@@ -67,21 +67,11 @@ import useCounterStore from "@/stores/counter";
  */
 const { t } = useI18n();
 
-const temp = {
-  "home-page": {
-
-  },
-}
-
 /**
  * Load asynchronously some translations
- * TODO trovare il modo di updatare un vocabolario (ma è proprio necessario?)
  */
-// getLanguage().then((updatedTranslations) => {
-//   console.log("Before loading translation: " + t("generic.server-loaded-message"), t("generic.increment", 2));
-//   updateLocale(i18n.global.locale.value, updatedTranslations);
-//   console.log("After loading translation: " + t("generic.server-loaded-message"), t("generic.increment", 2));
-// })
+getLanguage()
+    .then((updatedTranslations) => updateLocale("es", updatedTranslations))
 
 /**
  * Store object
@@ -98,11 +88,6 @@ const {
 } = storeToRefs(store);
 
 /**
- * Same value as the one in Pinia, to show they are the same.
- */
-const providedRef = inject<Ref<string>>('providedRef');
-
-/**
  * Functions can be used even without being deconstructed
  */
 const {
@@ -110,6 +95,11 @@ const {
   incrementDelayed,
   routeCheck,
 } = store;
+
+/**
+ * Same value as the one in Pinia, to show they are the same.
+ */
+const providedRef = inject<Ref<string>>('providedRef');
 
 /**
  * Change the provided value into a random string

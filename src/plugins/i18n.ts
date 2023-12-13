@@ -52,27 +52,20 @@ export const i18n = createI18n({
  * @param locale
  */
 export async function _loadLocale(i18n: I18n, locale: string) {
-    // if it's the same language, or it is already loaded: 
     if (
-        (i18n.global.locale as WritableComputedRef<string>).value === locale
-        // TODO || already loaded? loadedLanguages.includes(locale)
+        // Check if it's the same language
+        (i18n.global.locale as WritableComputedRef<string>).value === locale ||
+        // or it is already loaded
+        loadedLanguages.includes(locale)
     )
         return _changeLanguage(i18n, locale);
-
-    // // set locale and locale message
-    // const messages = await import(
-    //     /* webpackChunkName: "locale-[request]" */ `./locales/${locale}.json`
-    // )
-    // i18n.global.setLocaleMessage(locale, messages.default)
-
-    return import('../locales/' + locale + '.json')
+    // load from file (if any)
+    return import(/* webpackChunkName: "locale-[request]" */ `../locales/${locale}.json`)
         .then(messages => {
             _updateLocale(i18n, locale, messages.default);
-            // loadedLanguages.push(locale)
+            loadedLanguages.push(locale)
             return _changeLanguage(i18n, locale);
         })
-
-    // TODO? return nextTick();
 }
 
 /**
@@ -86,19 +79,13 @@ export async function loadLocale(locale: string) {
 
 /**
  * Dynamic import from server of vocabulary
- * TODO trovare il modo di updatare un vocabolario (ma è proprio necessario?)
+ * (It will overwrite existing locale if already present)
  *
  * @param i18n
  * @param locale
  * @param messages TODO type
  */
 export function _updateLocale(i18n: I18n, locale: string, messages: any) {
-    // console.log("PRE", {...i18n.global.messages?.value?.it })
-    // i18n.global.setLocaleMessage(locale, {
-    //     ...(i18n.global.messages?.value?.[i18n.global.locale.value] || {}),
-    //     ...messages
-    // });
-    // console.log("POST", {...i18n.global.messages?.value?.it })
     i18n.global.setLocaleMessage(locale, messages);
 }
 
@@ -118,7 +105,7 @@ export function updateLocale(locale: string, messages: any){
  * @param i18n
  * @param locale
  */
-export function _changeLanguage(i18n: I18n, locale: string) {
+export async function _changeLanguage(i18n: I18n, locale: string) {
     (i18n.global.locale as WritableComputedRef<string>).value = locale;
 
     /**
@@ -130,6 +117,7 @@ export function _changeLanguage(i18n: I18n, locale: string) {
      * axios.defaults.headers.common['Accept-Language'] = locale
      */
     document.querySelector('html')?.setAttribute('lang', locale)
+    return nextTick();
 }
 
 /**
@@ -138,5 +126,5 @@ export function _changeLanguage(i18n: I18n, locale: string) {
  * @param locale
  */
 export function changeLanguage(locale: string){
-    _changeLanguage(i18n as I18n, locale);
+    return _changeLanguage(i18n as I18n, locale);
 }
