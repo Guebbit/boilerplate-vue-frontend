@@ -1,0 +1,40 @@
+@import "@guebbit/scss-library";
+@import "@styles/global";
+
+/**
+ * Transform colors in CSS variables
+ * @import "@guebbit/scss-library/global/includers/colors";
+ */
+@include guebbit-include-colors((), ("root", "on-root"));
+
+/**
+ * Default theme
+ */
+:root {
+  /**
+   * Generic variables
+   */
+  --transitions-time: #{$g-transitions-time};
+  --nav-height: #{$g-nav-height};
+  --media-query-desktop: #{$g-media-query-desktop};
+
+  /**
+   * CSS Theme (semantic color variables for this project)
+   */
+  --body-background-color: var(--primary-white);
+  --body-text-color: var(--grey-900);
+  --anchor-text-color: var(--primary-500);
+  --anchor-background-color: transparent;
+  --anchor-text-active-color: var(--on-secondary-500);
+  --anchor-background-active-color: var(--secondary-500);
+}
+
+/**
+ * Dark Theme (changes from default variables)
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --body-background-color: var(--grey-900);
+    --body-text-color: var(--primary-white);
+  }
+}

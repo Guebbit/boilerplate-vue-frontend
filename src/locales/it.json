@@ -1,0 +1,19 @@
+{
+  "generic": {
+    "increment": "incremento | incrementi",
+    "count": "conto | conti",
+    "user": "utente | utenti",
+    "list": "lista | liste",
+    "user-list": "@:generic.list @:generic.user"
+  },
+  "home-page": {
+    "count-label": "@.capitalize:generic.count",
+    "provided-label": "App provided ref",
+    "increment-label": "@.capitalize:generic.increment",
+    "delayed-increment-label": "Async @:generic.increment"
+  },
+  "user-page": {
+    "user": "@:generic.user [0]",
+    "modified-user-list": "@.customModifier:{'generic.user-list'}"
+  }
+}

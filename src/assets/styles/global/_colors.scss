@@ -1,0 +1,53 @@
+@import "@guebbit/scss-library";
+
+$primary-color: #00bcd4 !default;
+$secondary-color: #ff9800 !default;
+
+$primary-color-100: tint-color($primary-color, 80%);
+$primary-color-200: tint-color($primary-color, 60%);
+$primary-color-300: tint-color($primary-color, 40%);
+$primary-color-400: tint-color($primary-color, 20%);
+$primary-color-500: $primary-color;
+$primary-color-600: shade-color($primary-color, 20%);
+$primary-color-700: shade-color($primary-color, 40%);
+$primary-color-800: shade-color($primary-color, 60%);
+$primary-color-900: shade-color($primary-color, 80%);
+
+$secondary-color-100: tint-color($secondary-color, 80%);
+$secondary-color-200: tint-color($secondary-color, 60%);
+$secondary-color-300: tint-color($secondary-color, 40%);
+$secondary-color-400: tint-color($secondary-color, 20%);
+$secondary-color-500: $secondary-color;
+$secondary-color-600: shade-color($secondary-color, 20%);
+$secondary-color-700: shade-color($secondary-color, 40%);
+$secondary-color-800: shade-color($secondary-color, 60%);
+$secondary-color-900: shade-color($secondary-color, 80%);
+
+$guebbit-colors-collection: () !default;
+$guebbit-colors-collection: map-merge(
+        $guebbit-colors-collection,
+        (
+                "primary": (
+                        "100": $primary-color-100,
+                        "200": $primary-color-200,
+                        "300": $primary-color-300,
+                        "400": $primary-color-400,
+                        "500": $primary-color-500,
+                        "600": $primary-color-600,
+                        "700": $primary-color-700,
+                        "800": $primary-color-800,
+                        "900": $primary-color-900
+                ),
+                "secondary": (
+                        "100": $secondary-color-100,
+                        "200": $secondary-color-200,
+                        "300": $secondary-color-300,
+                        "400": $secondary-color-400,
+                        "500": $secondary-color-500,
+                        "600": $secondary-color-600,
+                        "700": $secondary-color-700,
+                        "800": $secondary-color-800,
+                        "900": $secondary-color-900
+                ),
+        )
+);
