@@ -1,0 +1,23 @@
+.theme-input {
+  appearance: none;
+  border: none;
+  outline: none;
+  color: var(--input-text-color);
+  background: var(--input-background-color);
+  transition:
+          color var(--transitions-time, 0.2s),
+          background-color var(--transitions-time, 0.2s),
+          border var(--transitions-time, 0.2s);
+  border-bottom-style: solid;
+  border-bottom-width: 0.2em;
+  border-color: var(--input-border-color);
+  border-radius: 0.2em 0.2em 0 0;
+  font-size: 1.2em;
+  padding: 0.5em 1em;
+
+  &:hover {
+    color: var(--input-text-active-color);
+    background: var(--input-background-active-color);
+    border-color: var(--input-border-active-color);
+  }
+}

@@ -1,0 +1,13 @@
+a {
+  text-decoration: none;
+  color: var(--anchor-text-color);
+  background: var(--anchor-background-color);
+  transition:
+          color var(--transitions-time, 0.2s),
+          background-color var(--transitions-time, 0.2s);
+
+  &:hover{
+    color: var(--anchor-text-active-color);
+    background: var(--anchor-background-active-color);
+  }
+}

@@ -1,20 +1,12 @@
 @import "root";
+@import "./atoms/basics";
+@import "./atoms/buttons";
+@import "./atoms/inputs";
+@import "./atoms/typhography";
+@import "./molecules/cards";
 
 body {
   background: var(--body-background-color);
   color: var(--body-text-color);
 }
 
-a {
-  text-decoration: none;
-  color: var(--anchor-text-color);
-  background: var(--anchor-background-color);
-  transition:
-          color var(--transitions-time, 0.2s),
-          background-color var(--transitions-time, 0.2s);
-
-  &:hover{
-    color: var(--anchor-text-active-color);
-    background: var(--anchor-background-active-color);
-  }
-}

@@ -1,0 +1,22 @@
+.theme-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: var(--card-text-color);
+  background: var(--card-background-color);
+  transition:
+          color var(--transitions-time, 0.2s),
+          background-color var(--transitions-time, 0.2s),
+          border var(--transitions-time, 0.2s);
+  padding: 24px;
+  border-radius: 0.2em;
+  text-align: center;
+  line-height: 1.5;
+  width: 400px;
+
+  &:hover {
+    color: var(--card-text-active-color);
+    background: var(--card-background-active-color);
+  }
+}

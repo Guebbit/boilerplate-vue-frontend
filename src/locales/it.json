@@ -4,7 +4,8 @@
     "count": "conto | conti",
     "user": "utente | utenti",
     "list": "lista | liste",
-    "user-list": "@:generic.list @:generic.user"
+    "user-list": "@:generic.list @:generic.user",
+    "loading": "caricamento {load}"
   },
   "home-page": {
     "count-label": "@.capitalize:generic.count",

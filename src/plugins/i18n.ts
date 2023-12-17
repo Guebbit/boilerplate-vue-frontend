@@ -47,6 +47,7 @@ export const i18n = createI18n({
 
 /**
  * Dynamic import (still from file) of vocabulary
+ * TODO serious load locale from user browser and that change routes (for better SEO)
  *
  * @param i18n
  * @param locale

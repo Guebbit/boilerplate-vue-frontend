@@ -1,0 +1,23 @@
+.theme-button {
+  display: inline-block;
+  color: var(--button-text-color);
+  background: var(--button-background-color);
+  transition:
+          color var(--transitions-time, 0.2s),
+          background-color var(--transitions-time, 0.2s);
+  text-align: center;
+  font-weight: 600;
+  border-radius: 4px;
+  margin: 0;
+  padding: 1em 2em;
+  cursor: pointer;
+  outline: none;
+  text-transform: none;
+  user-select: none;
+  border-style: none;
+
+  &:hover {
+    color: var(--button-text-active-color);
+    background: var(--button-background-active-color);
+  }
+}

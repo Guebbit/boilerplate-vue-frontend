@@ -42,7 +42,7 @@ export default defineStore('counter', () => {
    */
   const route = useRoute();
   function routeCheck(){
-    console.log("route accessed within Pinia:" + route.path)
+    alert("route accessed within Pinia:" + route.path)
   }
 
   /**

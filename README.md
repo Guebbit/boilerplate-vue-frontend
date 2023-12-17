@@ -1,22 +1,5 @@
 # boilerplate-vue-frontend
 
-TODO: 
- - i18n language routes
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 This template should help get you started developing with Vue 3 in Vite.
 
 ## Recommended IDE Setup

@@ -1,50 +1,61 @@
 <template>
-  <main>
-    <h1>HOME</h1>
+  <main id="home-page">
+    <h1 class="theme-page-title"><span>HOME</span></h1>
 
     <div class="info-wrapper">
-      {{ t('home-page.count-label') }}:
-      <b>{{ count }} <small>({{ doubleCount }})</small></b>
+      <div class="theme-card">
+        {{ t('home-page.count-label') }}
+        <br />
+        <b class="value" style="font-size: 3em">{{ count }} <small>({{ doubleCount }})</small></b>
+      </div>
+      <button
+          class="theme-button"
+          @click="increment"
+      >
+        {{ t('home-page.increment-label') }}
+      </button>
+      <button
+          class="theme-button"
+          @click="incrementDelayed"
+      >
+        {{ t('home-page.delayed-increment-label') }}
+      </button>
+      <!--
+        :modelValue="modelValue"
+        @update:modelValue="value => emit('update:modelValue', value)"
+      -->
+      <CounterInput
+        v-model="count"
+        :min="0"
+        :max="5"
+      />
     </div>
+
     <div class="info-wrapper">
-      {{ t('home-page.provided-label') }}:
-      <b>{{ providedRef }} = {{ providedRefFromPinia }}</b>
+      <div class="theme-card">
+        {{ t('home-page.provided-label') }}
+        <b>{{ providedRef }} = {{ providedRefFromPinia }}</b>
+      </div>
+      <div>
+        <label for="providedRefInput">Change provided by typing</label>
+        <br />
+        <input
+            v-model="providedRefFromPinia"
+            id="providedRefInput"
+            class="theme-input"
+            type="text"
+        />
+      </div>
     </div>
 
-    <button
-        class="button"
-        @click="increment"
-    >
-      {{ t('home-page.increment-label') }}
-    </button>
-
-    <button
-        class="button"
-        @click="incrementDelayed"
-    >
-      {{ t('home-page.delayed-increment-label') }}
-    </button>
-
-    <button
-        class="button"
-        @click="routeCheck"
-    >
-      Check route
-    </button>
-
-    <label for="providedRefInput">Change provided by typing</label>
-    <input
-        id="providedRefInput"
-        type="text"
-        v-model="providedRefFromPinia"
-    />
-
-    <button
-        class="button"
-        @click="changeProvidedRef"
-    >
-      Change Provided with random
-    </button>
+    <div class="info-wrapper">
+      <button
+          class="theme-button"
+          @click="routeCheck"
+      >
+        Check route
+      </button>
+    </div>
   </main>
 </template>
 
@@ -55,12 +66,13 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { inject, watch, type Ref } from "vue";
+import { inject, watch, onMounted, toRef } from "vue";
 import { useI18n } from "vue-i18n";
 import { storeToRefs } from "pinia";
 import { getLanguage } from "@/api";
-import { i18n, updateLocale } from "@/plugins/i18n";
+import { updateLocale } from "@/plugins/i18n";
 import useCounterStore from "@/stores/counter";
+import CounterInput from "@/components/CounterInput.vue";
 
 /**
  * Use translation
@@ -99,18 +111,36 @@ const {
 /**
  * Same value as the one in Pinia, to show they are the same.
  */
-const providedRef = inject<Ref<string>>('providedRef');
+const providedRef = toRef<string>(inject('providedRef', ""));
 
-/**
- * Change the provided value into a random string
- */
-function changeProvidedRef(){
-  providedRefFromPinia.value = (Math.random() + 1).toString(36).substring(7);
-}
 
 /**
  * Watcher
  */
 watch(providedRefFromPinia, (val) => console.log("Provided ref changed", val));
+
+/**
+ * Created and mounted
+ */
+console.log("HOME was created")
+onMounted(() => {
+  console.log("HOME was mounted");
+})
 </script>
+
+<style lang="scss">
+#home-page{
+  .theme-page-title{
+    margin-bottom: 100px;
+  }
+
+  .info-wrapper{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 50px;
+    margin-bottom: 50px;
+  }
+}
+</style>
 

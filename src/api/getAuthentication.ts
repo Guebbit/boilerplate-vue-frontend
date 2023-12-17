@@ -1,6 +1,7 @@
 import fetchJsonWrapper from "@/utils/fetchJsonWrapper";
 
 export interface authenticationSuccessType {
+    secret: string,
     id: number,
     username: string,
     email: string
@@ -14,6 +15,7 @@ export default () =>
         .then(({ id, username, email }) => {
             // Some code
             return {
+                secret: 'secret' + id,
                 id,
                 username,
                 email
