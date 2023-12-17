@@ -5,7 +5,9 @@
     "user": "user | users",
     "list": "list | lists",
     "user-list": "@:generic.list @:generic.user",
-    "loading": "loading {load}"
+    "loading": "loading {load}",
+    "it": "italian",
+    "en": "english"
   },
   "home-page": {
     "count-label": "@.capitalize:generic.count",

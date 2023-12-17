@@ -4,6 +4,11 @@ import it from "@/locales/it.json";
 import en from "@/locales/en.json";
 
 /**
+ * List of supported languages
+ */
+export const supportedLanguages = import.meta.env.VITE_SUPPORTED_LOCALES.split(",");
+
+/**
  * List of loaded languages
  */
 export const loadedLanguages :string[] = [];
@@ -20,12 +25,12 @@ export const i18n = createI18n({
      * In this case: automatic browser language detection
      * (it's better to use this elsewhere, with routing)
      */
-    locale: navigator.language.slice(0, 2),
+    locale: import.meta.env.VITE_DEFAULT_LOCALE || 'en',
 
     /**
      * Fallback in case requested language doesn't exist
      */
-    fallbackLocale: 'it',
+    fallbackLocale: import.meta.env.VITE_FALLBACK_LOCALE || 'en',
 
     /**
      * Static import of vocabulary
@@ -47,12 +52,12 @@ export const i18n = createI18n({
 
 /**
  * Dynamic import (still from file) of vocabulary
- * TODO serious load locale from user browser and that change routes (for better SEO)
  *
  * @param i18n
  * @param locale
  */
 export async function _loadLocale(i18n: I18n, locale: string) {
+    // Load existing locale
     if (
         // Check if it's the same language
         (i18n.global.locale as WritableComputedRef<string>).value === locale ||
@@ -60,9 +65,14 @@ export async function _loadLocale(i18n: I18n, locale: string) {
         loadedLanguages.includes(locale)
     )
         return _changeLanguage(i18n, locale);
-    // load from file (if any)
+    // If not supported, just load default fallback
+    // This check happens AFTER because I could load a new unknown language from the server
+    if (!supportedLanguages.includes(locale))
+        return (i18n.global.fallbackLocale as WritableComputedRef<string>).value;
+    // Load from file (if any)
     return import(/* webpackChunkName: "locale-[request]" */ `../locales/${locale}.json`)
         .then(messages => {
+            console.log("_loadLocale messages", {...messages})
             _updateLocale(i18n, locale, messages.default);
             loadedLanguages.push(locale)
             return _changeLanguage(i18n, locale);
@@ -87,6 +97,7 @@ export async function loadLocale(locale: string) {
  * @param messages TODO type
  */
 export function _updateLocale(i18n: I18n, locale: string, messages: any) {
+    loadedLanguages.push(locale);
     i18n.global.setLocaleMessage(locale, messages);
 }
 
@@ -129,3 +140,33 @@ export async function _changeLanguage(i18n: I18n, locale: string) {
 export function changeLanguage(locale: string){
     return _changeLanguage(i18n as I18n, locale);
 }
+
+/**
+ * Get user locale, fallback if not available
+ */
+export function getDefaultLocale(){
+    const foundLocale = navigator.language.slice(0, 2);
+    if(!loadedLanguages.includes(foundLocale))
+        return (i18n.global.fallbackLocale as WritableComputedRef<string>).value;
+    return foundLocale;
+}
+
+
+/*
+
+get currentLocale() {
+    return i18n.global.locale.value
+},
+
+i18nRoute(to) {
+    return {
+        ...to,
+        params: {
+            locale: Trans.currentLocale,
+            ...to.params
+        }
+    }
+}
+
+TODO https://lokalise.com/blog/vue-i18n/
+*/

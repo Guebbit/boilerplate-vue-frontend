@@ -5,13 +5,15 @@
     "user": "utente | utenti",
     "list": "lista | liste",
     "user-list": "@:generic.list @:generic.user",
-    "loading": "caricamento {load}"
+    "loading": "caricamento {load}",
+    "it": "italiano",
+    "en": "inglese"
   },
   "home-page": {
     "count-label": "@.capitalize:generic.count",
     "provided-label": "App provided ref",
     "increment-label": "@.capitalize:generic.increment",
-    "delayed-increment-label": "Async @:generic.increment"
+    "delayed-increment-label": "@.capitalize:generic.increment asincrono"
   },
   "user-page": {
     "user": "@:generic.user [0]",

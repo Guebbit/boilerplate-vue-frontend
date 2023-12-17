@@ -7,11 +7,14 @@
       <RouterLink to="/restricted">Restricted</RouterLink>
       <RouterLink to="/users">User List</RouterLink>
     </nav>
+
+    <LanguageSwitcher />
   </header>
 </template>
 
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import LanguageSwitcher from "@/components/LanguageSwitcher.vue";
 </script>
 
 <style lang="scss">

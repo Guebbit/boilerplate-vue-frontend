@@ -54,34 +54,28 @@ export default async (to: RouteLocationNormalized, from: RouteLocationNormalized
      */
     return getAuthentication()
         .then(({ secret }) => {
-            if(!secret){
-                next({
+            if(!secret)
+                return next({
                     name: 'Home'
                 });
-                return;
-            }
             next();
         })
         .catch(({ status, statusText }: Response) => {
             switch (status){
-                case 401: {
-                    next({
+                case 401:
+                    return next({
                         name: '401',
                         params: {
                             error: statusText || "Wrong credentials"
                         }
-                    })
-                    return;
-                }
-                case 500: {
-                    next({
+                    });
+                case 500:
+                    return next({
                         name: '500'
-                    })
-                    return;
-                }
+                    });
             }
             // default
-            next({
+            return next({
                 name: 'Home'
             });
         })

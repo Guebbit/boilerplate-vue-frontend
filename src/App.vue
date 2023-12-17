@@ -13,4 +13,7 @@ import { RouterView } from 'vue-router';
  * Since we are in App.vue: to all application
  */
 provide('providedRef', ref('Lorem Ipsum'));
+
+// navigator.language.slice(0, 2)
+// loadedLanguages
 </script>
