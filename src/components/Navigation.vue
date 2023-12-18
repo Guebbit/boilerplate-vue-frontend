@@ -3,9 +3,27 @@
     <img alt="logo" class="logo" src="@/assets/images/guebbit-logo-colored.svg" />
 
     <nav>
-      <RouterLink to="/">Home</RouterLink>
-      <RouterLink to="/restricted">Restricted</RouterLink>
-      <RouterLink to="/users">User List</RouterLink>
+      <RouterLink
+        :to="RouterLinkI18n({
+          name: 'Home',
+        })"
+      >
+        {{ t('navigation.home-label') }}
+      </RouterLink>
+      <RouterLink
+        :to="RouterLinkI18n({
+          name: 'Restricted',
+        })"
+      >
+        {{ t('navigation.restricted-label') }}
+      </RouterLink>
+      <RouterLink
+        :to="RouterLinkI18n({
+          name: 'UserList',
+        })"
+      >
+        {{ t('navigation.user-list-label') }}
+      </RouterLink>
     </nav>
 
     <LanguageSwitcher />
@@ -13,8 +31,12 @@
 </template>
 
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import { RouterLink } from 'vue-router';
+import { useI18n } from 'vue-i18n';
 import LanguageSwitcher from "@/components/LanguageSwitcher.vue";
+import { RouterLinkI18n } from "@/plugins/i18n";
+
+const { t } = useI18n();
 </script>
 
 <style lang="scss">

@@ -4,14 +4,18 @@
     "count": "count | counts",
     "user": "user | users",
     "list": "list | lists",
-    "user-list": "@:generic.list @:generic.user",
     "loading": "loading {load}",
     "it": "italian",
     "en": "english"
   },
+  "navigation": {
+    "home-label": "Home",
+    "restricted-label": "Admin",
+    "user-list-label": "@:generic.user @:generic.list"
+  },
   "home-page": {
     "count-label": "@.capitalize:generic.count",
-    "provided-label": "App provided ref",
+    "provided-label": "App provided ref, injected from Home and Pinia",
     "increment-label": "@.capitalize:generic.increment",
     "delayed-increment-label": "Async @:generic.increment"
   },

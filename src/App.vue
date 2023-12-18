@@ -12,8 +12,5 @@ import { RouterView } from 'vue-router';
  * Provide data to all component descendants.
  * Since we are in App.vue: to all application
  */
-provide('providedRef', ref('Lorem Ipsum'));
-
-// navigator.language.slice(0, 2)
-// loadedLanguages
+provide('providedRef', ref('From App.vue'));
 </script>

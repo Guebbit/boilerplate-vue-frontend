@@ -17,6 +17,7 @@
   "dependencies": {
     "@guebbit/javascript-library": "^1.0.5",
     "@guebbit/scss-library": "^1.0.8",
+    "axios": "^1.6.2",
     "pinia": "^2.1.7",
     "vue": "^3.3.10",
     "vue-i18n": "^9.8.0",

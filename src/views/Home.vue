@@ -33,14 +33,23 @@
 
     <div class="info-wrapper">
       <div class="theme-card">
-        {{ t('home-page.provided-label') }}
-        <b>{{ providedRef }} = {{ providedRefFromPinia }}</b>
+        <p>{{ t('home-page.provided-label') }}</p>
+        <h3><b>{{ providedRef }} === {{ providedRefFromPinia }}</b></h3>
+        <small>
+          WARNING: If providedRefFromPinia get injected too soon
+          (like in a beforeEnter route guard)
+          they will not point at the same object, since the beforeEnter
+          will start BEFORE App is created (and providedRef is provided the first time).
+          <br/><br/>
+          It should be provided in the main.ts
+          (and removed from App.vue or it will be overwritten and the problem will happen again)
+        </small>
       </div>
       <div>
         <label for="providedRefInput">Change provided by typing</label>
         <br />
         <input
-            v-model="providedRefFromPinia"
+            v-model="providedRef"
             id="providedRefInput"
             class="theme-input"
             type="text"
@@ -83,7 +92,7 @@ const { t } = useI18n();
  * Load asynchronously some translations
  */
 getLanguage()
-    .then((updatedTranslations) => updateLocale("es", updatedTranslations))
+    .then((newLocaleVocabulary) => updateLocale("en", newLocaleVocabulary));
 
 /**
  * Store object

@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, RouterView } from 'vue-router';
 import errorRoutes from "./errorRoutes";
 import userRoutes from "./userRoutes";
+import demoMiddleware from "@/middlewares/demoMiddleware";
 import localeChoice from "@/middlewares/localeChoice";
 import authenticationCheck from "@/middlewares/authenticationCheck";
 import delay from "@/utils/delay";
@@ -14,7 +15,10 @@ const router = createRouter({
     {
       path: "/:locale?",
       component: RouterView,
-      beforeEnter: [localeChoice],
+      beforeEnter: [
+          demoMiddleware,
+          localeChoice
+      ],
       children: [
         {
           path: '',

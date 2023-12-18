@@ -1,7 +1,5 @@
 import { storeToRefs } from "pinia";
 import { getAuthentication } from "@/api";
-import { i18n } from "@/plugins/i18n";
-import useCounterStore from "@/stores/counter";
 import useCoreStore from "@/stores/core";
 import delay from "@/utils/delay";
 
@@ -19,39 +17,15 @@ import type {
  * @param next
  */
 export default async (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
-    /**
-     * Can use the store
-     */
-    const store = useCounterStore();
-    const {
-        count,
-    } = storeToRefs(store);
-    count.value++;
-    console.log("count++: " + count.value);
-
-    /**
-     * Can use translations
-     */
-    const { t } = i18n.global;
-    console.log(t('generic.loading', { load: to.path }));
-
-    /**
-     * loading demo
-     */
+    // Get global loading
     const {
         loading
     } = storeToRefs(useCoreStore());
     // start loading
     loading.value = true;
-
-    /**
-     * Demo delay
-     */
+    // DEMO delay
     await delay(1000);
-
-    /**
-     * Authentication data retrive
-     */
+    // Authentication data retrive
     return getAuthentication()
         .then(({ secret }) => {
             if(!secret)

@@ -1,7 +1,11 @@
 import { nextTick, type WritableComputedRef } from "vue";
 import { createI18n, type I18n } from "vue-i18n";
-import it from "@/locales/it.json";
-import en from "@/locales/en.json";
+// import it from "@/locales/it.json";
+// import en from "@/locales/en.json";
+import type {
+    RouteLocationRaw,
+    RouteLocationNamedRaw,
+} from "vue-router";
 
 /**
  * List of supported languages
@@ -36,10 +40,10 @@ export const i18n = createI18n({
      * Static import of vocabulary
      * (for large locale files it is better the dynamic one)
      */
-    messages: {
-        it,
-        en
-    },
+    // messages: {
+    //     it,
+    //     en
+    // },
 
     /**
      * Custom modifiers to transform translations
@@ -57,10 +61,10 @@ export const i18n = createI18n({
  * @param locale
  */
 export async function _loadLocale(i18n: I18n, locale: string) {
-    // Load existing locale
+    // Load locale
     if (
         // Check if it's the same language
-        (i18n.global.locale as WritableComputedRef<string>).value === locale ||
+        // (i18n.global.locale as WritableComputedRef<string>).value === locale ||
         // or it is already loaded
         loadedLanguages.includes(locale)
     )
@@ -69,14 +73,17 @@ export async function _loadLocale(i18n: I18n, locale: string) {
     // This check happens AFTER because I could load a new unknown language from the server
     if (!supportedLanguages.includes(locale))
         return (i18n.global.fallbackLocale as WritableComputedRef<string>).value;
-    // Load from file (if any)
-    return import(/* webpackChunkName: "locale-[request]" */ `../locales/${locale}.json`)
-        .then(messages => {
-            console.log("_loadLocale messages", {...messages})
-            _updateLocale(i18n, locale, messages.default);
-            loadedLanguages.push(locale)
-            return _changeLanguage(i18n, locale);
-        })
+    // Load from file (it should be there)
+    return import(/* webpackChunkName: "locale-[request]" */ `@/locales/${locale}.json`)
+        // file found
+        .then(file =>
+            // translation loaded
+            _updateLocale(i18n, locale, file.default)
+                // then language changed
+                .then(() => _changeLanguage(i18n, locale))
+        )
+        // this should never happen, but failsafe just in case
+        .catch(() => _changeLanguage(i18n, getDefaultLocale()));
 }
 
 /**
@@ -94,21 +101,24 @@ export async function loadLocale(locale: string) {
  *
  * @param i18n
  * @param locale
- * @param messages TODO type
+ * @param messages
  */
-export function _updateLocale(i18n: I18n, locale: string, messages: any) {
-    loadedLanguages.push(locale);
+export async function _updateLocale(i18n: I18n, locale: string, messages: any) {
+    // Could be already present and this is just an update
+    if(!loadedLanguages.includes(locale))
+        loadedLanguages.push(locale);
     i18n.global.setLocaleMessage(locale, messages);
+    return nextTick();
 }
 
 /**
  * Same as above, but with default I18n
  *
  * @param locale
- * @param messages TODO type
+ * @param messages
  */
-export function updateLocale(locale: string, messages: any){
-    _updateLocale(i18n as I18n, locale, messages);
+export async function updateLocale(locale: string, messages: any){
+    return _updateLocale(i18n as I18n, locale, messages);
 }
 
 /**
@@ -118,6 +128,8 @@ export function updateLocale(locale: string, messages: any){
  * @param locale
  */
 export async function _changeLanguage(i18n: I18n, locale: string) {
+    if(!loadedLanguages.includes(locale))
+        await _loadLocale(i18n, locale);
     (i18n.global.locale as WritableComputedRef<string>).value = locale;
 
     /**
@@ -151,22 +163,25 @@ export function getDefaultLocale(){
     return foundLocale;
 }
 
-
-/*
-
-get currentLocale() {
-    return i18n.global.locale.value
-},
-
-i18nRoute(to) {
+/**
+ * Fix Router Links adding our current Locale
+ *
+ * @param to
+ * @constructor
+ */
+export function RouterLinkI18n(to: RouteLocationRaw) {
+    if(typeof to === "string")
+        return {
+            path: to,
+            params: {
+                locale: i18n.global.locale.value,
+            }
+        }
     return {
         ...to,
         params: {
-            locale: Trans.currentLocale,
-            ...to.params
+            locale: i18n.global.locale.value,
+            ...((to as RouteLocationNamedRaw).params || {})
         }
     }
 }
-
-TODO https://lokalise.com/blog/vue-i18n/
-*/

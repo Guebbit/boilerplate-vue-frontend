@@ -49,7 +49,7 @@ export default defineStore('counter', () => {
    * Any property provided at the App level can be accessed from the
    * store using inject(), just like in components.
    */
-  const providedRef = inject<Ref<string>>('providedRef');
+  const providedRef = inject<Ref<string>>('providedRef', ref('From Pinia'));
 
   return {
     count,

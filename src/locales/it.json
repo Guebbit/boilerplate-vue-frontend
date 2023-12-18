@@ -4,14 +4,18 @@
     "count": "conto | conti",
     "user": "utente | utenti",
     "list": "lista | liste",
-    "user-list": "@:generic.list @:generic.user",
     "loading": "caricamento {load}",
     "it": "italiano",
     "en": "inglese"
   },
+  "navigation": {
+    "home-label": "Home",
+    "restricted-label": "Amministrazione",
+    "user-list-label": "@:generic.list @:generic.user"
+  },
   "home-page": {
     "count-label": "@.capitalize:generic.count",
-    "provided-label": "App provided ref",
+    "provided-label": "App provided ref, injected from Home and Pinia",
     "increment-label": "@.capitalize:generic.increment",
     "delayed-increment-label": "@.capitalize:generic.increment asincrono"
   },
