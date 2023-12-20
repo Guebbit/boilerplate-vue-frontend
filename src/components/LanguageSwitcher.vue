@@ -1,5 +1,5 @@
 <template>
-  <select @change="switchLanguage">
+  <select class="theme-select" @change="switchLanguage">
     <option
         v-for="sLocale in supportedLanguages"
         :key="`locale-${sLocale}`"
@@ -33,7 +33,3 @@ async function switchLanguage(event: Event){
       .catch(() => router.push("/"));
 }
 </script>
-
-<style lang="scss">
-// TODO
-</style>

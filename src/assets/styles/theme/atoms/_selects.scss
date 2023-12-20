@@ -1,0 +1,28 @@
+.theme-select {
+  // native reset
+  appearance: none;
+  border: 0;
+  outline: 0;
+  font: inherit;
+  &:focus {
+    outline: none;
+  }
+  // code
+  width: 15em;
+  padding: 0.5em 1em;
+  background: var(--select-icon) no-repeat right 0.8em center / 1.4em,
+    linear-gradient(to left, var(--select-icon-background) 3em, var(--select-background-color) 3em);
+  color: var(--select-text-color);
+  border-radius: 0.2em;
+  cursor: pointer;
+  // remove IE arrow
+  &::-ms-expand {
+    display: none;
+  }
+
+  // can't really be styled, better to leave default options
+  & > option {
+    color: initial;
+    background-color: initial;
+  }
+}

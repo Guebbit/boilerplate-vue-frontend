@@ -121,6 +121,13 @@ watch(props, ({ modelValue, min, max }) => {
     color: var(--button-text-color);
     background: var(--button-background-color);
     padding: 1em 2em;
+
+    &:first-child{
+      border-radius: 0.2em 0 0 0.2em;
+    }
+    &:last-child{
+      border-radius: 0 0.2em 0.2em 0;
+    }
   }
 }
 </style>

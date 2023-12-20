@@ -3,10 +3,12 @@
     <h1 class="theme-page-title"><span>HOME</span></h1>
 
     <div class="info-wrapper">
-      <div class="theme-card">
-        {{ t('home-page.count-label') }}
-        <br />
-        <b class="value" style="font-size: 3em">{{ count }} <small>({{ doubleCount }})</small></b>
+      <div class="theme-card" style="text-align: center">
+        <div class="card-content">
+          {{ t('home-page.count-label') }}
+          <br />
+          <b class="value" style="font-size: 3em">{{ count }} <small>({{ doubleCount }})</small></b>
+        </div>
       </div>
       <button
           class="theme-button"
@@ -33,17 +35,21 @@
 
     <div class="info-wrapper">
       <div class="theme-card">
-        <p>{{ t('home-page.provided-label') }}</p>
-        <h3><b>{{ providedRef }} === {{ providedRefFromPinia }}</b></h3>
-        <small>
-          WARNING: If providedRefFromPinia get injected too soon
-          (like in a beforeEnter route guard)
-          they will not point at the same object, since the beforeEnter
-          will start BEFORE App is created (and providedRef is provided the first time).
-          <br/><br/>
-          It should be provided in the main.ts
-          (and removed from App.vue or it will be overwritten and the problem will happen again)
-        </small>
+        <div class="card-header">
+          <h3><b>{{ providedRef }} === {{ providedRefFromPinia }}</b></h3>
+        </div>
+        <div class="card-content">
+          <p>{{ t('home-page.provided-label') }}</p>
+          <small>
+            WARNING: If providedRefFromPinia get injected too soon
+            (like in a beforeEnter route guard)
+            they will not point at the same object, since the beforeEnter
+            will start BEFORE App is created (and providedRef is provided the first time).
+            <br/><br/>
+            It should be provided in the main.ts
+            (and removed from App.vue or it will be overwritten and the problem will happen again)
+          </small>
+        </div>
       </div>
       <div>
         <label for="providedRefInput">Change provided by typing</label>

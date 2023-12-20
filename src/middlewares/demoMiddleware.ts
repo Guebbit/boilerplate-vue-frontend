@@ -27,7 +27,8 @@ export default async (to: RouteLocationNormalized, from: RouteLocationNormalized
     console.log("count++: " + count.value);
 
     /**
-     * Can use translations (but it could happen before they are loaded correctly)
+     * Can use translations, but it could happen before they are loaded correctly
+     * (like in this case, where it is loaded in a route guard, before App.vue)
      */
     const { t, locale } = i18n.global;
     console.log("locale: " + locale.value, t('generic.loading', { load: to.path }));

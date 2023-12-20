@@ -26,26 +26,37 @@
 
   --title-border-color: var(--primary-500);
 
+  // theme anchors
   --anchor-text-color: var(--primary-500);
   --anchor-background-color: transparent;
   --anchor-text-active-color: var(--on-secondary-500);
   --anchor-background-active-color: var(--secondary-500);
 
+  // theme buttons
   --button-text-color: var(--on-primary-500);
   --button-background-color: var(--primary-500);
   --button-text-active-color: var(--on-secondary-500);
   --button-background-active-color: var(--secondary-500);
 
+  // theme inputs
   --input-text-color: var(--on-primary-500);
-  --input-background-color: rgba(var(--primary-500), 0.2);
+  --input-background-color: #{rgba($primary-color-500, 0.1)};
   --input-border-color: var(--primary-500);
+  --input-background-active-color: #{rgba($secondary-color-500, 0.1)};
   --input-text-active-color: var(--on-secondary-500);
   --input-border-active-color: var(--secondary-500);
 
+  // theme cards
+  --select-text-color: var(--on-primary-500);
+  --select-background-color: var(--primary-500);
+  --select-icon: url(https://upload.wikimedia.org/wikipedia/commons/9/9d/Caret_down_font_awesome_whitevariation.svg);
+  --select-icon-background: var(--primary-700);
+
+  // theme cards
   --card-text-color: var(--on-primary-500);
-  --card-background-color: var(--primary-500);
-  --card-text-active-color: var(--on-secondary-500);
-  --card-background-active-color: var(--secondary-500);
+  --card-background-color: var(--primary-700);
+  --card-text-active-color: var(--on-secondary-700);
+  --card-background-active-color: var(--secondary-700);
 }
 
 /**
