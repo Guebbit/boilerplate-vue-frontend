@@ -1,5 +1,7 @@
 # boilerplate-vue-frontend
 
+TODO https://typescript-eslint.io/rules/naming-convention/
+
 This template should help get you started developing with Vue 3 in Vite.
 
 ## Recommended IDE Setup

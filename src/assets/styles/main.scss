@@ -1,5 +1,12 @@
-@import '@styles/global';
-@import '@styles/theme';
+@use '@/assets/styles/global' as guebbit;
+@use '@/assets/styles/theme' as *;
+
+/**
+ * TODO After scss-library update, remove "guebbit-" and put in _root.scss
+ * Transform colors in CSS variables
+ * @import "@guebbit/scss-library/global/includers/colors";
+ */
+@include guebbit.guebbit-include-colors((), ("root", "on-root"));
 
 *,
 *::before,

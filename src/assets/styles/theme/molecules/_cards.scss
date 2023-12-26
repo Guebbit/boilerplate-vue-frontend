@@ -1,19 +1,14 @@
+//@use "@guebbit/scss-library/components/molecules/cards/SimpleCard" as * with (
+//  $scss-library-component-name: "theme-card",
+//);
+$scss-library-component-name: "theme-card";
 @import "@guebbit/scss-library/components/molecules/cards/SimpleCard";
 
-//:root{
-//  --simple-card-background: var(--card-background-color);
-//  --simple-card-text-color: var(--card-text-color);
-//  --simple-card-active-background: var(--card-background-active-color);
-//  --simple-card-active-text-color: var(--card-text-active-color);
-//}
-
 .theme-card {
-  @extend %simple-card, .animate-on-hover;
-
-  --simple-card-background: var(--card-background-color);
-  --simple-card-text-color: var(--card-text-color);
-  --simple-card-active-background: var(--card-background-active-color);
-  --simple-card-active-text-color: var(--card-text-active-color);
+  --background: var(--card-background-color);
+  --text-color: var(--card-text-color);
+  --active-background: var(--card-background-active-color);
+  --active-text-color: var(--card-text-active-color);
 
   width: 400px;
   transition:

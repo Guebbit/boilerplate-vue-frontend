@@ -1,19 +1,19 @@
-@import "@guebbit/scss-library";
-@import "@styles/global";
-
-/**
- * Transform colors in CSS variables
- * @import "@guebbit/scss-library/global/includers/colors";
- */
-@include guebbit-include-colors((), ("root", "on-root"));
+@import "../global";
 
 /**
  * Default theme
  */
 :root {
+
+  /**
+   * Overrides
+   */
+  --on-secondary-600: #fff !important;
+
   /**
    * Generic variables
    */
+  --g-padding: #{$g-padding};
   --transitions-time: #{$g-transitions-time};
   --nav-height: #{$g-nav-height};
   --media-query-desktop: #{$g-media-query-desktop};
@@ -21,42 +21,42 @@
   /**
    * CSS Theme (semantic color variables for this project)
    */
-  --body-background-color: var(--core-white);
-  --body-text-color: var(--grey-900);
+  --body-background-color: rgb(var(--core-white));
+  --body-text-color: rgb(var(--grey-900));
 
-  --title-border-color: var(--primary-500);
+  --title-border-color: rgb(var(--primary-500));
 
   // theme anchors
-  --anchor-text-color: var(--primary-500);
+  --anchor-text-color: rgb(var(--primary-500));
   --anchor-background-color: transparent;
-  --anchor-text-active-color: var(--on-secondary-500);
-  --anchor-background-active-color: var(--secondary-500);
+  --anchor-text-active-color: rgb(var(--on-secondary-600));
+  --anchor-background-active-color: rgb(var(--secondary-600));
 
   // theme buttons
-  --button-text-color: var(--on-primary-500);
-  --button-background-color: var(--primary-500);
-  --button-text-active-color: var(--on-secondary-500);
-  --button-background-active-color: var(--secondary-500);
+  --button-text-color: rgb(var(--on-primary-500));
+  --button-background-color: rgb(var(--primary-500));
+  --button-text-active-color: rgb(var(--on-secondary-500));
+  --button-background-active-color: rgb(var(--secondary-500));
 
   // theme inputs
-  --input-text-color: var(--on-primary-500);
+  --input-text-color: rgb(var(--on-primary-500));
   --input-background-color: #{rgba($primary-color-500, 0.1)};
-  --input-border-color: var(--primary-500);
+  --input-border-color: rgb(var(--primary-500));
   --input-background-active-color: #{rgba($secondary-color-500, 0.1)};
-  --input-text-active-color: var(--on-secondary-500);
-  --input-border-active-color: var(--secondary-500);
+  --input-text-active-color: rgb(var(--on-secondary-500));
+  --input-border-active-color: rgb(var(--secondary-500));
 
   // theme cards
-  --select-text-color: var(--on-primary-500);
-  --select-background-color: var(--primary-500);
+  --select-text-color: rgb(var(--on-primary-500));
+  --select-background-color: rgb(var(--primary-500));
   --select-icon: url(https://upload.wikimedia.org/wikipedia/commons/9/9d/Caret_down_font_awesome_whitevariation.svg);
-  --select-icon-background: var(--primary-700);
+  --select-icon-background: rgb(var(--primary-700));
 
   // theme cards
-  --card-text-color: var(--on-primary-500);
-  --card-background-color: var(--primary-700);
-  --card-text-active-color: var(--on-secondary-700);
-  --card-background-active-color: var(--secondary-700);
+  --card-text-color: rgb(var(--on-primary-500));
+  --card-background-color: rgb(var(--primary-700));
+  --card-text-active-color: rgb(var(--on-secondary-700));
+  --card-background-active-color: rgb(var(--secondary-700));
 }
 
 /**
@@ -64,7 +64,7 @@
  */
 @media (prefers-color-scheme: dark) {
   :root {
-    --body-background-color: var(--grey-900);
-    --body-text-color: var(--core-white);
+    --body-background-color: rgb(var(--grey-900));
+    --body-text-color: rgb(var(--core-white));
   }
 }

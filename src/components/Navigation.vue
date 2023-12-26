@@ -22,7 +22,7 @@
           name: 'UserList',
         })"
       >
-        {{ t('navigation.user-list-label') }}
+        {{ t('navigation.user-list-label', 2) }}
       </RouterLink>
     </nav>
 
@@ -40,11 +40,13 @@ const { t } = useI18n();
 </script>
 
 <style lang="scss">
-@import "@styles/global";
+@import "@/assets/styles/global";
 
 .page-header{
   line-height: 1.5;
   height: var(--nav-height);
+  display: flex;
+  place-items: center;
 
   .logo {
     display: block;
@@ -63,6 +65,7 @@ const { t } = useI18n();
       align-items: center;
       padding: 0 1em;
       border-left: 1px solid var(--color-border);
+      text-shadow: 1px -1px 1em #000;
 
       &:hover,
       &.router-link-exact-active{
@@ -73,9 +76,6 @@ const { t } = useI18n();
   }
 
   @media (min-width: $g-media-query-desktop) {
-    display: flex;
-    place-items: center;
-
     nav {
       text-align: left;
     }

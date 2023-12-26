@@ -3,7 +3,7 @@
     <h1 class="theme-page-title"><span>HOME</span></h1>
 
     <div class="info-wrapper">
-      <div class="theme-card" style="text-align: center">
+      <div class="theme-card animate-on-hover" style="text-align: center">
         <div class="card-content">
           {{ t('home-page.count-label') }}
           <br />
@@ -34,7 +34,7 @@
     </div>
 
     <div class="info-wrapper">
-      <div class="theme-card">
+      <div class="theme-card animate-on-hover">
         <div class="card-header">
           <h3><b>{{ providedRef }} === {{ providedRefFromPinia }}</b></h3>
         </div>

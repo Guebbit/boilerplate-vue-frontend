@@ -4,7 +4,6 @@ import userRoutes from "./userRoutes";
 import demoMiddleware from "@/middlewares/demoMiddleware";
 import localeChoice from "@/middlewares/localeChoice";
 import authenticationCheck from "@/middlewares/authenticationCheck";
-import delay from "@/utils/delay";
 import DefaultLayout from "@/layouts/DefaultLayout.vue";
 import HomeView from '@/views/Home.vue';
 
@@ -62,9 +61,9 @@ const router = createRouter({
  *  - beforeResolve
  *  - afterEach
  */
-router.beforeEach(async (to, from, next) => {
+router.beforeEach((to, from, next) => {
   console.log(`Navigating from ${from.path} to ${to.path}`);
-  await delay(0);
+  // await delay(500);
   next(); // next is not necessary if there is no async data and there is no routing
 });
 
