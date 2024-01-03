@@ -9,8 +9,6 @@ import {
     type sortParameterType
 } from "@guebbit/javascript-library"
 
-import useItemDetails from "@/composables/useItemDetails";
-
 import type { LocationQuery, LocationQueryValueRaw } from "vue-router";
 
 // TODO pagination + infinite
