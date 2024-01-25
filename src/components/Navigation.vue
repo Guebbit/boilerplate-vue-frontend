@@ -46,7 +46,8 @@ const { t } = useI18n();
   line-height: 1.5;
   height: var(--nav-height);
   display: flex;
-  place-items: center;
+  justify-content: center;
+  align-items: center;
 
   .logo {
     display: block;

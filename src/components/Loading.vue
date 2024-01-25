@@ -3,11 +3,6 @@
 </template>
 
 <style lang="scss">
-.page-content{
-  max-width: 1280px;
-  margin: 0 auto;
-}
-
 .page-loading{
   position: absolute;
   bottom: 0;

@@ -11,8 +11,8 @@ $scss-library-component-name: "theme-card";
   --active-text-color: var(--card-text-active-color);
 
   width: 400px;
-  transition:
-          color var(--transitions-time, 0.2s),
-          background-color var(--transitions-time, 0.2s),
-          border var(--transitions-time, 0.2s);
+  //transition:
+  //        color var(--transitions-time, 0.2s),
+  //        background-color var(--transitions-time, 0.2s),
+  //        border var(--transitions-time, 0.2s);
 }

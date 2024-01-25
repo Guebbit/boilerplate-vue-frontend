@@ -1,5 +1,5 @@
 <template>
-  <main id="user-list-page" class="item-list-page">
+  <div id="user-list-page" class="item-list-page">
     <h1 class="theme-page-title"><span>LISTA UTENTI</span></h1>
     <div>
       TODO: tipica pagina che carica la lista utenti (fare pinia, TTL, etc) + lista cliccabile
@@ -10,6 +10,11 @@
         v-model="pageCurrent"
         :length="pageTotal"
     />
+
+    <div v-show="selectedIdentifier && selectedRecord">
+      <h3>SELECTED</h3>
+      <pre>{{ selectedRecord }}</pre>
+    </div>
 
     <div class="user-list">
       <div
@@ -37,7 +42,7 @@
         v-model="pageCurrent"
         :length="pageTotal"
     />
-  </main>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -63,6 +68,7 @@ const {
   pageItemList,
   itemsFilteredLength,
 } = useItemList<UserType>();
+
 
 pageSize.value = 6;
 

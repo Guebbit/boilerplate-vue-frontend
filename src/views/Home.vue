@@ -1,5 +1,5 @@
 <template>
-  <main id="home-page">
+  <div id="home-page">
     <h1 class="theme-page-title"><span>HOME</span></h1>
 
     <div class="info-wrapper">
@@ -71,7 +71,7 @@
         Check route
       </button>
     </div>
-  </main>
+  </div>
 </template>
 
 <script lang="ts">
