@@ -11,5 +11,4 @@ createApp(App)
     .use(createPinia())
     .use(router)
     .use(i18n)
-    // .provide('providedRef', ref('From main.ts'))
     .mount('#app');

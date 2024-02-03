@@ -2,6 +2,12 @@ import { ref, computed, inject, type Ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useRoute } from 'vue-router';
 
+import type {
+  ProvidedRefMutationFunction,
+  ProvidedRefType
+} from "@/types";
+
+
 /**
  * Pinia store demo
  */
@@ -49,7 +55,14 @@ export default defineStore('counter', () => {
    * Any property provided at the App level can be accessed from the
    * store using inject(), just like in components.
    */
-  const providedRef = inject<Ref<string>>('providedRef', ref('From Pinia'));
+  const {
+    providedRef,
+    setProvidedRef
+  } = inject<{
+    providedRef?: ProvidedRefType,
+    setProvidedRef?: ProvidedRefMutationFunction
+  }>('providedRef', {});
+
 
   return {
     count,
@@ -58,5 +71,6 @@ export default defineStore('counter', () => {
     incrementDelayed,
     routeCheck,
     providedRef,
+    setProvidedRef
   }
 })

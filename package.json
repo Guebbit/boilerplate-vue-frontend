@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "commonjs",
+  "license": "AGPLv3.0",
   "scripts": {
     "dev": "vite --port 8080",
     "build": "run-p type-check \"build-only {@}\" --",
