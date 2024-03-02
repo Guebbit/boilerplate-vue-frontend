@@ -1,0 +1,18 @@
+@use "../../../node_modules/@guebbit/css-toolkit/index" as guebbit;
+
+$primary-color: #00bcd4 !default;
+$secondary-color: #ff9800 !default;
+
+$theme-colors: (
+        "primary": guebbit.create-collection($primary-color),
+        "secondary": guebbit.create-collection($secondary-color)
+);
+
+@include guebbit.create-colors($theme-colors);
+@include guebbit.create-colors(guebbit.$colors-collection);
+
+
+@function get-theme-color($color, $variant: "500"){
+  @return map-get(map-get($theme-colors, $color), $variant);
+}
+

@@ -16,8 +16,9 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@guebbit/css-toolkit": "^1.0.1",
+    "@guebbit/css-ui": "^1.0.0",
     "@guebbit/javascript-library": "^1.0.5",
-    "@guebbit/scss-library": "^1.0.8",
     "axios": "^1.6.2",
     "pinia": "^2.1.7",
     "vue": "^3.3.10",

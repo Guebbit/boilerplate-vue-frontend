@@ -1,8 +1,6 @@
-//@use "@guebbit/scss-library/components/molecules/cards/SimpleCard" as * with (
-//  $scss-library-component-name: "theme-card",
-//);
-$scss-library-component-name: "theme-card";
-@import "@guebbit/scss-library/components/molecules/cards/SimpleCard";
+@use "@guebbit/css-ui/src/molecules/cards/SimpleCard" as card with (
+  $scss-library-component-name: "theme-card",
+);
 
 .theme-card {
   --background: var(--card-background-color);
