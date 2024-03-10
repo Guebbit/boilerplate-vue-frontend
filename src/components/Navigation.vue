@@ -40,7 +40,7 @@ const { t } = useI18n();
 </script>
 
 <style lang="scss">
-@import "@/assets/styles/global";
+@import "@/assets/styles/variables";
 
 .page-header{
   line-height: 1.5;
