@@ -34,6 +34,16 @@
         <div class="card-content">
           <h2 class="card-title"><b>{{ user.id }}</b> {{ user.name }}</h2>
           <p>{{ user.phone }} - {{ user.email }} - {{ user.website }}</p>
+          <RouterLink
+              :to="RouterLinkI18n({
+                  name: 'UserTarget',
+                  params: {
+                    id: user.id,
+                  }
+              })"
+          >
+            {{ t('user-page.button-go-to-details') }}
+          </RouterLink>
         </div>
       </div>
     </div>
@@ -52,10 +62,16 @@
 // (fare anche per User.vue)
 
 import { onBeforeMount, ref, computed } from "vue";
+import { RouterLink } from "vue-router";
+import { useI18n } from 'vue-i18n';
 import { getUserList } from "@/api";
 import useItemList from "@/composables/useItemList";
 import ListPagination from "@/components/ListPagination.vue";
-import type { UserType } from "@/types";
+import { RouterLinkI18n } from "@/plugins/i18n";
+import type { IUser } from "@/types";
+
+
+const { t } = useI18n();
 
 const {
   itemList,
@@ -67,7 +83,7 @@ const {
   pageTotal,
   pageItemList,
   itemsFilteredLength,
-} = useItemList<UserType>();
+} = useItemList<IUser>();
 
 
 pageSize.value = 6;

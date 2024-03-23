@@ -1,10 +1,10 @@
 import { createRouter, createWebHistory, RouterView } from 'vue-router';
-import errorRoutes from "./errorRoutes";
 import userRoutes from "./userRoutes";
 import demoMiddleware from "@/middlewares/demoMiddleware";
 import localeChoice from "@/middlewares/localeChoice";
 import authenticationCheck from "@/middlewares/authenticationCheck";
 import DefaultLayout from "@/layouts/DefaultLayout.vue";
+import ErrorPageLayout from '@/layouts/ErrorPageLayout.vue';
 import HomeView from '@/views/Home.vue';
 
 
@@ -39,19 +39,29 @@ const router = createRouter({
           component: () => import('@/views/Restricted.vue'),
           beforeEnter: [authenticationCheck],
         },
+        // TODO
+        // {
+        //   path: 'error',
+        //   name: 'Error',
+        //   meta: {
+        //     layout: ErrorPageLayout,
+        //   },
+        //   component: () => import('@/views/Error.vue'),
+        //   props: true
+        // },
         ...userRoutes,
-        ...errorRoutes,
       ]
     },
     /**
      * Catch all route for all wrong routes
      */
-    {
-      path: '/:catchAll(.*)',
-      redirect: {
-        name: '404'
-      }
-    }
+    // TODO
+    // {
+    //   path: '/:catchAll(.*)',
+    //   redirect: {
+    //     name: '404'
+    //   }
+    // }
   ]
 });
 

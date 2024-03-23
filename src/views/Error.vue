@@ -1,13 +1,15 @@
 <template>
-  <div>
-    <h1>401 UNAUTHORIZED</h1>
-    <h3>{{ error }}</h3>
-  </div>
+  <h1>{{ status }}</h1>
+  <h3>{{ message }}</h3>
 </template>
 
 <script setup lang="ts">
 defineProps({
-  error: {
+  status: {
+    type: Number,
+    required: false
+  },
+  message: {
     type: String,
     default: () => ""
   },

@@ -21,6 +21,7 @@
   },
   "user-page": {
     "user": "@:generic.user [0]",
-    "modified-user-list": "@.customModifier:{'generic.user-list'}"
+    "modified-user-list": "@.customModifier:{'generic.user-list'}",
+    "button-go-to-details": "Pagina utente"
   }
 }

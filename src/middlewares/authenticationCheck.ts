@@ -35,19 +35,15 @@ export default async (to: RouteLocationNormalized, from: RouteLocationNormalized
             next();
         })
         .catch(({ status, statusText }: Response) => {
-            switch (status){
-                case 401:
-                    return next({
-                        name: '401',
-                        params: {
-                            error: statusText || "Wrong credentials"
-                        }
-                    });
-                case 500:
-                    return next({
-                        name: '500'
-                    });
-            }
+            // TODO better error: status nell'url, messaggio come parametro
+            // if(status === 401 || status === 500)
+            //     return next({
+            //         name: 'Error',
+            //         params: {
+            //             status,
+            //             message: statusText
+            //         }
+            //     });
             // default
             return next({
                 name: 'Home'

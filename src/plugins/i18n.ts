@@ -164,6 +164,8 @@ export function getDefaultLocale(){
 }
 
 /**
+ * TODO trovare un metodo alternativo standard
+ *
  * Fix Router Links adding our current Locale
  *
  * @param to
