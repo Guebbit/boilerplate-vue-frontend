@@ -144,7 +144,7 @@ export default<T = any>(
 
     /**
      * PAGINATION
-     * First item of page
+     * First item of the current page
      */
     const pageOffset = computed(() => pageSize.value * (pageCurrent.value - 1));
 

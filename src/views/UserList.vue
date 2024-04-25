@@ -79,7 +79,6 @@ const {
   selectedRecord,
   pageCurrent,
   pageSize,
-  pageOffset,
   pageTotal,
   pageItemList,
   itemsFilteredLength,
