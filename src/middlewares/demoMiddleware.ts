@@ -31,7 +31,7 @@ export default async (to: RouteLocationNormalized, from: RouteLocationNormalized
      * (like in this case, where it is loaded in a route guard, before App.vue)
      */
     const { t, locale } = i18n.global;
-    console.log("locale: " + locale.value, t('generic.loading', { load: to.path }));
+    console.log("locale (will not work): " + locale.value, t('generic.loading', { load: to.path }));
 
     next();
 }
