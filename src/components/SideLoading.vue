@@ -1,9 +1,9 @@
 <template>
-  <div class="page-loading" />
+  <div class="side-loading" />
 </template>
 
 <style lang="scss">
-.page-loading{
+.side-loading{
   position: absolute;
   bottom: 0;
   right: 0;
@@ -18,10 +18,10 @@
     border-width: 6px;
     border-style: solid;
     border-color: var(--body-text-color) transparent var(--body-text-color) transparent;
-    animation: page-loading-animation 1s linear infinite;
+    animation: side-loading-animation 1s linear infinite;
   }
 
-  @keyframes page-loading-animation {
+  @keyframes side-loading-animation {
     0% {
       transform: rotate(0deg);
     }

@@ -1,4 +1,3 @@
-import { storeToRefs } from "pinia";
 import { getAuthentication } from "@/api";
 import useCoreStore from "@/stores/core";
 import delay from "@/utils/delay";
@@ -20,12 +19,14 @@ export default async (to: RouteLocationNormalized, from: RouteLocationNormalized
     // Get global loading
     const {
         loading
-    } = storeToRefs(useCoreStore());
+    } = useCoreStore();
     // start loading
-    loading.value = true;
+    loading.authentication = true;
+
     // DEMO delay
     await delay(1000);
-    // Authentication data retrive
+
+    // Authentication data retrieve
     return getAuthentication()
         .then(({ secret }) => {
             if(!secret)
@@ -50,5 +51,5 @@ export default async (to: RouteLocationNormalized, from: RouteLocationNormalized
             });
         })
         // end loading
-        .finally(() => loading.value = false);
+        .finally(() => loading.authentication = false);
 }

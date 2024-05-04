@@ -1,6 +1,5 @@
-import { ref, computed, inject, type Ref } from 'vue';
+import { reactive, computed } from 'vue';
 import { defineStore } from 'pinia';
-import { useRoute } from 'vue-router';
 
 /**
  * While we can't access to inject/provide in guards or any non-components,
@@ -12,9 +11,17 @@ export default defineStore('core', () => {
      * This loading must be accessed from anywhere.
      * Components, guards and so on.
      */
-    const loading = ref(false);
+    const loading = reactive<Record<string, boolean>>({});
+
+    /**
+     * Check if there is a loading
+     */
+    const isLoading = computed(
+        () => Object.values(loading).some(v => v)
+    )
 
     return {
-        loading
+        loading,
+        isLoading
     }
 })

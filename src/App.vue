@@ -16,15 +16,16 @@ import type {
 /**
  * Provide data to all component descendants.
  * Since we are in App.vue: to all application
- *
- * Pair value with its mutation for better reactivity
  */
 const providedRef = ref<ProvidedRefType>('From App.vue');
 const setProvidedRef: ProvidedRefMutationFunction = (value = "") => {
   providedRef.value = value;
 }
 
-provide('loading', {
+/**
+ * Pair value with its mutation for better reactivity
+ */
+provide('providedRef', {
   providedRef,
   setProvidedRef
 });
