@@ -11,17 +11,17 @@ export default defineStore('core', () => {
      * This loading must be accessed from anywhere.
      * Components, guards and so on.
      */
-    const loading = reactive<Record<string, boolean>>({});
+    const loadings = reactive<Record<string, boolean>>({});
 
     /**
      * Check if there is a loading
      */
     const isLoading = computed(
-        () => Object.values(loading).some(v => v)
+        () => Object.values(loadings).some(v => v)
     )
 
     return {
-        loading,
+        loadings,
         isLoading
     }
 })

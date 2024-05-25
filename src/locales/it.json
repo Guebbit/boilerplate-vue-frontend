@@ -15,7 +15,7 @@
   },
   "home-page": {
     "count-label": "@.capitalize:generic.count",
-    "provided-label": "App provided ref, injected from Home and Pinia",
+    "provided-label": "Variable provided by App.vue",
     "increment-label": "@.capitalize:generic.increment",
     "delayed-increment-label": "@.capitalize:generic.increment asincrono"
   },

@@ -73,7 +73,13 @@ import type { IUser } from "@/types";
 
 const { t } = useI18n();
 
+/**
+ * Composable that will have most of the logic
+ * of all this kind of pages
+ */
 const {
+  loadings,
+  isLoading,
   itemList,
   selectedIdentifier,
   selectedRecord,
@@ -84,13 +90,34 @@ const {
   itemsFilteredLength,
 } = useItemList<IUser>();
 
-
+/**
+ * Initialize pagination
+ */
 pageSize.value = 6;
 
+/**
+ * Get users from API
+ */
 onBeforeMount(() => {
   getUserList()
       .then((data) => itemList.value = data);
-})
+});
+
+/**
+ * Loading examples
+ */
+console.log("fake core loading START");
+loadings.value.core = true;
+setTimeout(() => {
+  console.log("fake core loading END");
+  loadings.value.core = false;
+  console.log("fake side (smaller) loading START");
+  loadings.value.userList = true;
+  setTimeout(() => {
+    console.log("fake side (smaller) loading END");
+    loadings.value.userList = false;
+  }, 4000)
+}, 2000);
 </script>
 
 <style lang="scss">

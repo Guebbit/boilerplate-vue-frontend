@@ -4,7 +4,7 @@
     <slot />
   </main>
   <CoreLoading
-      v-show="loading.core"
+      v-show="loadings.core"
   />
   <SideLoading
       v-show="isLoading"
@@ -20,20 +20,13 @@ import useCoreStore from "@/stores/core";
 
 /**
  * core loading
- * TODO mettere tutto dentro storeToRefs?
+ * // TODO why loadings.core is not recognized
  */
 const store = useCoreStore();
 const {
-  loading
-} = store;
-const {
+  loadings,
   isLoading
 } = storeToRefs(store);
-
-setTimeout(() => {
-  loading.core = true;
-  console.log("HEYYEYYY", isLoading.value, {...loading});
-}, 1000)
 </script>
 
 <style lang="scss">

@@ -8,9 +8,12 @@
 import { ref, provide } from 'vue';
 import { RouterView } from 'vue-router';
 
+/**
+ * Types of value and it's mutation
+ */
 import type {
+  ProvidedRefType,
   ProvidedRefMutationFunction,
-  ProvidedRefType
 } from "@/types";
 
 /**
@@ -29,4 +32,5 @@ provide('providedRef', {
   providedRef,
   setProvidedRef
 });
+
 </script>

@@ -36,27 +36,28 @@
     <div class="info-wrapper">
       <div class="theme-card animate-on-hover">
         <div class="card-header">
-          <h3><b>{{ providedRef }} === {{ providedRefFromPinia }}</b></h3>
+          <h3><b>{{ providedRef }}</b></h3>
         </div>
         <div class="card-content">
           <p>{{ t('home-page.provided-label') }}</p>
-          <small>
-            WARNING: If providedRefFromPinia get injected too soon
-            (like in a beforeEnter route guard)
-            they will not point at the same object, since the beforeEnter
-            will start BEFORE App is created (and providedRef is provided the first time).
-            <br/><br/>
-            It should be provided in the main.ts
-            (and removed from App.vue or it will be overwritten and the problem will happen again)
-          </small>
         </div>
       </div>
       <div>
-        <label for="providedRefInput">Change provided by typing</label>
+        <label for="providedRefInput">Change directly by typing</label>
         <br />
         <input
             v-model="providedRef"
             id="providedRefInput"
+            class="theme-input"
+            type="text"
+        />
+        <br />
+        <label for="providedRefInput2">Change via mutation by typing</label>
+        <br />
+        <input
+            :value="providedRef"
+            @input="event => setProvidedRef(event.target.value)"
+            id="providedRefInput2"
             class="theme-input"
             type="text"
         />
@@ -81,13 +82,14 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { inject, watch, onMounted, toRef } from "vue";
+import { inject, watch, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { storeToRefs } from "pinia";
 import { getLanguage } from "@/api";
 import { updateLocale } from "@/plugins/i18n";
 import useCounterStore from "@/stores/counter";
 import CounterInput from "@/components/CounterInput.vue";
+import type { ProvidedRefMutationFunction, ProvidedRefType } from "@/types";
 
 /**
  * Use translation
@@ -111,7 +113,6 @@ const store = useCounterStore();
 const {
   count,
   doubleCount,
-  providedRef: providedRefFromPinia,
 } = storeToRefs(store);
 
 /**
@@ -126,13 +127,18 @@ const {
 /**
  * Same value as the one in Pinia, to show they are the same.
  */
-const providedRef = toRef<string>(inject('providedRef', ""));
-
+const {
+  providedRef,
+  setProvidedRef
+} = inject<{
+  providedRef?: ProvidedRefType,
+  setProvidedRef?: ProvidedRefMutationFunction
+}>('providedRef', {});
 
 /**
  * Watcher
  */
-watch(providedRefFromPinia, (val) => console.log("Provided ref changed", val));
+watch(providedRef, (val) => console.log("Provided ref changed", val));
 
 /**
  * Created and mounted

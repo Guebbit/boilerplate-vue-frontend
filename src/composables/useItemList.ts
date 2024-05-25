@@ -1,4 +1,11 @@
-import { computed, ref, isReadonly, type Ref, } from "vue";
+import {
+    computed,
+    ref,
+    isReadonly,
+    type Ref
+} from "vue";
+
+import { storeToRefs } from "pinia";
 
 import {
     search,
@@ -8,6 +15,8 @@ import {
     type filterAnyMap,
     type sortParameterType
 } from "@guebbit/javascript-library"
+
+import useCoreStore from "@/stores/core";
 
 import type { LocationQuery, LocationQueryValueRaw } from "vue-router";
 
@@ -28,6 +37,19 @@ export default<T = any>(
         globalFilterLogic: "AND"
     },
 ) => {
+
+    /**
+     * I can use a Pinia store within the composable
+     */
+    const store = useCoreStore();
+    const {
+        loadings,
+        isLoading
+    } = storeToRefs(store);
+
+    /**
+     * TODO I can use other composables in another composable
+     */
 
     /**
      * List of items (to be filled)
@@ -216,6 +238,10 @@ export default<T = any>(
 
 
     return {
+        // loadings
+        loadings,
+        isLoading,
+
         // items
         itemList,
         itemListFiltered,

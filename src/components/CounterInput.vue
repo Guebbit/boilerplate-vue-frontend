@@ -20,7 +20,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineEmits, defineProps, watch } from "vue";
+import { computed, watch } from "vue";
 import { getUUID } from "@guebbit/javascript-library";
 
 /**
