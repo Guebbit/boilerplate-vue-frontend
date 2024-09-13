@@ -77,7 +77,7 @@ export default<T = any>(
                 globalFilterLogic
             ),
             sorters.value
-        );
+        ) as T[];
     });
 
     /**
