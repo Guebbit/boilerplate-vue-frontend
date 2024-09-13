@@ -16,17 +16,17 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "@guebbit/css-toolkit": "^1.0.1",
     "@guebbit/css-ui": "^1.0.1",
     "@guebbit/javascript-library": "^1.0.5",
+    "@guebbit/vue-library": "file:../vue-library",
     "axios": "^1.7.2",
     "pinia": "^2.1.7",
-    "vue": "^3.4.27",
-    "vue-i18n": "^9.8.0",
+    "vue": "^3.5.4",
     "vue-router": "^4.2.5",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@guebbit/css-toolkit": "^1.1.2",
     "@nightwatch/vue": "^3.1.0",
     "@rushstack/eslint-patch": "^1.3.3",
     "@tsconfig/node18": "^18.2.2",
@@ -41,16 +41,17 @@
     "eslint": "^8.56.0",
     "eslint-plugin-vue": "^9.27.0",
     "geckodriver": "^4.2.1",
-    "jsdom": "^24.0.0",
+    "jsdom": "^25.0.0",
     "nightwatch": "^3.6.3",
     "npm-run-all2": "^6.1.1",
     "prettier": "^3.2.5",
     "sass": "^1.77.2",
     "ts-node": "^10.9.1",
-    "typescript": "^5.4.5",
-    "vite": "^5.2.11",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.4",
     "vite-plugin-nightwatch": "^0.4.5",
-    "vitest": "^2.0.5",
+    "vitest": "^2.1.0",
+    "vue-i18n": "^10.0.1",
     "vue-tsc": "^2.0.19"
   }
 }

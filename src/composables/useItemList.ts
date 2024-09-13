@@ -22,6 +22,11 @@ import type { LocationQuery, LocationQueryValueRaw } from "vue-router";
 
 // TODO pagination + infinite
 
+
+/**
+ * TODO: aggiornarsi su Laravel + Nuxt + React + Next
+ **/
+
 export interface ItemListSettingsType {
     // Identifier parameter of "item"
     itemIdentifier?: string,

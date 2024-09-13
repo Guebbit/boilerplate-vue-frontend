@@ -2,6 +2,10 @@
   <div id="home-page">
     <h1 class="theme-page-title"><span>HOME</span></h1>
 
+    <SimpleButton>
+      CIAONE
+    </SimpleButton>
+
     <div class="info-wrapper">
       <div class="theme-card animate-on-hover" style="text-align: center">
         <div class="card-content">
@@ -85,6 +89,7 @@ export default {
 import { inject, watch, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { storeToRefs } from "pinia";
+import { SimpleButton } from "@guebbit/vue-library";
 import { getLanguage } from "@/api";
 import { updateLocale } from "@/plugins/i18n";
 import useCounterStore from "@/stores/counter";

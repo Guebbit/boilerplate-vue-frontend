@@ -1,9 +1,11 @@
 {
-  "parser": "@typescript-eslint/parser",
+  "root": true,
+  "parser": "vue-eslint-parser",
   "parserOptions": {
-    "ecmaVersion": "latest"
+    "parser": "@typescript-eslint/parser",
+    "ecmaVersion": "latest",
+    "sourceType": "module"
   },
-  "plugins": ["@typescript-eslint"],
   "extends": [
     "plugin:@typescript-eslint/recommended",
     "plugin:vue/vue3-essential",
@@ -11,9 +13,38 @@
     "@vue/eslint-config-typescript",
     "@vue/eslint-config-prettier/skip-formatting"
   ],
+  "plugins": [
+    "@typescript-eslint",
+    "filenames"
+  ],
   "rules": {
+    "no-console": "warn",
+    "no-debugger":"warn",
+    "vue/multi-word-component-names": "off",
+    "@typescript-eslint/no-non-null-assertion": "off",
+    "vue/require-default-prop": "off",
+    "vue/no-v-html": "off",
     "@typescript-eslint/naming-convention": [
       "error",
+      {
+        "selector": "default",
+        "format": ["camelCase", "PascalCase"],
+        "leadingUnderscore": "allow",
+        "trailingUnderscore": "allow"
+      },
+      {
+        "selector": "variable",
+        "format": ["camelCase", "UPPER_CASE"]
+      },
+      {
+        "selector": ["class", "typeLike", "typeParameter", "enum"],
+        "format": ["PascalCase"]
+      },
+      {
+        "selector": ["function"],
+        "format": ["camelCase"],
+        "leadingUnderscore": "allow"
+      },
       {
         "selector": "interface",
         "format": ["PascalCase"],
@@ -21,7 +52,44 @@
           "regex": "^I[A-Z]",
           "match": true
         }
+      },
+      {
+        "selector": ["memberLike", "enumMember"],
+        "format": ["camelCase", "PascalCase", "UPPER_CASE", "snake_case"],
+        "leadingUnderscore": "allow",
+        "trailingUnderscore": "allow"
       }
+    ],
+    "filenames/match-regex": [
+      "error",
+      "^[a-z]+([A-Z][a-z]+)*$",
+      true
     ]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["*.d.ts", "*.spec.ts", "*.config.ts", "*.test.ts"],
+      "rules": {
+        "filenames/match-regex": "off"
+      }
+    },
+    {
+      "files": [
+        "*.vue"
+      ],
+      "rules": {
+        "filenames/match-regex": [
+          "error",
+          "^[A-Z][a-z]+([A-Z][a-z]+)*$",
+          true
+        ]
+      }
+    },
+    {
+      "files": ["tests/**/*"],
+      "env": {
+        "jest": true
+      }
+    }
+  ]
 }

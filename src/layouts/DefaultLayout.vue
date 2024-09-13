@@ -1,11 +1,15 @@
 <template>
+
   <Navigation />
+
   <main class="page-content">
     <slot />
   </main>
+
   <CoreLoading
       v-show="loadings.core"
   />
+
   <SideLoading
       v-show="isLoading"
   />
@@ -27,6 +31,7 @@ const {
   loadings,
   isLoading
 } = storeToRefs(store);
+
 </script>
 
 <style lang="scss">

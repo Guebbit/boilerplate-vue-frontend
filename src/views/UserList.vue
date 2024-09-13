@@ -29,7 +29,7 @@
         <img
             class="card-image"
             :alt="user.name + ' photo'"
-            :src="'https://placekitten.com/' + (Math.floor((user.id || 1) % 10) + 5).toString() + '00/' + (Math.floor((user.id || 1) % 10) + 5).toString() + '00'"
+            :src="'https://placehold.co/' + (Math.floor((user.id || 1) % 10) + 5).toString() + '00x' + (Math.floor((user.id || 1) % 10) + 5).toString() + '00'"
         />
         <div class="card-content">
           <h2 class="card-title"><b>{{ user.id }}</b> {{ user.name }}</h2>
