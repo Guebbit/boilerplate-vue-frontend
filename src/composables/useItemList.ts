@@ -1,89 +1,101 @@
-import {
-    computed,
-    ref,
-    isReadonly,
-    type Ref
-} from "vue";
+import { computed, ref } from 'vue'
+import MiniSearch, { type SearchResult } from 'minisearch'
+import useItemStructure from '@/composables/useItemStructure'
 
-import { storeToRefs } from "pinia";
+export type ISortOrder = '' | 'ASC' | 'DESC' | 'asc' | 'desc';
 
-import {
-    search,
-    sort,
-    getJSON,
-    type logicGatesType,
-    type filterAnyMap,
-    type sortParameterType
-} from "@guebbit/javascript-library"
-
-import useCoreStore from "@/stores/core";
-
-import type { LocationQuery, LocationQueryValueRaw } from "vue-router";
-
-// TODO pagination + infinite
-
-
-/**
- * TODO: aggiornarsi su Laravel + Nuxt + React + Next
- **/
-
-export interface ItemListSettingsType {
-    // Identifier parameter of "item"
-    itemIdentifier?: string,
-    // @guebbit search logic gates
-    globalFilterLogic?: logicGatesType,
-}
-
-export default<T = any>(
-    filters: Ref<filterAnyMap[]> = ref([]),
-    sorters: Ref<sortParameterType[]> = ref([]),
-    settings: ItemListSettingsType = {
-        itemIdentifier: "id",
-        globalFilterLogic: "AND"
-    },
+export default<T = unknown>(
+    itemIdentifier = "id",
+    filterLengthLimit = 2,
 ) => {
 
     /**
-     * I can use a Pinia store within the composable
+     *
      */
-    const store = useCoreStore();
     const {
-        loadings,
-        isLoading
-    } = storeToRefs(store);
+        itemList,
+        itemsLength,
+        listToDictionary,
+        itemDictionary,
+        getRecord,
+        selectedIdentifier,
+        selectedRecord,
+
+        loadingKey,
+        startLoading,
+        stopLoading,
+        loading,
+    } = useItemStructure<T>(itemIdentifier);
 
     /**
-     * TODO I can use other composables in another composable
+     * Filter data
+     */
+    const filters = ref({} as Record<keyof T, string>);
+
+
+    /**
+     * // Search only specific fields
+     * miniSearch.search('zen', { fields: ['title'] })
+     *
+     * // Boost some fields (here "title")
+     * miniSearch.search('zen', { boost: { title: 2 } })
+     *
+     * // Prefix search (so that 'moto' will match 'motorcycle')
+     * miniSearch.search('moto', { prefix: true })
+     *
+     * // Search within a specific category
+     * miniSearch.search('zen', {
+     *   filter: (result) => result.category === 'fiction'
+     * })
+     *
+     * // Fuzzy search, in this example, with a max edit distance of 0.2 * term length,
+     * // rounded to nearest integer. The mispelled 'ismael' will match 'ishmael'.
+     * miniSearch.search('ismael', { fuzzy: 0.2 })
+     *
+     * // You can set the default search options upon initialization
+     * miniSearch = new MiniSearch({
+     *   fields: ['title', 'text'],
+     *   searchOptions: {
+     *     boost: { title: 2 },
+     *     fuzzy: 0.2
+     *   }
+     * })
+     * miniSearch.addAll(documents)
+     *
+     * // It will now by default perform fuzzy search and boost "title":
+     * miniSearch.search('zen and motorcycles'
      */
 
     /**
-     * List of items (to be filled)
+     * TODO https://github.com/lucaong/minisearch
+     *  https://chatgpt.com/c/67192190-553c-800b-9cda-d0fd5da18efe
+     *  CombinationOperator
+     * List of all FILTERED itemDictionary
      */
-    const itemList = ref<T[]>([]);
-
-    /**
-     *  List of all FILTERED itemRecords
-     */
-    const itemListFiltered = computed(() => {
-        const { globalFilterLogic = 'AND' } = settings;
-        // if no filters are set
-        if(filters.value.length < 1)
-            return itemList.value;
-        // guebbit filter
-        return sort(
-            search(
-                [ ...itemList.value ] as Array<Record<string, unknown | unknown[]>>,
-                filters.value,
-                globalFilterLogic
-            ),
-            sorters.value
-        ) as T[];
+    const itemListSearchData = computed(() => {
+        // Create a new MiniSearch instance
+        const miniSearch = new MiniSearch<T>({
+            fields: ["name"],
+            storeFields: ["id", "name", "username", "email", "address", "phone", "website", "company"], // TODO dinamycally get all fields
+        });
+        // Add all items and allow them to be searchable
+        miniSearch.addAll(itemList.value as T[]);
+        //
+        return miniSearch.search(filters.value.name, { fuzzy: 0.2, prefix: true });
     });
 
     /**
-     * Number of items
+     *
      */
-    const itemsLength = computed(() => Object.keys(itemList.value).length);
+    const itemListFiltered = computed(() => {
+        // if no filters are set
+        if(!filters.value.name || filters.value.name.length < filterLengthLimit)
+            return itemList.value as T[];
+        return itemListSearchData.value
+            // TODO it adds a score, match, etc. to the object (enrich: false // Prevents adding `score`, `match`, etc.?)
+            //  WARNING: controllare come funziona il discorso della selezione e della ricerca, che potrebbero cozzare (usano gli ID però devo fare che potrebbero non esserci)
+            .sort((a, b) => b.score - a.score) as T[]
+    });
 
     /**
      * Number of filtered items
@@ -91,65 +103,65 @@ export default<T = any>(
     const itemsFilteredLength = computed(() => Object.keys(itemListFiltered.value).length);
 
     /**
-     * Record list of items
+     * Dictionary of items
      */
-    const itemRecords = computed<Record<string, T>>(() =>
-        itemList.value.reduce((obj, cur, i) => {
-            return {
-                ...obj,
-                // @ts-ignore
-                [cur[settings.itemIdentifier || ""] as string]: cur
-            };
-        }, {}) // as Record<string, T>
+    const itemDictionaryFiltered = computed<Record<string, T>>(() =>
+        listToDictionary(itemListFiltered.value as T[], itemIdentifier as keyof T)
     );
-
+    
     /**
-     * GETTER - get record from object list using selected identifier
-     *
-     * @param id
+     * Sort data
      */
-    const getRecord = (id: string): T | undefined =>
-        (!id || !Object.prototype.hasOwnProperty.call(itemRecords.value, id)) ? undefined : itemRecords.value[id];
+    const sorters = ref({} as Record<keyof T, ISortOrder>);
 
     /**
-     * Selected ID
+     * TODO GUEBBIT
+     * @param data
+     * @param sortFields
      */
-    const selectedIdentifier = ref<string | undefined>();
-
+    const sortItems = <T>(
+        data: T[],
+        sortFields = {} as Record<keyof T, ISortOrder>
+    ): T[] =>
+        data.sort((a, b) => {
+            for (const field in sortFields) {
+                if (!Object.prototype.hasOwnProperty.call(sortFields, field))
+                    continue;
+                // Compare the field values...
+                const comparison = (a[field] < b[field] ? -1 : a[field] > b[field] ? 1 : 0);
+                // ...and choose the order
+                if (comparison !== 0) {
+                    return sortFields[field] === 'ASC' ? comparison : -comparison;
+                }
+            }
+            // All compared fields are equal
+            return 0;
+        })
 
     /**
-     * Selected item (by @{selectedIdentifier})
+     * List of all items sorted
      */
-    const selectedRecord = computed<T | undefined>(() =>
-        selectedIdentifier.value ? getRecord(selectedIdentifier.value) : undefined
-    );
+    const itemListSorted = computed(() => sortItems(itemListFiltered.value as T[], sorters.value));
 
     /**
-     * TODO
-     * FILTERS
-     * Filters RESET
-     * filterAnyMap items must be navigated and search resetted
-     *
-     * WARNING: Use ONLY if sorters and filters are REF
+     * Resert filters
      */
     function resetFilters(){
-        if(isReadonly(filters))
-            return;
-        // TODO fare una funzione su @guebbit/javascript-library che naviga i filterAnyMap e restituisce una copia vuota
-        // (filters as Ref<filterAnyMap[]>).value = [];
+        filters.value = {};
     }
 
     /**
-     * TODO
-     * SORTING
-     * Sort RESET
-     *
-     * WARNING: Use ONLY if sorters and filters are REF
+     * Reset sorters
      */
     function resetSort() {
-        if(!isReadonly(sorters))
-            (sorters as Ref<sortParameterType[]>).value = [];
+        sorters.value.value = {};
     }
+    
+
+    /**
+     * ---------------------------------- PAGINATION ------------------------------------
+     * TODO infinite pagination
+     */
 
     /**
      * PAGINATION
@@ -179,8 +191,13 @@ export default<T = any>(
      * PAGINATION
      * Items shown in current page
      */
-    const pageItemList = computed(() => itemListFiltered.value.slice(pageOffset.value, pageOffset.value + pageSize.value))
-    
+    const pageItemList = computed(() => itemListSorted.value.slice(pageOffset.value, pageOffset.value + pageSize.value))
+
+    /**
+     * ---------------------------------- URL ------------------------------------
+     * TODO
+     */
+
     // /**
     //  * Variables (objects) that I want to GET from URL
     //  */
@@ -243,23 +260,23 @@ export default<T = any>(
 
 
     return {
-        // loadings
-        loadings,
-        isLoading,
-
-        // items
+        // Selections
         itemList,
-        itemListFiltered,
         itemsLength,
-        itemsFilteredLength,
-        itemRecords,
-        
-        // selections
+        listToDictionary,
+        itemDictionary,
         getRecord,
         selectedIdentifier,
         selectedRecord,
         
-        // Sorting and filters
+        // Search & Sort
+        filters,
+        itemListFiltered,
+        itemsFilteredLength,
+        itemDictionaryFiltered,
+        sorters,
+        sortItems,
+        itemListSorted,
         resetFilters,
         resetSort,
         
@@ -275,5 +292,15 @@ export default<T = any>(
         // fromUrlToObject,
         // encodeURIObject,
         // decodeURIObject,
+
+        // Generics
+        loadingKey,
+        startLoading,
+        stopLoading,
+        loading,
+
+        // better names
+        list: pageItemList,
+        total: itemsFilteredLength,
     }
 };

@@ -7,7 +7,6 @@ import DefaultLayout from "@/layouts/DefaultLayout.vue";
 import ErrorPageLayout from '@/layouts/ErrorPageLayout.vue';
 import HomeView from '@/views/Home.vue';
 
-
 const router = createRouter({
   history: createWebHistory(import.meta.env.VITE_APP_BASE_URL),
   routes: [
@@ -64,6 +63,14 @@ const router = createRouter({
     // }
   ]
 });
+
+/**
+ * Global error handler
+ * TODO
+ */
+router.onError(err => {
+  console.error("ERRORRRRRRRRRRRRRRRR", err)
+})
 
 /**
  * Global guards

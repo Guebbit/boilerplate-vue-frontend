@@ -2,19 +2,28 @@ import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import nightwatchPlugin from 'vite-plugin-nightwatch'
-import path from "path";
+import vueJsx from '@vitejs/plugin-vue-jsx'
+import vueDevTools from 'vite-plugin-vue-devtools'
 
-// https://vitejs.dev/config/
+// https://vite.dev/config/
 export default defineConfig({
-  root: 'public',
   plugins: [
     vue(),
-    nightwatchPlugin(),
+    vueJsx(),
+    vueDevTools(),
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      '@': fileURLToPath(new URL('./src', import.meta.url))
     }
-  }
+  },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        silenceDeprecations: ['legacy-js-api'],
+        // quietDeps: true
+      },
+    },
+  },
 })

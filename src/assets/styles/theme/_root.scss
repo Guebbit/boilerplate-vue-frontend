@@ -1,8 +1,39 @@
-@use "../../../../node_modules/@guebbit/css-toolkit/index" as guebbit;
+@use "@guebbit/css-toolkit" as guebbit;
 @use "../colors" as color;
-@use "../variables" as variable;
+@use "../variables" as vars;
 
-@include guebbit.create-colors(guebbit.$colors-collection, ("root", "on-root"));
+/**
+ * Install the theme
+ */
+@use "@guebbit/css-ui/src/theme" as theme with (
+  $css-ui-dark-theme-class: vars.$css-ui-dark-theme-class,
+  $css-ui-var-prefix: vars.$css-ui-var-prefix,
+  $css-ui-root-prefix: vars.$css-ui-root-prefix,
+  $color: vars.$primary-color,
+  $color--dark: vars.$primary-color--dark,
+  $active-color: vars.$secondary-color,
+  $active-color--dark: vars.$secondary-color--dark,
+);
+
+/**
+ * Implement theme (insert in the css)
+ */
+:root{
+  @include theme.theme-generic;
+  @include theme.theme-dark-builder;
+}
+.#{theme.$css-ui-dark-theme-class}{
+  :root{
+    @include theme.theme-dark-builder;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  :root{
+    @include theme.theme-dark-builder;
+  }
+}
+
+
 
 /**
  * Default theme
@@ -17,10 +48,9 @@
   /**
    * Generic variables
    */
-  --g-padding: #{variable.$g-padding};
-  --transitions-time: #{variable.$g-transitions-time};
-  --nav-height: #{variable.$g-nav-height};
-  --media-query-desktop: #{variable.$g-media-query-desktop};
+  --g-padding: #{vars.$g-padding};
+  --transitions-time: #{vars.$g-transitions-time};
+  --nav-height: #{vars.$g-nav-height};
 
   /**
    * CSS Theme (semantic color variables for this project)

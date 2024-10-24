@@ -1,6 +1,24 @@
+@use "@guebbit/css-toolkit" as guebbit;
+@forward "@guebbit/css-toolkit";
+@forward "theme/variables";
+
+/**
+ * Main settings
+ */
+$css-ui-dark-theme-class: "theme--dark" !default;
+$css-ui-var-prefix: "g-vue-" !default;
+$css-ui-class-prefix: "g-vue-" !default;
+$css-ui-root-prefix: "g-theme-" !default;
+
+/**
+ * Media
+ */
 $g-media-query-mobile: 600px !default;
 $g-media-query-desktop: 1280px !default;
 
+/**
+ * Sizes
+ */
 $g-padding: 28px !default;
 $g-transitions-time: 0.2s !default;
 $g-nav-height: 54px !default;

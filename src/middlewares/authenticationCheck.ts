@@ -16,12 +16,13 @@ import type {
  * @param next
  */
 export default async (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
+
     // Get global loading
     const {
-        loading
+        loadings
     } = useCoreStore();
     // start loading
-    loading.authentication = true;
+    loadings.authentication = true;
 
     // DEMO delay
     await delay(1000);
@@ -36,6 +37,7 @@ export default async (to: RouteLocationNormalized, from: RouteLocationNormalized
             next();
         })
         .catch(({ status, statusText }: Response) => {
+            console.log("XADITTTTTT", status, statusText)
             // TODO better error: status nell'url, messaggio come parametro
             // if(status === 401 || status === 500)
             //     return next({
@@ -51,5 +53,5 @@ export default async (to: RouteLocationNormalized, from: RouteLocationNormalized
             });
         })
         // end loading
-        .finally(() => loading.authentication = false);
+        .finally(() => loadings.authentication = false);
 }

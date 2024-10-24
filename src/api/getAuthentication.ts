@@ -13,7 +13,9 @@ export default () =>
     axios.get<IGetAuthenticationResponse>(import.meta.env.VITE_APP_API_URL + 'users/1', {
         headers: {
             'Accept': 'application/json',
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             'Content-Type': 'application/json',
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             'Accept-Language': i18n.global.locale.value, // Current language
         },
     })

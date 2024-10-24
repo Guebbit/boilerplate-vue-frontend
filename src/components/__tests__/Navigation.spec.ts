@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
-import Navigation from '../Navigation.vue'
+import Navigation from '../organisms/Navigation.vue'
 
 /**
  *

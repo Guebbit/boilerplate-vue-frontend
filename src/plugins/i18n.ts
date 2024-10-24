@@ -50,7 +50,7 @@ export const i18n = createI18n({
      */
     modifiers: {
         customModifier: (str) =>
-            typeof str === "string" ? str.split(' ').join('_') : str
+            typeof str === "string" ? str.split('').join('.').toUpperCase() : str
     }
 });
 
@@ -169,7 +169,7 @@ export function getDefaultLocale(){
  * @param to
  * @constructor
  */
-export function RouterLinkI18n(to: RouteLocationRaw) {
+export function routerLinkI18n(to: RouteLocationRaw) {
     if(typeof to === "string")
         return {
             path: to,

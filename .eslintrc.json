@@ -15,7 +15,8 @@
   ],
   "plugins": [
     "@typescript-eslint",
-    "filenames"
+    "filenames",
+    "html"
   ],
   "rules": {
     "no-console": "warn",
@@ -24,6 +25,7 @@
     "@typescript-eslint/no-non-null-assertion": "off",
     "vue/require-default-prop": "off",
     "vue/no-v-html": "off",
+    "no-nested-ternary": "off",
     "@typescript-eslint/naming-convention": [
       "error",
       {
@@ -34,7 +36,9 @@
       },
       {
         "selector": "variable",
-        "format": ["camelCase", "UPPER_CASE"]
+        "format": ["camelCase", "UPPER_CASE"],
+        "leadingUnderscore": "allow",
+        "trailingUnderscore": "allow"
       },
       {
         "selector": ["class", "typeLike", "typeParameter", "enum"],
@@ -54,6 +58,14 @@
         }
       },
       {
+        "selector": "enum",
+        "format": ["PascalCase"],
+        "custom": {
+          "regex": "^E[A-Z]",
+          "match": true
+        }
+      },
+      {
         "selector": ["memberLike", "enumMember"],
         "format": ["camelCase", "PascalCase", "UPPER_CASE", "snake_case"],
         "leadingUnderscore": "allow",
@@ -62,20 +74,22 @@
     ],
     "filenames/match-regex": [
       "error",
-      "^[a-z]+([A-Z][a-z]+)*$",
+      "^_?[a-z]+([A-Z][a-z]+)*_?$",
       true
     ]
   },
   "overrides": [
     {
-      "files": ["*.d.ts", "*.spec.ts", "*.config.ts", "*.test.ts"],
+      "files": ["*.d.ts", "*.spec.ts", "*.cy.ts", "*.config.ts", "*.conf.ts", "*.test.ts", "src/components/**/*.ts"],
       "rules": {
-        "filenames/match-regex": "off"
+        "filenames/match-regex": "off",
+        "@typescript-eslint/naming-convention": "off"
       }
     },
     {
       "files": [
-        "*.vue"
+        "*.vue",
+        "*.tsx"
       ],
       "rules": {
         "filenames/match-regex": [

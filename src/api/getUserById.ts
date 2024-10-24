@@ -9,6 +9,7 @@ import type { IUser } from "@/types";
 export default (id: string) =>
     axios.get<IUser>(import.meta.env.VITE_APP_API_URL + 'user/' + id, {
         headers: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
             'Accept-Language': i18n.global.locale.value, // Current language
         },
     });

@@ -32,5 +32,4 @@ provide('providedRef', {
   providedRef,
   setProvidedRef
 });
-
 </script>

@@ -19,9 +19,12 @@
     "increment-label": "@.capitalize:generic.increment",
     "delayed-increment-label": "@.capitalize:generic.increment asincrono"
   },
-  "user-page": {
+  "page-list-users": {
     "user": "@:generic.user [0]",
-    "modified-user-list": "@.customModifier:{'generic.user-list'}",
+    "modified-user-list": "@.customModifier:{'generic.user'} @:{'generic.list'}",
     "button-go-to-details": "Pagina utente"
+  },
+  "page-target-users": {
+    "button-go-to-list": "Lista utenti"
   }
 }
