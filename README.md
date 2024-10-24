@@ -2,6 +2,7 @@
  - Merge boilerplate-nuxt
  - Do Vitest tests
  - Do Cypress tests
+
 Vue3
 https://blog.vuejs.org/posts/vue-3-2
 https://blog.vuejs.org/posts/vue-3-3

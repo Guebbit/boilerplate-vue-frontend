@@ -16,5 +16,6 @@ export default [
             layout: DefaultLayout,
         },
         component: () => import('@/views/User.vue'),
+        props: true,
     },
 ]

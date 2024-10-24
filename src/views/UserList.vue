@@ -98,18 +98,20 @@
 </template>
 
 <script setup lang="ts">
-// TODO creare Composables per riutilizzare questo genere di pagina "lista X"
 // TODO creare file SCSS per questa specifica pagina (tipo tema) e poi fare customizzazioni
 // TODO Guardare vrmetacarpi pagine simili
 // (fare anche per User.vue)
 
 import { onBeforeMount } from 'vue'
 import { RouterLink } from 'vue-router'
+import { routerLinkI18n } from '@/plugins/i18n';
 import { useI18n } from 'vue-i18n'
-import { getUserList } from '@/api'
-import useItemList, { type ISortOrder } from '@/composables/useItemList'
+import { storeToRefs } from 'pinia'
+import { useUsersStore } from '@/stores/users';
+import { useItemList, type ISortOrder } from '@/composables/useItemList'
+
 import ListPagination from '@/components/molecules/ListPagination.vue'
-import { routerLinkI18n } from '@/plugins/i18n'
+
 import type { IUser } from '@/types'
 
 /**
@@ -118,7 +120,16 @@ import type { IUser } from '@/types'
 const { t } = useI18n()
 
 /**
- * Item List composable
+ * Users store
+ */
+const {
+    fetchUsers,
+} = useUsersStore();
+const {
+    usersList,
+} = storeToRefs(useUsersStore());
+
+/**
  * Composable that will have most of the logic
  * of all this kind of pages
  */
@@ -148,8 +159,8 @@ pageSize.value = 6
  */
 onBeforeMount(() => {
     startLoading();
-    getUserList()
-        .then((data) => itemList.value = data)
+    fetchUsers()
+        .then(() => itemList.value = usersList.value)
         .finally(stopLoading)
 })
 

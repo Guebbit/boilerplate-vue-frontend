@@ -1,8 +1,8 @@
 import { computed, ref } from 'vue'
-import useCoreStore from "@/stores/core";
+import { useCoreStore } from "@/stores/core";
 import { getUuid } from '@guebbit/js-toolkit'
 
-export default<T = unknown>(
+export const useItemStructure = <T = unknown>(
     itemIdentifier = "id",
 ) => {
     /**
@@ -61,7 +61,7 @@ export default<T = unknown>(
      * ---------------------------------- GENERIC ------------------------------------
      */
 
-    const loadingKey = "items-" + getUuid();
+    const LOADING_KEY = "items-" + getUuid();
 
     /**
      * loadings
@@ -71,10 +71,10 @@ export default<T = unknown>(
         getLoading
     } = useCoreStore();
     // loading mutators
-    const startLoading = () => setLoading(loadingKey, true);
-    const stopLoading = () => setLoading(loadingKey, false);
+    const startLoading = () => setLoading(LOADING_KEY, true);
+    const stopLoading = () => setLoading(LOADING_KEY, false);
     // Check if it's loading
-    const loading = computed(() => getLoading(loadingKey));
+    const loading = computed(() => getLoading(LOADING_KEY));
 
 
 
@@ -87,7 +87,6 @@ export default<T = unknown>(
         selectedIdentifier,
         selectedRecord,
 
-        loadingKey,
         startLoading,
         stopLoading,
         loading,

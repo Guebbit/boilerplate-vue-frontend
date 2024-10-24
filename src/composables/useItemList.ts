@@ -1,10 +1,10 @@
 import { computed, ref } from 'vue'
 import MiniSearch, { type SearchResult } from 'minisearch'
-import useItemStructure from '@/composables/useItemStructure'
+import { useItemStructure } from '@/composables/useItemStructure'
 
 export type ISortOrder = '' | 'ASC' | 'DESC' | 'asc' | 'desc';
 
-export default<T = unknown>(
+export const useItemList = <T = unknown>(
     itemIdentifier = "id",
     filterLengthLimit = 2,
 ) => {
@@ -21,7 +21,6 @@ export default<T = unknown>(
         selectedIdentifier,
         selectedRecord,
 
-        loadingKey,
         startLoading,
         stopLoading,
         loading,
@@ -108,7 +107,7 @@ export default<T = unknown>(
     const itemDictionaryFiltered = computed<Record<string, T>>(() =>
         listToDictionary(itemListFiltered.value as T[], itemIdentifier as keyof T)
     );
-    
+
     /**
      * Sort data
      */
@@ -156,7 +155,7 @@ export default<T = unknown>(
     function resetSort() {
         sorters.value.value = {};
     }
-    
+
 
     /**
      * ---------------------------------- PAGINATION ------------------------------------
@@ -268,7 +267,7 @@ export default<T = unknown>(
         getRecord,
         selectedIdentifier,
         selectedRecord,
-        
+
         // Search & Sort
         filters,
         itemListFiltered,
@@ -279,14 +278,14 @@ export default<T = unknown>(
         itemListSorted,
         resetFilters,
         resetSort,
-        
+
         // Pagination
         pageCurrent,
         pageSize,
         pageTotal,
         pageOffset,
         pageItemList,
-        
+
         // Url
         // fromObjectToUrl,
         // fromUrlToObject,
@@ -294,7 +293,6 @@ export default<T = unknown>(
         // decodeURIObject,
 
         // Generics
-        loadingKey,
         startLoading,
         stopLoading,
         loading,

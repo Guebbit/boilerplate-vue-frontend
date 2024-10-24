@@ -20,7 +20,7 @@ import { storeToRefs } from "pinia";
 import CoreLoading from "@/components/atoms/CoreLoading.vue";
 import SideLoading from "@/components/atoms/SideLoading.vue";
 import Navigation from "@/components/organisms/Navigation.vue";
-import useCoreStore from "@/stores/core";
+import { useCoreStore } from "@/stores/core";
 
 /**
  * core loading

@@ -1,5 +1,5 @@
 import { getAuthentication } from "@/api";
-import useCoreStore from "@/stores/core";
+import { useCoreStore } from "@/stores/core";
 import delay from "@/utils/delay";
 
 import type {
@@ -37,7 +37,6 @@ export default async (to: RouteLocationNormalized, from: RouteLocationNormalized
             next();
         })
         .catch(({ status, statusText }: Response) => {
-            console.log("XADITTTTTT", status, statusText)
             // TODO better error: status nell'url, messaggio come parametro
             // if(status === 401 || status === 500)
             //     return next({

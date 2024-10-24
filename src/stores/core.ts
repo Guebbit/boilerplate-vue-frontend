@@ -5,17 +5,18 @@ import { defineStore } from 'pinia';
  * While we can't access to inject/provide in guards or any non-components,
  * we can access Pinia, so it is useful to safely store "global" variables (if needed)
  */
-export default defineStore('core', () => {
+export const useCoreStore = defineStore('core', () => {
 
     /**
+     * STATE
      * This loading must be accessed from anywhere.
      * Components, guards and so on.
      */
-    // const loadings = reactive<Record<string, boolean>>({});
     const loadings = ref<Record<string, boolean>>({});
 
     /**
-     * Loading mutator
+     * MUTATION
+     * Set loading value
      *
      * @param key
      * @param value
@@ -23,17 +24,20 @@ export default defineStore('core', () => {
     const setLoading = (key: string, value: boolean) => loadings.value[key] = value;
 
     /**
-     * Loading getter
-     */
-    const getLoading = (key: string) => loadings.value[key];
-
-    /**
-     *
+     * MUTATION
+     * Reset all loadings
      */
     const resetLoadings = () =>  loadings.value = {};
 
     /**
-     * Check if there is a loading
+     * GETTER
+     * Check if there is a specific loading
+     */
+    const getLoading = (key: string) => loadings.value[key];
+
+    /**
+     * GETTER
+     * Check if there are any loadings
      */
     const isLoading = computed(
         () => Object.values(loadings.value).some(v => v)
