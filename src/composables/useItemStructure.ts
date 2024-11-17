@@ -43,6 +43,26 @@ export const useItemStructure = <T = unknown>(
         (!id || !Object.prototype.hasOwnProperty.call(itemDictionary.value, id)) ? undefined : itemDictionary.value[id];
 
     /**
+     *
+     * @param id
+     * @param data
+     */
+    const editRecord = (id: string | number, data: Partial<T>) => {
+        const index = itemList.value.findIndex(item => (item as T)[itemIdentifier as keyof T] === id);
+        if (index !== -1)
+            itemList.value[index] = { ...itemList.value[index], ...data };
+    }
+
+    /**
+     * Delete record
+     *
+     * @param id
+     */
+    const deleteRecord = (id: string | number) => {
+        itemList.value = itemList.value.filter(item => (item as T)[itemIdentifier as keyof T] !== id);
+    }
+
+    /**
      * Selected ID
      */
     const selectedIdentifier = ref<string | number | undefined>();
@@ -76,14 +96,14 @@ export const useItemStructure = <T = unknown>(
     // Check if it's loading
     const loading = computed(() => getLoading(LOADING_KEY));
 
-
-
     return {
         itemList,
         itemsLength,
         listToDictionary,
         itemDictionary,
         getRecord,
+        editRecord,
+        deleteRecord,
         selectedIdentifier,
         selectedRecord,
 

@@ -18,6 +18,8 @@ export const useItemList = <T = unknown>(
         listToDictionary,
         itemDictionary,
         getRecord,
+        editRecord,
+        deleteRecord,
         selectedIdentifier,
         selectedRecord,
 
@@ -121,8 +123,10 @@ export const useItemList = <T = unknown>(
     const sortItems = <T>(
         data: T[],
         sortFields = {} as Record<keyof T, ISortOrder>
-    ): T[] =>
-        data.sort((a, b) => {
+    ): T[] => {
+        if(Object.keys(sortFields).length < 1)
+            return data;
+        return data.sort((a, b) => {
             for (const field in sortFields) {
                 if (!Object.prototype.hasOwnProperty.call(sortFields, field))
                     continue;
@@ -130,12 +134,15 @@ export const useItemList = <T = unknown>(
                 const comparison = (a[field] < b[field] ? -1 : a[field] > b[field] ? 1 : 0);
                 // ...and choose the order
                 if (comparison !== 0) {
-                    return sortFields[field] === 'ASC' ? comparison : -comparison;
+                    return sortFields[field].toLowerCase() === 'asc' ? comparison : (
+                        sortFields[field].toLowerCase() === 'desc' ? -comparison: 0
+                    );
                 }
             }
             // All compared fields are equal
             return 0;
         })
+    }
 
     /**
      * List of all items sorted
@@ -265,6 +272,8 @@ export const useItemList = <T = unknown>(
         listToDictionary,
         itemDictionary,
         getRecord,
+        editRecord,
+        deleteRecord,
         selectedIdentifier,
         selectedRecord,
 

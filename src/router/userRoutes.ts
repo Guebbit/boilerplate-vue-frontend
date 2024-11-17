@@ -1,11 +1,11 @@
-import DefaultLayout from '@/layouts/DefaultLayout.vue';
+import LayoutDefault from '@/layouts/LayoutDefault.vue';
 
 export default [
     {
         path: 'users',
         name: 'UserList',
         meta: {
-            layout: DefaultLayout,
+            layout: LayoutDefault,
         },
         component: () => import('@/views/UserList.vue'),
     },
@@ -13,7 +13,7 @@ export default [
         path: 'users/:id',
         name: 'UserTarget',
         meta: {
-            layout: DefaultLayout,
+            layout: LayoutDefault,
         },
         component: () => import('@/views/User.vue'),
         props: true,

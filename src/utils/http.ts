@@ -1,67 +1,116 @@
-import axiosClient, {type AxiosError, type AxiosResponse } from "axios";
+import axiosClient from "axios";
+import type { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
+import { i18n } from '@/plugins/i18n'
 
 /**
- * Creates an initial 'axios' instance with custom settings.
+ *
  */
-const axios = axiosClient.create({
+export type IAxiosRequestData = unknown;
+
+/**
+ *
+ */
+export type IAxiosResponseData = unknown;
+
+/**
+ *
+ */
+export type IAxiosResponseBody = unknown;
+
+/**
+ *
+ */
+export type IAxiosResponseErrorData = unknown;
+
+/**
+ *
+ */
+export type IAxiosResponseErrorBody = unknown;
+
+
+
+/**
+ * Creates an initial 'axios' instance that can be customized
+ */
+const instance = axiosClient.create({
     headers: {
         'Accept': 'application/json',
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         'Content-Type': 'application/json; charset=utf-8'
     },
+    timeout: import.meta.env.VITE_AXIOS_TIMEOUT || 10000,
 });
+
+
+
+/**
+ * Defaults
+ */
+// axios.defaults.baseURL = import.meta.env.VITE_APP_API_URL || "";
+
+
+
+/**
+ * Do something before request is sent
+ *
+ * @param config
+ */
+export const onRequest = (config: InternalAxiosRequestConfig<IAxiosRequestData>) => {
+    // config.headers['Authorization'] = `Bearer ${TOKEN}`;
+    // config.headers['Content-Type'] = 'application/json';
+    // console.log('[request]', config);
+    // Current language at the time of the request
+    config.headers['Accept-Language'] = i18n.global.locale.value;
+    return config;
+}
+
+/**
+ * Do something with request error
+ *
+ * @param error
+ */
+export const onRequestReject = (error: AxiosError) => {
+    // console.log('[request error]', error);
+    return Promise.reject(error);
+}
+
+/**
+ * Any status code that lie within the range of 2xx cause this function to trigger
+ *
+ * @param response
+ */
+export const onResponseSuccess = (response: AxiosResponse<IAxiosResponseData, IAxiosResponseBody>) => {
+    // console.log('[response]', response);
+    return response;
+}
+
+/**
+ * Any status codes that falls outside the range of 2xx cause this function to trigger
+ *
+ * @param error
+ */
+export const onResponseReject = (error: AxiosError<IAxiosResponseErrorData, IAxiosResponseErrorBody>) => {
+    // console.log('[response error]', error);
+    // error.response.status
+    return Promise.reject(error);
+}
+
+
 
 /**
  * Handle all requests
+ * (Intercept and modify requests before they are sent)
  */
-axios.interceptors.request.use(
-    /**
-     * Do something before request is sent
-     *
-     * @param config
-     */
-    (config) => config,
-
-    /**
-     * Do something with request error
-     *
-     * @param error
-     */
-    (error) => Promise.reject(error),
-);
+instance.interceptors.request.use(onRequest, onRequestReject);
 
 /**
  * Handle all responses
+ * (Intercept and modify responses after they are received)
  */
-axios.interceptors.response.use(
-    /**
-     * Any status code that lie within the range of 2xx cause this function to trigger
-     *
-     * @param res
-     */
-    (res) => res.data,
+instance.interceptors.response.use(onResponseSuccess, onResponseReject);
 
-    /**
-     * Any status codes that falls outside the range of 2xx cause this function to trigger
-     *
-     * @param err
-     */
-    (err: AxiosError<any, any>) => {
-        // if there is data (can be empty)
-        if (err.response?.data)
-            return Promise.reject(err.response.data);
-        if (err.response)
-            return Promise.reject(err.response);
-        if (err.request)
-            return Promise.reject(err.request);
-        return Promise.reject(err.message);
-    }
-);
 
 /**
- * Replaces main `axios` instance with the custom-one.
- *
- * @param cfg - Axios configuration object.
- * @returns A promise object of a response of the HTTP request with the 'data' object already
- * destructured.
+ * Complete custom axios instance
  */
-export default axios;
+export default instance;

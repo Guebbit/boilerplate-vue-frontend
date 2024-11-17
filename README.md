@@ -2,6 +2,7 @@
  - Merge boilerplate-nuxt
  - Do Vitest tests
  - Do Cypress tests
+ - store name => useNameStore, composable name => useNameComposable
 
 Vue3
 https://blog.vuejs.org/posts/vue-3-2

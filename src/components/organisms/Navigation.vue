@@ -1,6 +1,6 @@
 <template>
     <header class="page-header">
-        <img alt="logo" class="logo" src="../../assets/images/guebbit-logo-colored.svg" />
+        <img alt="logo" class="logo" :src="PUBLIC_PATH + '/images/guebbit-logo-colored.png'" />
 
         <nav>
             <RouterLink
@@ -35,6 +35,7 @@ import { RouterLink } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import LanguageSwitcher from '@/components/atoms/LanguageSwitcher.vue'
 import { routerLinkI18n } from '@/plugins/i18n'
+import { PUBLIC_PATH } from '@/utils/constants'
 
 const { t } = useI18n()
 </script>

@@ -5,7 +5,7 @@ import { useRoute } from 'vue-router';
 /**
  * Pinia store demo
  */
-export default defineStore('counter', () => {
+export const useCounterStore = defineStore('counter', () => {
 
   /**
    * State

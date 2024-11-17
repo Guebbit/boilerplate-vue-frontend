@@ -3,8 +3,8 @@ import userRoutes from "./userRoutes";
 import demoMiddleware from "@/middlewares/demoMiddleware";
 import localeChoice from "@/middlewares/localeChoice";
 import authenticationCheck from "@/middlewares/authenticationCheck";
-import DefaultLayout from "@/layouts/DefaultLayout.vue";
-import ErrorPageLayout from '@/layouts/ErrorPageLayout.vue';
+import LayoutDefault from "@/layouts/LayoutDefault.vue";
+import LayoutErrorPage from '@/layouts/LayoutErrorPage.vue';
 import HomeView from '@/views/Home.vue';
 
 const router = createRouter({
@@ -22,7 +22,7 @@ const router = createRouter({
           path: '',
           name: 'Home',
           meta: {
-            layout: DefaultLayout,
+            layout: LayoutDefault,
           },
           component: HomeView
         },
@@ -30,7 +30,7 @@ const router = createRouter({
           path: 'restricted',
           name: 'Restricted',
           meta: {
-            layout: DefaultLayout,
+            layout: LayoutDefault,
           },
           // route level code-splitting
           // this generates a separate chunk (About.[hash].js) for this route
@@ -43,7 +43,7 @@ const router = createRouter({
         //   path: 'error',
         //   name: 'Error',
         //   meta: {
-        //     layout: ErrorPageLayout,
+        //     layout: LayoutErrorPage,
         //   },
         //   component: () => import('@/views/Error.vue'),
         //   props: true

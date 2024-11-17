@@ -10,7 +10,7 @@ import type {
 /**
  * List of supported languages
  */
-export const supportedLanguages = import.meta.env.VITE_SUPPORTED_LOCALES.split(",");
+export const supportedLanguages = (import.meta.env.VITE_SUPPORTED_LOCALES || "").split(",")
 
 /**
  * List of loaded languages

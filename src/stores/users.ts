@@ -173,7 +173,7 @@ export const useUsersStore = defineStore('users', () => {
      * GETTER
      * Is fetching users
      */
-    const loading = computed(() => getLoading(LOADING_USERS_KEY) || getLoading(LOADING_USERS_KEY));
+    const loading = computed(() => getLoading(LOADING_USERS_KEY) || getLoading(LOADING_USER_KEY));
 
     return {
         users,

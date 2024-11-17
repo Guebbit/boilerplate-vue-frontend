@@ -71,6 +71,12 @@
             >
                 Check route
             </button>
+            <button
+                class="theme-button"
+                @click="testAddMessage"
+            >
+                Add test message
+            </button>
         </div>
     </div>
 </template>
@@ -89,7 +95,8 @@ import { storeToRefs } from 'pinia'
 import { getLanguage } from '@/api'
 import { updateLocale } from '@/plugins/i18n'
 import { useCoreStore } from '@/stores/core'
-import useCounterStore from '@/stores/counter'
+import { useToastStore } from '@/stores/toasts'
+import { useCounterStore } from '@/stores/counter'
 import CounterInput from '@/components/atoms/CounterInput.vue'
 import type { ProvidedRefMutationFunction, ProvidedRefType } from '@/types'
 
@@ -105,17 +112,27 @@ getLanguage()
     .then((newLocaleVocabulary) => updateLocale('en', newLocaleVocabulary))
 
 /**
- * Store object
+ * Counter store
  */
-const store = useCounterStore()
-
-/**
- * Refs needs to be extracted with this helper function
- */
+const store = useCounterStore();
 const {
     count,
     doubleCount
+    // Refs needs to be extracted with this helper function
 } = storeToRefs(store)
+
+
+/**
+ * Toast store
+ */
+const {
+    addMessage
+} = useToastStore()
+
+const testAddMessage = () => {
+    addMessage('Hello world')
+};
+
 
 /**
  * Functions can be used even without being deconstructed
@@ -176,7 +193,7 @@ setTimeout(() => {
         console.log('fake side (smaller) loading END')
         loadings.value.userList = false
     }, 4000)
-}, 2000)
+}, 500)
 </script>
 
 <style lang="scss">

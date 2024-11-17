@@ -1,9 +1,9 @@
 <template>
-  <div class="core-loading" />
+  <div class="loading-core" />
 </template>
 
 <style lang="scss">
-.core-loading{
+.loading-core{
   position: absolute;
   top: 0;
   left: 0;
@@ -27,10 +27,10 @@
     border-width: 6px;
     border-style: solid;
     border-color: var(--body-text-color) transparent var(--body-text-color) transparent;
-    animation: core-loading-animation 1s linear infinite;
+    animation: loading-core-animation 1s linear infinite;
   }
 
-  @keyframes core-loading-animation {
+  @keyframes loading-core-animation {
     0% {
       transform: rotate(0deg);
     }

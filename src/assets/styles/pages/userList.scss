@@ -1,0 +1,46 @@
+@use "../theme/pages/itemList";
+
+#user-list-page {
+  .user-list {
+    --list-margin: 16px;
+    --list-border-radius: 24px;
+
+    .theme-card {
+      --border-radius: 0;
+      --background: transparent;
+      --text-color: rgb(var(--core-white));
+      --background-active: rgb(var(--primary-500), 0.5);
+      --text-color-active: rgb(var(--on-primary-500));
+      width: 100%;
+      flex-direction: row;
+      border-bottom: 2px solid var(--primary-700);
+      cursor: pointer;
+
+      .card-image {
+        width: 30%;
+        max-height: 100px;
+        margin: var(--list-margin);
+        border-radius: var(--list-border-radius);
+      }
+
+      .card-title {
+        margin: 0;
+      }
+
+      &:first-child {
+        border-top-left-radius: var(--list-border-radius);
+        border-top-right-radius: var(--list-border-radius);
+      }
+
+      &:last-child {
+        border-bottom: none;
+        border-bottom-left-radius: var(--list-border-radius);
+        border-bottom-right-radius: var(--list-border-radius);
+      }
+    }
+  }
+
+  .list-pagination {
+    margin: 24px auto;
+  }
+}
