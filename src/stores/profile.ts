@@ -54,6 +54,7 @@ export const useProfileStore = defineStore('profile', () => {
      */
     const LOADING_AUTH_KEY = "auth-" + getUuid();
     // Mutations
+    // TODO remove personalized loading mutations
     const startAuthLoading = () => setLoading(LOADING_AUTH_KEY, true);
     const stopAuthLoading = () => setLoading(LOADING_AUTH_KEY, false);
 

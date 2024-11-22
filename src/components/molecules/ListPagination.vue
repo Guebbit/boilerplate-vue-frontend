@@ -24,15 +24,14 @@
 </template>
 
 <script setup lang="ts">
-defineProps({
+const {
+    length = 0
+} = defineProps<{
     /**
      *
      */
-    length: {
-        type: Number,
-        default: () => 0
-    }
-})
+    length?: number
+}>()
 
 const modelValue = defineModel<number>()
 </script>

@@ -4,14 +4,10 @@
 </template>
 
 <script setup lang="ts">
-defineProps({
-  status: {
-    type: Number,
-    required: false
-  },
-  message: {
-    type: String,
-    default: () => ""
-  },
-});
+const {
+    message = ""
+} = defineProps<{
+  status?: number
+  message?: string
+}>()
 </script>
