@@ -34,33 +34,39 @@
         </div>
 
         <div class="info-wrapper">
-            <div class="theme-card animate-on-hover">
+            <div class="theme-card animate-on-hover card-outlined">
                 <div class="card-header">
-                    <h3><b>{{ providedRef }}</b></h3>
+                    <h3>
+                      <b>{{ providedRef }}</b>
+                    </h3>
+                    <p>{{ t('home-page.provided-label') }}</p>
                 </div>
                 <div class="card-content">
-                    <p>{{ t('home-page.provided-label') }}</p>
+                    <label for="providedRefInput">
+                      {{ t('home-page.provided-change-typing-label') }}
+                    </label>
+                    <input
+                      v-model="providedRef"
+                      id="providedRefInput"
+                      class="theme-input"
+                      type="text"
+                    />
+                    <br />
+                    <label for="providedRefInput2">
+                      {{ t('home-page.provided-change-mutation-label') }}
+                    </label>
+                    <br />
+                    <input
+                      :value="providedRef"
+                      @input="event => setProvidedRef(event.target.value)"
+                      id="providedRefInput2"
+                      class="theme-input"
+                      type="text"
+                    />
                 </div>
             </div>
             <div>
-                <label for="providedRefInput">Change directly by typing</label>
-                <br />
-                <input
-                    v-model="providedRef"
-                    id="providedRefInput"
-                    class="theme-input"
-                    type="text"
-                />
-                <br />
-                <label for="providedRefInput2">Change via mutation by typing</label>
-                <br />
-                <input
-                    :value="providedRef"
-                    @input="event => setProvidedRef(event.target.value)"
-                    id="providedRefInput2"
-                    class="theme-input"
-                    type="text"
-                />
+              <h1>TODO mettere qualcosa qua</h1>
             </div>
         </div>
 
@@ -206,6 +212,7 @@ setTimeout(() => {
         display: flex;
         justify-content: center;
         align-items: center;
+        flex-wrap: wrap;
         gap: 50px;
         margin-bottom: 50px;
     }

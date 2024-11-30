@@ -16,6 +16,8 @@
   "home-page": {
     "count-label": "@.capitalize:generic.count",
     "provided-label": "Variable provided by App.vue",
+    "provided-change-typing-label": "Change directly by typing",
+    "provided-change-mutation-label": "Change using mutation",
     "increment-label": "@.capitalize:generic.increment",
     "delayed-increment-label": "Async @:generic.increment"
   },

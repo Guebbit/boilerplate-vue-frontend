@@ -10,7 +10,17 @@ import type {
 /**
  * List of supported languages
  */
-export const supportedLanguages = (import.meta.env.VITE_SUPPORTED_LOCALES || "").split(",")
+export const supportedLanguages =
+  import.meta.env.VITE_SUPPORTED_LOCALES ?
+    (import.meta.env.VITE_SUPPORTED_LOCALES || "").split(",") :
+      Object.keys(import.meta.glob('./locales/*.json')).map(file =>
+          file.replace('./locales/', '').replace('.json', '')
+        );
+
+console.log(`Supported languages:`, supportedLanguages);
+console.log(`Number of languages:`, supportedLanguages.length);
+
+
 
 /**
  * List of loaded languages
@@ -34,7 +44,7 @@ export const i18n = createI18n({
     /**
      * Fallback in case requested language doesn't exist
      */
-    fallbackLocale: import.meta.env.VITE_FALLBACK_LOCALE || 'en',
+    fallbackLocale: import.meta.env.VITE_FALLBACK_LOCALE  || 'en',
 
     /**
      * Static import of vocabulary
