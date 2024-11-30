@@ -4,7 +4,7 @@ import demoMiddleware from "@/middlewares/demoMiddleware";
 import localeChoice from "@/middlewares/localeChoice";
 import authenticationCheck from "@/middlewares/authenticationCheck";
 import LayoutDefault from "@/layouts/LayoutDefault.vue";
-import LayoutErrorPage from '@/layouts/LayoutErrorPage.vue';
+// TODO import LayoutErrorPage from '@/layouts/LayoutErrorPage.vue';
 import HomeView from '@/views/Home.vue';
 
 const router = createRouter({
@@ -39,15 +39,7 @@ const router = createRouter({
           beforeEnter: [authenticationCheck],
         },
         // TODO
-        // {
-        //   path: 'error',
-        //   name: 'Error',
-        //   meta: {
-        //     layout: LayoutErrorPage,
-        //   },
-        //   component: () => import('@/views/Error.vue'),
-        //   props: true
-        // },
+
         ...userRoutes,
       ]
     },

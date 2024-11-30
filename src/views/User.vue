@@ -23,7 +23,7 @@
                 name: 'UserList',
             })"
         >
-            GOBACK
+            {{ t('TODO.gotoList') }}
         </RouterLink>
     </div>
 </template>
