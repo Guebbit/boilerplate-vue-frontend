@@ -9,17 +9,17 @@ import type {
 
 /**
  * List of supported languages
+ * (Added through custom ENV variable or by reading the files in the locales folder on startup)
  */
 export const supportedLanguages =
   import.meta.env.VITE_SUPPORTED_LOCALES ?
-    (import.meta.env.VITE_SUPPORTED_LOCALES || "").split(",") :
-      Object.keys(import.meta.glob('./locales/*.json')).map(file =>
-          file.replace('./locales/', '').replace('.json', '')
-        );
-
-console.log(`Supported languages:`, supportedLanguages);
-console.log(`Number of languages:`, supportedLanguages.length);
-
+    (import.meta.env.VITE_SUPPORTED_LOCALES as string || "").split(",") :
+      Object.keys(import.meta.glob('./locales/*.json'))
+          .map(file =>
+              file
+                  .replace('./locales/', '')
+                  .replace('.json', '')
+            );
 
 
 /**

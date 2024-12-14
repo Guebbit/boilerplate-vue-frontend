@@ -160,8 +160,7 @@ const {
     setProvidedRef: ProvidedRefMutationFunction
 }>('providedRef', {
     providedRef: ref('Not provided'),
-    setProvidedRef: () => {
-    }
+    setProvidedRef: () => {}
 })
 
 /**
