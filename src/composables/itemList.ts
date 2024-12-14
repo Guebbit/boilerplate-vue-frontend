@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 import MiniSearch, { type SearchResult } from 'minisearch'
-import { useItemStructure } from '@/composables/useItemStructure'
+import { useItemStructure } from '@/composables/itemStructure.ts'
 
 export type ISortOrder = '' | 'ASC' | 'DESC' | 'asc' | 'desc';
 

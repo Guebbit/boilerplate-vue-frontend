@@ -2,7 +2,15 @@
  - Merge boilerplate-nuxt
  - Do Vitest tests
  - Do Cypress tests
- - store name => useNameStore, composable name => useNameComposable
+ - Create skeleton version
+ - From skeleton: css-ui version 
+   - remember to take old _root.scss and old _cards.scss (for simple-card) from older commits
+ - From skeleton: vuetify version
+ - From skeleton: quasar version
+
+# MAYBE?
+ - Extend use18n (or create a new use18n) to add some custom functions now present in the plugins/i18n.ts
+ - From skeleton: bootstrap version
 
 Vue3
 https://blog.vuejs.org/posts/vue-3-2
@@ -27,17 +35,3 @@ https://legacy.reactjs.org/blog/2018/09/10/introducing-the-react-profiler.html
 Check
 https://lighthouse-metrics.com/lighthouse/checks/0a63a778-592d-4ae0-bf68-22c3cf8524a3
 https://medium.com/@blessingmba3/micro-frontends-with-vue-js-breaking-down-monolithic-structures-aac15f053047
-
-
-```scss
-@media (min-width: #{variables.$g-media-query-desktop}) {
-  body{
-    background-color: red;
-  }
-}
-@media (max-width: #{variables.$g-media-query-mobile}) {
-  body{
-    background-color: green;
-  }
-}
-```

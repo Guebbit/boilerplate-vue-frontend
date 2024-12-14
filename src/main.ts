@@ -8,6 +8,7 @@ import router from './router'
 /**
  * Global CSS
  */
+import '@/assets/styles/theme.scss';
 import '@/assets/styles/main.scss';
 
 /**

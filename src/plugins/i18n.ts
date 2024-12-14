@@ -27,6 +27,9 @@ export const supportedLanguages =
  */
 export const loadedLanguages :string[] = [];
 
+/**
+ * I18n init
+ */
 export const i18n = createI18n({
 
     /**

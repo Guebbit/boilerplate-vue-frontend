@@ -1,39 +1,19 @@
 @use "@guebbit/css-toolkit" as guebbit;
-@use "../colors" as color;
-@use "../variables" as vars;
+@use "variables" as vars;
+@use "colors" as colors;
+@use "functions" as fn;
+@use "components/atoms/theme-button";
+@use "components/atoms/theme-input";
+@use "components/atoms/theme-select";
+@use "components/atoms/theme-page-title";
+@use "components/atoms/theme-card";
 
 /**
- * Install the theme
+ * Create specific colors (css vars and various helper classes),
+ * Theme colors and material various colors as helpers
  */
-@use "@guebbit/css-ui/src/theme" as theme with (
-  $css-ui-dark-theme-class: vars.$css-ui-dark-theme-class,
-  $css-ui-var-prefix: vars.$css-ui-var-prefix,
-  $css-ui-root-prefix: vars.$css-ui-root-prefix,
-  $color: vars.$primary-color,
-  $color--dark: vars.$primary-color--dark,
-  $active-color: vars.$secondary-color,
-  $active-color--dark: vars.$secondary-color--dark,
-);
-
-/**
- * Implement theme (insert in the css)
- */
-:root{
-  @include theme.theme-generic;
-  @include theme.theme-dark-builder;
-}
-.#{theme.$css-ui-dark-theme-class}{
-  :root{
-    @include theme.theme-dark-builder;
-  }
-}
-@media (prefers-color-scheme: dark) {
-  :root{
-    @include theme.theme-dark-builder;
-  }
-}
-
-
+@include guebbit.create-colors(colors.$theme-colors);
+@include guebbit.create-colors(guebbit.$colors-collection, (), ("root", "on-root"));
 
 /**
  * Default theme
@@ -48,7 +28,7 @@
   /**
    * Generic variables
    */
-  --g-padding: #{vars.$g-padding};
+  --padding: #{vars.$g-padding};
   --transitions-time: #{vars.$g-transitions-time};
   --nav-height: #{vars.$g-nav-height};
 
@@ -74,9 +54,9 @@
 
   // theme inputs
   --input-text-color: rgb(var(--on-primary-500));
-  --input-background-color: #{rgba(color.get-theme-color("primary", "500"), 0.1)};
+  --input-background-color: #{rgba(fn.get-theme-color("primary", "500"), 0.1)};
   --input-border-color: rgb(var(--primary-500));
-  --input-background-active-color: #{rgba(color.get-theme-color("secondary", "500"), 0.1)};
+  --input-background-active-color: #{rgba(fn.get-theme-color("secondary", "500"), 0.1)};
   --input-text-active-color: rgb(var(--on-secondary-500));
   --input-border-active-color: rgb(var(--secondary-500));
 
@@ -88,17 +68,36 @@
 
   // theme cards
   --card-text-color: rgb(var(--on-primary-500));
+  --card-background-color: rgb(var(--primary-500));
+  --card-text-active-color: rgb(var(--on-secondary-500));
+  --card-background-active-color: rgb(var(--secondary-500));
+}
+
+
+/**
+ * Dark Theme (overrides from light theme)
+ */
+@mixin theme-dark-builder {
+  --card-text-color: rgb(var(--on-primary-500));
   --card-background-color: rgb(var(--primary-700));
   --card-text-active-color: rgb(var(--on-secondary-700));
   --card-background-active-color: rgb(var(--secondary-700));
 }
 
 /**
- * Dark Theme (changes from default variables)
+ * By class
+ */
+.#{vars.$css-ui-dark-theme-class}{
+  :root{
+    @include theme-dark-builder;
+  }
+}
+
+/**
+ * By browser
  */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --body-background-color: rgb(var(--grey-900));
-    --body-text-color: rgb(var(--core-white));
+  :root{
+    @include theme-dark-builder;
   }
 }

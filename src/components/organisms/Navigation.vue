@@ -41,7 +41,7 @@ const { t } = useI18n()
 </script>
 
 <style lang="scss">
-@use "@/assets/styles/variables" as vars;
+@use "@/assets/styles/functions" as fn;
 
 .page-header {
     line-height: 1.5;
@@ -77,7 +77,7 @@ const { t } = useI18n()
         }
     }
 
-    @media (min-width: vars.$g-media-query-desktop) {
+    @include fn.for-desktop(){
         nav {
             text-align: left;
         }

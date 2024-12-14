@@ -109,7 +109,7 @@ import { routerLinkI18n } from '@/plugins/i18n';
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useUsersStore } from '@/stores/users';
-import { useItemList, type ISortOrder } from '@/composables/useItemList'
+import { useItemList, type ISortOrder } from '@/composables/itemList.ts'
 
 import ListPagination from '@/components/molecules/ListPagination.vue'
 

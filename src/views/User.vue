@@ -35,7 +35,7 @@ import { routerLinkI18n } from '@/plugins/i18n'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 import { useUsersStore } from '@/stores/users'
-import { useItemStructure } from '@/composables/useItemStructure'
+import { useItemStructure } from '@/composables/itemStructure.ts'
 import type { IUser } from '@/types'
 import { putProfileImage } from '@/api'
 

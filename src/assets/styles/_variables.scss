@@ -1,20 +1,15 @@
-@use "@guebbit/css-toolkit" as guebbit;
-@forward "@guebbit/css-toolkit";
-@forward "theme/variables";
-
 /**
  * Main settings
  */
 $css-ui-dark-theme-class: "theme--dark" !default;
-$css-ui-var-prefix: "g-vue-" !default;
-$css-ui-class-prefix: "g-vue-" !default;
-$css-ui-root-prefix: "g-theme-" !default;
 
 /**
- * Media
+ * Media thresholds
+ * "tablet" is between mobile and desktop
+ * Should always start with mobile then using "@media (min-width: XXX)" for desktop
  */
-$g-media-query-mobile: 600px !default;
-$g-media-query-desktop: 1280px !default;
+$g-threshold-mobile: 540px !default;
+$g-threshold-desktop: 1280px !default;
 
 /**
  * Sizes
