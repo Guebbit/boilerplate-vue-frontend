@@ -8,7 +8,7 @@ import LayoutDefault from "@/layouts/LayoutDefault.vue";
 import HomeView from '@/views/Home.vue';
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.VITE_APP_BASE_URL),
+  history: createWebHistory(import.meta.env.VITE_APP_BASE_URL as string | undefined ?? ""),
   routes: [
     {
       path: "/:locale?",
@@ -24,6 +24,7 @@ const router = createRouter({
           meta: {
             layout: LayoutDefault,
           },
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           component: HomeView
         },
         {

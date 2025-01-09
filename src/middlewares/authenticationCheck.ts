@@ -1,12 +1,11 @@
 import { refreshAuthentication } from "@/api";
-import { useCoreStore } from "@/stores/core";
 import { useProfileStore } from '@/stores/profile';
-import delay from "@/utils/delay";
 
 import type {
     NavigationGuardNext,
     RouteLocationNormalized,
 } from "vue-router";
+import { storeToRefs } from 'pinia'
 
 /**
  * DUMMY authentication, will run in global guards (in the router object)
@@ -18,24 +17,23 @@ import type {
  */
 export default async (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
 
-    // Get global loading
     const {
-        loadings
-    } = useCoreStore();
+        isAuth,
+    } = storeToRefs(useProfileStore());
     const {
-        fetchAuthentication
+        startLoading,
+        stopLoading,
     } = useProfileStore();
 
-    // start loading
-    loadings.authentication = true;
-
-    // DEMO delay
-    await delay(1000);
+    if(isAuth.value)
+        next();
 
     // TODO
-    loadings.authentication = false;
+    startLoading();
+    stopLoading();
     next();
 
+    // loadings.authentication = true;
     // Authentication data retrieve
     // return refreshAuthentication()
     //     .then((secret) => {

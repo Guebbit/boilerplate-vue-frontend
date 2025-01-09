@@ -38,15 +38,16 @@ const instance = axiosClient.create({
         // eslint-disable-next-line @typescript-eslint/naming-convention
         'Content-Type': 'application/json; charset=utf-8'
     },
-    timeout: import.meta.env.VITE_AXIOS_TIMEOUT || 10000,
+    timeout: Number.parseInt(import.meta.env.VITE_AXIOS_TIMEOUT as string | undefined ?? "10000"),
 });
 
 
 
 /**
- * Defaults
+ * Static Defaults
  */
-// axios.defaults.baseURL = import.meta.env.VITE_APP_API_URL || "";
+// prefix of all relative calls. If a full URL is used, this will be ignored
+instance.defaults.baseURL = import.meta.env.VITE_APP_API_URL as string | undefined ?? "";
 
 
 
@@ -71,7 +72,7 @@ export const onRequest = (config: InternalAxiosRequestConfig<IAxiosRequestData>)
  */
 export const onRequestReject = (error: AxiosError) => {
     // console.log('[request error]', error);
-    return Promise.reject(error);
+    return Promise.reject(error: unknown);
 }
 
 /**
@@ -92,7 +93,7 @@ export const onResponseSuccess = (response: AxiosResponse<IAxiosResponseData, IA
 export const onResponseReject = (error: AxiosError<IAxiosResponseErrorData, IAxiosResponseErrorBody>) => {
     // console.log('[response error]', error);
     // error.response.status
-    return Promise.reject(error);
+    return Promise.reject(error: unknown);
 }
 
 

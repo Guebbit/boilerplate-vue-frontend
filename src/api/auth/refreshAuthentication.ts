@@ -1,22 +1,20 @@
-import axios from "@/utils/http";
+import axios from '@/utils/axios.ts'
 
 export interface IRefreshAuthenticationResponse {
-    secret: string
+  secret: string
 }
 
 /**
  * Authentication DEMO
+ * TODO
  */
-export default () =>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    axios.get<any, IRefreshAuthenticationResponse>(import.meta.env.VITE_APP_API_URL + 'users/1', {
-        headers: {
-            'Accept': 'application/json',
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(({ secret = "secret_example" }) => {
-            // Some code
-            return secret;
-        });
+export const refreshAuthentication = () =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  axios.get<IRefreshAuthenticationResponse>('users/1')
+    .then((test => {
+        console.log("AUTHENTICATION", test)
+      // Some code
+      return test
+    }))
+
+export default refreshAuthentication

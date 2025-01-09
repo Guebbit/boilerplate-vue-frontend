@@ -1,11 +1,15 @@
 import { nextTick, type WritableComputedRef } from "vue";
 import { createI18n, type I18n } from "vue-i18n";
-// import it from "@/locales/it.json";
-// import en from "@/locales/en.json";
 import type {
     RouteLocationRaw,
     RouteLocationNamedRaw,
 } from "vue-router";
+// import it from "@/locales/it.json";
+// import en from "@/locales/en.json";
+
+export interface ITranslationDictionaries {
+    [key: string]: string | ITranslationDictionaries;
+};
 
 /**
  * List of supported languages
@@ -13,7 +17,7 @@ import type {
  */
 export const supportedLanguages =
   import.meta.env.VITE_SUPPORTED_LOCALES ?
-    (import.meta.env.VITE_SUPPORTED_LOCALES as string || "").split(",") :
+    (import.meta.env.VITE_SUPPORTED_LOCALES as string | undefined ?? "").split(",") :
       Object.keys(import.meta.glob('./locales/*.json'))
           .map(file =>
               file
@@ -42,12 +46,12 @@ export const i18n = createI18n({
      * In this case: automatic browser language detection
      * (it's better to use this elsewhere, with routing)
      */
-    locale: import.meta.env.VITE_DEFAULT_LOCALE || 'en',
+    locale: import.meta.env.VITE_DEFAULT_LOCALE as string | undefined ?? 'en',
 
     /**
      * Fallback in case requested language doesn't exist
      */
-    fallbackLocale: import.meta.env.VITE_FALLBACK_LOCALE  || 'en',
+    fallbackLocale: import.meta.env.VITE_FALLBACK_LOCALE as string | undefined  ?? 'en',
 
     /**
      * Static import of vocabulary
@@ -63,7 +67,7 @@ export const i18n = createI18n({
      */
     modifiers: {
         customModifier: (str) =>
-            typeof str === "string" ? str.split('').join('.').toUpperCase() : str
+            typeof str === "string" ? [...str].join('.').toUpperCase() : str
     }
 });
 
@@ -89,7 +93,7 @@ export async function _loadLocale(i18n: I18n, locale: string) {
     // Load from file (it should be there)
     return import(/* webpackChunkName: "locale-[request]" */ `@/locales/${locale}.json`)
         // file found
-        .then(file =>
+        .then((file: { default: ITranslationDictionaries }) =>
             // translation loaded
             _updateLocale(i18n, locale, file.default)
                 // then language changed
@@ -116,7 +120,7 @@ export async function loadLocale(locale: string) {
  * @param locale
  * @param messages
  */
-export async function _updateLocale(i18n: I18n, locale: string, messages: any) {
+export async function _updateLocale(i18n: I18n, locale: string, messages: ITranslationDictionaries) {
     // Could be already present and this is just an update
     if(!loadedLanguages.includes(locale))
         loadedLanguages.push(locale);
@@ -130,7 +134,7 @@ export async function _updateLocale(i18n: I18n, locale: string, messages: any) {
  * @param locale
  * @param messages
  */
-export async function updateLocale(locale: string, messages: any){
+export async function updateLocale(locale: string, messages: ITranslationDictionaries){
     return _updateLocale(i18n as I18n, locale, messages);
 }
 
@@ -194,7 +198,7 @@ export function routerLinkI18n(to: RouteLocationRaw) {
         ...to,
         params: {
             locale: i18n.global.locale.value,
-            ...((to as RouteLocationNamedRaw).params || {})
+            ...((to as RouteLocationNamedRaw).params)
         }
     }
 }

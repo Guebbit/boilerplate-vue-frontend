@@ -1,9 +1,11 @@
-import { ref, computed } from 'vue'
-import { defineStore } from 'pinia';
-import { getUuid } from '@guebbit/js-toolkit'
-import { getProfile, refreshAuthentication } from '@/api'
-import { useCoreStore } from "@/stores/core";
-import type { IUserProfile } from "@/types";
+import { computed } from 'vue'
+import { defineStore } from 'pinia'
+import { useI18n } from 'vue-i18n'
+import { useStoreStructureRestApi } from '@/composables/storeStructureRestApi.ts'
+import { useUsersStore } from '@/stores/users.ts'
+import { getProfile, updateUser } from '@/api'
+import type { IUser, IUserForm } from '@/types'
+import type { AxiosProgressEvent } from 'axios'
 
 /**
  * While we can't access to inject/provide in guards or any non-components,
@@ -12,125 +14,120 @@ import type { IUserProfile } from "@/types";
 export const useProfileStore = defineStore('profile', () => {
 
     /**
-     * Inherited stores
+     * Inherited
      */
     const {
-        setLoading,
-        getLoading
-    } = useCoreStore();
+        locale: profileLanguage
+    } = useI18n()
+
+    const {
+        itemDictionary,
+        selectedIdentifier,
+        selectedRecord: profile,
+
+        loading,
+        startLoading,
+        stopLoading,
+        fetchTarget,
+        updateTarget
+    } = useStoreStructureRestApi<IUser, IUser['id']>()
+
+    const {
+        updateUserImage
+    } = useUsersStore()
 
     /**
-     * STATE
-     * Current user profile data
+     * User status
      */
-    const profile = ref<IUserProfile | null>(null);
+    const isAuth = computed(() => true)
+    const isAdmin = computed(() => true)
 
     /**
-     * STATE
-     * Current user authentication token
+     *
+     * @param forced
      */
-    const token = ref<string | null>(null);
+    const fetchProfile = (forced = false) =>
+        fetchTarget(
+            getProfile()
+                .then((test) => {
+                    console.log('HELLOOOOOOOOOOOO', test)
+                    // to handle single-target stores we just need to select the correct identifier
+                    // selectedIdentifier.value = data.id;
+                    // return data;
+                }),
+            '_current',  // dummy identifier
+            forced
+        )
 
     /**
-     * STATE
-     * Time To Live and Last Update
-     * Optimize fetch requests by caching data and preventing unnecessary requests
+     * Edit profile
+     *
+     * @param userData
      */
-    const TTL = {
-        auth: 3600000,      // 1 hour
-        login: 86400000,    // 1 day
-        profile: 86400000,  // 1 day
-    };
-    // Reactivity is not needed
-    const lastUpdate = {
-        auth: 0,
-        login: 0,
-        profile: 0,
-    };
-
-    /**
-     * MUTATIONS
-     * Loadings setters
-     */
-    const LOADING_AUTH_KEY = "auth-" + getUuid();
-    // Mutations
-    // TODO remove personalized loading mutations
-    const startAuthLoading = () => setLoading(LOADING_AUTH_KEY, true);
-    const stopAuthLoading = () => setLoading(LOADING_AUTH_KEY, false);
-
-    /**
-     * ACTION
-     * Fetch users
-     */
-    const fetchAuthentication = async () => {
-        // If TTL is not expired, the current stored data is still valid
-        if(Date.now() - lastUpdate.auth < TTL.auth)
-            return Promise.resolve();
-        // Proceed with the request, but first update the lastUpdate
-        lastUpdate.auth = Date.now();
-        startAuthLoading();
-        return refreshAuthentication()
-            .then((secret) => token.value = secret)
-            .catch((error) => {
-                // TODO
-                // Reset TTL in case of error
-                lastUpdate.auth = 0;
-                console.error("ERROR - fetchUsers - users store", error);
-            })
-            .finally(stopAuthLoading)
+    const updateProfile = (userData: Partial<IUserForm> = {}) => {
+        if (!selectedIdentifier.value)
+            return Promise.reject(new Error('invalid user'))
+        return updateTarget(
+            updateUser(selectedIdentifier.value, userData),
+            selectedIdentifier.value,
+            userData
+        )
     }
 
     /**
-     * MUTATIONS
-     * Loadings setters
+     * Change user language
+     *
+     * @param files
+     * @param onUploadProgress
      */
-    const LOADING_PROFILE_KEY = "profile-" + getUuid();
-    // Mutations
-    const startProfileLoading = () => setLoading(LOADING_PROFILE_KEY, true);
-    const stopProfileLoading = () => setLoading(LOADING_PROFILE_KEY, false);
-
-    /**
-     * ACTION
-     * Fetch target users
-     */
-    const fetchProfile = async () => {
-        // TODO CHECK AUTHENTICATION
-        // If TTL is not expired, the current stored data is still valid
-        if(Date.now() - lastUpdate.profile < TTL.profile)
-            return Promise.resolve();
-        // Proceed with the request, but first update the lastUpdate
-        lastUpdate.profile = Date.now();
-        startProfileLoading();
-        return getProfile()
-            .then((data) => profile.value = data)
-            .catch((error) => {
-                // TODO
-                // Reset TTL in case of error
-                lastUpdate.profile = 0;
-                console.error("ERROR - fetchUser - users store", error);
-            })
-            .finally(stopProfileLoading)
+    const updateProfileImage = (
+        files: File[] | FileList = [],
+        onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
+    ) => {
+        if (!selectedIdentifier.value)
+            return Promise.reject(new Error('invalid user'))
+        return updateUserImage(
+            selectedIdentifier.value,
+            files,
+            onUploadProgress
+        )
     }
 
     /**
-     * GETTER
-     * Is authenticating or getting profile data
+     * Change user language
+     *
+     * @param language
      */
-    const loading = computed(() => getLoading(LOADING_PROFILE_KEY) || getLoading(LOADING_AUTH_KEY));
+    const updateProfileLanguage = (language = '') => {
+        profileLanguage.value = language
+        return updateProfile({
+            ...profile.value,
+            language
+        })
+    }
+
+    /**
+     * Logout and remove cached user data
+     */
+    const logout = () => {
+        itemDictionary.value = {}
+        selectedIdentifier.value = undefined
+    }
 
     return {
+        profileLanguage,
         profile,
-        token,
-        TTL,
-        lastUpdate,
-        LOADING_AUTH_KEY,
-        startAuthLoading,
-        stopAuthLoading,
-        fetchAuthentication,
-        LOADING_PROFILE_KEY,
-        startProfileLoading,
-        stopProfileLoading,
-        fetchProfile,
+
+        isAuth,
+        isAdmin,
+
         loading,
+        startLoading,
+        stopLoading,
+        fetchProfile,
+        updateProfile,
+        updateProfileImage,
+        updateProfileLanguage,
+        logout
     }
 })

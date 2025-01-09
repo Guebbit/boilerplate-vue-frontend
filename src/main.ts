@@ -14,6 +14,7 @@ import '@/assets/styles/main.scss';
 /**
  * Vue3 App
  */
+// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 createApp(App)
     .use(createPinia())
     .use(router)

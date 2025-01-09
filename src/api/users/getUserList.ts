@@ -1,9 +1,10 @@
-import axios from "@/utils/http";
+import axios from '@/utils/axios.ts';
 import type { IUser } from "@/types";
 
 /**
  * List of users
  */
-export default () =>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    axios.get<any, IUser[]>(import.meta.env.VITE_APP_API_URL + 'users');
+export const getUserList = () =>
+    axios.get<IUser[]>('users');
+
+export default getUserList;

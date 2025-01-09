@@ -14,7 +14,7 @@
 
         <div class="simple-card">
             <input type="file" id="fileInput" />
-            <button class="simple-button" @click="uploadImage">Upload Image</button>
+            <button class="simple-button" @click="emitUploadImage">Upload Image</button>
         </div>
 
 
@@ -37,21 +37,6 @@ import { storeToRefs } from 'pinia'
 import { useUsersStore } from '@/stores/users'
 import { useItemStructure } from '@/composables/itemStructure.ts'
 import type { IUser } from '@/types'
-import { putProfileImage } from '@/api'
-
-
-function uploadImage() {
-    const { files } = document.getElementById('fileInput') as HTMLInputElement
-    if (!files || files.length < 1)
-        return;
-    const formData = new FormData()
-    formData.append('file', files[0])
-
-    // TODO upload
-    putProfileImage(formData, ({ progress = 0 }) => {
-        console.log("upload %", Math.round(progress * 100) + '%');
-    })
-}
 
 
 /**
@@ -67,11 +52,24 @@ const { id } = defineProps<{
  * Users store
  */
 const {
-    fetchUser
+    fetchUser,
+    updateUserImage
 } = useUsersStore()
 const {
     usersList
 } = storeToRefs(useUsersStore())
+
+
+
+function emitUploadImage() {
+    const { files } = document.getElementById('fileInput') as HTMLInputElement
+    if(!files || files.length === 0)
+        return
+    updateUserImage(0, files, ({ progress = 0 }) => {
+        console.log("upload %", Math.round(progress * 100) + '%');
+    })
+}
+
 
 
 /**

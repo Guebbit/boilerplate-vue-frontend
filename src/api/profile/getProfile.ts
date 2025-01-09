@@ -1,23 +1,19 @@
-import axios from "@/utils/http";
+import axios from '@/utils/axios.ts'
 import type { IUserProfile } from '@/types'
 
 /**
- * Get Profile data DEMO
+ * Get Profile data DEMO TODO
  */
-export default () =>
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    axios.get<any, IUserProfile>((import.meta.env.VITE_APP_API_URL || "") + 'users/1', {
-        headers: {
-            'Accept': 'application/json',
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            'Content-Type': 'application/json',
-        },
-    })
-        .then(({ id, username, email }) => {
+export const getProfile = () =>
+    axios.get<IUserProfile>('users/1')
+        .then((test) => {
+            console.log("GETPROFILE", test)
             // Some code
             return {
-                id,
-                username,
-                email
-            };
+                // id,
+                // username,
+                // email
+            }
         });
+
+export default getProfile;

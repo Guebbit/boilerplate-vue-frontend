@@ -1,193 +1,127 @@
-import { ref, computed } from 'vue'
-import { defineStore } from 'pinia';
-import { getUuid } from '@guebbit/js-toolkit'
-import { getUserList, getUserById } from '@/api'
-import { useCoreStore } from "@/stores/core";
-import type { IUser } from "@/types";
+import { defineStore } from 'pinia'
+import { useStoreStructureRestApi } from '@/composables/storeStructureRestApi.ts'
+import {
+    createUser as createUserApi,
+    deleteUser as deleteUserApi,
+    getUserById as getUserByIdApi,
+    getUserList as getUserListApi,
+    updateUser as updateUserApi,
+    updateUserImage as updateUserImageApi
+} from '@/api'
+import type { IUser, IUserForm, IUserIdentification } from '@/types/users.ts'
+import type { AxiosProgressEvent } from 'axios'
 
-/**
- * While we can't access to inject/provide in guards or any non-components,
- * we can access Pinia, so it is useful to safely store "global" variables (if needed)
- */
 export const useUsersStore = defineStore('users', () => {
-
     /**
-     * Inherited stores
+     * Inherited
      */
     const {
-        setLoading,
-        getLoading
-    } = useCoreStore();
+        itemDictionary: users,
+        itemList: usersList,
+        getRecord: getUser,
+        addRecord: addUser,
+        selectedIdentifier: selectedUserId,
+        selectedRecord: currentUser,
+
+        loading,
+        fetchAll,
+        fetchTarget,
+        createTarget,
+        updateTarget,
+        deleteTarget
+    } = useStoreStructureRestApi<IUser, IUserIdentification>('id')
 
     /**
-     * STATE
-     * The identification parameter of the user Object
-     * READONLY and not exported
-     */
-    const IDENTIFICATION_KEY: string = "id";
-
-    /**
-     * STATE
-     * User dictionary and list
-     */
-    const users = ref({} as Record<string, IUser>);
-
-    /**
-     * GETTER
-     * Users list
-     */
-    const usersList = computed(() => Object.values(users.value));
-
-    /**
-     * MUTATION
-     * Add user
-     * If user already present, it will be overwritten
      *
-     * @param user
+     * @param forced
      */
-    const addUser = (user: IUser) => {
-        const key = user[IDENTIFICATION_KEY as keyof IUser] as keyof IUser;
-        users.value[key] = user
-    }
+    const fetchUsers = (forced = false) =>
+        fetchAll(
+            getUserListApi()
+                .then(({ data }) => data),
+            forced,
+            true
+        )
 
     /**
-     * MUTATION
-     * Edit user,
-     * If user not present, it will be ignored
-     * If it is present, it will be merged with the new data
      *
-     * @param user
+     * @param userId
+     * @param forced
      */
-    const editUser = (user: IUser) => {
-        const key = user[IDENTIFICATION_KEY as keyof IUser] as keyof IUser;
-        if (!users.value[key])
-            return
-        users.value[key] = {
-            ...users.value[key],
-            ...user
-        }
-    }
+    const fetchUser = (userId: IUserIdentification, forced = false) =>
+        fetchTarget(
+            getUserByIdApi(userId)
+                .then(({ data }) => data),
+            userId,
+            forced
+        )
 
     /**
-     * MUTATION
-     * Remove user
      *
-     * @param id
+     * @param userData
      */
-    const removeUser = (id: typeof IDENTIFICATION_KEY) => {
-        delete users.value[id]
+    const createUser = (userData: IUserForm) =>
+        createTarget(
+            createUserApi(userData)
+                .then(({ data }) => data)
+        )
+
+    /**
+     * Change user email
+     *
+     * @param userId
+     * @param files
+     * @param onUploadProgress
+     */
+    const updateUserImage = (
+        userId: IUserIdentification,
+        files: File[] | FileList = [],
+        onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
+    ) => {
+        // TODO generic wrapper with loading and error handling
+        if (files.length === 0)
+            return Promise.reject(new Error('no file selected'))
+        const formData = new FormData()
+        formData.append('file', files[0])
+        return updateUserImageApi(userId, formData, onUploadProgress)
     }
 
     /**
-     * GETTER
-     * Get target user by ID
+     *
+     * @param userId
+     * @param userData
      */
-    const getUser = computed(() =>
-        (id: number) => users.value[id] || null
-    )
+    const updateUser = (userId: IUserIdentification, userData: Partial<IUserForm> = {}) =>
+        updateTarget(
+            updateUserApi(userId, userData),
+            userId,
+            userData
+        )
 
     /**
-     * MUTATIONS
-     * Loadings setters
+     *
+     * @param userId
      */
-    const LOADING_USERS_KEY = "users-" + getUuid();
-    // Mutations
-    const startUsersLoading = () => setLoading(LOADING_USERS_KEY, true);
-    const stopUsersLoading = () => setLoading(LOADING_USERS_KEY, false);
-
-    /**
-     * STATE
-     * Time To Live and Last Update
-     * Optimize fetch requests by caching data and preventing unnecessary requests
-     */
-    const TTL = {
-        users: 86400000,    // 1 day
-        user: 86400000,     // 1 day
-    };
-    // Reactivity is not needed
-    const lastUpdate = {
-        users: 0,
-        user: {} as Record<string, number>
-    };
-
-    /**
-     * ACTION
-     * Fetch users
-     */
-    const fetchUsers = async () => {
-        // If TTL is not expired, the current stored data is still valid
-        if(Date.now() - lastUpdate.users < TTL.users)
-            return Promise.resolve();
-        // Proceed with the request, but first update the lastUpdate
-        lastUpdate.users = Date.now();
-        startUsersLoading();
-        return getUserList()
-            .then((data) => {
-                for(let i = 0, len = data.length; i < len; i++){
-                    // Update TTL for each user
-                    lastUpdate.user[data[i].id] = Date.now();
-                    addUser(data[i]);
-                }
-            })
-            .catch((error) => {
-                // TODO
-                // Reset TTL in case of error
-                lastUpdate.users = 0;
-                console.error("ERROR - fetchUsers - users store", error);
-            })
-            .finally(stopUsersLoading)
-    }
-
-    /**
-     * MUTATIONS
-     * Loadings setters
-     */
-    const LOADING_USER_KEY = "user-" + getUuid();
-    // Mutations
-    const startUserLoading = () => setLoading(LOADING_USER_KEY, true);
-    const stopUserLoading = () => setLoading(LOADING_USER_KEY, false);
-
-    /**
-     * ACTION
-     * Fetch target users
-     */
-    const fetchUser = async (id: typeof IDENTIFICATION_KEY) => {
-        // If TTL is not expired, the current stored data is still valid
-        if(Date.now() - lastUpdate.user[id] < TTL.user)
-            return Promise.resolve();
-        // Proceed with the request, but first update the lastUpdate
-        lastUpdate.user[id] = Date.now();
-        startUsersLoading();
-        return getUserById(id)
-            .then((data) => addUser(data))
-            .catch((error) => {
-                // TODO
-                // Reset TTL in case of error
-                lastUpdate.user[id] = 0;
-                console.error("ERROR - fetchUser - users store", error);
-            })
-            .finally(stopUsersLoading)
-    }
-
-    /**
-     * GETTER
-     * Is fetching users
-     */
-    const loading = computed(() => getLoading(LOADING_USERS_KEY) || getLoading(LOADING_USER_KEY));
+    const deleteUser = (userId: IUserIdentification) =>
+        deleteTarget(
+            deleteUserApi(userId),
+            userId
+        )
 
     return {
         users,
         usersList,
-        addUser,
-        editUser,
-        removeUser,
         getUser,
-        startUsersLoading,
-        stopUsersLoading,
-        fetchUsers,
-        startUserLoading,
-        stopUserLoading,
-        fetchUser,
+        addUser,
+        selectedUserId,
+        currentUser,
+
         loading,
+        fetchUsers,
+        fetchUser,
+        createUser,
+        updateUser,
+        updateUserImage,
+        deleteUser
     }
 })
