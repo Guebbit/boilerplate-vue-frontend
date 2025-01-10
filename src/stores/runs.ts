@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { runService } from '@/services'
-import { useStoreStructureRestApi } from '@/composables/storeStructureRestApi.ts'
+import { useStoreStructureRestApi } from '@/composables/structureRestAPI.ts'
 import type { IRun } from '@/models/run.model'
 import type { IDataIdentificationKey as IProjectIdentificationKey } from '@/stores/projects.ts'
 

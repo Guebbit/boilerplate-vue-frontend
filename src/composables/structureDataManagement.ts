@@ -5,6 +5,8 @@ interface ITestMe {
     name: string,
 }
 
+// TODO what about arrays?
+
 export const useStoreStructureData = <
     // type of item
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,7 +1,7 @@
 import { computed } from 'vue'
 import { defineStore } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import { useStoreStructureRestApi } from '@/composables/storeStructureRestApi.ts'
+import { useStoreStructureRestApi } from '@/composables/structureRestAPI.ts'
 import { useUsersStore } from '@/stores/users.ts'
 import { getProfile, updateUser } from '@/api'
 import type { IUser, IUserForm } from '@/types'

@@ -1,6 +1,6 @@
 import { defineStore, storeToRefs } from 'pinia'
 import { evidencesService } from '@/services'
-import { useStoreStructureRestApi } from '@/composables/storeStructureRestApi.ts'
+import { useStoreStructureRestApi } from '@/composables/structureRestAPI.ts'
 import type { IEvidence } from '@/types'
 import { type IDataIdentificationKey as IRunIdentificationKey, useRunsStore } from '@/stores/runs.ts'
 import { computed } from 'vue'
