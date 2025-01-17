@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { projectService } from '@/services'
 import { useRunsStore } from '@/stores/runs.ts'
-import { useStoreStructureRestApi } from '@/composables/storeStructureRestApi.ts'
+import { useStoreStructureRestApi } from '@/composables/structureRestAPI.ts'
 import type { IProject, IRun } from '@/types'
 
 // Typescript, for now, doesn't allow a cleaner approach

@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 import { useCoreStore } from "@/stores/core";
-import { useStoreStructureData } from '@/composables/storeStructureData.ts'
+import { useStoreStructureData } from '@/composables/structureDataManagement.ts'
 import { getUuid } from '@guebbit/js-toolkit'
 
 

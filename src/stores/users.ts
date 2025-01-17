@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { useStoreStructureRestApi } from '@/composables/storeStructureRestApi.ts'
+import { useStoreStructureRestApi } from '@/composables/structureRestAPI.ts'
 import {
     createUser as createUserApi,
     deleteUser as deleteUserApi,
