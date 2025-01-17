@@ -1,4 +1,4 @@
-import axios from '@/utils/axios.ts'
+import axios from '@/utils/http.ts'
 import type { IUserProfile } from '@/types'
 
 /**

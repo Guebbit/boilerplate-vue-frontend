@@ -1,4 +1,4 @@
-import axios from '@/utils/axios.ts'
+import axios from '@/utils/http.ts'
 
 export interface IRefreshAuthenticationResponse {
   secret: string

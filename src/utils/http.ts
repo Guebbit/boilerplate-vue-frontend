@@ -72,8 +72,34 @@ export const onRequest = (config: InternalAxiosRequestConfig<IAxiosRequestData>)
  */
 export const onRequestReject = (error: AxiosError) => {
     // console.log('[request error]', error);
-    return Promise.reject(error: unknown);
+    return Promise.reject(error);
 }
+
+
+
+
+export const onResponseReject2 = async (
+    error: AxiosError<IAxiosResponseErrorData, IAxiosResponseErrorBody>
+) => {
+    // If it's keycloak auth error:
+    // refresh the token and retry the request
+    if(error.response?.status === 401 && Object.hasOwnProperty.call(error.config?.headers, 'Authorization'))
+        return Promise.resolve() // TODO refresh token
+            .then(() => instance.request({
+                ...error.config,
+                headers: {
+                    ...error.config?.headers,
+                    // Do not retry the request again
+                    'Do-Not-Retry': 1
+                }
+            }))
+    // if(error.config?.headers['Do-Not-Retry'])
+    //     LOGOUT
+    return Promise.reject(error);
+}
+
+
+
 
 /**
  * Any status code that lie within the range of 2xx cause this function to trigger

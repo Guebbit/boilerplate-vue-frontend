@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, expect, it, vi } from 'vitest';
-import axios from "../axios";
+import axios from "../http";
 
 it('allows purchases within business hours', () => {
     // tell vitest we use mocked time
