@@ -1,6 +1,7 @@
 <template>
-    <div id="user-list-page" class="item-list-page">
-        <h1 class="theme-page-title"><span>LISTA UTENTI</span></h1>
+    <LayoutDefault id="user-list-page" class="item-list-page">
+        <h1 class="theme-page-title"><span>{{ t('page-list-users.page-title') }}</span></h1>
+
         <div>
             TODO: tipica pagina che carica la lista utenti (fare pinia, TTL, etc) + lista cliccabile
             TODO i colori da HEX a RGB così vai le variazioni di opacità
@@ -94,7 +95,7 @@
             v-model="pageCurrent"
             :length="pageTotal"
         />
-    </div>
+    </LayoutDefault>
 </template>
 
 <script setup lang="ts">
@@ -111,6 +112,7 @@ import { storeToRefs } from 'pinia'
 import { useUsersStore } from '@/stores/users';
 import { useItemList, type ISortOrder } from '@/composables/itemList.ts'
 
+import LayoutDefault from '@/layouts/LayoutDefault.vue'
 import ListPagination from '@/components/molecules/ListPagination.vue'
 
 import type { IUser } from '@/types'
@@ -124,7 +126,7 @@ const { t } = useI18n()
  * Users store
  */
 const {
-    fetchUsers,
+   fetchUsers,
 } = useUsersStore();
 const {
     usersList,
@@ -159,8 +161,8 @@ pageSize.value = 6
  * Get users from API
  */
 onBeforeMount(() => {
-    startLoading();
-    fetchUsers()
+    startLoading(loadingPostfix);
+   fetchUsers()
         .then(() => itemList.value = usersList.value)
         .finally(stopLoading)
 })

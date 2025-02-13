@@ -15,7 +15,7 @@ import type {
  * @param from
  * @param next
  */
-export default async (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
+export const demoMiddleware = (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
     /**
      * Can use the store
      */
@@ -24,6 +24,7 @@ export default async (to: RouteLocationNormalized, from: RouteLocationNormalized
         count,
     } = storeToRefs(store);
     count.value++;
+    // eslint-disable-next-line @typescript-eslint/restrict-plus-operands, no-console
     console.log("count++: " + count.value);
 
     /**
@@ -31,7 +32,8 @@ export default async (to: RouteLocationNormalized, from: RouteLocationNormalized
      * (like in this case, where it is loaded in a route guard, before App.vue)
      */
     const { t, locale } = i18n.global;
+    // eslint-disable-next-line no-console
     console.log("locale (will not work): " + locale.value, t('generic.loading', { load: to.path }));
 
     next();
-}
+};

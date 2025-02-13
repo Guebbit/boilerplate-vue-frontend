@@ -1,68 +1,90 @@
-import { createRouter, createWebHistory, RouterView } from 'vue-router';
-import userRoutes from "./userRoutes";
-import demoMiddleware from "@/middlewares/demoMiddleware";
-import localeChoice from "@/middlewares/localeChoice";
-import authenticationCheck from "@/middlewares/authenticationCheck";
-import LayoutDefault from "@/layouts/LayoutDefault.vue";
-// TODO import LayoutErrorPage from '@/layouts/LayoutErrorPage.vue';
-import HomeView from '@/views/Home.vue';
+import { createRouter, createWebHistory, RouterView } from 'vue-router'
+import { demoMiddleware } from '@/middlewares/demoMiddleware'
+import { localeChoice } from '@/middlewares/localeChoice'
+import { isAuth } from '@/middlewares/authentications.ts'
+import { getDefaultLocale } from '@/plugins/i18n.ts'
+
+import userRoutes from './userRoutes'
+import accountRoutes from './accountRoutes'
+
+import HomeView from '@/views/Home.vue'
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.VITE_APP_BASE_URL as string | undefined ?? ""),
-  routes: [
-    {
-      path: "/:locale?",
-      component: RouterView,
-      beforeEnter: [
-          demoMiddleware,
-          localeChoice
-      ],
-      children: [
+    history: createWebHistory(import.meta.env.VITE_APP_BASE_URL as string | undefined),
+    routes: [
         {
-          path: '',
-          name: 'Home',
-          meta: {
-            layout: LayoutDefault,
-          },
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          component: HomeView
-        },
-        {
-          path: 'restricted',
-          name: 'Restricted',
-          meta: {
-            layout: LayoutDefault,
-          },
-          // route level code-splitting
-          // this generates a separate chunk (About.[hash].js) for this route
-          // which is lazy-loaded when the route is visited.
-          component: () => import('@/views/Restricted.vue'),
-          beforeEnter: [authenticationCheck],
-        },
-        // TODO
+            path: '/:locale?',
+            component: RouterView,
+            beforeEnter: [
+                demoMiddleware
+            ],
+            children: [
+                {
+                    path: '',
+                    name: 'Home',
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                    component: HomeView
+                },
+                {
+                    path: 'restricted',
+                    name: 'Restricted',
+                    // route level code-splitting
+                    // this generates a separate chunk (About.[hash].js) for this route
+                    // which is lazy-loaded when the route is visited.
+                    component: () => import('@/views/Restricted.vue'),
+                    beforeEnter: [isAuth]
+                },
 
-        ...userRoutes,
-      ]
-    },
-    /**
-     * Catch all route for all wrong routes
-     */
-    // TODO
-    // {
-    //   path: '/:catchAll(.*)',
-    //   redirect: {
-    //     name: '404'
-    //   }
-    // }
-  ]
-});
+                ...userRoutes,
+                ...accountRoutes,
+
+                {
+                    path: 'error/:status',
+                    name: 'Error',
+                    // route level code-splitting
+                    // this generates a separate chunk (About.[hash].js) for this route
+                    // which is lazy-loaded when the route is visited.
+                    component: () => import('@/views/Error.vue')
+                },
+
+                /**
+                 * Catch all route for all wrong routes
+                 */
+                {
+                    path: '/:catchAll(.*)',
+                    redirect: {
+                        name: 'Error',
+                        params: {
+                            status: 404,
+                            message: 'WRONG ROUTE'
+                        }
+                    }
+                }
+            ]
+        },
+
+        /**
+         * Catch if a route doesn't have the locale and assign one
+         */
+        {
+            path: '/:catchAll(.*)',
+            redirect: `/${getDefaultLocale()}/`
+        }
+    ]
+})
 
 /**
  * Global error handler
- * TODO
  */
-router.onError(err => {
-  console.error("ERRORRRRRRRRRRRRRRRR", err)
+router.onError((error: Error) => {
+    console.error('ERRORRRRRRRRRRRRRRRR', error)
+    return router.push({
+        name: 'Error',
+        params: {
+            status: 500,
+            message: error.message
+        }
+    })
 })
 
 /**
@@ -72,9 +94,13 @@ router.onError(err => {
  *  - afterEach
  */
 router.beforeEach((to, from, next) => {
-  console.log(`Navigating from ${from.path} to ${to.path}`);
-  // await delay(500);
-  next(); // next is not necessary if there is no async data and there is no routing
-});
+    console.log(`Navigating from ${from.path} to ${to.path}`)
+    next()
+})
 
-export default router;
+/**
+ * Check that requeste locale is supported and loadeds
+ */
+router.beforeResolve(localeChoice)
+
+export default router

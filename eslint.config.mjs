@@ -133,7 +133,7 @@ export default tseslint.config(
       'unicorn/consistent-destructuring': 'warn',
 
       // TODO
-      'unicorn/prevent-abbreviations': 'off',
+      // 'unicorn/prevent-abbreviations': 'off',
 
       // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/HEAD/docs/rules/filename-case.md
       'unicorn/filename-case': [

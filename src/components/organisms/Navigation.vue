@@ -15,7 +15,7 @@
                     name: 'Restricted',
                 })"
             >
-                {{ t('navigation.restricted-label') }}
+                {{ t('navigation.admin-label') }}
             </RouterLink>
             <RouterLink
                 :to="routerLinkI18n({
@@ -26,18 +26,48 @@
             </RouterLink>
         </nav>
 
+        <slot />
+
+        <button
+            v-show="!isAuth"
+            class="theme-button"
+            @click="router.push(routerLinkI18n({
+                name: 'Login',
+                query: {
+                    continue: route.fullPath,
+                }
+            }))"
+        >
+            {{ t('navigation.login-label') }}
+        </button>
+        <button
+            v-show="isAuth"
+            class="theme-button"
+            @click="router.push(routerLinkI18n({ name: 'Logout' }))"
+        >
+            {{ t('navigation.logout-label') }}
+        </button>
+
         <LanguageSwitcher />
     </header>
 </template>
 
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import LanguageSwitcher from '@/components/atoms/LanguageSwitcher.vue'
 import { routerLinkI18n } from '@/plugins/i18n'
 import { PUBLIC_PATH } from '@/utils/constants'
+import { storeToRefs } from 'pinia'
+import { useProfileStore } from '@/stores/profile.ts'
 
+const router = useRouter()
+const route = useRoute()
 const { t } = useI18n()
+
+const {
+    isAuth
+} = storeToRefs(useProfileStore())
 </script>
 
 <style lang="scss">
@@ -77,7 +107,7 @@ const { t } = useI18n()
         }
     }
 
-    @include fn.for-desktop(){
+    @include fn.for-desktop() {
         nav {
             text-align: left;
         }

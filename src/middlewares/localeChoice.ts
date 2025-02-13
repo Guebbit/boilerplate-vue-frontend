@@ -1,20 +1,44 @@
-import { getDefaultLocale, supportedLanguages, loadedLanguages, loadLocale } from "@/plugins/i18n";
+import { getDefaultLocale, supportedLanguages, loadedLanguages, updateLocale, changeLanguage } from '@/plugins/i18n'
 import type { NavigationGuardNext, RouteLocationNormalized } from "vue-router";
+import { fetchLanguageApi } from '@/api'
 
 /**
+ * Check that requeste locale is supported and loaded,
+ * if not, it will set the custom language based on the user browser
  *
  * @param to
  * @param from
  * @param next
  */
-export default async (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
-    const paramLocale = to.params.locale as string;
-    // loadedLanguages can be downloaded from the server,
-    // so it can have unexpected languages that supportedLanguages doesn't know
-    if(!loadedLanguages.includes(paramLocale) && !supportedLanguages.includes(paramLocale))
-        // locale not loaded and not supported, try again with the default (will pass)
-        return next(getDefaultLocale());
-    // load new locale
-    return loadLocale(paramLocale)
-        .then(() => next());
-}
+export const localeChoice = (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
+    // Get the locale from the route (if any)
+    const locale = to.params.locale as string;
+
+    // If locale is already loaded, proceed without problems
+    if(loadedLanguages.includes(locale)){
+        next();
+        return;
+    }
+
+    // If locale is supported but not loaded, load it then continue
+    if(!loadedLanguages.includes(locale) && supportedLanguages.includes(locale))
+        return fetchLanguageApi(locale)
+            .then(([lang, newLocaleVocabulary]) =>
+                // Update the locale and change the language
+                updateLocale(lang, newLocaleVocabulary)
+                    .then(() => changeLanguage(lang))
+            )
+            .then(() => {
+                next()
+            })
+
+    //If locale is not present nor supported (or empty), set the default one
+    next({
+        name: to.name as string,
+        params: {
+            ...to.params,
+            locale: getDefaultLocale()
+        },
+        query: to.query
+    })
+};

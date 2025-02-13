@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia';
 import { getUuid } from '@guebbit/js-toolkit'
-import { getUserList, getUserById } from '@/api'
+import { fetchUsersApi, fetchUserByIdApi } from '@/api'
 import { useCoreStore } from "@/stores/core";
 import type { IUser } from "@/types";
 
@@ -24,7 +24,7 @@ export const useUsersStore = defineStore('users', () => {
      * The identification parameter of the user Object
      * READONLY and not exported
      */
-    const IDENTIFICATION_KEY: string = "id";
+    const IDENTIFICATION_KEY = "id";
 
     /**
      * STATE
@@ -101,8 +101,8 @@ export const useUsersStore = defineStore('users', () => {
      * Optimize fetch requests by caching data and preventing unnecessary requests
      */
     const TTL = {
-        users: 86400000,    // 1 day
-        user: 86400000,     // 1 day
+        users: 86_400_000,    // 1 day
+        user: 86_400_000,     // 1 day
     };
     // Reactivity is not needed
     const lastUpdate = {
@@ -117,23 +117,23 @@ export const useUsersStore = defineStore('users', () => {
     const fetchUsers = async () => {
         // If TTL is not expired, the current stored data is still valid
         if(Date.now() - lastUpdate.users < TTL.users)
-            return Promise.resolve();
+            return;
         // Proceed with the request, but first update the lastUpdate
         lastUpdate.users = Date.now();
         startUsersLoading();
-        return getUserList()
+        return fetchUsers()
             .then((data) => {
-                for(let i = 0, len = data.length; i < len; i++){
+                for(let index = 0, length_ = data.length; index < length_; index++){
                     // Update TTL for each user
-                    lastUpdate.user[data[i].id] = Date.now();
-                    addUser(data[i]);
+                    lastUpdate.user[data[index].id] = Date.now();
+                    addUser(data[index]);
                 }
             })
             .catch((error: unknown) => {
                 // TODO
                 // Reset TTL in case of error
                 lastUpdate.users = 0;
-                console.error("ERROR - fetchUsers - users store", error);
+                console.error("ERROR - fetchUsersApi - users store", error);
             })
             .finally(stopUsersLoading)
     }
@@ -154,12 +154,12 @@ export const useUsersStore = defineStore('users', () => {
     const fetchUser = async (id: typeof IDENTIFICATION_KEY) => {
         // If TTL is not expired, the current stored data is still valid
         if(Date.now() - lastUpdate.user[id] < TTL.user)
-            return Promise.resolve();
+            return;
         // Proceed with the request, but first update the lastUpdate
         lastUpdate.user[id] = Date.now();
         startUsersLoading();
-        return getUserById(id)
-            .then((data) => addUser(data))
+        return fetchUserByIdApi(id)
+            .then((data) => { addUser(data); })
             .catch((error: unknown) => {
                 // TODO
                 // Reset TTL in case of error
@@ -184,10 +184,10 @@ export const useUsersStore = defineStore('users', () => {
         getUser,
         startUsersLoading,
         stopUsersLoading,
-        fetchUsers,
+       fetchUsers,
         startUserLoading,
         stopUserLoading,
-        fetchUser,
+       fetchUser,
         loading,
     }
 })

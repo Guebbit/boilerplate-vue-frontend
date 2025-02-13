@@ -1,1 +1,1 @@
-export { default as getLanguage } from "./getLanguage";
+export { fetchLanguageApi } from "./fetchLanguageApi.ts";

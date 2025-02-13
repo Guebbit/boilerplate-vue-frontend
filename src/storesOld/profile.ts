@@ -1,9 +1,9 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia';
 import { getUuid } from '@guebbit/js-toolkit'
-import { getProfile, refreshAuthentication } from '@/api'
+import { fetchProfileApi, refreshAuthenticationApi } from '@/api'
 import { useCoreStore } from "@/stores/core";
-import type { IUserProfile } from "@/types";
+import type { IUser } from "@/types";
 
 /**
  * While we can't access to inject/provide in guards or any non-components,
@@ -23,7 +23,7 @@ export const useProfileStore = defineStore('profile', () => {
      * STATE
      * Current user profile data
      */
-    const profile = ref<IUserProfile | null>(null);
+    const profile = ref<IUser | null>(null);
 
     /**
      * STATE
@@ -37,9 +37,9 @@ export const useProfileStore = defineStore('profile', () => {
      * Optimize fetch requests by caching data and preventing unnecessary requests
      */
     const TTL = {
-        auth: 3600000,      // 1 hour
-        login: 86400000,    // 1 day
-        profile: 86400000,  // 1 day
+        auth: 3_600_000,      // 1 hour
+        login: 86_400_000,    // 1 day
+        profile: 86_400_000,  // 1 day
     };
     // Reactivity is not needed
     const lastUpdate = {
@@ -65,17 +65,17 @@ export const useProfileStore = defineStore('profile', () => {
     const fetchAuthentication = async () => {
         // If TTL is not expired, the current stored data is still valid
         if(Date.now() - lastUpdate.auth < TTL.auth)
-            return Promise.resolve();
+            return;
         // Proceed with the request, but first update the lastUpdate
         lastUpdate.auth = Date.now();
         startAuthLoading();
-        return refreshAuthentication()
+        return refreshAuthenticationApi()
             .then((secret) => token.value = secret)
             .catch((error: unknown) => {
                 // TODO
                 // Reset TTL in case of error
                 lastUpdate.auth = 0;
-                console.error("ERROR - fetchUsers - users store", error);
+                console.error("ERROR - fetchUsersApi - users store", error);
             })
             .finally(stopAuthLoading)
     }
@@ -97,11 +97,11 @@ export const useProfileStore = defineStore('profile', () => {
         // TODO CHECK AUTHENTICATION
         // If TTL is not expired, the current stored data is still valid
         if(Date.now() - lastUpdate.profile < TTL.profile)
-            return Promise.resolve();
+            return;
         // Proceed with the request, but first update the lastUpdate
         lastUpdate.profile = Date.now();
         startProfileLoading();
-        return getProfile()
+        return fetchProfile()
             .then((data) => profile.value = data)
             .catch((error: unknown) => {
                 // TODO
@@ -126,11 +126,11 @@ export const useProfileStore = defineStore('profile', () => {
         LOADING_AUTH_KEY,
         startAuthLoading,
         stopAuthLoading,
-        fetchAuthentication,
+       fetchAuthentication,
         LOADING_PROFILE_KEY,
         startProfileLoading,
         stopProfileLoading,
-        fetchProfile,
+       fetchProfile,
         loading,
     }
 })

@@ -15,33 +15,33 @@ export const usePageDataManagement = () => {
    * Data stores
    */
   const {
-    fetchProject
+   fetchProject
   } = useProjectsStore()
   const {
     selectedProjectId
   } = storeToRefs(useProjectsStore())
 
   const {
-    fetchRun
+   fetchRun
   } = useRunsStore()
   const {
     selectedRunId
   } = storeToRefs(useRunsStore())
 
   const {
-    fetchEvidences,
-    fetchEvidence,
+   fetchEvidences,
+   fetchEvidence,
   } = useEvidencesStore();
   const {
     selectedEvidenceId
   } = storeToRefs(useEvidencesStore());
 
   const {
-    fetchReports,
+   fetchReports,
   } = useReportsStore();
 
   const {
-    fetchUser
+   fetchUser
   } = useUsersStore();
   const {
     selectedUserId
@@ -99,10 +99,10 @@ export const usePageDataManagement = () => {
       selectedProjectId.value = projectId.value;
       selectedRunId.value = runId.value;
       return Promise.all([
-        fetchProject(projectId.value),
-        fetchRun(runId.value),
-        fetchEvidences(runId.value),
-        fetchReports(runId.value),
+       fetchProject(projectId.value),
+       fetchRun(runId.value),
+       fetchEvidences(runId.value),
+       fetchReports(runId.value),
       ])
         .catch(catchRoute)
         .finally(finalRoute)
@@ -132,7 +132,7 @@ export const usePageDataManagement = () => {
   const pageTargetEvidence = (
     projectId: Ref | ComputedRef,
     runId: Ref | ComputedRef,
-    evId: Ref | ComputedRef,
+    eventId: Ref | ComputedRef,
     finalRoute = () => {},
     catchRoute: (e: unknown) => void = () => {},
   ) => {
@@ -140,11 +140,11 @@ export const usePageDataManagement = () => {
     const selectAndFetch = () => {
       selectedProjectId.value = projectId.value;
       selectedRunId.value = runId.value;
-      selectedEvidenceId.value = evId.value;
+      selectedEvidenceId.value = eventId.value;
       return Promise.all([
-        fetchProject(projectId.value),
-        fetchRun(runId.value),
-        fetchEvidence(evId.value)
+       fetchProject(projectId.value),
+       fetchRun(runId.value),
+       fetchEvidence(eventId.value)
       ])
         .catch(catchRoute)
         .finally(finalRoute)
@@ -154,7 +154,7 @@ export const usePageDataManagement = () => {
       [
         () => projectId.value,
         () => runId.value,
-        () => evId.value,
+        () => eventId.value,
       ],
       selectAndFetch
     )

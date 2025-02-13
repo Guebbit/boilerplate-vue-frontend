@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { projectService } from '@/services'
 import { useRunsStore } from '@/stores/runs.ts'
-import { useStoreStructureRestApi } from '@/composables/structureRestAPI.ts'
+import { useStructureRestApi } from '@/composables/structureRestApi.ts'
 import type { IProject, IRun } from '@/types'
 
 // Typescript, for now, doesn't allow a cleaner approach
@@ -22,9 +22,9 @@ export const useProjectsStore = defineStore('projects', () => {
     selectedRecord: currentProject,
 
     loading,
-    fetchAll,
-    fetchTarget,
-  } = useStoreStructureRestApi<IProject, IProject["id"]>("id");
+   fetchAll,
+   fetchTarget,
+  } = useStructureRestApi<IProject, IProject["id"]>("id");
 
   /**
    * Projects hasMany runs and
@@ -44,9 +44,9 @@ export const useProjectsStore = defineStore('projects', () => {
    * @param runs
    */
   const addProjectRuns = (projectId: IDataIdentificationKey, runs: IRun[] = []) => {
-    for(let i = 0, len = runs.length; i < len; i++){
-      addRun(runs[i]);
-      addProjectRun(projectId, runs[i].id);
+    for(let index = 0, length_ = runs.length; index < length_; index++){
+      addRun(runs[index]);
+      addProjectRun(projectId, runs[index].id);
     }
     removeDuplicateRuns(projectId);
   }
@@ -56,7 +56,7 @@ export const useProjectsStore = defineStore('projects', () => {
    * @param forced
    */
   const fetchProjects = (forced = false) =>
-    fetchAll(
+   fetchAll(
       projectService.getProjects()
         .then(({ data }) => data),
       forced,
@@ -69,7 +69,7 @@ export const useProjectsStore = defineStore('projects', () => {
    * @param forced
    */
   const fetchProject = (projectId: IDataIdentificationKey, forced = false) =>
-    fetchTarget(
+   fetchTarget(
       projectService.getProject(projectId)
         .then(({ data }) => {
           // When fetching a single project: we also fetch its runs
@@ -89,8 +89,8 @@ export const useProjectsStore = defineStore('projects', () => {
     currentProject,
 
     loading,
-    fetchProjects,
-    fetchProject,
+   fetchProjects,
+   fetchProject,
 
     addProjectRuns,
   }

@@ -10,7 +10,10 @@ export default defineConfig({
   plugins: [
     vue(),
     vueJsx(),
-    vueDevTools(),
+    vueDevTools({
+      // open webstorm instead of vscode when using the __devtools__
+      launchEditor: 'webstorm',
+    }),
   ],
   resolve: {
     alias: {

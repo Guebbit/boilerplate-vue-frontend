@@ -41,7 +41,7 @@ export const useCounterStore = defineStore('counter', () => {
    */
   const route = useRoute();
   function routeCheck(){
-    alert("route accessed within Pinia:" + route.path)
+    alert("route accessed within Pinia: " + route.path)
   }
 
   /**

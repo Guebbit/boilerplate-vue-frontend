@@ -9,24 +9,58 @@
     "en": "inglese"
   },
   "navigation": {
-    "home-label": "Home",
-    "restricted-label": "Amministrazione",
-    "user-list-label": "@:generic.list @:generic.user"
+    "home-label": "home",
+    "admin-label": "amministrazione",
+    "user-list-label": "@:generic.list @:generic.user",
+    "login-label": "Login",
+    "logout-label": "Logout"
   },
   "home-page": {
+    "page-title": "Home",
     "count-label": "@.capitalize:generic.count",
-    "provided-label": "Variable provided by App.vue",
+    "provided-label": "Variabile provided da App.vue",
     "provided-change-typing-label": "Cambia direttamente scrivendo",
     "provided-change-mutation-label": "Cambia usando la sua mutazione",
     "increment-label": "@.capitalize:generic.increment",
     "delayed-increment-label": "@.capitalize:generic.increment asincrono"
   },
   "page-list-users": {
+    "page-title": "Lista utenti",
     "user": "@:generic.user [0]",
     "modified-user-list": "@.customModifier:{'generic.user'} @:{'generic.list'}",
     "button-go-to-details": "Pagina utente"
   },
   "page-target-users": {
+    "page-title": "Utente selezionato",
     "button-go-to-list": "Lista utenti"
+  },
+  "login-page": {
+    "page-title": "Login",
+    "email-label": "Email",
+    "password-label": "Password",
+    "submit": "Login"
+  },
+  "profile-page": {
+    "page-title": "Il tuo profilo",
+    "username-label": "Username",
+    "email-label": "Email",
+    "phone-label": "Numero di telefono",
+    "website-label": "Website",
+    "submit": "Salva modifiche",
+    "reset-form": "Cancella modifiche",
+    "password-label": "Password",
+    "passwordConfirm-label": "Confirma Password"
+  },
+  "users-form": {
+    "email-required": "L'email è obbligatoria",
+    "email-invalid": "Deve essere un'email valida",
+    "username-required": "Il nome utente è obbligatorio",
+    "username-min": "Il nome utente deve essere lungo almeno 3 caratteri",
+    "password-required": "La password è obbligatoria",
+    "password-min": "La password deve essere lunga almeno 8 caratteri",
+    "password-minus-required": "La password deve contenere almeno una lettera minuscola",
+    "password-maius-required": "La password deve contenere almeno una lettera maiuscola",
+    "password-number-required": "La password deve contenere almeno un numero",
+    "password-special-required": "La password deve contenere almeno un carattere speciale"
   }
 }

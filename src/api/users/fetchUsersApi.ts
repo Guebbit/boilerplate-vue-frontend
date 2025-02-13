@@ -4,7 +4,5 @@ import type { IUser } from "@/types";
 /**
  * List of users
  */
-export const getUserList = () =>
+export const fetchUsersApi = () =>
     axios.get<IUser[]>('users');
-
-export default getUserList;

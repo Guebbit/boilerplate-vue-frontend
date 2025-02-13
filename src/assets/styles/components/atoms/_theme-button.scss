@@ -16,6 +16,11 @@
   user-select: none;
   border-style: none;
 
+  &:disabled{
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
   &:hover {
     color: var(--button-text-active-color);
     background: var(--button-background-active-color);

@@ -21,10 +21,10 @@ export const useItemStructure = <T = unknown>(
      * @param identifier
      */
     const listToDictionary = <T>(list: T[], identifier: keyof T): Record<string, T> => {
-        return list.reduce((acc, item) => {
-            acc[(item[identifier] as string)] = item;
-            return acc;
-        }, {} as Record<string, T>);
+        return list.reduce<Record<string, T>>((accumulator, item) => {
+            accumulator[(item[identifier] as string)] = item;
+            return accumulator;
+        }, {});
     }
 
     /**

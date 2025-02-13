@@ -12,12 +12,15 @@ export interface ITranslationDictionaries {
 };
 
 /**
- * List of supported languages
- * (Added through custom ENV variable or by reading the files in the locales folder on startup)
+ * List of supported languages (that we currently don't have loaded but that can be fetched)
+ * - From watching the locales folder
+ * - From custom ENV variable if present
+ *
+ * Env variable is necessary in case of dynamic loading of languages from server
  */
 export const supportedLanguages =
-  import.meta.env.VITE_SUPPORTED_LOCALES ?
-    (import.meta.env.VITE_SUPPORTED_LOCALES as string | undefined ?? "").split(",") :
+  import.meta.env.VITE_APP_SUPPORTED_LOCALES ?
+    (import.meta.env.VITE_APP_SUPPORTED_LOCALES as string | undefined ?? "").split(",") :
       Object.keys(import.meta.glob('./locales/*.json'))
           .map(file =>
               file
@@ -27,7 +30,7 @@ export const supportedLanguages =
 
 
 /**
- * List of loaded languages
+ * List of loaded languages (already fetched)
  */
 export const loadedLanguages :string[] = [];
 
@@ -46,12 +49,12 @@ export const i18n = createI18n({
      * In this case: automatic browser language detection
      * (it's better to use this elsewhere, with routing)
      */
-    locale: import.meta.env.VITE_DEFAULT_LOCALE as string | undefined ?? 'en',
+    locale: import.meta.env.VITE_APP_DEFAULT_LOCALE as string | undefined ?? 'en',
 
     /**
      * Fallback in case requested language doesn't exist
      */
-    fallbackLocale: import.meta.env.VITE_FALLBACK_LOCALE as string | undefined  ?? 'en',
+    fallbackLocale: import.meta.env.VITE_APP_FALLBACK_LOCALE as string | undefined  ?? 'en',
 
     /**
      * Static import of vocabulary
@@ -66,8 +69,8 @@ export const i18n = createI18n({
      * Custom modifiers to transform translations
      */
     modifiers: {
-        customModifier: (str) =>
-            typeof str === "string" ? [...str].join('.').toUpperCase() : str
+        customModifier: (string_) =>
+            typeof string_ === "string" ? [...string_].join('.').toUpperCase() : string_
     }
 });
 
@@ -86,21 +89,23 @@ export async function _loadLocale(i18n: I18n, locale: string) {
         loadedLanguages.includes(locale)
     )
         return _changeLanguage(i18n, locale);
-    // If not supported, just load default fallback
-    // This check happens AFTER because I could load a new unknown language from the server
-    if (!supportedLanguages.includes(locale))
-        return (i18n.global.fallbackLocale as WritableComputedRef<string>).value;
+    // If not loaded but supported, load it from a file
+    // (load from server must be done elsewhere and then be added to loadadLanguages before calling this function)
+    if (supportedLanguages.includes(locale))
     // Load from file (it should be there)
-    return import(/* webpackChunkName: "locale-[request]" */ `@/locales/${locale}.json`)
-        // file found
-        .then((file: { default: ITranslationDictionaries }) =>
-            // translation loaded
-            _updateLocale(i18n, locale, file.default)
-                // then language changed
-                .then(() => _changeLanguage(i18n, locale))
-        )
-        // this should never happen, but failsafe just in case
-        .catch(() => _changeLanguage(i18n, getDefaultLocale()));
+        return import(/* webpackChunkName: "locale-[request]" */ `@/locales/${locale}.json`)
+            // file found
+            .then((file: { default: ITranslationDictionaries }) =>
+                // translation loaded
+                _updateLocale(i18n, locale, file.default)
+                    // then language changed
+                    .then(() => _changeLanguage(i18n, locale))
+            )
+            // this should never happen if in supportedLanguage, but failsafe default language just in case
+            .catch(() => _changeLanguage(i18n, getDefaultLocale()));
+
+    // If not supported, change to default language
+    return _changeLanguage(i18n, getDefaultLocale());
 }
 
 /**

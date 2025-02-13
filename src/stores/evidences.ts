@@ -1,6 +1,6 @@
 import { defineStore, storeToRefs } from 'pinia'
 import { evidencesService } from '@/services'
-import { useStoreStructureRestApi } from '@/composables/structureRestAPI.ts'
+import { useStructureRestApi } from '@/composables/structureRestApi.ts'
 import type { IEvidence } from '@/types'
 import { type IDataIdentificationKey as IRunIdentificationKey, useRunsStore } from '@/stores/runs.ts'
 import { computed } from 'vue'
@@ -23,10 +23,10 @@ export const useEvidencesStore = defineStore('evidences', () => {
     selectedRecord: currentEvidence,
 
     loading,
-    fetchByParent,
-    fetchTarget,
+   fetchByParent,
+   fetchTarget,
     updateTarget
-  } = useStoreStructureRestApi<IEvidence, IEvidence['id'], IRunIdentificationKey>()
+  } = useStructureRestApi<IEvidence, IEvidence['id'], IRunIdentificationKey>()
 
   /**
    * Run hasMany evidences
@@ -41,7 +41,7 @@ export const useEvidencesStore = defineStore('evidences', () => {
    * @param forced
    */
   const fetchEvidences = (runId: IRunIdentificationKey, forced = false) =>
-    fetchByParent(
+   fetchByParent(
       evidencesService.getEvidences(runId)
         .then(({ data }) => data),
       runId,
@@ -54,11 +54,11 @@ export const useEvidencesStore = defineStore('evidences', () => {
    * @param evId
    * @param forced
    */
-  const fetchEvidence = (evId: IDataIdentificationKey, forced = false) =>
-    fetchTarget(
-      evidencesService.getEvidence(evId)
+  const fetchEvidence = (eventId: IDataIdentificationKey, forced = false) =>
+   fetchTarget(
+      evidencesService.getEvidence(eventId)
         .then(({ data }) => data),
-      evId,
+      eventId,
       forced
     )
 
@@ -67,10 +67,10 @@ export const useEvidencesStore = defineStore('evidences', () => {
    * @param evId
    * @param evidenceData
    */
-  const updateEvidence = (evId: IDataIdentificationKey, evidenceData: Partial<IEvidence> = {}) =>
+  const updateEvidence = (eventId: IDataIdentificationKey, evidenceData: Partial<IEvidence> = {}) =>
     updateTarget(
-      evidencesService.changeEvidence(evId, evidenceData),
-      evId,
+      evidencesService.changeEvidence(eventId, evidenceData),
+      eventId,
       evidenceData
     )
 
@@ -79,8 +79,8 @@ export const useEvidencesStore = defineStore('evidences', () => {
    * @param evId
    * @param accepted
    */
-  const updateEvidenceStatus = (evId: IDataIdentificationKey, accepted: boolean) =>
-    updateEvidence(evId, {
+  const updateEvidenceStatus = (eventId: IDataIdentificationKey, accepted: boolean) =>
+    updateEvidence(eventId, {
       accepted
     })
 
@@ -102,8 +102,8 @@ export const useEvidencesStore = defineStore('evidences', () => {
     currentEvidence,
 
     loading,
-    fetchEvidences,
-    fetchEvidence,
+   fetchEvidences,
+   fetchEvidence,
     updateEvidence,
     updateEvidenceStatus,
 

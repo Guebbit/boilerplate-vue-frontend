@@ -40,7 +40,7 @@ export const useCoreStore = defineStore('core', () => {
      * Check if there are any loadings
      */
     const isLoading = computed(
-        () => Object.values(loadings.value).some(v => v)
+        () => Object.values(loadings.value).some(Boolean)
     )
 
     return {

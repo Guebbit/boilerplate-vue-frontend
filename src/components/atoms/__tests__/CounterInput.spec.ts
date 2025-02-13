@@ -4,7 +4,7 @@ import CounterInput from '../CounterInput.vue'
 
 describe('CounterInput component UNIT TEST', () => {
     it('Renders the component', () =>
-        expect(mount(CounterInput).exists()).toBe(true)
+        { expect(mount(CounterInput).exists()).toBe(true); }
     );
 
     it('Expect X = 5', () => {

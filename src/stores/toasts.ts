@@ -47,7 +47,7 @@ export const useToastStore = defineStore('toast', () => {
         });
         // Remove after timeout (if any)
         if(timeout > 0)
-            setTimeout(() => hideMessage(id), timeout);
+            setTimeout(() => { hideMessage(id); }, timeout);
     }
 
     /**

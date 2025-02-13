@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { runService } from '@/services'
-import { useStoreStructureRestApi } from '@/composables/structureRestAPI.ts'
+import { useStructureRestApi } from '@/composables/structureRestApi.ts'
 import type { IRun } from '@/models/run.model'
 import type { IDataIdentificationKey as IProjectIdentificationKey } from '@/stores/projects.ts'
 
@@ -28,9 +28,9 @@ export const useRunsStore = defineStore('runs', () => {
     getRecordsByParent: getRunsByProject,
 
     loading,
-    fetchByParent,
-    fetchTarget
-  } = useStoreStructureRestApi<IRun, IRun['id'], IProjectIdentificationKey>()
+   fetchByParent,
+   fetchTarget
+  } = useStructureRestApi<IRun, IRun['id'], IProjectIdentificationKey>()
 
   // /**
   //  * Run belongsTo Project TODO some kind of circular logic could prevent this kind of interaction
@@ -45,7 +45,7 @@ export const useRunsStore = defineStore('runs', () => {
    * @param forced
    */
   const fetchRuns = (projectId: IProjectIdentificationKey, forced = false) =>
-    fetchByParent(
+   fetchByParent(
       runService.getRuns(projectId)
         .then(({ data }) => data),
       projectId,
@@ -60,7 +60,7 @@ export const useRunsStore = defineStore('runs', () => {
    * @param forced
    */
   const fetchRun = (runId: IDataIdentificationKey, forced = false) =>
-    fetchTarget(
+   fetchTarget(
       runService.getRun(runId)
         .then(({ data }) => data),
       runId,
@@ -104,8 +104,8 @@ export const useRunsStore = defineStore('runs', () => {
     removeDuplicateRuns,
 
     loading,
-    fetchRuns,
-    fetchRun,
+   fetchRuns,
+   fetchRun,
 
     selectedOs,
     currentRunDetails,

@@ -77,7 +77,7 @@ export const useItemList = <T = unknown>(
         // Create a new MiniSearch instance
         const miniSearch = new MiniSearch<T>({
             fields: ["name"],
-            storeFields: ["id", "name", "username", "email", "address", "phone", "website", "company"], // TODO dinamycally get all fields
+            storeFields: ["id", "name", "username", "email", "phone", "website", "company"], // TODO dinamycally get all fields
         });
         // Add all items and allow them to be searchable
         miniSearch.addAll(itemList.value as T[]);
@@ -107,7 +107,7 @@ export const useItemList = <T = unknown>(
      * Dictionary of items
      */
     const itemDictionaryFiltered = computed<Record<string, T>>(() =>
-        listToDictionary(itemListFiltered.value as T[], itemIdentifier as keyof T)
+        listToDictionary(itemListFiltered.value, itemIdentifier as keyof T)
     );
 
     /**
@@ -124,14 +124,14 @@ export const useItemList = <T = unknown>(
         data: T[],
         sortFields = {} as Record<keyof T, ISortOrder>
     ): T[] => {
-        if(Object.keys(sortFields).length < 1)
+        if(Object.keys(sortFields).length === 0)
             return data;
         return data.sort((a, b) => {
             for (const field in sortFields) {
                 if (!Object.prototype.hasOwnProperty.call(sortFields, field))
                     continue;
                 // Compare the field values...
-                const comparison = (a[field] < b[field] ? -1 : a[field] > b[field] ? 1 : 0);
+                const comparison = (a[field] < b[field] ? -1 : (a[field] > b[field] ? 1 : 0));
                 // ...and choose the order
                 if (comparison !== 0) {
                     return sortFields[field].toLowerCase() === 'asc' ? comparison : (
@@ -147,7 +147,7 @@ export const useItemList = <T = unknown>(
     /**
      * List of all items sorted
      */
-    const itemListSorted = computed(() => sortItems(itemListFiltered.value as T[], sorters.value));
+    const itemListSorted = computed(() => sortItems(itemListFiltered.value, sorters.value));
 
     /**
      * Resert filters

@@ -1,6 +1,124 @@
+
+<script lang="ts">
+export default {
+    name: 'HomePage'
+}
+</script>
+
+<script setup lang="ts">
+import { inject, watch, onMounted, ref } from 'vue'
+import type { Ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { storeToRefs } from 'pinia'
+
+import { useCoreStore } from '@/stores/core'
+import { useToastStore } from '@/stores/toasts'
+import { useCounterStore } from '@/stores/counter'
+import LayoutDefault from '@/layouts/LayoutDefault.vue'
+import CounterInput from '@/components/atoms/CounterInput.vue'
+
+import type { ProvidedRefMutationFunction, ProvidedRefType } from '@/types'
+
+/**
+ * Use translation
+ */
+const { t } = useI18n()
+
+
+
+/**
+ * Toast store
+ */
+const {
+    addMessage
+} = useToastStore()
+
+const testAddMessage = () => {
+    addMessage('Hello world ' + Date.now())
+};
+
+
+
+/**
+ * Loading examples
+ */
+const {
+    loadings
+} = storeToRefs(useCoreStore());
+
+/**
+ * Loading examples
+ */
+console.log('fake core loading START')
+loadings.value.core = true
+setTimeout(() => {
+    console.log('fake core loading END')
+    loadings.value.core = false
+    console.log('fake side (smaller) loading START')
+    loadings.value.userList = true
+    setTimeout(() => {
+        console.log('fake side (smaller) loading END')
+        loadings.value.userList = false
+    }, 4000)
+}, 500)
+
+
+
+
+/**
+ * Counter store
+ */
+const store = useCounterStore();
+const {
+    count,
+    doubleCount
+    // Refs needs to be extracted with this helper function
+} = storeToRefs(store)
+
+
+/**
+ * These functions can be used even without being deconstructed
+ */
+const {
+    increment,
+    incrementDelayed,
+    routeCheck
+} = store
+
+/**
+ * Same value as the one in Pinia, to show they are the same.
+ */
+const {
+    providedRef,
+    setProvidedRef
+} = inject<{
+    providedRef: Ref<ProvidedRefType>,
+    setProvidedRef: ProvidedRefMutationFunction
+}>('providedRef', {
+    providedRef: ref('Not provided'),
+    setProvidedRef: () => {}
+})
+
+/**
+ * Watcher
+ */
+watch(providedRef, (val) => console.log('Provided ref changed', val))
+
+/**
+ * Created and mounted
+ */
+console.log('HOME was created')
+onMounted(() => {
+    console.log('HOME was mounted')
+})
+
+</script>
+
 <template>
-    <div id="home-page">
-        <h1 class="theme-page-title"><span>HOME</span></h1>
+    <LayoutDefault id="home-page">
+        <template #header>
+            <h1 class="theme-page-title"><span>{{ t('home-page.page-title') }}</span></h1>
+        </template>
 
         <div class="info-wrapper">
             <div class="theme-card animate-on-hover" style="text-align: center">
@@ -58,7 +176,7 @@
                     <br />
                     <input
                       :value="providedRef"
-                      @input="event => setProvidedRef(event.target.value)"
+                      @input="event => setProvidedRef(event.target?.value ?? '')"
                       id="providedRefInput2"
                       class="theme-input"
                       type="text"
@@ -84,122 +202,8 @@
                 Add test message
             </button>
         </div>
-    </div>
+    </LayoutDefault>
 </template>
-
-<script lang="ts">
-export default {
-    name: 'HomePage'
-}
-</script>
-
-<script setup lang="ts">
-import { inject, watch, onMounted, ref } from 'vue'
-import type { Ref } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { storeToRefs } from 'pinia'
-import { getLanguage } from '@/api'
-import { updateLocale } from '@/plugins/i18n'
-import { useCoreStore } from '@/stores/core'
-import { useToastStore } from '@/stores/toasts'
-import { useCounterStore } from '@/stores/counter'
-import CounterInput from '@/components/atoms/CounterInput.vue'
-import type { ProvidedRefMutationFunction, ProvidedRefType } from '@/types'
-
-/**
- * Use translation
- */
-const { t } = useI18n()
-
-/**
- * Load asynchronously some translations
- */
-getLanguage()
-    .then((newLocaleVocabulary) => updateLocale('en', newLocaleVocabulary))
-
-/**
- * Counter store
- */
-const store = useCounterStore();
-const {
-    count,
-    doubleCount
-    // Refs needs to be extracted with this helper function
-} = storeToRefs(store)
-
-
-/**
- * Toast store
- */
-const {
-    addMessage
-} = useToastStore()
-
-const testAddMessage = () => {
-    addMessage('Hello world')
-};
-
-
-/**
- * Functions can be used even without being deconstructed
- */
-const {
-    increment,
-    incrementDelayed,
-    routeCheck
-} = store
-
-/**
- * Same value as the one in Pinia, to show they are the same.
- */
-const {
-    providedRef,
-    setProvidedRef
-} = inject<{
-    providedRef: Ref<ProvidedRefType>,
-    setProvidedRef: ProvidedRefMutationFunction
-}>('providedRef', {
-    providedRef: ref('Not provided'),
-    setProvidedRef: () => {}
-})
-
-/**
- * Watcher
- */
-watch(providedRef, (val) => console.log('Provided ref changed', val))
-
-/**
- * Created and mounted
- */
-console.log('HOME was created')
-onMounted(() => {
-    console.log('HOME was mounted')
-})
-
-
-/**
- * Loading examples
- */
-const {
-    loadings
-} = storeToRefs(useCoreStore());
-
-/**
- * Loading examples
- */
-console.log('fake core loading START')
-loadings.value.core = true
-setTimeout(() => {
-    console.log('fake core loading END')
-    loadings.value.core = false
-    console.log('fake side (smaller) loading START')
-    loadings.value.userList = true
-    setTimeout(() => {
-        console.log('fake side (smaller) loading END')
-        loadings.value.userList = false
-    }, 4000)
-}, 500)
-</script>
 
 <style lang="scss">
 #home-page {

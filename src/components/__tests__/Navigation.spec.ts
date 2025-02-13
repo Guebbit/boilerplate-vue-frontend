@@ -6,5 +6,5 @@ import Navigation from '../organisms/Navigation.vue'
  *
  */
 describe('Navigation', () =>
-    it('renders properly', () => expect(mount(Navigation)).toBeTruthy)
+    { it('renders properly', () => expect(mount(Navigation)).toBeTruthy); }
 )

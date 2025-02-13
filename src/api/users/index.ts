@@ -1,6 +1,6 @@
-export { default as createUser } from "./createUser";
-export { default as deleteUser } from "./deleteUser";
-export { default as getUserById } from "./getUserById";
-export { default as getUserList } from "./getUserList";
-export { default as updateUser } from "./updateUser";
-export { default as updateUserImage } from "./updateUserImage.ts";
+export { createUserApi } from "./createUserApi.ts";
+export { deleteUserApi } from "./deleteUserApi.ts";
+export { fetchUserByIdApi } from "./fetchUserByIdApi.ts";
+export { fetchUsersApi } from "./fetchUsersApi.ts";
+export { updateUserApi } from "./updateUserApi.ts";
+export { updateUserImageApi } from "./updateUserImageApi.ts";

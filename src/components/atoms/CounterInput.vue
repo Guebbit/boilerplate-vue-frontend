@@ -4,8 +4,9 @@
         <div>
             <button
                 class="counter-sub"
-                @click="subCounter"
-            >-
+                @click="updateCounter(-step)"
+            >
+                -
             </button>
             <input
                 :value="count?.toString()"
@@ -17,8 +18,9 @@
             />
             <button
                 class="counter-add"
-                @click="addCounter"
-            >+
+                @click="updateCounter(step)"
+            >
+                +
             </button>
         </div>
     </div>
@@ -30,7 +32,7 @@ import { getUuid } from '@guebbit/js-toolkit'
 
 const {
     label = '',
-    step = 0,
+    step = 1,
     min,
     max
 } = defineProps<{
@@ -77,20 +79,10 @@ const triggerUpdateInput = (event: Event) => {
  * Update counter
  */
 const updateCounter = (delta = 0) => {
-    if (!count.value)
+    if (!count.value && count.value !== 0)
         return
     count.value += delta
 }
-
-/**
- * Subtract to counter
- */
-const subCounter = () => updateCounter(-step)
-
-/**
- * Add to counter
- */
-const addCounter = () => updateCounter(step)
 
 /**
  * HTML5 fix
@@ -140,6 +132,7 @@ watch([
         color: var(--button-text-color);
         background: var(--button-background-color);
         padding: 1em 2em;
+        cursor: pointer;
 
         &:first-child {
             border-radius: 0.2em 0 0 0.2em;

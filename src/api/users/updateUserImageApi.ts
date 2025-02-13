@@ -9,7 +9,7 @@ import type { IUserIdentification } from '@/types'
  * @param formData
  * @param onUploadProgress
  */
-export const updateUserImage = (
+export const updateUserImageApi = (
     id: IUserIdentification,
     formData: FormData,
     onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
@@ -21,5 +21,3 @@ export const updateUserImage = (
         },
         onUploadProgress
     })
-
-export default updateUserImage;

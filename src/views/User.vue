@@ -1,5 +1,7 @@
 <template>
-    <div>
+    <LayoutDefault id="user-target">
+        <h1 class="theme-page-title"><span>{{ t('page-target-users.page-title') }}</span></h1>
+
         <h1>UTENTE TARGET || {{ id }}. Loading: {{ loading }}</h1>
         TODO: tipica pagina che carica un singolo utenate (fare pinia, TTL, etc)
         + info utente
@@ -25,7 +27,7 @@
         >
             {{ t('TODO.gotoList') }}
         </RouterLink>
-    </div>
+    </LayoutDefault>
 </template>
 
 <script setup lang="ts">
@@ -34,8 +36,11 @@ import { RouterLink } from 'vue-router'
 import { routerLinkI18n } from '@/plugins/i18n'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
+
 import { useUsersStore } from '@/stores/users'
 import { useItemStructure } from '@/composables/itemStructure.ts'
+import LayoutDefault from '@/layouts/LayoutDefault.vue'
+
 import type { IUser } from '@/types'
 
 
@@ -52,7 +57,7 @@ const { id } = defineProps<{
  * Users store
  */
 const {
-    fetchUser,
+   fetchUser,
     updateUserImage
 } = useUsersStore()
 const {
@@ -94,8 +99,8 @@ onBeforeMount(() => {
     // I need this user data.
     // selectedRecord will be populated when data is available
     selectedIdentifier.value = id
-    startLoading()
-    fetchUser(id)
+    startLoading(loadingPostfix)
+   fetchUser(id)
         .then(() => itemList.value = usersList.value)
         .finally(stopLoading)
 })

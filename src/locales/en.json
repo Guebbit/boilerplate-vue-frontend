@@ -9,11 +9,14 @@
     "en": "english"
   },
   "navigation": {
-    "home-label": "Home",
-    "restricted-label": "Admin",
-    "user-list-label": "@:generic.user @:generic.list"
+    "home-label": "home",
+    "admin-label": "admin",
+    "user-list-label": "@:generic.user @:generic.list",
+    "login-label": "Login",
+    "logout-label": "Logout"
   },
   "home-page": {
+    "page-title": "Home",
     "count-label": "@.capitalize:generic.count",
     "provided-label": "Variable provided by App.vue",
     "provided-change-typing-label": "Change directly by typing",
@@ -22,11 +25,42 @@
     "delayed-increment-label": "Async @:generic.increment"
   },
   "page-list-users": {
+    "page-title": "Users list",
     "user": "@:generic.user [0]",
     "modified-user-list": "@.customModifier:{'generic.user'} @:{'generic.list'}",
     "button-go-to-details": "User page"
   },
   "page-target-users": {
+    "page-title": "User page",
     "button-go-to-list": "Users list"
+  },
+  "login-page": {
+    "page-title": "Login",
+    "email-label": "Email",
+    "password-label": "Password",
+    "submit": "Login"
+  },
+  "profile-page": {
+    "page-title": "User Profile",
+    "username-label": "Username",
+    "email-label": "Email",
+    "phone-label": "Phone Number",
+    "website-label": "Website",
+    "submit": "Save changes",
+    "reset-form": "Reset changes",
+    "password-label": "Password",
+    "passwordConfirm-label": "Confirm Password"
+  },
+  "users-form": {
+    "email-required": "Email is required",
+    "email-invalid": "Must be a valid email",
+    "username-required": "Username is required",
+    "username-min": "Username must be at least 3 characters long",
+    "password-required": "Password is required",
+    "password-min": "Password must be at least 8 characters long",
+    "password-minus-required": "Password must contain at least one lowercase letter",
+    "password-maius-required": "Password must contain at least one uppercase letter",
+    "password-number-required": "Password must contain at least one number",
+    "password-special-required": "Password must contain at least one special character"
   }
 }
