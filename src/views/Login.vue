@@ -19,8 +19,8 @@ import { useUsersStore } from '@/stores/users.ts'
  */
 const { t } = useI18n()
 const { addMessage } = useToastStore()
-const router = useRouter();
-const route = useRoute();
+const router = useRouter()
+const route = useRoute()
 
 /**
  * Form logics
@@ -28,34 +28,37 @@ const route = useRoute();
 interface IUserLoginForm {
     email?: string,
     password?: string,
+    remember?: boolean
 }
 
 const {
-    zodUserSchema,
+    zodSchemaUsers
 } = useUsersStore()
 
 const {
     form,
     errors,
     showErrors,
-    hasChanged,
     validate
 } = useStructureFormValidation<IUserLoginForm>(
-    zodUserSchema
+    zodSchemaUsers
         .pick({
-            email: true,
+            email: true
         })
         .extend({
-            password: z.string().min(8, t('users-form.password-required'))
+            password: z.string().min(8, t('users-form.password-required')),
         }),
     false
 )
-// TODO signup: costantvalidation ma errori mostrati solo quando il singolo campo è diverso dall'originale (non serve su focalize quindi tienilo per dopo)
 
-form.value = {
-    email: 'root@root.it',
-    password: 'RootRoot_123'
-}
+/**
+ * If not in production, dummy user of local database
+ */
+if(process.env.NODE_ENV !== 'production')
+    form.value = {
+        email: 'root@root.it',
+        password: 'RootRoot_123'
+    }
 
 const {
     login,
@@ -67,10 +70,10 @@ const {
  */
 const submitForm = () => {
     if (!validate()) {
-        showErrors.value = true;
-        return;
+        showErrors.value = true
+        return
     }
-    return login(form.value.email!, form.value.password!)
+    return login(form.value.email!, form.value.password!, form.value.remember)
         .then(() => fetchProfile())
         .then(() => route.query.continue ?
             router.push({
@@ -81,7 +84,7 @@ const submitForm = () => {
             })
         )
         .catch(({ message, errors = [] }) => {
-            if(errors.length === 0)
+            if (errors.length === 0)
                 addMessage(message)
             for (let i = 0, len = errors.length; i < len; i++)
                 addMessage(errors[i])
@@ -95,35 +98,56 @@ const submitForm = () => {
             <span>{{ t('login-page.page-title') }}</span>
         </h1>
 
-        <div class="theme-card form-container">
-            <form @submit.prevent="submitForm">
-                <div class="input-group">
-                    <label for="form-email">{{ t('login-page.email-label') }}</label>
+        <div class="theme-card theme-form-container">
+            <form
+                class="theme-form"
+                @submit.prevent="submitForm"
+            >
+                <div
+                    class="theme-form-input"
+                    :class="{
+                        'form-error': showErrors && errors.email
+                    }"
+                >
+                    <label for="form-email">{{ t('login-page.label-email') }}</label>
                     <input
                         v-model="form.email"
                         type="email"
                         id="form-email"
                         class="theme-input"
                     />
-                    <p v-if="showErrors && errors.email" class="error">{{ errors.email.join(", ") }}</p>
+                    <p v-if="showErrors && errors.email" class="form-error-message">{{ errors.email.join(', ') }}</p>
                 </div>
-                <div class="input-group">
-                    <label for="form-password">{{ t('login-page.password-label') }}</label>
+                <div
+                    class="theme-form-input"
+                    :class="{
+                        'form-error': showErrors && errors.password
+                    }"
+                >
+                    <label for="form-password">{{ t('login-page.label-password') }}</label>
                     <input
                         v-model="form.password"
                         type="password"
                         id="form-password"
                         class="theme-input"
                     />
-                    <p v-if="showErrors && errors.password" class="error">{{ errors.password.join(", ") }}</p>
+                    <p v-if="showErrors && errors.password" class="form-error-message">{{ errors.password.join(', ')  }}</p>
+                </div>
+
+                <div class="theme-form-input-checkbox">
+                    <input
+                        v-model="form.remember"
+                        type="checkbox"
+                        id="form-remember"
+                    />
+                    <label for="form-remember">{{ t('login-page.label-remember') }}</label>
                 </div>
 
                 <button
                     type="submit"
                     class="theme-button"
-                    :disabled="!hasChanged"
                 >
-                    {{ t('login-page.submit') }}
+                    {{ t('login-page.button-submit') }}
                 </button>
             </form>
         </div>
@@ -131,23 +155,13 @@ const submitForm = () => {
 </template>
 
 <style lang="scss">
-#login-page{
-    .form-container {
+@use "@/assets/styles/pages/forms.scss";
+
+#login-page {
+    .theme-form-container {
         max-width: 400px;
         margin: 100px auto;
         padding: 2rem;
-
-        form {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-    }
-
-    .input-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
     }
 }
 </style>

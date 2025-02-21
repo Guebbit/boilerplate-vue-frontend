@@ -162,7 +162,6 @@ export const useUsersStore = defineStore('users', () => {
             id: z.number().nullish().optional(),
             email: zodSchemaUsersEmail,
             username: zodSchemaUsersUsername,
-            password: zodSchemaUsersPassword,
             phone: z.string().nullish().optional(),
             website: z.string().nullish().optional(),
             language: z.string().nullish().optional(), // .default(process.env.NODE_SETTINGS_DEFAULT_LOCALE ?? "en"),

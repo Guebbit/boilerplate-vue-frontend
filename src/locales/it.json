@@ -9,20 +9,24 @@
     "en": "inglese"
   },
   "navigation": {
-    "home-label": "home",
-    "admin-label": "amministrazione",
-    "user-list-label": "@:generic.list @:generic.user",
-    "login-label": "Login",
-    "logout-label": "Logout"
+    "label-home": "home",
+    "label-admin": "amministrazione",
+    "label-user-list": "@:generic.list @:generic.user",
+    "label-profile": "Profilo",
+    "label-login": "Login",
+    "label-logout": "Logout",
+    "error-already-logged": "Sei già loggato",
+    "error-not-logged": "Devi essere loggato per accedere a questa pagina",
+    "error-forbidden": "Non sei autorizzato ad accedere a questa pagina"
   },
   "home-page": {
     "page-title": "Home",
-    "count-label": "@.capitalize:generic.count",
-    "provided-label": "Variabile provided da App.vue",
-    "provided-change-typing-label": "Cambia direttamente scrivendo",
-    "provided-change-mutation-label": "Cambia usando la sua mutazione",
-    "increment-label": "@.capitalize:generic.increment",
-    "delayed-increment-label": "@.capitalize:generic.increment asincrono"
+    "label-count": "@.capitalize:generic.count",
+    "label-provided": "Variabile provided da App.vue",
+    "label-provided-change-typing": "Cambia direttamente scrivendo",
+    "label-provided-change-mutation": "Cambia usando la sua mutazione",
+    "label-increment": "@.capitalize:generic.increment",
+    "label-delayed-increment": "@.capitalize:generic.increment asincrono"
   },
   "page-list-users": {
     "page-title": "Lista utenti",
@@ -36,31 +40,38 @@
   },
   "login-page": {
     "page-title": "Login",
-    "email-label": "Email",
-    "password-label": "Password",
-    "submit": "Login"
+    "label-email": "Email",
+    "label-password": "Password",
+    "label-remember": "Ricorda il mio accesso",
+    "text-conditions": "Ho letto le condizioni della privacy",
+    "button-submit": "Login"
   },
   "profile-page": {
     "page-title": "Il tuo profilo",
-    "username-label": "Username",
-    "email-label": "Email",
-    "phone-label": "Numero di telefono",
-    "website-label": "Website",
-    "submit": "Salva modifiche",
+    "label-username": "Username",
+    "label-email": "Email",
+    "label-phone": "Numero di telefono",
+    "label-website": "Website",
+    "label-password": "Password",
+    "label-passwordConfirm": "Conferma Password",
+    "button-submit": "Salva modifiche",
     "reset-form": "Cancella modifiche",
-    "password-label": "Password",
-    "passwordConfirm-label": "Confirma Password"
+    "success-update": "Profilo aggiornato con successo",
+    "button-change-password": "Cambia password"
   },
   "users-form": {
     "email-required": "L'email è obbligatoria",
     "email-invalid": "Deve essere un'email valida",
     "username-required": "Il nome utente è obbligatorio",
     "username-min": "Il nome utente deve essere lungo almeno 3 caratteri",
+    "conditions-required": "Devi accettare le condizioni!",
     "password-required": "La password è obbligatoria",
     "password-min": "La password deve essere lunga almeno 8 caratteri",
     "password-minus-required": "La password deve contenere almeno una lettera minuscola",
     "password-maius-required": "La password deve contenere almeno una lettera maiuscola",
     "password-number-required": "La password deve contenere almeno un numero",
-    "password-special-required": "La password deve contenere almeno un carattere speciale"
+    "password-special-required": "La password deve contenere almeno un carattere speciale",
+    "password-confirm-required": "Digita nuovamente la password",
+    "password-dont-match": "Le password non corrispondono"
   }
 }

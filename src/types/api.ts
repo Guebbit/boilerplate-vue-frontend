@@ -12,7 +12,7 @@ export interface IResponseSuccess<T> extends IResponseNeutral {
 
 export interface IResponseReject extends IResponseNeutral {
     // message: Technical error name or code
-    data: never;
+    data?: never;
     // UI friendly error message
     errors: string[];
 }

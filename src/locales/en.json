@@ -9,20 +9,24 @@
     "en": "english"
   },
   "navigation": {
-    "home-label": "home",
-    "admin-label": "admin",
-    "user-list-label": "@:generic.user @:generic.list",
-    "login-label": "Login",
-    "logout-label": "Logout"
+    "label-home": "home",
+    "label-admin": "admin",
+    "label-user-list": "@:generic.user @:generic.list",
+    "label-profile": "Profile",
+    "label-login": "Login",
+    "label-logout": "Logout",
+    "error-already-logged": "You are already logged",
+    "error-not-logged": "You must be logged to access this page",
+    "error-forbidden": "You are not allowed to access this page"
   },
   "home-page": {
     "page-title": "Home",
-    "count-label": "@.capitalize:generic.count",
-    "provided-label": "Variable provided by App.vue",
-    "provided-change-typing-label": "Change directly by typing",
-    "provided-change-mutation-label": "Change using mutation",
-    "increment-label": "@.capitalize:generic.increment",
-    "delayed-increment-label": "Async @:generic.increment"
+    "label-count": "@.capitalize:generic.count",
+    "label-provided": "Variable provided by App.vue",
+    "label-provided-change-typing": "Change directly by typing",
+    "label-provided-change-mutation": "Change using mutation",
+    "label-increment": "@.capitalize:generic.increment",
+    "label-delayed-increment": "Async @:generic.increment"
   },
   "page-list-users": {
     "page-title": "Users list",
@@ -36,31 +40,38 @@
   },
   "login-page": {
     "page-title": "Login",
-    "email-label": "Email",
-    "password-label": "Password",
-    "submit": "Login"
+    "label-email": "Email",
+    "label-password": "Password",
+    "label-remember": "Remember me",
+    "text-conditions": "I have read the privacy conditions",
+    "button-submit": "Login"
   },
   "profile-page": {
     "page-title": "User Profile",
-    "username-label": "Username",
-    "email-label": "Email",
-    "phone-label": "Phone Number",
-    "website-label": "Website",
-    "submit": "Save changes",
+    "label-username": "Username",
+    "label-email": "Email",
+    "label-phone": "Phone Number",
+    "label-website": "Website",
+    "label-password": "Password",
+    "label-passwordConfirm": "Confirm Password",
+    "button-submit": "Save changes",
     "reset-form": "Reset changes",
-    "password-label": "Password",
-    "passwordConfirm-label": "Confirm Password"
+    "success-update": "Profile updated successfully",
+    "button-change-password": "Change password"
   },
   "users-form": {
     "email-required": "Email is required",
     "email-invalid": "Must be a valid email",
     "username-required": "Username is required",
     "username-min": "Username must be at least 3 characters long",
+    "conditions-required": "Must accept privacy conditions!",
     "password-required": "Password is required",
     "password-min": "Password must be at least 8 characters long",
     "password-minus-required": "Password must contain at least one lowercase letter",
     "password-maius-required": "Password must contain at least one uppercase letter",
     "password-number-required": "Password must contain at least one number",
-    "password-special-required": "Password must contain at least one special character"
+    "password-special-required": "Password must contain at least one special character",
+    "password-confirm-required": "Type password again",
+    "password-dont-match": "Passwords do not match"
   }
 }

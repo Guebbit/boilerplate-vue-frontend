@@ -1,8 +1,8 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { useI18n } from 'vue-i18n'
 import { useStructureRestApi } from '@/composables/structureRestApi.ts'
-import { EUserRoles, type IUser } from '@/types'
+import { i18n } from '@/plugins/i18n.ts'
+import { ERefreshTokenExpiryTime, EUserRoles, type IUser } from '@/types'
 import {
     fetchProfileApi,
     patchProfileApi,
@@ -19,13 +19,6 @@ export type IDataIdentificationKey = IUser['id'];
  */
 export const useProfileStore = defineStore('profile', () => {
 
-    /**
-     * Inherited
-     */
-    const {
-        locale: profileLanguage
-    } = useI18n()
-
     const {
         itemDictionary,
         selectedIdentifier,
@@ -37,10 +30,16 @@ export const useProfileStore = defineStore('profile', () => {
     } = useStructureRestApi<IUser, IDataIdentificationKey>()
 
     /**
+     * Warning: can't use useI18n because it wouldn't work in global guards
+     * (It works correctly on changes and so on)
+     */
+    const profileLanguage = i18n.global.locale;
+
+    /**
      * Fast check if current user is admin
      */
-    const isAdmin = computed(() => profile.value?.roles.includes(EUserRoles.ADMIN))
-    const isAuth = computed(() => profile.value && accessToken.value)
+    const isAdmin = computed(() => Boolean(profile.value?.roles.includes(EUserRoles.ADMIN)))
+    const isAuth = computed(() => Boolean(profile.value && accessToken.value))
 
     /**
      * User access token
@@ -53,10 +52,11 @@ export const useProfileStore = defineStore('profile', () => {
      *
      * @param auth
      * @param password
+     * @param remember
      */
-    const login = (auth: string, password: string) =>
+    const login = (auth: string, password: string, remember = false) =>
         fetchAny(
-            loginApi(auth, password)
+            loginApi(auth, password, remember ? ERefreshTokenExpiryTime.MEDIUM : ERefreshTokenExpiryTime.SHORT)
                 .then(({ data: { token } = {} }) =>
                     accessToken.value = token
                 )
@@ -87,12 +87,11 @@ export const useProfileStore = defineStore('profile', () => {
                 .then(({ data }) => {
                     if (!data)
                         return
-                    console.log('PROFILE DATA FETCHED', data)
                     // to handle single-target stores we just need to select the correct identifier
                     selectedIdentifier.value = data.id
                     return data
                 }),
-            0,  // dummy identifier
+            1,  // dummy identifier
             forced
         )
     }
@@ -118,38 +117,11 @@ export const useProfileStore = defineStore('profile', () => {
      * @param language
      */
     const updateProfileLanguage = (language = '') => {
+        // TODO check
         profileLanguage.value = language
         return updateProfile({
             ...profile.value,
             language
-        })
-    }
-
-    /**
-     * Change user email
-     *
-     * @param email
-     */
-    const updateProfileEmail = (email = '') =>
-        updateProfile({
-            ...profile.value,
-            email
-        })
-
-    /**
-     * Change user password
-     * Password encryption is done by the server
-     * TODO controllare che sia sicuro inviare la password in chiaro in questo modo?
-     *
-     * @param password
-     * @param confirmPassword
-     */
-    const updateProfilePassword = async (password = '', confirmPassword = '') => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        return updateProfile({
-            ...profile.value,
-            password,
-            confirmPassword
         })
     }
 
@@ -177,8 +149,6 @@ export const useProfileStore = defineStore('profile', () => {
         fetchProfile,
         updateProfile,
         updateProfileLanguage,
-        updateProfileEmail,
-        updateProfilePassword,
         logout
     }
 })

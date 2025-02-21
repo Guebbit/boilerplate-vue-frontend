@@ -1,5 +1,6 @@
 import { useProfileStore } from '@/stores/profile.ts'
 import type { RouteRecordRaw, NavigationGuardWithThis } from 'vue-router'
+import { isAdmin, isAuth, isGuest, refreshAuth } from '@/middlewares/authentications.ts'
 
 /**
  * No need for a component, just logout the user and redirect to the home page
@@ -22,6 +23,7 @@ export default [
     {
         path: 'login',
         name: 'Login',
+        beforeEnter: [isGuest],
         component: () => import('@/views/Login.vue'),
     },
     {
@@ -32,6 +34,7 @@ export default [
     {
         path: 'profile',
         name: 'Profile',
+        beforeEnter: [isAuth],
         component: () => import('@/views/Profile.vue')
     },
     {

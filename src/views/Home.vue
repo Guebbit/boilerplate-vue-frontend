@@ -123,7 +123,7 @@ onMounted(() => {
         <div class="info-wrapper">
             <div class="theme-card animate-on-hover" style="text-align: center">
                 <div class="card-content">
-                    {{ t('home-page.count-label') }}
+                    {{ t('home-page.label-count') }}
                     <br />
                     <b class="value" style="font-size: 3em">{{ count }} <small>({{ doubleCount }})</small></b>
                 </div>
@@ -132,13 +132,13 @@ onMounted(() => {
                 class="theme-button"
                 @click="increment"
             >
-                {{ t('home-page.increment-label') }}
+                {{ t('home-page.label-increment') }}
             </button>
             <button
                 class="theme-button"
                 @click="incrementDelayed"
             >
-                {{ t('home-page.delayed-increment-label') }}
+                {{ t('home-page.label-delayed-increment') }}
             </button>
             <!--
               :modelValue="modelValue"
@@ -157,11 +157,11 @@ onMounted(() => {
                     <h3>
                       <b>{{ providedRef }}</b>
                     </h3>
-                    <p>{{ t('home-page.provided-label') }}</p>
+                    <p>{{ t('home-page.label-provided') }}</p>
                 </div>
                 <div class="card-content">
                     <label for="providedRefInput">
-                      {{ t('home-page.provided-change-typing-label') }}
+                      {{ t('home-page.label-provided-change-typing') }}
                     </label>
                     <input
                       v-model="providedRef"
@@ -171,7 +171,7 @@ onMounted(() => {
                     />
                     <br />
                     <label for="providedRefInput2">
-                      {{ t('home-page.provided-change-mutation-label') }}
+                      {{ t('home-page.label-provided-change-mutation') }}
                     </label>
                     <br />
                     <input

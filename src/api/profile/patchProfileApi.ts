@@ -4,5 +4,5 @@ import type { IUser } from '@/types'
 /**
  * Edit profile data
  */
-export const patchProfileApi = () =>
-    axios.get<IUser>('users/1')
+export const patchProfileApi = (userData: Partial<IUser>) =>
+    axios.patch<IUser>('account', userData)

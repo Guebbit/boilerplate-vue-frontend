@@ -1,64 +1,11 @@
-<template>
-    <header class="page-header">
-        <img alt="logo" class="logo" :src="PUBLIC_PATH + '/images/guebbit-logo-colored.png'" />
-
-        <nav>
-            <RouterLink
-                :to="routerLinkI18n({
-                    name: 'Home',
-                })"
-            >
-                {{ t('navigation.home-label') }}
-            </RouterLink>
-            <RouterLink
-                :to="routerLinkI18n({
-                    name: 'Restricted',
-                })"
-            >
-                {{ t('navigation.admin-label') }}
-            </RouterLink>
-            <RouterLink
-                :to="routerLinkI18n({
-                    name: 'UserList',
-                })"
-            >
-                {{ t('navigation.user-list-label', 2) }}
-            </RouterLink>
-        </nav>
-
-        <slot />
-
-        <button
-            v-show="!isAuth"
-            class="theme-button"
-            @click="router.push(routerLinkI18n({
-                name: 'Login',
-                query: {
-                    continue: route.fullPath,
-                }
-            }))"
-        >
-            {{ t('navigation.login-label') }}
-        </button>
-        <button
-            v-show="isAuth"
-            class="theme-button"
-            @click="router.push(routerLinkI18n({ name: 'Logout' }))"
-        >
-            {{ t('navigation.logout-label') }}
-        </button>
-
-        <LanguageSwitcher />
-    </header>
-</template>
-
 <script setup lang="ts">
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { storeToRefs } from 'pinia'
 import LanguageSwitcher from '@/components/atoms/LanguageSwitcher.vue'
 import { routerLinkI18n } from '@/plugins/i18n'
+import { loginContinueTo } from '@/utils/helperNavigation.ts'
 import { PUBLIC_PATH } from '@/utils/constants'
-import { storeToRefs } from 'pinia'
 import { useProfileStore } from '@/stores/profile.ts'
 
 const router = useRouter()
@@ -69,6 +16,63 @@ const {
     isAuth
 } = storeToRefs(useProfileStore())
 </script>
+
+<template>
+    <header class="page-header">
+        <img alt="logo" class="logo" :src="PUBLIC_PATH + '/images/guebbit-logo-colored.png'" />
+
+        <nav>
+            <RouterLink
+                :to="routerLinkI18n({
+                    name: 'Home',
+                })"
+            >
+                {{ t('navigation.label-home') }}
+            </RouterLink>
+            <RouterLink
+                :to="routerLinkI18n({
+                    name: 'Restricted',
+                })"
+            >
+                {{ t('navigation.label-admin') }}
+            </RouterLink>
+            <RouterLink
+                :to="routerLinkI18n({
+                    name: 'UserList',
+                })"
+            >
+                {{ t('navigation.label-user-list', 2) }}
+            </RouterLink>
+            <RouterLink
+                v-show="isAuth"
+                :to="routerLinkI18n({
+                    name: 'Profile',
+                })"
+            >
+                {{ t('navigation.label-profile', 2) }}
+            </RouterLink>
+        </nav>
+
+        <slot />
+
+        <button
+            v-show="!isAuth && !route.fullPath.includes('login')"
+            class="theme-button"
+            @click="router.push(routerLinkI18n(loginContinueTo(route.fullPath)))"
+        >
+            {{ t('navigation.label-login') }}
+        </button>
+        <button
+            v-show="isAuth"
+            class="theme-button"
+            @click="router.push(routerLinkI18n({ name: 'Logout' }))"
+        >
+            {{ t('navigation.label-logout') }}
+        </button>
+
+        <LanguageSwitcher />
+    </header>
+</template>
 
 <style lang="scss">
 @use "@/assets/styles/functions" as fn;

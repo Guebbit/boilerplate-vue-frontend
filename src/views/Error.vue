@@ -1,7 +1,7 @@
 <template>
   <LayoutDefault>
-      <h1>{{ status }}</h1>
-      <h3>{{ message }}</h3>
+      <h1>TODO |{{ status }}|</h1>
+      <h3>|{{ message }}|</h3>
   </LayoutDefault>
 </template>
 

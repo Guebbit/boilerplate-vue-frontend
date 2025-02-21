@@ -20,6 +20,15 @@ export const useStructureFormValidation = <
      */
     const initial = ref({} as Partial<T>)
     const setInitial = (referredVariable: ComputedRef<T | undefined> | Ref<T | undefined>) => {
+        if(referredVariable.value){
+            initial.value = {
+                ...referredVariable.value
+            }
+            form.value = {
+                ...referredVariable.value
+            }
+        }
+
         watch(referredVariable, (value) => {
             // If the form was not changed, update the form too
             if(!hasChanged.value)
@@ -58,10 +67,22 @@ export const useStructureFormValidation = <
     const isValid = computed(() => errorsList.value.length === 0)
 
     /**
+     * Treat empty and null strings as undefined
+     */
+    const sanitizeForm = <F extends Record<string, unknown>>(formData: F): F => {
+        return Object.fromEntries(
+            Object.entries(formData).map(([key, value]) => [
+                key,
+                value === "" || value === null ? undefined : value,
+            ])
+        ) as F;
+    }
+
+    /**
      * Check if form was used
      */
     const hasChanged = computed(() =>
-        JSON.stringify(form.value) !== JSON.stringify(initial.value)
+        JSON.stringify(sanitizeForm(form.value)) !== JSON.stringify(sanitizeForm(initial.value))
     )
 
     /**
@@ -70,13 +91,14 @@ export const useStructureFormValidation = <
      */
     const reset = () => {
         errors.value = {}
-        form.value = { ...initial.value }
+        form.value = { ...initial.value } as Partial<T>
     }
 
     /**
      * Form validation
      */
     const validate = () => {
+        errors.value = {}
         const parseResult = zodSchema.safeParse(form.value)
         if (parseResult.success)
             return true
@@ -91,6 +113,8 @@ export const useStructureFormValidation = <
     /**
      * Trigger form validation on form change (if required)
      */
+    if(constantValidation)
+        validate()
     watch(form, () => constantValidation && validate(), {
         deep: true
     })

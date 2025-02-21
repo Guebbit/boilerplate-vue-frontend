@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory, RouterView } from 'vue-router'
 import { demoMiddleware } from '@/middlewares/demoMiddleware'
 import { localeChoice } from '@/middlewares/localeChoice'
-import { isAuth } from '@/middlewares/authentications.ts'
+import { isAuth, refreshAuth } from '@/middlewares/authentications.ts'
 import { getDefaultLocale } from '@/plugins/i18n.ts'
 
 import userRoutes from './userRoutes'
@@ -77,14 +77,16 @@ const router = createRouter({
  * Global error handler
  */
 router.onError((error: Error) => {
-    console.error('ERRORRRRRRRRRRRRRRRR', error)
-    return router.push({
-        name: 'Error',
-        params: {
-            status: 500,
-            message: error.message
-        }
-    })
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    if(process.env.NODE_ENV !== 'production')
+        console.error('page error', error)
+    // return router.push({
+    //     name: 'Error',
+    //     params: {
+    //         status: 500,
+    //         message: error.message
+    //     }
+    // })
 })
 
 /**
@@ -92,11 +94,28 @@ router.onError((error: Error) => {
  *  - beforeEach
  *  - beforeResolve
  *  - afterEach
+ *
+ * Order of global and per-route guards:
+ *  - Global beforeEach
+ *  - Per-route beforeEnter
+ *  - In-component beforeRouteEnter
+ *  - Global beforeResolve
+ *  - Global afterEach
+ *  - In-component beforeRouteUpdate (when component is reused)
+ *  - In-component beforeRouteLeave
  */
 router.beforeEach((to, from, next) => {
     console.log(`Navigating from ${from.path} to ${to.path}`)
     next()
 })
+
+/**
+ * Refresh (is needed) the authentication before every route
+ */
+// router.beforeEach((to, from, next) =>
+//     refreshAuth()
+//         .then(() => { next() })
+// );
 
 /**
  * Check that requeste locale is supported and loadeds
