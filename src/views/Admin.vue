@@ -1,7 +1,6 @@
 <template>
   <div>
-    <h1>RESTRICTED</h1>
-    Pagina test con restrizioni\autenticazione
+    <h1>ADMIN PAGE</h1>
   </div>
 </template>
 

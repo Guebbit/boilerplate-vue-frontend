@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory, RouterView } from 'vue-router'
 import { demoMiddleware } from '@/middlewares/demoMiddleware'
 import { localeChoice } from '@/middlewares/localeChoice'
-import { isAuth, refreshAuth } from '@/middlewares/authentications.ts'
+import { isAuth } from '@/middlewares/authentications.ts'
 import { getDefaultLocale } from '@/plugins/i18n.ts'
 
 import userRoutes from './userRoutes'
@@ -26,12 +26,12 @@ const router = createRouter({
                     component: HomeView
                 },
                 {
-                    path: 'restricted',
-                    name: 'Restricted',
+                    path: 'admin',
+                    name: 'Admin',
                     // route level code-splitting
                     // this generates a separate chunk (About.[hash].js) for this route
                     // which is lazy-loaded when the route is visited.
-                    component: () => import('@/views/Restricted.vue'),
+                    component: () => import('@/views/Admin.vue'),
                     beforeEnter: [isAuth]
                 },
 

@@ -38,8 +38,8 @@ export const useProfileStore = defineStore('profile', () => {
     /**
      * Fast check if current user is admin
      */
-    const isAdmin = computed(() => Boolean(profile.value?.roles.includes(EUserRoles.ADMIN)))
-    const isAuth = computed(() => Boolean(profile.value && accessToken.value))
+    const isAdmin = computed(() => Boolean(accessToken.value && profile.value?.roles.includes(EUserRoles.ADMIN)))
+    const isAuth = computed(() => Boolean(accessToken.value && profile.value))
 
     /**
      * User access token

@@ -49,7 +49,8 @@ const {
  * Profile
  */
 const {
-    profile
+    profile,
+    isAuth
 } = storeToRefs(useProfileStore())
 const {
     fetchProfile
@@ -80,7 +81,7 @@ fetchProfile()
                 v-for="alert in messages"
                 :key="'alert-' + alert.id"
                 v-show="alert.visible"
-                class="theme-card"
+                :class="['theme-card', alert.type]"
             >
                 {{ alert.message }}
                 <button
@@ -124,8 +125,9 @@ fetchProfile()
 }
 
 .toast-container{
-    position: absolute;
+    position: fixed;
     bottom: 0;
     right: 0;
+    z-index: 9999;
 }
 </style>

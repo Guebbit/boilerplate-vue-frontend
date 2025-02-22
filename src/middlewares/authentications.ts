@@ -7,6 +7,10 @@ import type {
     RouteLocationNormalized
 } from 'vue-router'
 
+
+// TODO non posso controllare se jwt token esiste perché è secure.
+//  Però posso creare un cookie che semplicemente indica la presenza o meno del suddetto token (tipo isAuth)
+// TODO togliere isAuth\isAdmin a resetDatabase API (è solo per test)
 /**
  * Refresh the authentication if needed
  */
@@ -51,11 +55,12 @@ export const isGuest = (to: RouteLocationNormalized, from: RouteLocationNormaliz
         addMessage
     } = useToastStore()
 
-    console.log("ALLORA", isAuth.value)
     if (isAuth.value) {
         // TODO i18n
         addMessage('navigation.error-already-logged')
-        next(loginContinueTo(to.fullPath))
+        next({
+            name: 'Home'
+        })
         return
     }
 

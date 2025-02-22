@@ -13,7 +13,8 @@ const route = useRoute()
 const { t } = useI18n()
 
 const {
-    isAuth
+    isAuth,
+    isAdmin
 } = storeToRefs(useProfileStore())
 </script>
 
@@ -23,31 +24,41 @@ const {
 
         <nav>
             <RouterLink
-                :to="routerLinkI18n({
-                    name: 'Home',
-                })"
+                :to="
+                    routerLinkI18n({
+                        name: 'Home'
+                    })
+                "
             >
                 {{ t('navigation.label-home') }}
             </RouterLink>
             <RouterLink
-                :to="routerLinkI18n({
-                    name: 'Restricted',
-                })"
+                v-show="isAdmin"
+                :to="
+                    routerLinkI18n({
+                        name: 'Admin'
+                    })
+                "
             >
                 {{ t('navigation.label-admin') }}
             </RouterLink>
             <RouterLink
-                :to="routerLinkI18n({
-                    name: 'UserList',
-                })"
+                v-show="isAdmin"
+                :to="
+                    routerLinkI18n({
+                        name: 'UserList'
+                    })
+                "
             >
                 {{ t('navigation.label-user-list', 2) }}
             </RouterLink>
             <RouterLink
                 v-show="isAuth"
-                :to="routerLinkI18n({
-                    name: 'Profile',
-                })"
+                :to="
+                    routerLinkI18n({
+                        name: 'Profile'
+                    })
+                "
             >
                 {{ t('navigation.label-profile', 2) }}
             </RouterLink>
@@ -75,7 +86,7 @@ const {
 </template>
 
 <style lang="scss">
-@use "@/assets/styles/functions" as fn;
+@use '@/assets/styles/functions' as fn;
 
 .page-header {
     line-height: 1.5;
@@ -93,7 +104,6 @@ const {
     nav {
         width: 100%;
         height: 100%;
-        text-align: center;
 
         & > a {
             height: 100%;

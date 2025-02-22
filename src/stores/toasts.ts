@@ -4,7 +4,11 @@ import { getUuid } from '@guebbit/js-toolkit'
 
 export enum IToastType {
     PRIMARY = 'primary',
-
+    SECONDARY = 'secondary',
+    // TODO creare questi colori
+    DANGER = 'danger',
+    WARNING = 'warning',
+    SUCCESS = 'success',
 }
 export interface IToastMessage{
     id: string,

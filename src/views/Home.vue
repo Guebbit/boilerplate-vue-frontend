@@ -12,8 +12,8 @@ import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
 
 import { useCoreStore } from '@/stores/core'
-import { useToastStore } from '@/stores/toasts'
 import { useCounterStore } from '@/stores/counter'
+import { IToastType, useToastStore } from '@/stores/toasts'
 import LayoutDefault from '@/layouts/LayoutDefault.vue'
 import CounterInput from '@/components/atoms/CounterInput.vue'
 
@@ -34,7 +34,7 @@ const {
 } = useToastStore()
 
 const testAddMessage = () => {
-    addMessage('Hello world ' + Date.now())
+    addMessage('Hello world ' + Date.now(), IToastType.SECONDARY)
 };
 
 
