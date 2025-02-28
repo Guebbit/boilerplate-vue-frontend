@@ -122,6 +122,7 @@ watch([
         border: none;
         outline: none;
         padding: 0.5em 1em;
+        background: rgba(var(--secondary-200) / 0.5);
     }
 
     button {
@@ -129,8 +130,8 @@ watch([
         text-transform: none;
         user-select: none;
         border-style: none;
-        color: var(--button-text-color);
-        background: var(--button-background-color);
+        color: rgb(var(--on-primary-500));
+        background: rgb(var(--secondary-200));
         padding: 1em 2em;
         cursor: pointer;
 

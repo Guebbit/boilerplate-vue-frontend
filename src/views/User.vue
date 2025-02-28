@@ -1,34 +1,8 @@
-<template>
-    <LayoutDefault id="user-target">
-        <h1 class="theme-page-title"><span>{{ t('page-target-users.page-title') }}</span></h1>
-
-        <h1>UTENTE TARGET || {{ id }}. Loading: {{ loading }}</h1>
-        TODO: tipica pagina che carica un singolo utenate (fare pinia, TTL, etc)
-        + info utente
-        + sanitizzazione
-
-        <div class="theme-card animate-on-hover">
-            <div class="card-content">
-                <pre>{{ selectedRecord }}</pre>
-            </div>
-        </div>
-
-
-        <div class="simple-card">
-            <input type="file" id="fileInput" />
-            <button class="simple-button" @click="emitUploadImage">Upload Image</button>
-        </div>
-
-
-        <RouterLink
-            :to="routerLinkI18n({
-                name: 'UserList',
-            })"
-        >
-            {{ t('TODO.gotoList') }}
-        </RouterLink>
-    </LayoutDefault>
-</template>
+<script lang="ts">
+export default {
+    name: 'UserTargetPage'
+}
+</script>
 
 <script setup lang="ts">
 import { onBeforeMount, defineProps } from 'vue'
@@ -57,7 +31,7 @@ const { id } = defineProps<{
  * Users store
  */
 const {
-   fetchUser,
+    fetchUser,
     updateUserImage
 } = useUsersStore()
 const {
@@ -100,8 +74,42 @@ onBeforeMount(() => {
     // selectedRecord will be populated when data is available
     selectedIdentifier.value = id
     startLoading(loadingPostfix)
-   fetchUser(id)
+    fetchUser(id)
         .then(() => itemList.value = usersList.value)
         .finally(stopLoading)
 })
 </script>
+
+<template>
+    <LayoutDefault id="user-target">
+        <template #header>
+            <h1 class="theme-page-title"><span>{{ t('user-target-page.page-title') }}</span></h1>
+        </template>
+
+        <h1>UTENTE TARGET || {{ id }}. Loading: {{ loading }}</h1>
+        TODO: tipica pagina che carica un singolo utenate (fare pinia, TTL, etc)
+        + info utente
+        + sanitizzazione
+
+        <div class="theme-card animate-on-hover">
+            <div class="card-content">
+                <pre>{{ selectedRecord }}</pre>
+            </div>
+        </div>
+
+
+        <div class="simple-card">
+            <input type="file" id="fileInput" />
+            <button class="simple-button" @click="emitUploadImage">Upload Image</button>
+        </div>
+
+
+        <RouterLink
+            :to="routerLinkI18n({
+                name: 'UserList',
+            })"
+        >
+            {{ t('TODO.gotoList') }}
+        </RouterLink>
+    </LayoutDefault>
+</template>

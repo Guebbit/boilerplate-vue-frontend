@@ -17,7 +17,7 @@
     border-radius: 50%;
     border-width: 6px;
     border-style: solid;
-    border-color: var(--body-text-color) transparent var(--body-text-color) transparent;
+    border-color: var(--theme-on-surface) transparent var(--theme-on-surface) transparent;
     animation: loading-side-animation 1s linear infinite;
   }
 

@@ -1,14 +1,12 @@
 .theme-input {
   appearance: none;
   border: none;
+  border-bottom: solid rgb(var(--primary-800)) 0.2em;
   outline: none;
-  color: var(--input-text-color);
-  background: var(--input-background-color);
+  color: rgb(var(--on-primary-100));
+  background: rgb(var(--primary-100));
   font-size: 1.2em;
   padding: 0.5em 1em;
-  border-bottom-style: solid;
-  border-bottom-width: 0.2em;
-  border-color: var(--input-border-color);
   border-radius: 0.2em 0.2em 0 0;
   transition:
           color var(--transitions-time, 0.2s),
@@ -16,8 +14,8 @@
           border var(--transitions-time, 0.2s);
 
   &:hover {
-    color: var(--input-text-active-color);
-    background: var(--input-background-active-color);
-    border-color: var(--input-border-active-color);
+    color: rgb(var(--on-secondary-100));
+    background: rgb(var(--secondary-100));
+    border-bottom-color: rgb(var(--secondary-500));
   }
 }

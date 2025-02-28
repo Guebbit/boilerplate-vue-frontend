@@ -1,4 +1,3 @@
-
 <script lang="ts">
 export default {
     name: 'HomePage'
@@ -6,7 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { inject, watch, onMounted, ref } from 'vue'
+import { ref, inject, watch, onMounted, onUnmounted } from 'vue'
 import type { Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
@@ -14,6 +13,7 @@ import { storeToRefs } from 'pinia'
 import { useCoreStore } from '@/stores/core'
 import { useCounterStore } from '@/stores/counter'
 import { IToastType, useToastStore } from '@/stores/toasts'
+import { createSocket } from '@/utils/helperSockets.ts'
 import LayoutDefault from '@/layouts/LayoutDefault.vue'
 import CounterInput from '@/components/atoms/CounterInput.vue'
 
@@ -25,7 +25,6 @@ import type { ProvidedRefMutationFunction, ProvidedRefType } from '@/types'
 const { t } = useI18n()
 
 
-
 /**
  * Toast store
  */
@@ -35,8 +34,7 @@ const {
 
 const testAddMessage = () => {
     addMessage('Hello world ' + Date.now(), IToastType.SECONDARY)
-};
-
+}
 
 
 /**
@@ -44,7 +42,7 @@ const testAddMessage = () => {
  */
 const {
     loadings
-} = storeToRefs(useCoreStore());
+} = storeToRefs(useCoreStore())
 
 /**
  * Loading examples
@@ -63,18 +61,15 @@ setTimeout(() => {
 }, 500)
 
 
-
-
 /**
  * Counter store
  */
-const store = useCounterStore();
+const store = useCounterStore()
 const {
     count,
     doubleCount
     // Refs needs to be extracted with this helper function
 } = storeToRefs(store)
-
 
 /**
  * These functions can be used even without being deconstructed
@@ -96,7 +91,8 @@ const {
     setProvidedRef: ProvidedRefMutationFunction
 }>('providedRef', {
     providedRef: ref('Not provided'),
-    setProvidedRef: () => {}
+    setProvidedRef: () => {
+    }
 })
 
 /**
@@ -112,6 +108,23 @@ onMounted(() => {
     console.log('HOME was mounted')
 })
 
+
+/**
+ * Websocket
+ */
+const websocketMessages = ref<string[]>([])
+onMounted(() => {
+    const ws = createSocket('ws://localhost:3000/ws', {
+        onOpen: (ws) => {
+            ws.send('Hello from client')
+        },
+        onMessage: (ws, { data }) => {
+            websocketMessages.value.push(data)
+            console.log('Message received', data)
+        }
+    })
+    onUnmounted(() => ws.close())
+})
 </script>
 
 <template>
@@ -155,36 +168,41 @@ onMounted(() => {
             <div class="theme-card animate-on-hover card-outlined">
                 <div class="card-header">
                     <h3>
-                      <b>{{ providedRef }}</b>
+                        <b>{{ providedRef }}</b>
                     </h3>
                     <p>{{ t('home-page.label-provided') }}</p>
                 </div>
                 <div class="card-content">
                     <label for="providedRefInput">
-                      {{ t('home-page.label-provided-change-typing') }}
+                        {{ t('home-page.label-provided-change-typing') }}
                     </label>
                     <input
-                      v-model="providedRef"
-                      id="providedRefInput"
-                      class="theme-input"
-                      type="text"
+                        v-model="providedRef"
+                        id="providedRefInput"
+                        class="theme-input"
+                        type="text"
                     />
                     <br />
                     <label for="providedRefInput2">
-                      {{ t('home-page.label-provided-change-mutation') }}
+                        {{ t('home-page.label-provided-change-mutation') }}
                     </label>
                     <br />
                     <input
-                      :value="providedRef"
-                      @input="event => setProvidedRef(event.target?.value ?? '')"
-                      id="providedRefInput2"
-                      class="theme-input"
-                      type="text"
+                        :value="providedRef"
+                        @input="event => setProvidedRef(event.target?.value ?? '')"
+                        id="providedRefInput2"
+                        class="theme-input"
+                        type="text"
                     />
                 </div>
             </div>
-            <div>
-              <h1>TODO mettere qualcosa qua</h1>
+            <div class="websocket-messages">
+                <div
+                    v-for="message in websocketMessages"
+                    class="theme-card"
+                >
+                    {{ message }}
+                </div>
             </div>
         </div>
 
@@ -199,7 +217,13 @@ onMounted(() => {
                 class="theme-button"
                 @click="testAddMessage"
             >
-                Add test message
+                Add test alert
+            </button>
+            <button
+                class="theme-button"
+                @click="websocketMessages = []"
+            >
+                Reset messages
             </button>
         </div>
     </LayoutDefault>
@@ -207,10 +231,6 @@ onMounted(() => {
 
 <style lang="scss">
 #home-page {
-    .theme-page-title {
-        margin-bottom: 100px;
-    }
-
     .info-wrapper {
         display: flex;
         justify-content: center;
@@ -218,6 +238,15 @@ onMounted(() => {
         flex-wrap: wrap;
         gap: 50px;
         margin-bottom: 50px;
+    }
+
+    .websocket-messages {
+        overflow-y: auto;
+        max-height: 300px;
+
+        & > * {
+            margin-bottom: 12px;
+        }
     }
 }
 </style>

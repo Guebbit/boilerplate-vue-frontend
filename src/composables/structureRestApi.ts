@@ -71,6 +71,8 @@ export const useStructureRestApi = <
    * Generic fetch for all types of requests,
    * Just for loading management
    *
+   *
+   * @key F - type of the response, that can be anything
    * @param apiCall
    * @param enableLoading
    * @param loadingPostfix
@@ -110,7 +112,7 @@ export const useStructureRestApi = <
       loadingPostfix = ""
   ) => {
     // If TTL is not expired, the current stored data is still valid
-    if (forced || Date.now() - lastUpdateAll < allTTL)
+    if (!forced && Date.now() - lastUpdateAll < allTTL)
       return Promise.resolve(itemDictionary.value)
 
     // Proceed with the request, but first update the lastUpdate
@@ -126,9 +128,8 @@ export const useStructureRestApi = <
             if (!fetchMismatch)
               lastUpdateTarget[items[index][identifier] as K] = Date.now()
           }
-          lastUpdateAll = Date.now()
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
           // Reset TTL in case of error
           lastUpdateAll = 0
           throw error
@@ -155,7 +156,7 @@ export const useStructureRestApi = <
       loadingPostfix = ""
   ) => {
     // If TTL is not expired, the current stored data is still valid
-    if (forced || Date.now() - lastUpdateParent[parentId] < allTTL)
+    if (!forced && Date.now() - lastUpdateParent[parentId] < allTTL)
       return Promise.resolve(getRecordsByParent(parentId))
 
     // Proceed with the request, but first update the lastUpdate
@@ -167,10 +168,10 @@ export const useStructureRestApi = <
     return apiCall
         .then((items = [] as T[]) => {
           for (let index = 0, length_ = items.length; index < length_; index++) {
-            addToParent(parentId, items[index][identifier])
+            addToParent(parentId, items[index][identifier] as K)
             if (fetchMismatch) {
               // if mismatch, we don't want to overwrite the fetchTarget's item
-              editRecord(items[index][identifier], items[index], true)
+              editRecord(items[index][identifier] as K, items[index], true)
             } else {
               // no mismatch so we can add item AND update the target lastUpdate
               addRecord(items[index])
@@ -178,9 +179,8 @@ export const useStructureRestApi = <
             }
           }
           removeDuplicateChildren(parentId)
-          lastUpdateParent[parentId] = Date.now()
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
           // Reset TTL in case of error
           lastUpdateParent[parentId] = 0
           throw error
@@ -192,38 +192,43 @@ export const useStructureRestApi = <
    * Get target item from server
    *
    * @param apiCall
-   * @param id
+   * @param id - can be undefined if we don't know yet the id, no TTL check will be done thought
    * @param forced
    * @param enableLoading
    * @param loadingPostfix - custom loading key
    */
   const fetchTarget = (
       apiCall: Promise<T | undefined>,
-      id: K,
+      id?: K,
       forced = false,
       enableLoading = true,
       loadingPostfix = ""
   ) => {
     // If TTL is not expired, the current stored data is still valid
-    if (forced || Date.now() - (lastUpdateTarget[id] ?? 0) < targetTTL)
+    // (if id is not provided, we must force through the request)
+    if (id && !forced && Date.now() - (lastUpdateTarget[id]) < targetTTL)
       return Promise.resolve(getRecord(id))
 
     // Proceed with the request, but first update the lastUpdate
-    lastUpdateTarget[id] = Date.now()
+    if(id)
+      lastUpdateTarget[id] = Date.now()
     if (enableLoading)
       startLoading(loadingPostfix)
 
     // request
     return apiCall
         .then((item: T | undefined) => {
-          if (item)
-            addRecord(item)
-          lastUpdateTarget[id] = Date.now()
-          return getRecord(id)
+          if (!item)
+            return;
+          addRecord(item)
+          // in case it wasn't provided the id, we must update the lastUpdate now
+          lastUpdateTarget[item[identifier] as K] = Date.now()
+          return getRecord(item[identifier] as K)
         })
         .catch((error: unknown) => {
           // Reset TTL in case of error
-          lastUpdateTarget[id] = 0
+          if(id)
+            lastUpdateTarget[id] = 0
           throw error
         })
         .finally(() => enableLoading && stopLoading(loadingPostfix))
@@ -235,7 +240,7 @@ export const useStructureRestApi = <
    *
    * @param apiCall
    * @param dummyData
-   * @param fetchLike
+   * @param fetchLike - data of the created item will be fetched like a fetchTarget
    * @param enableLoading
    * @param loadingPostfix - custom loading key
    */
@@ -280,15 +285,15 @@ export const useStructureRestApi = <
 
   /**
    *
+   * @key F - type of the response, that can be something else than T
    * @param apiCall
    * @param id
    * @param itemData
    * @param enableLoading
    * @param loadingPostfix - custom loading key
    */
-  // TODO typings
-  const updateTarget = <F = any>(
-      apiCall: Promise<any>,
+  const updateTarget = <F = T>(
+      apiCall: Promise<F>,
       id: K,
       itemData: Partial<T>,
       enableLoading = true,
@@ -299,7 +304,7 @@ export const useStructureRestApi = <
     if (enableLoading)
       startLoading(loadingPostfix)
     return apiCall
-        .catch((error) => {
+        .catch((error: unknown) => {
           // Rollback in case of error
           if (oldItemData)
             editRecord(id, oldItemData)
@@ -310,12 +315,12 @@ export const useStructureRestApi = <
 
   /**
    *
+   * @key F - type of the response
    * @param apiCall
    * @param id
    * @param enableLoading
    * @param loadingPostfix - custom loading key
    */
-  // TODO typings
   const deleteTarget = <F = unknown>(
       apiCall: Promise<F>,
       id: K,
@@ -327,7 +332,7 @@ export const useStructureRestApi = <
     if (enableLoading)
       startLoading(loadingPostfix)
     return apiCall
-        .catch((error) => {
+        .catch((error: unknown) => {
           // Rollback in case of error
           if (oldItemData)
             addRecord(oldItemData)

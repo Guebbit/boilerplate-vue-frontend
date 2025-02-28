@@ -1,14 +1,6 @@
 @use "sass:map";
 @use "@guebbit/css-toolkit" as guebbit;
 @use "./variables" as vars;
-@use "./colors" as colors;
-
-/**
- * Function to easily get theme colors
- */
-@function get-theme-color($color, $variant: "500") {
-  @return map.get(map.get(colors.$theme-colors, $color), $variant);
-}
 
 /**
  * Mixin for mobile

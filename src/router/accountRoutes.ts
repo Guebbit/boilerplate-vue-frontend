@@ -1,23 +1,6 @@
 import { useProfileStore } from '@/stores/profile.ts'
-import type { RouteRecordRaw, NavigationGuardWithThis } from 'vue-router'
-import { isAdmin, isAuth, isGuest, refreshAuth } from '@/middlewares/authentications.ts'
-
-/**
- * No need for a component, just logout the user and redirect to the home page
- *
- * @param to
- * @param from
- * @param next
- */
-const logoutTrigger: NavigationGuardWithThis<undefined> = (to, from, next) => {
-    const {
-        logout
-    } = useProfileStore()
-    logout()
-    next({
-        name: 'Home'
-    });
-}
+import type { RouteRecordRaw } from 'vue-router'
+import { isAuth, isGuest } from '@/middlewares/authentications.ts'
 
 export default [
     {
@@ -40,6 +23,20 @@ export default [
     {
         path: 'logout',
         name: 'Logout',
-        beforeEnter: logoutTrigger
+        component: {
+            /**
+             * No need for a true component, just logout the user and be redirected to Home
+             * @param to
+             * @param from
+             * @param next
+             */
+            beforeRouteEnter: async (to, from, next) => {
+                const { logout } = useProfileStore()
+                await logout()
+                next({
+                    name: 'Home'
+                });
+            }
+        }
     }
 ] as RouteRecordRaw[]

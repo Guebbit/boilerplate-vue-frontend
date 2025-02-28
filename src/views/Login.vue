@@ -46,7 +46,7 @@ const {
             email: true
         })
         .extend({
-            password: z.string().min(8, t('users-form.password-required')),
+            password: z.string().min(8, t('users-form.password-required'))
         }),
     false
 )
@@ -54,7 +54,7 @@ const {
 /**
  * If not in production, dummy user of local database
  */
-if(process.env.NODE_ENV !== 'production')
+if (process.env.NODE_ENV !== 'production')
     form.value = {
         email: 'root@root.it',
         password: 'RootRoot_123'
@@ -74,14 +74,16 @@ const submitForm = () => {
         return
     }
     return login(form.value.email!, form.value.password!, form.value.remember)
-        .then(() => fetchProfile())
-        .then(() => route.query.continue ?
-            router.push({
-                path: route.query.continue as string
-            }) :
-            router.push({
-                name: 'Home'
-            })
+        .then(() =>
+            // if query continue was set, redirect to that page,
+            // otherwise redirect to home
+            route.query.continue ?
+                router.push({
+                    path: route.query.continue as string
+                }) :
+                router.push({
+                    name: 'Home'
+                })
         )
         .catch(({ message, errors = [] }) => {
             if (errors.length === 0)
@@ -94,9 +96,9 @@ const submitForm = () => {
 
 <template>
     <LayoutDefault id="login-page">
-        <h1 class="theme-page-title">
-            <span>{{ t('login-page.page-title') }}</span>
-        </h1>
+        <template #header>
+            <h1 class="theme-page-title"><span>{{ t('login-page.page-title') }}</span></h1>
+        </template>
 
         <div class="theme-card theme-form-container">
             <form
@@ -131,7 +133,8 @@ const submitForm = () => {
                         id="form-password"
                         class="theme-input"
                     />
-                    <p v-if="showErrors && errors.password" class="form-error-message">{{ errors.password.join(', ')  }}</p>
+                    <p v-if="showErrors && errors.password" class="form-error-message">{{ errors.password.join(', ')
+                        }}</p>
                 </div>
 
                 <div class="theme-form-input-checkbox">

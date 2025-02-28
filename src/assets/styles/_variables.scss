@@ -1,3 +1,25 @@
+@use "@guebbit/css-toolkit" as guebbit;
+
+
+/**
+ * Theme colors
+ * They will change with the dark and light theme
+ */
+$primary-color: #ff9800 !default;
+$secondary-color: #00bcd4 !default;
+$primary-color--dark: #00bcd4 !default;
+$secondary-color--dark: #ff9800 !default;
+
+$theme-colors: (
+    "primary": guebbit.create-collection($primary-color),
+    "secondary": guebbit.create-collection($secondary-color)
+);
+
+$theme-colors-dark: (
+    "primary": guebbit.create-collection($primary-color--dark),
+    "secondary": guebbit.create-collection($secondary-color--dark)
+);
+
 /**
  * Main settings
  */
@@ -7,13 +29,11 @@ $css-ui-dark-theme-class: "theme--dark" !default;
  * Media thresholds
  * "tablet" is between mobile and desktop
  * Should always start with mobile then using "@media (min-width: XXX)" for desktop
+ *
+ * Mobile (max 670px)
+ * Tablet (max 1366px)
+ * Desktop (max 1920px)
+ * Large Destop (min 1920px)
  */
-$g-threshold-mobile: 540px !default;
-$g-threshold-desktop: 1280px !default;
-
-/**
- * Sizes
- */
-$g-padding: 28px !default;
-$g-transitions-time: 0.2s !default;
-$g-nav-height: 54px !default;
+$g-threshold-mobile: 670px !default;
+$g-threshold-desktop: 1920px !default;

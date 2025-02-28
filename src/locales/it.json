@@ -28,13 +28,13 @@
     "label-increment": "@.capitalize:generic.increment",
     "label-delayed-increment": "@.capitalize:generic.increment asincrono"
   },
-  "page-list-users": {
+  "users-list-page": {
     "page-title": "Lista utenti",
     "user": "@:generic.user [0]",
     "modified-user-list": "@.customModifier:{'generic.user'} @:{'generic.list'}",
     "button-go-to-details": "Pagina utente"
   },
-  "page-target-users": {
+  "user-target-page": {
     "page-title": "Utente selezionato",
     "button-go-to-list": "Lista utenti"
   },

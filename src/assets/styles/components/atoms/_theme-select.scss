@@ -11,8 +11,8 @@
   width: 15em;
   padding: 0.5em 1em;
   background: var(--select-icon) no-repeat right 0.8em center / 1.4em,
-    linear-gradient(to left, var(--select-icon-background) 3em, var(--select-background-color) 3em);
-  color: var(--select-text-color);
+    linear-gradient(to left, rgb(var(--primary-700)) 3em, rgb(var(--primary-500)) 3em);
+  color: rgb(var(--on-primary-500));
   border-radius: 0.2em;
   cursor: pointer;
   // remove IE arrow

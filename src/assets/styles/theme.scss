@@ -1,7 +1,6 @@
 @use "@guebbit/css-toolkit" as guebbit;
 @use "variables" as vars;
-@use "colors" as colors;
-@use "functions" as fn;
+
 @use "components/atoms/theme-button";
 @use "components/atoms/theme-input";
 @use "components/atoms/theme-select";
@@ -9,11 +8,10 @@
 @use "components/atoms/theme-card";
 
 /**
- * Create specific colors (css vars and various helper classes),
+ * Create specific colors (various helper classes),
  * Theme colors and material various colors as helpers
  */
-@include guebbit.create-colors(colors.$theme-colors);
-@include guebbit.create-colors(guebbit.$colors-collection, (), ("root", "on-root"));
+@include guebbit.create-colors(guebbit.$colors-collection);
 
 /**
  * Default theme
@@ -21,83 +19,66 @@
 :root {
 
   /**
+   * Add the theme colors to the root
+   */
+  @include guebbit.create-colors-vars(vars.$theme-colors);
+
+  /**
+   * Add all the wanted guebbit colors to the root
+   */
+  @include guebbit.create-colors-vars(guebbit.$colors-collection);
+
+  /**
+   * Add the placeholder names to the root (required step)
+   */
+  @include guebbit.create-colors((
+      "primary": guebbit.create-collection(),
+      "secondary": guebbit.create-collection()
+  ), true);
+
+  /**
+   * Generic variables
+   */
+  --padding: 28px;
+  --transitions-time: 0.2s;
+  --nav-height: 54px;
+
+  /**
+   * CSS Theme (semantic color variables for this project)
+   */
+  --theme-surface: #ffffff;
+  --theme-on-surface: rgb(var(--grey-900));
+  --theme-background: #eeeeee;
+  --theme-on-background: rgb(var(--grey-900));
+
+  /**
    * Overrides
    */
   --on-secondary-600: #fff !important;
 
   /**
-   * Generic variables
+   * Other variables
    */
-  --padding: #{vars.$g-padding};
-  --transitions-time: #{vars.$g-transitions-time};
-  --nav-height: #{vars.$g-nav-height};
-
-  /**
-   * CSS Theme (semantic color variables for this project)
-   */
-  --body-background-color: rgb(var(--core-white));
-  --body-text-color: rgb(var(--grey-900));
-
-  --title-border-color: rgb(var(--primary-500));
-
-  // theme anchors
-  --anchor-text-color: rgb(var(--primary-500));
-  --anchor-background-color: transparent;
-  --anchor-text-active-color: rgb(var(--on-secondary-600));
-  --anchor-background-active-color: rgb(var(--secondary-600));
-
-  // theme buttons
-  --button-text-color: rgb(var(--on-primary-500));
-  --button-background-color: rgb(var(--primary-500));
-  --button-text-active-color: rgb(var(--on-secondary-500));
-  --button-background-active-color: rgb(var(--secondary-500));
-
-  // theme inputs
-  --input-text-color: rgb(var(--on-primary-500));
-  --input-background-color: #{rgba(fn.get-theme-color("primary", "500"), 0.1)};
-  --input-border-color: rgb(var(--primary-500));
-  --input-background-active-color: #{rgba(fn.get-theme-color("secondary", "500"), 0.1)};
-  --input-text-active-color: rgb(var(--on-secondary-500));
-  --input-border-active-color: rgb(var(--secondary-500));
-
-  // theme cards
-  --select-text-color: rgb(var(--on-primary-500));
-  --select-background-color: rgb(var(--primary-500));
   --select-icon: url(https://upload.wikimedia.org/wikipedia/commons/9/9d/Caret_down_font_awesome_whitevariation.svg);
-  --select-icon-background: rgb(var(--primary-700));
-
-  // theme cards
-  --card-text-color: rgb(var(--on-primary-500));
-  --card-background-color: rgb(var(--primary-500));
-  --card-text-active-color: rgb(var(--on-secondary-500));
-  --card-background-active-color: rgb(var(--secondary-500));
 }
 
-
 /**
- * Dark Theme (overrides from light theme)
+ * Dark theme
+ * (Will be applied by class name and by prefers-color-scheme)
  */
 @mixin theme-dark-builder {
-  --card-text-color: rgb(var(--on-primary-500));
-  --card-background-color: rgb(var(--primary-700));
-  --card-text-active-color: rgb(var(--on-secondary-700));
-  --card-background-active-color: rgb(var(--secondary-700));
+  @include guebbit.create-colors-vars(vars.$theme-colors-dark);
 }
 
-/**
- * By class
- */
-.#{vars.$css-ui-dark-theme-class}{
-  :root{
+// Class name
+.#{vars.$css-ui-dark-theme-class} {
+  :root {
     @include theme-dark-builder;
   }
 }
-
-/**
- * By browser
- */
+// Prefers color scheme
 @media (prefers-color-scheme: dark) {
-  :root{
+  :root {
     @include theme-dark-builder;
   }
 }

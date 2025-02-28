@@ -62,26 +62,34 @@ const {
             >
                 {{ t('navigation.label-profile', 2) }}
             </RouterLink>
+
+            <slot name="nav-left" />
         </nav>
 
         <slot />
 
-        <button
-            v-show="!isAuth && !route.fullPath.includes('login')"
-            class="theme-button"
-            @click="router.push(routerLinkI18n(loginContinueTo(route.fullPath)))"
-        >
-            {{ t('navigation.label-login') }}
-        </button>
-        <button
-            v-show="isAuth"
-            class="theme-button"
-            @click="router.push(routerLinkI18n({ name: 'Logout' }))"
-        >
-            {{ t('navigation.label-logout') }}
-        </button>
+        <nav>
+            <slot name="nav-right" />
 
-        <LanguageSwitcher />
+            <button
+                v-show="!isAuth && !route.fullPath.includes('login')"
+                class="theme-button"
+                @click="router.push(routerLinkI18n(loginContinueTo(route.fullPath)))"
+            >
+                {{ t('navigation.label-login') }}
+            </button>
+
+            <button
+                v-show="isAuth"
+                class="theme-button"
+                @click="router.push(routerLinkI18n({ name: 'Logout' }))"
+            >
+                {{ t('navigation.label-logout') }}
+            </button>
+
+            <LanguageSwitcher />
+        </nav>
+
     </header>
 </template>
 
@@ -89,12 +97,6 @@ const {
 @use '@/assets/styles/functions' as fn;
 
 .page-header {
-    line-height: 1.5;
-    height: var(--nav-height);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-
     .logo {
         display: block;
         max-height: 100%;
@@ -102,8 +104,8 @@ const {
     }
 
     nav {
-        width: 100%;
-        height: 100%;
+        display: flex;
+        gap: 1em;
 
         & > a {
             height: 100%;
@@ -112,18 +114,23 @@ const {
             padding: 0 1em;
             border-left: 1px solid var(--color-border);
             text-shadow: 1px -1px 1em #000;
+            text-transform: capitalize;
 
             &:hover,
             &.router-link-exact-active {
-                color: var(--anchor-text-active-color);
-                background: var(--anchor-background-active-color);
+                color: rgb(var(--on-secondary-600));
+                background: rgb(var(--secondary-600));
             }
         }
     }
 
     @include fn.for-desktop() {
         nav {
-            text-align: left;
+            justify-content: flex-start;
+
+            &:last-child{
+                justify-content: flex-end;
+            }
         }
     }
 }

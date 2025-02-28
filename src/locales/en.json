@@ -28,13 +28,13 @@
     "label-increment": "@.capitalize:generic.increment",
     "label-delayed-increment": "Async @:generic.increment"
   },
-  "page-list-users": {
+  "users-list-page": {
     "page-title": "Users list",
     "user": "@:generic.user [0]",
     "modified-user-list": "@.customModifier:{'generic.user'} @:{'generic.list'}",
     "button-go-to-details": "User page"
   },
-  "page-target-users": {
+  "user-target-page": {
     "page-title": "User page",
     "button-go-to-list": "Users list"
   },

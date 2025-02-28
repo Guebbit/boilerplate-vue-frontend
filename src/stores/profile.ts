@@ -7,7 +7,7 @@ import {
     fetchProfileApi,
     patchProfileApi,
     refreshTokenApi,
-    loginApi
+    loginApi, logoutApi
 } from '@/api'
 
 // Typescript, for now, doesn't allow a cleaner approach
@@ -61,6 +61,7 @@ export const useProfileStore = defineStore('profile', () => {
                     accessToken.value = token
                 )
         )
+            .then(() => fetchProfile(true))
 
     /**
      * Refresh access token
@@ -91,7 +92,7 @@ export const useProfileStore = defineStore('profile', () => {
                     selectedIdentifier.value = data.id
                     return data
                 }),
-            1,  // dummy identifier
+            undefined,
             forced
         )
     }
@@ -131,12 +132,16 @@ export const useProfileStore = defineStore('profile', () => {
     const logout = () => {
         itemDictionary.value = {}
         selectedIdentifier.value = undefined
-        // replace jwt cookie with an expired one
-        // eslint-disable-next-line unicorn/no-document-cookie
-        document.cookie = "jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        accessToken.value = undefined;
+        // replace jwt cookie with an expired one (warning: secure httpOnly cookies can't be deleted from the client)
+        // document.cookie = "jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        return logoutApi()
     }
 
+
     return {
+        itemDictionary,
+
         profileLanguage,
         profile,
         isAdmin,

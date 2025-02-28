@@ -45,8 +45,8 @@ const modelValue = defineModel<number>()
         cursor: pointer;
 
         &.active {
-            background-color: var(--button-background-color);
-            color: var(--button-text-color);
+            background-color: rgba(var(--primary-200) / 0.1);
+            color: rgb(var(--on-primary-500));
         }
 
         &:hover {

@@ -95,9 +95,9 @@ const submitForm = () => {
 
 <template>
     <LayoutDefault id="signup-page">
-        <h1 class="theme-page-title">
-            <span>{{ t('signup-page.page-title') }}</span>
-        </h1>
+        <template #header>
+            <h1 class="theme-page-title"><span>{{ t('signup-page.page-title') }}</span></h1>
+        </template>
 
         <div class="theme-card theme-form-container">
             <form

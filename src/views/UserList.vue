@@ -1,6 +1,14 @@
+<script lang="ts">
+export default {
+    name: 'UsersListPage'
+}
+</script>
+
 <template>
     <LayoutDefault id="user-list-page" class="item-list-page">
-        <h1 class="theme-page-title"><span>{{ t('page-list-users.page-title') }}</span></h1>
+        <template #header>
+            <h1 class="theme-page-title"><span>{{ t('users-list-page.page-title') }}</span></h1>
+        </template>
 
         <div>
             TODO: tipica pagina che carica la lista utenti (fare pinia, TTL, etc) + lista cliccabile
@@ -85,7 +93,7 @@
                             }
                         })"
                     >
-                        {{ t('page-list-users.button-go-to-details') }}
+                        {{ t('users-list-page.button-go-to-details') }}
                     </RouterLink>
                 </div>
             </div>

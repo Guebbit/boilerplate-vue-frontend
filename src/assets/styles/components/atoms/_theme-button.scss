@@ -1,7 +1,7 @@
 .theme-button {
   display: inline-block;
-  color: var(--button-text-color);
-  background: var(--button-background-color);
+  color: rgb(var(--on-primary-500));
+  background: rgba(var(--primary-200) / 0.5);
   transition:
           color var(--transitions-time, 0.2s),
           background-color var(--transitions-time, 0.2s);
@@ -22,7 +22,7 @@
   }
 
   &:hover {
-    color: var(--button-text-active-color);
-    background: var(--button-background-active-color);
+    color: rgb(var(--on-secondary-500));
+    background: rgba(var(--secondary-200) / 0.5);
   }
 }

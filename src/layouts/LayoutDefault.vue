@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useSlots } from 'vue';
+import { useSlots } from 'vue'
 import { storeToRefs } from 'pinia'
 import LoadingCore from '@/components/atoms/LoadingCore.vue'
 import LoadingSide from '@/components/atoms/LoadingSide.vue'
@@ -7,6 +7,7 @@ import Navigation from '@/components/organisms/Navigation.vue'
 import { useCoreStore } from '@/stores/core'
 import { useToastStore } from '@/stores/toasts'
 import { useProfileStore } from '@/stores/profile.ts'
+import { getCookie } from '@/utils/helperGenerics.ts'
 
 /**
  *
@@ -24,7 +25,7 @@ defineProps<{
  * - header
  * - navigation
  */
-const slots = useSlots();
+const slots = useSlots()
 
 /**
  * core loading
@@ -49,17 +50,19 @@ const {
  * Profile
  */
 const {
-    profile,
-    isAuth
+    profile
 } = storeToRefs(useProfileStore())
 const {
+    refreshToken,
     fetchProfile
 } = useProfileStore()
 
 /**
  * Fetch current user profile (if logged in)
  */
-fetchProfile()
+if(getCookie('isAuth'))
+    refreshToken()
+        .then(() => fetchProfile())
 </script>
 
 <template>
@@ -68,11 +71,11 @@ fetchProfile()
         <h3 v-if="profile">Hello {{ profile.email }}</h3>
     </Navigation>
 
-    <div v-if="slots.header">
-        <slot name="header" />
-    </div>
-
     <main :id class="page-content">
+        <div v-if="slots.header">
+            <slot name="header" />
+        </div>
+
         <div
             v-show="messages.length > 0"
             class="toast-container"
@@ -87,11 +90,14 @@ fetchProfile()
                 <button
                     class="theme-button"
                     @click="hideMessage(alert.id)"
-                >X</button>
+                >X
+                </button>
             </div>
         </div>
 
-        <slot />
+        <div class="page-container">
+            <slot />
+        </div>
     </main>
 
     <transition name="loaders-fade">
@@ -107,11 +113,6 @@ fetchProfile()
 </template>
 
 <style lang="scss">
-.page-content {
-    max-width: 1280px;
-    margin: 0 auto;
-}
-
 .loaders-fade {
     &-enter-active,
     &-leave-active {
@@ -124,7 +125,7 @@ fetchProfile()
     }
 }
 
-.toast-container{
+.toast-container {
     position: fixed;
     bottom: 0;
     right: 0;
