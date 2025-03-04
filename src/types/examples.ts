@@ -1,2 +1,2 @@
-export type ProvidedRefType = string;
-export type ProvidedRefMutationFunction = (value?: string) => void;
+export type ProvidedVariableType = string;
+export type ProvidedVariableMutationFunction = (value?: string) => void;

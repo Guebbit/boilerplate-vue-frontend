@@ -197,7 +197,9 @@ export const useItemList = <T = unknown>(
      * PAGINATION
      * Items shown in current page
      */
-    const pageItemList = computed(() => itemListSorted.value.slice(pageOffset.value, pageOffset.value + pageSize.value))
+    const pageItemList = computed(() =>
+        itemListSorted.value.slice(pageOffset.value, pageOffset.value + pageSize.value)
+    )
 
     /**
      * ---------------------------------- URL ------------------------------------

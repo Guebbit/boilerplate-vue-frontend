@@ -3,11 +3,12 @@ import { useI18n } from 'vue-i18n'
 import { z } from 'zod'
 import { useStructureRestApi } from '@/composables/structureRestApi.ts'
 import {
-    createUserApi as createUserApi,
-    deleteUserApi as deleteUserApi,
-    fetchUserByIdApi as fetchUserByIdApi,
-    fetchUsersApi as getUserListApi,
-    updateUserApi as updateUserApi,
+    createUserApi,
+    deleteUserApi,
+    fetchUserByIdApi,
+    fetchUsersAllApi,
+    fetchUsersApi,
+    updateUserApi,
     updateUserImageApi as updateUserImageApi
 } from '@/api'
 import { EUserRoles, type IUser, type IUserForm, type IUserIdentification } from '@/types/users.ts'
@@ -33,7 +34,7 @@ export const useUsersStore = defineStore('users', () => {
         createTarget,
         updateTarget,
         deleteTarget
-    } = useStructureRestApi<IUser, IUserIdentification>('id')
+    } = useStructureRestApi<IUser, IUserIdentification>()
 
     /**
      *
@@ -41,8 +42,29 @@ export const useUsersStore = defineStore('users', () => {
      */
     const fetchUsers = (forced = false) =>
         fetchAll(
-            getUserListApi()
-                .then(({ data }) => data),
+            fetchUsersAllApi()
+                .then(({ data }) => {
+                    console.log("ASDFASF", data)
+                    return data
+                }),
+            forced,
+            true
+        )
+
+    /**
+     * TODO paginazione online + offline o mista
+     *      mista: sotto una certa soglia di elementi, li scarico tutti e la tratto come offline, sopra una certa soglia vado a paginazione online
+     * @param forced
+     */
+    const fetchPaginationUsers = (forced = false) =>
+        fetchAll(
+            fetchUsersApi()
+                .then(({ data: { items, page, total, totalPages } }) => {
+                    console.log("PAGINATION", {
+                        items, page, total, totalPages
+                    })
+                    return items
+                }),
             forced,
             true
         )
@@ -183,6 +205,7 @@ export const useUsersStore = defineStore('users', () => {
 
         loading,
         fetchUsers,
+        fetchPaginationUsers,
         fetchUser,
         createUser,
         updateUser,

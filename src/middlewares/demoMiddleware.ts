@@ -24,7 +24,7 @@ export const demoMiddleware = (to: RouteLocationNormalized, from: RouteLocationN
         count,
     } = storeToRefs(store);
     count.value++;
-    // eslint-disable-next-line @typescript-eslint/restrict-plus-operands, no-console
+    // eslint-disable-next-line no-console
     console.log("count++: " + count.value);
 
     /**

@@ -70,12 +70,21 @@ export default tseslint.config(
     rules: {
       'no-console': 'warn',
       'no-debugger': 'warn',
+      'no-nested-ternary': 'off',
       'vue/script-indent': 'off',
       'vue/multi-word-component-names': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'off',
       'vue/require-default-prop': 'off',
       'vue/no-v-html': 'off',
-      'no-nested-ternary': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      // '@typescript-eslint/no-confusing-void-expression': 'off',
+      '@typescript-eslint/use-unknown-in-catch-callback-variable': 'off',
+
+      "@typescript-eslint/restrict-plus-operands": [
+        "error",
+        {
+          allowNumberAndString: true
+        }
+      ],
 
       '@typescript-eslint/naming-convention': [
         'error',
@@ -132,9 +141,6 @@ export default tseslint.config(
       // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/HEAD/docs/rules/better-regex.md
       'unicorn/consistent-destructuring': 'warn',
 
-      // TODO
-      // 'unicorn/prevent-abbreviations': 'off',
-
       // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/HEAD/docs/rules/filename-case.md
       'unicorn/filename-case': [
         'error',
@@ -188,11 +194,18 @@ export default tseslint.config(
   //     }
   // },
 
-  /**
-   *
-   */
+
   {
-    files: ['tests/**/*'],
+    files: ['tests/**/*', '**/*.spec.ts', '**/*.test.ts', '**/*.d.ts'],
+    rules: {
+      'unicorn/filename-case': 'off',
+      'unicorn/prevent-abbreviations': 'off',
+    }
+  },
+
+
+  {
+    files: ['tests/**/*', '**/*.spec.ts', '**/*.test.ts'],
 
     languageOptions: {
       globals: {

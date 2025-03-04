@@ -124,7 +124,7 @@ const {
         }
     }
 
-    @include fn.for-desktop() {
+    @include fn.for-tablet-and-desktop() {
         nav {
             justify-content: flex-start;
 

@@ -12,5 +12,4 @@ const languagesFakeDownload: Record<string, ITranslationDictionaries> = {
  * Demo of new locale loading from a server
  */
 export const fetchLanguageApi = (locale: string):Promise<[string, ITranslationDictionaries]> =>
-  // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
-  new Promise(resolve => setTimeout(() => resolve([locale, languagesFakeDownload[locale]]), 1000))
+  new Promise(resolve => setTimeout(() => { resolve([locale, languagesFakeDownload[locale]]); }, 1000))

@@ -64,8 +64,8 @@ export const i18n = createI18n({
      * Custom modifiers to transform translations
      */
     modifiers: {
-        customModifier: (string_) =>
-            typeof string_ === 'string' ? [...string_].join('.').toUpperCase() : string_
+        customSnakeCase: (value) =>
+            typeof value === 'string' ? value.split(' ').join('_') : value
     }
 })
 
@@ -74,12 +74,13 @@ export const i18n = createI18n({
  * If no language are present, add a fake default one
  */
 if(supportedLanguages.length === 0){
+    // eslint-disable-next-line no-console
     console.error("---------- NO LANGUAGES FOUND ----------")
     supportedLanguages.push(
-        (i18n.global.fallbackLocale as WritableComputedRef<string>).value ?? "no-lang"
+        (i18n.global.fallbackLocale as WritableComputedRef<string | undefined>).value ?? "no-lang"
     )
     loadedLanguages.push(
-        (i18n.global.fallbackLocale as WritableComputedRef<string>).value ?? "no-lang"
+        (i18n.global.fallbackLocale as WritableComputedRef<string | undefined>).value ?? "no-lang"
     )
 }
 

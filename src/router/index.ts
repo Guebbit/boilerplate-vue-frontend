@@ -39,12 +39,13 @@ const router = createRouter({
                 ...accountRoutes,
 
                 {
-                    path: 'error/:status',
+                    path: 'error/:status/:message?',
                     name: 'Error',
                     // route level code-splitting
                     // this generates a separate chunk (About.[hash].js) for this route
                     // which is lazy-loaded when the route is visited.
-                    component: () => import('@/views/Error.vue')
+                    component: () => import('@/views/Error.vue'),
+                    props: true,
                 },
 
                 /**
@@ -79,14 +80,15 @@ const router = createRouter({
 router.onError((error: Error) => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if(process.env.NODE_ENV !== 'production')
+        // eslint-disable-next-line no-console
         console.error('page error', error)
-    // return router.push({
-    //     name: 'Error',
-    //     params: {
-    //         status: 500,
-    //         message: error.message
-    //     }
-    // })
+    return router.push({
+        name: 'Error',
+        params: {
+            status: 500,
+            message: error.message
+        }
+    })
 })
 
 /**
@@ -105,6 +107,7 @@ router.onError((error: Error) => {
  *  - In-component beforeRouteLeave
  */
 router.beforeEach((to, from, next) => {
+    // eslint-disable-next-line no-console
     console.log(`Navigating from ${from.path} to ${to.path}`)
     next()
 })

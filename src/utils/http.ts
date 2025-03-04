@@ -108,6 +108,7 @@ export const onResponseReject = (error: AxiosError<IAxiosResponseErrorData, IAxi
         return Promise.reject(error.response.data);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if(process.env.NODE_ENV !== 'production')
+        // eslint-disable-next-line no-console
         console.error("------------- APP ERROR -------------", error);
     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
     return Promise.reject({

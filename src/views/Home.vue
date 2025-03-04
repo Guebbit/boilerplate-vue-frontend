@@ -17,7 +17,7 @@ import { createSocket } from '@/utils/helperSockets.ts'
 import LayoutDefault from '@/layouts/LayoutDefault.vue'
 import CounterInput from '@/components/atoms/CounterInput.vue'
 
-import type { ProvidedRefMutationFunction, ProvidedRefType } from '@/types'
+import type { ProvidedVariableMutationFunction, ProvidedVariableType } from '@/types'
 
 /**
  * Use translation
@@ -84,21 +84,21 @@ const {
  * Same value as the one in Pinia, to show they are the same.
  */
 const {
-    providedRef,
-    setProvidedRef
+    ProvidedVariable,
+    setProvidedVariable
 } = inject<{
-    providedRef: Ref<ProvidedRefType>,
-    setProvidedRef: ProvidedRefMutationFunction
-}>('providedRef', {
-    providedRef: ref('Not provided'),
-    setProvidedRef: () => {
+    ProvidedVariable: Ref<ProvidedVariableType>,
+    setProvidedVariable: ProvidedVariableMutationFunction
+}>('ProvidedVariable', {
+    ProvidedVariable: ref('Not provided'),
+    setProvidedVariable: () => {
     }
 })
 
 /**
  * Watcher
  */
-watch(providedRef, (val) => console.log('Provided ref changed', val))
+watch(ProvidedVariable, (val) => console.log('Provided ref changed', val))
 
 /**
  * Created and mounted
@@ -168,29 +168,29 @@ onMounted(() => {
             <div class="theme-card animate-on-hover card-outlined">
                 <div class="card-header">
                     <h3>
-                        <b>{{ providedRef }}</b>
+                        <b>{{ ProvidedVariable }}</b>
                     </h3>
                     <p>{{ t('home-page.label-provided') }}</p>
                 </div>
                 <div class="card-content">
-                    <label for="providedRefInput">
+                    <label for="ProvidedVariableInput">
                         {{ t('home-page.label-provided-change-typing') }}
                     </label>
                     <input
-                        v-model="providedRef"
-                        id="providedRefInput"
+                        v-model="ProvidedVariable"
+                        id="ProvidedVariableInput"
                         class="theme-input"
                         type="text"
                     />
                     <br />
-                    <label for="providedRefInput2">
+                    <label for="ProvidedVariableInput2">
                         {{ t('home-page.label-provided-change-mutation') }}
                     </label>
                     <br />
                     <input
-                        :value="providedRef"
-                        @input="event => setProvidedRef(event.target?.value ?? '')"
-                        id="providedRefInput2"
+                        :value="ProvidedVariable"
+                        @input="event => setProvidedVariable(event.target?.value ?? '')"
+                        id="ProvidedVariableInput2"
                         class="theme-input"
                         type="text"
                     />

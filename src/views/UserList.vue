@@ -4,18 +4,86 @@ export default {
 }
 </script>
 
+<script setup lang="ts">
+import "../assets/styles/pages/userList.scss";
+import { onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
+import { routerLinkI18n } from '@/plugins/i18n';
+import { useI18n } from 'vue-i18n'
+import { storeToRefs } from 'pinia'
+import { useUsersStore } from '@/stores/users';
+import { useItemList, type ISortOrder } from '@/composables/itemList.ts'
+
+import LayoutDefault from '@/layouts/LayoutDefault.vue'
+import ListPagination from '@/components/molecules/ListPagination.vue'
+
+import type { IUser } from '@/types'
+
+/**
+ * Generics
+ */
+const { t } = useI18n()
+
+/**
+ * Users store
+ */
+const {
+    fetchUsers,
+} = useUsersStore();
+const {
+    usersList,
+} = storeToRefs(useUsersStore());
+
+/**
+ * Composable that will have most of the logic
+ * of all this kind of pages
+ */
+const {
+    startLoading,
+    stopLoading,
+    loading,
+    itemList,
+    selectedIdentifier,
+    selectedRecord,
+    pageCurrent,
+    pageSize,
+    pageTotal,
+    filters,
+    sorters,
+    list,
+    total
+} = useItemList<IUser>()
+
+/**
+ * Initialize pagination
+ */
+pageSize.value = 6
+
+/**
+ * Get users from API
+ */
+onMounted(fetchUsers)
+
+/**
+ * Filters and sorters
+ * TODO decidere gerarchia, logical gates, etc
+ */
+filters.value.name = "";
+sorters.value = {
+    name: '',
+} as Record<keyof IUser, ISortOrder>
+</script>
+
 <template>
     <LayoutDefault id="user-list-page" class="item-list-page">
         <template #header>
             <h1 class="theme-page-title"><span>{{ t('users-list-page.page-title') }}</span></h1>
         </template>
 
-        <div>
-            TODO: tipica pagina che carica la lista utenti (fare pinia, TTL, etc) + lista cliccabile
-            TODO i colori da HEX a RGB così vai le variazioni di opacità
-        </div>
 
+        <pre>{{usersList}}</pre>
 
+        <!--
         <ListPagination
             v-model="pageCurrent"
             :length="pageTotal"
@@ -103,84 +171,6 @@ export default {
             v-model="pageCurrent"
             :length="pageTotal"
         />
+        -->
     </LayoutDefault>
 </template>
-
-<script setup lang="ts">
-// TODO creare file SCSS per questa specifica pagina (tipo tema) e poi fare customizzazioni
-// TODO Guardare vrmetacarpi pagine simili
-// (fare anche per User.vue)
-
-import "../assets/styles/pages/userList.scss";
-import { onBeforeMount } from 'vue'
-import { RouterLink } from 'vue-router'
-import { routerLinkI18n } from '@/plugins/i18n';
-import { useI18n } from 'vue-i18n'
-import { storeToRefs } from 'pinia'
-import { useUsersStore } from '@/stores/users';
-import { useItemList, type ISortOrder } from '@/composables/itemList.ts'
-
-import LayoutDefault from '@/layouts/LayoutDefault.vue'
-import ListPagination from '@/components/molecules/ListPagination.vue'
-
-import type { IUser } from '@/types'
-
-/**
- * Generics
- */
-const { t } = useI18n()
-
-/**
- * Users store
- */
-const {
-   fetchUsers,
-} = useUsersStore();
-const {
-    usersList,
-} = storeToRefs(useUsersStore());
-
-/**
- * Composable that will have most of the logic
- * of all this kind of pages
- */
-const {
-    startLoading,
-    stopLoading,
-    loading,
-    itemList,
-    selectedIdentifier,
-    selectedRecord,
-    pageCurrent,
-    pageSize,
-    pageTotal,
-    filters,
-    sorters,
-    list,
-    total
-} = useItemList<IUser>()
-
-/**
- * Initialize pagination
- */
-pageSize.value = 6
-
-/**
- * Get users from API
- */
-onBeforeMount(() => {
-    startLoading(loadingPostfix);
-   fetchUsers()
-        .then(() => itemList.value = usersList.value)
-        .finally(stopLoading)
-})
-
-/**
- * Filters and sorters
- * TODO decidere gerarchia, logical gates, etc
- */
-filters.value.name = "";
-sorters.value = {
-    name: '',
-} as Record<keyof IUser, ISortOrder>
-</script>

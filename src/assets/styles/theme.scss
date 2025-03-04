@@ -7,11 +7,6 @@
 @use "components/atoms/theme-page-title";
 @use "components/atoms/theme-card";
 
-/**
- * Create specific colors (various helper classes),
- * Theme colors and material various colors as helpers
- */
-@include guebbit.create-colors(guebbit.$colors-collection);
 
 /**
  * Default theme
@@ -23,18 +18,6 @@
    */
   @include guebbit.create-colors-vars(vars.$theme-colors);
 
-  /**
-   * Add all the wanted guebbit colors to the root
-   */
-  @include guebbit.create-colors-vars(guebbit.$colors-collection);
-
-  /**
-   * Add the placeholder names to the root (required step)
-   */
-  @include guebbit.create-colors((
-      "primary": guebbit.create-collection(),
-      "secondary": guebbit.create-collection()
-  ), true);
 
   /**
    * Generic variables
@@ -45,6 +28,7 @@
 
   /**
    * CSS Theme (semantic color variables for this project)
+   * TODO
    */
   --theme-surface: #ffffff;
   --theme-on-surface: rgb(var(--grey-900));
@@ -61,6 +45,8 @@
    */
   --select-icon: url(https://upload.wikimedia.org/wikipedia/commons/9/9d/Caret_down_font_awesome_whitevariation.svg);
 }
+
+
 
 /**
  * Dark theme

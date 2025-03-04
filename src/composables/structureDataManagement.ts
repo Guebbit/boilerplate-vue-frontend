@@ -23,7 +23,7 @@ export const useStructureDataManagement = <
     /**
      * List of items
      */
-    const itemList = computed<T[]>(() => Object.values(itemDictionary.value));
+    const itemList = computed<T[]>(() => Object.values(itemDictionary.value as Record<K, T>));
 
     /**
      * Get record from object dictionary using identifier
@@ -31,7 +31,7 @@ export const useStructureDataManagement = <
      * @param id
      */
     const getRecord = (id: K): T | undefined =>
-        (!id || !Object.prototype.hasOwnProperty.call(itemDictionary.value, id)) ? undefined : itemDictionary.value[id];
+        (!id || !Object.prototype.hasOwnProperty.call(itemDictionary.value, id)) ? undefined : (itemDictionary.value as Record<K, T>)[id];
 
     /**
      * Add item to the dictionary.
@@ -40,7 +40,7 @@ export const useStructureDataManagement = <
      * @param itemData
      */
     const addRecord = (itemData: T) =>
-        itemDictionary.value[itemData[identifier as keyof T]] = itemData
+        (itemDictionary.value as Record<K, T>)[itemData[identifier as keyof T]] = itemData
 
     /**
      * Edit item,
@@ -61,12 +61,12 @@ export const useStructureDataManagement = <
             return
         }
 
-        itemDictionary.value[id] = {
-            ...itemDictionary.value[id],
+        (itemDictionary.value as Record<K, T>)[id] = {
+            ...(itemDictionary.value as Record<K, T>)[id],
             ...data
         }
 
-        return itemDictionary.value[id];
+        return (itemDictionary.value as Record<K, T>)[id];
     }
 
     /**
@@ -75,7 +75,8 @@ export const useStructureDataManagement = <
      * @param id
      */
     const deleteRecord = (id: K) =>
-        getRecord(id) && delete itemDictionary.value[id];
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        getRecord(id) && delete (itemDictionary.value as Record<K, T>)[id];
 
     /**
      * Selected ID
@@ -86,8 +87,45 @@ export const useStructureDataManagement = <
      * Selected item (by @{selectedIdentifier})
      */
     const selectedRecord = computed<T | undefined>(() =>
-        itemDictionary.value[selectedIdentifier.value]
+        selectedIdentifier.value && (itemDictionary.value as Record<K, T>)[selectedIdentifier.value]
     );
+
+    /**
+     * ---------------------------------- PAGINATION ------------------------------------
+     * TODO infinite pagination
+     */
+
+    /**
+     * PAGINATION
+     * Current selected page (start with 1)
+     */
+    const pageCurrent = ref(1);
+
+    /**
+     * PAGINATION
+     * How many items in page
+     */
+    const pageSize = ref(10);
+
+    /**
+     * PAGINATION
+     * How many pages exist
+     */
+    const pageTotal = computed(() => Math.ceil(itemList.value.length / pageSize.value));
+
+    /**
+     * PAGINATION
+     * First item of the current page
+     */
+    const pageOffset = computed(() => pageSize.value * (pageCurrent.value - 1));
+
+    /**
+     * PAGINATION
+     * Items shown in current page
+     */
+    const pageItemList = computed(() =>
+        itemList.value.slice(pageOffset.value, pageOffset.value + pageSize.value)
+    )
 
 
     /**
@@ -105,10 +143,10 @@ export const useStructureDataManagement = <
      * @param parentId
      * @param childId
      */
-    const addToParent = (parentId: P, childId: K) => {
-        if(!parentHasMany.value[parentId])
-            parentHasMany.value[parentId] = []
-        parentHasMany.value[parentId].push(childId)
+    const addToParent = (parentId: P, childId: typeof identifier) => {
+        if(!(parentHasMany.value as Record<P, unknown>)[parentId])
+            (parentHasMany.value as Record<P, typeof identifier[]>)[parentId] = [] as typeof identifier[]
+        (parentHasMany.value as Record<P, typeof identifier[]>)[parentId].push(childId)
     }
 
     /**
@@ -116,30 +154,30 @@ export const useStructureDataManagement = <
      * @param parentId
      * @param childId
      */
-    const removeFromParent = (parentId: P, childId: K) =>
-        parentHasMany.value[parentId] =
-            parentHasMany.value[parentId]
-                .filter((id: K) => id !== childId)
+    const removeFromParent = (parentId: P, childId: typeof identifier) =>
+        (parentHasMany.value as Record<P, typeof identifier[]>)[parentId] =
+            (parentHasMany.value as Record<P, typeof identifier[]>)[parentId]
+                .filter((id: typeof identifier) => id !== childId)
 
     /**
      *
      * @param parentId
      */
     const removeDuplicateChildren = (parentId: P) =>
-        parentHasMany.value[parentId] = [...new Set(parentHasMany.value[parentId])]
+        (parentHasMany.value as Record<P, typeof identifier[]>)[parentId] = [...new Set((parentHasMany.value as Record<P, typeof identifier[]>)[parentId])]
 
     /**
      *
      * @param parentId
      */
     const getRecordsByParent = (parentId?: P): T[] => {
-        if(!parentId || !parentHasMany.value[parentId])
+        if(!parentId || !(parentHasMany.value as Record<P, unknown>)[parentId])
             return [];
         // Get all runs ID and use them to retrieve the complete run object
-        return (parentHasMany.value[parentId] ?? [])
-            .map(getRecord)
+        return ((parentHasMany.value as Record<P, unknown[]>)[parentId])
+            .map((element) => getRecord(element as K))
             // remove possibly undefined values
-            .filter(Boolean)
+            .filter(Boolean) as T[]
     }
 
     return {
@@ -151,6 +189,13 @@ export const useStructureDataManagement = <
         deleteRecord,
         selectedIdentifier,
         selectedRecord,
+
+        // Pagination
+        pageCurrent,
+        pageSize,
+        pageTotal,
+        pageOffset,
+        pageItemList,
 
         // belongsTo relationship
         parentHasMany,

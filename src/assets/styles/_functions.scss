@@ -19,6 +19,11 @@
     @content;
   }
 }
+@mixin for-tablet-and-desktop {
+  @media (min-width: #{vars.$g-threshold-mobile}) {
+    @content;
+  }
+}
 
 /**
  * Mixin for desktop

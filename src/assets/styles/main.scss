@@ -1,15 +1,5 @@
 @use "@guebbit/css-toolkit" as guebbit;
 
-/**
- *
- */
-@include guebbit.create-class("text-align", (
-    "right",
-    "left",
-    "center",
-), true);
-
-
 *,
 *::before,
 *::after {
@@ -44,6 +34,8 @@ a {
 
 .page-header {
   position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
   display: flex;
   justify-content: center;
@@ -58,10 +50,46 @@ a {
 
 .page-content {
   overflow: hidden;
-  padding-top: var(--nav-height);
+  margin-top: var(--nav-height);
 
   .page-container {
     max-width: 1280px;
     margin: 0 auto;
   }
+
+  &.full-page{
+    min-height: calc(100vh - var(--nav-height));
+  }
+
+  &.centered{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
 }
+
+
+:root {
+  /**
+   * Add all the wanted guebbit colors to the root
+   */
+  @include guebbit.create-colors-vars(guebbit.$colors-collection);
+}
+
+
+/**
+ * Create specific colors (various helper classes),
+ * Theme colors and material various colors as helpers
+ */
+@include guebbit.create-colors(guebbit.$colors-collection);
+
+
+/**
+ * Helper align classes
+ */
+@include guebbit.create-class("text-align", (
+    "right",
+    "left",
+    "center",
+), true);

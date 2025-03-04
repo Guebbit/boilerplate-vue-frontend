@@ -5,23 +5,30 @@ export default {
 </script>
 
 <template>
-  <LayoutDefault>
+  <LayoutDefault
+    centered
+  >
       <template #header>
-          <h1 class="theme-page-title"><span>{{ t('users-list-page.page-title') }}</span></h1>
+          <h1 class="theme-page-title"><span>{{ t('error-page.page-title') }} {{ status }}</span></h1>
       </template>
 
-      <h1>TODO |{{ status }}|</h1>
-      <h3>|{{ message }}|</h3>
+      <h3>{{ message }}</h3>
   </LayoutDefault>
 </template>
 
 <script setup lang="ts">
 import LayoutDefault from '@/layouts/LayoutDefault.vue'
+import { useI18n } from 'vue-i18n'
 
 const {
     message = ""
 } = defineProps<{
-  status?: number
+  status?: string
   message?: string
 }>()
+
+/**
+ * Generics
+ */
+const { t } = useI18n()
 </script>

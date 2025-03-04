@@ -16,7 +16,12 @@ defineProps<{
     /**
      * Id that I'll give to <main> tag
      */
-    id?: string
+    id?: string,
+
+    /**
+     * If the content should be minimum full page and centered
+     */
+    centered?: boolean
 }>()
 
 /**
@@ -71,28 +76,34 @@ if(getCookie('isAuth'))
         <h3 v-if="profile">Hello {{ profile.email }}</h3>
     </Navigation>
 
-    <main :id class="page-content">
+    <div
+        v-show="messages.length > 0"
+        class="toast-container"
+    >
+        <div
+            v-for="alert in messages"
+            :key="'alert-' + alert.id"
+            v-show="alert.visible"
+            :class="['theme-card', alert.type]"
+        >
+            {{ alert.message }}
+            <button
+                class="theme-button"
+                @click="hideMessage(alert.id)"
+            >X
+            </button>
+        </div>
+    </div>
+
+    <main
+        :id
+        class="page-content"
+        :class="{
+            'full-page centered': centered
+        }"
+    >
         <div v-if="slots.header">
             <slot name="header" />
-        </div>
-
-        <div
-            v-show="messages.length > 0"
-            class="toast-container"
-        >
-            <div
-                v-for="alert in messages"
-                :key="'alert-' + alert.id"
-                v-show="alert.visible"
-                :class="['theme-card', alert.type]"
-            >
-                {{ alert.message }}
-                <button
-                    class="theme-button"
-                    @click="hideMessage(alert.id)"
-                >X
-                </button>
-            </div>
         </div>
 
         <div class="page-container">

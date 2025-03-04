@@ -39,6 +39,14 @@ export const useStructureRestApi = <
     selectedIdentifier,
     selectedRecord,
 
+    // Pagination
+    pageCurrent,
+    pageSize,
+    pageTotal,
+    pageOffset,
+    pageItemList,
+
+    // belongsTo relationship
     parentHasMany,
     addToParent,
     removeFromParent,
@@ -168,7 +176,7 @@ export const useStructureRestApi = <
     return apiCall
         .then((items = [] as T[]) => {
           for (let index = 0, length_ = items.length; index < length_; index++) {
-            addToParent(parentId, items[index][identifier] as K)
+            addToParent(parentId, items[index][identifier as K])
             if (fetchMismatch) {
               // if mismatch, we don't want to overwrite the fetchTarget's item
               editRecord(items[index][identifier] as K, items[index], true)
@@ -357,6 +365,13 @@ export const useStructureRestApi = <
     deleteRecord,
     selectedIdentifier,
     selectedRecord,
+
+    // Pagination
+    pageCurrent,
+    pageSize,
+    pageTotal,
+    pageOffset,
+    pageItemList,
 
     // belongsTo relationship
     parentHasMany,

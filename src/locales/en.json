@@ -6,7 +6,8 @@
     "list": "list | lists",
     "loading": "loading {load}",
     "it": "italian",
-    "en": "english"
+    "en": "english",
+    "es": "spanish"
   },
   "navigation": {
     "label-home": "home",
@@ -28,10 +29,16 @@
     "label-increment": "@.capitalize:generic.increment",
     "label-delayed-increment": "Async @:generic.increment"
   },
+  "admin-page": {
+    "page-title": "Admin Dashboard"
+  },
+  "error-page": {
+    "page-title": "Error"
+  },
   "users-list-page": {
     "page-title": "Users list",
     "user": "@:generic.user [0]",
-    "modified-user-list": "@.customModifier:{'generic.user'} @:{'generic.list'}",
+    "modified-user-list": "@.customSnakeCase:{'generic.user'} @:{'generic.list'}",
     "button-go-to-details": "User page"
   },
   "user-target-page": {
