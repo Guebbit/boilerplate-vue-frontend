@@ -2,10 +2,11 @@ import { createRouter, createWebHistory, RouterView } from 'vue-router'
 import { demoMiddleware } from '@/middlewares/demoMiddleware'
 import { localeChoice } from '@/middlewares/localeChoice'
 import { isAuth } from '@/middlewares/authentications.ts'
-import { getDefaultLocale } from '@/plugins/i18n.ts'
+import { getDefaultLocale } from '@/utils/i18n.ts'
 
-import userRoutes from './userRoutes'
 import accountRoutes from './accountRoutes'
+import usersRoutes from './usersRoutes.ts'
+import productsRoutes from './productsRoutes'
 
 import HomeView from '@/views/Home.vue'
 
@@ -35,8 +36,9 @@ const router = createRouter({
                     beforeEnter: [isAuth]
                 },
 
-                ...userRoutes,
                 ...accountRoutes,
+                ...productsRoutes,
+                ...usersRoutes,
 
                 {
                     path: 'error/:status/:message?',

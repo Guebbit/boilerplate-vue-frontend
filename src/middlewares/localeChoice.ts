@@ -1,4 +1,4 @@
-import { getDefaultLocale, supportedLanguages, loadedLanguages, updateLocale, changeLanguage } from '@/plugins/i18n'
+import { getDefaultLocale, supportedLanguages, loadedLanguages, updateLocale, changeLanguage } from '@/utils/i18n.ts'
 import type { NavigationGuardNext, RouteLocationNormalized } from "vue-router";
 import { fetchLanguageApi } from '@/api'
 

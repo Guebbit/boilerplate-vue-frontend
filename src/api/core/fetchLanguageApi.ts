@@ -1,6 +1,6 @@
 import en from '@/locales/en.json'
 import it from '@/locales/it.json'
-import type { ITranslationDictionaries } from '@/plugins/i18n.ts'
+import type { ITranslationDictionaries } from '@/utils/i18n.ts'
 
 const languagesFakeDownload: Record<string, ITranslationDictionaries> = {
     en,

@@ -9,4 +9,8 @@
   position: relative;
   padding: calc(var(--padding) * 0.5) var(--padding);
   z-index: 1;
+
+  &.active{
+    opacity: 0.9
+  }
 }

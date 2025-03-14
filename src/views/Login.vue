@@ -1,3 +1,66 @@
+<template>
+    <LayoutDefault id="login-page">
+        <template #header>
+            <h1 class="theme-page-title"><span>{{ t('login-page.page-title') }}</span></h1>
+        </template>
+
+        <div class="theme-card theme-form-container">
+            <form
+                class="theme-form"
+                @submit.prevent="submitForm"
+            >
+                <div
+                    class="theme-form-input"
+                    :class="{
+                        'form-error': showErrors && errors.email
+                    }"
+                >
+                    <label for="form-email">{{ t('login-page.label-email') }}</label>
+                    <input
+                        v-model="form.email"
+                        type="email"
+                        id="form-email"
+                        class="theme-input"
+                    />
+                    <p v-if="showErrors && errors.email" class="form-error-message">{{ errors.email.join(', ') }}</p>
+                </div>
+                <div
+                    class="theme-form-input"
+                    :class="{
+                        'form-error': showErrors && errors.password
+                    }"
+                >
+                    <label for="form-password">{{ t('login-page.label-password') }}</label>
+                    <input
+                        v-model="form.password"
+                        type="password"
+                        id="form-password"
+                        class="theme-input"
+                    />
+                    <p v-if="showErrors && errors.password" class="form-error-message">{{ errors.password.join(', ')
+                        }}</p>
+                </div>
+
+                <div class="theme-form-input-checkbox">
+                    <input
+                        v-model="form.remember"
+                        type="checkbox"
+                        id="form-remember"
+                    />
+                    <label for="form-remember">{{ t('login-page.label-remember') }}</label>
+                </div>
+
+                <button
+                    type="submit"
+                    class="theme-button"
+                >
+                    {{ t('login-page.button-submit') }}
+                </button>
+            </form>
+        </div>
+    </LayoutDefault>
+</template>
+
 <script lang="ts">
 export default {
     name: 'LoginPage'
@@ -94,71 +157,8 @@ const submitForm = () => {
 }
 </script>
 
-<template>
-    <LayoutDefault id="login-page">
-        <template #header>
-            <h1 class="theme-page-title"><span>{{ t('login-page.page-title') }}</span></h1>
-        </template>
-
-        <div class="theme-card theme-form-container">
-            <form
-                class="theme-form"
-                @submit.prevent="submitForm"
-            >
-                <div
-                    class="theme-form-input"
-                    :class="{
-                        'form-error': showErrors && errors.email
-                    }"
-                >
-                    <label for="form-email">{{ t('login-page.label-email') }}</label>
-                    <input
-                        v-model="form.email"
-                        type="email"
-                        id="form-email"
-                        class="theme-input"
-                    />
-                    <p v-if="showErrors && errors.email" class="form-error-message">{{ errors.email.join(', ') }}</p>
-                </div>
-                <div
-                    class="theme-form-input"
-                    :class="{
-                        'form-error': showErrors && errors.password
-                    }"
-                >
-                    <label for="form-password">{{ t('login-page.label-password') }}</label>
-                    <input
-                        v-model="form.password"
-                        type="password"
-                        id="form-password"
-                        class="theme-input"
-                    />
-                    <p v-if="showErrors && errors.password" class="form-error-message">{{ errors.password.join(', ')
-                        }}</p>
-                </div>
-
-                <div class="theme-form-input-checkbox">
-                    <input
-                        v-model="form.remember"
-                        type="checkbox"
-                        id="form-remember"
-                    />
-                    <label for="form-remember">{{ t('login-page.label-remember') }}</label>
-                </div>
-
-                <button
-                    type="submit"
-                    class="theme-button"
-                >
-                    {{ t('login-page.button-submit') }}
-                </button>
-            </form>
-        </div>
-    </LayoutDefault>
-</template>
-
 <style lang="scss">
-@use "@/assets/styles/pages/forms.scss";
+@use "@/assets/styles/components/forms";
 
 #login-page {
     .theme-form-container {

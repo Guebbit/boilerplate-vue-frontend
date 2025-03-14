@@ -4,9 +4,9 @@ import { isAdmin } from '@/middlewares/authentications.ts'
 export default [
     {
         path: 'users',
-        name: 'UserList',
+        name: 'UsersList',
         beforeEnter: [isAdmin],
-        component: () => import('@/views/UserList.vue'),
+        component: () => import('@/views/UsersList.vue'),
     },
     {
         path: 'users/:id',

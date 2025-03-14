@@ -165,8 +165,9 @@ export async function updateLocale(locale: string, messages: ITranslationDiction
  * @param locale
  */
 export async function _changeLanguage(i18n: I18n, locale: string) {
-    if (!loadedLanguages.includes(locale)) await _loadLocale(i18n, locale)
-    ;(i18n.global.locale as WritableComputedRef<string>).value = locale
+    if (!loadedLanguages.includes(locale))
+        await _loadLocale(i18n, locale);
+    (i18n.global.locale as WritableComputedRef<string>).value = locale
 
     /**
      * NOTE:

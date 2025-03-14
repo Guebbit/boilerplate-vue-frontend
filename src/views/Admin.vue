@@ -1,3 +1,11 @@
+<template>
+    <LayoutDefault>
+        <template #header>
+            <h1 class="theme-page-title"><span>{{ t('admin-page.page-title') }}</span></h1>
+        </template>
+    </LayoutDefault>
+</template>
+
 <script lang="ts">
 export default {
     name: 'AdminPage'
@@ -14,11 +22,3 @@ import { useI18n } from 'vue-i18n'
  */
 const { t } = useI18n()
 </script>
-
-<template>
-    <LayoutDefault>
-        <template #header>
-            <h1 class="theme-page-title"><span>{{ t('admin-page.page-title') }}</span></h1>
-        </template>
-    </LayoutDefault>
-</template>

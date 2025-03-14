@@ -1,5 +1,5 @@
 import { storeToRefs } from "pinia";
-import { i18n } from "@/plugins/i18n";
+import { i18n } from "@/utils/i18n.ts";
 import { useCounterStore } from "@/stores/counter";
 
 import type {

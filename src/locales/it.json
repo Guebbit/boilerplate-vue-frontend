@@ -3,6 +3,7 @@
     "increment": "incremento | incrementi",
     "count": "conto | conti",
     "user": "utente | utenti",
+    "product": "prodotto | prodotti",
     "list": "lista | liste",
     "loading": "caricamento {load}",
     "it": "italiano",
@@ -12,7 +13,8 @@
   "navigation": {
     "label-home": "home",
     "label-admin": "amministrazione",
-    "label-user-list": "@:generic.list @:generic.user",
+    "label-users-list": "@:generic.list @:generic.user",
+    "label-products-list": "@:generic.list @:generic.product",
     "label-profile": "Profilo",
     "label-login": "Login",
     "label-logout": "Logout",
@@ -35,15 +37,25 @@
   "error-page": {
     "page-title": "Error"
   },
+  "products-list-page": {
+    "page-title": "Lista prodotti",
+    "user": "@:generic.product [0]",
+    "modified-users-list": "@.customSnakeCase:{'generic.product'} @:{'generic.list'}",
+    "button-go-to-details": "Pagina prodotto"
+  },
+  "product-target-page": {
+    "page-title": "Prodotto selezionato",
+    "button-go-to-list": "Vai alla lista prodotti"
+  },
   "users-list-page": {
     "page-title": "Lista utenti",
     "user": "@:generic.user [0]",
-    "modified-user-list": "@.customSnakeCase:{'generic.user'} @:{'generic.list'}",
+    "modified-users-list": "@.customSnakeCase:{'generic.user'} @:{'generic.list'}",
     "button-go-to-details": "Pagina utente"
   },
   "user-target-page": {
     "page-title": "Utente selezionato",
-    "button-go-to-list": "Lista utenti"
+    "button-go-to-list": "Vai alla lista utenti"
   },
   "login-page": {
     "page-title": "Login",

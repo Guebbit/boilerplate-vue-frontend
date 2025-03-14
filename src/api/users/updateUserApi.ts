@@ -8,4 +8,4 @@ import type { IUser, IUserForm } from "@/types";
  * @param userData
  */
 export const updateUserApi = (id: IUser["id"], userData: Partial<IUserForm>) =>
-    axios.put<IUser>('users/' + id, userData);
+    axios.put<IUser>('users/edit' + id, userData);

@@ -3,6 +3,7 @@
     "increment": "increment | increments",
     "count": "count | counts",
     "user": "user | users",
+    "product": "product | products",
     "list": "list | lists",
     "loading": "loading {load}",
     "it": "italian",
@@ -12,7 +13,8 @@
   "navigation": {
     "label-home": "home",
     "label-admin": "admin",
-    "label-user-list": "@:generic.user @:generic.list",
+    "label-users-list": "@:generic.user @:generic.list",
+    "label-products-list": "@:generic.product @:generic.list",
     "label-profile": "Profile",
     "label-login": "Login",
     "label-logout": "Logout",
@@ -35,15 +37,25 @@
   "error-page": {
     "page-title": "Error"
   },
+  "products-list-page": {
+    "page-title": "Products list",
+    "product": "@:generic.product [0]",
+    "modified-products-list": "@.customSnakeCase:{'generic.product'} @:{'generic.list'}",
+    "button-go-to-details": "Product page"
+  },
+  "product-target-page": {
+    "page-title": "Product page",
+    "button-go-to-list": "Go to products list"
+  },
   "users-list-page": {
     "page-title": "Users list",
     "user": "@:generic.user [0]",
-    "modified-user-list": "@.customSnakeCase:{'generic.user'} @:{'generic.list'}",
+    "modified-users-list": "@.customSnakeCase:{'generic.user'} @:{'generic.list'}",
     "button-go-to-details": "User page"
   },
   "user-target-page": {
     "page-title": "User page",
-    "button-go-to-list": "Users list"
+    "button-go-to-list": "Go to users list"
   },
   "login-page": {
     "page-title": "Login",

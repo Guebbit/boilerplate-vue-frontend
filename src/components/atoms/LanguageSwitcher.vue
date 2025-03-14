@@ -11,10 +11,10 @@
     </select>
 </template>
 
-<script lang="ts" setup>
+<script setup lang="ts">
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { changeLanguage, supportedLanguages } from '@/plugins/i18n'
+import { changeLanguage, supportedLanguages } from '@/utils/i18n.ts'
 import { useProfileStore } from '@/stores/profile.ts'
 import { storeToRefs } from 'pinia'
 

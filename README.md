@@ -9,7 +9,7 @@
  - From skeleton: quasar version
 
 # MAYBE?
- - Extend use18n (or create a new use18n) to add some custom functions now present in the plugins/i18n.ts
+ - Extend use18n (or create a new use18n) to add some custom functions now present in the utils/i18n.ts
  - From skeleton: bootstrap version
 
 Vue3

@@ -17,7 +17,8 @@
     "test:e2e": "start-server-and-test preview http://localhost:4173 'cypress run --e2e'",
     "test:e2e:target": "start-server-and-test preview http://localhost:4173 'cypress run --e2e' --spec 'tests/e2e/xxxx.spec.ts'",
     "test:e2e:dev": "start-server-and-test 'vite dev --port 4173' http://localhost:4173 'cypress open --e2e'",
-    "node:kill": "cmd \"/C TASKKILL /IM node.exe /F\"",
+    "kill:win": "cmd \"/C TASKKILL /IM node.exe /F\"",
+    "kill:gnu": "pkill -9 node",
     "format": "prettier --write src/",
     "prepublish": "npm run lint && npm run test:unit && npm run build && npm run docs:build"
   },
@@ -38,7 +39,6 @@
     "@tsconfig/node22": "^22.0.0",
     "@types/jsdom": "^21.1.7",
     "@types/node": "^22.13.7",
-    "@types/ramda": "^0.30.2",
     "@typescript-eslint/eslint-plugin": "^8.25.0",
     "@vitejs/plugin-vue": "^5.2.1",
     "@vitejs/plugin-vue-jsx": "^4.1.1",

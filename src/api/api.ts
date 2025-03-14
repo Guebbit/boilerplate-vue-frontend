@@ -1,6 +1,6 @@
 import axiosClient from "axios";
 import type { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
-import { i18n } from '@/plugins/i18n'
+import { i18n } from '@/utils/i18n.ts'
 
 /**
  *

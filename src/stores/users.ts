@@ -43,12 +43,8 @@ export const useUsersStore = defineStore('users', () => {
     const fetchUsers = (forced = false) =>
         fetchAll(
             fetchUsersAllApi()
-                .then(({ data }) => {
-                    console.log("ASDFASF", data)
-                    return data
-                }),
-            forced,
-            true
+                .then(({ data }) => data),
+            forced
         )
 
     /**
@@ -65,8 +61,7 @@ export const useUsersStore = defineStore('users', () => {
                     })
                     return items
                 }),
-            forced,
-            true
+            forced
         )
 
     /**

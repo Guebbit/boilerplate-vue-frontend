@@ -1,3 +1,80 @@
+<template>
+    <LayoutDefault id="signup-page">
+        <template #header>
+            <h1 class="theme-page-title"><span>{{ t('signup-page.page-title') }}</span></h1>
+        </template>
+
+        <div class="theme-card theme-form-container">
+            <form
+                class="theme-form"
+                @submit.prevent="submitForm"
+            >
+                <div
+                    class="theme-form-input"
+                    :class="{
+                        'form-error': showErrors && errors.email
+                    }"
+                >
+                    <label for="form-email">{{ t('signup-page.label-email') }}</label>
+                    <input
+                        v-model="form.email"
+                        type="email"
+                        id="form-email"
+                        class="theme-input"
+                    />
+                    <p v-if="showErrors && errors.email" class="form-error-message">{{ errors.email.join(', ') }}</p>
+                </div>
+                <div
+                    class="theme-form-input"
+                    :class="{
+                        'form-error': showErrors && errors.password
+                    }"
+                >
+                    <label for="form-password">{{ t('signup-page.label-password') }}</label>
+                    <input
+                        v-model="form.password"
+                        type="password"
+                        id="form-password"
+                        class="theme-input"
+                    />
+                    <p v-if="showErrors && errors.password" class="form-error-message">{{ errors.password.join(', ')  }}</p>
+                </div>
+
+                <div class="theme-form-input-checkbox">
+                    <input
+                        v-model="form.remember"
+                        type="checkbox"
+                        id="form-remember"
+                    />
+                    <label for="form-remember">{{ t('signup-page.label-remember') }}</label>
+                </div>
+
+                <div
+                    class="theme-form-input-checkbox"
+                    :class="{
+                        'form-error': showErrors && errors.conditions
+                    }"
+                >
+                    <input
+                        v-model="form.conditions"
+                        type="checkbox"
+                        id="form-conditions"
+                    />
+                    <label for="form-conditions">{{ t('signup-page.text-conditions') }}</label>
+                </div>
+
+                <button
+                    type="submit"
+                    class="theme-button"
+                    :disabled="!hasChanged"
+                >
+                    {{ t('signup-page.button-submit') }}
+                </button>
+            </form>
+        </div>
+    </LayoutDefault>
+</template>
+
 <script lang="ts">
 export default {
     name: 'SignupPage'
@@ -93,85 +170,8 @@ const submitForm = () => {
 }
 </script>
 
-<template>
-    <LayoutDefault id="signup-page">
-        <template #header>
-            <h1 class="theme-page-title"><span>{{ t('signup-page.page-title') }}</span></h1>
-        </template>
-
-        <div class="theme-card theme-form-container">
-            <form
-                class="theme-form"
-                @submit.prevent="submitForm"
-            >
-                <div
-                    class="theme-form-input"
-                    :class="{
-                        'form-error': showErrors && errors.email
-                    }"
-                >
-                    <label for="form-email">{{ t('signup-page.label-email') }}</label>
-                    <input
-                        v-model="form.email"
-                        type="email"
-                        id="form-email"
-                        class="theme-input"
-                    />
-                    <p v-if="showErrors && errors.email" class="form-error-message">{{ errors.email.join(', ') }}</p>
-                </div>
-                <div
-                    class="theme-form-input"
-                    :class="{
-                        'form-error': showErrors && errors.password
-                    }"
-                >
-                    <label for="form-password">{{ t('signup-page.label-password') }}</label>
-                    <input
-                        v-model="form.password"
-                        type="password"
-                        id="form-password"
-                        class="theme-input"
-                    />
-                    <p v-if="showErrors && errors.password" class="form-error-message">{{ errors.password.join(', ')  }}</p>
-                </div>
-
-                <div class="theme-form-input-checkbox">
-                    <input
-                        v-model="form.remember"
-                        type="checkbox"
-                        id="form-remember"
-                    />
-                    <label for="form-remember">{{ t('signup-page.label-remember') }}</label>
-                </div>
-
-                <div
-                    class="theme-form-input-checkbox"
-                    :class="{
-                        'form-error': showErrors && errors.conditions
-                    }"
-                >
-                    <input
-                        v-model="form.conditions"
-                        type="checkbox"
-                        id="form-conditions"
-                    />
-                    <label for="form-conditions">{{ t('signup-page.text-conditions') }}</label>
-                </div>
-
-                <button
-                    type="submit"
-                    class="theme-button"
-                    :disabled="!hasChanged"
-                >
-                    {{ t('signup-page.button-submit') }}
-                </button>
-            </form>
-        </div>
-    </LayoutDefault>
-</template>
-
 <style lang="scss">
-@use "@/assets/styles/pages/forms.scss";
+@use "@/assets/styles/components/forms";
 
 #signup-page {
     .theme-form-container {

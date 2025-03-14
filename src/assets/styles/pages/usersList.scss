@@ -1,7 +1,7 @@
-@use "itemList";
+@use "../components/itemList";
 
-#user-list-page {
-  .user-list {
+#users-list-page {
+  .users-list {
     --list-margin: 16px;
     --list-border-radius: 24px;
 

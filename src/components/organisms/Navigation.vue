@@ -1,23 +1,3 @@
-<script setup lang="ts">
-import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { storeToRefs } from 'pinia'
-import LanguageSwitcher from '@/components/atoms/LanguageSwitcher.vue'
-import { routerLinkI18n } from '@/plugins/i18n'
-import { loginContinueTo } from '@/utils/helperNavigation.ts'
-import { PUBLIC_PATH } from '@/utils/constants'
-import { useProfileStore } from '@/stores/profile.ts'
-
-const router = useRouter()
-const route = useRoute()
-const { t } = useI18n()
-
-const {
-    isAuth,
-    isAdmin
-} = storeToRefs(useProfileStore())
-</script>
-
 <template>
     <header class="page-header">
         <img alt="logo" class="logo" :src="PUBLIC_PATH + '/images/guebbit-logo-colored.png'" />
@@ -46,11 +26,20 @@ const {
                 v-show="isAdmin"
                 :to="
                     routerLinkI18n({
-                        name: 'UserList'
+                        name: 'UsersList'
                     })
                 "
             >
-                {{ t('navigation.label-user-list', 2) }}
+                {{ t('navigation.label-users-list', 2) }}
+            </RouterLink>
+            <RouterLink
+                :to="
+                    routerLinkI18n({
+                        name: 'ProductsList'
+                    })
+                "
+            >
+                {{ t('navigation.label-products-list', 2) }}
             </RouterLink>
             <RouterLink
                 v-show="isAuth"
@@ -128,10 +117,30 @@ const {
         nav {
             justify-content: flex-start;
 
-            &:last-child{
+            &:last-child {
                 justify-content: flex-end;
             }
         }
     }
 }
 </style>
+
+<script setup lang="ts">
+import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import { storeToRefs } from 'pinia'
+import LanguageSwitcher from '@/components/atoms/LanguageSwitcher.vue'
+import { routerLinkI18n } from '@/utils/i18n.ts'
+import { loginContinueTo } from '@/utils/helperNavigation.ts'
+import { PUBLIC_PATH } from '@/utils/constants'
+import { useProfileStore } from '@/stores/profile.ts'
+
+const router = useRouter()
+const route = useRoute()
+const { t } = useI18n()
+
+const {
+    isAuth,
+    isAdmin
+} = storeToRefs(useProfileStore())
+</script>

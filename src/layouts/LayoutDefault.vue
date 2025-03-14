@@ -1,75 +1,3 @@
-<script setup lang="ts">
-import { useSlots } from 'vue'
-import { storeToRefs } from 'pinia'
-import LoadingCore from '@/components/atoms/LoadingCore.vue'
-import LoadingSide from '@/components/atoms/LoadingSide.vue'
-import Navigation from '@/components/organisms/Navigation.vue'
-import { useCoreStore } from '@/stores/core'
-import { useToastStore } from '@/stores/toasts'
-import { useProfileStore } from '@/stores/profile.ts'
-import { getCookie } from '@/utils/helperGenerics.ts'
-
-/**
- *
- */
-defineProps<{
-    /**
-     * Id that I'll give to <main> tag
-     */
-    id?: string,
-
-    /**
-     * If the content should be minimum full page and centered
-     */
-    centered?: boolean
-}>()
-
-/**
- * Slots
- * - default
- * - header
- * - navigation
- */
-const slots = useSlots()
-
-/**
- * core loading
- */
-const {
-    loadings,
-    isLoading
-} = storeToRefs(useCoreStore())
-
-/**
- * Toasts
- */
-const {
-    messages
-} = storeToRefs(useToastStore())
-const {
-    hideMessage
-} = useToastStore()
-
-
-/**
- * Profile
- */
-const {
-    profile
-} = storeToRefs(useProfileStore())
-const {
-    refreshToken,
-    fetchProfile
-} = useProfileStore()
-
-/**
- * Fetch current user profile (if logged in)
- */
-if(getCookie('isAuth'))
-    refreshToken()
-        .then(() => fetchProfile())
-</script>
-
 <template>
     <Navigation>
         <slot name="navigation" />
@@ -143,3 +71,77 @@ if(getCookie('isAuth'))
     z-index: 9999;
 }
 </style>
+
+
+
+<script setup lang="ts">
+import { useSlots } from 'vue'
+import { storeToRefs } from 'pinia'
+import LoadingCore from '@/components/atoms/LoadingCore.vue'
+import LoadingSide from '@/components/atoms/LoadingSide.vue'
+import Navigation from '@/components/organisms/Navigation.vue'
+import { useCoreStore } from '@/stores/core'
+import { useToastStore } from '@/stores/toasts'
+import { useProfileStore } from '@/stores/profile.ts'
+import { getCookie } from '@/utils/helperGenerics.ts'
+
+/**
+ *
+ */
+defineProps<{
+    /**
+     * Id that I'll give to <main> tag
+     */
+    id?: string,
+
+    /**
+     * If the content should be minimum full page and centered
+     */
+    centered?: boolean
+}>()
+
+/**
+ * Slots
+ * - default
+ * - header
+ * - navigation
+ */
+const slots = useSlots()
+
+/**
+ * core loading
+ */
+const {
+    loadings,
+    isLoading
+} = storeToRefs(useCoreStore())
+
+/**
+ * Toasts
+ */
+const {
+    messages
+} = storeToRefs(useToastStore())
+const {
+    hideMessage
+} = useToastStore()
+
+
+/**
+ * Profile
+ */
+const {
+    profile
+} = storeToRefs(useProfileStore())
+const {
+    refreshToken,
+    fetchProfile
+} = useProfileStore()
+
+/**
+ * Fetch current user profile (if logged in)
+ */
+if(getCookie('isAuth'))
+    refreshToken()
+        .then(() => fetchProfile())
+</script>

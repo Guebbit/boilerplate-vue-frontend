@@ -1,17 +1,16 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { useStructureRestApi } from '@/composables/structureRestApi.ts'
-import { i18n } from '@/plugins/i18n.ts'
-import { ERefreshTokenExpiryTime, EUserRoles, type IUser } from '@/types'
+import { i18n } from '@/utils/i18n.ts'
+import { ERefreshTokenExpiryTime, EUserRoles, type IUser, type IUserIdentification } from '@/types'
 import {
     fetchProfileApi,
     patchProfileApi,
     refreshTokenApi,
-    loginApi, logoutApi
+    loginApi,
+    logoutApi
 } from '@/api'
 
-// Typescript, for now, doesn't allow a cleaner approach
-export type IDataIdentificationKey = IUser['id'];
 
 /**
  * While we can't access to inject/provide in guards or any non-components,
@@ -27,7 +26,7 @@ export const useProfileStore = defineStore('profile', () => {
         fetchAny,
         fetchTarget,
         updateTarget
-    } = useStructureRestApi<IUser, IDataIdentificationKey>()
+    } = useStructureRestApi<IUser, IUserIdentification>()
 
     /**
      * Warning: can't use useI18n because it wouldn't work in global guards
@@ -140,8 +139,6 @@ export const useProfileStore = defineStore('profile', () => {
 
 
     return {
-        itemDictionary,
-
         profileLanguage,
         profile,
         isAdmin,

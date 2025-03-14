@@ -1,9 +1,3 @@
-<script lang="ts">
-export default {
-    name: 'ErrorPage'
-}
-</script>
-
 <template>
   <LayoutDefault
     centered
@@ -15,6 +9,13 @@ export default {
       <h3>{{ message }}</h3>
   </LayoutDefault>
 </template>
+
+<script lang="ts">
+export default {
+    name: 'ErrorPage'
+}
+</script>
+
 
 <script setup lang="ts">
 import LayoutDefault from '@/layouts/LayoutDefault.vue'

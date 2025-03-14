@@ -1,9 +1,9 @@
 import axios from '@/utils/http.ts';
-import type { IUser } from "@/types";
+import type { IUser, IUserIdentification } from '@/types'
 
 /**
- * List of users
+ * Get target user
  * @param id
  */
-export const fetchUserByIdApi = (id: IUser['id']) =>
-    axios.get<IUser>('users/' + id)
+export const fetchUserByIdApi = (id: IUserIdentification) =>
+    axios.get<IUser>('users/details/' + id)
