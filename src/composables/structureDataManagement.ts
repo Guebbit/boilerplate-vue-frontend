@@ -11,7 +11,7 @@ export const useStructureDataManagement = <
     // WARNING: Typescript is not inferring correctly between different composables and use the default type
     P extends string | number | symbol = string | number | symbol,
 >(
-    //  The identification parameter of the project type (READONLY and not exported)
+    //  The identification parameter of the item (READONLY and not exported)
     identifier = "id",
 ) => {
 

@@ -14,7 +14,7 @@ export const useStructureRestApi = <
     // WARNING: Typescript is not inferring correctly between different composables and use the default type
     P extends string | number | symbol = string | number | symbol,
 >({
-      //  The identification parameter of the project type (READONLY and not exported)
+      //  The identification parameter of the item (READONLY and not exported)
       identifier = 'id',
       // Unique key for loading management
       // If falsy: doesn't update the global loading state
@@ -91,7 +91,7 @@ export const useStructureRestApi = <
      * @param enableLoading   - enable loading during promises
      * @param loadingPostfix  - custom loading key
      */
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const asyncAny = <F = any>(
             asyncCall: Promise<F>,
             lastUpdateName?: string,
@@ -101,7 +101,7 @@ export const useStructureRestApi = <
         ): Promise<F | undefined> => {
             // If TTL is not expired, the current stored data is still valid
             // If no TTL name is provided, we ignore the TTL altogether
-            if (forced || (lastUpdateName && Date.now() - (lastUpdateAny[lastUpdateName] ?? 0) < allTTL))
+            if (!forced && (lastUpdateName && Date.now() - (lastUpdateAny[lastUpdateName] ?? 0) < allTTL))
                 // WARNING: We don't know what kind of data was about to be fetched, so it will be empty
                 // eslint-disable-next-line unicorn/no-useless-undefined
                 return Promise.resolve(undefined)
