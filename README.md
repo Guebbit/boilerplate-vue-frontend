@@ -1,4 +1,5 @@
 # TODO
+ - Always call useXYZStore() inside functions, not at the top level — avoids circular dependency issues (unless it is specifically dependent)
  - Merge boilerplate-nuxt
  - Do Vitest tests
  - Do Cypress tests
