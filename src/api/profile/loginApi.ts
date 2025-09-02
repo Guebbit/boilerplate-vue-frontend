@@ -2,7 +2,7 @@ import axios from '@/utils/http.ts'
 import { ERefreshTokenExpiryTime, type IResponseSuccess, type IUserForm } from '@/types'
 
 export interface ILoginApiParameters extends Pick<IUserForm, 'email' | 'password'> {
-    rememeber: ERefreshTokenExpiryTime
+    remember: ERefreshTokenExpiryTime
 }
 
 export interface ILoginApiResponse {
