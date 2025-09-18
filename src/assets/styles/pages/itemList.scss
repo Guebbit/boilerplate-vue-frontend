@@ -1,0 +1,32 @@
+.item-list-page {
+  --list-margin: 16px;
+  --list-border-radius: 24px;
+
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px;
+
+  .item-card {
+    --border-radius: 0;
+    --background: transparent;
+    --text-color2: rgb(var(--core-white));
+    --background-active2: rgb(var(--primary-500), 0.5);
+    --text-color-active2: rgb(var(--on-primary-500));
+
+    .card-image{
+      margin: var(--list-margin);
+      border-radius: var(--list-border-radius);
+    }
+
+    &:first-child {
+      border-top-left-radius: var(--list-border-radius);
+      border-top-right-radius: var(--list-border-radius);
+    }
+
+    &:last-child {
+      border-bottom: none;
+      border-bottom-left-radius: var(--list-border-radius);
+      border-bottom-right-radius: var(--list-border-radius);
+    }
+  }
+}

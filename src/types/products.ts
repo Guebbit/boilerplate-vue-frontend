@@ -9,6 +9,8 @@ export interface IProduct {
     imageUrl?: string,
     active?: boolean,
     quantity?: number
+    "createdAt": string,
+    "updatedAt": string
 }
 
 /**

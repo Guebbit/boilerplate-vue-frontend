@@ -24,11 +24,11 @@
     </div>
 
     <main
-        :id
         class="page-content"
         :class="{
             'full-page centered': centered
         }"
+        v-bind="$attrs"
     >
         <div v-if="slots.header">
             <slot name="header" />
@@ -89,11 +89,6 @@ import { getCookie } from '@/utils/helperGenerics.ts'
  *
  */
 defineProps<{
-    /**
-     * Id that I'll give to <main> tag
-     */
-    id?: string,
-
     /**
      * If the content should be minimum full page and centered
      */

@@ -30,15 +30,14 @@
    * CSS Theme (semantic color variables for this project)
    * TODO
    */
-  --theme-surface: #ffffff;
-  --theme-on-surface: rgb(var(--grey-900));
-  --theme-background: #eeeeee;
-  --theme-on-background: rgb(var(--grey-900));
+  --theme-surface: 255 255 255;
+  --theme-on-surface: var(--grey-900);
+  --theme-background: 222 222 222;
 
   /**
    * Overrides
    */
-  --on-secondary-600: #fff !important;
+  --on-secondary-600: 255 255 255 !important;
 
   /**
    * Other variables

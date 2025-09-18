@@ -1,3 +1,4 @@
+<script src="../router/productsRoutes.ts"></script>
 <template>
     <LayoutDefault id="product-target">
         <template #header>

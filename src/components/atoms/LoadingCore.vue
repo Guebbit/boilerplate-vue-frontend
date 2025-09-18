@@ -10,7 +10,7 @@
   width: 100%;
   height: 100%;
   z-index: 9999;
-  background: var(--theme-surface);
+  background: rgb(var(--theme-surface));
 
   &:after {
     // TODO cambiare e centrare
@@ -26,7 +26,7 @@
     border-radius: 50%;
     border-width: 6px;
     border-style: solid;
-    border-color: var(--theme-on-surface) transparent var(--theme-on-surface) transparent;
+    border-color: rgb(var(--theme-on-surface)) transparent rgb(var(--theme-on-surface)) transparent;
     animation: loading-core-animation 1s linear infinite;
   }
 

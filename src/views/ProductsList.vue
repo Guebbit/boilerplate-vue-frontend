@@ -4,19 +4,19 @@
             <h1 class="theme-page-title"><span>{{ t('products-list-page.page-title') }}</span></h1>
         </template>
 
-        <div class="products-list">
+        <div class="item-list">
             <div
                 v-for="product in productsList"
                 :key="'product-card-' + product.id"
-                class="theme-card"
+                class="item-card theme-card"
                 :class="{
-                    active: selectedIdentifier === product.id
+                    active: selectedProductId === product.id
                 }"
-                @click="selectedIdentifier = product.id"
+                @click="selectedProductId = product.id"
             >
                 <img
                     class="card-image"
-                    :alt="product.name + ' photo'"
+                    :alt="product.title + ' photo'"
                     :src="product.imageUrl"
                 />
                 <div class="card-content">
@@ -70,6 +70,7 @@ const {
 } = useProductsStore();
 const {
     productsList,
+    selectedProductId,
 } = storeToRefs(useProductsStore());
 
 /**
@@ -77,3 +78,7 @@ const {
  */
 onMounted(fetchProducts)
 </script>
+
+<style>
+@import "../assets/styles/pages/itemList.scss";
+</style>

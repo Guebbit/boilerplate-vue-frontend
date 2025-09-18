@@ -28,14 +28,13 @@ export const useProductsStore = defineStore('products', () => {
      *
      * @param forced
      */
-    const fetchProducts = (forced = false) => {
+    const fetchProducts = (forced = false) =>
         fetchAll(
             fetchProductsAllApi()
                 .then(({ data }) => data),
             forced
         )
-    }
-    
+
     /**
      *
      * @param productId
