@@ -17,7 +17,7 @@ export interface IResponseReject extends IResponseNeutral {
     errors: string[];
 }
 
-export interface IPagination<T>{
+export interface IPagination<T> {
     page: number;
     total: number;
     totalPages: number;

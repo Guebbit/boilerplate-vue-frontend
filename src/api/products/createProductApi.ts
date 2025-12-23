@@ -1,5 +1,5 @@
 import axios from '@/utils/http.ts';
-import type { IProduct, IProductForm } from "@/types";
+import type { IProduct, IProductForm } from '@/types';
 
 /**
  * List of Products

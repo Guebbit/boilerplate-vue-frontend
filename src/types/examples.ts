@@ -1,2 +1,2 @@
-export type ProvidedVariableType = string;
-export type ProvidedVariableMutationFunction = (value?: string) => void;
+export type IProvidedVariableType = string;
+export type IProvidedVariableMutationFunction = (value?: string) => void;

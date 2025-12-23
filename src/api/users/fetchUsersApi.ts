@@ -1,5 +1,5 @@
 import axios from '@/utils/http.ts';
-import type { IPagination, IUser } from '@/types'
+import type { IPagination, IUser } from '@/types';
 
 /**
  * Get users with pagination

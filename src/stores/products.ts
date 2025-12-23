@@ -1,18 +1,10 @@
-import { defineStore } from 'pinia'
-import { useI18n } from 'vue-i18n'
-import { useStructureRestApi } from '@/composables/structureRestApi.ts'
-import {
-    fetchProductByIdApi,
-    fetchProductsAllApi,
-} from '@/api'
-import type { IProduct, IProductIdentification } from '@/types/products.ts'
+import { defineStore } from 'pinia';
+import { useStructureRestApi } from '@guebbit/vue-toolkit';
+
+import { fetchProductByIdApi, fetchProductsAllApi } from '@/api';
+import type { IProduct, IProductIdentification } from '@/types/products.ts';
 
 export const useProductsStore = defineStore('products', () => {
-    /**
-     * Inherited
-     */
-    const { t } = useI18n()
-
     const {
         itemDictionary: products,
         itemList: productsList,
@@ -21,19 +13,15 @@ export const useProductsStore = defineStore('products', () => {
 
         loading,
         fetchAll,
-        fetchTarget,
-    } = useStructureRestApi<IProduct, IProductIdentification>()
+        fetchTarget
+    } = useStructureRestApi<IProduct, IProductIdentification>();
 
     /**
      *
      * @param forced
      */
     const fetchProducts = (forced = false) =>
-        fetchAll(
-            fetchProductsAllApi()
-                .then(({ data }) => data),
-            forced
-        )
+        fetchAll(() => fetchProductsAllApi().then(({ data }) => data), { forced });
 
     /**
      *
@@ -41,13 +29,9 @@ export const useProductsStore = defineStore('products', () => {
      * @param forced
      */
     const fetchProduct = (productId: IProductIdentification, forced = false) =>
-        fetchTarget(
-            fetchProductByIdApi(productId)
-                .then(({ data }) => data),
-            productId,
+        fetchTarget(() => fetchProductByIdApi(productId).then(({ data }) => data), productId, {
             forced
-        )
-
+        });
 
     return {
         products,
@@ -57,6 +41,6 @@ export const useProductsStore = defineStore('products', () => {
 
         loading,
         fetchProducts,
-        fetchProduct,
-    }
-})
+        fetchProduct
+    };
+});

@@ -1,9 +1,7 @@
-import { ref, computed } from 'vue'
+import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 
-
 export const useCoreStore = defineStore('core', () => {
-
     /**
      * This loading must be accessed from anywhere.
      * Components, guards and so on.
@@ -16,12 +14,12 @@ export const useCoreStore = defineStore('core', () => {
      * @param key
      * @param value
      */
-    const setLoading = (key: string | symbol, value: boolean) => loadings.value[key] = value;
+    const setLoading = (key: string | symbol, value: boolean) => (loadings.value[key] = value);
 
     /**
      * Reset all loadings
      */
-    const resetLoadings = () =>  loadings.value = {};
+    const resetLoadings = () => (loadings.value = {});
 
     /**
      * Check if there is a specific loading
@@ -31,15 +29,13 @@ export const useCoreStore = defineStore('core', () => {
     /**
      * Check if there are any loadings
      */
-    const isLoading = computed(
-        () => Object.values(loadings.value).some(Boolean)
-    )
+    const isLoading = computed(() => Object.values(loadings.value).some(Boolean));
 
     /**
      * Manage all dialogs
      * TODO vuetify-like
      */
-    const dialogs = ref({} as Record<string, boolean>)
+    const dialogs = ref({} as Record<string, boolean>);
 
     return {
         loadings,
@@ -48,5 +44,5 @@ export const useCoreStore = defineStore('core', () => {
         setLoading,
         getLoading,
         dialogs
-    }
-})
+    };
+});

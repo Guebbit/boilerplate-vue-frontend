@@ -1,96 +1,96 @@
 {
-  "generic": {
-    "increment": "increment | increments",
-    "count": "count | counts",
-    "user": "user | users",
-    "product": "product | products",
-    "list": "list | lists",
-    "loading": "loading {load}",
-    "it": "italian",
-    "en": "english",
-    "es": "spanish"
-  },
-  "navigation": {
-    "label-home": "home",
-    "label-admin": "admin",
-    "label-users-list": "@:generic.user @:generic.list",
-    "label-products-list": "@:generic.product @:generic.list",
-    "label-profile": "Profile",
-    "label-login": "Login",
-    "label-logout": "Logout",
-    "error-already-logged": "You are already logged",
-    "error-not-logged": "You must be logged to access this page",
-    "error-forbidden": "You are not allowed to access this page"
-  },
-  "home-page": {
-    "page-title": "Home",
-    "label-count": "@.capitalize:generic.count",
-    "label-provided": "Variable provided by App.vue",
-    "label-provided-change-typing": "Change directly by typing",
-    "label-provided-change-mutation": "Change using mutation",
-    "label-increment": "@.capitalize:generic.increment",
-    "label-delayed-increment": "Async @:generic.increment"
-  },
-  "admin-page": {
-    "page-title": "Admin Dashboard"
-  },
-  "error-page": {
-    "page-title": "Error"
-  },
-  "products-list-page": {
-    "page-title": "Products list",
-    "product": "@:generic.product [0]",
-    "modified-products-list": "@.customSnakeCase:{'generic.product'} @:{'generic.list'}",
-    "button-go-to-details": "Product page"
-  },
-  "product-target-page": {
-    "page-title": "Product page",
-    "button-go-to-list": "Go to products list"
-  },
-  "users-list-page": {
-    "page-title": "Users list",
-    "user": "@:generic.user [0]",
-    "modified-users-list": "@.customSnakeCase:{'generic.user'} @:{'generic.list'}",
-    "button-go-to-details": "User page"
-  },
-  "user-target-page": {
-    "page-title": "User page",
-    "button-go-to-list": "Go to users list"
-  },
-  "login-page": {
-    "page-title": "Login",
-    "label-email": "Email",
-    "label-password": "Password",
-    "label-remember": "Remember me",
-    "text-conditions": "I have read the privacy conditions",
-    "button-submit": "Login"
-  },
-  "profile-page": {
-    "page-title": "User Profile",
-    "label-username": "Username",
-    "label-email": "Email",
-    "label-phone": "Phone Number",
-    "label-website": "Website",
-    "label-password": "Password",
-    "label-passwordConfirm": "Confirm Password",
-    "button-submit": "Save changes",
-    "reset-form": "Reset changes",
-    "success-update": "Profile updated successfully",
-    "button-change-password": "Change password"
-  },
-  "users-form": {
-    "email-required": "Email is required",
-    "email-invalid": "Must be a valid email",
-    "username-required": "Username is required",
-    "username-min": "Username must be at least 3 characters long",
-    "conditions-required": "Must accept privacy conditions!",
-    "password-required": "Password is required",
-    "password-min": "Password must be at least 8 characters long",
-    "password-minus-required": "Password must contain at least one lowercase letter",
-    "password-maius-required": "Password must contain at least one uppercase letter",
-    "password-number-required": "Password must contain at least one number",
-    "password-special-required": "Password must contain at least one special character",
-    "password-confirm-required": "Type password again",
-    "password-dont-match": "Passwords do not match"
-  }
+    "generic": {
+        "increment": "increment | increments",
+        "count": "count | counts",
+        "user": "user | users",
+        "product": "product | products",
+        "list": "list | lists",
+        "loading": "loading {load}",
+        "it": "italian",
+        "en": "english",
+        "es": "spanish"
+    },
+    "navigation": {
+        "label-home": "home",
+        "label-admin": "admin",
+        "label-users-list": "@:generic.user @:generic.list",
+        "label-products-list": "@:generic.product @:generic.list",
+        "label-profile": "Profile",
+        "label-login": "Login",
+        "label-logout": "Logout",
+        "error-already-logged": "You are already logged",
+        "error-not-logged": "You must be logged to access this page",
+        "error-forbidden": "You are not allowed to access this page"
+    },
+    "home-page": {
+        "page-title": "Home",
+        "label-count": "@.capitalize:generic.count",
+        "label-provided": "Variable provided by App.vue",
+        "label-provided-change-typing": "Change directly by typing",
+        "label-provided-change-mutation": "Change using mutation",
+        "label-increment": "@.capitalize:generic.increment",
+        "label-delayed-increment": "Async @:generic.increment"
+    },
+    "admin-page": {
+        "page-title": "Admin Dashboard"
+    },
+    "error-page": {
+        "page-title": "Error"
+    },
+    "products-list-page": {
+        "page-title": "Products list",
+        "product": "@:generic.product [0]",
+        "modified-products-list": "@.customSnakeCase:{'generic.product'} @:{'generic.list'}",
+        "button-go-to-details": "Product page"
+    },
+    "product-target-page": {
+        "page-title": "Product page",
+        "button-go-to-list": "Go to products list"
+    },
+    "users-list-page": {
+        "page-title": "Users list",
+        "user": "@:generic.user [0]",
+        "modified-users-list": "@.customSnakeCase:{'generic.user'} @:{'generic.list'}",
+        "button-go-to-details": "User page"
+    },
+    "user-target-page": {
+        "page-title": "User page",
+        "button-go-to-list": "Go to users list"
+    },
+    "login-page": {
+        "page-title": "Login",
+        "label-email": "Email",
+        "label-password": "Password",
+        "label-remember": "Remember me",
+        "text-conditions": "I have read the privacy conditions",
+        "button-submit": "Login"
+    },
+    "profile-page": {
+        "page-title": "User Profile",
+        "label-username": "Username",
+        "label-email": "Email",
+        "label-phone": "Phone Number",
+        "label-website": "Website",
+        "label-password": "Password",
+        "label-passwordConfirm": "Confirm Password",
+        "button-submit": "Save changes",
+        "reset-form": "Reset changes",
+        "success-update": "Profile updated successfully",
+        "button-change-password": "Change password"
+    },
+    "users-form": {
+        "email-required": "Email is required",
+        "email-invalid": "Must be a valid email",
+        "username-required": "Username is required",
+        "username-min": "Username must be at least 3 characters long",
+        "conditions-required": "Must accept privacy conditions!",
+        "password-required": "Password is required",
+        "password-min": "Password must be at least 8 characters long",
+        "password-minus-required": "Password must contain at least one lowercase letter",
+        "password-maius-required": "Password must contain at least one uppercase letter",
+        "password-number-required": "Password must contain at least one number",
+        "password-special-required": "Password must contain at least one special character",
+        "password-confirm-required": "Type password again",
+        "password-dont-match": "Passwords do not match"
+    }
 }

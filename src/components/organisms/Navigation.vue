@@ -78,7 +78,6 @@
 
             <LanguageSwitcher />
         </nav>
-
     </header>
 </template>
 
@@ -126,21 +125,18 @@
 </style>
 
 <script setup lang="ts">
-import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { storeToRefs } from 'pinia'
-import LanguageSwitcher from '@/components/atoms/LanguageSwitcher.vue'
-import { routerLinkI18n } from '@/utils/i18n.ts'
-import { loginContinueTo } from '@/utils/helperNavigation.ts'
-import { PUBLIC_PATH } from '@/utils/constants'
-import { useProfileStore } from '@/stores/profile.ts'
+import { RouterLink, useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
+import LanguageSwitcher from '@/components/atoms/LanguageSwitcher.vue';
+import { routerLinkI18n } from '@/utils/i18n.ts';
+import { loginContinueTo } from '@/utils/helperNavigation.ts';
+import { PUBLIC_PATH } from '@/utils/constants';
+import { useProfileStore } from '@/stores/profile.ts';
 
-const router = useRouter()
-const route = useRoute()
-const { t } = useI18n()
+const router = useRouter();
+const route = useRoute();
+const { t } = useI18n();
 
-const {
-    isAuth,
-    isAdmin
-} = storeToRefs(useProfileStore())
+const { isAuth, isAdmin } = storeToRefs(useProfileStore());
 </script>

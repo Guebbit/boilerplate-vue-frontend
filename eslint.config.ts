@@ -1,64 +1,68 @@
 import eslint from '@eslint/js'
 import globals from 'globals'
-import tseslint from 'typescript-eslint'
-import html from 'eslint-plugin-html'
-import eslintPluginUnicorn from 'eslint-plugin-unicorn'
+import pluginUnicorn from 'eslint-plugin-unicorn'
+import { globalIgnores } from 'eslint/config'
+import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript'
+import pluginVue from 'eslint-plugin-vue'
+import pluginVitest from '@vitest/eslint-plugin'
+import pluginCypress from 'eslint-plugin-cypress'
+import pluginOxlint from 'eslint-plugin-oxlint'
 
-export default tseslint.config(
+// To allow more languages other than `ts` in `.vue` files, uncomment the following lines:
+// import { configureVueProject } from '@vue/eslint-config-typescript'
+// configureVueProject({ scriptLangs: ['ts', 'tsx'] })
+// More info at https://github.com/vuejs/eslint-config-typescript/#advanced-setup
+
+export default defineConfigWithVueTs(
     {
-        ignores: [
-            'dist',
-            'node_modules',
-            'eslint.config.mjs'
-        ]
+        name: 'app/files-to-lint',
+        files: ['**/*.{ts,mts,tsx,vue}']
     },
 
     /**
-     *
+     * Excluded files
+     */
+    globalIgnores([
+        '**/dist/**',
+        '**/dist-ssr/**',
+        '**/coverage/**',
+        '**/docs/**',
+        '**/node_modules/**',
+        '**/eslint.config.ts'
+    ]),
+
+    /**
+     * Base eslint
      */
     eslint.configs.recommended,
 
     /**
-     *
+     * Vue + Typescript presets
      */
-    tseslint.configs.recommendedTypeChecked,
+    pluginVue.configs['flat/essential'],
+    vueTsConfigs.recommended,
+    ...pluginOxlint.configs['flat/recommended'],
 
     /**
-     *
+     * Unicorn plugin
      */
-    tseslint.configs.strictTypeChecked,
+    pluginUnicorn.configs['flat/recommended'],
 
     /**
-     *
-     */
-    tseslint.configs.stylisticTypeChecked,
-
-    /**
-     *
-     */
-    eslintPluginUnicorn.configs['flat/recommended'],
-
-    /**
-     *
+     * Global parser + dedicated eslint tsconfig
      */
     {
         languageOptions: {
             parserOptions: {
-                projectService: true,
-                tsconfigRootDir: import.meta.dirname
+                extraFileExtensions: ['.vue']
             }
         }
     },
 
     /**
-     *
+     * All global rules
      */
     {
-        plugins: {
-            html
-            // unicorn: eslintPluginUnicorn
-        },
-
         languageOptions: {
             globals: {
                 ...globals.browser
@@ -70,7 +74,6 @@ export default tseslint.config(
         rules: {
             'no-console': 'warn',
             'no-debugger': 'warn',
-            'no-nested-ternary': 'off',
             'vue/script-indent': 'off',
             'vue/multi-word-component-names': 'off',
             'vue/require-default-prop': 'off',
@@ -78,6 +81,9 @@ export default tseslint.config(
             '@typescript-eslint/no-non-null-assertion': 'off',
             // '@typescript-eslint/no-confusing-void-expression': 'off',
             '@typescript-eslint/use-unknown-in-catch-callback-variable': 'off',
+            'no-nested-ternary': 'off',
+            'unicorn/no-nested-ternary': 'off',
+            'unicorn/prefer-top-level-await': 'off',
 
             '@typescript-eslint/restrict-plus-operands': [
                 'error',
@@ -112,7 +118,6 @@ export default tseslint.config(
                 {
                     selector: 'interface',
                     format: ['PascalCase'],
-
                     custom: {
                         regex: '^I[A-Z]',
                         match: true
@@ -121,7 +126,6 @@ export default tseslint.config(
                 {
                     selector: 'enum',
                     format: ['PascalCase'],
-
                     custom: {
                         regex: '^E[A-Z]',
                         match: true
@@ -142,10 +146,11 @@ export default tseslint.config(
             'unicorn/consistent-destructuring': 'warn',
 
             // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/HEAD/docs/rules/filename-case.md
+            // Every file is camelCase except Vue components and tests (see below)
             'unicorn/filename-case': [
                 'error',
                 {
-                    'case': 'camelCase'
+                    case: 'camelCase'
                 }
             ],
 
@@ -153,7 +158,7 @@ export default tseslint.config(
             'unicorn/catch-error-name': [
                 'error',
                 {
-                    'name': 'error'
+                    name: 'error'
                 }
             ],
 
@@ -161,14 +166,18 @@ export default tseslint.config(
             'unicorn/prevent-abbreviations': [
                 'error',
                 {
-                    'replacements': {
-                        'i': false,
-                        'len': false,
-                        'opts': {
-                            'options': true
+                    replacements: {
+                        i: false,
+                        e: false,
+                        len: false,
+                        prop: false,
+                        props: false,
+                        prev: false,
+                        opts: {
+                            options: true
                         },
-                        'ref': {
-                            'reference': false
+                        ref: {
+                            reference: false
                         }
                     }
                 }
@@ -176,42 +185,43 @@ export default tseslint.config(
 
             // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/HEAD/docs/rules/string-content.md
             // 'unicorn/string-content': [
-            //     'error',
-            //     {
-            //         'patterns': {
-            //             'unicorn': '🦄',
-            //             'awesome': {
-            //                 'suggest': '😎',
-            //                 'message': 'Please use `😎` instead of `awesome`.'
-            //             },
-            //             'cool': {
-            //                 'suggest': '😎',
-            //                 'fix': false
-            //             }
-            //         }
-            //     }
-            // ]
+            //   'error',
+            //   {
+            //     patterns: {
+            //       unicorn: '🦄',
+            //       awesome: {
+            //         suggest: '😎',
+            //         message: 'Please use `😎` instead of `awesome`.',
+            //       },
+            //       cool: {
+            //         suggest: '😎',
+            //         fix: false,
+            //       },
+            //     },
+            //   },
+            // ],
         }
     },
 
     /**
-     *
+     * Specific naming conventions for components (PascalCase)
+     * WARNING: Slows down a lot
      */
-    // WARNING: Slows down a lot
-    // {
-    //     files: ['**/*.vue', '**/*.tsx'],
-    //
-    //     rules: {
-    //         'unicorn/filename-case': [
-    //             'error',
-    //             {
-    //                 'case': 'pascalCase'
-    //             }
-    //         ]
-    //     }
-    // },
+    {
+        files: ['**/*.vue', '**/*.tsx'],
+        rules: {
+            'unicorn/filename-case': [
+                'error',
+                {
+                    case: 'pascalCase'
+                }
+            ]
+        }
+    },
 
-
+    /**
+     * "Special" files names are better to be left untouched
+     */
     {
         files: ['tests/**/*', '**/*.spec.ts', '**/*.test.ts', '**/*.d.ts'],
         rules: {
@@ -219,14 +229,38 @@ export default tseslint.config(
             'unicorn/prevent-abbreviations': 'off'
         }
     },
-
-
     {
-        files: ['tests/**/*', '**/*.spec.ts', '**/*.test.ts'],
+        files: ['**/*.d.ts'],
+        rules: {
+            '@typescript-eslint/naming-convention': 'off'
+        }
+    },
 
+    /**
+     * Tests specific eslint config
+     * - Unit Tests (Vitest)
+     *  - E2E Tests (Cypress)
+     */
+    {
+        ...pluginVitest.configs.recommended,
+        files: ['src/**/__tests__/*', 'tests/**/*', '**/*.{spec,test}.{ts,tsx}'],
         languageOptions: {
-            globals: {
-                ...globals.jest
+            parserOptions: {
+                projectService: false,
+                project: ['./tsconfig.vitest.json']
+            }
+        }
+    },
+    {
+        ...pluginCypress.configs.recommended,
+        files: [
+            'cypress/e2e/**/*.{cy,spec}.{js,ts,jsx,tsx}',
+            'cypress/support/**/*.{js,ts,jsx,tsx}'
+        ],
+        languageOptions: {
+            parserOptions: {
+                projectService: false,
+                project: ['./tsconfig.cypress.json']
             }
         }
     }

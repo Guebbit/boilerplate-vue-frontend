@@ -1,42 +1,43 @@
 <template>
-  <div class="loading-core" />
+    <div class="loading-core" />
 </template>
 
 <style lang="scss">
-.loading-core{
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 9999;
-  background: rgb(var(--theme-surface));
-
-  &:after {
-    // TODO cambiare e centrare
+.loading-core {
     position: absolute;
-    top: 50%;
-    right: 50%;
-    transform: translate(-50%,-50%);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 9999;
+    background: rgb(var(--theme-surface));
 
-    content: "";
-    display: block;
-    width: 4em;
-    height: 4em;
-    border-radius: 50%;
-    border-width: 6px;
-    border-style: solid;
-    border-color: rgb(var(--theme-on-surface)) transparent rgb(var(--theme-on-surface)) transparent;
-    animation: loading-core-animation 1s linear infinite;
-  }
+    &:after {
+        // TODO cambiare e centrare
+        position: absolute;
+        top: 50%;
+        right: 50%;
+        transform: translate(-50%, -50%);
 
-  @keyframes loading-core-animation {
-    0% {
-      transform: rotate(0deg);
+        content: '';
+        display: block;
+        width: 4em;
+        height: 4em;
+        border-radius: 50%;
+        border-width: 6px;
+        border-style: solid;
+        border-color: rgb(var(--theme-on-surface)) transparent rgb(var(--theme-on-surface))
+            transparent;
+        animation: loading-core-animation 1s linear infinite;
     }
-    100% {
-      transform: rotate(360deg);
+
+    @keyframes loading-core-animation {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
     }
-  }
 }
 </style>

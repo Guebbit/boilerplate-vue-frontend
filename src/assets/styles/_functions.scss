@@ -1,35 +1,35 @@
-@use "sass:map";
-@use "@guebbit/css-toolkit" as guebbit;
-@use "./variables" as vars;
+@use 'sass:map';
+@use '@guebbit/css-toolkit' as guebbit;
+@use './variables' as vars;
 
 /**
  * Mixin for mobile
  */
 @mixin for-mobile {
-  @media (max-width: #{vars.$g-threshold-mobile}) {
-    @content;
-  }
+    @media (max-width: #{vars.$g-threshold-mobile}) {
+        @content;
+    }
 }
 
 /**
  * Mixin for tablet
  */
 @mixin for-tablet {
-  @media (min-width: #{vars.$g-threshold-mobile}) and (max-width: #{vars.$g-threshold-desktop - 1}) {
-    @content;
-  }
+    @media (min-width: #{vars.$g-threshold-mobile}) and (max-width: #{vars.$g-threshold-desktop - 1}) {
+        @content;
+    }
 }
 @mixin for-tablet-and-desktop {
-  @media (min-width: #{vars.$g-threshold-mobile}) {
-    @content;
-  }
+    @media (min-width: #{vars.$g-threshold-mobile}) {
+        @content;
+    }
 }
 
 /**
  * Mixin for desktop
  */
 @mixin for-desktop {
-  @media (min-width: #{vars.$g-threshold-desktop}) {
-    @content;
-  }
+    @media (min-width: #{vars.$g-threshold-desktop}) {
+        @content;
+    }
 }

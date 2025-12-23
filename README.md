@@ -1,17 +1,26 @@
+# Instructions
+
+- Check the .dev folder for Insomnia api structure
+    - the insomnia.json file is an insomnia collection
+    - Install insomnia-plugin-export-to-openapi (hoping is still up to date)
+    - Menu at the right of the collection name (Insomnia 12) -> Export to OpenAPI 3 -> create openapi.yaml
+
 # TODO
- - Always call useXYZStore() inside functions, not at the top level — avoids circular dependency issues (unless it is specifically dependent)
- - Merge boilerplate-nuxt
- - Do Vitest tests
- - Do Cypress tests
- - Create skeleton version
- - From skeleton: css-ui version 
-   - remember to take old _root.scss and old _cards.scss (for simple-card) from older commits
- - From skeleton: vuetify version
- - From skeleton: quasar version
+
+- Always call useXYZStore() inside functions, not at the top level — avoids circular dependency issues (unless it is specifically dependent)
+- Merge boilerplate-nuxt
+- Do Vitest tests
+- Do Cypress tests
+- Create skeleton version
+- From skeleton: css-ui version
+    - remember to take old \_root.scss and old \_cards.scss (for simple-card) from older commits
+- From skeleton: vuetify version
+- From skeleton: quasar version
 
 # MAYBE?
- - Extend use18n (or create a new use18n) to add some custom functions now present in the utils/i18n.ts
- - From skeleton: bootstrap version
+
+- Extend use18n (or create a new use18n) to add some custom functions now present in the utils/i18n.ts
+- From skeleton: bootstrap version
 
 Vue3
 https://blog.vuejs.org/posts/vue-3-2

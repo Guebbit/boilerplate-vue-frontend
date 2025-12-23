@@ -1,11 +1,11 @@
-import { describe, it, expect } from 'vitest'
-import { mount } from '@vue/test-utils'
-import CounterInput from '../CounterInput.vue'
+import { describe, it, expect } from 'vitest';
+import { mount } from '@vue/test-utils';
+import CounterInput from '../CounterInput.vue';
 
 describe('CounterInput component UNIT TEST', () => {
-    it('Renders the component', () =>
-        { expect(mount(CounterInput).exists()).toBe(true); }
-    );
+    it('Renders the component', () => {
+        expect(mount(CounterInput).exists()).toBe(true);
+    });
 
     it('Expect X = 5', () => {
         const mountedComponent = mount(CounterInput, {
@@ -14,7 +14,9 @@ describe('CounterInput component UNIT TEST', () => {
             }
         });
         expect(mount(CounterInput).classes()).toContain('counter-input');
-        expect((mountedComponent.find('.counter-input input').element as HTMLInputElement).value).toBe('5');
+        expect(
+            (mountedComponent.find('.counter-input input').element as HTMLInputElement).value
+        ).toBe('5');
     });
 
     it('Expect 2 <= X <= 9', async () => {
@@ -29,7 +31,8 @@ describe('CounterInput component UNIT TEST', () => {
         // find elements
         const addButtonElement = mountedComponent.find('.counter-add');
         const subButtonElement = mountedComponent.find('.counter-sub');
-        const inputElement =  mountedComponent.find('.counter-input input').element as HTMLInputElement;
+        const inputElement = mountedComponent.find('.counter-input input')
+            .element as HTMLInputElement;
 
         // Start adding and subtracting
         expect(inputElement.value).toBe('8');
@@ -61,4 +64,4 @@ describe('CounterInput component UNIT TEST', () => {
         await subButtonElement.trigger('click');
         expect(inputElement.value).toBe('2');
     });
-})
+});

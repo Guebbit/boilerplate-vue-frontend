@@ -1,10 +1,6 @@
 <template>
     <div class="list-pagination">
-        <span
-            @click="modelValue = 0"
-        >
-            &laquo;
-        </span>
+        <span @click="modelValue = 0"> &laquo; </span>
         <span
             v-for="i in length"
             :key="'page-' + i"
@@ -15,25 +11,19 @@
         >
             {{ i }}
         </span>
-        <span
-            @click="modelValue = length"
-        >
-            &raquo;
-        </span>
+        <span @click="modelValue = length"> &raquo; </span>
     </div>
 </template>
 
 <script setup lang="ts">
-const {
-    length = 0
-} = defineProps<{
+const { length = 0 } = defineProps<{
     /**
      *
      */
-    length?: number
-}>()
+    length?: number;
+}>();
 
-const modelValue = defineModel<number>()
+const modelValue = defineModel<number>();
 </script>
 
 <style lang="scss">

@@ -1,6 +1,6 @@
-import en from '@/locales/en.json'
-import it from '@/locales/it.json'
-import type { ITranslationDictionaries } from '@/utils/i18n.ts'
+import en from '@/locales/en.json';
+import it from '@/locales/it.json';
+import type { ITranslationDictionaries } from '@/utils/i18n.ts';
 
 const languagesFakeDownload: Record<string, ITranslationDictionaries> = {
     en,
@@ -11,5 +11,9 @@ const languagesFakeDownload: Record<string, ITranslationDictionaries> = {
 /**
  * Demo of new locale loading from a server
  */
-export const fetchLanguageApi = (locale: string):Promise<[string, ITranslationDictionaries]> =>
-  new Promise(resolve => setTimeout(() => { resolve([locale, languagesFakeDownload[locale]]); }, 1000))
+export const fetchLanguageApi = (locale: string): Promise<[string, ITranslationDictionaries]> =>
+    new Promise((resolve) =>
+        setTimeout(() => {
+            resolve([locale, languagesFakeDownload[locale]]);
+        }, 1000)
+    );

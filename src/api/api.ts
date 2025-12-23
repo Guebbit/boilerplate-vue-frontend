@@ -1,6 +1,6 @@
-import axiosClient from "axios";
-import type { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from "axios";
-import { i18n } from '@/utils/i18n.ts'
+import axiosClient from 'axios';
+import type { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { getCurrentLocale } from '@/utils/i18n.ts';
 
 /**
  *
@@ -27,29 +27,23 @@ export type IAxiosResponseErrorData = unknown;
  */
 export type IAxiosResponseErrorBody = unknown;
 
-
-
 /**
  * Creates an initial 'axios' instance that can be customized
  */
 const instance = axiosClient.create({
     headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         // eslint-disable-next-line @typescript-eslint/naming-convention
         'Content-Type': 'application/json; charset=utf-8'
     },
-    timeout: Number.parseInt(import.meta.env.VITE_AXIOS_TIMEOUT as string | undefined ?? "10000"),
+    timeout: Number.parseInt(import.meta.env.VITE_AXIOS_TIMEOUT ?? '10000')
 });
-
-
 
 /**
  * Static Defaults
  */
 // prefix of all relative calls. If a full URL is used, this will be ignored
-instance.defaults.baseURL = import.meta.env.VITE_API_URL as string | undefined ?? "";
-
-
+instance.defaults.baseURL = import.meta.env.VITE_API_URL ?? '';
 
 /**
  * Do something before request is sent
@@ -61,9 +55,10 @@ export const onRequest = (config: InternalAxiosRequestConfig<IAxiosRequestData>)
     // config.headers['Content-Type'] = 'application/json';
     // console.log('[request]', config);
     // Current language at the time of the request
-    config.headers['Accept-Language'] = i18n.global.locale.value;
+    const currentLocale = getCurrentLocale();
+    if (currentLocale) config.headers['Accept-Language'] = currentLocale;
     return config;
-}
+};
 
 /**
  * Do something with request error
@@ -73,10 +68,7 @@ export const onRequest = (config: InternalAxiosRequestConfig<IAxiosRequestData>)
 export const onRequestReject = (error: AxiosError) => {
     // console.log('[request error]', error);
     return Promise.reject(error);
-}
-
-
-
+};
 
 // export const onResponseReject2 = async (
 //     error: AxiosError<IAxiosResponseErrorData, IAxiosResponseErrorBody>
@@ -98,31 +90,30 @@ export const onRequestReject = (error: AxiosError) => {
 //     return Promise.reject(error);
 // }
 
-
-
-
 /**
  * Any status code that lie within the range of 2xx cause this function to trigger
  *
  * @param response
  */
-export const onResponseSuccess = (response: AxiosResponse<IAxiosResponseData, IAxiosResponseBody>) => {
+export const onResponseSuccess = (
+    response: AxiosResponse<IAxiosResponseData, IAxiosResponseBody>
+) => {
     // console.log('[response]', response);
     return response;
-}
+};
 
 /**
  * Any status codes that falls outside the range of 2xx cause this function to trigger
  *
  * @param error
  */
-export const onResponseReject = (error: AxiosError<IAxiosResponseErrorData, IAxiosResponseErrorBody>) => {
+export const onResponseReject = (
+    error: AxiosError<IAxiosResponseErrorData, IAxiosResponseErrorBody>
+) => {
     // console.log('[response error]', error);
     // error.response.status
     return Promise.reject(error);
-}
-
-
+};
 
 /**
  * Handle all requests
@@ -135,7 +126,6 @@ instance.interceptors.request.use(onRequest, onRequestReject);
  * (Intercept and modify responses after they are received)
  */
 instance.interceptors.response.use(onResponseSuccess, onResponseReject);
-
 
 /**
  * Complete custom axios instance

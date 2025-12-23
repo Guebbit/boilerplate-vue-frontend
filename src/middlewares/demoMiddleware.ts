@@ -1,11 +1,8 @@
-import { storeToRefs } from "pinia";
-import { i18n } from "@/utils/i18n.ts";
-import { useCounterStore } from "@/stores/counter";
+import { storeToRefs } from 'pinia';
+import { i18n } from '@/utils/i18n.ts';
+import { useCounterStore } from '@/stores/counter';
 
-import type {
-    NavigationGuardNext,
-    RouteLocationNormalized,
-} from "vue-router";
+import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router';
 
 /**
  * DUMMY authentication, will run in global guards (in the router object)
@@ -15,17 +12,19 @@ import type {
  * @param from
  * @param next
  */
-export const demoMiddleware = (to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
+export const demoMiddleware = (
+    to: RouteLocationNormalized,
+    from: RouteLocationNormalized,
+    next: NavigationGuardNext
+) => {
     /**
      * Can use the store
      */
     const store = useCounterStore();
-    const {
-        count,
-    } = storeToRefs(store);
+    const { count } = storeToRefs(store);
     count.value++;
     // eslint-disable-next-line no-console
-    console.log("count++: " + count.value);
+    console.log('count++: ' + count.value);
 
     /**
      * Can use translations, but it could happen before they are loaded correctly
@@ -33,7 +32,7 @@ export const demoMiddleware = (to: RouteLocationNormalized, from: RouteLocationN
      */
     const { t, locale } = i18n.global;
     // eslint-disable-next-line no-console
-    console.log("locale (will not work): " + locale.value, t('generic.loading', { load: to.path }));
+    console.log('locale (will not work): ' + locale.value, t('generic.loading', { load: to.path }));
 
     next();
 };

@@ -1,11 +1,11 @@
 import { beforeEach, afterEach, expect, it, vi } from 'vitest';
-import axios from "../http";
+import axios from '../http';
 
 it('allows purchases within business hours', () => {
     // tell vitest we use mocked time
-    beforeEach(() => vi.useFakeTimers())
+    beforeEach(() => vi.useFakeTimers());
     // restoring date after each test run
-    afterEach(() => vi.useRealTimers())
+    afterEach(() => vi.useRealTimers());
 
     // // If we want to set a specific time (not necessary)
     // // access Date.now() will result in the date set above
@@ -14,4 +14,4 @@ it('allows purchases within business hours', () => {
 
     // TODO
     return expect(axios).resolves.toEqual(axios);
-})
+});

@@ -1,12 +1,12 @@
-@use "itemList";
+@use 'itemList';
 
 #users-list-page {
-  .users-list {
-    --list-margin: 16px;
-    --list-border-radius: 24px;
-  }
+    .users-list {
+        --list-margin: 16px;
+        --list-border-radius: 24px;
+    }
 
-  .list-pagination {
-    margin: 24px auto;
-  }
+    .list-pagination {
+        margin: 24px auto;
+    }
 }

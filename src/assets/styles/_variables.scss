@@ -1,5 +1,4 @@
-@use "@guebbit/css-toolkit" as guebbit;
-
+@use '@guebbit/css-toolkit' as guebbit;
 
 /**
  * Theme colors
@@ -11,19 +10,19 @@ $primary-color--dark: #00bcd4 !default;
 $secondary-color--dark: #ff9800 !default;
 
 $theme-colors: (
-    "primary": guebbit.create-collection($primary-color),
-    "secondary": guebbit.create-collection($secondary-color)
+    'primary': guebbit.create-collection($primary-color),
+    'secondary': guebbit.create-collection($secondary-color)
 );
 
 $theme-colors-dark: (
-    "primary": guebbit.create-collection($primary-color--dark),
-    "secondary": guebbit.create-collection($secondary-color--dark)
+    'primary': guebbit.create-collection($primary-color--dark),
+    'secondary': guebbit.create-collection($secondary-color--dark)
 );
 
 /**
  * Main settings
  */
-$css-ui-dark-theme-class: "theme--dark" !default;
+$css-ui-dark-theme-class: 'theme--dark' !default;
 
 /**
  * Media thresholds

@@ -4,10 +4,7 @@
         <h3 v-if="profile">Hello {{ profile.email }}</h3>
     </Navigation>
 
-    <div
-        v-show="messages.length > 0"
-        class="toast-container"
-    >
+    <div v-show="messages.length > 0" class="toast-container">
         <div
             v-for="alert in messages"
             :key="'alert-' + alert.id"
@@ -15,11 +12,7 @@
             :class="['theme-card', alert.type]"
         >
             {{ alert.message }}
-            <button
-                class="theme-button"
-                @click="hideMessage(alert.id)"
-            >X
-            </button>
+            <button class="theme-button" @click="hideMessage(alert.id)">X</button>
         </div>
     </div>
 
@@ -40,14 +33,10 @@
     </main>
 
     <transition name="loaders-fade">
-        <LoadingCore
-            v-show="loadings.core"
-        />
+        <LoadingCore v-show="loadings.core" />
     </transition>
     <transition name="loaders-fade">
-        <LoadingSide
-            v-show="isLoading"
-        />
+        <LoadingSide v-show="isLoading" />
     </transition>
 </template>
 
@@ -72,18 +61,16 @@
 }
 </style>
 
-
-
 <script setup lang="ts">
-import { useSlots } from 'vue'
-import { storeToRefs } from 'pinia'
-import LoadingCore from '@/components/atoms/LoadingCore.vue'
-import LoadingSide from '@/components/atoms/LoadingSide.vue'
-import Navigation from '@/components/organisms/Navigation.vue'
-import { useCoreStore } from '@/stores/core'
-import { useToastStore } from '@/stores/toasts'
-import { useProfileStore } from '@/stores/profile.ts'
-import { getCookie } from '@/utils/helperGenerics.ts'
+import { useSlots } from 'vue';
+import { storeToRefs } from 'pinia';
+import LoadingCore from '@/components/atoms/LoadingCore.vue';
+import LoadingSide from '@/components/atoms/LoadingSide.vue';
+import Navigation from '@/components/organisms/Navigation.vue';
+import { useCoreStore } from '@/stores/core';
+import { useToastStore } from '@/stores/toasts';
+import { useProfileStore } from '@/stores/profile.ts';
+import { getCookie } from '@/utils/helperGenerics.ts';
 
 /**
  *
@@ -92,8 +79,8 @@ defineProps<{
     /**
      * If the content should be minimum full page and centered
      */
-    centered?: boolean
-}>()
+    centered?: boolean;
+}>();
 
 /**
  * Slots
@@ -101,42 +88,27 @@ defineProps<{
  * - header
  * - navigation
  */
-const slots = useSlots()
+const slots = useSlots();
 
 /**
  * core loading
  */
-const {
-    loadings,
-    isLoading
-} = storeToRefs(useCoreStore())
+const { loadings, isLoading } = storeToRefs(useCoreStore());
 
 /**
  * Toasts
  */
-const {
-    messages
-} = storeToRefs(useToastStore())
-const {
-    hideMessage
-} = useToastStore()
-
+const { messages } = storeToRefs(useToastStore());
+const { hideMessage } = useToastStore();
 
 /**
  * Profile
  */
-const {
-    profile
-} = storeToRefs(useProfileStore())
-const {
-    refreshToken,
-    fetchProfile
-} = useProfileStore()
+const { profile } = storeToRefs(useProfileStore());
+const { refreshToken, fetchProfile } = useProfileStore();
 
 /**
  * Fetch current user profile (if logged in)
  */
-if(getCookie('isAuth'))
-    refreshToken()
-        .then(() => fetchProfile())
+if (getCookie('isAuth')) refreshToken().then(() => fetchProfile());
 </script>

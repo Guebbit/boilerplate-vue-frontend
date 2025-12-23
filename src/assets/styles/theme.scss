@@ -1,69 +1,64 @@
-@use "@guebbit/css-toolkit" as guebbit;
-@use "variables" as vars;
+@use '@guebbit/css-toolkit' as guebbit;
+@use 'variables' as vars;
 
-@use "components/atoms/theme-button";
-@use "components/atoms/theme-input";
-@use "components/atoms/theme-select";
-@use "components/atoms/theme-page-title";
-@use "components/atoms/theme-card";
-
+@use 'components/atoms/theme-button';
+@use 'components/atoms/theme-input';
+@use 'components/atoms/theme-select';
+@use 'components/atoms/theme-page-title';
+@use 'components/atoms/theme-card';
 
 /**
  * Default theme
  */
 :root {
-
-  /**
+    /**
    * Add the theme colors to the root
    */
-  @include guebbit.create-colors-vars(vars.$theme-colors);
+    @include guebbit.create-colors-vars(vars.$theme-colors);
 
-
-  /**
+    /**
    * Generic variables
    */
-  --padding: 28px;
-  --transitions-time: 0.2s;
-  --nav-height: 54px;
+    --padding: 28px;
+    --transitions-time: 0.2s;
+    --nav-height: 54px;
 
-  /**
+    /**
    * CSS Theme (semantic color variables for this project)
    * TODO
    */
-  --theme-surface: 255 255 255;
-  --theme-on-surface: var(--grey-900);
-  --theme-background: 222 222 222;
+    --theme-surface: 255 255 255;
+    --theme-on-surface: var(--grey-900);
+    --theme-background: 222 222 222;
 
-  /**
+    /**
    * Overrides
    */
-  --on-secondary-600: 255 255 255 !important;
+    --on-secondary-600: 255 255 255 !important;
 
-  /**
+    /**
    * Other variables
    */
-  --select-icon: url(https://upload.wikimedia.org/wikipedia/commons/9/9d/Caret_down_font_awesome_whitevariation.svg);
+    --select-icon: url(https://upload.wikimedia.org/wikipedia/commons/9/9d/Caret_down_font_awesome_whitevariation.svg);
 }
-
-
 
 /**
  * Dark theme
  * (Will be applied by class name and by prefers-color-scheme)
  */
 @mixin theme-dark-builder {
-  @include guebbit.create-colors-vars(vars.$theme-colors-dark);
+    @include guebbit.create-colors-vars(vars.$theme-colors-dark);
 }
 
 // Class name
 .#{vars.$css-ui-dark-theme-class} {
-  :root {
-    @include theme-dark-builder;
-  }
+    :root {
+        @include theme-dark-builder;
+    }
 }
 // Prefers color scheme
 @media (prefers-color-scheme: dark) {
-  :root {
-    @include theme-dark-builder;
-  }
+    :root {
+        @include theme-dark-builder;
+    }
 }

@@ -1,32 +1,32 @@
 //@use "@guebbit/css-ui/src/molecules/cards/SimpleCard";
 
 .theme-card {
-  cursor: pointer;
-  --background: var(--primary-500);
-  --text-color: var(--on-primary-500);
-  --active-background: var(--secondary-500);
-  --active-text-color: var(--on-secondary-500);
-  background: rgb(var(--background));
-  color: rgb(var(--text-color));
-  padding: 40px;
+    cursor: pointer;
+    --background: var(--primary-500);
+    --text-color: var(--on-primary-500);
+    --active-background: var(--secondary-500);
+    --active-text-color: var(--on-secondary-500);
+    background: rgb(var(--background));
+    color: rgb(var(--text-color));
+    padding: 40px;
 
-  .card-image {
-    width: 30%;
-    max-height: 100px;
-    object-fit: cover;
-  }
+    .card-image {
+        width: 30%;
+        max-height: 100px;
+        object-fit: cover;
+    }
 
-  .card-title {
-    margin: 0;
-  }
+    .card-title {
+        margin: 0;
+    }
 
-  &:hover,
-  &.active{
-    background: rgb(var(--active-background));
-    color: rgb(var(--active-text-color));
-  }
+    &:hover,
+    &.active {
+        background: rgb(var(--active-background));
+        color: rgb(var(--active-text-color));
+    }
 
-  &:hover{
-    opacity: 0.8;
-  }
+    &:hover {
+        opacity: 0.8;
+    }
 }

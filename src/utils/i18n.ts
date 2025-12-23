@@ -1,11 +1,11 @@
-import { nextTick, type WritableComputedRef } from 'vue'
-import { createI18n, type I18n } from 'vue-i18n'
-import type { RouteLocationRaw, RouteLocationNamedRaw } from 'vue-router'
+import { nextTick, type WritableComputedRef } from 'vue';
+import { createI18n, type I18n } from 'vue-i18n';
+import type { RouteLocationRaw, RouteLocationNamedRaw } from 'vue-router';
 // import it from "@/locales/it.json";
 // import en from "@/locales/en.json";
 
 export interface ITranslationDictionaries {
-    [key: string]: string | ITranslationDictionaries
+    [key: string]: string | ITranslationDictionaries;
 }
 
 /**
@@ -20,14 +20,13 @@ export const supportedLanguages = import.meta.env.VITE_APP_SUPPORTED_LOCALES
     ? ((import.meta.env.VITE_APP_SUPPORTED_LOCALES as string | undefined) ?? '').split(',')
     : Object.keys(import.meta.glob('/src/locales/*.json')).map((file) =>
           file.replace('/src/locales/', '').replace('.json', '')
-      )
+      );
 
 /**
  * [on build]
  * List of loaded languages (already fetched)
  */
-export const loadedLanguages: string[] = []
-
+export const loadedLanguages: string[] = [];
 
 /**
  * [on build]
@@ -44,7 +43,7 @@ export const i18n = createI18n({
      * In this case: automatic browser language detection
      * (it's better to use this elsewhere, with routing)
      */
-    locale: (import.meta.env.VITE_APP_DEFAULT_LOCALE as string | undefined) ?? 'en',
+    locale: import.meta.env.VITE_APP_DEFAULT_LOCALE ?? 'en',
 
     /**
      * Fallback in case requested language doesn't exist
@@ -64,24 +63,23 @@ export const i18n = createI18n({
      * Custom modifiers to transform translations
      */
     modifiers: {
-        customSnakeCase: (value) =>
-            typeof value === 'string' ? value.split(' ').join('_') : value
+        customSnakeCase: (value) => (typeof value === 'string' ? value.split(' ').join('_') : value)
     }
-})
+});
 
 /**
  * [on build]
  * If no language are present, add a fake default one
  */
-if(supportedLanguages.length === 0){
+if (supportedLanguages.length === 0) {
     // eslint-disable-next-line no-console
-    console.error("---------- NO LANGUAGES FOUND ----------")
+    console.error('---------- NO LANGUAGES FOUND ----------');
     supportedLanguages.push(
-        (i18n.global.fallbackLocale as WritableComputedRef<string | undefined>).value ?? "no-lang"
-    )
+        (i18n.global.fallbackLocale as WritableComputedRef<string | undefined>).value ?? 'no-lang'
+    );
     loadedLanguages.push(
-        (i18n.global.fallbackLocale as WritableComputedRef<string | undefined>).value ?? "no-lang"
-    )
+        (i18n.global.fallbackLocale as WritableComputedRef<string | undefined>).value ?? 'no-lang'
+    );
 }
 
 /**
@@ -93,12 +91,10 @@ if(supportedLanguages.length === 0){
 export async function _loadLocale(i18n: I18n, locale: string) {
     // Load locale
     if (
-        // Check if it's the same language
-        // (i18n.global.locale as WritableComputedRef<string>).value === locale ||
-        // or it is already loaded
+        // Check if already loaded
         loadedLanguages.includes(locale)
     )
-        return _changeLanguage(i18n, locale)
+        return _changeLanguage(i18n, locale);
     // If not loaded but supported, load it from a file
     // (load from server must be done elsewhere and then be added to loadadLanguages before calling this function)
     if (supportedLanguages.includes(locale))
@@ -114,10 +110,10 @@ export async function _loadLocale(i18n: I18n, locale: string) {
                 )
                 // this should never happen if in supportedLanguage, but failsafe default language just in case
                 .catch(() => _changeLanguage(i18n, getDefaultLocale()))
-        )
+        );
 
     // If not supported, change to default language
-    return _changeLanguage(i18n, getDefaultLocale())
+    return _changeLanguage(i18n, getDefaultLocale());
 }
 
 /**
@@ -126,7 +122,7 @@ export async function _loadLocale(i18n: I18n, locale: string) {
  * @param locale
  */
 export async function loadLocale(locale: string) {
-    return _loadLocale(i18n as I18n, locale)
+    return _loadLocale(i18n, locale);
 }
 
 /**
@@ -143,9 +139,9 @@ export async function _updateLocale(
     messages: ITranslationDictionaries
 ) {
     // Could be already present and this is just an update
-    if (!loadedLanguages.includes(locale)) loadedLanguages.push(locale)
-    i18n.global.setLocaleMessage(locale, messages)
-    return nextTick()
+    if (!loadedLanguages.includes(locale)) loadedLanguages.push(locale);
+    i18n.global.setLocaleMessage(locale, messages);
+    return nextTick();
 }
 
 /**
@@ -155,7 +151,7 @@ export async function _updateLocale(
  * @param messages
  */
 export async function updateLocale(locale: string, messages: ITranslationDictionaries) {
-    return _updateLocale(i18n as I18n, locale, messages)
+    return _updateLocale(i18n, locale, messages);
 }
 
 /**
@@ -165,9 +161,8 @@ export async function updateLocale(locale: string, messages: ITranslationDiction
  * @param locale
  */
 export async function _changeLanguage(i18n: I18n, locale: string) {
-    if (!loadedLanguages.includes(locale))
-        await _loadLocale(i18n, locale);
-    (i18n.global.locale as WritableComputedRef<string>).value = locale
+    if (!loadedLanguages.includes(locale)) await _loadLocale(i18n, locale);
+    (i18n.global.locale as WritableComputedRef<string>).value = locale;
 
     /**
      * NOTE:
@@ -177,8 +172,8 @@ export async function _changeLanguage(i18n: I18n, locale: string) {
      * The following is an example for axios.
      * axios.defaults.headers.common['Accept-Language'] = locale
      */
-    document.querySelector('html')?.setAttribute('lang', locale)
-    return nextTick()
+    document.querySelector('html')?.setAttribute('lang', locale);
+    return nextTick();
 }
 
 /**
@@ -187,18 +182,24 @@ export async function _changeLanguage(i18n: I18n, locale: string) {
  * @param locale
  */
 export function changeLanguage(locale: string) {
-    return _changeLanguage(i18n as I18n, locale)
+    return _changeLanguage(i18n, locale);
 }
 
 /**
  * Get user locale, fallback if not available
  */
 export function getDefaultLocale() {
-    const foundLocale = navigator.language.slice(0, 2)
+    const foundLocale = navigator.language.slice(0, 2);
     if (!loadedLanguages.includes(foundLocale))
-        return (i18n.global.fallbackLocale as WritableComputedRef<string>).value
-    return foundLocale
+        return (i18n.global.fallbackLocale as WritableComputedRef<string>).value;
+    return foundLocale;
 }
+
+/**
+ * Current locale value
+ * Since i18n.global.locale can be both string and WritableComputedRef<string>, we need to cast it
+ */
+export const getCurrentLocale = () => i18n.global.locale.value;
 
 /**
  * Fix Router Links adding our current Locale
@@ -211,14 +212,14 @@ export function routerLinkI18n(to: RouteLocationRaw) {
         return {
             path: to,
             params: {
-                locale: i18n.global.locale.value
+                locale: getCurrentLocale()
             }
-        }
+        };
     return {
         ...to,
         params: {
-            locale: i18n.global.locale.value,
+            locale: getCurrentLocale(),
             ...(to as RouteLocationNamedRaw).params
         }
-    }
+    };
 }

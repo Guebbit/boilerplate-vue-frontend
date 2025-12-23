@@ -1,6 +1,6 @@
-import axios from '@/utils/http.ts'
-import type { AxiosProgressEvent } from 'axios'
-import type { IUserIdentification } from '@/types'
+import axios from '@/utils/http.ts';
+import type { AxiosProgressEvent, AxiosResponse } from 'axios';
+import type { IUser, IUserIdentification } from '@/types';
 
 /**
  * Put Profile data DEMO
@@ -10,14 +10,14 @@ import type { IUserIdentification } from '@/types'
  * @param onUploadProgress
  */
 export const updateUserImageApi = (
-    id: IUserIdentification,
+    id: IUserIdentification, // TODO
     formData: FormData,
     onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
-) =>
-    axios.put('https://httpbin.org/put', formData,{
+): Promise<AxiosResponse<IUser>> =>
+    axios.put<IUser>('https://httpbin.org/put', formData, {
         headers: {
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            'Content-Type': 'multipart/form-data',
+            'Content-Type': 'multipart/form-data'
         },
         onUploadProgress
-    })
+    });

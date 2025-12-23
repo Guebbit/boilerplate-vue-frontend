@@ -1,8 +1,7 @@
-import axios from '@/utils/http.ts'
-import type { IResponseSuccess } from '@/types'
+import axios from '@/utils/http.ts';
+import type { IResponseSuccess } from '@/types';
 
 /**
  * Login user through email and password
  */
-export const logoutApi = () =>
-    axios.post<undefined, IResponseSuccess<undefined>>('account/logout')
+export const logoutApi = () => axios.post<undefined, IResponseSuccess<undefined>>('account/logout');

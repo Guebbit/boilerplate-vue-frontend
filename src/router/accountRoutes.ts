@@ -1,13 +1,13 @@
-import { useProfileStore } from '@/stores/profile.ts'
-import type { RouteRecordRaw } from 'vue-router'
-import { isAuth, isGuest } from '@/middlewares/authentications.ts'
+import { useProfileStore } from '@/stores/profile.ts';
+import type { RouteRecordRaw } from 'vue-router';
+import { isAuth, isGuest } from '@/middlewares/authentications.ts';
 
 export default [
     {
         path: 'login',
         name: 'Login',
         beforeEnter: [isGuest],
-        component: () => import('@/views/Login.vue'),
+        component: () => import('@/views/Login.vue')
     },
     {
         path: 'signup',
@@ -31,12 +31,12 @@ export default [
              * @param next
              */
             beforeRouteEnter: async (to, from, next) => {
-                const { logout } = useProfileStore()
-                await logout()
+                const { logout } = useProfileStore();
+                await logout();
                 next({
                     name: 'Home'
                 });
             }
         }
     }
-] as RouteRecordRaw[]
+] as RouteRecordRaw[];

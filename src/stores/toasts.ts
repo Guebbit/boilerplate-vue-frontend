@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { getUuid } from '@guebbit/js-toolkit'
+import { getUuid } from '@guebbit/js-toolkit';
 
 export enum IToastType {
     PRIMARY = 'primary',
@@ -8,13 +8,13 @@ export enum IToastType {
     // TODO creare questi colori
     DANGER = 'danger',
     WARNING = 'warning',
-    SUCCESS = 'success',
+    SUCCESS = 'success'
 }
-export interface IToastMessage{
-    id: string,
-    message: string,
-    type: IToastType,
-    visible: boolean
+export interface IToastMessage {
+    id: string;
+    message: string;
+    type: IToastType;
+    visible: boolean;
 }
 
 /**
@@ -29,9 +29,7 @@ export const useToastStore = defineStore('toast', () => {
     /**
      * Visible messages
      */
-    const messages = computed(() =>
-        history.value.filter(({ visible }) => visible)
-    );
+    const messages = computed(() => history.value.filter(({ visible }) => visible));
 
     /**
      * Add a message then after a timeout and then remove it (FIFO)
@@ -47,20 +45,21 @@ export const useToastStore = defineStore('toast', () => {
             id,
             message,
             type,
-            visible: true,
+            visible: true
         });
         // Remove after timeout (if any)
-        if(timeout > 0)
-            setTimeout(() => { hideMessage(id); }, timeout);
-    }
+        if (timeout > 0)
+            setTimeout(() => {
+                hideMessage(id);
+            }, timeout);
+    };
 
     /**
      * Find a message by id
      *
      * @param _id
      */
-    const findMessage = (_id: string) =>
-        history.value.find(({ id }) => id === _id);
+    const findMessage = (_id: string) => history.value.find(({ id }) => id === _id);
 
     /**
      * Hide a message visiblity
@@ -68,9 +67,8 @@ export const useToastStore = defineStore('toast', () => {
      * @param _id
      */
     const hideMessage = (_id: string) => {
-        const message = findMessage(_id)
-        if (message)
-            message.visible = false
+        const message = findMessage(_id);
+        if (message) message.visible = false;
     };
 
     /**
@@ -79,9 +77,8 @@ export const useToastStore = defineStore('toast', () => {
      * @param _id
      */
     const showMessage = (_id: string) => {
-        const message = findMessage(_id)
-        if (message)
-            message.visible = true
+        const message = findMessage(_id);
+        if (message) message.visible = true;
     };
 
     /**
@@ -90,7 +87,7 @@ export const useToastStore = defineStore('toast', () => {
      * @param _id
      */
     const removeMessage = (_id: string) =>
-        history.value = history.value.filter(({ id }) => id !== _id);
+        (history.value = history.value.filter(({ id }) => id !== _id));
 
     return {
         history,
@@ -99,6 +96,6 @@ export const useToastStore = defineStore('toast', () => {
         findMessage,
         hideMessage,
         showMessage,
-        removeMessage,
+        removeMessage
     };
 });

@@ -1,96 +1,96 @@
 {
-  "generic": {
-    "increment": "incremento | incrementi",
-    "count": "conto | conti",
-    "user": "utente | utenti",
-    "product": "prodotto | prodotti",
-    "list": "lista | liste",
-    "loading": "caricamento {load}",
-    "it": "italiano",
-    "en": "inglese",
-    "es": "spagnolo"
-  },
-  "navigation": {
-    "label-home": "home",
-    "label-admin": "amministrazione",
-    "label-users-list": "@:generic.list @:generic.user",
-    "label-products-list": "@:generic.list @:generic.product",
-    "label-profile": "Profilo",
-    "label-login": "Login",
-    "label-logout": "Logout",
-    "error-already-logged": "Sei già loggato",
-    "error-not-logged": "Devi essere loggato per accedere a questa pagina",
-    "error-forbidden": "Non sei autorizzato ad accedere a questa pagina"
-  },
-  "home-page": {
-    "page-title": "Home",
-    "label-count": "@.capitalize:generic.count",
-    "label-provided": "Variabile provided da App.vue",
-    "label-provided-change-typing": "Cambia direttamente scrivendo",
-    "label-provided-change-mutation": "Cambia usando la sua mutazione",
-    "label-increment": "@.capitalize:generic.increment",
-    "label-delayed-increment": "@.capitalize:generic.increment asincrono"
-  },
-  "admin-page": {
-    "page-title": "Admin Dashboard"
-  },
-  "error-page": {
-    "page-title": "Error"
-  },
-  "products-list-page": {
-    "page-title": "Lista prodotti",
-    "user": "@:generic.product [0]",
-    "modified-users-list": "@.customSnakeCase:{'generic.product'} @:{'generic.list'}",
-    "button-go-to-details": "Pagina prodotto"
-  },
-  "product-target-page": {
-    "page-title": "Prodotto selezionato",
-    "button-go-to-list": "Vai alla lista prodotti"
-  },
-  "users-list-page": {
-    "page-title": "Lista utenti",
-    "user": "@:generic.user [0]",
-    "modified-users-list": "@.customSnakeCase:{'generic.user'} @:{'generic.list'}",
-    "button-go-to-details": "Pagina utente"
-  },
-  "user-target-page": {
-    "page-title": "Utente selezionato",
-    "button-go-to-list": "Vai alla lista utenti"
-  },
-  "login-page": {
-    "page-title": "Login",
-    "label-email": "Email",
-    "label-password": "Password",
-    "label-remember": "Ricorda il mio accesso",
-    "text-conditions": "Ho letto le condizioni della privacy",
-    "button-submit": "Login"
-  },
-  "profile-page": {
-    "page-title": "Il tuo profilo",
-    "label-username": "Username",
-    "label-email": "Email",
-    "label-phone": "Numero di telefono",
-    "label-website": "Website",
-    "label-password": "Password",
-    "label-passwordConfirm": "Conferma Password",
-    "button-submit": "Salva modifiche",
-    "reset-form": "Cancella modifiche",
-    "success-update": "Profilo aggiornato con successo",
-    "button-change-password": "Cambia password"
-  },
-  "users-form": {
-    "email-required": "L'email è obbligatoria",
-    "email-invalid": "Deve essere un'email valida",
-    "username-required": "Il nome utente è obbligatorio",
-    "username-min": "Il nome utente deve essere lungo almeno 3 caratteri",
-    "conditions-required": "Devi accettare le condizioni!",
-    "password-required": "La password è obbligatoria",
-    "password-min": "La password deve essere lunga almeno 8 caratteri",
-    "password-minus-required": "La password deve contenere almeno una lettera minuscola",
-    "password-maius-required": "La password deve contenere almeno una lettera maiuscola",
-    "password-number-required": "La password deve contenere almeno un numero",
-    "password-special-required": "La password deve contenere almeno un carattere speciale",
-    "password-confirm-required": "Digita nuovamente la password",
-    "password-dont-match": "Le password non corrispondono"
-  }
+    "generic": {
+        "increment": "incremento | incrementi",
+        "count": "conto | conti",
+        "user": "utente | utenti",
+        "product": "prodotto | prodotti",
+        "list": "lista | liste",
+        "loading": "caricamento {load}",
+        "it": "italiano",
+        "en": "inglese",
+        "es": "spagnolo"
+    },
+    "navigation": {
+        "label-home": "home",
+        "label-admin": "amministrazione",
+        "label-users-list": "@:generic.list @:generic.user",
+        "label-products-list": "@:generic.list @:generic.product",
+        "label-profile": "Profilo",
+        "label-login": "Login",
+        "label-logout": "Logout",
+        "error-already-logged": "Sei già loggato",
+        "error-not-logged": "Devi essere loggato per accedere a questa pagina",
+        "error-forbidden": "Non sei autorizzato ad accedere a questa pagina"
+    },
+    "home-page": {
+        "page-title": "Home",
+        "label-count": "@.capitalize:generic.count",
+        "label-provided": "Variabile provided da App.vue",
+        "label-provided-change-typing": "Cambia direttamente scrivendo",
+        "label-provided-change-mutation": "Cambia usando la sua mutazione",
+        "label-increment": "@.capitalize:generic.increment",
+        "label-delayed-increment": "@.capitalize:generic.increment asincrono"
+    },
+    "admin-page": {
+        "page-title": "Admin Dashboard"
+    },
+    "error-page": {
+        "page-title": "Error"
+    },
+    "products-list-page": {
+        "page-title": "Lista prodotti",
+        "user": "@:generic.product [0]",
+        "modified-users-list": "@.customSnakeCase:{'generic.product'} @:{'generic.list'}",
+        "button-go-to-details": "Pagina prodotto"
+    },
+    "product-target-page": {
+        "page-title": "Prodotto selezionato",
+        "button-go-to-list": "Vai alla lista prodotti"
+    },
+    "users-list-page": {
+        "page-title": "Lista utenti",
+        "user": "@:generic.user [0]",
+        "modified-users-list": "@.customSnakeCase:{'generic.user'} @:{'generic.list'}",
+        "button-go-to-details": "Pagina utente"
+    },
+    "user-target-page": {
+        "page-title": "Utente selezionato",
+        "button-go-to-list": "Vai alla lista utenti"
+    },
+    "login-page": {
+        "page-title": "Login",
+        "label-email": "Email",
+        "label-password": "Password",
+        "label-remember": "Ricorda il mio accesso",
+        "text-conditions": "Ho letto le condizioni della privacy",
+        "button-submit": "Login"
+    },
+    "profile-page": {
+        "page-title": "Il tuo profilo",
+        "label-username": "Username",
+        "label-email": "Email",
+        "label-phone": "Numero di telefono",
+        "label-website": "Website",
+        "label-password": "Password",
+        "label-passwordConfirm": "Conferma Password",
+        "button-submit": "Salva modifiche",
+        "reset-form": "Cancella modifiche",
+        "success-update": "Profilo aggiornato con successo",
+        "button-change-password": "Cambia password"
+    },
+    "users-form": {
+        "email-required": "L'email è obbligatoria",
+        "email-invalid": "Deve essere un'email valida",
+        "username-required": "Il nome utente è obbligatorio",
+        "username-min": "Il nome utente deve essere lungo almeno 3 caratteri",
+        "conditions-required": "Devi accettare le condizioni!",
+        "password-required": "La password è obbligatoria",
+        "password-min": "La password deve essere lunga almeno 8 caratteri",
+        "password-minus-required": "La password deve contenere almeno una lettera minuscola",
+        "password-maius-required": "La password deve contenere almeno una lettera maiuscola",
+        "password-number-required": "La password deve contenere almeno un numero",
+        "password-special-required": "La password deve contenere almeno un carattere speciale",
+        "password-confirm-required": "Digita nuovamente la password",
+        "password-dont-match": "Le password non corrispondono"
+    }
 }

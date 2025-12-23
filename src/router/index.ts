@@ -1,29 +1,27 @@
-import { createRouter, createWebHistory, RouterView } from 'vue-router'
-import { demoMiddleware } from '@/middlewares/demoMiddleware'
-import { localeChoice } from '@/middlewares/localeChoice'
-import { isAuth } from '@/middlewares/authentications.ts'
-import { getDefaultLocale } from '@/utils/i18n.ts'
+import { createRouter, createWebHistory, RouterView } from 'vue-router';
+import { demoMiddleware } from '@/middlewares/demoMiddleware';
+import { localeChoice } from '@/middlewares/localeChoice';
+import { isAuth } from '@/middlewares/authentications.ts';
+import { getDefaultLocale } from '@/utils/i18n.ts';
 
-import accountRoutes from './accountRoutes'
-import usersRoutes from './usersRoutes.ts'
-import productsRoutes from './productsRoutes'
+import accountRoutes from './accountRoutes';
+import usersRoutes from './usersRoutes.ts';
+import productsRoutes from './productsRoutes';
 
-import HomeView from '@/views/Home.vue'
+import HomeView from '@/views/Home.vue';
 
 const router = createRouter({
-    history: createWebHistory(import.meta.env.VITE_APP_BASE_URL as string | undefined),
+    history: createWebHistory(import.meta.env.VITE_APP_BASE_URL),
     routes: [
         {
             path: '/:locale?',
             component: RouterView,
-            beforeEnter: [
-                demoMiddleware
-            ],
+            beforeEnter: [demoMiddleware],
             children: [
                 {
                     path: '',
                     name: 'Home',
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
                     component: HomeView
                 },
                 {
@@ -47,7 +45,7 @@ const router = createRouter({
                     // this generates a separate chunk (About.[hash].js) for this route
                     // which is lazy-loaded when the route is visited.
                     component: () => import('@/views/Error.vue'),
-                    props: true,
+                    props: true
                 },
 
                 /**
@@ -74,24 +72,23 @@ const router = createRouter({
             redirect: `/${getDefaultLocale()}/`
         }
     ]
-})
+});
 
 /**
  * Global error handler
  */
 router.onError((error: Error) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    if(process.env.NODE_ENV !== 'production')
+    if (process.env.NODE_ENV !== 'production')
         // eslint-disable-next-line no-console
-        console.error('page error', error)
+        console.error('page error', error);
     return router.push({
         name: 'Error',
         params: {
             status: 500,
             message: error.message
         }
-    })
-})
+    });
+});
 
 /**
  * Global guards
@@ -110,9 +107,9 @@ router.onError((error: Error) => {
  */
 router.beforeEach((to, from, next) => {
     // eslint-disable-next-line no-console
-    console.log(`Navigating from ${from.path} to ${to.path}`)
-    next()
-})
+    console.log(`Navigating from ${from.path} to ${to.path}`);
+    next();
+});
 
 /**
  * Refresh (is needed) the authentication before every route
@@ -125,6 +122,6 @@ router.beforeEach((to, from, next) => {
 /**
  * Check that requeste locale is supported and loadeds
  */
-router.beforeResolve(localeChoice)
+router.beforeResolve(localeChoice);
 
-export default router
+export default router;

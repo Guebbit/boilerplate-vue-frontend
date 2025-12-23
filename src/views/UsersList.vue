@@ -1,7 +1,77 @@
+<script setup lang="ts">
+import '../assets/styles/pages/usersList.scss';
+import { onMounted } from 'vue';
+import { RouterLink } from 'vue-router';
+import { routerLinkI18n } from '@/utils/i18n.ts';
+import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
+import { useUsersStore } from '@/stores/users';
+import { useItemList, type ISortOrder } from '@/composables/itemList.ts';
+
+import LayoutDefault from '@/layouts/LayoutDefault.vue';
+import ListPagination from '@/components/molecules/ListPagination.vue';
+
+import type { IUser } from '@/types';
+
+/**
+ * Generics
+ */
+const { t } = useI18n();
+
+/**
+ * Users store
+ * The composable within will have most of the logic for this kind of pages
+ */
+const { fetchUsers } = useUsersStore();
+const { usersList } = storeToRefs(useUsersStore());
+
+/**
+ * TODO
+ * Composable that will have most of the logic
+ * of all this kind of pages
+ */
+const {
+    startLoading,
+    stopLoading,
+    loading,
+    itemList,
+    selectedIdentifier,
+    selectedRecord,
+    pageCurrent,
+    pageSize,
+    pageTotal,
+    filters,
+    sorters,
+    list,
+    total
+} = useItemList<IUser>();
+
+/**
+ * Initialize pagination
+ */
+pageSize.value = 6;
+
+/**
+ * Get users from API
+ */
+onMounted(fetchUsers);
+
+/**
+ * Filters and sorters
+ * TODO decidere gerarchia, logical gates, etc
+ */
+filters.value.name = '';
+sorters.value = {
+    name: ''
+} as Record<keyof IUser, ISortOrder>;
+</script>
+
 <template>
     <LayoutDefault id="users-list-page" class="item-list-page">
         <template #header>
-            <h1 class="theme-page-title"><span>{{ t('users-list-page.page-title') }}</span></h1>
+            <h1 class="theme-page-title">
+                <span>{{ t('users-list-page.page-title') }}</span>
+            </h1>
         </template>
 
         <div class="users-list">
@@ -14,28 +84,27 @@
                 }"
                 @click="selectedIdentifier = user.id"
             >
-                <img
-                    class="card-image"
-                    :alt="user.name + ' photo'"
-                    :src="user.imageUrl"
-                />
+                <img class="card-image" :alt="user.name + ' photo'" :src="user.imageUrl" />
                 <div class="card-content">
-                    <h2 class="card-title"><b>{{ user.id }}</b> {{ user.name }}</h2>
+                    <h2 class="card-title">
+                        <b>{{ user.id }}</b> {{ user.name }}
+                    </h2>
                     <p>{{ user.phone }} - {{ user.email }} - {{ user.website }}</p>
                     <RouterLink
-                        :to="routerLinkI18n({
-                            name: 'UserTarget',
-                            params: {
-                                id: user.id,
-                            }
-                        })"
+                        :to="
+                            routerLinkI18n({
+                                name: 'UserTarget',
+                                params: {
+                                    id: user.id
+                                }
+                            })
+                        "
                     >
                         {{ t('users-list-page.button-go-to-details') }}
                     </RouterLink>
                 </div>
             </div>
         </div>
-
 
         <!--
         <ListPagination
@@ -96,82 +165,3 @@
         -->
     </LayoutDefault>
 </template>
-
-<script lang="ts">
-export default {
-    name: 'UsersListPage'
-}
-</script>
-
-<script setup lang="ts">
-import "../assets/styles/pages/usersList.scss";
-import { onMounted } from 'vue'
-import { RouterLink } from 'vue-router'
-import { routerLinkI18n } from '@/utils/i18n.ts';
-import { useI18n } from 'vue-i18n'
-import { storeToRefs } from 'pinia'
-import { useUsersStore } from '@/stores/users';
-import { useItemList, type ISortOrder } from '@/composables/itemList.ts'
-
-import LayoutDefault from '@/layouts/LayoutDefault.vue'
-import ListPagination from '@/components/molecules/ListPagination.vue'
-
-import type { IUser } from '@/types'
-
-/**
- * Generics
- */
-const { t } = useI18n()
-
-/**
- * Users store
- * The composable within will have most of the logic for this kind of pages
- */
-const {
-    fetchUsers,
-} = useUsersStore();
-const {
-    usersList,
-} = storeToRefs(useUsersStore());
-
-/**
- * TODO
- * Composable that will have most of the logic
- * of all this kind of pages
- */
-const {
-    startLoading,
-    stopLoading,
-    loading,
-    itemList,
-    selectedIdentifier,
-    selectedRecord,
-    pageCurrent,
-    pageSize,
-    pageTotal,
-    filters,
-    sorters,
-    list,
-    total
-} = useItemList<IUser>()
-
-/**
- * Initialize pagination
- */
-pageSize.value = 6
-
-/**
- * Get users from API
- */
-onMounted(fetchUsers)
-
-/**
- * Filters and sorters
- * TODO decidere gerarchia, logical gates, etc
- */
-filters.value.name = "";
-sorters.value = {
-    name: '',
-} as Record<keyof IUser, ISortOrder>
-</script>
-

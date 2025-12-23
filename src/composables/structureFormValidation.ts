@@ -1,70 +1,73 @@
-import { computed, ref, watch, type Ref, type ComputedRef } from 'vue'
-import { z, type ZodSchema } from 'zod'
-import { zodErrorInterpreter } from '@/utils/helperErrors.ts'
+import { computed, ref, watch, type Ref, type ComputedRef } from 'vue';
+import { z } from 'zod';
+import { zodErrorInterpreter } from '@/utils/helperErrors.ts';
 
 export const useStructureFormValidation = <
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    T extends Record<string | number | symbol, any> = Record<string, any>,
+    T extends Record<string | number | symbol, any> = Record<string, any>
 >(
-    zodSchema: ZodSchema = z.any(),
+    zodSchema = z.any(),
     constantValidation = true
 ) => {
-
     /**
      * Form state
      */
-    const form = ref({} as Partial<T>)
+    const form = ref({} as Partial<T>);
 
     /**
      * Form original state (for reset, no need to be reactive)
      */
-    const initial = ref({} as Partial<T>)
+    const initial = ref({} as Partial<T>);
     const setInitial = (referredVariable: ComputedRef<T | undefined> | Ref<T | undefined>) => {
-        if(referredVariable.value){
+        if (referredVariable.value) {
             initial.value = {
                 ...referredVariable.value
-            }
+            };
             form.value = {
                 ...referredVariable.value
-            }
+            };
         }
 
-        watch(referredVariable, (value) => {
-            // If the form was not changed, update the form too
-            if(!hasChanged.value)
-                form.value = {
+        watch(
+            referredVariable,
+            (value) => {
+                // If the form was not changed, update the form too
+                if (!hasChanged.value)
+                    form.value = {
+                        ...value
+                    };
+                // Update the initial value
+
+                initial.value = {
+                    ...initial.value,
                     ...value
-                }
-            // Update the initial value
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            initial.value = {
-                ...initial.value,
-                ...value
+                };
+            },
+            {
+                deep: true
             }
-        }, {
-            deep: true
-        })
-    }
+        );
+    };
 
     /**
      * Current form errors
      */
-    const errors = ref<Record<string, string[]>>({})
+    const errors = ref<Record<string, string[]>>({});
 
     /**
      * List of all errors
      */
-    const errorsList = computed(() => Object.values(errors.value).flat())
+    const errorsList = computed(() => Object.values(errors.value).flat());
 
     /**
      * Decide when to show errors
      */
-    const showErrors = ref(false)
+    const showErrors = ref(false);
 
     /**
      * Check if form is valid
      */
-    const isValid = computed(() => errorsList.value.length === 0)
+    const isValid = computed(() => errorsList.value.length === 0);
 
     /**
      * Treat empty and null strings as undefined
@@ -73,51 +76,52 @@ export const useStructureFormValidation = <
         return Object.fromEntries(
             Object.entries(formData).map(([key, value]) => [
                 key,
-                value === "" || value === null ? undefined : value,
+                value === '' || value === null ? undefined : value
             ])
         ) as F;
-    }
+    };
 
     /**
      * Check if form was used
      */
-    const hasChanged = computed(() =>
-        JSON.stringify(sanitizeForm(form.value)) !== JSON.stringify(sanitizeForm(initial.value))
-    )
+    const hasChanged = computed(
+        () =>
+            JSON.stringify(sanitizeForm(form.value)) !== JSON.stringify(sanitizeForm(initial.value))
+    );
 
     /**
      * Reset form to initial state and remove errors
      * (new errors may arise if the initial state was invalid)
      */
     const reset = () => {
-        errors.value = {}
-        form.value = { ...initial.value } as Partial<T>
-    }
+        errors.value = {};
+        form.value = { ...initial.value } as Partial<T>;
+    };
 
     /**
      * Form validation
      */
     const validate = () => {
-        errors.value = {}
-        const parseResult = zodSchema.safeParse(form.value)
-        if (parseResult.success)
-            return true
-        for (const [field, message] of zodErrorInterpreter(parseResult)) {
-            if (!Object.hasOwnProperty.call(errors.value, field))
-                errors.value[field] = []
-            errors.value[field].push(message)
-        }
-        return false
-    }
+        errors.value = {};
+        const parseResult = zodSchema.safeParse(form.value);
+        if (parseResult.success) return true;
+        console.log('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', parseResult);
+        //
+        // for (const [field, message] of zodErrorInterpreter(parseResult)) {
+        //     if (!Object.hasOwnProperty.call(errors.value, field))
+        //         errors.value[field] = []
+        //     errors.value[field].push(message)
+        // }
+        return false;
+    };
 
     /**
      * Trigger form validation on form change (if required)
      */
-    if(constantValidation)
-        validate()
+    if (constantValidation) validate();
     watch(form, () => constantValidation && validate(), {
         deep: true
-    })
+    });
 
     return {
         form,
@@ -130,5 +134,5 @@ export const useStructureFormValidation = <
         hasChanged,
         reset,
         validate
-    }
-}
+    };
+};

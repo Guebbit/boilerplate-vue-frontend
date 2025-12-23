@@ -1,7 +1,7 @@
-import { defineStore } from 'pinia'
-import { useI18n } from 'vue-i18n'
-import { z } from 'zod'
-import { useStructureRestApi } from '@/composables/structureRestApi.ts'
+import { defineStore } from 'pinia';
+import { useI18n } from 'vue-i18n';
+import { z } from 'zod';
+import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import {
     createUserApi,
     deleteUserApi,
@@ -10,15 +10,15 @@ import {
     fetchUsersApi,
     updateUserApi,
     updateUserImageApi as updateUserImageApi
-} from '@/api'
-import { EUserRoles, type IUser, type IUserForm, type IUserIdentification } from '@/types/users.ts'
-import type { AxiosProgressEvent } from 'axios'
+} from '@/api';
+import { EUserRoles, type IUser, type IUserForm, type IUserIdentification } from '@/types/users.ts';
+import type { AxiosProgressEvent } from 'axios';
 
 export const useUsersStore = defineStore('users', () => {
     /**
      * Inherited
      */
-    const { t } = useI18n()
+    const { t } = useI18n();
 
     const {
         itemDictionary: users,
@@ -34,18 +34,14 @@ export const useUsersStore = defineStore('users', () => {
         createTarget,
         updateTarget,
         deleteTarget
-    } = useStructureRestApi<IUser, IUserIdentification>()
+    } = useStructureRestApi<IUser, IUserIdentification>();
 
     /**
      *
      * @param forced
      */
     const fetchUsers = (forced = false) =>
-        fetchAll(
-            fetchUsersAllApi()
-                .then(({ data }) => data),
-            forced
-        )
+        fetchAll(() => fetchUsersAllApi().then(({ data }) => data), { forced });
 
     /**
      * TODO paginazione online + offline o mista
@@ -54,15 +50,18 @@ export const useUsersStore = defineStore('users', () => {
      */
     const fetchPaginationUsers = (forced = false) =>
         fetchAll(
-            fetchUsersApi()
-                .then(({ data: { items, page, total, totalPages } }) => {
-                    console.log("PAGINATION", {
-                        items, page, total, totalPages
-                    })
-                    return items
+            () =>
+                fetchUsersApi().then(({ data: { items, page, total, totalPages } }) => {
+                    console.log('PAGINATION', {
+                        items,
+                        page,
+                        total,
+                        totalPages
+                    });
+                    return items;
                 }),
-            forced
-        )
+            { forced }
+        );
 
     /**
      *
@@ -70,22 +69,14 @@ export const useUsersStore = defineStore('users', () => {
      * @param forced
      */
     const fetchUser = (userId: IUserIdentification, forced = false) =>
-        fetchTarget(
-            fetchUserByIdApi(userId)
-                .then(({ data }) => data),
-            userId,
-            forced
-        )
+        fetchTarget(() => fetchUserByIdApi(userId).then(({ data }) => data), userId, { forced });
 
     /**
      *
      * @param userData
      */
     const createUser = (userData: IUserForm) =>
-        createTarget(
-            createUserApi(userData)
-                .then(({ data }) => data)
-        )
+        createTarget(() => createUserApi(userData).then(({ data }) => data));
 
     /**
      * Change user email
@@ -100,12 +91,11 @@ export const useUsersStore = defineStore('users', () => {
         onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
     ) => {
         // TODO generic wrapper with loading and error handling
-        if (files.length === 0)
-            return Promise.reject(new Error('no file selected'))
-        const formData = new FormData()
-        formData.append('file', files[0])
-        return updateUserImageApi(userId, formData, onUploadProgress)
-    }
+        if (files.length === 0 || !files[0]) return Promise.reject(new Error('no file selected'));
+        const formData = new FormData();
+        formData.append('file', files[0]);
+        return updateUserImageApi(userId, formData, onUploadProgress);
+    };
 
     /**
      *
@@ -113,21 +103,14 @@ export const useUsersStore = defineStore('users', () => {
      * @param userData
      */
     const updateUser = (userId: IUserIdentification, userData: Partial<IUserForm> = {}) =>
-        updateTarget(
-            updateUserApi(userId, userData),
-            userId,
-            userData
-        )
+        updateTarget(() => updateUserApi(userId, userData), userId, userData);
 
     /**
      *
      * @param userId
      */
     const deleteUser = (userId: IUserIdentification) =>
-        deleteTarget(
-            deleteUserApi(userId),
-            userId
-        )
+        deleteTarget(() => deleteUserApi(userId), userId);
 
     /**
      * Zod schema for a valid email
@@ -135,9 +118,9 @@ export const useUsersStore = defineStore('users', () => {
     const zodSchemaUsersEmail = z
         .string({
             invalid_type_error: t('users-form.email-required'),
-            required_error: t('users-form.email-required'),
+            required_error: t('users-form.email-required')
         })
-        .email(t('users-form.email-invalid'))
+        .email(t('users-form.email-invalid'));
 
     /**
      *
@@ -145,9 +128,9 @@ export const useUsersStore = defineStore('users', () => {
     const zodSchemaUsersUsername = z
         .string({
             invalid_type_error: t('users-form.username-required'),
-            required_error: t('users-form.username-required'),
+            required_error: t('users-form.username-required')
         })
-        .min(3, t('users-form.username-min'))
+        .min(3, t('users-form.username-min'));
 
     /**
      *
@@ -155,41 +138,40 @@ export const useUsersStore = defineStore('users', () => {
     const zodSchemaUsersPassword = z
         .string({
             invalid_type_error: t('users-form.password-required'),
-            required_error: t('users-form.password-required'),
+            required_error: t('users-form.password-required')
         })
         .min(8, t('users-form.password-min'))
-        .refine(password => password && /[a-z]/.test(password), {
-            message: t('users-form.password-minus-required'),
+        .refine((password) => password && /[a-z]/.test(password), {
+            message: t('users-form.password-minus-required')
         })
-        .refine(password => password && /[A-Z]/.test(password), {
-            message: t('users-form.password-maius-required'),
+        .refine((password) => password && /[A-Z]/.test(password), {
+            message: t('users-form.password-maius-required')
         })
-        .refine(password => password && /\d/.test(password), {
-            message: t('users-form.password-number-required'),
+        .refine((password) => password && /\d/.test(password), {
+            message: t('users-form.password-number-required')
         })
-        .refine(password => password && /[^\dA-Za-z]/.test(password), {
-            message: t('users-form.password-special-required'),
+        .refine((password) => password && /[^\dA-Za-z]/.test(password), {
+            message: t('users-form.password-special-required')
         });
 
     /**
      *
      */
-    const zodSchemaUsers =
-        z.object({
-            id: z.number().nullish().optional(),
-            email: zodSchemaUsersEmail,
-            username: zodSchemaUsersUsername,
-            phone: z.string().nullish().optional(),
-            website: z.string().nullish().optional(),
-            language: z.string().nullish().optional(), // .default(process.env.NODE_SETTINGS_DEFAULT_LOCALE ?? "en"),
-            // imageUrl: z.string().nullish().optional(), // TODO FILE?
-            roles: z.array(z.nativeEnum(EUserRoles)).nullish().optional(), // .default([]),
-            active: z.boolean().nullish().optional(),
-            createdAt: z.date().nullish().optional(),
-            updatedAt: z.date().nullish().optional(),
-            deletedAt: z.date().nullish().optional(),
-        });
-    
+    const zodSchemaUsers = z.object({
+        id: z.number().nullish().optional(),
+        email: zodSchemaUsersEmail,
+        username: zodSchemaUsersUsername,
+        phone: z.string().nullish().optional(),
+        website: z.string().nullish().optional(),
+        language: z.string().nullish().optional(), // .default(process.env.NODE_SETTINGS_DEFAULT_LOCALE ?? "en"),
+        // imageUrl: z.string().nullish().optional(), // TODO FILE?
+        roles: z.array(z.nativeEnum(EUserRoles)).nullish().optional(), // .default([]),
+        active: z.boolean().nullish().optional(),
+        createdAt: z.date().nullish().optional(),
+        updatedAt: z.date().nullish().optional(),
+        deletedAt: z.date().nullish().optional()
+    });
+
     return {
         users,
         usersList,
@@ -210,6 +192,6 @@ export const useUsersStore = defineStore('users', () => {
         zodSchemaUsersEmail,
         zodSchemaUsersUsername,
         zodSchemaUsersPassword,
-        zodSchemaUsers,
-    }
-})
+        zodSchemaUsers
+    };
+});

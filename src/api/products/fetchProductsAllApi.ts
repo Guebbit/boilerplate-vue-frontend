@@ -1,8 +1,7 @@
 import axios from '@/utils/http.ts';
-import type { IProduct } from '@/types'
+import type { IProduct } from '@/types';
 
 /**
  * List all products
  */
-export const fetchProductsAllApi = () =>
-    axios.get<IProduct[]>('products/all');
+export const fetchProductsAllApi = () => axios.get<IProduct[]>('products/all');

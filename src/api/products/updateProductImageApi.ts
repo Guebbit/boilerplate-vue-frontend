@@ -1,6 +1,6 @@
-import axios from '@/utils/http.ts'
-import type { AxiosProgressEvent } from 'axios'
-import type { IProductIdentification } from '@/types'
+import axios from '@/utils/http.ts';
+import type { AxiosProgressEvent } from 'axios';
+import type { IProductIdentification } from '@/types';
 
 /**
  * Put Profile data DEMO
@@ -14,10 +14,10 @@ export const updateProductImageApi = (
     formData: FormData,
     onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
 ) =>
-    axios.put('https://httpbin.org/put', formData,{
+    axios.put('https://httpbin.org/put', formData, {
         headers: {
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            'Content-Type': 'multipart/form-data',
+            'Content-Type': 'multipart/form-data'
         },
         onUploadProgress
-    })
+    });

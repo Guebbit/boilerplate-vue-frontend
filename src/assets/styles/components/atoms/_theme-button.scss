@@ -1,28 +1,28 @@
 .theme-button {
-  display: inline-block;
-  color: rgb(var(--on-primary-500));
-  background: rgba(var(--primary-200) / 0.5);
-  transition:
-          color var(--transitions-time, 0.2s),
-          background-color var(--transitions-time, 0.2s);
-  text-align: center;
-  font-weight: 600;
-  border-radius: 4px;
-  margin: 0;
-  padding: 1em 2em;
-  cursor: pointer;
-  outline: none;
-  text-transform: none;
-  user-select: none;
-  border-style: none;
+    display: inline-block;
+    color: rgb(var(--on-primary-500));
+    background: rgba(var(--primary-200) / 0.5);
+    transition:
+        color var(--transitions-time, 0.2s),
+        background-color var(--transitions-time, 0.2s);
+    text-align: center;
+    font-weight: 600;
+    border-radius: 4px;
+    margin: 0;
+    padding: 1em 2em;
+    cursor: pointer;
+    outline: none;
+    text-transform: none;
+    user-select: none;
+    border-style: none;
 
-  &:disabled{
-    opacity: 0.5;
-    pointer-events: none;
-  }
+    &:disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
 
-  &:hover {
-    color: rgb(var(--on-secondary-500));
-    background: rgba(var(--secondary-200) / 0.5);
-  }
+    &:hover {
+        color: rgb(var(--on-secondary-500));
+        background: rgba(var(--secondary-200) / 0.5);
+    }
 }

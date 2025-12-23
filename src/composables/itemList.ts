@@ -1,14 +1,10 @@
-import { computed, ref } from 'vue'
-import MiniSearch, { type SearchResult } from 'minisearch'
-import { useItemStructure } from '@/composables/itemStructure.ts'
+import { computed, ref } from 'vue';
+import MiniSearch, { type SearchResult } from 'minisearch';
+import { useItemStructure } from '@/composables/itemStructure.ts';
 
 export type ISortOrder = '' | 'ASC' | 'DESC' | 'asc' | 'desc';
 
-export const useItemList = <T = unknown>(
-    itemIdentifier = "id",
-    filterLengthLimit = 2,
-) => {
-
+export const useItemList = <T = unknown>(itemIdentifier = 'id', filterLengthLimit = 2) => {
     /**
      *
      */
@@ -25,14 +21,13 @@ export const useItemList = <T = unknown>(
 
         startLoading,
         stopLoading,
-        loading,
+        loading
     } = useItemStructure<T>(itemIdentifier);
 
     /**
      * Filter data
      */
     const filters = ref({} as Record<keyof T, string>);
-
 
     /**
      * // Search only specific fields
@@ -76,8 +71,8 @@ export const useItemList = <T = unknown>(
     const itemListSearchData = computed(() => {
         // Create a new MiniSearch instance
         const miniSearch = new MiniSearch<T>({
-            fields: ["name"],
-            storeFields: ["id", "name", "username", "email", "phone", "website", "company"], // TODO dinamycally get all fields
+            fields: ['name'],
+            storeFields: ['id', 'name', 'username', 'email', 'phone', 'website', 'company'] // TODO dinamycally get all fields
         });
         // Add all items and allow them to be searchable
         miniSearch.addAll(itemList.value as T[]);
@@ -90,12 +85,14 @@ export const useItemList = <T = unknown>(
      */
     const itemListFiltered = computed(() => {
         // if no filters are set
-        if(!filters.value.name || filters.value.name.length < filterLengthLimit)
+        if (!filters.value.name || filters.value.name.length < filterLengthLimit)
             return itemList.value as T[];
-        return itemListSearchData.value
-            // TODO it adds a score, match, etc. to the object (enrich: false // Prevents adding `score`, `match`, etc.?)
-            //  WARNING: controllare come funziona il discorso della selezione e della ricerca, che potrebbero cozzare (usano gli ID però devo fare che potrebbero non esserci)
-            .sort((a, b) => b.score - a.score) as T[]
+        return (
+            itemListSearchData.value
+                // TODO it adds a score, match, etc. to the object (enrich: false // Prevents adding `score`, `match`, etc.?)
+                //  WARNING: controllare come funziona il discorso della selezione e della ricerca, che potrebbero cozzare (usano gli ID però devo fare che potrebbero non esserci)
+                .toSorted((a, b) => b.score - a.score) as T[]
+        );
     });
 
     /**
@@ -120,29 +117,26 @@ export const useItemList = <T = unknown>(
      * @param data
      * @param sortFields
      */
-    const sortItems = <T>(
-        data: T[],
-        sortFields = {} as Record<keyof T, ISortOrder>
-    ): T[] => {
-        if(Object.keys(sortFields).length === 0)
-            return data;
-        return data.sort((a, b) => {
+    const sortItems = <T>(data: T[], sortFields = {} as Record<keyof T, ISortOrder>): T[] => {
+        if (Object.keys(sortFields).length === 0) return data;
+        return data.toSorted((a, b) => {
             for (const field in sortFields) {
-                if (!Object.prototype.hasOwnProperty.call(sortFields, field))
-                    continue;
+                if (!Object.prototype.hasOwnProperty.call(sortFields, field)) continue;
                 // Compare the field values...
-                const comparison = (a[field] < b[field] ? -1 : (a[field] > b[field] ? 1 : 0));
+                const comparison = a[field] < b[field] ? -1 : a[field] > b[field] ? 1 : 0;
                 // ...and choose the order
                 if (comparison !== 0) {
-                    return sortFields[field].toLowerCase() === 'asc' ? comparison : (
-                        sortFields[field].toLowerCase() === 'desc' ? -comparison: 0
-                    );
+                    return sortFields[field].toLowerCase() === 'asc'
+                        ? comparison
+                        : sortFields[field].toLowerCase() === 'desc'
+                          ? -comparison
+                          : 0;
                 }
             }
             // All compared fields are equal
             return 0;
-        })
-    }
+        });
+    };
 
     /**
      * List of all items sorted
@@ -152,7 +146,7 @@ export const useItemList = <T = unknown>(
     /**
      * Resert filters
      */
-    function resetFilters(){
+    function resetFilters() {
         filters.value = {};
     }
 
@@ -162,7 +156,6 @@ export const useItemList = <T = unknown>(
     function resetSort() {
         sorters.value.value = {};
     }
-
 
     /**
      * ---------------------------------- PAGINATION ------------------------------------
@@ -199,7 +192,7 @@ export const useItemList = <T = unknown>(
      */
     const pageItemList = computed(() =>
         itemListSorted.value.slice(pageOffset.value, pageOffset.value + pageSize.value)
-    )
+    );
 
     /**
      * ---------------------------------- URL ------------------------------------
@@ -266,7 +259,6 @@ export const useItemList = <T = unknown>(
     // console.log("fromObjectToUrl", fromObjectToUrl(obj))
     // console.log("fromUrlToObject", fromUrlToObject(fromObjectToUrl(obj)))
 
-
     return {
         // Selections
         itemList,
@@ -310,6 +302,6 @@ export const useItemList = <T = unknown>(
 
         // better names
         list: pageItemList,
-        total: itemsFilteredLength,
-    }
+        total: itemsFilteredLength
+    };
 };

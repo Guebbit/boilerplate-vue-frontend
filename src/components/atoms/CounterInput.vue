@@ -2,12 +2,7 @@
     <div class="counter-input">
         <label v-show="label.length > 0" :for="uuid">{{ label }}</label>
         <div>
-            <button
-                class="counter-sub"
-                @click="updateCounter(-step)"
-            >
-                -
-            </button>
+            <button class="counter-sub" @click="updateCounter(-step)">-</button>
             <input
                 :value="count?.toString()"
                 @input="triggerUpdateInput"
@@ -16,19 +11,14 @@
                 :max="max"
                 :min="min"
             />
-            <button
-                class="counter-add"
-                @click="updateCounter(step)"
-            >
-                +
-            </button>
+            <button class="counter-add" @click="updateCounter(step)">+</button>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { watch, defineModel } from 'vue'
-import { getUuid } from '@guebbit/js-toolkit'
+import { watch, defineModel } from 'vue';
+import { getUuid } from '@guebbit/js-toolkit';
 
 const {
     label = '',
@@ -39,50 +29,47 @@ const {
     /**
      * Max possible value
      */
-    label?: string
+    label?: string;
     /**
      * add\sub steps
      */
-    step?: number
+    step?: number;
     /**
      * Max possible value
      */
-    max?: number
+    max?: number;
     /**
      * Min possible value
      */
-    min?: number
-}>()
+    min?: number;
+}>();
 
 /**
  * Unique ID to link input and label
  */
-const uuid = getUuid()
+const uuid = getUuid();
 
 /**
  *    Counter value
  */
-const count = defineModel<number>()
+const count = defineModel<number>();
 
 /**
  *
  */
 const triggerUpdateInput = (event: Event) => {
-    if (!event.target)
-        return
-    const countInt = parseInt((event.target as HTMLInputElement).value)
-    if (countInt || countInt === 0)
-        count.value = countInt
-}
+    if (!event.target) return;
+    const countInt = Number.parseInt((event.target as HTMLInputElement).value);
+    if (countInt || countInt === 0) count.value = countInt;
+};
 
 /**
  * Update counter
  */
 const updateCounter = (delta = 0) => {
-    if (!count.value && count.value !== 0)
-        return
-    count.value += delta
-}
+    if (!count.value && count.value !== 0) return;
+    count.value += delta;
+};
 
 /**
  * HTML5 fix
@@ -90,26 +77,20 @@ const updateCounter = (delta = 0) => {
  */
 const fixCounter = () => {
     // if undefined or null
-    if (!count.value)
-        return
+    if (!count.value) return;
     // fix attr min
-    if ((min || min === 0) && count.value < min)
-        count.value = Math.max(count.value, min)
+    if ((min || min === 0) && count.value < min) count.value = Math.max(count.value, min);
     // fix attr max
-    if ((max || max === 0) && count.value > max)
-        count.value = Math.min(count.value, max)
-}
+    if ((max || max === 0) && count.value > max) count.value = Math.min(count.value, max);
+};
 
-watch([
-    count,
-    min,
-    max
-], () => fixCounter())
+watch([count, min, max], () => {
+    fixCounter();
+});
 </script>
 
 <style lang="scss">
 .counter-input {
-
     & > * {
         display: flex;
         justify-content: center;

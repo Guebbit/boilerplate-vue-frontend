@@ -1,5 +1,5 @@
 import axios from '@/utils/http.ts';
-import type { IPagination, IProduct } from '@/types'
+import type { IPagination, IProduct } from '@/types';
 
 /**
  * List products with pagination logics
