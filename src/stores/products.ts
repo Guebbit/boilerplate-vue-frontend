@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 
-import { fetchProductByIdApi, fetchProductsAllApi } from '@/api';
+import { fetchProductByIdApi, fetchProductsAllApi } from '@/apiOld';
 import type { IProduct, IProductIdentification } from '@/types/products.ts';
 
 export const useProductsStore = defineStore('products', () => {

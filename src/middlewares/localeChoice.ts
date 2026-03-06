@@ -6,7 +6,7 @@ import {
     changeLanguage
 } from '@/utils/i18n.ts';
 import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router';
-import { fetchLanguageApi } from '@/api';
+import { fetchLanguageApi } from '@/apiOld';
 
 /**
  * Check that requeste locale is supported and loaded,

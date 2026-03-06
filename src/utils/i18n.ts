@@ -34,7 +34,7 @@ export const loadedLanguages: string[] = [];
  */
 export const i18n = createI18n({
     /**
-     * MUST set false to use composition api
+     * MUST set false to use composition apiOld
      */
     legacy: false,
 

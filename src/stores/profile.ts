@@ -3,7 +3,15 @@ import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { i18n } from '@/utils/i18n.ts';
 import { ERefreshTokenExpiryTime, EUserRoles, type IUser, type IUserIdentification } from '@/types';
-import { fetchProfileApi, patchProfileApi, refreshTokenApi, loginApi, logoutApi } from '@/api';
+import { fetchProfileApi, patchProfileApi, refreshTokenApi, loginApi, logoutApi } from '@/apiOld';
+
+
+import type { LoginRequest } from '@/api';
+import { api } from '@/utils/api';
+await api.login({ email: 'user@example.com', password: 'pass' });
+// const me = (await api.getProfile()).data;
+// const products = (await api.listProducts(1)).data;
+
 
 /**
  * While we can't access to inject/provide in guards or any non-components,

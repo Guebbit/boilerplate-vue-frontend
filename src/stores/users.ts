@@ -10,9 +10,36 @@ import {
     fetchUsersApi,
     updateUserApi,
     updateUserImageApi as updateUserImageApi
-} from '@/api';
+} from '@/apiOld';
 import { EUserRoles, type IUser, type IUserForm, type IUserIdentification } from '@/types/users.ts';
 import type { AxiosProgressEvent } from 'axios';
+
+
+
+
+
+
+
+
+import { DefaultApi, Configuration } from "./api";
+
+const api = new DefaultApi(
+    new Configuration({
+        basePath: "http://localhost:3000",
+        accessToken: "YOUR_TOKEN",
+    })
+);
+
+await api.confirmPasswordReset("token_here", {
+    token: "token_here",
+    password: "newpass",
+    passwordConfirm: "newpass"
+});
+
+
+
+
+
 
 export const useUsersStore = defineStore('users', () => {
     /**

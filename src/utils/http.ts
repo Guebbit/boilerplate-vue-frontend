@@ -4,7 +4,7 @@ import type { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axio
 import type { IResponseReject, IResponseSuccess } from '@/types';
 import { useProfileStore } from '@/stores/profile.ts';
 import { storeToRefs } from 'pinia';
-import { refreshTokenApi } from '@/api';
+import { refreshTokenApi } from '@/apiOld';
 import type { Ref } from 'vue';
 
 /**

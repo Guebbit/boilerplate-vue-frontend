@@ -15,7 +15,6 @@ import pluginOxlint from 'eslint-plugin-oxlint'
 
 export default defineConfigWithVueTs(
     {
-        name: 'app/files-to-lint',
         files: ['**/*.{ts,mts,tsx,vue}']
     },
 
