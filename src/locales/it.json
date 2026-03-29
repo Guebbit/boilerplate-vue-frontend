@@ -16,6 +16,8 @@
         "label-users-list": "@:generic.list @:generic.user",
         "label-products-list": "@:generic.list @:generic.product",
         "label-profile": "Profilo",
+        "label-cart": "Carrello",
+        "label-orders": "Ordini",
         "label-login": "Login",
         "label-logout": "Logout",
         "error-already-logged": "Sei già loggato",
@@ -77,6 +79,43 @@
         "reset-form": "Cancella modifiche",
         "success-update": "Profilo aggiornato con successo",
         "button-change-password": "Cambia password"
+    },
+    "cart-page": {
+        "page-title": "Il mio carrello",
+        "empty-cart": "Il tuo carrello è vuoto",
+        "button-go-to-products": "Sfoglia i prodotti",
+        "label-product-id": "Prodotto",
+        "label-quantity": "Quantità",
+        "label-summary": "Riepilogo",
+        "label-items-count": "Articoli",
+        "label-total-quantity": "Quantità totale",
+        "label-total": "Totale",
+        "button-remove": "Rimuovi",
+        "button-clear": "Svuota carrello",
+        "button-checkout": "Acquista",
+        "success-checkout": "Ordine effettuato con successo!"
+    },
+    "orders-list-page": {
+        "page-title": "I miei ordini",
+        "empty-orders": "Non hai ancora effettuato ordini",
+        "button-go-to-cart": "Vai al carrello",
+        "label-status": "Stato",
+        "label-total": "Totale",
+        "label-date": "Data",
+        "button-go-to-details": "Dettagli ordine"
+    },
+    "order-target-page": {
+        "page-title": "Dettagli ordine",
+        "label-order-id": "ID Ordine",
+        "label-status": "Stato",
+        "label-total": "Totale",
+        "label-notes": "Note",
+        "label-date": "Data",
+        "label-items": "Articoli",
+        "label-product-id": "Prodotto",
+        "label-quantity": "Quantità",
+        "loading": "Caricamento ordine...",
+        "button-go-to-list": "Vai alla lista ordini"
     },
     "users-form": {
         "email-required": "L'email è obbligatoria",
