@@ -7,6 +7,8 @@ import { getDefaultLocale } from '@/utils/i18n.ts';
 import accountRoutes from './accountRoutes';
 import usersRoutes from './usersRoutes.ts';
 import productsRoutes from './productsRoutes';
+import cartRoutes from './cartRoutes.ts';
+import ordersRoutes from './ordersRoutes.ts';
 
 import HomeView from '@/views/Home.vue';
 
@@ -37,6 +39,8 @@ const router = createRouter({
                 ...accountRoutes,
                 ...productsRoutes,
                 ...usersRoutes,
+                ...cartRoutes,
+                ...ordersRoutes,
 
                 {
                     path: 'error/:status/:message?',

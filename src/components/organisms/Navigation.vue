@@ -51,6 +51,26 @@
             >
                 {{ t('navigation.label-profile', 2) }}
             </RouterLink>
+            <RouterLink
+                v-show="isAuth"
+                :to="
+                    routerLinkI18n({
+                        name: 'Cart'
+                    })
+                "
+            >
+                {{ t('navigation.label-cart') }}
+            </RouterLink>
+            <RouterLink
+                v-show="isAuth"
+                :to="
+                    routerLinkI18n({
+                        name: 'OrdersList'
+                    })
+                "
+            >
+                {{ t('navigation.label-orders') }}
+            </RouterLink>
 
             <slot name="nav-left" />
         </nav>

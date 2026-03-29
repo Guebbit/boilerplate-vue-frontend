@@ -16,6 +16,8 @@
         "label-users-list": "@:generic.user @:generic.list",
         "label-products-list": "@:generic.product @:generic.list",
         "label-profile": "Profile",
+        "label-cart": "Cart",
+        "label-orders": "Orders",
         "label-login": "Login",
         "label-logout": "Logout",
         "error-already-logged": "You are already logged",
@@ -77,6 +79,43 @@
         "reset-form": "Reset changes",
         "success-update": "Profile updated successfully",
         "button-change-password": "Change password"
+    },
+    "cart-page": {
+        "page-title": "My Cart",
+        "empty-cart": "Your cart is empty",
+        "button-go-to-products": "Browse products",
+        "label-product-id": "Product",
+        "label-quantity": "Quantity",
+        "label-summary": "Summary",
+        "label-items-count": "Items",
+        "label-total-quantity": "Total quantity",
+        "label-total": "Total",
+        "button-remove": "Remove",
+        "button-clear": "Clear cart",
+        "button-checkout": "Checkout",
+        "success-checkout": "Order placed successfully!"
+    },
+    "orders-list-page": {
+        "page-title": "My Orders",
+        "empty-orders": "You have no orders yet",
+        "button-go-to-cart": "Go to cart",
+        "label-status": "Status",
+        "label-total": "Total",
+        "label-date": "Date",
+        "button-go-to-details": "Order details"
+    },
+    "order-target-page": {
+        "page-title": "Order details",
+        "label-order-id": "Order ID",
+        "label-status": "Status",
+        "label-total": "Total",
+        "label-notes": "Notes",
+        "label-date": "Date",
+        "label-items": "Items",
+        "label-product-id": "Product",
+        "label-quantity": "Quantity",
+        "loading": "Loading order...",
+        "button-go-to-list": "Go to orders list"
     },
     "users-form": {
         "email-required": "Email is required",
