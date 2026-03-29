@@ -1,27 +1,23 @@
-# AddUserRequestJSON
+# PasswordResetConfirmRequest
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**email** | **string** |  | [default to undefined]
-**username** | **string** |  | [default to undefined]
+**token** | **string** | One-time password reset token (NOT a JWT). | [default to undefined]
 **password** | **string** |  | [default to undefined]
-**admin** | **boolean** |  | [default to undefined]
-**active** | **boolean** |  | [default to undefined]
+**passwordConfirm** | **string** |  | [default to undefined]
 
 ## Example
 
 ```typescript
-import { AddUserRequestJSON } from './api';
+import { PasswordResetConfirmRequest } from './api';
 
-const instance: AddUserRequestJSON = {
-    email,
-    username,
+const instance: PasswordResetConfirmRequest = {
+    token,
     password,
-    admin,
-    active,
+    passwordConfirm,
 };
 ```
 

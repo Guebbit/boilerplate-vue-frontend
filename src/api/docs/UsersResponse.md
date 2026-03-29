@@ -1,19 +1,21 @@
-# ModelError
+# UsersResponse
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**error** | **string** |  | [optional] [default to undefined]
+**items** | [**Array&lt;User&gt;**](User.md) |  | [default to undefined]
+**meta** | [**PaginationMeta**](PaginationMeta.md) |  | [default to undefined]
 
 ## Example
 
 ```typescript
-import { ModelError } from './api';
+import { UsersResponse } from './api';
 
-const instance: ModelError = {
-    error,
+const instance: UsersResponse = {
+    items,
+    meta,
 };
 ```
 

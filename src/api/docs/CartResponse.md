@@ -1,21 +1,21 @@
-# CartItem
+# CartResponse
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**productId** | **string** | Resource identifier | [default to undefined]
-**quantity** | **number** |  | [default to undefined]
+**items** | [**Array&lt;CartItem&gt;**](CartItem.md) |  | [default to undefined]
+**summary** | [**CartSummaryResponse**](CartSummaryResponse.md) |  | [default to undefined]
 
 ## Example
 
 ```typescript
-import { CartItem } from './api';
+import { CartResponse } from './api';
 
-const instance: CartItem = {
-    productId,
-    quantity,
+const instance: CartResponse = {
+    items,
+    summary,
 };
 ```
 

@@ -1,21 +1,21 @@
-# EditProductJsonAltRequest
+# CheckoutRequest
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**title** | **string** |  | [optional] [default to undefined]
-**price** | **number** |  | [optional] [default to undefined]
+**email** | **string** |  | [optional] [default to undefined]
+**notes** | **string** | Optional order notes | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import { EditProductJsonAltRequest } from './api';
+import { CheckoutRequest } from './api';
 
-const instance: EditProductJsonAltRequest = {
-    title,
-    price,
+const instance: CheckoutRequest = {
+    email,
+    notes,
 };
 ```
 

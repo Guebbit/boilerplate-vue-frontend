@@ -1,23 +1,19 @@
-# EditUserRequestJSON
+# PasswordResetRequest
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**id** | **string** |  | [default to undefined]
-**email** | **string** |  | [optional] [default to undefined]
-**password** | **string** |  | [optional] [default to undefined]
+**email** | **string** |  | [default to undefined]
 
 ## Example
 
 ```typescript
-import { EditUserRequestJSON } from './api';
+import { PasswordResetRequest } from './api';
 
-const instance: EditUserRequestJSON = {
-    id,
+const instance: PasswordResetRequest = {
     email,
-    password,
 };
 ```
 

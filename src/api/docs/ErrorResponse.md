@@ -1,4 +1,4 @@
-# MessageResponse
+# ErrorResponse
 
 
 ## Properties
@@ -6,16 +6,18 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **success** | **boolean** |  | [default to undefined]
-**message** | **string** |  | [default to undefined]
+**error** | [**ErrorDetail**](ErrorDetail.md) |  | [default to undefined]
+**traceId** | **string** | Correlation ID for support/debugging | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import { MessageResponse } from './api';
+import { ErrorResponse } from './api';
 
-const instance: MessageResponse = {
+const instance: ErrorResponse = {
     success,
-    message,
+    error,
+    traceId,
 };
 ```
 

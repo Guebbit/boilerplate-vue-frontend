@@ -1,21 +1,19 @@
-# ResetConfirmRequest
+# RemoveCartItemRequest
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**password** | **string** |  | [default to undefined]
-**passwordConfirm** | **string** |  | [default to undefined]
+**productId** | **string** | Resource identifier | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import { ResetConfirmRequest } from './api';
+import { RemoveCartItemRequest } from './api';
 
-const instance: ResetConfirmRequest = {
-    password,
-    passwordConfirm,
+const instance: RemoveCartItemRequest = {
+    productId,
 };
 ```
 

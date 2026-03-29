@@ -1,21 +1,21 @@
-# CartItem
+# DeleteUserRequest
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**productId** | **string** | Resource identifier | [default to undefined]
-**quantity** | **number** |  | [default to undefined]
+**id** | **string** | Resource identifier | [default to undefined]
+**hardDelete** | **boolean** |  | [optional] [default to false]
 
 ## Example
 
 ```typescript
-import { CartItem } from './api';
+import { DeleteUserRequest } from './api';
 
-const instance: CartItem = {
-    productId,
-    quantity,
+const instance: DeleteUserRequest = {
+    id,
+    hardDelete,
 };
 ```
 

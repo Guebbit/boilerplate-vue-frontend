@@ -26,13 +26,13 @@
         "kill:gnu": "pkill -9 node",
         "genapi": "rm -rf src/api && openapi-generator-cli generate -i openapi.yaml -g typescript-axios -o ./src/api",
         "update:all": "npx npm-check-updates -u",
-        "complete": "npm run lint && npm run test:unit && npm run build",
-        "publish:public": "npm publish --access public"
+        "complete": "npm run build && npm run test && npm run lint && npm run docs:build",
+        "publish:public": "npm run complete && npm publish --access public"
     },
     "dependencies": {
         "@guebbit/css-toolkit": "^1.3.2",
         "@guebbit/js-toolkit": "^1.0.8",
-        "@guebbit/vue-toolkit": "file:../vue-toolkit/guebbit-vue-toolkit-1.0.0.tgz",
+        "@guebbit/vue-toolkit": "^1.0.0",
         "@openapitools/openapi-generator-cli": "^2.30.2",
         "axios": "^1.13.6",
         "minisearch": "^7.2.0",

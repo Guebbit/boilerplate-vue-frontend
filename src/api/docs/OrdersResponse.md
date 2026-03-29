@@ -1,21 +1,21 @@
-# CartItem
+# OrdersResponse
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**productId** | **string** | Resource identifier | [default to undefined]
-**quantity** | **number** |  | [default to undefined]
+**items** | [**Array&lt;Order&gt;**](Order.md) |  | [default to undefined]
+**meta** | [**PaginationMeta**](PaginationMeta.md) |  | [default to undefined]
 
 ## Example
 
 ```typescript
-import { CartItem } from './api';
+import { OrdersResponse } from './api';
 
-const instance: CartItem = {
-    productId,
-    quantity,
+const instance: OrdersResponse = {
+    items,
+    meta,
 };
 ```
 

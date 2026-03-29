@@ -1,4 +1,4 @@
-# CartItem
+# UpsertCartItemRequest
 
 
 ## Properties
@@ -11,9 +11,9 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { CartItem } from './api';
+import { UpsertCartItemRequest } from './api';
 
-const instance: CartItem = {
+const instance: UpsertCartItemRequest = {
     productId,
     quantity,
 };

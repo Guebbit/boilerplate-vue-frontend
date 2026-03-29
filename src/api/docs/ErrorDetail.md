@@ -1,21 +1,23 @@
-# MessageResponse
+# ErrorDetail
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**success** | **boolean** |  | [default to undefined]
-**message** | **string** |  | [default to undefined]
+**code** | **string** |  | [default to undefined]
+**message** | **string** |  | [optional] [default to undefined]
+**details** | **{ [key: string]: any; }** |  | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import { MessageResponse } from './api';
+import { ErrorDetail } from './api';
 
-const instance: MessageResponse = {
-    success,
+const instance: ErrorDetail = {
+    code,
     message,
+    details,
 };
 ```
 

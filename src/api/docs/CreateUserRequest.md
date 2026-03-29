@@ -1,33 +1,27 @@
-# User
+# CreateUserRequest
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**id** | **string** | Resource identifier | [default to undefined]
 **email** | **string** |  | [default to undefined]
 **username** | **string** |  | [default to undefined]
+**password** | **string** |  | [default to undefined]
 **admin** | **boolean** |  | [optional] [default to undefined]
 **active** | **boolean** |  | [optional] [default to undefined]
-**imageUrl** | **string** |  | [optional] [default to undefined]
-**createdAt** | **string** |  | [optional] [default to undefined]
-**updatedAt** | **string** |  | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import { User } from './api';
+import { CreateUserRequest } from './api';
 
-const instance: User = {
-    id,
+const instance: CreateUserRequest = {
     email,
     username,
+    password,
     admin,
     active,
-    imageUrl,
-    createdAt,
-    updatedAt,
 };
 ```
 

@@ -1,23 +1,21 @@
-# Invoice
+# UpdateUserByIdRequest
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**id** | **string** |  | [optional] [default to undefined]
-**orderId** | **string** |  | [optional] [default to undefined]
-**url** | **string** |  | [optional] [default to undefined]
+**email** | **string** |  | [optional] [default to undefined]
+**password** | **string** |  | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import { Invoice } from './api';
+import { UpdateUserByIdRequest } from './api';
 
-const instance: Invoice = {
-    id,
-    orderId,
-    url,
+const instance: UpdateUserByIdRequest = {
+    email,
+    password,
 };
 ```
 

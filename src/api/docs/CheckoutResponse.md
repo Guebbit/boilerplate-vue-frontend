@@ -1,21 +1,21 @@
-# CartItem
+# CheckoutResponse
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**productId** | **string** | Resource identifier | [default to undefined]
-**quantity** | **number** |  | [default to undefined]
+**order** | [**Order**](Order.md) |  | [default to undefined]
+**message** | **string** |  | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import { CartItem } from './api';
+import { CheckoutResponse } from './api';
 
-const instance: CartItem = {
-    productId,
-    quantity,
+const instance: CheckoutResponse = {
+    order,
+    message,
 };
 ```
 

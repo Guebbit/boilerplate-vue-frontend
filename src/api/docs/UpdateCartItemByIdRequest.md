@@ -1,20 +1,18 @@
-# CartItemInput
+# UpdateCartItemByIdRequest
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**id** | **string** | Product ID | [default to undefined]
 **quantity** | **number** |  | [default to undefined]
 
 ## Example
 
 ```typescript
-import { CartItemInput } from './api';
+import { UpdateCartItemByIdRequest } from './api';
 
-const instance: CartItemInput = {
-    id,
+const instance: UpdateCartItemByIdRequest = {
     quantity,
 };
 ```

@@ -1,21 +1,23 @@
-# MessageResponse
+# ValidationErrorResponseAllOfErrors
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**success** | **boolean** |  | [default to undefined]
+**field** | **string** |  | [default to undefined]
 **message** | **string** |  | [default to undefined]
+**code** | **string** |  | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import { MessageResponse } from './api';
+import { ValidationErrorResponseAllOfErrors } from './api';
 
-const instance: MessageResponse = {
-    success,
+const instance: ValidationErrorResponseAllOfErrors = {
+    field,
     message,
+    code,
 };
 ```
 

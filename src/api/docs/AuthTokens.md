@@ -5,8 +5,9 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**token** | **string** | Access JWT | [optional] [default to undefined]
-**refreshToken** | **string** | Refresh token (if returned) | [optional] [default to undefined]
+**token** | **string** | Access JWT | [default to undefined]
+**refreshToken** | **string** | Refresh token if returned by backend | [optional] [default to undefined]
+**expiresIn** | **number** | Access token expiry in seconds | [optional] [default to undefined]
 
 ## Example
 
@@ -16,6 +17,7 @@ import { AuthTokens } from './api';
 const instance: AuthTokens = {
     token,
     refreshToken,
+    expiresIn,
 };
 ```
 

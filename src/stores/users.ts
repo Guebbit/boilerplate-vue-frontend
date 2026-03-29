@@ -15,32 +15,6 @@ import { EUserRoles, type IUser, type IUserForm, type IUserIdentification } from
 import type { AxiosProgressEvent } from 'axios';
 
 
-
-
-
-
-
-
-import { DefaultApi, Configuration } from "./api";
-
-const api = new DefaultApi(
-    new Configuration({
-        basePath: "http://localhost:3000",
-        accessToken: "YOUR_TOKEN",
-    })
-);
-
-await api.confirmPasswordReset("token_here", {
-    token: "token_here",
-    password: "newpass",
-    passwordConfirm: "newpass"
-});
-
-
-
-
-
-
 export const useUsersStore = defineStore('users', () => {
     /**
      * Inherited

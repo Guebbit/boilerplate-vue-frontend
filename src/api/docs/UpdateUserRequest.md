@@ -1,19 +1,23 @@
-# ResetRequest
+# UpdateUserRequest
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**email** | **string** |  | [default to undefined]
+**id** | **string** | Resource identifier | [default to undefined]
+**email** | **string** |  | [optional] [default to undefined]
+**password** | **string** |  | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import { ResetRequest } from './api';
+import { UpdateUserRequest } from './api';
 
-const instance: ResetRequest = {
+const instance: UpdateUserRequest = {
+    id,
     email,
+    password,
 };
 ```
 
