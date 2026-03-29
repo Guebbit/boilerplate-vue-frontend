@@ -2,16 +2,9 @@ import { defineStore } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
-import {
-    createUserApi,
-    deleteUserApi,
-    fetchUserByIdApi,
-    fetchUsersAllApi,
-    fetchUsersApi,
-    updateUserApi,
-    updateUserImageApi as updateUserImageApi
-} from '@/apiOld';
-import { EUserRoles, type IUser, type IUserForm, type IUserIdentification } from '@/types/users.ts';
+import { updateUserImageApi } from '@/apiOld';
+import { usersApi } from '@/utils/api.ts';
+import type { User, CreateUserRequest } from '@/api';
 import type { AxiosProgressEvent } from 'axios';
 
 
@@ -35,31 +28,35 @@ export const useUsersStore = defineStore('users', () => {
         createTarget,
         updateTarget,
         deleteTarget
-    } = useStructureRestApi<IUser, IUserIdentification>();
+    } = useStructureRestApi<User, string>();
 
     /**
      *
      * @param forced
      */
     const fetchUsers = (forced = false) =>
-        fetchAll(() => fetchUsersAllApi().then(({ data }) => data), { forced });
+        fetchAll(
+            () =>
+                usersApi
+                    .listUsers()
+                    .then(({ data }) => (data as { items?: User[] })?.items ?? []),
+            { forced }
+        );
 
     /**
      * TODO paginazione online + offline o mista
      *      mista: sotto una certa soglia di elementi, li scarico tutti e la tratto come offline, sopra una certa soglia vado a paginazione online
+     * @param page
+     * @param pageSize
      * @param forced
      */
-    const fetchPaginationUsers = (forced = false) =>
+    const fetchPaginationUsers = (page = 1, pageSize = 9, forced = false) =>
         fetchAll(
             () =>
-                fetchUsersApi().then(({ data: { items, page, total, totalPages } }) => {
-                    console.log('PAGINATION', {
-                        items,
-                        page,
-                        total,
-                        totalPages
-                    });
-                    return items;
+                usersApi.listUsers(undefined, page, pageSize).then(({ data }) => {
+                    const response = data as { items?: User[]; meta?: { page: number; totalItems: number; totalPages: number } };
+                    console.log('PAGINATION', response?.meta);
+                    return response?.items ?? [];
                 }),
             { forced }
         );
@@ -69,33 +66,39 @@ export const useUsersStore = defineStore('users', () => {
      * @param userId
      * @param forced
      */
-    const fetchUser = (userId: IUserIdentification, forced = false) =>
-        fetchTarget(() => fetchUserByIdApi(userId).then(({ data }) => data), userId, { forced });
+    const fetchUser = (userId: string, forced = false) =>
+        fetchTarget(
+            () => usersApi.getUserById(userId).then(({ data }) => data as User),
+            userId,
+            { forced }
+        );
 
     /**
      *
      * @param userData
      */
-    const createUser = (userData: IUserForm) =>
-        createTarget(() => createUserApi(userData).then(({ data }) => data));
+    const createUser = (userData: CreateUserRequest) =>
+        createTarget(() => usersApi.createUser(userData).then(({ data }) => data as User));
 
     /**
-     * Change user email
+     * Change user image
+     * NOTE: image upload is not part of the OpenAPI spec; using legacy API.
      *
      * @param userId
      * @param files
      * @param onUploadProgress
      */
     const updateUserImage = (
-        userId: IUserIdentification,
+        userId: string,
         files: File[] | FileList = [],
         onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
+        // eslint-disable-next-line unicorn/consistent-function-scoping
     ) => {
         // TODO generic wrapper with loading and error handling
         if (files.length === 0 || !files[0]) return Promise.reject(new Error('no file selected'));
         const formData = new FormData();
         formData.append('file', files[0]);
-        return updateUserImageApi(userId, formData, onUploadProgress);
+        return fetchAny(() => updateUserImageApi(Number(userId), formData, onUploadProgress));
     };
 
     /**
@@ -103,44 +106,37 @@ export const useUsersStore = defineStore('users', () => {
      * @param userId
      * @param userData
      */
-    const updateUser = (userId: IUserIdentification, userData: Partial<IUserForm> = {}) =>
-        updateTarget(() => updateUserApi(userId, userData), userId, userData);
+    const updateUser = (userId: string, userData: { email?: string; password?: string } = {}) =>
+        updateTarget(
+            () => usersApi.updateUserById(userId, userData).then(({ data }) => data as User),
+            userData as Partial<User>,
+            userId
+        );
 
     /**
      *
      * @param userId
      */
-    const deleteUser = (userId: IUserIdentification) =>
-        deleteTarget(() => deleteUserApi(userId), userId);
+    const deleteUser = (userId: string) =>
+        deleteTarget(() => usersApi.deleteUserById(userId), userId);
 
     /**
      * Zod schema for a valid email
      */
-    const zodSchemaUsersEmail = z
-        .string({
-            invalid_type_error: t('users-form.email-required'),
-            required_error: t('users-form.email-required')
-        })
-        .email(t('users-form.email-invalid'));
+    const zodSchemaUsersEmail = z.email(t('users-form.email-invalid'));
 
     /**
      *
      */
     const zodSchemaUsersUsername = z
-        .string({
-            invalid_type_error: t('users-form.username-required'),
-            required_error: t('users-form.username-required')
-        })
+        .string()
         .min(3, t('users-form.username-min'));
 
     /**
      *
      */
     const zodSchemaUsersPassword = z
-        .string({
-            invalid_type_error: t('users-form.password-required'),
-            required_error: t('users-form.password-required')
-        })
+        .string()
         .min(8, t('users-form.password-min'))
         .refine((password) => password && /[a-z]/.test(password), {
             message: t('users-form.password-minus-required')
@@ -159,18 +155,14 @@ export const useUsersStore = defineStore('users', () => {
      *
      */
     const zodSchemaUsers = z.object({
-        id: z.number().nullish().optional(),
+        id: z.string().nullish().optional(),
         email: zodSchemaUsersEmail,
         username: zodSchemaUsersUsername,
-        phone: z.string().nullish().optional(),
-        website: z.string().nullish().optional(),
-        language: z.string().nullish().optional(), // .default(process.env.NODE_SETTINGS_DEFAULT_LOCALE ?? "en"),
-        // imageUrl: z.string().nullish().optional(), // TODO FILE?
-        roles: z.array(z.nativeEnum(EUserRoles)).nullish().optional(), // .default([]),
+        imageUrl: z.string().nullish().optional(),
+        admin: z.boolean().nullish().optional(),
         active: z.boolean().nullish().optional(),
-        createdAt: z.date().nullish().optional(),
-        updatedAt: z.date().nullish().optional(),
-        deletedAt: z.date().nullish().optional()
+        createdAt: z.string().nullish().optional(),
+        updatedAt: z.string().nullish().optional()
     });
 
     return {

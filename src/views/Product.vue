@@ -42,6 +42,7 @@ import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useProductsStore } from '@/stores/products';
+import { updateProductImageApi } from '@/apiOld';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 
@@ -57,13 +58,17 @@ const { id } = defineProps<{
  * Products store
  * The composable within will have most of the logic for this kind of pages
  */
-const { fetchProduct, updateProductImage } = useProductsStore();
+const { fetchProduct } = useProductsStore();
 const { currentProduct, selectedProductId } = storeToRefs(useProductsStore());
 
 function emitUploadImage() {
+    if (!id) return;
     const { files } = document.querySelector('#fileInput') as HTMLInputElement;
     if (!files || files.length === 0) return;
-    updateProductImage(0, files, ({ progress = 0 }) => {
+    const formData = new FormData();
+    formData.append('file', files[0]!);
+    // NOTE: image upload is not part of the OpenAPI spec; using legacy API.
+    return updateProductImageApi(Number(id), formData, ({ progress = 0 }) => {
         console.log('upload %', Math.round(progress * 100) + '%');
     });
 }

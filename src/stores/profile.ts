@@ -1,17 +1,10 @@
-import { ref, computed, type WritableComputedRef } from 'vue';
+import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { i18n } from '@/utils/i18n.ts';
-import { ERefreshTokenExpiryTime, EUserRoles, type IUser, type IUserIdentification } from '@/types';
-import { fetchProfileApi, patchProfileApi, refreshTokenApi, loginApi, logoutApi } from '@/apiOld';
-
-
-import type { LoginRequest } from '@/api';
-import { api } from '@/utils/api';
-await api.login({ email: 'user@example.com', password: 'pass' });
-// const me = (await api.getProfile()).data;
-// const products = (await api.listProducts(1)).data;
-
+import type { User } from '@/api';
+import { accountApi, authApi } from '@/utils/api.ts';
+import { patchProfileApi, refreshTokenApi, logoutApi } from '@/apiOld';
 
 /**
  * While we can't access to inject/provide in guards or any non-components,
@@ -26,7 +19,7 @@ export const useProfileStore = defineStore('profile', () => {
         fetchAny,
         fetchTarget,
         updateTarget
-    } = useStructureRestApi<IUser, IUserIdentification>();
+    } = useStructureRestApi<User, string>();
 
     /**
      * Warning: can't use useI18n because it wouldn't work in global guards
@@ -38,9 +31,7 @@ export const useProfileStore = defineStore('profile', () => {
     /**
      * Fast check if current user is admin
      */
-    const isAdmin = computed(() =>
-        Boolean(accessToken.value && profile.value?.roles.includes(EUserRoles.ADMIN))
-    );
+    const isAdmin = computed(() => Boolean(accessToken.value && profile.value?.admin));
     const isAuth = computed(() => Boolean(accessToken.value && profile.value));
 
     /**
@@ -54,16 +45,25 @@ export const useProfileStore = defineStore('profile', () => {
      *
      * @param auth
      * @param password
-     * @param remember
      */
-    const login = (auth: string, password: string, remember = false) =>
+    const login = (auth: string, password: string) =>
         fetchAny(() =>
-            loginApi(
-                auth,
-                password,
-                remember ? ERefreshTokenExpiryTime.MEDIUM : ERefreshTokenExpiryTime.SHORT
-            ).then(({ data: { token } = {} }) => (accessToken.value = token))
+            authApi
+                .login({ email: auth, password })
+                .then(({ data: { token } = {} as { token?: string } }) => (accessToken.value = token))
         ).then(() => fetchProfile(true));
+
+    /**
+     * Register a new user account
+     *
+     * @param email
+     * @param password
+     * @param username
+     */
+    const signup = (email: string, password: string, username = email) =>
+        fetchAny(() =>
+            authApi.signup({ email, password, passwordConfirm: password, username })
+        );
 
     /**
      * Refresh access token
@@ -83,7 +83,7 @@ export const useProfileStore = defineStore('profile', () => {
     const fetchProfile = (forced = false) => {
         return fetchTarget(
             () =>
-                fetchProfileApi().then(({ data }) => {
+                accountApi.getAccount().then(({ data }) => {
                     if (!data) return;
                     // to handle single-target stores we just need to select the correct identifier
                     selectedIdentifier.value = data.id;
@@ -96,12 +96,15 @@ export const useProfileStore = defineStore('profile', () => {
 
     /**
      * Edit profile
+     * NOTE: /account PATCH is not defined in the OpenAPI spec; we keep the
+     * legacy apiOld call until the spec is extended.
      *
      * @param userData
      */
-    const updateProfile = (userData: Partial<IUser> = {}) => {
+    const updateProfile = (userData: Partial<User> = {}) => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
-        return updateTarget(() => patchProfileApi(userData), selectedIdentifier.value, userData);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return updateTarget(() => patchProfileApi(userData as any), userData, selectedIdentifier.value);
     };
 
     /**
@@ -113,8 +116,7 @@ export const useProfileStore = defineStore('profile', () => {
         // TODO check
         profileLanguage.value = language;
         return updateProfile({
-            ...profile.value,
-            language
+            ...profile.value
         });
     };
 
@@ -139,6 +141,7 @@ export const useProfileStore = defineStore('profile', () => {
         loading,
         accessToken,
         login,
+        signup,
         refreshToken,
         fetchProfile,
         updateProfile,
