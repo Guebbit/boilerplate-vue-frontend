@@ -116,7 +116,7 @@ const submitForm = () => {
         showErrors.value = true;
         return;
     }
-    return login(form.value.email!, form.value.password!, form.value.remember)
+    return login(form.value.email!, form.value.password!)
         .then(() =>
             // if query continue was set, redirect to that page,
             // otherwise redirect to home

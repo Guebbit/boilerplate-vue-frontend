@@ -11,7 +11,7 @@ import { useItemList, type ISortOrder } from '@/composables/itemList.ts';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import ListPagination from '@/components/molecules/ListPagination.vue';
 
-import type { IUser } from '@/types';
+import type { User } from '@/api';
 
 /**
  * Generics
@@ -44,7 +44,7 @@ const {
     sorters,
     list,
     total
-} = useItemList<IUser>();
+} = useItemList<User>();
 
 /**
  * Initialize pagination
@@ -60,10 +60,10 @@ onMounted(fetchUsers);
  * Filters and sorters
  * TODO decidere gerarchia, logical gates, etc
  */
-filters.value.name = '';
+filters.value.username = '';
 sorters.value = {
-    name: ''
-} as Record<keyof IUser, ISortOrder>;
+    username: ''
+} as Record<keyof User, ISortOrder>;
 </script>
 
 <template>
@@ -84,12 +84,12 @@ sorters.value = {
                 }"
                 @click="selectedIdentifier = user.id"
             >
-                <img class="card-image" :alt="user.name + ' photo'" :src="user.imageUrl" />
+                <img class="card-image" :alt="user.username + ' photo'" :src="user.imageUrl" />
                 <div class="card-content">
                     <h2 class="card-title">
-                        <b>{{ user.id }}</b> {{ user.name }}
+                        <b>{{ user.id }}</b> {{ user.username }}
                     </h2>
-                    <p>{{ user.phone }} - {{ user.email }} - {{ user.website }}</p>
+                    <p>{{ user.email }}</p>
                     <RouterLink
                         :to="
                             routerLinkI18n({
