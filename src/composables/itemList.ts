@@ -30,39 +30,6 @@ export const useItemList = <T = unknown>(itemIdentifier = 'id', filterLengthLimi
     const filters = ref({} as Record<keyof T, string>);
 
     /**
-     * // Search only specific fields
-     * miniSearch.search('zen', { fields: ['title'] })
-     *
-     * // Boost some fields (here "title")
-     * miniSearch.search('zen', { boost: { title: 2 } })
-     *
-     * // Prefix search (so that 'moto' will match 'motorcycle')
-     * miniSearch.search('moto', { prefix: true })
-     *
-     * // Search within a specific category
-     * miniSearch.search('zen', {
-     *   filter: (result) => result.category === 'fiction'
-     * })
-     *
-     * // Fuzzy search, in this example, with a max edit distance of 0.2 * term length,
-     * // rounded to nearest integer. The mispelled 'ismael' will match 'ishmael'.
-     * miniSearch.search('ismael', { fuzzy: 0.2 })
-     *
-     * // You can set the default search options upon initialization
-     * miniSearch = new MiniSearch({
-     *   fields: ['title', 'text'],
-     *   searchOptions: {
-     *     boost: { title: 2 },
-     *     fuzzy: 0.2
-     *   }
-     * })
-     * miniSearch.addAll(documents)
-     *
-     * // It will now by default perform fuzzy search and boost "title":
-     * miniSearch.search('zen and motorcycles'
-     */
-
-    /**
      * TODO https://github.com/lucaong/minisearch
      *  https://chatgpt.com/c/67192190-553c-800b-9cda-d0fd5da18efe
      *  CombinationOperator
