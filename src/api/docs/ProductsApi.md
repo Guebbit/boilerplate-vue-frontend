@@ -14,26 +14,33 @@ All URIs are relative to *http://localhost:3000*
 |[**updateProductById**](#updateproductbyid) | **PUT** /products/{id} | Edit product|
 
 # **createProduct**
-> Product createProduct(createProductRequest)
+> Product createProduct()
 
-Creates a new product
+Creates a new product with optional image upload
 
 ### Example
 
 ```typescript
 import {
     ProductsApi,
-    Configuration,
-    CreateProductRequest
+    Configuration
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new ProductsApi(configuration);
 
-let createProductRequest: CreateProductRequest; //
+let title: string; // (default to undefined)
+let price: number; // (default to undefined)
+let description: string; // (optional) (default to undefined)
+let active: boolean; // (optional) (default to undefined)
+let imageUpload: File; //Optional product image (optional) (default to undefined)
 
 const { status, data } = await apiInstance.createProduct(
-    createProductRequest
+    title,
+    price,
+    description,
+    active,
+    imageUpload
 );
 ```
 
@@ -41,7 +48,11 @@ const { status, data } = await apiInstance.createProduct(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **createProductRequest** | **CreateProductRequest**|  | |
+| **title** | [**string**] |  | defaults to undefined|
+| **price** | [**number**] |  | defaults to undefined|
+| **description** | [**string**] |  | (optional) defaults to undefined|
+| **active** | [**boolean**] |  | (optional) defaults to undefined|
+| **imageUpload** | [**File**] | Optional product image | (optional) defaults to undefined|
 
 
 ### Return type
@@ -54,7 +65,7 @@ const { status, data } = await apiInstance.createProduct(
 
 ### HTTP request headers
 
- - **Content-Type**: application/json
+ - **Content-Type**: multipart/form-data
  - **Accept**: application/json
 
 
@@ -358,26 +369,35 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **updateProduct**
-> Product updateProduct(updateProductRequest)
+> Product updateProduct()
 
-Updates an existing product
+Updates an existing product with optional image upload
 
 ### Example
 
 ```typescript
 import {
     ProductsApi,
-    Configuration,
-    UpdateProductRequest
+    Configuration
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new ProductsApi(configuration);
 
-let updateProductRequest: UpdateProductRequest; //
+let id: string; //Resource identifier (default to undefined)
+let title: string; // (default to undefined)
+let price: number; // (default to undefined)
+let description: string; // (optional) (default to undefined)
+let active: boolean; // (optional) (default to undefined)
+let imageUpload: File; //Optional product image (optional) (default to undefined)
 
 const { status, data } = await apiInstance.updateProduct(
-    updateProductRequest
+    id,
+    title,
+    price,
+    description,
+    active,
+    imageUpload
 );
 ```
 
@@ -385,7 +405,12 @@ const { status, data } = await apiInstance.updateProduct(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **updateProductRequest** | **UpdateProductRequest**|  | |
+| **id** | [**string**] | Resource identifier | defaults to undefined|
+| **title** | [**string**] |  | defaults to undefined|
+| **price** | [**number**] |  | defaults to undefined|
+| **description** | [**string**] |  | (optional) defaults to undefined|
+| **active** | [**boolean**] |  | (optional) defaults to undefined|
+| **imageUpload** | [**File**] | Optional product image | (optional) defaults to undefined|
 
 
 ### Return type
@@ -398,7 +423,7 @@ const { status, data } = await apiInstance.updateProduct(
 
 ### HTTP request headers
 
- - **Content-Type**: application/json
+ - **Content-Type**: multipart/form-data
  - **Accept**: application/json
 
 
@@ -415,28 +440,35 @@ const { status, data } = await apiInstance.updateProduct(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **updateProductById**
-> Product updateProductById(updateProductByIdRequest)
+> Product updateProductById()
 
-Updates the product identified by `{id}` in the path. Functionally equivalent to `PUT /products` with the id in the body.
+Updates the product identified by `{id}` in the path with optional image upload. Functionally equivalent to `PUT /products` with the id in the body.
 
 ### Example
 
 ```typescript
 import {
     ProductsApi,
-    Configuration,
-    UpdateProductByIdRequest
+    Configuration
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new ProductsApi(configuration);
 
 let id: string; //Resource identifier (default to undefined)
-let updateProductByIdRequest: UpdateProductByIdRequest; //
+let title: string; // (default to undefined)
+let price: number; // (default to undefined)
+let description: string; // (optional) (default to undefined)
+let active: boolean; // (optional) (default to undefined)
+let imageUpload: File; //Optional product image (optional) (default to undefined)
 
 const { status, data } = await apiInstance.updateProductById(
     id,
-    updateProductByIdRequest
+    title,
+    price,
+    description,
+    active,
+    imageUpload
 );
 ```
 
@@ -444,8 +476,12 @@ const { status, data } = await apiInstance.updateProductById(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **updateProductByIdRequest** | **UpdateProductByIdRequest**|  | |
 | **id** | [**string**] | Resource identifier | defaults to undefined|
+| **title** | [**string**] |  | defaults to undefined|
+| **price** | [**number**] |  | defaults to undefined|
+| **description** | [**string**] |  | (optional) defaults to undefined|
+| **active** | [**boolean**] |  | (optional) defaults to undefined|
+| **imageUpload** | [**File**] | Optional product image | (optional) defaults to undefined|
 
 
 ### Return type
@@ -458,7 +494,7 @@ const { status, data } = await apiInstance.updateProductById(
 
 ### HTTP request headers
 
- - **Content-Type**: application/json
+ - **Content-Type**: multipart/form-data
  - **Accept**: application/json
 
 

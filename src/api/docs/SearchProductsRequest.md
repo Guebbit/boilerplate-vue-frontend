@@ -8,6 +8,7 @@ Name | Type | Description | Notes
 **page** | **number** | 1-based page index | [optional] [default to 1]
 **pageSize** | **number** | Optional override; server may clamp to a max | [optional] [default to 10]
 **text** | **string** | Free-text search string | [optional] [default to undefined]
+**id** | **string** | Resource identifier | [optional] [default to undefined]
 **minPrice** | **number** |  | [optional] [default to undefined]
 **maxPrice** | **number** |  | [optional] [default to undefined]
 
@@ -20,6 +21,7 @@ const instance: SearchProductsRequest = {
     page,
     pageSize,
     text,
+    id,
     minPrice,
     maxPrice,
 };

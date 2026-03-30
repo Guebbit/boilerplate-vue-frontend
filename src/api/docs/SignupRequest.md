@@ -7,7 +7,6 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **email** | **string** |  | [default to undefined]
 **username** | **string** |  | [default to undefined]
-**imageUrl** | **string** |  | [optional] [default to undefined]
 **password** | **string** |  | [default to undefined]
 **passwordConfirm** | **string** |  | [default to undefined]
 
@@ -19,7 +18,6 @@ import { SignupRequest } from './api';
 const instance: SignupRequest = {
     email,
     username,
-    imageUrl,
     password,
     passwordConfirm,
 };

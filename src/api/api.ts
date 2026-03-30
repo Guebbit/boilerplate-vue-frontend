@@ -213,10 +213,25 @@ export interface Product {
     'imageUrl'?: string;
     'createdAt'?: string;
     'updatedAt'?: string;
+    'deletedAt'?: string;
 }
 export interface ProductsResponse {
     'items': Array<Product>;
     'meta': PaginationMeta;
+}
+export interface RefreshTokenResponse {
+    /**
+     * New access JWT
+     */
+    'token': string;
+    /**
+     * New refresh token if returned by backend
+     */
+    'refreshToken'?: string;
+    /**
+     * New access token expiry in seconds
+     */
+    'expiresIn'?: number;
 }
 export interface RemoveCartItemRequest {
     /**
@@ -260,6 +275,10 @@ export interface SearchProductsRequest {
      * Free-text search string
      */
     'text'?: string;
+    /**
+     * Resource identifier
+     */
+    'id'?: string;
     'minPrice'?: number;
     'maxPrice'?: number;
 }
@@ -287,7 +306,6 @@ export interface SearchUsersRequest {
 export interface SignupRequest {
     'email': string;
     'username': string;
-    'imageUrl'?: string;
     'password': string;
     'passwordConfirm': string;
 }
@@ -363,6 +381,17 @@ export interface UpdateProductRequest {
     'price': number;
     'imageUrl'?: string;
     'active'?: boolean;
+}
+export interface UpdateProductRequestBody {
+    /**
+     * Resource identifier
+     */
+    'id': string;
+    'title': string;
+    'description'?: string;
+    'price': string;
+    'imageUrl'?: string;
+    'active'?: string;
 }
 export interface UpdateUserByIdRequest {
     'email'?: string;
@@ -590,6 +619,104 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
             };
         },
         /**
+         * Logs out the authenticated user from ALL devices by removing all refresh tokens from the database and clearing authentication cookies.
+         * @summary Logout from all devices
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        logoutAll: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/account/logout-all`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Creates a new short-lived access token using a refresh token. The refresh token can be provided as a query parameter, path parameter, or retrieved from the `jwt` cookie.
+         * @summary Refresh access token
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        refreshToken: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/account/refresh`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Creates a new short-lived access token using a refresh token provided in the URL path.
+         * @summary Refresh access token with token in path
+         * @param {string} token Refresh token
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        refreshTokenWithPath: async (token: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'token' is not null or undefined
+            assertParamExists('refreshTokenWithPath', 'token', token)
+            const localVarPath = `/account/refresh/{token}`
+                .replace(`{${"token"}}`, encodeURIComponent(String(token)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
          * @param {PasswordResetRequest} passwordResetRequest 
          * @param {*} [options] Override http request option.
@@ -625,15 +752,25 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
             };
         },
         /**
-         * Registers a new user account. Returns the newly created user profile on success.
+         * Registers a new user account with optional image upload. Returns the newly created user profile on success.
          * @summary Signup
-         * @param {SignupRequest} signupRequest 
+         * @param {string} email 
+         * @param {string} username 
+         * @param {string} password 
+         * @param {string} passwordConfirm 
+         * @param {File} [imageUpload] Optional user profile image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        signup: async (signupRequest: SignupRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'signupRequest' is not null or undefined
-            assertParamExists('signup', 'signupRequest', signupRequest)
+        signup: async (email: string, username: string, password: string, passwordConfirm: string, imageUpload?: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'email' is not null or undefined
+            assertParamExists('signup', 'email', email)
+            // verify required parameter 'username' is not null or undefined
+            assertParamExists('signup', 'username', username)
+            // verify required parameter 'password' is not null or undefined
+            assertParamExists('signup', 'password', password)
+            // verify required parameter 'passwordConfirm' is not null or undefined
+            assertParamExists('signup', 'passwordConfirm', passwordConfirm)
             const localVarPath = `/account/signup`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -645,15 +782,36 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
             const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+            const localVarFormParams = new ((configuration && configuration.formDataCtor) || FormData)();
 
 
+            if (email !== undefined) { 
+                localVarFormParams.append('email', email as any);
+            }
     
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
+            if (username !== undefined) { 
+                localVarFormParams.append('username', username as any);
+            }
+    
+            if (password !== undefined) { 
+                localVarFormParams.append('password', password as any);
+            }
+    
+            if (passwordConfirm !== undefined) { 
+                localVarFormParams.append('passwordConfirm', passwordConfirm as any);
+            }
+    
+            if (imageUpload !== undefined) { 
+                localVarFormParams.append('imageUpload', imageUpload as any);
+            }
+    
+    
+            localVarHeaderParameter['Content-Type'] = 'multipart/form-data';
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(signupRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = localVarFormParams;
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -695,6 +853,43 @@ export const AuthApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Logs out the authenticated user from ALL devices by removing all refresh tokens from the database and clearing authentication cookies.
+         * @summary Logout from all devices
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async logoutAll(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<MessageResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.logoutAll(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AuthApi.logoutAll']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Creates a new short-lived access token using a refresh token. The refresh token can be provided as a query parameter, path parameter, or retrieved from the `jwt` cookie.
+         * @summary Refresh access token
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async refreshToken(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RefreshTokenResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.refreshToken(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AuthApi.refreshToken']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Creates a new short-lived access token using a refresh token provided in the URL path.
+         * @summary Refresh access token with token in path
+         * @param {string} token Refresh token
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async refreshTokenWithPath(token: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<RefreshTokenResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.refreshTokenWithPath(token, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AuthApi.refreshTokenWithPath']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
          * @param {PasswordResetRequest} passwordResetRequest 
          * @param {*} [options] Override http request option.
@@ -707,14 +902,18 @@ export const AuthApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Registers a new user account. Returns the newly created user profile on success.
+         * Registers a new user account with optional image upload. Returns the newly created user profile on success.
          * @summary Signup
-         * @param {SignupRequest} signupRequest 
+         * @param {string} email 
+         * @param {string} username 
+         * @param {string} password 
+         * @param {string} passwordConfirm 
+         * @param {File} [imageUpload] Optional user profile image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async signup(signupRequest: SignupRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<User>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.signup(signupRequest, options);
+        async signup(email: string, username: string, password: string, passwordConfirm: string, imageUpload?: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<User>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.signup(email, username, password, passwordConfirm, imageUpload, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['AuthApi.signup']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -748,6 +947,34 @@ export const AuthApiFactory = function (configuration?: Configuration, basePath?
             return localVarFp.login(loginRequest, options).then((request) => request(axios, basePath));
         },
         /**
+         * Logs out the authenticated user from ALL devices by removing all refresh tokens from the database and clearing authentication cookies.
+         * @summary Logout from all devices
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        logoutAll(options?: RawAxiosRequestConfig): AxiosPromise<MessageResponse> {
+            return localVarFp.logoutAll(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Creates a new short-lived access token using a refresh token. The refresh token can be provided as a query parameter, path parameter, or retrieved from the `jwt` cookie.
+         * @summary Refresh access token
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        refreshToken(options?: RawAxiosRequestConfig): AxiosPromise<RefreshTokenResponse> {
+            return localVarFp.refreshToken(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Creates a new short-lived access token using a refresh token provided in the URL path.
+         * @summary Refresh access token with token in path
+         * @param {string} token Refresh token
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        refreshTokenWithPath(token: string, options?: RawAxiosRequestConfig): AxiosPromise<RefreshTokenResponse> {
+            return localVarFp.refreshTokenWithPath(token, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
          * @param {PasswordResetRequest} passwordResetRequest 
          * @param {*} [options] Override http request option.
@@ -757,14 +984,18 @@ export const AuthApiFactory = function (configuration?: Configuration, basePath?
             return localVarFp.requestPasswordReset(passwordResetRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * Registers a new user account. Returns the newly created user profile on success.
+         * Registers a new user account with optional image upload. Returns the newly created user profile on success.
          * @summary Signup
-         * @param {SignupRequest} signupRequest 
+         * @param {string} email 
+         * @param {string} username 
+         * @param {string} password 
+         * @param {string} passwordConfirm 
+         * @param {File} [imageUpload] Optional user profile image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        signup(signupRequest: SignupRequest, options?: RawAxiosRequestConfig): AxiosPromise<User> {
-            return localVarFp.signup(signupRequest, options).then((request) => request(axios, basePath));
+        signup(email: string, username: string, password: string, passwordConfirm: string, imageUpload?: File, options?: RawAxiosRequestConfig): AxiosPromise<User> {
+            return localVarFp.signup(email, username, password, passwordConfirm, imageUpload, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -795,6 +1026,37 @@ export class AuthApi extends BaseAPI {
     }
 
     /**
+     * Logs out the authenticated user from ALL devices by removing all refresh tokens from the database and clearing authentication cookies.
+     * @summary Logout from all devices
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public logoutAll(options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).logoutAll(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Creates a new short-lived access token using a refresh token. The refresh token can be provided as a query parameter, path parameter, or retrieved from the `jwt` cookie.
+     * @summary Refresh access token
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public refreshToken(options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).refreshToken(options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Creates a new short-lived access token using a refresh token provided in the URL path.
+     * @summary Refresh access token with token in path
+     * @param {string} token Refresh token
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public refreshTokenWithPath(token: string, options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).refreshTokenWithPath(token, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
      * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
      * @param {PasswordResetRequest} passwordResetRequest 
      * @param {*} [options] Override http request option.
@@ -805,14 +1067,18 @@ export class AuthApi extends BaseAPI {
     }
 
     /**
-     * Registers a new user account. Returns the newly created user profile on success.
+     * Registers a new user account with optional image upload. Returns the newly created user profile on success.
      * @summary Signup
-     * @param {SignupRequest} signupRequest 
+     * @param {string} email 
+     * @param {string} username 
+     * @param {string} password 
+     * @param {string} passwordConfirm 
+     * @param {File} [imageUpload] Optional user profile image
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public signup(signupRequest: SignupRequest, options?: RawAxiosRequestConfig) {
-        return AuthApiFp(this.configuration).signup(signupRequest, options).then((request) => request(this.axios, this.basePath));
+    public signup(email: string, username: string, password: string, passwordConfirm: string, imageUpload?: File, options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).signup(email, username, password, passwordConfirm, imageUpload, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
@@ -2097,15 +2363,21 @@ export class OrdersApi extends BaseAPI {
 export const ProductsApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
-         * Creates a new product
+         * Creates a new product with optional image upload
          * @summary Create product
-         * @param {CreateProductRequest} createProductRequest 
+         * @param {string} title 
+         * @param {number} price 
+         * @param {string} [description] 
+         * @param {boolean} [active] 
+         * @param {File} [imageUpload] Optional product image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createProduct: async (createProductRequest: CreateProductRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'createProductRequest' is not null or undefined
-            assertParamExists('createProduct', 'createProductRequest', createProductRequest)
+        createProduct: async (title: string, price: number, description?: string, active?: boolean, imageUpload?: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'title' is not null or undefined
+            assertParamExists('createProduct', 'title', title)
+            // verify required parameter 'price' is not null or undefined
+            assertParamExists('createProduct', 'price', price)
             const localVarPath = `/products`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2117,19 +2389,40 @@ export const ProductsApiAxiosParamCreator = function (configuration?: Configurat
             const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+            const localVarFormParams = new ((configuration && configuration.formDataCtor) || FormData)();
 
             // authentication bearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
 
+            if (title !== undefined) { 
+                localVarFormParams.append('title', title as any);
+            }
     
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
+            if (price !== undefined) { 
+                localVarFormParams.append('price', price as any);
+            }
+    
+            if (description !== undefined) { 
+                localVarFormParams.append('description', description as any);
+            }
+    
+            if (active !== undefined) { 
+                localVarFormParams.append('active', String(active) as any);
+            }
+    
+            if (imageUpload !== undefined) { 
+                localVarFormParams.append('imageUpload', imageUpload as any);
+            }
+    
+    
+            localVarHeaderParameter['Content-Type'] = 'multipart/form-data';
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(createProductRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = localVarFormParams;
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2350,15 +2643,24 @@ export const ProductsApiAxiosParamCreator = function (configuration?: Configurat
             };
         },
         /**
-         * Updates an existing product
+         * Updates an existing product with optional image upload
          * @summary Edit product
-         * @param {UpdateProductRequest} updateProductRequest 
+         * @param {string} id Resource identifier
+         * @param {string} title 
+         * @param {number} price 
+         * @param {string} [description] 
+         * @param {boolean} [active] 
+         * @param {File} [imageUpload] Optional product image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateProduct: async (updateProductRequest: UpdateProductRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'updateProductRequest' is not null or undefined
-            assertParamExists('updateProduct', 'updateProductRequest', updateProductRequest)
+        updateProduct: async (id: string, title: string, price: number, description?: string, active?: boolean, imageUpload?: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('updateProduct', 'id', id)
+            // verify required parameter 'title' is not null or undefined
+            assertParamExists('updateProduct', 'title', title)
+            // verify required parameter 'price' is not null or undefined
+            assertParamExists('updateProduct', 'price', price)
             const localVarPath = `/products`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2370,19 +2672,44 @@ export const ProductsApiAxiosParamCreator = function (configuration?: Configurat
             const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+            const localVarFormParams = new ((configuration && configuration.formDataCtor) || FormData)();
 
             // authentication bearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
 
+            if (id !== undefined) { 
+                localVarFormParams.append('id', id as any);
+            }
     
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
+            if (title !== undefined) { 
+                localVarFormParams.append('title', title as any);
+            }
+    
+            if (description !== undefined) { 
+                localVarFormParams.append('description', description as any);
+            }
+    
+            if (price !== undefined) { 
+                localVarFormParams.append('price', price as any);
+            }
+    
+            if (active !== undefined) { 
+                localVarFormParams.append('active', String(active) as any);
+            }
+    
+            if (imageUpload !== undefined) { 
+                localVarFormParams.append('imageUpload', imageUpload as any);
+            }
+    
+    
+            localVarHeaderParameter['Content-Type'] = 'multipart/form-data';
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(updateProductRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = localVarFormParams;
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2390,18 +2717,24 @@ export const ProductsApiAxiosParamCreator = function (configuration?: Configurat
             };
         },
         /**
-         * Updates the product identified by `{id}` in the path. Functionally equivalent to `PUT /products` with the id in the body.
+         * Updates the product identified by `{id}` in the path with optional image upload. Functionally equivalent to `PUT /products` with the id in the body.
          * @summary Edit product
          * @param {string} id Resource identifier
-         * @param {UpdateProductByIdRequest} updateProductByIdRequest 
+         * @param {string} title 
+         * @param {number} price 
+         * @param {string} [description] 
+         * @param {boolean} [active] 
+         * @param {File} [imageUpload] Optional product image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateProductById: async (id: string, updateProductByIdRequest: UpdateProductByIdRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        updateProductById: async (id: string, title: string, price: number, description?: string, active?: boolean, imageUpload?: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('updateProductById', 'id', id)
-            // verify required parameter 'updateProductByIdRequest' is not null or undefined
-            assertParamExists('updateProductById', 'updateProductByIdRequest', updateProductByIdRequest)
+            // verify required parameter 'title' is not null or undefined
+            assertParamExists('updateProductById', 'title', title)
+            // verify required parameter 'price' is not null or undefined
+            assertParamExists('updateProductById', 'price', price)
             const localVarPath = `/products/{id}`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -2414,19 +2747,40 @@ export const ProductsApiAxiosParamCreator = function (configuration?: Configurat
             const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+            const localVarFormParams = new ((configuration && configuration.formDataCtor) || FormData)();
 
             // authentication bearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
 
+            if (title !== undefined) { 
+                localVarFormParams.append('title', title as any);
+            }
     
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
+            if (description !== undefined) { 
+                localVarFormParams.append('description', description as any);
+            }
+    
+            if (price !== undefined) { 
+                localVarFormParams.append('price', price as any);
+            }
+    
+            if (active !== undefined) { 
+                localVarFormParams.append('active', String(active) as any);
+            }
+    
+            if (imageUpload !== undefined) { 
+                localVarFormParams.append('imageUpload', imageUpload as any);
+            }
+    
+    
+            localVarHeaderParameter['Content-Type'] = 'multipart/form-data';
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(updateProductByIdRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = localVarFormParams;
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -2443,14 +2797,18 @@ export const ProductsApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = ProductsApiAxiosParamCreator(configuration)
     return {
         /**
-         * Creates a new product
+         * Creates a new product with optional image upload
          * @summary Create product
-         * @param {CreateProductRequest} createProductRequest 
+         * @param {string} title 
+         * @param {number} price 
+         * @param {string} [description] 
+         * @param {boolean} [active] 
+         * @param {File} [imageUpload] Optional product image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async createProduct(createProductRequest: CreateProductRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Product>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.createProduct(createProductRequest, options);
+        async createProduct(title: string, price: number, description?: string, active?: boolean, imageUpload?: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Product>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createProduct(title, price, description, active, imageUpload, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['ProductsApi.createProduct']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -2527,28 +2885,37 @@ export const ProductsApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Updates an existing product
+         * Updates an existing product with optional image upload
          * @summary Edit product
-         * @param {UpdateProductRequest} updateProductRequest 
+         * @param {string} id Resource identifier
+         * @param {string} title 
+         * @param {number} price 
+         * @param {string} [description] 
+         * @param {boolean} [active] 
+         * @param {File} [imageUpload] Optional product image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async updateProduct(updateProductRequest: UpdateProductRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Product>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateProduct(updateProductRequest, options);
+        async updateProduct(id: string, title: string, price: number, description?: string, active?: boolean, imageUpload?: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Product>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateProduct(id, title, price, description, active, imageUpload, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['ProductsApi.updateProduct']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Updates the product identified by `{id}` in the path. Functionally equivalent to `PUT /products` with the id in the body.
+         * Updates the product identified by `{id}` in the path with optional image upload. Functionally equivalent to `PUT /products` with the id in the body.
          * @summary Edit product
          * @param {string} id Resource identifier
-         * @param {UpdateProductByIdRequest} updateProductByIdRequest 
+         * @param {string} title 
+         * @param {number} price 
+         * @param {string} [description] 
+         * @param {boolean} [active] 
+         * @param {File} [imageUpload] Optional product image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async updateProductById(id: string, updateProductByIdRequest: UpdateProductByIdRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Product>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateProductById(id, updateProductByIdRequest, options);
+        async updateProductById(id: string, title: string, price: number, description?: string, active?: boolean, imageUpload?: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Product>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateProductById(id, title, price, description, active, imageUpload, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['ProductsApi.updateProductById']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -2563,14 +2930,18 @@ export const ProductsApiFactory = function (configuration?: Configuration, baseP
     const localVarFp = ProductsApiFp(configuration)
     return {
         /**
-         * Creates a new product
+         * Creates a new product with optional image upload
          * @summary Create product
-         * @param {CreateProductRequest} createProductRequest 
+         * @param {string} title 
+         * @param {number} price 
+         * @param {string} [description] 
+         * @param {boolean} [active] 
+         * @param {File} [imageUpload] Optional product image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createProduct(createProductRequest: CreateProductRequest, options?: RawAxiosRequestConfig): AxiosPromise<Product> {
-            return localVarFp.createProduct(createProductRequest, options).then((request) => request(axios, basePath));
+        createProduct(title: string, price: number, description?: string, active?: boolean, imageUpload?: File, options?: RawAxiosRequestConfig): AxiosPromise<Product> {
+            return localVarFp.createProduct(title, price, description, active, imageUpload, options).then((request) => request(axios, basePath));
         },
         /**
          * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record
@@ -2629,25 +3000,34 @@ export const ProductsApiFactory = function (configuration?: Configuration, baseP
             return localVarFp.searchProducts(searchProductsRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * Updates an existing product
-         * @summary Edit product
-         * @param {UpdateProductRequest} updateProductRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateProduct(updateProductRequest: UpdateProductRequest, options?: RawAxiosRequestConfig): AxiosPromise<Product> {
-            return localVarFp.updateProduct(updateProductRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Updates the product identified by `{id}` in the path. Functionally equivalent to `PUT /products` with the id in the body.
+         * Updates an existing product with optional image upload
          * @summary Edit product
          * @param {string} id Resource identifier
-         * @param {UpdateProductByIdRequest} updateProductByIdRequest 
+         * @param {string} title 
+         * @param {number} price 
+         * @param {string} [description] 
+         * @param {boolean} [active] 
+         * @param {File} [imageUpload] Optional product image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateProductById(id: string, updateProductByIdRequest: UpdateProductByIdRequest, options?: RawAxiosRequestConfig): AxiosPromise<Product> {
-            return localVarFp.updateProductById(id, updateProductByIdRequest, options).then((request) => request(axios, basePath));
+        updateProduct(id: string, title: string, price: number, description?: string, active?: boolean, imageUpload?: File, options?: RawAxiosRequestConfig): AxiosPromise<Product> {
+            return localVarFp.updateProduct(id, title, price, description, active, imageUpload, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Updates the product identified by `{id}` in the path with optional image upload. Functionally equivalent to `PUT /products` with the id in the body.
+         * @summary Edit product
+         * @param {string} id Resource identifier
+         * @param {string} title 
+         * @param {number} price 
+         * @param {string} [description] 
+         * @param {boolean} [active] 
+         * @param {File} [imageUpload] Optional product image
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateProductById(id: string, title: string, price: number, description?: string, active?: boolean, imageUpload?: File, options?: RawAxiosRequestConfig): AxiosPromise<Product> {
+            return localVarFp.updateProductById(id, title, price, description, active, imageUpload, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -2657,14 +3037,18 @@ export const ProductsApiFactory = function (configuration?: Configuration, baseP
  */
 export class ProductsApi extends BaseAPI {
     /**
-     * Creates a new product
+     * Creates a new product with optional image upload
      * @summary Create product
-     * @param {CreateProductRequest} createProductRequest 
+     * @param {string} title 
+     * @param {number} price 
+     * @param {string} [description] 
+     * @param {boolean} [active] 
+     * @param {File} [imageUpload] Optional product image
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public createProduct(createProductRequest: CreateProductRequest, options?: RawAxiosRequestConfig) {
-        return ProductsApiFp(this.configuration).createProduct(createProductRequest, options).then((request) => request(this.axios, this.basePath));
+    public createProduct(title: string, price: number, description?: string, active?: boolean, imageUpload?: File, options?: RawAxiosRequestConfig) {
+        return ProductsApiFp(this.configuration).createProduct(title, price, description, active, imageUpload, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -2729,26 +3113,35 @@ export class ProductsApi extends BaseAPI {
     }
 
     /**
-     * Updates an existing product
+     * Updates an existing product with optional image upload
      * @summary Edit product
-     * @param {UpdateProductRequest} updateProductRequest 
+     * @param {string} id Resource identifier
+     * @param {string} title 
+     * @param {number} price 
+     * @param {string} [description] 
+     * @param {boolean} [active] 
+     * @param {File} [imageUpload] Optional product image
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public updateProduct(updateProductRequest: UpdateProductRequest, options?: RawAxiosRequestConfig) {
-        return ProductsApiFp(this.configuration).updateProduct(updateProductRequest, options).then((request) => request(this.axios, this.basePath));
+    public updateProduct(id: string, title: string, price: number, description?: string, active?: boolean, imageUpload?: File, options?: RawAxiosRequestConfig) {
+        return ProductsApiFp(this.configuration).updateProduct(id, title, price, description, active, imageUpload, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
-     * Updates the product identified by `{id}` in the path. Functionally equivalent to `PUT /products` with the id in the body.
+     * Updates the product identified by `{id}` in the path with optional image upload. Functionally equivalent to `PUT /products` with the id in the body.
      * @summary Edit product
      * @param {string} id Resource identifier
-     * @param {UpdateProductByIdRequest} updateProductByIdRequest 
+     * @param {string} title 
+     * @param {number} price 
+     * @param {string} [description] 
+     * @param {boolean} [active] 
+     * @param {File} [imageUpload] Optional product image
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public updateProductById(id: string, updateProductByIdRequest: UpdateProductByIdRequest, options?: RawAxiosRequestConfig) {
-        return ProductsApiFp(this.configuration).updateProductById(id, updateProductByIdRequest, options).then((request) => request(this.axios, this.basePath));
+    public updateProductById(id: string, title: string, price: number, description?: string, active?: boolean, imageUpload?: File, options?: RawAxiosRequestConfig) {
+        return ProductsApiFp(this.configuration).updateProductById(id, title, price, description, active, imageUpload, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
@@ -2760,15 +3153,24 @@ export class ProductsApi extends BaseAPI {
 export const UsersApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
-         * Creates a new user account with the supplied email, username, and password.
+         * Creates a new user account with the supplied email, username, and password. Optional image can be uploaded.
          * @summary Create user
-         * @param {CreateUserRequest} createUserRequest 
+         * @param {string} email 
+         * @param {string} username 
+         * @param {string} password 
+         * @param {boolean} [admin] 
+         * @param {boolean} [active] 
+         * @param {File} [imageUpload] Optional user profile image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createUser: async (createUserRequest: CreateUserRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'createUserRequest' is not null or undefined
-            assertParamExists('createUser', 'createUserRequest', createUserRequest)
+        createUser: async (email: string, username: string, password: string, admin?: boolean, active?: boolean, imageUpload?: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'email' is not null or undefined
+            assertParamExists('createUser', 'email', email)
+            // verify required parameter 'username' is not null or undefined
+            assertParamExists('createUser', 'username', username)
+            // verify required parameter 'password' is not null or undefined
+            assertParamExists('createUser', 'password', password)
             const localVarPath = `/users`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -2780,19 +3182,44 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
             const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+            const localVarFormParams = new ((configuration && configuration.formDataCtor) || FormData)();
 
             // authentication bearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
 
+            if (email !== undefined) { 
+                localVarFormParams.append('email', email as any);
+            }
     
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
+            if (username !== undefined) { 
+                localVarFormParams.append('username', username as any);
+            }
+    
+            if (password !== undefined) { 
+                localVarFormParams.append('password', password as any);
+            }
+    
+            if (admin !== undefined) { 
+                localVarFormParams.append('admin', String(admin) as any);
+            }
+    
+            if (active !== undefined) { 
+                localVarFormParams.append('active', String(active) as any);
+            }
+    
+            if (imageUpload !== undefined) { 
+                localVarFormParams.append('imageUpload', imageUpload as any);
+            }
+    
+    
+            localVarHeaderParameter['Content-Type'] = 'multipart/form-data';
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(createUserRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = localVarFormParams;
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -3030,15 +3457,18 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
             };
         },
         /**
-         * Updates an existing user\'s email or password.
+         * Updates an existing user\'s email or password. Optional image can be uploaded.
          * @summary Edit user
-         * @param {UpdateUserRequest} updateUserRequest 
+         * @param {string} id Resource identifier
+         * @param {string} [email] 
+         * @param {string} [password] 
+         * @param {File} [imageUpload] Optional user profile image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateUser: async (updateUserRequest: UpdateUserRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'updateUserRequest' is not null or undefined
-            assertParamExists('updateUser', 'updateUserRequest', updateUserRequest)
+        updateUser: async (id: string, email?: string, password?: string, imageUpload?: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'id' is not null or undefined
+            assertParamExists('updateUser', 'id', id)
             const localVarPath = `/users`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -3050,19 +3480,36 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
             const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+            const localVarFormParams = new ((configuration && configuration.formDataCtor) || FormData)();
 
             // authentication bearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
 
+            if (id !== undefined) { 
+                localVarFormParams.append('id', id as any);
+            }
     
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
+            if (email !== undefined) { 
+                localVarFormParams.append('email', email as any);
+            }
+    
+            if (password !== undefined) { 
+                localVarFormParams.append('password', password as any);
+            }
+    
+            if (imageUpload !== undefined) { 
+                localVarFormParams.append('imageUpload', imageUpload as any);
+            }
+    
+    
+            localVarHeaderParameter['Content-Type'] = 'multipart/form-data';
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(updateUserRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = localVarFormParams;
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -3070,18 +3517,18 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
             };
         },
         /**
-         * Updates the email or password of the user identified by `{id}` in the path.
+         * Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
          * @summary Edit user
          * @param {string} id Resource identifier
-         * @param {UpdateUserByIdRequest} updateUserByIdRequest 
+         * @param {string} [email] 
+         * @param {string} [password] 
+         * @param {File} [imageUpload] Optional user profile image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateUserById: async (id: string, updateUserByIdRequest: UpdateUserByIdRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        updateUserById: async (id: string, email?: string, password?: string, imageUpload?: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('updateUserById', 'id', id)
-            // verify required parameter 'updateUserByIdRequest' is not null or undefined
-            assertParamExists('updateUserById', 'updateUserByIdRequest', updateUserByIdRequest)
             const localVarPath = `/users/{id}`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
@@ -3094,19 +3541,32 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
             const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
             const localVarHeaderParameter = {} as any;
             const localVarQueryParameter = {} as any;
+            const localVarFormParams = new ((configuration && configuration.formDataCtor) || FormData)();
 
             // authentication bearerAuth required
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
 
+            if (email !== undefined) { 
+                localVarFormParams.append('email', email as any);
+            }
     
-            localVarHeaderParameter['Content-Type'] = 'application/json';
-
+            if (password !== undefined) { 
+                localVarFormParams.append('password', password as any);
+            }
+    
+            if (imageUpload !== undefined) { 
+                localVarFormParams.append('imageUpload', imageUpload as any);
+            }
+    
+    
+            localVarHeaderParameter['Content-Type'] = 'multipart/form-data';
+    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(updateUserByIdRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = localVarFormParams;
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -3123,14 +3583,19 @@ export const UsersApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = UsersApiAxiosParamCreator(configuration)
     return {
         /**
-         * Creates a new user account with the supplied email, username, and password.
+         * Creates a new user account with the supplied email, username, and password. Optional image can be uploaded.
          * @summary Create user
-         * @param {CreateUserRequest} createUserRequest 
+         * @param {string} email 
+         * @param {string} username 
+         * @param {string} password 
+         * @param {boolean} [admin] 
+         * @param {boolean} [active] 
+         * @param {File} [imageUpload] Optional user profile image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async createUser(createUserRequest: CreateUserRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<User>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.createUser(createUserRequest, options);
+        async createUser(email: string, username: string, password: string, admin?: boolean, active?: boolean, imageUpload?: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<User>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createUser(email, username, password, admin, active, imageUpload, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['UsersApi.createUser']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -3208,28 +3673,33 @@ export const UsersApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Updates an existing user\'s email or password.
+         * Updates an existing user\'s email or password. Optional image can be uploaded.
          * @summary Edit user
-         * @param {UpdateUserRequest} updateUserRequest 
+         * @param {string} id Resource identifier
+         * @param {string} [email] 
+         * @param {string} [password] 
+         * @param {File} [imageUpload] Optional user profile image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async updateUser(updateUserRequest: UpdateUserRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<User>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateUser(updateUserRequest, options);
+        async updateUser(id: string, email?: string, password?: string, imageUpload?: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<User>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateUser(id, email, password, imageUpload, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['UsersApi.updateUser']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
-         * Updates the email or password of the user identified by `{id}` in the path.
+         * Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
          * @summary Edit user
          * @param {string} id Resource identifier
-         * @param {UpdateUserByIdRequest} updateUserByIdRequest 
+         * @param {string} [email] 
+         * @param {string} [password] 
+         * @param {File} [imageUpload] Optional user profile image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async updateUserById(id: string, updateUserByIdRequest: UpdateUserByIdRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<User>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateUserById(id, updateUserByIdRequest, options);
+        async updateUserById(id: string, email?: string, password?: string, imageUpload?: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<User>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateUserById(id, email, password, imageUpload, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['UsersApi.updateUserById']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -3244,14 +3714,19 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
     const localVarFp = UsersApiFp(configuration)
     return {
         /**
-         * Creates a new user account with the supplied email, username, and password.
+         * Creates a new user account with the supplied email, username, and password. Optional image can be uploaded.
          * @summary Create user
-         * @param {CreateUserRequest} createUserRequest 
+         * @param {string} email 
+         * @param {string} username 
+         * @param {string} password 
+         * @param {boolean} [admin] 
+         * @param {boolean} [active] 
+         * @param {File} [imageUpload] Optional user profile image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        createUser(createUserRequest: CreateUserRequest, options?: RawAxiosRequestConfig): AxiosPromise<User> {
-            return localVarFp.createUser(createUserRequest, options).then((request) => request(axios, basePath));
+        createUser(email: string, username: string, password: string, admin?: boolean, active?: boolean, imageUpload?: File, options?: RawAxiosRequestConfig): AxiosPromise<User> {
+            return localVarFp.createUser(email, username, password, admin, active, imageUpload, options).then((request) => request(axios, basePath));
         },
         /**
          * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record.
@@ -3311,25 +3786,30 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
             return localVarFp.searchUsers(searchUsersRequest, options).then((request) => request(axios, basePath));
         },
         /**
-         * Updates an existing user\'s email or password.
-         * @summary Edit user
-         * @param {UpdateUserRequest} updateUserRequest 
-         * @param {*} [options] Override http request option.
-         * @throws {RequiredError}
-         */
-        updateUser(updateUserRequest: UpdateUserRequest, options?: RawAxiosRequestConfig): AxiosPromise<User> {
-            return localVarFp.updateUser(updateUserRequest, options).then((request) => request(axios, basePath));
-        },
-        /**
-         * Updates the email or password of the user identified by `{id}` in the path.
+         * Updates an existing user\'s email or password. Optional image can be uploaded.
          * @summary Edit user
          * @param {string} id Resource identifier
-         * @param {UpdateUserByIdRequest} updateUserByIdRequest 
+         * @param {string} [email] 
+         * @param {string} [password] 
+         * @param {File} [imageUpload] Optional user profile image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateUserById(id: string, updateUserByIdRequest: UpdateUserByIdRequest, options?: RawAxiosRequestConfig): AxiosPromise<User> {
-            return localVarFp.updateUserById(id, updateUserByIdRequest, options).then((request) => request(axios, basePath));
+        updateUser(id: string, email?: string, password?: string, imageUpload?: File, options?: RawAxiosRequestConfig): AxiosPromise<User> {
+            return localVarFp.updateUser(id, email, password, imageUpload, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
+         * @summary Edit user
+         * @param {string} id Resource identifier
+         * @param {string} [email] 
+         * @param {string} [password] 
+         * @param {File} [imageUpload] Optional user profile image
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateUserById(id: string, email?: string, password?: string, imageUpload?: File, options?: RawAxiosRequestConfig): AxiosPromise<User> {
+            return localVarFp.updateUserById(id, email, password, imageUpload, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -3339,14 +3819,19 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
  */
 export class UsersApi extends BaseAPI {
     /**
-     * Creates a new user account with the supplied email, username, and password.
+     * Creates a new user account with the supplied email, username, and password. Optional image can be uploaded.
      * @summary Create user
-     * @param {CreateUserRequest} createUserRequest 
+     * @param {string} email 
+     * @param {string} username 
+     * @param {string} password 
+     * @param {boolean} [admin] 
+     * @param {boolean} [active] 
+     * @param {File} [imageUpload] Optional user profile image
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public createUser(createUserRequest: CreateUserRequest, options?: RawAxiosRequestConfig) {
-        return UsersApiFp(this.configuration).createUser(createUserRequest, options).then((request) => request(this.axios, this.basePath));
+    public createUser(email: string, username: string, password: string, admin?: boolean, active?: boolean, imageUpload?: File, options?: RawAxiosRequestConfig) {
+        return UsersApiFp(this.configuration).createUser(email, username, password, admin, active, imageUpload, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3412,26 +3897,31 @@ export class UsersApi extends BaseAPI {
     }
 
     /**
-     * Updates an existing user\'s email or password.
+     * Updates an existing user\'s email or password. Optional image can be uploaded.
      * @summary Edit user
-     * @param {UpdateUserRequest} updateUserRequest 
+     * @param {string} id Resource identifier
+     * @param {string} [email] 
+     * @param {string} [password] 
+     * @param {File} [imageUpload] Optional user profile image
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public updateUser(updateUserRequest: UpdateUserRequest, options?: RawAxiosRequestConfig) {
-        return UsersApiFp(this.configuration).updateUser(updateUserRequest, options).then((request) => request(this.axios, this.basePath));
+    public updateUser(id: string, email?: string, password?: string, imageUpload?: File, options?: RawAxiosRequestConfig) {
+        return UsersApiFp(this.configuration).updateUser(id, email, password, imageUpload, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
-     * Updates the email or password of the user identified by `{id}` in the path.
+     * Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
      * @summary Edit user
      * @param {string} id Resource identifier
-     * @param {UpdateUserByIdRequest} updateUserByIdRequest 
+     * @param {string} [email] 
+     * @param {string} [password] 
+     * @param {File} [imageUpload] Optional user profile image
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public updateUserById(id: string, updateUserByIdRequest: UpdateUserByIdRequest, options?: RawAxiosRequestConfig) {
-        return UsersApiFp(this.configuration).updateUserById(id, updateUserByIdRequest, options).then((request) => request(this.axios, this.basePath));
+    public updateUserById(id: string, email?: string, password?: string, imageUpload?: File, options?: RawAxiosRequestConfig) {
+        return UsersApiFp(this.configuration).updateUserById(id, email, password, imageUpload, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

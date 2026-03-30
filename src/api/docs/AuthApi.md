@@ -6,6 +6,9 @@ All URIs are relative to *http://localhost:3000*
 |------------- | ------------- | -------------|
 |[**confirmPasswordReset**](#confirmpasswordreset) | **POST** /account/reset-confirm | |
 |[**login**](#login) | **POST** /account/login | Login|
+|[**logoutAll**](#logoutall) | **POST** /account/logout-all | Logout from all devices|
+|[**refreshToken**](#refreshtoken) | **GET** /account/refresh | Refresh access token|
+|[**refreshTokenWithPath**](#refreshtokenwithpath) | **GET** /account/refresh/{token} | Refresh access token with token in path|
 |[**requestPasswordReset**](#requestpasswordreset) | **POST** /account/reset | |
 |[**signup**](#signup) | **POST** /account/signup | Signup|
 
@@ -118,6 +121,151 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
+# **logoutAll**
+> MessageResponse logoutAll()
+
+Logs out the authenticated user from ALL devices by removing all refresh tokens from the database and clearing authentication cookies.
+
+### Example
+
+```typescript
+import {
+    AuthApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new AuthApi(configuration);
+
+const { status, data } = await apiInstance.logoutAll();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**MessageResponse**
+
+### Authorization
+
+[bearerAuth](../README.md#bearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Success |  -  |
+|**401** | Unauthorized |  -  |
+|**500** | Internal server error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **refreshToken**
+> RefreshTokenResponse refreshToken()
+
+Creates a new short-lived access token using a refresh token. The refresh token can be provided as a query parameter, path parameter, or retrieved from the `jwt` cookie.
+
+### Example
+
+```typescript
+import {
+    AuthApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new AuthApi(configuration);
+
+const { status, data } = await apiInstance.refreshToken();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**RefreshTokenResponse**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | New access token |  -  |
+|**401** | Unauthorized |  -  |
+|**500** | Internal server error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **refreshTokenWithPath**
+> RefreshTokenResponse refreshTokenWithPath()
+
+Creates a new short-lived access token using a refresh token provided in the URL path.
+
+### Example
+
+```typescript
+import {
+    AuthApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new AuthApi(configuration);
+
+let token: string; //Refresh token (default to undefined)
+
+const { status, data } = await apiInstance.refreshTokenWithPath(
+    token
+);
+```
+
+### Parameters
+
+|Name | Type | Description  | Notes|
+|------------- | ------------- | ------------- | -------------|
+| **token** | [**string**] | Refresh token | defaults to undefined|
+
+
+### Return type
+
+**RefreshTokenResponse**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | New access token |  -  |
+|**401** | Unauthorized |  -  |
+|**500** | Internal server error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
 # **requestPasswordReset**
 > MessageResponse requestPasswordReset(passwordResetRequest)
 
@@ -173,26 +321,33 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **signup**
-> User signup(signupRequest)
+> User signup()
 
-Registers a new user account. Returns the newly created user profile on success.
+Registers a new user account with optional image upload. Returns the newly created user profile on success.
 
 ### Example
 
 ```typescript
 import {
     AuthApi,
-    Configuration,
-    SignupRequest
+    Configuration
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new AuthApi(configuration);
 
-let signupRequest: SignupRequest; //
+let email: string; // (default to undefined)
+let username: string; // (default to undefined)
+let password: string; // (default to undefined)
+let passwordConfirm: string; // (default to undefined)
+let imageUpload: File; //Optional user profile image (optional) (default to undefined)
 
 const { status, data } = await apiInstance.signup(
-    signupRequest
+    email,
+    username,
+    password,
+    passwordConfirm,
+    imageUpload
 );
 ```
 
@@ -200,7 +355,11 @@ const { status, data } = await apiInstance.signup(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **signupRequest** | **SignupRequest**|  | |
+| **email** | [**string**] |  | defaults to undefined|
+| **username** | [**string**] |  | defaults to undefined|
+| **password** | [**string**] |  | defaults to undefined|
+| **passwordConfirm** | [**string**] |  | defaults to undefined|
+| **imageUpload** | [**File**] | Optional user profile image | (optional) defaults to undefined|
 
 
 ### Return type
@@ -213,7 +372,7 @@ No authorization required
 
 ### HTTP request headers
 
- - **Content-Type**: application/json
+ - **Content-Type**: multipart/form-data
  - **Accept**: application/json
 
 
