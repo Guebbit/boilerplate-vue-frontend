@@ -4,7 +4,7 @@ import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { i18n } from '@/utils/i18n.ts';
 import type { User } from '@/api';
 import { accountApi, authApi } from '@/utils/api.ts';
-import { patchProfileApi, refreshTokenApi, logoutApi } from '@/apiOld';
+import { patchProfileApi, logoutApi } from '@/apiOld';
 
 /**
  * While we can't access to inject/provide in guards or any non-components,
@@ -62,7 +62,7 @@ export const useProfileStore = defineStore('profile', () => {
      */
     const signup = (email: string, password: string, username = email) =>
         fetchAny(() =>
-            authApi.signup({ email, password, passwordConfirm: password, username })
+            authApi.signup(email, username, password, password)
         );
 
     /**
@@ -70,7 +70,7 @@ export const useProfileStore = defineStore('profile', () => {
      */
     const refreshToken = () =>
         fetchAny(() =>
-            refreshTokenApi().then(({ data: { token } = {} }) => (accessToken.value = token))
+            authApi.refreshToken().then(({ data: { token } = {} as { token?: string } }) => (accessToken.value = token))
         );
 
     /**

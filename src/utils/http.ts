@@ -4,7 +4,13 @@ import type { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axio
 import type { IResponseReject, IResponseSuccess } from '@/types';
 import { useProfileStore } from '@/stores/profile.ts';
 import { storeToRefs } from 'pinia';
-import { refreshTokenApi } from '@/apiOld';
+
+/**
+ * Extended request config with a custom flag to prevent refresh-retry loops
+ */
+interface IAxiosRequestConfigDontRetry extends InternalAxiosRequestConfig {
+    _dontRetry: boolean;
+}
 
 /**
  *
@@ -136,7 +142,11 @@ export const onResponseRejectWithRefresh = async (
     // If it's keycloak auth error:
     // refresh the token and retry the request if not already retried
     if (error.response?.status === 401 && !Object.hasOwnProperty.call(error.config, '_dontRetry'))
-        return refreshTokenApi().then(({ data }) => {
+        return instance
+            .get<unknown, IResponseSuccess<{ token: string }>>('/account/refresh', {
+                _dontRetry: true
+            } as IAxiosRequestConfigDontRetry)
+            .then(({ data }) => {
             if (!data?.token || !error.config) return;
             // if token is present, I'll retry the request
             accessToken.value = data.token;

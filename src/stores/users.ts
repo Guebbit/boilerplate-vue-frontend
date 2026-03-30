@@ -2,7 +2,6 @@ import { defineStore } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
-import { updateUserImageApi } from '@/apiOld';
 import { usersApi } from '@/utils/api.ts';
 import type { User, CreateUserRequest } from '@/api';
 import type { AxiosProgressEvent } from 'axios';
@@ -78,11 +77,14 @@ export const useUsersStore = defineStore('users', () => {
      * @param userData
      */
     const createUser = (userData: CreateUserRequest) =>
-        createTarget(() => usersApi.createUser(userData).then(({ data }) => data as User));
+        createTarget(() =>
+            usersApi
+                .createUser(userData.email, userData.username, userData.password, userData.admin, userData.active)
+                .then(({ data }) => data as User)
+        );
 
     /**
-     * Change user image
-     * NOTE: image upload is not part of the OpenAPI spec; using legacy API.
+     * Change user image via the generated API (imageUpload multipart endpoint)
      *
      * @param userId
      * @param files
@@ -92,13 +94,17 @@ export const useUsersStore = defineStore('users', () => {
         userId: string,
         files: File[] | FileList = [],
         onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
-        // eslint-disable-next-line unicorn/consistent-function-scoping
     ) => {
-        // TODO generic wrapper with loading and error handling
         if (files.length === 0 || !files[0]) return Promise.reject(new Error('no file selected'));
-        const formData = new FormData();
-        formData.append('file', files[0]);
-        return fetchAny(() => updateUserImageApi(Number(userId), formData, onUploadProgress));
+        return updateTarget(
+            () =>
+                usersApi
+                    .updateUserById(userId, undefined, undefined, files[0], { onUploadProgress })
+                    .then(({ data }) => data as User),
+            // No fields to optimistically merge — the updated imageUrl is returned by the API
+            {} as Partial<User>,
+            userId
+        );
     };
 
     /**
@@ -108,7 +114,10 @@ export const useUsersStore = defineStore('users', () => {
      */
     const updateUser = (userId: string, userData: { email?: string; password?: string } = {}) =>
         updateTarget(
-            () => usersApi.updateUserById(userId, userData).then(({ data }) => data as User),
+            () =>
+                usersApi
+                    .updateUserById(userId, userData.email, userData.password)
+                    .then(({ data }) => data as User),
             userData as Partial<User>,
             userId
         );
