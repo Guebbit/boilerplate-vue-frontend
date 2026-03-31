@@ -99,9 +99,9 @@ const { zodSchemaUsers } = useUsersStore();
 
 const { form, formErrors, isDirty, isSubmitting, handleSubmit } =
     useStructureFormManagement<IUserSignupForm>(
-        import.meta.env.NODE_ENV !== 'production'
-            ? { email: 'root@root.it', password: 'RootRoot_123' }
-            : {},
+        import.meta.env.NODE_ENV === 'production'
+            ? {}
+            : { email: 'root@root.it', password: 'RootRoot_123' },
         zodSchemaUsers
             .pick({
                 email: true
@@ -130,11 +130,7 @@ const submitForm = () =>
     handleSubmit(async () => {
         await signup(form.value.email!, form.value.password!);
         await fetchProfile();
-        if (route.query.continue) {
-            await router.push({ path: route.query.continue as string });
-        } else {
-            await router.push({ name: 'Home' });
-        }
+        await (route.query.continue ? router.push({ path: route.query.continue as string }) : router.push({ name: 'Home' }));
     })
         .then((success) => {
             if (!success) showErrors.value = true;
