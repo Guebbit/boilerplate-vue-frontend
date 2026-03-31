@@ -26,7 +26,7 @@ export const useCounterStore = defineStore('counter', () => {
     /**
      * Equivalent of Action (no real difference, just async)
      */
-    async function incrementDelayed() {
+    function incrementDelayed() {
         return new Promise((resolve) => {
             setTimeout(() => {
                 count.value++;
