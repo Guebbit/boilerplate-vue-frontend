@@ -11,19 +11,19 @@
                 <div
                     class="theme-form-input"
                     :class="{
-                        'form-error': showErrors && errors.email
+                        'form-error': showErrors && formErrors.email
                     }"
                 >
                     <label for="form-email">{{ t('signup-page.label-email') }}</label>
                     <input v-model="form.email" type="email" id="form-email" class="theme-input" />
-                    <p v-if="showErrors && errors.email" class="form-error-message">
-                        {{ errors.email.join(', ') }}
+                    <p v-if="showErrors && formErrors.email" class="form-error-message">
+                        {{ formErrors.email.join(', ') }}
                     </p>
                 </div>
                 <div
                     class="theme-form-input"
                     :class="{
-                        'form-error': showErrors && errors.password
+                        'form-error': showErrors && formErrors.password
                     }"
                 >
                     <label for="form-password">{{ t('signup-page.label-password') }}</label>
@@ -33,8 +33,8 @@
                         id="form-password"
                         class="theme-input"
                     />
-                    <p v-if="showErrors && errors.password" class="form-error-message">
-                        {{ errors.password.join(', ') }}
+                    <p v-if="showErrors && formErrors.password" class="form-error-message">
+                        {{ formErrors.password.join(', ') }}
                     </p>
                 </div>
 
@@ -46,14 +46,14 @@
                 <div
                     class="theme-form-input-checkbox"
                     :class="{
-                        'form-error': showErrors && errors.conditions
+                        'form-error': showErrors && formErrors.conditions
                     }"
                 >
                     <input v-model="form.conditions" type="checkbox" id="form-conditions" />
                     <label for="form-conditions">{{ t('signup-page.text-conditions') }}</label>
                 </div>
 
-                <button type="submit" class="theme-button" :disabled="!hasChanged">
+                <button type="submit" class="theme-button" :disabled="!isDirty || isSubmitting">
                     {{ t('signup-page.button-submit') }}
                 </button>
             </form>
@@ -68,10 +68,11 @@ export default {
 </script>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useToastStore } from '@/stores/toasts';
-import { useStructureFormValidation } from '@/composables/structureFormValidation.ts';
+import { useStructureFormManagement } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
 import { useRouter, useRoute } from 'vue-router';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
@@ -97,9 +98,11 @@ interface IUserSignupForm {
 
 const { zodSchemaUsers } = useUsersStore();
 
-// TODO signup: costantvalidation ma errori mostrati solo quando il singolo campo è diverso dall'originale
-const { form, errors, showErrors, hasChanged, validate } =
-    useStructureFormValidation<IUserSignupForm>(
+const { form, formErrors, isDirty, isSubmitting, handleSubmit } =
+    useStructureFormManagement<IUserSignupForm>(
+        import.meta.env.NODE_ENV !== 'production'
+            ? { email: 'root@root.it', password: 'RootRoot_123' }
+            : {},
         zodSchemaUsers
             .pick({
                 email: true
@@ -109,41 +112,38 @@ const { form, errors, showErrors, hasChanged, validate } =
                 conditions: z.boolean().refine((value) => value, {
                     message: t('users-form.conditions-required')
                 })
-            }),
-        false
+            })
     );
 
-form.value = {
-    email: 'root@root.it',
-    password: 'RootRoot_123'
-};
+/**
+ * Whether to display validation errors in the UI
+ */
+const showErrors = ref(false);
 
 const { signup, fetchProfile } = useProfileStore();
 
 /**
- * Submit form and try to authenticate
+ * Submit form and try to authenticate.
+ * handleSubmit returns false when validation fails (shows errors),
+ * and re-throws when the onSubmit handler itself throws (API errors caught below).
  */
-const submitForm = () => {
-    if (!validate()) {
-        showErrors.value = true;
-        return;
-    }
-    return signup(form.value.email!, form.value.password!)
-        .then(() => fetchProfile())
-        .then(() =>
-            route.query.continue
-                ? router.push({
-                      path: route.query.continue as string
-                  })
-                : router.push({
-                      name: 'Home'
-                  })
-        )
+const submitForm = () =>
+    handleSubmit(async () => {
+        await signup(form.value.email!, form.value.password!);
+        await fetchProfile();
+        if (route.query.continue) {
+            await router.push({ path: route.query.continue as string });
+        } else {
+            await router.push({ name: 'Home' });
+        }
+    })
+        .then((success) => {
+            if (!success) showErrors.value = true;
+        })
         .catch(({ message, errors = [] }) => {
             if (errors.length === 0) addMessage(message);
             for (let i = 0, len = errors.length; i < len; i++) addMessage(errors[i]);
         });
-};
 </script>
 
 <style lang="scss">
