@@ -22,6 +22,10 @@ export const useUsersStore = defineStore('users', () => {
         selectedRecord: currentUser,
 
         loading,
+        pageCurrent,
+        pageSize,
+        pageTotal,
+        pageItemList,
         fetchAll,
         fetchTarget,
         createTarget,
@@ -183,6 +187,10 @@ export const useUsersStore = defineStore('users', () => {
         currentUser,
 
         loading,
+        pageCurrent,
+        pageSize,
+        pageTotal,
+        pageItemList,
         fetchUsers,
         fetchPaginationUsers,
         fetchUser,
