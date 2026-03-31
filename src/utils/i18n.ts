@@ -88,7 +88,7 @@ if (supportedLanguages.length === 0) {
  * @param i18n
  * @param locale
  */
-export async function _loadLocale(i18n: I18n, locale: string) {
+export function _loadLocale(i18n: I18n, locale: string) {
     // Load locale
     if (
         // Check if already loaded
@@ -121,7 +121,7 @@ export async function _loadLocale(i18n: I18n, locale: string) {
  *
  * @param locale
  */
-export async function loadLocale(locale: string) {
+export function loadLocale(locale: string) {
     return _loadLocale(i18n, locale);
 }
 
@@ -133,7 +133,7 @@ export async function loadLocale(locale: string) {
  * @param locale
  * @param messages
  */
-export async function _updateLocale(
+export function _updateLocale(
     i18n: I18n,
     locale: string,
     messages: ITranslationDictionaries
@@ -150,7 +150,7 @@ export async function _updateLocale(
  * @param locale
  * @param messages
  */
-export async function updateLocale(locale: string, messages: ITranslationDictionaries) {
+export function updateLocale(locale: string, messages: ITranslationDictionaries) {
     return _updateLocale(i18n, locale, messages);
 }
 
@@ -160,20 +160,24 @@ export async function updateLocale(locale: string, messages: ITranslationDiction
  * @param i18n
  * @param locale
  */
-export async function _changeLanguage(i18n: I18n, locale: string) {
-    if (!loadedLanguages.includes(locale)) await _loadLocale(i18n, locale);
-    (i18n.global.locale as WritableComputedRef<string>).value = locale;
+export function _changeLanguage(i18n: I18n, locale: string) {
+    const setLocale = () => {
+        (i18n.global.locale as WritableComputedRef<string>).value = locale;
 
-    /**
-     * NOTE:
-     * If you need to specify the language setting for headers
-     * such as the `fetch` API, set it here (and it's not defined in other ways).
-     *
-     * The following is an example for axios.
-     * axios.defaults.headers.common['Accept-Language'] = locale
-     */
-    document.querySelector('html')?.setAttribute('lang', locale);
-    return nextTick();
+        /**
+         * NOTE:
+         * If you need to specify the language setting for headers
+         * such as the `fetch` API, set it here (and it's not defined in other ways).
+         *
+         * The following is an example for axios.
+         * axios.defaults.headers.common['Accept-Language'] = locale
+         */
+        document.querySelector('html')?.setAttribute('lang', locale);
+        return nextTick();
+    };
+    if (!loadedLanguages.includes(locale))
+        return _loadLocale(i18n, locale).then(() => setLocale());
+    return setLocale();
 }
 
 /**
