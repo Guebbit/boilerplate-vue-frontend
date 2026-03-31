@@ -68,7 +68,7 @@ import LoadingCore from '@/components/atoms/LoadingCore.vue';
 import LoadingSide from '@/components/atoms/LoadingSide.vue';
 import Navigation from '@/components/organisms/Navigation.vue';
 import { useCoreStore } from '@/stores/core';
-import { useToastStore } from '@/stores/toasts';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
 import { getCookie } from '@/utils/helperGenerics.ts';
 
@@ -98,8 +98,8 @@ const { loadings, isLoading } = storeToRefs(useCoreStore());
 /**
  * Toasts
  */
-const { messages } = storeToRefs(useToastStore());
-const { hideMessage } = useToastStore();
+const { messages } = storeToRefs(useNotificationsStore());
+const { hideMessage } = useNotificationsStore();
 
 /**
  * Profile
