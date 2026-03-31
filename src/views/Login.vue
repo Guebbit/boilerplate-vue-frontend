@@ -60,7 +60,7 @@ export default {
 <script setup lang="ts">
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
-import { useToastStore } from '@/stores/toasts';
+import { useToastStore } from '@guebbit/vue-toolkit';
 import { useStructureFormValidation } from '@/composables/structureFormValidation.ts';
 import { useProfileStore } from '@/stores/profile.ts';
 import { useRouter, useRoute } from 'vue-router';
@@ -71,7 +71,7 @@ import { useUsersStore } from '@/stores/users.ts';
  * UI logics
  */
 const { t } = useI18n();
-const { addMessage } = useToastStore();
+const { addMessage } = useNotificationsStore();
 const router = useRouter();
 const route = useRoute();
 

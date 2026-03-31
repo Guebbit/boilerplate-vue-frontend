@@ -100,7 +100,7 @@ import LayoutDefault from '@/layouts/LayoutDefault.vue';
  */
 const { t } = useI18n();
 const router = useRouter();
-const { addMessage } = useToastStore();
+const { addMessage } = useNotificationsStore();
 
 /**
  * Cart store

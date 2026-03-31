@@ -1,6 +1,6 @@
 import { storeToRefs } from 'pinia';
 import { useProfileStore } from '@/stores/profile';
-import { useToastStore } from '@/stores/toasts';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { loginContinueTo } from '@/utils/helperNavigation';
 import { getCookie } from '@/utils/helperGenerics.ts';
 import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router';
@@ -46,7 +46,7 @@ export const isGuest = async (
     next: NavigationGuardNext
 ) => {
     const { isAuth } = storeToRefs(useProfileStore());
-    const { addMessage } = useToastStore();
+    const { addMessage } = useNotificationsStore();
 
     await refreshAuth().finally(() => {
         // Already authenticated, send to home
@@ -76,7 +76,7 @@ export const isAuth = async (
     next: NavigationGuardNext
 ) => {
     const { isAuth } = storeToRefs(useProfileStore());
-    const { addMessage } = useToastStore();
+    const { addMessage } = useNotificationsStore();
 
     await refreshAuth().finally(() => {
         // Not authenticated, send to login
@@ -104,7 +104,7 @@ export const isAdmin = async (
     next: NavigationGuardNext
 ) => {
     const { isAuth, isAdmin } = storeToRefs(useProfileStore());
-    const { addMessage } = useToastStore();
+    const { addMessage } = useNotificationsStore();
 
     await refreshAuth().finally(() => {
         // Not authenticated, send to login
