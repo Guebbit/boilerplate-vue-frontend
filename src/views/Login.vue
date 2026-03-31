@@ -60,8 +60,7 @@ export default {
 <script setup lang="ts">
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
-import { useToastStore } from '@guebbit/vue-toolkit';
-import { useStructureFormValidation } from '@/composables/structureFormValidation.ts';
+import { useNotificationsStore, useStructureFormManagement } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
 import { useRouter, useRoute } from 'vue-router';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
@@ -86,7 +85,7 @@ interface IUserLoginForm {
 
 const { zodSchemaUsers } = useUsersStore();
 
-const { form, errors, showErrors, validate } = useStructureFormValidation<IUserLoginForm>(
+const { form, errors, showErrors, validate } = useStructureFormManagement<IUserLoginForm>(
     zodSchemaUsers
         .pick({
             email: true

@@ -126,8 +126,7 @@ export default {
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { useToastStore } from '@guebbit/vue-toolkit';
-import { useStructureFormValidation } from '@/composables/structureFormValidation.ts';
+import { useNotificationsStore, useStructureFormManagement } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
 import { useUsersStore } from '@/stores/users.ts';
 
@@ -149,7 +148,7 @@ const { profile } = storeToRefs(useProfileStore());
 const { zodSchemaUsers, zodSchemaUsersPassword } = useUsersStore();
 
 const { form, errors, showErrors, hasChanged, reset, validate, setInitial } =
-    useStructureFormValidation(zodSchemaUsers, false);
+    useStructureFormManagement({}, zodSchemaUsers);
 
 /**
  * Another instance of form only for the password
@@ -158,7 +157,7 @@ const {
     form: passwordForm,
     errors: passwordErrors,
     isValid: passwordIsValid
-} = useStructureFormValidation(
+} = useStructureFormManagement(
     z
         .object({
             password: zodSchemaUsersPassword,

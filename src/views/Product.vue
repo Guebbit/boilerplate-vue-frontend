@@ -42,7 +42,6 @@ import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useProductsStore } from '@/stores/products';
-import { updateProductImageApi } from '@/apiOld';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 
@@ -61,6 +60,30 @@ const { id } = defineProps<{
 const { fetchProduct } = useProductsStore();
 const { currentProduct, selectedProductId } = storeToRefs(useProductsStore());
 
+// import axios from '@/utils/http.ts';
+// import type { AxiosProgressEvent } from 'axios';
+// import type { IProductIdentification } from '@/types';
+//
+// /**
+//  * Put Profile data DEMO
+//  *
+//  * @param id
+//  * @param formData
+//  * @param onUploadProgress
+//  */
+// export const updateProductImageApi = (
+//     id: IProductIdentification,
+//     formData: FormData,
+//     onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
+// ) =>
+//     axios.put('https://httpbin.org/put', formData, {
+//         headers: {
+//             // eslint-disable-next-line @typescript-eslint/naming-convention
+//             'Content-Type': 'multipart/form-data'
+//         },
+//         onUploadProgress
+//     });
+
 function emitUploadImage() {
     if (!id) return;
     const { files } = document.querySelector('#fileInput') as HTMLInputElement;
@@ -68,9 +91,9 @@ function emitUploadImage() {
     const formData = new FormData();
     formData.append('file', files[0]!);
     // NOTE: image upload is not part of the OpenAPI spec; using legacy API.
-    return updateProductImageApi(Number(id), formData, ({ progress = 0 }) => {
-        console.log('upload %', Math.round(progress * 100) + '%');
-    });
+    // return updateProductImageApi(Number(id), formData, ({ progress = 0 }) => {
+    //     console.log('upload %', Math.round(progress * 100) + '%');
+    // });
 }
 
 /**

@@ -30,9 +30,7 @@
                         <h3 class="card-title">
                             {{ t('cart-page.label-product-id') }}: <b>{{ item.productId }}</b>
                         </h3>
-                        <p>
-                            {{ t('cart-page.label-quantity') }}: {{ item.quantity }}
-                        </p>
+                        <p>{{ t('cart-page.label-quantity') }}: {{ item.quantity }}</p>
                         <div class="cart-item-actions">
                             <button
                                 class="theme-button"
@@ -47,10 +45,7 @@
                             >
                                 +
                             </button>
-                            <button
-                                class="theme-button"
-                                @click="removeCartItem(item.productId)"
-                            >
+                            <button class="theme-button" @click="removeCartItem(item.productId)">
                                 {{ t('cart-page.button-remove') }}
                             </button>
                         </div>
@@ -62,7 +57,10 @@
                 <h3>{{ t('cart-page.label-summary') }}</h3>
                 <p>{{ t('cart-page.label-items-count') }}: {{ cartSummary.itemsCount }}</p>
                 <p>{{ t('cart-page.label-total-quantity') }}: {{ cartSummary.totalQuantity }}</p>
-                <p>{{ t('cart-page.label-total') }}: {{ cartSummary.total }} {{ cartSummary.currency }}</p>
+                <p>
+                    {{ t('cart-page.label-total') }}: {{ cartSummary.total }}
+                    {{ cartSummary.currency }}
+                </p>
             </div>
 
             <div class="cart-actions">
@@ -90,7 +88,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useCartStore } from '@/stores/cart.ts';
-import { useToastStore } from '@/stores/toasts.ts';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { ordersApi } from '@/utils/api.ts';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';

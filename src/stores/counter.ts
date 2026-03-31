@@ -36,21 +36,12 @@ export const useCounterStore = defineStore('counter', () => {
     }
 
     /**
-     * Setup stores are also able to rely on globally provided properties like the Router or the Route.
-     */
-    const route = useRoute();
-    function routeCheck() {
-        alert('route accessed within Pinia: ' + route.path);
-    }
-
-    /**
      * Exported store members
      */
     return {
         count,
         doubleCount,
         increment,
-        incrementDelayed,
-        routeCheck
+        incrementDelayed
     };
 });

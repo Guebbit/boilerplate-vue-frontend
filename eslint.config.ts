@@ -22,12 +22,12 @@ export default defineConfigWithVueTs(
      * Excluded files
      */
     globalIgnores([
-        '**/dist/**',
-        '**/dist-ssr/**',
-        '**/coverage/**',
-        '**/docs/**',
-        '**/node_modules/**',
-        '**/eslint.config.ts'
+        'dist',
+        'dist-ssr',
+        'coverage',
+        'docs',
+        'node_modules',
+        'eslint.config.ts'
     ]),
 
     /**

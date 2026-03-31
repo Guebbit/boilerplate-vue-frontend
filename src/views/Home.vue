@@ -73,7 +73,6 @@
         </div>
 
         <div class="info-wrapper">
-            <button class="theme-button" @click="routeCheck">Check route</button>
             <button class="theme-button" @click="testAddMessage">Add test alert</button>
             <button class="theme-button" @click="websocketMessages = []">Reset messages</button>
         </div>
@@ -177,7 +176,7 @@ const {
 /**
  * These functions can be used even without being deconstructed
  */
-const { increment, incrementDelayed, routeCheck } = store;
+const { increment, incrementDelayed } = store;
 
 /**
  * Same value as the one in Pinia, to show they are the same.

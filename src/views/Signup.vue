@@ -71,8 +71,7 @@ export default {
 import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
-import { useToastStore } from '@/stores/toasts';
-import { useStructureFormManagement } from '@guebbit/vue-toolkit';
+import { useNotificationsStore, useStructureFormManagement } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
 import { useRouter, useRoute } from 'vue-router';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
@@ -82,7 +81,7 @@ import { useUsersStore } from '@/stores/users.ts';
  * UI logics
  */
 const { t } = useI18n();
-const { addMessage } = useToastStore();
+const { addMessage } = useNotificationsStore();
 const router = useRouter();
 const route = useRoute();
 
