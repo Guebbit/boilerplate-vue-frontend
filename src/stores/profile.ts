@@ -4,7 +4,6 @@ import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { i18n } from '@/utils/i18n.ts';
 import type { User } from '@/api';
 import { accountApi, authApi } from '@/utils/api.ts';
-import { patchProfileApi, logoutApi } from '@/apiOld';
 
 /**
  * While we can't access to inject/provide in guards or any non-components,

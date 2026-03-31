@@ -3,10 +3,28 @@ import {
     supportedLanguages,
     loadedLanguages,
     updateLocale,
-    changeLanguage
+    changeLanguage,
+    type ITranslationDictionaries
 } from '@/utils/i18n.ts';
 import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router';
-import { fetchLanguageApi } from '@/apiOld';
+import en from '@/locales/en.json';
+import it from '@/locales/it.json';
+
+// TODO
+const languagesFakeDownload: Record<string, ITranslationDictionaries> = {
+    en,
+    it,
+    es: {}
+};
+
+export const fetchLanguageApi = (locale: string): Promise<[string, ITranslationDictionaries]> =>
+    new Promise((resolve) =>
+        setTimeout(() => {
+            resolve([locale,
+                [locale]]);
+        }, 1000)
+    );
+
 
 /**
  * Check that requeste locale is supported and loaded,
