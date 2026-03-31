@@ -33,6 +33,7 @@ docs/PasswordResetRequest.md
 docs/Product.md
 docs/ProductsApi.md
 docs/ProductsResponse.md
+docs/RefreshTokenResponse.md
 docs/RemoveCartItemRequest.md
 docs/SearchOrdersRequest.md
 docs/SearchProductsRequest.md
@@ -43,6 +44,7 @@ docs/UpdateOrderByIdRequest.md
 docs/UpdateOrderRequest.md
 docs/UpdateProductByIdRequest.md
 docs/UpdateProductRequest.md
+docs/UpdateProductRequestBody.md
 docs/UpdateUserByIdRequest.md
 docs/UpdateUserRequest.md
 docs/UpsertCartItemRequest.md

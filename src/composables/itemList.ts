@@ -1,97 +1,105 @@
 import { computed, ref } from 'vue';
-import MiniSearch, { type SearchResult } from 'minisearch';
-import { useItemStructure } from '@/composables/itemStructure.ts';
+import MiniSearch from 'minisearch';
+import { useStructureDataManagement } from '@guebbit/vue-toolkit';
+import { getUuid } from '@guebbit/js-toolkit';
+import { useCoreStore } from '@/stores/core';
 
 export type ISortOrder = '' | 'ASC' | 'DESC' | 'asc' | 'desc';
 
-export const useItemList = <T = unknown>(itemIdentifier = 'id', filterLengthLimit = 2) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const useItemList = <T extends Record<string | number | symbol, any> = Record<string, any>>(itemIdentifier = 'id', filterLengthLimit = 2) => {
     /**
-     *
+     * Delegate data management (dictionary, selection, CRUD, pagination refs)
+     * to the toolkit composable
      */
     const {
-        itemList,
-        itemsLength,
-        listToDictionary,
         itemDictionary,
+        itemList,
         getRecord,
         editRecord,
         deleteRecord,
+        addRecord,
         selectedIdentifier,
         selectedRecord,
-
-        startLoading,
-        stopLoading,
-        loading
-    } = useItemStructure<T>(itemIdentifier);
+        pageCurrent,
+        pageSize,
+    } = useStructureDataManagement<T>(itemIdentifier);
 
     /**
-     * Filter data
+     * Number of items
      */
+    const itemsLength = computed(() => itemList.value.length);
+
+    /**
+     * Helper: convert a list to a dictionary keyed by the given identifier
+     */
+    const listToDictionary = <U>(list: U[], identifier: keyof U): Record<string, U> => {
+        const dictionary: Record<string, U> = {};
+        for (const item of list) {
+            dictionary[item[identifier] as string] = item;
+        }
+        return dictionary;
+    };
+
+    /**
+     * ---------------------------------- LOADING ------------------------------------
+     */
+
+    const LOADING_KEY = 'items-' + getUuid();
+    const { setLoading, getLoading } = useCoreStore();
+    const startLoading = () => setLoading(LOADING_KEY, true);
+    const stopLoading = () => setLoading(LOADING_KEY, false);
+    const loading = computed(() => getLoading(LOADING_KEY));
+
+    /**
+     * ---------------------------------- FILTER / SEARCH ------------------------------------
+     */
+
     const filters = ref({} as Record<keyof T, string>);
 
-    /**
-     * TODO https://github.com/lucaong/minisearch
-     *  https://chatgpt.com/c/67192190-553c-800b-9cda-d0fd5da18efe
-     *  CombinationOperator
-     * List of all FILTERED itemDictionary
-     */
     const itemListSearchData = computed(() => {
-        // Create a new MiniSearch instance
         const miniSearch = new MiniSearch<T>({
             fields: ['name'],
-            storeFields: ['id', 'name', 'username', 'email', 'phone', 'website', 'company'] // TODO dinamycally get all fields
+            storeFields: ['id', 'name', 'username', 'email', 'phone', 'website', 'company']
         });
-        // Add all items and allow them to be searchable
         miniSearch.addAll(itemList.value as T[]);
-        //
         return miniSearch.search(filters.value.name, { fuzzy: 0.2, prefix: true });
     });
 
-    /**
-     *
-     */
     const itemListFiltered = computed(() => {
-        // if no filters are set
         if (!filters.value.name || filters.value.name.length < filterLengthLimit)
             return itemList.value as T[];
         return (
             itemListSearchData.value
-                // TODO it adds a score, match, etc. to the object (enrich: false // Prevents adding `score`, `match`, etc.?)
-                //  WARNING: controllare come funziona il discorso della selezione e della ricerca, che potrebbero cozzare (usano gli ID però devo fare che potrebbero non esserci)
-                .toSorted((a, b) => b.score - a.score) as T[]
+                .toSorted((a, b) => b.score - a.score) as unknown as T[]
         );
     });
 
-    /**
-     * Number of filtered items
-     */
-    const itemsFilteredLength = computed(() => Object.keys(itemListFiltered.value).length);
+    const itemsFilteredLength = computed(() => itemListFiltered.value.length);
 
-    /**
-     * Dictionary of items
-     */
     const itemDictionaryFiltered = computed<Record<string, T>>(() =>
         listToDictionary(itemListFiltered.value, itemIdentifier as keyof T)
     );
 
     /**
-     * Sort data
+     * Reset filters
      */
-    const sorters = ref({} as Record<keyof T, ISortOrder>);
+    function resetFilters() {
+        filters.value = {} as Record<keyof T, string>;
+    }
 
     /**
-     * TODO GUEBBIT
-     * @param data
-     * @param sortFields
+     * ---------------------------------- SORT ------------------------------------
      */
-    const sortItems = <T>(data: T[], sortFields = {} as Record<keyof T, ISortOrder>): T[] => {
+
+    const sorters = ref({} as Record<keyof T, ISortOrder>);
+
+    const sortItems = <U>(data: U[], sortFields = {} as Record<keyof U, ISortOrder>): U[] => {
         if (Object.keys(sortFields).length === 0) return data;
         return data.toSorted((a, b) => {
             for (const field in sortFields) {
                 if (!Object.prototype.hasOwnProperty.call(sortFields, field)) continue;
-                // Compare the field values...
                 const comparison = a[field] < b[field] ? -1 : a[field] > b[field] ? 1 : 0;
-                // ...and choose the order
                 if (comparison !== 0) {
                     return sortFields[field].toLowerCase() === 'asc'
                         ? comparison
@@ -100,134 +108,29 @@ export const useItemList = <T = unknown>(itemIdentifier = 'id', filterLengthLimi
                           : 0;
                 }
             }
-            // All compared fields are equal
             return 0;
         });
     };
 
-    /**
-     * List of all items sorted
-     */
     const itemListSorted = computed(() => sortItems(itemListFiltered.value, sorters.value));
 
-    /**
-     * Resert filters
-     */
-    function resetFilters() {
-        filters.value = {};
-    }
-
-    /**
-     * Reset sorters
-     */
     function resetSort() {
-        sorters.value.value = {};
+        sorters.value = {} as Record<keyof T, ISortOrder>;
     }
 
     /**
      * ---------------------------------- PAGINATION ------------------------------------
-     * TODO infinite pagination
+     * Pagination is computed from the filtered+sorted list so that filters are reflected
      */
 
-    /**
-     * PAGINATION
-     * Current selected page (start with 1)
-     */
-    const pageCurrent = ref(1);
-
-    /**
-     * PAGINATION
-     * How many items in page
-     */
-    const pageSize = ref(10);
-
-    /**
-     * PAGINATION
-     * How many pages exist
-     */
     const pageTotal = computed(() => Math.ceil(itemsFilteredLength.value / pageSize.value));
-
-    /**
-     * PAGINATION
-     * First item of the current page
-     */
     const pageOffset = computed(() => pageSize.value * (pageCurrent.value - 1));
-
-    /**
-     * PAGINATION
-     * Items shown in current page
-     */
     const pageItemList = computed(() =>
         itemListSorted.value.slice(pageOffset.value, pageOffset.value + pageSize.value)
     );
 
-    /**
-     * ---------------------------------- URL ------------------------------------
-     * TODO
-     */
-
-    // /**
-    //  * Variables (objects) that I want to GET from URL
-    //  */
-    // const decodeURIObject = (json ?: string) => json ? getJSON(decodeURIComponent(json)) : {};
-    //
-    // /**
-    //  * Variables (objects) that I want to save in URL
-    //  */
-    // const encodeURIObject = (queryData ?:unknown) :LocationQueryValueRaw => {
-    //     if(typeof queryData === "number" || (Array.isArray(queryData) && queryData.length > 0) || Object.keys(queryData as Record<string, unknown>).length > 0)
-    //         return encodeURIComponent(JSON.stringify(queryData));
-    // };
-    //
-    // /**
-    //  * Variables (objects) that I want to save in URL
-    //  */
-    // const fromObjectToUrl = (queryObject :Record<string, unknown> = {}) => {
-    //     const query :LocationQuery = {};
-    //     // encode
-    //     for(const queryKey in queryObject) {
-    //         if (!Object.prototype.hasOwnProperty.call(queryObject, queryKey))
-    //             continue;
-    //         const temp = encodeURIObject(queryObject[queryKey as keyof typeof queryObject]);
-    //         // add/edit query if exist
-    //         if(temp && temp.length > 0)
-    //             query[queryKey] = temp;
-    //         // remove query if not (if route.query is sent, it could be)
-    //         else
-    //             delete query[queryKey];
-    //     }
-    //     // new query
-    //     return query;
-    // };
-    //
-    // /**
-    //  *
-    //  * @param queryUrl
-    //  */
-    // const fromUrlToObject = (queryUrl :Record<string, string>) :Record<string, unknown> => {
-    //     const containerObject :Record<string, unknown> = {};
-    //     for(const queryKey in queryUrl) {
-    //         if (!Object.prototype.hasOwnProperty.call(queryUrl, queryKey))
-    //             continue;
-    //         const result = decodeURIObject(queryUrl[queryKey as keyof typeof queryUrl] as string);
-    //         if(result)
-    //             containerObject[queryKey as keyof typeof containerObject] = result;
-    //     }
-    //     return containerObject;
-    // };
-    //
-    //
-    //
-    // const obj = {
-    //     lorem: "ipsum",
-    //     gino: 2,
-    //     pino: "panino"
-    // };
-    // console.log("fromObjectToUrl", fromObjectToUrl(obj))
-    // console.log("fromUrlToObject", fromUrlToObject(fromObjectToUrl(obj)))
-
     return {
-        // Selections
+        // Data management
         itemList,
         itemsLength,
         listToDictionary,
@@ -235,6 +138,7 @@ export const useItemList = <T = unknown>(itemIdentifier = 'id', filterLengthLimi
         getRecord,
         editRecord,
         deleteRecord,
+        addRecord,
         selectedIdentifier,
         selectedRecord,
 
@@ -256,18 +160,12 @@ export const useItemList = <T = unknown>(itemIdentifier = 'id', filterLengthLimi
         pageOffset,
         pageItemList,
 
-        // Url
-        // fromObjectToUrl,
-        // fromUrlToObject,
-        // encodeURIObject,
-        // decodeURIObject,
-
-        // Generics
+        // Loading
         startLoading,
         stopLoading,
         loading,
 
-        // better names
+        // Aliases
         list: pageItemList,
         total: itemsFilteredLength
     };

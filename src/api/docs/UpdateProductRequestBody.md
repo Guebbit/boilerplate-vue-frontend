@@ -1,4 +1,4 @@
-# Product
+# UpdateProductRequestBody
 
 
 ## Properties
@@ -7,29 +7,23 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **string** | Resource identifier | [default to undefined]
 **title** | **string** |  | [default to undefined]
-**price** | **number** |  | [default to undefined]
 **description** | **string** |  | [optional] [default to undefined]
-**active** | **boolean** |  | [optional] [default to undefined]
+**price** | **string** |  | [default to undefined]
 **imageUrl** | **string** |  | [optional] [default to undefined]
-**createdAt** | **string** |  | [optional] [default to undefined]
-**updatedAt** | **string** |  | [optional] [default to undefined]
-**deletedAt** | **string** |  | [optional] [default to undefined]
+**active** | **string** |  | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import { Product } from './api';
+import { UpdateProductRequestBody } from './api';
 
-const instance: Product = {
+const instance: UpdateProductRequestBody = {
     id,
     title,
-    price,
     description,
-    active,
+    price,
     imageUrl,
-    createdAt,
-    updatedAt,
-    deletedAt,
+    active,
 };
 ```
 
