@@ -126,7 +126,7 @@ export default {
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { useToastStore } from '@/stores/toasts';
+import { useToastStore } from '@guebbit/vue-toolkit';
 import { useStructureFormValidation } from '@/composables/structureFormValidation.ts';
 import { useProfileStore } from '@/stores/profile.ts';
 import { useUsersStore } from '@/stores/users.ts';
@@ -135,7 +135,7 @@ import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { z } from 'zod';
 
 const { t } = useI18n();
-const { addMessage } = useToastStore();
+const { addMessage } = useNotificationsStore();
 
 /**
  * Profile logic
