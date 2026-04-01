@@ -115,7 +115,7 @@ export const onResponseReject = (
     if (error.response?.data && Object.hasOwnProperty.call(error.response.data, 'errors'))
         return Promise.reject(error.response.data);
 
-    if (process.env.NODE_ENV !== 'production')
+    if (import.meta.env.NODE_ENV !== 'production')
         // eslint-disable-next-line no-console
         console.error('------------- APP ERROR -------------', error);
 
