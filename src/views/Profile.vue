@@ -125,7 +125,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
@@ -166,9 +166,9 @@ interface IProfileForm {
     website?: string;
 }
 
-const { form, formErrors, isDirty, resetForm, validate, setInitial } =
+const { form, formErrors, isDirty, resetForm, validate, setForm } =
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    useStructureFormValidation<IProfileForm>(undefined, zodSchemaUsers as any);
+    useStructureFormValidation<IProfileForm>({}, zodSchemaUsers as any);
 
 const showErrors = ref(false);
 
@@ -180,13 +180,14 @@ const {
     formErrors: passwordErrors,
     isValid: passwordIsValid
 } = useStructureFormValidation(
-    {},
+    {
+        password: '',
+        passwordConfirm: ''
+    },
     z
         .object({
             password: zodSchemaUsersPassword,
-            passwordConfirm: z.string({
-                required_error: t('users-form.password-confirm-required')
-            })
+            passwordConfirm: z.string().min(1, t('users-form.password-confirm-required'))
         })
         .superRefine(({ passwordConfirm, password }, ctx) => {
             if (passwordConfirm !== password)
@@ -201,7 +202,13 @@ const {
 /**
  * Profile information is the original
  */
-setInitial(profile);
+watch(
+    profile,
+    (userProfile) => {
+        setForm(userProfile ?? {});
+    },
+    { immediate: true }
+);
 
 /**
  * Toggle password change
@@ -228,7 +235,15 @@ const submitForm = () => {
         showErrors.value = true;
         return;
     }
-    return updateProfile(form.value)
+    return updateProfile({
+        email: form.value.email,
+        username: form.value.username,
+        imageUrl: form.value.imageUrl ?? undefined,
+        admin: form.value.admin ?? undefined,
+        active: form.value.active ?? undefined,
+        createdAt: form.value.createdAt ?? undefined,
+        updatedAt: form.value.updatedAt ?? undefined
+    })
         .then(() => {
             addMessage(t('profile-page.success-update'));
         })

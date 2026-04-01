@@ -103,7 +103,7 @@ export const useUsersStore = defineStore('users', () => {
         return updateTarget(
             () =>
                 usersApi
-                    .updateUserById(userId, undefined, undefined, files[0], { onUploadProgress })
+                    .updateUserById(userId, undefined, undefined, undefined, files[0], { onUploadProgress })
                     .then(({ data }) => data as User),
             // No fields to optimistically merge — the updated imageUrl is returned by the API
             {} as Partial<User>,

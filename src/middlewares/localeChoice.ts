@@ -20,8 +20,7 @@ const languagesFakeDownload: Record<string, ITranslationDictionaries> = {
 export const fetchLanguageApi = (locale: string): Promise<[string, ITranslationDictionaries]> =>
     new Promise((resolve) =>
         setTimeout(() => {
-            resolve([locale,
-                [locale]]);
+            resolve([locale, languagesFakeDownload[locale] ?? {}]);
         }, 1000)
     );
 

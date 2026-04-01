@@ -88,7 +88,7 @@ if (supportedLanguages.length === 0) {
  * @param i18n
  * @param locale
  */
-export function _loadLocale(i18n: I18n, locale: string) {
+export function _loadLocale(i18n: I18n, locale: string): Promise<unknown> {
     // Load locale
     if (
         // Check if already loaded
@@ -160,7 +160,7 @@ export function updateLocale(locale: string, messages: ITranslationDictionaries)
  * @param i18n
  * @param locale
  */
-export function _changeLanguage(i18n: I18n, locale: string) {
+export function _changeLanguage(i18n: I18n, locale: string): Promise<unknown> {
     const setLocale = () => {
         (i18n.global.locale as WritableComputedRef<string>).value = locale;
 
