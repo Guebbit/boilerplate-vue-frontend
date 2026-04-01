@@ -53,11 +53,32 @@
         "page-title": "Lista utenti",
         "user": "@:generic.user [0]",
         "modified-users-list": "@.customSnakeCase:{'generic.user'} @:{'generic.list'}",
-        "button-go-to-details": "Pagina utente"
+        "button-go-to-details": "Pagina utente",
+        "button-create-user": "Crea utente",
+        "button-view": "Visualizza",
+        "button-edit": "Modifica",
+        "button-delete": "Elimina",
+        "confirm-delete": "Sei sicuro di voler eliminare questo utente?",
+        "success-delete": "Utente eliminato con successo",
+        "column-id": "ID",
+        "column-username": "Nome utente",
+        "column-email": "Email",
+        "column-admin": "Admin",
+        "column-active": "Attivo",
+        "column-created-at": "Creato il",
+        "column-actions": "Azioni"
     },
     "user-target-page": {
         "page-title": "Utente selezionato",
-        "button-go-to-list": "Vai alla lista utenti"
+        "button-go-to-list": "Vai alla lista utenti",
+        "button-go-to-edit": "Modifica utente",
+        "label-id": "ID",
+        "label-username": "Nome utente",
+        "label-email": "Email",
+        "label-admin": "Admin",
+        "label-active": "Attivo",
+        "label-created-at": "Creato il",
+        "label-updated-at": "Aggiornato il"
     },
     "login-page": {
         "page-title": "Login",
@@ -131,5 +152,26 @@
         "password-special-required": "La password deve contenere almeno un carattere speciale",
         "password-confirm-required": "Digita nuovamente la password",
         "password-dont-match": "Le password non corrispondono"
+    },
+    "user-edit-page": {
+        "page-title": "Modifica utente",
+        "label-email": "Email",
+        "label-password": "Nuova password (lascia vuoto per non modificarla)",
+        "button-submit": "Salva modifiche",
+        "reset-form": "Reimposta modifiche",
+        "button-go-to-details": "Torna ai dettagli utente",
+        "button-go-to-list": "Torna alla lista utenti",
+        "success-update": "Utente aggiornato con successo"
+    },
+    "user-create-page": {
+        "page-title": "Crea utente",
+        "label-email": "Email",
+        "label-username": "Nome utente",
+        "label-password": "Password",
+        "label-admin": "Amministratore",
+        "label-active": "Attivo",
+        "button-submit": "Crea utente",
+        "button-go-to-list": "Torna alla lista utenti",
+        "success-create": "Utente creato con successo"
     }
 }
