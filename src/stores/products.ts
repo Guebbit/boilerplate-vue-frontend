@@ -3,7 +3,7 @@ import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import type { AxiosProgressEvent } from 'axios';
 
 import { productsApi } from '@/utils/api.ts';
-import type { Product, CreateProductRequest, UpdateProductByIdRequest } from '../../api';
+import type { Product, CreateProductRequest, UpdateProductByIdRequest } from '@types';
 
 export const useProductsStore = defineStore('products', () => {
     const {

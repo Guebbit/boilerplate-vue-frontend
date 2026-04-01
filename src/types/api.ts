@@ -1,25 +1,26 @@
-export interface IResponseNeutral {
-    success: boolean;
-    status: number;
-    message: string;
-}
+import type {
+    SignupRequest,
+    CreateUserRequest,
+    UpdateUserRequest,
+    UpdateUserByIdRequest,
+    CreateProductRequest,
+    UpdateProductRequest,
+    UpdateProductByIdRequest
+} from '@api';
+export * from '@api';
 
-export interface IResponseSuccess<T> extends IResponseNeutral {
-    // message: "ok"
-    data?: T;
-    errors: never;
-}
+// Generic helper
+export type WithFileUpload<T, K extends string = 'imageUpload'> = T & {
+    [P in K]?: File;
+};
 
-export interface IResponseReject extends IResponseNeutral {
-    // message: Technical error name or code
-    data?: never;
-    // UI friendly error message
-    errors: string[];
-}
+// openapi doesn't generate multipart/form-data types
+export type SignupRequestMultipart = WithFileUpload<SignupRequest>;
+export type CreateUserRequestMultipart = WithFileUpload<CreateUserRequest>;
+export type UpdateUserRequestMultipart = WithFileUpload<UpdateUserRequest>;
+export type UpdateUserByIdRequestMultipart = WithFileUpload<UpdateUserByIdRequest>;
+export type CreateProductRequestMultipart = WithFileUpload<CreateProductRequest>;
+export type UpdateProductRequestMultipart = WithFileUpload<UpdateProductRequest>;
+export type UpdateProductByIdRequestMultipart = WithFileUpload<UpdateProductByIdRequest>;
 
-export interface IPagination<T> {
-    page: number;
-    total: number;
-    totalPages: number;
-    items: T;
-}
+

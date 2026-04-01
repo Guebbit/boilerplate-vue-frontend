@@ -3426,17 +3426,17 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
         /**
          * Returns a paginated list of user accounts.
          * @summary List users (paginated)
-         * @param {string} [id] 
          * @param {number} [page] 1-based page index
          * @param {number} [pageSize] 
          * @param {string} [text] 
+         * @param {string} [id] 
          * @param {string} [email] 
          * @param {string} [username] 
          * @param {boolean} [active] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listUsers: async (id?: string, page?: number, pageSize?: number, text?: string, email?: string, username?: string, active?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        listUsers: async (page?: number, pageSize?: number, text?: string, id?: string, email?: string, username?: string, active?: boolean, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/users`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -3453,10 +3453,6 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-            if (id !== undefined) {
-                localVarQueryParameter['id'] = id;
-            }
-
             if (page !== undefined) {
                 localVarQueryParameter['page'] = page;
             }
@@ -3467,6 +3463,10 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
 
             if (text !== undefined) {
                 localVarQueryParameter['text'] = text;
+            }
+
+            if (id !== undefined) {
+                localVarQueryParameter['id'] = id;
             }
 
             if (email !== undefined) {
@@ -3729,18 +3729,18 @@ export const UsersApiFp = function(configuration?: Configuration) {
         /**
          * Returns a paginated list of user accounts.
          * @summary List users (paginated)
-         * @param {string} [id] 
          * @param {number} [page] 1-based page index
          * @param {number} [pageSize] 
          * @param {string} [text] 
+         * @param {string} [id] 
          * @param {string} [email] 
          * @param {string} [username] 
          * @param {boolean} [active] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async listUsers(id?: string, page?: number, pageSize?: number, text?: string, email?: string, username?: string, active?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UsersResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.listUsers(id, page, pageSize, text, email, username, active, options);
+        async listUsers(page?: number, pageSize?: number, text?: string, id?: string, email?: string, username?: string, active?: boolean, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UsersResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listUsers(page, pageSize, text, id, email, username, active, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['UsersApi.listUsers']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -3850,18 +3850,18 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
         /**
          * Returns a paginated list of user accounts.
          * @summary List users (paginated)
-         * @param {string} [id] 
          * @param {number} [page] 1-based page index
          * @param {number} [pageSize] 
          * @param {string} [text] 
+         * @param {string} [id] 
          * @param {string} [email] 
          * @param {string} [username] 
          * @param {boolean} [active] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listUsers(id?: string, page?: number, pageSize?: number, text?: string, email?: string, username?: string, active?: boolean, options?: RawAxiosRequestConfig): AxiosPromise<UsersResponse> {
-            return localVarFp.listUsers(id, page, pageSize, text, email, username, active, options).then((request) => request(axios, basePath));
+        listUsers(page?: number, pageSize?: number, text?: string, id?: string, email?: string, username?: string, active?: boolean, options?: RawAxiosRequestConfig): AxiosPromise<UsersResponse> {
+            return localVarFp.listUsers(page, pageSize, text, id, email, username, active, options).then((request) => request(axios, basePath));
         },
         /**
          * Searches and filters users via a JSON request body. Functionally equivalent to `GET /users` with query parameters
@@ -3961,18 +3961,18 @@ export class UsersApi extends BaseAPI {
     /**
      * Returns a paginated list of user accounts.
      * @summary List users (paginated)
-     * @param {string} [id] 
      * @param {number} [page] 1-based page index
      * @param {number} [pageSize] 
      * @param {string} [text] 
+     * @param {string} [id] 
      * @param {string} [email] 
      * @param {string} [username] 
      * @param {boolean} [active] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public listUsers(id?: string, page?: number, pageSize?: number, text?: string, email?: string, username?: string, active?: boolean, options?: RawAxiosRequestConfig) {
-        return UsersApiFp(this.configuration).listUsers(id, page, pageSize, text, email, username, active, options).then((request) => request(this.axios, this.basePath));
+    public listUsers(page?: number, pageSize?: number, text?: string, id?: string, email?: string, username?: string, active?: boolean, options?: RawAxiosRequestConfig) {
+        return UsersApiFp(this.configuration).listUsers(page, pageSize, text, id, email, username, active, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

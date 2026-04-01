@@ -1,12 +1,15 @@
 import {
-    Configuration,
     AccountApi,
     AuthApi,
     CartApi,
     OrdersApi,
     ProductsApi,
     UsersApi
-} from '../../api';
+} from '@api';
+import {
+    Configuration
+} from "../../api"
+
 import httpClient from '@/utils/http.ts';
 
 /**

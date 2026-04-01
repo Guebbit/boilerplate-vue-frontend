@@ -3,8 +3,8 @@ import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { usersApi } from '@/utils/api.ts';
-import type { User, CreateUserRequest } from '../../api';
 import type { AxiosProgressEvent } from 'axios';
+import type { User, CreateUserRequest, UsersResponse } from '@types';
 
 
 export const useUsersStore = defineStore('users', () => {
@@ -47,8 +47,6 @@ export const useUsersStore = defineStore('users', () => {
         );
 
     /**
-     * TODO paginazione online + offline o mista
-     *      mista: sotto una certa soglia di elementi, li scarico tutti e la tratto come offline, sopra una certa soglia vado a paginazione online
      * @param page
      * @param pageSize
      * @param forced
@@ -56,7 +54,7 @@ export const useUsersStore = defineStore('users', () => {
     const fetchPaginationUsers = (page = 1, pageSize = 9, forced = false) =>
         fetchAll(
             () =>
-                usersApi.listUsers(undefined, page, pageSize).then(({ data }) => {
+                usersApi.listUsers(page, pageSize).then(({ data }) => {
                     const response = data as { items?: User[]; meta?: { page: number; totalItems: number; totalPages: number } };
                     return response?.items ?? [];
                 }),

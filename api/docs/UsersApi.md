@@ -268,19 +268,19 @@ import {
 const configuration = new Configuration();
 const apiInstance = new UsersApi(configuration);
 
-let id: string; // (optional) (default to undefined)
 let page: number; //1-based page index (optional) (default to 1)
 let pageSize: number; // (optional) (default to 10)
 let text: string; // (optional) (default to undefined)
+let id: string; // (optional) (default to undefined)
 let email: string; // (optional) (default to undefined)
 let username: string; // (optional) (default to undefined)
 let active: boolean; // (optional) (default to undefined)
 
 const { status, data } = await apiInstance.listUsers(
-    id,
     page,
     pageSize,
     text,
+    id,
     email,
     username,
     active
@@ -291,10 +291,10 @@ const { status, data } = await apiInstance.listUsers(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **id** | [**string**] |  | (optional) defaults to undefined|
 | **page** | [**number**] | 1-based page index | (optional) defaults to 1|
 | **pageSize** | [**number**] |  | (optional) defaults to 10|
 | **text** | [**string**] |  | (optional) defaults to undefined|
+| **id** | [**string**] |  | (optional) defaults to undefined|
 | **email** | [**string**] |  | (optional) defaults to undefined|
 | **username** | [**string**] |  | (optional) defaults to undefined|
 | **active** | [**boolean**] |  | (optional) defaults to undefined|

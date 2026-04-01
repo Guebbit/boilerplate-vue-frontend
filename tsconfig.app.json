@@ -1,6 +1,7 @@
 {
     "extends": "@vue/tsconfig/tsconfig.dom.json",
     "include": [
+        "api",
         "src/env.d.ts",
         "src/**/*",
         "src/**/*.vue"
@@ -18,7 +19,9 @@
 
         "baseUrl": ".",
         "paths": {
-            "@/*": ["./src/*"]
+            "@/*": ["./src/*"],
+            "@types": ["./src/types"],
+            "@api": ["./api/api"]
         }
     }
 }

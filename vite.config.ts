@@ -16,7 +16,11 @@ export default defineConfig({
     resolve: {
         alias: {
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            '@': fileURLToPath(new URL('src', import.meta.url))
+            '@': fileURLToPath(new URL('src', import.meta.url)),
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            '@types': fileURLToPath(new URL('src/types', import.meta.url)),
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            '@api': fileURLToPath(new URL('api/api', import.meta.url)),
         }
     },
     css: {

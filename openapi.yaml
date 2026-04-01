@@ -1120,10 +1120,10 @@ paths:
             security:
                 - bearerAuth: []
             parameters:
-                - $ref: '#/components/parameters/IdParam'
                 - $ref: '#/components/parameters/PageParam'
                 - $ref: '#/components/parameters/PageSizeParam'
                 - $ref: '#/components/parameters/TextParam'
+                - $ref: '#/components/parameters/IdParam'
                 - name: email
                   in: query
                   schema:
