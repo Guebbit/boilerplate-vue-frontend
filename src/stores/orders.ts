@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { ordersApi } from '@/utils/api.ts';
-import type { Order, CreateOrderRequest } from '@/api';
+import type { Order, CreateOrderRequest, UpdateOrderByIdRequest, CheckoutRequest, CheckoutResponse } from '@/api';
 
 export const useOrdersStore = defineStore('orders', () => {
     const {
@@ -13,7 +13,9 @@ export const useOrdersStore = defineStore('orders', () => {
         loading,
         fetchAll,
         fetchTarget,
+        fetchAny,
         createTarget,
+        updateTarget,
         deleteTarget
     } = useStructureRestApi<Order, string>();
 
@@ -53,6 +55,34 @@ export const useOrdersStore = defineStore('orders', () => {
         createTarget(() => ordersApi.createOrder(orderData).then(({ data }) => data as Order));
 
     /**
+     * Update an existing order by ID
+     *
+     * @param orderId
+     * @param orderData
+     */
+    const updateOrder = (orderId: string, orderData: UpdateOrderByIdRequest) =>
+        updateTarget(
+            () =>
+                ordersApi
+                    .updateOrderById(orderId, orderData)
+                    .then(({ data }) => data as Order),
+            orderData as Partial<Order>,
+            orderId
+        );
+
+    /**
+     * Convert the authenticated user's current cart into a new order
+     *
+     * @param checkoutData
+     */
+    const checkout = (checkoutData?: CheckoutRequest) =>
+        fetchAny(() =>
+            ordersApi
+                .checkout(checkoutData)
+                .then(({ data }) => data as CheckoutResponse)
+        );
+
+    /**
      * Delete an order by ID
      *
      * @param orderId
@@ -70,6 +100,8 @@ export const useOrdersStore = defineStore('orders', () => {
         fetchOrders,
         fetchOrder,
         createOrder,
+        updateOrder,
+        checkout,
         deleteOrder
     };
 });

@@ -88,8 +88,8 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useCartStore } from '@/stores/cart.ts';
+import { useOrdersStore } from '@/stores/orders.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { ordersApi } from '@/utils/api.ts';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 
@@ -105,13 +105,13 @@ const { addMessage } = useNotificationsStore();
  */
 const { fetchCart, updateCartItem, removeCartItem, clearCart } = useCartStore();
 const { cartItems, cartSummary } = storeToRefs(useCartStore());
+const { checkout: checkoutOrder } = useOrdersStore();
 
 /**
  * Checkout: place an order from the current cart
  */
 const checkout = () =>
-    ordersApi
-        .checkout()
+    checkoutOrder()
         .then(() => {
             addMessage(t('cart-page.success-checkout'));
             return fetchCart();
