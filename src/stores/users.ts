@@ -58,7 +58,6 @@ export const useUsersStore = defineStore('users', () => {
             () =>
                 usersApi.listUsers(undefined, page, pageSize).then(({ data }) => {
                     const response = data as { items?: User[]; meta?: { page: number; totalItems: number; totalPages: number } };
-                    console.log('PAGINATION', response?.meta);
                     return response?.items ?? [];
                 }),
             { forced }
