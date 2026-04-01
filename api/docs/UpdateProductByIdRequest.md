@@ -1,4 +1,4 @@
-# CreateProductRequest
+# UpdateProductByIdRequest
 
 
 ## Properties
@@ -6,20 +6,22 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **title** | **string** |  | [default to undefined]
-**price** | **number** |  | [default to undefined]
 **description** | **string** |  | [optional] [default to undefined]
+**price** | **number** |  | [default to undefined]
 **active** | **boolean** |  | [optional] [default to undefined]
+**imageUrl** | **string** |  | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import { CreateProductRequest } from './api';
+import { UpdateProductByIdRequest } from './api';
 
-const instance: CreateProductRequest = {
+const instance: UpdateProductByIdRequest = {
     title,
-    price,
     description,
+    price,
     active,
+    imageUrl,
 };
 ```
 

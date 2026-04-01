@@ -24,7 +24,7 @@
         "test:e2e:dev": "start-server-and-test 'vite dev --port 4173' http://localhost:4173 'cypress open --e2e'",
         "kill:win": "cmd \"/C TASKKILL /IM node.exe /F\"",
         "kill:gnu": "pkill -9 node",
-        "genapi": "rm -rf src/api && openapi-generator-cli generate -i openapi.yaml -g typescript-axios -o ./src/api",
+        "genapi": "rm -rf api && openapi-generator-cli generate -i openapi.yaml -g typescript-axios -o ./api",
         "update:all": "npx npm-check-updates -u",
         "complete": "npm run build && npm run test && npm run lint:fix && npm run prettier:fix && npm run docs:build",
         "publish:public": "npm run complete && npm publish --access public"
@@ -32,7 +32,7 @@
     "dependencies": {
         "@guebbit/css-toolkit": "^1.3.2",
         "@guebbit/js-toolkit": "^1.0.8",
-        "@guebbit/vue-toolkit": "^1.0.1",
+        "@guebbit/vue-toolkit": "^1.0.3",
         "@openapitools/openapi-generator-cli": "^2.30.2",
         "axios": "^1.13.6",
         "pinia": "^3.0.4",

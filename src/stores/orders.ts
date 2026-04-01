@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { ordersApi } from '@/utils/api.ts';
-import type { Order, CreateOrderRequest, UpdateOrderByIdRequest, CheckoutRequest, CheckoutResponse } from '@/api';
+import type { Order, CreateOrderRequest, UpdateOrderByIdRequest, CheckoutRequest, CheckoutResponse } from '../../api';
 
 export const useOrdersStore = defineStore('orders', () => {
     const {

@@ -10,6 +10,7 @@ Name | Type | Description | Notes
 **password** | **string** |  | [default to undefined]
 **admin** | **boolean** |  | [optional] [default to undefined]
 **active** | **boolean** |  | [optional] [default to undefined]
+**imageUrl** | **string** |  | [optional] [default to undefined]
 
 ## Example
 
@@ -22,6 +23,7 @@ const instance: CreateUserRequest = {
     password,
     admin,
     active,
+    imageUrl,
 };
 ```
 

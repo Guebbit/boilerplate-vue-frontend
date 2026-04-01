@@ -6,7 +6,7 @@ import {
     OrdersApi,
     ProductsApi,
     UsersApi
-} from '@/api';
+} from '../../api';
 import httpClient from '@/utils/http.ts';
 
 /**

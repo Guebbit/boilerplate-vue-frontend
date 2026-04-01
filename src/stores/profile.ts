@@ -2,7 +2,7 @@ import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { i18n } from '@/utils/i18n.ts';
-import type { User } from '@/api';
+import type { User } from '../../api';
 import { accountApi, authApi } from '@/utils/api.ts';
 
 /**

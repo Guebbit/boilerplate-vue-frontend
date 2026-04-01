@@ -5,6 +5,7 @@ All URIs are relative to *http://localhost:3000*
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
 |[**confirmPasswordReset**](#confirmpasswordreset) | **POST** /account/reset-confirm | |
+|[**deleteExpiredTokens**](#deleteexpiredtokens) | **DELETE** /account/tokens/expired | Remove expired tokens|
 |[**login**](#login) | **POST** /account/login | Login|
 |[**logoutAll**](#logoutall) | **POST** /account/logout-all | Logout from all devices|
 |[**refreshToken**](#refreshtoken) | **GET** /account/refresh | Refresh access token|
@@ -62,6 +63,53 @@ No authorization required
 |-------------|-------------|------------------|
 |**200** | Success |  -  |
 |**422** | Validation failed |  -  |
+|**500** | Internal server error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **deleteExpiredTokens**
+> MessageResponse deleteExpiredTokens()
+
+Removes all expired tokens (refresh, password-reset, etc.) from every user record in the database. Restricted to administrators.
+
+### Example
+
+```typescript
+import {
+    AuthApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new AuthApi(configuration);
+
+const { status, data } = await apiInstance.deleteExpiredTokens();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**MessageResponse**
+
+### Authorization
+
+[bearerAuth](../README.md#bearerAuth)
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Success |  -  |
+|**401** | Unauthorized |  -  |
+|**403** | Forbidden |  -  |
 |**500** | Internal server error |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)

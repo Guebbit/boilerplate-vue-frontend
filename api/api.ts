@@ -93,6 +93,7 @@ export interface CreateProductRequest {
     'price': number;
     'description'?: string;
     'active'?: boolean;
+    'imageUrl'?: string;
 }
 export interface CreateUserRequest {
     'email': string;
@@ -100,6 +101,7 @@ export interface CreateUserRequest {
     'password': string;
     'admin'?: boolean;
     'active'?: boolean;
+    'imageUrl'?: string;
 }
 export interface DeleteOrderRequest {
     /**
@@ -308,8 +310,13 @@ export interface SignupRequest {
     'username': string;
     'password': string;
     'passwordConfirm': string;
+    'imageUrl'?: string;
 }
 export interface UpdateCartItemByIdRequest {
+    /**
+     * Resource identifier
+     */
+    'productId'?: string;
     'quantity': number;
 }
 export interface UpdateOrderByIdRequest {
@@ -368,8 +375,8 @@ export interface UpdateProductByIdRequest {
     'title': string;
     'description'?: string;
     'price': number;
-    'imageUrl'?: string;
     'active'?: boolean;
+    'imageUrl'?: string;
 }
 export interface UpdateProductRequest {
     /**
@@ -379,8 +386,8 @@ export interface UpdateProductRequest {
     'title': string;
     'description'?: string;
     'price': number;
-    'imageUrl'?: string;
     'active'?: boolean;
+    'imageUrl'?: string;
 }
 export interface UpdateProductRequestBody {
     /**
@@ -396,6 +403,8 @@ export interface UpdateProductRequestBody {
 export interface UpdateUserByIdRequest {
     'email'?: string;
     'password'?: string;
+    'username'?: string;
+    'imageUrl'?: string;
 }
 export interface UpdateUserRequest {
     /**
@@ -403,7 +412,9 @@ export interface UpdateUserRequest {
      */
     'id': string;
     'email'?: string;
+    'username'?: string;
     'password'?: string;
+    'imageUrl'?: string;
 }
 export interface UpsertCartItemRequest {
     /**
@@ -576,6 +587,40 @@ export const AuthApiAxiosParamCreator = function (configuration?: Configuration)
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(passwordResetConfirmRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * Removes all expired tokens (refresh, password-reset, etc.) from every user record in the database. Restricted to administrators.
+         * @summary Remove expired tokens
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteExpiredTokens: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/account/tokens/expired`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'DELETE', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -840,6 +885,18 @@ export const AuthApiFp = function(configuration?: Configuration) {
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
+         * Removes all expired tokens (refresh, password-reset, etc.) from every user record in the database. Restricted to administrators.
+         * @summary Remove expired tokens
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async deleteExpiredTokens(options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<MessageResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deleteExpiredTokens(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['AuthApi.deleteExpiredTokens']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Authenticates a user with email and password credentials. On success, returns a JWT access token that must be passed as a Bearer token on subsequent authenticated requests.
          * @summary Login
          * @param {LoginRequest} loginRequest 
@@ -937,6 +994,15 @@ export const AuthApiFactory = function (configuration?: Configuration, basePath?
             return localVarFp.confirmPasswordReset(passwordResetConfirmRequest, options).then((request) => request(axios, basePath));
         },
         /**
+         * Removes all expired tokens (refresh, password-reset, etc.) from every user record in the database. Restricted to administrators.
+         * @summary Remove expired tokens
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deleteExpiredTokens(options?: RawAxiosRequestConfig): AxiosPromise<MessageResponse> {
+            return localVarFp.deleteExpiredTokens(options).then((request) => request(axios, basePath));
+        },
+        /**
          * Authenticates a user with email and password credentials. On success, returns a JWT access token that must be passed as a Bearer token on subsequent authenticated requests.
          * @summary Login
          * @param {LoginRequest} loginRequest 
@@ -1012,6 +1078,16 @@ export class AuthApi extends BaseAPI {
      */
     public confirmPasswordReset(passwordResetConfirmRequest: PasswordResetConfirmRequest, options?: RawAxiosRequestConfig) {
         return AuthApiFp(this.configuration).confirmPasswordReset(passwordResetConfirmRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Removes all expired tokens (refresh, password-reset, etc.) from every user record in the database. Restricted to administrators.
+     * @summary Remove expired tokens
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public deleteExpiredTokens(options?: RawAxiosRequestConfig) {
+        return AuthApiFp(this.configuration).deleteExpiredTokens(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3461,12 +3537,13 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
          * @summary Edit user
          * @param {string} id Resource identifier
          * @param {string} [email] 
+         * @param {string} [username] 
          * @param {string} [password] 
          * @param {File} [imageUpload] Optional user profile image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateUser: async (id: string, email?: string, password?: string, imageUpload?: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        updateUser: async (id: string, email?: string, username?: string, password?: string, imageUpload?: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('updateUser', 'id', id)
             const localVarPath = `/users`;
@@ -3493,6 +3570,10 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
     
             if (email !== undefined) { 
                 localVarFormParams.append('email', email as any);
+            }
+    
+            if (username !== undefined) { 
+                localVarFormParams.append('username', username as any);
             }
     
             if (password !== undefined) { 
@@ -3522,11 +3603,12 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
          * @param {string} id Resource identifier
          * @param {string} [email] 
          * @param {string} [password] 
+         * @param {string} [username] 
          * @param {File} [imageUpload] Optional user profile image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateUserById: async (id: string, email?: string, password?: string, imageUpload?: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        updateUserById: async (id: string, email?: string, password?: string, username?: string, imageUpload?: File, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'id' is not null or undefined
             assertParamExists('updateUserById', 'id', id)
             const localVarPath = `/users/{id}`
@@ -3554,6 +3636,10 @@ export const UsersApiAxiosParamCreator = function (configuration?: Configuration
     
             if (password !== undefined) { 
                 localVarFormParams.append('password', password as any);
+            }
+    
+            if (username !== undefined) { 
+                localVarFormParams.append('username', username as any);
             }
     
             if (imageUpload !== undefined) { 
@@ -3677,13 +3763,14 @@ export const UsersApiFp = function(configuration?: Configuration) {
          * @summary Edit user
          * @param {string} id Resource identifier
          * @param {string} [email] 
+         * @param {string} [username] 
          * @param {string} [password] 
          * @param {File} [imageUpload] Optional user profile image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async updateUser(id: string, email?: string, password?: string, imageUpload?: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<User>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateUser(id, email, password, imageUpload, options);
+        async updateUser(id: string, email?: string, username?: string, password?: string, imageUpload?: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<User>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateUser(id, email, username, password, imageUpload, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['UsersApi.updateUser']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -3694,12 +3781,13 @@ export const UsersApiFp = function(configuration?: Configuration) {
          * @param {string} id Resource identifier
          * @param {string} [email] 
          * @param {string} [password] 
+         * @param {string} [username] 
          * @param {File} [imageUpload] Optional user profile image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async updateUserById(id: string, email?: string, password?: string, imageUpload?: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<User>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.updateUserById(id, email, password, imageUpload, options);
+        async updateUserById(id: string, email?: string, password?: string, username?: string, imageUpload?: File, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<User>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateUserById(id, email, password, username, imageUpload, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['UsersApi.updateUserById']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -3790,13 +3878,14 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
          * @summary Edit user
          * @param {string} id Resource identifier
          * @param {string} [email] 
+         * @param {string} [username] 
          * @param {string} [password] 
          * @param {File} [imageUpload] Optional user profile image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateUser(id: string, email?: string, password?: string, imageUpload?: File, options?: RawAxiosRequestConfig): AxiosPromise<User> {
-            return localVarFp.updateUser(id, email, password, imageUpload, options).then((request) => request(axios, basePath));
+        updateUser(id: string, email?: string, username?: string, password?: string, imageUpload?: File, options?: RawAxiosRequestConfig): AxiosPromise<User> {
+            return localVarFp.updateUser(id, email, username, password, imageUpload, options).then((request) => request(axios, basePath));
         },
         /**
          * Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
@@ -3804,12 +3893,13 @@ export const UsersApiFactory = function (configuration?: Configuration, basePath
          * @param {string} id Resource identifier
          * @param {string} [email] 
          * @param {string} [password] 
+         * @param {string} [username] 
          * @param {File} [imageUpload] Optional user profile image
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        updateUserById(id: string, email?: string, password?: string, imageUpload?: File, options?: RawAxiosRequestConfig): AxiosPromise<User> {
-            return localVarFp.updateUserById(id, email, password, imageUpload, options).then((request) => request(axios, basePath));
+        updateUserById(id: string, email?: string, password?: string, username?: string, imageUpload?: File, options?: RawAxiosRequestConfig): AxiosPromise<User> {
+            return localVarFp.updateUserById(id, email, password, username, imageUpload, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -3901,13 +3991,14 @@ export class UsersApi extends BaseAPI {
      * @summary Edit user
      * @param {string} id Resource identifier
      * @param {string} [email] 
+     * @param {string} [username] 
      * @param {string} [password] 
      * @param {File} [imageUpload] Optional user profile image
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public updateUser(id: string, email?: string, password?: string, imageUpload?: File, options?: RawAxiosRequestConfig) {
-        return UsersApiFp(this.configuration).updateUser(id, email, password, imageUpload, options).then((request) => request(this.axios, this.basePath));
+    public updateUser(id: string, email?: string, username?: string, password?: string, imageUpload?: File, options?: RawAxiosRequestConfig) {
+        return UsersApiFp(this.configuration).updateUser(id, email, username, password, imageUpload, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -3916,12 +4007,13 @@ export class UsersApi extends BaseAPI {
      * @param {string} id Resource identifier
      * @param {string} [email] 
      * @param {string} [password] 
+     * @param {string} [username] 
      * @param {File} [imageUpload] Optional user profile image
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      */
-    public updateUserById(id: string, email?: string, password?: string, imageUpload?: File, options?: RawAxiosRequestConfig) {
-        return UsersApiFp(this.configuration).updateUserById(id, email, password, imageUpload, options).then((request) => request(this.axios, this.basePath));
+    public updateUserById(id: string, email?: string, password?: string, username?: string, imageUpload?: File, options?: RawAxiosRequestConfig) {
+        return UsersApiFp(this.configuration).updateUserById(id, email, password, username, imageUpload, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

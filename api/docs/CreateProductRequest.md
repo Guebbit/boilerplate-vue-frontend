@@ -1,29 +1,27 @@
-# UpdateProductRequest
+# CreateProductRequest
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**id** | **string** | Resource identifier | [default to undefined]
 **title** | **string** |  | [default to undefined]
-**description** | **string** |  | [optional] [default to undefined]
 **price** | **number** |  | [default to undefined]
-**imageUrl** | **string** |  | [optional] [default to undefined]
+**description** | **string** |  | [optional] [default to undefined]
 **active** | **boolean** |  | [optional] [default to undefined]
+**imageUrl** | **string** |  | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import { UpdateProductRequest } from './api';
+import { CreateProductRequest } from './api';
 
-const instance: UpdateProductRequest = {
-    id,
+const instance: CreateProductRequest = {
     title,
-    description,
     price,
-    imageUrl,
+    description,
     active,
+    imageUrl,
 };
 ```
 

@@ -69,7 +69,9 @@
                     v-show="showChangePassword"
                     class="theme-form-input"
                     :class="{
-                        'form-error': showErrors && (passwordErrors.password || passwordErrors.passwordConfirm)
+                        'form-error':
+                            showErrors &&
+                            (passwordErrors.password || passwordErrors.passwordConfirm)
                     }"
                 >
                     <label for="password">{{ t('profile-page.label-password') }}</label>
@@ -126,8 +128,7 @@ export default {
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useStructureFormValidation } from '@/composables/useStructureFormValidation.ts';
+import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
 import { useUsersStore } from '@/stores/users.ts';
 
@@ -219,7 +220,9 @@ const showChangePassword = ref(false);
  * If both data and password forms are valid
  */
 const areFormsValid = computed(
-    () => (isDirty.value && !showChangePassword.value) || (showChangePassword.value && passwordIsValid.value)
+    () =>
+        (isDirty.value && !showChangePassword.value) ||
+        (showChangePassword.value && passwordIsValid.value)
 );
 
 /**

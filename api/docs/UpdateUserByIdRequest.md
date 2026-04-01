@@ -1,23 +1,25 @@
-# UpdateUserRequest
+# UpdateUserByIdRequest
 
 
 ## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**id** | **string** | Resource identifier | [default to undefined]
 **email** | **string** |  | [optional] [default to undefined]
 **password** | **string** |  | [optional] [default to undefined]
+**username** | **string** |  | [optional] [default to undefined]
+**imageUrl** | **string** |  | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import { UpdateUserRequest } from './api';
+import { UpdateUserByIdRequest } from './api';
 
-const instance: UpdateUserRequest = {
-    id,
+const instance: UpdateUserByIdRequest = {
     email,
     password,
+    username,
+    imageUrl,
 };
 ```
 

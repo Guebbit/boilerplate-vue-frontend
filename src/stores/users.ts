@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { usersApi } from '@/utils/api.ts';
-import type { User, CreateUserRequest } from '@/api';
+import type { User, CreateUserRequest } from '../../api';
 import type { AxiosProgressEvent } from 'axios';
 
 

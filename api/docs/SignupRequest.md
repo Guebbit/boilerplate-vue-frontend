@@ -9,6 +9,7 @@ Name | Type | Description | Notes
 **username** | **string** |  | [default to undefined]
 **password** | **string** |  | [default to undefined]
 **passwordConfirm** | **string** |  | [default to undefined]
+**imageUrl** | **string** |  | [optional] [default to undefined]
 
 ## Example
 
@@ -20,6 +21,7 @@ const instance: SignupRequest = {
     username,
     password,
     passwordConfirm,
+    imageUrl,
 };
 ```
 

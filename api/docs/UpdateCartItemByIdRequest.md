@@ -5,6 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**productId** | **string** | Resource identifier | [optional] [default to undefined]
 **quantity** | **number** |  | [default to undefined]
 
 ## Example
@@ -13,6 +14,7 @@ Name | Type | Description | Notes
 import { UpdateCartItemByIdRequest } from './api';
 
 const instance: UpdateCartItemByIdRequest = {
+    productId,
     quantity,
 };
 ```

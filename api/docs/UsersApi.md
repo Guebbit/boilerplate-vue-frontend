@@ -398,12 +398,14 @@ const apiInstance = new UsersApi(configuration);
 
 let id: string; //Resource identifier (default to undefined)
 let email: string; // (optional) (default to undefined)
+let username: string; // (optional) (default to undefined)
 let password: string; // (optional) (default to undefined)
 let imageUpload: File; //Optional user profile image (optional) (default to undefined)
 
 const { status, data } = await apiInstance.updateUser(
     id,
     email,
+    username,
     password,
     imageUpload
 );
@@ -415,6 +417,7 @@ const { status, data } = await apiInstance.updateUser(
 |------------- | ------------- | ------------- | -------------|
 | **id** | [**string**] | Resource identifier | defaults to undefined|
 | **email** | [**string**] |  | (optional) defaults to undefined|
+| **username** | [**string**] |  | (optional) defaults to undefined|
 | **password** | [**string**] |  | (optional) defaults to undefined|
 | **imageUpload** | [**File**] | Optional user profile image | (optional) defaults to undefined|
 
@@ -463,12 +466,14 @@ const apiInstance = new UsersApi(configuration);
 let id: string; //Resource identifier (default to undefined)
 let email: string; // (optional) (default to undefined)
 let password: string; // (optional) (default to undefined)
+let username: string; // (optional) (default to undefined)
 let imageUpload: File; //Optional user profile image (optional) (default to undefined)
 
 const { status, data } = await apiInstance.updateUserById(
     id,
     email,
     password,
+    username,
     imageUpload
 );
 ```
@@ -480,6 +485,7 @@ const { status, data } = await apiInstance.updateUserById(
 | **id** | [**string**] | Resource identifier | defaults to undefined|
 | **email** | [**string**] |  | (optional) defaults to undefined|
 | **password** | [**string**] |  | (optional) defaults to undefined|
+| **username** | [**string**] |  | (optional) defaults to undefined|
 | **imageUpload** | [**File**] | Optional user profile image | (optional) defaults to undefined|
 
 
