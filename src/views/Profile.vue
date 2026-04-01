@@ -12,33 +12,33 @@
                 <div
                     class="theme-form-input"
                     :class="{
-                        'form-error': showErrors && errors.username
+                        'form-error': showErrors && formErrors.username
                     }"
                 >
                     <label for="username">{{ t('profile-page.label-username') }}</label>
                     <input v-model="form.username" type="text" id="username" class="theme-input" />
-                    <p v-if="showErrors && errors.username" class="form-error-message">
-                        {{ errors.username.join(', ') }}
+                    <p v-if="showErrors && formErrors.username" class="form-error-message">
+                        {{ formErrors.username.join(', ') }}
                     </p>
                 </div>
 
                 <div
                     class="theme-form-input"
                     :class="{
-                        'form-error': showErrors && errors.email
+                        'form-error': showErrors && formErrors.email
                     }"
                 >
                     <label for="email">{{ t('profile-page.label-email') }}</label>
                     <input v-model="form.email" type="email" id="email" class="theme-input" />
-                    <p v-if="showErrors && errors.email" class="form-error-message">
-                        {{ errors.email.join(', ') }}
+                    <p v-if="showErrors && formErrors.email" class="form-error-message">
+                        {{ formErrors.email.join(', ') }}
                     </p>
                 </div>
 
                 <div
                     class="theme-form-input"
                     :class="{
-                        'form-error': showErrors && errors.phone
+                        'form-error': showErrors && formErrors.phone
                     }"
                 >
                     <label for="phone">{{ t('profile-page.label-phone') }}</label>
@@ -48,7 +48,7 @@
                 <div
                     class="theme-form-input"
                     :class="{
-                        'form-error': showErrors && errors.conditions
+                        'form-error': showErrors && formErrors.website
                     }"
                 >
                     <label for="website">{{ t('profile-page.label-website') }}</label>
@@ -69,7 +69,7 @@
                     v-show="showChangePassword"
                     class="theme-form-input"
                     :class="{
-                        'form-error': showErrors && (errors.password || errors.passwordConfirm)
+                        'form-error': showErrors && (passwordErrors.password || passwordErrors.passwordConfirm)
                     }"
                 >
                     <label for="password">{{ t('profile-page.label-password') }}</label>
@@ -108,7 +108,7 @@
                 <button type="submit" class="theme-button" :disabled="!areFormsValid">
                     {{ t('profile-page.button-submit') }}
                 </button>
-                <button type="button" class="theme-button" @click="reset">
+                <button type="button" class="theme-button" @click="resetForm">
                     {{ t('profile-page.reset-form') }}
                 </button>
             </form>
@@ -123,7 +123,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormManagement } from '@guebbit/vue-toolkit';
@@ -147,7 +147,7 @@ const { profile } = storeToRefs(useProfileStore());
  */
 const { zodSchemaUsers, zodSchemaUsersPassword } = useUsersStore();
 
-const { form, errors, showErrors, hasChanged, reset, validate, setInitial } =
+const { form, formErrors, isDirty, resetForm, validate, setForm } =
     useStructureFormManagement({}, zodSchemaUsers);
 
 /**
@@ -155,9 +155,10 @@ const { form, errors, showErrors, hasChanged, reset, validate, setInitial } =
  */
 const {
     form: passwordForm,
-    errors: passwordErrors,
+    formErrors: passwordErrors,
     isValid: passwordIsValid
 } = useStructureFormManagement(
+    {},
     z
         .object({
             password: zodSchemaUsersPassword,
@@ -176,9 +177,20 @@ const {
 );
 
 /**
- * Profile information is the original
+ * Populate form with profile data whenever it becomes available
  */
-setInitial(profile);
+watch(
+    profile,
+    (newProfile) => {
+        if (newProfile) setForm(newProfile);
+    },
+    { immediate: true }
+);
+
+/**
+ * Whether to display validation errors in the UI
+ */
+const showErrors = ref(false);
 
 /**
  * Toggle password change
@@ -192,14 +204,14 @@ const showChangePassword = ref(false);
  * If both data and password forms are valid
  */
 const areFormsValid = computed(
-    () => (hasChanged && !showChangePassword.value) || (showChangePassword.value && passwordIsValid)
+    () => (isDirty.value && !showChangePassword.value) || (showChangePassword.value && passwordIsValid.value)
 );
 
 /**
  *
  */
 const submitForm = () => {
-    if (validate() && areFormsValid.value) {
+    if (!validate() || !areFormsValid.value) {
         showErrors.value = true;
         return;
     }

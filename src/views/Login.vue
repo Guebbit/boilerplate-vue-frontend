@@ -11,19 +11,19 @@
                 <div
                     class="theme-form-input"
                     :class="{
-                        'form-error': showErrors && errors.email
+                        'form-error': showErrors && formErrors.email
                     }"
                 >
                     <label for="form-email">{{ t('login-page.label-email') }}</label>
                     <input v-model="form.email" type="email" id="form-email" class="theme-input" />
-                    <p v-if="showErrors && errors.email" class="form-error-message">
-                        {{ errors.email.join(', ') }}
+                    <p v-if="showErrors && formErrors.email" class="form-error-message">
+                        {{ formErrors.email.join(', ') }}
                     </p>
                 </div>
                 <div
                     class="theme-form-input"
                     :class="{
-                        'form-error': showErrors && errors.password
+                        'form-error': showErrors && formErrors.password
                     }"
                 >
                     <label for="form-password">{{ t('login-page.label-password') }}</label>
@@ -33,8 +33,8 @@
                         id="form-password"
                         class="theme-input"
                     />
-                    <p v-if="showErrors && errors.password" class="form-error-message">
-                        {{ errors.password.join(', ') }}
+                    <p v-if="showErrors && formErrors.password" class="form-error-message">
+                        {{ formErrors.password.join(', ') }}
                     </p>
                 </div>
 
@@ -58,6 +58,7 @@ export default {
 </script>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormManagement } from '@guebbit/vue-toolkit';
@@ -85,16 +86,18 @@ interface IUserLoginForm {
 
 const { zodSchemaUsers } = useUsersStore();
 
-const { form, errors, showErrors, validate } = useStructureFormManagement<IUserLoginForm>(
+const { form, formErrors, validate } = useStructureFormManagement<IUserLoginForm>(
+    {},
     zodSchemaUsers
         .pick({
             email: true
         })
         .extend({
             password: z.string().min(8, t('users-form.password-required'))
-        }),
-    false
+        })
 );
+
+const showErrors = ref(false);
 
 /**
  * If not in production, dummy user of local database
