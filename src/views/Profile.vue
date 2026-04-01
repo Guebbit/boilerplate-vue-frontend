@@ -166,11 +166,6 @@ interface IProfileForm {
     website?: string;
 }
 
-interface IPasswordForm {
-    password?: string;
-    passwordConfirm?: string;
-}
-
 const { form, formErrors, isDirty, resetForm, validate, setInitial } =
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     useStructureFormValidation<IProfileForm>(undefined, zodSchemaUsers as any);

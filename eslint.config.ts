@@ -26,6 +26,7 @@ export default defineConfigWithVueTs(
         'dist-ssr',
         'coverage',
         'docs',
+        'api',
         'node_modules',
         'eslint.config.ts'
     ]),
