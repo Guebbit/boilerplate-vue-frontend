@@ -71,7 +71,8 @@ export default {
 import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
-import { useNotificationsStore, useStructureFormManagement } from '@guebbit/vue-toolkit';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useStructureFormValidation } from '@/composables/useStructureFormValidation.ts';
 import { useProfileStore } from '@/stores/profile.ts';
 import { useRouter, useRoute } from 'vue-router';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
@@ -98,7 +99,7 @@ interface IUserSignupForm {
 const { zodSchemaUsers } = useUsersStore();
 
 const { form, formErrors, isDirty, isSubmitting, handleSubmit } =
-    useStructureFormManagement<IUserSignupForm>(
+    useStructureFormValidation<IUserSignupForm>(
         import.meta.env.NODE_ENV === 'production'
             ? {}
             : { email: 'root@root.it', password: 'RootRoot_123' },
