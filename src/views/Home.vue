@@ -118,7 +118,6 @@ import { storeToRefs } from 'pinia';
 import { useCoreStore } from '@/stores/core';
 import { useCounterStore } from '@/stores/counter';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import type { IToastType } from '@guebbit/vue-toolkit';
 import { createSocket } from '@/utils/helperSockets.ts';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import CounterInput from '@/components/atoms/CounterInput.vue';
@@ -136,7 +135,7 @@ const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 const testAddMessage = () => {
-    addMessage('Hello world ' + Date.now(), 'secondary' as IToastType);
+    addMessage('Hello world ' + Date.now());
 };
 
 /**
