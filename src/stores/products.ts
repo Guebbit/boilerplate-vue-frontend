@@ -52,6 +52,8 @@ export const useProductsStore = defineStore('products', () => {
         );
 
     /**
+     * Create a new product.
+     *
      *
      * @param productData
      */
@@ -88,6 +90,8 @@ export const useProductsStore = defineStore('products', () => {
     };
 
     /**
+     * Update an existing product by ID.
+     *
      *
      * @param productId
      * @param productData
@@ -103,6 +107,8 @@ export const useProductsStore = defineStore('products', () => {
         );
 
     /**
+     * Delete a product by ID.
+     *
      *
      * @param productId
      */
