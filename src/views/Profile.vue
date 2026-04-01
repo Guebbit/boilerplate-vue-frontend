@@ -108,7 +108,7 @@
                 <button type="submit" class="theme-button" :disabled="!areFormsValid">
                     {{ t('profile-page.button-submit') }}
                 </button>
-                <button type="button" class="theme-button" @click="resetForm">
+                <button type="button" class="theme-button" @click="reset">
                     {{ t('profile-page.reset-form') }}
                 </button>
             </form>
@@ -129,6 +129,7 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormManagement } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
 import { useUsersStore } from '@/stores/users.ts';
+import type { User } from '@/api';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { z } from 'zod';
@@ -147,8 +148,23 @@ const { profile } = storeToRefs(useProfileStore());
  */
 const { zodSchemaUsers, zodSchemaUsersPassword } = useUsersStore();
 
-const { form, formErrors, isDirty, resetForm, validate, setForm } =
-    useStructureFormManagement({}, zodSchemaUsers);
+interface IProfileForm {
+    id?: string | null;
+    email?: string;
+    username?: string;
+    imageUrl?: string | null;
+    admin?: boolean | null;
+    active?: boolean | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+    phone?: string;
+    website?: string;
+}
+
+const { form, formErrors, validate, setForm, resetForm } = useStructureFormManagement<IProfileForm>(
+    {},
+    zodSchemaUsers.partial()
+);
 
 /**
  * Another instance of form only for the password
@@ -157,14 +173,15 @@ const {
     form: passwordForm,
     formErrors: passwordErrors,
     isValid: passwordIsValid
-} = useStructureFormManagement(
-    {},
+} = useStructureFormManagement<{ password: string; passwordConfirm: string }>(
+    {
+        password: '',
+        passwordConfirm: ''
+    },
     z
         .object({
             password: zodSchemaUsersPassword,
-            passwordConfirm: z.string({
-                required_error: t('users-form.password-confirm-required')
-            })
+            passwordConfirm: z.string().min(1, t('users-form.password-confirm-required'))
         })
         .superRefine(({ passwordConfirm, password }, ctx) => {
             if (passwordConfirm !== password)
@@ -204,8 +221,16 @@ const showChangePassword = ref(false);
  * If both data and password forms are valid
  */
 const areFormsValid = computed(
-    () => (isDirty.value && !showChangePassword.value) || (showChangePassword.value && passwordIsValid.value)
+    () =>
+        (JSON.stringify(form.value) !== JSON.stringify(profile.value ?? {}) &&
+            !showChangePassword.value) ||
+        (showChangePassword.value && passwordIsValid.value)
 );
+
+const reset = () => {
+    resetForm();
+    if (profile.value) setForm(profile.value);
+};
 
 /**
  *
@@ -215,7 +240,17 @@ const submitForm = () => {
         showErrors.value = true;
         return;
     }
-    return updateProfile(form.value)
+    const userData: Partial<User> = {
+        id: form.value.id ?? undefined,
+        email: form.value.email,
+        username: form.value.username,
+        imageUrl: form.value.imageUrl ?? undefined,
+        admin: form.value.admin ?? undefined,
+        active: form.value.active ?? undefined,
+        createdAt: form.value.createdAt ?? undefined,
+        updatedAt: form.value.updatedAt ?? undefined
+    };
+    return updateProfile(userData)
         .then(() => {
             addMessage(t('profile-page.success-update'));
         })
