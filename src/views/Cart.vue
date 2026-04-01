@@ -119,7 +119,8 @@ const checkout = () =>
         .then(() => {
             router.push(routerLinkI18n({ name: 'OrdersList' }));
         })
-        .catch(({ message }: Error) => {
+        .catch((error: unknown) => {
+            const message = (error as { message?: string })?.message ?? 'Unknown error';
             addMessage(message);
         });
 

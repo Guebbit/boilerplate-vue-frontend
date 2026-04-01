@@ -194,6 +194,7 @@ const { providedVariable, setProvidedVariable } = inject<{
  */
 
 watch(providedVariable, (val) => {
+    // eslint-disable-next-line no-console
     console.log('Provided ref changed', val);
 });
 
