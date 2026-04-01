@@ -1,8 +1,12 @@
-// https://on.cypress.io/api
+describe('Public routes', () => {
+    const publicRoutes = ['/', '/login', '/signup', '/products', '/error/404/not-found'];
 
-describe('My First Test', () => {
-    it('visits the app root url', () => {
-        cy.visit('/');
-        cy.contains('h1', 'HOME');
-    });
+    for (const route of publicRoutes) {
+        it(`renders ${route} without frontend errors`, () => {
+            cy.visit(route);
+            cy.get('body').should('be.visible');
+            cy.get('main.page-content').should('exist');
+            cy.get('h1').should('exist');
+        });
+    }
 });
