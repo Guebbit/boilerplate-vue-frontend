@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { i18n } from '@/utils/i18n.ts';
 import type { User } from '@/api';
-import { accountApi, authApi } from '@/utils/api.ts';
+import { accountApi, authApi, usersApi } from '@/utils/api.ts';
 
 /**
  * While we can't access to inject/provide in guards or any non-components,
@@ -28,15 +28,15 @@ export const useProfileStore = defineStore('profile', () => {
     const profileLanguage = i18n.global.locale;
 
     /**
+     * User access token
+     */
+    const accessToken = ref<string>();
+
+    /**
      * Fast check if current user is admin
      */
     const isAdmin = computed(() => Boolean(accessToken.value && profile.value?.admin));
     const isAuth = computed(() => Boolean(accessToken.value && profile.value));
-
-    /**
-     * User access token
-     */
-    const accessToken = ref<string>();
 
     /**
      * Authenticate users
@@ -102,8 +102,14 @@ export const useProfileStore = defineStore('profile', () => {
      */
     const updateProfile = (userData: Partial<User> = {}) => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return updateTarget(() => patchProfileApi(userData as any), userData, selectedIdentifier.value);
+        return updateTarget(
+            () =>
+                usersApi
+                    .updateUserById(selectedIdentifier.value!, userData.email)
+                    .then(({ data }) => data as User),
+            userData,
+            selectedIdentifier.value
+        );
     };
 
     /**
@@ -128,7 +134,7 @@ export const useProfileStore = defineStore('profile', () => {
         accessToken.value = undefined;
         // replace jwt cookie with an expired one (warning: secure httpOnly cookies can't be deleted from the client)
         // document.cookie = "jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        return logoutApi();
+        return authApi.logoutAll();
     };
 
     return {
