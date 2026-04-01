@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch, defineModel } from 'vue';
+import { watch } from 'vue';
 import { getUuid } from '@guebbit/js-toolkit';
 
 const {
@@ -84,7 +84,7 @@ const fixCounter = () => {
     if ((max || max === 0) && count.value > max) count.value = Math.min(count.value, max);
 };
 
-watch([count, min, max], () => {
+watch([count, () => min, () => max], () => {
     fixCounter();
 });
 </script>

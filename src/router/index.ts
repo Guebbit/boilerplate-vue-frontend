@@ -82,7 +82,7 @@ const router = createRouter({
  * Global error handler
  */
 router.onError((error: Error) => {
-    if (process.env.NODE_ENV !== 'production')
+    if (import.meta.env.NODE_ENV !== 'production')
         // eslint-disable-next-line no-console
         console.error('page error', error);
     return router.push({

@@ -77,7 +77,7 @@ import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { useNotificationsStore, useStructureFormManagement } from '@guebbit/vue-toolkit';
+import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/stores/users';
 import { z } from 'zod';
 
@@ -123,7 +123,7 @@ const editSchema = zodSchemaUsers
     });
 
 const { form, formErrors, isSubmitting, handleSubmit } =
-    useStructureFormManagement<IUserEditForm>({}, editSchema);
+    useStructureFormValidation<IUserEditForm>({}, editSchema);
 
 /**
  * Whether to display validation errors in the UI
