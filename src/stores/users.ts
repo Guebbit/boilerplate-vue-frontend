@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { usersApi } from '@/utils/api.ts';
 import type { AxiosProgressEvent } from 'axios';
-import type { User, CreateUserRequest, UsersResponse } from '@types';
+import type { User, CreateUserRequestMultipart, UpdateUserByIdRequestMultipart, UsersResponse } from '@types';
 
 
 export const useUsersStore = defineStore('users', () => {
@@ -18,6 +18,7 @@ export const useUsersStore = defineStore('users', () => {
         itemList: usersList,
         getRecord: getUser,
         addRecord: addUser,
+        addRecords,
         selectedIdentifier: selectedUserId,
         selectedRecord: currentUser,
 
@@ -26,6 +27,7 @@ export const useUsersStore = defineStore('users', () => {
         pageSize,
         pageTotal,
         pageItemList,
+        fetchAny,
         fetchAll,
         fetchTarget,
         createTarget,
@@ -52,13 +54,14 @@ export const useUsersStore = defineStore('users', () => {
      * @param forced
      */
     const fetchPaginationUsers = (page = 1, pageSize = 9, forced = false) =>
-        fetchAll(
+        fetchAny(
             () =>
                 usersApi.listUsers(page, pageSize).then(({ data }) => {
-                    const response = data as { items?: User[]; meta?: { page: number; totalItems: number; totalPages: number } };
-                    return response?.items ?? [];
+                    const response = data as UsersResponse;
+                    addRecords(response.items ?? []);
+                    return response;
                 }),
-            { forced }
+            { forced, lastUpdateKey: `users_page_${page}_${pageSize}` }
         );
 
     /**
@@ -77,10 +80,10 @@ export const useUsersStore = defineStore('users', () => {
      *
      * @param userData
      */
-    const createUser = (userData: CreateUserRequest) =>
+    const createUser = (userData: CreateUserRequestMultipart) =>
         createTarget(() =>
             usersApi
-                .createUser(userData.email, userData.username, userData.password, userData.admin, userData.active)
+                .createUser(userData.email, userData.username, userData.password, userData.admin, userData.active, userData.imageUpload)
                 .then(({ data }) => data as User)
         );
 
@@ -113,13 +116,13 @@ export const useUsersStore = defineStore('users', () => {
      * @param userId
      * @param userData
      */
-    const updateUser = (userId: string, userData: { email?: string; password?: string } = {}) =>
+    const updateUser = (userId: string, userData: UpdateUserByIdRequestMultipart = {}) =>
         updateTarget(
             () =>
                 usersApi
-                    .updateUserById(userId, userData.email, userData.password)
+                    .updateUserById(userId, userData.email, userData.password, userData.username, userData.imageUpload)
                     .then(({ data }) => data as User),
-            userData as Partial<User>,
+            { email: userData.email, password: userData.password, username: userData.username } as Partial<User>,
             userId
         );
 
