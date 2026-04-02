@@ -37,6 +37,25 @@
                         {{ formErrors.password.join(', ') }}
                     </p>
                 </div>
+                <div
+                    class="theme-form-input"
+                    :class="{
+                        'form-error': showErrors && formErrors.passwordConfirm
+                    }"
+                >
+                    <label for="form-password-confirm">
+                        {{ t('users-form.label-passwordConfirm') }}
+                    </label>
+                    <input
+                        v-model="form.passwordConfirm"
+                        type="password"
+                        id="form-password-confirm"
+                        class="theme-input"
+                    />
+                    <p v-if="showErrors && formErrors.passwordConfirm" class="form-error-message">
+                        {{ formErrors.passwordConfirm.join(', ') }}
+                    </p>
+                </div>
 
                 <div class="theme-form-input-checkbox">
                     <input v-model="form.remember" type="checkbox" id="form-remember" />
@@ -90,7 +109,9 @@ const route = useRoute();
  */
 interface IUserSignupForm {
     email?: string;
+    username?: string;
     password?: string;
+    passwordConfirm?: string;
     remember?: boolean;
     conditions?: boolean;
 }
@@ -103,14 +124,17 @@ const { form, formErrors, isDirty, isSubmitting, handleSubmit } =
             ? {}
             : { email: 'root@root.it', password: 'RootRoot_123' },
         zodSchemaUsers
-            .pick({
-                email: true
-            })
+            .pick({ email: true, username: true })
             .extend({
                 password: z.string().min(8, t('users-form.password-required')),
+                passwordConfirm: z.string().min(8, t('users-form.password-confirm-required')),
                 conditions: z.boolean().refine((value) => value, {
                     message: t('users-form.conditions-required')
                 })
+            })
+            .refine((data) => data.password === data.passwordConfirm, {
+                message: t('users-form.password-dont-match'),
+                path: ['passwordConfirm']
             })
     );
 
@@ -128,7 +152,12 @@ const { signup, fetchProfile } = useProfileStore();
  */
 const submitForm = () =>
     handleSubmit(async () => {
-        await signup(form.value.email!, form.value.password!);
+        await signup(
+            form.value.email!,
+            form.value.password!,
+            form.value.username,
+            form.value.passwordConfirm!
+        );
         await fetchProfile();
         await (route.query.continue
             ? router.push({ path: route.query.continue as string })

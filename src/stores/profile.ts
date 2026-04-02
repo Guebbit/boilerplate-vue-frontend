@@ -2,8 +2,34 @@ import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import { i18n } from '@/utils/i18n.ts';
-import type { User } from '@types';
+import type { AuthTokens, RefreshTokenResponse, User } from '@types';
 import { accountApi, authApi, usersApi } from '@/utils/api.ts';
+
+/**
+ * Extract token from both wrapped ({ data: { token } }) and direct ({ token }) responses
+ */
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null;
+
+const isWrappedResponse = <T>(response: unknown): response is { data?: T } =>
+    isObjectRecord(response) && 'data' in response;
+
+const getTokenFromResponse = (
+    response?: { data?: { token?: string } } | AuthTokens | RefreshTokenResponse
+): string | undefined => {
+    if (isObjectRecord(response)) {
+        const maybeToken = (response as Record<string, unknown>).token;
+        if (typeof maybeToken === 'string') return maybeToken;
+    }
+    if (isWrappedResponse<{ token?: string }>(response)) return response.data?.token;
+    return undefined;
+};
+
+/**
+ * Extract payload from both wrapped ({ data }) and direct responses
+ */
+const getPayloadFromResponse = <T>(response?: { data?: T } | T): T | undefined =>
+    isWrappedResponse<T>(response) ? response.data : (response as T | undefined);
 
 /**
  * While we can't access to inject/provide in guards or any non-components,
@@ -49,7 +75,9 @@ export const useProfileStore = defineStore('profile', () => {
         fetchAny(() =>
             authApi
                 .login({ email: auth, password })
-                .then(({ data: { token } = {} as { token?: string } }) => (accessToken.value = token))
+                .then((response) => {
+                    accessToken.value = getTokenFromResponse(response);
+                })
         ).then(() => fetchProfile(true));
 
     /**
@@ -59,17 +87,22 @@ export const useProfileStore = defineStore('profile', () => {
      * @param password
      * @param username
      */
-    const signup = (email: string, password: string, username = email) =>
-        fetchAny(() =>
-            authApi.signup(email, username, password, password)
-        );
+    const signup = (
+        email: string,
+        password: string,
+        username = email,
+        passwordConfirm = password
+    ) =>
+        fetchAny(() => authApi.signup(email, username, password, passwordConfirm));
 
     /**
      * Refresh access token
      */
     const refreshToken = () =>
         fetchAny(() =>
-            authApi.refreshToken().then(({ data: { token } = {} as { token?: string } }) => (accessToken.value = token))
+            authApi.refreshToken().then((response) => {
+                accessToken.value = getTokenFromResponse(response);
+            })
         );
 
     /**
@@ -82,11 +115,12 @@ export const useProfileStore = defineStore('profile', () => {
     const fetchProfile = (forced = false) => {
         return fetchTarget(
             () =>
-                accountApi.getAccount().then(({ data }) => {
-                    if (!data) return;
+                accountApi.getAccount().then((response) => {
+                    const payload = getPayloadFromResponse<User>(response);
+                    if (!payload) return;
                     // to handle single-target stores we just need to select the correct identifier
-                    selectedIdentifier.value = data.id;
-                    return data;
+                    selectedIdentifier.value = payload.id;
+                    return payload;
                 }),
             undefined,
             { forced }

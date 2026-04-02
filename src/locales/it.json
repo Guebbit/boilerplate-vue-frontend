@@ -202,6 +202,7 @@
     "users-form": {
         "email-required": "L'email è obbligatoria",
         "email-invalid": "Deve essere un'email valida",
+        "label-passwordConfirm": "Conferma Password",
         "username-required": "Il nome utente è obbligatorio",
         "username-min": "Il nome utente deve essere lungo almeno 3 caratteri",
         "conditions-required": "Devi accettare le condizioni!",
