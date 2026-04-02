@@ -8,24 +8,60 @@
 
         <div class="theme-card animate-on-hover">
             <div class="card-content">
-                <pre>{{ currentProduct }}</pre>
+                <div v-if="currentProduct" class="product-details">
+                    <table class="user-detail-table">
+                        <tbody>
+                            <tr>
+                                <th>{{ t('product-target-page.label-id') }}</th>
+                                <td>{{ currentProduct.id }}</td>
+                            </tr>
+                            <tr>
+                                <th>{{ t('product-target-page.label-title') }}</th>
+                                <td>{{ currentProduct.title }}</td>
+                            </tr>
+                            <tr>
+                                <th>{{ t('product-target-page.label-price') }}</th>
+                                <td>{{ currentProduct.price }}</td>
+                            </tr>
+                            <tr>
+                                <th>{{ t('product-target-page.label-description') }}</th>
+                                <td>{{ currentProduct.description || '-' }}</td>
+                            </tr>
+                            <tr>
+                                <th>{{ t('product-target-page.label-active') }}</th>
+                                <td>{{ currentProduct.active ? '✓' : '✗' }}</td>
+                            </tr>
+                            <tr v-if="currentProduct.createdAt">
+                                <th>{{ t('product-target-page.label-created-at') }}</th>
+                                <td>{{ new Date(currentProduct.createdAt).toLocaleString() }}</td>
+                            </tr>
+                            <tr v-if="currentProduct.updatedAt">
+                                <th>{{ t('product-target-page.label-updated-at') }}</th>
+                                <td>{{ new Date(currentProduct.updatedAt).toLocaleString() }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-        <div class="simple-card">
-            <input type="file" id="fileInput" />
-            <button class="simple-button" @click="emitUploadImage">Upload Image (TODO)</button>
+        <div class="product-target-actions">
+            <RouterLink
+                v-if="currentProduct"
+                :to="routerLinkI18n({ name: 'ProductEdit', params: { id: currentProduct.id } })"
+            >
+                {{ t('product-target-page.button-go-to-edit') }}
+            </RouterLink>
+            <RouterLink
+                :to="
+                    routerLinkI18n({
+                        name: 'ProductsList'
+                    })
+                "
+            >
+                {{ t('product-target-page.button-go-to-list') }}
+            </RouterLink>
         </div>
-
-        <RouterLink
-            :to="
-                routerLinkI18n({
-                    name: 'ProductsList'
-                })
-            "
-        >
-            {{ t('product-target-page.button-go-to-list') }}
-        </RouterLink>
     </LayoutDefault>
 </template>
 
@@ -60,42 +96,6 @@ const { id } = defineProps<{
 const { fetchProduct } = useProductsStore();
 const { currentProduct, selectedProductId } = storeToRefs(useProductsStore());
 
-// import axios from '@/utils/http.ts';
-// import type { AxiosProgressEvent } from 'axios';
-// import type { IProductIdentification } from '@/types';
-//
-// /**
-//  * Put Profile data DEMO
-//  *
-//  * @param id
-//  * @param formData
-//  * @param onUploadProgress
-//  */
-// export const updateProductImageApi = (
-//     id: IProductIdentification,
-//     formData: FormData,
-//     onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
-// ) =>
-//     axios.put('https://httpbin.org/put', formData, {
-//         headers: {
-//             // eslint-disable-next-line @typescript-eslint/naming-convention
-//             'Content-Type': 'multipart/form-data'
-//         },
-//         onUploadProgress
-//     });
-
-function emitUploadImage() {
-    if (!id) return;
-    const { files } = document.querySelector('#fileInput') as HTMLInputElement;
-    if (!files || files.length === 0) return;
-    const formData = new FormData();
-    formData.append('file', files[0]!);
-    // NOTE: image upload is not part of the OpenAPI spec; using legacy API.
-    // return updateProductImageApi(Number(id), formData, ({ progress = 0 }) => {
-    //     console.log('upload %', Math.round(progress * 100) + '%');
-    // });
-}
-
 /**
  * Get product from API
  */
@@ -107,3 +107,31 @@ onBeforeMount(() => {
     return fetchProduct(id);
 });
 </script>
+
+<style lang="scss">
+#product-target {
+    .user-detail-table {
+        width: 100%;
+        border-collapse: collapse;
+
+        th,
+        td {
+            padding: 10px 14px;
+            text-align: left;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+        }
+
+        th {
+            width: 40%;
+            font-weight: 600;
+            color: rgba(128, 128, 128, 0.8);
+        }
+    }
+
+    .product-target-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+    }
+}
+</style>

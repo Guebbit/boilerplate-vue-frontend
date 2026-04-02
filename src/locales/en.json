@@ -43,11 +43,30 @@
         "page-title": "Products list",
         "product": "@:generic.product [0]",
         "modified-products-list": "@.customSnakeCase:{'generic.product'} @:{'generic.list'}",
-        "button-go-to-details": "Product page"
+        "button-go-to-details": "Product page",
+        "button-view": "View",
+        "button-edit": "Edit",
+        "button-delete": "Delete",
+        "confirm-delete": "Are you sure you want to delete this product?",
+        "success-delete": "Product deleted successfully",
+        "column-id": "ID",
+        "column-title": "Title",
+        "column-price": "Price",
+        "column-active": "Active",
+        "column-created-at": "Created at",
+        "column-actions": "Actions"
     },
     "product-target-page": {
         "page-title": "Product page",
-        "button-go-to-list": "Go to products list"
+        "button-go-to-list": "Go to products list",
+        "button-go-to-edit": "Edit product",
+        "label-id": "ID",
+        "label-title": "Title",
+        "label-price": "Price",
+        "label-description": "Description",
+        "label-active": "Active",
+        "label-created-at": "Created at",
+        "label-updated-at": "Updated at"
     },
     "users-list-page": {
         "page-title": "Users list",
@@ -123,7 +142,17 @@
         "label-status": "Status",
         "label-total": "Total",
         "label-date": "Date",
-        "button-go-to-details": "Order details"
+        "button-go-to-details": "Order details",
+        "button-view": "View",
+        "button-edit": "Edit",
+        "button-delete": "Delete",
+        "confirm-delete": "Are you sure you want to delete this order?",
+        "success-delete": "Order deleted successfully",
+        "column-id": "ID",
+        "column-status": "Status",
+        "column-total": "Total",
+        "column-date": "Date",
+        "column-actions": "Actions"
     },
     "order-target-page": {
         "page-title": "Order details",
@@ -136,7 +165,38 @@
         "label-product-id": "Product",
         "label-quantity": "Quantity",
         "loading": "Loading order...",
-        "button-go-to-list": "Go to orders list"
+        "button-go-to-list": "Go to orders list",
+        "button-go-to-edit": "Edit order",
+        "button-download-invoice": "Download invoice"
+    },
+    "products-form": {
+        "title-required": "Title is required",
+        "price-min": "Price must be greater than or equal to 0"
+    },
+    "orders-form": {
+        "status-invalid": "Invalid order status"
+    },
+    "product-edit-page": {
+        "page-title": "Edit product",
+        "label-title": "Title",
+        "label-price": "Price",
+        "label-description": "Description",
+        "label-active": "Active",
+        "button-submit": "Save changes",
+        "reset-form": "Reset changes",
+        "button-go-to-details": "Back to product details",
+        "button-go-to-list": "Back to products list",
+        "success-update": "Product updated successfully"
+    },
+    "order-edit-page": {
+        "page-title": "Edit order",
+        "label-status": "Status",
+        "label-email": "Email",
+        "button-submit": "Save changes",
+        "reset-form": "Reset changes",
+        "button-go-to-details": "Back to order details",
+        "button-go-to-list": "Back to orders list",
+        "success-update": "Order updated successfully"
     },
     "users-form": {
         "email-required": "Email is required",

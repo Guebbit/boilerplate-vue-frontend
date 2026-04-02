@@ -43,11 +43,30 @@
         "page-title": "Lista prodotti",
         "user": "@:generic.product [0]",
         "modified-users-list": "@.customSnakeCase:{'generic.product'} @:{'generic.list'}",
-        "button-go-to-details": "Pagina prodotto"
+        "button-go-to-details": "Pagina prodotto",
+        "button-view": "Visualizza",
+        "button-edit": "Modifica",
+        "button-delete": "Elimina",
+        "confirm-delete": "Sei sicuro di voler eliminare questo prodotto?",
+        "success-delete": "Prodotto eliminato con successo",
+        "column-id": "ID",
+        "column-title": "Titolo",
+        "column-price": "Prezzo",
+        "column-active": "Attivo",
+        "column-created-at": "Creato il",
+        "column-actions": "Azioni"
     },
     "product-target-page": {
         "page-title": "Prodotto selezionato",
-        "button-go-to-list": "Vai alla lista prodotti"
+        "button-go-to-list": "Vai alla lista prodotti",
+        "button-go-to-edit": "Modifica prodotto",
+        "label-id": "ID",
+        "label-title": "Titolo",
+        "label-price": "Prezzo",
+        "label-description": "Descrizione",
+        "label-active": "Attivo",
+        "label-created-at": "Creato il",
+        "label-updated-at": "Aggiornato il"
     },
     "users-list-page": {
         "page-title": "Lista utenti",
@@ -123,7 +142,17 @@
         "label-status": "Stato",
         "label-total": "Totale",
         "label-date": "Data",
-        "button-go-to-details": "Dettagli ordine"
+        "button-go-to-details": "Dettagli ordine",
+        "button-view": "Visualizza",
+        "button-edit": "Modifica",
+        "button-delete": "Elimina",
+        "confirm-delete": "Sei sicuro di voler eliminare questo ordine?",
+        "success-delete": "Ordine eliminato con successo",
+        "column-id": "ID",
+        "column-status": "Stato",
+        "column-total": "Totale",
+        "column-date": "Data",
+        "column-actions": "Azioni"
     },
     "order-target-page": {
         "page-title": "Dettagli ordine",
@@ -136,7 +165,38 @@
         "label-product-id": "Prodotto",
         "label-quantity": "Quantità",
         "loading": "Caricamento ordine...",
-        "button-go-to-list": "Vai alla lista ordini"
+        "button-go-to-list": "Vai alla lista ordini",
+        "button-go-to-edit": "Modifica ordine",
+        "button-download-invoice": "Scarica fattura"
+    },
+    "products-form": {
+        "title-required": "Il titolo è obbligatorio",
+        "price-min": "Il prezzo deve essere maggiore o uguale a 0"
+    },
+    "orders-form": {
+        "status-invalid": "Stato ordine non valido"
+    },
+    "product-edit-page": {
+        "page-title": "Modifica prodotto",
+        "label-title": "Titolo",
+        "label-price": "Prezzo",
+        "label-description": "Descrizione",
+        "label-active": "Attivo",
+        "button-submit": "Salva modifiche",
+        "reset-form": "Reimposta modifiche",
+        "button-go-to-details": "Torna ai dettagli prodotto",
+        "button-go-to-list": "Torna alla lista prodotti",
+        "success-update": "Prodotto aggiornato con successo"
+    },
+    "order-edit-page": {
+        "page-title": "Modifica ordine",
+        "label-status": "Stato",
+        "label-email": "Email",
+        "button-submit": "Salva modifiche",
+        "reset-form": "Reimposta modifiche",
+        "button-go-to-details": "Torna ai dettagli ordine",
+        "button-go-to-list": "Torna alla lista ordini",
+        "success-update": "Ordine aggiornato con successo"
     },
     "users-form": {
         "email-required": "L'email è obbligatoria",
