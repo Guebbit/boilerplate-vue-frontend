@@ -44,7 +44,7 @@
                     }"
                 >
                     <label for="form-password-confirm">
-                        {{ t('profile-page.label-passwordConfirm') }}
+                        {{ t('users-form.label-passwordConfirm') }}
                     </label>
                     <input
                         v-model="form.passwordConfirm"
@@ -59,7 +59,7 @@
 
                 <div class="theme-form-input-checkbox">
                     <input v-model="form.remember" type="checkbox" id="form-remember" />
-                    <label for="form-remember">{{ t('login-page.label-remember') }}</label>
+                    <label for="form-remember">{{ t('signup-page.label-remember') }}</label>
                 </div>
 
                 <div
@@ -154,8 +154,8 @@ const submitForm = () =>
     handleSubmit(async () => {
         await signup(
             form.value.email!,
-            form.value.username ?? form.value.email!,
             form.value.password!,
+            form.value.username ?? form.value.email!,
             form.value.passwordConfirm!
         );
         await fetchProfile();

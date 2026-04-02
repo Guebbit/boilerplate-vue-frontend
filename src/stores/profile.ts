@@ -8,17 +8,27 @@ import { accountApi, authApi, usersApi } from '@/utils/api.ts';
 /**
  * Extract token from both wrapped ({ data: { token } }) and direct ({ token }) responses
  */
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null;
+
+const isWrappedResponse = <T>(response: unknown): response is { data?: T } =>
+    isObjectRecord(response) && 'data' in response;
+
 const getTokenFromResponse = (
     response?: { data?: { token?: string } } | AuthTokens | RefreshTokenResponse
-) =>
-    (response as { data?: { token?: string } })?.data?.token ??
-    (response as AuthTokens | RefreshTokenResponse)?.token;
+) => {
+    if (isObjectRecord(response)) {
+        const maybeToken = (response as Record<string, unknown>).token;
+        if (typeof maybeToken === 'string') return maybeToken;
+    }
+    if (isWrappedResponse<{ token?: string }>(response)) return response.data?.token;
+};
 
 /**
  * Extract payload from both wrapped ({ data }) and direct responses
  */
 const getPayloadFromResponse = <T>(response?: { data?: T } | T): T | undefined =>
-    (response as { data?: T })?.data ?? (response as T | undefined);
+    isWrappedResponse<T>(response) ? response.data : (response as T | undefined);
 
 /**
  * While we can't access to inject/provide in guards or any non-components,
@@ -76,10 +86,13 @@ export const useProfileStore = defineStore('profile', () => {
      * @param password
      * @param username
      */
-    const signup = (email: string, username: string, password: string, passwordConfirm = password) =>
-        fetchAny(() =>
-            authApi.signup(email, username, password, passwordConfirm)
-        );
+    const signup = (
+        email: string,
+        password: string,
+        username = email,
+        passwordConfirm = password
+    ) =>
+        fetchAny(() => authApi.signup(email, username, password, passwordConfirm));
 
     /**
      * Refresh access token
