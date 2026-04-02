@@ -13,7 +13,7 @@
                     <p>{{ t('order-target-page.label-status') }}: {{ currentOrder.status }}</p>
                     <p>{{ t('order-target-page.label-total') }}: {{ currentOrder.total }}</p>
                     <p v-if="currentOrder.notes">{{ t('order-target-page.label-notes') }}: {{ currentOrder.notes }}</p>
-                    <p v-if="currentOrder.createdAt">{{ t('order-target-page.label-date') }}: {{ currentOrder.createdAt }}</p>
+                    <p v-if="currentOrder.createdAt">{{ t('order-target-page.label-date') }}: {{ new Date(currentOrder.createdAt).toLocaleString() }}</p>
                     <div v-if="currentOrder.items.length > 0">
                         <h3>{{ t('order-target-page.label-items') }}</h3>
                         <div
@@ -30,15 +30,31 @@
             </div>
         </div>
 
-        <RouterLink
-            :to="
-                routerLinkI18n({
-                    name: 'OrdersList'
-                })
-            "
-        >
-            {{ t('order-target-page.button-go-to-list') }}
-        </RouterLink>
+        <div class="order-target-actions">
+            <RouterLink
+                v-if="currentOrder"
+                :to="routerLinkI18n({ name: 'OrderEdit', params: { id: currentOrder.id } })"
+            >
+                {{ t('order-target-page.button-go-to-edit') }}
+            </RouterLink>
+            <button
+                v-if="currentOrder"
+                class="theme-button"
+                :disabled="loading"
+                @click="downloadInvoice"
+            >
+                {{ t('order-target-page.button-download-invoice') }}
+            </button>
+            <RouterLink
+                :to="
+                    routerLinkI18n({
+                        name: 'OrdersList'
+                    })
+                "
+            >
+                {{ t('order-target-page.button-go-to-list') }}
+            </RouterLink>
+        </div>
     </LayoutDefault>
 </template>
 
@@ -54,6 +70,7 @@ import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/stores/orders.ts';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
@@ -62,6 +79,7 @@ import LayoutDefault from '@/layouts/LayoutDefault.vue';
  * Generics
  */
 const { t } = useI18n();
+const { addMessage } = useNotificationsStore();
 const { id } = defineProps<{
     id?: string;
 }>();
@@ -70,7 +88,28 @@ const { id } = defineProps<{
  * Orders store
  */
 const { fetchOrder } = useOrdersStore();
-const { currentOrder, selectedOrderId } = storeToRefs(useOrdersStore());
+const { getOrderInvoice } = useOrdersStore();
+const { currentOrder, selectedOrderId, loading } = storeToRefs(useOrdersStore());
+
+const downloadInvoice = async () => {
+    if (!id) return;
+    try {
+        const response = await getOrderInvoice(id);
+        const blob = response?.data as Blob | undefined;
+        if (!blob) return;
+        const url = globalThis.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `order-${id}-invoice.pdf`;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        globalThis.URL.revokeObjectURL(url);
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Failed to download invoice';
+        addMessage(message);
+    }
+};
 
 /**
  * Get order from API
@@ -83,3 +122,13 @@ onBeforeMount(() => {
     return fetchOrder(id);
 });
 </script>
+
+<style lang="scss">
+#order-target {
+    .order-target-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+    }
+}
+</style>

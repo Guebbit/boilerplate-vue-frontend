@@ -1,16 +1,27 @@
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useI18n } from 'vue-i18n';
+import { z } from 'zod';
 import { ordersApi } from '@/utils/api.ts';
-import type { Order, CreateOrderRequest, UpdateOrderByIdRequest, CheckoutRequest, CheckoutResponse } from '@types';
+import type { Order, CreateOrderRequest, UpdateOrderByIdRequest, CheckoutRequest, CheckoutResponse, OrdersResponse } from '@types';
 
 export const useOrdersStore = defineStore('orders', () => {
+    const { t } = useI18n();
+
     const {
         itemDictionary: orders,
         itemList: ordersList,
+        getRecord: getOrder,
+        addRecord: addOrder,
+        addRecords,
         selectedIdentifier: selectedOrderId,
         selectedRecord: currentOrder,
 
         loading,
+        pageCurrent,
+        pageSize,
+        pageTotal,
+        pageItemList,
         fetchAll,
         fetchTarget,
         fetchAny,
@@ -31,6 +42,22 @@ export const useOrdersStore = defineStore('orders', () => {
                     .listOrders()
                     .then(({ data }) => (data as { items?: Order[] })?.items ?? []),
             { forced }
+        );
+
+    /**
+     * @param page
+     * @param pageSize
+     * @param forced
+     */
+    const fetchPaginationOrders = (page = 1, pageSize = 10, forced = false) =>
+        fetchAny(
+            () =>
+                ordersApi.listOrders(undefined, page, pageSize).then(({ data }) => {
+                    const response = data as OrdersResponse;
+                    addRecords(response.items ?? []);
+                    return response;
+                }),
+            { forced, lastUpdateKey: `orders_page_${page}_${pageSize}` }
         );
 
     /**
@@ -90,18 +117,60 @@ export const useOrdersStore = defineStore('orders', () => {
     const deleteOrder = (orderId: string) =>
         deleteTarget(() => ordersApi.deleteOrderById(orderId), orderId);
 
+    /**
+     * Download order invoice (PDF binary)
+     *
+     * @param orderId
+     */
+    const getOrderInvoice = (orderId: string) =>
+        fetchAny(() =>
+            ordersApi.getOrderInvoice(orderId, { responseType: 'blob' })
+        );
+
+    /**
+     * Zod schema for order status
+     */
+    const zodSchemaOrderStatus = z.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'], {
+        message: t('orders-form.status-invalid')
+    });
+
+    /**
+     * Order schema
+     */
+    const zodSchemaOrder = z.object({
+        id: z.string().nullish(),
+        userId: z.string().nullish(),
+        email: z.email(t('orders-form.email-invalid')).nullish(),
+        status: zodSchemaOrderStatus.nullish(),
+        total: z.number().nullish(),
+        notes: z.string().nullish(),
+        createdAt: z.string().nullish(),
+        updatedAt: z.string().nullish()
+    });
+
     return {
         orders,
         ordersList,
+        getOrder,
+        addOrder,
         selectedOrderId,
         currentOrder,
 
         loading,
+        pageCurrent,
+        pageSize,
+        pageTotal,
+        pageItemList,
         fetchOrders,
+        fetchPaginationOrders,
         fetchOrder,
         createOrder,
         updateOrder,
         checkout,
-        deleteOrder
+        deleteOrder,
+        getOrderInvoice,
+
+        zodSchemaOrderStatus,
+        zodSchemaOrder
     };
 });

@@ -6,37 +6,60 @@
             </h1>
         </template>
 
-        <div class="item-list">
-            <div
-                v-for="product in productsList"
-                :key="'product-card-' + product.id"
-                class="item-card theme-card"
-                :class="{
-                    active: selectedProductId === product.id
-                }"
-                @click="selectedProductId = product.id"
-            >
-                <img class="card-image" :alt="product.title + ' photo'" :src="product.imageUrl" />
-                <div class="card-content">
-                    <h2 class="card-title">
-                        <b>{{ product.id }}</b> {{ product.title }}
-                    </h2>
-                    <p>{{ product.price }} - {{ product.description }}</p>
-                    <RouterLink
-                        :to="
-                            routerLinkI18n({
-                                name: 'ProductTarget',
-                                params: {
-                                    id: product.id
-                                }
-                            })
-                        "
+        <div class="users-table-wrapper">
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>{{ t('products-list-page.column-id') }}</th>
+                        <th>{{ t('products-list-page.column-title') }}</th>
+                        <th>{{ t('products-list-page.column-price') }}</th>
+                        <th>{{ t('products-list-page.column-active') }}</th>
+                        <th>{{ t('products-list-page.column-created-at') }}</th>
+                        <th>{{ t('products-list-page.column-actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr
+                        v-for="product in pageItemList"
+                        :key="'product-row-' + product.id"
+                        :class="{ active: selectedProductId === product.id }"
+                        @click="selectedProductId = product.id"
                     >
-                        {{ t('products-list-page.button-go-to-details') }}
-                    </RouterLink>
-                </div>
-            </div>
+                        <td>{{ product.id }}</td>
+                        <td>{{ product.title }}</td>
+                        <td>{{ product.price }}</td>
+                        <td>{{ product.active ? '✓' : '✗' }}</td>
+                        <td>{{ product.createdAt ? new Date(product.createdAt).toLocaleDateString() : '-' }}</td>
+                        <td class="actions-cell">
+                            <RouterLink
+                                :to="routerLinkI18n({ name: 'ProductTarget', params: { id: product.id } })"
+                                class="theme-button"
+                            >
+                                {{ t('products-list-page.button-view') }}
+                            </RouterLink>
+                            <RouterLink
+                                :to="routerLinkI18n({ name: 'ProductEdit', params: { id: product.id } })"
+                                class="theme-button"
+                            >
+                                {{ t('products-list-page.button-edit') }}
+                            </RouterLink>
+                            <button
+                                class="theme-button"
+                                :disabled="loading"
+                                @click.stop="handleDelete(product.id)"
+                            >
+                                {{ t('products-list-page.button-delete') }}
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
+
+        <ListPagination
+            v-model="pageCurrent"
+            :length="pageTotal"
+        />
     </LayoutDefault>
 </template>
 
@@ -48,33 +71,50 @@ export default {
 
 <script setup lang="ts">
 import '../assets/styles/pages/productsList.scss';
-import { onMounted } from 'vue';
+import { onMounted, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/stores/products';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
+import ListPagination from '@/components/molecules/ListPagination.vue';
 
 /**
  * Generics
  */
 const { t } = useI18n();
+const { addMessage } = useNotificationsStore();
 
 /**
  * Products store
- * The composable within will have most of the logic for this kind of pages
  */
-const { fetchProducts } = useProductsStore();
-const { productsList, selectedProductId } = storeToRefs(useProductsStore());
+const { fetchPaginationProducts, deleteProduct } = useProductsStore();
+const { pageItemList, selectedProductId, pageCurrent, pageTotal, pageSize, loading } = storeToRefs(useProductsStore());
+
+/**
+ * Initialize pagination
+ */
+pageSize.value = 10;
+
+/**
+ * Delete a product after confirmation
+ */
+const handleDelete = (productId: string) => {
+    if (!confirm(t('products-list-page.confirm-delete'))) return;
+    deleteProduct(productId)
+        .then(() => addMessage(t('products-list-page.success-delete')))
+        .catch(({ message }: { message: string }) => addMessage(message));
+};
 
 /**
  * Get products from API
  */
-onMounted(fetchProducts);
-</script>
+onMounted(() => fetchPaginationProducts(Math.max(1, pageCurrent.value), pageSize.value));
 
-<style>
-@import '../assets/styles/pages/itemList.scss';
-</style>
+watch([pageCurrent, pageSize], ([currentPage, currentPageSize]) => {
+    fetchPaginationProducts(Math.max(1, currentPage), currentPageSize);
+});
+</script>

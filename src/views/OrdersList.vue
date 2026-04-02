@@ -19,38 +19,58 @@
             </RouterLink>
         </div>
 
-        <div v-else class="item-list">
-            <div
-                v-for="order in ordersList"
-                :key="'order-card-' + order.id"
-                class="item-card theme-card"
-                :class="{
-                    active: selectedOrderId === order.id
-                }"
-                @click="selectedOrderId = order.id"
-            >
-                <div class="card-content">
-                    <h2 class="card-title">
-                        <b>{{ order.id }}</b>
-                    </h2>
-                    <p>{{ t('orders-list-page.label-status') }}: {{ order.status }}</p>
-                    <p>{{ t('orders-list-page.label-total') }}: {{ order.total }}</p>
-                    <p v-if="order.createdAt">{{ t('orders-list-page.label-date') }}: {{ order.createdAt }}</p>
-                    <RouterLink
-                        :to="
-                            routerLinkI18n({
-                                name: 'OrderTarget',
-                                params: {
-                                    id: order.id
-                                }
-                            })
-                        "
+        <div v-else class="users-table-wrapper">
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>{{ t('orders-list-page.column-id') }}</th>
+                        <th>{{ t('orders-list-page.column-status') }}</th>
+                        <th>{{ t('orders-list-page.column-total') }}</th>
+                        <th>{{ t('orders-list-page.column-date') }}</th>
+                        <th>{{ t('orders-list-page.column-actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr
+                        v-for="order in pageItemList"
+                        :key="'order-row-' + order.id"
+                        :class="{ active: selectedOrderId === order.id }"
+                        @click="selectedOrderId = order.id"
                     >
-                        {{ t('orders-list-page.button-go-to-details') }}
-                    </RouterLink>
-                </div>
-            </div>
+                        <td>{{ order.id }}</td>
+                        <td>{{ order.status }}</td>
+                        <td>{{ order.total }}</td>
+                        <td>{{ order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '-' }}</td>
+                        <td class="actions-cell">
+                            <RouterLink
+                                :to="routerLinkI18n({ name: 'OrderTarget', params: { id: order.id } })"
+                                class="theme-button"
+                            >
+                                {{ t('orders-list-page.button-view') }}
+                            </RouterLink>
+                            <RouterLink
+                                :to="routerLinkI18n({ name: 'OrderEdit', params: { id: order.id } })"
+                                class="theme-button"
+                            >
+                                {{ t('orders-list-page.button-edit') }}
+                            </RouterLink>
+                            <button
+                                class="theme-button"
+                                :disabled="loading"
+                                @click.stop="handleDelete(order.id)"
+                            >
+                                {{ t('orders-list-page.button-delete') }}
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
+
+        <ListPagination
+            v-model="pageCurrent"
+            :length="pageTotal"
+        />
     </LayoutDefault>
 </template>
 
@@ -61,32 +81,45 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import '../assets/styles/pages/ordersList.scss';
+import { onMounted, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/stores/orders.ts';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
+import ListPagination from '@/components/molecules/ListPagination.vue';
 
 /**
  * Generics
  */
 const { t } = useI18n();
+const { addMessage } = useNotificationsStore();
 
 /**
  * Orders store
  */
-const { fetchOrders } = useOrdersStore();
-const { ordersList, selectedOrderId } = storeToRefs(useOrdersStore());
+const { fetchPaginationOrders, deleteOrder } = useOrdersStore();
+const { ordersList, pageItemList, selectedOrderId, pageCurrent, pageTotal, pageSize, loading } = storeToRefs(useOrdersStore());
+
+pageSize.value = 10;
+
+const handleDelete = (orderId: string) => {
+    if (!confirm(t('orders-list-page.confirm-delete'))) return;
+    deleteOrder(orderId)
+        .then(() => addMessage(t('orders-list-page.success-delete')))
+        .catch(({ message }: { message: string }) => addMessage(message));
+};
 
 /**
  * Get orders from API
  */
-onMounted(fetchOrders);
-</script>
+onMounted(() => fetchPaginationOrders(Math.max(1, pageCurrent.value), pageSize.value));
 
-<style>
-@import '../assets/styles/pages/itemList.scss';
-</style>
+watch([pageCurrent, pageSize], ([currentPage, currentPageSize]) => {
+    fetchPaginationOrders(Math.max(1, currentPage), currentPageSize);
+});
+</script>

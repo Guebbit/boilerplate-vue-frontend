@@ -1,16 +1,21 @@
 import { defineStore } from 'pinia';
 import { useStructureRestApi } from '@guebbit/vue-toolkit';
 import type { AxiosProgressEvent } from 'axios';
+import { useI18n } from 'vue-i18n';
+import { z } from 'zod';
 
 import { productsApi } from '@/utils/api.ts';
-import type { Product, CreateProductRequest, UpdateProductByIdRequest } from '@types';
+import type { Product, CreateProductRequest, UpdateProductByIdRequest, ProductsResponse } from '@types';
 
 export const useProductsStore = defineStore('products', () => {
+    const { t } = useI18n();
+
     const {
         itemDictionary: products,
         itemList: productsList,
         getRecord: getProduct,
         addRecord: addProduct,
+        addRecords,
         selectedIdentifier: selectedProductId,
         selectedRecord: currentProduct,
 
@@ -19,6 +24,7 @@ export const useProductsStore = defineStore('products', () => {
         pageSize,
         pageTotal,
         pageItemList,
+        fetchAny,
         fetchAll,
         fetchTarget,
         createTarget,
@@ -37,6 +43,22 @@ export const useProductsStore = defineStore('products', () => {
                     .listProducts()
                     .then(({ data }) => (data as { items?: Product[] })?.items ?? []),
             { forced }
+        );
+
+    /**
+     * @param page
+     * @param pageSize
+     * @param forced
+     */
+    const fetchPaginationProducts = (page = 1, pageSize = 10, forced = false) =>
+        fetchAny(
+            () =>
+                productsApi.listProducts(undefined, page, pageSize).then(({ data }) => {
+                    const response = data as ProductsResponse;
+                    addRecords(response.items ?? []);
+                    return response;
+                }),
+            { forced, lastUpdateKey: `products_page_${page}_${pageSize}` }
         );
 
     /**
@@ -115,6 +137,30 @@ export const useProductsStore = defineStore('products', () => {
     const deleteProduct = (productId: string) =>
         deleteTarget(() => productsApi.deleteProductById(productId), productId);
 
+    /**
+     * Zod schema for product title
+     */
+    const zodSchemaProductsTitle = z.string().min(1, t('products-form.title-required'));
+
+    /**
+     * Zod schema for product price
+     */
+    const zodSchemaProductsPrice = z.number().min(0, t('products-form.price-min'));
+
+    /**
+     * Product schema
+     */
+    const zodSchemaProducts = z.object({
+        id: z.string().nullish(),
+        title: zodSchemaProductsTitle,
+        price: zodSchemaProductsPrice,
+        description: z.string().nullish(),
+        active: z.boolean().nullish(),
+        imageUrl: z.string().nullish(),
+        createdAt: z.string().nullish(),
+        updatedAt: z.string().nullish()
+    });
+
     return {
         products,
         productsList,
@@ -129,10 +175,15 @@ export const useProductsStore = defineStore('products', () => {
         pageTotal,
         pageItemList,
         fetchProducts,
+        fetchPaginationProducts,
         fetchProduct,
         createProduct,
         updateProduct,
         updateProductImage,
-        deleteProduct
+        deleteProduct,
+
+        zodSchemaProductsTitle,
+        zodSchemaProductsPrice,
+        zodSchemaProducts
     };
 });
