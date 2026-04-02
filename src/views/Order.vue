@@ -97,16 +97,17 @@ const downloadInvoice = async () => {
         const response = await getOrderInvoice(id);
         const blob = response?.data as Blob | undefined;
         if (!blob) return;
-        const url = window.URL.createObjectURL(blob);
+        const url = globalThis.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
         link.download = `order-${id}-invoice.pdf`;
-        document.body.appendChild(link);
+        document.body.append(link);
         link.click();
         link.remove();
-        window.URL.revokeObjectURL(url);
-    } catch ({ message }: any) {
-        addMessage(message || 'Failed to download invoice');
+        globalThis.URL.revokeObjectURL(url);
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : 'Failed to download invoice';
+        addMessage(message);
     }
 };
 
