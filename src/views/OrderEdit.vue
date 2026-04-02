@@ -106,7 +106,10 @@ interface IOrderEditForm {
 
 const editSchema = z.object({
     status: zodSchemaOrderStatus.optional(),
-    email: z.email(t('users-form.email-invalid')).optional()
+    email: z.preprocess(
+        (v) => (v === '' ? undefined : v),
+        z.email(t('orders-form.email-invalid')).optional()
+    )
 });
 
 const { form, formErrors, isSubmitting, handleSubmit } =

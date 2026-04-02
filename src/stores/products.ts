@@ -50,7 +50,7 @@ export const useProductsStore = defineStore('products', () => {
      * @param pageSize
      * @param forced
      */
-    const fetchPaginationProducts = (page = 1, pageSize = 9, forced = false) =>
+    const fetchPaginationProducts = (page = 1, pageSize = 10, forced = false) =>
         fetchAny(
             () =>
                 productsApi.listProducts(undefined, page, pageSize).then(({ data }) => {
@@ -151,14 +151,14 @@ export const useProductsStore = defineStore('products', () => {
      * Product schema
      */
     const zodSchemaProducts = z.object({
-        id: z.string().nullish().optional(),
+        id: z.string().nullish(),
         title: zodSchemaProductsTitle,
         price: zodSchemaProductsPrice,
-        description: z.string().nullish().optional(),
-        active: z.boolean().nullish().optional(),
-        imageUrl: z.string().nullish().optional(),
-        createdAt: z.string().nullish().optional(),
-        updatedAt: z.string().nullish().optional()
+        description: z.string().nullish(),
+        active: z.boolean().nullish(),
+        imageUrl: z.string().nullish(),
+        createdAt: z.string().nullish(),
+        updatedAt: z.string().nullish()
     });
 
     return {

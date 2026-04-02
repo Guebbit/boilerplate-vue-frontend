@@ -71,7 +71,7 @@ export default {
 
 <script setup lang="ts">
 import '../assets/styles/pages/productsList.scss';
-import { onMounted } from 'vue';
+import { onMounted, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
@@ -91,7 +91,7 @@ const { addMessage } = useNotificationsStore();
 /**
  * Products store
  */
-const { fetchProducts, deleteProduct } = useProductsStore();
+const { fetchPaginationProducts, deleteProduct } = useProductsStore();
 const { pageItemList, selectedProductId, pageCurrent, pageTotal, pageSize, loading } = storeToRefs(useProductsStore());
 
 /**
@@ -112,5 +112,9 @@ const handleDelete = (productId: string) => {
 /**
  * Get products from API
  */
-onMounted(fetchProducts);
+onMounted(() => fetchPaginationProducts(Math.max(1, pageCurrent.value), pageSize.value));
+
+watch([pageCurrent, pageSize], ([currentPage, currentPageSize]) => {
+    fetchPaginationProducts(Math.max(1, currentPage), currentPageSize);
+});
 </script>

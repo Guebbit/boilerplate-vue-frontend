@@ -49,7 +49,7 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param pageSize
      * @param forced
      */
-    const fetchPaginationOrders = (page = 1, pageSize = 9, forced = false) =>
+    const fetchPaginationOrders = (page = 1, pageSize = 10, forced = false) =>
         fetchAny(
             () =>
                 ordersApi.listOrders(undefined, page, pageSize).then(({ data }) => {
@@ -138,14 +138,14 @@ export const useOrdersStore = defineStore('orders', () => {
      * Order schema
      */
     const zodSchemaOrder = z.object({
-        id: z.string().nullish().optional(),
-        userId: z.string().nullish().optional(),
-        email: z.email(t('users-form.email-invalid')).nullish().optional(),
-        status: zodSchemaOrderStatus.nullish().optional(),
-        total: z.number().nullish().optional(),
-        notes: z.string().nullish().optional(),
-        createdAt: z.string().nullish().optional(),
-        updatedAt: z.string().nullish().optional()
+        id: z.string().nullish(),
+        userId: z.string().nullish(),
+        email: z.email(t('orders-form.email-invalid')).nullish(),
+        status: zodSchemaOrderStatus.nullish(),
+        total: z.number().nullish(),
+        notes: z.string().nullish(),
+        createdAt: z.string().nullish(),
+        updatedAt: z.string().nullish()
     });
 
     return {

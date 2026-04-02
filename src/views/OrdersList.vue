@@ -82,7 +82,7 @@ export default {
 
 <script setup lang="ts">
 import '../assets/styles/pages/ordersList.scss';
-import { onMounted } from 'vue';
+import { onMounted, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
@@ -102,7 +102,7 @@ const { addMessage } = useNotificationsStore();
 /**
  * Orders store
  */
-const { fetchOrders, deleteOrder } = useOrdersStore();
+const { fetchPaginationOrders, deleteOrder } = useOrdersStore();
 const { ordersList, pageItemList, selectedOrderId, pageCurrent, pageTotal, pageSize, loading } = storeToRefs(useOrdersStore());
 
 pageSize.value = 10;
@@ -117,5 +117,9 @@ const handleDelete = (orderId: string) => {
 /**
  * Get orders from API
  */
-onMounted(fetchOrders);
+onMounted(() => fetchPaginationOrders(Math.max(1, pageCurrent.value), pageSize.value));
+
+watch([pageCurrent, pageSize], ([currentPage, currentPageSize]) => {
+    fetchPaginationOrders(Math.max(1, currentPage), currentPageSize);
+});
 </script>

@@ -174,7 +174,8 @@
         "price-min": "Price must be greater than or equal to 0"
     },
     "orders-form": {
-        "status-invalid": "Invalid order status"
+        "status-invalid": "Invalid order status",
+        "email-invalid": "Must be a valid email"
     },
     "product-edit-page": {
         "page-title": "Edit product",
