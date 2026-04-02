@@ -7,6 +7,7 @@ interface ImportMetaEnv {
     readonly VITE_APP_BASE_URL: string | undefined;
     readonly VITE_API_URL: string | undefined;
     readonly VITE_API_WEBSOCKET: string | undefined;
+    readonly VITE_API_MOCK_ENABLED: string | undefined;
     readonly VITE_AXIOS_TIMEOUT: string | undefined;
 }
 
