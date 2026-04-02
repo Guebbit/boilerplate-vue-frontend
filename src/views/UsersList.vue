@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import '../assets/styles/pages/usersList.scss';
-import { onMounted } from 'vue';
+import { onMounted, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
@@ -22,7 +22,7 @@ const { addMessage } = useNotificationsStore();
  * useStructureRestApi within the store handles data management,
  * selection, loading state and pagination
  */
-const { fetchUsers, deleteUser } = useUsersStore();
+const { fetchPaginationUsers, deleteUser } = useUsersStore();
 const {
     pageItemList,
     selectedUserId,
@@ -40,7 +40,11 @@ pageSize.value = 10;
 /**
  * Get users from API
  */
-onMounted(fetchUsers);
+onMounted(() => fetchPaginationUsers(Math.max(1, pageCurrent.value), pageSize.value));
+
+watch([pageCurrent, pageSize], ([currentPage, currentPageSize]) => {
+    fetchPaginationUsers(Math.max(1, currentPage), currentPageSize);
+});
 
 /**
  * Delete a user after confirmation
