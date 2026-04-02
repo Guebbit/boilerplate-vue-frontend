@@ -39,7 +39,10 @@ const parseRequestBody = <T>(data: unknown): Partial<T> => {
     if (!data) return {};
     if (typeof FormData !== 'undefined' && data instanceof FormData) {
         const parsedData: Record<string, unknown> = {};
-        for (const [key, value] of data.entries()) parsedData[key] = parseValue(value);
+        // eslint-disable-next-line unicorn/no-array-for-each
+        data.forEach((value, key) => {
+            parsedData[key] = parseValue(value);
+        });
         return parsedData as Partial<T>;
     }
     if (typeof data === 'string') {
@@ -57,18 +60,29 @@ const parseRequestBody = <T>(data: unknown): Partial<T> => {
 const getPathSegments = (url: string | undefined) =>
     new URL(url ?? '', 'http://localhost').pathname.split('/').filter(Boolean);
 
-const getQueryParameters = (url: string | undefined, params?: unknown) => {
+const getLastPathSegment = (url: string | undefined) => {
+    const pathSegments = getPathSegments(url);
+    // eslint-disable-next-line unicorn/prefer-at
+    return pathSegments[pathSegments.length - 1];
+};
+
+const getQueryParameters = (url: string | undefined, parameters?: unknown) => {
     const parsedUrl = new URL(url ?? '', 'http://localhost');
-    const queryFromUrl = Object.fromEntries(parsedUrl.searchParams.entries());
+    const queryFromUrl: Record<string, string> = {};
+    // eslint-disable-next-line unicorn/no-array-for-each
+    parsedUrl.searchParams.forEach((value, key) => {
+        queryFromUrl[key] = value;
+    });
     return {
         ...queryFromUrl,
-        ...(typeof params === 'object' && params ? params as Record<string, unknown> : {})
+        ...(typeof parameters === 'object' && parameters ? parameters as Record<string, unknown> : {})
     };
 };
 
 const toBooleanOrUndefined = (value: unknown) => {
     if (value === true || value === 'true') return true;
     if (value === false || value === 'false') return false;
+    // eslint-disable-next-line unicorn/no-useless-undefined
     return undefined;
 };
 
@@ -170,11 +184,13 @@ let sampleCartItems: CartItem[] = [
 ];
 
 const calculateCartSummary = (): CartSummaryResponse => {
-    const totalQuantity = sampleCartItems.reduce((sum, item) => sum + item.quantity, 0);
-    const total = sampleCartItems.reduce((sum, item) => {
+    let totalQuantity = 0;
+    let total = 0;
+    for (const item of sampleCartItems) {
         const currentProduct = sampleProducts.find(({ id }) => id === item.productId);
-        return sum + (currentProduct?.price ?? 0) * item.quantity;
-    }, 0);
+        totalQuantity += item.quantity;
+        total += (currentProduct?.price ?? 0) * item.quantity;
+    }
     return {
         itemsCount: sampleCartItems.length,
         totalQuantity,
@@ -191,10 +207,11 @@ const getCartResponse = (): CartResponse => ({
 const createMockOrder = (
     values: Pick<Order, 'userId' | 'email' | 'items'> & Pick<Partial<Order>, 'status' | 'notes'>
 ): Order => {
-    const total = values.items.reduce((sum, item) => {
+    let total = 0;
+    for (const item of values.items) {
         const currentProduct = sampleProducts.find(({ id }) => id === item.productId);
-        return sum + (currentProduct?.price ?? 0) * item.quantity;
-    }, 0);
+        total += (currentProduct?.price ?? 0) * item.quantity;
+    }
     return {
         id: `order-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         userId: values.userId,
@@ -208,7 +225,7 @@ const createMockOrder = (
     };
 };
 
-let sampleOrders: Order[] = [
+const sampleOrders: Order[] = [
     createMockOrder({
         userId: 'user-1',
         email: 'admin@example.com',
@@ -223,8 +240,8 @@ let sampleOrders: Order[] = [
     })
 ];
 
-const replyUsersList = (url: string | undefined, params?: unknown): [number, UsersResponse] => {
-    const query = getQueryParameters(url, params);
+const replyUsersList = (url: string | undefined, parameters?: unknown): [number, UsersResponse] => {
+    const query = getQueryParameters(url, parameters);
     const page = toNumberOrDefault(query.page, 1);
     const pageSize = toNumberOrDefault(query.pageSize, 10);
     const text = String(query.text ?? '').trim().toLowerCase();
@@ -256,14 +273,14 @@ const replyUsersList = (url: string | undefined, params?: unknown): [number, Use
     ];
 };
 
-const replyProductsList = (url: string | undefined, params?: unknown): [number, ProductsResponse] => {
-    const query = getQueryParameters(url, params);
+const replyProductsList = (url: string | undefined, parameters?: unknown): [number, ProductsResponse] => {
+    const query = getQueryParameters(url, parameters);
     const page = toNumberOrDefault(query.page, 1);
     const pageSize = toNumberOrDefault(query.pageSize, 10);
     const text = String(query.text ?? '').trim().toLowerCase();
     const id = query.id ?? query.productId ? String(query.id ?? query.productId) : undefined;
-    const minPrice = query.minPrice !== undefined ? Number(query.minPrice) : undefined;
-    const maxPrice = query.maxPrice !== undefined ? Number(query.maxPrice) : undefined;
+    const minPrice = query.minPrice === undefined ? undefined : Number(query.minPrice);
+    const maxPrice = query.maxPrice === undefined ? undefined : Number(query.maxPrice);
 
     const filteredItems = sampleProducts.filter((product) => {
         if (id && product.id !== id) return false;
@@ -287,8 +304,8 @@ const replyProductsList = (url: string | undefined, params?: unknown): [number, 
     ];
 };
 
-const replyOrdersList = (url: string | undefined, params?: unknown): [number, OrdersResponse] => {
-    const query = getQueryParameters(url, params);
+const replyOrdersList = (url: string | undefined, parameters?: unknown): [number, OrdersResponse] => {
+    const query = getQueryParameters(url, parameters);
     const page = toNumberOrDefault(query.page, 1);
     const pageSize = toNumberOrDefault(query.pageSize, 10);
     const id = query.id ? String(query.id) : undefined;
@@ -321,7 +338,7 @@ const defaultRefreshTokenResponse: RefreshTokenResponse = {
 
 export const initializeApiMocking = () => {
     const shouldEnableMock = import.meta.env.VITE_API_MOCK_ENABLED === 'true';
-    if (!shouldEnableMock) return undefined;
+    if (!shouldEnableMock) return;
     if (mockAdapterInstance) return mockAdapterInstance;
 
     const mockAdapter = new MockAdapter(httpClient, {
@@ -389,7 +406,7 @@ export const initializeApiMocking = () => {
         const requestBody = parseRequestBody<Record<string, unknown>>(config.data);
         const targetId = String(requestBody.id ?? currentAuthenticatedUserId);
         const targetIndex = sampleUsers.findIndex(({ id }) => id === targetId);
-        if (targetIndex < 0) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } }];
+        if (targetIndex === -1) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } }];
 
         const updatedUser: User = {
             ...sampleUsers[targetIndex],
@@ -406,7 +423,7 @@ export const initializeApiMocking = () => {
         const requestBody = parseRequestBody<Record<string, unknown>>(config.data);
         const targetId = String(requestBody.id ?? '');
         const targetIndex = sampleUsers.findIndex(({ id }) => id === targetId);
-        if (targetIndex < 0) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } }];
+        if (targetIndex === -1) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } }];
         sampleUsers.splice(targetIndex, 1);
         return [200, createMessageResponse('User deleted')];
     });
@@ -417,16 +434,16 @@ export const initializeApiMocking = () => {
     });
 
     mockAdapter.onGet(/\/users\/[^/]+(?:\?.*)?$/).reply((config) => {
-        const userId = getPathSegments(config.url).at(-1);
+        const userId = getLastPathSegment(config.url);
         const targetUser = sampleUsers.find((user) => user.id === userId);
         if (!targetUser) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } }];
         return [200, targetUser];
     });
 
     mockAdapter.onPut(/\/users\/[^/]+(?:\?.*)?$/).reply((config) => {
-        const userId = getPathSegments(config.url).at(-1);
+        const userId = getLastPathSegment(config.url);
         const targetIndex = sampleUsers.findIndex(({ id }) => id === userId);
-        if (targetIndex < 0) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } }];
+        if (targetIndex === -1) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } }];
         const requestBody = parseRequestBody<Record<string, unknown>>(config.data);
         const updatedUser: User = {
             ...sampleUsers[targetIndex],
@@ -439,9 +456,9 @@ export const initializeApiMocking = () => {
     });
 
     mockAdapter.onDelete(/\/users\/[^/]+(?:\?.*)?$/).reply((config) => {
-        const userId = getPathSegments(config.url).at(-1);
+        const userId = getLastPathSegment(config.url);
         const targetIndex = sampleUsers.findIndex(({ id }) => id === userId);
-        if (targetIndex < 0) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } }];
+        if (targetIndex === -1) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } }];
         sampleUsers.splice(targetIndex, 1);
         return [200, createMessageResponse('User deleted')];
     });
@@ -468,12 +485,12 @@ export const initializeApiMocking = () => {
         const requestBody = parseRequestBody<Record<string, unknown>>(config.data);
         const targetId = String(requestBody.id ?? '');
         const targetIndex = sampleProducts.findIndex(({ id }) => id === targetId);
-        if (targetIndex < 0) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }];
+        if (targetIndex === -1) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }];
         const updatedProduct: Product = {
             ...sampleProducts[targetIndex],
             title: requestBody.title ? String(requestBody.title) : sampleProducts[targetIndex].title,
-            description: requestBody.description !== undefined ? String(requestBody.description) : sampleProducts[targetIndex].description,
-            price: requestBody.price !== undefined ? Number(requestBody.price) : sampleProducts[targetIndex].price,
+            description: requestBody.description === undefined ? sampleProducts[targetIndex].description : String(requestBody.description),
+            price: requestBody.price === undefined ? sampleProducts[targetIndex].price : Number(requestBody.price),
             active: requestBody.active === undefined ? sampleProducts[targetIndex].active : Boolean(requestBody.active),
             updatedAt: getIsoDateNow()
         };
@@ -485,7 +502,7 @@ export const initializeApiMocking = () => {
         const requestBody = parseRequestBody<Record<string, unknown>>(config.data);
         const targetId = String(requestBody.id ?? '');
         const targetIndex = sampleProducts.findIndex(({ id }) => id === targetId);
-        if (targetIndex < 0) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }];
+        if (targetIndex === -1) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }];
         sampleProducts.splice(targetIndex, 1);
         return [200, createMessageResponse('Product deleted')];
     });
@@ -496,22 +513,22 @@ export const initializeApiMocking = () => {
     });
 
     mockAdapter.onGet(/\/products\/[^/]+(?:\?.*)?$/).reply((config) => {
-        const productId = getPathSegments(config.url).at(-1);
+        const productId = getLastPathSegment(config.url);
         const targetProduct = sampleProducts.find((product) => product.id === productId);
         if (!targetProduct) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }];
         return [200, targetProduct];
     });
 
     mockAdapter.onPut(/\/products\/[^/]+(?:\?.*)?$/).reply((config) => {
-        const productId = getPathSegments(config.url).at(-1);
+        const productId = getLastPathSegment(config.url);
         const targetIndex = sampleProducts.findIndex(({ id }) => id === productId);
-        if (targetIndex < 0) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }];
+        if (targetIndex === -1) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }];
         const requestBody = parseRequestBody<Record<string, unknown>>(config.data);
         const updatedProduct: Product = {
             ...sampleProducts[targetIndex],
             title: requestBody.title ? String(requestBody.title) : sampleProducts[targetIndex].title,
-            description: requestBody.description !== undefined ? String(requestBody.description) : sampleProducts[targetIndex].description,
-            price: requestBody.price !== undefined ? Number(requestBody.price) : sampleProducts[targetIndex].price,
+            description: requestBody.description === undefined ? sampleProducts[targetIndex].description : String(requestBody.description),
+            price: requestBody.price === undefined ? sampleProducts[targetIndex].price : Number(requestBody.price),
             active: requestBody.active === undefined ? sampleProducts[targetIndex].active : Boolean(requestBody.active),
             updatedAt: getIsoDateNow()
         };
@@ -520,9 +537,9 @@ export const initializeApiMocking = () => {
     });
 
     mockAdapter.onDelete(/\/products\/[^/]+(?:\?.*)?$/).reply((config) => {
-        const productId = getPathSegments(config.url).at(-1);
+        const productId = getLastPathSegment(config.url);
         const targetIndex = sampleProducts.findIndex(({ id }) => id === productId);
-        if (targetIndex < 0) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }];
+        if (targetIndex === -1) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }];
         sampleProducts.splice(targetIndex, 1);
         return [200, createMessageResponse('Product deleted')];
     });
@@ -539,7 +556,7 @@ export const initializeApiMocking = () => {
             return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }];
 
         const existingItemIndex = sampleCartItems.findIndex((item) => item.productId === productId);
-        if (existingItemIndex < 0) sampleCartItems.push({ productId, quantity: quantity || 1 });
+        if (existingItemIndex === -1) sampleCartItems.push({ productId, quantity: quantity || 1 });
         else sampleCartItems[existingItemIndex].quantity = quantity || sampleCartItems[existingItemIndex].quantity;
         sampleCartItems = sampleCartItems.filter((item) => item.quantity > 0);
         return [200, getCartResponse()];
@@ -557,20 +574,20 @@ export const initializeApiMocking = () => {
     });
 
     mockAdapter.onPut(/\/cart\/[^/]+(?:\?.*)?$/).reply((config) => {
-        const productId = getPathSegments(config.url).at(-1);
+        const productId = getLastPathSegment(config.url);
         const requestBody = parseRequestBody<Record<string, unknown>>(config.data);
         const quantity = Math.max(0, Number(requestBody.quantity ?? 0));
         if (!productId || !sampleProducts.some((product) => product.id === productId))
             return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }];
         const existingItemIndex = sampleCartItems.findIndex((item) => item.productId === productId);
-        if (existingItemIndex < 0) sampleCartItems.push({ productId, quantity: quantity || 1 });
+        if (existingItemIndex === -1) sampleCartItems.push({ productId, quantity: quantity || 1 });
         else sampleCartItems[existingItemIndex].quantity = quantity;
         sampleCartItems = sampleCartItems.filter((item) => item.quantity > 0);
         return [200, getCartResponse()];
     });
 
     mockAdapter.onDelete(/\/cart\/[^/]+(?:\?.*)?$/).reply((config) => {
-        const productId = getPathSegments(config.url).at(-1);
+        const productId = getLastPathSegment(config.url);
         sampleCartItems = sampleCartItems.filter((item) => item.productId !== productId);
         return [200, getCartResponse()];
     });
@@ -590,9 +607,9 @@ export const initializeApiMocking = () => {
         return [201, { order: createdOrder, message: 'Checkout completed' }];
     });
 
-    mockAdapter.onGet(/\/orders\/[^/]+\/invoice(?:\?.*)?$/).reply(200, createMockInvoicePdf(), {
-        'Content-Type': 'application/pdf'
-    });
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    const pdfHeaders: Record<string, string> = { 'Content-Type': 'application/pdf' };
+    mockAdapter.onGet(/\/orders\/[^/]+\/invoice(?:\?.*)?$/).reply(200, createMockInvoicePdf(), pdfHeaders);
 
     mockAdapter.onGet(/\/orders(?:\?.*)?$/).reply((config) => replyOrdersList(config.url, config.params));
 
@@ -612,7 +629,7 @@ export const initializeApiMocking = () => {
     mockAdapter.onPut(/\/orders(?:\?.*)?$/).reply((config) => {
         const requestBody = parseRequestBody<UpdateOrderRequest>(config.data);
         const targetIndex = sampleOrders.findIndex(({ id }) => id === requestBody.id);
-        if (targetIndex < 0) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } }];
+        if (targetIndex === -1) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } }];
         const updatedOrder: Order = {
             ...sampleOrders[targetIndex],
             userId: requestBody.userId ?? sampleOrders[targetIndex].userId,
@@ -629,7 +646,7 @@ export const initializeApiMocking = () => {
         const requestBody = parseRequestBody<Record<string, unknown>>(config.data);
         const targetId = String(requestBody.id ?? '');
         const targetIndex = sampleOrders.findIndex(({ id }) => id === targetId);
-        if (targetIndex < 0) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } }];
+        if (targetIndex === -1) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } }];
         sampleOrders.splice(targetIndex, 1);
         return [200, createMessageResponse('Order deleted')];
     });
@@ -640,16 +657,16 @@ export const initializeApiMocking = () => {
     });
 
     mockAdapter.onGet(/\/orders\/[^/]+(?:\?.*)?$/).reply((config) => {
-        const orderId = getPathSegments(config.url).at(-1);
+        const orderId = getLastPathSegment(config.url);
         const targetOrder = sampleOrders.find((order) => order.id === orderId);
         if (!targetOrder) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } }];
         return [200, targetOrder];
     });
 
     mockAdapter.onPut(/\/orders\/[^/]+(?:\?.*)?$/).reply((config) => {
-        const orderId = getPathSegments(config.url).at(-1);
+        const orderId = getLastPathSegment(config.url);
         const targetIndex = sampleOrders.findIndex(({ id }) => id === orderId);
-        if (targetIndex < 0) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } }];
+        if (targetIndex === -1) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } }];
         const requestBody = parseRequestBody<UpdateOrderByIdRequest>(config.data);
         const updatedOrder: Order = {
             ...sampleOrders[targetIndex],
@@ -664,9 +681,9 @@ export const initializeApiMocking = () => {
     });
 
     mockAdapter.onDelete(/\/orders\/[^/]+(?:\?.*)?$/).reply((config) => {
-        const orderId = getPathSegments(config.url).at(-1);
+        const orderId = getLastPathSegment(config.url);
         const targetIndex = sampleOrders.findIndex(({ id }) => id === orderId);
-        if (targetIndex < 0) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } }];
+        if (targetIndex === -1) return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } }];
         sampleOrders.splice(targetIndex, 1);
         return [200, createMessageResponse('Order deleted')];
     });
@@ -674,4 +691,3 @@ export const initializeApiMocking = () => {
     mockAdapterInstance = mockAdapter;
     return mockAdapterInstance;
 };
-
