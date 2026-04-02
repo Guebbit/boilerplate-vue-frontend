@@ -1,5 +1,9 @@
 {
     "extends": "./tsconfig.app.json",
+    "include": [
+        "api/**/*.ts",
+        "src/**/*"
+    ],
     "exclude": [],
     "compilerOptions": {
         "composite": true,

@@ -1,5 +1,4 @@
 import type { AxiosAdapter, AxiosRequestConfig, AxiosResponse } from 'axios';
-import httpClient from '@/utils/http.ts';
 import type {
     AuthTokens,
     CartItem,
@@ -41,7 +40,7 @@ interface IFakeDatabase {
     tokenCounter: number;
 }
 
-const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+const clone = <T>(value: T): T => structuredClone(value);
 
 const nowIso = () => new Date().toISOString();
 
@@ -155,11 +154,10 @@ const seedDatabase = (): IFakeDatabase => {
     };
 };
 
-let fakeDb = seedDatabase();
-let isFakeApiInstalled = false;
+let fakeDatabase = seedDatabase();
 
 export const resetFakeApiState = () => {
-    fakeDb = seedDatabase();
+    fakeDatabase = seedDatabase();
 };
 
 const readUrl = (url = '') => {
@@ -171,7 +169,7 @@ const readUrl = (url = '') => {
 
 const getHeader = (config: AxiosRequestConfig, key: string) => {
     const headers = config.headers;
-    if (!headers) return undefined;
+    if (!headers) return;
     if (typeof (headers as { get?: (name: string) => unknown }).get === 'function') {
         const value = (headers as { get: (name: string) => unknown }).get(key);
         if (typeof value === 'string') return value;
@@ -187,6 +185,7 @@ const readBody = (config: AxiosRequestConfig): Record<string, unknown> => {
 
     if (typeof FormData !== 'undefined' && rawBody instanceof FormData) {
         const data: Record<string, unknown> = {};
+        // eslint-disable-next-line unicorn/no-array-for-each -- FormData exposes forEach as its standard iteration API
         rawBody.forEach((value, key) => {
             data[key] = value;
         });
@@ -257,7 +256,10 @@ const response = <T>(
     status,
     statusText: toStatusText(status),
     headers: {},
-    config: config as AxiosRequestConfig,
+    config: {
+        ...config,
+        headers: config.headers ?? {}
+    } as AxiosResponse<T>['config'],
     request: {}
 });
 
@@ -269,9 +271,9 @@ const makeSuccess = <T>(status: number, data: T, message = 'ok'): IFakeSuccessRe
 });
 
 const makeToken = (userId: string): string => {
-    fakeDb.tokenCounter += 1;
-    const token = `fake-token-${userId}-${fakeDb.tokenCounter}`;
-    fakeDb.tokens[token] = userId;
+    fakeDatabase.tokenCounter += 1;
+    const token = `fake-token-${userId}-${fakeDatabase.tokenCounter}`;
+    fakeDatabase.tokens[token] = userId;
     return token;
 };
 
@@ -279,8 +281,8 @@ const getAuthedUser = (config: AxiosRequestConfig): IFakeUser | undefined => {
     const authorization = getHeader(config, 'Authorization');
     if (!authorization?.startsWith('Bearer ')) return undefined;
     const token = authorization.slice('Bearer '.length);
-    const userId = fakeDb.tokens[token];
-    return fakeDb.users.find((user) => user.id === userId);
+    const userId = fakeDatabase.tokens[token];
+    return fakeDatabase.users.find((user) => user.id === userId);
 };
 
 const mustBeAuthed = (config: AxiosRequestConfig): IFakeUser | IFakeErrorResponse => {
@@ -297,13 +299,15 @@ const mustBeAdmin = (
 };
 
 const calculateCartResponse = (userId: string): CartResponse => {
-    const cartItems = fakeDb.carts[userId] ?? [];
-    const totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-    const total = cartItems.reduce((sum, item) => {
-        const product = fakeDb.products.find((p) => p.id === item.productId);
-        if (!product) return sum;
-        return sum + product.price * item.quantity;
-    }, 0);
+    const cartItems = fakeDatabase.carts[userId] ?? [];
+    let totalQuantity = 0;
+    let total = 0;
+    for (const item of cartItems) {
+        totalQuantity += item.quantity;
+        const product = fakeDatabase.products.find((productItem) => productItem.id === item.productId);
+        if (!product) continue;
+        total += product.price * item.quantity;
+    }
 
     return {
         items: clone(cartItems),
@@ -324,7 +328,7 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
     if (method === 'post' && pathname === '/account/login') {
         const email = String(body.email ?? '');
         const password = String(body.password ?? '');
-        const user = fakeDb.users.find((item) => item.email === email && item.password === password);
+        const user = fakeDatabase.users.find((item) => item.email === email && item.password === password);
         if (!user) return response(config, 401, authError());
 
         const authData: AuthTokens = {
@@ -340,7 +344,7 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
         const createdUser: IFakeUser = {
             id: userId,
             email: String(body.email ?? ''),
-            username: String(body.username ?? body.email ?? `user-${fakeDb.users.length + 1}`),
+            username: String(body.username ?? body.email ?? `user-${Date.now()}`),
             password: String(body.password ?? 'ChangeMe_123'),
             admin: false,
             active: true,
@@ -348,12 +352,12 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
             createdAt: nowIso(),
             updatedAt: nowIso()
         };
-        fakeDb.users.push(createdUser);
+        fakeDatabase.users.push(createdUser);
         return response(config, 201, makeSuccess(201, sanitizeUser(createdUser), 'Created'));
     }
 
     if (method === 'get' && pathname === '/account/refresh') {
-        const rootUser = fakeDb.users.find((user) => user.email === 'root@root.it');
+        const rootUser = fakeDatabase.users.find((user) => user.email === 'root@root.it');
         if (!rootUser) return response(config, 500, notFoundError());
         const refreshData: RefreshTokenResponse = {
             token: makeToken(rootUser.id),
@@ -366,9 +370,9 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
     if (method === 'post' && pathname === '/account/logout-all') {
         const user = mustBeAuthed(config);
         if ('errors' in user) return response(config, 401, user);
-        const tokenToDelete = Object.entries(fakeDb.tokens).find(([, id]) => id === user.id)?.[0];
-        if (tokenToDelete) delete fakeDb.tokens[tokenToDelete];
-        const success: MessageResponse = { message: 'Logged out' };
+        const tokenToDelete = Object.entries(fakeDatabase.tokens).find(([, id]) => id === user.id)?.[0];
+        if (tokenToDelete) delete fakeDatabase.tokens[tokenToDelete];
+        const success: MessageResponse = { success: true, message: 'Logged out' };
         return response(config, 200, makeSuccess(200, success, 'Logged out'));
     }
 
@@ -384,19 +388,19 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
         const text = (searchParams.get('text') ?? '').toLowerCase();
 
         const filtered = text
-            ? fakeDb.products.filter(
+            ? fakeDatabase.products.filter(
                 (product) =>
                     product.title.toLowerCase().includes(text) ||
                     (product.description ?? '').toLowerCase().includes(text)
             )
-            : fakeDb.products;
+            : fakeDatabase.products;
         const pageData = paginate(filtered, page, pageSize);
         return response(config, 200, makeSuccess(200, pageData));
     }
 
     if (method === 'get' && pathname.startsWith('/products/')) {
         const productId = pathname.replace('/products/', '');
-        const product = fakeDb.products.find((item) => item.id === productId);
+        const product = fakeDatabase.products.find((item) => item.id === productId);
         if (!product) return response(config, 404, notFoundError());
         return response(config, 200, makeSuccess(200, clone(product)));
     }
@@ -414,7 +418,7 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
             createdAt: nowIso(),
             updatedAt: nowIso()
         };
-        fakeDb.products.push(created);
+        fakeDatabase.products.push(created);
         return response(config, 201, makeSuccess(201, created, 'Created'));
     }
 
@@ -422,7 +426,7 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
         const admin = mustBeAdmin(config);
         if ('errors' in admin) return response(config, admin.status, admin);
         const productId = pathname.replace('/products/', '');
-        const product = fakeDb.products.find((item) => item.id === productId);
+        const product = fakeDatabase.products.find((item) => item.id === productId);
         if (!product) return response(config, 404, notFoundError());
         product.title = String(body.title ?? product.title);
         product.price = parseNumber(body.price, product.price);
@@ -436,7 +440,7 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
         const admin = mustBeAdmin(config);
         if ('errors' in admin) return response(config, admin.status, admin);
         const productId = pathname.replace('/products/', '');
-        fakeDb.products = fakeDb.products.filter((item) => item.id !== productId);
+        fakeDatabase.products = fakeDatabase.products.filter((item) => item.id !== productId);
         return response(config, 200, makeSuccess(200, { message: 'Deleted' }));
     }
 
@@ -445,7 +449,7 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
         if ('errors' in admin) return response(config, admin.status, admin);
         const page = Number.parseInt(searchParams.get('page') ?? '1', 10);
         const pageSize = Number.parseInt(searchParams.get('pageSize') ?? '10', 10);
-        const items = fakeDb.users.map(sanitizeUser);
+        const items = fakeDatabase.users.map((user) => sanitizeUser(user));
         const pageData = paginate(items, page, pageSize);
         return response(config, 200, makeSuccess(200, pageData));
     }
@@ -454,7 +458,7 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
         const admin = mustBeAdmin(config);
         if ('errors' in admin) return response(config, admin.status, admin);
         const userId = pathname.replace('/users/', '');
-        const user = fakeDb.users.find((item) => item.id === userId);
+        const user = fakeDatabase.users.find((item) => item.id === userId);
         if (!user) return response(config, 404, notFoundError());
         return response(config, 200, makeSuccess(200, sanitizeUser(user)));
     }
@@ -473,7 +477,7 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
             createdAt: nowIso(),
             updatedAt: nowIso()
         };
-        fakeDb.users.push(createdUser);
+        fakeDatabase.users.push(createdUser);
         return response(config, 201, makeSuccess(201, sanitizeUser(createdUser), 'Created'));
     }
 
@@ -481,7 +485,7 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
         const admin = mustBeAdmin(config);
         if ('errors' in admin) return response(config, admin.status, admin);
         const userId = pathname.replace('/users/', '');
-        const user = fakeDb.users.find((item) => item.id === userId);
+        const user = fakeDatabase.users.find((item) => item.id === userId);
         if (!user) return response(config, 404, notFoundError());
         user.email = String(body.email ?? user.email);
         user.username = String(body.username ?? user.username);
@@ -496,7 +500,7 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
         const admin = mustBeAdmin(config);
         if ('errors' in admin) return response(config, admin.status, admin);
         const userId = pathname.replace('/users/', '');
-        fakeDb.users = fakeDb.users.filter((item) => item.id !== userId);
+        fakeDatabase.users = fakeDatabase.users.filter((item) => item.id !== userId);
         return response(config, 200, makeSuccess(200, { message: 'Deleted' }));
     }
 
@@ -511,11 +515,11 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
         if ('errors' in user) return response(config, 401, user);
         const productId = String(body.productId ?? '');
         const quantity = Math.max(1, parseNumber(body.quantity, 1));
-        const cartItems = fakeDb.carts[user.id] ?? [];
+        const cartItems = fakeDatabase.carts[user.id] ?? [];
         const existing = cartItems.find((item) => item.productId === productId);
         if (existing) existing.quantity = quantity;
         else cartItems.push({ productId, quantity });
-        fakeDb.carts[user.id] = cartItems;
+        fakeDatabase.carts[user.id] = cartItems;
         return response(config, 200, makeSuccess(200, calculateCartResponse(user.id)));
     }
 
@@ -524,11 +528,11 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
         if ('errors' in user) return response(config, 401, user);
         const productId = pathname.replace('/cart/', '');
         const quantity = Math.max(1, parseNumber(body.quantity, 1));
-        const cartItems = fakeDb.carts[user.id] ?? [];
+        const cartItems = fakeDatabase.carts[user.id] ?? [];
         const existing = cartItems.find((item) => item.productId === productId);
         if (!existing) return response(config, 404, notFoundError());
         existing.quantity = quantity;
-        fakeDb.carts[user.id] = cartItems;
+        fakeDatabase.carts[user.id] = cartItems;
         return response(config, 200, makeSuccess(200, calculateCartResponse(user.id)));
     }
 
@@ -536,7 +540,7 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
         const user = mustBeAuthed(config);
         if ('errors' in user) return response(config, 401, user);
         const productId = pathname.replace('/cart/', '');
-        fakeDb.carts[user.id] = (fakeDb.carts[user.id] ?? []).filter((item) => item.productId !== productId);
+        fakeDatabase.carts[user.id] = (fakeDatabase.carts[user.id] ?? []).filter((item) => item.productId !== productId);
         return response(config, 200, makeSuccess(200, calculateCartResponse(user.id)));
     }
 
@@ -544,9 +548,9 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
         const user = mustBeAuthed(config);
         if ('errors' in user) return response(config, 401, user);
         const productId = typeof body.productId === 'string' ? body.productId : undefined;
-        if (productId)
-            fakeDb.carts[user.id] = (fakeDb.carts[user.id] ?? []).filter((item) => item.productId !== productId);
-        else fakeDb.carts[user.id] = [];
+        fakeDatabase.carts[user.id] = productId
+            ? (fakeDatabase.carts[user.id] ?? []).filter((item) => item.productId !== productId)
+            : [];
         return response(config, 200, makeSuccess(200, calculateCartResponse(user.id)));
     }
 
@@ -573,8 +577,8 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
             createdAt: nowIso(),
             updatedAt: nowIso()
         };
-        fakeDb.orders.unshift(order);
-        fakeDb.carts[user.id] = [];
+        fakeDatabase.orders.unshift(order);
+        fakeDatabase.carts[user.id] = [];
         const checkoutResponse: CheckoutResponse = {
             order,
             message: 'Order placed successfully'
@@ -588,8 +592,8 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
         const page = Number.parseInt(searchParams.get('page') ?? '1', 10);
         const pageSize = Number.parseInt(searchParams.get('pageSize') ?? '10', 10);
         const visibleOrders = user.admin
-            ? fakeDb.orders
-            : fakeDb.orders.filter((order) => order.userId === user.id);
+            ? fakeDatabase.orders
+            : fakeDatabase.orders.filter((order) => order.userId === user.id);
         const pageData = paginate(visibleOrders, page, pageSize);
         return response(config, 200, makeSuccess(200, pageData));
     }
@@ -598,7 +602,7 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
         const user = mustBeAuthed(config);
         if ('errors' in user) return response(config, 401, user);
         const id = pathname.replace('/orders/', '').replace('/invoice', '');
-        const order = fakeDb.orders.find((item) => item.id === id);
+        const order = fakeDatabase.orders.find((item) => item.id === id);
         if (!order) return response(config, 404, notFoundError());
         const invoiceContent = `Invoice for order ${order.id}\nTotal: ${order.total}\n`;
         const blob = new Blob([invoiceContent], { type: 'application/pdf' });
@@ -609,7 +613,7 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
         const user = mustBeAuthed(config);
         if ('errors' in user) return response(config, 401, user);
         const id = pathname.replace('/orders/', '');
-        const order = fakeDb.orders.find((item) => item.id === id);
+        const order = fakeDatabase.orders.find((item) => item.id === id);
         if (!order) return response(config, 404, notFoundError());
         return response(config, 200, makeSuccess(200, clone(order)));
     }
@@ -618,7 +622,7 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
         const admin = mustBeAdmin(config);
         if ('errors' in admin) return response(config, admin.status, admin);
         const id = pathname.replace('/orders/', '');
-        const order = fakeDb.orders.find((item) => item.id === id);
+        const order = fakeDatabase.orders.find((item) => item.id === id);
         if (!order) return response(config, 404, notFoundError());
         if (body.status) order.status = String(body.status) as OrderStatusEnum;
         if (body.email) order.email = String(body.email);
@@ -631,14 +635,14 @@ const fakeApiHandler = (config: AxiosRequestConfig): AxiosResponse<unknown> => {
         const admin = mustBeAdmin(config);
         if ('errors' in admin) return response(config, admin.status, admin);
         const id = pathname.replace('/orders/', '');
-        fakeDb.orders = fakeDb.orders.filter((item) => item.id !== id);
+        fakeDatabase.orders = fakeDatabase.orders.filter((item) => item.id !== id);
         return response(config, 200, makeSuccess(200, { message: 'Deleted' }));
     }
 
     return response(config, 404, notFoundError());
 };
 
-export const createFakeApiAdapter = (): AxiosAdapter => async (config) =>
+export const fakeApiAdapter: AxiosAdapter = async (config) =>
     fakeApiHandler(config as AxiosRequestConfig);
 
 export const shouldEnableFakeApi = () => {
@@ -648,16 +652,4 @@ export const shouldEnableFakeApi = () => {
         import.meta.env.MODE === 'test' ||
         hasCypress
     );
-};
-
-export const setupFakeApi = (resetState = false) => {
-    if (resetState) resetFakeApiState();
-    if (isFakeApiInstalled) return;
-    httpClient.defaults.adapter = createFakeApiAdapter();
-    isFakeApiInstalled = true;
-};
-
-export const setupFakeApiIfEnabled = () => {
-    if (!shouldEnableFakeApi()) return;
-    setupFakeApi();
 };
