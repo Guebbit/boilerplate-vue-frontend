@@ -19,7 +19,6 @@ export const getAccessToken = () => {
     const { accessToken } = storeToRefs(useProfileStore());
     return accessToken.value;
 };
-getAccessToken();
 
 /**
  *
