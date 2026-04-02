@@ -12,6 +12,7 @@ export default [
     {
         path: 'signup',
         name: 'Signup',
+        beforeEnter: [isGuest],
         component: () => import('@/views/Signup.vue')
     },
     {
