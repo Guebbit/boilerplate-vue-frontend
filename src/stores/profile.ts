@@ -16,12 +16,13 @@ const isWrappedResponse = <T>(response: unknown): response is { data?: T } =>
 
 const getTokenFromResponse = (
     response?: { data?: { token?: string } } | AuthTokens | RefreshTokenResponse
-) => {
+): string | undefined => {
     if (isObjectRecord(response)) {
         const maybeToken = (response as Record<string, unknown>).token;
         if (typeof maybeToken === 'string') return maybeToken;
     }
     if (isWrappedResponse<{ token?: string }>(response)) return response.data?.token;
+    return undefined;
 };
 
 /**

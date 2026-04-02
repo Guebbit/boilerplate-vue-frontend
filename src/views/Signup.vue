@@ -155,7 +155,7 @@ const submitForm = () =>
         await signup(
             form.value.email!,
             form.value.password!,
-            form.value.username ?? form.value.email!,
+            form.value.username,
             form.value.passwordConfirm!
         );
         await fetchProfile();
