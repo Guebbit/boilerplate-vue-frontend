@@ -53,7 +53,7 @@ export const useUsersStore = defineStore('users', () => {
      * @param pageSize
      * @param forced
      */
-    const fetchPaginationUsers = (page = 1, pageSize = 9, forced = false) =>
+    const fetchPaginationUsers = (page = 1, pageSize = 10, forced = false) =>
         fetchAny(
             () =>
                 usersApi.listUsers(page, pageSize).then(({ data }) => {
