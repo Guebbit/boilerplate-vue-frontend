@@ -17,5 +17,9 @@
  
 import './commands';
 
+Cypress.on('window:before:load', (win) => {
+    win.document.cookie = 'isAuth=1; path=/';
+});
+
 // Alternatively you can use CommonJS syntax:
 // require('./commands')

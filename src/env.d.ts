@@ -8,6 +8,7 @@ interface ImportMetaEnv {
     readonly VITE_API_URL: string | undefined;
     readonly VITE_API_WEBSOCKET: string | undefined;
     readonly VITE_AXIOS_TIMEOUT: string | undefined;
+    readonly VITE_USE_FAKE_API: string | undefined;
 }
 
 interface ImportMeta {
