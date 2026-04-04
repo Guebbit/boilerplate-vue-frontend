@@ -12,11 +12,17 @@ import ordersRoutes from './ordersRoutes.ts';
 
 import HomeView from '@/views/Home.vue';
 
+const isRouterDebugEnabled = import.meta.env.DEV && import.meta.env.VITE_APP_DEBUG_ROUTER === 'true';
+
 const router = createRouter({
     history: createWebHistory(import.meta.env.VITE_APP_BASE_URL),
     routes: [
         {
-            path: '/:locale?',
+            path: '/',
+            redirect: () => `/${getDefaultLocale()}/`
+        },
+        {
+            path: '/:locale',
             component: RouterView,
             beforeEnter: [demoMiddleware],
             children: [
@@ -56,12 +62,12 @@ const router = createRouter({
                  * Catch all route for all wrong routes
                  */
                 {
-                    path: '/:catchAll(.*)',
+                    path: ':catchAll(.*)*',
                     redirect: {
                         name: 'Error',
                         params: {
                             status: 404,
-                            message: 'WRONG ROUTE'
+                            message: 'error-page.not-found'
                         }
                     }
                 }
@@ -72,8 +78,15 @@ const router = createRouter({
          * Catch if a route doesn't have the locale and assign one
          */
         {
-            path: '/:catchAll(.*)',
-            redirect: `/${getDefaultLocale()}/`
+            path: '/:catchAll(.*)*',
+            redirect: {
+                name: 'Error',
+                params: {
+                    locale: getDefaultLocale(),
+                    status: 404,
+                    message: 'error-page.not-found'
+                }
+            }
         }
     ]
 });
@@ -89,7 +102,7 @@ router.onError((error: Error) => {
         name: 'Error',
         params: {
             status: 500,
-            message: error.message
+            message: error.message || 'error-page.unexpected'
         }
     });
 });
@@ -110,8 +123,10 @@ router.onError((error: Error) => {
  *  - In-component beforeRouteLeave
  */
 router.beforeEach((to, from, next) => {
-    // eslint-disable-next-line no-console
-    console.log(`Navigating from ${from.path} to ${to.path}`);
+    if (isRouterDebugEnabled) {
+        // eslint-disable-next-line no-console
+        console.log(`Navigating from ${from.path} to ${to.path}`);
+    }
     next();
 });
 

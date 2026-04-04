@@ -113,7 +113,6 @@ export default {
 import { ref, inject, watch, onMounted, onUnmounted } from 'vue';
 import type { Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { storeToRefs } from 'pinia';
 
 import { useCoreStore } from '@/stores/core';
 import { useCounterStore } from '@/stores/counter';
@@ -123,6 +122,8 @@ import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import CounterInput from '@/components/atoms/CounterInput.vue';
 
 import type { IProvidedVariableMutationFunction, IProvidedVariableType } from '@/types';
+
+const isDebugEnabled = import.meta.env.DEV && import.meta.env.VITE_APP_DEBUG_HOME === 'true';
 
 /**
  * Use translation
@@ -141,25 +142,33 @@ const testAddMessage = () => {
 /**
  * Loading examples
  */
-const { loadings } = storeToRefs(useCoreStore());
+const { startLoading, stopLoading } = useCoreStore();
 
 /**
  * Loading examples
  */
-// eslint-disable-next-line no-console
-console.log('fake core loading START');
-loadings.value.core = true;
+if (isDebugEnabled) {
+    // eslint-disable-next-line no-console
+    console.log('fake core loading START');
+}
+startLoading('core');
 setTimeout(() => {
-    // eslint-disable-next-line no-console
-    console.log('fake core loading END');
-    loadings.value.core = false;
-    // eslint-disable-next-line no-console
-    console.log('fake side (smaller) loading START');
-    loadings.value.usersList = true;
-    setTimeout(() => {
+    if (isDebugEnabled) {
         // eslint-disable-next-line no-console
-        console.log('fake side (smaller) loading END');
-        loadings.value.usersList = false;
+        console.log('fake core loading END');
+    }
+    stopLoading('core');
+    if (isDebugEnabled) {
+        // eslint-disable-next-line no-console
+        console.log('fake side (smaller) loading START');
+    }
+    startLoading('usersList');
+    setTimeout(() => {
+        if (isDebugEnabled) {
+            // eslint-disable-next-line no-console
+            console.log('fake side (smaller) loading END');
+        }
+        stopLoading('usersList');
     }, 4000);
 }, 500);
 
@@ -194,18 +203,26 @@ const { providedVariable, setProvidedVariable } = inject<{
  */
 
 watch(providedVariable, (val) => {
-    // eslint-disable-next-line no-console
-    console.log('Provided ref changed', val);
+    if (isDebugEnabled) {
+        // eslint-disable-next-line no-console
+        console.log('Provided ref changed', val);
+    }
 });
 
 /**
  * Created and mounted
  */
-// eslint-disable-next-line no-console
-console.log('HOME was created');
+if (isDebugEnabled) {
+    // eslint-disable-next-line no-console
+    console.log('HOME was created');
+}
 
-// eslint-disable-next-line no-console
-onMounted(() => console.log('HOME was mounted'));
+onMounted(() => {
+    if (isDebugEnabled) {
+        // eslint-disable-next-line no-console
+        console.log('HOME was mounted');
+    }
+});
 
 /**
  * Websocket
@@ -218,8 +235,10 @@ onMounted(() => {
         },
         onMessage: (ws, { data }) => {
             websocketMessages.value.push(data);
-            // eslint-disable-next-line no-console
-            console.log('Message received', data);
+            if (isDebugEnabled) {
+                // eslint-disable-next-line no-console
+                console.log('Message received', data);
+            }
         }
     });
     onUnmounted(() => {

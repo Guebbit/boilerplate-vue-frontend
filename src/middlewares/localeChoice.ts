@@ -10,7 +10,6 @@ import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router';
 import en from '@/locales/en.json';
 import it from '@/locales/it.json';
 
-// TODO
 const languagesFakeDownload: Record<string, ITranslationDictionaries> = {
     en,
     it,

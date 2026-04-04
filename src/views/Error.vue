@@ -6,7 +6,7 @@
             </h1>
         </template>
 
-        <h3>{{ message }}</h3>
+        <h3>{{ normalizedMessage }}</h3>
     </LayoutDefault>
 </template>
 
@@ -19,6 +19,7 @@ export default {
 <script setup lang="ts">
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { useI18n } from 'vue-i18n';
+import { computed } from 'vue';
 
 const { message = '' } = defineProps<{
     status?: string;
@@ -29,4 +30,7 @@ const { message = '' } = defineProps<{
  * Generics
  */
 const { t } = useI18n();
+const normalizedMessage = computed(() =>
+    message.startsWith('error-page.') ? t(message) : message
+);
 </script>

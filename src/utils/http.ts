@@ -1,6 +1,12 @@
 import axiosClient from 'axios';
 import { getCurrentLocale } from '@/utils/i18n.ts';
-import type { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import type {
+    AxiosError,
+    AxiosResponse,
+    AxiosRequestConfig,
+    InternalAxiosRequestConfig,
+    AxiosInstance
+} from 'axios';
 import type { IResponseReject, IResponseSuccess } from '@/types';
 import { useProfileStore } from '@/stores/profile.ts';
 import { storeToRefs } from 'pinia';
@@ -9,8 +15,15 @@ import { storeToRefs } from 'pinia';
  * Extended request config with a custom flag to prevent refresh-retry loops
  */
 interface IAxiosRequestConfigDontRetry extends InternalAxiosRequestConfig {
-    _dontRetry: boolean;
+    _dontRetry?: boolean;
 }
+
+interface IAxiosInstanceWithDontRetry extends AxiosInstance {
+    request<T = unknown, R = AxiosResponse<T>, D = unknown>(config: AxiosRequestConfig<D>): Promise<R>;
+}
+
+const hasDontRetryFlag = (config?: AxiosRequestConfig): config is AxiosRequestConfig & { _dontRetry: boolean } =>
+    Boolean(config && '_dontRetry' in config && config._dontRetry);
 
 /**
  *
@@ -58,6 +71,7 @@ const instance = axiosClient.create({
     withCredentials: true,
     timeout: Number.parseInt(import.meta.env.VITE_AXIOS_TIMEOUT ?? '10000')
 });
+const instanceWithDontRetry = instance as IAxiosInstanceWithDontRetry;
 
 /**
  * Static Defaults
@@ -138,27 +152,27 @@ export const onResponseRejectWithRefresh = async (
     error: AxiosError<IAxiosResponseErrorData, IAxiosResponseErrorBody>
 ) => {
     const { accessToken } = storeToRefs(useProfileStore());
+    const originalRequest = error.config as (AxiosRequestConfig & { _dontRetry?: boolean }) | undefined;
     // If it's keycloak auth error:
     // refresh the token and retry the request if not already retried
-    if (error.response?.status === 401 && !Object.hasOwnProperty.call(error.config, '_dontRetry'))
+    if (error.response?.status === 401 && !hasDontRetryFlag(originalRequest))
         return instance
             .get<unknown, IResponseSuccess<{ token: string }>>('/account/refresh', {
                 _dontRetry: true
             } as IAxiosRequestConfigDontRetry)
             .then(({ data }) => {
-            if (!data?.token || !error.config) return;
-            // if token is present, I'll retry the request
-            accessToken.value = data.token;
-            return instance.request({
-                ...error.config,
-                // @ts-expect-error _dontRetry is my custom property to understand if the request has already been retried
-                _dontRetry: true,
-                headers: {
-                    ...error.config.headers
-                    // Do not retry the request again
-                }
+                if (!data?.token || !originalRequest) return;
+                // if token is present, I'll retry the request
+                accessToken.value = data.token;
+                return instanceWithDontRetry.request({
+                    ...originalRequest,
+                    _dontRetry: true,
+                    headers: {
+                        ...originalRequest.headers
+                        // Do not retry the request again
+                    }
+                });
             });
-        });
     return onResponseReject(error);
     // if(config?.headers['Do-Not-Retry'])
     //     TODO LOGOUT
@@ -175,7 +189,6 @@ instance.interceptors.request.use(onRequest, onRequestReject);
  * Handle all responses
  * (Intercept and modify responses after they are received)
  */
-// @ts-expect-error TODO check
 instance.interceptors.response.use(onResponseSuccess, onResponseRejectWithRefresh);
 
 /**
