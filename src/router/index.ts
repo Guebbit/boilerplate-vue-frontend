@@ -19,7 +19,7 @@ const router = createRouter({
     routes: [
         {
             path: '/',
-            redirect: () => `/${getDefaultLocale()}/`
+            redirect: () => ({ path: `/${getDefaultLocale()}/` })
         },
         {
             path: '/:locale',
@@ -62,7 +62,7 @@ const router = createRouter({
                  * Catch all route for all wrong routes
                  */
                 {
-                    path: ':catchAll(.*)*',
+                    path: ':catchAll(.*)',
                     redirect: {
                         name: 'Error',
                         params: {
@@ -78,7 +78,7 @@ const router = createRouter({
          * Catch if a route doesn't have the locale and assign one
          */
         {
-            path: '/:catchAll(.*)*',
+            path: '/:catchAll(.*)',
             redirect: {
                 name: 'Error',
                 params: {
