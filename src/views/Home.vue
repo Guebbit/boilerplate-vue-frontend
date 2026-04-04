@@ -113,6 +113,7 @@ export default {
 import { ref, inject, watch, onMounted, onUnmounted } from 'vue';
 import type { Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
 
 import { useCoreStore } from '@/stores/core';
 import { useCounterStore } from '@/stores/counter';
