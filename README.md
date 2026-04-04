@@ -30,7 +30,7 @@ Vue 3 + TypeScript frontend boilerplate with:
 
 ## Environment variables
 
-Use `/home/runner/work/boilerplate-vue-frontend/boilerplate-vue-frontend/.env-example` as reference.
+Use `.env-example` as reference.
 
 - `VITE_APP_DEFAULT_LOCALE`: initial locale (example: `en`)
 - `VITE_APP_SUPPORTED_LOCALES`: comma-separated supported locales (example: `en,it,es`)
@@ -71,7 +71,7 @@ Use `/home/runner/work/boilerplate-vue-frontend/boilerplate-vue-frontend/.env-ex
 
 ## API generation flow
 
-1. Update `/home/runner/work/boilerplate-vue-frontend/boilerplate-vue-frontend/openapi.yaml`
+1. Update `openapi.yaml`
 2. Regenerate client:
    ```bash
    npm run genapi
