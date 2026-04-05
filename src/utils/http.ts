@@ -192,6 +192,10 @@ instance.interceptors.request.use(onRequest, onRequestReject);
  * Handle all responses
  * (Intercept and modify responses after they are received)
  */
+// NOTE:
+// Axios expects the success interceptor to return an AxiosResponse.
+// Our app-level API contract unwraps and returns only the response body envelope.
+// The cast keeps axios interceptor typing satisfied while preserving our app behavior.
 instance.interceptors.response.use(
     onResponseSuccess as unknown as (value: AxiosResponse) => AxiosResponse,
     onResponseRejectWithRefresh

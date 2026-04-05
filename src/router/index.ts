@@ -19,7 +19,12 @@ const router = createRouter({
     routes: [
         {
             path: '/',
-            redirect: () => ({ path: `/${getDefaultLocale()}/` })
+            redirect: () => ({
+                name: 'Home',
+                params: {
+                    locale: getDefaultLocale()
+                }
+            })
         },
         {
             path: '/:locale',
