@@ -1,5 +1,13 @@
 {
     "extends": "./tsconfig.app.json",
+    "include": [
+        "api",
+        "src/env.d.ts",
+        "src/**/*",
+        "src/**/*.vue",
+        "tests/unit/**/*.ts",
+        "tests/unit/**/*.tsx"
+    ],
     "exclude": [],
     "compilerOptions": {
         "composite": true,
