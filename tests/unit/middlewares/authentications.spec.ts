@@ -40,7 +40,7 @@ describe('authentications middleware', () => {
     });
 
     it('redirects guest to login for auth-only route', async () => {
-        const { isAuth } = await import('../authentications');
+        const { isAuth } = await import('@/middlewares/authentications');
 
         await isAuth(
             { fullPath: '/en/admin' } as never,
@@ -57,7 +57,7 @@ describe('authentications middleware', () => {
     });
 
     it('redirects authenticated user away from guest-only route', async () => {
-        const { isGuest } = await import('../authentications');
+        const { isGuest } = await import('@/middlewares/authentications');
         profileRefs.isAuth.value = true;
 
         await isGuest(
@@ -71,7 +71,7 @@ describe('authentications middleware', () => {
     });
 
     it('blocks non-admin on admin middleware', async () => {
-        const { isAdmin } = await import('../authentications');
+        const { isAdmin } = await import('@/middlewares/authentications');
         profileRefs.isAuth.value = true;
         profileRefs.isAdmin.value = false;
 

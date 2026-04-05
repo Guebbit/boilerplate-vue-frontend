@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { useCoreStore } from '../core';
+import { useCoreStore } from '@guebbit/vue-toolkit';
 
 describe('core store', () => {
     beforeEach(() => {
@@ -10,11 +10,11 @@ describe('core store', () => {
     it('manages loading states with helpers', () => {
         const store = useCoreStore();
 
-        store.startLoading('core');
+        store.setLoading('core', true);
         expect(store.getLoading('core')).toBe(true);
         expect(store.isLoading).toBe(true);
 
-        store.stopLoading('core');
+        store.setLoading('core', false);
         expect(store.getLoading('core')).toBe(false);
         expect(store.isLoading).toBe(false);
 
@@ -22,20 +22,7 @@ describe('core store', () => {
         expect(store.getLoading('usersList')).toBe(true);
 
         store.resetLoadings();
-        expect(store.getLoading('usersList')).toBeUndefined();
+        expect(store.getLoading('usersList')).toBe(false);
         expect(store.isLoading).toBe(false);
-    });
-
-    it('manages dialogs with helpers', () => {
-        const store = useCoreStore();
-
-        store.setDialog('deleteConfirm', true);
-        expect(store.getDialog('deleteConfirm')).toBe(true);
-
-        store.setDialog('deleteConfirm', false);
-        expect(store.getDialog('deleteConfirm')).toBe(false);
-
-        store.resetDialogs();
-        expect(store.getDialog('deleteConfirm')).toBeUndefined();
     });
 });
