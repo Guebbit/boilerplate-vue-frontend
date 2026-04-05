@@ -51,7 +51,6 @@ export const isGuest = async (
     await refreshAuth().finally(() => {
         // Already authenticated, send to home
         if (isAuth.value) {
-            // TODO i18n
             addMessage('navigation.error-already-logged');
             next({
                 name: 'Home'
@@ -81,7 +80,6 @@ export const isAuth = async (
     await refreshAuth().finally(() => {
         // Not authenticated, send to login
         if (!isAuth.value) {
-            // TODO i18n
             addMessage('navigation.error-not-logged');
             next(loginContinueTo(to.fullPath));
             return;
@@ -109,14 +107,12 @@ export const isAdmin = async (
     await refreshAuth().finally(() => {
         // Not authenticated, send to login
         if (!isAuth.value) {
-            // TODO i18n
             addMessage('navigation.error-not-logged');
             next(loginContinueTo(to.fullPath));
             return;
         }
         // Wrong roles, send home
         if (!isAdmin.value) {
-            // TODO i18n
             addMessage('navigation.error-forbidden');
             next({
                 name: 'Home'

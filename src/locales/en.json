@@ -37,7 +37,9 @@
         "page-title": "Admin Dashboard"
     },
     "error-page": {
-        "page-title": "Error"
+        "page-title": "Error",
+        "not-found": "Page not found",
+        "unexpected": "Unexpected error"
     },
     "products-list-page": {
         "page-title": "Products list",

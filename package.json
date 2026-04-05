@@ -18,7 +18,7 @@
         "prettier:fix": "npx prettier . --write",
         "test": "npm run test:unit && npm run test:e2e",
         "test:unit": "vitest run",
-        "test:unit:target": "vitest run src/components/atoms/__tests__/CounterInput.spec.ts",
+        "test:unit:target": "vitest run tests/unit/components/atoms/CounterInput.spec.ts",
         "test:e2e": "start-server-and-test preview http://localhost:4173 'cypress run --e2e'",
         "test:e2e:target": "start-server-and-test preview http://localhost:4173 'cypress run --e2e' --spec 'tests/e2e/xxxx.spec.ts'",
         "test:e2e:dev": "start-server-and-test 'vite dev --port 4173' http://localhost:4173 'cypress open --e2e'",
@@ -26,7 +26,7 @@
         "kill:gnu": "pkill -9 node",
         "genapi": "rm -rf api && openapi-generator-cli generate -i openapi.yaml -g typescript-axios -o ./api",
         "update:all": "npx npm-check-updates -u",
-        "complete": "npm run build && npm run test && npm run lint:fix && npm run prettier:fix && npm run docs:build",
+        "complete": "npm run build && npm run test && npm run lint:fix && npm run prettier:fix",
         "publish:public": "npm run complete && npm publish --access public"
     },
     "dependencies": {

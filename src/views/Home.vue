@@ -115,9 +115,8 @@ import type { Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 
-import { useCoreStore } from '@/stores/core';
 import { useCounterStore } from '@/stores/counter';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { createSocket } from '@/utils/helperSockets.ts';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import CounterInput from '@/components/atoms/CounterInput.vue';
@@ -141,25 +140,25 @@ const testAddMessage = () => {
 /**
  * Loading examples
  */
-const { loadings } = storeToRefs(useCoreStore());
+const coreStore = useCoreStore();
 
 /**
  * Loading examples
  */
 // eslint-disable-next-line no-console
 console.log('fake core loading START');
-loadings.value.core = true;
+coreStore.setLoading('core', true);
 setTimeout(() => {
     // eslint-disable-next-line no-console
     console.log('fake core loading END');
-    loadings.value.core = false;
+    coreStore.setLoading('core', false);
     // eslint-disable-next-line no-console
     console.log('fake side (smaller) loading START');
-    loadings.value.usersList = true;
+    coreStore.setLoading('usersList', true);
     setTimeout(() => {
         // eslint-disable-next-line no-console
         console.log('fake side (smaller) loading END');
-        loadings.value.usersList = false;
+        coreStore.setLoading('usersList', false);
     }, 4000);
 }, 500);
 
@@ -204,8 +203,10 @@ watch(providedVariable, (val) => {
 // eslint-disable-next-line no-console
 console.log('HOME was created');
 
-// eslint-disable-next-line no-console
-onMounted(() => console.log('HOME was mounted'));
+onMounted(() => {
+    // eslint-disable-next-line no-console
+    console.log('HOME was mounted');
+});
 
 /**
  * Websocket

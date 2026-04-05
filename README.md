@@ -1,47 +1,89 @@
-# Instructions
+# boilerplate-vue-frontend
 
-- Check the .dev folder for Insomnia api structure
-    - the insomnia.json file is an insomnia collection
-    - Install insomnia-plugin-export-to-openapi (hoping is still up to date)
-    - Menu at the right of the collection name (Insomnia 12) -> Export to OpenAPI 3 -> create openapi.yaml
+Vue 3 + TypeScript frontend boilerplate with:
+- Vite
+- Pinia
+- Vue Router
+- Vue I18n
+- OpenAPI-generated axios client
+- Vitest + Cypress
 
-# TODO
+## Requirements
 
-- Always call useXYZStore() inside functions, not at the top level — avoids circular dependency issues (unless it is specifically dependent)
-- Merge boilerplate-nuxt
-- Do Vitest tests
-- Do Cypress tests
-- Create skeleton version
-- From skeleton: css-ui version
-    - remember to take old \_root.scss and old \_cards.scss (for simple-card) from older commits
-- From skeleton: vuetify version
-- From skeleton: quasar version
+- Node.js 22+
+- npm
 
-# MAYBE?
+## Setup
 
-- Extend use18n (or create a new use18n) to add some custom functions now present in the utils/i18n.ts
-- From skeleton: bootstrap version
+1. Install dependencies:
+   ```bash
+   npm ci
+   ```
+2. Create your environment file:
+   ```bash
+   cp .env-example .env
+   ```
+3. Start dev server:
+   ```bash
+   npm run dev
+   ```
 
-Vue3
-https://blog.vuejs.org/posts/vue-3-2
-https://blog.vuejs.org/posts/vue-3-3
-https://blog.vuejs.org/posts/vue-3-4
-https://blog.stackademic.com/learn-these-new-features-in-vue-3-5-now-2909e24aa58d
-https://vuejs.org/guide/components/v-model.html
+## Environment variables
 
-Nuxt
-https://nuxt.com/docs/getting-started/installation
-https://nuxt.com/docs/getting-started/assets
-https://nuxt.com/docs/guide/directory-structure/plugins
+Use `.env-example` as reference.
 
-Typescript
-https://vuejs.org/guide/typescript/overview.html
-https://vuejs.org/guide/typescript/composition-api.html
+- `VITE_APP_DEFAULT_LOCALE`: initial locale (example: `en`)
+- `VITE_APP_SUPPORTED_LOCALES`: comma-separated supported locales (example: `en,it,es`)
+- `VITE_APP_PUBLIC_PATH`: public path
+- `VITE_APP_BASE_URL`: router history base URL (optional)
+- `VITE_API_URL`: backend API base URL
+- `VITE_API_WEBSOCKET`: websocket URL used by demo page
+- `VITE_API_MOCK_ENABLED`: enable API mocking (`true`/`false`)
+- `VITE_AXIOS_TIMEOUT`: axios timeout in ms
+- `VITE_APP_DEBUG_ROUTER`: enable router debug logs in dev (`true`/`false`)
+- `VITE_APP_DEBUG_HOME`: enable Home view demo logs in dev (`true`/`false`)
 
-Transform in REACT boilerplate
-https://sebastiandedeyne.com/react-for-vue-developers/#templates
-https://legacy.reactjs.org/blog/2018/09/10/introducing-the-react-profiler.html
+## Scripts
 
-Check
-https://lighthouse-metrics.com/lighthouse/checks/0a63a778-592d-4ae0-bf68-22c3cf8524a3
-https://medium.com/@blessingmba3/micro-frontends-with-vue-js-breaking-down-monolithic-structures-aac15f053047
+- `npm run dev`: start Vite dev server
+- `npm run build`: type-check + build
+- `npm run preview`: preview built app
+- `npm run lint`: run ESLint
+- `npm run lint:fix`: run ESLint autofix
+- `npm run lint:openapi`: lint `openapi.yaml` with Spectral
+- `npm run prettier`: run Prettier check
+- `npm run prettier:fix`: run Prettier write
+- `npm run test:unit`: run Vitest unit tests
+- `npm run test:e2e`: run Cypress e2e tests
+- `npm run genapi`: regenerate API client from `openapi.yaml`
+
+## Architecture overview
+
+- `/src/router`: route definitions and navigation guards
+- `/src/stores`: Pinia stores for domain/state logic
+- `/src/views`: page-level components
+- `/src/components`: reusable UI components
+- `/src/middlewares`: route middleware functions
+- `/src/utils/http.ts`: shared axios instance and interceptors
+- `/src/utils/api.ts`: generated API class wiring
+- `/api`: OpenAPI-generated TypeScript axios client
+- `/openapi.yaml`: API contract source
+
+## API generation flow
+
+1. Update `openapi.yaml`
+2. Regenerate client:
+   ```bash
+   npm run genapi
+   ```
+3. Validate and update usages in stores/views if needed.
+
+## Validation commands
+
+Run these before opening or updating a PR:
+
+```bash
+npm run lint
+npm run build
+npm run test:unit
+```

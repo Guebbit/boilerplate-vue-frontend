@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { ref } from 'vue';
-import Navigation from '../organisms/Navigation.vue';
+import Navigation from '@/components/organisms/Navigation.vue';
 
 vi.mock('vue-i18n', async (importOriginal) => {
     const actual = await importOriginal<typeof import('vue-i18n')>();
@@ -28,9 +28,6 @@ vi.mock('@/stores/profile.ts', () => ({
     })
 }));
 
-/**
- *
- */
 describe('Navigation', () => {
     it('renders properly', () => expect(mount(Navigation)).toBeTruthy());
 });

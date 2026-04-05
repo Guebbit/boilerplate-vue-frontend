@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
-import CounterInput from '../CounterInput.vue';
+import CounterInput from '@/components/atoms/CounterInput.vue';
 
 describe('CounterInput component UNIT TEST', () => {
     it('Renders the component', () => {

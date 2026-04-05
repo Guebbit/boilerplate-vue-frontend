@@ -67,8 +67,7 @@ import { storeToRefs } from 'pinia';
 import LoadingCore from '@/components/atoms/LoadingCore.vue';
 import LoadingSide from '@/components/atoms/LoadingSide.vue';
 import Navigation from '@/components/organisms/Navigation.vue';
-import { useCoreStore } from '@/stores/core';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
 import { getCookie } from '@/utils/helperGenerics.ts';
 
