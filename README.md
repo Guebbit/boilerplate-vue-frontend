@@ -87,3 +87,26 @@ npm run lint
 npm run build
 npm run test:unit
 ```
+
+
+
+
+
+# TODO
+
+- Always call useXYZStore() inside functions, not at the top level — avoids circular dependency issues (unless it is specifically dependent)
+- Create a NUXT variant
+- Create a Vuetify Variant
+- Create a Quasar Variant
+- Do Vitest tests
+- Do Cypress tests
+- Create skeleton version
+- From skeleton: css-ui version
+   - remember to take old \_root.scss and old \_cards.scss (for simple-card) from older commits
+- From skeleton: vuetify version
+- From skeleton: quasar version
+# MAYBE?
+
+- Extend use18n (or create a new use18n) to add some custom functions now present in the utils/i18n.ts
+- From skeleton: bootstrap version
+- Do lighthouse metrics tests
