@@ -30,7 +30,7 @@
         "publish:public": "npm run complete && npm publish --access public"
     },
     "dependencies": {
-        "@guebbit/css-toolkit": "^1.3.2",
+        "@guebbit/css-toolkit": "^1.4.1",
         "@guebbit/js-toolkit": "^1.0.8",
         "@guebbit/vue-toolkit": "^1.0.3",
         "@openapitools/openapi-generator-cli": "^2.30.2",
