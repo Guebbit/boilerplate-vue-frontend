@@ -13,12 +13,7 @@
                     :class="{ 'form-error': showErrors && formErrors.title }"
                 >
                     <label for="edit-title">{{ t('product-edit-page.label-title') }}</label>
-                    <input
-                        v-model="form.title"
-                        type="text"
-                        id="edit-title"
-                        class="theme-input"
-                    />
+                    <input v-model="form.title" type="text" id="edit-title" class="theme-input" />
                     <p v-if="showErrors && formErrors.title" class="form-error-message">
                         {{ formErrors.title.join(', ') }}
                     </p>
@@ -43,7 +38,9 @@
                 </div>
 
                 <div class="theme-form-input">
-                    <label for="edit-description">{{ t('product-edit-page.label-description') }}</label>
+                    <label for="edit-description">{{
+                        t('product-edit-page.label-description')
+                    }}</label>
                     <textarea
                         v-model="form.description"
                         id="edit-description"
@@ -68,10 +65,7 @@
         </div>
 
         <div class="product-edit-actions">
-            <RouterLink
-                v-if="id"
-                :to="routerLinkI18n({ name: 'ProductTarget', params: { id } })"
-            >
+            <RouterLink v-if="id" :to="routerLinkI18n({ name: 'ProductTarget', params: { id } })">
                 {{ t('product-edit-page.button-go-to-details') }}
             </RouterLink>
             <RouterLink :to="routerLinkI18n({ name: 'ProductsList' })">

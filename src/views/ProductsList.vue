@@ -29,16 +29,32 @@
                         <td>{{ product.title }}</td>
                         <td>{{ product.price }}</td>
                         <td>{{ product.active ? '✓' : '✗' }}</td>
-                        <td>{{ product.createdAt ? new Date(product.createdAt).toLocaleDateString() : '-' }}</td>
+                        <td>
+                            {{
+                                product.createdAt
+                                    ? new Date(product.createdAt).toLocaleDateString()
+                                    : '-'
+                            }}
+                        </td>
                         <td class="actions-cell">
                             <RouterLink
-                                :to="routerLinkI18n({ name: 'ProductTarget', params: { id: product.id } })"
+                                :to="
+                                    routerLinkI18n({
+                                        name: 'ProductTarget',
+                                        params: { id: product.id }
+                                    })
+                                "
                                 class="theme-button"
                             >
                                 {{ t('products-list-page.button-view') }}
                             </RouterLink>
                             <RouterLink
-                                :to="routerLinkI18n({ name: 'ProductEdit', params: { id: product.id } })"
+                                :to="
+                                    routerLinkI18n({
+                                        name: 'ProductEdit',
+                                        params: { id: product.id }
+                                    })
+                                "
                                 class="theme-button"
                             >
                                 {{ t('products-list-page.button-edit') }}
@@ -56,10 +72,7 @@
             </table>
         </div>
 
-        <ListPagination
-            v-model="pageCurrent"
-            :length="pageTotal"
-        />
+        <ListPagination v-model="pageCurrent" :length="pageTotal" />
     </LayoutDefault>
 </template>
 
@@ -92,7 +105,8 @@ const { addMessage } = useNotificationsStore();
  * Products store
  */
 const { fetchPaginationProducts, deleteProduct } = useProductsStore();
-const { pageItemList, selectedProductId, pageCurrent, pageTotal, pageSize, loading } = storeToRefs(useProductsStore());
+const { pageItemList, selectedProductId, pageCurrent, pageTotal, pageSize, loading } =
+    storeToRefs(useProductsStore());
 
 /**
  * Initialize pagination

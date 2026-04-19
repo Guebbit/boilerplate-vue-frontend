@@ -23,14 +23,8 @@ const { addMessage } = useNotificationsStore();
  * selection, loading state and pagination
  */
 const { fetchPaginationUsers, deleteUser } = useUsersStore();
-const {
-    pageItemList,
-    selectedUserId,
-    pageCurrent,
-    pageSize,
-    pageTotal,
-    loading
-} = storeToRefs(useUsersStore());
+const { pageItemList, selectedUserId, pageCurrent, pageSize, pageTotal, loading } =
+    storeToRefs(useUsersStore());
 
 /**
  * Initialize pagination
@@ -66,10 +60,7 @@ const handleDelete = (userId: string) => {
         </template>
 
         <div class="users-list-actions">
-            <RouterLink
-                :to="routerLinkI18n({ name: 'UserCreate' })"
-                class="theme-button"
-            >
+            <RouterLink :to="routerLinkI18n({ name: 'UserCreate' })" class="theme-button">
                 {{ t('users-list-page.button-create-user') }}
             </RouterLink>
         </div>
@@ -99,10 +90,16 @@ const handleDelete = (userId: string) => {
                         <td>{{ user.email }}</td>
                         <td>{{ user.admin ? '✓' : '✗' }}</td>
                         <td>{{ user.active ? '✓' : '✗' }}</td>
-                        <td>{{ user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-' }}</td>
+                        <td>
+                            {{
+                                user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'
+                            }}
+                        </td>
                         <td class="actions-cell">
                             <RouterLink
-                                :to="routerLinkI18n({ name: 'UserTarget', params: { id: user.id } })"
+                                :to="
+                                    routerLinkI18n({ name: 'UserTarget', params: { id: user.id } })
+                                "
                                 class="theme-button"
                             >
                                 {{ t('users-list-page.button-view') }}
@@ -126,9 +123,6 @@ const handleDelete = (userId: string) => {
             </table>
         </div>
 
-        <ListPagination
-            v-model="pageCurrent"
-            :length="pageTotal"
-        />
+        <ListPagination v-model="pageCurrent" :length="pageTotal" />
     </LayoutDefault>
 </template>

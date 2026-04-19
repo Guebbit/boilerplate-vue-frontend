@@ -3,15 +3,17 @@
  *
  * @param path
  */
-export const loginContinueTo = (path: string) => {
+export const loginContinueTo = (path: string, locale?: string) => {
+    const parameters = locale ? { locale } : undefined;
     if (path.includes('error'))
         return {
-            name: 'Login'
+            name: 'Login',
+            params: parameters
         };
 
-    // TODO what if path has a different language?
     return {
         name: 'Login',
+        params: parameters,
         query: {
             continue: path
         }

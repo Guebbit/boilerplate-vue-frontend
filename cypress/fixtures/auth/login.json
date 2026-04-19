@@ -1,0 +1,8 @@
+{
+    "success": true,
+    "status": 200,
+    "message": "ok",
+    "data": {
+        "token": "mock-access-token-123"
+    }
+}

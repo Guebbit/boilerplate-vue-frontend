@@ -54,7 +54,10 @@
                     <br />
                     <input
                         :value="providedVariable"
-                        @input="(event) => setProvidedVariable((event.target as HTMLInputElement)?.value ?? '')"
+                        @input="
+                            (event) =>
+                                setProvidedVariable((event.target as HTMLInputElement)?.value ?? '')
+                        "
                         id="ProvidedVariableInput2"
                         class="theme-input"
                         type="text"
@@ -78,8 +81,6 @@
         </div>
     </LayoutDefault>
 </template>
-
-
 
 <style lang="scss">
 #home-page {
@@ -140,25 +141,25 @@ const testAddMessage = () => {
 /**
  * Loading examples
  */
-const coreStore = useCoreStore();
+const { setLoading } = useCoreStore();
 
 /**
  * Loading examples
  */
 // eslint-disable-next-line no-console
 console.log('fake core loading START');
-coreStore.setLoading('core', true);
+setLoading('core', true);
 setTimeout(() => {
     // eslint-disable-next-line no-console
     console.log('fake core loading END');
-    coreStore.setLoading('core', false);
+    setLoading('core', false);
     // eslint-disable-next-line no-console
     console.log('fake side (smaller) loading START');
-    coreStore.setLoading('usersList', true);
+    setLoading('usersList', true);
     setTimeout(() => {
         // eslint-disable-next-line no-console
         console.log('fake side (smaller) loading END');
-        coreStore.setLoading('usersList', false);
+        setLoading('usersList', false);
     }, 4000);
 }, 500);
 

@@ -1,11 +1,12 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
-import { useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { cartApi } from '@/utils/api.ts';
 import type { CartItem, CartResponse, CartSummaryResponse } from '@types';
 
 export const useCartStore = defineStore('cart', () => {
-    const { loading, fetchAny } = useStructureRestApi<CartItem, string>();
+    const { getLoading, setLoading } = useCoreStore();
+    const { loading, fetchAny } = useStructureRestApi<CartItem, string>({ getLoading, setLoading });
 
     /**
      * Full cart response (items + summary)

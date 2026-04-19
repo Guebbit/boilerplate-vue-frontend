@@ -13,11 +13,7 @@
                     :class="{ 'form-error': showErrors && formErrors.status }"
                 >
                     <label for="edit-status">{{ t('order-edit-page.label-status') }}</label>
-                    <select
-                        v-model="form.status"
-                        id="edit-status"
-                        class="theme-input"
-                    >
+                    <select v-model="form.status" id="edit-status" class="theme-input">
                         <option value="pending">pending</option>
                         <option value="paid">paid</option>
                         <option value="processing">processing</option>
@@ -35,12 +31,7 @@
                     :class="{ 'form-error': showErrors && formErrors.email }"
                 >
                     <label for="edit-email">{{ t('order-edit-page.label-email') }}</label>
-                    <input
-                        v-model="form.email"
-                        type="email"
-                        id="edit-email"
-                        class="theme-input"
-                    />
+                    <input v-model="form.email" type="email" id="edit-email" class="theme-input" />
                     <p v-if="showErrors && formErrors.email" class="form-error-message">
                         {{ formErrors.email.join(', ') }}
                     </p>
@@ -58,10 +49,7 @@
         </div>
 
         <div class="order-edit-actions">
-            <RouterLink
-                v-if="id"
-                :to="routerLinkI18n({ name: 'OrderTarget', params: { id } })"
-            >
+            <RouterLink v-if="id" :to="routerLinkI18n({ name: 'OrderTarget', params: { id } })">
                 {{ t('order-edit-page.button-go-to-details') }}
             </RouterLink>
             <RouterLink :to="routerLinkI18n({ name: 'OrdersList' })">
@@ -112,8 +100,10 @@ const editSchema = z.object({
     )
 });
 
-const { form, formErrors, isSubmitting, handleSubmit } =
-    useStructureFormValidation<IOrderEditForm>({}, editSchema);
+const { form, formErrors, isSubmitting, handleSubmit } = useStructureFormValidation<IOrderEditForm>(
+    {},
+    editSchema
+);
 
 const showErrors = ref(false);
 

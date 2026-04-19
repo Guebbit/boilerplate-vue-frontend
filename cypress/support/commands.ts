@@ -1,37 +1,28 @@
 /// <reference types="cypress" />
-// ***********************************************
-// This example commands.ts shows you how to
-// create various custom commands and overwrite
-// existing commands.
-//
-// For more comprehensive examples of custom
-// commands please read more here:
-// https://on.cypress.io/custom-commands
-// ***********************************************
-//
-//
-// -- This is a parent command --
-// Cypress.Commands.add('login', (email, password) => { ... })
-//
-//
-// -- This is a child command --
-// Cypress.Commands.add('drag', { prevSubject: 'element'}, (subject, options) => { ... })
-//
-//
-// -- This is a dual command --
-// Cypress.Commands.add('dismiss', { prevSubject: 'optional'}, (subject, options) => { ... })
-//
-//
-// -- This will overwrite an existing command --
-// Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
-//
-// declare global {
-//   namespace Cypress {
-//     interface Chainable {
-//       login(email: string, password: string): Chainable<void>
-//       drag(subject: string, options?: Partial<TypeOptions>): Chainable<Element>
-//       dismiss(subject: string, options?: Partial<TypeOptions>): Chainable<Element>
-//       visit(originalFn: CommandOriginalFn, url: string, options: Partial<VisitOptions>): Chainable<Element>
-//     }
-//   }
-// }
+
+declare global {
+    // eslint-disable-next-line @typescript-eslint/no-namespace
+    namespace Cypress {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        interface Chainable {
+            /**
+             * Sets the isAuth cookie and mocks the refresh-token + profile endpoints so
+             * that the authentication middleware can hydrate Pinia on every page load,
+             * without needing a real backend.
+             *
+             * @param role - 'user' (default) or 'admin'
+             */
+            loginAs(role?: 'user' | 'admin'): Chainable<void>;
+        }
+    }
+}
+
+Cypress.Commands.add('loginAs', (role = 'user') => {
+    const profileFixture = role === 'admin' ? 'auth/admin-profile' : 'auth/profile';
+
+    // The isAuth cookie tells refreshAuth() there may be a valid refresh token,
+    // so it will call GET /account/refresh → GET /account on each page load.
+    cy.setCookie('isAuth', 'true');
+    cy.intercept('GET', Cypress.env('apiUrl') + '/account/refresh', { fixture: 'auth/login' });
+    cy.intercept('GET', Cypress.env('apiUrl') + '/account', { fixture: profileFixture });
+});

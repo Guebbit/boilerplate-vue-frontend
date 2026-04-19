@@ -1,0 +1,14 @@
+{
+    "success": true,
+    "status": 200,
+    "message": "ok",
+    "data": {
+        "items": [],
+        "summary": {
+            "itemsCount": 0,
+            "totalQuantity": 0,
+            "total": 0,
+            "currency": "EUR"
+        }
+    }
+}

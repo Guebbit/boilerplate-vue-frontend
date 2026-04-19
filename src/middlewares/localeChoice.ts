@@ -23,7 +23,6 @@ export const fetchLanguageApi = (locale: string): Promise<[string, ITranslationD
         }, 1000)
     );
 
-
 /**
  * Check that requeste locale is supported and loaded,
  * if not, it will set the custom language based on the user browser

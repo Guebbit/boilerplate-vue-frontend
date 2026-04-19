@@ -12,8 +12,13 @@
                     <h2>{{ t('order-target-page.label-order-id') }}: {{ currentOrder.id }}</h2>
                     <p>{{ t('order-target-page.label-status') }}: {{ currentOrder.status }}</p>
                     <p>{{ t('order-target-page.label-total') }}: {{ currentOrder.total }}</p>
-                    <p v-if="currentOrder.notes">{{ t('order-target-page.label-notes') }}: {{ currentOrder.notes }}</p>
-                    <p v-if="currentOrder.createdAt">{{ t('order-target-page.label-date') }}: {{ new Date(currentOrder.createdAt).toLocaleString() }}</p>
+                    <p v-if="currentOrder.notes">
+                        {{ t('order-target-page.label-notes') }}: {{ currentOrder.notes }}
+                    </p>
+                    <p v-if="currentOrder.createdAt">
+                        {{ t('order-target-page.label-date') }}:
+                        {{ new Date(currentOrder.createdAt).toLocaleString() }}
+                    </p>
                     <div v-if="currentOrder.items.length > 0">
                         <h3>{{ t('order-target-page.label-items') }}</h3>
                         <div
@@ -21,7 +26,9 @@
                             :key="'order-item-' + item.productId"
                             class="theme-card"
                         >
-                            <p>{{ t('order-target-page.label-product-id') }}: {{ item.productId }}</p>
+                            <p>
+                                {{ t('order-target-page.label-product-id') }}: {{ item.productId }}
+                            </p>
                             <p>{{ t('order-target-page.label-quantity') }}: {{ item.quantity }}</p>
                         </div>
                     </div>

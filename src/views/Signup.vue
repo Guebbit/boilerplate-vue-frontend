@@ -120,11 +120,9 @@ const { zodSchemaUsers } = useUsersStore();
 
 const { form, formErrors, isDirty, isSubmitting, handleSubmit } =
     useStructureFormValidation<IUserSignupForm>(
-        import.meta.env.NODE_ENV === 'production'
-            ? {}
-            : { email: 'root@root.it', password: 'RootRoot_123' },
+        import.meta.env.PROD ? {} : { email: 'root@root.it', password: 'RootRoot_123' },
         zodSchemaUsers
-            .pick({ email: true, username: true })
+            .pick({ email: true })
             .extend({
                 password: z.string().min(8, t('users-form.password-required')),
                 passwordConfirm: z.string().min(8, t('users-form.password-confirm-required')),

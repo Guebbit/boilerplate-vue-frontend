@@ -13,12 +13,7 @@
                     :class="{ 'form-error': showErrors && formErrors.email }"
                 >
                     <label for="edit-email">{{ t('user-edit-page.label-email') }}</label>
-                    <input
-                        v-model="form.email"
-                        type="email"
-                        id="edit-email"
-                        class="theme-input"
-                    />
+                    <input v-model="form.email" type="email" id="edit-email" class="theme-input" />
                     <p v-if="showErrors && formErrors.email" class="form-error-message">
                         {{ formErrors.email.join(', ') }}
                     </p>
@@ -52,10 +47,7 @@
         </div>
 
         <div class="user-edit-actions">
-            <RouterLink
-                v-if="id"
-                :to="routerLinkI18n({ name: 'UserTarget', params: { id } })"
-            >
+            <RouterLink v-if="id" :to="routerLinkI18n({ name: 'UserTarget', params: { id } })">
                 {{ t('user-edit-page.button-go-to-details') }}
             </RouterLink>
             <RouterLink :to="routerLinkI18n({ name: 'UsersList' })">
@@ -113,17 +105,14 @@ interface IUserEditForm {
 /**
  * Password is optional on edit: empty string means "do not change"
  */
-const editSchema = zodSchemaUsers
-    .pick({ email: true })
-    .extend({
-        password: z.preprocess(
-            (v) => (v === '' ? undefined : v),
-            zodSchemaUsersPassword.optional()
-        )
-    });
+const editSchema = zodSchemaUsers.pick({ email: true }).extend({
+    password: z.preprocess((v) => (v === '' ? undefined : v), zodSchemaUsersPassword.optional())
+});
 
-const { form, formErrors, isSubmitting, handleSubmit } =
-    useStructureFormValidation<IUserEditForm>({}, editSchema);
+const { form, formErrors, isSubmitting, handleSubmit } = useStructureFormValidation<IUserEditForm>(
+    {},
+    editSchema
+);
 
 /**
  * Whether to display validation errors in the UI

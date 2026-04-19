@@ -3,7 +3,7 @@ import { useProfileStore } from '@/stores/profile';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { loginContinueTo } from '@/utils/helperNavigation';
 import { getCookie } from '@/utils/helperGenerics.ts';
-import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router';
+import type { RouteLocationNormalized } from 'vue-router';
 
 /**
  * Refresh the authentication if needed
@@ -38,28 +38,16 @@ export const refreshAuth = async () => {
  *
  * @param to
  * @param from
- * @param next
  */
-export const isGuest = async (
-    to: RouteLocationNormalized,
-    from: RouteLocationNormalized,
-    next: NavigationGuardNext
-) => {
+export const isGuest = async (to: RouteLocationNormalized, from: RouteLocationNormalized) => {
+    await refreshAuth();
     const { isAuth } = storeToRefs(useProfileStore());
     const { addMessage } = useNotificationsStore();
 
-    await refreshAuth().finally(() => {
-        // Already authenticated, send to home
-        if (isAuth.value) {
-            addMessage('navigation.error-already-logged');
-            next({
-                name: 'Home'
-            });
-            return;
-        }
-        // Proceed if NOT authenticated
-        next();
-    });
+    if (isAuth.value) {
+        addMessage('navigation.error-already-logged');
+        return { name: 'Home', params: { locale: to.params.locale as string } };
+    }
 };
 
 /**
@@ -67,26 +55,16 @@ export const isGuest = async (
  *
  * @param to
  * @param from
- * @param next
  */
-export const isAuth = async (
-    to: RouteLocationNormalized,
-    from: RouteLocationNormalized,
-    next: NavigationGuardNext
-) => {
+export const isAuth = async (to: RouteLocationNormalized, from: RouteLocationNormalized) => {
+    await refreshAuth();
     const { isAuth } = storeToRefs(useProfileStore());
     const { addMessage } = useNotificationsStore();
 
-    await refreshAuth().finally(() => {
-        // Not authenticated, send to login
-        if (!isAuth.value) {
-            addMessage('navigation.error-not-logged');
-            next(loginContinueTo(to.fullPath));
-            return;
-        }
-        // Proceed if authenticated
-        next();
-    });
+    if (!isAuth.value) {
+        addMessage('navigation.error-not-logged');
+        return loginContinueTo(to.fullPath, to.params.locale as string);
+    }
 };
 
 /**
@@ -94,32 +72,18 @@ export const isAuth = async (
  *
  * @param to
  * @param from
- * @param next
  */
-export const isAdmin = async (
-    to: RouteLocationNormalized,
-    from: RouteLocationNormalized,
-    next: NavigationGuardNext
-) => {
+export const isAdmin = async (to: RouteLocationNormalized, from: RouteLocationNormalized) => {
+    await refreshAuth();
     const { isAuth, isAdmin } = storeToRefs(useProfileStore());
     const { addMessage } = useNotificationsStore();
 
-    await refreshAuth().finally(() => {
-        // Not authenticated, send to login
-        if (!isAuth.value) {
-            addMessage('navigation.error-not-logged');
-            next(loginContinueTo(to.fullPath));
-            return;
-        }
-        // Wrong roles, send home
-        if (!isAdmin.value) {
-            addMessage('navigation.error-forbidden');
-            next({
-                name: 'Home'
-            });
-            return;
-        }
-        // Proceed if authenticated
-        next();
-    });
+    if (!isAuth.value) {
+        addMessage('navigation.error-not-logged');
+        return loginContinueTo(to.fullPath, to.params.locale as string);
+    }
+    if (!isAdmin.value) {
+        addMessage('navigation.error-forbidden');
+        return { name: 'Home', params: { locale: to.params.locale as string } };
+    }
 };

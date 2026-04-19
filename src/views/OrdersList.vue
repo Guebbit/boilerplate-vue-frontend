@@ -40,16 +40,29 @@
                         <td>{{ order.id }}</td>
                         <td>{{ order.status }}</td>
                         <td>{{ order.total }}</td>
-                        <td>{{ order.createdAt ? new Date(order.createdAt).toLocaleDateString() : '-' }}</td>
+                        <td>
+                            {{
+                                order.createdAt
+                                    ? new Date(order.createdAt).toLocaleDateString()
+                                    : '-'
+                            }}
+                        </td>
                         <td class="actions-cell">
                             <RouterLink
-                                :to="routerLinkI18n({ name: 'OrderTarget', params: { id: order.id } })"
+                                :to="
+                                    routerLinkI18n({
+                                        name: 'OrderTarget',
+                                        params: { id: order.id }
+                                    })
+                                "
                                 class="theme-button"
                             >
                                 {{ t('orders-list-page.button-view') }}
                             </RouterLink>
                             <RouterLink
-                                :to="routerLinkI18n({ name: 'OrderEdit', params: { id: order.id } })"
+                                :to="
+                                    routerLinkI18n({ name: 'OrderEdit', params: { id: order.id } })
+                                "
                                 class="theme-button"
                             >
                                 {{ t('orders-list-page.button-edit') }}
@@ -67,10 +80,7 @@
             </table>
         </div>
 
-        <ListPagination
-            v-model="pageCurrent"
-            :length="pageTotal"
-        />
+        <ListPagination v-model="pageCurrent" :length="pageTotal" />
     </LayoutDefault>
 </template>
 
@@ -103,7 +113,8 @@ const { addMessage } = useNotificationsStore();
  * Orders store
  */
 const { fetchPaginationOrders, deleteOrder } = useOrdersStore();
-const { ordersList, pageItemList, selectedOrderId, pageCurrent, pageTotal, pageSize, loading } = storeToRefs(useOrdersStore());
+const { ordersList, pageItemList, selectedOrderId, pageCurrent, pageTotal, pageSize, loading } =
+    storeToRefs(useOrdersStore());
 
 pageSize.value = 10;
 

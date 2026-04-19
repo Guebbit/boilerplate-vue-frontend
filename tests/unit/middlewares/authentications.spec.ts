@@ -4,7 +4,6 @@ import { ref } from 'vue';
 const refreshTokenMock = vi.fn();
 const fetchProfileMock = vi.fn();
 const addMessageMock = vi.fn();
-const nextMock = vi.fn();
 const profileRefs = {
     isAuth: ref(false),
     isAdmin: ref(false)
@@ -42,17 +41,14 @@ describe('authentications middleware', () => {
     it('redirects guest to login for auth-only route', async () => {
         const { isAuth } = await import('@/middlewares/authentications');
 
-        await isAuth(
-            { fullPath: '/en/admin' } as never,
-            {} as never,
-            nextMock
+        const result = await isAuth(
+            { fullPath: '/en/admin', params: { locale: 'en' } } as never,
+            {} as never
         );
 
         expect(addMessageMock).toHaveBeenCalledWith('navigation.error-not-logged');
-        expect(nextMock).toHaveBeenCalledWith(
-            expect.objectContaining({
-                name: 'Login'
-            })
+        expect(result).toEqual(
+            expect.objectContaining({ name: 'Login', params: { locale: 'en' } })
         );
     });
 
@@ -60,14 +56,13 @@ describe('authentications middleware', () => {
         const { isGuest } = await import('@/middlewares/authentications');
         profileRefs.isAuth.value = true;
 
-        await isGuest(
-            {} as never,
-            {} as never,
-            nextMock
+        const result = await isGuest(
+            { fullPath: '/en/login', params: { locale: 'en' } } as never,
+            {} as never
         );
 
         expect(addMessageMock).toHaveBeenCalledWith('navigation.error-already-logged');
-        expect(nextMock).toHaveBeenCalledWith({ name: 'Home' });
+        expect(result).toEqual({ name: 'Home', params: { locale: 'en' } });
     });
 
     it('blocks non-admin on admin middleware', async () => {
@@ -75,13 +70,12 @@ describe('authentications middleware', () => {
         profileRefs.isAuth.value = true;
         profileRefs.isAdmin.value = false;
 
-        await isAdmin(
-            { fullPath: '/en/admin' } as never,
-            {} as never,
-            nextMock
+        const result = await isAdmin(
+            { fullPath: '/en/admin', params: { locale: 'en' } } as never,
+            {} as never
         );
 
         expect(addMessageMock).toHaveBeenCalledWith('navigation.error-forbidden');
-        expect(nextMock).toHaveBeenCalledWith({ name: 'Home' });
+        expect(result).toEqual({ name: 'Home', params: { locale: 'en' } });
     });
 });

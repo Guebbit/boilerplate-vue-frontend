@@ -31,12 +31,12 @@ export default [
              * @param from
              * @param next
              */
-            beforeRouteEnter: async (to, from, next) => {
+            beforeRouteEnter: (to, from, next) => {
                 const { logout } = useProfileStore();
-                await logout();
-                next({
-                    name: 'Home'
-                });
+                const locale = to.params.locale as string;
+                logout()
+                    .then(() => next({ name: 'Home', params: { locale } }))
+                    .catch(() => next({ name: 'Home', params: { locale } }));
             }
         }
     }

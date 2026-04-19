@@ -165,7 +165,9 @@ export const onResponseRejectWithRefresh = async (
     error: AxiosError<IAxiosResponseErrorData, IAxiosResponseErrorBody>
 ) => {
     const { accessToken } = storeToRefs(useProfileStore());
-    const originalRequest = error.config as (InternalAxiosRequestConfig & { _dontRetry?: boolean }) | undefined;
+    const originalRequest = error.config as
+        | (InternalAxiosRequestConfig & { _dontRetry?: boolean })
+        | undefined;
     if (error.response?.status === 401 && !originalRequest?._dontRetry)
         return instance
             .get<unknown, IResponseSuccess<{ token: string }>>('/account/refresh', {

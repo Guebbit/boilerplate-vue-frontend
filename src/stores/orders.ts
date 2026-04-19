@@ -1,13 +1,20 @@
 import { defineStore } from 'pinia';
-import { useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 import { ordersApi } from '@/utils/api.ts';
-import type { Order, CreateOrderRequest, UpdateOrderByIdRequest, CheckoutRequest, CheckoutResponse, OrdersResponse } from '@types';
+import type {
+    Order,
+    CreateOrderRequest,
+    UpdateOrderByIdRequest,
+    CheckoutRequest,
+    CheckoutResponse,
+    OrdersResponse
+} from '@types';
 
 export const useOrdersStore = defineStore('orders', () => {
     const { t } = useI18n();
-
+    const { getLoading, setLoading } = useCoreStore();
     const {
         itemDictionary: orders,
         itemList: ordersList,
@@ -28,7 +35,7 @@ export const useOrdersStore = defineStore('orders', () => {
         createTarget,
         updateTarget,
         deleteTarget
-    } = useStructureRestApi<Order, string>();
+    } = useStructureRestApi<Order, string>({ getLoading, setLoading });
 
     /**
      * Fetch all orders for the authenticated user
@@ -89,10 +96,7 @@ export const useOrdersStore = defineStore('orders', () => {
      */
     const updateOrder = (orderId: string, orderData: UpdateOrderByIdRequest) =>
         updateTarget(
-            () =>
-                ordersApi
-                    .updateOrderById(orderId, orderData)
-                    .then(({ data }) => data as Order),
+            () => ordersApi.updateOrderById(orderId, orderData).then(({ data }) => data as Order),
             orderData as Partial<Order>,
             orderId
         );
@@ -104,9 +108,7 @@ export const useOrdersStore = defineStore('orders', () => {
      */
     const checkout = (checkoutData?: CheckoutRequest) =>
         fetchAny(() =>
-            ordersApi
-                .checkout(checkoutData)
-                .then(({ data }) => data as CheckoutResponse)
+            ordersApi.checkout(checkoutData).then(({ data }) => data as CheckoutResponse)
         );
 
     /**
@@ -123,16 +125,17 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param orderId
      */
     const getOrderInvoice = (orderId: string) =>
-        fetchAny(() =>
-            ordersApi.getOrderInvoice(orderId, { responseType: 'blob' })
-        );
+        fetchAny(() => ordersApi.getOrderInvoice(orderId, { responseType: 'blob' }));
 
     /**
      * Zod schema for order status
      */
-    const zodSchemaOrderStatus = z.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'], {
-        message: t('orders-form.status-invalid')
-    });
+    const zodSchemaOrderStatus = z.enum(
+        ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'],
+        {
+            message: t('orders-form.status-invalid')
+        }
+    );
 
     /**
      * Order schema

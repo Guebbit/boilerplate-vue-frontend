@@ -133,11 +133,7 @@ export function loadLocale(locale: string) {
  * @param locale
  * @param messages
  */
-export function _updateLocale(
-    i18n: I18n,
-    locale: string,
-    messages: ITranslationDictionaries
-) {
+export function _updateLocale(i18n: I18n, locale: string, messages: ITranslationDictionaries) {
     // Could be already present and this is just an update
     if (!loadedLanguages.includes(locale)) loadedLanguages.push(locale);
     i18n.global.setLocaleMessage(locale, messages);
@@ -175,8 +171,7 @@ export function _changeLanguage(i18n: I18n, locale: string): Promise<unknown> {
         document.querySelector('html')?.setAttribute('lang', locale);
         return nextTick();
     };
-    if (!loadedLanguages.includes(locale))
-        return _loadLocale(i18n, locale).then(() => setLocale());
+    if (!loadedLanguages.includes(locale)) return _loadLocale(i18n, locale).then(() => setLocale());
     return setLocale();
 }
 

@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
-import { useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { i18n } from '@/utils/i18n.ts';
 import type { AuthTokens, RefreshTokenResponse, User } from '@types';
 import { accountApi, authApi, usersApi } from '@/utils/api.ts';
@@ -36,6 +36,7 @@ const getPayloadFromResponse = <T>(response?: { data?: T } | T): T | undefined =
  * we can access Pinia, so it is useful to safely store "global" variables (if needed)
  */
 export const useProfileStore = defineStore('profile', () => {
+    const { getLoading, setLoading } = useCoreStore();
     const {
         itemDictionary,
         selectedIdentifier,
@@ -44,7 +45,7 @@ export const useProfileStore = defineStore('profile', () => {
         fetchAny,
         fetchTarget,
         updateTarget
-    } = useStructureRestApi<User, string>();
+    } = useStructureRestApi<User, string>({ getLoading, setLoading });
 
     /**
      * Warning: can't use useI18n because it wouldn't work in global guards
@@ -73,11 +74,9 @@ export const useProfileStore = defineStore('profile', () => {
      */
     const login = (auth: string, password: string) =>
         fetchAny(() =>
-            authApi
-                .login({ email: auth, password })
-                .then((response) => {
-                    accessToken.value = getTokenFromResponse(response);
-                })
+            authApi.login({ email: auth, password }).then((response) => {
+                accessToken.value = getTokenFromResponse(response);
+            })
         ).then(() => fetchProfile(true));
 
     /**
@@ -92,8 +91,7 @@ export const useProfileStore = defineStore('profile', () => {
         password: string,
         username = email,
         passwordConfirm = password
-    ) =>
-        fetchAny(() => authApi.signup(email, username, password, passwordConfirm));
+    ) => fetchAny(() => authApi.signup(email, username, password, passwordConfirm));
 
     /**
      * Refresh access token

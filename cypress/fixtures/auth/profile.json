@@ -1,0 +1,14 @@
+{
+    "success": true,
+    "status": 200,
+    "message": "ok",
+    "data": {
+        "id": "user-1",
+        "email": "test@example.com",
+        "username": "testuser",
+        "admin": false,
+        "active": true,
+        "createdAt": "2024-01-01T00:00:00Z",
+        "updatedAt": "2024-01-01T00:00:00Z"
+    }
+}

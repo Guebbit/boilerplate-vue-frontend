@@ -1,15 +1,20 @@
 import { defineStore } from 'pinia';
-import { useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import type { AxiosProgressEvent } from 'axios';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 
 import { productsApi } from '@/utils/api.ts';
-import type { Product, CreateProductRequest, UpdateProductByIdRequest, ProductsResponse } from '@types';
+import type {
+    Product,
+    CreateProductRequest,
+    UpdateProductByIdRequest,
+    ProductsResponse
+} from '@types';
 
 export const useProductsStore = defineStore('products', () => {
     const { t } = useI18n();
-
+    const { getLoading, setLoading } = useCoreStore();
     const {
         itemDictionary: products,
         itemList: productsList,
@@ -30,7 +35,7 @@ export const useProductsStore = defineStore('products', () => {
         createTarget,
         updateTarget,
         deleteTarget
-    } = useStructureRestApi<Product, string>();
+    } = useStructureRestApi<Product, string>({ getLoading, setLoading });
 
     /**
      *
@@ -82,7 +87,12 @@ export const useProductsStore = defineStore('products', () => {
     const createProduct = (productData: CreateProductRequest) =>
         createTarget(() =>
             productsApi
-                .createProduct(productData.title, productData.price, productData.description, productData.active)
+                .createProduct(
+                    productData.title,
+                    productData.price,
+                    productData.description,
+                    productData.active
+                )
                 .then(({ data }) => data as Product)
         );
 
@@ -104,7 +114,15 @@ export const useProductsStore = defineStore('products', () => {
         return updateTarget(
             () =>
                 productsApi
-                    .updateProductById(product.id, product.title, product.price, product.description, product.active, files[0], { onUploadProgress })
+                    .updateProductById(
+                        product.id,
+                        product.title,
+                        product.price,
+                        product.description,
+                        product.active,
+                        files[0],
+                        { onUploadProgress }
+                    )
                     .then(({ data }) => data as Product),
             {} as Partial<Product>,
             product.id
@@ -122,7 +140,13 @@ export const useProductsStore = defineStore('products', () => {
         updateTarget(
             () =>
                 productsApi
-                    .updateProductById(productId, productData.title, productData.price, productData.description, productData.active)
+                    .updateProductById(
+                        productId,
+                        productData.title,
+                        productData.price,
+                        productData.description,
+                        productData.active
+                    )
                     .then(({ data }) => data as Product),
             productData as Partial<Product>,
             productId

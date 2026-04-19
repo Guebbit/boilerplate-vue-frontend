@@ -12,7 +12,8 @@ import ordersRoutes from './ordersRoutes.ts';
 
 import HomeView from '@/views/Home.vue';
 
-const isRouterDebugEnabled = import.meta.env.DEV && import.meta.env.VITE_APP_DEBUG_ROUTER === 'true';
+const isRouterDebugEnabled =
+    import.meta.env.DEV && import.meta.env.VITE_APP_DEBUG_ROUTER === 'true';
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.VITE_APP_BASE_URL),

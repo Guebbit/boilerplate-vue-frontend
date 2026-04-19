@@ -123,13 +123,11 @@ interface IUserCreateForm {
 const { form, formErrors, isSubmitting, handleSubmit } =
     useStructureFormValidation<IUserCreateForm>(
         {},
-        zodSchemaUsers
-            .pick({ email: true, username: true })
-            .extend({
-                password: zodSchemaUsersPassword,
-                admin: z.boolean().optional(),
-                active: z.boolean().optional()
-            })
+        zodSchemaUsers.pick({ email: true, username: true }).extend({
+            password: zodSchemaUsersPassword,
+            admin: z.boolean().optional(),
+            active: z.boolean().optional()
+        })
     );
 
 /**

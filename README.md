@@ -1,6 +1,7 @@
 # boilerplate-vue-frontend
 
 Vue 3 + TypeScript frontend boilerplate with:
+
 - Vite
 - Pinia
 - Vue Router
@@ -16,17 +17,17 @@ Vue 3 + TypeScript frontend boilerplate with:
 ## Setup
 
 1. Install dependencies:
-   ```bash
-   npm ci
-   ```
+    ```bash
+    npm ci
+    ```
 2. Create your environment file:
-   ```bash
-   cp .env-example .env
-   ```
+    ```bash
+    cp .env-example .env
+    ```
 3. Start dev server:
-   ```bash
-   npm run dev
-   ```
+    ```bash
+    npm run dev
+    ```
 
 ## Environment variables
 
@@ -73,9 +74,9 @@ Use `.env-example` as reference.
 
 1. Update `openapi.yaml`
 2. Regenerate client:
-   ```bash
-   npm run genapi
-   ```
+    ```bash
+    npm run genapi
+    ```
 3. Validate and update usages in stores/views if needed.
 
 ## Validation commands
@@ -88,10 +89,6 @@ npm run build
 npm run test:unit
 ```
 
-
-
-
-
 # TODO
 
 - Always call useXYZStore() inside functions, not at the top level — avoids circular dependency issues (unless it is specifically dependent)
@@ -102,9 +99,10 @@ npm run test:unit
 - Do Cypress tests
 - Create skeleton version
 - From skeleton: css-ui version
-   - remember to take old \_root.scss and old \_cards.scss (for simple-card) from older commits
+    - remember to take old \_root.scss and old \_cards.scss (for simple-card) from older commits
 - From skeleton: vuetify version
 - From skeleton: quasar version
+
 # MAYBE?
 
 - Extend use18n (or create a new use18n) to add some custom functions now present in the utils/i18n.ts

@@ -1,18 +1,22 @@
 import { defineStore } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
-import { useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { usersApi } from '@/utils/api.ts';
 import type { AxiosProgressEvent } from 'axios';
-import type { User, CreateUserRequestMultipart, UpdateUserByIdRequestMultipart, UsersResponse } from '@types';
-
+import type {
+    User,
+    CreateUserRequestMultipart,
+    UpdateUserByIdRequestMultipart,
+    UsersResponse
+} from '@types';
 
 export const useUsersStore = defineStore('users', () => {
     /**
      * Inherited
      */
     const { t } = useI18n();
-
+    const { getLoading, setLoading } = useCoreStore();
     const {
         itemDictionary: users,
         itemList: usersList,
@@ -33,7 +37,7 @@ export const useUsersStore = defineStore('users', () => {
         createTarget,
         updateTarget,
         deleteTarget
-    } = useStructureRestApi<User, string>();
+    } = useStructureRestApi<User, string>({ getLoading, setLoading });
 
     /**
      *
@@ -42,9 +46,7 @@ export const useUsersStore = defineStore('users', () => {
     const fetchUsers = (forced = false) =>
         fetchAll(
             () =>
-                usersApi
-                    .listUsers()
-                    .then(({ data }) => (data as { items?: User[] })?.items ?? []),
+                usersApi.listUsers().then(({ data }) => (data as { items?: User[] })?.items ?? []),
             { forced }
         );
 
@@ -70,11 +72,9 @@ export const useUsersStore = defineStore('users', () => {
      * @param forced
      */
     const fetchUser = (userId: string, forced = false) =>
-        fetchTarget(
-            () => usersApi.getUserById(userId).then(({ data }) => data as User),
-            userId,
-            { forced }
-        );
+        fetchTarget(() => usersApi.getUserById(userId).then(({ data }) => data as User), userId, {
+            forced
+        });
 
     /**
      *
@@ -83,7 +83,14 @@ export const useUsersStore = defineStore('users', () => {
     const createUser = (userData: CreateUserRequestMultipart) =>
         createTarget(() =>
             usersApi
-                .createUser(userData.email, userData.username, userData.password, userData.admin, userData.active, userData.imageUpload)
+                .createUser(
+                    userData.email,
+                    userData.username,
+                    userData.password,
+                    userData.admin,
+                    userData.active,
+                    userData.imageUpload
+                )
                 .then(({ data }) => data as User)
         );
 
@@ -103,7 +110,9 @@ export const useUsersStore = defineStore('users', () => {
         return updateTarget(
             () =>
                 usersApi
-                    .updateUserById(userId, undefined, undefined, undefined, files[0], { onUploadProgress })
+                    .updateUserById(userId, undefined, undefined, undefined, files[0], {
+                        onUploadProgress
+                    })
                     .then(({ data }) => data as User),
             // No fields to optimistically merge — the updated imageUrl is returned by the API
             {} as Partial<User>,
@@ -120,9 +129,19 @@ export const useUsersStore = defineStore('users', () => {
         updateTarget(
             () =>
                 usersApi
-                    .updateUserById(userId, userData.email, userData.password, userData.username, userData.imageUpload)
+                    .updateUserById(
+                        userId,
+                        userData.email,
+                        userData.password,
+                        userData.username,
+                        userData.imageUpload
+                    )
                     .then(({ data }) => data as User),
-            { email: userData.email, password: userData.password, username: userData.username } as Partial<User>,
+            {
+                email: userData.email,
+                password: userData.password,
+                username: userData.username
+            } as Partial<User>,
             userId
         );
 
@@ -141,9 +160,7 @@ export const useUsersStore = defineStore('users', () => {
     /**
      *
      */
-    const zodSchemaUsersUsername = z
-        .string()
-        .min(3, t('users-form.username-min'));
+    const zodSchemaUsersUsername = z.string().min(3, t('users-form.username-min'));
 
     /**
      *

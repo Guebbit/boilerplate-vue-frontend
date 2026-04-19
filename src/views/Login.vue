@@ -102,7 +102,7 @@ const showErrors = ref(false);
 /**
  * If not in production, dummy user of local database
  */
-if (import.meta.env.NODE_ENV !== 'production')
+if (import.meta.env.DEV)
     form.value = {
         email: 'root@root.it',
         password: 'RootRoot_123'

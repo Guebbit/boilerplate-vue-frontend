@@ -71,8 +71,8 @@ a {
 
 :root {
     /**
-   * Add all the wanted guebbit colors to the root
-   */
+     * Add all the wanted guebbit colors to the root
+     */
     @include guebbit.create-colors-vars(guebbit.$colors-collection);
 }
 

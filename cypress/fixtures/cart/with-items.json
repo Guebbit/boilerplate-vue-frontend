@@ -1,0 +1,17 @@
+{
+    "success": true,
+    "status": 200,
+    "message": "ok",
+    "data": {
+        "items": [
+            { "productId": "prod-1", "quantity": 2 },
+            { "productId": "prod-2", "quantity": 1 }
+        ],
+        "summary": {
+            "itemsCount": 2,
+            "totalQuantity": 3,
+            "total": 45.5,
+            "currency": "EUR"
+        }
+    }
+}

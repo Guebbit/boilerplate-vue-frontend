@@ -1,17 +1,43 @@
 describe('Public routes', () => {
-    const publicRoutes = ['/', '/login', '/signup', '/products'];
+    it('loads home page at locale-prefixed URL', () => {
+        cy.visit('/en');
+        cy.get('#home-page').should('exist');
+        cy.get('h1').should('exist');
+    });
 
-    for (const route of publicRoutes) {
-        it(`loads ${route} and shows basic page content`, () => {
-            cy.visit(route);
-            cy.get('body').should('be.visible');
-            cy.get('h1').should('exist');
-        });
-    }
+    it('redirects / to the locale-prefixed home', () => {
+        cy.visit('/');
+        cy.url().should('match', /\/[a-z]{2}(\/|$)/);
+        cy.get('h1').should('exist');
+    });
 
-    it('loads error route and shows 404 page', () => {
-        cy.visit('/error/404/not-found');
-        cy.get('body').should('be.visible');
+    it('loads the products list page', () => {
+        cy.intercept(
+            { method: 'GET', pathname: '/products*', port: 3000 },
+            { fixture: 'products/list' }
+        );
+        cy.visit('/en/products');
+        cy.get('#products-list-page').should('exist');
+        cy.get('h1').should('contain.text', 'Products list');
+    });
+
+    it('loads the login page', () => {
+        cy.visit('/en/login');
+        cy.get('#login-page').should('exist');
+        cy.get('#form-email').should('exist');
+        cy.get('#form-password').should('exist');
+    });
+
+    it('loads the signup page', () => {
+        cy.visit('/en/signup');
+        cy.get('#signup-page').should('exist');
+        cy.get('#form-email').should('exist');
+        cy.get('#form-password').should('exist');
+        cy.get('#form-password-confirm').should('exist');
+    });
+
+    it('shows 404 error page for unknown routes', () => {
+        cy.visit('/en/error/404/not-found');
         cy.get('h1').should('contain.text', '404');
     });
 });

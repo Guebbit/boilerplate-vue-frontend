@@ -1,12 +1,12 @@
-import eslint from '@eslint/js'
-import globals from 'globals'
-import pluginUnicorn from 'eslint-plugin-unicorn'
-import { globalIgnores } from 'eslint/config'
-import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript'
-import pluginVue from 'eslint-plugin-vue'
-import pluginVitest from '@vitest/eslint-plugin'
-import pluginCypress from 'eslint-plugin-cypress'
-import pluginOxlint from 'eslint-plugin-oxlint'
+import eslint from '@eslint/js';
+import globals from 'globals';
+import pluginUnicorn from 'eslint-plugin-unicorn';
+import { globalIgnores } from 'eslint/config';
+import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript';
+import pluginVue from 'eslint-plugin-vue';
+import pluginVitest from '@vitest/eslint-plugin';
+import pluginCypress from 'eslint-plugin-cypress';
+import pluginOxlint from 'eslint-plugin-oxlint';
 
 // To allow more languages other than `ts` in `.vue` files, uncomment the following lines:
 // import { configureVueProject } from '@vue/eslint-config-typescript'
@@ -264,4 +264,4 @@ export default defineConfigWithVueTs(
             }
         }
     }
-)
+);

@@ -21,7 +21,8 @@ export const createMessageResponse = (message: string): MessageResponse => ({
 const parseValue = (value: FormDataEntryValue | unknown) => {
     if (value === 'true') return true;
     if (value === 'false') return false;
-    if (typeof value === 'string' && value.trim() !== '' && !Number.isNaN(Number(value))) return Number(value);
+    if (typeof value === 'string' && value.trim() !== '' && !Number.isNaN(Number(value)))
+        return Number(value);
     return value;
 };
 
@@ -38,8 +39,7 @@ export const parseRequestBody = <T>(data: unknown): Partial<T> => {
     if (typeof data === 'string') {
         try {
             return JSON.parse(data) as Partial<T>;
-        }
-        catch {
+        } catch {
             return {};
         }
     }
@@ -65,7 +65,9 @@ export const getQueryParameters = (url: string | undefined, parameters?: unknown
     });
     return {
         ...queryFromUrl,
-        ...(typeof parameters === 'object' && parameters ? parameters as Record<string, unknown> : {})
+        ...(typeof parameters === 'object' && parameters
+            ? (parameters as Record<string, unknown>)
+            : {})
     };
 };
 
@@ -81,7 +83,11 @@ export const toNumberOrDefault = (value: unknown, defaultValue: number) => {
     return Number.isFinite(numberValue) && numberValue > 0 ? numberValue : defaultValue;
 };
 
-export const toPaginationMeta = (itemCount: number, page: number, pageSize: number): PaginationMeta => ({
+export const toPaginationMeta = (
+    itemCount: number,
+    page: number,
+    pageSize: number
+): PaginationMeta => ({
     page,
     pageSize,
     totalItems: itemCount,
@@ -241,4 +247,3 @@ export const defaultRefreshTokenResponse: RefreshTokenResponse = {
     refreshToken: 'mock-refresh-token',
     expiresIn: 3600
 };
-

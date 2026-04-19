@@ -1,45 +1,45 @@
 name: CI
 
 on:
-  # Run on every PR and on direct pushes to main.
-  # This gives fast feedback for feature branches and protects main.
-  pull_request:
-  push:
-    branches:
-      - main
+    # Run on every PR and on direct pushes to main.
+    # This gives fast feedback for feature branches and protects main.
+    pull_request:
+    push:
+        branches:
+            - main
 
 jobs:
-  validate:
-    # Single "quality gate" job for this boilerplate.
-    runs-on: ubuntu-latest
-    # Principle of least privilege:
-    # workflow only needs to read repository contents.
-    permissions:
-      contents: read
-    steps:
-      # 1) Get the repository code.
-      - name: Checkout
-        uses: actions/checkout@v4
+    validate:
+        # Single "quality gate" job for this boilerplate.
+        runs-on: ubuntu-latest
+        # Principle of least privilege:
+        # workflow only needs to read repository contents.
+        permissions:
+            contents: read
+        steps:
+            # 1) Get the repository code.
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      # 2) Configure Node and npm cache for faster installs.
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
+            # 2) Configure Node and npm cache for faster installs.
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: npm
 
-      # 3) Install exact lockfile dependencies (reproducible builds).
-      - name: Install dependencies
-        run: npm ci
+            # 3) Install exact lockfile dependencies (reproducible builds).
+            - name: Install dependencies
+              run: npm ci
 
-      # 4) Static analysis.
-      - name: Lint
-        run: npm run lint
+            # 4) Static analysis.
+            - name: Lint
+              run: npm run lint
 
-      # 5) Type-check and production build.
-      - name: Build
-        run: npm run build
+            # 5) Type-check and production build.
+            - name: Build
+              run: npm run build
 
-      # 6) Unit test suite.
-      - name: Unit tests
-        run: npm run test:unit
+            # 6) Unit test suite.
+            - name: Unit tests
+              run: npm run test:unit

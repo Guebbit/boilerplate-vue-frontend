@@ -1,19 +1,12 @@
 {
     "extends": "./tsconfig.app.json",
-    "include": [
-        "api",
-        "src/env.d.ts",
-        "src/**/*",
-        "src/**/*.vue",
-        "tests/unit/**/*.ts",
-        "tests/unit/**/*.tsx"
-    ],
+    "include": ["api", "src/**/*", "src/**/*.vue", "tests/unit/**/*.ts", "tests/unit/**/*.tsx"],
     "exclude": [],
     "compilerOptions": {
         "composite": true,
         "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.vitest.tsbuildinfo",
 
         "lib": [],
-        "types": ["node", "jsdom"]
+        "types": ["vite/client", "node", "jsdom"]
     }
 }

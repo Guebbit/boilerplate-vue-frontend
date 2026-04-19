@@ -19,12 +19,22 @@ export const registerCartMockHandlers = (mockAdapter: MockAdapter) => {
         const productId = String(requestBody.productId ?? '');
         const quantity = Math.max(0, Number(requestBody.quantity ?? 0));
         if (!mockDatabase.sampleProducts.some((product) => product.id === productId))
-            return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }];
+            return [
+                404,
+                { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }
+            ];
 
-        const existingItemIndex = mockDatabase.sampleCartItems.findIndex((item) => item.productId === productId);
-        if (existingItemIndex === -1) mockDatabase.sampleCartItems.push({ productId, quantity: quantity || 1 });
-        else mockDatabase.sampleCartItems[existingItemIndex].quantity = quantity || mockDatabase.sampleCartItems[existingItemIndex].quantity;
-        mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter((item) => item.quantity > 0);
+        const existingItemIndex = mockDatabase.sampleCartItems.findIndex(
+            (item) => item.productId === productId
+        );
+        if (existingItemIndex === -1)
+            mockDatabase.sampleCartItems.push({ productId, quantity: quantity || 1 });
+        else
+            mockDatabase.sampleCartItems[existingItemIndex].quantity =
+                quantity || mockDatabase.sampleCartItems[existingItemIndex].quantity;
+        mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter(
+            (item) => item.quantity > 0
+        );
         return [200, getCartResponse()];
     });
 
@@ -35,7 +45,9 @@ export const registerCartMockHandlers = (mockAdapter: MockAdapter) => {
             mockDatabase.sampleCartItems = [];
             return [200, getCartResponse()];
         }
-        mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter((item) => item.productId !== productId);
+        mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter(
+            (item) => item.productId !== productId
+        );
         return [200, getCartResponse()];
     });
 
@@ -44,23 +56,39 @@ export const registerCartMockHandlers = (mockAdapter: MockAdapter) => {
         const requestBody = parseRequestBody<Record<string, unknown>>(config.data);
         const quantity = Math.max(0, Number(requestBody.quantity ?? 0));
         if (!productId || !mockDatabase.sampleProducts.some((product) => product.id === productId))
-            return [404, { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }];
-        const existingItemIndex = mockDatabase.sampleCartItems.findIndex((item) => item.productId === productId);
-        if (existingItemIndex === -1) mockDatabase.sampleCartItems.push({ productId, quantity: quantity || 1 });
+            return [
+                404,
+                { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }
+            ];
+        const existingItemIndex = mockDatabase.sampleCartItems.findIndex(
+            (item) => item.productId === productId
+        );
+        if (existingItemIndex === -1)
+            mockDatabase.sampleCartItems.push({ productId, quantity: quantity || 1 });
         else mockDatabase.sampleCartItems[existingItemIndex].quantity = quantity;
-        mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter((item) => item.quantity > 0);
+        mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter(
+            (item) => item.quantity > 0
+        );
         return [200, getCartResponse()];
     });
 
     mockAdapter.onDelete(/\/cart\/[^/]+(?:\?.*)?$/).reply((config) => {
         const productId = getLastPathSegment(config.url);
-        mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter((item) => item.productId !== productId);
+        mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter(
+            (item) => item.productId !== productId
+        );
         return [200, getCartResponse()];
     });
 
     mockAdapter.onPost(/\/cart\/checkout(?:\?.*)?$/).reply((config) => {
         const requestBody = parseRequestBody<Record<string, unknown>>(config.data);
-        const email = String(requestBody.email ?? (mockDatabase.sampleUsers.find((user) => user.id === mockDatabase.currentAuthenticatedUserId)?.email ?? 'mock@example.com'));
+        const email = String(
+            requestBody.email ??
+                mockDatabase.sampleUsers.find(
+                    (user) => user.id === mockDatabase.currentAuthenticatedUserId
+                )?.email ??
+                'mock@example.com'
+        );
         const createdOrder = createMockOrder({
             userId: mockDatabase.currentAuthenticatedUserId,
             email,
@@ -73,4 +101,3 @@ export const registerCartMockHandlers = (mockAdapter: MockAdapter) => {
         return [201, { order: createdOrder, message: 'Checkout completed' }];
     });
 };
-

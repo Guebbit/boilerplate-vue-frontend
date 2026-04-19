@@ -52,9 +52,7 @@
             >
                 {{ t('user-target-page.button-go-to-edit') }}
             </RouterLink>
-            <RouterLink
-                :to="routerLinkI18n({ name: 'UsersList' })"
-            >
+            <RouterLink :to="routerLinkI18n({ name: 'UsersList' })">
                 {{ t('user-target-page.button-go-to-list') }}
             </RouterLink>
         </div>
