@@ -6,6 +6,17 @@
             </h1>
         </template>
 
+        <form class="list-filters" @submit.prevent="handleSearch">
+            <BaseInput v-model="filters.text" :label="t('products-list-page.filter-text')" :placeholder="t('products-list-page.filter-text')" />
+            <BaseInput v-model="filters.id" :label="t('products-list-page.filter-id')" :placeholder="t('products-list-page.filter-id')" />
+            <BaseInput v-model.number="filters.minPrice" :label="t('products-list-page.filter-min-price')" type="number" />
+            <BaseInput v-model.number="filters.maxPrice" :label="t('products-list-page.filter-max-price')" type="number" />
+            <div class="list-filters-actions">
+                <button type="submit" class="theme-button">{{ t('generic.search') }}</button>
+                <button type="button" class="theme-button" @click="handleReset">{{ t('generic.reset') }}</button>
+            </div>
+        </form>
+
         <div class="users-table-wrapper">
             <table class="users-table">
                 <thead>
@@ -38,23 +49,13 @@
                         </td>
                         <td class="actions-cell">
                             <RouterLink
-                                :to="
-                                    routerLinkI18n({
-                                        name: 'ProductTarget',
-                                        params: { id: product.id }
-                                    })
-                                "
+                                :to="routerLinkI18n({ name: 'ProductTarget', params: { id: product.id } })"
                                 class="theme-button"
                             >
                                 {{ t('products-list-page.button-view') }}
                             </RouterLink>
                             <RouterLink
-                                :to="
-                                    routerLinkI18n({
-                                        name: 'ProductEdit',
-                                        params: { id: product.id }
-                                    })
-                                "
+                                :to="routerLinkI18n({ name: 'ProductEdit', params: { id: product.id } })"
                                 class="theme-button"
                             >
                                 {{ t('products-list-page.button-edit') }}
@@ -84,38 +85,41 @@ export default {
 
 <script setup lang="ts">
 import '../assets/styles/pages/productsList.scss';
-import { onMounted, watch } from 'vue';
+import { onMounted, reactive, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/stores/products';
+import type { SearchProductsRequest } from '@types';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import ListPagination from '@/components/molecules/ListPagination.vue';
+import BaseInput from '@/components/atoms/BaseInput.vue';
 
-/**
- * Generics
- */
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
-/**
- * Products store
- */
-const { fetchPaginationProducts, deleteProduct } = useProductsStore();
+const { fetchSearchProducts, deleteProduct } = useProductsStore();
 const { pageItemList, selectedProductId, pageCurrent, pageTotal, pageSize, loading } =
     storeToRefs(useProductsStore());
 
-/**
- * Initialize pagination
- */
 pageSize.value = 10;
 
-/**
- * Delete a product after confirmation
- */
+const filters = reactive<Omit<SearchProductsRequest, 'page' | 'pageSize'>>({});
+
+const handleSearch = () => {
+    pageCurrent.value = 1;
+    fetchSearchProducts(filters, 1, pageSize.value);
+};
+
+const handleReset = () => {
+    Object.keys(filters).forEach((k) => delete (filters as Record<string, unknown>)[k]);
+    pageCurrent.value = 1;
+    fetchSearchProducts({}, 1, pageSize.value, true);
+};
+
 const handleDelete = (productId: string) => {
     if (!confirm(t('products-list-page.confirm-delete'))) return;
     deleteProduct(productId)
@@ -123,12 +127,9 @@ const handleDelete = (productId: string) => {
         .catch(({ message }: { message: string }) => addMessage(message));
 };
 
-/**
- * Get products from API
- */
-onMounted(() => fetchPaginationProducts(Math.max(1, pageCurrent.value), pageSize.value));
+onMounted(() => fetchSearchProducts(filters, Math.max(1, pageCurrent.value), pageSize.value));
 
 watch([pageCurrent, pageSize], ([currentPage, currentPageSize]) => {
-    fetchPaginationProducts(Math.max(1, currentPage), currentPageSize);
+    fetchSearchProducts(filters, Math.max(1, currentPage), currentPageSize);
 });
 </script>

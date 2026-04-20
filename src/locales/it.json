@@ -8,7 +8,9 @@
         "loading": "caricamento {load}",
         "it": "italiano",
         "en": "inglese",
-        "es": "spagnolo"
+        "es": "spagnolo",
+        "search": "Cerca",
+        "reset": "Reimposta"
     },
     "navigation": {
         "label-home": "home",
@@ -56,7 +58,11 @@
         "column-price": "Prezzo",
         "column-active": "Attivo",
         "column-created-at": "Creato il",
-        "column-actions": "Azioni"
+        "column-actions": "Azioni",
+        "filter-text": "Cerca",
+        "filter-id": "ID prodotto",
+        "filter-min-price": "Prezzo minimo",
+        "filter-max-price": "Prezzo massimo"
     },
     "product-target-page": {
         "page-title": "Prodotto selezionato",
@@ -87,7 +93,15 @@
         "column-admin": "Admin",
         "column-active": "Attivo",
         "column-created-at": "Creato il",
-        "column-actions": "Azioni"
+        "column-actions": "Azioni",
+        "filter-text": "Cerca",
+        "filter-id": "ID utente",
+        "filter-email": "Email",
+        "filter-username": "Nome utente",
+        "filter-active": "Stato",
+        "filter-active-all": "Tutti",
+        "filter-active-yes": "Attivo",
+        "filter-active-no": "Inattivo"
     },
     "user-target-page": {
         "page-title": "Utente selezionato",
@@ -154,7 +168,11 @@
         "column-status": "Stato",
         "column-total": "Totale",
         "column-date": "Data",
-        "column-actions": "Azioni"
+        "column-actions": "Azioni",
+        "filter-id": "ID ordine",
+        "filter-user-id": "ID utente",
+        "filter-product-id": "ID prodotto",
+        "filter-email": "Email"
     },
     "order-target-page": {
         "page-title": "Dettagli ordine",

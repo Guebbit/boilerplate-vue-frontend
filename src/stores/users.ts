@@ -6,9 +6,10 @@ import { usersApi } from '@/utils/api.ts';
 import type { AxiosProgressEvent } from 'axios';
 import type {
     User,
+    UsersResponse,
     CreateUserRequestMultipart,
     UpdateUserByIdRequestMultipart,
-    UsersResponse
+    SearchUsersRequest
 } from '@types';
 
 export const useUsersStore = defineStore('users', () => {
@@ -31,6 +32,7 @@ export const useUsersStore = defineStore('users', () => {
         pageSize,
         pageTotal,
         pageItemList,
+        fetchSearch,
         fetchAny,
         fetchAll,
         fetchTarget,
@@ -66,12 +68,32 @@ export const useUsersStore = defineStore('users', () => {
             { forced, lastUpdateKey: `users_page_${page}_${pageSize}` }
         );
 
+    type IUsersFilters = Omit<SearchUsersRequest, 'page' | 'pageSize'>;
+
+    /**
+     * @param filters
+     * @param page
+     * @param pageSize
+     * @param forced
+     */
+    const fetchSearchUsers = (filters: IUsersFilters = {}, page = 1, pageSize = 10, forced = false) =>
+        fetchSearch(
+            () =>
+                usersApi
+                    .searchUsers({ ...filters, page, pageSize })
+                    .then(({ data: { items = [] , meta} }) => [items, meta.totalItems] as [typeof items, number]),
+            filters,
+            page,
+            pageSize,
+            { forced }
+        );
+
     /**
      *
      * @param userId
      * @param forced
      */
-    const fetchUser = (userId: string, forced = false) =>
+    const fetchUser =(userId: string, forced = false) =>
         fetchTarget(() => usersApi.getUserById(userId).then(({ data }) => data as User), userId, {
             forced
         });
@@ -210,6 +232,7 @@ export const useUsersStore = defineStore('users', () => {
         pageItemList,
         fetchUsers,
         fetchPaginationUsers,
+        fetchSearchUsers,
         fetchUser,
         createUser,
         updateUser,

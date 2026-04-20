@@ -263,18 +263,18 @@ import {
 const configuration = new Configuration();
 const apiInstance = new ProductsApi(configuration);
 
-let productId: string; // (optional) (default to undefined)
 let page: number; //1-based page index (optional) (default to 1)
 let pageSize: number; // (optional) (default to 10)
 let text: string; // (optional) (default to undefined)
+let productId: string; // (optional) (default to undefined)
 let minPrice: number; // (optional) (default to undefined)
 let maxPrice: number; // (optional) (default to undefined)
 
 const { status, data } = await apiInstance.listProducts(
-    productId,
     page,
     pageSize,
     text,
+    productId,
     minPrice,
     maxPrice
 );
@@ -284,10 +284,10 @@ const { status, data } = await apiInstance.listProducts(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **productId** | [**string**] |  | (optional) defaults to undefined|
 | **page** | [**number**] | 1-based page index | (optional) defaults to 1|
 | **pageSize** | [**number**] |  | (optional) defaults to 10|
 | **text** | [**string**] |  | (optional) defaults to undefined|
+| **productId** | [**string**] |  | (optional) defaults to undefined|
 | **minPrice** | [**number**] |  | (optional) defaults to undefined|
 | **maxPrice** | [**number**] |  | (optional) defaults to undefined|
 

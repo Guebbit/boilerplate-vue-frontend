@@ -36,16 +36,6 @@ export type IAxiosRequestData = unknown;
 /**
  *
  */
-export type IAxiosResponseData<T> = IResponseSuccess<T>;
-
-/**
- *
- */
-export type IAxiosResponseBody = unknown;
-
-/**
- *
- */
 export type IAxiosResponseErrorData = IResponseReject;
 
 /**
@@ -88,9 +78,7 @@ instance.defaults.baseURL = import.meta.env.VITE_API_URL ?? '';
 export const onRequest = (config: InternalAxiosRequestConfig<IAxiosRequestData>) => {
     const { accessToken } = storeToRefs(useProfileStore());
     if (accessToken.value) config.headers.Authorization = `Bearer ${accessToken.value}`;
-    // config.headers['Content-Type'] = 'application/json';
     // console.log('[request]', config);
-    // Current language at the time of the request
     config.headers['Accept-Language'] = getCurrentLocale();
     return config;
 };
@@ -108,16 +96,14 @@ export const onRequestReject = (error: AxiosError) => {
 
 /**
  * Response success interceptor.
- * Our backend wraps payloads in a standard success envelope,
- * so we return `response.data` directly.
+ * Passes the full AxiosResponse through unchanged; callers unwrap the
+ * backend success envelope ({ data }) themselves.
  *
  * @param response
  */
-export const onResponseSuccess = <T>(
-    response: AxiosResponse<IAxiosResponseData<T>, IAxiosResponseBody>
-): IAxiosResponseData<T> => {
-    return response.data;
-};
+export const onResponseSuccess = (
+    response: AxiosResponse
+): AxiosResponse => response;
 
 /**
  * Response error normalizer.
@@ -170,12 +156,12 @@ export const onResponseRejectWithRefresh = async (
         | undefined;
     if (error.response?.status === 401 && !originalRequest?._dontRetry)
         return instance
-            .get<unknown, IResponseSuccess<{ token: string }>>('/account/refresh', {
+            .get<IResponseSuccess<{ token: string }>>('/account/refresh', {
                 _dontRetry: true
             } as IAxiosRequestConfigWithRetry)
             .then(({ data }) => {
-                if (!data?.token || !originalRequest) return;
-                accessToken.value = data.token;
+                if (!data?.data?.token || !originalRequest) return;
+                accessToken.value = data.data.token;
                 return instance.request({
                     ...originalRequest,
                     _dontRetry: true
@@ -194,14 +180,7 @@ instance.interceptors.request.use(onRequest, onRequestReject);
  * Handle all responses
  * (Intercept and modify responses after they are received)
  */
-// NOTE:
-// Axios expects the success interceptor to return an AxiosResponse.
-// Our app-level API contract unwraps and returns only the response body envelope.
-// The cast keeps axios interceptor typing satisfied while preserving our app behavior.
-instance.interceptors.response.use(
-    onResponseSuccess as unknown as (value: AxiosResponse) => AxiosResponse,
-    onResponseRejectWithRefresh
-);
+instance.interceptors.response.use(onResponseSuccess, onResponseRejectWithRefresh);
 
 /**
  * Complete custom axios instance

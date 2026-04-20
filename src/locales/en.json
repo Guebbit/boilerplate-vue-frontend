@@ -8,7 +8,9 @@
         "loading": "loading {load}",
         "it": "italian",
         "en": "english",
-        "es": "spanish"
+        "es": "spanish",
+        "search": "Search",
+        "reset": "Reset"
     },
     "navigation": {
         "label-home": "home",
@@ -56,7 +58,11 @@
         "column-price": "Price",
         "column-active": "Active",
         "column-created-at": "Created at",
-        "column-actions": "Actions"
+        "column-actions": "Actions",
+        "filter-text": "Search",
+        "filter-id": "Product ID",
+        "filter-min-price": "Min price",
+        "filter-max-price": "Max price"
     },
     "product-target-page": {
         "page-title": "Product page",
@@ -87,7 +93,15 @@
         "column-admin": "Admin",
         "column-active": "Active",
         "column-created-at": "Created at",
-        "column-actions": "Actions"
+        "column-actions": "Actions",
+        "filter-text": "Search",
+        "filter-id": "User ID",
+        "filter-email": "Email",
+        "filter-username": "Username",
+        "filter-active": "Status",
+        "filter-active-all": "All",
+        "filter-active-yes": "Active",
+        "filter-active-no": "Inactive"
     },
     "user-target-page": {
         "page-title": "User page",
@@ -154,7 +168,11 @@
         "column-status": "Status",
         "column-total": "Total",
         "column-date": "Date",
-        "column-actions": "Actions"
+        "column-actions": "Actions",
+        "filter-id": "Order ID",
+        "filter-user-id": "User ID",
+        "filter-product-id": "Product ID",
+        "filter-email": "Email"
     },
     "order-target-page": {
         "page-title": "Order details",

@@ -1,54 +1,65 @@
+<script lang="ts">
+export default {
+    name: 'UsersListPage'
+};
+</script>
+
 <script setup lang="ts">
 import '../assets/styles/pages/usersList.scss';
-import { onMounted, watch } from 'vue';
+import { onMounted, reactive, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/stores/users';
+import type { SearchUsersRequest } from '@types';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import ListPagination from '@/components/molecules/ListPagination.vue';
+import BaseInput from '@/components/atoms/BaseInput.vue';
+import BaseSelect from '@/components/atoms/BaseSelect.vue';
 
-/**
- * Generics
- */
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
-/**
- * Users store
- * useStructureRestApi within the store handles data management,
- * selection, loading state and pagination
- */
-const { fetchPaginationUsers, deleteUser } = useUsersStore();
+const { fetchSearchUsers, deleteUser } = useUsersStore();
 const { pageItemList, selectedUserId, pageCurrent, pageSize, pageTotal, loading } =
     storeToRefs(useUsersStore());
 
-/**
- * Initialize pagination
- */
 pageSize.value = 10;
 
-/**
- * Get users from API
- */
-onMounted(() => fetchPaginationUsers(Math.max(1, pageCurrent.value), pageSize.value));
+const filters = reactive<Omit<SearchUsersRequest, 'page' | 'pageSize'>>({});
 
-watch([pageCurrent, pageSize], ([currentPage, currentPageSize]) => {
-    fetchPaginationUsers(Math.max(1, currentPage), currentPageSize);
-});
+const activeOptions = [
+    { value: undefined, label: t('users-list-page.filter-active-all') },
+    { value: true, label: t('users-list-page.filter-active-yes') },
+    { value: false, label: t('users-list-page.filter-active-no') }
+];
 
-/**
- * Delete a user after confirmation
- */
+const handleSearch = () => {
+    pageCurrent.value = 1;
+    fetchSearchUsers(filters, 1, pageSize.value);
+};
+
+const handleReset = () => {
+    Object.keys(filters).forEach((k) => delete (filters as Record<string, unknown>)[k]);
+    pageCurrent.value = 1;
+    fetchSearchUsers({}, 1, pageSize.value, true);
+};
+
 const handleDelete = (userId: string) => {
     if (!confirm(t('users-list-page.confirm-delete'))) return;
     deleteUser(userId)
         .then(() => addMessage(t('users-list-page.success-delete')))
         .catch(({ message }: { message: string }) => addMessage(message));
 };
+
+onMounted(() => fetchSearchUsers(filters, Math.max(1, pageCurrent.value), pageSize.value));
+
+watch([pageCurrent, pageSize], ([currentPage, currentPageSize]) => {
+    fetchSearchUsers(filters, Math.max(1, currentPage), currentPageSize);
+});
 </script>
 
 <template>
@@ -58,6 +69,18 @@ const handleDelete = (userId: string) => {
                 <span>{{ t('users-list-page.page-title') }}</span>
             </h1>
         </template>
+
+        <form class="list-filters" @submit.prevent="handleSearch">
+            <BaseInput v-model="filters.text" :label="t('users-list-page.filter-text')" :placeholder="t('users-list-page.filter-text')" />
+            <BaseInput v-model="filters.id" :label="t('users-list-page.filter-id')" :placeholder="t('users-list-page.filter-id')" />
+            <BaseInput v-model="filters.email" :label="t('users-list-page.filter-email')" :placeholder="t('users-list-page.filter-email')" />
+            <BaseInput v-model="filters.username" :label="t('users-list-page.filter-username')" :placeholder="t('users-list-page.filter-username')" />
+            <BaseSelect v-model="filters.active" :label="t('users-list-page.filter-active')" :options="activeOptions" />
+            <div class="list-filters-actions">
+                <button type="submit" class="theme-button">{{ t('generic.search') }}</button>
+                <button type="button" class="theme-button" @click="handleReset">{{ t('generic.reset') }}</button>
+            </div>
+        </form>
 
         <div class="users-list-actions">
             <RouterLink :to="routerLinkI18n({ name: 'UserCreate' })" class="theme-button">
@@ -97,9 +120,7 @@ const handleDelete = (userId: string) => {
                         </td>
                         <td class="actions-cell">
                             <RouterLink
-                                :to="
-                                    routerLinkI18n({ name: 'UserTarget', params: { id: user.id } })
-                                "
+                                :to="routerLinkI18n({ name: 'UserTarget', params: { id: user.id } })"
                                 class="theme-button"
                             >
                                 {{ t('users-list-page.button-view') }}

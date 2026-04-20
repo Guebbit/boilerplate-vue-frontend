@@ -363,17 +363,17 @@ import {
 const configuration = new Configuration();
 const apiInstance = new OrdersApi(configuration);
 
-let id: string; // (optional) (default to undefined)
 let page: number; //1-based page index (optional) (default to 1)
 let pageSize: number; // (optional) (default to 10)
+let id: string; // (optional) (default to undefined)
 let userId: string; // (optional) (default to undefined)
 let productId: string; // (optional) (default to undefined)
 let email: string; // (optional) (default to undefined)
 
 const { status, data } = await apiInstance.listOrders(
-    id,
     page,
     pageSize,
+    id,
     userId,
     productId,
     email
@@ -384,9 +384,9 @@ const { status, data } = await apiInstance.listOrders(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **id** | [**string**] |  | (optional) defaults to undefined|
 | **page** | [**number**] | 1-based page index | (optional) defaults to 1|
 | **pageSize** | [**number**] |  | (optional) defaults to 10|
+| **id** | [**string**] |  | (optional) defaults to undefined|
 | **userId** | [**string**] |  | (optional) defaults to undefined|
 | **productId** | [**string**] |  | (optional) defaults to undefined|
 | **email** | [**string**] |  | (optional) defaults to undefined|

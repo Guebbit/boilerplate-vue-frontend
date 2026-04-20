@@ -5,6 +5,7 @@ import {
     type CartSummaryResponse,
     type MessageResponse,
     type Order,
+    type OrderItem,
     type PaginationMeta,
     type Product,
     type RefreshTokenResponse,
@@ -201,6 +202,11 @@ export const calculateCartSummary = (): CartSummaryResponse => {
     };
 };
 
+export const cartItemToOrderItem = (item: CartItem): OrderItem => ({
+    product: mockDatabase.sampleProducts.find(({ id }) => id === item.productId)!,
+    quantity: item.quantity
+});
+
 export const getCartResponse = (): CartResponse => ({
     items: mockDatabase.sampleCartItems,
     summary: calculateCartSummary()
@@ -211,8 +217,7 @@ export const createMockOrder = (
 ): Order => {
     let total = 0;
     for (const item of values.items) {
-        const currentProduct = mockDatabase.sampleProducts.find(({ id }) => id === item.productId);
-        total += (currentProduct?.price ?? 0) * item.quantity;
+        total += (item.product?.price ?? 0) * item.quantity;
     }
     return {
         id: `order-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
@@ -231,13 +236,13 @@ mockDatabase.sampleOrders = [
     createMockOrder({
         userId: 'user-1',
         email: 'admin@example.com',
-        items: [{ productId: 'prod-1', quantity: 1 }],
+        items: [{ product: mockDatabase.sampleProducts.find(({ id }) => id === 'prod-1')!, quantity: 1 }],
         status: OrderStatusEnum.Paid
     }),
     createMockOrder({
         userId: 'user-2',
         email: 'john@example.com',
-        items: [{ productId: 'prod-2', quantity: 3 }],
+        items: [{ product: mockDatabase.sampleProducts.find(({ id }) => id === 'prod-2')!, quantity: 3 }],
         status: OrderStatusEnum.Processing
     })
 ];

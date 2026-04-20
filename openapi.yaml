@@ -341,6 +341,17 @@ components:
                     type: integer
                     minimum: 1
 
+        OrderItem:
+            type: object
+            additionalProperties: false
+            required: [product, quantity]
+            properties:
+                product:
+                    $ref: '#/components/schemas/Product'
+                quantity:
+                    type: integer
+                    minimum: 1
+
         Order:
             type: object
             required: [id, userId, email, items, total, status]
@@ -354,7 +365,7 @@ components:
                 items:
                     type: array
                     items:
-                        $ref: '#/components/schemas/CartItem'
+                        $ref: '#/components/schemas/OrderItem'
                 total:
                     type: number
                     format: double
@@ -1320,10 +1331,10 @@ paths:
             description: Returns a paginated list of products.
             operationId: listProducts
             parameters:
-                - $ref: '#/components/parameters/ProductIdParam'
                 - $ref: '#/components/parameters/PageParam'
                 - $ref: '#/components/parameters/PageSizeParam'
                 - $ref: '#/components/parameters/TextParam'
+                - $ref: '#/components/parameters/ProductIdParam'
                 - name: minPrice
                   in: query
                   required: false
@@ -1666,9 +1677,9 @@ paths:
             security:
                 - bearerAuth: []
             parameters:
-                - $ref: '#/components/parameters/IdParam'
                 - $ref: '#/components/parameters/PageParam'
                 - $ref: '#/components/parameters/PageSizeParam'
+                - $ref: '#/components/parameters/IdParam'
                 - $ref: '#/components/parameters/UserIdParam'
                 - $ref: '#/components/parameters/ProductIdParam'
                 - name: email

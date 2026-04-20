@@ -23,11 +23,11 @@
                         <h3>{{ t('order-target-page.label-items') }}</h3>
                         <div
                             v-for="item in currentOrder.items"
-                            :key="'order-item-' + item.productId"
+                            :key="'order-item-' + item.product.id"
                             class="theme-card"
                         >
                             <p>
-                                {{ t('order-target-page.label-product-id') }}: {{ item.productId }}
+                                {{ t('order-target-page.label-product-id') }}: {{ item.product.id }}
                             </p>
                             <p>{{ t('order-target-page.label-quantity') }}: {{ item.quantity }}</p>
                         </div>

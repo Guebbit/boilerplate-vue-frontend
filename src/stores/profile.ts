@@ -69,15 +69,19 @@ export const useProfileStore = defineStore('profile', () => {
      * Authenticate users
      * TODO se l'utente non è ancora loggato non so con quale lingua restituire gli errori
      *
-     * @param auth
+     * @param email
      * @param password
      */
-    const login = (auth: string, password: string) =>
+    const login = (email: string, password: string) =>
         fetchAny(() =>
-            authApi.login({ email: auth, password }).then((response) => {
-                accessToken.value = getTokenFromResponse(response);
-            })
-        ).then(() => fetchProfile(true));
+            authApi
+                .login({ email, password })
+                .then((data) => {
+                    console.log('11111111111', data);
+                    accessToken.value = getTokenFromResponse(data);
+                })
+                .then(() => fetchProfile(true))
+        );
 
     /**
      * Register a new user account
@@ -98,8 +102,8 @@ export const useProfileStore = defineStore('profile', () => {
      */
     const refreshToken = () =>
         fetchAny(() =>
-            authApi.refreshToken().then((response) => {
-                accessToken.value = getTokenFromResponse(response);
+            authApi.refreshToken().then(({ data }) => {
+                accessToken.value = getTokenFromResponse(data);
             })
         );
 
@@ -113,8 +117,8 @@ export const useProfileStore = defineStore('profile', () => {
     const fetchProfile = (forced = false) => {
         return fetchTarget(
             () =>
-                accountApi.getAccount().then((response) => {
-                    const payload = getPayloadFromResponse<User>(response);
+                accountApi.getAccount().then(({ data }) => {
+                    const payload = getPayloadFromResponse<User>(data);
                     if (!payload) return;
                     // to handle single-target stores we just need to select the correct identifier
                     selectedIdentifier.value = payload.id;

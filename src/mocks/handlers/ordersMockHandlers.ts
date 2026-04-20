@@ -8,6 +8,7 @@ import type {
 } from '@types';
 import { OrderStatusEnum } from '@types';
 import {
+    cartItemToOrderItem,
     createMessageResponse,
     createMockInvoicePdf,
     createMockOrder,
@@ -37,7 +38,7 @@ const replyOrdersList = (
         if (id && order.id !== id) return false;
         if (userId && order.userId !== userId) return false;
         if (email && !order.email.toLowerCase().includes(email)) return false;
-        if (productId && !order.items.some((item) => item.productId === productId)) return false;
+        if (productId && !order.items.some((item) => item.product.id === productId)) return false;
         return true;
     });
 
@@ -66,7 +67,7 @@ export const registerOrdersMockHandlers = (mockAdapter: MockAdapter) => {
         const createdOrder = createMockOrder({
             userId: String(requestBody.userId ?? mockDatabase.currentAuthenticatedUserId),
             email: String(requestBody.email ?? 'order@example.com'),
-            items: Array.isArray(requestBody.items) ? (requestBody.items as CartItem[]) : [],
+            items: Array.isArray(requestBody.items) ? (requestBody.items as CartItem[]).map(cartItemToOrderItem) : [],
             notes: requestBody.notes ? String(requestBody.notes) : undefined,
             status: OrderStatusEnum.Pending
         });
@@ -86,7 +87,7 @@ export const registerOrdersMockHandlers = (mockAdapter: MockAdapter) => {
             ...mockDatabase.sampleOrders[targetIndex],
             userId: requestBody.userId ?? mockDatabase.sampleOrders[targetIndex].userId,
             email: requestBody.email ?? mockDatabase.sampleOrders[targetIndex].email,
-            items: requestBody.items ?? mockDatabase.sampleOrders[targetIndex].items,
+            items: requestBody.items ? requestBody.items.map(cartItemToOrderItem) : mockDatabase.sampleOrders[targetIndex].items,
             status: requestBody.status ?? mockDatabase.sampleOrders[targetIndex].status,
             updatedAt: getIsoDateNow()
         };
@@ -136,7 +137,7 @@ export const registerOrdersMockHandlers = (mockAdapter: MockAdapter) => {
             ...mockDatabase.sampleOrders[targetIndex],
             userId: requestBody.userId ?? mockDatabase.sampleOrders[targetIndex].userId,
             email: requestBody.email ?? mockDatabase.sampleOrders[targetIndex].email,
-            items: requestBody.items ?? mockDatabase.sampleOrders[targetIndex].items,
+            items: requestBody.items ? requestBody.items.map(cartItemToOrderItem) : mockDatabase.sampleOrders[targetIndex].items,
             status: requestBody.status ?? mockDatabase.sampleOrders[targetIndex].status,
             updatedAt: getIsoDateNow()
         };

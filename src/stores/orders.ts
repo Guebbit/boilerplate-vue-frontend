@@ -5,11 +5,12 @@ import { z } from 'zod';
 import { ordersApi } from '@/utils/api.ts';
 import type {
     Order,
+    OrdersResponse,
     CreateOrderRequest,
     UpdateOrderByIdRequest,
     CheckoutRequest,
     CheckoutResponse,
-    OrdersResponse
+    SearchOrdersRequest
 } from '@types';
 
 export const useOrdersStore = defineStore('orders', () => {
@@ -29,6 +30,7 @@ export const useOrdersStore = defineStore('orders', () => {
         pageSize,
         pageTotal,
         pageItemList,
+        fetchSearch,
         fetchAll,
         fetchTarget,
         fetchAny,
@@ -59,12 +61,32 @@ export const useOrdersStore = defineStore('orders', () => {
     const fetchPaginationOrders = (page = 1, pageSize = 10, forced = false) =>
         fetchAny(
             () =>
-                ordersApi.listOrders(undefined, page, pageSize).then(({ data }) => {
+                ordersApi.listOrders(page, pageSize).then(({ data }) => {
                     const response = data as OrdersResponse;
                     addRecords(response.items ?? []);
                     return response;
                 }),
             { forced, lastUpdateKey: `orders_page_${page}_${pageSize}` }
+        );
+
+    type IOrdersFilters = Omit<SearchOrdersRequest, 'page' | 'pageSize'>;
+
+    /**
+     * @param filters
+     * @param page
+     * @param pageSize
+     * @param forced
+     */
+    const fetchSearchOrders = (filters: IOrdersFilters = {}, page = 1, pageSize = 10, forced = false) =>
+        fetchSearch(
+            () =>
+                ordersApi
+                    .searchOrders({ ...filters, page, pageSize })
+                    .then(({ data: { meta, items = [] } }) => [items, meta.totalItems] as [typeof items, number]),
+            filters,
+            page,
+            pageSize,
+            { forced }
         );
 
     /**
@@ -166,6 +188,7 @@ export const useOrdersStore = defineStore('orders', () => {
         pageItemList,
         fetchOrders,
         fetchPaginationOrders,
+        fetchSearchOrders,
         fetchOrder,
         createOrder,
         updateOrder,

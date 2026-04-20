@@ -104,8 +104,8 @@ const showErrors = ref(false);
  */
 if (import.meta.env.DEV)
     form.value = {
-        email: 'root@root.it',
-        password: 'RootRoot_123'
+        email: 'admin@example.com',
+        password: 'rootroot'
     };
 
 const { login } = useProfileStore();
@@ -118,6 +118,7 @@ const submitForm = () => {
         showErrors.value = true;
         return;
     }
+    console.log('submitting form', form.value);
     return login(form.value.email!, form.value.password!)
         .then(() =>
             // if query continue was set, redirect to that page,

@@ -25,6 +25,7 @@ docs/ErrorResponse.md
 docs/LoginRequest.md
 docs/MessageResponse.md
 docs/Order.md
+docs/OrderItem.md
 docs/OrdersApi.md
 docs/OrdersResponse.md
 docs/PaginationMeta.md

@@ -9,8 +9,7 @@ import { registerOrdersMockHandlers } from '@/mocks/handlers/ordersMockHandlers.
 let mockAdapterInstance: MockAdapter | undefined;
 
 export const initializeApiMocking = () => {
-    const shouldEnableMock = import.meta.env.VITE_API_MOCK_ENABLED === 'true';
-    if (!shouldEnableMock) return;
+    if (import.meta.env.VITE_API_MOCK_ENABLED !== 'true') return;
     if (mockAdapterInstance) return mockAdapterInstance;
 
     const mockAdapter = new MockAdapter(httpClient, {

@@ -1,6 +1,7 @@
 import type MockAdapter from 'axios-mock-adapter';
 import { OrderStatusEnum } from '@types';
 import {
+    cartItemToOrderItem,
     createMockOrder,
     getCartResponse,
     calculateCartSummary,
@@ -92,7 +93,7 @@ export const registerCartMockHandlers = (mockAdapter: MockAdapter) => {
         const createdOrder = createMockOrder({
             userId: mockDatabase.currentAuthenticatedUserId,
             email,
-            items: mockDatabase.sampleCartItems,
+            items: mockDatabase.sampleCartItems.map(cartItemToOrderItem),
             notes: requestBody.notes ? String(requestBody.notes) : undefined,
             status: OrderStatusEnum.Pending
         });

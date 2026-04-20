@@ -32,6 +32,7 @@ export const registerAccountMockHandlers = (mockAdapter: MockAdapter) => {
                 401,
                 { success: false, error: { code: 'UNAUTHORIZED', message: 'Invalid credentials' } }
             ];
+        mockDatabase.currentAuthenticatedUserId = matchedUser.id;
         return [
             200,
             {

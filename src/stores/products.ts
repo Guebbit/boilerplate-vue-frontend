@@ -9,7 +9,7 @@ import type {
     Product,
     CreateProductRequest,
     UpdateProductByIdRequest,
-    ProductsResponse
+    SearchProductsRequest
 } from '@types';
 
 export const useProductsStore = defineStore('products', () => {
@@ -29,7 +29,8 @@ export const useProductsStore = defineStore('products', () => {
         pageSize,
         pageTotal,
         pageItemList,
-        fetchAny,
+        fetchSearch,
+        fetchPaginate,
         fetchAll,
         fetchTarget,
         createTarget,
@@ -42,13 +43,9 @@ export const useProductsStore = defineStore('products', () => {
      * @param forced
      */
     const fetchProducts = (forced = false) =>
-        fetchAll(
-            () =>
-                productsApi
-                    .listProducts()
-                    .then(({ data }) => (data as { items?: Product[] })?.items ?? []),
-            { forced }
-        );
+        fetchAll(() => productsApi.listProducts().then(({ data: { meta, items = [] } }) => items), {
+            forced
+        });
 
     /**
      * @param page
@@ -56,14 +53,42 @@ export const useProductsStore = defineStore('products', () => {
      * @param forced
      */
     const fetchPaginationProducts = (page = 1, pageSize = 10, forced = false) =>
-        fetchAny(
+        fetchPaginate(
             () =>
-                productsApi.listProducts(undefined, page, pageSize).then(({ data }) => {
-                    const response = data as ProductsResponse;
-                    addRecords(response.items ?? []);
-                    return response;
-                }),
-            { forced, lastUpdateKey: `products_page_${page}_${pageSize}` }
+                productsApi
+                    .listProducts(page, pageSize)
+                    .then(({ data: { meta, items = [] } }) => [items, meta.totalItems]),
+            page,
+            pageSize,
+            { forced }
+        );
+
+    type IProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
+
+    /**
+     * @param filters
+     * @param page
+     * @param pageSize
+     * @param forced
+     */
+    const fetchSearchProducts = (
+        filters: IProductsFilters = {},
+        page = 1,
+        pageSize = 10,
+        forced = false
+    ) =>
+        fetchSearch(
+            () =>
+                productsApi
+                    .searchProducts({ ...filters, page, pageSize })
+                    .then(
+                        ({ data: { meta, items = [] } }) =>
+                            [items, meta.totalItems] as [typeof items, number]
+                    ),
+            filters,
+            page,
+            pageSize,
+            { forced }
         );
 
     /**
@@ -200,6 +225,7 @@ export const useProductsStore = defineStore('products', () => {
         pageItemList,
         fetchProducts,
         fetchPaginationProducts,
+        fetchSearchProducts,
         fetchProduct,
         createProduct,
         updateProduct,
