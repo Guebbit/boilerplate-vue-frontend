@@ -128,10 +128,11 @@ const { signup, fetchProfile } = useProfileStore();
  */
 const submitForm = () =>
     handleSubmit(async () => {
+        const username = form.value.username?.trim();
         await signup(
             form.value.email!,
             form.value.password!,
-            form.value.username?.trim() || undefined,
+            username ? username : undefined,
             form.value.passwordConfirm!
         );
         await fetchProfile();
