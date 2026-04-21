@@ -91,6 +91,11 @@ npm run test:unit
 
 # TODO
 
+- Signup should send an email with a link to confirm the account 
+    (CHECK the api-mongodb-mongoose, it doesn't send the email and just create the user) 
+    Create the registration confirmation page
+- Create the reset password page and reset password confirm page
+- Add images upload in the various forms
 - Always call useXYZStore() inside functions, not at the top level — avoids circular dependency issues (unless it is specifically dependent)
 - Create a NUXT variant
 - Create a Vuetify Variant
