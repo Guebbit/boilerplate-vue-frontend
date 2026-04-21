@@ -130,7 +130,8 @@
         "label-password": "Password",
         "label-remember": "Ricorda il mio accesso",
         "text-conditions": "Ho letto le condizioni della privacy",
-        "button-submit": "Registrati"
+        "button-submit": "Registrati",
+        "success-email-code-sent": "Registrazione completata. Ti abbiamo inviato un'email con un codice di verifica."
     },
     "profile-page": {
         "page-title": "Il tuo profilo",
@@ -235,6 +236,7 @@
         "username-required": "Il nome utente è obbligatorio",
         "username-min": "Il nome utente deve essere lungo almeno 3 caratteri",
         "conditions-required": "Devi accettare le condizioni!",
+        "fix-errors": "Correggi gli errori evidenziati nel modulo.",
         "password-required": "La password è obbligatoria",
         "password-min": "La password deve essere lunga almeno 8 caratteri",
         "password-minus-required": "La password deve contenere almeno una lettera minuscola",

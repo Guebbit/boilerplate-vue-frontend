@@ -7,7 +7,7 @@
         </template>
 
         <div class="theme-card theme-form-container">
-            <form class="theme-form" @submit.prevent="submitForm">
+            <form ref="formElement" class="theme-form" @submit.prevent="submitForm">
                 <BaseInput
                     v-model="form.email"
                     type="email"
@@ -30,10 +30,6 @@
                     :show-errors="showErrors"
                 />
                 <BaseCheckbox
-                    v-model="form.remember"
-                    :label="t('signup-page.label-remember')"
-                />
-                <BaseCheckbox
                     v-model="form.conditions"
                     :label="t('signup-page.text-conditions')"
                     :errors="formErrors.conditions"
@@ -54,7 +50,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { nextTick, ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
@@ -83,7 +79,6 @@ interface IUserSignupForm {
     username?: string;
     password?: string;
     passwordConfirm?: string;
-    remember?: boolean;
     conditions?: boolean;
 }
 
@@ -96,7 +91,6 @@ const { form, formErrors, isSubmitting, handleSubmit } =
             username: '',
             password: '',
             passwordConfirm: '',
-            remember: false,
             conditions: false
         },
         zodSchemaUsers
@@ -118,8 +112,16 @@ const { form, formErrors, isSubmitting, handleSubmit } =
  * Whether to display validation errors in the UI
  */
 const showErrors = ref(false);
+const formElement = ref<HTMLFormElement>();
 
 const { signup, fetchProfile } = useProfileStore();
+
+const focusFirstErrorField = () =>
+    formElement.value
+        ?.querySelector<HTMLElement>(
+            '.form-error input, .form-error textarea, .form-error select, .form-error [tabindex]'
+        )
+        ?.focus();
 
 /**
  * Submit form and try to authenticate.
@@ -132,16 +134,21 @@ const submitForm = () =>
         await signup(
             form.value.email!,
             form.value.password!,
-            username ? username : undefined,
+            username || undefined,
             form.value.passwordConfirm!
         );
+        addMessage(t('signup-page.success-email-code-sent'));
         await fetchProfile();
         await (route.query.continue
             ? router.push({ path: route.query.continue as string })
             : router.push({ name: 'Home' }));
     })
-        .then((success) => {
-            if (!success) showErrors.value = true;
+        .then(async (success) => {
+            if (success) return;
+            showErrors.value = true;
+            addMessage(t('users-form.fix-errors'));
+            await nextTick();
+            focusFirstErrorField();
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>
