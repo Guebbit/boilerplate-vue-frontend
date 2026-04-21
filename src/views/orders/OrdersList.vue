@@ -89,7 +89,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import '../assets/styles/pages/ordersList.scss';
+import '@/assets/styles/pages/ordersList.scss';
 import { onMounted, reactive, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
@@ -97,6 +97,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/stores/orders.ts';
+import { notifyErrorMessages } from '@/utils/helperErrors.ts';
 import type { SearchOrdersRequest } from '@types';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
@@ -129,7 +130,7 @@ const handleDelete = (orderId: string) => {
     if (!confirm(t('orders-list-page.confirm-delete'))) return;
     deleteOrder(orderId)
         .then(() => addMessage(t('orders-list-page.success-delete')))
-        .catch(({ message }: { message: string }) => addMessage(message));
+        .catch((error) => notifyErrorMessages(addMessage, error));
 };
 
 onMounted(() => fetchSearchOrders(filters, Math.max(1, pageCurrent.value), pageSize.value));

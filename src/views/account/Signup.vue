@@ -39,7 +39,7 @@
                     :errors="formErrors.conditions"
                     :show-errors="showErrors"
                 />
-                <BaseButton type="submit" :disabled="!isDirty || isSubmitting">
+                <BaseButton type="submit" :disabled="isSubmitting">
                     {{ t('signup-page.button-submit') }}
                 </BaseButton>
             </form>
@@ -65,6 +65,7 @@ import { useUsersStore } from '@/stores/users.ts';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
 import BaseButton from '@/components/atoms/BaseButton.vue';
+import { notifyErrorMessages } from '@/utils/helperErrors.ts';
 
 /**
  * UI logics
@@ -88,9 +89,16 @@ interface IUserSignupForm {
 
 const { zodSchemaUsers } = useUsersStore();
 
-const { form, formErrors, isDirty, isSubmitting, handleSubmit } =
+const { form, formErrors, isSubmitting, handleSubmit } =
     useStructureFormValidation<IUserSignupForm>(
-       {},
+        {
+            email: '',
+            username: '',
+            password: '',
+            passwordConfirm: '',
+            remember: false,
+            conditions: false
+        },
         zodSchemaUsers
             .pick({ email: true })
             .extend({
@@ -120,10 +128,11 @@ const { signup, fetchProfile } = useProfileStore();
  */
 const submitForm = () =>
     handleSubmit(async () => {
+        const username = form.value.username?.trim();
         await signup(
             form.value.email!,
             form.value.password!,
-            form.value.username,
+            username ? username : undefined,
             form.value.passwordConfirm!
         );
         await fetchProfile();
@@ -134,10 +143,7 @@ const submitForm = () =>
         .then((success) => {
             if (!success) showErrors.value = true;
         })
-        .catch(({ message, errors = [] }) => {
-            if (errors.length === 0) addMessage(message);
-            for (let i = 0, len = errors.length; i < len; i++) addMessage(errors[i]);
-        });
+        .catch((error) => notifyErrorMessages(addMessage, error));
 </script>
 
 <style lang="scss">

@@ -90,6 +90,7 @@ import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useCartStore } from '@/stores/cart.ts';
 import { useOrdersStore } from '@/stores/orders.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { notifyErrorMessages } from '@/utils/helperErrors.ts';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 
@@ -119,10 +120,7 @@ const checkout = () =>
         .then(() => {
             router.push(routerLinkI18n({ name: 'OrdersList' }));
         })
-        .catch((error: unknown) => {
-            const message = (error as { message?: string })?.message ?? 'Unknown error';
-            addMessage(message);
-        });
+        .catch((error) => notifyErrorMessages(addMessage, error));
 
 /**
  * Load cart on mount

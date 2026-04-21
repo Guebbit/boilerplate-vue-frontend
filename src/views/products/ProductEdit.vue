@@ -72,6 +72,7 @@ import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
 import BaseButton from '@/components/atoms/BaseButton.vue';
+import { notifyErrorMessages } from '@/utils/helperErrors.ts';
 
 /**
  * Generics
@@ -157,7 +158,7 @@ const submitForm = () =>
         .then((success) => {
             if (!success) showErrors.value = true;
         })
-        .catch(({ message }: { message: string }) => addMessage(message));
+        .catch((error) => notifyErrorMessages(addMessage, error));
 
 /**
  * Load product data on mount

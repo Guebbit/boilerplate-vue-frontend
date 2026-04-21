@@ -43,6 +43,20 @@ export type IAxiosResponseErrorData = IResponseReject;
  */
 export type IAxiosResponseErrorBody = unknown;
 
+const refreshExcludedPaths = new Set([
+    '/account/login',
+    '/account/signup',
+    '/account/reset',
+    '/account/reset-confirm',
+    '/account/logout-all'
+]);
+
+const shouldSkipRefresh = (url?: string) => {
+    if (!url) return false;
+    const pathname = url.startsWith('http://') || url.startsWith('https://') ? new URL(url).pathname : url;
+    return refreshExcludedPaths.has(pathname);
+};
+
 /**
  * Creates the shared axios instance used by generated API clients.
  *
@@ -154,7 +168,11 @@ export const onResponseRejectWithRefresh = async (
     const originalRequest = error.config as
         | (InternalAxiosRequestConfig & { _dontRetry?: boolean })
         | undefined;
-    if (error.response?.status === 401 && !originalRequest?._dontRetry)
+    if (
+        error.response?.status === 401 &&
+        !originalRequest?._dontRetry &&
+        !shouldSkipRefresh(originalRequest?.url)
+    )
         return instance
             .get<IResponseSuccess<{ token: string }>>('/account/refresh', {
                 _dontRetry: true
@@ -166,7 +184,8 @@ export const onResponseRejectWithRefresh = async (
                     ...originalRequest,
                     _dontRetry: true
                 } as IAxiosRequestConfigWithRetry);
-            });
+            })
+            .catch(() => onResponseReject(error));
     return onResponseReject(error);
 };
 

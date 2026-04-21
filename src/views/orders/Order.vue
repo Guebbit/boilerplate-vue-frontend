@@ -79,6 +79,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/stores/orders.ts';
+import { notifyErrorMessages } from '@/utils/helperErrors.ts';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 
@@ -113,8 +114,7 @@ const downloadInvoice = async () => {
         link.remove();
         globalThis.URL.revokeObjectURL(url);
     } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : 'Failed to download invoice';
-        addMessage(message);
+        notifyErrorMessages(addMessage, error);
     }
 };
 

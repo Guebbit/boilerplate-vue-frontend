@@ -84,7 +84,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import '../assets/styles/pages/productsList.scss';
+import '@/assets/styles/pages/productsList.scss';
 import { onMounted, reactive, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
@@ -92,6 +92,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/stores/products';
+import { notifyErrorMessages } from '@/utils/helperErrors.ts';
 import type { SearchProductsRequest } from '@types';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
@@ -124,7 +125,7 @@ const handleDelete = (productId: string) => {
     if (!confirm(t('products-list-page.confirm-delete'))) return;
     deleteProduct(productId)
         .then(() => addMessage(t('products-list-page.success-delete')))
-        .catch(({ message }: { message: string }) => addMessage(message));
+        .catch((error) => notifyErrorMessages(addMessage, error));
 };
 
 onMounted(() => fetchSearchProducts(filters, Math.max(1, pageCurrent.value), pageSize.value));

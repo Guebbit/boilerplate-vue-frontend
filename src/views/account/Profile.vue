@@ -88,6 +88,7 @@ import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseButton from '@/components/atoms/BaseButton.vue';
 import { z } from 'zod';
+import { notifyErrorMessages } from '@/utils/helperErrors.ts';
 
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
@@ -201,9 +202,7 @@ const submitForm = () => {
         .then(() => {
             addMessage(t('profile-page.success-update'));
         })
-        .catch(({ message }) => {
-            addMessage(message);
-        });
+        .catch((error) => notifyErrorMessages(addMessage, error));
 };
 </script>
 

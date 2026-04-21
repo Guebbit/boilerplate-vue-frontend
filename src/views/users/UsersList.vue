@@ -5,7 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import '../assets/styles/pages/usersList.scss';
+import '@/assets/styles/pages/usersList.scss';
 import { onMounted, reactive, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
@@ -13,6 +13,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/stores/users';
+import { notifyErrorMessages } from '@/utils/helperErrors.ts';
 import type { SearchUsersRequest } from '@types';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
@@ -52,7 +53,7 @@ const handleDelete = (userId: string) => {
     if (!confirm(t('users-list-page.confirm-delete'))) return;
     deleteUser(userId)
         .then(() => addMessage(t('users-list-page.success-delete')))
-        .catch(({ message }: { message: string }) => addMessage(message));
+        .catch((error) => notifyErrorMessages(addMessage, error));
 };
 
 onMounted(() => fetchSearchUsers(filters, Math.max(1, pageCurrent.value), pageSize.value));
