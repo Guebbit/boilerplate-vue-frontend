@@ -112,7 +112,7 @@ export const mockDatabase: {
     sampleUsers: [
         {
             id: 'user-1',
-            email: 'admin@example.com',
+            email: 'root@root.it',
             username: 'admin',
             admin: true,
             active: true,
@@ -235,7 +235,7 @@ export const createMockOrder = (
 mockDatabase.sampleOrders = [
     createMockOrder({
         userId: 'user-1',
-        email: 'admin@example.com',
+        email: 'root@root.it',
         items: [{ product: mockDatabase.sampleProducts.find(({ id }) => id === 'prod-1')!, quantity: 1 }],
         status: OrderStatusEnum.Paid
     }),

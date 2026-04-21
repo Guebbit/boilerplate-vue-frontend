@@ -21,6 +21,7 @@
         "label-cart": "Cart",
         "label-orders": "Orders",
         "label-login": "Login",
+        "label-signup": "Sign up",
         "label-logout": "Logout",
         "error-already-logged": "You are already logged",
         "error-not-logged": "You must be logged to access this page",
@@ -122,6 +123,14 @@
         "label-remember": "Remember me",
         "text-conditions": "I have read the privacy conditions",
         "button-submit": "Login"
+    },
+    "signup-page": {
+        "page-title": "Sign up",
+        "label-email": "Email",
+        "label-password": "Password",
+        "label-remember": "Remember me",
+        "text-conditions": "I have read the privacy conditions",
+        "button-submit": "Sign up"
     },
     "profile-page": {
         "page-title": "User Profile",

@@ -8,59 +8,37 @@
 
         <div class="theme-card theme-form-container">
             <form class="theme-form" @submit.prevent="submitForm">
-                <div
-                    class="theme-form-input"
-                    :class="{ 'form-error': showErrors && formErrors.title }"
-                >
-                    <label for="edit-title">{{ t('product-edit-page.label-title') }}</label>
-                    <input v-model="form.title" type="text" id="edit-title" class="theme-input" />
-                    <p v-if="showErrors && formErrors.title" class="form-error-message">
-                        {{ formErrors.title.join(', ') }}
-                    </p>
-                </div>
-
-                <div
-                    class="theme-form-input"
-                    :class="{ 'form-error': showErrors && formErrors.price }"
-                >
-                    <label for="edit-price">{{ t('product-edit-page.label-price') }}</label>
-                    <input
-                        v-model.number="form.price"
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        id="edit-price"
-                        class="theme-input"
-                    />
-                    <p v-if="showErrors && formErrors.price" class="form-error-message">
-                        {{ formErrors.price.join(', ') }}
-                    </p>
-                </div>
-
-                <div class="theme-form-input">
-                    <label for="edit-description">{{
-                        t('product-edit-page.label-description')
-                    }}</label>
-                    <textarea
-                        v-model="form.description"
-                        id="edit-description"
-                        class="theme-input"
-                    />
-                </div>
-
-                <div class="theme-form-input-checkbox">
-                    <input v-model="form.active" type="checkbox" id="edit-active" />
-                    <label for="edit-active">{{ t('product-edit-page.label-active') }}</label>
-                </div>
-
-                <br />
-
-                <button type="submit" class="theme-button" :disabled="isSubmitting || loading">
+                <BaseInput
+                    v-model="form.title"
+                    type="text"
+                    :label="t('product-edit-page.label-title')"
+                    :errors="formErrors.title"
+                    :show-errors="showErrors"
+                />
+                <BaseInput
+                    v-model="form.price"
+                    type="number"
+                    :label="t('product-edit-page.label-price')"
+                    :min="0"
+                    :step="0.01"
+                    :errors="formErrors.price"
+                    :show-errors="showErrors"
+                />
+                <BaseInput
+                    v-model="form.description"
+                    :label="t('product-edit-page.label-description')"
+                    multiline
+                />
+                <BaseCheckbox
+                    v-model="form.active"
+                    :label="t('product-edit-page.label-active')"
+                />
+                <BaseButton type="submit" :disabled="isSubmitting || loading">
                     {{ t('product-edit-page.button-submit') }}
-                </button>
-                <button type="button" class="theme-button" @click="resetToCurrentProduct">
+                </BaseButton>
+                <BaseButton type="button" @click="resetToCurrentProduct">
                     {{ t('product-edit-page.reset-form') }}
-                </button>
+                </BaseButton>
             </form>
         </div>
 
@@ -90,19 +68,33 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/stores/products';
 import { z } from 'zod';
-
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
+import BaseInput from '@/components/atoms/BaseInput.vue';
+import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
+import BaseButton from '@/components/atoms/BaseButton.vue';
 
+/**
+ * Generics
+ */
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
+/**
+ * Props
+ */
 const { id } = defineProps<{
     id?: string;
 }>();
 
+/**
+ * Products store
+ */
 const { fetchProduct, updateProduct, zodSchemaProducts } = useProductsStore();
 const { currentProduct, selectedProductId, loading } = storeToRefs(useProductsStore());
 
+/**
+ * Form definition
+ */
 interface IProductEditForm {
     title?: string;
     price?: number;
@@ -118,8 +110,14 @@ const editSchema = zodSchemaProducts.pick({ title: true, price: true }).extend({
 const { form, formErrors, isSubmitting, handleSubmit } =
     useStructureFormValidation<IProductEditForm>({}, editSchema);
 
+/**
+ * Whether to display validation errors in the UI
+ */
 const showErrors = ref(false);
 
+/**
+ * Reset form to the current product's data
+ */
 const resetToCurrentProduct = () => {
     form.value = {
         title: currentProduct.value?.title ?? '',
@@ -130,6 +128,9 @@ const resetToCurrentProduct = () => {
     showErrors.value = false;
 };
 
+/**
+ * When the product data is loaded, pre-fill the form
+ */
 watch(
     currentProduct,
     (product) => {
@@ -138,6 +139,9 @@ watch(
     { immediate: true }
 );
 
+/**
+ * Submit form and update the product
+ */
 const submitForm = () =>
     handleSubmit(async () => {
         if (!id || form.value.title === undefined || form.value.price === undefined) return;
@@ -155,6 +159,9 @@ const submitForm = () =>
         })
         .catch(({ message }: { message: string }) => addMessage(message));
 
+/**
+ * Load product data on mount
+ */
 if (id) {
     selectedProductId.value = id;
     fetchProduct(id);
@@ -162,8 +169,6 @@ if (id) {
 </script>
 
 <style lang="scss">
-@use '@/assets/styles/components/forms';
-
 #product-edit-page {
     .theme-form-container {
         max-width: 600px;

@@ -8,73 +8,40 @@
 
         <div class="theme-card theme-form-container">
             <form class="theme-form" @submit.prevent="submitForm">
-                <div
-                    class="theme-form-input"
-                    :class="{
-                        'form-error': showErrors && formErrors.email
-                    }"
-                >
-                    <label for="form-email">{{ t('signup-page.label-email') }}</label>
-                    <input v-model="form.email" type="email" id="form-email" class="theme-input" />
-                    <p v-if="showErrors && formErrors.email" class="form-error-message">
-                        {{ formErrors.email.join(', ') }}
-                    </p>
-                </div>
-                <div
-                    class="theme-form-input"
-                    :class="{
-                        'form-error': showErrors && formErrors.password
-                    }"
-                >
-                    <label for="form-password">{{ t('signup-page.label-password') }}</label>
-                    <input
-                        v-model="form.password"
-                        type="password"
-                        id="form-password"
-                        class="theme-input"
-                    />
-                    <p v-if="showErrors && formErrors.password" class="form-error-message">
-                        {{ formErrors.password.join(', ') }}
-                    </p>
-                </div>
-                <div
-                    class="theme-form-input"
-                    :class="{
-                        'form-error': showErrors && formErrors.passwordConfirm
-                    }"
-                >
-                    <label for="form-password-confirm">
-                        {{ t('users-form.label-passwordConfirm') }}
-                    </label>
-                    <input
-                        v-model="form.passwordConfirm"
-                        type="password"
-                        id="form-password-confirm"
-                        class="theme-input"
-                    />
-                    <p v-if="showErrors && formErrors.passwordConfirm" class="form-error-message">
-                        {{ formErrors.passwordConfirm.join(', ') }}
-                    </p>
-                </div>
-
-                <div class="theme-form-input-checkbox">
-                    <input v-model="form.remember" type="checkbox" id="form-remember" />
-                    <label for="form-remember">{{ t('signup-page.label-remember') }}</label>
-                </div>
-
-                <div
-                    class="theme-form-input-checkbox"
-                    :class="{
-                        'form-error': showErrors && formErrors.conditions
-                    }"
-                >
-                    <input v-model="form.conditions" type="checkbox" id="form-conditions" />
-                    <label for="form-conditions">{{ t('signup-page.text-conditions') }}</label>
-                </div>
-
-                <button type="submit" class="theme-button" :disabled="!isDirty || isSubmitting">
+                <BaseInput
+                    v-model="form.email"
+                    type="email"
+                    :label="t('signup-page.label-email')"
+                    :errors="formErrors.email"
+                    :show-errors="showErrors"
+                />
+                <BaseInput
+                    v-model="form.password"
+                    type="password"
+                    :label="t('signup-page.label-password')"
+                    :errors="formErrors.password"
+                    :show-errors="showErrors"
+                />
+                <BaseInput
+                    v-model="form.passwordConfirm"
+                    type="password"
+                    :label="t('users-form.label-passwordConfirm')"
+                    :errors="formErrors.passwordConfirm"
+                    :show-errors="showErrors"
+                />
+                <BaseCheckbox
+                    v-model="form.remember"
+                    :label="t('signup-page.label-remember')"
+                />
+                <BaseCheckbox
+                    v-model="form.conditions"
+                    :label="t('signup-page.text-conditions')"
+                    :errors="formErrors.conditions"
+                    :show-errors="showErrors"
+                />
+                <BaseButton type="submit" :disabled="!isDirty || isSubmitting">
                     {{ t('signup-page.button-submit') }}
-                </button>
+                </BaseButton>
             </form>
         </div>
     </LayoutDefault>
@@ -95,6 +62,9 @@ import { useProfileStore } from '@/stores/profile.ts';
 import { useRouter, useRoute } from 'vue-router';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { useUsersStore } from '@/stores/users.ts';
+import BaseInput from '@/components/atoms/BaseInput.vue';
+import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
+import BaseButton from '@/components/atoms/BaseButton.vue';
 
 /**
  * UI logics
@@ -120,7 +90,7 @@ const { zodSchemaUsers } = useUsersStore();
 
 const { form, formErrors, isDirty, isSubmitting, handleSubmit } =
     useStructureFormValidation<IUserSignupForm>(
-        import.meta.env.PROD ? {} : { email: 'root@root.it', password: 'RootRoot_123' },
+       {},
         zodSchemaUsers
             .pick({ email: true })
             .extend({
@@ -171,8 +141,6 @@ const submitForm = () =>
 </script>
 
 <style lang="scss">
-@use '@/assets/styles/components/forms';
-
 #signup-page {
     .theme-form-container {
         max-width: 400px;

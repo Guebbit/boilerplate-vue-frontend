@@ -1,6 +1,6 @@
 <template>
     <header class="page-header">
-        <img alt="logo" class="logo" :src="PUBLIC_PATH + '/images/guebbit-logo-colored.png'" />
+        <img alt="logo" class="logo" :src="PUBLIC_PATH + 'images/guebbit-logo-colored.png'" />
 
         <nav>
             <RouterLink
@@ -86,6 +86,14 @@
                 @click="router.push(routerLinkI18n(loginContinueTo(route.fullPath)))"
             >
                 {{ t('navigation.label-login') }}
+            </button>
+
+            <button
+                v-show="!isAuth && !route.fullPath.includes('signup')"
+                class="theme-button"
+                @click="router.push(routerLinkI18n({ name: 'Signup' }))"
+            >
+                {{ t('navigation.label-signup') }}
             </button>
 
             <button

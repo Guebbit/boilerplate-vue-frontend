@@ -1,52 +1,37 @@
 <template>
-    <div class="base-select">
+    <div
+        class="theme-form-input"
+        :class="{ 'form-error': showErrors && errors?.length }"
+    >
         <label v-if="label" :for="uuid">{{ label }}</label>
-        <select :id="uuid" v-model="model" :disabled="disabled">
+        <select :id="uuid" v-model="model" :disabled="disabled" class="theme-input">
             <option v-if="placeholder !== undefined" value="">{{ placeholder }}</option>
             <option v-for="opt in options" :key="String(opt.value)" :value="opt.value">
                 {{ opt.label }}
             </option>
         </select>
+        <p v-if="showErrors && errors?.length" class="form-error-message">
+            {{ errors!.join(', ') }}
+        </p>
     </div>
 </template>
 
 <script setup lang="ts">
 import { getUuid } from '@guebbit/js-toolkit';
 
+/**
+ * Reusable select field: wraps a <select> with a label, the theme-form-input
+ * layout, and inline validation error display.
+ */
 defineProps<{
     label?: string;
     placeholder?: string;
     disabled?: boolean;
     options: { value: string | number | boolean | undefined; label: string }[];
+    errors?: string[];
+    showErrors?: boolean;
 }>();
 
 const uuid = getUuid();
 const model = defineModel<string | number | boolean | undefined>();
 </script>
-
-<style lang="scss">
-.base-select {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-
-    label {
-        font-size: 0.85em;
-        font-weight: 500;
-    }
-
-    select {
-        padding: 0.5em 0.75em;
-        border: 1px solid rgba(128, 128, 128, 0.4);
-        border-radius: 0.2em;
-        background: rgba(var(--secondary-200) / 0.2);
-        outline: none;
-        font-size: 0.95em;
-        cursor: pointer;
-
-        &:focus {
-            border-color: rgb(var(--primary-500));
-        }
-    }
-}
-</style>

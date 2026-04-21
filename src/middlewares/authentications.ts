@@ -3,6 +3,7 @@ import { useProfileStore } from '@/stores/profile';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { loginContinueTo } from '@/utils/helperNavigation';
 import { getCookie } from '@/utils/helperGenerics.ts';
+import { i18n } from '@/utils/i18n.ts';
 import type { RouteLocationNormalized } from 'vue-router';
 
 /**
@@ -45,7 +46,7 @@ export const isGuest = async (to: RouteLocationNormalized, from: RouteLocationNo
     const { addMessage } = useNotificationsStore();
 
     if (isAuth.value) {
-        addMessage('navigation.error-already-logged');
+        addMessage(i18n.global.t('navigation.error-already-logged'));
         return { name: 'Home', params: { locale: to.params.locale as string } };
     }
 };
@@ -62,7 +63,7 @@ export const isAuth = async (to: RouteLocationNormalized, from: RouteLocationNor
     const { addMessage } = useNotificationsStore();
 
     if (!isAuth.value) {
-        addMessage('navigation.error-not-logged');
+        addMessage(i18n.global.t('navigation.error-not-logged'));
         return loginContinueTo(to.fullPath, to.params.locale as string);
     }
 };
@@ -79,11 +80,11 @@ export const isAdmin = async (to: RouteLocationNormalized, from: RouteLocationNo
     const { addMessage } = useNotificationsStore();
 
     if (!isAuth.value) {
-        addMessage('navigation.error-not-logged');
+        addMessage(i18n.global.t('navigation.error-not-logged'));
         return loginContinueTo(to.fullPath, to.params.locale as string);
     }
     if (!isAdmin.value) {
-        addMessage('navigation.error-forbidden');
+        addMessage(i18n.global.t('navigation.error-forbidden'));
         return { name: 'Home', params: { locale: to.params.locale as string } };
     }
 };

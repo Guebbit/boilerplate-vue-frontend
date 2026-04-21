@@ -8,43 +8,26 @@
 
         <div class="theme-card theme-form-container">
             <form class="theme-form" @submit.prevent="submitForm">
-                <div
-                    class="theme-form-input"
-                    :class="{ 'form-error': showErrors && formErrors.status }"
-                >
-                    <label for="edit-status">{{ t('order-edit-page.label-status') }}</label>
-                    <select v-model="form.status" id="edit-status" class="theme-input">
-                        <option value="pending">pending</option>
-                        <option value="paid">paid</option>
-                        <option value="processing">processing</option>
-                        <option value="shipped">shipped</option>
-                        <option value="delivered">delivered</option>
-                        <option value="cancelled">cancelled</option>
-                    </select>
-                    <p v-if="showErrors && formErrors.status" class="form-error-message">
-                        {{ formErrors.status.join(', ') }}
-                    </p>
-                </div>
-
-                <div
-                    class="theme-form-input"
-                    :class="{ 'form-error': showErrors && formErrors.email }"
-                >
-                    <label for="edit-email">{{ t('order-edit-page.label-email') }}</label>
-                    <input v-model="form.email" type="email" id="edit-email" class="theme-input" />
-                    <p v-if="showErrors && formErrors.email" class="form-error-message">
-                        {{ formErrors.email.join(', ') }}
-                    </p>
-                </div>
-
-                <br />
-
-                <button type="submit" class="theme-button" :disabled="isSubmitting || loading">
+                <BaseSelect
+                    v-model="form.status"
+                    :label="t('order-edit-page.label-status')"
+                    :options="statusOptions"
+                    :errors="formErrors.status"
+                    :show-errors="showErrors"
+                />
+                <BaseInput
+                    v-model="form.email"
+                    type="email"
+                    :label="t('order-edit-page.label-email')"
+                    :errors="formErrors.email"
+                    :show-errors="showErrors"
+                />
+                <BaseButton type="submit" :disabled="isSubmitting || loading">
                     {{ t('order-edit-page.button-submit') }}
-                </button>
-                <button type="button" class="theme-button" @click="resetToCurrentOrder">
+                </BaseButton>
+                <BaseButton type="button" @click="resetToCurrentOrder">
                     {{ t('order-edit-page.reset-form') }}
-                </button>
+                </BaseButton>
             </form>
         </div>
 
@@ -74,19 +57,45 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/stores/orders.ts';
 import { z } from 'zod';
-
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
+import BaseInput from '@/components/atoms/BaseInput.vue';
+import BaseSelect from '@/components/atoms/BaseSelect.vue';
+import BaseButton from '@/components/atoms/BaseButton.vue';
 
+/**
+ * Generics
+ */
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
+/**
+ * Props
+ */
 const { id } = defineProps<{
     id?: string;
 }>();
 
+/**
+ * Orders store
+ */
 const { fetchOrder, updateOrder, zodSchemaOrderStatus } = useOrdersStore();
 const { currentOrder, selectedOrderId, loading } = storeToRefs(useOrdersStore());
 
+/**
+ * Available status options for the select field
+ */
+const statusOptions = [
+    { value: 'pending', label: 'pending' },
+    { value: 'paid', label: 'paid' },
+    { value: 'processing', label: 'processing' },
+    { value: 'shipped', label: 'shipped' },
+    { value: 'delivered', label: 'delivered' },
+    { value: 'cancelled', label: 'cancelled' }
+];
+
+/**
+ * Form definition
+ */
 interface IOrderEditForm {
     status?: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
     email?: string;
@@ -105,8 +114,14 @@ const { form, formErrors, isSubmitting, handleSubmit } = useStructureFormValidat
     editSchema
 );
 
+/**
+ * Whether to display validation errors in the UI
+ */
 const showErrors = ref(false);
 
+/**
+ * Reset form to the current order's data
+ */
 const resetToCurrentOrder = () => {
     form.value = {
         status: currentOrder.value?.status,
@@ -115,6 +130,9 @@ const resetToCurrentOrder = () => {
     showErrors.value = false;
 };
 
+/**
+ * When the order data is loaded, pre-fill the form
+ */
 watch(
     currentOrder,
     (order) => {
@@ -123,6 +141,9 @@ watch(
     { immediate: true }
 );
 
+/**
+ * Submit form and update the order
+ */
 const submitForm = () =>
     handleSubmit(async () => {
         if (!id) return;
@@ -138,6 +159,9 @@ const submitForm = () =>
         })
         .catch(({ message }: { message: string }) => addMessage(message));
 
+/**
+ * Load order data on mount
+ */
 if (id) {
     selectedOrderId.value = id;
     fetchOrder(id);
@@ -145,8 +169,6 @@ if (id) {
 </script>
 
 <style lang="scss">
-@use '@/assets/styles/components/forms';
-
 #order-edit-page {
     .theme-form-container {
         max-width: 600px;

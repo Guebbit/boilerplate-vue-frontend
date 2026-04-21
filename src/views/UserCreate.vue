@@ -8,69 +8,38 @@
 
         <div class="theme-card theme-form-container">
             <form class="theme-form" @submit.prevent="submitForm">
-                <div
-                    class="theme-form-input"
-                    :class="{ 'form-error': showErrors && formErrors.email }"
-                >
-                    <label for="create-email">{{ t('user-create-page.label-email') }}</label>
-                    <input
-                        v-model="form.email"
-                        type="email"
-                        id="create-email"
-                        class="theme-input"
-                    />
-                    <p v-if="showErrors && formErrors.email" class="form-error-message">
-                        {{ formErrors.email.join(', ') }}
-                    </p>
-                </div>
-
-                <div
-                    class="theme-form-input"
-                    :class="{ 'form-error': showErrors && formErrors.username }"
-                >
-                    <label for="create-username">{{ t('user-create-page.label-username') }}</label>
-                    <input
-                        v-model="form.username"
-                        type="text"
-                        id="create-username"
-                        class="theme-input"
-                    />
-                    <p v-if="showErrors && formErrors.username" class="form-error-message">
-                        {{ formErrors.username.join(', ') }}
-                    </p>
-                </div>
-
-                <div
-                    class="theme-form-input"
-                    :class="{ 'form-error': showErrors && formErrors.password }"
-                >
-                    <label for="create-password">{{ t('user-create-page.label-password') }}</label>
-                    <input
-                        v-model="form.password"
-                        type="password"
-                        id="create-password"
-                        class="theme-input"
-                    />
-                    <p v-if="showErrors && formErrors.password" class="form-error-message">
-                        {{ formErrors.password.join(', ') }}
-                    </p>
-                </div>
-
-                <div class="theme-form-input-checkbox">
-                    <input v-model="form.admin" type="checkbox" id="create-admin" />
-                    <label for="create-admin">{{ t('user-create-page.label-admin') }}</label>
-                </div>
-
-                <div class="theme-form-input-checkbox">
-                    <input v-model="form.active" type="checkbox" id="create-active" />
-                    <label for="create-active">{{ t('user-create-page.label-active') }}</label>
-                </div>
-
-                <br />
-
-                <button type="submit" class="theme-button" :disabled="isSubmitting">
+                <BaseInput
+                    v-model="form.email"
+                    type="email"
+                    :label="t('user-create-page.label-email')"
+                    :errors="formErrors.email"
+                    :show-errors="showErrors"
+                />
+                <BaseInput
+                    v-model="form.username"
+                    type="text"
+                    :label="t('user-create-page.label-username')"
+                    :errors="formErrors.username"
+                    :show-errors="showErrors"
+                />
+                <BaseInput
+                    v-model="form.password"
+                    type="password"
+                    :label="t('user-create-page.label-password')"
+                    :errors="formErrors.password"
+                    :show-errors="showErrors"
+                />
+                <BaseCheckbox
+                    v-model="form.admin"
+                    :label="t('user-create-page.label-admin')"
+                />
+                <BaseCheckbox
+                    v-model="form.active"
+                    :label="t('user-create-page.label-active')"
+                />
+                <BaseButton type="submit" :disabled="isSubmitting">
                     {{ t('user-create-page.button-submit') }}
-                </button>
+                </BaseButton>
             </form>
         </div>
 
@@ -94,8 +63,10 @@ import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/stores/users';
 import { z } from 'zod';
-
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
+import BaseInput from '@/components/atoms/BaseInput.vue';
+import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
+import BaseButton from '@/components/atoms/BaseButton.vue';
 
 /**
  * Generics
@@ -158,8 +129,6 @@ const submitForm = () =>
 </script>
 
 <style lang="scss">
-@use '@/assets/styles/components/forms';
-
 #user-create-page {
     .theme-form-container {
         max-width: 600px;

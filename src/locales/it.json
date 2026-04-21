@@ -21,6 +21,7 @@
         "label-cart": "Carrello",
         "label-orders": "Ordini",
         "label-login": "Login",
+        "label-signup": "Registrati",
         "label-logout": "Logout",
         "error-already-logged": "Sei già loggato",
         "error-not-logged": "Devi essere loggato per accedere a questa pagina",
@@ -122,6 +123,14 @@
         "label-remember": "Ricorda il mio accesso",
         "text-conditions": "Ho letto le condizioni della privacy",
         "button-submit": "Login"
+    },
+    "signup-page": {
+        "page-title": "Registrazione",
+        "label-email": "Email",
+        "label-password": "Password",
+        "label-remember": "Ricorda il mio accesso",
+        "text-conditions": "Ho letto le condizioni della privacy",
+        "button-submit": "Registrati"
     },
     "profile-page": {
         "page-title": "Il tuo profilo",

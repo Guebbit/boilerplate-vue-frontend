@@ -67,6 +67,7 @@
         "globals": "^17.4.0",
         "jiti": "^2.6.1",
         "jsdom": "^28.1.0",
+        "msw": "^2.13.4",
         "npm-run-all2": "^8.0.4",
         "openapi-zod-client": "^1.18.3",
         "prettier": "^3.8.1",

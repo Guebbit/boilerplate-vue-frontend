@@ -9,110 +9,63 @@
         <div class="theme-card theme-form-container">
             <form class="theme-form" @submit.prevent="submitForm">
                 <!-- TODO language select + roles (user edit, if admin) -->
-                <div
-                    class="theme-form-input"
-                    :class="{
-                        'form-error': showErrors && formErrors.username
-                    }"
-                >
-                    <label for="username">{{ t('profile-page.label-username') }}</label>
-                    <input v-model="form.username" type="text" id="username" class="theme-input" />
-                    <p v-if="showErrors && formErrors.username" class="form-error-message">
-                        {{ formErrors.username.join(', ') }}
-                    </p>
-                </div>
+                <BaseInput
+                    v-model="form.username"
+                    type="text"
+                    :label="t('profile-page.label-username')"
+                    :errors="formErrors.username"
+                    :show-errors="showErrors"
+                />
+                <BaseInput
+                    v-model="form.email"
+                    type="email"
+                    :label="t('profile-page.label-email')"
+                    :errors="formErrors.email"
+                    :show-errors="showErrors"
+                />
+                <BaseInput
+                    v-model="form.phone"
+                    type="tel"
+                    :label="t('profile-page.label-phone')"
+                    :errors="formErrors.phone"
+                    :show-errors="showErrors"
+                />
+                <BaseInput
+                    v-model="form.website"
+                    type="url"
+                    :label="t('profile-page.label-website')"
+                    :errors="formErrors.website"
+                    :show-errors="showErrors"
+                />
 
-                <div
-                    class="theme-form-input"
-                    :class="{
-                        'form-error': showErrors && formErrors.email
-                    }"
-                >
-                    <label for="email">{{ t('profile-page.label-email') }}</label>
-                    <input v-model="form.email" type="email" id="email" class="theme-input" />
-                    <p v-if="showErrors && formErrors.email" class="form-error-message">
-                        {{ formErrors.email.join(', ') }}
-                    </p>
-                </div>
-
-                <div
-                    class="theme-form-input"
-                    :class="{
-                        'form-error': showErrors && formErrors.phone
-                    }"
-                >
-                    <label for="phone">{{ t('profile-page.label-phone') }}</label>
-                    <input v-model="form.phone" type="tel" id="phone" class="theme-input" />
-                </div>
-
-                <div
-                    class="theme-form-input"
-                    :class="{
-                        'form-error': showErrors && formErrors.website
-                    }"
-                >
-                    <label for="website">{{ t('profile-page.label-website') }}</label>
-                    <input v-model="form.website" type="url" id="website" class="theme-input" />
-                </div>
-
-                <br />
-
-                <button
-                    class="theme-button"
-                    type="button"
-                    @click="showChangePassword = !showChangePassword"
-                >
+                <BaseButton type="button" @click="showChangePassword = !showChangePassword">
                     {{ t('profile-page.button-change-password') }}
-                </button>
+                </BaseButton>
 
-                <div
-                    v-show="showChangePassword"
-                    class="theme-form-input"
-                    :class="{
-                        'form-error':
-                            showErrors &&
-                            (passwordErrors.password || passwordErrors.passwordConfirm)
-                    }"
-                >
-                    <label for="password">{{ t('profile-page.label-password') }}</label>
-                    <input
+                <template v-if="showChangePassword">
+                    <BaseInput
                         v-model="passwordForm.password"
                         type="password"
-                        id="password"
-                        class="theme-input"
+                        :label="t('profile-page.label-password')"
+                        :errors="passwordErrors.password"
+                        :show-errors="true"
                     />
-
-                    <p
-                        v-for="error in passwordErrors.password"
-                        :key="'password-error-' + error"
-                        class="form-error-message"
-                    >
-                        {{ error }}
-                    </p>
-
-                    <label for="passwordConfirm">{{
-                        t('profile-page.label-passwordConfirm')
-                    }}</label>
-                    <input
+                    <BaseInput
                         v-model="passwordForm.passwordConfirm"
                         type="password"
-                        id="passwordConfirm"
-                        class="theme-input"
+                        :label="t('profile-page.label-passwordConfirm')"
+                        :errors="passwordErrors.passwordConfirm"
+                        :show-errors="true"
                     />
-                    <p v-if="passwordErrors.passwordConfirm" class="form-error-message">
-                        {{ passwordErrors.passwordConfirm.join(', ') }}
-                    </p>
-
-                    <br />
-                </div>
+                </template>
 
                 <!-- If something has changed OR the password has changed (and it's valid) -->
-                <button type="submit" class="theme-button" :disabled="!areFormsValid">
+                <BaseButton type="submit" :disabled="!areFormsValid">
                     {{ t('profile-page.button-submit') }}
-                </button>
-                <button type="button" class="theme-button" @click="resetForm">
+                </BaseButton>
+                <BaseButton type="button" @click="resetForm">
                     {{ t('profile-page.reset-form') }}
-                </button>
+                </BaseButton>
             </form>
         </div>
     </LayoutDefault>
@@ -131,8 +84,9 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
 import { useUsersStore } from '@/stores/users.ts';
-
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
+import BaseInput from '@/components/atoms/BaseInput.vue';
+import BaseButton from '@/components/atoms/BaseButton.vue';
 import { z } from 'zod';
 
 const { t } = useI18n();
@@ -228,7 +182,7 @@ const areFormsValid = computed(
 );
 
 /**
- *
+ * Submit profile changes, optionally including a password update
  */
 const submitForm = () => {
     if (!validate() || !areFormsValid.value) {
@@ -254,8 +208,6 @@ const submitForm = () => {
 </script>
 
 <style lang="scss">
-@use '@/assets/styles/components/forms';
-
 #profile-page {
     .theme-form-container {
         max-width: 600px;

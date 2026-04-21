@@ -8,41 +8,26 @@
 
         <div class="theme-card theme-form-container">
             <form class="theme-form" @submit.prevent="submitForm">
-                <div
-                    class="theme-form-input"
-                    :class="{ 'form-error': showErrors && formErrors.email }"
-                >
-                    <label for="edit-email">{{ t('user-edit-page.label-email') }}</label>
-                    <input v-model="form.email" type="email" id="edit-email" class="theme-input" />
-                    <p v-if="showErrors && formErrors.email" class="form-error-message">
-                        {{ formErrors.email.join(', ') }}
-                    </p>
-                </div>
-
-                <div
-                    class="theme-form-input"
-                    :class="{ 'form-error': showErrors && formErrors.password }"
-                >
-                    <label for="edit-password">{{ t('user-edit-page.label-password') }}</label>
-                    <input
-                        v-model="form.password"
-                        type="password"
-                        id="edit-password"
-                        class="theme-input"
-                    />
-                    <p v-if="showErrors && formErrors.password" class="form-error-message">
-                        {{ formErrors.password.join(', ') }}
-                    </p>
-                </div>
-
-                <br />
-
-                <button type="submit" class="theme-button" :disabled="isSubmitting || loading">
+                <BaseInput
+                    v-model="form.email"
+                    type="email"
+                    :label="t('user-edit-page.label-email')"
+                    :errors="formErrors.email"
+                    :show-errors="showErrors"
+                />
+                <BaseInput
+                    v-model="form.password"
+                    type="password"
+                    :label="t('user-edit-page.label-password')"
+                    :errors="formErrors.password"
+                    :show-errors="showErrors"
+                />
+                <BaseButton type="submit" :disabled="isSubmitting || loading">
                     {{ t('user-edit-page.button-submit') }}
-                </button>
-                <button type="button" class="theme-button" @click="resetToCurrentUser">
+                </BaseButton>
+                <BaseButton type="button" @click="resetToCurrentUser">
                     {{ t('user-edit-page.reset-form') }}
-                </button>
+                </BaseButton>
             </form>
         </div>
 
@@ -72,8 +57,9 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/stores/users';
 import { z } from 'zod';
-
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
+import BaseInput from '@/components/atoms/BaseInput.vue';
+import BaseButton from '@/components/atoms/BaseButton.vue';
 
 /**
  * Generics
@@ -169,8 +155,6 @@ if (id) {
 </script>
 
 <style lang="scss">
-@use '@/assets/styles/components/forms';
-
 #user-edit-page {
     .theme-form-container {
         max-width: 600px;
