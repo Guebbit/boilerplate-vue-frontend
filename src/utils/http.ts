@@ -13,7 +13,7 @@ import {
     normalizeResponseReject,
     normalizeResponseSuccess,
     unwrapResponseData
-} from '@/utils/httpResponseNormalization.ts';
+} from '@/utils/httpResponseNormalization';
 
 /**
  * Custom request config for internal retry bookkeeping.

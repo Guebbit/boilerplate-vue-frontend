@@ -4,7 +4,7 @@ import type { AxiosResponse } from 'axios';
 import {
     normalizeResponseReject,
     normalizeResponseSuccess
-} from '@/utils/httpResponseNormalization.ts';
+} from '@/utils/httpResponseNormalization';
 
 const createAxiosResponse = <T>(data: T): AxiosResponse<T> =>
     ({
