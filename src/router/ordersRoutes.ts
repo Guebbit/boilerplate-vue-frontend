@@ -6,20 +6,20 @@ export default [
         path: 'orders',
         name: 'OrdersList',
         beforeEnter: [isAuth],
-        component: () => import('@/views/OrdersList.vue')
+        component: () => import('@/views/orders/OrdersList.vue')
     },
     {
         path: 'orders/:id',
         name: 'OrderTarget',
         beforeEnter: [isAuth],
-        component: () => import('@/views/Order.vue'),
+        component: () => import('@/views/orders/Order.vue'),
         props: true
     },
     {
         path: 'orders/:id/edit',
         name: 'OrderEdit',
         beforeEnter: [isAdmin],
-        component: () => import('@/views/OrderEdit.vue'),
+        component: () => import('@/views/orders/OrderEdit.vue'),
         props: true
     }
 ] as RouteRecordRaw[];

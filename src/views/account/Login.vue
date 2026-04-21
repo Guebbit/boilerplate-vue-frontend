@@ -41,7 +41,7 @@ export default {
 import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { boolean, z } from 'zod';
+import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
 import { useUsersStore } from '@/stores/users.ts';
@@ -49,6 +49,7 @@ import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
 import BaseButton from '@/components/atoms/BaseButton.vue';
+import { notifyErrorMessages } from '@/utils/helperErrors.ts';
 import type { LoginRequest } from '@api';
 
 /**
@@ -110,10 +111,7 @@ const submitForm = () => {
                 ? router.push({ path: route.query.continue as string })
                 : router.push({ name: 'Home' })
         )
-        .catch(({ message, errors = [] }) => {
-            if (errors.length === 0) addMessage(message);
-            for (let i = 0, len = errors.length; i < len; i++) addMessage(errors[i]);
-        });
+        .catch((error) => notifyErrorMessages(addMessage, error));
 };
 </script>
 

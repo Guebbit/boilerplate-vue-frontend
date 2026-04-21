@@ -77,7 +77,6 @@ export const useProfileStore = defineStore('profile', () => {
             authApi
                 .login({ email, password })
                 .then((data) => {
-                    console.log('11111111111', data);
                     accessToken.value = getTokenFromResponse(data);
                 })
                 .then(() => fetchProfile(true))

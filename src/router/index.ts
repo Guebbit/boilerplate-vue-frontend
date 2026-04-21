@@ -10,7 +10,7 @@ import productsRoutes from './productsRoutes';
 import cartRoutes from './cartRoutes.ts';
 import ordersRoutes from './ordersRoutes.ts';
 
-import HomeView from '@/views/Home.vue';
+import HomeView from '@/views/core/Home.vue';
 
 const isRouterDebugEnabled =
     import.meta.env.DEV && import.meta.env.VITE_APP_DEBUG_ROUTER === 'true';
@@ -44,7 +44,7 @@ const router = createRouter({
                     // route level code-splitting
                     // this generates a separate chunk (About.[hash].js) for this route
                     // which is lazy-loaded when the route is visited.
-                    component: () => import('@/views/Admin.vue'),
+                    component: () => import('@/views/core/Admin.vue'),
                     beforeEnter: [isAuth]
                 },
 
@@ -60,7 +60,7 @@ const router = createRouter({
                     // route level code-splitting
                     // this generates a separate chunk (About.[hash].js) for this route
                     // which is lazy-loaded when the route is visited.
-                    component: () => import('@/views/Error.vue'),
+                    component: () => import('@/views/core/Error.vue'),
                     props: true
                 },
 

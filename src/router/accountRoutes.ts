@@ -7,19 +7,19 @@ export default [
         path: 'login',
         name: 'Login',
         beforeEnter: [isGuest],
-        component: () => import('@/views/Login.vue')
+        component: () => import('@/views/account/Login.vue')
     },
     {
         path: 'signup',
         name: 'Signup',
         beforeEnter: [isGuest],
-        component: () => import('@/views/Signup.vue')
+        component: () => import('@/views/account/Signup.vue')
     },
     {
         path: 'profile',
         name: 'Profile',
         beforeEnter: [isAuth],
-        component: () => import('@/views/Profile.vue')
+        component: () => import('@/views/account/Profile.vue')
     },
     {
         path: 'logout',

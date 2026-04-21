@@ -1,4 +1,5 @@
 import type { ZodSafeParseError } from 'zod';
+import type { IResponseReject } from '@/types';
 
 /**
  * Zod error interpreter
@@ -15,3 +16,24 @@ export function zodErrorInterpreter(parsedResult: ZodSafeParseError<Record<strin
             for (const i18n of (data as { _errors: string[] })._errors) issues.push([field, i18n]);
     return issues;
 }
+
+const isResponseReject = (error: unknown): error is IResponseReject =>
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof error.message === 'string' &&
+    'errors' in error &&
+    Array.isArray(error.errors);
+
+export const getErrorMessages = (error: unknown): string[] => {
+    if (isResponseReject(error)) return error.errors.length > 0 ? error.errors : [error.message];
+    if (error instanceof Error && error.message) return [error.message];
+    return ['Unknown error'];
+};
+
+export const notifyErrorMessages = (
+    addMessage: (message: string) => unknown,
+    error: unknown
+): void => {
+    for (const message of getErrorMessages(error)) addMessage(message);
+};
