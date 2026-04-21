@@ -93,6 +93,7 @@ const { form, formErrors, isSubmitting, handleSubmit } =
     useStructureFormValidation<IUserSignupForm>(
         {
             email: '',
+            username: undefined,
             password: '',
             passwordConfirm: '',
             remember: false,
