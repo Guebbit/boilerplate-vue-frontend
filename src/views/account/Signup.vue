@@ -131,7 +131,6 @@ const submitForm = () =>
             username || undefined,
             form.value.passwordConfirm!
         );
-        addMessage(t('signup-page.success-email-code-sent'));
         await fetchProfile();
         await (route.query.continue
             ? router.push({ path: route.query.continue as string })
