@@ -39,16 +39,17 @@ export default {
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { z } from 'zod';
+import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { boolean, z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
-import { useRouter, useRoute } from 'vue-router';
-import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { useUsersStore } from '@/stores/users.ts';
+import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
 import BaseButton from '@/components/atoms/BaseButton.vue';
+import type { LoginRequest } from '@api';
 
 /**
  * UI logics
@@ -61,16 +62,18 @@ const route = useRoute();
 /**
  * Form logics
  */
-interface IUserLoginForm {
-    email?: string;
-    password?: string;
-    remember?: boolean;
-}
-
 const { zodSchemaUsers } = useUsersStore();
 
-const { form, formErrors, validate } = useStructureFormValidation<IUserLoginForm>(
-    {},
+const { form, formErrors, validate } = useStructureFormValidation<
+    LoginRequest & {
+        remember?: boolean;
+    }
+>(
+    {
+        email: '',
+        password: '',
+        remember: false
+    },
     zodSchemaUsers
         .pick({
             email: true
@@ -91,12 +94,11 @@ if (import.meta.env.NODE_ENV !== 'production')
         password: 'rootroot'
     };
 
-const { login } = useProfileStore();
-
 /**
  * Submit form and try to authenticate
  */
 const submitForm = () => {
+    const { login } = useProfileStore();
     if (!validate()) {
         showErrors.value = true;
         return;

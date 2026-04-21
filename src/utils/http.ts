@@ -103,7 +103,7 @@ export const onRequestReject = (error: AxiosError) => {
  */
 export const onResponseSuccess = (
     response: AxiosResponse
-): AxiosResponse => response;
+): AxiosResponse['data'] => response.data;
 
 /**
  * Response error normalizer.

@@ -83,7 +83,7 @@ export const useProductsStore = defineStore('products', () => {
                     .searchProducts({ ...filters, page, pageSize })
                     .then(
                         ({ data: { meta, items = [] } }) =>
-                            [items, meta.totalItems] as [typeof items, number]
+                            [items, meta.totalItems]
                     ),
             filters,
             page,

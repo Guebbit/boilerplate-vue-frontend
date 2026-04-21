@@ -82,7 +82,7 @@ export const useOrdersStore = defineStore('orders', () => {
             () =>
                 ordersApi
                     .searchOrders({ ...filters, page, pageSize })
-                    .then(({ data: { meta, items = [] } }) => [items, meta.totalItems] as [typeof items, number]),
+                    .then(({ data: { meta, items = [] } }) => [items, meta.totalItems]),
             filters,
             page,
             pageSize,

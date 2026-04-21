@@ -81,7 +81,7 @@ export const useUsersStore = defineStore('users', () => {
             () =>
                 usersApi
                     .searchUsers({ ...filters, page, pageSize })
-                    .then(({ data: { items = [] , meta} }) => [items, meta.totalItems] as [typeof items, number]),
+                    .then(({ data: { items = [] , meta} }) => [items, meta.totalItems]),
             filters,
             page,
             pageSize,
