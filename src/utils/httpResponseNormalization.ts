@@ -4,6 +4,13 @@ import type { IResponseReject } from '@/types';
 const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null;
 
+const isResponseReject = (value: unknown): value is IResponseReject =>
+    isObjectRecord(value) &&
+    typeof value.success === 'boolean' &&
+    typeof value.status === 'number' &&
+    typeof value.message === 'string' &&
+    Array.isArray(value.errors);
+
 export const unwrapResponseData = <T>(value: { data?: T } | T): T | undefined =>
     isObjectRecord(value) && 'data' in value ? (value as { data?: T }).data : (value as T);
 
@@ -17,7 +24,7 @@ export const normalizeResponseReject = (
     status: number | undefined,
     apiMockEnabled: boolean
 ): IResponseReject | undefined => {
-    if (data && Object.hasOwnProperty.call(data, 'errors')) return data as IResponseReject;
+    if (isResponseReject(data)) return data;
 
     if (apiMockEnabled && isObjectRecord(data)) {
         const nestedError = isObjectRecord(data.error) ? data.error : undefined;
@@ -31,7 +38,7 @@ export const normalizeResponseReject = (
             success: false,
             status: status ?? 500,
             message,
-            errors: message ? [message] : []
+            errors: [message]
         };
     }
 };
