@@ -15,7 +15,7 @@ const createAxiosResponse = <T>(data: T): AxiosResponse<T> =>
         config: { headers: {} }
     }) as AxiosResponse<T>;
 
-describe('http response interceptors', () => {
+describe('http response normalization', () => {
     it('unwraps response data when API mocking is disabled', () => {
         const response = createAxiosResponse({ data: { id: 'user-1' } });
 
