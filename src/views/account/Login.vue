@@ -7,7 +7,7 @@
         </template>
 
         <div class="theme-card theme-form-container">
-            <form class="theme-form" @submit.prevent="submitForm">
+            <form ref="formElement" class="theme-form" @submit.prevent="submitForm">
                 <BaseInput
                     v-model="form.email"
                     type="email"
@@ -38,7 +38,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { nextTick, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
@@ -50,6 +50,7 @@ import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
 import BaseButton from '@/components/atoms/BaseButton.vue';
 import { notifyErrorMessages } from '@/utils/helperErrors.ts';
+import { focusFirstErrorField } from '@/utils/helperForms.ts';
 import type { LoginRequest } from '@api';
 
 /**
@@ -85,6 +86,7 @@ const { form, formErrors, validate } = useStructureFormValidation<
 );
 
 const showErrors = ref(false);
+const formElement = ref<HTMLFormElement>();
 
 /**
  * If not in production, dummy user of local database
@@ -98,10 +100,13 @@ if (import.meta.env.NODE_ENV !== 'production')
 /**
  * Submit form and try to authenticate
  */
-const submitForm = () => {
+const submitForm = async () => {
     const { login } = useProfileStore();
     if (!validate()) {
         showErrors.value = true;
+        addMessage(t('users-form.fix-errors'));
+        await nextTick();
+        focusFirstErrorField(formElement.value);
         return;
     }
     return login(form.value.email!, form.value.password!)
