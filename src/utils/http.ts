@@ -10,6 +10,12 @@ import type { IResponseReject, IResponseSuccess } from '@/types';
 import { useProfileStore } from '@/stores/profile.ts';
 import { storeToRefs } from 'pinia';
 
+const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null;
+
+const unwrapResponseData = <T>(value: { data?: T } | T): T | undefined =>
+    isObjectRecord(value) && 'data' in value ? (value as { data?: T }).data : (value as T);
+
 /**
  * Custom request config for internal retry bookkeeping.
  *
@@ -103,7 +109,8 @@ export const onRequestReject = (error: AxiosError) => {
  */
 export const onResponseSuccess = (
     response: AxiosResponse
-): AxiosResponse['data'] => response.data;
+): AxiosResponse | AxiosResponse['data'] =>
+    import.meta.env.VITE_API_MOCK_ENABLED === 'true' ? response : response.data;
 
 /**
  * Response error normalizer.
@@ -121,6 +128,23 @@ export const onResponseReject = (
     // console.log('[response error]', error);
     if (error.response?.data && Object.hasOwnProperty.call(error.response.data, 'errors'))
         return Promise.reject(error.response.data);
+
+    if (import.meta.env.VITE_API_MOCK_ENABLED === 'true' && isObjectRecord(error.response?.data)) {
+        const normalizedError = error.response.data as Record<string, unknown>;
+        const nestedError = isObjectRecord(normalizedError.error) ? normalizedError.error : undefined;
+        const message =
+            typeof nestedError?.message === 'string'
+                ? nestedError.message
+                : typeof normalizedError.message === 'string'
+                  ? normalizedError.message
+                  : 'Unknown error';
+        return Promise.reject({
+            success: false,
+            status: error.response?.status ?? 500,
+            message,
+            errors: message ? [message] : []
+        });
+    }
 
     if (import.meta.env.NODE_ENV !== 'production')
         // eslint-disable-next-line no-console
@@ -160,8 +184,9 @@ export const onResponseRejectWithRefresh = async (
                 _dontRetry: true
             } as IAxiosRequestConfigWithRetry)
             .then(({ data }) => {
-                if (!data?.data?.token || !originalRequest) return;
-                accessToken.value = data.data.token;
+                const payload = unwrapResponseData<{ token?: string }>(data);
+                if (!payload?.token || !originalRequest) return;
+                accessToken.value = payload.token;
                 return instance.request({
                     ...originalRequest,
                     _dontRetry: true
