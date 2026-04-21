@@ -11,12 +11,11 @@ const isResponseReject = (value: unknown): value is IResponseReject =>
     typeof value.message === 'string' &&
     Array.isArray(value.errors);
 
-export const unwrapResponseData = <T>(value: { data?: T } | T): T | undefined =>
-    isObjectRecord(value)
-        ? 'data' in value
-            ? (value as { data?: T }).data
-            : (value as T)
-        : (value as T);
+export const unwrapResponseData = <T>(value: { data?: T } | T): T | undefined => {
+    if (value === undefined) return undefined;
+    if (isObjectRecord(value) && 'data' in value) return (value as { data?: T }).data;
+    return value as T;
+};
 
 export const normalizeResponseSuccess = (
     response: AxiosResponse,
@@ -45,4 +44,5 @@ export const normalizeResponseReject = (
             errors: [message]
         };
     }
+    return undefined;
 };
