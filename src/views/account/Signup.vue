@@ -93,7 +93,7 @@ const { form, formErrors, isSubmitting, handleSubmit } =
     useStructureFormValidation<IUserSignupForm>(
         {
             email: '',
-            username: undefined,
+            username: '',
             password: '',
             passwordConfirm: '',
             remember: false,
@@ -131,7 +131,7 @@ const submitForm = () =>
         await signup(
             form.value.email!,
             form.value.password!,
-            form.value.username || undefined,
+            form.value.username?.trim() || undefined,
             form.value.passwordConfirm!
         );
         await fetchProfile();
