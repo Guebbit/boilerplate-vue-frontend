@@ -50,6 +50,7 @@ import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
 import BaseButton from '@/components/atoms/BaseButton.vue';
 import { notifyErrorMessages } from '@/utils/helperErrors.ts';
+import { focusFirstErrorField } from '@/utils/helperForms.ts';
 import type { LoginRequest } from '@api';
 
 /**
@@ -87,13 +88,6 @@ const { form, formErrors, validate } = useStructureFormValidation<
 const showErrors = ref(false);
 const formElement = ref<HTMLFormElement>();
 
-const focusFirstErrorField = () =>
-    formElement.value
-        ?.querySelector<HTMLElement>(
-            '.form-error input, .form-error textarea, .form-error select, .form-error [tabindex]'
-        )
-        ?.focus();
-
 /**
  * If not in production, dummy user of local database
  */
@@ -112,7 +106,7 @@ const submitForm = async () => {
         showErrors.value = true;
         addMessage(t('users-form.fix-errors'));
         await nextTick();
-        focusFirstErrorField();
+        focusFirstErrorField(formElement.value);
         return;
     }
     return login(form.value.email!, form.value.password!)

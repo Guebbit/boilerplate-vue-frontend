@@ -62,6 +62,7 @@ import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
 import BaseButton from '@/components/atoms/BaseButton.vue';
 import { notifyErrorMessages } from '@/utils/helperErrors.ts';
+import { focusFirstErrorField } from '@/utils/helperForms.ts';
 
 /**
  * UI logics
@@ -116,13 +117,6 @@ const formElement = ref<HTMLFormElement>();
 
 const { signup, fetchProfile } = useProfileStore();
 
-const focusFirstErrorField = () =>
-    formElement.value
-        ?.querySelector<HTMLElement>(
-            '.form-error input, .form-error textarea, .form-error select, .form-error [tabindex]'
-        )
-        ?.focus();
-
 /**
  * Submit form and try to authenticate.
  * handleSubmit returns false when validation fails (shows errors),
@@ -142,13 +136,14 @@ const submitForm = () =>
         await (route.query.continue
             ? router.push({ path: route.query.continue as string })
             : router.push({ name: 'Home' }));
+        addMessage(t('signup-page.success-email-code-sent'));
     })
         .then(async (success) => {
             if (success) return;
             showErrors.value = true;
             addMessage(t('users-form.fix-errors'));
             await nextTick();
-            focusFirstErrorField();
+            focusFirstErrorField(formElement.value);
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>
