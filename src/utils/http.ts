@@ -9,12 +9,11 @@ import type {
 import type { IResponseReject, IResponseSuccess } from '@/types';
 import { useProfileStore } from '@/stores/profile.ts';
 import { storeToRefs } from 'pinia';
-
-const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
-    typeof value === 'object' && value !== null;
-
-const unwrapResponseData = <T>(value: { data?: T } | T): T | undefined =>
-    isObjectRecord(value) && 'data' in value ? (value as { data?: T }).data : (value as T);
+import {
+    normalizeResponseReject,
+    normalizeResponseSuccess,
+    unwrapResponseData
+} from '@/utils/httpResponseNormalization.ts';
 
 /**
  * Custom request config for internal retry bookkeeping.
@@ -110,7 +109,7 @@ export const onRequestReject = (error: AxiosError) => {
 export const onResponseSuccess = (
     response: AxiosResponse
 ): AxiosResponse | AxiosResponse['data'] =>
-    import.meta.env.VITE_API_MOCK_ENABLED === 'true' ? response : response.data;
+    normalizeResponseSuccess(response, import.meta.env.VITE_API_MOCK_ENABLED === 'true');
 
 /**
  * Response error normalizer.
@@ -126,25 +125,12 @@ export const onResponseReject = (
     error: AxiosError<IAxiosResponseErrorData, IAxiosResponseErrorBody>
 ): Promise<IAxiosResponseErrorData> => {
     // console.log('[response error]', error);
-    if (error.response?.data && Object.hasOwnProperty.call(error.response.data, 'errors'))
-        return Promise.reject(error.response.data);
-
-    if (import.meta.env.VITE_API_MOCK_ENABLED === 'true' && isObjectRecord(error.response?.data)) {
-        const normalizedError = error.response.data as Record<string, unknown>;
-        const nestedError = isObjectRecord(normalizedError.error) ? normalizedError.error : undefined;
-        const message =
-            typeof nestedError?.message === 'string'
-                ? nestedError.message
-                : typeof normalizedError.message === 'string'
-                  ? normalizedError.message
-                  : 'Unknown error';
-        return Promise.reject({
-            success: false,
-            status: error.response?.status ?? 500,
-            message,
-            errors: message ? [message] : []
-        });
-    }
+    const normalizedError = normalizeResponseReject(
+        error.response?.data,
+        error.response?.status,
+        import.meta.env.VITE_API_MOCK_ENABLED === 'true'
+    );
+    if (normalizedError) return Promise.reject(normalizedError);
 
     if (import.meta.env.NODE_ENV !== 'production')
         // eslint-disable-next-line no-console

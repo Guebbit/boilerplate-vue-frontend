@@ -1,10 +1,10 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import type { AxiosError, AxiosResponse } from 'axios';
+import { describe, expect, it } from 'vitest';
+import type { AxiosResponse } from 'axios';
 
-import { onResponseReject, onResponseSuccess } from '@/utils/http.ts';
-
-const mockEnv = import.meta.env as Record<string, string | undefined>;
-const originalMockEnabled = mockEnv.VITE_API_MOCK_ENABLED;
+import {
+    normalizeResponseReject,
+    normalizeResponseSuccess
+} from '@/utils/httpResponseNormalization.ts';
 
 const createAxiosResponse = <T>(data: T): AxiosResponse<T> =>
     ({
@@ -15,41 +15,33 @@ const createAxiosResponse = <T>(data: T): AxiosResponse<T> =>
         config: { headers: {} }
     }) as AxiosResponse<T>;
 
-afterEach(() => {
-    mockEnv.VITE_API_MOCK_ENABLED = originalMockEnabled;
-});
-
 describe('http response interceptors', () => {
     it('unwraps response data when API mocking is disabled', () => {
-        mockEnv.VITE_API_MOCK_ENABLED = 'false';
         const response = createAxiosResponse({ data: { id: 'user-1' } });
 
-        expect(onResponseSuccess(response)).toEqual(response.data);
+        expect(normalizeResponseSuccess(response, false)).toEqual(response.data);
     });
 
     it('keeps the full axios response when API mocking is enabled', () => {
-        mockEnv.VITE_API_MOCK_ENABLED = 'true';
         const response = createAxiosResponse({ id: 'user-1' });
 
-        expect(onResponseSuccess(response)).toBe(response);
+        expect(normalizeResponseSuccess(response, true)).toBe(response);
     });
 
-    it('normalizes mocked error payloads', async () => {
-        mockEnv.VITE_API_MOCK_ENABLED = 'true';
-        const error = {
-            response: {
-                data: {
+    it('normalizes mocked error payloads', () => {
+        expect(
+            normalizeResponseReject(
+                {
                     success: false,
                     error: {
                         code: 'NOT_FOUND',
                         message: 'User not found'
                     }
                 },
-                status: 404
-            }
-        } as AxiosError;
-
-        await expect(onResponseReject(error)).rejects.toEqual({
+                404,
+                true
+            )
+        ).toEqual({
             success: false,
             status: 404,
             message: 'User not found',
