@@ -7,19 +7,20 @@ import {
     mockDatabase,
     parseRequestBody
 } from '../shared/mockShared.ts';
+import { toMockReply } from '../shared/mockTransport.ts';
 
 export const registerAccountMockHandlers = (mockAdapter: MockAdapter) => {
     mockAdapter
         .onGet(/\/account\/refresh\/[^/?]+(?:\?.*)?$/)
-        .reply(200, defaultRefreshTokenResponse);
-    mockAdapter.onGet(/\/account\/refresh(?:\?.*)?$/).reply(200, defaultRefreshTokenResponse);
+        .reply(() => toMockReply(defaultRefreshTokenResponse));
+    mockAdapter.onGet(/\/account\/refresh(?:\?.*)?$/).reply(() => toMockReply(defaultRefreshTokenResponse));
 
     mockAdapter.onGet(/\/account(?:\?.*)?$/).reply(() => {
         const currentUser =
             mockDatabase.sampleUsers.find(
                 (user) => user.id === mockDatabase.currentAuthenticatedUserId
             ) ?? mockDatabase.sampleUsers[0];
-        return [200, currentUser];
+        return toMockReply(currentUser);
     });
 
     mockAdapter.onPost(/\/account\/login(?:\?.*)?$/).reply((config) => {
@@ -28,19 +29,16 @@ export const registerAccountMockHandlers = (mockAdapter: MockAdapter) => {
             (user) => user.email.toLowerCase() === String(requestBody.email ?? '').toLowerCase()
         );
         if (!matchedUser)
-            return [
-                401,
-                { success: false, error: { code: 'UNAUTHORIZED', message: 'Invalid credentials' } }
-            ];
+            return toMockReply(
+                { success: false, error: { code: 'UNAUTHORIZED', message: 'Invalid credentials' } },
+                { status: 401 }
+            );
         mockDatabase.currentAuthenticatedUserId = matchedUser.id;
-        return [
-            200,
-            {
-                token: `mock-token-for-${matchedUser.id}`,
-                refreshToken: 'mock-refresh-token',
-                expiresIn: 3600
-            }
-        ];
+        return toMockReply({
+            token: `mock-token-for-${matchedUser.id}`,
+            refreshToken: 'mock-refresh-token',
+            expiresIn: 3600
+        });
     });
 
     mockAdapter.onPost(/\/account\/signup(?:\?.*)?$/).reply((config) => {
@@ -56,19 +54,19 @@ export const registerAccountMockHandlers = (mockAdapter: MockAdapter) => {
             updatedAt: getIsoDateNow()
         };
         mockDatabase.sampleUsers.unshift(createdUser);
-        return [201, createdUser];
+        return toMockReply(createdUser, { status: 201 });
     });
 
     mockAdapter
         .onPost(/\/account\/reset(?:\?.*)?$/)
-        .reply(200, createMessageResponse('Password reset email sent'));
+        .reply(() => toMockReply(createMessageResponse('Password reset email sent')));
     mockAdapter
         .onPost(/\/account\/reset-confirm(?:\?.*)?$/)
-        .reply(200, createMessageResponse('Password reset confirmed'));
+        .reply(() => toMockReply(createMessageResponse('Password reset confirmed')));
     mockAdapter
         .onPost(/\/account\/logout-all(?:\?.*)?$/)
-        .reply(200, createMessageResponse('Logged out from all devices'));
+        .reply(() => toMockReply(createMessageResponse('Logged out from all devices')));
     mockAdapter
         .onDelete(/\/account\/tokens\/expired(?:\?.*)?$/)
-        .reply(200, createMessageResponse('Expired tokens removed'));
+        .reply(() => toMockReply(createMessageResponse('Expired tokens removed')));
 };

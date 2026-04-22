@@ -12,8 +12,9 @@ import {
     toNumberOrDefault,
     toPaginationMeta
 } from '../shared/mockShared.ts';
+import { toMockReply } from '../shared/mockTransport.ts';
 
-const replyUsersList = (url: string | undefined, parameters?: unknown): [number, UsersResponse] => {
+const replyUsersList = (url: string | undefined, parameters?: unknown) => {
     const query = getQueryParameters(url, parameters);
     const page = toNumberOrDefault(query.page, 1);
     const pageSize = toNumberOrDefault(query.pageSize, 10);
@@ -40,13 +41,10 @@ const replyUsersList = (url: string | undefined, parameters?: unknown): [number,
         return true;
     });
 
-    return [
-        200,
-        {
-            items: slicePaginatedData(filteredItems, page, pageSize),
-            meta: toPaginationMeta(filteredItems.length, page, pageSize)
-        }
-    ];
+    return toMockReply<UsersResponse>({
+        items: slicePaginatedData(filteredItems, page, pageSize),
+        meta: toPaginationMeta(filteredItems.length, page, pageSize)
+    });
 };
 
 export const registerUsersMockHandlers = (mockAdapter: MockAdapter) => {
@@ -67,7 +65,7 @@ export const registerUsersMockHandlers = (mockAdapter: MockAdapter) => {
             updatedAt: getIsoDateNow()
         };
         mockDatabase.sampleUsers.unshift(createdUser);
-        return [201, createdUser];
+        return toMockReply(createdUser, { status: 201 });
     });
 
     mockAdapter.onPut(/\/users(?:\?.*)?$/).reply((config) => {
@@ -75,10 +73,10 @@ export const registerUsersMockHandlers = (mockAdapter: MockAdapter) => {
         const targetId = String(requestBody.id ?? mockDatabase.currentAuthenticatedUserId);
         const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === targetId);
         if (targetIndex === -1)
-            return [
-                404,
-                { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } }
-            ];
+            return toMockReply(
+                { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } },
+                { status: 404 }
+            );
 
         const updatedUser: User = {
             ...mockDatabase.sampleUsers[targetIndex],
@@ -95,7 +93,7 @@ export const registerUsersMockHandlers = (mockAdapter: MockAdapter) => {
             updatedAt: getIsoDateNow()
         };
         mockDatabase.sampleUsers[targetIndex] = updatedUser;
-        return [200, updatedUser];
+        return toMockReply(updatedUser);
     });
 
     mockAdapter.onDelete(/\/users(?:\?.*)?$/).reply((config) => {
@@ -103,12 +101,12 @@ export const registerUsersMockHandlers = (mockAdapter: MockAdapter) => {
         const targetId = String(requestBody.id ?? '');
         const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === targetId);
         if (targetIndex === -1)
-            return [
-                404,
-                { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } }
-            ];
+            return toMockReply(
+                { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } },
+                { status: 404 }
+            );
         mockDatabase.sampleUsers.splice(targetIndex, 1);
-        return [200, createMessageResponse('User deleted')];
+        return toMockReply(createMessageResponse('User deleted'));
     });
 
     mockAdapter.onPost(/\/users\/search(?:\?.*)?$/).reply((config) => {
@@ -120,21 +118,21 @@ export const registerUsersMockHandlers = (mockAdapter: MockAdapter) => {
         const userId = getLastPathSegment(config.url);
         const targetUser = mockDatabase.sampleUsers.find((user) => user.id === userId);
         if (!targetUser)
-            return [
-                404,
-                { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } }
-            ];
-        return [200, targetUser];
+            return toMockReply(
+                { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } },
+                { status: 404 }
+            );
+        return toMockReply(targetUser);
     });
 
     mockAdapter.onPut(/\/users\/[^/]+(?:\?.*)?$/).reply((config) => {
         const userId = getLastPathSegment(config.url);
         const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === userId);
         if (targetIndex === -1)
-            return [
-                404,
-                { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } }
-            ];
+            return toMockReply(
+                { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } },
+                { status: 404 }
+            );
         const requestBody = parseRequestBody<Record<string, unknown>>(config.data);
         const updatedUser: User = {
             ...mockDatabase.sampleUsers[targetIndex],
@@ -147,18 +145,18 @@ export const registerUsersMockHandlers = (mockAdapter: MockAdapter) => {
             updatedAt: getIsoDateNow()
         };
         mockDatabase.sampleUsers[targetIndex] = updatedUser;
-        return [200, updatedUser];
+        return toMockReply(updatedUser);
     });
 
     mockAdapter.onDelete(/\/users\/[^/]+(?:\?.*)?$/).reply((config) => {
         const userId = getLastPathSegment(config.url);
         const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === userId);
         if (targetIndex === -1)
-            return [
-                404,
-                { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } }
-            ];
+            return toMockReply(
+                { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } },
+                { status: 404 }
+            );
         mockDatabase.sampleUsers.splice(targetIndex, 1);
-        return [200, createMessageResponse('User deleted')];
+        return toMockReply(createMessageResponse('User deleted'));
     });
 };

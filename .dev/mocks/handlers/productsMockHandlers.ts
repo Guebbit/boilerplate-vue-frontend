@@ -11,11 +11,9 @@ import {
     toNumberOrDefault,
     toPaginationMeta
 } from '../shared/mockShared.ts';
+import { toMockReply } from '../shared/mockTransport.ts';
 
-const replyProductsList = (
-    url: string | undefined,
-    parameters?: unknown
-): [number, ProductsResponse] => {
+const replyProductsList = (url: string | undefined, parameters?: unknown) => {
     const query = getQueryParameters(url, parameters);
     const page = toNumberOrDefault(query.page, 1);
     const pageSize = toNumberOrDefault(query.pageSize, 10);
@@ -40,13 +38,10 @@ const replyProductsList = (
         return true;
     });
 
-    return [
-        200,
-        {
-            items: slicePaginatedData(filteredItems, page, pageSize),
-            meta: toPaginationMeta(filteredItems.length, page, pageSize)
-        }
-    ];
+    return toMockReply<ProductsResponse>({
+        items: slicePaginatedData(filteredItems, page, pageSize),
+        meta: toPaginationMeta(filteredItems.length, page, pageSize)
+    });
 };
 
 export const registerProductsMockHandlers = (mockAdapter: MockAdapter) => {
@@ -67,7 +62,7 @@ export const registerProductsMockHandlers = (mockAdapter: MockAdapter) => {
             updatedAt: getIsoDateNow()
         };
         mockDatabase.sampleProducts.unshift(createdProduct);
-        return [201, createdProduct];
+        return toMockReply(createdProduct, { status: 201 });
     });
 
     mockAdapter.onPut(/\/products(?:\?.*)?$/).reply((config) => {
@@ -75,10 +70,10 @@ export const registerProductsMockHandlers = (mockAdapter: MockAdapter) => {
         const targetId = String(requestBody.id ?? '');
         const targetIndex = mockDatabase.sampleProducts.findIndex(({ id }) => id === targetId);
         if (targetIndex === -1)
-            return [
-                404,
-                { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }
-            ];
+            return toMockReply(
+                { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } },
+                { status: 404 }
+            );
         const updatedProduct: Product = {
             ...mockDatabase.sampleProducts[targetIndex],
             title: requestBody.title
@@ -99,7 +94,7 @@ export const registerProductsMockHandlers = (mockAdapter: MockAdapter) => {
             updatedAt: getIsoDateNow()
         };
         mockDatabase.sampleProducts[targetIndex] = updatedProduct;
-        return [200, updatedProduct];
+        return toMockReply(updatedProduct);
     });
 
     mockAdapter.onDelete(/\/products(?:\?.*)?$/).reply((config) => {
@@ -107,12 +102,12 @@ export const registerProductsMockHandlers = (mockAdapter: MockAdapter) => {
         const targetId = String(requestBody.id ?? '');
         const targetIndex = mockDatabase.sampleProducts.findIndex(({ id }) => id === targetId);
         if (targetIndex === -1)
-            return [
-                404,
-                { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }
-            ];
+            return toMockReply(
+                { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } },
+                { status: 404 }
+            );
         mockDatabase.sampleProducts.splice(targetIndex, 1);
-        return [200, createMessageResponse('Product deleted')];
+        return toMockReply(createMessageResponse('Product deleted'));
     });
 
     mockAdapter.onPost(/\/products\/search(?:\?.*)?$/).reply((config) => {
@@ -126,21 +121,21 @@ export const registerProductsMockHandlers = (mockAdapter: MockAdapter) => {
             (product) => product.id === productId
         );
         if (!targetProduct)
-            return [
-                404,
-                { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }
-            ];
-        return [200, targetProduct];
+            return toMockReply(
+                { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } },
+                { status: 404 }
+            );
+        return toMockReply(targetProduct);
     });
 
     mockAdapter.onPut(/\/products\/[^/]+(?:\?.*)?$/).reply((config) => {
         const productId = getLastPathSegment(config.url);
         const targetIndex = mockDatabase.sampleProducts.findIndex(({ id }) => id === productId);
         if (targetIndex === -1)
-            return [
-                404,
-                { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }
-            ];
+            return toMockReply(
+                { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } },
+                { status: 404 }
+            );
         const requestBody = parseRequestBody<Record<string, unknown>>(config.data);
         const updatedProduct: Product = {
             ...mockDatabase.sampleProducts[targetIndex],
@@ -162,18 +157,18 @@ export const registerProductsMockHandlers = (mockAdapter: MockAdapter) => {
             updatedAt: getIsoDateNow()
         };
         mockDatabase.sampleProducts[targetIndex] = updatedProduct;
-        return [200, updatedProduct];
+        return toMockReply(updatedProduct);
     });
 
     mockAdapter.onDelete(/\/products\/[^/]+(?:\?.*)?$/).reply((config) => {
         const productId = getLastPathSegment(config.url);
         const targetIndex = mockDatabase.sampleProducts.findIndex(({ id }) => id === productId);
         if (targetIndex === -1)
-            return [
-                404,
-                { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } }
-            ];
+            return toMockReply(
+                { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } },
+                { status: 404 }
+            );
         mockDatabase.sampleProducts.splice(targetIndex, 1);
-        return [200, createMessageResponse('Product deleted')];
+        return toMockReply(createMessageResponse('Product deleted'));
     });
 };
