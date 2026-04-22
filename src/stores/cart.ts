@@ -9,6 +9,7 @@ export const useCartStore = defineStore('cart', () => {
     const { loading: restLoading, fetchAny } = useStructureRestApi<CartItem, string>({
         getLoading: (key?: string) => {
             if (key) return getLoading(key);
+            return undefined;
         },
         setLoading: (key?: string, value?: boolean) => {
             if (key && value !== undefined) setLoading(key, value);

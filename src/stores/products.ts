@@ -40,6 +40,7 @@ export const useProductsStore = defineStore('products', () => {
     } = useStructureRestApi<Product, string>({
         getLoading: (key?: string) => {
             if (key) return getLoading(key);
+            return undefined;
         },
         setLoading: (key?: string, value?: boolean) => {
             if (key && value !== undefined) setLoading(key, value);
