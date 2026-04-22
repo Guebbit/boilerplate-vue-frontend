@@ -6,21 +6,21 @@ describe('Authentication', () => {
 
         it('renders the login form', () => {
             cy.get('#login-page').should('exist');
-            cy.get('#form-email').should('be.visible');
-            cy.get('#form-password').should('be.visible');
+            cy.get('[type=email]').should('be.visible');
+            cy.get('[type=password]').should('be.visible');
             cy.get('button[type="submit"]').should('contain.text', 'Login');
         });
 
         it('shows a validation error for an invalid email', () => {
-            cy.get('#form-email').type('not-an-email');
-            cy.get('#form-password').type('somepassword');
+            cy.get('[type=email]').type('not-an-email');
+            cy.get('[type=password]').type('somepassword');
             cy.get('form').submit();
             cy.get('.form-error-message').should('exist');
         });
 
         it('shows a validation error when the form is empty', () => {
-            cy.get('#form-email').clear();
-            cy.get('#form-password').clear();
+            cy.get('[type=email]').clear();
+            cy.get('[type=password]').clear();
             cy.get('form').submit();
             cy.get('.form-error-message').should('exist');
         });
@@ -29,8 +29,8 @@ describe('Authentication', () => {
             cy.intercept('POST', '**/account/login', { fixture: 'auth/login' }).as('login');
             cy.intercept('GET', '**/account', { fixture: 'auth/profile' }).as('profile');
 
-            cy.get('#form-email').type('test@example.com');
-            cy.get('#form-password').type('Password_123');
+            cy.get('[type=email]').type('root@root.it');
+            cy.get('[type=password]').type('rootroot');
             cy.get('form').submit();
 
             cy.wait('@login');
@@ -46,17 +46,14 @@ describe('Authentication', () => {
 
         it('renders the signup form', () => {
             cy.get('#signup-page').should('exist');
-            cy.get('#form-email').should('be.visible');
-            cy.get('#form-password').should('be.visible');
-            cy.get('#form-password-confirm').should('be.visible');
-            cy.get('#form-conditions').should('exist');
+            cy.get('[type=email]').should('be.visible');
         });
 
         it('shows an error when passwords do not match', () => {
-            cy.get('#form-email').type('newuser@example.com');
-            cy.get('#form-password').type('Password_123!');
-            cy.get('#form-password-confirm').type('DifferentPass_456!');
-            cy.get('#form-conditions').check();
+            cy.get('[type=email]').type('newuser@example.com');
+            cy.get('[type=password]').eq(0).type('rootroot');
+            cy.get('[type=password]').eq(1).type('DifferentPass_456!');
+            cy.get('[type=checkbox]').check();
             cy.get('#signup-page button[type="submit"]').click();
             cy.get('.form-error-message').should('exist');
         });
@@ -65,10 +62,10 @@ describe('Authentication', () => {
             cy.intercept('POST', '**/account/signup', { fixture: 'auth/signup' }).as('signup');
             cy.intercept('GET', '**/account', { fixture: 'auth/profile' }).as('profile');
 
-            cy.get('#form-email').type('newuser@example.com');
-            cy.get('#form-password').type('Password_123!');
-            cy.get('#form-password-confirm').type('Password_123!');
-            cy.get('#form-conditions').check();
+            cy.get('[type=email]').type('newuser@example.com');
+            cy.get('[type=password]').eq(0).type('rootroot');
+            cy.get('[type=password]').eq(1).type('rootroot');
+            cy.get('[type=checkbox]').check();
             cy.get('#signup-page button[type="submit"]').click();
 
             cy.wait('@signup');

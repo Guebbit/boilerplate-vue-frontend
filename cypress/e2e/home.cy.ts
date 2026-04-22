@@ -24,16 +24,16 @@ describe('Public routes', () => {
     it('loads the login page', () => {
         cy.visit('/en/login');
         cy.get('#login-page').should('exist');
-        cy.get('#form-email').should('exist');
-        cy.get('#form-password').should('exist');
+        cy.get('[type=email]').should('exist');
+        cy.get('[type=password]').should('exist');
     });
 
     it('loads the signup page', () => {
         cy.visit('/en/signup');
         cy.get('#signup-page').should('exist');
-        cy.get('#form-email').should('exist');
-        cy.get('#form-password').should('exist');
-        cy.get('#form-password-confirm').should('exist');
+        cy.get('[type=email]').should('exist');
+        cy.get('[type=password]').should('exist');
+        cy.get('[type=password]-confirm').should('exist');
     });
 
     it('shows 404 error page for unknown routes', () => {

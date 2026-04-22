@@ -64,7 +64,7 @@ const inputValue = computed({
     get: () => String(model.value ?? ''),
     set: (value: string) => {
         if (props.type === 'number') {
-            const n = parseFloat(value);
+            const n = Number.parseFloat(value);
             model.value = Number.isNaN(n) ? undefined : n;
         } else {
             model.value = value;

@@ -4,7 +4,7 @@
     "message": "ok",
     "data": {
         "id": "user-1",
-        "email": "test@example.com",
+        "email": "root@root.it",
         "username": "testuser",
         "admin": false,
         "active": true,

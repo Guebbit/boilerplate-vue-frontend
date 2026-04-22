@@ -91,6 +91,7 @@ npm run test:unit
 
 # TODO
 
+- Fix tests
 - Signup should send an email with a link to confirm the account 
     (CHECK the api-mongodb-mongoose, it doesn't send the email and just create the user) 
     Create the registration confirmation page

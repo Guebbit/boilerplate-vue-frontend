@@ -116,7 +116,7 @@ const handleSearch = () => {
 };
 
 const handleReset = () => {
-    Object.keys(filters).forEach((k) => delete (filters as Record<string, unknown>)[k]);
+    for (const k of Object.keys(filters)) delete (filters as Record<string, unknown>)[k];
     pageCurrent.value = 1;
     fetchSearchProducts({}, 1, pageSize.value, true);
 };
