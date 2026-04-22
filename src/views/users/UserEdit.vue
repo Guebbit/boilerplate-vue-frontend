@@ -54,7 +54,10 @@ import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import {
+    useNotificationsStore,
+    useStructureFormManagement as useStructureFormValidation
+} from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/stores/users';
 import { z } from 'zod';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';

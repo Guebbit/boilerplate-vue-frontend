@@ -53,7 +53,10 @@ export default {
 import { nextTick, ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import {
+    useNotificationsStore,
+    useStructureFormManagement as useStructureFormValidation
+} from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
 import { useRouter, useRoute } from 'vue-router';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';

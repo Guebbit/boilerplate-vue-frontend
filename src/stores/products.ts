@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import type { AxiosProgressEvent } from 'axios';
 import { useI18n } from 'vue-i18n';
+import { computed } from 'vue';
 import { z } from 'zod';
 
 import { productsApi } from '@/utils/api.ts';
@@ -24,19 +25,26 @@ export const useProductsStore = defineStore('products', () => {
         selectedIdentifier: selectedProductId,
         selectedRecord: currentProduct,
 
-        loading,
+        loading: restLoading,
         pageCurrent,
         pageSize,
         pageTotal,
         pageItemList,
         fetchSearch,
-        fetchPaginate,
+        fetchAny,
         fetchAll,
         fetchTarget,
         createTarget,
         updateTarget,
         deleteTarget
-    } = useStructureRestApi<Product, string>({ getLoading, setLoading });
+    } = useStructureRestApi<Product, string>({
+        getLoading: (key?: string) => {
+            if (key) getLoading(key);
+        },
+        setLoading: (key?: string, value?: boolean) => {
+            if (key && value !== undefined) setLoading(key, value);
+        }
+    });
 
     /**
      *
@@ -52,15 +60,15 @@ export const useProductsStore = defineStore('products', () => {
      * @param pageSize
      * @param forced
      */
-    const fetchPaginationProducts = (page = 1, pageSize = 10, forced = false) =>
-        fetchPaginate(
+    const fetchPaginationProducts = (page = 1, pageSizeValue = 10, forced = false) =>
+        fetchAny(
             () =>
-                productsApi
-                    .listProducts(page, pageSize)
-                    .then(({ data: { meta, items = [] } }) => [items, meta.totalItems]),
-            page,
-            pageSize,
-            { forced }
+                productsApi.listProducts(page, pageSizeValue).then(({ data }) => {
+                    const response = data as { items?: Product[] };
+                    addRecords(response.items ?? []);
+                    return response;
+                }),
+            { forced, lastUpdateKey: `products_page_${page}_${pageSizeValue}` }
         );
 
     type IProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
@@ -74,22 +82,21 @@ export const useProductsStore = defineStore('products', () => {
     const fetchSearchProducts = (
         filters: IProductsFilters = {},
         page = 1,
-        pageSize = 10,
+        pageSizeValue = 10,
         forced = false
-    ) =>
-        fetchSearch(
+    ) => {
+        pageCurrent.value = page;
+        pageSize.value = pageSizeValue;
+        return fetchSearch(
             () =>
                 productsApi
-                    .searchProducts({ ...filters, page, pageSize })
-                    .then(
-                        ({ data: { meta, items = [] } }) =>
-                            [items, meta.totalItems]
-                    ),
+                    .searchProducts({ ...filters, page, pageSize: pageSizeValue })
+                    .then(({ data: { items = [] } }) => items),
             filters,
             page,
-            pageSize,
             { forced }
         );
+    };
 
     /**
      *
@@ -218,7 +225,7 @@ export const useProductsStore = defineStore('products', () => {
         selectedProductId,
         currentProduct,
 
-        loading,
+        loading: computed(() => Boolean(restLoading.value)),
         pageCurrent,
         pageSize,
         pageTotal,

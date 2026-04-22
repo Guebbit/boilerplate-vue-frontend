@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { useI18n } from 'vue-i18n';
+import { computed } from 'vue';
 import { z } from 'zod';
 import { ordersApi } from '@/utils/api.ts';
 import type {
@@ -25,7 +26,7 @@ export const useOrdersStore = defineStore('orders', () => {
         selectedIdentifier: selectedOrderId,
         selectedRecord: currentOrder,
 
-        loading,
+        loading: restLoading,
         pageCurrent,
         pageSize,
         pageTotal,
@@ -37,7 +38,14 @@ export const useOrdersStore = defineStore('orders', () => {
         createTarget,
         updateTarget,
         deleteTarget
-    } = useStructureRestApi<Order, string>({ getLoading, setLoading });
+    } = useStructureRestApi<Order, string>({
+        getLoading: (key?: string) => {
+            if (key) getLoading(key);
+        },
+        setLoading: (key?: string, value?: boolean) => {
+            if (key && value !== undefined) setLoading(key, value);
+        }
+    });
 
     /**
      * Fetch all orders for the authenticated user
@@ -77,17 +85,24 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param pageSize
      * @param forced
      */
-    const fetchSearchOrders = (filters: IOrdersFilters = {}, page = 1, pageSize = 10, forced = false) =>
-        fetchSearch(
+    const fetchSearchOrders = (
+        filters: IOrdersFilters = {},
+        page = 1,
+        pageSizeValue = 10,
+        forced = false
+    ) => {
+        pageCurrent.value = page;
+        pageSize.value = pageSizeValue;
+        return fetchSearch(
             () =>
                 ordersApi
-                    .searchOrders({ ...filters, page, pageSize })
-                    .then(({ data: { meta, items = [] } }) => [items, meta.totalItems]),
+                    .searchOrders({ ...filters, page, pageSize: pageSizeValue })
+                    .then(({ data: { items = [] } }) => items),
             filters,
             page,
-            pageSize,
             { forced }
         );
+    };
 
     /**
      * Fetch a single order by ID
@@ -181,7 +196,7 @@ export const useOrdersStore = defineStore('orders', () => {
         selectedOrderId,
         currentOrder,
 
-        loading,
+        loading: computed(() => Boolean(restLoading.value)),
         pageCurrent,
         pageSize,
         pageTotal,

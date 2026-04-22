@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { useI18n } from 'vue-i18n';
+import { computed } from 'vue';
 import { z } from 'zod';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { usersApi } from '@/utils/api.ts';
@@ -27,7 +28,7 @@ export const useUsersStore = defineStore('users', () => {
         selectedIdentifier: selectedUserId,
         selectedRecord: currentUser,
 
-        loading,
+        loading: restLoading,
         pageCurrent,
         pageSize,
         pageTotal,
@@ -39,7 +40,14 @@ export const useUsersStore = defineStore('users', () => {
         createTarget,
         updateTarget,
         deleteTarget
-    } = useStructureRestApi<User, string>({ getLoading, setLoading });
+    } = useStructureRestApi<User, string>({
+        getLoading: (key?: string) => {
+            if (key) getLoading(key);
+        },
+        setLoading: (key?: string, value?: boolean) => {
+            if (key && value !== undefined) setLoading(key, value);
+        }
+    });
 
     /**
      *
@@ -76,24 +84,31 @@ export const useUsersStore = defineStore('users', () => {
      * @param pageSize
      * @param forced
      */
-    const fetchSearchUsers = (filters: IUsersFilters = {}, page = 1, pageSize = 10, forced = false) =>
-        fetchSearch(
+    const fetchSearchUsers = (
+        filters: IUsersFilters = {},
+        page = 1,
+        pageSizeValue = 10,
+        forced = false
+    ) => {
+        pageCurrent.value = page;
+        pageSize.value = pageSizeValue;
+        return fetchSearch(
             () =>
                 usersApi
-                    .searchUsers({ ...filters, page, pageSize })
-                    .then(({ data: { items = [] , meta} }) => [items, meta.totalItems]),
+                    .searchUsers({ ...filters, page, pageSize: pageSizeValue })
+                    .then(({ data: { items = [] } }) => items),
             filters,
             page,
-            pageSize,
             { forced }
         );
+    };
 
     /**
      *
      * @param userId
      * @param forced
      */
-    const fetchUser =(userId: string, forced = false) =>
+    const fetchUser = (userId: string, forced = false) =>
         fetchTarget(() => usersApi.getUserById(userId).then(({ data }) => data as User), userId, {
             forced
         });
@@ -225,7 +240,7 @@ export const useUsersStore = defineStore('users', () => {
         selectedUserId,
         currentUser,
 
-        loading,
+        loading: computed(() => Boolean(restLoading.value)),
         pageCurrent,
         pageSize,
         pageTotal,

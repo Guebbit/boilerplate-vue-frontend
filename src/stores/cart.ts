@@ -6,7 +6,14 @@ import type { CartItem, CartResponse, CartSummaryResponse } from '@types';
 
 export const useCartStore = defineStore('cart', () => {
     const { getLoading, setLoading } = useCoreStore();
-    const { loading, fetchAny } = useStructureRestApi<CartItem, string>({ getLoading, setLoading });
+    const { loading: restLoading, fetchAny } = useStructureRestApi<CartItem, string>({
+        getLoading: (key?: string) => {
+            if (key) getLoading(key);
+        },
+        setLoading: (key?: string, value?: boolean) => {
+            if (key && value !== undefined) setLoading(key, value);
+        }
+    });
 
     /**
      * Full cart response (items + summary)
@@ -96,7 +103,7 @@ export const useCartStore = defineStore('cart', () => {
         cartSummary,
         cartCount,
 
-        loading,
+        loading: computed(() => Boolean(restLoading.value)),
         fetchCart,
         upsertCartItem,
         updateCartItem,

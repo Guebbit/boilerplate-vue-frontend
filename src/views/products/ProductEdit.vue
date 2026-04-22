@@ -29,10 +29,7 @@
                     :label="t('product-edit-page.label-description')"
                     multiline
                 />
-                <BaseCheckbox
-                    v-model="form.active"
-                    :label="t('product-edit-page.label-active')"
-                />
+                <BaseCheckbox v-model="form.active" :label="t('product-edit-page.label-active')" />
                 <BaseButton type="submit" :disabled="isSubmitting || loading">
                     {{ t('product-edit-page.button-submit') }}
                 </BaseButton>
@@ -65,7 +62,10 @@ import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import {
+    useNotificationsStore,
+    useStructureFormManagement as useStructureFormValidation
+} from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/stores/products';
 import { z } from 'zod';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';

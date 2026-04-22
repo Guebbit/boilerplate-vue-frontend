@@ -42,7 +42,10 @@ import { nextTick, ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import {
+    useNotificationsStore,
+    useStructureFormManagement as useStructureFormValidation
+} from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
 import { useUsersStore } from '@/stores/users.ts';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';

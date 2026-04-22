@@ -41,11 +41,18 @@ export const useProfileStore = defineStore('profile', () => {
         itemDictionary,
         selectedIdentifier,
         selectedRecord: profile,
-        loading,
+        loading: restLoading,
         fetchAny,
         fetchTarget,
         updateTarget
-    } = useStructureRestApi<User, string>({ getLoading, setLoading });
+    } = useStructureRestApi<User, string>({
+        getLoading: (key?: string) => {
+            if (key) getLoading(key);
+        },
+        setLoading: (key?: string, value?: boolean) => {
+            if (key && value !== undefined) setLoading(key, value);
+        }
+    });
 
     /**
      * Warning: can't use useI18n because it wouldn't work in global guards
@@ -170,7 +177,7 @@ export const useProfileStore = defineStore('profile', () => {
             itemDictionary.value = {};
             selectedIdentifier.value = undefined;
             accessToken.value = undefined;
-        })
+        });
     };
 
     return {
@@ -179,7 +186,7 @@ export const useProfileStore = defineStore('profile', () => {
         isAdmin,
         isAuth,
 
-        loading,
+        loading: computed(() => Boolean(restLoading.value)),
         accessToken,
         login,
         signup,
