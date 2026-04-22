@@ -10,7 +10,7 @@ import {
     type Product,
     type RefreshTokenResponse,
     type User
-} from '@types';
+} from '@/types';
 
 export const getIsoDateNow = () => new Date().toISOString();
 

@@ -4,13 +4,13 @@ import { i18n } from '@/utils/i18n.ts';
 
 import App from './App.vue';
 import router from './router';
-import { initializeApiMocking } from '@/mocks/apiMock.ts';
+import { initializeApiMocking } from '../.dev/mocks/apiMock.ts';
 
 /**
  * Global CSS
  */
-import '@/assets/styles/theme.scss';
-import '@/assets/styles/main.scss';
+import '@/styles/theme.scss';
+import '@/styles/main.scss';
 
 /**
  * Vue3 App

@@ -110,7 +110,7 @@
 </template>
 
 <style lang="scss">
-@use '@/assets/styles/functions' as fn;
+@use '@/styles/functions' as fn;
 
 .page-header {
     .logo {

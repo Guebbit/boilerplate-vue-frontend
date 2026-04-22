@@ -1,6 +1,6 @@
 @use 'sass:map';
-@use '@guebbit/css-toolkit' as guebbit;
-@use './variables' as vars;
+@use '../../node_modules/@guebbit/css-toolkit/index' as guebbit;
+@use 'variables' as vars;
 
 /**
  * Mixin for mobile

@@ -5,8 +5,8 @@ import type {
     OrdersResponse,
     UpdateOrderByIdRequest,
     UpdateOrderRequest
-} from '@types';
-import { OrderStatusEnum } from '@types';
+} from '@/types';
+import { OrderStatusEnum } from '@/types';
 import {
     cartItemToOrderItem,
     createMessageResponse,
@@ -20,7 +20,7 @@ import {
     slicePaginatedData,
     toNumberOrDefault,
     toPaginationMeta
-} from '@/mocks/shared/mockShared.ts';
+} from '../shared/mockShared.ts';
 
 const replyOrdersList = (
     url: string | undefined,

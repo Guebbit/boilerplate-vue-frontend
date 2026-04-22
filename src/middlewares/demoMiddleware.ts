@@ -20,8 +20,7 @@ export const demoMiddleware = (
     /**
      * Can use the store
      */
-    const store = useCounterStore();
-    const { count } = storeToRefs(store);
+    const { count } = storeToRefs(useCounterStore());
     count.value++;
     // eslint-disable-next-line no-console
     console.log('count++: ' + count.value);

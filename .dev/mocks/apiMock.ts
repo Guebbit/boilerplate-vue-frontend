@@ -1,10 +1,10 @@
 import MockAdapter from 'axios-mock-adapter';
 import httpClient from '@/utils/http.ts';
-import { registerAccountMockHandlers } from '@/mocks/handlers/accountMockHandlers.ts';
-import { registerUsersMockHandlers } from '@/mocks/handlers/usersMockHandlers.ts';
-import { registerProductsMockHandlers } from '@/mocks/handlers/productsMockHandlers.ts';
-import { registerCartMockHandlers } from '@/mocks/handlers/cartMockHandlers.ts';
-import { registerOrdersMockHandlers } from '@/mocks/handlers/ordersMockHandlers.ts';
+import { registerAccountMockHandlers } from './handlers/accountMockHandlers.ts';
+import { registerUsersMockHandlers } from './handlers/usersMockHandlers.ts';
+import { registerProductsMockHandlers } from './handlers/productsMockHandlers.ts';
+import { registerCartMockHandlers } from './handlers/cartMockHandlers.ts';
+import { registerOrdersMockHandlers } from './handlers/ordersMockHandlers.ts';
 
 let mockAdapterInstance: MockAdapter | undefined;
 
@@ -14,7 +14,8 @@ export const initializeApiMocking = () => {
 
     const mockAdapter = new MockAdapter(httpClient, {
         delayResponse: 250,
-        onNoMatch: 'passthrough'
+        // or else "passthrough": Unmatched requests go to the real network instead of returning a 404 error
+        onNoMatch: 'throwException'
     });
 
     registerAccountMockHandlers(mockAdapter);

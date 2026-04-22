@@ -1,11 +1,11 @@
-@use '@guebbit/css-toolkit' as guebbit;
+@use '../../node_modules/@guebbit/css-toolkit/index' as guebbit;
 @use 'variables' as vars;
 
-@use 'components/atoms/theme-button';
-@use 'components/atoms/theme-input';
-@use 'components/atoms/theme-select';
-@use 'components/atoms/theme-page-title';
-@use 'components/atoms/theme-card';
+@use 'components/theme-button';
+@use 'components/theme-input';
+@use 'components/theme-select';
+@use 'components/theme-page-title';
+@use 'components/theme-card';
 @use 'components/forms';
 
 /**

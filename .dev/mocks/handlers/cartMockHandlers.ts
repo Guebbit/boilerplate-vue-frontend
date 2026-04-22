@@ -1,5 +1,5 @@
 import type MockAdapter from 'axios-mock-adapter';
-import { OrderStatusEnum } from '@types';
+import { OrderStatusEnum } from '@/types';
 import {
     cartItemToOrderItem,
     createMockOrder,
@@ -8,7 +8,7 @@ import {
     getLastPathSegment,
     mockDatabase,
     parseRequestBody
-} from '@/mocks/shared/mockShared.ts';
+} from '../shared/mockShared.ts';
 
 export const registerCartMockHandlers = (mockAdapter: MockAdapter) => {
     mockAdapter.onGet(/\/cart\/summary(?:\?.*)?$/).reply(() => [200, calculateCartSummary()]);

@@ -5,7 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import '@/assets/styles/pages/usersList.scss';
+import '@/styles/pages/usersList.scss';
 import { onMounted, reactive, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';

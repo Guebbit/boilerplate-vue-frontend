@@ -1,12 +1,12 @@
 import type MockAdapter from 'axios-mock-adapter';
-import type { LoginRequest, User } from '@types';
+import type { LoginRequest, User } from '@/types';
 import {
     createMessageResponse,
     defaultRefreshTokenResponse,
     getIsoDateNow,
     mockDatabase,
     parseRequestBody
-} from '@/mocks/shared/mockShared.ts';
+} from '../shared/mockShared.ts';
 
 export const registerAccountMockHandlers = (mockAdapter: MockAdapter) => {
     mockAdapter

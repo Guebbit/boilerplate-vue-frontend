@@ -1,5 +1,5 @@
 import type MockAdapter from 'axios-mock-adapter';
-import type { Product, ProductsResponse } from '@types';
+import type { Product, ProductsResponse } from '@/types';
 import {
     createMessageResponse,
     getIsoDateNow,
@@ -10,7 +10,7 @@ import {
     slicePaginatedData,
     toNumberOrDefault,
     toPaginationMeta
-} from '@/mocks/shared/mockShared.ts';
+} from '../shared/mockShared.ts';
 
 const replyProductsList = (
     url: string | undefined,

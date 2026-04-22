@@ -166,17 +166,16 @@ setTimeout(() => {
 /**
  * Counter store
  */
-const store = useCounterStore();
 const {
     count,
     doubleCount
     // Refs needs to be extracted with this helper function
-} = storeToRefs(store);
+} = storeToRefs(useCounterStore());
 
 /**
  * These functions can be used even without being deconstructed
  */
-const { increment, incrementDelayed } = store;
+const { increment, incrementDelayed } = useCounterStore();
 
 /**
  * Same value as the one in Pinia, to show they are the same.

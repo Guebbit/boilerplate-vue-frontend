@@ -84,7 +84,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import '@/assets/styles/pages/productsList.scss';
+import '@/styles/pages/productsList.scss';
 import { onMounted, reactive, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';

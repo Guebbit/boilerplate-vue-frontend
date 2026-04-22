@@ -1,5 +1,5 @@
 import type MockAdapter from 'axios-mock-adapter';
-import type { User, UsersResponse } from '@types';
+import type { User, UsersResponse } from '@/types';
 import {
     createMessageResponse,
     getIsoDateNow,
@@ -11,7 +11,7 @@ import {
     toBooleanOrUndefined,
     toNumberOrDefault,
     toPaginationMeta
-} from '@/mocks/shared/mockShared.ts';
+} from '../shared/mockShared.ts';
 
 const replyUsersList = (url: string | undefined, parameters?: unknown): [number, UsersResponse] => {
     const query = getQueryParameters(url, parameters);
