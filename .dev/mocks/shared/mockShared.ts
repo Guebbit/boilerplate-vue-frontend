@@ -12,6 +12,7 @@ import {
     type User
 } from '@/types';
 
+// Shared timestamp utility to keep fixture updates consistent.
 export const getIsoDateNow = () => new Date().toISOString();
 
 export const createMessageResponse = (message: string): MessageResponse => ({
@@ -48,6 +49,7 @@ export const parseRequestBody = <T>(data: unknown): Partial<T> => {
     return {};
 };
 
+// URL helpers are shared by all resource handlers for id and query extraction.
 const getPathSegments = (url: string | undefined) =>
     new URL(url ?? '', 'http://localhost').pathname.split('/').filter(Boolean);
 
@@ -101,6 +103,7 @@ export const slicePaginatedData = <T>(items: T[], page: number, pageSize: number
 export const createMockInvoicePdf = () =>
     new TextEncoder().encode('%PDF-1.4\n% Mock invoice PDF\n').buffer;
 
+// In-memory fixtures (mutable by handlers) used as a mock "database".
 export const mockDatabase: {
     currentAuthenticatedUserId: string;
     sampleUsers: User[];
@@ -202,6 +205,7 @@ export const calculateCartSummary = (): CartSummaryResponse => {
     };
 };
 
+// Conversion helper used when cart payloads become order payloads.
 export const cartItemToOrderItem = (item: CartItem): OrderItem => ({
     product: mockDatabase.sampleProducts.find(({ id }) => id === item.productId)!,
     quantity: item.quantity
@@ -232,6 +236,7 @@ export const createMockOrder = (
     };
 };
 
+// Seed a predictable order list at startup.
 mockDatabase.sampleOrders = [
     createMockOrder({
         userId: 'user-1',

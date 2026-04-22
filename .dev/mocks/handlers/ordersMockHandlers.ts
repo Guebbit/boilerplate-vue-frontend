@@ -21,11 +21,9 @@ import {
     toNumberOrDefault,
     toPaginationMeta
 } from '../shared/mockShared.ts';
+import { toMockReply } from '../shared/mockTransport.ts';
 
-const replyOrdersList = (
-    url: string | undefined,
-    parameters?: unknown
-): [number, OrdersResponse] => {
+const replyOrdersList = (url: string | undefined, parameters?: unknown) => {
     const query = getQueryParameters(url, parameters);
     const page = toNumberOrDefault(query.page, 1);
     const pageSize = toNumberOrDefault(query.pageSize, 10);
@@ -42,13 +40,10 @@ const replyOrdersList = (
         return true;
     });
 
-    return [
-        200,
-        {
-            items: slicePaginatedData(filteredItems, page, pageSize),
-            meta: toPaginationMeta(filteredItems.length, page, pageSize)
-        }
-    ];
+    return toMockReply<OrdersResponse>({
+        items: slicePaginatedData(filteredItems, page, pageSize),
+        meta: toPaginationMeta(filteredItems.length, page, pageSize)
+    });
 };
 
 export const registerOrdersMockHandlers = (mockAdapter: MockAdapter) => {
@@ -56,7 +51,7 @@ export const registerOrdersMockHandlers = (mockAdapter: MockAdapter) => {
     const pdfHeaders: Record<string, string> = { 'Content-Type': 'application/pdf' };
     mockAdapter
         .onGet(/\/orders\/[^/]+\/invoice(?:\?.*)?$/)
-        .reply(200, createMockInvoicePdf(), pdfHeaders);
+        .reply(() => toMockReply(createMockInvoicePdf(), { headers: pdfHeaders }));
 
     mockAdapter
         .onGet(/\/orders(?:\?.*)?$/)
@@ -67,32 +62,36 @@ export const registerOrdersMockHandlers = (mockAdapter: MockAdapter) => {
         const createdOrder = createMockOrder({
             userId: String(requestBody.userId ?? mockDatabase.currentAuthenticatedUserId),
             email: String(requestBody.email ?? 'order@example.com'),
-            items: Array.isArray(requestBody.items) ? (requestBody.items as CartItem[]).map(cartItemToOrderItem) : [],
+            items: Array.isArray(requestBody.items)
+                ? (requestBody.items as CartItem[]).map((item) => cartItemToOrderItem(item))
+                : [],
             notes: requestBody.notes ? String(requestBody.notes) : undefined,
             status: OrderStatusEnum.Pending
         });
         mockDatabase.sampleOrders.unshift(createdOrder);
-        return [201, createdOrder];
+        return toMockReply(createdOrder, { status: 201 });
     });
 
     mockAdapter.onPut(/\/orders(?:\?.*)?$/).reply((config) => {
         const requestBody = parseRequestBody<UpdateOrderRequest>(config.data);
         const targetIndex = mockDatabase.sampleOrders.findIndex(({ id }) => id === requestBody.id);
         if (targetIndex === -1)
-            return [
-                404,
-                { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } }
-            ];
+            return toMockReply(
+                { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } },
+                { status: 404 }
+            );
         const updatedOrder: Order = {
             ...mockDatabase.sampleOrders[targetIndex],
             userId: requestBody.userId ?? mockDatabase.sampleOrders[targetIndex].userId,
             email: requestBody.email ?? mockDatabase.sampleOrders[targetIndex].email,
-            items: requestBody.items ? requestBody.items.map(cartItemToOrderItem) : mockDatabase.sampleOrders[targetIndex].items,
+            items: requestBody.items
+                ? requestBody.items.map((item) => cartItemToOrderItem(item))
+                : mockDatabase.sampleOrders[targetIndex].items,
             status: requestBody.status ?? mockDatabase.sampleOrders[targetIndex].status,
             updatedAt: getIsoDateNow()
         };
         mockDatabase.sampleOrders[targetIndex] = updatedOrder;
-        return [200, updatedOrder];
+        return toMockReply(updatedOrder);
     });
 
     mockAdapter.onDelete(/\/orders(?:\?.*)?$/).reply((config) => {
@@ -100,12 +99,12 @@ export const registerOrdersMockHandlers = (mockAdapter: MockAdapter) => {
         const targetId = String(requestBody.id ?? '');
         const targetIndex = mockDatabase.sampleOrders.findIndex(({ id }) => id === targetId);
         if (targetIndex === -1)
-            return [
-                404,
-                { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } }
-            ];
+            return toMockReply(
+                { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } },
+                { status: 404 }
+            );
         mockDatabase.sampleOrders.splice(targetIndex, 1);
-        return [200, createMessageResponse('Order deleted')];
+        return toMockReply(createMessageResponse('Order deleted'));
     });
 
     mockAdapter.onPost(/\/orders\/search(?:\?.*)?$/).reply((config) => {
@@ -117,43 +116,45 @@ export const registerOrdersMockHandlers = (mockAdapter: MockAdapter) => {
         const orderId = getLastPathSegment(config.url);
         const targetOrder = mockDatabase.sampleOrders.find((order) => order.id === orderId);
         if (!targetOrder)
-            return [
-                404,
-                { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } }
-            ];
-        return [200, targetOrder];
+            return toMockReply(
+                { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } },
+                { status: 404 }
+            );
+        return toMockReply(targetOrder);
     });
 
     mockAdapter.onPut(/\/orders\/[^/]+(?:\?.*)?$/).reply((config) => {
         const orderId = getLastPathSegment(config.url);
         const targetIndex = mockDatabase.sampleOrders.findIndex(({ id }) => id === orderId);
         if (targetIndex === -1)
-            return [
-                404,
-                { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } }
-            ];
+            return toMockReply(
+                { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } },
+                { status: 404 }
+            );
         const requestBody = parseRequestBody<UpdateOrderByIdRequest>(config.data);
         const updatedOrder: Order = {
             ...mockDatabase.sampleOrders[targetIndex],
             userId: requestBody.userId ?? mockDatabase.sampleOrders[targetIndex].userId,
             email: requestBody.email ?? mockDatabase.sampleOrders[targetIndex].email,
-            items: requestBody.items ? requestBody.items.map(cartItemToOrderItem) : mockDatabase.sampleOrders[targetIndex].items,
+            items: requestBody.items
+                ? requestBody.items.map((item) => cartItemToOrderItem(item))
+                : mockDatabase.sampleOrders[targetIndex].items,
             status: requestBody.status ?? mockDatabase.sampleOrders[targetIndex].status,
             updatedAt: getIsoDateNow()
         };
         mockDatabase.sampleOrders[targetIndex] = updatedOrder;
-        return [200, updatedOrder];
+        return toMockReply(updatedOrder);
     });
 
     mockAdapter.onDelete(/\/orders\/[^/]+(?:\?.*)?$/).reply((config) => {
         const orderId = getLastPathSegment(config.url);
         const targetIndex = mockDatabase.sampleOrders.findIndex(({ id }) => id === orderId);
         if (targetIndex === -1)
-            return [
-                404,
-                { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } }
-            ];
+            return toMockReply(
+                { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } },
+                { status: 404 }
+            );
         mockDatabase.sampleOrders.splice(targetIndex, 1);
-        return [200, createMessageResponse('Order deleted')];
+        return toMockReply(createMessageResponse('Order deleted'));
     });
 };
