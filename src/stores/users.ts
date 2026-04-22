@@ -76,15 +76,19 @@ export const useUsersStore = defineStore('users', () => {
      * @param pageSize
      * @param forced
      */
-    const fetchSearchUsers = (filters: IUsersFilters = {}, page = 1, pageSize = 10, forced = false) =>
+    const fetchSearchUsers = (
+        filters: IUsersFilters = {},
+        page = 1,
+        pageSize = 10,
+        forced = false
+    ) =>
         fetchSearch(
             () =>
                 usersApi
                     .searchUsers({ ...filters, page, pageSize })
-                    .then(({ data: { items = [] , meta} }) => [items, meta.totalItems]),
+                    .then(({ data: { items = [] } }) => items),
             filters,
             page,
-            pageSize,
             { forced }
         );
 
@@ -93,7 +97,7 @@ export const useUsersStore = defineStore('users', () => {
      * @param userId
      * @param forced
      */
-    const fetchUser =(userId: string, forced = false) =>
+    const fetchUser = (userId: string, forced = false) =>
         fetchTarget(() => usersApi.getUserById(userId).then(({ data }) => data as User), userId, {
             forced
         });

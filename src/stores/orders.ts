@@ -77,15 +77,19 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param pageSize
      * @param forced
      */
-    const fetchSearchOrders = (filters: IOrdersFilters = {}, page = 1, pageSize = 10, forced = false) =>
+    const fetchSearchOrders = (
+        filters: IOrdersFilters = {},
+        page = 1,
+        pageSize = 10,
+        forced = false
+    ) =>
         fetchSearch(
             () =>
                 ordersApi
                     .searchOrders({ ...filters, page, pageSize })
-                    .then(({ data: { meta, items = [] } }) => [items, meta.totalItems]),
+                    .then(({ data: { items = [] } }) => items),
             filters,
             page,
-            pageSize,
             { forced }
         );
 

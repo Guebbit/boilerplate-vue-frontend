@@ -26,14 +26,14 @@
         "kill:gnu": "pkill -9 node",
         "genapi": "rm -rf api && openapi-generator-cli generate -i openapi.yaml -g typescript-axios -o ./api",
         "update:all": "npx npm-check-updates -u",
-        "complete": "npm run build && npm run test && npm run lint:fix && npm run prettier:fix",
-        "complete:check": "npm run build && npm run test && npm run lint && npm run prettier",
+        "complete": "npm run build && npm run test:unit && npm run lint:fix && npm run prettier:fix",
+        "complete:check": "npm run build && npm run test:unit && npm run lint && npm run prettier",
         "publish:public": "npm run complete && npm publish --access public"
     },
     "dependencies": {
         "@guebbit/css-toolkit": "^1.4.1",
         "@guebbit/js-toolkit": "^1.0.8",
-        "@guebbit/vue-toolkit": "file:../vue-toolkit",
+        "@guebbit/vue-toolkit": "^1.0.3",
         "@openapitools/openapi-generator-cli": "^2.30.2",
         "axios": "^1.13.6",
         "axios-mock-adapter": "^2.1.0",

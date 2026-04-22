@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { productsApi } from '@/utils/api.ts';
 import type {
     Product,
+    ProductsResponse,
     CreateProductRequest,
     UpdateProductByIdRequest,
     SearchProductsRequest
@@ -30,7 +31,7 @@ export const useProductsStore = defineStore('products', () => {
         pageTotal,
         pageItemList,
         fetchSearch,
-        fetchPaginate,
+        fetchAny,
         fetchAll,
         fetchTarget,
         createTarget,
@@ -53,14 +54,14 @@ export const useProductsStore = defineStore('products', () => {
      * @param forced
      */
     const fetchPaginationProducts = (page = 1, pageSize = 10, forced = false) =>
-        fetchPaginate(
+        fetchAny(
             () =>
-                productsApi
-                    .listProducts(page, pageSize)
-                    .then(({ data: { meta, items = [] } }) => [items, meta.totalItems]),
-            page,
-            pageSize,
-            { forced }
+                productsApi.listProducts(page, pageSize).then(({ data }) => {
+                    const response = data as ProductsResponse;
+                    addRecords(response.items ?? []);
+                    return response;
+                }),
+            { forced, lastUpdateKey: `products_page_${page}_${pageSize}` }
         );
 
     type IProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
@@ -81,13 +82,9 @@ export const useProductsStore = defineStore('products', () => {
             () =>
                 productsApi
                     .searchProducts({ ...filters, page, pageSize })
-                    .then(
-                        ({ data: { meta, items = [] } }) =>
-                            [items, meta.totalItems]
-                    ),
+                    .then(({ data: { items = [] } }) => items),
             filters,
             page,
-            pageSize,
             { forced }
         );
 
