@@ -77,12 +77,20 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param pageSize
      * @param forced
      */
+    /**
+     * Fetches a filtered, paginated order list via GET /orders.
+     * Filters are passed as query parameters; SearchOrdersRequest is still
+     * used as the filter shape so callers stay type-safe.
+     */
     const fetchSearchOrders = (filters: IOrdersFilters = {}, page = 1, pageSize = 10, forced = false) =>
         fetchSearch(
             () =>
                 ordersApi
-                    .searchOrders({ ...filters, page, pageSize })
-                    .then(({ data: { meta, items = [] } }) => [items, meta.totalItems]),
+                    .listOrders(page, pageSize, filters.id, filters.userId, filters.productId, filters.email)
+                    .then(({ data }) => {
+                        const d = data as { items?: Order[]; meta?: { totalItems?: number }; total?: number };
+                        return [d.items ?? [], d.meta?.totalItems ?? d.total ?? 0] as [Order[], number];
+                    }),
             filters,
             page,
             pageSize,

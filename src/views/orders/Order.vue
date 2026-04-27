@@ -19,7 +19,7 @@
                         {{ t('order-target-page.label-date') }}:
                         {{ new Date(currentOrder.createdAt).toLocaleString() }}
                     </p>
-                    <div v-if="currentOrder.items.length > 0">
+                    <div v-if="currentOrder.items?.length">
                         <h3>{{ t('order-target-page.label-items') }}</h3>
                         <div
                             v-for="item in currentOrder.items"

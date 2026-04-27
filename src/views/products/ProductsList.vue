@@ -112,13 +112,15 @@ const filters = reactive<Omit<SearchProductsRequest, 'page' | 'pageSize'>>({});
 
 const handleSearch = () => {
     pageCurrent.value = 1;
-    fetchSearchProducts(filters, 1, pageSize.value);
+    fetchSearchProducts(filters, 1, pageSize.value)
+        .catch((error) => notifyErrorMessages(addMessage, error));
 };
 
 const handleReset = () => {
     for (const k of Object.keys(filters)) delete (filters as Record<string, unknown>)[k];
     pageCurrent.value = 1;
-    fetchSearchProducts({}, 1, pageSize.value, true);
+    fetchSearchProducts({}, 1, pageSize.value, true)
+        .catch((error) => notifyErrorMessages(addMessage, error));
 };
 
 const handleDelete = (productId: string) => {
@@ -128,9 +130,13 @@ const handleDelete = (productId: string) => {
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
 
-onMounted(() => fetchSearchProducts(filters, Math.max(1, pageCurrent.value), pageSize.value));
+onMounted(() =>
+    fetchSearchProducts(filters, Math.max(1, pageCurrent.value), pageSize.value)
+        .catch((error) => notifyErrorMessages(addMessage, error))
+);
 
 watch([pageCurrent, pageSize], ([currentPage, currentPageSize]) => {
-    fetchSearchProducts(filters, Math.max(1, currentPage), currentPageSize);
+    fetchSearchProducts(filters, Math.max(1, currentPage), currentPageSize)
+        .catch((error) => notifyErrorMessages(addMessage, error));
 });
 </script>

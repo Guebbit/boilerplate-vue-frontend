@@ -43,7 +43,7 @@ export const useProductsStore = defineStore('products', () => {
      * @param forced
      */
     const fetchProducts = (forced = false) =>
-        fetchAll(() => productsApi.listProducts().then(({ data: { meta, items = [] } }) => items), {
+        fetchAll(() => productsApi.listProducts().then(({ data }) => (data as { items?: Product[] }).items ?? []), {
             forced
         });
 
@@ -57,7 +57,10 @@ export const useProductsStore = defineStore('products', () => {
             () =>
                 productsApi
                     .listProducts(page, pageSize)
-                    .then(({ data: { meta, items = [] } }) => [items, meta.totalItems]),
+                    .then(({ data }) => {
+                        const d = data as { items?: Product[]; meta?: { totalItems?: number }; total?: number };
+                        return [d.items ?? [], d.meta?.totalItems ?? d.total ?? 0] as [Product[], number];
+                    }),
             page,
             pageSize,
             { forced }
@@ -66,6 +69,10 @@ export const useProductsStore = defineStore('products', () => {
     type IProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
 
     /**
+     * Fetches a filtered, paginated product list via GET /products.
+     * Filters are passed as query parameters; SearchProductsRequest is still
+     * used as the filter shape so callers stay type-safe.
+     *
      * @param filters
      * @param page
      * @param pageSize
@@ -80,11 +87,11 @@ export const useProductsStore = defineStore('products', () => {
         fetchSearch(
             () =>
                 productsApi
-                    .searchProducts({ ...filters, page, pageSize })
-                    .then(
-                        ({ data: { meta, items = [] } }) =>
-                            [items, meta.totalItems]
-                    ),
+                    .listProducts(page, pageSize, filters.text, filters.id, filters.minPrice, filters.maxPrice)
+                    .then(({ data }) => {
+                        const d = data as { items?: Product[]; meta?: { totalItems?: number }; total?: number };
+                        return [d.items ?? [], d.meta?.totalItems ?? d.total ?? 0] as [Product[], number];
+                    }),
             filters,
             page,
             pageSize,

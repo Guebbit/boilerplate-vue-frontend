@@ -76,12 +76,20 @@ export const useUsersStore = defineStore('users', () => {
      * @param pageSize
      * @param forced
      */
+    /**
+     * Fetches a filtered, paginated user list via GET /users.
+     * Filters are passed as query parameters; SearchUsersRequest is still
+     * used as the filter shape so callers stay type-safe.
+     */
     const fetchSearchUsers = (filters: IUsersFilters = {}, page = 1, pageSize = 10, forced = false) =>
         fetchSearch(
             () =>
                 usersApi
-                    .searchUsers({ ...filters, page, pageSize })
-                    .then(({ data: { items = [] , meta} }) => [items, meta.totalItems]),
+                    .listUsers(page, pageSize, filters.text, filters.id, filters.email, filters.username, filters.active)
+                    .then(({ data }) => {
+                        const d = data as { items?: User[]; meta?: { totalItems?: number }; total?: number };
+                        return [d.items ?? [], d.meta?.totalItems ?? d.total ?? 0] as [User[], number];
+                    }),
             filters,
             page,
             pageSize,

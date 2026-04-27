@@ -32,8 +32,8 @@ describe('Public routes', () => {
         cy.visit('/en/signup');
         cy.get('#signup-page').should('exist');
         cy.get('[type=email]').should('exist');
-        cy.get('[type=password]').should('exist');
-        cy.get('[type=password]-confirm').should('exist');
+        cy.get('[type=password]').eq(0).should('exist');
+        cy.get('[type=password]').eq(1).should('exist');
     });
 
     it('shows 404 error page for unknown routes', () => {

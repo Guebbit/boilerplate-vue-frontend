@@ -140,10 +140,13 @@ export const onResponseReject = (
         // eslint-disable-next-line no-console
         console.error('------------- APP ERROR -------------', error);
 
+    const status = error.response?.status ?? 500;
+    const message = error.response?.statusText || error.message || 'Unknown error';
+
     return Promise.reject({
         success: false,
-        status: 500,
-        message: 'Unknown error',
+        status,
+        message,
         errors: [] as string[]
     });
 };

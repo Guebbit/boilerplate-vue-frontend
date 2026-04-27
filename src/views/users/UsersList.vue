@@ -40,13 +40,15 @@ const activeOptions = [
 
 const handleSearch = () => {
     pageCurrent.value = 1;
-    fetchSearchUsers(filters, 1, pageSize.value);
+    fetchSearchUsers(filters, 1, pageSize.value)
+        .catch((error) => notifyErrorMessages(addMessage, error));
 };
 
 const handleReset = () => {
     for (const k of Object.keys(filters)) delete (filters as Record<string, unknown>)[k];
     pageCurrent.value = 1;
-    fetchSearchUsers({}, 1, pageSize.value, true);
+    fetchSearchUsers({}, 1, pageSize.value, true)
+        .catch((error) => notifyErrorMessages(addMessage, error));
 };
 
 const handleDelete = (userId: string) => {
@@ -56,10 +58,14 @@ const handleDelete = (userId: string) => {
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
 
-onMounted(() => fetchSearchUsers(filters, Math.max(1, pageCurrent.value), pageSize.value));
+onMounted(() =>
+    fetchSearchUsers(filters, Math.max(1, pageCurrent.value), pageSize.value)
+        .catch((error) => notifyErrorMessages(addMessage, error))
+);
 
 watch([pageCurrent, pageSize], ([currentPage, currentPageSize]) => {
-    fetchSearchUsers(filters, Math.max(1, currentPage), currentPageSize);
+    fetchSearchUsers(filters, Math.max(1, currentPage), currentPageSize)
+        .catch((error) => notifyErrorMessages(addMessage, error));
 });
 </script>
 
