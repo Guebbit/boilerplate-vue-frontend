@@ -7,21 +7,19 @@ import {
     type ITranslationDictionaries
 } from '@/utils/i18n.ts';
 import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router';
-import en from '@/locales/en.json';
-import it from '@/locales/it.json';
-
-const languagesFakeDownload: Record<string, ITranslationDictionaries> = {
-    en,
-    it,
-    es: {}
-};
 
 export const fetchLanguageApi = (locale: string): Promise<[string, ITranslationDictionaries]> =>
-    new Promise((resolve) =>
+    new Promise((resolve) => {
+        if (!supportedLanguages.includes(locale)) {
+            resolve([locale, {}]);
+            return;
+        }
         setTimeout(() => {
-            resolve([locale, languagesFakeDownload[locale] ?? {}]);
-        }, 1000)
-    );
+            import(`@/locales/${locale}.json`)
+                .then((module) => resolve([locale, module.default as ITranslationDictionaries]))
+                .catch(() => resolve([locale, {}]));
+        }, 1000);
+    });
 
 /**
  * Check that requeste locale is supported and loaded,
