@@ -82,20 +82,18 @@ export const useOrdersStore = defineStore('orders', () => {
      * Filters are passed as query parameters; SearchOrdersRequest is still
      * used as the filter shape so callers stay type-safe.
      */
-    const fetchSearchOrders = (filters: IOrdersFilters = {}, page = 1, pageSize = 10, forced = false) =>
-        fetchSearch(
+    const fetchSearchOrders = (filters: IOrdersFilters = {}, page = 1, pageSizeValue = 10, forced = false) => {
+        pageSize.value = pageSizeValue;
+        return fetchSearch(
             () =>
                 ordersApi
-                    .listOrders(page, pageSize, filters.id, filters.userId, filters.productId, filters.email)
-                    .then(({ data }) => {
-                        const d = data as { items?: Order[]; meta?: { totalItems?: number }; total?: number };
-                        return [d.items ?? [], d.meta?.totalItems ?? d.total ?? 0] as [Order[], number];
-                    }),
+                    .listOrders(page, pageSizeValue, filters.id, filters.userId, filters.productId, filters.email)
+                    .then(({ data }) => (data as { items?: Order[] }).items ?? []),
             filters,
             page,
-            pageSize,
-            { forced }
+            { forced, lastUpdateKey: `orders_search_${pageSizeValue}` }
         );
+    };
 
     /**
      * Fetch a single order by ID

@@ -81,20 +81,26 @@ export const useUsersStore = defineStore('users', () => {
      * Filters are passed as query parameters; SearchUsersRequest is still
      * used as the filter shape so callers stay type-safe.
      */
-    const fetchSearchUsers = (filters: IUsersFilters = {}, page = 1, pageSize = 10, forced = false) =>
-        fetchSearch(
+    const fetchSearchUsers = (filters: IUsersFilters = {}, page = 1, pageSizeValue = 10, forced = false) => {
+        pageSize.value = pageSizeValue;
+        return fetchSearch(
             () =>
                 usersApi
-                    .listUsers(page, pageSize, filters.text, filters.id, filters.email, filters.username, filters.active)
-                    .then(({ data }) => {
-                        const d = data as { items?: User[]; meta?: { totalItems?: number }; total?: number };
-                        return [d.items ?? [], d.meta?.totalItems ?? d.total ?? 0] as [User[], number];
-                    }),
+                    .listUsers(
+                        page,
+                        pageSizeValue,
+                        filters.text,
+                        filters.id,
+                        filters.email,
+                        filters.username,
+                        filters.active
+                    )
+                    .then(({ data }) => (data as { items?: User[] }).items ?? []),
             filters,
             page,
-            pageSize,
-            { forced }
+            { forced, lastUpdateKey: `users_search_${pageSizeValue}` }
         );
+    };
 
     /**
      *
