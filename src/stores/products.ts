@@ -43,9 +43,15 @@ export const useProductsStore = defineStore('products', () => {
      * @param forced
      */
     const fetchProducts = (forced = false) =>
-        fetchAll(() => productsApi.listProducts().then(({ data }) => (data as { items?: Product[] }).items ?? []), {
-            forced
-        });
+        fetchAll(
+            () =>
+                productsApi
+                    .listProducts()
+                    .then(({ data }) => (data as { items?: Product[] }).items ?? []),
+            {
+                forced
+            }
+        );
 
     /**
      * @param page
@@ -55,13 +61,11 @@ export const useProductsStore = defineStore('products', () => {
     const fetchPaginationProducts = (page = 1, pageSizeValue = 10, forced = false) =>
         fetchAny(
             () =>
-                productsApi
-                    .listProducts(page, pageSizeValue)
-                    .then(({ data }) => {
-                        const response = data as { items?: Product[] };
-                        addRecords(response.items ?? []);
-                        return response;
-                    }),
+                productsApi.listProducts(page, pageSizeValue).then(({ data }) => {
+                    const response = data as { items?: Product[] };
+                    addRecords(response.items ?? []);
+                    return response;
+                }),
             { forced, lastUpdateKey: `products_page_${page}_${pageSizeValue}` }
         );
 

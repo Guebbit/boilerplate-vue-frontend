@@ -81,7 +81,12 @@ export const useUsersStore = defineStore('users', () => {
      * Filters are passed as query parameters; SearchUsersRequest is still
      * used as the filter shape so callers stay type-safe.
      */
-    const fetchSearchUsers = (filters: IUsersFilters = {}, page = 1, pageSizeValue = 10, forced = false) => {
+    const fetchSearchUsers = (
+        filters: IUsersFilters = {},
+        page = 1,
+        pageSizeValue = 10,
+        forced = false
+    ) => {
         pageSize.value = pageSizeValue;
         return fetchSearch(
             () =>
@@ -107,7 +112,7 @@ export const useUsersStore = defineStore('users', () => {
      * @param userId
      * @param forced
      */
-    const fetchUser =(userId: string, forced = false) =>
+    const fetchUser = (userId: string, forced = false) =>
         fetchTarget(() => usersApi.getUserById(userId).then(({ data }) => data as User), userId, {
             forced
         });

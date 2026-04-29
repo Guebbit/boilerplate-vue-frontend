@@ -31,6 +31,11 @@ const getTokenFromResponse = (
 const getPayloadFromResponse = <T>(response?: { data?: T } | T): T | undefined =>
     isWrappedResponse<T>(response) ? response.data : (response as T | undefined);
 
+const setCookie = (value: string) => {
+    const cookieDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
+    cookieDescriptor?.set?.call(document, value);
+};
+
 /**
  * While we can't access to inject/provide in guards or any non-components,
  * we can access Pinia, so it is useful to safely store "global" variables (if needed)
@@ -78,7 +83,7 @@ export const useProfileStore = defineStore('profile', () => {
                 .login({ email, password })
                 .then((data) => {
                     accessToken.value = getTokenFromResponse(data);
-                    document.cookie = 'isAuth=true; path=/; SameSite=Lax';
+                    setCookie('isAuth=true; path=/; SameSite=Lax');
                 })
                 .then(() => fetchProfile(true))
         );
@@ -170,8 +175,8 @@ export const useProfileStore = defineStore('profile', () => {
             itemDictionary.value = {};
             selectedIdentifier.value = undefined;
             accessToken.value = undefined;
-            document.cookie = 'isAuth=; path=/; max-age=0; SameSite=Lax';
-        })
+            setCookie('isAuth=; path=/; max-age=0; SameSite=Lax');
+        });
     };
 
     return {
