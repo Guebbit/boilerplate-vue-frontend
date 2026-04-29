@@ -6,7 +6,6 @@ import { usersApi } from '@/utils/api.ts';
 import type { AxiosProgressEvent } from 'axios';
 import type {
     User,
-    UsersResponse,
     CreateUserRequestMultipart,
     UpdateUserByIdRequestMultipart,
     SearchUsersRequest
@@ -48,7 +47,7 @@ export const useUsersStore = defineStore('users', () => {
     const fetchUsers = (forced = false) =>
         fetchAll(
             () =>
-                usersApi.listUsers().then(({ data }) => (data as { items?: User[] })?.items ?? []),
+                usersApi.listUsers().then(({ data }) => data.items),
             { forced }
         );
 
@@ -61,9 +60,8 @@ export const useUsersStore = defineStore('users', () => {
         fetchAny(
             () =>
                 usersApi.listUsers(page, pageSize).then(({ data }) => {
-                    const response = data as UsersResponse;
-                    addRecords(response.items ?? []);
-                    return response;
+                    addRecords(data.items);
+                    return data;
                 }),
             { forced, lastUpdateKey: `users_page_${page}_${pageSize}` }
         );
@@ -81,27 +79,38 @@ export const useUsersStore = defineStore('users', () => {
      * Filters are passed as query parameters; SearchUsersRequest is still
      * used as the filter shape so callers stay type-safe.
      */
-    const fetchSearchUsers = (filters: IUsersFilters = {}, page = 1, pageSize = 10, forced = false) =>
-        fetchSearch(
+    const fetchSearchUsers = (
+        filters: IUsersFilters = {},
+        page = 1,
+        pageSizeValue = 10,
+        forced = false
+    ) => {
+        pageSize.value = pageSizeValue;
+        return fetchSearch(
             () =>
                 usersApi
-                    .listUsers(page, pageSize, filters.text, filters.id, filters.email, filters.username, filters.active)
-                    .then(({ data }) => {
-                        const d = data as { items?: User[]; meta?: { totalItems?: number }; total?: number };
-                        return [d.items ?? [], d.meta?.totalItems ?? d.total ?? 0] as [User[], number];
-                    }),
+                    .listUsers(
+                        page,
+                        pageSizeValue,
+                        filters.text,
+                        filters.id,
+                        filters.email,
+                        filters.username,
+                        filters.active
+                    )
+                    .then(({ data }) => data.items),
             filters,
             page,
-            pageSize,
-            { forced }
+            { forced, lastUpdateKey: `users_search_${pageSizeValue}` }
         );
+    };
 
     /**
      *
      * @param userId
      * @param forced
      */
-    const fetchUser =(userId: string, forced = false) =>
+    const fetchUser = (userId: string, forced = false) =>
         fetchTarget(() => usersApi.getUserById(userId).then(({ data }) => data as User), userId, {
             forced
         });

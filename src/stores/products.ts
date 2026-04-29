@@ -30,7 +30,7 @@ export const useProductsStore = defineStore('products', () => {
         pageTotal,
         pageItemList,
         fetchSearch,
-        fetchPaginate,
+        fetchAny,
         fetchAll,
         fetchTarget,
         createTarget,
@@ -43,27 +43,29 @@ export const useProductsStore = defineStore('products', () => {
      * @param forced
      */
     const fetchProducts = (forced = false) =>
-        fetchAll(() => productsApi.listProducts().then(({ data }) => (data as { items?: Product[] }).items ?? []), {
-            forced
-        });
+        fetchAll(
+            () =>
+                productsApi
+                    .listProducts()
+                    .then(({ data }) => data.items),
+            {
+                forced
+            }
+        );
 
     /**
      * @param page
      * @param pageSize
      * @param forced
      */
-    const fetchPaginationProducts = (page = 1, pageSize = 10, forced = false) =>
-        fetchPaginate(
+    const fetchPaginationProducts = (page = 1, pageSizeValue = 10, forced = false) =>
+        fetchAny(
             () =>
-                productsApi
-                    .listProducts(page, pageSize)
-                    .then(({ data }) => {
-                        const d = data as { items?: Product[]; meta?: { totalItems?: number }; total?: number };
-                        return [d.items ?? [], d.meta?.totalItems ?? d.total ?? 0] as [Product[], number];
-                    }),
-            page,
-            pageSize,
-            { forced }
+                productsApi.listProducts(page, pageSizeValue).then(({ data }) => {
+                    addRecords(data.items);
+                    return data;
+                }),
+            { forced, lastUpdateKey: `products_page_${page}_${pageSizeValue}` }
         );
 
     type IProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
@@ -81,22 +83,27 @@ export const useProductsStore = defineStore('products', () => {
     const fetchSearchProducts = (
         filters: IProductsFilters = {},
         page = 1,
-        pageSize = 10,
+        pageSizeValue = 10,
         forced = false
-    ) =>
-        fetchSearch(
+    ) => {
+        pageSize.value = pageSizeValue;
+        return fetchSearch(
             () =>
                 productsApi
-                    .listProducts(page, pageSize, filters.text, filters.id, filters.minPrice, filters.maxPrice)
-                    .then(({ data }) => {
-                        const d = data as { items?: Product[]; meta?: { totalItems?: number }; total?: number };
-                        return [d.items ?? [], d.meta?.totalItems ?? d.total ?? 0] as [Product[], number];
-                    }),
+                    .listProducts(
+                        page,
+                        pageSizeValue,
+                        filters.text,
+                        filters.id,
+                        filters.minPrice,
+                        filters.maxPrice
+                    )
+                    .then(({ data }) => data.items),
             filters,
             page,
-            pageSize,
-            { forced }
+            { forced, lastUpdateKey: `products_search_${pageSizeValue}` }
         );
+    };
 
     /**
      *
