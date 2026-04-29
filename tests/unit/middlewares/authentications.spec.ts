@@ -30,6 +30,14 @@ vi.mock('@/utils/helperGenerics.ts', () => ({
     getCookie: vi.fn(() => {})
 }));
 
+vi.mock('@/utils/i18n.ts', () => ({
+    i18n: {
+        global: {
+            t: (key: string) => key
+        }
+    }
+}));
+
 describe('authentications middleware', () => {
     beforeEach(() => {
         vi.resetModules();

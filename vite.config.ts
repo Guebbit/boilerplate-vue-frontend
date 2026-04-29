@@ -30,5 +30,14 @@ export default defineConfig({
                 // quietDeps: true
             }
         }
+    },
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks(id) {
+                    if (id.includes('/node_modules/@guebbit/vue-toolkit/')) return 'guebbit-vue-toolkit';
+                }
+            }
+        }
     }
 });

@@ -21,11 +21,21 @@ declare global {
 }
 
 Cypress.Commands.add('resetMockState', () =>
-    cy
-        .window()
-        .then((windowObject) =>
-            windowObject.fetch('/__mock/reset', { method: 'POST' }).then(() => {})
-        )
+    cy.window().then(async (windowObject) => {
+        const maxAttempts = 10;
+        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+            try {
+                const response = await windowObject.fetch('/__mock/reset', { method: 'POST' });
+                if (response.ok) return;
+            } catch (error) {
+                void error;
+            }
+            await new Promise((resolve) => {
+                setTimeout(resolve, 200);
+            });
+        }
+        throw new Error('Unable to reset mock state after multiple attempts.');
+    })
 );
 
 Cypress.Commands.add('loginAs', (role = 'user') => {
