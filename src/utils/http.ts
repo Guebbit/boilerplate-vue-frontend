@@ -53,7 +53,8 @@ const refreshExcludedPaths = new Set([
 
 const shouldSkipRefresh = (url?: string) => {
     if (!url) return false;
-    const pathname = url.startsWith('http://') || url.startsWith('https://') ? new URL(url).pathname : url;
+    const pathname =
+        url.startsWith('http://') || url.startsWith('https://') ? new URL(url).pathname : url;
     return refreshExcludedPaths.has(pathname);
 };
 
@@ -115,9 +116,7 @@ export const onRequestReject = (error: AxiosError) => {
  *
  * @param response
  */
-export const onResponseSuccess = (
-    response: AxiosResponse
-): AxiosResponse['data'] => response.data;
+export const onResponseSuccess = (response: AxiosResponse): AxiosResponse['data'] => response.data;
 
 /**
  * Response error normalizer.

@@ -21,9 +21,11 @@ declare global {
 }
 
 Cypress.Commands.add('resetMockState', () =>
-    cy.window().then((windowObject) =>
-        windowObject.fetch('/__mock/reset', { method: 'POST' }).then(() => {})
-    )
+    cy
+        .window()
+        .then((windowObject) =>
+            windowObject.fetch('/__mock/reset', { method: 'POST' }).then(() => {})
+        )
 );
 
 Cypress.Commands.add('loginAs', (role = 'user') => {

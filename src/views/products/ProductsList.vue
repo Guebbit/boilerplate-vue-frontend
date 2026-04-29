@@ -7,13 +7,31 @@
         </template>
 
         <form class="list-filters" @submit.prevent="handleSearch">
-            <BaseInput v-model="filters.text" :label="t('products-list-page.filter-text')" :placeholder="t('products-list-page.filter-text')" />
-            <BaseInput v-model="filters.id" :label="t('products-list-page.filter-id')" :placeholder="t('products-list-page.filter-id')" />
-            <BaseInput v-model.number="filters.minPrice" :label="t('products-list-page.filter-min-price')" type="number" />
-            <BaseInput v-model.number="filters.maxPrice" :label="t('products-list-page.filter-max-price')" type="number" />
+            <BaseInput
+                v-model="filters.text"
+                :label="t('products-list-page.filter-text')"
+                :placeholder="t('products-list-page.filter-text')"
+            />
+            <BaseInput
+                v-model="filters.id"
+                :label="t('products-list-page.filter-id')"
+                :placeholder="t('products-list-page.filter-id')"
+            />
+            <BaseInput
+                v-model.number="filters.minPrice"
+                :label="t('products-list-page.filter-min-price')"
+                type="number"
+            />
+            <BaseInput
+                v-model.number="filters.maxPrice"
+                :label="t('products-list-page.filter-max-price')"
+                type="number"
+            />
             <div class="list-filters-actions">
                 <button type="submit" class="theme-button">{{ t('generic.search') }}</button>
-                <button type="button" class="theme-button" @click="handleReset">{{ t('generic.reset') }}</button>
+                <button type="button" class="theme-button" @click="handleReset">
+                    {{ t('generic.reset') }}
+                </button>
             </div>
         </form>
 
@@ -49,13 +67,23 @@
                         </td>
                         <td class="actions-cell">
                             <RouterLink
-                                :to="routerLinkI18n({ name: 'ProductTarget', params: { id: product.id } })"
+                                :to="
+                                    routerLinkI18n({
+                                        name: 'ProductTarget',
+                                        params: { id: product.id }
+                                    })
+                                "
                                 class="theme-button view-button"
                             >
                                 {{ t('products-list-page.button-view') }}
                             </RouterLink>
                             <RouterLink
-                                :to="routerLinkI18n({ name: 'ProductEdit', params: { id: product.id } })"
+                                :to="
+                                    routerLinkI18n({
+                                        name: 'ProductEdit',
+                                        params: { id: product.id }
+                                    })
+                                "
                                 class="theme-button edit-button"
                             >
                                 {{ t('products-list-page.button-edit') }}
@@ -112,15 +140,17 @@ const filters = reactive<Omit<SearchProductsRequest, 'page' | 'pageSize'>>({});
 
 const handleSearch = () => {
     pageCurrent.value = 1;
-    fetchSearchProducts(filters, 1, pageSize.value)
-        .catch((error) => notifyErrorMessages(addMessage, error));
+    fetchSearchProducts(filters, 1, pageSize.value).catch((error) =>
+        notifyErrorMessages(addMessage, error)
+    );
 };
 
 const handleReset = () => {
     for (const k of Object.keys(filters)) delete (filters as Record<string, unknown>)[k];
     pageCurrent.value = 1;
-    fetchSearchProducts({}, 1, pageSize.value, true)
-        .catch((error) => notifyErrorMessages(addMessage, error));
+    fetchSearchProducts({}, 1, pageSize.value, true).catch((error) =>
+        notifyErrorMessages(addMessage, error)
+    );
 };
 
 const handleDelete = (productId: string) => {
@@ -131,12 +161,14 @@ const handleDelete = (productId: string) => {
 };
 
 onMounted(() =>
-    fetchSearchProducts(filters, Math.max(1, pageCurrent.value), pageSize.value)
-        .catch((error) => notifyErrorMessages(addMessage, error))
+    fetchSearchProducts(filters, Math.max(1, pageCurrent.value), pageSize.value).catch((error) =>
+        notifyErrorMessages(addMessage, error)
+    )
 );
 
 watch([pageCurrent, pageSize], ([currentPage, currentPageSize]) => {
-    fetchSearchProducts(filters, Math.max(1, currentPage), currentPageSize)
-        .catch((error) => notifyErrorMessages(addMessage, error));
+    fetchSearchProducts(filters, Math.max(1, currentPage), currentPageSize).catch((error) =>
+        notifyErrorMessages(addMessage, error)
+    );
 });
 </script>

@@ -1,8 +1,5 @@
 <template>
-    <div
-        class="theme-form-input"
-        :class="{ 'form-error': showErrors && errors?.length }"
-    >
+    <div class="theme-form-input" :class="{ 'form-error': showErrors && errors?.length }">
         <label v-if="label" :for="uuid">{{ label }}</label>
         <select :id="uuid" v-model="model" :disabled="disabled" class="theme-input">
             <option v-if="placeholder !== undefined" value="">{{ placeholder }}</option>

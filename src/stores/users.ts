@@ -22,7 +22,6 @@ export const useUsersStore = defineStore('users', () => {
         itemList: usersList,
         getRecord: getUser,
         addRecord: addUser,
-        addRecords,
         selectedIdentifier: selectedUserId,
         selectedRecord: currentUser,
 
@@ -45,11 +44,7 @@ export const useUsersStore = defineStore('users', () => {
      * @param forced
      */
     const fetchUsers = (forced = false) =>
-        fetchAll(
-            () =>
-                usersApi.listUsers().then(({ data }) => data.items),
-            { forced }
-        );
+        fetchAll(() => usersApi.listUsers().then(({ data }) => data.items), { forced });
 
     /**
      * @param page
@@ -57,14 +52,9 @@ export const useUsersStore = defineStore('users', () => {
      * @param forced
      */
     const fetchPaginationUsers = (page = 1, pageSize = 10, forced = false) =>
-        fetchAny(
-            () =>
-                usersApi.listUsers(page, pageSize).then(({ data }) => {
-                    addRecords(data.items);
-                    return data;
-                }),
-            { forced, lastUpdateKey: `users_page_${page}_${pageSize}` }
-        );
+        fetchAny(() => usersApi.listUsers(page, pageSize).then(({ data }) => data.items), {
+            forced
+        });
 
     type IUsersFilters = Omit<SearchUsersRequest, 'page' | 'pageSize'>;
 
@@ -101,7 +91,7 @@ export const useUsersStore = defineStore('users', () => {
                     .then(({ data }) => data.items),
             filters,
             page,
-            { forced, lastUpdateKey: `users_search_${pageSizeValue}` }
+            { forced }
         );
     };
 

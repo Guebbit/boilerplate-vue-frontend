@@ -45,7 +45,10 @@
                             >
                                 +
                             </button>
-                            <button class="theme-button remove-button" @click="removeCartItem(item.productId)">
+                            <button
+                                class="theme-button remove-button"
+                                @click="removeCartItem(item.productId)"
+                            >
                                 {{ t('cart-page.button-remove') }}
                             </button>
                         </div>

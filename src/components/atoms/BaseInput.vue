@@ -1,8 +1,5 @@
 <template>
-    <div
-        class="theme-form-input"
-        :class="{ 'form-error': showErrors && errors?.length }"
-    >
+    <div class="theme-form-input" :class="{ 'form-error': showErrors && errors?.length }">
         <label v-if="label" :for="uuid">{{ label }}</label>
         <textarea
             v-if="multiline"

@@ -20,7 +20,6 @@ export const useOrdersStore = defineStore('orders', () => {
         itemList: ordersList,
         getRecord: getOrder,
         addRecord: addOrder,
-        addRecords,
         selectedIdentifier: selectedOrderId,
         selectedRecord: currentOrder,
 
@@ -44,13 +43,7 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param forced
      */
     const fetchOrders = (forced = false) =>
-        fetchAll(
-            () =>
-                ordersApi
-                    .listOrders()
-                    .then(({ data }) => data.items),
-            { forced }
-        );
+        fetchAll(() => ordersApi.listOrders().then(({ data }) => data.items), { forced });
 
     /**
      * @param page
@@ -58,14 +51,9 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param forced
      */
     const fetchPaginationOrders = (page = 1, pageSize = 10, forced = false) =>
-        fetchAny(
-            () =>
-                ordersApi.listOrders(page, pageSize).then(({ data }) => {
-                    addRecords(data.items);
-                    return data;
-                }),
-            { forced, lastUpdateKey: `orders_page_${page}_${pageSize}` }
-        );
+        fetchAny(() => ordersApi.listOrders(page, pageSize).then(({ data }) => data.items), {
+            forced
+        });
 
     type IOrdersFilters = Omit<SearchOrdersRequest, 'page' | 'pageSize'>;
 
@@ -101,7 +89,7 @@ export const useOrdersStore = defineStore('orders', () => {
                     .then(({ data }) => data.items),
             filters,
             page,
-            { forced, lastUpdateKey: `orders_search_${pageSizeValue}` }
+            { forced }
         );
     };
 

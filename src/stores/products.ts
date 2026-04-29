@@ -20,7 +20,6 @@ export const useProductsStore = defineStore('products', () => {
         itemList: productsList,
         getRecord: getProduct,
         addRecord: addProduct,
-        addRecords,
         selectedIdentifier: selectedProductId,
         selectedRecord: currentProduct,
 
@@ -43,29 +42,19 @@ export const useProductsStore = defineStore('products', () => {
      * @param forced
      */
     const fetchProducts = (forced = false) =>
-        fetchAll(
-            () =>
-                productsApi
-                    .listProducts()
-                    .then(({ data }) => data.items),
-            {
-                forced
-            }
-        );
+        fetchAll(() => productsApi.listProducts().then(({ data }) => data.items), {
+            forced
+        });
 
     /**
      * @param page
      * @param pageSize
      * @param forced
      */
-    const fetchPaginationProducts = (page = 1, pageSizeValue = 10, forced = false) =>
+    const fetchPaginationProducts = (page = 1, pageSize = 10, forced = false) =>
         fetchAny(
-            () =>
-                productsApi.listProducts(page, pageSizeValue).then(({ data }) => {
-                    addRecords(data.items);
-                    return data;
-                }),
-            { forced, lastUpdateKey: `products_page_${page}_${pageSizeValue}` }
+            () => productsApi.listProducts(page, pageSize).then(({ data }) => data.items),
+            { forced }
         );
 
     type IProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
@@ -101,7 +90,7 @@ export const useProductsStore = defineStore('products', () => {
                     .then(({ data }) => data.items),
             filters,
             page,
-            { forced, lastUpdateKey: `products_search_${pageSizeValue}` }
+            { forced }
         );
     };
 

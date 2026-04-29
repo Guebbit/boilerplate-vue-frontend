@@ -29,10 +29,7 @@
                     :label="t('product-edit-page.label-description')"
                     multiline
                 />
-                <BaseCheckbox
-                    v-model="form.active"
-                    :label="t('product-edit-page.label-active')"
-                />
+                <BaseCheckbox v-model="form.active" :label="t('product-edit-page.label-active')" />
                 <BaseButton type="submit" :disabled="isSubmitting || loading">
                     {{ t('product-edit-page.button-submit') }}
                 </BaseButton>

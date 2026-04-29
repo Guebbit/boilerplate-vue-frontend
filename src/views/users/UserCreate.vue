@@ -29,14 +29,8 @@
                     :errors="formErrors.password"
                     :show-errors="showErrors"
                 />
-                <BaseCheckbox
-                    v-model="form.admin"
-                    :label="t('user-create-page.label-admin')"
-                />
-                <BaseCheckbox
-                    v-model="form.active"
-                    :label="t('user-create-page.label-active')"
-                />
+                <BaseCheckbox v-model="form.admin" :label="t('user-create-page.label-admin')" />
+                <BaseCheckbox v-model="form.active" :label="t('user-create-page.label-active')" />
                 <BaseButton type="submit" :disabled="isSubmitting">
                     {{ t('user-create-page.button-submit') }}
                 </BaseButton>
