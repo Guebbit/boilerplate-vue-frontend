@@ -30,6 +30,7 @@ Cypress.Commands.add('resetMockState', () =>
             try {
                 const response = await windowObject.fetch('/__mock/reset', { method: 'POST' });
                 if (response.ok) return;
+                lastError = `Mock reset returned HTTP ${response.status}`;
             } catch (error) {
                 // Ignore transient failures while MSW starts, then retry.
                 lastError = error;
