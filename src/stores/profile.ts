@@ -78,6 +78,7 @@ export const useProfileStore = defineStore('profile', () => {
                 .login({ email, password })
                 .then((data) => {
                     accessToken.value = getTokenFromResponse(data);
+                    document.cookie = 'isAuth=true; path=/; SameSite=Lax';
                 })
                 .then(() => fetchProfile(true))
         );
@@ -164,12 +165,12 @@ export const useProfileStore = defineStore('profile', () => {
      * Logout and remove cached user data
      */
     const logout = () => {
-        // replace jwt cookie with an expired one (warning: secure httpOnly cookies can't be deleted from the client)
-        // document.cookie = "jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        // The httpOnly jwt cookie can only be cleared server-side; isAuth is JS-accessible.
         return authApi.logoutAll().then(() => {
             itemDictionary.value = {};
             selectedIdentifier.value = undefined;
             accessToken.value = undefined;
+            document.cookie = 'isAuth=; path=/; max-age=0; SameSite=Lax';
         })
     };
 

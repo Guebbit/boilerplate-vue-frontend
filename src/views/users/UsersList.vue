@@ -128,18 +128,18 @@ watch([pageCurrent, pageSize], ([currentPage, currentPageSize]) => {
                         <td class="actions-cell">
                             <RouterLink
                                 :to="routerLinkI18n({ name: 'UserTarget', params: { id: user.id } })"
-                                class="theme-button"
+                                class="theme-button view-button"
                             >
                                 {{ t('users-list-page.button-view') }}
                             </RouterLink>
                             <RouterLink
                                 :to="routerLinkI18n({ name: 'UserEdit', params: { id: user.id } })"
-                                class="theme-button"
+                                class="theme-button edit-button"
                             >
                                 {{ t('users-list-page.button-edit') }}
                             </RouterLink>
                             <button
-                                class="theme-button"
+                                class="theme-button delete-button"
                                 :disabled="loading"
                                 @click.stop="handleDelete(user.id!)"
                             >

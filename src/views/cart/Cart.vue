@@ -33,19 +33,19 @@
                         <p>{{ t('cart-page.label-quantity') }}: {{ item.quantity }}</p>
                         <div class="cart-item-actions">
                             <button
-                                class="theme-button"
+                                class="theme-button decrease-button"
                                 :disabled="item.quantity <= 1"
                                 @click="updateCartItem(item.productId, item.quantity - 1)"
                             >
                                 -
                             </button>
                             <button
-                                class="theme-button"
+                                class="theme-button increase-button"
                                 @click="updateCartItem(item.productId, item.quantity + 1)"
                             >
                                 +
                             </button>
-                            <button class="theme-button" @click="removeCartItem(item.productId)">
+                            <button class="theme-button remove-button" @click="removeCartItem(item.productId)">
                                 {{ t('cart-page.button-remove') }}
                             </button>
                         </div>
@@ -64,10 +64,10 @@
             </div>
 
             <div class="cart-actions">
-                <button class="theme-button" @click="clearCart()">
+                <button class="theme-button clear-button" @click="clearCart()">
                     {{ t('cart-page.button-clear') }}
                 </button>
-                <button class="theme-button" @click="checkout">
+                <button class="theme-button checkout-button" @click="checkout">
                     {{ t('cart-page.button-checkout') }}
                 </button>
             </div>

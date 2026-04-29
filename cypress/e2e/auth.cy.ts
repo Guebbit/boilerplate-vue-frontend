@@ -29,7 +29,9 @@ describe('Authentication', () => {
             cy.intercept('POST', '**/account/login', { fixture: 'auth/login' }).as('login');
             cy.intercept('GET', '**/account', { fixture: 'auth/profile' }).as('profile');
 
+            cy.get('[type=email]').clear();
             cy.get('[type=email]').type('root@root.it');
+            cy.get('[type=password]').clear();
             cy.get('[type=password]').type('rootroot');
             cy.get('form').submit();
 
@@ -60,7 +62,7 @@ describe('Authentication', () => {
 
         it('signs up successfully and redirects', () => {
             cy.intercept('POST', '**/account/signup', { fixture: 'auth/signup' }).as('signup');
-            cy.intercept('GET', '**/account', { fixture: 'auth/profile' }).as('profile');
+            cy.intercept('GET', '**/account', { fixture: 'auth/profile' });
 
             cy.get('[type=email]').type('newuser@example.com');
             cy.get('[type=password]').eq(0).type('rootroot');
@@ -93,6 +95,14 @@ describe('Authentication', () => {
         it('redirects an unauthenticated user from admin-only /users to login', () => {
             cy.visit('/en/users');
             cy.url().should('include', '/login');
+        });
+
+        it('keeps authentication after page reload (F5)', () => {
+            cy.loginAs('user');
+            cy.visit('/en/cart');
+            cy.url().should('not.include', '/login');
+            cy.reload();
+            cy.url().should('not.include', '/login');
         });
     });
 

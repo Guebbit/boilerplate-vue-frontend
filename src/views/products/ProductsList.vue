@@ -50,18 +50,18 @@
                         <td class="actions-cell">
                             <RouterLink
                                 :to="routerLinkI18n({ name: 'ProductTarget', params: { id: product.id } })"
-                                class="theme-button"
+                                class="theme-button view-button"
                             >
                                 {{ t('products-list-page.button-view') }}
                             </RouterLink>
                             <RouterLink
                                 :to="routerLinkI18n({ name: 'ProductEdit', params: { id: product.id } })"
-                                class="theme-button"
+                                class="theme-button edit-button"
                             >
                                 {{ t('products-list-page.button-edit') }}
                             </RouterLink>
                             <button
-                                class="theme-button"
+                                class="theme-button delete-button"
                                 :disabled="loading"
                                 @click.stop="handleDelete(product.id)"
                             >

@@ -37,9 +37,9 @@ describe('Orders', () => {
             cy.get('.users-table tbody tr')
                 .eq(0)
                 .within(() => {
-                    cy.contains('View').should('exist');
-                    cy.contains('Edit').should('exist');
-                    cy.contains('Delete').should('exist');
+                    cy.get('.view-button').should('exist');
+                    cy.get('.edit-button').should('exist');
+                    cy.get('.delete-button').should('exist');
                 });
         });
 
@@ -47,7 +47,7 @@ describe('Orders', () => {
             cy.intercept('GET', Cypress.env('apiUrl') + '/orders/order-1', {
                 fixture: 'orders/single'
             }).as('order');
-            cy.get('.users-table tbody tr').eq(0).contains('View').click();
+            cy.get('.users-table tbody tr').eq(0).find('.view-button').click();
             cy.wait('@order');
             cy.url().should('include', '/orders/order-1');
         });

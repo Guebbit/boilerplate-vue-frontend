@@ -54,8 +54,7 @@ describe('Cart', () => {
             cy.intercept('PUT', Cypress.env('apiUrl') + '/cart/prod-1', {
                 fixture: 'cart/updated'
             }).as('updateCart');
-            // prod-1 (qty 2) is the first item; its minus button is the first button in actions
-            cy.get('.cart-item').eq(0).find('.cart-item-actions .theme-button').eq(0).click();
+            cy.get('.cart-item').eq(0).find('.decrease-button').click();
             cy.wait('@updateCart');
         });
 
@@ -63,7 +62,7 @@ describe('Cart', () => {
             cy.intercept('PUT', Cypress.env('apiUrl') + '/cart/prod-1', {
                 fixture: 'cart/updated'
             }).as('updateCart');
-            cy.get('.cart-item').eq(0).find('.cart-item-actions .theme-button').eq(1).click();
+            cy.get('.cart-item').eq(0).find('.increase-button').click();
             cy.wait('@updateCart');
         });
 
@@ -71,7 +70,7 @@ describe('Cart', () => {
             cy.intercept('DELETE', Cypress.env('apiUrl') + '/cart/prod-2', {
                 fixture: 'cart/after-remove'
             }).as('removeItem');
-            cy.get('.cart-item').eq(1).contains('Remove').click();
+            cy.get('.cart-item').eq(1).find('.remove-button').click();
             cy.wait('@removeItem');
         });
 
@@ -79,7 +78,7 @@ describe('Cart', () => {
             cy.intercept('DELETE', Cypress.env('apiUrl') + '/cart', { fixture: 'cart/cleared' }).as(
                 'clearCart'
             );
-            cy.contains('Clear cart').click();
+            cy.get('.clear-button').click();
             cy.wait('@clearCart');
         });
 
@@ -90,7 +89,7 @@ describe('Cart', () => {
             cy.intercept('GET', Cypress.env('apiUrl') + '/orders*', { fixture: 'orders/list' });
             // fetchCart is called after checkout; return cleared cart so the chain resolves
             cy.intercept('GET', Cypress.env('apiUrl') + '/cart', { fixture: 'cart/cleared' });
-            cy.contains('Checkout').click();
+            cy.get('.checkout-button').click();
             cy.wait('@checkout');
             cy.url().should('include', '/orders');
         });

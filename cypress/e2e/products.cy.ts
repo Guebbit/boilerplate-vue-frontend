@@ -36,9 +36,9 @@ describe('Products', () => {
             cy.get('.users-table tbody tr')
                 .eq(0)
                 .within(() => {
-                    cy.contains('View').should('exist');
-                    cy.contains('Edit').should('exist');
-                    cy.contains('Delete').should('exist');
+                    cy.get('.view-button').should('exist');
+                    cy.get('.edit-button').should('exist');
+                    cy.get('.delete-button').should('exist');
                 });
         });
 
@@ -46,7 +46,7 @@ describe('Products', () => {
             cy.intercept('GET', Cypress.env('apiUrl') + '/products/prod-1', {
                 fixture: 'products/single'
             }).as('product');
-            cy.get('.users-table tbody tr').eq(0).contains('View').click();
+            cy.get('.users-table tbody tr').eq(0).find('.view-button').click();
             cy.wait('@product');
             cy.url().should('include', '/products/prod-1');
         });
