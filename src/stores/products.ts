@@ -52,10 +52,9 @@ export const useProductsStore = defineStore('products', () => {
      * @param forced
      */
     const fetchPaginationProducts = (page = 1, pageSize = 10, forced = false) =>
-        fetchAny(
-            () => productsApi.listProducts(page, pageSize).then(({ data }) => data.items),
-            { forced }
-        );
+        fetchAny(() => productsApi.listProducts(page, pageSize).then(({ data }) => data.items), {
+            forced
+        });
 
     type IProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
 
