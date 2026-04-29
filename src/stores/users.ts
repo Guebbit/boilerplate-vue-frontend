@@ -6,7 +6,6 @@ import { usersApi } from '@/utils/api.ts';
 import type { AxiosProgressEvent } from 'axios';
 import type {
     User,
-    UsersResponse,
     CreateUserRequestMultipart,
     UpdateUserByIdRequestMultipart,
     SearchUsersRequest
@@ -48,7 +47,7 @@ export const useUsersStore = defineStore('users', () => {
     const fetchUsers = (forced = false) =>
         fetchAll(
             () =>
-                usersApi.listUsers().then(({ data }) => (data as { items?: User[] })?.items ?? []),
+                usersApi.listUsers().then(({ data }) => data.items),
             { forced }
         );
 
@@ -61,9 +60,8 @@ export const useUsersStore = defineStore('users', () => {
         fetchAny(
             () =>
                 usersApi.listUsers(page, pageSize).then(({ data }) => {
-                    const response = data as UsersResponse;
-                    addRecords(response.items ?? []);
-                    return response;
+                    addRecords(data.items);
+                    return data;
                 }),
             { forced, lastUpdateKey: `users_page_${page}_${pageSize}` }
         );
@@ -100,7 +98,7 @@ export const useUsersStore = defineStore('users', () => {
                         filters.username,
                         filters.active
                     )
-                    .then(({ data }) => (data as { items?: User[] }).items ?? []),
+                    .then(({ data }) => data.items),
             filters,
             page,
             { forced, lastUpdateKey: `users_search_${pageSizeValue}` }

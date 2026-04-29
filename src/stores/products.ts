@@ -47,7 +47,7 @@ export const useProductsStore = defineStore('products', () => {
             () =>
                 productsApi
                     .listProducts()
-                    .then(({ data }) => (data as { items?: Product[] }).items ?? []),
+                    .then(({ data }) => data.items),
             {
                 forced
             }
@@ -62,9 +62,8 @@ export const useProductsStore = defineStore('products', () => {
         fetchAny(
             () =>
                 productsApi.listProducts(page, pageSizeValue).then(({ data }) => {
-                    const response = data as { items?: Product[] };
-                    addRecords(response.items ?? []);
-                    return response;
+                    addRecords(data.items);
+                    return data;
                 }),
             { forced, lastUpdateKey: `products_page_${page}_${pageSizeValue}` }
         );
@@ -99,7 +98,7 @@ export const useProductsStore = defineStore('products', () => {
                         filters.minPrice,
                         filters.maxPrice
                     )
-                    .then(({ data }) => (data as { items?: Product[] }).items ?? []),
+                    .then(({ data }) => data.items),
             filters,
             page,
             { forced, lastUpdateKey: `products_search_${pageSizeValue}` }

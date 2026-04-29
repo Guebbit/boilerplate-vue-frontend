@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { ordersApi } from '@/utils/api.ts';
 import type {
     Order,
-    OrdersResponse,
     CreateOrderRequest,
     UpdateOrderByIdRequest,
     CheckoutRequest,
@@ -49,7 +48,7 @@ export const useOrdersStore = defineStore('orders', () => {
             () =>
                 ordersApi
                     .listOrders()
-                    .then(({ data }) => (data as { items?: Order[] })?.items ?? []),
+                    .then(({ data }) => data.items),
             { forced }
         );
 
@@ -62,9 +61,8 @@ export const useOrdersStore = defineStore('orders', () => {
         fetchAny(
             () =>
                 ordersApi.listOrders(page, pageSize).then(({ data }) => {
-                    const response = data as OrdersResponse;
-                    addRecords(response.items ?? []);
-                    return response;
+                    addRecords(data.items);
+                    return data;
                 }),
             { forced, lastUpdateKey: `orders_page_${page}_${pageSize}` }
         );
@@ -100,7 +98,7 @@ export const useOrdersStore = defineStore('orders', () => {
                         filters.productId,
                         filters.email
                     )
-                    .then(({ data }) => (data as { items?: Order[] }).items ?? []),
+                    .then(({ data }) => data.items),
             filters,
             page,
             { forced, lastUpdateKey: `orders_search_${pageSizeValue}` }
