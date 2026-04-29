@@ -49,6 +49,28 @@ export const parseRequestBody = <T>(data: unknown): Partial<T> => {
     return {};
 };
 
+export const readRequestBody = async <T>(request: Request): Promise<Partial<T>> => {
+    try {
+        return parseRequestBody<T>(await request.clone().json());
+    } catch (error) {
+        void error;
+    }
+
+    try {
+        return parseRequestBody<T>(await request.clone().formData());
+    } catch (error) {
+        void error;
+    }
+
+    try {
+        return parseRequestBody<T>(await request.clone().text());
+    } catch (error) {
+        void error;
+    }
+
+    return {};
+};
+
 // URL helpers are shared by all resource handlers for id and query extraction.
 const getPathSegments = (url: string | undefined) =>
     new URL(url ?? '', 'http://localhost').pathname.split('/').filter(Boolean);
@@ -103,16 +125,8 @@ export const slicePaginatedData = <T>(items: T[], page: number, pageSize: number
 export const createMockInvoicePdf = () =>
     new TextEncoder().encode('%PDF-1.4\n% Mock invoice PDF\n').buffer;
 
-// In-memory fixtures (mutable by handlers) used as a mock "database".
-export const mockDatabase: {
-    currentAuthenticatedUserId: string;
-    sampleUsers: User[];
-    sampleProducts: Product[];
-    sampleCartItems: CartItem[];
-    sampleOrders: Order[];
-} = {
-    currentAuthenticatedUserId: 'user-1',
-    sampleUsers: [
+const createInitialMockDatabase = () => {
+    const sampleUsers: User[] = [
         {
             id: 'user-1',
             email: 'root@root.it',
@@ -143,13 +157,14 @@ export const mockDatabase: {
             createdAt: getIsoDateNow(),
             updatedAt: getIsoDateNow()
         }
-    ],
-    sampleProducts: [
+    ];
+
+    const sampleProducts: Product[] = [
         {
             id: 'prod-1',
-            title: 'Keyboard',
-            description: 'Mechanical keyboard',
-            price: 109.9,
+            title: 'Product Alpha',
+            description: 'First test product',
+            price: 10,
             active: true,
             imageUrl: '',
             createdAt: getIsoDateNow(),
@@ -157,9 +172,9 @@ export const mockDatabase: {
         },
         {
             id: 'prod-2',
-            title: 'Mouse',
-            description: 'Wireless mouse',
-            price: 39.5,
+            title: 'Product Beta',
+            description: 'Second test product',
+            price: 25.5,
             active: true,
             imageUrl: '',
             createdAt: getIsoDateNow(),
@@ -167,26 +182,91 @@ export const mockDatabase: {
         },
         {
             id: 'prod-3',
-            title: 'Headset',
-            description: 'Noise-cancelling headset',
-            price: 89,
+            title: 'Product Gamma',
+            description: 'Third test product',
+            price: 20,
             active: false,
             imageUrl: '',
             createdAt: getIsoDateNow(),
             updatedAt: getIsoDateNow()
         }
-    ],
-    sampleCartItems: [
+    ];
+
+    const sampleCartItems: CartItem[] = [
         {
             productId: 'prod-1',
-            quantity: 1
+            quantity: 2
         },
         {
             productId: 'prod-2',
-            quantity: 2
+            quantity: 1
         }
-    ],
-    sampleOrders: []
+    ];
+
+    const createOrder = (
+        values: Pick<Order, 'userId' | 'email' | 'items'> & Pick<Partial<Order>, 'status' | 'notes'>
+    ): Order => {
+        let total = 0;
+        for (const item of values.items) {
+            total += (item.product?.price ?? 0) * item.quantity;
+        }
+        return {
+            id: `order-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            userId: values.userId,
+            email: values.email,
+            items: values.items,
+            total,
+            status: values.status ?? OrderStatusEnum.Pending,
+            notes: values.notes,
+            createdAt: getIsoDateNow(),
+            updatedAt: getIsoDateNow()
+        };
+    };
+
+    const sampleOrders: Order[] = [
+        createOrder({
+            userId: 'user-1',
+            email: 'root@root.it',
+            items: [
+                { product: sampleProducts[0], quantity: 2 },
+                { product: sampleProducts[1], quantity: 1 }
+            ],
+            status: OrderStatusEnum.Pending
+        }),
+        createOrder({
+            userId: 'user-1',
+            email: 'root@root.it',
+            items: [{ product: sampleProducts[0], quantity: 2 }],
+            status: OrderStatusEnum.Delivered,
+            notes: 'Fast delivery please'
+        })
+    ];
+
+    return {
+        currentAuthenticatedUserId: 'user-1',
+        sampleUsers,
+        sampleProducts,
+        sampleCartItems,
+        sampleOrders
+    };
+};
+
+// In-memory fixtures (mutable by handlers) used as a mock "database".
+export const mockDatabase: {
+    currentAuthenticatedUserId: string;
+    sampleUsers: User[];
+    sampleProducts: Product[];
+    sampleCartItems: CartItem[];
+    sampleOrders: Order[];
+} = createInitialMockDatabase();
+
+export const resetMockDatabase = () => {
+    const initialMockDatabase = createInitialMockDatabase();
+    mockDatabase.currentAuthenticatedUserId = initialMockDatabase.currentAuthenticatedUserId;
+    mockDatabase.sampleUsers = initialMockDatabase.sampleUsers;
+    mockDatabase.sampleProducts = initialMockDatabase.sampleProducts;
+    mockDatabase.sampleCartItems = initialMockDatabase.sampleCartItems;
+    mockDatabase.sampleOrders = initialMockDatabase.sampleOrders;
 };
 
 export const calculateCartSummary = (): CartSummaryResponse => {
@@ -235,22 +315,6 @@ export const createMockOrder = (
         updatedAt: getIsoDateNow()
     };
 };
-
-// Seed a predictable order list at startup.
-mockDatabase.sampleOrders = [
-    createMockOrder({
-        userId: 'user-1',
-        email: 'root@root.it',
-        items: [{ product: mockDatabase.sampleProducts.find(({ id }) => id === 'prod-1')!, quantity: 1 }],
-        status: OrderStatusEnum.Paid
-    }),
-    createMockOrder({
-        userId: 'user-2',
-        email: 'john@example.com',
-        items: [{ product: mockDatabase.sampleProducts.find(({ id }) => id === 'prod-2')!, quantity: 3 }],
-        status: OrderStatusEnum.Processing
-    })
-];
 
 export const defaultRefreshTokenResponse: RefreshTokenResponse = {
     token: 'mock-access-token',

@@ -1,11 +1,13 @@
 describe('Products', () => {
+    beforeEach(() => {
+        cy.visit('/en');
+        cy.resetMockState();
+    });
+
     describe('Products list', () => {
         beforeEach(() => {
-            cy.intercept('GET', Cypress.env('apiUrl') + '/products*', {
-                fixture: 'products/list'
-            }).as('products');
             cy.visit('/en/products');
-            cy.wait('@products');
+            cy.get('.users-table tbody tr').should('have.length.at.least', 1);
         });
 
         it('shows the page title and a product table', () => {
@@ -14,7 +16,7 @@ describe('Products', () => {
         });
 
         it('renders one row per product returned by the API', () => {
-            cy.get('.users-table tbody tr').should('have.length', 2);
+            cy.get('.users-table tbody tr').should('have.length', 3);
         });
 
         it('displays product title and price in each row', () => {
@@ -43,22 +45,16 @@ describe('Products', () => {
         });
 
         it('navigates to product detail when clicking View', () => {
-            cy.intercept('GET', Cypress.env('apiUrl') + '/products/prod-1', {
-                fixture: 'products/single'
-            }).as('product');
             cy.get('.users-table tbody tr').eq(0).find('.view-button').click();
-            cy.wait('@product');
             cy.url().should('include', '/products/prod-1');
+            cy.get('#product-target').should('exist');
         });
     });
 
     describe('Product detail', () => {
         beforeEach(() => {
-            cy.intercept('GET', Cypress.env('apiUrl') + '/products/prod-1', {
-                fixture: 'products/single'
-            }).as('product');
             cy.visit('/en/products/prod-1');
-            cy.wait('@product');
+            cy.get('#product-target').should('exist');
         });
 
         it('shows the product detail page', () => {
