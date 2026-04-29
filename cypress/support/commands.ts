@@ -23,18 +23,24 @@ declare global {
 Cypress.Commands.add('resetMockState', () =>
     cy.window().then(async (windowObject) => {
         const maxAttempts = 10;
+        let lastError: unknown;
         for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
             try {
                 const response = await windowObject.fetch('/__mock/reset', { method: 'POST' });
                 if (response.ok) return;
             } catch (error) {
-                void error;
+                // Ignore transient failures while MSW starts, then retry.
+                lastError = error;
             }
             await new Promise((resolve) => {
                 setTimeout(resolve, 200);
             });
         }
-        throw new Error('Unable to reset mock state after multiple attempts.');
+        throw new Error(
+            `Unable to reset mock state after ${maxAttempts} attempts.${
+                lastError ? ` Last error: ${String(lastError)}` : ''
+            }`
+        );
     })
 );
 
