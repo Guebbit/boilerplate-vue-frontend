@@ -10,6 +10,10 @@ import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router';
 
 export const fetchLanguageApi = (locale: string): Promise<[string, ITranslationDictionaries]> =>
     new Promise((resolve) => {
+        if (!/^[\w-]+$/.test(locale)) {
+            resolve([locale, {}]);
+            return;
+        }
         setTimeout(() => {
             import(`@/locales/${locale}.json`)
                 .then((module) => resolve([locale, module.default as ITranslationDictionaries]))

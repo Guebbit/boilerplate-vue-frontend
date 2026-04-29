@@ -1,5 +1,8 @@
 /// <reference types="cypress" />
 
+const RESET_MOCK_MAX_ATTEMPTS = 10;
+const RESET_MOCK_RETRY_DELAY_MS = 200;
+
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace Cypress {
@@ -22,9 +25,8 @@ declare global {
 
 Cypress.Commands.add('resetMockState', () =>
     cy.window().then(async (windowObject) => {
-        const maxAttempts = 10;
         let lastError: unknown;
-        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        for (let attempt = 0; attempt < RESET_MOCK_MAX_ATTEMPTS; attempt += 1) {
             try {
                 const response = await windowObject.fetch('/__mock/reset', { method: 'POST' });
                 if (response.ok) return;
@@ -33,11 +35,11 @@ Cypress.Commands.add('resetMockState', () =>
                 lastError = error;
             }
             await new Promise((resolve) => {
-                setTimeout(resolve, 200);
+                setTimeout(resolve, RESET_MOCK_RETRY_DELAY_MS);
             });
         }
         throw new Error(
-            `Unable to reset mock state after ${maxAttempts} attempts.${
+            `Unable to reset mock state after ${RESET_MOCK_MAX_ATTEMPTS} attempts.${
                 lastError ? ` Last error: ${String(lastError)}` : ''
             }`
         );
