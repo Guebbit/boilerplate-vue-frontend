@@ -1,4 +1,9 @@
 describe('Public routes', () => {
+    beforeEach(() => {
+        cy.visit('/en');
+        cy.resetMockState();
+    });
+
     it('loads home page at locale-prefixed URL', () => {
         cy.visit('/en');
         cy.get('#home-page').should('exist');
@@ -12,10 +17,6 @@ describe('Public routes', () => {
     });
 
     it('loads the products list page', () => {
-        cy.intercept(
-            { method: 'GET', pathname: '/products*', port: 3000 },
-            { fixture: 'products/list' }
-        );
         cy.visit('/en/products');
         cy.get('#products-list-page').should('exist');
         cy.get('h1').should('contain.text', 'Products list');

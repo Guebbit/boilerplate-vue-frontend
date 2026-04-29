@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mockResponse, toMockReply } from '../../../.dev/mocks/shared/mockTransport.ts';
+import { mockResponse } from '../../../.dev/mocks/shared/mockTransport.ts';
 
 describe('mock transport helpers', () => {
     it('builds an axios-like response envelope with defaults', () => {
@@ -14,12 +14,10 @@ describe('mock transport helpers', () => {
         });
     });
 
-    it('creates axios-mock-adapter reply objects from domain payloads', () => {
-        const reply = toMockReply({ message: 'ok' }, { status: 201, headers: { xTest: '1' } });
+    it('builds an envelope with custom status and headers', () => {
+        const envelope = mockResponse({ message: 'ok' }, { status: 201, headers: { xTest: '1' } });
 
-        expect(reply.status).toBe(201);
-        expect(reply.headers).toEqual({ xTest: '1' });
-        expect(reply.data).toEqual({
+        expect(envelope).toEqual({
             data: { message: 'ok' },
             status: 201,
             headers: { xTest: '1' },

@@ -1,4 +1,9 @@
 describe('Authentication', () => {
+    beforeEach(() => {
+        cy.visit('/en');
+        cy.resetMockState();
+    });
+
     describe('Login', () => {
         beforeEach(() => {
             cy.visit('/en/login');
@@ -26,18 +31,14 @@ describe('Authentication', () => {
         });
 
         it('logs in successfully and redirects to home', () => {
-            cy.intercept('POST', '**/account/login', { fixture: 'auth/login' }).as('login');
-            cy.intercept('GET', '**/account', { fixture: 'auth/profile' }).as('profile');
-
             cy.get('[type=email]').clear();
             cy.get('[type=email]').type('root@root.it');
             cy.get('[type=password]').clear();
             cy.get('[type=password]').type('rootroot');
             cy.get('form').submit();
 
-            cy.wait('@login');
-            cy.wait('@profile');
             cy.url().should('not.include', '/login');
+            cy.get('#home-page').should('exist');
         });
     });
 
@@ -61,17 +62,14 @@ describe('Authentication', () => {
         });
 
         it('signs up successfully and redirects', () => {
-            cy.intercept('POST', '**/account/signup', { fixture: 'auth/signup' }).as('signup');
-            cy.intercept('GET', '**/account', { fixture: 'auth/profile' });
-
             cy.get('[type=email]').type('newuser@example.com');
             cy.get('[type=password]').eq(0).type('rootroot');
             cy.get('[type=password]').eq(1).type('rootroot');
             cy.get('[type=checkbox]').check();
             cy.get('#signup-page button[type="submit"]').click();
 
-            cy.wait('@signup');
             cy.url().should('not.include', '/signup');
+            cy.get('#home-page').should('exist');
         });
     });
 
@@ -108,11 +106,10 @@ describe('Authentication', () => {
 
     describe('Logout', () => {
         it('logs out and redirects to home', () => {
-            cy.intercept('POST', '**/account/logout-all', { fixture: 'auth/logout' }).as('logout');
             cy.loginAs('user');
             cy.visit('/en/logout');
-            cy.wait('@logout');
             cy.url().should('not.include', '/logout');
+            cy.get('#home-page').should('exist');
         });
     });
 });

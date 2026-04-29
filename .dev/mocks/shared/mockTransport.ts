@@ -1,12 +1,11 @@
-import type { AxiosRequestConfig } from 'axios';
+import { delay, HttpResponse } from 'msw';
 
 type MockTransportHeaders = Record<string, string>;
 
 type MockTransportOptions = {
     status?: number;
     headers?: MockTransportHeaders;
-    config?: AxiosRequestConfig;
-    request?: Record<string, unknown>;
+    delayMs?: number;
 };
 
 /**
@@ -16,19 +15,25 @@ export const mockResponse = <T>(data: T, options: MockTransportOptions = {}) => 
     data,
     status: options.status ?? 200,
     headers: options.headers ?? {},
-    config: options.config ?? {},
-    request: options.request ?? {}
+    config: {},
+    request: {}
 });
 
-/**
- * Converts domain data into the object format expected by axios-mock-adapter.
- * `status`/`headers` are intentionally duplicated:
- * - top-level keys are consumed by axios-mock-adapter transport handling
- * - nested keys inside `data` are consumed by app code expecting Axios-like payloads
- */
-export const toMockReply = <T>(data: T, options: MockTransportOptions = {}) => ({
-    status: options.status ?? 200,
-    data: mockResponse(data, options),
-    headers: options.headers ?? {},
-    config: options.config ?? {}
-});
+export const toMockJsonResponse = async <T>(data: T, options: MockTransportOptions = {}) => {
+    await delay(options.delayMs ?? 250);
+    return HttpResponse.json(mockResponse(data, options), {
+        status: options.status ?? 200,
+        headers: options.headers ?? {}
+    });
+};
+
+export const toMockArrayBufferResponse = async (
+    data: ArrayBuffer,
+    options: MockTransportOptions = {}
+) => {
+    await delay(options.delayMs ?? 250);
+    return HttpResponse.arrayBuffer(data, {
+        status: options.status ?? 200,
+        headers: options.headers ?? {}
+    });
+};

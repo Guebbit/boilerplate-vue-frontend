@@ -16,5 +16,9 @@ import '@/styles/main.scss';
  * Vue3 App
  */
 
-initializeApiMocking();
-createApp(App).use(createPinia()).use(router).use(i18n).mount('#app');
+const bootstrapApplication = async () => {
+    await initializeApiMocking();
+    createApp(App).use(createPinia()).use(router).use(i18n).mount('#app');
+};
+
+void bootstrapApplication();

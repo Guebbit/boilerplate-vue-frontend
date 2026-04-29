@@ -1,4 +1,4 @@
-import type MockAdapter from 'axios-mock-adapter';
+import { http, type HttpHandler } from 'msw';
 import type { User, UsersResponse } from '@/types';
 import {
     createMessageResponse,
@@ -6,13 +6,13 @@ import {
     getLastPathSegment,
     getQueryParameters,
     mockDatabase,
-    parseRequestBody,
+    readRequestBody,
     slicePaginatedData,
     toBooleanOrUndefined,
     toNumberOrDefault,
     toPaginationMeta
 } from '../shared/mockShared.ts';
-import { toMockReply } from '../shared/mockTransport.ts';
+import { toMockJsonResponse } from '../shared/mockTransport.ts';
 
 const replyUsersList = (url: string | undefined, parameters?: unknown) => {
     const query = getQueryParameters(url, parameters);
@@ -41,19 +41,16 @@ const replyUsersList = (url: string | undefined, parameters?: unknown) => {
         return true;
     });
 
-    return toMockReply<UsersResponse>({
+    return toMockJsonResponse<UsersResponse>({
         items: slicePaginatedData(filteredItems, page, pageSize),
         meta: toPaginationMeta(filteredItems.length, page, pageSize)
     });
 };
 
-export const registerUsersMockHandlers = (mockAdapter: MockAdapter) => {
-    mockAdapter
-        .onGet(/\/users(?:\?.*)?$/)
-        .reply((config) => replyUsersList(config.url, config.params));
-
-    mockAdapter.onPost(/\/users(?:\?.*)?$/).reply((config) => {
-        const requestBody = parseRequestBody<Record<string, unknown>>(config.data);
+export const registerUsersMockHandlers = (): HttpHandler[] => [
+    http.get(/\/users(?:\?.*)?$/, ({ request }) => replyUsersList(request.url)),
+    http.post(/\/users(?:\?.*)?$/, async ({ request }) => {
+        const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const createdUser: User = {
             id: `user-${Date.now()}`,
             email: String(requestBody.email ?? 'created.user@example.com'),
@@ -64,16 +61,17 @@ export const registerUsersMockHandlers = (mockAdapter: MockAdapter) => {
             createdAt: getIsoDateNow(),
             updatedAt: getIsoDateNow()
         };
-        mockDatabase.sampleUsers.unshift(createdUser);
-        return toMockReply(createdUser, { status: 201 });
-    });
 
-    mockAdapter.onPut(/\/users(?:\?.*)?$/).reply((config) => {
-        const requestBody = parseRequestBody<Record<string, unknown>>(config.data);
+        mockDatabase.sampleUsers.unshift(createdUser);
+        return toMockJsonResponse(createdUser, { status: 201 });
+    }),
+    http.put(/\/users(?:\?.*)?$/, async ({ request }) => {
+        const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const targetId = String(requestBody.id ?? mockDatabase.currentAuthenticatedUserId);
         const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === targetId);
+
         if (targetIndex === -1)
-            return toMockReply(
+            return toMockJsonResponse(
                 { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } },
                 { status: 404 }
             );
@@ -92,48 +90,51 @@ export const registerUsersMockHandlers = (mockAdapter: MockAdapter) => {
                     : Boolean(requestBody.active),
             updatedAt: getIsoDateNow()
         };
-        mockDatabase.sampleUsers[targetIndex] = updatedUser;
-        return toMockReply(updatedUser);
-    });
 
-    mockAdapter.onDelete(/\/users(?:\?.*)?$/).reply((config) => {
-        const requestBody = parseRequestBody<Record<string, unknown>>(config.data);
+        mockDatabase.sampleUsers[targetIndex] = updatedUser;
+        return toMockJsonResponse(updatedUser);
+    }),
+    http.delete(/\/users(?:\?.*)?$/, async ({ request }) => {
+        const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const targetId = String(requestBody.id ?? '');
         const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === targetId);
+
         if (targetIndex === -1)
-            return toMockReply(
+            return toMockJsonResponse(
                 { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } },
                 { status: 404 }
             );
+
         mockDatabase.sampleUsers.splice(targetIndex, 1);
-        return toMockReply(createMessageResponse('User deleted'));
-    });
-
-    mockAdapter.onPost(/\/users\/search(?:\?.*)?$/).reply((config) => {
-        const requestBody = parseRequestBody<Record<string, unknown>>(config.data);
-        return replyUsersList(config.url, requestBody);
-    });
-
-    mockAdapter.onGet(/\/users\/[^/]+(?:\?.*)?$/).reply((config) => {
-        const userId = getLastPathSegment(config.url);
+        return toMockJsonResponse(createMessageResponse('User deleted'));
+    }),
+    http.post(/\/users\/search(?:\?.*)?$/, async ({ request }) => {
+        const requestBody = await readRequestBody<Record<string, unknown>>(request);
+        return replyUsersList(request.url, requestBody);
+    }),
+    http.get(/\/users\/[^/]+(?:\?.*)?$/, ({ request }) => {
+        const userId = getLastPathSegment(request.url);
         const targetUser = mockDatabase.sampleUsers.find((user) => user.id === userId);
-        if (!targetUser)
-            return toMockReply(
-                { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } },
-                { status: 404 }
-            );
-        return toMockReply(targetUser);
-    });
 
-    mockAdapter.onPut(/\/users\/[^/]+(?:\?.*)?$/).reply((config) => {
-        const userId = getLastPathSegment(config.url);
-        const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === userId);
-        if (targetIndex === -1)
-            return toMockReply(
+        if (!targetUser)
+            return toMockJsonResponse(
                 { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } },
                 { status: 404 }
             );
-        const requestBody = parseRequestBody<Record<string, unknown>>(config.data);
+
+        return toMockJsonResponse(targetUser);
+    }),
+    http.put(/\/users\/[^/]+(?:\?.*)?$/, async ({ request }) => {
+        const userId = getLastPathSegment(request.url);
+        const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === userId);
+
+        if (targetIndex === -1)
+            return toMockJsonResponse(
+                { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } },
+                { status: 404 }
+            );
+
+        const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const updatedUser: User = {
             ...mockDatabase.sampleUsers[targetIndex],
             email: requestBody.email
@@ -144,19 +145,21 @@ export const registerUsersMockHandlers = (mockAdapter: MockAdapter) => {
                 : mockDatabase.sampleUsers[targetIndex].username,
             updatedAt: getIsoDateNow()
         };
-        mockDatabase.sampleUsers[targetIndex] = updatedUser;
-        return toMockReply(updatedUser);
-    });
 
-    mockAdapter.onDelete(/\/users\/[^/]+(?:\?.*)?$/).reply((config) => {
-        const userId = getLastPathSegment(config.url);
+        mockDatabase.sampleUsers[targetIndex] = updatedUser;
+        return toMockJsonResponse(updatedUser);
+    }),
+    http.delete(/\/users\/[^/]+(?:\?.*)?$/, ({ request }) => {
+        const userId = getLastPathSegment(request.url);
         const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === userId);
+
         if (targetIndex === -1)
-            return toMockReply(
+            return toMockJsonResponse(
                 { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } },
                 { status: 404 }
             );
+
         mockDatabase.sampleUsers.splice(targetIndex, 1);
-        return toMockReply(createMessageResponse('User deleted'));
-    });
-};
+        return toMockJsonResponse(createMessageResponse('User deleted'));
+    })
+];

@@ -1,29 +1,32 @@
-import MockAdapter from 'axios-mock-adapter';
-import httpClient from '@/utils/http.ts';
+import { setupWorker } from 'msw/browser';
 import { registerAccountMockHandlers } from './handlers/accountMockHandlers.ts';
 import { registerUsersMockHandlers } from './handlers/usersMockHandlers.ts';
 import { registerProductsMockHandlers } from './handlers/productsMockHandlers.ts';
 import { registerCartMockHandlers } from './handlers/cartMockHandlers.ts';
 import { registerOrdersMockHandlers } from './handlers/ordersMockHandlers.ts';
 
-let mockAdapterInstance: MockAdapter | undefined;
+let workerStartPromise: Promise<void> | undefined;
 
-export const initializeApiMocking = () => {
+export const initializeApiMocking = async () => {
     if (import.meta.env.VITE_API_MOCK_ENABLED !== 'true') return;
-    if (mockAdapterInstance) return mockAdapterInstance;
+    if (workerStartPromise) return workerStartPromise;
 
-    const mockAdapter = new MockAdapter(httpClient, {
-        delayResponse: 250,
-        // or else "passthrough": Unmatched requests go to the real network instead of returning a 404 error
-        onNoMatch: 'throwException'
-    });
+    const worker = setupWorker(
+        ...registerAccountMockHandlers(),
+        ...registerUsersMockHandlers(),
+        ...registerProductsMockHandlers(),
+        ...registerCartMockHandlers(),
+        ...registerOrdersMockHandlers()
+    );
 
-    registerAccountMockHandlers(mockAdapter);
-    registerUsersMockHandlers(mockAdapter);
-    registerProductsMockHandlers(mockAdapter);
-    registerCartMockHandlers(mockAdapter);
-    registerOrdersMockHandlers(mockAdapter);
+    workerStartPromise = worker
+        .start({
+            onUnhandledRequest: 'error',
+            serviceWorker: {
+                url: '/mockServiceWorker.js'
+            }
+        })
+        .then(() => undefined);
 
-    mockAdapterInstance = mockAdapter;
-    return mockAdapterInstance;
+    return workerStartPromise;
 };
