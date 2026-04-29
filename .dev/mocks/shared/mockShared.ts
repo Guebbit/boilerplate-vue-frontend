@@ -52,15 +52,21 @@ export const parseRequestBody = <T>(data: unknown): Partial<T> => {
 export const readRequestBody = async <T>(request: Request): Promise<Partial<T>> => {
     try {
         return parseRequestBody<T>(await request.clone().json());
-    } catch {}
+    } catch (error) {
+        void error;
+    }
 
     try {
         return parseRequestBody<T>(await request.clone().formData());
-    } catch {}
+    } catch (error) {
+        void error;
+    }
 
     try {
         return parseRequestBody<T>(await request.clone().text());
-    } catch {}
+    } catch (error) {
+        void error;
+    }
 
     return {};
 };

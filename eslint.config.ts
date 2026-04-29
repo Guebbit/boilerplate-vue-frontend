@@ -28,7 +28,8 @@ export default defineConfigWithVueTs(
         'docs',
         'api',
         'node_modules',
-        'eslint.config.ts'
+        'eslint.config.ts',
+        'public/mockServiceWorker.js'
     ]),
 
     /**

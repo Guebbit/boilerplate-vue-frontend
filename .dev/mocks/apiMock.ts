@@ -26,7 +26,7 @@ export const initializeApiMocking = async () => {
                 url: '/mockServiceWorker.js'
             }
         })
-        .then(() => undefined);
+        .then(() => {});
 
     return workerStartPromise;
 };

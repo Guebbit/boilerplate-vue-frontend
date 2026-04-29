@@ -22,7 +22,7 @@ declare global {
 
 Cypress.Commands.add('resetMockState', () =>
     cy.window().then((windowObject) =>
-        windowObject.fetch('/__mock/reset', { method: 'POST' }).then(() => undefined)
+        windowObject.fetch('/__mock/reset', { method: 'POST' }).then(() => {})
     )
 );
 
@@ -33,8 +33,10 @@ Cypress.Commands.add('loginAs', (role = 'user') => {
             : { email: 'john@example.com', password: 'rootroot' };
 
     cy.visit('/en/login');
-    cy.get('[type=email]').clear().type(credentials.email);
-    cy.get('[type=password]').clear().type(credentials.password);
+    cy.get('[type=email]').clear();
+    cy.get('[type=email]').type(credentials.email);
+    cy.get('[type=password]').clear();
+    cy.get('[type=password]').type(credentials.password);
     cy.get('form').submit();
     cy.url().should('not.include', '/login');
 });
