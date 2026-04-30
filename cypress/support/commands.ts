@@ -2,6 +2,7 @@
 
 const RESET_MOCK_MAX_ATTEMPTS = 10;
 const RESET_MOCK_RETRY_DELAY_MS = 200;
+const APP_READY_TIMEOUT_MS = 15_000;
 
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -46,6 +47,14 @@ Cypress.Commands.add('resetMockState', () =>
         );
     })
 );
+
+// After every cy.visit(), wait until the app has fully bootstrapped:
+// MSW running + Vue mounted + initial router navigation resolved.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+Cypress.Commands.overwrite('visit', (originalFunction: any, url: any, options: any) => {
+    originalFunction(url, options);
+    cy.window({ timeout: APP_READY_TIMEOUT_MS }).should('have.property', '_appReady', true);
+});
 
 Cypress.Commands.add('loginAs', (role = 'user') => {
     const credentials =

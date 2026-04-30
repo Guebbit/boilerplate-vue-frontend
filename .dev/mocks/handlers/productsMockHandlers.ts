@@ -3,7 +3,6 @@ import type { Product, ProductsResponse } from '@/types';
 import {
     createMessageResponse,
     getIsoDateNow,
-    getLastPathSegment,
     getQueryParameters,
     mockDatabase,
     readRequestBody,
@@ -12,6 +11,8 @@ import {
     toPaginationMeta
 } from '../shared/mockShared.ts';
 import { toMockJsonResponse } from '../shared/mockTransport.ts';
+
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
 const replyProductsList = (url: string | undefined, parameters?: unknown) => {
     const query = getQueryParameters(url, parameters);
@@ -45,8 +46,8 @@ const replyProductsList = (url: string | undefined, parameters?: unknown) => {
 };
 
 export const registerProductsMockHandlers = (): HttpHandler[] => [
-    http.get(/\/products(?:\?.*)?$/, ({ request }) => replyProductsList(request.url)),
-    http.post(/\/products(?:\?.*)?$/, async ({ request }) => {
+    http.get(`${API_BASE}/products`, ({ request }) => replyProductsList(request.url)),
+    http.post(`${API_BASE}/products`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const createdProduct: Product = {
             id: `prod-${Date.now()}`,
@@ -61,7 +62,7 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
         mockDatabase.sampleProducts.unshift(createdProduct);
         return toMockJsonResponse(createdProduct, { status: 201 });
     }),
-    http.put(/\/products(?:\?.*)?$/, async ({ request }) => {
+    http.put(`${API_BASE}/products`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const targetId = String(requestBody.id ?? '');
         const targetIndex = mockDatabase.sampleProducts.findIndex(({ id }) => id === targetId);
@@ -95,7 +96,7 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
         mockDatabase.sampleProducts[targetIndex] = updatedProduct;
         return toMockJsonResponse(updatedProduct);
     }),
-    http.delete(/\/products(?:\?.*)?$/, async ({ request }) => {
+    http.delete(`${API_BASE}/products`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const targetId = String(requestBody.id ?? '');
         const targetIndex = mockDatabase.sampleProducts.findIndex(({ id }) => id === targetId);
@@ -109,12 +110,12 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
         mockDatabase.sampleProducts.splice(targetIndex, 1);
         return toMockJsonResponse(createMessageResponse('Product deleted'));
     }),
-    http.post(/\/products\/search(?:\?.*)?$/, async ({ request }) => {
+    http.post(`${API_BASE}/products/search`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
         return replyProductsList(request.url, requestBody);
     }),
-    http.get(/\/products\/[^/]+(?:\?.*)?$/, ({ request }) => {
-        const productId = getLastPathSegment(request.url);
+    http.get(`${API_BASE}/products/:productId`, ({ params }) => {
+        const productId = String(params.productId);
         const targetProduct = mockDatabase.sampleProducts.find((product) => product.id === productId);
 
         if (!targetProduct)
@@ -125,8 +126,8 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
 
         return toMockJsonResponse(targetProduct);
     }),
-    http.put(/\/products\/[^/]+(?:\?.*)?$/, async ({ request }) => {
-        const productId = getLastPathSegment(request.url);
+    http.put(`${API_BASE}/products/:productId`, async ({ request, params }) => {
+        const productId = String(params.productId);
         const targetIndex = mockDatabase.sampleProducts.findIndex(({ id }) => id === productId);
 
         if (targetIndex === -1)
@@ -159,8 +160,8 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
         mockDatabase.sampleProducts[targetIndex] = updatedProduct;
         return toMockJsonResponse(updatedProduct);
     }),
-    http.delete(/\/products\/[^/]+(?:\?.*)?$/, ({ request }) => {
-        const productId = getLastPathSegment(request.url);
+    http.delete(`${API_BASE}/products/:productId`, ({ params }) => {
+        const productId = String(params.productId);
         const targetIndex = mockDatabase.sampleProducts.findIndex(({ id }) => id === productId);
 
         if (targetIndex === -1)

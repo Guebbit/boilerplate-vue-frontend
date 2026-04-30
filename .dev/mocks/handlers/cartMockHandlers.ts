@@ -5,16 +5,17 @@ import {
     createMockOrder,
     getCartResponse,
     calculateCartSummary,
-    getLastPathSegment,
     mockDatabase,
     readRequestBody
 } from '../shared/mockShared.ts';
 import { toMockJsonResponse } from '../shared/mockTransport.ts';
 
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+
 export const registerCartMockHandlers = (): HttpHandler[] => [
-    http.get(/\/cart\/summary(?:\?.*)?$/, () => toMockJsonResponse(calculateCartSummary())),
-    http.get(/\/cart(?:\?.*)?$/, () => toMockJsonResponse(getCartResponse())),
-    http.post(/\/cart(?:\?.*)?$/, async ({ request }) => {
+    http.get(`${API_BASE}/cart/summary`, () => toMockJsonResponse(calculateCartSummary())),
+    http.get(`${API_BASE}/cart`, () => toMockJsonResponse(getCartResponse())),
+    http.post(`${API_BASE}/cart`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const productId = String(requestBody.productId ?? '');
         const quantity = Math.max(0, Number(requestBody.quantity ?? 0));
@@ -38,7 +39,7 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
         mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter((item) => item.quantity > 0);
         return toMockJsonResponse(getCartResponse());
     }),
-    http.delete(/\/cart(?:\?.*)?$/, async ({ request }) => {
+    http.delete(`${API_BASE}/cart`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const productId = requestBody.productId ? String(requestBody.productId) : undefined;
 
@@ -52,8 +53,8 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
         );
         return toMockJsonResponse(getCartResponse());
     }),
-    http.put(/\/cart\/[^/]+(?:\?.*)?$/, async ({ request }) => {
-        const productId = getLastPathSegment(request.url);
+    http.put(`${API_BASE}/cart/:productId`, async ({ request, params }) => {
+        const productId = String(params.productId);
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const quantity = Math.max(0, Number(requestBody.quantity ?? 0));
 
@@ -74,14 +75,14 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
         mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter((item) => item.quantity > 0);
         return toMockJsonResponse(getCartResponse());
     }),
-    http.delete(/\/cart\/[^/]+(?:\?.*)?$/, ({ request }) => {
-        const productId = getLastPathSegment(request.url);
+    http.delete(`${API_BASE}/cart/:productId`, ({ params }) => {
+        const productId = String(params.productId);
         mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter(
             (item) => item.productId !== productId
         );
         return toMockJsonResponse(getCartResponse());
     }),
-    http.post(/\/cart\/checkout(?:\?.*)?$/, async ({ request }) => {
+    http.post(`${API_BASE}/cart/checkout`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const email = String(
             requestBody.email ??

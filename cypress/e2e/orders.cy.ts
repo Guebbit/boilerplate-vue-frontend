@@ -25,13 +25,13 @@ describe('Orders', () => {
                 .eq(0)
                 .within(() => {
                     cy.contains('pending').should('exist');
-                    cy.contains('20').should('exist');
+                    cy.contains('45.5').should('exist');
                 });
             cy.get('.users-table tbody tr')
                 .eq(1)
                 .within(() => {
                     cy.contains('delivered').should('exist');
-                    cy.contains('45.5').should('exist');
+                    cy.contains('20').should('exist');
                 });
         });
 

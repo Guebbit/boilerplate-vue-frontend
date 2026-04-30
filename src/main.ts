@@ -19,6 +19,10 @@ import '@/styles/main.scss';
 const bootstrapApplication = async () => {
     await initializeApiMocking();
     createApp(App).use(createPinia()).use(router).use(i18n).mount('#app');
+    await router.isReady();
+    // Signal to Cypress (or any test runner) that the app is fully ready:
+    // MSW is running, Vue is mounted, and the initial navigation has resolved.
+    (globalThis as typeof globalThis & { _appReady?: boolean })._appReady = true;
 };
 
 void bootstrapApplication();

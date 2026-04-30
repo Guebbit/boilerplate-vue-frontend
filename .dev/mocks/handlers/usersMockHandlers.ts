@@ -3,7 +3,6 @@ import type { User, UsersResponse } from '@/types';
 import {
     createMessageResponse,
     getIsoDateNow,
-    getLastPathSegment,
     getQueryParameters,
     mockDatabase,
     readRequestBody,
@@ -13,6 +12,8 @@ import {
     toPaginationMeta
 } from '../shared/mockShared.ts';
 import { toMockJsonResponse } from '../shared/mockTransport.ts';
+
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
 const replyUsersList = (url: string | undefined, parameters?: unknown) => {
     const query = getQueryParameters(url, parameters);
@@ -48,8 +49,8 @@ const replyUsersList = (url: string | undefined, parameters?: unknown) => {
 };
 
 export const registerUsersMockHandlers = (): HttpHandler[] => [
-    http.get(/\/users(?:\?.*)?$/, ({ request }) => replyUsersList(request.url)),
-    http.post(/\/users(?:\?.*)?$/, async ({ request }) => {
+    http.get(`${API_BASE}/users`, ({ request }) => replyUsersList(request.url)),
+    http.post(`${API_BASE}/users`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const createdUser: User = {
             id: `user-${Date.now()}`,
@@ -65,7 +66,7 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
         mockDatabase.sampleUsers.unshift(createdUser);
         return toMockJsonResponse(createdUser, { status: 201 });
     }),
-    http.put(/\/users(?:\?.*)?$/, async ({ request }) => {
+    http.put(`${API_BASE}/users`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const targetId = String(requestBody.id ?? mockDatabase.currentAuthenticatedUserId);
         const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === targetId);
@@ -94,7 +95,7 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
         mockDatabase.sampleUsers[targetIndex] = updatedUser;
         return toMockJsonResponse(updatedUser);
     }),
-    http.delete(/\/users(?:\?.*)?$/, async ({ request }) => {
+    http.delete(`${API_BASE}/users`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const targetId = String(requestBody.id ?? '');
         const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === targetId);
@@ -108,12 +109,12 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
         mockDatabase.sampleUsers.splice(targetIndex, 1);
         return toMockJsonResponse(createMessageResponse('User deleted'));
     }),
-    http.post(/\/users\/search(?:\?.*)?$/, async ({ request }) => {
+    http.post(`${API_BASE}/users/search`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
         return replyUsersList(request.url, requestBody);
     }),
-    http.get(/\/users\/[^/]+(?:\?.*)?$/, ({ request }) => {
-        const userId = getLastPathSegment(request.url);
+    http.get(`${API_BASE}/users/:userId`, ({ params }) => {
+        const userId = String(params.userId);
         const targetUser = mockDatabase.sampleUsers.find((user) => user.id === userId);
 
         if (!targetUser)
@@ -124,8 +125,8 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
 
         return toMockJsonResponse(targetUser);
     }),
-    http.put(/\/users\/[^/]+(?:\?.*)?$/, async ({ request }) => {
-        const userId = getLastPathSegment(request.url);
+    http.put(`${API_BASE}/users/:userId`, async ({ request, params }) => {
+        const userId = String(params.userId);
         const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === userId);
 
         if (targetIndex === -1)
@@ -149,8 +150,8 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
         mockDatabase.sampleUsers[targetIndex] = updatedUser;
         return toMockJsonResponse(updatedUser);
     }),
-    http.delete(/\/users\/[^/]+(?:\?.*)?$/, ({ request }) => {
-        const userId = getLastPathSegment(request.url);
+    http.delete(`${API_BASE}/users/:userId`, ({ params }) => {
+        const userId = String(params.userId);
         const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === userId);
 
         if (targetIndex === -1)

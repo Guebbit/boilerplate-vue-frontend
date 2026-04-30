@@ -19,9 +19,16 @@ export const initializeApiMocking = async () => {
         ...registerOrdersMockHandlers()
     );
 
+    const apiOrigin = new URL(import.meta.env.VITE_API_URL ?? 'http://localhost:3000').origin;
+
     workerStartPromise = worker
         .start({
-            onUnhandledRequest: 'error',
+            onUnhandledRequest: (request, print) => {
+                // Only error on unhandled requests to the API — let Vite module fetches through.
+                if (new URL(request.url).origin === apiOrigin) {
+                    print.error();
+                }
+            },
             serviceWorker: {
                 url: '/mockServiceWorker.js'
             }

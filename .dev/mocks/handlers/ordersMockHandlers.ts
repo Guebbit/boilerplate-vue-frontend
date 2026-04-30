@@ -13,7 +13,6 @@ import {
     createMockInvoicePdf,
     createMockOrder,
     getIsoDateNow,
-    getLastPathSegment,
     getQueryParameters,
     mockDatabase,
     readRequestBody,
@@ -22,6 +21,8 @@ import {
     toPaginationMeta
 } from '../shared/mockShared.ts';
 import { toMockArrayBufferResponse, toMockJsonResponse } from '../shared/mockTransport.ts';
+
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
 const replyOrdersList = (url: string | undefined, parameters?: unknown) => {
     const query = getQueryParameters(url, parameters);
@@ -51,11 +52,11 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
     const pdfHeaders: Record<string, string> = { 'Content-Type': 'application/pdf' };
 
     return [
-        http.get(/\/orders\/[^/]+\/invoice(?:\?.*)?$/, () =>
+        http.get(`${API_BASE}/orders/:orderId/invoice`, () =>
             toMockArrayBufferResponse(createMockInvoicePdf(), { headers: pdfHeaders })
         ),
-        http.get(/\/orders(?:\?.*)?$/, ({ request }) => replyOrdersList(request.url)),
-        http.post(/\/orders(?:\?.*)?$/, async ({ request }) => {
+        http.get(`${API_BASE}/orders`, ({ request }) => replyOrdersList(request.url)),
+        http.post(`${API_BASE}/orders`, async ({ request }) => {
             const requestBody = await readRequestBody<Record<string, unknown>>(request);
             const createdOrder = createMockOrder({
                 userId: String(requestBody.userId ?? mockDatabase.currentAuthenticatedUserId),
@@ -70,7 +71,7 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
             mockDatabase.sampleOrders.unshift(createdOrder);
             return toMockJsonResponse(createdOrder, { status: 201 });
         }),
-        http.put(/\/orders(?:\?.*)?$/, async ({ request }) => {
+        http.put(`${API_BASE}/orders`, async ({ request }) => {
             const requestBody = await readRequestBody<UpdateOrderRequest>(request);
             const targetIndex = mockDatabase.sampleOrders.findIndex(({ id }) => id === requestBody.id);
 
@@ -94,7 +95,7 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
             mockDatabase.sampleOrders[targetIndex] = updatedOrder;
             return toMockJsonResponse(updatedOrder);
         }),
-        http.delete(/\/orders(?:\?.*)?$/, async ({ request }) => {
+        http.delete(`${API_BASE}/orders`, async ({ request }) => {
             const requestBody = await readRequestBody<Record<string, unknown>>(request);
             const targetId = String(requestBody.id ?? '');
             const targetIndex = mockDatabase.sampleOrders.findIndex(({ id }) => id === targetId);
@@ -108,12 +109,12 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
             mockDatabase.sampleOrders.splice(targetIndex, 1);
             return toMockJsonResponse(createMessageResponse('Order deleted'));
         }),
-        http.post(/\/orders\/search(?:\?.*)?$/, async ({ request }) => {
+        http.post(`${API_BASE}/orders/search`, async ({ request }) => {
             const requestBody = await readRequestBody<Record<string, unknown>>(request);
             return replyOrdersList(request.url, requestBody);
         }),
-        http.get(/\/orders\/[^/]+(?:\?.*)?$/, ({ request }) => {
-            const orderId = getLastPathSegment(request.url);
+        http.get(`${API_BASE}/orders/:orderId`, ({ params }) => {
+            const orderId = String(params.orderId);
             const targetOrder = mockDatabase.sampleOrders.find((order) => order.id === orderId);
 
             if (!targetOrder)
@@ -124,8 +125,8 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
 
             return toMockJsonResponse(targetOrder);
         }),
-        http.put(/\/orders\/[^/]+(?:\?.*)?$/, async ({ request }) => {
-            const orderId = getLastPathSegment(request.url);
+        http.put(`${API_BASE}/orders/:orderId`, async ({ request, params }) => {
+            const orderId = String(params.orderId);
             const targetIndex = mockDatabase.sampleOrders.findIndex(({ id }) => id === orderId);
 
             if (targetIndex === -1)
@@ -149,8 +150,8 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
             mockDatabase.sampleOrders[targetIndex] = updatedOrder;
             return toMockJsonResponse(updatedOrder);
         }),
-        http.delete(/\/orders\/[^/]+(?:\?.*)?$/, ({ request }) => {
-            const orderId = getLastPathSegment(request.url);
+        http.delete(`${API_BASE}/orders/:orderId`, ({ params }) => {
+            const orderId = String(params.orderId);
             const targetIndex = mockDatabase.sampleOrders.findIndex(({ id }) => id === orderId);
 
             if (targetIndex === -1)
