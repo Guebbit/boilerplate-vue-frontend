@@ -42,66 +42,42 @@
             </RouterLink>
         </div>
 
-        <div v-else class="users-table-wrapper">
-            <table class="users-table">
-                <thead>
-                    <tr>
-                        <th>{{ t('orders-list-page.column-id') }}</th>
-                        <th>{{ t('orders-list-page.column-status') }}</th>
-                        <th>{{ t('orders-list-page.column-total') }}</th>
-                        <th>{{ t('orders-list-page.column-date') }}</th>
-                        <th>{{ t('orders-list-page.column-actions') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr
-                        v-for="order in pageItemList"
-                        :key="'order-row-' + order.id"
-                        :class="{ active: selectedOrderId === order.id }"
-                        @click="selectedOrderId = order.id"
+        <CoreDataTable
+            v-else
+            v-model="selectedOrderId"
+            :headers="tableHeaders"
+            :items="pageItemList"
+            :loading="loading"
+            :loading-text="t('generic.loading')"
+        >
+            <template v-slot:[`item.createdAt`]="{ item }">
+                {{ formatDate(item.createdAt) }}
+            </template>
+
+            <template v-slot:[`item.actions`]="{ item }">
+                <div class="actions-cell">
+                    <RouterLink
+                        :to="routerLinkI18n({ name: 'OrderTarget', params: { id: item.id } })"
+                        class="theme-button view-button"
                     >
-                        <td>{{ order.id }}</td>
-                        <td>{{ order.status }}</td>
-                        <td>{{ order.total }}</td>
-                        <td>
-                            {{
-                                order.createdAt
-                                    ? new Date(order.createdAt).toLocaleDateString()
-                                    : '-'
-                            }}
-                        </td>
-                        <td class="actions-cell">
-                            <RouterLink
-                                :to="
-                                    routerLinkI18n({
-                                        name: 'OrderTarget',
-                                        params: { id: order.id }
-                                    })
-                                "
-                                class="theme-button view-button"
-                            >
-                                {{ t('orders-list-page.button-view') }}
-                            </RouterLink>
-                            <RouterLink
-                                :to="
-                                    routerLinkI18n({ name: 'OrderEdit', params: { id: order.id } })
-                                "
-                                class="theme-button edit-button"
-                            >
-                                {{ t('orders-list-page.button-edit') }}
-                            </RouterLink>
-                            <button
-                                class="theme-button delete-button"
-                                :disabled="loading"
-                                @click.stop="handleDelete(order.id)"
-                            >
-                                {{ t('orders-list-page.button-delete') }}
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+                        {{ t('orders-list-page.button-view') }}
+                    </RouterLink>
+                    <RouterLink
+                        :to="routerLinkI18n({ name: 'OrderEdit', params: { id: item.id } })"
+                        class="theme-button edit-button"
+                    >
+                        {{ t('orders-list-page.button-edit') }}
+                    </RouterLink>
+                    <button
+                        class="theme-button delete-button"
+                        :disabled="loading"
+                        @click.stop="handleDelete(item.id)"
+                    >
+                        {{ t('orders-list-page.button-delete') }}
+                    </button>
+                </div>
+            </template>
+        </CoreDataTable>
 
         <ListPagination v-model="pageCurrent" :length="pageTotal" />
     </LayoutDefault>
@@ -115,7 +91,7 @@ export default {
 
 <script setup lang="ts">
 import '@/styles/pages/ordersList.scss';
-import { onMounted, reactive, watch } from 'vue';
+import { computed, onMounted, reactive, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
@@ -127,6 +103,7 @@ import type { SearchOrdersRequest } from '@types';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import ListPagination from '@/components/molecules/ListPagination.vue';
+import CoreDataTable from '@/components/molecules/CoreDataTable.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 
 const { t } = useI18n();
@@ -139,6 +116,14 @@ const { ordersList, pageItemList, selectedOrderId, pageCurrent, pageTotal, pageS
 pageSize.value = 10;
 
 const filters = reactive<Omit<SearchOrdersRequest, 'page' | 'pageSize'>>({});
+
+const tableHeaders = computed(() => [
+    { title: t('orders-list-page.column-id'), key: 'id' },
+    { title: t('orders-list-page.column-status'), key: 'status' },
+    { title: t('orders-list-page.column-total'), key: 'total' },
+    { title: t('orders-list-page.column-date'), key: 'createdAt' },
+    { title: t('orders-list-page.column-actions'), key: 'actions' }
+]);
 
 const handleSearch = () => {
     pageCurrent.value = 1;
@@ -161,6 +146,8 @@ const handleDelete = (orderId: string) => {
         .then(() => addMessage(t('orders-list-page.success-delete')))
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
+
+const formatDate = (date?: string) => (date ? new Date(date).toLocaleDateString() : '-');
 
 onMounted(() =>
     fetchSearchOrders(filters, Math.max(1, pageCurrent.value), pageSize.value).catch((error) =>
