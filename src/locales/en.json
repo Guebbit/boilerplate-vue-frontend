@@ -34,7 +34,17 @@
         "label-provided-change-typing": "Change directly by typing",
         "label-provided-change-mutation": "Change using mutation",
         "label-increment": "@.capitalize:generic.increment",
-        "label-delayed-increment": "Async @:generic.increment"
+        "label-delayed-increment": "Async @:generic.increment",
+        "label-websocket-messages": "WebSocket messages",
+        "label-live-messages": "Live activity",
+        "button-test-alert": "Add test alert",
+        "button-reset-messages": "Reset messages",
+        "placeholder-card-1-title": "Fast setup",
+        "placeholder-card-1-description": "Reusable blocks with clean defaults for quick page composition.",
+        "placeholder-card-2-title": "Material placeholders",
+        "placeholder-card-2-description": "Simple visual cards that improve layout quality while content evolves.",
+        "placeholder-card-3-title": "Scalable structure",
+        "placeholder-card-3-description": "Composable components designed for easy extension across views."
     },
     "admin-page": {
         "page-title": "Admin Dashboard"
