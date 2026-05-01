@@ -10,7 +10,7 @@
             <MaterialStatCard
                 :title="t('home-page.label-count')"
                 :value="count"
-                :subtitle="'(' + doubleCount + ')'"
+                :subtitle="`(${doubleCount})`"
                 accent="primary"
             />
             <MaterialStatCard
@@ -48,7 +48,7 @@
                         {{ t('home-page.label-provided-change-mutation') }}
                     </p>
                     <BaseInput
-                        v-model="providedVariableViaMutation"
+                        v-model="providedVariableModel"
                         type="text"
                     />
                 </div>
@@ -207,7 +207,7 @@ const { providedVariable, setProvidedVariable } = inject<{
     setProvidedVariable: () => {}
 });
 
-const providedVariableViaMutation = computed({
+const providedVariableModel = computed({
     get: () => providedVariable.value,
     set: (value: IProvidedVariableType) => setProvidedVariable(value)
 });
