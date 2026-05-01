@@ -6,7 +6,7 @@ export default {
 
 <script setup lang="ts">
 import '@/styles/pages/usersList.scss';
-import { onMounted, reactive, watch } from 'vue';
+import { computed, onMounted, reactive, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
@@ -18,6 +18,7 @@ import type { SearchUsersRequest } from '@types';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import ListPagination from '@/components/molecules/ListPagination.vue';
+import CoreDataTable from '@/components/molecules/CoreDataTable.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseSelect from '@/components/atoms/BaseSelect.vue';
 
@@ -37,6 +38,16 @@ const activeOptions = [
     { value: true, label: t('users-list-page.filter-active-yes') },
     { value: false, label: t('users-list-page.filter-active-no') }
 ];
+
+const tableHeaders = computed(() => [
+    { title: t('users-list-page.column-id'), key: 'id' },
+    { title: t('users-list-page.column-username'), key: 'username' },
+    { title: t('users-list-page.column-email'), key: 'email' },
+    { title: t('users-list-page.column-admin'), key: 'admin' },
+    { title: t('users-list-page.column-active'), key: 'active' },
+    { title: t('users-list-page.column-created-at'), key: 'createdAt' },
+    { title: t('users-list-page.column-actions'), key: 'actions' }
+]);
 
 const handleSearch = () => {
     pageCurrent.value = 1;
@@ -121,63 +132,49 @@ watch([pageCurrent, pageSize], ([currentPage, currentPageSize]) => {
             </RouterLink>
         </div>
 
-        <div class="users-table-wrapper">
-            <table class="users-table">
-                <thead>
-                    <tr>
-                        <th>{{ t('users-list-page.column-id') }}</th>
-                        <th>{{ t('users-list-page.column-username') }}</th>
-                        <th>{{ t('users-list-page.column-email') }}</th>
-                        <th>{{ t('users-list-page.column-admin') }}</th>
-                        <th>{{ t('users-list-page.column-active') }}</th>
-                        <th>{{ t('users-list-page.column-created-at') }}</th>
-                        <th>{{ t('users-list-page.column-actions') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr
-                        v-for="user in pageItemList"
-                        :key="'user-row-' + user.id"
-                        :class="{ active: selectedUserId === user.id }"
-                        @click="selectedUserId = user.id"
+        <CoreDataTable
+            v-model="selectedUserId"
+            :headers="tableHeaders"
+            :items="pageItemList"
+            :loading="loading"
+            :loading-text="t('generic.loading')"
+        >
+            <template #item.admin="{ item }">
+                {{ item.admin ? '✓' : '✗' }}
+            </template>
+
+            <template #item.active="{ item }">
+                {{ item.active ? '✓' : '✗' }}
+            </template>
+
+            <template #item.createdAt="{ item }">
+                {{ item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '-' }}
+            </template>
+
+            <template #item.actions="{ item }">
+                <div class="actions-cell">
+                    <RouterLink
+                        :to="routerLinkI18n({ name: 'UserTarget', params: { id: item.id } })"
+                        class="theme-button view-button"
                     >
-                        <td>{{ user.id }}</td>
-                        <td>{{ user.username }}</td>
-                        <td>{{ user.email }}</td>
-                        <td>{{ user.admin ? '✓' : '✗' }}</td>
-                        <td>{{ user.active ? '✓' : '✗' }}</td>
-                        <td>
-                            {{
-                                user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '-'
-                            }}
-                        </td>
-                        <td class="actions-cell">
-                            <RouterLink
-                                :to="
-                                    routerLinkI18n({ name: 'UserTarget', params: { id: user.id } })
-                                "
-                                class="theme-button view-button"
-                            >
-                                {{ t('users-list-page.button-view') }}
-                            </RouterLink>
-                            <RouterLink
-                                :to="routerLinkI18n({ name: 'UserEdit', params: { id: user.id } })"
-                                class="theme-button edit-button"
-                            >
-                                {{ t('users-list-page.button-edit') }}
-                            </RouterLink>
-                            <button
-                                class="theme-button delete-button"
-                                :disabled="loading"
-                                @click.stop="handleDelete(user.id!)"
-                            >
-                                {{ t('users-list-page.button-delete') }}
-                            </button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+                        {{ t('users-list-page.button-view') }}
+                    </RouterLink>
+                    <RouterLink
+                        :to="routerLinkI18n({ name: 'UserEdit', params: { id: item.id } })"
+                        class="theme-button edit-button"
+                    >
+                        {{ t('users-list-page.button-edit') }}
+                    </RouterLink>
+                    <button
+                        class="theme-button delete-button"
+                        :disabled="loading"
+                        @click.stop="handleDelete(item.id!)"
+                    >
+                        {{ t('users-list-page.button-delete') }}
+                    </button>
+                </div>
+            </template>
+        </CoreDataTable>
 
         <ListPagination v-model="pageCurrent" :length="pageTotal" />
     </LayoutDefault>
