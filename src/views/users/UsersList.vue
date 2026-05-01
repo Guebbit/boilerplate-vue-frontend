@@ -71,6 +71,8 @@ const handleDelete = (userId: string) => {
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
 
+const formatDate = (date?: string) => (date ? new Date(date).toLocaleDateString() : '-');
+
 onMounted(() =>
     fetchSearchUsers(filters, Math.max(1, pageCurrent.value), pageSize.value).catch((error) =>
         notifyErrorMessages(addMessage, error)
@@ -139,19 +141,19 @@ watch([pageCurrent, pageSize], ([currentPage, currentPageSize]) => {
             :loading="loading"
             :loading-text="t('generic.loading')"
         >
-            <template #item.admin="{ item }">
+            <template v-slot:[`item.admin`]="{ item }">
                 {{ item.admin ? '✓' : '✗' }}
             </template>
 
-            <template #item.active="{ item }">
+            <template v-slot:[`item.active`]="{ item }">
                 {{ item.active ? '✓' : '✗' }}
             </template>
 
-            <template #item.createdAt="{ item }">
-                {{ item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '-' }}
+            <template v-slot:[`item.createdAt`]="{ item }">
+                {{ formatDate(item.createdAt) }}
             </template>
 
-            <template #item.actions="{ item }">
+            <template v-slot:[`item.actions`]="{ item }">
                 <div class="actions-cell">
                     <RouterLink
                         :to="routerLinkI18n({ name: 'UserTarget', params: { id: item.id } })"

@@ -15,30 +15,34 @@
                 <tr v-else-if="items.length === 0">
                     <td :colspan="headers.length">{{ noDataText }}</td>
                 </tr>
-                <tr
-                    v-for="item in items"
-                    v-else
-                    :key="`row-${String(item[itemValue])}`"
-                    :class="{ active: modelValue === item[itemValue] }"
-                    @click="handleRowClick(item)"
-                >
-                    <td v-for="header in headers" :key="`cell-${String(item[itemValue])}-${header.key}`">
-                        <slot
-                            :name="`item.${header.key}`"
-                            :item="item"
-                            :value="item[header.key]"
-                            :column="header"
+                <template v-else>
+                    <tr
+                        v-for="(item, rowIndex) in items"
+                        :key="`row-${String(getValue(item, itemValue) ?? rowIndex)}`"
+                        :class="{ active: modelValue === getValue(item, itemValue) }"
+                        @click="handleRowClick(item)"
+                    >
+                        <td
+                            v-for="header in headers"
+                            :key="`cell-${String(getValue(item, itemValue) ?? rowIndex)}-${header.key}`"
                         >
-                            {{ item[header.key] ?? '-' }}
-                        </slot>
-                    </td>
-                </tr>
+                            <slot
+                                :name="`item.${header.key}`"
+                                :item="item"
+                                :value="getValue(item, header.key)"
+                                :column="header"
+                            >
+                                {{ getValue(item, header.key) ?? '-' }}
+                            </slot>
+                        </td>
+                    </tr>
+                </template>
             </tbody>
         </table>
     </div>
 </template>
 
-<script setup lang="ts" generic="T extends Record<string, unknown>">
+<script setup lang="ts" generic="T extends object">
 type CoreDataTableHeader = {
     title: string;
     key: string;
@@ -60,14 +64,11 @@ const {
     noDataText?: string;
 }>();
 
-const emit = defineEmits<{
-    rowClick: [item: T];
-}>();
-
 const modelValue = defineModel<unknown>();
 
+const getValue = (item: T, key: string): unknown => (item as Record<string, unknown>)[key];
+
 const handleRowClick = (item: T) => {
-    modelValue.value = item[itemValue];
-    emit('rowClick', item);
+    modelValue.value = getValue(item, itemValue);
 };
 </script>

@@ -42,24 +42,34 @@
             :loading="loading"
             :loading-text="t('generic.loading')"
         >
-            <template #item.active="{ item }">
+            <template v-slot:[`item.active`]="{ item }">
                 {{ item.active ? '✓' : '✗' }}
             </template>
 
-            <template #item.createdAt="{ item }">
-                {{ item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '-' }}
+            <template v-slot:[`item.createdAt`]="{ item }">
+                {{ formatDate(item.createdAt) }}
             </template>
 
-            <template #item.actions="{ item }">
+            <template v-slot:[`item.actions`]="{ item }">
                 <div class="actions-cell">
                     <RouterLink
-                        :to="routerLinkI18n({ name: 'ProductTarget', params: { id: item.id } })"
+                        :to="
+                            routerLinkI18n({
+                                name: 'ProductTarget',
+                                params: { id: item.id }
+                            })
+                        "
                         class="theme-button view-button"
                     >
                         {{ t('products-list-page.button-view') }}
                     </RouterLink>
                     <RouterLink
-                        :to="routerLinkI18n({ name: 'ProductEdit', params: { id: item.id } })"
+                        :to="
+                            routerLinkI18n({
+                                name: 'ProductEdit',
+                                params: { id: item.id }
+                            })
+                        "
                         class="theme-button edit-button"
                     >
                         {{ t('products-list-page.button-edit') }}
@@ -143,6 +153,8 @@ const handleDelete = (productId: string) => {
         .then(() => addMessage(t('products-list-page.success-delete')))
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
+
+const formatDate = (date?: string) => (date ? new Date(date).toLocaleDateString() : '-');
 
 onMounted(() =>
     fetchSearchProducts(filters, Math.max(1, pageCurrent.value), pageSize.value).catch((error) =>

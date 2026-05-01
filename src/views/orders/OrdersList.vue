@@ -50,11 +50,11 @@
             :loading="loading"
             :loading-text="t('generic.loading')"
         >
-            <template #item.createdAt="{ item }">
-                {{ item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '-' }}
+            <template v-slot:[`item.createdAt`]="{ item }">
+                {{ formatDate(item.createdAt) }}
             </template>
 
-            <template #item.actions="{ item }">
+            <template v-slot:[`item.actions`]="{ item }">
                 <div class="actions-cell">
                     <RouterLink
                         :to="routerLinkI18n({ name: 'OrderTarget', params: { id: item.id } })"
@@ -146,6 +146,8 @@ const handleDelete = (orderId: string) => {
         .then(() => addMessage(t('orders-list-page.success-delete')))
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
+
+const formatDate = (date?: string) => (date ? new Date(date).toLocaleDateString() : '-');
 
 onMounted(() =>
     fetchSearchOrders(filters, Math.max(1, pageCurrent.value), pageSize.value).catch((error) =>
