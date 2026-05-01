@@ -48,7 +48,11 @@
                         {{ t('home-page.label-provided-change-mutation') }}
                     </p>
                     <BaseInput
-                        v-model="providedVariableModel"
+                        :model-value="providedVariable"
+                        @update:model-value="
+                            (value) =>
+                                setProvidedVariable(typeof value === 'string' ? value : '')
+                        "
                         type="text"
                     />
                 </div>
@@ -205,11 +209,6 @@ const { providedVariable, setProvidedVariable } = inject<{
 }>('providedVariable', {
     providedVariable: ref('Not provided'),
     setProvidedVariable: () => {}
-});
-
-const providedVariableModel = computed({
-    get: () => providedVariable.value,
-    set: (value: IProvidedVariableType) => setProvidedVariable(value)
 });
 
 /**
