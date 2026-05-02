@@ -43,6 +43,11 @@ Use `.env-example` as reference.
 - `VITE_AXIOS_TIMEOUT`: axios timeout in ms
 - `VITE_APP_DEBUG_ROUTER`: enable router debug logs in dev (`true`/`false`)
 - `VITE_APP_DEBUG_HOME`: enable Home view demo logs in dev (`true`/`false`)
+- `VITE_SENTRY_DSN`: Sentry DSN (optional, disables Sentry when empty)
+- `VITE_SENTRY_TRACES_SAMPLE_RATE`: Sentry tracing sample rate (`0` to `1`)
+
+Sentry (briefly): it collects frontend crashes and optional performance traces,
+so you can see what broke, where, and for which users in production.
 
 ## Scripts
 

@@ -37,6 +37,7 @@
         "@guebbit/js-toolkit": "^1.0.8",
         "@guebbit/vue-toolkit": "^1.0.3",
         "@openapitools/openapi-generator-cli": "^2.30.2",
+        "@sentry/vue": "^10.51.0",
         "axios": "^1.13.6",
         "pinia": "^3.0.4",
         "vue": "^3.5.29",
