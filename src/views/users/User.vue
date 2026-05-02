@@ -1,62 +1,74 @@
 <template>
-    <LayoutDefault id="user-target">
-        <template #header>
-            <h1 class="theme-page-title">
-                <span>{{ t('user-target-page.page-title') }}</span>
-            </h1>
+    <ItemDetailPage
+        page-id="user-target"
+        page-class="user-detail"
+        :page-title="t('user-target-page.page-title')"
+        :hero-eyebrow="currentUser?.id"
+        :hero-title="heroTitle"
+        :hero-description="heroDescription"
+        hero-icon="👤"
+        :section-title="t('generic.details')"
+    >
+        <template #stats>
+            <MaterialStatCard :title="t('user-target-page.label-email')" :value="formatText(currentUser?.email)" />
+            <MaterialStatCard :title="t('user-target-page.label-admin')" :value="userRole" accent="secondary" />
+            <MaterialStatCard
+                :title="t('user-target-page.label-active')"
+                :value="userStatus"
+                accent="tertiary"
+            />
         </template>
 
-        <div class="theme-card animate-on-hover">
-            <div class="card-content">
-                <div v-if="currentUser" class="user-details">
-                    <table class="user-detail-table">
-                        <tbody>
-                            <tr>
-                                <th>{{ t('user-target-page.label-id') }}</th>
-                                <td>{{ currentUser.id }}</td>
-                            </tr>
-                            <tr>
-                                <th>{{ t('user-target-page.label-username') }}</th>
-                                <td>{{ currentUser.username }}</td>
-                            </tr>
-                            <tr>
-                                <th>{{ t('user-target-page.label-email') }}</th>
-                                <td>{{ currentUser.email }}</td>
-                            </tr>
-                            <tr>
-                                <th>{{ t('user-target-page.label-admin') }}</th>
-                                <td>{{ currentUser.admin ? '✓' : '✗' }}</td>
-                            </tr>
-                            <tr>
-                                <th>{{ t('user-target-page.label-active') }}</th>
-                                <td>{{ currentUser.active ? '✓' : '✗' }}</td>
-                            </tr>
-                            <tr v-if="currentUser.createdAt">
-                                <th>{{ t('user-target-page.label-created-at') }}</th>
-                                <td>{{ new Date(currentUser.createdAt).toLocaleString() }}</td>
-                            </tr>
-                            <tr v-if="currentUser.updatedAt">
-                                <th>{{ t('user-target-page.label-updated-at') }}</th>
-                                <td>{{ new Date(currentUser.updatedAt).toLocaleString() }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        <template v-if="currentUser">
+            <ItemDetailField :label="t('user-target-page.label-id')" :value="currentUser.id" icon="#" />
+            <ItemDetailField
+                :label="t('user-target-page.label-username')"
+                :value="currentUser.username"
+                icon="🙂"
+            />
+            <ItemDetailField :label="t('user-target-page.label-email')" :value="currentUser.email" icon="✉" />
+            <ItemDetailField :label="t('user-target-page.label-admin')" icon="🛡">
+                <span class="item-detail__status-chip">{{ userRole }}</span>
+            </ItemDetailField>
+            <ItemDetailField :label="t('user-target-page.label-active')" icon="●">
+                <span class="item-detail__status-chip">{{ userStatus }}</span>
+            </ItemDetailField>
+            <ItemDetailField
+                :label="t('user-target-page.label-updated-at')"
+                :value="formatDateTime(currentUser.updatedAt)"
+                icon="🕒"
+                full-width
+            />
+        </template>
+        <p v-else class="item-detail__empty">{{ t('generic.loading-state') }}</p>
 
-        <div class="user-target-actions">
+        <template #aside>
+            <MaterialGraphicCard :title="heroTitle" :description="heroDescription" variant="secondary" />
+            <ItemDetailField
+                :label="t('user-target-page.label-created-at')"
+                :value="formatDateTime(currentUser?.createdAt)"
+                icon="📅"
+            />
+            <ItemDetailField
+                :label="t('user-target-page.label-updated-at')"
+                :value="formatDateTime(currentUser?.updatedAt)"
+                icon="🕘"
+            />
+        </template>
+
+        <template #actions>
             <RouterLink
                 v-if="currentUser"
                 :to="routerLinkI18n({ name: 'UserEdit', params: { id: currentUser.id } })"
+                class="theme-button"
             >
                 {{ t('user-target-page.button-go-to-edit') }}
             </RouterLink>
-            <RouterLink :to="routerLinkI18n({ name: 'UsersList' })">
+            <RouterLink :to="routerLinkI18n({ name: 'UsersList' })" class="theme-button">
                 {{ t('user-target-page.button-go-to-list') }}
             </RouterLink>
-        </div>
-    </LayoutDefault>
+        </template>
+    </ItemDetailPage>
 </template>
 
 <script lang="ts">
@@ -66,66 +78,40 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { onBeforeMount, defineProps } from 'vue';
+import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useUsersStore } from '@/stores/users';
+import ItemDetailPage from '@/components/organisms/ItemDetailPage.vue';
+import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
+import MaterialGraphicCard from '@/components/molecules/MaterialGraphicCard.vue';
+import MaterialStatCard from '@/components/molecules/MaterialStatCard.vue';
+import { useItemDetailRecord } from '@/composables/useItemDetailRecord.ts';
+import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';
 
-import LayoutDefault from '@/layouts/LayoutDefault.vue';
-
-/**
- * Generics
- */
 const { t } = useI18n();
 const { id } = defineProps<{
     id?: string;
 }>();
 
-/**
- * Users store
- * The composable within will have most of the logic for this kind of pages
- */
 const { fetchUser } = useUsersStore();
 const { currentUser, selectedUserId } = storeToRefs(useUsersStore());
+const { formatText, formatDateTime, formatFlag } = useItemDetailDisplay();
 
-/**
- * Get user from API
- */
-onBeforeMount(() => {
-    if (!id) return;
-    // Select the current user id so selectedRecord/currentUser
-    // will be populated when data is available
-    selectedUserId.value = id;
-    return fetchUser(id);
+const heroTitle = computed(() => currentUser.value?.username ?? id ?? t('user-target-page.page-title'));
+const heroDescription = computed(() => formatText(currentUser.value?.email));
+const userRole = computed(() =>
+    formatFlag(currentUser.value?.admin, t('generic.administrator'), t('generic.standard-user'))
+);
+const userStatus = computed(() =>
+    formatFlag(currentUser.value?.active, t('generic.enabled'), t('generic.disabled'))
+);
+
+useItemDetailRecord({
+    id,
+    selectedId: selectedUserId,
+    fetchRecord: fetchUser
 });
 </script>
-
-<style lang="scss">
-#user-target {
-    .user-detail-table {
-        width: 100%;
-        border-collapse: collapse;
-
-        th,
-        td {
-            padding: 10px 14px;
-            text-align: left;
-            border-bottom: 1px solid rgba(128, 128, 128, 0.2);
-        }
-
-        th {
-            width: 40%;
-            font-weight: 600;
-            color: rgba(128, 128, 128, 0.8);
-        }
-    }
-
-    .user-target-actions {
-        display: flex;
-        gap: 12px;
-        margin-top: 16px;
-    }
-}
-</style>

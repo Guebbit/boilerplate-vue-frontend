@@ -1,53 +1,89 @@
 <template>
-    <LayoutDefault id="product-edit-page">
-        <template #header>
-            <h1 class="theme-page-title">
-                <span>{{ t('product-edit-page.page-title') }}</span>
-            </h1>
+    <ItemDetailPage
+        ref="detailPage"
+        page-id="product-edit-page"
+        page-class="product-detail"
+        :page-title="t('product-edit-page.page-title')"
+        :hero-eyebrow="id"
+        :hero-title="heroTitle"
+        :hero-description="heroDescription"
+        hero-icon="✏️"
+        :section-title="t('generic.details')"
+        :section-description="t('product-edit-page.page-title')"
+        edit-mode
+        @submit="submitForm"
+    >
+        <BaseInput
+            v-model="form.title"
+            type="text"
+            :label="t('product-edit-page.label-title')"
+            :errors="formErrors.title"
+            :show-errors="showErrors"
+        />
+        <BaseInput
+            v-model="form.price"
+            type="number"
+            :label="t('product-edit-page.label-price')"
+            :min="0"
+            :step="0.01"
+            :errors="formErrors.price"
+            :show-errors="showErrors"
+        />
+        <BaseInput
+            v-model="form.description"
+            :label="t('product-edit-page.label-description')"
+            multiline
+            :rows="5"
+        />
+        <BaseCheckbox v-model="form.active" :label="t('product-edit-page.label-active')" />
+
+        <div class="item-detail__form-actions">
+            <BaseButton type="submit" :disabled="isSubmitting || loading">
+                {{ t('product-edit-page.button-submit') }}
+            </BaseButton>
+            <BaseButton type="button" @click="resetForm">
+                {{ t('product-edit-page.reset-form') }}
+            </BaseButton>
+        </div>
+
+        <template #stats>
+            <MaterialStatCard :title="t('product-target-page.label-id')" :value="id ?? emptyValue" />
+            <MaterialStatCard
+                :title="t('product-target-page.label-price')"
+                :value="formatNumber(currentProduct?.price, priceFormat)"
+                accent="secondary"
+            />
+            <MaterialStatCard
+                :title="t('product-target-page.label-active')"
+                :value="formatFlag(currentProduct?.active, t('generic.enabled'), t('generic.disabled'))"
+                accent="tertiary"
+            />
         </template>
 
-        <div class="theme-card theme-form-container">
-            <form class="theme-form" @submit.prevent="submitForm">
-                <BaseInput
-                    v-model="form.title"
-                    type="text"
-                    :label="t('product-edit-page.label-title')"
-                    :errors="formErrors.title"
-                    :show-errors="showErrors"
-                />
-                <BaseInput
-                    v-model="form.price"
-                    type="number"
-                    :label="t('product-edit-page.label-price')"
-                    :min="0"
-                    :step="0.01"
-                    :errors="formErrors.price"
-                    :show-errors="showErrors"
-                />
-                <BaseInput
-                    v-model="form.description"
-                    :label="t('product-edit-page.label-description')"
-                    multiline
-                />
-                <BaseCheckbox v-model="form.active" :label="t('product-edit-page.label-active')" />
-                <BaseButton type="submit" :disabled="isSubmitting || loading">
-                    {{ t('product-edit-page.button-submit') }}
-                </BaseButton>
-                <BaseButton type="button" @click="resetToCurrentProduct">
-                    {{ t('product-edit-page.reset-form') }}
-                </BaseButton>
-            </form>
-        </div>
+        <template #aside>
+            <MaterialGraphicCard :title="heroTitle" :description="heroDescription" variant="primary" />
+            <ItemDetailField :label="t('product-target-page.label-id')" :value="id ?? emptyValue" icon="#" />
+            <ItemDetailField
+                :label="t('product-target-page.label-created-at')"
+                :value="formatDateTime(currentProduct?.createdAt)"
+                icon="📅"
+            />
+            <ItemDetailField
+                :label="t('product-target-page.label-updated-at')"
+                :value="formatDateTime(currentProduct?.updatedAt)"
+                icon="🕘"
+            />
+        </template>
 
-        <div class="product-edit-actions">
-            <RouterLink v-if="id" :to="routerLinkI18n({ name: 'ProductTarget', params: { id } })">
+        <template #actions>
+            <RouterLink v-if="id" :to="routerLinkI18n({ name: 'ProductTarget', params: { id } })" class="theme-button">
                 {{ t('product-edit-page.button-go-to-details') }}
             </RouterLink>
-            <RouterLink :to="routerLinkI18n({ name: 'ProductsList' })">
+            <RouterLink :to="routerLinkI18n({ name: 'ProductsList' })" class="theme-button">
                 {{ t('product-edit-page.button-go-to-list') }}
             </RouterLink>
-        </div>
-    </LayoutDefault>
+        </template>
+    </ItemDetailPage>
 </template>
 
 <script lang="ts">
@@ -57,7 +93,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
@@ -65,34 +101,28 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/stores/products';
 import { z } from 'zod';
-import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
 import BaseButton from '@/components/atoms/BaseButton.vue';
+import ItemDetailPage from '@/components/organisms/ItemDetailPage.vue';
+import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
+import MaterialGraphicCard from '@/components/molecules/MaterialGraphicCard.vue';
+import MaterialStatCard from '@/components/molecules/MaterialStatCard.vue';
+import { useItemDetailRecord } from '@/composables/useItemDetailRecord.ts';
+import { useItemDetailForm } from '@/composables/useItemDetailForm.ts';
+import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';
 import { notifyErrorMessages } from '@/utils/helperErrors.ts';
 
-/**
- * Generics
- */
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
-
-/**
- * Props
- */
 const { id } = defineProps<{
     id?: string;
 }>();
 
-/**
- * Products store
- */
 const { fetchProduct, updateProduct, zodSchemaProducts } = useProductsStore();
 const { currentProduct, selectedProductId, loading } = storeToRefs(useProductsStore());
+const { emptyValue, formatText, formatDateTime, formatNumber, formatFlag } = useItemDetailDisplay();
 
-/**
- * Form definition
- */
 interface IProductEditForm {
     title?: string;
     price?: number;
@@ -108,38 +138,25 @@ const editSchema = zodSchemaProducts.pick({ title: true, price: true }).extend({
 const { form, formErrors, isSubmitting, handleSubmit } =
     useStructureFormValidation<IProductEditForm>({}, editSchema);
 
-/**
- * Whether to display validation errors in the UI
- */
-const showErrors = ref(false);
+const { showErrors, resetForm } = useItemDetailForm({
+    currentItem: currentProduct,
+    form,
+    mapToForm: (product) => ({
+        title: product?.title ?? '',
+        price: product?.price ?? 0,
+        description: product?.description ?? '',
+        active: product?.active ?? false
+    })
+});
 
-/**
- * Reset form to the current product's data
- */
-const resetToCurrentProduct = () => {
-    form.value = {
-        title: currentProduct.value?.title ?? '',
-        price: currentProduct.value?.price ?? 0,
-        description: currentProduct.value?.description ?? '',
-        active: currentProduct.value?.active ?? false
-    };
-    showErrors.value = false;
-};
+const priceFormat = {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+} satisfies Intl.NumberFormatOptions;
 
-/**
- * When the product data is loaded, pre-fill the form
- */
-watch(
-    currentProduct,
-    (product) => {
-        if (product) resetToCurrentProduct();
-    },
-    { immediate: true }
-);
+const heroTitle = computed(() => currentProduct.value?.title ?? id ?? t('product-edit-page.page-title'));
+const heroDescription = computed(() => formatText(currentProduct.value?.description));
 
-/**
- * Submit form and update the product
- */
 const submitForm = () =>
     handleSubmit(async () => {
         if (!id || form.value.title === undefined || form.value.price === undefined) return;
@@ -157,27 +174,9 @@ const submitForm = () =>
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 
-/**
- * Load product data on mount
- */
-if (id) {
-    selectedProductId.value = id;
-    fetchProduct(id);
-}
+useItemDetailRecord({
+    id,
+    selectedId: selectedProductId,
+    fetchRecord: fetchProduct
+});
 </script>
-
-<style lang="scss">
-#product-edit-page {
-    .theme-form-container {
-        max-width: 600px;
-        margin: 100px auto;
-        padding: 2rem;
-    }
-
-    .product-edit-actions {
-        display: flex;
-        gap: 12px;
-        margin-top: 16px;
-    }
-}
-</style>
