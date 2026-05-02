@@ -21,6 +21,8 @@ const bootstrapApplication = async () => {
     await initializeApiMocking();
     const app = createApp(App);
 
+    // Sentry = error/performance monitoring.
+    // It helps you see crashes and slow pages in production.
     const sentryDsn = (import.meta.env.VITE_SENTRY_DSN as string | undefined)?.trim();
     const tracesSampleRateRaw =
         (import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE as string | undefined) ?? '0';
@@ -29,11 +31,13 @@ const bootstrapApplication = async () => {
         ? Math.min(Math.max(tracesSampleRateParsed, 0), 1)
         : 0;
 
+    // No DSN => Sentry stays off.
     if (sentryDsn)
         Sentry.init({
             app,
             dsn: sentryDsn,
             environment: import.meta.env.MODE,
+            // 0 = no tracing, 1 = trace everything.
             tracesSampleRate
         });
 
