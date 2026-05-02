@@ -1,23 +1,19 @@
 <template>
     <article class="theme-card material-graphic-card animate-on-hover">
-        <div class="graphic" :class="variant">
+        <div class="graphic" :class="props.variant ?? 'primary'">
             <span class="dot dot-lg" />
             <span class="dot dot-sm" />
             <span class="line" />
         </div>
         <div class="content">
-            <h3>{{ title }}</h3>
-            <p>{{ description }}</p>
+            <h3>{{ props.title }}</h3>
+            <p>{{ props.description }}</p>
         </div>
     </article>
 </template>
 
 <script setup lang="ts">
-const {
-    title,
-    description,
-    variant = 'primary'
-} = defineProps<{
+const props = defineProps<{
     title: string;
     description: string;
     variant?: 'primary' | 'secondary' | 'tertiary';

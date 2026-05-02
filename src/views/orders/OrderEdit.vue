@@ -151,11 +151,11 @@ const { formatText, formatDateTime, formatNumber } = useItemDetailDisplay();
 /**
  * Select options for status updates.
  */
-const statusOptions = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'].map(
-    (value) => ({
+const statusOptions = computed(() =>
+    ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'].map((value) => ({
         value,
         label: t(`orders-form.status-${value}`)
-    })
+    }))
 );
 
 /**

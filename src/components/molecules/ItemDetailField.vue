@@ -1,8 +1,8 @@
 <template>
-    <article class="item-detail-field" :class="{ 'item-detail-field-full-width': fullWidth }">
-        <div class="item-detail-field-icon" aria-hidden="true">{{ icon }}</div>
+    <article class="item-detail-field" :class="{ 'item-detail-field-full-width': props.fullWidth }">
+        <div class="item-detail-field-icon" aria-hidden="true">{{ props.icon ?? '•' }}</div>
         <div class="item-detail-field-content">
-            <p class="item-detail-field-label">{{ label }}</p>
+            <p class="item-detail-field-label">{{ props.label }}</p>
             <div class="item-detail-field-value">
                 <slot>{{ displayValue }}</slot>
             </div>
@@ -17,12 +17,7 @@ import { EMPTY_VALUE } from '@/utils/constants.ts';
 /**
  * Atomic read-only field used by detail pages to render one label/value pair.
  */
-const {
-    label,
-    value,
-    icon = '•',
-    fullWidth = false
-} = defineProps<{
+const props = defineProps<{
     label: string;
     value?: string | number | null;
     icon?: string;
@@ -33,8 +28,8 @@ const {
  * Normalizes empty-like values to a single fallback glyph.
  */
 const displayValue = computed(() => {
-    if (value === undefined || value === null || value === '') return EMPTY_VALUE;
-    return String(value);
+    if (props.value === undefined || props.value === null || props.value === '') return EMPTY_VALUE;
+    return String(props.value);
 });
 </script>
 

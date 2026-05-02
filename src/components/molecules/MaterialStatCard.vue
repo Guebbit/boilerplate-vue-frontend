@@ -1,18 +1,13 @@
 <template>
-    <div class="theme-card material-stat-card animate-on-hover" :class="'accent-' + accent">
-        <p class="eyebrow">{{ title }}</p>
-        <p class="value">{{ value }}</p>
-        <p v-if="subtitle" class="subtitle">{{ subtitle }}</p>
+    <div class="theme-card material-stat-card animate-on-hover" :class="'accent-' + (props.accent ?? 'primary')">
+        <p class="eyebrow">{{ props.title }}</p>
+        <p class="value">{{ props.value }}</p>
+        <p v-if="props.subtitle" class="subtitle">{{ props.subtitle }}</p>
     </div>
 </template>
 
 <script setup lang="ts">
-const {
-    title,
-    value,
-    subtitle,
-    accent = 'primary'
-} = defineProps<{
+const props = defineProps<{
     title: string;
     value: string | number;
     subtitle?: string;

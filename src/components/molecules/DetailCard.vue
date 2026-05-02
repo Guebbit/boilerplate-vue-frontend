@@ -1,5 +1,5 @@
 <template>
-    <component :is="as" class="theme-card detail-card" v-bind="$attrs">
+    <component :is="props.as ?? 'article'" class="theme-card detail-card" v-bind="$attrs">
         <slot />
     </component>
 </template>
@@ -8,7 +8,7 @@
 /**
  * Lightweight wrapper around the generic theme card for detail-page surfaces.
  */
-const { as = 'article' } = defineProps<{
+const props = defineProps<{
     as?: 'article' | 'aside' | 'div' | 'section';
 }>();
 </script>
