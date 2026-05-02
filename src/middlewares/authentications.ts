@@ -7,42 +7,15 @@ import { i18n } from '@/utils/i18n.ts';
 import type { RouteLocationNormalized } from 'vue-router';
 
 /**
- * Refresh the authentication if needed
- * isAuth cookie is an helper cookie to check if the user is or should be authenticated,
- * since we can't check for the jwt token itself.
- */
-export const refreshAuth = async () => {
-    const { isAuth } = storeToRefs(useProfileStore());
-    const { refreshToken, fetchProfile } = useProfileStore();
-
-    /**
-     * Already logged or there is no token for refresh,
-     * no need to bother the server
-     */
-    if (isAuth.value || !getCookie('isAuth')) return;
-
-    /**
-     * Not authenticated but there could be a token.
-     * Try to refresh authentication before continuing
-     */
-    return (
-        refreshToken()
-            .then(() => fetchProfile())
-            // no need to handle errors, but must not block the execution
-
-            .catch(() => {})
-    );
-};
-
-/**
  * Check if user is a guest
  *
  * @param to
  * @param from
  */
 export const isGuest = async (to: RouteLocationNormalized, from: RouteLocationNormalized) => {
-    await refreshAuth();
+    const { fetchProfile } = useProfileStore();
     const { isAuth } = storeToRefs(useProfileStore());
+    await fetchProfile();
     const { addMessage } = useNotificationsStore();
 
     if (isAuth.value) {
@@ -58,7 +31,8 @@ export const isGuest = async (to: RouteLocationNormalized, from: RouteLocationNo
  * @param from
  */
 export const isAuth = async (to: RouteLocationNormalized, from: RouteLocationNormalized) => {
-    await refreshAuth();
+    const { fetchProfile } = useProfileStore();
+    await fetchProfile();
     const { isAuth } = storeToRefs(useProfileStore());
     const { addMessage } = useNotificationsStore();
 
@@ -75,8 +49,9 @@ export const isAuth = async (to: RouteLocationNormalized, from: RouteLocationNor
  * @param from
  */
 export const isAdmin = async (to: RouteLocationNormalized, from: RouteLocationNormalized) => {
-    await refreshAuth();
+    const { fetchProfile } = useProfileStore();
     const { isAuth, isAdmin } = storeToRefs(useProfileStore());
+    await fetchProfile();
     const { addMessage } = useNotificationsStore();
 
     if (!isAuth.value) {
