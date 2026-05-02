@@ -22,6 +22,7 @@
     },
     "navigation": {
         "label-home": "home",
+        "label-playground": "playground",
         "label-admin": "admin",
         "label-users-list": "@:generic.user @:generic.list",
         "label-products-list": "@:generic.product @:generic.list",
@@ -37,6 +38,19 @@
     },
     "home-page": {
         "page-title": "Home",
+        "hero-title": "Welcome to your Vue boilerplate",
+        "hero-description": "Start from a clean and reusable foundation, then shape it into your next product experience.",
+        "button-browse-products": "Browse products",
+        "featured-title": "Featured products",
+        "featured-product-1-title": "Starter UI Kit",
+        "featured-product-1-description": "Essential components to build consistent interfaces faster.",
+        "featured-product-2-title": "Performance Bundle",
+        "featured-product-2-description": "Optimized building blocks focused on speed and smooth UX.",
+        "featured-product-3-title": "Growth Toolkit",
+        "featured-product-3-description": "Flexible modules to scale features as your app evolves."
+    },
+    "playground-page": {
+        "page-title": "Playground",
         "label-count": "@.capitalize:generic.count",
         "label-provided": "Variable provided by App.vue",
         "label-provided-change-typing": "Change directly by typing",
