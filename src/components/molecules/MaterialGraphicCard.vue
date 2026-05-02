@@ -1,28 +1,27 @@
 <template>
     <article class="theme-card material-graphic-card animate-on-hover">
-        <div class="graphic" :class="variant">
+        <div class="graphic" :class="resolvedVariant">
             <span class="dot dot-lg" />
             <span class="dot dot-sm" />
             <span class="line" />
         </div>
         <div class="content">
-            <h3>{{ title }}</h3>
-            <p>{{ description }}</p>
+            <h3>{{ props.title }}</h3>
+            <p>{{ props.description }}</p>
         </div>
     </article>
 </template>
 
 <script setup lang="ts">
-withDefaults(
-    defineProps<{
-        title: string;
-        description: string;
-        variant?: 'primary' | 'secondary' | 'tertiary';
-    }>(),
-    {
-        variant: 'primary'
-    }
-);
+import { computed } from 'vue';
+
+const props = defineProps<{
+    title: string;
+    description: string;
+    variant?: 'primary' | 'secondary' | 'tertiary';
+}>();
+
+const resolvedVariant = computed(() => props.variant ?? 'primary');
 </script>
 
 <style lang="scss">

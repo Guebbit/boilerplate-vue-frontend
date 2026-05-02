@@ -1,67 +1,120 @@
 <template>
-    <LayoutDefault id="order-target">
+    <LayoutDefault id="order-target" class="item-detail-page item-detail-page-order">
         <template #header>
             <h1 class="theme-page-title">
                 <span>{{ t('order-target-page.page-title') }}</span>
             </h1>
         </template>
 
-        <div class="theme-card animate-on-hover">
-            <div class="card-content">
-                <div v-if="currentOrder">
-                    <h2>{{ t('order-target-page.label-order-id') }}: {{ currentOrder.id }}</h2>
-                    <p>{{ t('order-target-page.label-status') }}: {{ currentOrder.status }}</p>
-                    <p>{{ t('order-target-page.label-total') }}: {{ currentOrder.total }}</p>
-                    <p v-if="currentOrder.notes">
-                        {{ t('order-target-page.label-notes') }}: {{ currentOrder.notes }}
-                    </p>
-                    <p v-if="currentOrder.createdAt">
-                        {{ t('order-target-page.label-date') }}:
-                        {{ new Date(currentOrder.createdAt).toLocaleString() }}
-                    </p>
-                    <div v-if="currentOrder.items?.length">
-                        <h3>{{ t('order-target-page.label-items') }}</h3>
-                        <div
-                            v-for="item in currentOrder.items"
-                            :key="'order-item-' + item.product.id"
-                            class="theme-card"
-                        >
-                            <p>
-                                {{ t('order-target-page.label-product-id') }}: {{ item.product.id }}
-                            </p>
-                            <p>{{ t('order-target-page.label-quantity') }}: {{ item.quantity }}</p>
-                        </div>
+        <section class="item-detail-page-content">
+            <div class="item-detail-page-grid-top">
+                <DetailCard class="item-detail-page-hero animate-on-hover">
+                    <div class="item-detail-page-hero-icon" aria-hidden="true">🧾</div>
+                    <div>
+                        <p v-if="currentOrder?.id" class="item-detail-page-eyebrow">{{ currentOrder.id }}</p>
+                        <h2 class="item-detail-page-hero-title">{{ heroTitle }}</h2>
+                        <p class="item-detail-page-hero-description">{{ heroDescription }}</p>
                     </div>
-                </div>
-                <p v-else>{{ t('order-target-page.loading') }}</p>
-            </div>
-        </div>
+                </DetailCard>
 
-        <div class="order-target-actions">
-            <RouterLink
-                v-if="currentOrder"
-                :to="routerLinkI18n({ name: 'OrderEdit', params: { id: currentOrder.id } })"
-            >
-                {{ t('order-target-page.button-go-to-edit') }}
-            </RouterLink>
-            <button
-                v-if="currentOrder"
-                class="theme-button"
-                :disabled="loading"
-                @click="downloadInvoice"
-            >
-                {{ t('order-target-page.button-download-invoice') }}
-            </button>
-            <RouterLink
-                :to="
-                    routerLinkI18n({
-                        name: 'OrdersList'
-                    })
-                "
-            >
-                {{ t('order-target-page.button-go-to-list') }}
-            </RouterLink>
-        </div>
+                <div class="item-detail-page-stats">
+                    <MaterialStatCard :title="t('order-target-page.label-status')" :value="orderStatus" />
+                    <MaterialStatCard
+                        :title="t('order-target-page.label-total')"
+                        :value="formatNumber(currentOrder?.total, priceFormat)"
+                        accent="secondary"
+                    />
+                    <MaterialStatCard
+                        :title="t('order-target-page.label-items')"
+                        :value="currentOrder?.items?.length ?? 0"
+                        accent="tertiary"
+                    />
+                </div>
+            </div>
+
+            <div class="item-detail-page-grid-main item-detail-page-grid-main-with-aside">
+                <DetailCard class="item-detail-page-main">
+                    <div class="item-detail-page-section-header">
+                        <h3>{{ t('generic.details') }}</h3>
+                    </div>
+
+                    <div v-if="currentOrder" class="item-detail-page-grid-fields">
+                        <ItemDetailField :label="t('order-target-page.label-order-id')" :value="currentOrder.id" icon="#" />
+                        <ItemDetailField :label="t('order-target-page.label-status')" icon="●">
+                            <span class="item-detail-page-status-chip">{{ orderStatus }}</span>
+                        </ItemDetailField>
+                        <ItemDetailField
+                            :label="t('order-target-page.label-total')"
+                            :value="formatNumber(currentOrder.total, priceFormat)"
+                            icon="💶"
+                        />
+                        <ItemDetailField
+                            :label="t('orders-list-page.filter-email')"
+                            :value="formatText(currentOrder.email)"
+                            icon="✉"
+                        />
+                        <ItemDetailField
+                            :label="t('order-target-page.label-notes')"
+                            :value="formatText(currentOrder.notes)"
+                            icon="📝"
+                            full-width
+                        />
+                    </div>
+                    <p v-else class="item-detail-page-empty">{{ t('order-target-page.loading') }}</p>
+                </DetailCard>
+
+                <DetailCard as="aside" class="item-detail-page-aside">
+                    <MaterialGraphicCard :title="heroTitle" :description="heroDescription" variant="tertiary" />
+                    <ItemDetailField
+                        :label="t('order-target-page.label-date')"
+                        :value="formatDateTime(currentOrder?.createdAt)"
+                        icon="📅"
+                    />
+                    <ItemDetailField
+                        :label="t('order-target-page.label-updated-at')"
+                        :value="formatDateTime(currentOrder?.updatedAt)"
+                        icon="🕘"
+                    />
+
+                    <div>
+                        <h3 class="item-detail-page-aside-title">{{ t('order-target-page.label-items') }}</h3>
+                        <div v-if="currentOrder?.items?.length" class="item-detail-page-item-list">
+                            <article
+                                v-for="item in currentOrder.items"
+                                :key="'order-item-' + item.product.id"
+                                class="item-detail-page-item-card"
+                            >
+                                <div class="item-detail-page-item-header">
+                                    <span>{{ item.product.title || item.product.id }}</span>
+                                    <span class="item-detail-page-status-chip">× {{ item.quantity }}</span>
+                                </div>
+                                <div class="item-detail-page-item-row">
+                                    <p>{{ t('order-target-page.label-product-id') }}</p>
+                                    <strong>{{ item.product.id }}</strong>
+                                </div>
+                            </article>
+                        </div>
+                        <p v-else class="item-detail-page-aside-text">{{ t('generic.no-data') }}</p>
+                    </div>
+                </DetailCard>
+            </div>
+
+            <div class="item-detail-page-actions">
+                <RouterLink
+                    v-if="currentOrder"
+                    :to="routerLinkI18n({ name: 'OrderEdit', params: { id: currentOrder.id } })"
+                    class="theme-button"
+                >
+                    {{ t('order-target-page.button-go-to-edit') }}
+                </RouterLink>
+                <button v-if="currentOrder" class="theme-button" :disabled="loading" @click="downloadInvoice">
+                    {{ t('order-target-page.button-download-invoice') }}
+                </button>
+                <RouterLink :to="routerLinkI18n({ name: 'OrdersList' })" class="theme-button">
+                    {{ t('order-target-page.button-go-to-list') }}
+                </RouterLink>
+            </div>
+        </section>
     </LayoutDefault>
 </template>
 
@@ -72,33 +125,69 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { onBeforeMount, defineProps } from 'vue';
+import '@/styles/pages/itemDetail.scss';
+import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/stores/orders.ts';
-import { notifyErrorMessages } from '@/utils/helperErrors.ts';
-
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
+import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
+import DetailCard from '@/components/molecules/DetailCard.vue';
+import MaterialGraphicCard from '@/components/molecules/MaterialGraphicCard.vue';
+import MaterialStatCard from '@/components/molecules/MaterialStatCard.vue';
+import { useItemDetailRecord } from '@/composables/useItemDetailRecord.ts';
+import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';
+import { notifyErrorMessages } from '@/utils/helperErrors.ts';
+import { EMPTY_VALUE } from '@/utils/constants.ts';
 
 /**
- * Generics
+ * Generic translation and notification accessors.
  */
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Route order id.
+ */
 const { id } = defineProps<{
     id?: string;
 }>();
 
 /**
- * Orders store
+ * Store API and reactive order references.
  */
-const { fetchOrder } = useOrdersStore();
-const { getOrderInvoice } = useOrdersStore();
+const { fetchOrder, getOrderInvoice } = useOrdersStore();
 const { currentOrder, selectedOrderId, loading } = storeToRefs(useOrdersStore());
 
+/**
+ * Shared value formatting helpers.
+ */
+const { formatText, formatDateTime, formatNumber } = useItemDetailDisplay();
+
+/**
+ * Decimal formatting for monetary totals.
+ */
+const priceFormat = {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+} satisfies Intl.NumberFormatOptions;
+
+/**
+ * Hero labels and localized status.
+ */
+const heroTitle = computed(() => currentOrder.value?.id ?? id ?? t('order-target-page.page-title'));
+const heroDescription = computed(() => formatText(currentOrder.value?.notes || currentOrder.value?.email));
+const orderStatus = computed(() => {
+    const status = currentOrder.value?.status;
+    return status ? t(`orders-form.status-${status}`) : EMPTY_VALUE;
+});
+
+/**
+ * Downloads the server-generated invoice as PDF.
+ */
 const downloadInvoice = async () => {
     if (!id) return;
     try {
@@ -119,23 +208,11 @@ const downloadInvoice = async () => {
 };
 
 /**
- * Get order from API
+ * Activates mount-time order loading.
  */
-onBeforeMount(() => {
-    if (!id) return;
-    // Select the current order id so selectedRecord/currentOrder
-    // will be populated when data is available
-    selectedOrderId.value = id;
-    return fetchOrder(id);
+useItemDetailRecord({
+    id,
+    selectedId: selectedOrderId,
+    fetchRecord: fetchOrder
 });
 </script>
-
-<style lang="scss">
-#order-target {
-    .order-target-actions {
-        display: flex;
-        gap: 12px;
-        margin-top: 16px;
-    }
-}
-</style>

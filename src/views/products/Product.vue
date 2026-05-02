@@ -1,67 +1,109 @@
 <template>
-    <LayoutDefault id="product-target">
+    <LayoutDefault id="product-target" class="item-detail-page">
         <template #header>
             <h1 class="theme-page-title">
                 <span>{{ t('product-target-page.page-title') }}</span>
             </h1>
         </template>
 
-        <div class="theme-card animate-on-hover">
-            <div class="card-content">
-                <div v-if="currentProduct" class="product-details">
-                    <table class="user-detail-table">
-                        <tbody>
-                            <tr>
-                                <th>{{ t('product-target-page.label-id') }}</th>
-                                <td>{{ currentProduct.id }}</td>
-                            </tr>
-                            <tr>
-                                <th>{{ t('product-target-page.label-title') }}</th>
-                                <td>{{ currentProduct.title }}</td>
-                            </tr>
-                            <tr>
-                                <th>{{ t('product-target-page.label-price') }}</th>
-                                <td>{{ currentProduct.price }}</td>
-                            </tr>
-                            <tr>
-                                <th>{{ t('product-target-page.label-description') }}</th>
-                                <td>{{ currentProduct.description || '-' }}</td>
-                            </tr>
-                            <tr>
-                                <th>{{ t('product-target-page.label-active') }}</th>
-                                <td>{{ currentProduct.active ? '✓' : '✗' }}</td>
-                            </tr>
-                            <tr v-if="currentProduct.createdAt">
-                                <th>{{ t('product-target-page.label-created-at') }}</th>
-                                <td>{{ new Date(currentProduct.createdAt).toLocaleString() }}</td>
-                            </tr>
-                            <tr v-if="currentProduct.updatedAt">
-                                <th>{{ t('product-target-page.label-updated-at') }}</th>
-                                <td>{{ new Date(currentProduct.updatedAt).toLocaleString() }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
+        <section class="item-detail-page-content">
+            <div class="item-detail-page-grid-top">
+                <DetailCard class="item-detail-page-hero animate-on-hover">
+                    <div class="item-detail-page-hero-icon" aria-hidden="true">📦</div>
+                    <div>
+                        <p v-if="currentProduct?.id" class="item-detail-page-eyebrow">{{ currentProduct.id }}</p>
+                        <h2 class="item-detail-page-hero-title">{{ heroTitle }}</h2>
+                        <p class="item-detail-page-hero-description">{{ heroDescription }}</p>
+                    </div>
+                </DetailCard>
+
+                <div class="item-detail-page-stats">
+                    <MaterialStatCard
+                        :title="t('product-target-page.label-price')"
+                        :value="formatNumber(currentProduct?.price, priceFormat)"
+                    />
+                    <MaterialStatCard
+                        :title="t('product-target-page.label-active')"
+                        :value="formatFlag(currentProduct?.active, t('generic.enabled'), t('generic.disabled'))"
+                        accent="secondary"
+                    />
+                    <MaterialStatCard
+                        :title="t('product-target-page.label-created-at')"
+                        :value="formatDateTime(currentProduct?.createdAt)"
+                        accent="tertiary"
+                    />
                 </div>
             </div>
-        </div>
 
-        <div class="product-target-actions">
-            <RouterLink
-                v-if="currentProduct"
-                :to="routerLinkI18n({ name: 'ProductEdit', params: { id: currentProduct.id } })"
-            >
-                {{ t('product-target-page.button-go-to-edit') }}
-            </RouterLink>
-            <RouterLink
-                :to="
-                    routerLinkI18n({
-                        name: 'ProductsList'
-                    })
-                "
-            >
-                {{ t('product-target-page.button-go-to-list') }}
-            </RouterLink>
-        </div>
+            <div class="item-detail-page-grid-main item-detail-page-grid-main-with-aside">
+                <DetailCard class="item-detail-page-main">
+                    <div class="item-detail-page-section-header">
+                        <h3>{{ t('generic.details') }}</h3>
+                    </div>
+
+                    <div v-if="currentProduct" class="item-detail-page-grid-fields">
+                        <ItemDetailField
+                            :label="t('product-target-page.label-id')"
+                            :value="currentProduct.id"
+                            icon="#"
+                        />
+                        <ItemDetailField
+                            :label="t('product-target-page.label-title')"
+                            :value="currentProduct.title"
+                            icon="🏷"
+                        />
+                        <ItemDetailField
+                            :label="t('product-target-page.label-price')"
+                            :value="formatNumber(currentProduct.price, priceFormat)"
+                            icon="💶"
+                        />
+                        <ItemDetailField :label="t('product-target-page.label-active')" icon="●">
+                            <span class="item-detail-page-status-chip">{{ productStatus }}</span>
+                        </ItemDetailField>
+                        <ItemDetailField
+                            :label="t('product-target-page.label-description')"
+                            :value="formatText(currentProduct.description)"
+                            icon="📝"
+                            full-width
+                        />
+                        <ItemDetailField
+                            :label="t('product-target-page.label-updated-at')"
+                            :value="formatDateTime(currentProduct.updatedAt)"
+                            icon="🕒"
+                            full-width
+                        />
+                    </div>
+                    <p v-else class="item-detail-page-empty">{{ t('generic.loading-state') }}</p>
+                </DetailCard>
+
+                <DetailCard as="aside" class="item-detail-page-aside">
+                    <MaterialGraphicCard :title="heroTitle" :description="heroDescription" variant="primary" />
+                    <ItemDetailField
+                        :label="t('product-target-page.label-created-at')"
+                        :value="formatDateTime(currentProduct?.createdAt)"
+                        icon="📅"
+                    />
+                    <ItemDetailField
+                        :label="t('product-target-page.label-updated-at')"
+                        :value="formatDateTime(currentProduct?.updatedAt)"
+                        icon="🕘"
+                    />
+                </DetailCard>
+            </div>
+
+            <div class="item-detail-page-actions">
+                <RouterLink
+                    v-if="currentProduct"
+                    :to="routerLinkI18n({ name: 'ProductEdit', params: { id: currentProduct.id } })"
+                    class="theme-button"
+                >
+                    {{ t('product-target-page.button-go-to-edit') }}
+                </RouterLink>
+                <RouterLink :to="routerLinkI18n({ name: 'ProductsList' })" class="theme-button">
+                    {{ t('product-target-page.button-go-to-list') }}
+                </RouterLink>
+            </div>
+        </section>
     </LayoutDefault>
 </template>
 
@@ -72,66 +114,75 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { onBeforeMount, defineProps } from 'vue';
+import '@/styles/pages/itemDetail.scss';
+import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useProductsStore } from '@/stores/products';
-
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
+import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
+import DetailCard from '@/components/molecules/DetailCard.vue';
+import MaterialGraphicCard from '@/components/molecules/MaterialGraphicCard.vue';
+import MaterialStatCard from '@/components/molecules/MaterialStatCard.vue';
+import { useItemDetailRecord } from '@/composables/useItemDetailRecord.ts';
+import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';
 
 /**
- * Generics
+ * Localized dictionary helper.
  */
 const { t } = useI18n();
+
+/**
+ * Route-provided product id.
+ */
 const { id } = defineProps<{
     id?: string;
 }>();
 
 /**
- * Products store
- * The composable within will have most of the logic for this kind of pages
+ * Product store selectors and fetch API.
  */
 const { fetchProduct } = useProductsStore();
 const { currentProduct, selectedProductId } = storeToRefs(useProductsStore());
 
 /**
- * Get product from API
+ * Shared value formatters for detail pages.
  */
-onBeforeMount(() => {
-    if (!id) return;
-    // Select the current product id so selectedRecord/currentProduct
-    // will be populated when data is available
-    selectedProductId.value = id;
-    return fetchProduct(id);
+const { formatText, formatDateTime, formatNumber, formatFlag } = useItemDetailDisplay();
+
+/**
+ * Currency-like number format used for product prices.
+ */
+const priceFormat = {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+} satisfies Intl.NumberFormatOptions;
+
+/**
+ * Hero title fallback chain.
+ */
+const heroTitle = computed(() => currentProduct.value?.title ?? id ?? t('product-target-page.page-title'));
+
+/**
+ * Hero secondary text.
+ */
+const heroDescription = computed(() => formatText(currentProduct.value?.description));
+
+/**
+ * Human-readable active/inactive status chip label.
+ */
+const productStatus = computed(() =>
+    formatFlag(currentProduct.value?.active, t('generic.enabled'), t('generic.disabled'))
+);
+
+/**
+ * Activates record selection + onBeforeMount record fetch.
+ */
+useItemDetailRecord({
+    id,
+    selectedId: selectedProductId,
+    fetchRecord: fetchProduct
 });
 </script>
-
-<style lang="scss">
-#product-target {
-    .user-detail-table {
-        width: 100%;
-        border-collapse: collapse;
-
-        th,
-        td {
-            padding: 10px 14px;
-            text-align: left;
-            border-bottom: 1px solid rgba(128, 128, 128, 0.2);
-        }
-
-        th {
-            width: 40%;
-            font-weight: 600;
-            color: rgba(128, 128, 128, 0.8);
-        }
-    }
-
-    .product-target-actions {
-        display: flex;
-        gap: 12px;
-        margin-top: 16px;
-    }
-}
-</style>

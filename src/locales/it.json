@@ -11,7 +11,14 @@
         "es": "spagnolo",
         "search": "Cerca",
         "reset": "Reimposta",
-        "page-size": "Dimensione pagina"
+        "page-size": "Dimensione pagina",
+        "loading-state": "Caricamento...",
+        "details": "Dettagli",
+        "enabled": "Attivo",
+        "disabled": "Disattivato",
+        "administrator": "Amministratore",
+        "standard-user": "Utente standard",
+        "no-data": "Nessun dato disponibile"
     },
     "navigation": {
         "label-home": "home",
@@ -208,7 +215,8 @@
         "loading": "Caricamento ordine...",
         "button-go-to-list": "Vai alla lista ordini",
         "button-go-to-edit": "Modifica ordine",
-        "button-download-invoice": "Scarica fattura"
+        "button-download-invoice": "Scarica fattura",
+        "label-updated-at": "Aggiornato il"
     },
     "products-form": {
         "title-required": "Il titolo è obbligatorio",
@@ -216,7 +224,13 @@
     },
     "orders-form": {
         "status-invalid": "Stato ordine non valido",
-        "email-invalid": "Deve essere un'email valida"
+        "email-invalid": "Deve essere un'email valida",
+        "status-pending": "In attesa",
+        "status-paid": "Pagato",
+        "status-processing": "In elaborazione",
+        "status-shipped": "Spedito",
+        "status-delivered": "Consegnato",
+        "status-cancelled": "Annullato"
     },
     "product-edit-page": {
         "page-title": "Modifica prodotto",

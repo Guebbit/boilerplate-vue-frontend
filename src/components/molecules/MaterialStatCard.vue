@@ -1,23 +1,22 @@
 <template>
-    <div class="theme-card material-stat-card animate-on-hover" :class="'accent-' + accent">
-        <p class="eyebrow">{{ title }}</p>
-        <p class="value">{{ value }}</p>
-        <p v-if="subtitle" class="subtitle">{{ subtitle }}</p>
+    <div class="theme-card material-stat-card animate-on-hover" :class="'accent-' + resolvedAccent">
+        <p class="eyebrow">{{ props.title }}</p>
+        <p class="value">{{ props.value }}</p>
+        <p v-if="props.subtitle" class="subtitle">{{ props.subtitle }}</p>
     </div>
 </template>
 
 <script setup lang="ts">
-withDefaults(
-    defineProps<{
-        title: string;
-        value: string | number;
-        subtitle?: string;
-        accent?: 'primary' | 'secondary' | 'tertiary';
-    }>(),
-    {
-        accent: 'primary'
-    }
-);
+import { computed } from 'vue';
+
+const props = defineProps<{
+    title: string;
+    value: string | number;
+    subtitle?: string;
+    accent?: 'primary' | 'secondary' | 'tertiary';
+}>();
+
+const resolvedAccent = computed(() => props.accent ?? 'primary');
 </script>
 
 <style lang="scss">

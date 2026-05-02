@@ -1,44 +1,92 @@
 <template>
-    <LayoutDefault id="user-edit-page">
+    <LayoutDefault id="user-edit-page" class="item-detail-page item-detail-page-user">
         <template #header>
             <h1 class="theme-page-title">
                 <span>{{ t('user-edit-page.page-title') }}</span>
             </h1>
         </template>
 
-        <div class="theme-card theme-form-container">
-            <form class="theme-form" @submit.prevent="submitForm">
-                <BaseInput
-                    v-model="form.email"
-                    type="email"
-                    :label="t('user-edit-page.label-email')"
-                    :errors="formErrors.email"
-                    :show-errors="showErrors"
-                />
-                <BaseInput
-                    v-model="form.password"
-                    type="password"
-                    :label="t('user-edit-page.label-password')"
-                    :errors="formErrors.password"
-                    :show-errors="showErrors"
-                />
-                <BaseButton type="submit" :disabled="isSubmitting || loading">
-                    {{ t('user-edit-page.button-submit') }}
-                </BaseButton>
-                <BaseButton type="button" @click="resetToCurrentUser">
-                    {{ t('user-edit-page.reset-form') }}
-                </BaseButton>
-            </form>
-        </div>
+        <section class="item-detail-page-content">
+            <div class="item-detail-page-grid-top">
+                <DetailCard class="item-detail-page-hero animate-on-hover">
+                    <div class="item-detail-page-hero-icon" aria-hidden="true">✏️</div>
+                    <div>
+                        <p v-if="id" class="item-detail-page-eyebrow">{{ id }}</p>
+                        <h2 class="item-detail-page-hero-title">{{ heroTitle }}</h2>
+                        <p class="item-detail-page-hero-description">{{ heroDescription }}</p>
+                    </div>
+                </DetailCard>
 
-        <div class="user-edit-actions">
-            <RouterLink v-if="id" :to="routerLinkI18n({ name: 'UserTarget', params: { id } })">
-                {{ t('user-edit-page.button-go-to-details') }}
-            </RouterLink>
-            <RouterLink :to="routerLinkI18n({ name: 'UsersList' })">
-                {{ t('user-edit-page.button-go-to-list') }}
-            </RouterLink>
-        </div>
+                <div class="item-detail-page-stats">
+                    <MaterialStatCard :title="t('user-target-page.label-id')" :value="id ?? EMPTY_VALUE" />
+                    <MaterialStatCard :title="t('user-target-page.label-admin')" :value="userRole" accent="secondary" />
+                    <MaterialStatCard
+                        :title="t('user-target-page.label-active')"
+                        :value="userStatus"
+                        accent="tertiary"
+                    />
+                </div>
+            </div>
+
+            <div class="item-detail-page-grid-main item-detail-page-grid-main-with-aside">
+                <DetailCard class="item-detail-page-main">
+                    <div class="item-detail-page-section-header">
+                        <h3>{{ t('generic.details') }}</h3>
+                        <p>{{ t('user-edit-page.page-title') }}</p>
+                    </div>
+
+                    <form class="theme-form item-detail-page-form" @submit.prevent="submitForm">
+                        <BaseInput
+                            v-model="form.email"
+                            type="email"
+                            :label="t('user-edit-page.label-email')"
+                            :errors="formErrors.email"
+                            :show-errors="showErrors"
+                        />
+                        <BaseInput
+                            v-model="form.password"
+                            type="password"
+                            :label="t('user-edit-page.label-password')"
+                            :errors="formErrors.password"
+                            :show-errors="showErrors"
+                        />
+
+                        <div class="item-detail-page-form-actions">
+                            <BaseButton type="submit" :disabled="isSubmitting || loading">
+                                {{ t('user-edit-page.button-submit') }}
+                            </BaseButton>
+                            <BaseButton type="button" @click="resetForm">
+                                {{ t('user-edit-page.reset-form') }}
+                            </BaseButton>
+                        </div>
+                    </form>
+                </DetailCard>
+
+                <DetailCard as="aside" class="item-detail-page-aside">
+                    <MaterialGraphicCard :title="heroTitle" :description="heroDescription" variant="secondary" />
+                    <ItemDetailField :label="t('user-target-page.label-id')" :value="id ?? EMPTY_VALUE" icon="#" />
+                    <ItemDetailField
+                        :label="t('user-target-page.label-created-at')"
+                        :value="formatDateTime(currentUser?.createdAt)"
+                        icon="📅"
+                    />
+                    <ItemDetailField
+                        :label="t('user-target-page.label-updated-at')"
+                        :value="formatDateTime(currentUser?.updatedAt)"
+                        icon="🕘"
+                    />
+                </DetailCard>
+            </div>
+
+            <div class="item-detail-page-actions">
+                <RouterLink v-if="id" :to="routerLinkI18n({ name: 'UserTarget', params: { id } })" class="theme-button">
+                    {{ t('user-edit-page.button-go-to-details') }}
+                </RouterLink>
+                <RouterLink :to="routerLinkI18n({ name: 'UsersList' })" class="theme-button">
+                    {{ t('user-edit-page.button-go-to-list') }}
+                </RouterLink>
+            </div>
+        </section>
     </LayoutDefault>
 </template>
 
@@ -49,7 +97,8 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import '@/styles/pages/itemDetail.scss';
+import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
@@ -60,29 +109,42 @@ import { z } from 'zod';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseButton from '@/components/atoms/BaseButton.vue';
+import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
+import DetailCard from '@/components/molecules/DetailCard.vue';
+import MaterialGraphicCard from '@/components/molecules/MaterialGraphicCard.vue';
+import MaterialStatCard from '@/components/molecules/MaterialStatCard.vue';
+import { useItemDetailRecord } from '@/composables/useItemDetailRecord.ts';
+import { useItemDetailForm } from '@/composables/useItemDetailForm.ts';
+import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';
 import { notifyErrorMessages } from '@/utils/helperErrors.ts';
+import { EMPTY_VALUE } from '@/utils/constants.ts';
 
 /**
- * Generics
+ * Generic i18n/notifications helpers.
  */
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
- * Props
+ * User id route param.
  */
 const { id } = defineProps<{
     id?: string;
 }>();
 
 /**
- * Users store
+ * User store APIs and references.
  */
 const { fetchUser, updateUser, zodSchemaUsers, zodSchemaUsersPassword } = useUsersStore();
 const { currentUser, selectedUserId, loading } = storeToRefs(useUsersStore());
 
 /**
- * Form definition
+ * Shared display formatting helpers.
+ */
+const { formatText, formatDateTime, formatFlag } = useItemDetailDisplay();
+
+/**
+ * Edit form data model.
  */
 interface IUserEditForm {
     email?: string;
@@ -90,46 +152,46 @@ interface IUserEditForm {
 }
 
 /**
- * Password is optional on edit: empty string means "do not change"
+ * Edit validation schema with optional password replacement.
  */
 const editSchema = zodSchemaUsers.pick({ email: true }).extend({
     password: z.preprocess((v) => (v === '' ? undefined : v), zodSchemaUsersPassword.optional())
 });
 
+/**
+ * Toolkit form bindings.
+ */
 const { form, formErrors, isSubmitting, handleSubmit } = useStructureFormValidation<IUserEditForm>(
     {},
     editSchema
 );
 
 /**
- * Whether to display validation errors in the UI
+ * Shared watcher-based form hydration.
  */
-const showErrors = ref(false);
-
-/**
- * Reset form to the current user's data
- */
-const resetToCurrentUser = () => {
-    form.value = {
-        email: currentUser.value?.email ?? '',
+const { showErrors, resetForm } = useItemDetailForm({
+    currentItem: currentUser,
+    form,
+    mapToForm: (user) => ({
+        email: user?.email ?? '',
         password: ''
-    };
-    showErrors.value = false;
-};
+    })
+});
 
 /**
- * When the user data is loaded, pre-fill the form
+ * Hero and status labels.
  */
-watch(
-    currentUser,
-    (user) => {
-        if (user) resetToCurrentUser();
-    },
-    { immediate: true }
+const heroTitle = computed(() => currentUser.value?.username ?? id ?? t('user-edit-page.page-title'));
+const heroDescription = computed(() => formatText(currentUser.value?.email));
+const userRole = computed(() =>
+    formatFlag(currentUser.value?.admin, t('generic.administrator'), t('generic.standard-user'))
+);
+const userStatus = computed(() =>
+    formatFlag(currentUser.value?.active, t('generic.enabled'), t('generic.disabled'))
 );
 
 /**
- * Submit form and update the user
+ * Validates and persists user updates.
  */
 const submitForm = () =>
     handleSubmit(async () => {
@@ -147,26 +209,11 @@ const submitForm = () =>
         .catch((error) => notifyErrorMessages(addMessage, error));
 
 /**
- * Load user data on mount
+ * Activates route selection + onBeforeMount record load.
  */
-if (id) {
-    selectedUserId.value = id;
-    fetchUser(id);
-}
+useItemDetailRecord({
+    id,
+    selectedId: selectedUserId,
+    fetchRecord: fetchUser
+});
 </script>
-
-<style lang="scss">
-#user-edit-page {
-    .theme-form-container {
-        max-width: 600px;
-        margin: 100px auto;
-        padding: 2rem;
-    }
-
-    .user-edit-actions {
-        display: flex;
-        gap: 12px;
-        margin-top: 16px;
-    }
-}
-</style>

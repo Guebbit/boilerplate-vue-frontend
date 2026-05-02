@@ -11,7 +11,14 @@
         "es": "spanish",
         "search": "Search",
         "reset": "Reset",
-        "page-size": "Page size"
+        "page-size": "Page size",
+        "loading-state": "Loading...",
+        "details": "Details",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "administrator": "Administrator",
+        "standard-user": "Standard user",
+        "no-data": "No data available"
     },
     "navigation": {
         "label-home": "home",
@@ -208,7 +215,8 @@
         "loading": "Loading order...",
         "button-go-to-list": "Go to orders list",
         "button-go-to-edit": "Edit order",
-        "button-download-invoice": "Download invoice"
+        "button-download-invoice": "Download invoice",
+        "label-updated-at": "Updated at"
     },
     "products-form": {
         "title-required": "Title is required",
@@ -216,7 +224,13 @@
     },
     "orders-form": {
         "status-invalid": "Invalid order status",
-        "email-invalid": "Must be a valid email"
+        "email-invalid": "Must be a valid email",
+        "status-pending": "Pending",
+        "status-paid": "Paid",
+        "status-processing": "Processing",
+        "status-shipped": "Shipped",
+        "status-delivered": "Delivered",
+        "status-cancelled": "Cancelled"
     },
     "product-edit-page": {
         "page-title": "Edit product",
