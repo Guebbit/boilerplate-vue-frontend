@@ -23,6 +23,16 @@
                     :show-errors="showErrors"
                 />
                 <BaseCheckbox v-model="form.remember" :label="t('login-page.label-remember')" />
+                <RouterLink
+                    :to="
+                        routerLinkI18n({
+                            name: 'PasswordResetRequest'
+                        })
+                    "
+                    class="login-page-password-reset-link"
+                >
+                    {{ t('login-page.link-password-reset') }}
+                </RouterLink>
                 <BaseButton type="submit">
                     {{ t('login-page.button-submit') }}
                 </BaseButton>
@@ -39,7 +49,7 @@ export default {
 
 <script setup lang="ts">
 import { nextTick, ref } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { RouterLink, useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
@@ -51,6 +61,7 @@ import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
 import BaseButton from '@/components/atoms/BaseButton.vue';
 import { notifyErrorMessages } from '@/utils/helperErrors.ts';
 import { focusFirstErrorField } from '@/utils/helperForms.ts';
+import { routerLinkI18n } from '@/utils/i18n.ts';
 import type { LoginRequest } from '@api';
 
 /**
@@ -126,6 +137,11 @@ const submitForm = async () => {
         max-width: 400px;
         margin: 100px auto;
         padding: 2rem;
+    }
+
+    .login-page-password-reset-link {
+        display: inline-flex;
+        margin-bottom: 1rem;
     }
 }
 </style>

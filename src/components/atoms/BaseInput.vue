@@ -30,7 +30,6 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { getUuid } from '@guebbit/js-toolkit';
 
 /**
  * Reusable form field: wraps a text/password/email/number/url/tel input (or textarea)
@@ -50,7 +49,7 @@ const props = defineProps<{
     showErrors?: boolean;
 }>();
 
-const uuid = getUuid();
+const uuid = globalThis.crypto.randomUUID();
 const model = defineModel<string | number | undefined>();
 
 /**

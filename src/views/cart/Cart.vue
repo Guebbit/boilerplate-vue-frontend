@@ -61,8 +61,8 @@
                 <p>{{ t('cart-page.label-items-count') }}: {{ cartSummary.itemsCount }}</p>
                 <p>{{ t('cart-page.label-total-quantity') }}: {{ cartSummary.totalQuantity }}</p>
                 <p>
-                    {{ t('cart-page.label-total') }}: {{ cartSummary.total }}
-                    {{ cartSummary.currency }}
+                    {{ t('cart-page.label-total') }}:
+                    {{ formatCurrency(cartSummary.total, cartSummary.currency) }}
                 </p>
             </div>
 
@@ -94,6 +94,7 @@ import { useCartStore } from '@/stores/cart.ts';
 import { useOrdersStore } from '@/stores/orders.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { notifyErrorMessages } from '@/utils/helperErrors.ts';
+import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 
@@ -103,6 +104,7 @@ import LayoutDefault from '@/layouts/LayoutDefault.vue';
 const { t } = useI18n();
 const router = useRouter();
 const { addMessage } = useNotificationsStore();
+const { formatCurrency } = useItemDetailDisplay();
 
 /**
  * Cart store

@@ -23,7 +23,6 @@
     "navigation": {
         "label-home": "home",
         "label-playground": "playground",
-        "label-admin": "amministrazione",
         "label-users-list": "@:generic.list @:generic.user",
         "label-products-list": "@:generic.list @:generic.product",
         "label-profile": "Profilo",
@@ -67,9 +66,6 @@
         "placeholder-card-2-description": "Card visive semplici che migliorano il layout mentre i contenuti evolvono.",
         "placeholder-card-3-title": "Struttura scalabile",
         "placeholder-card-3-description": "Componenti componibili progettati per estendersi facilmente tra le viste."
-    },
-    "admin-page": {
-        "page-title": "Admin Dashboard"
     },
     "error-page": {
         "page-title": "Errore",
@@ -153,6 +149,7 @@
         "label-email": "Email",
         "label-password": "Password",
         "label-remember": "Ricorda il mio accesso",
+        "link-password-reset": "Password dimenticata?",
         "text-conditions": "Ho letto le condizioni della privacy",
         "button-submit": "Login"
     },
@@ -164,6 +161,23 @@
         "text-conditions": "Ho letto le condizioni della privacy",
         "button-submit": "Registrati",
         "success-email-code-sent": "Registrazione completata. Ti abbiamo inviato un'email con un codice di verifica."
+    },
+    "password-reset-request-page": {
+        "page-title": "Reimposta password",
+        "label-email": "Email",
+        "button-submit": "Invia token di reset",
+        "button-go-to-login": "Torna al login",
+        "success": "Se l'account esiste, abbiamo inviato un token di reset alla tua email."
+    },
+    "password-reset-confirm-page": {
+        "page-title": "Conferma reset password",
+        "label-token": "Token di reset",
+        "label-password": "Nuova password",
+        "label-password-confirm": "Conferma nuova password",
+        "token-required": "Il token di reset è obbligatorio",
+        "button-submit": "Aggiorna password",
+        "button-go-to-login": "Torna al login",
+        "success": "Password aggiornata con successo. Ora puoi effettuare il login."
     },
     "profile-page": {
         "page-title": "Il tuo profilo",

@@ -103,6 +103,24 @@ export const useProfileStore = defineStore('profile', () => {
     ) => fetchAny(() => authApi.signup(email, username, password, passwordConfirm));
 
     /**
+     * Starts password reset flow by sending a token to the provided email.
+     *
+     * @param email
+     */
+    const requestPasswordReset = (email: string) =>
+        fetchAny(() => authApi.requestPasswordReset({ email }));
+
+    /**
+     * Completes password reset using one-time token and the new password.
+     *
+     * @param token
+     * @param password
+     * @param passwordConfirm
+     */
+    const confirmPasswordReset = (token: string, password: string, passwordConfirm: string) =>
+        fetchAny(() => authApi.confirmPasswordReset({ token, password, passwordConfirm }));
+
+    /**
      * Refresh access token
      */
     const refreshToken = () =>
@@ -189,6 +207,8 @@ export const useProfileStore = defineStore('profile', () => {
         accessToken,
         login,
         signup,
+        requestPasswordReset,
+        confirmPasswordReset,
         refreshToken,
         fetchProfile,
         updateProfile,

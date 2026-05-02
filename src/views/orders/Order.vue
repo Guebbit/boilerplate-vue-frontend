@@ -21,7 +21,7 @@
                     <MaterialStatCard :title="t('order-target-page.label-status')" :value="orderStatus" />
                     <MaterialStatCard
                         :title="t('order-target-page.label-total')"
-                        :value="formatNumber(currentOrder?.total, priceFormat)"
+                        :value="formatCurrency(currentOrder?.total)"
                         accent="secondary"
                     />
                     <MaterialStatCard
@@ -45,7 +45,7 @@
                         </ItemDetailField>
                         <ItemDetailField
                             :label="t('order-target-page.label-total')"
-                            :value="formatNumber(currentOrder.total, priceFormat)"
+                            :value="formatCurrency(currentOrder.total)"
                             icon="💶"
                         />
                         <ItemDetailField
@@ -165,15 +165,7 @@ const { currentOrder, selectedOrderId, loading } = storeToRefs(useOrdersStore())
 /**
  * Shared value formatting helpers.
  */
-const { formatText, formatDateTime, formatNumber } = useItemDetailDisplay();
-
-/**
- * Decimal formatting for monetary totals.
- */
-const priceFormat = {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-} satisfies Intl.NumberFormatOptions;
+const { formatText, formatDateTime, formatCurrency } = useItemDetailDisplay();
 
 /**
  * Hero labels and localized status.

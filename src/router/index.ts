@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory, RouterView } from 'vue-router';
 import { demoMiddleware } from '@/middlewares/demoMiddleware';
 import { localeChoice } from '@/middlewares/localeChoice';
-import { isAuth } from '@/middlewares/authentications.ts';
 import { getDefaultLocale } from '@/utils/i18n.ts';
 
 import accountRoutes from './accountRoutes';
@@ -43,16 +42,6 @@ const router = createRouter({
                     name: 'Playground',
                     component: () => import('@/views/core/Playground.vue')
                 },
-                {
-                    path: 'admin',
-                    name: 'Admin',
-                    // route level code-splitting
-                    // this generates a separate chunk (About.[hash].js) for this route
-                    // which is lazy-loaded when the route is visited.
-                    component: () => import('@/views/core/Admin.vue'),
-                    beforeEnter: [isAuth]
-                },
-
                 ...accountRoutes,
                 ...productsRoutes,
                 ...usersRoutes,

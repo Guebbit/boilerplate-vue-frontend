@@ -9,7 +9,6 @@
 </template>
 
 <script setup lang="ts">
-import { getUuid } from '@guebbit/js-toolkit';
 
 /**
  * Reusable checkbox field: wraps a checkbox input with a label in the
@@ -22,6 +21,6 @@ defineProps<{
     showErrors?: boolean;
 }>();
 
-const uuid = getUuid();
+const uuid = globalThis.crypto.randomUUID();
 const model = defineModel<boolean | undefined>();
 </script>
