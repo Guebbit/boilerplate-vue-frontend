@@ -1,6 +1,6 @@
 <template>
     <article class="item-detail-field" :class="{ 'item-detail-field-full-width': props.fullWidth }">
-        <div class="item-detail-field-icon" aria-hidden="true">{{ props.icon ?? '•' }}</div>
+        <div class="item-detail-field-icon" aria-hidden="true">{{ props.icon ?? '' }}</div>
         <div class="item-detail-field-content">
             <p class="item-detail-field-label">{{ props.label }}</p>
             <div class="item-detail-field-value">
