@@ -21,7 +21,7 @@ const bootstrapApplication = async () => {
     await initializeApiMocking();
     const app = createApp(App);
 
-    const sentryDsn = (import.meta.env.VITE_SENTRY_DSN as string | undefined) ?? '';
+    const sentryDsn = (import.meta.env.VITE_SENTRY_DSN as string | undefined)?.trim();
     const tracesSampleRateRaw =
         (import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE as string | undefined) ?? '0';
     const tracesSampleRate = Number.parseFloat(tracesSampleRateRaw);
