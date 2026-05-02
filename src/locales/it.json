@@ -215,7 +215,8 @@
         "loading": "Caricamento ordine...",
         "button-go-to-list": "Vai alla lista ordini",
         "button-go-to-edit": "Modifica ordine",
-        "button-download-invoice": "Scarica fattura"
+        "button-download-invoice": "Scarica fattura",
+        "label-updated-at": "Aggiornato il"
     },
     "products-form": {
         "title-required": "Il titolo è obbligatorio",

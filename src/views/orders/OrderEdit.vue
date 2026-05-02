@@ -70,7 +70,7 @@
                         icon="📅"
                     />
                     <ItemDetailField
-                        :label="t('product-target-page.label-updated-at')"
+                        :label="t('order-target-page.label-updated-at')"
                         :value="formatDateTime(currentOrder?.updatedAt)"
                         icon="🕘"
                     />
