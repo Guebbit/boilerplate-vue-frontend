@@ -12,7 +12,7 @@ export const useItemDetailRecord = ({
     fetchRecord
 }: IUseItemDetailRecordOptions) => {
     const loadRecord = () => {
-        if (!id) return Promise.resolve(undefined);
+        if (!id) return Promise.resolve();
         selectedId.value = id;
         return fetchRecord(id);
     };

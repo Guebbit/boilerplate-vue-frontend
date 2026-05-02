@@ -1,3 +1,8 @@
+const defaultNumberFormat: Intl.NumberFormatOptions = {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 0
+};
+
 export const useItemDetailDisplay = () => {
     const emptyValue = '—';
 
@@ -9,10 +14,7 @@ export const useItemDetailDisplay = () => {
 
     const formatNumber = (
         value?: number | null,
-        options: Intl.NumberFormatOptions = {
-            maximumFractionDigits: 2,
-            minimumFractionDigits: 0
-        }
+        options: Intl.NumberFormatOptions = defaultNumberFormat
     ) => (typeof value === 'number' ? new Intl.NumberFormat(undefined, options).format(value) : emptyValue);
 
     const formatFlag = (value: boolean | null | undefined, trueLabel: string, falseLabel: string) => {
@@ -23,7 +25,7 @@ export const useItemDetailDisplay = () => {
     const formatEnumLabel = (value?: string | null) => {
         if (!value) return emptyValue;
         return value
-            .split(/[-_\s]+/)
+.split(/[\s_-]+/)
             .filter(Boolean)
             .map((token) => token[0]?.toUpperCase() + token.slice(1))
             .join(' ');
