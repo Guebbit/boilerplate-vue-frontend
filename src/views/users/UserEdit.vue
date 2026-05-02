@@ -8,17 +8,17 @@
 
         <section class="item-detail-page-content">
             <div class="item-detail-page-grid-top">
-                <article class="theme-card theme-card-detail item-detail-page-hero animate-on-hover">
+                <DetailCard class="item-detail-page-hero animate-on-hover">
                     <div class="item-detail-page-hero-icon" aria-hidden="true">✏️</div>
                     <div>
                         <p v-if="id" class="item-detail-page-eyebrow">{{ id }}</p>
                         <h2 class="item-detail-page-hero-title">{{ heroTitle }}</h2>
                         <p class="item-detail-page-hero-description">{{ heroDescription }}</p>
                     </div>
-                </article>
+                </DetailCard>
 
                 <div class="item-detail-page-stats">
-                    <MaterialStatCard :title="t('user-target-page.label-id')" :value="id ?? emptyValue" />
+                    <MaterialStatCard :title="t('user-target-page.label-id')" :value="id ?? EMPTY_VALUE" />
                     <MaterialStatCard :title="t('user-target-page.label-admin')" :value="userRole" accent="secondary" />
                     <MaterialStatCard
                         :title="t('user-target-page.label-active')"
@@ -29,7 +29,7 @@
             </div>
 
             <div class="item-detail-page-grid-main item-detail-page-grid-main-with-aside">
-                <article class="theme-card theme-card-detail item-detail-page-main">
+                <DetailCard class="item-detail-page-main">
                     <div class="item-detail-page-section-header">
                         <h3>{{ t('generic.details') }}</h3>
                         <p>{{ t('user-edit-page.page-title') }}</p>
@@ -60,11 +60,11 @@
                             </BaseButton>
                         </div>
                     </form>
-                </article>
+                </DetailCard>
 
-                <aside class="theme-card theme-card-detail item-detail-page-aside">
+                <DetailCard as="aside" class="item-detail-page-aside">
                     <MaterialGraphicCard :title="heroTitle" :description="heroDescription" variant="secondary" />
-                    <ItemDetailField :label="t('user-target-page.label-id')" :value="id ?? emptyValue" icon="#" />
+                    <ItemDetailField :label="t('user-target-page.label-id')" :value="id ?? EMPTY_VALUE" icon="#" />
                     <ItemDetailField
                         :label="t('user-target-page.label-created-at')"
                         :value="formatDateTime(currentUser?.createdAt)"
@@ -75,7 +75,7 @@
                         :value="formatDateTime(currentUser?.updatedAt)"
                         icon="🕘"
                     />
-                </aside>
+                </DetailCard>
             </div>
 
             <div class="item-detail-page-actions">
@@ -110,12 +110,14 @@ import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseButton from '@/components/atoms/BaseButton.vue';
 import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
+import DetailCard from '@/components/molecules/DetailCard.vue';
 import MaterialGraphicCard from '@/components/molecules/MaterialGraphicCard.vue';
 import MaterialStatCard from '@/components/molecules/MaterialStatCard.vue';
 import { useItemDetailRecord } from '@/composables/useItemDetailRecord.ts';
 import { useItemDetailForm } from '@/composables/useItemDetailForm.ts';
 import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';
 import { notifyErrorMessages } from '@/utils/helperErrors.ts';
+import { EMPTY_VALUE } from '@/utils/constants.ts';
 
 /**
  * Generic i18n/notifications helpers.
@@ -139,7 +141,7 @@ const { currentUser, selectedUserId, loading } = storeToRefs(useUsersStore());
 /**
  * Shared display formatting helpers.
  */
-const { emptyValue, formatText, formatDateTime, formatFlag } = useItemDetailDisplay();
+const { formatText, formatDateTime, formatFlag } = useItemDetailDisplay();
 
 /**
  * Edit form data model.

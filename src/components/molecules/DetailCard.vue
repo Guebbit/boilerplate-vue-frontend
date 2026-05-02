@@ -1,4 +1,20 @@
-.theme-card.theme-card-detail {
+<template>
+    <component :is="as" class="theme-card detail-card" v-bind="$attrs">
+        <slot />
+    </component>
+</template>
+
+<script setup lang="ts">
+/**
+ * Lightweight wrapper around the generic theme card for detail-page surfaces.
+ */
+const { as = 'article' } = defineProps<{
+    as?: 'article' | 'aside' | 'div' | 'section';
+}>();
+</script>
+
+<style lang="scss">
+.detail-card {
     --background: var(--theme-surface);
     --text-color: var(--theme-on-surface);
     --active-background: var(--theme-surface);
@@ -14,3 +30,4 @@
         opacity: 1;
     }
 }
+</style>

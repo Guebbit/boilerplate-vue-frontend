@@ -13,16 +13,15 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(
-    defineProps<{
-        title: string;
-        description: string;
-        variant?: 'primary' | 'secondary' | 'tertiary';
-    }>(),
-    {
-        variant: 'primary'
-    }
-);
+const {
+    title,
+    description,
+    variant = 'primary'
+} = defineProps<{
+    title: string;
+    description: string;
+    variant?: 'primary' | 'secondary' | 'tertiary';
+}>();
 </script>
 
 <style lang="scss">

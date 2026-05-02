@@ -7,17 +7,17 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(
-    defineProps<{
-        title: string;
-        value: string | number;
-        subtitle?: string;
-        accent?: 'primary' | 'secondary' | 'tertiary';
-    }>(),
-    {
-        accent: 'primary'
-    }
-);
+const {
+    title,
+    value,
+    subtitle,
+    accent = 'primary'
+} = defineProps<{
+    title: string;
+    value: string | number;
+    subtitle?: string;
+    accent?: 'primary' | 'secondary' | 'tertiary';
+}>();
 </script>
 
 <style lang="scss">

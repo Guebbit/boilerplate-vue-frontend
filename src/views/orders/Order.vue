@@ -8,14 +8,14 @@
 
         <section class="item-detail-page-content">
             <div class="item-detail-page-grid-top">
-                <article class="theme-card theme-card-detail item-detail-page-hero animate-on-hover">
+                <DetailCard class="item-detail-page-hero animate-on-hover">
                     <div class="item-detail-page-hero-icon" aria-hidden="true">🧾</div>
                     <div>
                         <p v-if="currentOrder?.id" class="item-detail-page-eyebrow">{{ currentOrder.id }}</p>
                         <h2 class="item-detail-page-hero-title">{{ heroTitle }}</h2>
                         <p class="item-detail-page-hero-description">{{ heroDescription }}</p>
                     </div>
-                </article>
+                </DetailCard>
 
                 <div class="item-detail-page-stats">
                     <MaterialStatCard :title="t('order-target-page.label-status')" :value="orderStatus" />
@@ -33,7 +33,7 @@
             </div>
 
             <div class="item-detail-page-grid-main item-detail-page-grid-main-with-aside">
-                <article class="theme-card theme-card-detail item-detail-page-main">
+                <DetailCard class="item-detail-page-main">
                     <div class="item-detail-page-section-header">
                         <h3>{{ t('generic.details') }}</h3>
                     </div>
@@ -56,14 +56,14 @@
                         <ItemDetailField
                             :label="t('order-target-page.label-notes')"
                             :value="formatText(currentOrder.notes)"
-                            icon="��"
+                            icon="📝"
                             full-width
                         />
                     </div>
                     <p v-else class="item-detail-page-empty">{{ t('order-target-page.loading') }}</p>
-                </article>
+                </DetailCard>
 
-                <aside class="theme-card theme-card-detail item-detail-page-aside">
+                <DetailCard as="aside" class="item-detail-page-aside">
                     <MaterialGraphicCard :title="heroTitle" :description="heroDescription" variant="tertiary" />
                     <ItemDetailField
                         :label="t('order-target-page.label-date')"
@@ -96,7 +96,7 @@
                         </div>
                         <p v-else class="item-detail-page-aside-text">{{ t('generic.no-data') }}</p>
                     </div>
-                </aside>
+                </DetailCard>
             </div>
 
             <div class="item-detail-page-actions">
@@ -135,11 +135,13 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/stores/orders.ts';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
+import DetailCard from '@/components/molecules/DetailCard.vue';
 import MaterialGraphicCard from '@/components/molecules/MaterialGraphicCard.vue';
 import MaterialStatCard from '@/components/molecules/MaterialStatCard.vue';
 import { useItemDetailRecord } from '@/composables/useItemDetailRecord.ts';
 import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';
 import { notifyErrorMessages } from '@/utils/helperErrors.ts';
+import { EMPTY_VALUE } from '@/utils/constants.ts';
 
 /**
  * Generic translation and notification accessors.
@@ -180,7 +182,7 @@ const heroTitle = computed(() => currentOrder.value?.id ?? id ?? t('order-target
 const heroDescription = computed(() => formatText(currentOrder.value?.notes || currentOrder.value?.email));
 const orderStatus = computed(() => {
     const status = currentOrder.value?.status;
-    return status ? t(`orders-form.status-${status}`) : '—';
+    return status ? t(`orders-form.status-${status}`) : EMPTY_VALUE;
 });
 
 /**

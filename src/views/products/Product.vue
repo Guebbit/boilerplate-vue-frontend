@@ -8,14 +8,14 @@
 
         <section class="item-detail-page-content">
             <div class="item-detail-page-grid-top">
-                <article class="theme-card theme-card-detail item-detail-page-hero animate-on-hover">
+                <DetailCard class="item-detail-page-hero animate-on-hover">
                     <div class="item-detail-page-hero-icon" aria-hidden="true">📦</div>
                     <div>
                         <p v-if="currentProduct?.id" class="item-detail-page-eyebrow">{{ currentProduct.id }}</p>
                         <h2 class="item-detail-page-hero-title">{{ heroTitle }}</h2>
                         <p class="item-detail-page-hero-description">{{ heroDescription }}</p>
                     </div>
-                </article>
+                </DetailCard>
 
                 <div class="item-detail-page-stats">
                     <MaterialStatCard
@@ -36,7 +36,7 @@
             </div>
 
             <div class="item-detail-page-grid-main item-detail-page-grid-main-with-aside">
-                <article class="theme-card theme-card-detail item-detail-page-main">
+                <DetailCard class="item-detail-page-main">
                     <div class="item-detail-page-section-header">
                         <h3>{{ t('generic.details') }}</h3>
                     </div>
@@ -74,9 +74,9 @@
                         />
                     </div>
                     <p v-else class="item-detail-page-empty">{{ t('generic.loading-state') }}</p>
-                </article>
+                </DetailCard>
 
-                <aside class="theme-card theme-card-detail item-detail-page-aside">
+                <DetailCard as="aside" class="item-detail-page-aside">
                     <MaterialGraphicCard :title="heroTitle" :description="heroDescription" variant="primary" />
                     <ItemDetailField
                         :label="t('product-target-page.label-created-at')"
@@ -88,7 +88,7 @@
                         :value="formatDateTime(currentProduct?.updatedAt)"
                         icon="🕘"
                     />
-                </aside>
+                </DetailCard>
             </div>
 
             <div class="item-detail-page-actions">
@@ -123,6 +123,7 @@ import { storeToRefs } from 'pinia';
 import { useProductsStore } from '@/stores/products';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
+import DetailCard from '@/components/molecules/DetailCard.vue';
 import MaterialGraphicCard from '@/components/molecules/MaterialGraphicCard.vue';
 import MaterialStatCard from '@/components/molecules/MaterialStatCard.vue';
 import { useItemDetailRecord } from '@/composables/useItemDetailRecord.ts';

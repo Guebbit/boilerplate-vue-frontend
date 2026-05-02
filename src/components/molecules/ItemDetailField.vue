@@ -12,30 +12,29 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { EMPTY_VALUE } from '@/utils/constants.ts';
 
 /**
  * Atomic read-only field used by detail pages to render one label/value pair.
  */
-const props = withDefaults(
-    defineProps<{
-        label: string;
-        value?: string | number | null;
-        icon?: string;
-        fullWidth?: boolean;
-    }>(),
-    {
-        value: undefined,
-        icon: '•',
-        fullWidth: false
-    }
-);
+const {
+    label,
+    value,
+    icon = '•',
+    fullWidth = false
+} = defineProps<{
+    label: string;
+    value?: string | number | null;
+    icon?: string;
+    fullWidth?: boolean;
+}>();
 
 /**
  * Normalizes empty-like values to a single fallback glyph.
  */
 const displayValue = computed(() => {
-    if (props.value === undefined || props.value === null || props.value === '') return '—';
-    return String(props.value);
+    if (value === undefined || value === null || value === '') return EMPTY_VALUE;
+    return String(value);
 });
 </script>
 
