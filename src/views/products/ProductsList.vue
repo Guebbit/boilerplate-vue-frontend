@@ -27,6 +27,11 @@
                 :label="t('products-list-page.filter-max-price')"
                 type="number"
             />
+            <BaseSelect
+                v-model="pageSize"
+                :label="t('generic.page-size')"
+                :options="pageSizeOptions"
+            />
             <div class="list-filters-actions">
                 <button type="submit" class="theme-button">{{ t('generic.search') }}</button>
                 <button type="button" class="theme-button" @click="handleReset">
@@ -97,7 +102,7 @@ export default {
 
 <script setup lang="ts">
 import '@/styles/pages/productsList.scss';
-import { computed, onMounted, reactive, watch } from 'vue';
+import { computed, reactive } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
@@ -111,6 +116,8 @@ import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import ListPagination from '@/components/molecules/ListPagination.vue';
 import CoreDataTable from '@/components/molecules/CoreDataTable.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
+import BaseSelect from '@/components/atoms/BaseSelect.vue';
+import { useListPage } from '@/composables/useListPage.ts';
 
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
@@ -119,9 +126,12 @@ const { fetchSearchProducts, deleteProduct } = useProductsStore();
 const { pageItemList, selectedProductId, pageCurrent, pageTotal, pageSize, loading } =
     storeToRefs(useProductsStore());
 
-pageSize.value = 10;
-
 const filters = reactive<Omit<SearchProductsRequest, 'page' | 'pageSize'>>({});
+const pageSizeOptions = [
+    { value: 10, label: '10' },
+    { value: 25, label: '25' },
+    { value: 50, label: '50' }
+];
 
 const tableHeaders = computed(() => [
     { title: t('products-list-page.column-id'), key: 'id' },
@@ -132,20 +142,13 @@ const tableHeaders = computed(() => [
     { title: t('products-list-page.column-actions'), key: 'actions' }
 ]);
 
-const handleSearch = () => {
-    pageCurrent.value = 1;
-    fetchSearchProducts(filters, 1, pageSize.value).catch((error) =>
-        notifyErrorMessages(addMessage, error)
-    );
-};
-
-const handleReset = () => {
-    for (const k of Object.keys(filters)) delete (filters as Record<string, unknown>)[k];
-    pageCurrent.value = 1;
-    fetchSearchProducts({}, 1, pageSize.value, true).catch((error) =>
-        notifyErrorMessages(addMessage, error)
-    );
-};
+const { handleSearch, handleReset } = useListPage({
+    filters,
+    pageCurrent,
+    pageSize,
+    fetchSearch: fetchSearchProducts,
+    onError: (error) => notifyErrorMessages(addMessage, error)
+});
 
 const handleDelete = (productId: string) => {
     if (!confirm(t('products-list-page.confirm-delete'))) return;
@@ -155,16 +158,4 @@ const handleDelete = (productId: string) => {
 };
 
 const formatDate = (date?: string) => (date ? new Date(date).toLocaleDateString() : '-');
-
-onMounted(() =>
-    fetchSearchProducts(filters, Math.max(1, pageCurrent.value), pageSize.value).catch((error) =>
-        notifyErrorMessages(addMessage, error)
-    )
-);
-
-watch([pageCurrent, pageSize], ([currentPage, currentPageSize]) => {
-    fetchSearchProducts(filters, Math.max(1, currentPage), currentPageSize).catch((error) =>
-        notifyErrorMessages(addMessage, error)
-    );
-});
 </script>

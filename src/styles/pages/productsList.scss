@@ -1,44 +1,7 @@
 @use 'itemList';
 
 #products-list-page {
-    .users-table-wrapper {
-        overflow-x: auto;
-        margin-bottom: 16px;
-    }
-
-    .users-table {
-        width: 100%;
-        border-collapse: collapse;
-
-        th,
-        td {
-            padding: 10px 14px;
-            text-align: left;
-            border-bottom: 1px solid rgba(128, 128, 128, 0.3);
-        }
-
-        thead tr {
-            background: rgba(128, 128, 128, 0.1);
-        }
-
-        tbody tr {
-            cursor: pointer;
-            transition: background 0.2s;
-
-            &:hover,
-            &.active {
-                background: rgba(128, 128, 128, 0.15);
-            }
-        }
-
-        .actions-cell {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-    }
-
-    .list-pagination {
-        margin: 24px auto;
-    }
+    --table-row-hover: rgba(var(--primary-100) / 0.2);
+    --table-row-active: rgba(var(--primary-200) / 0.35);
+    --table-header-background: rgba(var(--primary-100) / 0.3);
 }

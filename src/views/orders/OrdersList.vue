@@ -27,6 +27,11 @@
                 :label="t('orders-list-page.filter-email')"
                 :placeholder="t('orders-list-page.filter-email')"
             />
+            <BaseSelect
+                v-model="pageSize"
+                :label="t('generic.page-size')"
+                :options="pageSizeOptions"
+            />
             <div class="list-filters-actions">
                 <button type="submit" class="theme-button">{{ t('generic.search') }}</button>
                 <button type="button" class="theme-button" @click="handleReset">
@@ -91,7 +96,7 @@ export default {
 
 <script setup lang="ts">
 import '@/styles/pages/ordersList.scss';
-import { computed, onMounted, reactive, watch } from 'vue';
+import { computed, reactive } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
@@ -105,6 +110,8 @@ import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import ListPagination from '@/components/molecules/ListPagination.vue';
 import CoreDataTable from '@/components/molecules/CoreDataTable.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
+import BaseSelect from '@/components/atoms/BaseSelect.vue';
+import { useListPage } from '@/composables/useListPage.ts';
 
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
@@ -113,9 +120,12 @@ const { fetchSearchOrders, deleteOrder } = useOrdersStore();
 const { ordersList, pageItemList, selectedOrderId, pageCurrent, pageTotal, pageSize, loading } =
     storeToRefs(useOrdersStore());
 
-pageSize.value = 10;
-
 const filters = reactive<Omit<SearchOrdersRequest, 'page' | 'pageSize'>>({});
+const pageSizeOptions = [
+    { value: 10, label: '10' },
+    { value: 25, label: '25' },
+    { value: 50, label: '50' }
+];
 
 const tableHeaders = computed(() => [
     { title: t('orders-list-page.column-id'), key: 'id' },
@@ -125,20 +135,13 @@ const tableHeaders = computed(() => [
     { title: t('orders-list-page.column-actions'), key: 'actions' }
 ]);
 
-const handleSearch = () => {
-    pageCurrent.value = 1;
-    fetchSearchOrders(filters, 1, pageSize.value).catch((error) =>
-        notifyErrorMessages(addMessage, error)
-    );
-};
-
-const handleReset = () => {
-    for (const k of Object.keys(filters)) delete (filters as Record<string, unknown>)[k];
-    pageCurrent.value = 1;
-    fetchSearchOrders({}, 1, pageSize.value, true).catch((error) =>
-        notifyErrorMessages(addMessage, error)
-    );
-};
+const { handleSearch, handleReset } = useListPage({
+    filters,
+    pageCurrent,
+    pageSize,
+    fetchSearch: fetchSearchOrders,
+    onError: (error) => notifyErrorMessages(addMessage, error)
+});
 
 const handleDelete = (orderId: string) => {
     if (!confirm(t('orders-list-page.confirm-delete'))) return;
@@ -148,16 +151,4 @@ const handleDelete = (orderId: string) => {
 };
 
 const formatDate = (date?: string) => (date ? new Date(date).toLocaleDateString() : '-');
-
-onMounted(() =>
-    fetchSearchOrders(filters, Math.max(1, pageCurrent.value), pageSize.value).catch((error) =>
-        notifyErrorMessages(addMessage, error)
-    )
-);
-
-watch([pageCurrent, pageSize], ([currentPage, currentPageSize]) => {
-    fetchSearchOrders(filters, Math.max(1, currentPage), currentPageSize).catch((error) =>
-        notifyErrorMessages(addMessage, error)
-    );
-});
 </script>

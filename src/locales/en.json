@@ -10,7 +10,8 @@
         "en": "english",
         "es": "spanish",
         "search": "Search",
-        "reset": "Reset"
+        "reset": "Reset",
+        "page-size": "Page size"
     },
     "navigation": {
         "label-home": "home",
