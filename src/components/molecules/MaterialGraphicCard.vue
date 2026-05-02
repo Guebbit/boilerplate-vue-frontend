@@ -1,6 +1,6 @@
 <template>
     <article class="theme-card material-graphic-card animate-on-hover">
-        <div class="graphic" :class="props.variant ?? 'primary'">
+        <div class="graphic" :class="resolvedVariant">
             <span class="dot dot-lg" />
             <span class="dot dot-sm" />
             <span class="line" />
@@ -13,11 +13,15 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+
 const props = defineProps<{
     title: string;
     description: string;
     variant?: 'primary' | 'secondary' | 'tertiary';
 }>();
+
+const resolvedVariant = computed(() => props.variant ?? 'primary');
 </script>
 
 <style lang="scss">
