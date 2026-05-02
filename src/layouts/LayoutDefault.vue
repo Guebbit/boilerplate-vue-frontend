@@ -104,10 +104,15 @@ const { hideMessage } = useNotificationsStore();
  * Profile
  */
 const { profile } = storeToRefs(useProfileStore());
-const { refreshToken, fetchProfile } = useProfileStore();
+const { fetchProfile } = useProfileStore();
 
 /**
  * Fetch current user profile (if logged in)
  */
-if (getCookie('isAuth')) refreshToken().then(() => fetchProfile());
+if (getCookie('isAuth') && !profile.value)
+    fetchProfile().catch((error) => {
+        if (import.meta.env.DEV)
+            // eslint-disable-next-line no-console
+            console.warn('Unable to preload profile from layout', error);
+    });
 </script>

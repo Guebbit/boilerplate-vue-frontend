@@ -6,7 +6,7 @@ export default {
 
 <script setup lang="ts">
 import '@/styles/pages/usersList.scss';
-import { computed, onMounted, reactive, watch } from 'vue';
+import { computed, reactive } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
@@ -21,6 +21,7 @@ import ListPagination from '@/components/molecules/ListPagination.vue';
 import CoreDataTable from '@/components/molecules/CoreDataTable.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseSelect from '@/components/atoms/BaseSelect.vue';
+import { useListPage } from '@/composables/useListPage.ts';
 
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
@@ -29,14 +30,17 @@ const { fetchSearchUsers, deleteUser } = useUsersStore();
 const { pageItemList, selectedUserId, pageCurrent, pageSize, pageTotal, loading } =
     storeToRefs(useUsersStore());
 
-pageSize.value = 10;
-
 const filters = reactive<Omit<SearchUsersRequest, 'page' | 'pageSize'>>({});
 
 const activeOptions = [
     { value: undefined, label: t('users-list-page.filter-active-all') },
     { value: true, label: t('users-list-page.filter-active-yes') },
     { value: false, label: t('users-list-page.filter-active-no') }
+];
+const pageSizeOptions = [
+    { value: 10, label: '10' },
+    { value: 25, label: '25' },
+    { value: 50, label: '50' }
 ];
 
 const tableHeaders = computed(() => [
@@ -49,20 +53,13 @@ const tableHeaders = computed(() => [
     { title: t('users-list-page.column-actions'), key: 'actions' }
 ]);
 
-const handleSearch = () => {
-    pageCurrent.value = 1;
-    fetchSearchUsers(filters, 1, pageSize.value).catch((error) =>
-        notifyErrorMessages(addMessage, error)
-    );
-};
-
-const handleReset = () => {
-    for (const k of Object.keys(filters)) delete (filters as Record<string, unknown>)[k];
-    pageCurrent.value = 1;
-    fetchSearchUsers({}, 1, pageSize.value, true).catch((error) =>
-        notifyErrorMessages(addMessage, error)
-    );
-};
+const { handleSearch, handleReset } = useListPage({
+    filters,
+    pageCurrent,
+    pageSize,
+    fetchSearch: fetchSearchUsers,
+    onError: (error) => notifyErrorMessages(addMessage, error)
+});
 
 const handleDelete = (userId: string) => {
     if (!confirm(t('users-list-page.confirm-delete'))) return;
@@ -72,18 +69,6 @@ const handleDelete = (userId: string) => {
 };
 
 const formatDate = (date?: string) => (date ? new Date(date).toLocaleDateString() : '-');
-
-onMounted(() =>
-    fetchSearchUsers(filters, Math.max(1, pageCurrent.value), pageSize.value).catch((error) =>
-        notifyErrorMessages(addMessage, error)
-    )
-);
-
-watch([pageCurrent, pageSize], ([currentPage, currentPageSize]) => {
-    fetchSearchUsers(filters, Math.max(1, currentPage), currentPageSize).catch((error) =>
-        notifyErrorMessages(addMessage, error)
-    );
-});
 </script>
 
 <template>
@@ -119,6 +104,11 @@ watch([pageCurrent, pageSize], ([currentPage, currentPageSize]) => {
                 v-model="filters.active"
                 :label="t('users-list-page.filter-active')"
                 :options="activeOptions"
+            />
+            <BaseSelect
+                v-model="pageSize"
+                :label="t('generic.page-size')"
+                :options="pageSizeOptions"
             />
             <div class="list-filters-actions">
                 <button type="submit" class="theme-button">{{ t('generic.search') }}</button>

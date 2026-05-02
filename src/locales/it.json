@@ -10,7 +10,8 @@
         "en": "inglese",
         "es": "spagnolo",
         "search": "Cerca",
-        "reset": "Reimposta"
+        "reset": "Reimposta",
+        "page-size": "Dimensione pagina"
     },
     "navigation": {
         "label-home": "home",
