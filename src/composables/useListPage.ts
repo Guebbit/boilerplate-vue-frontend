@@ -28,8 +28,7 @@ export const useListPage = <TFilters extends Record<string, unknown>>({
     };
 
     const handleReset = () => {
-        for (const key of Reflect.ownKeys(filters))
-            delete (filters as Record<string | symbol, unknown>)[key];
+        for (const key of Object.keys(filters)) delete filters[key as keyof TFilters];
         pageCurrent.value = 1;
         return fetchSearch(filters, 1, pageSize.value, true).catch((error) => onError(error));
     };
