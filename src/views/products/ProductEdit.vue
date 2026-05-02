@@ -21,7 +21,7 @@
                     <MaterialStatCard :title="t('product-target-page.label-id')" :value="id ?? EMPTY_VALUE" />
                     <MaterialStatCard
                         :title="t('product-target-page.label-price')"
-                        :value="formatNumber(currentProduct?.price, priceFormat)"
+                        :value="formatCurrency(currentProduct?.price)"
                         accent="secondary"
                     />
                     <MaterialStatCard
@@ -155,7 +155,7 @@ const { currentProduct, selectedProductId, loading } = storeToRefs(useProductsSt
 /**
  * Shared detail display helpers.
  */
-const { formatText, formatDateTime, formatNumber, formatFlag } = useItemDetailDisplay();
+const { formatText, formatDateTime, formatCurrency, formatFlag } = useItemDetailDisplay();
 
 /**
  * Form model used by the update workflow.
@@ -194,14 +194,6 @@ const { showErrors, resetForm } = useItemDetailForm({
         active: product?.active ?? false
     })
 });
-
-/**
- * Product number formatting config.
- */
-const priceFormat = {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-} satisfies Intl.NumberFormatOptions;
 
 /**
  * Hero metadata.

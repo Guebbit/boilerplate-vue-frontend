@@ -22,7 +22,7 @@
                     <MaterialStatCard :title="t('order-target-page.label-status')" :value="orderStatus" accent="secondary" />
                     <MaterialStatCard
                         :title="t('order-target-page.label-total')"
-                        :value="formatNumber(currentOrder?.total, priceFormat)"
+                        :value="formatCurrency(currentOrder?.total)"
                         accent="tertiary"
                     />
                 </div>
@@ -146,7 +146,7 @@ const { currentOrder, selectedOrderId, loading } = storeToRefs(useOrdersStore())
 /**
  * Shared detail formatters.
  */
-const { formatText, formatDateTime, formatNumber } = useItemDetailDisplay();
+const { formatText, formatDateTime, formatCurrency } = useItemDetailDisplay();
 
 /**
  * Select options for status updates.
@@ -193,14 +193,6 @@ const { showErrors, resetForm } = useItemDetailForm({
         email: order?.email ?? ''
     })
 });
-
-/**
- * Money formatting configuration.
- */
-const priceFormat = {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-} satisfies Intl.NumberFormatOptions;
 
 /**
  * Hero texts and status label.

@@ -18,7 +18,6 @@
 
 <script setup lang="ts">
 import { watch } from 'vue';
-import { getUuid } from '@guebbit/js-toolkit';
 
 const {
     label = '',
@@ -47,7 +46,7 @@ const {
 /**
  * Unique ID to link input and label
  */
-const uuid = getUuid();
+const uuid = globalThis.crypto.randomUUID();
 
 /**
  *    Counter value

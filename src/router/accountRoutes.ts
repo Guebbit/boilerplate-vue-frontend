@@ -16,6 +16,18 @@ export default [
         component: () => import('@/views/account/Signup.vue')
     },
     {
+        path: 'password-reset',
+        name: 'PasswordResetRequest',
+        beforeEnter: [isGuest],
+        component: () => import('@/views/account/PasswordResetRequest.vue')
+    },
+    {
+        path: 'password-reset/confirm',
+        name: 'PasswordResetConfirm',
+        beforeEnter: [isGuest],
+        component: () => import('@/views/account/PasswordResetConfirm.vue')
+    },
+    {
         path: 'profile',
         name: 'Profile',
         beforeEnter: [isAuth],

@@ -23,7 +23,6 @@
     "navigation": {
         "label-home": "home",
         "label-playground": "playground",
-        "label-admin": "admin",
         "label-users-list": "@:generic.user @:generic.list",
         "label-products-list": "@:generic.product @:generic.list",
         "label-profile": "Profile",
@@ -67,9 +66,6 @@
         "placeholder-card-2-description": "Simple visual cards that improve layout quality while content evolves.",
         "placeholder-card-3-title": "Scalable structure",
         "placeholder-card-3-description": "Composable components designed for easy extension across views."
-    },
-    "admin-page": {
-        "page-title": "Admin Dashboard"
     },
     "error-page": {
         "page-title": "Error",
@@ -153,6 +149,7 @@
         "label-email": "Email",
         "label-password": "Password",
         "label-remember": "Remember me",
+        "link-password-reset": "Forgot password?",
         "text-conditions": "I have read the privacy conditions",
         "button-submit": "Login"
     },
@@ -164,6 +161,23 @@
         "text-conditions": "I have read the privacy conditions",
         "button-submit": "Register now",
         "success-email-code-sent": "Registration successful. We sent an email with a verification code."
+    },
+    "password-reset-request-page": {
+        "page-title": "Reset password",
+        "label-email": "Email",
+        "button-submit": "Send reset token",
+        "button-go-to-login": "Back to login",
+        "success": "If the account exists, we sent a password reset token to your email."
+    },
+    "password-reset-confirm-page": {
+        "page-title": "Confirm password reset",
+        "label-token": "Reset token",
+        "label-password": "New password",
+        "label-password-confirm": "Confirm new password",
+        "token-required": "Reset token is required",
+        "button-submit": "Update password",
+        "button-go-to-login": "Back to login",
+        "success": "Password updated successfully. You can now log in."
     },
     "profile-page": {
         "page-title": "User Profile",

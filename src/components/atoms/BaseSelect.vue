@@ -14,7 +14,6 @@
 </template>
 
 <script setup lang="ts">
-import { getUuid } from '@guebbit/js-toolkit';
 
 /**
  * Reusable select field: wraps a <select> with a label, the theme-form-input
@@ -29,6 +28,6 @@ defineProps<{
     showErrors?: boolean;
 }>();
 
-const uuid = getUuid();
+const uuid = globalThis.crypto.randomUUID();
 const model = defineModel<string | number | boolean | undefined>();
 </script>

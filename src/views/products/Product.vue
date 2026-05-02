@@ -20,7 +20,7 @@
                 <div class="item-detail-page-stats">
                     <MaterialStatCard
                         :title="t('product-target-page.label-price')"
-                        :value="formatNumber(currentProduct?.price, priceFormat)"
+                        :value="formatCurrency(currentProduct?.price)"
                     />
                     <MaterialStatCard
                         :title="t('product-target-page.label-active')"
@@ -54,7 +54,7 @@
                         />
                         <ItemDetailField
                             :label="t('product-target-page.label-price')"
-                            :value="formatNumber(currentProduct.price, priceFormat)"
+                            :value="formatCurrency(currentProduct.price)"
                             icon="💶"
                         />
                         <ItemDetailField :label="t('product-target-page.label-active')" icon="●">
@@ -150,15 +150,7 @@ const { currentProduct, selectedProductId } = storeToRefs(useProductsStore());
 /**
  * Shared value formatters for detail pages.
  */
-const { formatText, formatDateTime, formatNumber, formatFlag } = useItemDetailDisplay();
-
-/**
- * Currency-like number format used for product prices.
- */
-const priceFormat = {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-} satisfies Intl.NumberFormatOptions;
+const { formatText, formatDateTime, formatCurrency, formatFlag } = useItemDetailDisplay();
 
 /**
  * Hero title fallback chain.
