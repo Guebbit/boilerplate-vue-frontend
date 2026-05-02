@@ -1,6 +1,6 @@
 <template>
-    <div class="users-table-wrapper">
-        <table class="users-table">
+    <div class="list-table-wrapper">
+        <table class="list-table">
             <thead>
                 <tr>
                     <th v-for="header in headers" :key="'header-' + header.key">

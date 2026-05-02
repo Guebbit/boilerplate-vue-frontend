@@ -8,7 +8,7 @@ describe('Orders', () => {
         beforeEach(() => {
             cy.loginAs('user');
             cy.visit('/en/orders');
-            cy.get('.users-table tbody tr').should('have.length', 2);
+            cy.get('.list-table tbody tr').should('have.length', 2);
         });
 
         it('shows the page title', () => {
@@ -17,17 +17,17 @@ describe('Orders', () => {
         });
 
         it('renders one row per order returned by the API', () => {
-            cy.get('.users-table tbody tr').should('have.length', 2);
+            cy.get('.list-table tbody tr').should('have.length', 2);
         });
 
         it('displays order status and total in each row', () => {
-            cy.get('.users-table tbody tr')
+            cy.get('.list-table tbody tr')
                 .eq(0)
                 .within(() => {
                     cy.contains('pending').should('exist');
                     cy.contains('45.5').should('exist');
                 });
-            cy.get('.users-table tbody tr')
+            cy.get('.list-table tbody tr')
                 .eq(1)
                 .within(() => {
                     cy.contains('delivered').should('exist');
@@ -36,7 +36,7 @@ describe('Orders', () => {
         });
 
         it('shows View, Edit and Delete actions per row', () => {
-            cy.get('.users-table tbody tr')
+            cy.get('.list-table tbody tr')
                 .eq(0)
                 .within(() => {
                     cy.get('.view-button').should('exist');
@@ -46,7 +46,7 @@ describe('Orders', () => {
         });
 
         it('navigates to order detail when clicking View', () => {
-            cy.get('.users-table tbody tr').eq(0).find('.view-button').click();
+            cy.get('.list-table tbody tr').eq(0).find('.view-button').click();
             cy.url().should('include', '/orders/');
             cy.get('#order-target').should('exist');
         });
