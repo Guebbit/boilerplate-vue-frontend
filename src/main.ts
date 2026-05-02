@@ -24,14 +24,17 @@ const bootstrapApplication = async () => {
     const sentryDsn = (import.meta.env.VITE_SENTRY_DSN as string | undefined)?.trim();
     const tracesSampleRateRaw =
         (import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE as string | undefined) ?? '0';
-    const tracesSampleRate = Number.parseFloat(tracesSampleRateRaw);
+    const tracesSampleRateParsed = Number.parseFloat(tracesSampleRateRaw);
+    const tracesSampleRate = Number.isFinite(tracesSampleRateParsed)
+        ? Math.min(Math.max(tracesSampleRateParsed, 0), 1)
+        : 0;
 
     if (sentryDsn)
         Sentry.init({
             app,
             dsn: sentryDsn,
             environment: import.meta.env.MODE,
-            tracesSampleRate: Number.isFinite(tracesSampleRate) ? tracesSampleRate : 0
+            tracesSampleRate
         });
 
     app.use(createPinia()).use(router).use(i18n).mount('#app');
