@@ -39,6 +39,11 @@ const router = createRouter({
                     component: HomeView
                 },
                 {
+                    path: 'playground',
+                    name: 'Playground',
+                    component: () => import('@/views/core/Playground.vue')
+                },
+                {
                     path: 'admin',
                     name: 'Admin',
                     // route level code-splitting

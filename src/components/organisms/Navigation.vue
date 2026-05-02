@@ -13,6 +13,15 @@
                 {{ t('navigation.label-home') }}
             </RouterLink>
             <RouterLink
+                :to="
+                    routerLinkI18n({
+                        name: 'Playground'
+                    })
+                "
+            >
+                {{ t('navigation.label-playground') }}
+            </RouterLink>
+            <RouterLink
                 v-show="isAdmin"
                 :to="
                     routerLinkI18n({
