@@ -1,0 +1,363 @@
+/**
+ * Admin dashboard page styles.
+ *
+ * Naming: full kebab-case, no BEM __ pattern.
+ * Theming modifier "--dark" is intentionally avoided here — theming is handled
+ * globally by the theme layer.
+ */
+
+#admin-page {
+    // ── Page subtitle ───────────────────────────────────────────────────────
+    .admin-page-subtitle {
+        margin: 0.25rem 0 0;
+        font-size: 0.9rem;
+        opacity: 0.7;
+    }
+
+    // ── KPI card row ────────────────────────────────────────────────────────
+    .admin-kpi-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.75rem;
+
+        .material-stat-card {
+            flex: 1 1 180px;
+        }
+    }
+
+    // ── Tab bar ─────────────────────────────────────────────────────────────
+    .admin-tab-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid rgba(var(--theme-on-surface) / 0.1);
+        padding-bottom: 0.5rem;
+    }
+
+    .admin-tab-button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0.45rem 1rem;
+        border-radius: 0.5rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: inherit;
+        opacity: 0.65;
+        transition:
+            opacity 0.15s,
+            background 0.15s;
+
+        &:hover {
+            opacity: 1;
+            background: rgba(var(--theme-on-surface) / 0.06);
+        }
+
+        &.active {
+            opacity: 1;
+            background: rgba(var(--primary-500) / 0.12);
+            color: rgb(var(--primary-500));
+        }
+    }
+
+    // ── Tab panel wrapper ────────────────────────────────────────────────────
+    .admin-tab-panel {
+        min-height: 280px;
+    }
+
+    // ── Section headers shared across tabs ───────────────────────────────────
+    .admin-section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0 0 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        opacity: 0.75;
+    }
+
+    // ── Empty state (shared) ─────────────────────────────────────────────────
+    .admin-empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem 1rem;
+        opacity: 0.65;
+        text-align: center;
+    }
+
+    .admin-empty-icon {
+        font-size: 2.5rem;
+        margin: 0 0 0.5rem;
+    }
+
+    .admin-empty-title {
+        font-size: 1rem;
+        font-weight: 600;
+        margin: 0 0 0.35rem;
+    }
+
+    .admin-empty-description {
+        font-size: 0.85rem;
+        max-width: 340px;
+        margin: 0;
+        opacity: 0.8;
+    }
+
+    // ── Overview tab ─────────────────────────────────────────────────────────
+    .admin-overview-section {
+        margin-bottom: 2rem;
+    }
+
+    .admin-overview-status-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .admin-status-item {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.75rem 1.25rem;
+        border-radius: 0.75rem;
+        min-width: 160px;
+    }
+
+    .admin-status-icon {
+        font-size: 1.4rem;
+        line-height: 1;
+    }
+
+    .admin-status-label {
+        font-size: 0.85rem;
+        opacity: 0.75;
+        flex: 1;
+    }
+
+    .admin-status-value {
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    .admin-overview-links-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+    }
+
+    .admin-link-card {
+        padding: 1.1rem 1.25rem;
+        border-radius: 0.85rem;
+        cursor: default;
+    }
+
+    .admin-link-card-icon {
+        font-size: 1.6rem;
+        margin: 0 0 0.4rem;
+    }
+
+    .admin-link-card-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin: 0 0 0.3rem;
+    }
+
+    .admin-link-card-description {
+        font-size: 0.8rem;
+        margin: 0;
+        opacity: 0.7;
+        line-height: 1.45;
+    }
+
+    // ── Log tab ───────────────────────────────────────────────────────────────
+    .admin-log-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .admin-log-entry {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem 1rem;
+        padding: 0.5rem 0.85rem;
+        border-radius: 0.5rem;
+        font-size: 0.83rem;
+        background: rgba(var(--theme-on-surface) / 0.04);
+        border-left: 3px solid transparent;
+    }
+
+    .admin-log-level-error {
+        border-left-color: rgb(var(--error-500, 220 38 38));
+    }
+
+    .admin-log-level-warn {
+        border-left-color: rgb(var(--warning-500, 234 179 8));
+    }
+
+    .admin-log-level-info {
+        border-left-color: rgb(var(--primary-500));
+    }
+
+    .admin-log-timestamp,
+    .admin-log-meta,
+    .admin-log-source {
+        opacity: 0.6;
+        font-size: 0.78rem;
+    }
+
+    .admin-log-level-badge {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 0.1rem 0.4rem;
+        border-radius: 0.25rem;
+        background: rgba(var(--theme-on-surface) / 0.1);
+    }
+
+    .admin-log-message {
+        flex: 1;
+        min-width: 120px;
+    }
+
+    // ── Audit tab ─────────────────────────────────────────────────────────────
+    .admin-audit-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .admin-audit-entry {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem 1rem;
+        padding: 0.5rem 0.85rem;
+        border-radius: 0.5rem;
+        font-size: 0.83rem;
+        background: rgba(var(--theme-on-surface) / 0.04);
+    }
+
+    .admin-audit-timestamp,
+    .admin-audit-meta {
+        opacity: 0.6;
+        font-size: 0.78rem;
+    }
+
+    .admin-audit-action {
+        font-weight: 600;
+        flex: 1;
+        min-width: 100px;
+    }
+
+    .admin-audit-outcome-badge {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 0.1rem 0.45rem;
+        border-radius: 0.25rem;
+    }
+
+    .admin-audit-outcome-success {
+        background: rgba(34 197 94 / 0.15);
+        color: rgb(21 128 61);
+    }
+
+    .admin-audit-outcome-failure,
+    .admin-audit-outcome-denied {
+        background: rgba(220 38 38 / 0.12);
+        color: rgb(185 28 28);
+    }
+
+    // ── Traces tab ────────────────────────────────────────────────────────────
+    .admin-traces-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .admin-trace-entry {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem 1rem;
+        padding: 0.5rem 0.85rem;
+        border-radius: 0.5rem;
+        font-size: 0.83rem;
+        background: rgba(var(--theme-on-surface) / 0.04);
+    }
+
+    .admin-trace-span {
+        flex: 1;
+        min-width: 120px;
+        font-weight: 500;
+    }
+
+    .admin-trace-duration {
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .admin-trace-status,
+    .admin-trace-time {
+        opacity: 0.6;
+        font-size: 0.78rem;
+    }
+
+    .admin-trace-error-badge {
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 0.1rem 0.4rem;
+        border-radius: 0.25rem;
+        background: rgba(220 38 38 / 0.12);
+        color: rgb(185 28 28);
+    }
+
+    // ── Analytics tab ─────────────────────────────────────────────────────────
+    .admin-analytics-series {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.25rem;
+    }
+
+    .admin-analytics-serie-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin: 0 0 0.85rem;
+    }
+
+    .admin-analytics-serie-unit {
+        font-weight: 400;
+        opacity: 0.65;
+        font-size: 0.8rem;
+    }
+
+    .admin-analytics-serie-points {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .admin-analytics-point {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.82rem;
+        padding: 0.2rem 0;
+        border-bottom: 1px solid rgba(var(--theme-on-surface) / 0.06);
+    }
+
+    .admin-analytics-point-label {
+        opacity: 0.7;
+    }
+
+    .admin-analytics-point-value {
+        font-weight: 600;
+    }
+}

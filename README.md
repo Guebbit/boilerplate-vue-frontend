@@ -63,11 +63,26 @@ so you can see what broke, where, and for which users in production.
 - `npm run test:e2e`: run Cypress e2e tests
 - `npm run genapi`: regenerate API client from `openapi.yaml`
 
+## Admin dashboard
+
+An initial admin dashboard is available at `/:locale/admin` (requires admin role).
+
+It provides:
+- KPI summary cards: total products, users and orders derived from the existing stores.
+- **Overview** tab: data-at-a-glance with entity counts and section index.
+- **Logs** tab: structured log viewer (empty state; wired once a backend log endpoint is available).
+- **Audit** tab: security/audit event viewer (empty state; wired once the audit endpoint is ready).
+- **Traces** tab: distributed trace list (empty state; wired once Tempo/OTLP is connected).
+- **Analytics** tab: product analytics / time-series viewer (empty state; wired once PostHog or a metrics endpoint is configured).
+
+TypeScript types for all dashboard data models live in `src/types/admin.ts`.
+
 ## Architecture overview
 
 - `/src/router`: route definitions and navigation guards
 - `/src/stores`: Pinia stores for domain/state logic
 - `/src/views`: page-level components
+  - `/src/views/admin`: Admin dashboard page and its child components
 - `/src/components`: reusable UI components
 - `/src/middlewares`: route middleware functions
 - `/src/utils/http.ts`: shared axios instance and interceptors
