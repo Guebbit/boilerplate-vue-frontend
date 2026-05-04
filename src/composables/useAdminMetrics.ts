@@ -16,7 +16,7 @@ export const useAdminMetrics = () => {
         error.value = undefined;
         try {
             const response = await adminApi.getAdminMetricsSummary();
-            metrics.value = response.data ?? undefined;
+            metrics.value = response.data;
         } catch {
             error.value = 'Failed to load metrics data';
         } finally {

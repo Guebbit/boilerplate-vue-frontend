@@ -16,7 +16,7 @@ export const useAdminHealth = () => {
         error.value = undefined;
         try {
             const response = await adminApi.getAdminHealth();
-            health.value = response.data ?? undefined;
+            health.value = response.data;
         } catch {
             error.value = 'Failed to load health data';
         } finally {

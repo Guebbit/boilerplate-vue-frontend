@@ -94,6 +94,54 @@ npm run build
 npm run test:unit
 ```
 
+## Admin Dashboard
+
+Route: `/:locale/admin` — requires admin role (redirects non-admins to Home).
+
+The dashboard is split into two tabs:
+
+### Overview tab
+
+Fetches live data from two contract-defined endpoints:
+
+| Endpoint | What it shows |
+|---|---|
+| `GET /admin/health` | API status, database status, uptime, memory, integrations (Loki, PostHog, OTEL), system info |
+| `GET /admin/metrics/summary` | HTTP totals, error rate, in-flight requests, p50/p95 latency, auth events, business events |
+
+KPI cards at the top give an instant health snapshot:
+
+```
+┌─────────────┐ ┌──────────────┐ ┌──────────┐ ┌──────────────┐
+│  API Status │ │   Database   │ │  Uptime  │ │  Requests    │
+│     ok      │ │  connected   │ │  1h 30m  │ │    1042      │
+└─────────────┘ └──────────────┘ └──────────┘ └──────────────┘
+┌─────────────┐ ┌──────────────┐ ┌──────────┐ ┌──────────────┐
+│   Errors    │ │  Error Rate  │ │ Lat. p50 │ │  Lat. p95    │
+│     12      │ │    1.2%      │ │  18ms    │ │    85ms      │
+└─────────────┘ └──────────────┘ └──────────┘ └──────────────┘
+```
+
+### Audit Log tab
+
+Fetches from `GET /admin/audit` with optional filters:
+
+- **Actor** – filter by user ID
+- **Action** – filter by dot-notation action (e.g. `auth.login.failed`)
+- **Outcome** – success / failure
+- **Since** – ISO-8601 timestamp
+
+Displays a colour-coded table with truncated request/trace IDs (hover for full value).
+
+### Data contract
+
+All types are driven by `openapi.yaml` (admin section) and reflected in:
+
+- `api/api.ts` — generated interfaces (`AdminHealth`, `AdminMetricsSummary`, `AuditEventItem`, …)
+- `src/types/admin.ts` — FE view-model types (`IAdminKpi`, `IAdminAuditFilters`)
+- `src/composables/useAdminHealth.ts`, `useAdminMetrics.ts`, `useAdminAudit.ts`
+- `.dev/mocks/handlers/adminMockHandlers.ts` — MSW mock responses for dev/test
+
 # TODO
 
 - Fix tests
