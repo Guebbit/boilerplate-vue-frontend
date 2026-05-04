@@ -4,6 +4,7 @@ import { localeChoice } from '@/middlewares/localeChoice';
 import { getDefaultLocale } from '@/utils/i18n.ts';
 
 import accountRoutes from './accountRoutes';
+import adminRoutes from './adminRoutes.ts';
 import usersRoutes from './usersRoutes.ts';
 import productsRoutes from './productsRoutes';
 import cartRoutes from './cartRoutes.ts';
@@ -43,6 +44,7 @@ const router = createRouter({
                     component: () => import('@/views/core/Playground.vue')
                 },
                 ...accountRoutes,
+                ...adminRoutes,
                 ...productsRoutes,
                 ...usersRoutes,
                 ...cartRoutes,

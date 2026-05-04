@@ -32,6 +32,16 @@
                 {{ t('navigation.label-users-list', 2) }}
             </RouterLink>
             <RouterLink
+                v-show="isAdmin"
+                :to="
+                    routerLinkI18n({
+                        name: 'Admin'
+                    })
+                "
+            >
+                {{ t('navigation.label-admin') }}
+            </RouterLink>
+            <RouterLink
                 :to="
                     routerLinkI18n({
                         name: 'ProductsList'

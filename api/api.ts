@@ -471,6 +471,137 @@ export interface ValidationErrorResponseAllOfErrors {
     code?: string;
 }
 
+// ---------- Admin / Observability ----------
+
+export interface AdminHealthIntegrations {
+    loki?: boolean;
+    posthog?: boolean;
+    otelEnabled?: boolean;
+}
+
+export interface AdminHealthMemory {
+    heapUsedMb: number;
+    heapTotalMb: number;
+    rssMb: number;
+}
+
+export interface AdminHealthSystem {
+    platform: string;
+    cpuCount: number;
+    loadAvg: number[];
+}
+
+export interface AdminHealth {
+    status: 'ok' | 'degraded';
+    environment: string;
+    service: string;
+    nodeVersion: string;
+    uptimeSeconds: number;
+    database: {
+        status: 'connected' | 'connecting' | 'disconnected';
+    };
+    integrations?: AdminHealthIntegrations;
+    memory?: AdminHealthMemory;
+    system?: AdminHealthSystem;
+    timestamp: string;
+}
+
+export interface AdminHealthResponse {
+    success: boolean;
+    data: AdminHealth;
+}
+
+export interface AdminMetricsLatency {
+    /** Median latency in ms */
+    p50: number;
+    /** 95th-percentile latency in ms */
+    p95: number;
+}
+
+export interface AdminMetricsSummary {
+    http: {
+        totalRequests: number;
+        totalErrors: number;
+        /** Fraction of requests that returned 4xx/5xx */
+        errorRate: number;
+        inFlight: number;
+        latencyMs: AdminMetricsLatency;
+    };
+    auth?: {
+        loginSuccess?: number;
+        loginFailure?: number;
+        signupSuccess?: number;
+    };
+    business?: {
+        checkoutSuccess?: number;
+        ordersCreated?: number;
+    };
+    database?: {
+        queriesTotal?: number;
+        errorsTotal?: number;
+    };
+    process?: {
+        uptimeSeconds?: number;
+        heapUsedMb?: number;
+    };
+    timestamp: string;
+}
+
+export interface AdminMetricsSummaryResponse {
+    success: boolean;
+    data: AdminMetricsSummary;
+}
+
+export const AuditEventItemActorRoleEnum = {
+    Admin: 'admin',
+    User: 'user',
+    Anonymous: 'anonymous'
+} as const;
+
+export type AuditEventItemActorRoleEnum =
+    (typeof AuditEventItemActorRoleEnum)[keyof typeof AuditEventItemActorRoleEnum];
+
+export const AuditEventItemOutcomeEnum = {
+    Success: 'success',
+    Failure: 'failure'
+} as const;
+
+export type AuditEventItemOutcomeEnum =
+    (typeof AuditEventItemOutcomeEnum)[keyof typeof AuditEventItemOutcomeEnum];
+
+export const AuditEventItemLevelEnum = {
+    Info: 'info',
+    Warn: 'warn'
+} as const;
+
+export type AuditEventItemLevelEnum =
+    (typeof AuditEventItemLevelEnum)[keyof typeof AuditEventItemLevelEnum];
+
+export interface AuditEventItem {
+    actor_user_id: string;
+    actor_role: AuditEventItemActorRoleEnum;
+    /** Dot-notation action name (e.g. auth.login.succeeded) */
+    action: string;
+    outcome: AuditEventItemOutcomeEnum;
+    ip?: string;
+    user_agent?: string;
+    request_id?: string;
+    trace_id?: string;
+    target_type?: string;
+    target_id?: string;
+    metadata?: Record<string, unknown>;
+    timestamp: string;
+    level: AuditEventItemLevelEnum;
+}
+
+export interface AuditLogsResponse {
+    success: boolean;
+    data: {
+        items: AuditEventItem[];
+        total: number;
+    };
+}
+
 /**
  * AccountApi - axios parameter creator
  */
@@ -5444,5 +5575,133 @@ export class UsersApi extends BaseAPI {
         return UsersApiFp(this.configuration)
             .updateUserById(id, email, password, username, imageUpload, options)
             .then((request) => request(this.axios, this.basePath));
+    }
+}
+
+/**
+ * AdminApi - object-oriented interface
+ * Provides access to observability endpoints: health, metrics summary, and audit logs.
+ */
+export class AdminApi extends BaseAPI {
+    /**
+     * Full JSON health snapshot for the admin dashboard.
+     * @summary Admin health summary
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public getAdminHealth(options?: RawAxiosRequestConfig): Promise<AdminHealthResponse> {
+        const localVarPath = `/admin/health`;
+        const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let baseOptions: any;
+        if (this.configuration) {
+            baseOptions = this.configuration.baseOptions;
+        }
+        const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options };
+        const localVarHeaderParameter = {} as Record<string, string>;
+        return setBearerAuthToObject(localVarHeaderParameter, this.configuration).then(() => {
+            setSearchParams(localVarUrlObj, {});
+            const headersFromBaseOptions =
+                baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {
+                ...localVarHeaderParameter,
+                ...headersFromBaseOptions,
+                ...options?.headers
+            };
+            return createRequestFunction(
+                { url: toPathString(localVarUrlObj), options: localVarRequestOptions },
+                globalAxios,
+                BASE_PATH,
+                this.configuration
+            )(this.axios, this.basePath);
+        });
+    }
+
+    /**
+     * Key operational metrics returned as JSON for dashboard KPI cards.
+     * @summary Metrics summary (JSON)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public getAdminMetricsSummary(
+        options?: RawAxiosRequestConfig
+    ): Promise<AdminMetricsSummaryResponse> {
+        const localVarPath = `/admin/metrics/summary`;
+        const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let baseOptions: any;
+        if (this.configuration) {
+            baseOptions = this.configuration.baseOptions;
+        }
+        const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options };
+        const localVarHeaderParameter = {} as Record<string, string>;
+        return setBearerAuthToObject(localVarHeaderParameter, this.configuration).then(() => {
+            setSearchParams(localVarUrlObj, {});
+            const headersFromBaseOptions =
+                baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {
+                ...localVarHeaderParameter,
+                ...headersFromBaseOptions,
+                ...options?.headers
+            };
+            return createRequestFunction(
+                { url: toPathString(localVarUrlObj), options: localVarRequestOptions },
+                globalAxios,
+                BASE_PATH,
+                this.configuration
+            )(this.axios, this.basePath);
+        });
+    }
+
+    /**
+     * Returns the most recent audit events from the in-memory ring buffer.
+     * @summary Recent audit events
+     * @param {string} [actor] Filter by actor user ID
+     * @param {string} [action] Filter by action name
+     * @param {'success' | 'failure'} [outcome] Filter by outcome
+     * @param {string} [since] Return events after this ISO-8601 timestamp
+     * @param {number} [limit] Maximum number of events to return (1–200)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public getAdminAuditLogs(
+        actor?: string,
+        action?: string,
+        outcome?: 'success' | 'failure',
+        since?: string,
+        limit?: number,
+        options?: RawAxiosRequestConfig
+    ): Promise<AuditLogsResponse> {
+        const localVarPath = `/admin/audit`;
+        const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let baseOptions: any;
+        if (this.configuration) {
+            baseOptions = this.configuration.baseOptions;
+        }
+        const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options };
+        const localVarHeaderParameter = {} as Record<string, string>;
+        const localVarQueryParameter: Record<string, unknown> = {};
+        if (actor !== undefined) localVarQueryParameter['actor'] = actor;
+        if (action !== undefined) localVarQueryParameter['action'] = action;
+        if (outcome !== undefined) localVarQueryParameter['outcome'] = outcome;
+        if (since !== undefined) localVarQueryParameter['since'] = since;
+        if (limit !== undefined) localVarQueryParameter['limit'] = limit;
+        return setBearerAuthToObject(localVarHeaderParameter, this.configuration).then(() => {
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            const headersFromBaseOptions =
+                baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {
+                ...localVarHeaderParameter,
+                ...headersFromBaseOptions,
+                ...options?.headers
+            };
+            return createRequestFunction(
+                { url: toPathString(localVarUrlObj), options: localVarRequestOptions },
+                globalAxios,
+                BASE_PATH,
+                this.configuration
+            )(this.axios, this.basePath);
+        });
     }
 }

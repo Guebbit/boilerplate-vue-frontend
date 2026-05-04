@@ -1,4 +1,4 @@
-import { AccountApi, AuthApi, CartApi, OrdersApi, ProductsApi, UsersApi } from '@api';
+import { AccountApi, AdminApi, AuthApi, CartApi, OrdersApi, ProductsApi, UsersApi } from '@api';
 import { Configuration } from '../../api';
 
 import httpClient from '@/utils/http.ts';
@@ -18,6 +18,7 @@ const apiConfiguration = new Configuration({
  * automatic token-refresh interceptor are applied to every request.
  */
 export const accountApi = new AccountApi(apiConfiguration, undefined, httpClient);
+export const adminApi = new AdminApi(apiConfiguration, undefined, httpClient);
 export const authApi = new AuthApi(apiConfiguration, undefined, httpClient);
 export const cartApi = new CartApi(apiConfiguration, undefined, httpClient);
 export const ordersApi = new OrdersApi(apiConfiguration, undefined, httpClient);

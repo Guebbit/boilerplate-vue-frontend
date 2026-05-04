@@ -1,5 +1,6 @@
 import { setupWorker } from 'msw/browser';
 import { registerAccountMockHandlers } from './handlers/accountMockHandlers.ts';
+import { registerAdminMockHandlers } from './handlers/adminMockHandlers.ts';
 import { registerUsersMockHandlers } from './handlers/usersMockHandlers.ts';
 import { registerProductsMockHandlers } from './handlers/productsMockHandlers.ts';
 import { registerCartMockHandlers } from './handlers/cartMockHandlers.ts';
@@ -13,6 +14,7 @@ export const initializeApiMocking = async () => {
 
     const worker = setupWorker(
         ...registerAccountMockHandlers(),
+        ...registerAdminMockHandlers(),
         ...registerUsersMockHandlers(),
         ...registerProductsMockHandlers(),
         ...registerCartMockHandlers(),
