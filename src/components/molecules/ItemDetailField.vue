@@ -56,7 +56,11 @@ const displayValue = computed(() => {
     display: grid;
     place-items: center;
     font-size: 1.2rem;
-    background: linear-gradient(160deg, rgba(var(--detail-accent) / 0.2), rgba(var(--detail-accent) / 0.08));
+    background: linear-gradient(
+        160deg,
+        rgba(var(--detail-accent) / 0.2),
+        rgba(var(--detail-accent) / 0.08)
+    );
     color: rgb(var(--detail-accent));
 }
 

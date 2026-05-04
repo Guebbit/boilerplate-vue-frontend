@@ -11,7 +11,9 @@
                 <DetailCard class="item-detail-page-hero animate-on-hover">
                     <div class="item-detail-page-hero-icon" aria-hidden="true">📦</div>
                     <div>
-                        <p v-if="currentProduct?.id" class="item-detail-page-eyebrow">{{ currentProduct.id }}</p>
+                        <p v-if="currentProduct?.id" class="item-detail-page-eyebrow">
+                            {{ currentProduct.id }}
+                        </p>
                         <h2 class="item-detail-page-hero-title">{{ heroTitle }}</h2>
                         <p class="item-detail-page-hero-description">{{ heroDescription }}</p>
                     </div>
@@ -24,7 +26,13 @@
                     />
                     <MaterialStatCard
                         :title="t('product-target-page.label-active')"
-                        :value="formatFlag(currentProduct?.active, t('generic.enabled'), t('generic.disabled'))"
+                        :value="
+                            formatFlag(
+                                currentProduct?.active,
+                                t('generic.enabled'),
+                                t('generic.disabled')
+                            )
+                        "
                         accent="secondary"
                     />
                     <MaterialStatCard
@@ -77,7 +85,11 @@
                 </DetailCard>
 
                 <DetailCard as="aside" class="item-detail-page-aside">
-                    <MaterialGraphicCard :title="heroTitle" :description="heroDescription" variant="primary" />
+                    <MaterialGraphicCard
+                        :title="heroTitle"
+                        :description="heroDescription"
+                        variant="primary"
+                    />
                     <ItemDetailField
                         :label="t('product-target-page.label-created-at')"
                         :value="formatDateTime(currentProduct?.createdAt)"
@@ -155,7 +167,9 @@ const { formatText, formatDateTime, formatCurrency, formatFlag } = useItemDetail
 /**
  * Hero title fallback chain.
  */
-const heroTitle = computed(() => currentProduct.value?.title ?? id ?? t('product-target-page.page-title'));
+const heroTitle = computed(
+    () => currentProduct.value?.title ?? id ?? t('product-target-page.page-title')
+);
 
 /**
  * Hero secondary text.

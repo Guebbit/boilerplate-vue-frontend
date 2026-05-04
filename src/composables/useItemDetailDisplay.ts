@@ -37,7 +37,10 @@ const formatDateTime = (value?: string | null) =>
 const formatNumber = (
     value?: number | null,
     options: Intl.NumberFormatOptions = DEFAULT_NUMBER_FORMAT
-) => (typeof value === 'number' ? new Intl.NumberFormat(getLocale(), options).format(value) : EMPTY_VALUE);
+) =>
+    typeof value === 'number'
+        ? new Intl.NumberFormat(getLocale(), options).format(value)
+        : EMPTY_VALUE;
 
 /**
  * Formats numeric values as currency with locale-aware separators and symbol.

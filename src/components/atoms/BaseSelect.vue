@@ -14,7 +14,6 @@
 </template>
 
 <script setup lang="ts">
-
 /**
  * Reusable select field: wraps a <select> with a label, the theme-form-input
  * layout, and inline validation error display.

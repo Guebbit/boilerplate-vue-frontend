@@ -18,8 +18,15 @@
                 </DetailCard>
 
                 <div class="item-detail-page-stats">
-                    <MaterialStatCard :title="t('user-target-page.label-id')" :value="id ?? EMPTY_VALUE" />
-                    <MaterialStatCard :title="t('user-target-page.label-admin')" :value="userRole" accent="secondary" />
+                    <MaterialStatCard
+                        :title="t('user-target-page.label-id')"
+                        :value="id ?? EMPTY_VALUE"
+                    />
+                    <MaterialStatCard
+                        :title="t('user-target-page.label-admin')"
+                        :value="userRole"
+                        accent="secondary"
+                    />
                     <MaterialStatCard
                         :title="t('user-target-page.label-active')"
                         :value="userStatus"
@@ -63,8 +70,16 @@
                 </DetailCard>
 
                 <DetailCard as="aside" class="item-detail-page-aside">
-                    <MaterialGraphicCard :title="heroTitle" :description="heroDescription" variant="secondary" />
-                    <ItemDetailField :label="t('user-target-page.label-id')" :value="id ?? EMPTY_VALUE" icon="#" />
+                    <MaterialGraphicCard
+                        :title="heroTitle"
+                        :description="heroDescription"
+                        variant="secondary"
+                    />
+                    <ItemDetailField
+                        :label="t('user-target-page.label-id')"
+                        :value="id ?? EMPTY_VALUE"
+                        icon="#"
+                    />
                     <ItemDetailField
                         :label="t('user-target-page.label-created-at')"
                         :value="formatDateTime(currentUser?.createdAt)"
@@ -79,7 +94,11 @@
             </div>
 
             <div class="item-detail-page-actions">
-                <RouterLink v-if="id" :to="routerLinkI18n({ name: 'UserTarget', params: { id } })" class="theme-button">
+                <RouterLink
+                    v-if="id"
+                    :to="routerLinkI18n({ name: 'UserTarget', params: { id } })"
+                    class="theme-button"
+                >
                     {{ t('user-edit-page.button-go-to-details') }}
                 </RouterLink>
                 <RouterLink :to="routerLinkI18n({ name: 'UsersList' })" class="theme-button">
@@ -181,7 +200,9 @@ const { showErrors, resetForm } = useItemDetailForm({
 /**
  * Hero and status labels.
  */
-const heroTitle = computed(() => currentUser.value?.username ?? id ?? t('user-edit-page.page-title'));
+const heroTitle = computed(
+    () => currentUser.value?.username ?? id ?? t('user-edit-page.page-title')
+);
 const heroDescription = computed(() => formatText(currentUser.value?.email));
 const userRole = computed(() =>
     formatFlag(currentUser.value?.admin, t('generic.administrator'), t('generic.standard-user'))

@@ -32,7 +32,11 @@
         grid-template-columns: auto minmax(0, 1fr);
         align-items: center;
         background:
-            radial-gradient(circle at top right, rgba(var(--detail-accent) / 0.16), transparent 38%),
+            radial-gradient(
+                circle at top right,
+                rgba(var(--detail-accent) / 0.16),
+                transparent 38%
+            ),
             rgb(var(--theme-surface));
     }
 
@@ -43,7 +47,11 @@
         place-items: center;
         border-radius: 1.5rem;
         font-size: 2rem;
-        background: linear-gradient(160deg, rgb(var(--detail-accent)), rgba(var(--detail-accent) / 0.65));
+        background: linear-gradient(
+            160deg,
+            rgb(var(--detail-accent)),
+            rgba(var(--detail-accent) / 0.65)
+        );
         color: rgb(var(--theme-surface));
         box-shadow: 0 12px 26px rgba(var(--detail-accent) / 0.28);
     }

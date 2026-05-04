@@ -11,7 +11,9 @@
                 <DetailCard class="item-detail-page-hero animate-on-hover">
                     <div class="item-detail-page-hero-icon" aria-hidden="true">👤</div>
                     <div>
-                        <p v-if="currentUser?.id" class="item-detail-page-eyebrow">{{ currentUser.id }}</p>
+                        <p v-if="currentUser?.id" class="item-detail-page-eyebrow">
+                            {{ currentUser.id }}
+                        </p>
                         <h2 class="item-detail-page-hero-title">{{ heroTitle }}</h2>
                         <p class="item-detail-page-hero-description">{{ heroDescription }}</p>
                     </div>
@@ -22,7 +24,11 @@
                         :title="t('user-target-page.label-email')"
                         :value="formatText(currentUser?.email)"
                     />
-                    <MaterialStatCard :title="t('user-target-page.label-admin')" :value="userRole" accent="secondary" />
+                    <MaterialStatCard
+                        :title="t('user-target-page.label-admin')"
+                        :value="userRole"
+                        accent="secondary"
+                    />
                     <MaterialStatCard
                         :title="t('user-target-page.label-active')"
                         :value="userStatus"
@@ -38,13 +44,21 @@
                     </div>
 
                     <div v-if="currentUser" class="item-detail-page-grid-fields">
-                        <ItemDetailField :label="t('user-target-page.label-id')" :value="currentUser.id" icon="#" />
+                        <ItemDetailField
+                            :label="t('user-target-page.label-id')"
+                            :value="currentUser.id"
+                            icon="#"
+                        />
                         <ItemDetailField
                             :label="t('user-target-page.label-username')"
                             :value="currentUser.username"
                             icon="🙂"
                         />
-                        <ItemDetailField :label="t('user-target-page.label-email')" :value="currentUser.email" icon="✉" />
+                        <ItemDetailField
+                            :label="t('user-target-page.label-email')"
+                            :value="currentUser.email"
+                            icon="✉"
+                        />
                         <ItemDetailField :label="t('user-target-page.label-admin')" icon="🛡">
                             <span class="item-detail-page-status-chip">{{ userRole }}</span>
                         </ItemDetailField>
@@ -62,7 +76,11 @@
                 </DetailCard>
 
                 <DetailCard as="aside" class="item-detail-page-aside">
-                    <MaterialGraphicCard :title="heroTitle" :description="heroDescription" variant="secondary" />
+                    <MaterialGraphicCard
+                        :title="heroTitle"
+                        :description="heroDescription"
+                        variant="secondary"
+                    />
                     <ItemDetailField
                         :label="t('user-target-page.label-created-at')"
                         :value="formatDateTime(currentUser?.createdAt)"
@@ -140,7 +158,9 @@ const { formatText, formatDateTime, formatFlag } = useItemDetailDisplay();
 /**
  * Hero and status computed values.
  */
-const heroTitle = computed(() => currentUser.value?.username ?? id ?? t('user-target-page.page-title'));
+const heroTitle = computed(
+    () => currentUser.value?.username ?? id ?? t('user-target-page.page-title')
+);
 const heroDescription = computed(() => formatText(currentUser.value?.email));
 const userRole = computed(() =>
     formatFlag(currentUser.value?.admin, t('generic.administrator'), t('generic.standard-user'))

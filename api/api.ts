@@ -33,6 +33,158 @@ import type { RequestArgs } from './base';
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError, operationServerMap } from './base';
 
+export interface AdminHealth {
+    status: AdminHealthStatusEnum;
+    environment: string;
+    service: string;
+    nodeVersion: string;
+    uptimeSeconds: number;
+    database: AdminHealthDatabase;
+    integrations?: AdminHealthIntegrations;
+    memory?: AdminHealthMemory;
+    system?: AdminHealthSystem;
+    timestamp: string;
+}
+
+export const AdminHealthStatusEnum = {
+    Ok: 'ok',
+    Degraded: 'degraded'
+} as const;
+
+export type AdminHealthStatusEnum =
+    (typeof AdminHealthStatusEnum)[keyof typeof AdminHealthStatusEnum];
+
+export interface AdminHealthDatabase {
+    status: AdminHealthDatabaseStatusEnum;
+}
+
+export const AdminHealthDatabaseStatusEnum = {
+    Connected: 'connected',
+    Connecting: 'connecting',
+    Disconnected: 'disconnected'
+} as const;
+
+export type AdminHealthDatabaseStatusEnum =
+    (typeof AdminHealthDatabaseStatusEnum)[keyof typeof AdminHealthDatabaseStatusEnum];
+
+export interface AdminHealthIntegrations {
+    loki?: boolean;
+    posthog?: boolean;
+    otelEnabled?: boolean;
+}
+export interface AdminHealthMemory {
+    heapUsedMb: number;
+    heapTotalMb: number;
+    rssMb: number;
+}
+export interface AdminHealthResponse {
+    success: boolean;
+    data: AdminHealth;
+}
+export interface AdminHealthSystem {
+    platform: string;
+    cpuCount: number;
+    loadAvg: Array<number>;
+}
+export interface AdminMetricsLatency {
+    /**
+     * Median latency in ms
+     */
+    p50: number;
+    /**
+     * 95th-percentile latency in ms
+     */
+    p95: number;
+}
+export interface AdminMetricsSummary {
+    http: AdminMetricsSummaryHttp;
+    auth: AdminMetricsSummaryAuth;
+    business: AdminMetricsSummaryBusiness;
+    database: AdminMetricsSummaryDatabase;
+    process: AdminMetricsSummaryProcess;
+    timestamp: string;
+}
+export interface AdminMetricsSummaryAuth {
+    loginSuccess?: number;
+    loginFailure?: number;
+    signupSuccess?: number;
+}
+export interface AdminMetricsSummaryBusiness {
+    checkoutSuccess?: number;
+    ordersCreated?: number;
+}
+export interface AdminMetricsSummaryDatabase {
+    queriesTotal?: number;
+    errorsTotal?: number;
+}
+export interface AdminMetricsSummaryHttp {
+    totalRequests: number;
+    totalErrors: number;
+    /**
+     * Fraction of requests that returned 4xx/5xx
+     */
+    errorRate: number;
+    inFlight: number;
+    latencyMs: AdminMetricsLatency;
+}
+export interface AdminMetricsSummaryProcess {
+    uptimeSeconds?: number;
+    heapUsedMb?: number;
+}
+export interface AdminMetricsSummaryResponse {
+    success: boolean;
+    data: AdminMetricsSummary;
+}
+export interface AuditEventItem {
+    actor_user_id: string;
+    actor_role: AuditEventItemActorRoleEnum;
+    /**
+     * Dot-notation action name (e.g. auth.login.succeeded)
+     */
+    action: string;
+    outcome: AuditEventItemOutcomeEnum;
+    ip?: string;
+    user_agent?: string;
+    request_id?: string;
+    trace_id?: string;
+    target_type?: string;
+    target_id?: string;
+    metadata?: { [key: string]: any };
+    timestamp: string;
+    level: AuditEventItemLevelEnum;
+}
+
+export const AuditEventItemActorRoleEnum = {
+    Admin: 'admin',
+    User: 'user',
+    Anonymous: 'anonymous'
+} as const;
+
+export type AuditEventItemActorRoleEnum =
+    (typeof AuditEventItemActorRoleEnum)[keyof typeof AuditEventItemActorRoleEnum];
+export const AuditEventItemOutcomeEnum = {
+    Success: 'success',
+    Failure: 'failure'
+} as const;
+
+export type AuditEventItemOutcomeEnum =
+    (typeof AuditEventItemOutcomeEnum)[keyof typeof AuditEventItemOutcomeEnum];
+export const AuditEventItemLevelEnum = {
+    Info: 'info',
+    Warn: 'warn'
+} as const;
+
+export type AuditEventItemLevelEnum =
+    (typeof AuditEventItemLevelEnum)[keyof typeof AuditEventItemLevelEnum];
+
+export interface AuditLogsResponse {
+    success: boolean;
+    data: AuditLogsResponseData;
+}
+export interface AuditLogsResponseData {
+    items: Array<AuditEventItem>;
+    total: number;
+}
 export interface AuthTokens {
     /**
      * Access JWT
@@ -584,6 +736,375 @@ export class AccountApi extends BaseAPI {
             .then((request) => request(this.axios, this.basePath));
     }
 }
+
+/**
+ * AdminApi - axios parameter creator
+ */
+export const AdminApiAxiosParamCreator = function (configuration?: Configuration) {
+    return {
+        /**
+         * Returns the most recent audit events from the in-memory ring buffer (up to 200). Events include auth flows, admin CRUD actions, and security blocks. Requires admin role.
+         * @summary Recent audit events
+         * @param {string} [actor] Filter by actor user ID
+         * @param {string} [action] Filter by action name (e.g. auth.login.failed)
+         * @param {GetAdminAuditLogsOutcomeEnum} [outcome] Filter by outcome
+         * @param {string} [since] Return events after this ISO-8601 timestamp
+         * @param {number} [limit] Maximum number of events to return
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getAdminAuditLogs: async (
+            actor?: string,
+            action?: string,
+            outcome?: GetAdminAuditLogsOutcomeEnum,
+            since?: string,
+            limit?: number,
+            options: RawAxiosRequestConfig = {}
+        ): Promise<RequestArgs> => {
+            const localVarPath = `/admin/audit`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options };
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration);
+
+            if (actor !== undefined) {
+                localVarQueryParameter['actor'] = actor;
+            }
+
+            if (action !== undefined) {
+                localVarQueryParameter['action'] = action;
+            }
+
+            if (outcome !== undefined) {
+                localVarQueryParameter['outcome'] = outcome;
+            }
+
+            if (since !== undefined) {
+                localVarQueryParameter['since'] =
+                    (since as any) instanceof Date ? (since as any).toISOString() : since;
+            }
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions =
+                baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {
+                ...localVarHeaderParameter,
+                ...headersFromBaseOptions,
+                ...options.headers
+            };
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions
+            };
+        },
+        /**
+         * Full JSON health snapshot for the admin dashboard. Includes uptime, database status, memory, integrations, and system info. Requires admin role.
+         * @summary Admin health summary
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getAdminHealth: async (options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/admin/health`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options };
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration);
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions =
+                baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {
+                ...localVarHeaderParameter,
+                ...headersFromBaseOptions,
+                ...options.headers
+            };
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions
+            };
+        },
+        /**
+         * Key operational metrics derived from Prometheus counters/histograms, returned as structured JSON for dashboard KPI cards and charts. Requires admin role.
+         * @summary Metrics summary (JSON)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getAdminMetricsSummary: async (
+            options: RawAxiosRequestConfig = {}
+        ): Promise<RequestArgs> => {
+            const localVarPath = `/admin/metrics/summary`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options };
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration);
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions =
+                baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {
+                ...localVarHeaderParameter,
+                ...headersFromBaseOptions,
+                ...options.headers
+            };
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions
+            };
+        }
+    };
+};
+
+/**
+ * AdminApi - functional programming interface
+ */
+export const AdminApiFp = function (configuration?: Configuration) {
+    const localVarAxiosParamCreator = AdminApiAxiosParamCreator(configuration);
+    return {
+        /**
+         * Returns the most recent audit events from the in-memory ring buffer (up to 200). Events include auth flows, admin CRUD actions, and security blocks. Requires admin role.
+         * @summary Recent audit events
+         * @param {string} [actor] Filter by actor user ID
+         * @param {string} [action] Filter by action name (e.g. auth.login.failed)
+         * @param {GetAdminAuditLogsOutcomeEnum} [outcome] Filter by outcome
+         * @param {string} [since] Return events after this ISO-8601 timestamp
+         * @param {number} [limit] Maximum number of events to return
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getAdminAuditLogs(
+            actor?: string,
+            action?: string,
+            outcome?: GetAdminAuditLogsOutcomeEnum,
+            since?: string,
+            limit?: number,
+            options?: RawAxiosRequestConfig
+        ): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AuditLogsResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getAdminAuditLogs(
+                actor,
+                action,
+                outcome,
+                since,
+                limit,
+                options
+            );
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath =
+                operationServerMap['AdminApi.getAdminAuditLogs']?.[localVarOperationServerIndex]
+                    ?.url;
+            return (axios, basePath) =>
+                createRequestFunction(
+                    localVarAxiosArgs,
+                    globalAxios,
+                    BASE_PATH,
+                    configuration
+                )(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Full JSON health snapshot for the admin dashboard. Includes uptime, database status, memory, integrations, and system info. Requires admin role.
+         * @summary Admin health summary
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getAdminHealth(
+            options?: RawAxiosRequestConfig
+        ): Promise<
+            (axios?: AxiosInstance, basePath?: string) => AxiosPromise<AdminHealthResponse>
+        > {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getAdminHealth(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath =
+                operationServerMap['AdminApi.getAdminHealth']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) =>
+                createRequestFunction(
+                    localVarAxiosArgs,
+                    globalAxios,
+                    BASE_PATH,
+                    configuration
+                )(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * Key operational metrics derived from Prometheus counters/histograms, returned as structured JSON for dashboard KPI cards and charts. Requires admin role.
+         * @summary Metrics summary (JSON)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getAdminMetricsSummary(
+            options?: RawAxiosRequestConfig
+        ): Promise<
+            (axios?: AxiosInstance, basePath?: string) => AxiosPromise<AdminMetricsSummaryResponse>
+        > {
+            const localVarAxiosArgs =
+                await localVarAxiosParamCreator.getAdminMetricsSummary(options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath =
+                operationServerMap['AdminApi.getAdminMetricsSummary']?.[
+                    localVarOperationServerIndex
+                ]?.url;
+            return (axios, basePath) =>
+                createRequestFunction(
+                    localVarAxiosArgs,
+                    globalAxios,
+                    BASE_PATH,
+                    configuration
+                )(axios, localVarOperationServerBasePath || basePath);
+        }
+    };
+};
+
+/**
+ * AdminApi - factory interface
+ */
+export const AdminApiFactory = function (
+    configuration?: Configuration,
+    basePath?: string,
+    axios?: AxiosInstance
+) {
+    const localVarFp = AdminApiFp(configuration);
+    return {
+        /**
+         * Returns the most recent audit events from the in-memory ring buffer (up to 200). Events include auth flows, admin CRUD actions, and security blocks. Requires admin role.
+         * @summary Recent audit events
+         * @param {string} [actor] Filter by actor user ID
+         * @param {string} [action] Filter by action name (e.g. auth.login.failed)
+         * @param {GetAdminAuditLogsOutcomeEnum} [outcome] Filter by outcome
+         * @param {string} [since] Return events after this ISO-8601 timestamp
+         * @param {number} [limit] Maximum number of events to return
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getAdminAuditLogs(
+            actor?: string,
+            action?: string,
+            outcome?: GetAdminAuditLogsOutcomeEnum,
+            since?: string,
+            limit?: number,
+            options?: RawAxiosRequestConfig
+        ): AxiosPromise<AuditLogsResponse> {
+            return localVarFp
+                .getAdminAuditLogs(actor, action, outcome, since, limit, options)
+                .then((request) => request(axios, basePath));
+        },
+        /**
+         * Full JSON health snapshot for the admin dashboard. Includes uptime, database status, memory, integrations, and system info. Requires admin role.
+         * @summary Admin health summary
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getAdminHealth(options?: RawAxiosRequestConfig): AxiosPromise<AdminHealthResponse> {
+            return localVarFp.getAdminHealth(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Key operational metrics derived from Prometheus counters/histograms, returned as structured JSON for dashboard KPI cards and charts. Requires admin role.
+         * @summary Metrics summary (JSON)
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getAdminMetricsSummary(
+            options?: RawAxiosRequestConfig
+        ): AxiosPromise<AdminMetricsSummaryResponse> {
+            return localVarFp
+                .getAdminMetricsSummary(options)
+                .then((request) => request(axios, basePath));
+        }
+    };
+};
+
+/**
+ * AdminApi - object-oriented interface
+ */
+export class AdminApi extends BaseAPI {
+    /**
+     * Returns the most recent audit events from the in-memory ring buffer (up to 200). Events include auth flows, admin CRUD actions, and security blocks. Requires admin role.
+     * @summary Recent audit events
+     * @param {string} [actor] Filter by actor user ID
+     * @param {string} [action] Filter by action name (e.g. auth.login.failed)
+     * @param {GetAdminAuditLogsOutcomeEnum} [outcome] Filter by outcome
+     * @param {string} [since] Return events after this ISO-8601 timestamp
+     * @param {number} [limit] Maximum number of events to return
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public getAdminAuditLogs(
+        actor?: string,
+        action?: string,
+        outcome?: GetAdminAuditLogsOutcomeEnum,
+        since?: string,
+        limit?: number,
+        options?: RawAxiosRequestConfig
+    ) {
+        return AdminApiFp(this.configuration)
+            .getAdminAuditLogs(actor, action, outcome, since, limit, options)
+            .then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Full JSON health snapshot for the admin dashboard. Includes uptime, database status, memory, integrations, and system info. Requires admin role.
+     * @summary Admin health summary
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public getAdminHealth(options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration)
+            .getAdminHealth(options)
+            .then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Key operational metrics derived from Prometheus counters/histograms, returned as structured JSON for dashboard KPI cards and charts. Requires admin role.
+     * @summary Metrics summary (JSON)
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     */
+    public getAdminMetricsSummary(options?: RawAxiosRequestConfig) {
+        return AdminApiFp(this.configuration)
+            .getAdminMetricsSummary(options)
+            .then((request) => request(this.axios, this.basePath));
+    }
+}
+
+export const GetAdminAuditLogsOutcomeEnum = {
+    Success: 'success',
+    Failure: 'failure'
+} as const;
+export type GetAdminAuditLogsOutcomeEnum =
+    (typeof GetAdminAuditLogsOutcomeEnum)[keyof typeof GetAdminAuditLogsOutcomeEnum];
 
 /**
  * AuthApi - axios parameter creator
