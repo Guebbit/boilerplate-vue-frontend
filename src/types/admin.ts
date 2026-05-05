@@ -21,7 +21,7 @@ export interface IAdminKpiCard {
 export interface IAdminAuditFilters {
     actor?: string;
     action?: string;
-    outcome?: 'success' | 'failure' | '';
+    outcome?: 'success' | 'failure';
     since?: string;
     limit?: number;
 }

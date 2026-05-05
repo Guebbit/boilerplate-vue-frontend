@@ -75,11 +75,11 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
         errorAudit.value = undefined;
         try {
             const response = await adminApi.getAdminAuditLogs(
-                filters.actor || undefined,
-                filters.action || undefined,
-                filters.outcome || undefined,
-                filters.since || undefined,
-                filters.limit || undefined
+                filters.actor,
+                filters.action,
+                filters.outcome,
+                filters.since,
+                filters.limit
             );
             auditEvents.value = response.data.data.items;
             auditTotal.value = response.data.data.total;

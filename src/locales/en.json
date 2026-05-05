@@ -368,10 +368,6 @@
         "audit-col-ip": "IP",
         "audit-col-request-id": "Request ID",
         "audit-col-trace-id": "Trace ID",
-        "tab-metrics": "Metrics",
-        "kpi-status": "Status",
-        "kpi-uptime-hint": "since last restart",
-        "kpi-db": "Database",
         "overview-system": "System",
         "overview-service": "Service",
         "overview-env": "Environment",
@@ -406,7 +402,6 @@
         "metrics-db-queries": "Total queries",
         "metrics-db-errors": "DB errors",
         "metrics-no-data": "No metrics data available",
-        "audit-col-time": "Time",
         "audit-total": "{count} events",
         "audit-empty": "No audit events"
     }

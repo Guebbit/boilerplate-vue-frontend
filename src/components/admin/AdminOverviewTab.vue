@@ -67,7 +67,7 @@ const kpiCards = computed<IAdminKpiCard[]>(() => [
     },
     {
         title: t('admin-page.kpi-uptime'),
-        value: formatUptime(props.metrics?.process?.uptimeSeconds ?? props.health?.uptimeSeconds),
+        value: formatUptime(props.health?.uptimeSeconds ?? props.metrics?.process?.uptimeSeconds),
         status: 'ok'
     },
     {
@@ -91,7 +91,7 @@ const kpiCards = computed<IAdminKpiCard[]>(() => [
         value:
             props.metrics?.http.latencyMs.p50 === undefined
                 ? '—'
-                : `${props.metrics.http.latencyMs.p50}ms`,
+                : `${props.metrics.http.latencyMs.p50} ms`,
         status: 'ok'
     },
     {
@@ -99,7 +99,7 @@ const kpiCards = computed<IAdminKpiCard[]>(() => [
         value:
             props.metrics?.http.latencyMs.p95 === undefined
                 ? '—'
-                : `${props.metrics.http.latencyMs.p95}ms`,
+                : `${props.metrics.http.latencyMs.p95} ms`,
         status: 'ok'
     }
 ]);

@@ -19,10 +19,10 @@ const props = defineProps<{
 }>();
 
 const filters = reactive<IAdminAuditFilters>({
-    actor: '',
-    action: '',
-    outcome: '',
-    since: '',
+    actor: undefined,
+    action: undefined,
+    outcome: undefined,
+    since: undefined,
     limit: 50
 });
 
@@ -31,13 +31,16 @@ const handleSearch = () => {
 };
 
 const handleReset = () => {
-    filters.actor = '';
-    filters.action = '';
-    filters.outcome = '';
-    filters.since = '';
+    filters.actor = undefined;
+    filters.action = undefined;
+    filters.outcome = undefined;
+    filters.since = undefined;
     filters.limit = 50;
     void props.onSearch(filters);
 };
+
+const truncateId = (value?: string, length = 8) =>
+    value ? `${value.slice(0, length)}...` : '—';
 
 const formatDate = (iso: string) => {
     try {
@@ -64,7 +67,7 @@ const formatDate = (iso: string) => {
                 :placeholder="t('admin-page.audit-filter-action')"
             />
             <select v-model="filters.outcome" class="theme-select">
-                <option value="">{{ t('admin-page.audit-filter-outcome-all') }}</option>
+                <option :value="undefined">{{ t('admin-page.audit-filter-outcome-all') }}</option>
                 <option value="success">{{ t('admin-page.audit-filter-outcome-success') }}</option>
                 <option value="failure">{{ t('admin-page.audit-filter-outcome-failure') }}</option>
             </select>
@@ -153,10 +156,10 @@ const formatDate = (iso: string) => {
                         </td>
                         <td>{{ event.ip ?? '—' }}</td>
                         <td class="admin-audit-cell-id" :title="event.request_id">
-                            {{ event.request_id ? event.request_id.slice(0, 8) + '…' : '—' }}
+                            {{ truncateId(event.request_id) }}
                         </td>
                         <td class="admin-audit-cell-id" :title="event.trace_id">
-                            {{ event.trace_id ? event.trace_id.slice(0, 8) + '…' : '—' }}
+                            {{ truncateId(event.trace_id) }}
                         </td>
                     </tr>
                 </tbody>
