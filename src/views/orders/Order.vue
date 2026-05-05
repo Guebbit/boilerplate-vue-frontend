@@ -11,14 +11,19 @@
                 <DetailCard class="item-detail-page-hero animate-on-hover">
                     <div class="item-detail-page-hero-icon" aria-hidden="true">🧾</div>
                     <div>
-                        <p v-if="currentOrder?.id" class="item-detail-page-eyebrow">{{ currentOrder.id }}</p>
+                        <p v-if="currentOrder?.id" class="item-detail-page-eyebrow">
+                            {{ currentOrder.id }}
+                        </p>
                         <h2 class="item-detail-page-hero-title">{{ heroTitle }}</h2>
                         <p class="item-detail-page-hero-description">{{ heroDescription }}</p>
                     </div>
                 </DetailCard>
 
                 <div class="item-detail-page-stats">
-                    <MaterialStatCard :title="t('order-target-page.label-status')" :value="orderStatus" />
+                    <MaterialStatCard
+                        :title="t('order-target-page.label-status')"
+                        :value="orderStatus"
+                    />
                     <MaterialStatCard
                         :title="t('order-target-page.label-total')"
                         :value="formatCurrency(currentOrder?.total)"
@@ -39,7 +44,11 @@
                     </div>
 
                     <div v-if="currentOrder" class="item-detail-page-grid-fields">
-                        <ItemDetailField :label="t('order-target-page.label-order-id')" :value="currentOrder.id" icon="#" />
+                        <ItemDetailField
+                            :label="t('order-target-page.label-order-id')"
+                            :value="currentOrder.id"
+                            icon="#"
+                        />
                         <ItemDetailField :label="t('order-target-page.label-status')" icon="●">
                             <span class="item-detail-page-status-chip">{{ orderStatus }}</span>
                         </ItemDetailField>
@@ -60,11 +69,17 @@
                             full-width
                         />
                     </div>
-                    <p v-else class="item-detail-page-empty">{{ t('order-target-page.loading') }}</p>
+                    <p v-else class="item-detail-page-empty">
+                        {{ t('order-target-page.loading') }}
+                    </p>
                 </DetailCard>
 
                 <DetailCard as="aside" class="item-detail-page-aside">
-                    <MaterialGraphicCard :title="heroTitle" :description="heroDescription" variant="tertiary" />
+                    <MaterialGraphicCard
+                        :title="heroTitle"
+                        :description="heroDescription"
+                        variant="tertiary"
+                    />
                     <ItemDetailField
                         :label="t('order-target-page.label-date')"
                         :value="formatDateTime(currentOrder?.createdAt)"
@@ -77,7 +92,9 @@
                     />
 
                     <div>
-                        <h3 class="item-detail-page-aside-title">{{ t('order-target-page.label-items') }}</h3>
+                        <h3 class="item-detail-page-aside-title">
+                            {{ t('order-target-page.label-items') }}
+                        </h3>
                         <div v-if="currentOrder?.items?.length" class="item-detail-page-item-list">
                             <article
                                 v-for="item in currentOrder.items"
@@ -86,7 +103,9 @@
                             >
                                 <div class="item-detail-page-item-header">
                                     <span>{{ item.product.title || item.product.id }}</span>
-                                    <span class="item-detail-page-status-chip">× {{ item.quantity }}</span>
+                                    <span class="item-detail-page-status-chip"
+                                        >× {{ item.quantity }}</span
+                                    >
                                 </div>
                                 <div class="item-detail-page-item-row">
                                     <p>{{ t('order-target-page.label-product-id') }}</p>
@@ -107,7 +126,12 @@
                 >
                     {{ t('order-target-page.button-go-to-edit') }}
                 </RouterLink>
-                <button v-if="currentOrder" class="theme-button" :disabled="loading" @click="downloadInvoice">
+                <button
+                    v-if="currentOrder"
+                    class="theme-button"
+                    :disabled="loading"
+                    @click="downloadInvoice"
+                >
                     {{ t('order-target-page.button-download-invoice') }}
                 </button>
                 <RouterLink :to="routerLinkI18n({ name: 'OrdersList' })" class="theme-button">
@@ -171,7 +195,9 @@ const { formatText, formatDateTime, formatCurrency } = useItemDetailDisplay();
  * Hero labels and localized status.
  */
 const heroTitle = computed(() => currentOrder.value?.id ?? id ?? t('order-target-page.page-title'));
-const heroDescription = computed(() => formatText(currentOrder.value?.notes || currentOrder.value?.email));
+const heroDescription = computed(() =>
+    formatText(currentOrder.value?.notes || currentOrder.value?.email)
+);
 const orderStatus = computed(() => {
     const status = currentOrder.value?.status;
     return status ? t(`orders-form.status-${status}`) : EMPTY_VALUE;

@@ -3,14 +3,20 @@ export default { name: 'AdminAuditTab' };
 </script>
 
 <script setup lang="ts">
-import { reactive, onMounted } from 'vue';
+import { reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useAdminAudit } from '@/composables/useAdminAudit.ts';
+import type { AuditEventItem } from '@types';
 import type { IAdminAuditFilters } from '@/types/admin.ts';
 
 const { t } = useI18n();
 
-const { auditEvents, total, loading, error, fetchAuditLogs } = useAdminAudit();
+const props = defineProps<{
+    auditEvents: AuditEventItem[];
+    total: number;
+    loading: boolean;
+    error?: string;
+    onSearch: (filters?: IAdminAuditFilters) => Promise<void>;
+}>();
 
 const filters = reactive<IAdminAuditFilters>({
     actor: '',
@@ -21,7 +27,7 @@ const filters = reactive<IAdminAuditFilters>({
 });
 
 const handleSearch = () => {
-    fetchAuditLogs(filters);
+    void props.onSearch(filters);
 };
 
 const handleReset = () => {
@@ -30,7 +36,7 @@ const handleReset = () => {
     filters.outcome = '';
     filters.since = '';
     filters.limit = 50;
-    fetchAuditLogs(filters);
+    void props.onSearch(filters);
 };
 
 const formatDate = (iso: string) => {
@@ -40,13 +46,10 @@ const formatDate = (iso: string) => {
         return iso;
     }
 };
-
-onMounted(() => fetchAuditLogs(filters));
 </script>
 
 <template>
     <div class="admin-audit-tab">
-        <!-- Filters -->
         <form class="admin-audit-filters" @submit.prevent="handleSearch">
             <input
                 v-model="filters.actor"
@@ -78,7 +81,7 @@ onMounted(() => fetchAuditLogs(filters));
                 <option :value="200">200</option>
             </select>
             <div class="admin-audit-filter-actions">
-                <button type="submit" class="theme-button" :disabled="loading">
+                <button type="submit" class="theme-button" :disabled="props.loading">
                     {{ t('generic.search') }}
                 </button>
                 <button type="button" class="theme-button" @click="handleReset">
@@ -87,28 +90,25 @@ onMounted(() => fetchAuditLogs(filters));
             </div>
         </form>
 
-        <!-- Summary -->
         <div class="admin-audit-summary">
             {{
                 t('admin-page.audit-showing', {
-                    shown: auditEvents.length,
-                    total
+                    shown: props.auditEvents.length,
+                    total: props.total
                 })
             }}
         </div>
 
-        <!-- Error state -->
-        <div v-if="error" class="admin-error-state">{{ error }}</div>
+        <div v-if="props.error" class="admin-error-state">{{ props.error }}</div>
 
-        <!-- Empty state -->
-        <div v-else-if="!loading && auditEvents.length === 0" class="admin-empty-state">
+        <div v-else-if="!props.loading && props.auditEvents.length === 0" class="admin-empty-state">
             {{ t('generic.no-data') }}
         </div>
 
-        <!-- Loading -->
-        <div v-else-if="loading" class="admin-loading-state">{{ t('generic.loading-state') }}</div>
+        <div v-else-if="props.loading" class="admin-loading-state">
+            {{ t('generic.loading-state') }}
+        </div>
 
-        <!-- Table -->
         <div v-else class="admin-audit-table-wrapper">
             <table class="admin-audit-table">
                 <thead>
@@ -125,7 +125,7 @@ onMounted(() => fetchAuditLogs(filters));
                 </thead>
                 <tbody>
                     <tr
-                        v-for="(event, index) in auditEvents"
+                        v-for="(event, index) in props.auditEvents"
                         :key="`${event.timestamp}-${index}`"
                         :class="event.outcome === 'failure' ? 'admin-audit-row-failure' : ''"
                     >

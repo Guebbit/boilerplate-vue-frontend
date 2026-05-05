@@ -25,21 +25,21 @@
                 v-show="isAdmin"
                 :to="
                     routerLinkI18n({
-                        name: 'UsersList'
-                    })
-                "
-            >
-                {{ t('navigation.label-users-list', 2) }}
-            </RouterLink>
-            <RouterLink
-                v-show="isAdmin"
-                :to="
-                    routerLinkI18n({
                         name: 'Admin'
                     })
                 "
             >
                 {{ t('navigation.label-admin') }}
+            </RouterLink>
+            <RouterLink
+                v-show="isAdmin"
+                :to="
+                    routerLinkI18n({
+                        name: 'UsersList'
+                    })
+                "
+            >
+                {{ t('navigation.label-users-list', 2) }}
             </RouterLink>
             <RouterLink
                 :to="

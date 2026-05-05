@@ -9,7 +9,6 @@
 </template>
 
 <script setup lang="ts">
-
 /**
  * Reusable checkbox field: wraps a checkbox input with a label in the
  * theme-form-input-checkbox layout, with optional validation error display.

@@ -139,7 +139,7 @@ All types are driven by `openapi.yaml` (admin section) and reflected in:
 
 - `api/api.ts` — generated interfaces (`AdminHealth`, `AdminMetricsSummary`, `AuditEventItem`, …)
 - `src/types/admin.ts` — FE view-model types (`IAdminKpi`, `IAdminAuditFilters`)
-- `src/composables/useAdminHealth.ts`, `useAdminMetrics.ts`, `useAdminAudit.ts`
+- `src/composables/useAdminObservability.ts`
 - `.dev/mocks/handlers/adminMockHandlers.ts` — MSW mock responses for dev/test
 
 # TODO

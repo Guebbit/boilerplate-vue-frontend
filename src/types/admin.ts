@@ -1,41 +1,23 @@
 /**
- * Admin / Observability types — contract-driven from OpenAPI.
+ * Admin dashboard view-layer types.
  *
- * These types are re-exported from the generated API layer and
- * supplemented with FE-only view-model types (prefixed with `I`).
+ * Contract types (AdminHealth, AdminMetricsSummary, AuditEventItem, etc.)
+ * come from `@types`, which re-exports the generated `@api` client types.
+ * Only UI/composition-specific types belong here.
  */
-export type {
-    AdminHealth,
-    AdminHealthIntegrations,
-    AdminHealthMemory,
-    AdminHealthResponse,
-    AdminHealthSystem,
-    AdminMetricsLatency,
-    AdminMetricsSummary,
-    AdminMetricsSummaryResponse,
-    AuditEventItem,
-    AuditLogsResponse
-} from '@api';
 
-export {
-    AuditEventItemActorRoleEnum,
-    AuditEventItemLevelEnum,
-    AuditEventItemOutcomeEnum
-} from '@api';
+/** Identifies each tab in the Admin dashboard. */
+export type AdminTabKey = 'overview' | 'audit';
 
-/**
- * KPI card shown in the overview row.
- */
-export interface IAdminKpi {
+/** A single KPI card shown in the admin overview. */
+export interface IAdminKpiCard {
     title: string;
     value: string | number;
     hint?: string;
     status?: 'ok' | 'warn' | 'error' | 'loading' | 'unknown';
 }
 
-/**
- * Audit filter form state.
- */
+/** Audit filter form state. */
 export interface IAdminAuditFilters {
     actor?: string;
     action?: string;

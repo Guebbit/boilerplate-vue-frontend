@@ -18,8 +18,15 @@
                 </DetailCard>
 
                 <div class="item-detail-page-stats">
-                    <MaterialStatCard :title="t('order-target-page.label-order-id')" :value="id ?? EMPTY_VALUE" />
-                    <MaterialStatCard :title="t('order-target-page.label-status')" :value="orderStatus" accent="secondary" />
+                    <MaterialStatCard
+                        :title="t('order-target-page.label-order-id')"
+                        :value="id ?? EMPTY_VALUE"
+                    />
+                    <MaterialStatCard
+                        :title="t('order-target-page.label-status')"
+                        :value="orderStatus"
+                        accent="secondary"
+                    />
                     <MaterialStatCard
                         :title="t('order-target-page.label-total')"
                         :value="formatCurrency(currentOrder?.total)"
@@ -63,7 +70,11 @@
                 </DetailCard>
 
                 <DetailCard as="aside" class="item-detail-page-aside">
-                    <MaterialGraphicCard :title="heroTitle" :description="heroDescription" variant="tertiary" />
+                    <MaterialGraphicCard
+                        :title="heroTitle"
+                        :description="heroDescription"
+                        variant="tertiary"
+                    />
                     <ItemDetailField
                         :label="t('order-target-page.label-date')"
                         :value="formatDateTime(currentOrder?.createdAt)"
@@ -83,7 +94,11 @@
             </div>
 
             <div class="item-detail-page-actions">
-                <RouterLink v-if="id" :to="routerLinkI18n({ name: 'OrderTarget', params: { id } })" class="theme-button">
+                <RouterLink
+                    v-if="id"
+                    :to="routerLinkI18n({ name: 'OrderTarget', params: { id } })"
+                    class="theme-button"
+                >
                     {{ t('order-edit-page.button-go-to-details') }}
                 </RouterLink>
                 <RouterLink :to="routerLinkI18n({ name: 'OrdersList' })" class="theme-button">
@@ -171,7 +186,10 @@ interface IOrderEditForm {
  */
 const editSchema = z.object({
     status: zodSchemaOrderStatus.optional(),
-    email: z.preprocess((v) => (v === '' ? undefined : v), z.email(t('orders-form.email-invalid')).optional())
+    email: z.preprocess(
+        (v) => (v === '' ? undefined : v),
+        z.email(t('orders-form.email-invalid')).optional()
+    )
 });
 
 /**
@@ -198,7 +216,9 @@ const { showErrors, resetForm } = useItemDetailForm({
  * Hero texts and status label.
  */
 const heroTitle = computed(() => currentOrder.value?.id ?? id ?? t('order-edit-page.page-title'));
-const heroDescription = computed(() => formatText(currentOrder.value?.notes || currentOrder.value?.email));
+const heroDescription = computed(() =>
+    formatText(currentOrder.value?.notes || currentOrder.value?.email)
+);
 const orderStatus = computed(() => {
     const status = currentOrder.value?.status;
     return status ? t(`orders-form.status-${status}`) : EMPTY_VALUE;
