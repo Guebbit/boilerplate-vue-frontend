@@ -1116,6 +1116,21 @@ components:
                         total: { type: integer, minimum: 0 }
 
 paths:
+    # --------- System ---------
+    /:
+        get:
+            tags: [Admin]
+            summary: API health check
+            description: Returns a simple liveness indicator. Use `GET /admin/health` for the full admin health summary.
+            operationId: getHealth
+            responses:
+                '200':
+                    description: API is running
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MessageResponse'
+
     # --------- Admin — observability & dashboard ---------
     /admin/health:
         get:

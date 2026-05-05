@@ -1,67 +1,46 @@
 import { ref, type Ref } from 'vue';
 import { adminApi } from '@/utils/api.ts';
-import type {
-    AdminHealth,
-    AdminMetricsSummary,
-    AuditEventItem,
-    GetAdminAuditLogsOutcomeEnum
-} from '@types';
+import type { AdminHealth, AdminMetricsSummary, AuditEventItem } from '@types';
+import type { IAdminAuditFilters } from '@/types/admin.ts';
 
-export interface IUseAdminDashboardAuditFilters {
-    actor?: string;
-    action?: string;
-    outcome?: GetAdminAuditLogsOutcomeEnum;
-    since?: string;
-    limit?: number;
-}
-
-export interface IUseAdminDashboardReturn {
-    /** Health data from GET /admin/health */
+export interface IUseAdminObservabilityReturn {
     health: Ref<AdminHealth | undefined>;
-    /** Metrics data from GET /admin/metrics/summary */
     metrics: Ref<AdminMetricsSummary | undefined>;
-    /** Audit events from GET /admin/audit */
-    auditItems: Ref<AuditEventItem[]>;
+    auditEvents: Ref<AuditEventItem[]>;
     auditTotal: Ref<number>;
-    /** Loading flags */
     loadingHealth: Ref<boolean>;
     loadingMetrics: Ref<boolean>;
     loadingAudit: Ref<boolean>;
-    /** Error messages */
     errorHealth: Ref<string | undefined>;
     errorMetrics: Ref<string | undefined>;
     errorAudit: Ref<string | undefined>;
-    /** Fetch actions */
     fetchHealth: () => Promise<void>;
     fetchMetrics: () => Promise<void>;
-    fetchAudit: (filters?: IUseAdminDashboardAuditFilters) => Promise<void>;
+    fetchAuditLogs: (filters?: IAdminAuditFilters) => Promise<void>;
     fetchAll: () => Promise<void>;
 }
 
 /**
- * Unified composable for the Admin dashboard.
+ * Unified composable for the Admin observability dashboard.
  *
- * Provides typed access to all three admin observability endpoints:
- *   - GET /admin/health        → AdminHealth
- *   - GET /admin/metrics/summary → AdminMetricsSummary
- *   - GET /admin/audit         → AuditLogsResponse
- *
- * Contract types are sourced from the generated @api layer via @types.
- * UI-only types (AdminTabKey, IAdminKpiCard) live in types/admin.ts.
+ * It exposes the three contract-backed endpoints behind one shared state:
+ * - GET /admin/health
+ * - GET /admin/metrics/summary
+ * - GET /admin/audit
  */
-export const useAdminDashboard = (): IUseAdminDashboardReturn => {
-    const health = ref<AdminHealth | undefined>();
-    const metrics = ref<AdminMetricsSummary | undefined>();
-    const auditItems = ref<AuditEventItem[]>([]);
+export const useAdminObservability = (): IUseAdminObservabilityReturn => {
+    const health = ref<AdminHealth | undefined>(undefined);
+    const metrics = ref<AdminMetricsSummary | undefined>(undefined);
+    const auditEvents = ref<AuditEventItem[]>([]);
     const auditTotal = ref(0);
 
     const loadingHealth = ref(false);
     const loadingMetrics = ref(false);
     const loadingAudit = ref(false);
 
-    const errorHealth = ref<string | undefined>();
-    const errorMetrics = ref<string | undefined>();
-    const errorAudit = ref<string | undefined>();
+    const errorHealth = ref<string | undefined>(undefined);
+    const errorMetrics = ref<string | undefined>(undefined);
+    const errorAudit = ref<string | undefined>(undefined);
 
     const fetchHealth = async () => {
         loadingHealth.value = true;
@@ -91,7 +70,7 @@ export const useAdminDashboard = (): IUseAdminDashboardReturn => {
         }
     };
 
-    const fetchAudit = async (filters: IUseAdminDashboardAuditFilters = {}) => {
+    const fetchAuditLogs = async (filters: IAdminAuditFilters = {}) => {
         loadingAudit.value = true;
         errorAudit.value = undefined;
         try {
@@ -102,23 +81,24 @@ export const useAdminDashboard = (): IUseAdminDashboardReturn => {
                 filters.since,
                 filters.limit
             );
-            auditItems.value = response.data.data.items;
+            auditEvents.value = response.data.data.items;
             auditTotal.value = response.data.data.total;
         } catch (error: unknown) {
-            errorAudit.value = error instanceof Error ? error.message : 'Failed to load audit data';
+            errorAudit.value =
+                error instanceof Error ? error.message : 'Failed to load audit logs';
         } finally {
             loadingAudit.value = false;
         }
     };
 
     const fetchAll = async () => {
-        await Promise.all([fetchHealth(), fetchMetrics(), fetchAudit()]);
+        await Promise.all([fetchHealth(), fetchMetrics(), fetchAuditLogs()]);
     };
 
     return {
         health,
         metrics,
-        auditItems,
+        auditEvents,
         auditTotal,
         loadingHealth,
         loadingMetrics,
@@ -128,7 +108,7 @@ export const useAdminDashboard = (): IUseAdminDashboardReturn => {
         errorAudit,
         fetchHealth,
         fetchMetrics,
-        fetchAudit,
+        fetchAuditLogs,
         fetchAll
     };
 };
