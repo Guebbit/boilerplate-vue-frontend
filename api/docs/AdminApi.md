@@ -52,7 +52,7 @@ const { status, data } = await apiInstance.getAdminAuditLogs(
 
 ### Return type
 
-**AuditLogsResponse**
+**AuditLogsResponse** (see [Audit](Audit.md))
 
 ### Authorization
 
@@ -100,7 +100,7 @@ This endpoint does not have any parameters.
 
 ### Return type
 
-**AdminHealthResponse**
+**AdminHealthResponse** (see [AdminHealth](AdminHealth.md))
 
 ### Authorization
 
@@ -147,7 +147,7 @@ This endpoint does not have any parameters.
 
 ### Return type
 
-**AdminMetricsSummaryResponse**
+**AdminMetricsSummaryResponse** (see [AdminMetrics](AdminMetrics.md))
 
 ### Authorization
 
