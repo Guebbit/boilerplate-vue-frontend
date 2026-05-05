@@ -40,18 +40,14 @@
                     <p class="field-label">
                         {{ t('playground-page.label-provided-change-typing') }}
                     </p>
-                    <BaseInput
-                        v-model="providedVariable"
-                        type="text"
-                    />
+                    <BaseInput v-model="providedVariable" type="text" />
                     <p class="field-label">
                         {{ t('playground-page.label-provided-change-mutation') }}
                     </p>
                     <BaseInput
                         :model-value="providedVariable"
                         @update:model-value="
-                            (value) =>
-                                setProvidedVariable(typeof value === 'string' ? value : '')
+                            (value) => setProvidedVariable(typeof value === 'string' ? value : '')
                         "
                         type="text"
                     />
@@ -79,7 +75,9 @@
         </section>
 
         <section class="info-wrapper">
-            <BaseButton @click="testAddMessage">{{ t('playground-page.button-test-alert') }}</BaseButton>
+            <BaseButton @click="testAddMessage">{{
+                t('playground-page.button-test-alert')
+            }}</BaseButton>
             <BaseButton @click="websocketMessages = []">
                 {{ t('playground-page.button-reset-messages') }}
             </BaseButton>

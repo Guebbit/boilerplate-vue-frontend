@@ -18,7 +18,10 @@
                 </DetailCard>
 
                 <div class="item-detail-page-stats">
-                    <MaterialStatCard :title="t('product-target-page.label-id')" :value="id ?? EMPTY_VALUE" />
+                    <MaterialStatCard
+                        :title="t('product-target-page.label-id')"
+                        :value="id ?? EMPTY_VALUE"
+                    />
                     <MaterialStatCard
                         :title="t('product-target-page.label-price')"
                         :value="formatCurrency(currentProduct?.price)"
@@ -26,7 +29,13 @@
                     />
                     <MaterialStatCard
                         :title="t('product-target-page.label-active')"
-                        :value="formatFlag(currentProduct?.active, t('generic.enabled'), t('generic.disabled'))"
+                        :value="
+                            formatFlag(
+                                currentProduct?.active,
+                                t('generic.enabled'),
+                                t('generic.disabled')
+                            )
+                        "
                         accent="tertiary"
                     />
                 </div>
@@ -62,7 +71,10 @@
                             multiline
                             :rows="5"
                         />
-                        <BaseCheckbox v-model="form.active" :label="t('product-edit-page.label-active')" />
+                        <BaseCheckbox
+                            v-model="form.active"
+                            :label="t('product-edit-page.label-active')"
+                        />
 
                         <div class="item-detail-page-form-actions">
                             <BaseButton type="submit" :disabled="isSubmitting || loading">
@@ -76,8 +88,16 @@
                 </DetailCard>
 
                 <DetailCard as="aside" class="item-detail-page-aside">
-                    <MaterialGraphicCard :title="heroTitle" :description="heroDescription" variant="primary" />
-                    <ItemDetailField :label="t('product-target-page.label-id')" :value="id ?? EMPTY_VALUE" icon="#" />
+                    <MaterialGraphicCard
+                        :title="heroTitle"
+                        :description="heroDescription"
+                        variant="primary"
+                    />
+                    <ItemDetailField
+                        :label="t('product-target-page.label-id')"
+                        :value="id ?? EMPTY_VALUE"
+                        icon="#"
+                    />
                     <ItemDetailField
                         :label="t('product-target-page.label-created-at')"
                         :value="formatDateTime(currentProduct?.createdAt)"
@@ -92,7 +112,11 @@
             </div>
 
             <div class="item-detail-page-actions">
-                <RouterLink v-if="id" :to="routerLinkI18n({ name: 'ProductTarget', params: { id } })" class="theme-button">
+                <RouterLink
+                    v-if="id"
+                    :to="routerLinkI18n({ name: 'ProductTarget', params: { id } })"
+                    class="theme-button"
+                >
                     {{ t('product-edit-page.button-go-to-details') }}
                 </RouterLink>
                 <RouterLink :to="routerLinkI18n({ name: 'ProductsList' })" class="theme-button">
@@ -198,7 +222,9 @@ const { showErrors, resetForm } = useItemDetailForm({
 /**
  * Hero metadata.
  */
-const heroTitle = computed(() => currentProduct.value?.title ?? id ?? t('product-edit-page.page-title'));
+const heroTitle = computed(
+    () => currentProduct.value?.title ?? id ?? t('product-edit-page.page-title')
+);
 const heroDescription = computed(() => formatText(currentProduct.value?.description));
 
 /**

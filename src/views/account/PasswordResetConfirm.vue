@@ -100,7 +100,11 @@ const formElement = ref<HTMLFormElement>();
 
 const submitForm = () =>
     handleSubmit(async () => {
-        await confirmPasswordReset(form.value.token!, form.value.password!, form.value.passwordConfirm!);
+        await confirmPasswordReset(
+            form.value.token!,
+            form.value.password!,
+            form.value.passwordConfirm!
+        );
         addMessage(t('password-reset-confirm-page.success'));
         showErrors.value = false;
         await router.push(routerLinkI18n({ name: 'Login' }));

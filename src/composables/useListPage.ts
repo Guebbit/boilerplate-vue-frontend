@@ -5,7 +5,12 @@ interface IUseListPageOptions<TFilters extends Record<string, unknown>> {
     pageCurrent: Ref<number>;
     pageSize: Ref<number>;
     initialPageSize?: number;
-    fetchSearch: (filters: TFilters, page: number, pageSize: number, forced?: boolean) => Promise<unknown>;
+    fetchSearch: (
+        filters: TFilters,
+        page: number,
+        pageSize: number,
+        forced?: boolean
+    ) => Promise<unknown>;
     onError: (error: unknown) => void;
 }
 
@@ -20,7 +25,9 @@ export const useListPage = <TFilters extends Record<string, unknown>>({
     pageSize.value = initialPageSize;
 
     const fetchCurrentPage = () =>
-        fetchSearch(filters, Math.max(1, pageCurrent.value), pageSize.value).catch((error) => onError(error));
+        fetchSearch(filters, Math.max(1, pageCurrent.value), pageSize.value).catch((error) =>
+            onError(error)
+        );
 
     const handleSearch = () => {
         pageCurrent.value = 1;
@@ -36,7 +43,9 @@ export const useListPage = <TFilters extends Record<string, unknown>>({
     onMounted(fetchCurrentPage);
 
     watch([pageCurrent, pageSize], ([currentPage, currentPageSize]) => {
-        fetchSearch(filters, Math.max(1, currentPage), currentPageSize).catch((error) => onError(error));
+        fetchSearch(filters, Math.max(1, currentPage), currentPageSize).catch((error) =>
+            onError(error)
+        );
     });
 
     return {

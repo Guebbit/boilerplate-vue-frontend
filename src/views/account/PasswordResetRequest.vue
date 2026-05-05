@@ -53,10 +53,9 @@ const { addMessage } = useNotificationsStore();
 const { requestPasswordReset } = useProfileStore();
 const { zodSchemaUsers } = useUsersStore();
 
-const { form, formErrors, isSubmitting, handleSubmit } = useStructureFormValidation<{ email?: string }>(
-    { email: '' },
-    zodSchemaUsers.pick({ email: true })
-);
+const { form, formErrors, isSubmitting, handleSubmit } = useStructureFormValidation<{
+    email?: string;
+}>({ email: '' }, zodSchemaUsers.pick({ email: true }));
 
 const showErrors = ref(false);
 const formElement = ref<HTMLFormElement>();
