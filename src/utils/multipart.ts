@@ -1,3 +1,19 @@
+import type { IResponseSuccess } from '@/types';
+
+type IDataResponse<T> = { data: T };
+type IEnvelopeResponse<T> = { data: IResponseSuccess<T> };
+
+const isSuccessEnvelope = <T>(value: unknown): value is IResponseSuccess<T> =>
+    typeof value === 'object' && value !== null && 'success' in value;
+
+/**
+ * Converts a plain payload object into browser `FormData`, skipping nullish values
+ * and appending arrays as repeated fields under the same key.
+ *
+ * @template T Payload object shape to serialize as multipart data.
+ * @param payload Source object that may contain strings, numbers, booleans, blobs/files, or arrays of them.
+ * @returns A `FormData` instance ready for multipart HTTP requests.
+ */
 export const toMultipartFormData = <T extends object>(payload: T): FormData => {
     const formData = new FormData();
 
@@ -17,3 +33,21 @@ export const toMultipartFormData = <T extends object>(payload: T): FormData => {
 
     return formData;
 };
+
+export const unwrapApiPayload = <T>(
+    response: IDataResponse<T> | IEnvelopeResponse<T>
+): T | undefined => {
+    const payload = response.data;
+    return isSuccessEnvelope<T>(payload) ? payload.data : payload;
+};
+
+export const withOptionalMultipartUpload = <TRequest extends { imageUpload?: File }, TResponse>(
+    payload: TRequest,
+    options: {
+        sendMultipart: (formData: FormData) => Promise<IEnvelopeResponse<TResponse>>;
+        sendJson: () => Promise<IDataResponse<TResponse>>;
+    }
+): Promise<TResponse | undefined> =>
+    payload.imageUpload
+        ? options.sendMultipart(toMultipartFormData(payload)).then(unwrapApiPayload)
+        : options.sendJson().then(unwrapApiPayload);

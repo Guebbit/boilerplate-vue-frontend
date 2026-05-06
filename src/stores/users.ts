@@ -4,7 +4,11 @@ import { z } from 'zod';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { usersApi } from '@/utils/api.ts';
 import httpClient from '@/utils/http.ts';
-import { toMultipartFormData } from '@/utils/multipart.ts';
+import {
+    toMultipartFormData,
+    unwrapApiPayload,
+    withOptionalMultipartUpload
+} from '@/utils/multipart.ts';
 import type { AxiosProgressEvent } from 'axios';
 import type { IResponseSuccess } from '@/types';
 import type {
@@ -114,16 +118,18 @@ export const useUsersStore = defineStore('users', () => {
      */
     const createUser = (userData: CreateUserRequestMultipart) =>
         createTarget(() =>
-            (userData.imageUpload
-                ? httpClient.post<IResponseSuccess<User>>('/users', toMultipartFormData(userData))
-                : usersApi.createUser({
-                      email: userData.email,
-                      username: userData.username,
-                      password: userData.password,
-                      admin: userData.admin,
-                      active: userData.active
-                  })
-            ).then(({ data }) => data as User)
+            withOptionalMultipartUpload<CreateUserRequestMultipart, User>(userData, {
+                sendMultipart: (formData) =>
+                    httpClient.post<IResponseSuccess<User>>('/users', formData),
+                sendJson: () =>
+                    usersApi.createUser({
+                        email: userData.email,
+                        username: userData.username,
+                        password: userData.password,
+                        admin: userData.admin,
+                        active: userData.active
+                    })
+            }).then((data) => data as User)
         );
 
     /**
@@ -142,10 +148,13 @@ export const useUsersStore = defineStore('users', () => {
         return updateTarget(
             () =>
                 httpClient
-                    .put<
-                        IResponseSuccess<User>
-                    >(`/users/${encodeURIComponent(userId)}`, toMultipartFormData({ imageUpload: files[0] }), { onUploadProgress })
-                    .then(({ data }) => data.data as User),
+                    .put<IResponseSuccess<User>>(
+                        `/users/${encodeURIComponent(userId)}`,
+                        toMultipartFormData({ imageUpload: files[0] }),
+                        { onUploadProgress }
+                    )
+                    .then((response) => unwrapApiPayload<User>(response))
+                    .then((data) => data as User),
             // No fields to optimistically merge — the updated imageUrl is returned by the API
             {} as Partial<User>,
             userId
@@ -160,17 +169,19 @@ export const useUsersStore = defineStore('users', () => {
     const updateUser = (userId: string, userData: UpdateUserByIdRequestMultipart = {}) =>
         updateTarget(
             () =>
-                (userData.imageUpload
-                    ? httpClient.put<IResponseSuccess<User>>(
-                          `/users/${encodeURIComponent(userId)}`,
-                          toMultipartFormData(userData)
-                      )
-                    : usersApi.updateUserById(userId, {
-                          email: userData.email,
-                          password: userData.password,
-                          username: userData.username
-                      })
-                ).then(({ data }) => ('data' in data ? data.data : data) as User),
+                withOptionalMultipartUpload<UpdateUserByIdRequestMultipart, User>(userData, {
+                    sendMultipart: (formData) =>
+                        httpClient.put<IResponseSuccess<User>>(
+                            `/users/${encodeURIComponent(userId)}`,
+                            formData
+                        ),
+                    sendJson: () =>
+                        usersApi.updateUserById(userId, {
+                            email: userData.email,
+                            password: userData.password,
+                            username: userData.username
+                        })
+                }).then((data) => data as User),
             {
                 email: userData.email,
                 password: userData.password,

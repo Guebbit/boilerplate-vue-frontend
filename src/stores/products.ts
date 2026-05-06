@@ -6,7 +6,11 @@ import { z } from 'zod';
 
 import { productsApi } from '@/utils/api.ts';
 import httpClient from '@/utils/http.ts';
-import { toMultipartFormData } from '@/utils/multipart.ts';
+import {
+    toMultipartFormData,
+    unwrapApiPayload,
+    withOptionalMultipartUpload
+} from '@/utils/multipart.ts';
 import type { IResponseSuccess } from '@/types';
 import type {
     Product,
@@ -116,20 +120,19 @@ export const useProductsStore = defineStore('products', () => {
      */
     const createProduct = (productData: CreateProductRequestMultipart) =>
         createTarget(() =>
-            (productData.imageUpload
-                ? httpClient.post<IResponseSuccess<Product>>(
-                      '/products',
-                      toMultipartFormData(productData)
-                  )
-                : productsApi.createProduct({
-                      title: productData.title,
-                      price: productData.price,
-                      description: productData.description,
-                      active: productData.active,
-                      categories: productData.categories,
-                      tags: productData.tags
-                  })
-            ).then(({ data }) => data as Product)
+            withOptionalMultipartUpload<CreateProductRequestMultipart, Product>(productData, {
+                sendMultipart: (formData) =>
+                    httpClient.post<IResponseSuccess<Product>>('/products', formData),
+                sendJson: () =>
+                    productsApi.createProduct({
+                        title: productData.title,
+                        price: productData.price,
+                        description: productData.description,
+                        active: productData.active,
+                        categories: productData.categories,
+                        tags: productData.tags
+                    })
+            }).then((data) => data as Product)
         );
 
     /**
@@ -163,7 +166,8 @@ export const useProductsStore = defineStore('products', () => {
                         }),
                         { onUploadProgress }
                     )
-                    .then(({ data }) => data.data as Product),
+                    .then((response) => unwrapApiPayload<Product>(response))
+                    .then((data) => data as Product),
             {} as Partial<Product>,
             product.id
         );
@@ -179,20 +183,25 @@ export const useProductsStore = defineStore('products', () => {
     const updateProduct = (productId: string, productData: UpdateProductByIdRequestMultipart) =>
         updateTarget(
             () =>
-                (productData.imageUpload
-                    ? httpClient.put<IResponseSuccess<Product>>(
-                          `/products/${encodeURIComponent(productId)}`,
-                          toMultipartFormData(productData)
-                      )
-                    : productsApi.updateProductById(productId, {
-                          title: productData.title,
-                          price: productData.price,
-                          description: productData.description,
-                          active: productData.active,
-                          categories: productData.categories,
-                          tags: productData.tags
-                      })
-                ).then(({ data }) => ('data' in data ? data.data : data) as Product),
+                withOptionalMultipartUpload<UpdateProductByIdRequestMultipart, Product>(
+                    productData,
+                    {
+                        sendMultipart: (formData) =>
+                            httpClient.put<IResponseSuccess<Product>>(
+                                `/products/${encodeURIComponent(productId)}`,
+                                formData
+                            ),
+                        sendJson: () =>
+                            productsApi.updateProductById(productId, {
+                                title: productData.title,
+                                price: productData.price,
+                                description: productData.description,
+                                active: productData.active,
+                                categories: productData.categories,
+                                tags: productData.tags
+                            })
+                    }
+                ).then((data) => data as Product),
             productData as Partial<Product>,
             productId
         );
