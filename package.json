@@ -28,8 +28,8 @@
         "pretest:e2e": "npm run kill:port",
         "genapi": "rm -rf api && openapi-generator-cli generate -i openapi.yaml -g typescript-axios -o ./api",
         "update:all": "npx npm-check-updates -u",
-        "complete": "npm run build && npm run lint:fix && npm run prettier:fix && npm run test",
-        "complete:check": "npm run build && npm run lint && npm run prettier && npm run test",
+        "complete": "npm run build && npm run lint:fix && npm run lint:openapi && npm run prettier:fix && npm run test",
+        "complete:check": "npm run build && npm run lint && npm run lint:openapi && npm run prettier && npm run test",
         "publish:public": "npm run complete && npm publish --access public"
     },
     "dependencies": {

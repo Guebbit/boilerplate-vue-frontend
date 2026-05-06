@@ -8,10 +8,15 @@ on:
         branches:
             - main
 
+concurrency:
+    group: ci-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
 jobs:
     validate:
         # Single "quality gate" job for this boilerplate.
         runs-on: ubuntu-latest
+        timeout-minutes: 30
         # Principle of least privilege:
         # workflow only needs to read repository contents.
         permissions:
@@ -32,14 +37,6 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
-            # 4) Static analysis.
-            - name: Lint
-              run: npm run lint
-
-            # 5) Type-check and production build.
-            - name: Build
-              run: npm run build
-
-            # 6) Unit test suite.
-            - name: Unit tests
-              run: npm run test:unit
+            # 4) Run the strict repository validation gate, including OpenAPI linting.
+            - name: Complete validation check
+              run: npm run complete:check

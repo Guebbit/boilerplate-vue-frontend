@@ -1214,10 +1214,10 @@ components:
 
         AuditEventItem:
             type: object
-            required: [actor_user_id, actor_role, action, outcome, timestamp, level]
+            required: [actorUserId, actorRole, action, outcome, timestamp, level]
             properties:
-                actor_user_id: { type: string }
-                actor_role:
+                actorUserId: { type: string }
+                actorRole:
                     type: string
                     enum: [admin, user, anonymous]
                 action:
@@ -1229,11 +1229,11 @@ components:
                     type: string
                     enum: [success, failure]
                 ip: { type: string }
-                user_agent: { type: string }
-                request_id: { type: string }
-                trace_id: { type: string }
-                target_type: { type: string }
-                target_id: { type: string }
+                userAgent: { type: string }
+                requestId: { type: string }
+                traceId: { type: string }
+                targetType: { type: string }
+                targetId: { type: string }
                 metadata:
                     type: object
                     additionalProperties: true
