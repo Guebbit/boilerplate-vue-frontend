@@ -11,6 +11,8 @@ Name | Type | Description | Notes
 **description** | **string** |  | [optional] [default to undefined]
 **active** | **boolean** |  | [optional] [default to undefined]
 **imageUrl** | **string** |  | [optional] [default to undefined]
+**categories** | **Array&lt;string&gt;** |  | [optional] [default to undefined]
+**tags** | **Array&lt;string&gt;** |  | [optional] [default to undefined]
 **createdAt** | **string** |  | [optional] [default to undefined]
 **updatedAt** | **string** |  | [optional] [default to undefined]
 **deletedAt** | **string** |  | [optional] [default to undefined]
@@ -27,6 +29,8 @@ const instance: Product = {
     description,
     active,
     imageUrl,
+    categories,
+    tags,
     createdAt,
     updatedAt,
     deletedAt,

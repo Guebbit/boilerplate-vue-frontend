@@ -148,6 +148,8 @@ export const useProductsStore = defineStore('products', () => {
                         product.description,
                         product.active,
                         files[0],
+                        undefined,
+                        undefined,
                         { onUploadProgress }
                     )
                     .then(({ data }) => data as Product),

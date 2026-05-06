@@ -1,8 +1,7 @@
-# Audit
+# AuditEventItem
 
-## AuditEventItem
 
-### Properties
+## Properties
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
@@ -20,7 +19,7 @@ Name | Type | Description | Notes
 **timestamp** | **string** |  | [default to undefined]
 **level** | **string** |  | [default to undefined]
 
-### Example
+## Example
 
 ```typescript
 import { AuditEventItem } from './api';
@@ -42,44 +41,4 @@ const instance: AuditEventItem = {
 };
 ```
 
-## AuditLogsResponseData
-
-### Properties
-
-Name | Type | Description | Notes
------------- | ------------- | ------------- | -------------
-**items** | **Array<AuditEventItem>** |  | [default to undefined]
-**total** | **number** |  | [default to undefined]
-
-### Example
-
-```typescript
-import { AuditLogsResponseData } from './api';
-
-const instance: AuditLogsResponseData = {
-    items,
-    total,
-};
-```
-
-## AuditLogsResponse
-
-### Properties
-
-Name | Type | Description | Notes
------------- | ------------- | ------------- | -------------
-**success** | **boolean** |  | [default to undefined]
-**data** | **AuditLogsResponseData** |  | [default to undefined]
-
-### Example
-
-```typescript
-import { AuditLogsResponse } from './api';
-
-const instance: AuditLogsResponse = {
-    success,
-    data,
-};
-```
-
-[[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)

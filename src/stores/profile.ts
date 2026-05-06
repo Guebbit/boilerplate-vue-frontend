@@ -159,12 +159,17 @@ export const useProfileStore = defineStore('profile', () => {
      *
      * @param userData
      */
-    const updateProfile = (userData: Partial<User> = {}) => {
+    const updateProfile = (userData: Partial<User> & { password?: string } = {}) => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
         return updateTarget(
             () =>
                 usersApi
-                    .updateUserById(selectedIdentifier.value!, userData.email)
+                    .updateUserById(
+                        selectedIdentifier.value!,
+                        userData.email,
+                        userData.password,
+                        userData.username
+                    )
                     .then(({ data }) => data as User),
             userData,
             selectedIdentifier.value

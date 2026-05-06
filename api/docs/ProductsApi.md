@@ -34,13 +34,17 @@ let price: number; // (default to undefined)
 let description: string; // (optional) (default to undefined)
 let active: boolean; // (optional) (default to undefined)
 let imageUpload: File; //Optional product image (optional) (default to undefined)
+let categories: Array<string>; // (optional) (default to undefined)
+let tags: Array<string>; // (optional) (default to undefined)
 
 const { status, data } = await apiInstance.createProduct(
     title,
     price,
     description,
     active,
-    imageUpload
+    imageUpload,
+    categories,
+    tags
 );
 ```
 
@@ -53,6 +57,8 @@ const { status, data } = await apiInstance.createProduct(
 | **description** | [**string**] |  | (optional) defaults to undefined|
 | **active** | [**boolean**] |  | (optional) defaults to undefined|
 | **imageUpload** | [**File**] | Optional product image | (optional) defaults to undefined|
+| **categories** | **Array&lt;string&gt;** |  | (optional) defaults to undefined|
+| **tags** | **Array&lt;string&gt;** |  | (optional) defaults to undefined|
 
 
 ### Return type
@@ -390,6 +396,8 @@ let price: number; // (default to undefined)
 let description: string; // (optional) (default to undefined)
 let active: boolean; // (optional) (default to undefined)
 let imageUpload: File; //Optional product image (optional) (default to undefined)
+let categories: Array<string>; // (optional) (default to undefined)
+let tags: Array<string>; // (optional) (default to undefined)
 
 const { status, data } = await apiInstance.updateProduct(
     id,
@@ -397,7 +405,9 @@ const { status, data } = await apiInstance.updateProduct(
     price,
     description,
     active,
-    imageUpload
+    imageUpload,
+    categories,
+    tags
 );
 ```
 
@@ -411,6 +421,8 @@ const { status, data } = await apiInstance.updateProduct(
 | **description** | [**string**] |  | (optional) defaults to undefined|
 | **active** | [**boolean**] |  | (optional) defaults to undefined|
 | **imageUpload** | [**File**] | Optional product image | (optional) defaults to undefined|
+| **categories** | **Array&lt;string&gt;** |  | (optional) defaults to undefined|
+| **tags** | **Array&lt;string&gt;** |  | (optional) defaults to undefined|
 
 
 ### Return type
@@ -461,6 +473,8 @@ let price: number; // (default to undefined)
 let description: string; // (optional) (default to undefined)
 let active: boolean; // (optional) (default to undefined)
 let imageUpload: File; //Optional product image (optional) (default to undefined)
+let categories: Array<string>; // (optional) (default to undefined)
+let tags: Array<string>; // (optional) (default to undefined)
 
 const { status, data } = await apiInstance.updateProductById(
     id,
@@ -468,7 +482,9 @@ const { status, data } = await apiInstance.updateProductById(
     price,
     description,
     active,
-    imageUpload
+    imageUpload,
+    categories,
+    tags
 );
 ```
 
@@ -482,6 +498,8 @@ const { status, data } = await apiInstance.updateProductById(
 | **description** | [**string**] |  | (optional) defaults to undefined|
 | **active** | [**boolean**] |  | (optional) defaults to undefined|
 | **imageUpload** | [**File**] | Optional product image | (optional) defaults to undefined|
+| **categories** | **Array&lt;string&gt;** |  | (optional) defaults to undefined|
+| **tags** | **Array&lt;string&gt;** |  | (optional) defaults to undefined|
 
 
 ### Return type

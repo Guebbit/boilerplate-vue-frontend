@@ -7,6 +7,8 @@ All URIs are relative to *http://localhost:3000*
 |[**getAdminAuditLogs**](#getadminauditlogs) | **GET** /admin/audit | Recent audit events|
 |[**getAdminHealth**](#getadminhealth) | **GET** /admin/health | Admin health summary|
 |[**getAdminMetricsSummary**](#getadminmetricssummary) | **GET** /admin/metrics/summary | Metrics summary (JSON)|
+|[**getHealth**](#gethealth) | **GET** / | API health check|
+|[**getPrometheusMetrics**](#getprometheusmetrics) | **GET** /metrics | Prometheus metrics|
 
 # **getAdminAuditLogs**
 > AuditLogsResponse getAdminAuditLogs()
@@ -52,7 +54,7 @@ const { status, data } = await apiInstance.getAdminAuditLogs(
 
 ### Return type
 
-**AuditLogsResponse** (see [Audit](Audit.md))
+**AuditLogsResponse**
 
 ### Authorization
 
@@ -100,7 +102,7 @@ This endpoint does not have any parameters.
 
 ### Return type
 
-**AdminHealthResponse** (see [AdminHealth](AdminHealth.md))
+**AdminHealthResponse**
 
 ### Authorization
 
@@ -147,7 +149,7 @@ This endpoint does not have any parameters.
 
 ### Return type
 
-**AdminMetricsSummaryResponse** (see [AdminMetrics](AdminMetrics.md))
+**AdminMetricsSummaryResponse**
 
 ### Authorization
 
@@ -166,6 +168,94 @@ This endpoint does not have any parameters.
 |**401** | Unauthorized |  -  |
 |**403** | Forbidden |  -  |
 |**500** | Internal server error |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getHealth**
+> MessageResponse getHealth()
+
+Returns a simple liveness indicator. Use `GET /admin/health` for the full admin health summary.
+
+### Example
+
+```typescript
+import {
+    AdminApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new AdminApi(configuration);
+
+const { status, data } = await apiInstance.getHealth();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**MessageResponse**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | API is running |  -  |
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+# **getPrometheusMetrics**
+> string getPrometheusMetrics()
+
+Raw Prometheus text (exposition format 0.0.4). Intended for Prometheus scraping, not for browser clients. Use `GET /admin/metrics/summary` for a JSON summary suitable for dashboards. 
+
+### Example
+
+```typescript
+import {
+    AdminApi,
+    Configuration
+} from './api';
+
+const configuration = new Configuration();
+const apiInstance = new AdminApi(configuration);
+
+const { status, data } = await apiInstance.getPrometheusMetrics();
+```
+
+### Parameters
+This endpoint does not have any parameters.
+
+
+### Return type
+
+**string**
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+ - **Content-Type**: Not defined
+ - **Accept**: text/plain
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+|**200** | Prometheus exposition text |  -  |
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 

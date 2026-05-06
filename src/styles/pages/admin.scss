@@ -33,6 +33,26 @@
         padding: 0.5em 0;
     }
 
+    .admin-maintenance-actions {
+        margin-bottom: 1em;
+    }
+
+    .admin-maintenance-button {
+        background: rgb(var(--secondary-600));
+        border: 1px solid rgb(var(--secondary-700));
+        border-radius: 6px;
+        color: #fff;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-weight: 600;
+        padding: 0.45em 0.8em;
+    }
+
+    .admin-maintenance-button:disabled {
+        cursor: default;
+        opacity: 0.6;
+    }
+
     /* Overview tab */
     .admin-overview-controls {
         display: flex;

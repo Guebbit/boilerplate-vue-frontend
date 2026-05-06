@@ -233,6 +233,10 @@ onMounted(() => {
  * Websocket
  */
 const websocketMessages = ref<string[]>([]);
+const defaultWebsocketUrl = 'ws://localhost:3000/ws';
+const websocketUrl = (import.meta.env.VITE_API_WEBSOCKET ?? defaultWebsocketUrl)
+    .replace(/^http:\/\//u, 'ws://')
+    .replace(/^https:\/\//u, 'wss://');
 
 const placeholderCards = computed<
     {
@@ -259,7 +263,7 @@ const placeholderCards = computed<
 ]);
 
 onMounted(() => {
-    const ws = createSocket('ws://localhost:3000/ws', {
+    const ws = createSocket(websocketUrl, {
         onOpen: (ws) => {
             ws.send('Hello from client');
         },

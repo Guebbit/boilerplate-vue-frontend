@@ -32,6 +32,7 @@ docs/CartResponse.md
 docs/CartSummaryResponse.md
 docs/CheckoutRequest.md
 docs/CheckoutResponse.md
+docs/CreateFeedbackRequest.md
 docs/CreateOrderRequest.md
 docs/CreateProductRequest.md
 docs/CreateUserRequest.md
@@ -40,6 +41,9 @@ docs/DeleteProductRequest.md
 docs/DeleteUserRequest.md
 docs/ErrorDetail.md
 docs/ErrorResponse.md
+docs/FeedbackApi.md
+docs/FeedbackRequest.md
+docs/FeedbackRequestsResponse.md
 docs/LoginRequest.md
 docs/MessageResponse.md
 docs/Order.md
@@ -54,11 +58,13 @@ docs/ProductsApi.md
 docs/ProductsResponse.md
 docs/RefreshTokenResponse.md
 docs/RemoveCartItemRequest.md
+docs/SearchFeedbackRequestsRequest.md
 docs/SearchOrdersRequest.md
 docs/SearchProductsRequest.md
 docs/SearchUsersRequest.md
 docs/SignupRequest.md
 docs/UpdateCartItemByIdRequest.md
+docs/UpdateFeedbackRequestStatusRequest.md
 docs/UpdateOrderByIdRequest.md
 docs/UpdateOrderRequest.md
 docs/UpdateProductByIdRequest.md
