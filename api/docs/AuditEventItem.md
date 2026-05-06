@@ -5,16 +5,16 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**actor_user_id** | **string** |  | [default to undefined]
-**actor_role** | **string** |  | [default to undefined]
+**actorUserId** | **string** |  | [default to undefined]
+**actorRole** | **string** |  | [default to undefined]
 **action** | **string** | Dot-notation action name (e.g. auth.login.succeeded) | [default to undefined]
 **outcome** | **string** |  | [default to undefined]
 **ip** | **string** |  | [optional] [default to undefined]
-**user_agent** | **string** |  | [optional] [default to undefined]
-**request_id** | **string** |  | [optional] [default to undefined]
-**trace_id** | **string** |  | [optional] [default to undefined]
-**target_type** | **string** |  | [optional] [default to undefined]
-**target_id** | **string** |  | [optional] [default to undefined]
+**userAgent** | **string** |  | [optional] [default to undefined]
+**requestId** | **string** |  | [optional] [default to undefined]
+**traceId** | **string** |  | [optional] [default to undefined]
+**targetType** | **string** |  | [optional] [default to undefined]
+**targetId** | **string** |  | [optional] [default to undefined]
 **metadata** | **{ [key: string]: any; }** |  | [optional] [default to undefined]
 **timestamp** | **string** |  | [default to undefined]
 **level** | **string** |  | [default to undefined]
@@ -25,16 +25,16 @@ Name | Type | Description | Notes
 import { AuditEventItem } from './api';
 
 const instance: AuditEventItem = {
-    actor_user_id,
-    actor_role,
+    actorUserId,
+    actorRole,
     action,
     outcome,
     ip,
-    user_agent,
-    request_id,
-    trace_id,
-    target_type,
-    target_id,
+    userAgent,
+    requestId,
+    traceId,
+    targetType,
+    targetId,
     metadata,
     timestamp,
     level,

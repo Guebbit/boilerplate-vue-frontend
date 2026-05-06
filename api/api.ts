@@ -124,19 +124,19 @@ export interface AdminMetricsSummaryResponse {
     'data': AdminMetricsSummary;
 }
 export interface AuditEventItem {
-    'actor_user_id': string;
-    'actor_role': AuditEventItemActorRoleEnum;
+    'actorUserId': string;
+    'actorRole': AuditEventItemActorRoleEnum;
     /**
      * Dot-notation action name (e.g. auth.login.succeeded)
      */
     'action': string;
     'outcome': AuditEventItemOutcomeEnum;
     'ip'?: string;
-    'user_agent'?: string;
-    'request_id'?: string;
-    'trace_id'?: string;
-    'target_type'?: string;
-    'target_id'?: string;
+    'userAgent'?: string;
+    'requestId'?: string;
+    'traceId'?: string;
+    'targetType'?: string;
+    'targetId'?: string;
     'metadata'?: { [key: string]: any; };
     'timestamp': string;
     'level': AuditEventItemLevelEnum;
