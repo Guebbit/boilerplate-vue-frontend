@@ -5,7 +5,6 @@ import { globalIgnores } from 'eslint/config';
 import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript';
 import pluginVue from 'eslint-plugin-vue';
 import pluginVitest from '@vitest/eslint-plugin';
-import pluginCypress from 'eslint-plugin-cypress';
 import pluginOxlint from 'eslint-plugin-oxlint';
 
 // To allow more languages other than `ts` in `.vue` files, uncomment the following lines:
@@ -240,7 +239,6 @@ export default defineConfigWithVueTs(
     /**
      * Tests specific eslint config
      * - Unit Tests (Vitest)
-     *  - E2E Tests (Cypress)
      */
     {
         ...pluginVitest.configs.recommended,
@@ -249,19 +247,6 @@ export default defineConfigWithVueTs(
             parserOptions: {
                 projectService: false,
                 project: ['./tsconfig.vitest.json']
-            }
-        }
-    },
-    {
-        ...pluginCypress.configs.recommended,
-        files: [
-            'cypress/e2e/**/*.{cy,spec}.{js,ts,jsx,tsx}',
-            'cypress/support/**/*.{js,ts,jsx,tsx}'
-        ],
-        languageOptions: {
-            parserOptions: {
-                projectService: false,
-                project: ['./tsconfig.cypress.json']
             }
         }
     }

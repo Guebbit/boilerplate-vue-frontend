@@ -7,8 +7,6 @@
         "tests/**/*.ts",
         "tests/**/*.tsx",
         "tests/**/*.vue",
-        "cypress/**/*.ts",
-        "cypress.config.ts",
         "vite.config.ts",
         "vitest.config.ts"
     ],

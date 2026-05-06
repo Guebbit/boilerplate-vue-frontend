@@ -63,7 +63,6 @@ to `http://localhost:8080` to match this frontend default dev port.
 - `npm run prettier`: run Prettier check
 - `npm run prettier:fix`: run Prettier write
 - `npm run test:unit`: run Vitest unit tests
-- `npm run test:e2e`: run Cypress e2e tests
 - `npm run genapi`: regenerate API client from `openapi.yaml`
 
 ## Architecture overview
