@@ -148,6 +148,8 @@ export const useProductsStore = defineStore('products', () => {
                         product.description,
                         product.active,
                         files[0],
+                        // OpenAPI now exposes optional categories/tags in this position.
+                        // We are only updating the image here.
                         undefined,
                         undefined,
                         { onUploadProgress }
