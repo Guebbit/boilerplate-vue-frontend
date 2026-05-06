@@ -39,8 +39,7 @@ const handleReset = () => {
     void props.onSearch(filters);
 };
 
-const truncateId = (value?: string, length = 8) =>
-    value ? `${value.slice(0, length)}...` : '—';
+const truncateId = (value?: string, length = 8) => (value ? `${value.slice(0, length)}...` : '—');
 
 const formatDate = (iso: string) => {
     try {
@@ -137,7 +136,10 @@ const formatDate = (iso: string) => {
                         </td>
                         <td class="admin-audit-cell-actor">{{ event.actorUserId }}</td>
                         <td>
-                            <span class="admin-audit-badge" :class="`admin-audit-role-${event.actorRole}`">
+                            <span
+                                class="admin-audit-badge"
+                                :class="`admin-audit-role-${event.actorRole}`"
+                            >
                                 {{ event.actorRole }}
                             </span>
                         </td>

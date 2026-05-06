@@ -3,7 +3,10 @@ import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { usersApi } from '@/utils/api.ts';
+import httpClient from '@/utils/http.ts';
+import { toMultipartFormData } from '@/utils/multipart.ts';
 import type { AxiosProgressEvent } from 'axios';
+import type { IResponseSuccess } from '@/types';
 import type {
     User,
     CreateUserRequestMultipart,
@@ -111,16 +114,16 @@ export const useUsersStore = defineStore('users', () => {
      */
     const createUser = (userData: CreateUserRequestMultipart) =>
         createTarget(() =>
-            usersApi
-                .createUser(
-                    userData.email,
-                    userData.username,
-                    userData.password,
-                    userData.admin,
-                    userData.active,
-                    userData.imageUpload
-                )
-                .then(({ data }) => data as User)
+            (userData.imageUpload
+                ? httpClient.post<IResponseSuccess<User>>('/users', toMultipartFormData(userData))
+                : usersApi.createUser({
+                      email: userData.email,
+                      username: userData.username,
+                      password: userData.password,
+                      admin: userData.admin,
+                      active: userData.active
+                  })
+            ).then(({ data }) => data as User)
         );
 
     /**
@@ -138,11 +141,11 @@ export const useUsersStore = defineStore('users', () => {
         if (files.length === 0 || !files[0]) return Promise.reject(new Error('no file selected'));
         return updateTarget(
             () =>
-                usersApi
-                    .updateUserById(userId, undefined, undefined, undefined, files[0], {
-                        onUploadProgress
-                    })
-                    .then(({ data }) => data as User),
+                httpClient
+                    .put<
+                        IResponseSuccess<User>
+                    >(`/users/${encodeURIComponent(userId)}`, toMultipartFormData({ imageUpload: files[0] }), { onUploadProgress })
+                    .then(({ data }) => data.data as User),
             // No fields to optimistically merge — the updated imageUrl is returned by the API
             {} as Partial<User>,
             userId
@@ -157,15 +160,17 @@ export const useUsersStore = defineStore('users', () => {
     const updateUser = (userId: string, userData: UpdateUserByIdRequestMultipart = {}) =>
         updateTarget(
             () =>
-                usersApi
-                    .updateUserById(
-                        userId,
-                        userData.email,
-                        userData.password,
-                        userData.username,
-                        userData.imageUpload
-                    )
-                    .then(({ data }) => data as User),
+                (userData.imageUpload
+                    ? httpClient.put<IResponseSuccess<User>>(
+                          `/users/${encodeURIComponent(userId)}`,
+                          toMultipartFormData(userData)
+                      )
+                    : usersApi.updateUserById(userId, {
+                          email: userData.email,
+                          password: userData.password,
+                          username: userData.username
+                      })
+                ).then(({ data }) => ('data' in data ? data.data : data) as User),
             {
                 email: userData.email,
                 password: userData.password,

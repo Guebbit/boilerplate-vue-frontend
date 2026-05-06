@@ -69,7 +69,6 @@ docs/UpdateOrderByIdRequest.md
 docs/UpdateOrderRequest.md
 docs/UpdateProductByIdRequest.md
 docs/UpdateProductRequest.md
-docs/UpdateProductRequestBody.md
 docs/UpdateUserByIdRequest.md
 docs/UpdateUserRequest.md
 docs/UpsertCartItemRequest.md

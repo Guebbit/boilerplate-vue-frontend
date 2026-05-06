@@ -369,7 +369,7 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **signup**
-> User signup()
+> User signup(signupRequest)
 
 Registers a new user account with optional image upload. Returns the newly created user profile on success.
 
@@ -378,24 +378,17 @@ Registers a new user account with optional image upload. Returns the newly creat
 ```typescript
 import {
     AuthApi,
-    Configuration
+    Configuration,
+    SignupRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new AuthApi(configuration);
 
-let email: string; // (default to undefined)
-let username: string; // (default to undefined)
-let password: string; // (default to undefined)
-let passwordConfirm: string; // (default to undefined)
-let imageUpload: File; //Optional user profile image (optional) (default to undefined)
+let signupRequest: SignupRequest; //
 
 const { status, data } = await apiInstance.signup(
-    email,
-    username,
-    password,
-    passwordConfirm,
-    imageUpload
+    signupRequest
 );
 ```
 
@@ -403,11 +396,7 @@ const { status, data } = await apiInstance.signup(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **email** | [**string**] |  | defaults to undefined|
-| **username** | [**string**] |  | defaults to undefined|
-| **password** | [**string**] |  | defaults to undefined|
-| **passwordConfirm** | [**string**] |  | defaults to undefined|
-| **imageUpload** | [**File**] | Optional user profile image | (optional) defaults to undefined|
+| **signupRequest** | **SignupRequest**|  | |
 
 
 ### Return type
@@ -420,7 +409,7 @@ No authorization required
 
 ### HTTP request headers
 
- - **Content-Type**: multipart/form-data
+ - **Content-Type**: application/json, multipart/form-data
  - **Accept**: application/json
 
 

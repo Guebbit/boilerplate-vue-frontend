@@ -14,7 +14,7 @@ All URIs are relative to *http://localhost:3000*
 |[**updateUserById**](#updateuserbyid) | **PUT** /users/{id} | Edit user|
 
 # **createUser**
-> User createUser()
+> User createUser(createUserRequest)
 
 Creates a new user account with the supplied email, username, and password. Optional image can be uploaded.
 
@@ -23,26 +23,17 @@ Creates a new user account with the supplied email, username, and password. Opti
 ```typescript
 import {
     UsersApi,
-    Configuration
+    Configuration,
+    CreateUserRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new UsersApi(configuration);
 
-let email: string; // (default to undefined)
-let username: string; // (default to undefined)
-let password: string; // (default to undefined)
-let admin: boolean; // (optional) (default to undefined)
-let active: boolean; // (optional) (default to undefined)
-let imageUpload: File; //Optional user profile image (optional) (default to undefined)
+let createUserRequest: CreateUserRequest; //
 
 const { status, data } = await apiInstance.createUser(
-    email,
-    username,
-    password,
-    admin,
-    active,
-    imageUpload
+    createUserRequest
 );
 ```
 
@@ -50,12 +41,7 @@ const { status, data } = await apiInstance.createUser(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **email** | [**string**] |  | defaults to undefined|
-| **username** | [**string**] |  | defaults to undefined|
-| **password** | [**string**] |  | defaults to undefined|
-| **admin** | [**boolean**] |  | (optional) defaults to undefined|
-| **active** | [**boolean**] |  | (optional) defaults to undefined|
-| **imageUpload** | [**File**] | Optional user profile image | (optional) defaults to undefined|
+| **createUserRequest** | **CreateUserRequest**|  | |
 
 
 ### Return type
@@ -68,7 +54,7 @@ const { status, data } = await apiInstance.createUser(
 
 ### HTTP request headers
 
- - **Content-Type**: multipart/form-data
+ - **Content-Type**: application/json, multipart/form-data
  - **Accept**: application/json
 
 
@@ -381,7 +367,7 @@ const { status, data } = await apiInstance.searchUsers(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **updateUser**
-> User updateUser()
+> User updateUser(updateUserRequest)
 
 Updates an existing user\'s email or password. Optional image can be uploaded.
 
@@ -390,24 +376,17 @@ Updates an existing user\'s email or password. Optional image can be uploaded.
 ```typescript
 import {
     UsersApi,
-    Configuration
+    Configuration,
+    UpdateUserRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new UsersApi(configuration);
 
-let id: string; //Resource identifier (default to undefined)
-let email: string; // (optional) (default to undefined)
-let username: string; // (optional) (default to undefined)
-let password: string; // (optional) (default to undefined)
-let imageUpload: File; //Optional user profile image (optional) (default to undefined)
+let updateUserRequest: UpdateUserRequest; //
 
 const { status, data } = await apiInstance.updateUser(
-    id,
-    email,
-    username,
-    password,
-    imageUpload
+    updateUserRequest
 );
 ```
 
@@ -415,11 +394,7 @@ const { status, data } = await apiInstance.updateUser(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
-| **id** | [**string**] | Resource identifier | defaults to undefined|
-| **email** | [**string**] |  | (optional) defaults to undefined|
-| **username** | [**string**] |  | (optional) defaults to undefined|
-| **password** | [**string**] |  | (optional) defaults to undefined|
-| **imageUpload** | [**File**] | Optional user profile image | (optional) defaults to undefined|
+| **updateUserRequest** | **UpdateUserRequest**|  | |
 
 
 ### Return type
@@ -432,7 +407,7 @@ const { status, data } = await apiInstance.updateUser(
 
 ### HTTP request headers
 
- - **Content-Type**: multipart/form-data
+ - **Content-Type**: application/json, multipart/form-data
  - **Accept**: application/json
 
 
@@ -448,7 +423,7 @@ const { status, data } = await apiInstance.updateUser(
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 # **updateUserById**
-> User updateUserById()
+> User updateUserById(updateUserByIdRequest)
 
 Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
 
@@ -457,24 +432,19 @@ Updates the email or password of the user identified by `{id}` in the path. Opti
 ```typescript
 import {
     UsersApi,
-    Configuration
+    Configuration,
+    UpdateUserByIdRequest
 } from './api';
 
 const configuration = new Configuration();
 const apiInstance = new UsersApi(configuration);
 
 let id: string; //Resource identifier (default to undefined)
-let email: string; // (optional) (default to undefined)
-let password: string; // (optional) (default to undefined)
-let username: string; // (optional) (default to undefined)
-let imageUpload: File; //Optional user profile image (optional) (default to undefined)
+let updateUserByIdRequest: UpdateUserByIdRequest; //
 
 const { status, data } = await apiInstance.updateUserById(
     id,
-    email,
-    password,
-    username,
-    imageUpload
+    updateUserByIdRequest
 );
 ```
 
@@ -482,11 +452,8 @@ const { status, data } = await apiInstance.updateUserById(
 
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
+| **updateUserByIdRequest** | **UpdateUserByIdRequest**|  | |
 | **id** | [**string**] | Resource identifier | defaults to undefined|
-| **email** | [**string**] |  | (optional) defaults to undefined|
-| **password** | [**string**] |  | (optional) defaults to undefined|
-| **username** | [**string**] |  | (optional) defaults to undefined|
-| **imageUpload** | [**File**] | Optional user profile image | (optional) defaults to undefined|
 
 
 ### Return type
@@ -499,7 +466,7 @@ const { status, data } = await apiInstance.updateUserById(
 
 ### HTTP request headers
 
- - **Content-Type**: multipart/form-data
+ - **Content-Type**: application/json, multipart/form-data
  - **Accept**: application/json
 
 

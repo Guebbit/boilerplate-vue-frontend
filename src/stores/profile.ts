@@ -100,7 +100,7 @@ export const useProfileStore = defineStore('profile', () => {
         password: string,
         username = email,
         passwordConfirm = password
-    ) => fetchAny(() => authApi.signup(email, username, password, passwordConfirm));
+    ) => fetchAny(() => authApi.signup({ email, username, password, passwordConfirm }));
 
     /**
      * Starts password reset flow by sending a token to the provided email.
@@ -164,12 +164,11 @@ export const useProfileStore = defineStore('profile', () => {
         return updateTarget(
             () =>
                 usersApi
-                    .updateUserById(
-                        selectedIdentifier.value!,
-                        userData.email,
-                        userData.password,
-                        userData.username
-                    )
+                    .updateUserById(selectedIdentifier.value!, {
+                        email: userData.email,
+                        password: userData.password,
+                        username: userData.username
+                    })
                     .then(({ data }) => data as User),
             userData,
             selectedIdentifier.value

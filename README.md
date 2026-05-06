@@ -107,10 +107,10 @@ The dashboard is split into two tabs:
 
 Fetches live data from two contract-defined endpoints:
 
-| Endpoint | What it shows |
-|---|---|
-| `GET /admin/health` | API status, database status, uptime, memory, integrations (Loki, PostHog, OTEL), system info |
-| `GET /admin/metrics/summary` | HTTP totals, error rate, in-flight requests, p50/p95 latency, auth events, business events |
+| Endpoint                     | What it shows                                                                                |
+| ---------------------------- | -------------------------------------------------------------------------------------------- |
+| `GET /admin/health`          | API status, database status, uptime, memory, integrations (Loki, PostHog, OTEL), system info |
+| `GET /admin/metrics/summary` | HTTP totals, error rate, in-flight requests, p50/p95 latency, auth events, business events   |
 
 KPI cards at the top give an instant health snapshot:
 

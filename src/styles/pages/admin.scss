@@ -17,7 +17,9 @@
         font-weight: 500;
         color: var(--color-text);
         margin-bottom: -2px;
-        transition: color 0.15s, border-color 0.15s;
+        transition:
+            color 0.15s,
+            border-color 0.15s;
 
         &:hover {
             color: rgb(var(--secondary-600));
