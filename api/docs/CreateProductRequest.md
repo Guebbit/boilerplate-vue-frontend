@@ -10,6 +10,8 @@ Name | Type | Description | Notes
 **description** | **string** |  | [optional] [default to undefined]
 **active** | **boolean** |  | [optional] [default to undefined]
 **imageUrl** | **string** |  | [optional] [default to undefined]
+**categories** | **Array&lt;string&gt;** |  | [optional] [default to undefined]
+**tags** | **Array&lt;string&gt;** |  | [optional] [default to undefined]
 
 ## Example
 
@@ -22,6 +24,8 @@ const instance: CreateProductRequest = {
     description,
     active,
     imageUrl,
+    categories,
+    tags,
 };
 ```
 

@@ -1,4 +1,4 @@
-# SearchProductsRequest
+# SearchFeedbackRequestsRequest
 
 
 ## Properties
@@ -8,26 +8,20 @@ Name | Type | Description | Notes
 **page** | **number** | 1-based page index | [optional] [default to 1]
 **pageSize** | **number** | Optional override; server may clamp to a max | [optional] [default to 10]
 **text** | **string** | Free-text search string | [optional] [default to undefined]
-**id** | **string** | Resource identifier | [optional] [default to undefined]
-**minPrice** | **number** |  | [optional] [default to undefined]
-**maxPrice** | **number** |  | [optional] [default to undefined]
-**category** | **string** |  | [optional] [default to undefined]
-**tag** | **string** |  | [optional] [default to undefined]
+**status** | **string** |  | [optional] [default to undefined]
+**email** | **string** |  | [optional] [default to undefined]
 
 ## Example
 
 ```typescript
-import { SearchProductsRequest } from './api';
+import { SearchFeedbackRequestsRequest } from './api';
 
-const instance: SearchProductsRequest = {
+const instance: SearchFeedbackRequestsRequest = {
     page,
     pageSize,
     text,
-    id,
-    minPrice,
-    maxPrice,
-    category,
-    tag,
+    status,
+    email,
 };
 ```
 

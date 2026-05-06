@@ -134,18 +134,28 @@ const kpiCards = computed<IAdminKpiCard[]>(() => [
             <h3 class="admin-section-title">{{ t('admin-page.section-auth') }}</h3>
             <div class="admin-detail-grid">
                 <div class="admin-detail-item">
-                    <span class="admin-detail-label">{{ t('admin-page.label-login-success') }}</span>
-                    <span class="admin-detail-value">{{ props.metrics.auth.loginSuccess ?? 0 }}</span>
+                    <span class="admin-detail-label">{{
+                        t('admin-page.label-login-success')
+                    }}</span>
+                    <span class="admin-detail-value">{{
+                        props.metrics.auth.loginSuccess ?? 0
+                    }}</span>
                 </div>
                 <div class="admin-detail-item">
-                    <span class="admin-detail-label">{{ t('admin-page.label-login-failure') }}</span>
+                    <span class="admin-detail-label">{{
+                        t('admin-page.label-login-failure')
+                    }}</span>
                     <span class="admin-detail-value admin-detail-value-warn">{{
                         props.metrics.auth.loginFailure ?? 0
                     }}</span>
                 </div>
                 <div class="admin-detail-item">
-                    <span class="admin-detail-label">{{ t('admin-page.label-signup-success') }}</span>
-                    <span class="admin-detail-value">{{ props.metrics.auth.signupSuccess ?? 0 }}</span>
+                    <span class="admin-detail-label">{{
+                        t('admin-page.label-signup-success')
+                    }}</span>
+                    <span class="admin-detail-value">{{
+                        props.metrics.auth.signupSuccess ?? 0
+                    }}</span>
                 </div>
             </div>
         </div>
@@ -154,11 +164,17 @@ const kpiCards = computed<IAdminKpiCard[]>(() => [
             <h3 class="admin-section-title">{{ t('admin-page.section-business') }}</h3>
             <div class="admin-detail-grid">
                 <div class="admin-detail-item">
-                    <span class="admin-detail-label">{{ t('admin-page.label-orders-created') }}</span>
-                    <span class="admin-detail-value">{{ props.metrics.business.ordersCreated ?? 0 }}</span>
+                    <span class="admin-detail-label">{{
+                        t('admin-page.label-orders-created')
+                    }}</span>
+                    <span class="admin-detail-value">{{
+                        props.metrics.business.ordersCreated ?? 0
+                    }}</span>
                 </div>
                 <div class="admin-detail-item">
-                    <span class="admin-detail-label">{{ t('admin-page.label-checkout-success') }}</span>
+                    <span class="admin-detail-label">{{
+                        t('admin-page.label-checkout-success')
+                    }}</span>
                     <span class="admin-detail-value">{{
                         props.metrics.business.checkoutSuccess ?? 0
                     }}</span>
@@ -183,12 +199,20 @@ const kpiCards = computed<IAdminKpiCard[]>(() => [
                 </div>
                 <template v-if="props.health.memory">
                     <div class="admin-detail-item">
-                        <span class="admin-detail-label">{{ t('admin-page.label-heap-used') }}</span>
-                        <span class="admin-detail-value">{{ props.health.memory.heapUsedMb }} MB</span>
+                        <span class="admin-detail-label">{{
+                            t('admin-page.label-heap-used')
+                        }}</span>
+                        <span class="admin-detail-value"
+                            >{{ props.health.memory.heapUsedMb }} MB</span
+                        >
                     </div>
                     <div class="admin-detail-item">
-                        <span class="admin-detail-label">{{ t('admin-page.label-heap-total') }}</span>
-                        <span class="admin-detail-value">{{ props.health.memory.heapTotalMb }} MB</span>
+                        <span class="admin-detail-label">{{
+                            t('admin-page.label-heap-total')
+                        }}</span>
+                        <span class="admin-detail-value"
+                            >{{ props.health.memory.heapTotalMb }} MB</span
+                        >
                     </div>
                 </template>
                 <template v-if="props.health.system">
@@ -197,7 +221,9 @@ const kpiCards = computed<IAdminKpiCard[]>(() => [
                         <span class="admin-detail-value">{{ props.health.system.platform }}</span>
                     </div>
                     <div class="admin-detail-item">
-                        <span class="admin-detail-label">{{ t('admin-page.label-cpu-count') }}</span>
+                        <span class="admin-detail-label">{{
+                            t('admin-page.label-cpu-count')
+                        }}</span>
                         <span class="admin-detail-value">{{ props.health.system.cpuCount }}</span>
                     </div>
                 </template>

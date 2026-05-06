@@ -84,8 +84,7 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
             auditEvents.value = response.data.data.items;
             auditTotal.value = response.data.data.total;
         } catch (error: unknown) {
-            errorAudit.value =
-                error instanceof Error ? error.message : 'Failed to load audit logs';
+            errorAudit.value = error instanceof Error ? error.message : 'Failed to load audit logs';
         } finally {
             loadingAudit.value = false;
         }

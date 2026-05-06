@@ -100,7 +100,7 @@ export const useProfileStore = defineStore('profile', () => {
         password: string,
         username = email,
         passwordConfirm = password
-    ) => fetchAny(() => authApi.signup(email, username, password, passwordConfirm));
+    ) => fetchAny(() => authApi.signup({ email, username, password, passwordConfirm }));
 
     /**
      * Starts password reset flow by sending a token to the provided email.
@@ -159,12 +159,16 @@ export const useProfileStore = defineStore('profile', () => {
      *
      * @param userData
      */
-    const updateProfile = (userData: Partial<User> = {}) => {
+    const updateProfile = (userData: Partial<User> & { password?: string } = {}) => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
         return updateTarget(
             () =>
                 usersApi
-                    .updateUserById(selectedIdentifier.value!, userData.email)
+                    .updateUserById(selectedIdentifier.value!, {
+                        email: userData.email,
+                        password: userData.password,
+                        username: userData.username
+                    })
                     .then(({ data }) => data as User),
             userData,
             selectedIdentifier.value

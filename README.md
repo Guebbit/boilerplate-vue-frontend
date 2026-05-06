@@ -38,7 +38,7 @@ Use `.env-example` as reference.
 - `VITE_APP_PUBLIC_PATH`: public path
 - `VITE_APP_BASE_URL`: router history base URL (optional)
 - `VITE_API_URL`: backend API base URL
-- `VITE_API_WEBSOCKET`: websocket URL used by demo page
+- `VITE_API_WEBSOCKET`: websocket URL used by demo page (recommended format: `ws://...`; `http://...` is auto-converted)
 - `VITE_API_MOCK_ENABLED`: enable API mocking (`true`/`false`)
 - `VITE_AXIOS_TIMEOUT`: axios timeout in ms
 - `VITE_APP_DEBUG_ROUTER`: enable router debug logs in dev (`true`/`false`)
@@ -48,6 +48,9 @@ Use `.env-example` as reference.
 
 Sentry (briefly): it collects frontend crashes and optional performance traces,
 so you can see what broke, where, and for which users in production.
+
+When pairing locally with `boilerplate-node-backend`, set backend `NODE_CORS_ORIGIN`
+to `http://localhost:8080` to match this frontend default dev port.
 
 ## Scripts
 
@@ -104,10 +107,10 @@ The dashboard is split into two tabs:
 
 Fetches live data from two contract-defined endpoints:
 
-| Endpoint | What it shows |
-|---|---|
-| `GET /admin/health` | API status, database status, uptime, memory, integrations (Loki, PostHog, OTEL), system info |
-| `GET /admin/metrics/summary` | HTTP totals, error rate, in-flight requests, p50/p95 latency, auth events, business events |
+| Endpoint                     | What it shows                                                                                |
+| ---------------------------- | -------------------------------------------------------------------------------------------- |
+| `GET /admin/health`          | API status, database status, uptime, memory, integrations (Loki, PostHog, OTEL), system info |
+| `GET /admin/metrics/summary` | HTTP totals, error rate, in-flight requests, p50/p95 latency, auth events, business events   |
 
 KPI cards at the top give an instant health snapshot:
 

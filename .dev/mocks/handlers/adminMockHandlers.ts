@@ -49,35 +49,35 @@ const MOCK_AUDIT_EVENTS: AuditLogsResponse = {
         total: 3,
         items: [
             {
-                actor_user_id: 'user-admin-1',
-                actor_role: 'admin',
+                actorUserId: 'user-admin-1',
+                actorRole: 'admin',
                 action: 'auth.login.succeeded',
                 outcome: 'success',
                 ip: '127.0.0.1',
-                request_id: 'req-abc12345',
-                trace_id: 'trace-def67890',
+                requestId: 'req-abc12345',
+                traceId: 'trace-def67890',
                 timestamp: new Date(Date.now() - 60_000).toISOString(),
                 level: 'info'
             },
             {
-                actor_user_id: 'user-guest-1',
-                actor_role: 'anonymous',
+                actorUserId: 'user-guest-1',
+                actorRole: 'anonymous',
                 action: 'auth.login.failed',
                 outcome: 'failure',
                 ip: '192.168.1.50',
-                request_id: 'req-xyz99887',
-                trace_id: 'trace-uvw33221',
+                requestId: 'req-xyz99887',
+                traceId: 'trace-uvw33221',
                 timestamp: new Date(Date.now() - 120_000).toISOString(),
                 level: 'warn'
             },
             {
-                actor_user_id: 'user-standard-2',
-                actor_role: 'user',
+                actorUserId: 'user-standard-2',
+                actorRole: 'user',
                 action: 'orders.create',
                 outcome: 'success',
                 ip: '10.0.0.5',
-                request_id: 'req-lmn55443',
-                trace_id: 'trace-opq11009',
+                requestId: 'req-lmn55443',
+                traceId: 'trace-opq11009',
                 timestamp: new Date(Date.now() - 300_000).toISOString(),
                 level: 'info'
             }

@@ -5,10 +5,17 @@ import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 
 import { productsApi } from '@/utils/api.ts';
+import httpClient from '@/utils/http.ts';
+import {
+    toMultipartFormData,
+    unwrapApiPayload,
+    withOptionalMultipartUpload
+} from '@/utils/multipart.ts';
+import type { IResponseSuccess } from '@/types';
 import type {
     Product,
-    CreateProductRequest,
-    UpdateProductByIdRequest,
+    CreateProductRequestMultipart,
+    UpdateProductByIdRequestMultipart,
     SearchProductsRequest
 } from '@types';
 
@@ -111,16 +118,21 @@ export const useProductsStore = defineStore('products', () => {
      *
      * @param productData
      */
-    const createProduct = (productData: CreateProductRequest) =>
+    const createProduct = (productData: CreateProductRequestMultipart) =>
         createTarget(() =>
-            productsApi
-                .createProduct(
-                    productData.title,
-                    productData.price,
-                    productData.description,
-                    productData.active
-                )
-                .then(({ data }) => data as Product)
+            withOptionalMultipartUpload<CreateProductRequestMultipart, Product>(productData, {
+                sendMultipart: (formData) =>
+                    httpClient.post<IResponseSuccess<Product>>('/products', formData),
+                sendJson: () =>
+                    productsApi.createProduct({
+                        title: productData.title,
+                        price: productData.price,
+                        description: productData.description,
+                        active: productData.active,
+                        categories: productData.categories,
+                        tags: productData.tags
+                    })
+            }).then((data) => data as Product)
         );
 
     /**
@@ -140,17 +152,22 @@ export const useProductsStore = defineStore('products', () => {
         if (files.length === 0 || !files[0]) return Promise.reject(new Error('no file selected'));
         return updateTarget(
             () =>
-                productsApi
-                    .updateProductById(
-                        product.id,
-                        product.title,
-                        product.price,
-                        product.description,
-                        product.active,
-                        files[0],
+                httpClient
+                    .put<IResponseSuccess<Product>>(
+                        `/products/${encodeURIComponent(product.id)}`,
+                        toMultipartFormData({
+                            title: product.title,
+                            price: product.price,
+                            description: product.description,
+                            active: product.active,
+                            categories: product.categories,
+                            tags: product.tags,
+                            imageUpload: files[0]
+                        }),
                         { onUploadProgress }
                     )
-                    .then(({ data }) => data as Product),
+                    .then((response) => unwrapApiPayload<Product>(response))
+                    .then((data) => data as Product),
             {} as Partial<Product>,
             product.id
         );
@@ -163,18 +180,28 @@ export const useProductsStore = defineStore('products', () => {
      * @param productId
      * @param productData
      */
-    const updateProduct = (productId: string, productData: UpdateProductByIdRequest) =>
+    const updateProduct = (productId: string, productData: UpdateProductByIdRequestMultipart) =>
         updateTarget(
             () =>
-                productsApi
-                    .updateProductById(
-                        productId,
-                        productData.title,
-                        productData.price,
-                        productData.description,
-                        productData.active
-                    )
-                    .then(({ data }) => data as Product),
+                withOptionalMultipartUpload<UpdateProductByIdRequestMultipart, Product>(
+                    productData,
+                    {
+                        sendMultipart: (formData) =>
+                            httpClient.put<IResponseSuccess<Product>>(
+                                `/products/${encodeURIComponent(productId)}`,
+                                formData
+                            ),
+                        sendJson: () =>
+                            productsApi.updateProductById(productId, {
+                                title: productData.title,
+                                price: productData.price,
+                                description: productData.description,
+                                active: productData.active,
+                                categories: productData.categories,
+                                tags: productData.tags
+                            })
+                    }
+                ).then((data) => data as Product),
             productData as Partial<Product>,
             productId
         );

@@ -6,16 +6,20 @@ export default { name: 'AdminPage' };
 import '@/styles/pages/admin.scss';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAdminObservability } from '@/composables/useAdminObservability.ts';
 import type { AdminTabKey } from '@/types/admin.ts';
+import { authApi } from '@/utils/api.ts';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import AdminOverviewTab from '@/components/admin/AdminOverviewTab.vue';
 import AdminAuditTab from '@/components/admin/AdminAuditTab.vue';
 
 const { t } = useI18n();
+const { addMessage } = useNotificationsStore();
 
 const activeTab = ref<AdminTabKey>('overview');
+const cleaningExpiredTokens = ref(false);
 
 const {
     health,
@@ -37,6 +41,20 @@ const overviewLoading = computed(() => loadingHealth.value || loadingMetrics.val
 onMounted(() => {
     void fetchAll();
 });
+
+const clearExpiredTokens = async () => {
+    const shouldContinue = globalThis.confirm(t('admin-page.confirm-clear-expired-tokens'));
+    if (!shouldContinue) return;
+    cleaningExpiredTokens.value = true;
+    try {
+        await authApi.deleteExpiredTokens();
+        addMessage(t('admin-page.success-clear-expired-tokens'));
+    } catch {
+        addMessage(t('admin-page.error-clear-expired-tokens'));
+    } finally {
+        cleaningExpiredTokens.value = false;
+    }
+};
 </script>
 
 <template>
@@ -63,6 +81,19 @@ onMounted(() => {
                 {{ t('admin-page.tab-audit') }}
             </button>
         </nav>
+        <div class="admin-maintenance-actions">
+            <button
+                class="admin-maintenance-button"
+                :disabled="cleaningExpiredTokens"
+                @click="clearExpiredTokens"
+            >
+                {{
+                    cleaningExpiredTokens
+                        ? t('admin-page.button-cleaning-expired-tokens')
+                        : t('admin-page.button-clear-expired-tokens')
+                }}
+            </button>
+        </div>
 
         <div class="admin-tab-content">
             <AdminOverviewTab
