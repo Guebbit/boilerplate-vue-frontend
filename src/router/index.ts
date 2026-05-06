@@ -133,14 +133,6 @@ router.beforeEach((to, from, next) => {
 });
 
 /**
- * Refresh (is needed) the authentication before every route
- */
-// router.beforeEach((to, from, next) =>
-//     refreshAuth()
-//         .then(() => { next() })
-// );
-
-/**
  * Check that requeste locale is supported and loadeds
  */
 router.beforeResolve(localeChoice);
