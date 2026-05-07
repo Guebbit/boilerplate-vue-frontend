@@ -9,7 +9,8 @@ describe('Cart', () => {
             cy.loginAs('admin');
             cy.visit('/en/cart');
             cy.get('body').then((bodyElement) => {
-                if (bodyElement.find('.clear-button').length > 0) cy.get('.clear-button').click();
+                if (bodyElement.find('.clear-button').length > 0)
+                    cy.wrap(bodyElement).find('.clear-button').first().click();
             });
             cy.contains('Your cart is empty').should('be.visible');
         });
@@ -67,7 +68,7 @@ describe('Cart', () => {
                 .its('length')
                 .then((initialLength) => {
                     cy.get('.cart-item').last().find('.remove-button').click();
-                    cy.get('.cart-item').should('have.length', Math.max(initialLength - 1, 0));
+                    cy.get('.cart-item').should('have.length', initialLength - 1);
                 });
         });
 

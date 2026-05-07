@@ -27,7 +27,7 @@ describe('Orders', () => {
                     cy.contains(/pending|paid|processing|shipped|delivered|cancelled/i).should(
                         'exist'
                     );
-                    cy.contains(/\d/).should('exist');
+                    cy.contains(/\d+(\.\d+)?/).should('exist');
                 });
         });
 
