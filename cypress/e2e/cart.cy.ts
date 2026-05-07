@@ -63,11 +63,15 @@ describe('Cart', () => {
                     expect(quantityMatch).to.not.be.null;
                     const initialQuantity = Number.parseInt(quantityMatch![0], 10);
                     expect(initialQuantity).to.be.greaterThan(0);
-                    cy.get('.cart-item').eq(0).find('.decrease-button').click();
-                    cy.get('.cart-item')
-                        .eq(0)
-                        .contains(`Quantity: ${initialQuantity > 1 ? initialQuantity - 1 : initialQuantity}`)
-                        .should('exist');
+                    if (initialQuantity === 1) {
+                        cy.get('.cart-item').eq(0).find('.decrease-button').should('be.disabled');
+                    } else {
+                        cy.get('.cart-item').eq(0).find('.decrease-button').click();
+                        cy.get('.cart-item')
+                            .eq(0)
+                            .contains(`Quantity: ${initialQuantity - 1}`)
+                            .should('exist');
+                    }
                 });
         });
 
