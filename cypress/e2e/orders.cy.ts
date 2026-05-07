@@ -6,7 +6,7 @@ describe('Orders', () => {
 
     describe('Orders list', () => {
         beforeEach(() => {
-            cy.loginAs('user');
+            cy.loginAs('admin');
             cy.visit('/en/orders');
             cy.get('.list-table tbody tr').should('have.length', 2);
         });
