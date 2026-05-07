@@ -6,7 +6,9 @@ const readFirstItemQuantity = () =>
         .then((quantityText) => {
             const quantityMatch = quantityText.match(/\d+/);
             if (!quantityMatch)
-                throw new Error(`Unable to parse initial cart quantity from: "${quantityText}"`);
+                throw new Error(
+                    `Unable to parse cart quantity from: "${quantityText}". Expected format: Quantity: N where N is a positive integer.`
+                );
             const quantityValue = Number.parseInt(quantityMatch[0], 10);
             expect(quantityValue).to.be.greaterThan(0);
             return quantityValue;
@@ -23,8 +25,9 @@ describe('Cart', () => {
             cy.loginAs('admin');
             cy.visit('/en/cart');
             cy.get('body').then((bodyElement) => {
-                if (bodyElement.find('.clear-button').length > 0)
+                if (bodyElement.find('.clear-button').length > 0) {
                     cy.wrap(bodyElement).find('.clear-button').first().click();
+                }
             });
             cy.contains('Your cart is empty').should('be.visible');
         });
