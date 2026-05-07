@@ -54,13 +54,39 @@ describe('Cart', () => {
         });
 
         it('decreases quantity when clicking the minus button', () => {
-            cy.get('.cart-item').eq(0).find('.decrease-button').click();
-            cy.get('.cart-item').eq(0).contains('Quantity:').should('exist');
+            cy.get('.cart-item')
+                .eq(0)
+                .contains(/Quantity:\s*\d+/)
+                .invoke('text')
+                .then((quantityText) => {
+                    const initialQuantity = Number.parseInt(
+                        quantityText.match(/\d+/u)?.[0] ?? '0',
+                        10
+                    );
+                    cy.get('.cart-item').eq(0).find('.decrease-button').click();
+                    cy.get('.cart-item')
+                        .eq(0)
+                        .contains(`Quantity: ${initialQuantity > 1 ? initialQuantity - 1 : initialQuantity}`)
+                        .should('exist');
+                });
         });
 
         it('increases quantity when clicking the plus button', () => {
-            cy.get('.cart-item').eq(0).find('.increase-button').click();
-            cy.get('.cart-item').eq(0).contains('Quantity:').should('exist');
+            cy.get('.cart-item')
+                .eq(0)
+                .contains(/Quantity:\s*\d+/)
+                .invoke('text')
+                .then((quantityText) => {
+                    const initialQuantity = Number.parseInt(
+                        quantityText.match(/\d+/u)?.[0] ?? '0',
+                        10
+                    );
+                    cy.get('.cart-item').eq(0).find('.increase-button').click();
+                    cy.get('.cart-item')
+                        .eq(0)
+                        .contains(`Quantity: ${initialQuantity + 1}`)
+                        .should('exist');
+                });
         });
 
         it('removes an item when clicking Remove', () => {
