@@ -59,7 +59,7 @@ describe('Cart', () => {
                 .contains(/Quantity:\s*\d+/)
                 .invoke('text')
                 .then((quantityText) => {
-                    const quantityMatch = quantityText.match(/\d+/u);
+                    const quantityMatch = quantityText.match(/\d+/);
                     expect(quantityMatch).to.not.be.null;
                     const initialQuantity = Number.parseInt(quantityMatch![0], 10);
                     expect(initialQuantity).to.be.greaterThan(0);
@@ -81,7 +81,7 @@ describe('Cart', () => {
                 .contains(/Quantity:\s*\d+/)
                 .invoke('text')
                 .then((quantityText) => {
-                    const quantityMatch = quantityText.match(/\d+/u);
+                    const quantityMatch = quantityText.match(/\d+/);
                     expect(quantityMatch).to.not.be.null;
                     const initialQuantity = Number.parseInt(quantityMatch![0], 10);
                     expect(initialQuantity).to.be.greaterThan(0);
