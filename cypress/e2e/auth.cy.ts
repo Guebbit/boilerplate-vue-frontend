@@ -95,6 +95,20 @@ describe('Authentication', () => {
             cy.url().should('include', '/login');
         });
 
+        it('redirects an authenticated non-admin user away from /admin', () => {
+            cy.loginAs('user');
+            cy.visit('/en/admin');
+            cy.url().should('not.include', '/admin');
+            cy.get('#home-page').should('exist');
+        });
+
+        it('redirects an authenticated non-admin user away from /users', () => {
+            cy.loginAs('user');
+            cy.visit('/en/users');
+            cy.url().should('not.include', '/users');
+            cy.get('#home-page').should('exist');
+        });
+
         it('keeps authentication after page reload (F5)', () => {
             cy.loginAs('user');
             cy.visit('/en/cart');

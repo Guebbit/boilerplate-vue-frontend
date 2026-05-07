@@ -6,7 +6,7 @@ describe('Cart', () => {
 
     describe('Empty cart', () => {
         beforeEach(() => {
-            cy.loginAs('user');
+            cy.loginAs('admin');
             cy.visit('/en/cart');
             cy.get('.clear-button').click();
             cy.contains('Your cart is empty').should('be.visible');
@@ -33,7 +33,7 @@ describe('Cart', () => {
 
     describe('Cart with items', () => {
         beforeEach(() => {
-            cy.loginAs('user');
+            cy.loginAs('admin');
             cy.visit('/en/cart');
             cy.get('.cart-item').should('have.length', 2);
         });

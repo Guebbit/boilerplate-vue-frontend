@@ -60,7 +60,7 @@ Cypress.Commands.add('loginAs', (role = 'user') => {
     const credentials =
         role === 'admin'
             ? { email: 'root@root.it', password: 'rootroot' }
-            : { email: 'root@root.it', password: 'rootroot' };
+            : { email: 'john@example.com', password: 'rootroot' };
 
     cy.visit('/en/login');
     cy.get('[type=email]').clear();
