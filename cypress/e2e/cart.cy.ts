@@ -59,10 +59,10 @@ describe('Cart', () => {
                 .contains(/Quantity:\s*\d+/)
                 .invoke('text')
                 .then((quantityText) => {
-                    const initialQuantity = Number.parseInt(
-                        quantityText.match(/\d+/u)?.[0] ?? '0',
-                        10
-                    );
+                    const quantityMatch = quantityText.match(/\d+/u);
+                    expect(quantityMatch).to.not.be.null;
+                    const initialQuantity = Number.parseInt(quantityMatch![0], 10);
+                    expect(initialQuantity).to.be.greaterThan(0);
                     cy.get('.cart-item').eq(0).find('.decrease-button').click();
                     cy.get('.cart-item')
                         .eq(0)
@@ -77,10 +77,10 @@ describe('Cart', () => {
                 .contains(/Quantity:\s*\d+/)
                 .invoke('text')
                 .then((quantityText) => {
-                    const initialQuantity = Number.parseInt(
-                        quantityText.match(/\d+/u)?.[0] ?? '0',
-                        10
-                    );
+                    const quantityMatch = quantityText.match(/\d+/u);
+                    expect(quantityMatch).to.not.be.null;
+                    const initialQuantity = Number.parseInt(quantityMatch![0], 10);
+                    expect(initialQuantity).to.be.greaterThan(0);
                     cy.get('.cart-item').eq(0).find('.increase-button').click();
                     cy.get('.cart-item')
                         .eq(0)
