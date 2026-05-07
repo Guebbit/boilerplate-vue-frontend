@@ -60,8 +60,8 @@ describe('Cart', () => {
                 .invoke('text')
                 .then((quantityText) => {
                     const quantityMatch = quantityText.match(/\d+/);
-                    expect(quantityMatch).to.not.be.null;
-                    const initialQuantity = Number.parseInt(quantityMatch![0], 10);
+                    if (!quantityMatch) throw new Error('Unable to parse initial cart quantity');
+                    const initialQuantity = Number.parseInt(quantityMatch[0], 10);
                     expect(initialQuantity).to.be.greaterThan(0);
                     if (initialQuantity === 1) {
                         cy.get('.cart-item').eq(0).find('.decrease-button').should('be.disabled');
@@ -82,8 +82,8 @@ describe('Cart', () => {
                 .invoke('text')
                 .then((quantityText) => {
                     const quantityMatch = quantityText.match(/\d+/);
-                    expect(quantityMatch).to.not.be.null;
-                    const initialQuantity = Number.parseInt(quantityMatch![0], 10);
+                    if (!quantityMatch) throw new Error('Unable to parse initial cart quantity');
+                    const initialQuantity = Number.parseInt(quantityMatch[0], 10);
                     expect(initialQuantity).to.be.greaterThan(0);
                     cy.get('.cart-item').eq(0).find('.increase-button').click();
                     cy.get('.cart-item')
