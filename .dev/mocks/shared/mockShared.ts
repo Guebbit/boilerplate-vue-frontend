@@ -125,6 +125,50 @@ export const slicePaginatedData = <T>(items: T[], page: number, pageSize: number
 export const createMockInvoicePdf = () =>
     new TextEncoder().encode('%PDF-1.4\n% Mock invoice PDF\n').buffer;
 
+// ─── sessionStorage bridge ────────────────────────────────────────────────────
+//
+// Problem: MSW handlers run in the browser's main thread. Every cy.visit() call
+// in Cypress causes a full page reload, which re-evaluates all ES modules,
+// including this file. That wipes the module-level `mockDatabase` back to its
+// initial state — most critically, `currentAuthenticatedUserId` reverts to
+// 'user-1' (admin), silently undoing any login performed in a previous step.
+//
+// Solution: mirror `currentAuthenticatedUserId` in sessionStorage, which
+// survives page reloads within the same browser tab (Cypress runs all steps of
+// one test in the same tab). On re-evaluation, `createInitialMockDatabase`
+// reads this value and restores the correct user identity.
+//
+// sessionStorage is cleared between tests by `cy.clearAllSessionStorage()` in
+// cypress/support/e2e.ts, and also whenever the `/__mock/reset` endpoint is
+// hit (which calls `resetMockDatabase`). Both code paths ensure a clean slate.
+//
+// The helpers are wrapped in try/catch so the mock module can also be imported
+// safely in non-browser contexts (e.g. Vitest with jsdom).
+
+const MOCK_USER_ID_KEY = 'mock_currentUserId';
+
+const tryGetSessionStorage = (key: string): string | undefined => {
+    try {
+        if (typeof sessionStorage === 'undefined') return undefined;
+        return sessionStorage.getItem(key) ?? undefined;
+    } catch {
+        return undefined;
+    }
+};
+
+// Pass no second argument (or pass undefined) to remove the key.
+export const trySetSessionStorage = (key: string, value?: string) => {
+    try {
+        if (typeof sessionStorage === 'undefined') return;
+        if (value === undefined) sessionStorage.removeItem(key);
+        else sessionStorage.setItem(key, value);
+    } catch {
+        // ignore storage errors (e.g. in non-browser environments)
+    }
+};
+
+// ─── mock database ────────────────────────────────────────────────────────────
+
 const createInitialMockDatabase = () => {
     const sampleUsers: User[] = [
         {
@@ -243,7 +287,10 @@ const createInitialMockDatabase = () => {
     ];
 
     return {
-        currentAuthenticatedUserId: 'user-1',
+        // Restored from sessionStorage so that a cy.visit() page reload does not
+        // lose the identity set by a preceding login step. Falls back to user-1
+        // (admin) when no stored value exists (fresh test, after reset, or SSR).
+        currentAuthenticatedUserId: tryGetSessionStorage(MOCK_USER_ID_KEY) ?? 'user-1',
         sampleUsers,
         sampleProducts,
         sampleCartItems,
@@ -251,7 +298,7 @@ const createInitialMockDatabase = () => {
     };
 };
 
-// In-memory fixtures (mutable by handlers) used as a mock "database".
+// Single shared in-memory store mutated by all handlers.
 export const mockDatabase: {
     currentAuthenticatedUserId: string;
     sampleUsers: User[];
@@ -260,7 +307,11 @@ export const mockDatabase: {
     sampleOrders: Order[];
 } = createInitialMockDatabase();
 
+// Called by the /__mock/reset MSW endpoint (cy.resetMockState()).
+// Clears the sessionStorage mirror first so that createInitialMockDatabase
+// falls back to 'user-1' instead of the previously logged-in user.
 export const resetMockDatabase = () => {
+    trySetSessionStorage(MOCK_USER_ID_KEY);
     const initialMockDatabase = createInitialMockDatabase();
     mockDatabase.currentAuthenticatedUserId = initialMockDatabase.currentAuthenticatedUserId;
     mockDatabase.sampleUsers = initialMockDatabase.sampleUsers;

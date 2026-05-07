@@ -1,5 +1,6 @@
 const readFirstItemQuantity = () =>
-    cy.get('.cart-item')
+    cy
+        .get('.cart-item')
         .eq(0)
         .contains(/Quantity:\s*\d+/)
         .invoke('text')

@@ -17,5 +17,10 @@
 
 import './commands';
 
+beforeEach(() => {
+    cy.clearCookies();
+    cy.clearAllSessionStorage();
+});
+
 // Alternatively you can use CommonJS syntax:
 // require('./commands')
