@@ -1,3 +1,17 @@
+const readFirstItemQuantity = () =>
+    cy.get('.cart-item')
+        .eq(0)
+        .contains(/Quantity:\s*\d+/)
+        .invoke('text')
+        .then((quantityText) => {
+            const quantityMatch = quantityText.match(/\d+/);
+            if (!quantityMatch)
+                throw new Error(`Unable to parse initial cart quantity from: "${quantityText}"`);
+            const quantityValue = Number.parseInt(quantityMatch[0], 10);
+            expect(quantityValue).to.be.greaterThan(0);
+            return quantityValue;
+        });
+
 describe('Cart', () => {
     beforeEach(() => {
         cy.visit('/en');
@@ -54,43 +68,27 @@ describe('Cart', () => {
         });
 
         it('decreases quantity when clicking the minus button', () => {
-            cy.get('.cart-item')
-                .eq(0)
-                .contains(/Quantity:\s*\d+/)
-                .invoke('text')
-                .then((quantityText) => {
-                    const quantityMatch = quantityText.match(/\d+/);
-                    if (!quantityMatch) throw new Error('Unable to parse initial cart quantity');
-                    const initialQuantity = Number.parseInt(quantityMatch[0], 10);
-                    expect(initialQuantity).to.be.greaterThan(0);
-                    if (initialQuantity === 1) {
-                        cy.get('.cart-item').eq(0).find('.decrease-button').should('be.disabled');
-                    } else {
-                        cy.get('.cart-item').eq(0).find('.decrease-button').click();
-                        cy.get('.cart-item')
-                            .eq(0)
-                            .contains(`Quantity: ${initialQuantity - 1}`)
-                            .should('exist');
-                    }
-                });
+            readFirstItemQuantity().then((initialQuantity) => {
+                if (initialQuantity === 1) {
+                    cy.get('.cart-item').eq(0).find('.decrease-button').should('be.disabled');
+                } else {
+                    cy.get('.cart-item').eq(0).find('.decrease-button').click();
+                    cy.get('.cart-item')
+                        .eq(0)
+                        .contains(`Quantity: ${initialQuantity - 1}`)
+                        .should('exist');
+                }
+            });
         });
 
         it('increases quantity when clicking the plus button', () => {
-            cy.get('.cart-item')
-                .eq(0)
-                .contains(/Quantity:\s*\d+/)
-                .invoke('text')
-                .then((quantityText) => {
-                    const quantityMatch = quantityText.match(/\d+/);
-                    if (!quantityMatch) throw new Error('Unable to parse initial cart quantity');
-                    const initialQuantity = Number.parseInt(quantityMatch[0], 10);
-                    expect(initialQuantity).to.be.greaterThan(0);
-                    cy.get('.cart-item').eq(0).find('.increase-button').click();
-                    cy.get('.cart-item')
-                        .eq(0)
-                        .contains(`Quantity: ${initialQuantity + 1}`)
-                        .should('exist');
-                });
+            readFirstItemQuantity().then((initialQuantity) => {
+                cy.get('.cart-item').eq(0).find('.increase-button').click();
+                cy.get('.cart-item')
+                    .eq(0)
+                    .contains(`Quantity: ${initialQuantity + 1}`)
+                    .should('exist');
+            });
         });
 
         it('removes an item when clicking Remove', () => {
