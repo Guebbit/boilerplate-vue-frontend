@@ -3,5 +3,7 @@ node_modules
 types
 .dev
 docs
+api
+public/mockServiceWorker.js
 *.insomnia*
 Insomnia_*.json

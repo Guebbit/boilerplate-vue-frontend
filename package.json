@@ -15,6 +15,7 @@
         "lint:openapi": "spectral lint openapi.yaml",
         "lint:openapi:fix": "spectral lint openapi.yaml --format stylish",
         "prettier": "npx prettier .",
+        "prettier:check": "npx prettier --check .",
         "prettier:fix": "npx prettier . --write",
         "test": "npm run test:unit && npm run test:e2e",
         "test:unit": "vitest run",
@@ -29,13 +30,13 @@
         "genapi": "rm -rf api && openapi-generator-cli generate -i openapi.yaml -g typescript-axios -o ./api",
         "update:all": "npx npm-check-updates -u",
         "complete": "npm run build && npm run lint:fix && npm run lint:openapi && npm run prettier:fix && npm run test",
-        "complete:check": "npm run build && npm run lint && npm run lint:openapi && npm run prettier && npm run test",
+        "complete:check": "npm run build && npm run lint && npm run lint:openapi && npm run prettier:check && npm run test",
         "publish:public": "npm run complete && npm publish --access public"
     },
     "dependencies": {
         "@guebbit/css-toolkit": "^1.4.1",
         "@guebbit/vue-toolkit": "^1.0.3",
-        "@openapitools/openapi-generator-cli": "^2.30.2",
+        "@openapitools/openapi-generator-cli": "2.31.0",
         "@sentry/vue": "^10.51.0",
         "axios": "^1.13.6",
         "pinia": "^3.0.4",

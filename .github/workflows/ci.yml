@@ -48,6 +48,15 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
-            # 5) Run the strict repository validation gate; npm scripts already include unit + e2e.
+            # 5) Verify the committed generated API client is up-to-date with openapi.yaml.
+            - name: Check generated API freshness
+              run: |
+                  npm run genapi
+                  if ! git diff --exit-code -- api/; then
+                      echo "Generated api/ is stale. Run 'npm run genapi' and commit the changes."
+                      exit 1
+                  fi
+
+            # 6) Run the strict repository validation gate; npm scripts already include unit + e2e.
             - name: Complete validation check
               run: npm run complete:check

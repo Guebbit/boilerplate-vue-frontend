@@ -60,7 +60,8 @@ to `http://localhost:8080` to match this frontend default dev port.
 - `npm run lint`: run ESLint
 - `npm run lint:fix`: run ESLint autofix
 - `npm run lint:openapi`: lint `openapi.yaml` with Spectral
-- `npm run prettier`: run Prettier check
+- `npm run prettier`: run Prettier check (alias for `prettier:check`)
+- `npm run prettier:check`: run Prettier check
 - `npm run prettier:fix`: run Prettier write
 - `npm run test:unit`: run Vitest unit tests
 - `npm run test:e2e`: run Cypress e2e tests
@@ -96,6 +97,16 @@ npm run lint
 npm run build
 npm run test:unit
 ```
+
+## Frontend/backend tandem sync discipline
+
+- Treat `openapi.yaml` as the canonical contract for both paired boilerplates.
+- After any contract edit, regenerate derived artifacts (`npm run genapi`) and commit the generated `api/` changes.
+- Keep paired branches aligned: frontend `main` with backend `api-mongodb-mongoose`.
+- Local pairing reminder:
+    - Backend default URL: `http://localhost:3000`
+    - Frontend dev URL: `http://localhost:8080`
+    - Backend CORS should allow frontend origin `http://localhost:8080` (set `NODE_CORS_ORIGIN=http://localhost:8080`).
 
 ## Admin Dashboard
 
