@@ -43,6 +43,13 @@ export type IAxiosResponseErrorData = IResponseReject;
  */
 export type IAxiosResponseErrorBody = unknown;
 
+const getFallbackMessage = (status: number, fallback: string) => {
+    if (status === 401) return 'Unauthorized';
+    if (status === 403) return 'Forbidden';
+    if (status >= 500) return 'Internal Server Error';
+    return fallback;
+};
+
 const refreshExcludedPaths = new Set([
     '/account/login',
     '/account/signup',
@@ -148,18 +155,21 @@ export const onResponseReject = (
         });
     }
 
-    if (import.meta.env.NODE_ENV !== 'production')
+    const status = error.response?.status ?? 500;
+    const fallbackMessage = error.response?.statusText || error.message || 'Unknown error';
+    const message = getFallbackMessage(status, fallbackMessage);
+    const shouldLogServerError =
+        import.meta.env.DEV && import.meta.env.VITE_APP_DEBUG_HTTP === 'true' && status >= 500;
+
+    if (shouldLogServerError)
         // eslint-disable-next-line no-console
         console.error('------------- APP ERROR -------------', error);
-
-    const status = error.response?.status ?? 500;
-    const message = error.response?.statusText || error.message || 'Unknown error';
 
     return Promise.reject({
         success: false,
         status,
         message,
-        errors: [] as string[],
+        errors: status === 401 || status === 403 ? [message] : ([] as string[]),
         ...(requestId && { requestId }),
         ...(traceId && { traceId })
     });

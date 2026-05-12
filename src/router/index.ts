@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, RouterView } from 'vue-router';
 import { demoMiddleware } from '@/middlewares/demoMiddleware';
 import { localeChoice } from '@/middlewares/localeChoice';
 import { getDefaultLocale } from '@/utils/i18n.ts';
+import { loginContinueTo } from '@/utils/helperNavigation.ts';
 
 import accountRoutes from './accountRoutes';
 import adminRoutes from './adminRoutes.ts';
@@ -97,12 +98,46 @@ const router = createRouter({
  * Global error handler
  */
 router.onError((error: Error) => {
-    if (import.meta.env.NODE_ENV !== 'production')
+    const currentRoute = router.currentRoute.value;
+    const locale =
+        typeof currentRoute.params.locale === 'string'
+            ? currentRoute.params.locale
+            : getDefaultLocale();
+    const status =
+        typeof (error as { status?: unknown }).status === 'number'
+            ? ((error as { status?: number }).status ?? 500)
+            : undefined;
+
+    if (status === 401) return router.push(loginContinueTo(currentRoute.fullPath, locale));
+
+    if (status === 403)
+        return router.push({
+            name: 'Error',
+            params: {
+                locale,
+                status: 403,
+                message: 'navigation.error-forbidden'
+            }
+        });
+
+    if (import.meta.env.DEV && import.meta.env.VITE_APP_DEBUG_ROUTER === 'true')
         // eslint-disable-next-line no-console
         console.error('page error', error);
+
+    if (status && status < 500)
+        return router.push({
+            name: 'Error',
+            params: {
+                locale,
+                status,
+                message: error.message || 'error-page.unexpected'
+            }
+        });
+
     return router.push({
         name: 'Error',
         params: {
+            locale,
             status: 500,
             message: error.message || 'error-page.unexpected'
         }
