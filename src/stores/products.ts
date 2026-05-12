@@ -103,7 +103,7 @@ export const useProductsStore = defineStore('products', () => {
      */
     const fetchProduct = (productId: string, forced = false) =>
         fetchTarget(
-            () => ProductsService.getProductById(productId).then((data) => data),
+            () => ProductsService.getProductById(productId),
             productId,
             { forced }
         );

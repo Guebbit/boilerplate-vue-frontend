@@ -166,7 +166,7 @@ export const useProfileStore = defineStore('profile', () => {
                     email: userData.email,
                     password: userData.password,
                     username: userData.username
-                }).then((data) => data),
+                }),
             userData,
             selectedIdentifier.value
         );

@@ -101,7 +101,7 @@ export const useUsersStore = defineStore('users', () => {
      * @param forced
      */
     const fetchUser = (userId: string, forced = false) =>
-        fetchTarget(() => UsersService.getUserById(userId).then((data) => data), userId, {
+        fetchTarget(() => UsersService.getUserById(userId), userId, {
             forced
         });
 

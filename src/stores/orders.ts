@@ -102,7 +102,7 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param forced
      */
     const fetchOrder = (orderId: string, forced = false) =>
-        fetchTarget(() => OrdersService.getOrderById(orderId).then((data) => data), orderId, {
+        fetchTarget(() => OrdersService.getOrderById(orderId), orderId, {
             forced
         });
 
@@ -112,7 +112,7 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param orderData
      */
     const createOrder = (orderData: CreateOrderRequest) =>
-        createTarget(() => OrdersService.createOrder(orderData).then((data) => data));
+        createTarget(() => OrdersService.createOrder(orderData));
 
     /**
      * Update an existing order by ID
@@ -122,7 +122,7 @@ export const useOrdersStore = defineStore('orders', () => {
      */
     const updateOrder = (orderId: string, orderData: UpdateOrderByIdRequest) =>
         updateTarget(
-            () => OrdersService.updateOrderById(orderId, orderData).then((data) => data),
+            () => OrdersService.updateOrderById(orderId, orderData),
             orderData as Partial<Order>,
             orderId
         );
@@ -133,9 +133,7 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param checkoutData
      */
     const checkout = (checkoutData?: CheckoutRequest) =>
-        fetchAny(() =>
-            OrdersService.checkout(checkoutData).then((data) => data as CheckoutResponse)
-        );
+        fetchAny(() => OrdersService.checkout(checkoutData));
 
     /**
      * Delete an order by ID
