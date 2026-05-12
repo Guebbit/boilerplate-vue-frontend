@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { i18n } from '@/utils/i18n.ts';
 import type { AuthTokens, RefreshTokenResponse, User } from '@types';
-import { accountApi, authApi, usersApi } from '@/utils/api.ts';
+import { AccountService, AuthService, UsersService } from '@/utils/api.ts';
 
 /**
  * Extract token from both wrapped ({ data: { token } }) and direct ({ token }) responses
@@ -79,8 +79,7 @@ export const useProfileStore = defineStore('profile', () => {
      */
     const login = (email: string, password: string) =>
         fetchAny(() =>
-            authApi
-                .login({ email, password })
+            AuthService.login({ email, password })
                 .then((data) => {
                     accessToken.value = getTokenFromResponse(data);
                     setCookie('isAuth=true; path=/; SameSite=Lax');
@@ -100,7 +99,7 @@ export const useProfileStore = defineStore('profile', () => {
         password: string,
         username = email,
         passwordConfirm = password
-    ) => fetchAny(() => authApi.signup({ email, username, password, passwordConfirm }));
+    ) => fetchAny(() => AuthService.signup({ email, username, password, passwordConfirm }));
 
     /**
      * Starts password reset flow by sending a token to the provided email.
@@ -108,7 +107,7 @@ export const useProfileStore = defineStore('profile', () => {
      * @param email
      */
     const requestPasswordReset = (email: string) =>
-        fetchAny(() => authApi.requestPasswordReset({ email }));
+        fetchAny(() => AuthService.requestPasswordReset({ email }));
 
     /**
      * Completes password reset using one-time token and the new password.
@@ -118,14 +117,14 @@ export const useProfileStore = defineStore('profile', () => {
      * @param passwordConfirm
      */
     const confirmPasswordReset = (token: string, password: string, passwordConfirm: string) =>
-        fetchAny(() => authApi.confirmPasswordReset({ token, password, passwordConfirm }));
+        fetchAny(() => AuthService.confirmPasswordReset({ token, password, passwordConfirm }));
 
     /**
      * Refresh access token
      */
     const refreshToken = () =>
         fetchAny(() =>
-            authApi.refreshToken().then(({ data }) => {
+            AuthService.refreshToken().then((data) => {
                 accessToken.value = getTokenFromResponse(data);
             })
         );
@@ -140,7 +139,7 @@ export const useProfileStore = defineStore('profile', () => {
     const fetchProfile = (forced = false) => {
         return fetchTarget(
             () =>
-                accountApi.getAccount().then(({ data }) => {
+                AccountService.getAccount().then((data) => {
                     const payload = getPayloadFromResponse<User>(data);
                     if (!payload) return;
                     // to handle single-target stores we just need to select the correct identifier
@@ -163,13 +162,11 @@ export const useProfileStore = defineStore('profile', () => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
         return updateTarget(
             () =>
-                usersApi
-                    .updateUserById(selectedIdentifier.value!, {
-                        email: userData.email,
-                        password: userData.password,
-                        username: userData.username
-                    })
-                    .then(({ data }) => data as User),
+                UsersService.updateUserById(selectedIdentifier.value!, {
+                    email: userData.email,
+                    password: userData.password,
+                    username: userData.username
+                }),
             userData,
             selectedIdentifier.value
         );
@@ -193,7 +190,7 @@ export const useProfileStore = defineStore('profile', () => {
      */
     const logout = () => {
         // The httpOnly jwt cookie can only be cleared server-side; isAuth is JS-accessible.
-        return authApi.logoutAll().then(() => {
+        return AuthService.logoutAll().then(() => {
             itemDictionary.value = {};
             selectedIdentifier.value = undefined;
             accessToken.value = undefined;

@@ -21,7 +21,8 @@ export const mockResponse = <T>(data: T, options: MockTransportOptions = {}) => 
 
 export const toMockJsonResponse = async <T>(data: T, options: MockTransportOptions = {}) => {
     await delay(options.delayMs ?? 250);
-    return HttpResponse.json(mockResponse(data, options), {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return HttpResponse.json(data as any, {
         status: options.status ?? 200,
         headers: options.headers ?? {}
     });

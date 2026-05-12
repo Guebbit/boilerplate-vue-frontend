@@ -41,13 +41,11 @@ export const unwrapApiPayload = <T>(
     return isSuccessEnvelope<T>(payload) ? payload.data : payload;
 };
 
-export const withOptionalMultipartUpload = <TRequest extends { imageUpload?: File }, TResponse>(
+export const withOptionalMultipartUpload = <TRequest extends { imageUpload?: Blob }, TResponse>(
     payload: TRequest,
     options: {
-        sendMultipart: (formData: FormData) => Promise<IEnvelopeResponse<TResponse>>;
-        sendJson: () => Promise<IDataResponse<TResponse>>;
+        sendMultipart: (formData: FormData) => Promise<TResponse>;
+        sendJson: () => Promise<TResponse>;
     }
-): Promise<TResponse | undefined> =>
-    payload.imageUpload
-        ? options.sendMultipart(toMultipartFormData(payload)).then(unwrapApiPayload)
-        : options.sendJson().then(unwrapApiPayload);
+): Promise<TResponse> =>
+    payload.imageUpload ? options.sendMultipart(toMultipartFormData(payload)) : options.sendJson();

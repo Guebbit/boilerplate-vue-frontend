@@ -2,15 +2,10 @@ import { defineStore } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
-import { usersApi } from '@/utils/api.ts';
+import { UsersService } from '@/utils/api.ts';
 import httpClient from '@/utils/http.ts';
-import {
-    toMultipartFormData,
-    unwrapApiPayload,
-    withOptionalMultipartUpload
-} from '@/utils/multipart.ts';
+import { toMultipartFormData, withOptionalMultipartUpload } from '@/utils/multipart.ts';
 import type { AxiosProgressEvent } from 'axios';
-import type { IResponseSuccess } from '@/types';
 import type {
     User,
     CreateUserRequestMultipart,
@@ -51,7 +46,7 @@ export const useUsersStore = defineStore('users', () => {
      * @param forced
      */
     const fetchUsers = (forced = false) =>
-        fetchAll(() => usersApi.listUsers().then(({ data }) => data.items), { forced });
+        fetchAll(() => UsersService.listUsers().then((response) => response.items), { forced });
 
     /**
      * @param page
@@ -59,7 +54,7 @@ export const useUsersStore = defineStore('users', () => {
      * @param forced
      */
     const fetchPaginationUsers = (page = 1, pageSize = 10, forced = false) =>
-        fetchAny(() => usersApi.listUsers(page, pageSize).then(({ data }) => data.items), {
+        fetchAny(() => UsersService.listUsers(page, pageSize).then((response) => response.items), {
             forced
         });
 
@@ -85,17 +80,15 @@ export const useUsersStore = defineStore('users', () => {
         pageSize.value = pageSizeValue;
         return fetchSearch(
             () =>
-                usersApi
-                    .listUsers(
-                        page,
-                        pageSizeValue,
-                        filters.text,
-                        filters.id,
-                        filters.email,
-                        filters.username,
-                        filters.active
-                    )
-                    .then(({ data }) => data.items),
+                UsersService.listUsers(
+                    page,
+                    pageSizeValue,
+                    filters.text,
+                    filters.id,
+                    filters.email,
+                    filters.username,
+                    filters.active
+                ).then((response) => response.items),
             filters,
             page,
             { forced }
@@ -108,7 +101,7 @@ export const useUsersStore = defineStore('users', () => {
      * @param forced
      */
     const fetchUser = (userId: string, forced = false) =>
-        fetchTarget(() => usersApi.getUserById(userId).then(({ data }) => data as User), userId, {
+        fetchTarget(() => UsersService.getUserById(userId), userId, {
             forced
         });
 
@@ -119,17 +112,16 @@ export const useUsersStore = defineStore('users', () => {
     const createUser = (userData: CreateUserRequestMultipart) =>
         createTarget(() =>
             withOptionalMultipartUpload<CreateUserRequestMultipart, User>(userData, {
-                sendMultipart: (formData) =>
-                    httpClient.post<IResponseSuccess<User>>('/users', formData),
+                sendMultipart: (formData) => httpClient.post<User, User>('/users', formData),
                 sendJson: () =>
-                    usersApi.createUser({
+                    UsersService.createUser({
                         email: userData.email,
                         username: userData.username,
                         password: userData.password,
                         admin: userData.admin,
                         active: userData.active
                     })
-            }).then((data) => data as User)
+            })
         );
 
     /**
@@ -147,14 +139,11 @@ export const useUsersStore = defineStore('users', () => {
         if (files.length === 0 || !files[0]) return Promise.reject(new Error('no file selected'));
         return updateTarget(
             () =>
-                httpClient
-                    .put<IResponseSuccess<User>>(
-                        `/users/${encodeURIComponent(userId)}`,
-                        toMultipartFormData({ imageUpload: files[0] }),
-                        { onUploadProgress }
-                    )
-                    .then((response) => unwrapApiPayload<User>(response))
-                    .then((data) => data as User),
+                httpClient.put<User, User>(
+                    `/users/${encodeURIComponent(userId)}`,
+                    toMultipartFormData({ imageUpload: files[0] }),
+                    { onUploadProgress }
+                ),
             // No fields to optimistically merge — the updated imageUrl is returned by the API
             {} as Partial<User>,
             userId
@@ -171,17 +160,17 @@ export const useUsersStore = defineStore('users', () => {
             () =>
                 withOptionalMultipartUpload<UpdateUserByIdRequestMultipart, User>(userData, {
                     sendMultipart: (formData) =>
-                        httpClient.put<IResponseSuccess<User>>(
+                        httpClient.put<User, User>(
                             `/users/${encodeURIComponent(userId)}`,
                             formData
                         ),
                     sendJson: () =>
-                        usersApi.updateUserById(userId, {
+                        UsersService.updateUserById(userId, {
                             email: userData.email,
                             password: userData.password,
                             username: userData.username
                         })
-                }).then((data) => data as User),
+                }),
             {
                 email: userData.email,
                 password: userData.password,
@@ -195,7 +184,7 @@ export const useUsersStore = defineStore('users', () => {
      * @param userId
      */
     const deleteUser = (userId: string) =>
-        deleteTarget(() => usersApi.deleteUserById(userId), userId);
+        deleteTarget(() => UsersService.deleteUserById(userId), userId);
 
     /**
      * Zod schema for a valid email

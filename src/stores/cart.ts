@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
-import { cartApi } from '@/utils/api.ts';
+import { CartService } from '@/utils/api.ts';
 import type { CartItem, CartResponse, CartSummaryResponse } from '@types';
 
 export const useCartStore = defineStore('cart', () => {
@@ -33,8 +33,8 @@ export const useCartStore = defineStore('cart', () => {
      */
     const fetchCart = () =>
         fetchAny(() =>
-            cartApi.getCart().then(({ data }) => {
-                cart.value = data as CartResponse;
+            CartService.getCart().then((data) => {
+                cart.value = data;
             })
         );
 
@@ -46,8 +46,8 @@ export const useCartStore = defineStore('cart', () => {
      */
     const upsertCartItem = (productId: string, quantity: number) =>
         fetchAny(() =>
-            cartApi.upsertCartItem({ productId, quantity }).then(({ data }) => {
-                cart.value = data as CartResponse;
+            CartService.upsertCartItem({ productId, quantity }).then((data) => {
+                cart.value = data;
             })
         );
 
@@ -59,8 +59,8 @@ export const useCartStore = defineStore('cart', () => {
      */
     const updateCartItem = (productId: string, quantity: number) =>
         fetchAny(() =>
-            cartApi.updateCartItemById(productId, { quantity }).then(({ data }) => {
-                cart.value = data as CartResponse;
+            CartService.updateCartItemById(productId, { quantity }).then((data) => {
+                cart.value = data;
             })
         );
 
@@ -71,8 +71,8 @@ export const useCartStore = defineStore('cart', () => {
      */
     const removeCartItem = (productId: string) =>
         fetchAny(() =>
-            cartApi.removeCartItem(productId).then(({ data }) => {
-                cart.value = data as CartResponse;
+            CartService.removeCartItem(productId).then((data) => {
+                cart.value = data;
             })
         );
 
@@ -85,8 +85,8 @@ export const useCartStore = defineStore('cart', () => {
      */
     const clearCart = (productId?: string) =>
         fetchAny(() =>
-            cartApi.clearCart(productId ? { productId } : undefined).then(({ data }) => {
-                cart.value = data as CartResponse;
+            CartService.clearCart(productId ? { productId } : undefined).then((data) => {
+                cart.value = data;
             })
         );
 

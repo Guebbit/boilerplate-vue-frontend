@@ -1,5 +1,4 @@
 import {
-    OrderStatusEnum,
     type CartItem,
     type CartResponse,
     type CartSummaryResponse,
@@ -260,7 +259,7 @@ const createInitialMockDatabase = () => {
             email: values.email,
             items: values.items,
             total,
-            status: values.status ?? OrderStatusEnum.Pending,
+            status: values.status ?? 'pending',
             notes: values.notes,
             createdAt: getIsoDateNow(),
             updatedAt: getIsoDateNow()
@@ -275,13 +274,13 @@ const createInitialMockDatabase = () => {
                 { product: sampleProducts[0], quantity: 2 },
                 { product: sampleProducts[1], quantity: 1 }
             ],
-            status: OrderStatusEnum.Pending
+            status: 'pending'
         }),
         createOrder({
             userId: 'user-1',
             email: 'root@root.it',
             items: [{ product: sampleProducts[0], quantity: 2 }],
-            status: OrderStatusEnum.Delivered,
+            status: 'delivered',
             notes: 'Fast delivery please'
         })
     ];
@@ -360,7 +359,7 @@ export const createMockOrder = (
         email: values.email,
         items: values.items,
         total,
-        status: values.status ?? OrderStatusEnum.Pending,
+        status: values.status ?? 'pending',
         notes: values.notes,
         createdAt: getIsoDateNow(),
         updatedAt: getIsoDateNow()

@@ -4,14 +4,9 @@ import type { AxiosProgressEvent } from 'axios';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 
-import { productsApi } from '@/utils/api.ts';
+import { ProductsService } from '@/utils/api.ts';
 import httpClient from '@/utils/http.ts';
-import {
-    toMultipartFormData,
-    unwrapApiPayload,
-    withOptionalMultipartUpload
-} from '@/utils/multipart.ts';
-import type { IResponseSuccess } from '@/types';
+import { toMultipartFormData, withOptionalMultipartUpload } from '@/utils/multipart.ts';
 import type {
     Product,
     CreateProductRequestMultipart,
@@ -49,7 +44,7 @@ export const useProductsStore = defineStore('products', () => {
      * @param forced
      */
     const fetchProducts = (forced = false) =>
-        fetchAll(() => productsApi.listProducts().then(({ data }) => data.items), {
+        fetchAll(() => ProductsService.listProducts().then((response) => response.items), {
             forced
         });
 
@@ -59,9 +54,12 @@ export const useProductsStore = defineStore('products', () => {
      * @param forced
      */
     const fetchPaginationProducts = (page = 1, pageSize = 10, forced = false) =>
-        fetchAny(() => productsApi.listProducts(page, pageSize).then(({ data }) => data.items), {
-            forced
-        });
+        fetchAny(
+            () => ProductsService.listProducts(page, pageSize).then((response) => response.items),
+            {
+                forced
+            }
+        );
 
     type IProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
 
@@ -84,16 +82,14 @@ export const useProductsStore = defineStore('products', () => {
         pageSize.value = pageSizeValue;
         return fetchSearch(
             () =>
-                productsApi
-                    .listProducts(
-                        page,
-                        pageSizeValue,
-                        filters.text,
-                        filters.id,
-                        filters.minPrice,
-                        filters.maxPrice
-                    )
-                    .then(({ data }) => data.items),
+                ProductsService.listProducts(
+                    page,
+                    pageSizeValue,
+                    filters.text,
+                    filters.id,
+                    filters.minPrice,
+                    filters.maxPrice
+                ).then((response) => response.items),
             filters,
             page,
             { forced }
@@ -107,7 +103,7 @@ export const useProductsStore = defineStore('products', () => {
      */
     const fetchProduct = (productId: string, forced = false) =>
         fetchTarget(
-            () => productsApi.getProductById(productId).then(({ data }) => data as Product),
+            () => ProductsService.getProductById(productId),
             productId,
             { forced }
         );
@@ -122,9 +118,9 @@ export const useProductsStore = defineStore('products', () => {
         createTarget(() =>
             withOptionalMultipartUpload<CreateProductRequestMultipart, Product>(productData, {
                 sendMultipart: (formData) =>
-                    httpClient.post<IResponseSuccess<Product>>('/products', formData),
+                    httpClient.post<Product, Product>('/products', formData),
                 sendJson: () =>
-                    productsApi.createProduct({
+                    ProductsService.createProduct({
                         title: productData.title,
                         price: productData.price,
                         description: productData.description,
@@ -132,7 +128,7 @@ export const useProductsStore = defineStore('products', () => {
                         categories: productData.categories,
                         tags: productData.tags
                     })
-            }).then((data) => data as Product)
+            })
         );
 
     /**
@@ -152,22 +148,19 @@ export const useProductsStore = defineStore('products', () => {
         if (files.length === 0 || !files[0]) return Promise.reject(new Error('no file selected'));
         return updateTarget(
             () =>
-                httpClient
-                    .put<IResponseSuccess<Product>>(
-                        `/products/${encodeURIComponent(product.id)}`,
-                        toMultipartFormData({
-                            title: product.title,
-                            price: product.price,
-                            description: product.description,
-                            active: product.active,
-                            categories: product.categories,
-                            tags: product.tags,
-                            imageUpload: files[0]
-                        }),
-                        { onUploadProgress }
-                    )
-                    .then((response) => unwrapApiPayload<Product>(response))
-                    .then((data) => data as Product),
+                httpClient.put<Product, Product>(
+                    `/products/${encodeURIComponent(product.id)}`,
+                    toMultipartFormData({
+                        title: product.title,
+                        price: product.price,
+                        description: product.description,
+                        active: product.active,
+                        categories: product.categories,
+                        tags: product.tags,
+                        imageUpload: files[0]
+                    }),
+                    { onUploadProgress }
+                ),
             {} as Partial<Product>,
             product.id
         );
@@ -187,12 +180,12 @@ export const useProductsStore = defineStore('products', () => {
                     productData,
                     {
                         sendMultipart: (formData) =>
-                            httpClient.put<IResponseSuccess<Product>>(
+                            httpClient.put<Product, Product>(
                                 `/products/${encodeURIComponent(productId)}`,
                                 formData
                             ),
                         sendJson: () =>
-                            productsApi.updateProductById(productId, {
+                            ProductsService.updateProductById(productId, {
                                 title: productData.title,
                                 price: productData.price,
                                 description: productData.description,
@@ -201,7 +194,7 @@ export const useProductsStore = defineStore('products', () => {
                                 tags: productData.tags
                             })
                     }
-                ).then((data) => data as Product),
+                ),
             productData as Partial<Product>,
             productId
         );
@@ -213,7 +206,7 @@ export const useProductsStore = defineStore('products', () => {
      * @param productId
      */
     const deleteProduct = (productId: string) =>
-        deleteTarget(() => productsApi.deleteProductById(productId), productId);
+        deleteTarget(() => ProductsService.deleteProductById(productId), productId);
 
     /**
      * Zod schema for product title
