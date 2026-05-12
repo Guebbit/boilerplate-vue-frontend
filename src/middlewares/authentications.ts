@@ -30,7 +30,9 @@ export const isGuest = (to: RouteLocationNormalized, from: RouteLocationNormaliz
         .then(() => {
             const { isAuth } = storeToRefs(useProfileStore());
             if (isAuth.value) {
-                useNotificationsStore().addMessage(i18n.global.t('navigation.error-already-logged'));
+                useNotificationsStore().addMessage(
+                    i18n.global.t('navigation.error-already-logged')
+                );
                 return { name: 'Home', params: { locale: to.params.locale as string } };
             }
         });

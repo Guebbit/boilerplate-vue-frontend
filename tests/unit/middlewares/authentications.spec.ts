@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 
-const refreshTokenMock = vi.fn();
-const fetchProfileMock = vi.fn();
+const refreshTokenMock = vi.fn(() => Promise.resolve());
+const fetchProfileMock = vi.fn(() => Promise.resolve());
 const addMessageMock = vi.fn();
 const profileRefs = {
     isAuth: ref(false),
