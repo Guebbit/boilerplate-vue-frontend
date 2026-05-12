@@ -2,7 +2,8 @@ import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
-import { ordersApi } from '@/utils/api.ts';
+import { OrdersService } from '@/utils/api.ts';
+import httpClient from '@/utils/http.ts';
 import type {
     Order,
     CreateOrderRequest,
@@ -43,7 +44,7 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param forced
      */
     const fetchOrders = (forced = false) =>
-        fetchAll(() => ordersApi.listOrders().then(({ data }) => data.items), { forced });
+        fetchAll(() => OrdersService.listOrders().then((response) => response.items), { forced });
 
     /**
      * @param page
@@ -51,7 +52,7 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param forced
      */
     const fetchPaginationOrders = (page = 1, pageSize = 10, forced = false) =>
-        fetchAny(() => ordersApi.listOrders(page, pageSize).then(({ data }) => data.items), {
+        fetchAny(() => OrdersService.listOrders(page, pageSize).then((response) => response.items), {
             forced
         });
 
@@ -77,7 +78,7 @@ export const useOrdersStore = defineStore('orders', () => {
         pageSize.value = pageSizeValue;
         return fetchSearch(
             () =>
-                ordersApi
+                OrdersService
                     .listOrders(
                         page,
                         pageSizeValue,
@@ -86,7 +87,7 @@ export const useOrdersStore = defineStore('orders', () => {
                         filters.productId,
                         filters.email
                     )
-                    .then(({ data }) => data.items),
+                    .then((response) => response.items),
             filters,
             page,
             { forced }
@@ -101,7 +102,7 @@ export const useOrdersStore = defineStore('orders', () => {
      */
     const fetchOrder = (orderId: string, forced = false) =>
         fetchTarget(
-            () => ordersApi.getOrderById(orderId).then(({ data }) => data as Order),
+            () => OrdersService.getOrderById(orderId).then((data) => data),
             orderId,
             { forced }
         );
@@ -112,7 +113,7 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param orderData
      */
     const createOrder = (orderData: CreateOrderRequest) =>
-        createTarget(() => ordersApi.createOrder(orderData).then(({ data }) => data as Order));
+        createTarget(() => OrdersService.createOrder(orderData).then((data) => data));
 
     /**
      * Update an existing order by ID
@@ -122,7 +123,7 @@ export const useOrdersStore = defineStore('orders', () => {
      */
     const updateOrder = (orderId: string, orderData: UpdateOrderByIdRequest) =>
         updateTarget(
-            () => ordersApi.updateOrderById(orderId, orderData).then(({ data }) => data as Order),
+            () => OrdersService.updateOrderById(orderId, orderData).then((data) => data),
             orderData as Partial<Order>,
             orderId
         );
@@ -134,7 +135,7 @@ export const useOrdersStore = defineStore('orders', () => {
      */
     const checkout = (checkoutData?: CheckoutRequest) =>
         fetchAny(() =>
-            ordersApi.checkout(checkoutData).then(({ data }) => data as CheckoutResponse)
+            OrdersService.checkout(checkoutData).then((data) => data as CheckoutResponse)
         );
 
     /**
@@ -143,7 +144,7 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param orderId
      */
     const deleteOrder = (orderId: string) =>
-        deleteTarget(() => ordersApi.deleteOrderById(orderId), orderId);
+        deleteTarget(() => OrdersService.deleteOrderById(orderId), orderId);
 
     /**
      * Download order invoice (PDF binary)
@@ -151,7 +152,7 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param orderId
      */
     const getOrderInvoice = (orderId: string) =>
-        fetchAny(() => ordersApi.getOrderInvoice(orderId, { responseType: 'blob' }));
+        fetchAny(() => httpClient.get(`/orders/${encodeURIComponent(orderId)}/invoice`, { responseType: 'blob' }));
 
     /**
      * Zod schema for order status

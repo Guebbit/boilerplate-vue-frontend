@@ -1,5 +1,5 @@
 import { ref, type Ref } from 'vue';
-import { adminApi } from '@/utils/api.ts';
+import { AdminService } from '@/utils/api.ts';
 import type { AdminHealth, AdminMetricsSummary, AuditEventItem } from '@types';
 import type { IAdminAuditFilters } from '@/types/admin.ts';
 
@@ -46,8 +46,8 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
         loadingHealth.value = true;
         errorHealth.value = undefined;
         try {
-            const response = await adminApi.getAdminHealth();
-            health.value = response.data.data;
+            const response = await AdminService.getAdminHealth();
+            health.value = response.data;
         } catch (error: unknown) {
             errorHealth.value =
                 error instanceof Error ? error.message : 'Failed to load health data';
@@ -60,8 +60,8 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
         loadingMetrics.value = true;
         errorMetrics.value = undefined;
         try {
-            const response = await adminApi.getAdminMetricsSummary();
-            metrics.value = response.data.data;
+            const response = await AdminService.getAdminMetricsSummary();
+            metrics.value = response.data;
         } catch (error: unknown) {
             errorMetrics.value =
                 error instanceof Error ? error.message : 'Failed to load metrics data';
@@ -74,15 +74,15 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
         loadingAudit.value = true;
         errorAudit.value = undefined;
         try {
-            const response = await adminApi.getAdminAuditLogs(
+            const response = await AdminService.getAdminAuditLogs(
                 filters.actor,
                 filters.action,
                 filters.outcome,
                 filters.since,
                 filters.limit
             );
-            auditEvents.value = response.data.data.items;
-            auditTotal.value = response.data.data.total;
+            auditEvents.value = response.data.items;
+            auditTotal.value = response.data.total;
         } catch (error: unknown) {
             errorAudit.value = error instanceof Error ? error.message : 'Failed to load audit logs';
         } finally {

@@ -19,9 +19,9 @@ export const mockResponse = <T>(data: T, options: MockTransportOptions = {}) => 
     request: {}
 });
 
-export const toMockJsonResponse = async <T>(data: T, options: MockTransportOptions = {}) => {
+export const toMockJsonResponse = async <T extends Record<string, unknown> | unknown[]>(data: T, options: MockTransportOptions = {}) => {
     await delay(options.delayMs ?? 250);
-    return HttpResponse.json(mockResponse(data, options), {
+    return HttpResponse.json(data, {
         status: options.status ?? 200,
         headers: options.headers ?? {}
     });

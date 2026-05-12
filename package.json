@@ -27,7 +27,7 @@
         "kill:gnu": "pkill -9 node",
         "kill:port": "fuser -k 4173/tcp || true",
         "pretest:e2e": "npm run kill:port",
-        "genapi": "rm -rf api && openapi-generator-cli generate -i openapi.yaml -g typescript-axios -o ./api",
+        "genapi": "rm -rf api && openapi --input openapi.yaml --output ./api --client axios --useUnionTypes",
         "update:all": "npx npm-check-updates -u",
         "complete": "npm run build && npm run lint:fix && npm run lint:openapi && npm run prettier:fix && npm run test",
         "complete:check": "npm run build && npm run lint && npm run lint:openapi && npm run prettier:check && npm run test",
@@ -36,7 +36,6 @@
     "dependencies": {
         "@guebbit/css-toolkit": "^1.4.1",
         "@guebbit/vue-toolkit": "^1.0.3",
-        "@openapitools/openapi-generator-cli": "2.31.0",
         "@sentry/vue": "^10.51.0",
         "axios": "^1.13.6",
         "pinia": "^3.0.4",

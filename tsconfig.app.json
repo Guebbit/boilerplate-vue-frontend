@@ -16,7 +16,7 @@
         "paths": {
             "@/*": ["./src/*"],
             "@types": ["./src/types"],
-            "@api": ["./api/api"]
+            "@api": ["./api/index"]
         }
     }
 }

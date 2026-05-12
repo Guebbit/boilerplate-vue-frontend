@@ -1,5 +1,4 @@
 import { http, type HttpHandler } from 'msw';
-import { OrderStatusEnum } from '@/types';
 import {
     cartItemToOrderItem,
     createMockOrder,
@@ -97,7 +96,7 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
             email,
             items: mockDatabase.sampleCartItems.map((item) => cartItemToOrderItem(item)),
             notes: requestBody.notes ? String(requestBody.notes) : undefined,
-            status: OrderStatusEnum.Pending
+            status: 'pending'
         });
 
         mockDatabase.sampleOrders.unshift(createdOrder);

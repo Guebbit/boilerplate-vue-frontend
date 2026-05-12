@@ -1,26 +1,31 @@
-import { AccountApi, AdminApi, AuthApi, CartApi, OrdersApi, ProductsApi, UsersApi } from '@api';
-import { Configuration } from '../../api';
-
-import httpClient from '@/utils/http.ts';
+import { OpenAPI } from '@api';
+import { getCurrentLocale } from '@/utils/i18n.ts';
 
 /**
- * Shared OpenAPI configuration.
- * The basePath is driven by the VITE_API_URL env variable so that it matches
- * the custom axios instance in http.ts (no duplicate base-URL definition).
+ * Configure the openapi-typescript-codegen OpenAPI singleton.
+ * The base URL is driven by the VITE_API_URL env variable.
+ * The access token is resolved lazily at request time to avoid circular imports.
  */
-const apiConfiguration = new Configuration({
-    basePath: import.meta.env.VITE_API_URL ?? 'http://localhost:3000'
-});
+OpenAPI.BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+OpenAPI.WITH_CREDENTIALS = true;
+OpenAPI.CREDENTIALS = 'include';
+OpenAPI.TOKEN = async () => {
+    const { useProfileStore } = await import('@/stores/profile.ts');
+    return useProfileStore().accessToken ?? '';
+};
+// eslint-disable-next-line @typescript-eslint/naming-convention
+OpenAPI.HEADERS = async () => ({ 'Accept-Language': getCurrentLocale() });
 
 /**
- * All generated API classes share the same configuration and the custom
- * http.ts axios instance so that auth headers, language headers and the
- * automatic token-refresh interceptor are applied to every request.
+ * Re-export generated service classes so that callers can import from a single
+ * location while being guaranteed that the OpenAPI singleton is already configured.
  */
-export const accountApi = new AccountApi(apiConfiguration, undefined, httpClient);
-export const adminApi = new AdminApi(apiConfiguration, undefined, httpClient);
-export const authApi = new AuthApi(apiConfiguration, undefined, httpClient);
-export const cartApi = new CartApi(apiConfiguration, undefined, httpClient);
-export const ordersApi = new OrdersApi(apiConfiguration, undefined, httpClient);
-export const productsApi = new ProductsApi(apiConfiguration, undefined, httpClient);
-export const usersApi = new UsersApi(apiConfiguration, undefined, httpClient);
+export {
+    AccountService,
+    AdminService,
+    AuthService,
+    CartService,
+    OrdersService,
+    ProductsService,
+    UsersService
+} from '@api';
