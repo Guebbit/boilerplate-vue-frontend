@@ -127,7 +127,7 @@ export const useUsersStore = defineStore('users', () => {
                         admin: userData.admin,
                         active: userData.active
                     })
-            }).then((data) => data ?? ({} as User))
+            })
         );
 
     /**
@@ -177,7 +177,7 @@ export const useUsersStore = defineStore('users', () => {
                             password: userData.password,
                             username: userData.username
                         })
-                }).then((data) => data ?? ({} as User)),
+                }),
             {
                 email: userData.email,
                 password: userData.password,

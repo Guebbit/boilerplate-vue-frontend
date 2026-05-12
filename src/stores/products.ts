@@ -130,7 +130,7 @@ export const useProductsStore = defineStore('products', () => {
                         categories: productData.categories,
                         tags: productData.tags
                     })
-            }).then((data) => data ?? ({} as Product))
+            })
         );
 
     /**
@@ -196,7 +196,7 @@ export const useProductsStore = defineStore('products', () => {
                                 tags: productData.tags
                             })
                     }
-                ).then((data) => data ?? ({} as Product)),
+                ),
             productData as Partial<Product>,
             productId
         );
