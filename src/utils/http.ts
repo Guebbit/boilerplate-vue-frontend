@@ -123,8 +123,12 @@ export const onResponseSuccess = (response: AxiosResponse): AxiosResponse['data'
  *
  * Behavior:
  * - if API already returned the standard reject envelope (`errors` field),
- *   pass it through
+ *   pass it through (enriched with backend correlation IDs from headers)
  * - otherwise map unknown/transport errors to a safe fallback structure
+ *
+ * Backend correlation headers captured:
+ * - `x-request-id` → requestId
+ * - `x-trace-id`   → traceId
  *
  * @param error
  */
@@ -132,8 +136,17 @@ export const onResponseReject = (
     error: AxiosError<IAxiosResponseErrorData, IAxiosResponseErrorBody>
 ): Promise<IAxiosResponseErrorData> => {
     // console.log('[response error]', error);
-    if (error.response?.data && Object.hasOwnProperty.call(error.response.data, 'errors'))
-        return Promise.reject(error.response.data);
+    const requestId = error.response?.headers?.['x-request-id'] as string | undefined;
+    const traceId = error.response?.headers?.['x-trace-id'] as string | undefined;
+
+    if (error.response?.data && Object.hasOwnProperty.call(error.response.data, 'errors')) {
+        const envelope = error.response.data;
+        return Promise.reject({
+            ...envelope,
+            ...(requestId && { requestId }),
+            ...(traceId && { traceId })
+        });
+    }
 
     if (import.meta.env.NODE_ENV !== 'production')
         // eslint-disable-next-line no-console
@@ -146,7 +159,9 @@ export const onResponseReject = (
         success: false,
         status,
         message,
-        errors: [] as string[]
+        errors: [] as string[],
+        ...(requestId && { requestId }),
+        ...(traceId && { traceId })
     });
 };
 

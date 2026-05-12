@@ -15,4 +15,7 @@ export interface IResponseReject extends IResponseNeutral {
     data?: never;
     // UI friendly error message
     errors: string[];
+    // Backend correlation identifiers — useful for support/debugging
+    requestId?: string;
+    traceId?: string;
 }
