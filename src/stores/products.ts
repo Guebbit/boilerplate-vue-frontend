@@ -102,11 +102,7 @@ export const useProductsStore = defineStore('products', () => {
      * @param forced
      */
     const fetchProduct = (productId: string, forced = false) =>
-        fetchTarget(
-            () => ProductsService.getProductById(productId),
-            productId,
-            { forced }
-        );
+        fetchTarget(() => ProductsService.getProductById(productId), productId, { forced });
 
     /**
      * Create a new product.

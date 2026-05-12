@@ -285,11 +285,13 @@ const createInitialMockDatabase = () => {
         })
     ];
 
+    // Sentinel convention for currentAuthenticatedUserId:
+    //   undefined key  → never set (fresh browser) → default to user-1 (admin)
+    //   '' (empty str) → explicitly logged out / reset → no session
+    //   '<id>'         → actively logged-in user
+    const storedUserId = tryGetSessionStorage(MOCK_USER_ID_KEY);
     return {
-        // Restored from sessionStorage so that a cy.visit() page reload does not
-        // lose the identity set by a preceding login step. Falls back to user-1
-        // (admin) when no stored value exists (fresh test, after reset, or SSR).
-        currentAuthenticatedUserId: tryGetSessionStorage(MOCK_USER_ID_KEY) ?? 'user-1',
+        currentAuthenticatedUserId: storedUserId === undefined ? 'user-1' : (storedUserId || undefined),
         sampleUsers,
         sampleProducts,
         sampleCartItems,
@@ -299,7 +301,7 @@ const createInitialMockDatabase = () => {
 
 // Single shared in-memory store mutated by all handlers.
 export const mockDatabase: {
-    currentAuthenticatedUserId: string;
+    currentAuthenticatedUserId: string | undefined;
     sampleUsers: User[];
     sampleProducts: Product[];
     sampleCartItems: CartItem[];
@@ -307,12 +309,12 @@ export const mockDatabase: {
 } = createInitialMockDatabase();
 
 // Called by the /__mock/reset MSW endpoint (cy.resetMockState()).
-// Clears the sessionStorage mirror first so that createInitialMockDatabase
-// falls back to 'user-1' instead of the previously logged-in user.
+// Always resets to no session (undefined) regardless of the dev-mode default,
+// so each Cypress test starts as an unauthenticated visitor.
 export const resetMockDatabase = () => {
-    trySetSessionStorage(MOCK_USER_ID_KEY);
+    trySetSessionStorage(MOCK_USER_ID_KEY, ''); // '' = "no session" sentinel
     const initialMockDatabase = createInitialMockDatabase();
-    mockDatabase.currentAuthenticatedUserId = initialMockDatabase.currentAuthenticatedUserId;
+    mockDatabase.currentAuthenticatedUserId = undefined;
     mockDatabase.sampleUsers = initialMockDatabase.sampleUsers;
     mockDatabase.sampleProducts = initialMockDatabase.sampleProducts;
     mockDatabase.sampleCartItems = initialMockDatabase.sampleCartItems;

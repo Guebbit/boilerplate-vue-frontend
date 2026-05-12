@@ -92,7 +92,7 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
         );
 
         const createdOrder = createMockOrder({
-            userId: mockDatabase.currentAuthenticatedUserId,
+            userId: mockDatabase.currentAuthenticatedUserId ?? 'anonymous',
             email,
             items: mockDatabase.sampleCartItems.map((item) => cartItemToOrderItem(item)),
             notes: requestBody.notes ? String(requestBody.notes) : undefined,

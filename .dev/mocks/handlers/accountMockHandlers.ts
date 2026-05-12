@@ -30,30 +30,49 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
     //
     // The real API issues short-lived access tokens. On a page reload the
     // Pinia store loses its in-memory accessToken and calls GET /account/refresh
-    // with the refresh-token cookie to obtain a new one.
+    // to obtain a new one.
     //
-    // In the mock we always succeed — any caller gets back the same static
-    // tokens. This is intentional: tests care about UI behaviour after a
-    // successful token refresh, not about refresh-token validation itself.
+    // In the mock, refresh succeeds only when there is an active session
+    // (currentAuthenticatedUserId is set). This lets the default dev state
+    // (admin) auto-authenticate on page load, while a reset/logout produces a
+    // proper 401 so that guest-only pages remain accessible.
     //
     // Two routes cover both the legacy /:token path param form and the cookie-
     // only form used by the current client.
     http.get(`${API_BASE}/account/refresh/:token`, () =>
-        toMockJsonResponse(defaultRefreshTokenResponse)
+        mockDatabase.currentAuthenticatedUserId
+            ? toMockJsonResponse(defaultRefreshTokenResponse)
+            : toMockJsonResponse(
+                  { success: false, error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } },
+                  { status: 401 }
+              )
     ),
-    http.get(`${API_BASE}/account/refresh`, () => toMockJsonResponse(defaultRefreshTokenResponse)),
+    http.get(`${API_BASE}/account/refresh`, () =>
+        mockDatabase.currentAuthenticatedUserId
+            ? toMockJsonResponse(defaultRefreshTokenResponse)
+            : toMockJsonResponse(
+                  { success: false, error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } },
+                  { status: 401 }
+              )
+    ),
 
     // ── Current authenticated user ────────────────────────────────────────────
     //
     // Returns the profile for whoever is currently "logged in" in the mock
-    // database. mockDatabase.currentAuthenticatedUserId is updated by the login
-    // and signup handlers below and is mirrored in sessionStorage so that a
-    // cy.visit() page reload (which re-evaluates this module) still returns the
-    // right user rather than silently reverting to user-1 (admin).
+    // database. Returns 401 when no session exists so that unauthenticated
+    // visitors don't accidentally appear as logged-in users.
+    // mockDatabase.currentAuthenticatedUserId is updated by the login and signup
+    // handlers below and is mirrored in sessionStorage so that a cy.visit() page
+    // reload still returns the right user rather than losing the session.
     http.get(`${API_BASE}/account`, () => {
-        const currentUser =
-            mockDatabase.sampleUsers.find((user) => user.id === mockDatabase.currentAuthenticatedUserId) ??
-            mockDatabase.sampleUsers[0];
+        const currentUser = mockDatabase.sampleUsers.find(
+            (user) => user.id === mockDatabase.currentAuthenticatedUserId
+        );
+        if (!currentUser)
+            return toMockJsonResponse(
+                { success: false, error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } },
+                { status: 401 }
+            );
         return toMockJsonResponse(currentUser);
     }),
 
@@ -130,13 +149,17 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
     // ── Session management ────────────────────────────────────────────────────
     //
     // logout-all — invalidates every active session on the real API (useful
-    // after a suspected account compromise). Mock just acknowledges.
+    // after a suspected account compromise). In the mock, also clears the
+    // in-memory session so that subsequent refresh / profile calls return 401
+    // and the app correctly shows guest-only content after logout.
     //
     // DELETE /account/tokens/expired — admin maintenance endpoint that purges
     // expired refresh tokens from the database. Mock always succeeds.
-    http.post(`${API_BASE}/account/logout-all`, () =>
-        toMockJsonResponse(createMessageResponse('Logged out from all devices'))
-    ),
+    http.post(`${API_BASE}/account/logout-all`, () => {
+        mockDatabase.currentAuthenticatedUserId = undefined;
+        trySetSessionStorage('mock_currentUserId', ''); // '' = "no session" sentinel
+        return toMockJsonResponse(createMessageResponse('Logged out from all devices'));
+    }),
     http.delete(`${API_BASE}/account/tokens/expired`, () =>
         toMockJsonResponse(createMessageResponse('Expired tokens removed'))
     )
