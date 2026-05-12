@@ -67,6 +67,30 @@ describe('onResponseReject', () => {
         });
     });
 
+    it('normalizes 401 responses as authentication state errors', async () => {
+        const { onResponseReject } = await import('@/utils/http.ts');
+        const error = makeAxiosError(401, {});
+
+        await expect(onResponseReject(error as never)).rejects.toMatchObject({
+            success: false,
+            status: 401,
+            message: 'Unauthorized',
+            errors: ['Unauthorized']
+        });
+    });
+
+    it('normalizes 403 responses as authorization state errors', async () => {
+        const { onResponseReject } = await import('@/utils/http.ts');
+        const error = makeAxiosError(403, {});
+
+        await expect(onResponseReject(error as never)).rejects.toMatchObject({
+            success: false,
+            status: 403,
+            message: 'Forbidden',
+            errors: ['Forbidden']
+        });
+    });
+
     it('omits requestId and traceId when headers are absent', async () => {
         const { onResponseReject } = await import('@/utils/http.ts');
         const error = makeAxiosError(500, {});

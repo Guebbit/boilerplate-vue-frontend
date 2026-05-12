@@ -1,5 +1,6 @@
 import type { ZodSafeParseError } from 'zod';
 import type { IResponseReject } from '@/types';
+import { i18n } from '@/utils/i18n.ts';
 
 /**
  * Zod error interpreter
@@ -25,8 +26,44 @@ const isResponseReject = (error: unknown): error is IResponseReject =>
     'errors' in error &&
     Array.isArray(error.errors);
 
+const getErrorStatus = (error: unknown): number | undefined => {
+    if (!error || typeof error !== 'object' || !('status' in error)) return undefined;
+    const { status } = error as { status?: unknown };
+    return typeof status === 'number' ? status : undefined;
+};
+
+const hasTranslationKey = (key: string): boolean => {
+    const locale = i18n.global.locale.value;
+    let current: unknown = i18n.global.getLocaleMessage(locale);
+    for (const part of key.split('.')) {
+        if (!current || typeof current !== 'object' || !(part in current)) return false;
+        current = (current as Record<string, unknown>)[part];
+    }
+    return typeof current === 'string';
+};
+
+const getStatusMessage = (status: number): string | undefined => {
+    if (status === 401) {
+        if (!hasTranslationKey('navigation.error-not-logged')) return 'Authentication required';
+        const message = i18n.global.t('navigation.error-not-logged');
+        return message === 'navigation.error-not-logged' ? 'Authentication required' : message;
+    }
+    if (status === 403) {
+        if (!hasTranslationKey('navigation.error-forbidden')) return 'Forbidden';
+        const message = i18n.global.t('navigation.error-forbidden');
+        return message === 'navigation.error-forbidden' ? 'Forbidden' : message;
+    }
+    return undefined;
+};
+
 export const getErrorMessages = (error: unknown): string[] => {
-    if (isResponseReject(error)) return error.errors.length > 0 ? error.errors : [error.message];
+    if (isResponseReject(error)) {
+        const statusMessage = getStatusMessage(error.status);
+        if (statusMessage) return [statusMessage];
+        return error.errors.length > 0 ? error.errors : [error.message];
+    }
+    const statusMessage = getStatusMessage(getErrorStatus(error) ?? 0);
+    if (statusMessage) return [statusMessage];
     if (error instanceof Error && error.message) return [error.message];
     return ['Unknown error'];
 };

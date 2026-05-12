@@ -31,6 +31,6 @@ const { message = '' } = defineProps<{
  */
 const { t } = useI18n();
 const normalizedMessage = computed(() =>
-    message.startsWith('error-page.') ? t(message) : message
+    message.startsWith('error-page.') || message.startsWith('navigation.') ? t(message) : message
 );
 </script>

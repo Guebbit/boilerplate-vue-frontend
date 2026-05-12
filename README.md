@@ -43,6 +43,7 @@ Use `.env-example` as reference.
 - `VITE_AXIOS_TIMEOUT`: axios timeout in ms
 - `VITE_APP_DEBUG_ROUTER`: enable router debug logs in dev (`true`/`false`)
 - `VITE_APP_DEBUG_HOME`: enable Home view demo logs in dev (`true`/`false`)
+- `VITE_APP_DEBUG_HTTP`: enable HTTP interceptor debug logs for server errors in dev (`true`/`false`)
 - `VITE_SENTRY_DSN`: Sentry DSN (optional, disables Sentry when empty)
 - `VITE_SENTRY_TRACES_SAMPLE_RATE`: Sentry tracing sample rate (`0` to `1`)
 
@@ -97,6 +98,21 @@ npm run lint
 npm run build
 npm run test:unit
 ```
+
+## API error handling conventions
+
+- `401` is treated as **not logged in**:
+    - route-level failures redirect to Login (with `continue` query preserved)
+    - form/list actions show authentication-focused UI messages instead of generic server errors
+- `403` is treated as **forbidden** and shown as clear authorization feedback (never as generic 500)
+- only `5xx` errors are treated as true server failures (`/error/500` flow)
+- frontend captures backend correlation headers (`x-request-id`, `x-trace-id`) in normalized axios errors
+
+## Tracing and correlation notes (optional)
+
+- This frontend does not emit browser OpenTelemetry spans by default.
+- For cross-service debugging, keep using `x-request-id` / `x-trace-id` from backend responses.
+- If needed, you can later opt into FE tracing by adding browser OTel instrumentation and forwarding trace headers (`traceparent`, `tracestate`) to backend APIs.
 
 ## Frontend/backend tandem sync discipline
 
