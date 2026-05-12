@@ -52,9 +52,12 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param forced
      */
     const fetchPaginationOrders = (page = 1, pageSize = 10, forced = false) =>
-        fetchAny(() => OrdersService.listOrders(page, pageSize).then((response) => response.items), {
-            forced
-        });
+        fetchAny(
+            () => OrdersService.listOrders(page, pageSize).then((response) => response.items),
+            {
+                forced
+            }
+        );
 
     type IOrdersFilters = Omit<SearchOrdersRequest, 'page' | 'pageSize'>;
 
@@ -78,16 +81,14 @@ export const useOrdersStore = defineStore('orders', () => {
         pageSize.value = pageSizeValue;
         return fetchSearch(
             () =>
-                OrdersService
-                    .listOrders(
-                        page,
-                        pageSizeValue,
-                        filters.id,
-                        filters.userId,
-                        filters.productId,
-                        filters.email
-                    )
-                    .then((response) => response.items),
+                OrdersService.listOrders(
+                    page,
+                    pageSizeValue,
+                    filters.id,
+                    filters.userId,
+                    filters.productId,
+                    filters.email
+                ).then((response) => response.items),
             filters,
             page,
             { forced }
@@ -101,11 +102,9 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param forced
      */
     const fetchOrder = (orderId: string, forced = false) =>
-        fetchTarget(
-            () => OrdersService.getOrderById(orderId).then((data) => data),
-            orderId,
-            { forced }
-        );
+        fetchTarget(() => OrdersService.getOrderById(orderId).then((data) => data), orderId, {
+            forced
+        });
 
     /**
      * Create a new order directly (admin)
@@ -152,7 +151,11 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param orderId
      */
     const getOrderInvoice = (orderId: string) =>
-        fetchAny(() => httpClient.get(`/orders/${encodeURIComponent(orderId)}/invoice`, { responseType: 'blob' }));
+        fetchAny(() =>
+            httpClient.get(`/orders/${encodeURIComponent(orderId)}/invoice`, {
+                responseType: 'blob'
+            })
+        );
 
     /**
      * Zod schema for order status

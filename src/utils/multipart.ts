@@ -48,6 +48,4 @@ export const withOptionalMultipartUpload = <TRequest extends { imageUpload?: Blo
         sendJson: () => Promise<TResponse>;
     }
 ): Promise<TResponse> =>
-    payload.imageUpload
-        ? options.sendMultipart(toMultipartFormData(payload))
-        : options.sendJson();
+    payload.imageUpload ? options.sendMultipart(toMultipartFormData(payload)) : options.sendJson();

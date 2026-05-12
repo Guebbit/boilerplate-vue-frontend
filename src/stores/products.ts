@@ -6,10 +6,7 @@ import { z } from 'zod';
 
 import { ProductsService } from '@/utils/api.ts';
 import httpClient from '@/utils/http.ts';
-import {
-    toMultipartFormData,
-    withOptionalMultipartUpload
-} from '@/utils/multipart.ts';
+import { toMultipartFormData, withOptionalMultipartUpload } from '@/utils/multipart.ts';
 import type {
     Product,
     CreateProductRequestMultipart,
@@ -57,9 +54,12 @@ export const useProductsStore = defineStore('products', () => {
      * @param forced
      */
     const fetchPaginationProducts = (page = 1, pageSize = 10, forced = false) =>
-        fetchAny(() => ProductsService.listProducts(page, pageSize).then((response) => response.items), {
-            forced
-        });
+        fetchAny(
+            () => ProductsService.listProducts(page, pageSize).then((response) => response.items),
+            {
+                forced
+            }
+        );
 
     type IProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
 
@@ -82,16 +82,14 @@ export const useProductsStore = defineStore('products', () => {
         pageSize.value = pageSizeValue;
         return fetchSearch(
             () =>
-                ProductsService
-                    .listProducts(
-                        page,
-                        pageSizeValue,
-                        filters.text,
-                        filters.id,
-                        filters.minPrice,
-                        filters.maxPrice
-                    )
-                    .then((response) => response.items),
+                ProductsService.listProducts(
+                    page,
+                    pageSizeValue,
+                    filters.text,
+                    filters.id,
+                    filters.minPrice,
+                    filters.maxPrice
+                ).then((response) => response.items),
             filters,
             page,
             { forced }

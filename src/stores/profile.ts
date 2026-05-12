@@ -79,8 +79,7 @@ export const useProfileStore = defineStore('profile', () => {
      */
     const login = (email: string, password: string) =>
         fetchAny(() =>
-            AuthService
-                .login({ email, password })
+            AuthService.login({ email, password })
                 .then((data) => {
                     accessToken.value = getTokenFromResponse(data);
                     setCookie('isAuth=true; path=/; SameSite=Lax');
@@ -163,13 +162,11 @@ export const useProfileStore = defineStore('profile', () => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
         return updateTarget(
             () =>
-                UsersService
-                    .updateUserById(selectedIdentifier.value!, {
-                        email: userData.email,
-                        password: userData.password,
-                        username: userData.username
-                    })
-                    .then((data) => data),
+                UsersService.updateUserById(selectedIdentifier.value!, {
+                    email: userData.email,
+                    password: userData.password,
+                    username: userData.username
+                }).then((data) => data),
             userData,
             selectedIdentifier.value
         );

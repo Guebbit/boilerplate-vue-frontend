@@ -4,10 +4,7 @@ import { z } from 'zod';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { UsersService } from '@/utils/api.ts';
 import httpClient from '@/utils/http.ts';
-import {
-    toMultipartFormData,
-    withOptionalMultipartUpload
-} from '@/utils/multipart.ts';
+import { toMultipartFormData, withOptionalMultipartUpload } from '@/utils/multipart.ts';
 import type { AxiosProgressEvent } from 'axios';
 import type {
     User,
@@ -83,17 +80,15 @@ export const useUsersStore = defineStore('users', () => {
         pageSize.value = pageSizeValue;
         return fetchSearch(
             () =>
-                UsersService
-                    .listUsers(
-                        page,
-                        pageSizeValue,
-                        filters.text,
-                        filters.id,
-                        filters.email,
-                        filters.username,
-                        filters.active
-                    )
-                    .then((response) => response.items),
+                UsersService.listUsers(
+                    page,
+                    pageSizeValue,
+                    filters.text,
+                    filters.id,
+                    filters.email,
+                    filters.username,
+                    filters.active
+                ).then((response) => response.items),
             filters,
             page,
             { forced }
@@ -117,8 +112,7 @@ export const useUsersStore = defineStore('users', () => {
     const createUser = (userData: CreateUserRequestMultipart) =>
         createTarget(() =>
             withOptionalMultipartUpload<CreateUserRequestMultipart, User>(userData, {
-                sendMultipart: (formData) =>
-                    httpClient.post<User, User>('/users', formData),
+                sendMultipart: (formData) => httpClient.post<User, User>('/users', formData),
                 sendJson: () =>
                     UsersService.createUser({
                         email: userData.email,
@@ -145,12 +139,11 @@ export const useUsersStore = defineStore('users', () => {
         if (files.length === 0 || !files[0]) return Promise.reject(new Error('no file selected'));
         return updateTarget(
             () =>
-                httpClient
-                    .put<User, User>(
-                        `/users/${encodeURIComponent(userId)}`,
-                        toMultipartFormData({ imageUpload: files[0] }),
-                        { onUploadProgress }
-                    ),
+                httpClient.put<User, User>(
+                    `/users/${encodeURIComponent(userId)}`,
+                    toMultipartFormData({ imageUpload: files[0] }),
+                    { onUploadProgress }
+                ),
             // No fields to optimistically merge — the updated imageUrl is returned by the API
             {} as Partial<User>,
             userId
