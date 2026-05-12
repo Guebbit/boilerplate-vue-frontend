@@ -105,7 +105,7 @@ router.onError((error: Error) => {
             : getDefaultLocale();
     const status =
         typeof (error as { status?: unknown }).status === 'number'
-            ? ((error as { status?: number }).status ?? 500)
+            ? (error as { status?: number }).status
             : undefined;
 
     if (status === 401) return router.push(loginContinueTo(currentRoute.fullPath, locale));

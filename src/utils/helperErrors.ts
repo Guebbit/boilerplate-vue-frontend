@@ -45,13 +45,11 @@ const hasTranslationKey = (key: string): boolean => {
 const getStatusMessage = (status: number): string | undefined => {
     if (status === 401) {
         if (!hasTranslationKey('navigation.error-not-logged')) return 'Authentication required';
-        const message = i18n.global.t('navigation.error-not-logged');
-        return message === 'navigation.error-not-logged' ? 'Authentication required' : message;
+        return i18n.global.t('navigation.error-not-logged');
     }
     if (status === 403) {
         if (!hasTranslationKey('navigation.error-forbidden')) return 'Forbidden';
-        const message = i18n.global.t('navigation.error-forbidden');
-        return message === 'navigation.error-forbidden' ? 'Forbidden' : message;
+        return i18n.global.t('navigation.error-forbidden');
     }
     return undefined;
 };
