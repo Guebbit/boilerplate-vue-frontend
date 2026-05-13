@@ -64,12 +64,12 @@
 <script setup lang="ts">
 import { useSlots } from 'vue';
 import { storeToRefs } from 'pinia';
-import LoadingCore from '@/components/atoms/LoadingCore.vue';
-import LoadingSide from '@/components/atoms/LoadingSide.vue';
-import Navigation from '@/components/organisms/Navigation.vue';
+import LoadingCore from '@/components/ui/LoadingCore.vue';
+import LoadingSide from '@/components/ui/LoadingSide.vue';
+import Navigation from '@/components/shared/Navigation.vue';
 import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
-import { getCookie } from '@/utils/helperGenerics.ts';
+import { getCookie } from '@/utils/generics.ts';
 
 /**
  *

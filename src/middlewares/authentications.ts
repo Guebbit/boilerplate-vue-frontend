@@ -1,8 +1,8 @@
 import { storeToRefs } from 'pinia';
 import { useProfileStore } from '@/stores/profile';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { loginContinueTo } from '@/utils/helperNavigation';
-import { getCookie } from '@/utils/helperGenerics.ts';
+import { loginContinueTo } from '@/utils/navigation';
+import { getCookie } from '@/utils/generics.ts';
 import { i18n } from '@/utils/i18n.ts';
 import type { RouteLocationNormalized } from 'vue-router';
 

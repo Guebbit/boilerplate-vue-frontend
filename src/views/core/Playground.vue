@@ -125,13 +125,13 @@ import { storeToRefs } from 'pinia';
 
 import { useCounterStore } from '@/stores/counter';
 import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
-import { createSocket } from '@/utils/helperSockets.ts';
+import { createSocket } from '@/utils/sockets.ts';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import BaseButton from '@/components/atoms/BaseButton.vue';
-import BaseInput from '@/components/atoms/BaseInput.vue';
-import CounterInput from '@/components/atoms/CounterInput.vue';
-import MaterialStatCard from '@/components/molecules/MaterialStatCard.vue';
-import MaterialGraphicCard from '@/components/molecules/MaterialGraphicCard.vue';
+import BaseButton from '@/components/ui/BaseButton.vue';
+import BaseInput from '@/components/ui/BaseInput.vue';
+import CounterInput from '@/components/ui/CounterInput.vue';
+import MaterialStatCard from '@/components/ui/MaterialStatCard.vue';
+import MaterialGraphicCard from '@/components/ui/MaterialGraphicCard.vue';
 
 import type { IProvidedVariableMutationFunction, IProvidedVariableType } from '@/types';
 

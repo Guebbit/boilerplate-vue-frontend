@@ -2,14 +2,14 @@ import { createRouter, createWebHistory, RouterView } from 'vue-router';
 import { demoMiddleware } from '@/middlewares/demoMiddleware';
 import { localeChoice } from '@/middlewares/localeChoice';
 import { getDefaultLocale } from '@/utils/i18n.ts';
-import { loginContinueTo } from '@/utils/helperNavigation.ts';
+import { loginContinueTo } from '@/utils/navigation.ts';
 
-import accountRoutes from './accountRoutes';
-import adminRoutes from './adminRoutes.ts';
-import usersRoutes from './usersRoutes.ts';
-import productsRoutes from './productsRoutes';
-import cartRoutes from './cartRoutes.ts';
-import ordersRoutes from './ordersRoutes.ts';
+import accountRoutes from '@/features/account/routes';
+import adminRoutes from '@/features/admin/routes';
+import usersRoutes from '@/features/users/routes';
+import productsRoutes from '@/features/products/routes';
+import cartRoutes from '@/features/cart/routes';
+import ordersRoutes from '@/features/orders/routes';
 
 import HomeView from '@/views/core/Home.vue';
 

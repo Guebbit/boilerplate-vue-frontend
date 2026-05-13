@@ -81,7 +81,7 @@ import { RouterLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import MaterialGraphicCard from '@/components/molecules/MaterialGraphicCard.vue';
+import MaterialGraphicCard from '@/components/ui/MaterialGraphicCard.vue';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 
 const { t } = useI18n();
