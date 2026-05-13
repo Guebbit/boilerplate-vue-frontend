@@ -34,7 +34,20 @@ describe('Products', () => {
                 });
         });
 
-        it('shows View, Edit and Delete actions per row', () => {
+        it('shows only the View action for non-admin users', () => {
+            cy.get('.list-table tbody tr')
+                .eq(0)
+                .within(() => {
+                    cy.get('.view-button').should('exist');
+                    cy.get('.edit-button').should('not.exist');
+                    cy.get('.delete-button').should('not.exist');
+                });
+        });
+
+        it('shows View, Edit and Delete actions per row for admin users', () => {
+            cy.loginAs('admin');
+            cy.visit('/en/products');
+            cy.get('.list-table tbody tr').should('have.length.at.least', 1);
             cy.get('.list-table tbody tr')
                 .eq(0)
                 .within(() => {

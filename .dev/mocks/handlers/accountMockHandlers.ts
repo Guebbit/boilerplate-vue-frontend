@@ -64,7 +64,12 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
     // mockDatabase.currentAuthenticatedUserId is updated by the login and signup
     // handlers below and is mirrored in sessionStorage so that a cy.visit() page
     // reload still returns the right user rather than losing the session.
-    http.get(`${API_BASE}/account`, () => {
+    http.get(`${API_BASE}/account`, ({ request }) => {
+        if (!request.headers.get('Authorization'))
+            return toMockJsonResponse(
+                { success: false, error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } },
+                { status: 401 }
+            );
         const currentUser = mockDatabase.sampleUsers.find(
             (user) => user.id === mockDatabase.currentAuthenticatedUserId
         );
@@ -127,7 +132,14 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
         mockDatabase.sampleUsers.unshift(createdUser);
         mockDatabase.currentAuthenticatedUserId = createdUser.id;
         trySetSessionStorage('mock_currentUserId', createdUser.id);
-        return toMockJsonResponse(createdUser, { status: 201 });
+        return toMockJsonResponse(
+            {
+                token: `mock-token-for-${createdUser.id}`,
+                refreshToken: 'mock-refresh-token',
+                expiresIn: 3600
+            },
+            { status: 201 }
+        );
     }),
 
     // ── Password reset (two-step flow) ────────────────────────────────────────

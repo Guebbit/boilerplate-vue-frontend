@@ -68,12 +68,14 @@
                         {{ t('orders-list-page.button-view') }}
                     </RouterLink>
                     <RouterLink
+                        v-if="isAdmin"
                         :to="routerLinkI18n({ name: 'OrderEdit', params: { id: item.id } })"
                         class="theme-button edit-button"
                     >
                         {{ t('orders-list-page.button-edit') }}
                     </RouterLink>
                     <button
+                        v-if="isAdmin"
                         class="theme-button delete-button"
                         :disabled="loading"
                         @click.stop="handleDelete(item.id)"
@@ -103,6 +105,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/stores/orders.ts';
+import { useProfileStore } from '@/stores/profile.ts';
 import { notifyErrorMessages } from '@/utils/helperErrors.ts';
 import type { SearchOrdersRequest } from '@types';
 
@@ -119,6 +122,7 @@ const { addMessage } = useNotificationsStore();
 const { fetchSearchOrders, deleteOrder } = useOrdersStore();
 const { ordersList, pageItemList, selectedOrderId, pageCurrent, pageTotal, pageSize, loading } =
     storeToRefs(useOrdersStore());
+const { isAdmin } = storeToRefs(useProfileStore());
 
 const filters = reactive<Omit<SearchOrdersRequest, 'page' | 'pageSize'>>({});
 const pageSizeOptions = [

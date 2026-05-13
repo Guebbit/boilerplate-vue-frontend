@@ -134,7 +134,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import '@/styles/pages/itemDetail.scss';
+import '@/styles/features/itemDetail.scss';
 import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';

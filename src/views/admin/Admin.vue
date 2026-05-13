@@ -1,7 +1,3 @@
-<script lang="ts">
-export default { name: 'AdminPage' };
-</script>
-
 <script setup lang="ts">
 import '@/styles/pages/admin.scss';
 import { computed, onMounted, ref } from 'vue';

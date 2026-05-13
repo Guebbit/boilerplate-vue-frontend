@@ -1,7 +1,7 @@
 <template>
     <Navigation>
         <slot name="navigation" />
-        <h3 v-if="profile">Hello {{ profile.email }}</h3>
+        <h3 v-if="isAuth && profile">Hello {{ profile.email }}</h3>
     </Navigation>
 
     <div v-show="messages.length > 0" class="toast-container">
@@ -103,7 +103,7 @@ const { hideMessage } = useNotificationsStore();
 /**
  * Profile
  */
-const { profile } = storeToRefs(useProfileStore());
+const { profile, isAuth } = storeToRefs(useProfileStore());
 const { fetchProfile } = useProfileStore();
 
 /**

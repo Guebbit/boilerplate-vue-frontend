@@ -60,13 +60,7 @@
         "label-websocket-messages": "Messaggi WebSocket",
         "label-live-messages": "Attività in tempo reale",
         "button-test-alert": "Aggiungi alert di test",
-        "button-reset-messages": "Reimposta messaggi",
-        "placeholder-card-1-title": "Setup veloce",
-        "placeholder-card-1-description": "Blocchi riutilizzabili con impostazioni pulite per comporre pagine rapidamente.",
-        "placeholder-card-2-title": "Placeholder material",
-        "placeholder-card-2-description": "Card visive semplici che migliorano il layout mentre i contenuti evolvono.",
-        "placeholder-card-3-title": "Struttura scalabile",
-        "placeholder-card-3-description": "Componenti componibili progettati per estendersi facilmente tra le viste."
+        "button-reset-messages": "Reimposta messaggi"
     },
     "error-page": {
         "page-title": "Errore",

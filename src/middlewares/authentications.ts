@@ -2,18 +2,20 @@ import { storeToRefs } from 'pinia';
 import { useProfileStore } from '@/stores/profile';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { loginContinueTo } from '@/utils/helperNavigation';
+import { getCookie } from '@/utils/helperGenerics.ts';
 import { i18n } from '@/utils/i18n.ts';
 import type { RouteLocationNormalized } from 'vue-router';
 
 /**
- * Restore the in-memory access token by attempting a silent token refresh.
- * Succeeds when there is an active server-side session (real API: valid
- * refresh-token cookie; mock: currentAuthenticatedUserId is set).
- * Errors are swallowed so callers always continue to the profile fetch.
+ * Silently restore the in-memory access token via the refresh endpoint.
+ * Only attempted when the `isAuth` cookie is present — avoids a pointless
+ * network round-trip for every guest page view.
+ * In mock mode the cookie is pre-set by the mock initializer when a default
+ * session exists, so the guard still refreshes correctly there.
  */
 const restoreTokenIfNeeded = () => {
     const store = useProfileStore();
-    if (store.accessToken) return Promise.resolve();
+    if (store.accessToken || !getCookie('isAuth')) return Promise.resolve();
     return store.refreshToken().catch(() => {});
 };
 

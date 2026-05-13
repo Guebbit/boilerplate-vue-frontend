@@ -5,11 +5,12 @@ import { registerUsersMockHandlers } from './handlers/usersMockHandlers.ts';
 import { registerProductsMockHandlers } from './handlers/productsMockHandlers.ts';
 import { registerCartMockHandlers } from './handlers/cartMockHandlers.ts';
 import { registerOrdersMockHandlers } from './handlers/ordersMockHandlers.ts';
+import { mockDatabase } from './shared/mockShared.ts';
 
 let workerStartPromise: Promise<void> | undefined;
 
-export const initializeApiMocking = async () => {
-    if (import.meta.env.VITE_API_MOCK_ENABLED !== 'true') return;
+export const initializeApiMocking = () => {
+    if (import.meta.env.VITE_API_MOCK_ENABLED !== 'true') return Promise.resolve();
     if (workerStartPromise) return workerStartPromise;
 
     const worker = setupWorker(
@@ -35,7 +36,23 @@ export const initializeApiMocking = async () => {
                 url: '/mockServiceWorker.js'
             }
         })
-        .then(() => {});
+        .then(() => {
+            // When there is a default session (e.g. admin on first load), set the
+            // isAuth cookie so restoreTokenIfNeeded() knows to attempt a refresh.
+            // Without this, the cookie-gated guard skips refresh and the user
+            // appears as a guest even though the mock has an active session.
+            if (mockDatabase.currentAuthenticatedUserId)
+                void cookieStore.set({
+                    name: 'isAuth',
+                    value: 'true',
+                    path: '/',
+                    sameSite: 'lax',
+                });
+        })
+        .catch((error) => {
+            // eslint-disable-next-line no-console
+            console.warn('[Mock] Service worker failed to start — API calls will not be intercepted:', error);
+        });
 
     return workerStartPromise;
 };

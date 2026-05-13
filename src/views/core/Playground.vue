@@ -64,16 +64,6 @@
             </div>
         </section>
 
-        <section class="info-wrapper graphics-grid">
-            <MaterialGraphicCard
-                v-for="card in placeholderCards"
-                :key="card.title"
-                :title="card.title"
-                :description="card.description"
-                :variant="card.variant"
-            />
-        </section>
-
         <section class="info-wrapper">
             <BaseButton @click="testAddMessage">{{
                 t('playground-page.button-test-alert')
@@ -237,30 +227,6 @@ const defaultWebsocketUrl = 'ws://localhost:3000/ws';
 const websocketUrl = (import.meta.env.VITE_API_WEBSOCKET ?? defaultWebsocketUrl)
     .replace(/^http:\/\//u, 'ws://')
     .replace(/^https:\/\//u, 'wss://');
-
-const placeholderCards = computed<
-    {
-        title: string;
-        description: string;
-        variant: 'primary' | 'secondary' | 'tertiary';
-    }[]
->(() => [
-    {
-        title: t('playground-page.placeholder-card-1-title'),
-        description: t('playground-page.placeholder-card-1-description'),
-        variant: 'primary'
-    },
-    {
-        title: t('playground-page.placeholder-card-2-title'),
-        description: t('playground-page.placeholder-card-2-description'),
-        variant: 'secondary'
-    },
-    {
-        title: t('playground-page.placeholder-card-3-title'),
-        description: t('playground-page.placeholder-card-3-description'),
-        variant: 'tertiary'
-    }
-]);
 
 onMounted(() => {
     const ws = createSocket(websocketUrl, {

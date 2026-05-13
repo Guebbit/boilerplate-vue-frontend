@@ -1,4 +1,4 @@
-@use 'itemList';
+@use '../features/itemList';
 
 #products-list-page {
     --table-row-hover: rgba(var(--primary-100) / 0.2);

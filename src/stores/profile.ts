@@ -14,9 +14,7 @@ const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
 const isWrappedResponse = <T>(response: unknown): response is { data?: T } =>
     isObjectRecord(response) && 'data' in response;
 
-const getTokenFromResponse = (
-    response?: { data?: { token?: string } } | AuthTokens | RefreshTokenResponse
-): string | undefined => {
+const getTokenFromResponse = (response?: unknown): string | undefined => {
     if (isObjectRecord(response)) {
         const maybeToken = (response as Record<string, unknown>).token;
         if (typeof maybeToken === 'string') return maybeToken;
@@ -99,7 +97,13 @@ export const useProfileStore = defineStore('profile', () => {
         password: string,
         username = email,
         passwordConfirm = password
-    ) => fetchAny(() => AuthService.signup({ email, username, password, passwordConfirm }));
+    ) =>
+        fetchAny(() =>
+            AuthService.signup({ email, username, password, passwordConfirm }).then((data) => {
+                accessToken.value = getTokenFromResponse(data);
+                if (accessToken.value) setCookie('isAuth=true; path=/; SameSite=Lax');
+            })
+        );
 
     /**
      * Starts password reset flow by sending a token to the provided email.

@@ -48,4 +48,7 @@ const bootstrapApplication = async () => {
     (globalThis as typeof globalThis & { _appReady?: boolean })._appReady = true;
 };
 
-void bootstrapApplication();
+void bootstrapApplication().catch((error) => {
+    // eslint-disable-next-line no-console
+    console.error('[Bootstrap] Fatal error during application initialization:', error);
+});

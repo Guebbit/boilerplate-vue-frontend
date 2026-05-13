@@ -66,13 +66,14 @@ const router = createRouter({
                  */
                 {
                     path: ':catchAll(.*)',
-                    redirect: {
+                    redirect: (to) => ({
                         name: 'Error',
                         params: {
+                            locale: to.params.locale as string,
                             status: 404,
                             message: 'error-page.not-found'
                         }
-                    }
+                    })
                 }
             ]
         },
@@ -82,14 +83,14 @@ const router = createRouter({
          */
         {
             path: '/:catchAll(.*)',
-            redirect: {
+            redirect: () => ({
                 name: 'Error',
                 params: {
                     locale: getDefaultLocale(),
                     status: 404,
                     message: 'error-page.not-found'
                 }
-            }
+            })
         }
     ]
 });

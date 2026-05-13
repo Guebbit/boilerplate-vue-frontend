@@ -189,9 +189,12 @@ export function changeLanguage(locale: string) {
  */
 export function getDefaultLocale() {
     const foundLocale = navigator.language.slice(0, 2);
-    if (!loadedLanguages.includes(foundLocale))
-        return (i18n.global.fallbackLocale as WritableComputedRef<string>).value;
-    return foundLocale;
+    if (loadedLanguages.includes(foundLocale)) return foundLocale;
+    return (
+        (i18n.global.fallbackLocale as WritableComputedRef<string>).value ||
+        (import.meta.env.VITE_APP_DEFAULT_LOCALE as string | undefined) ||
+        'en'
+    );
 }
 
 /**
