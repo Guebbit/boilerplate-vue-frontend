@@ -2,6 +2,8 @@
 
 Quick reference for working with the paired backend boilerplate.
 
+See also: [README.md](./README.md) (frontend overview) · [AI_README.md](./AI_README.md) (AI-agent guidance).
+
 ## Paired repositories
 
 | Side     | Repository                         | Default branch         |
@@ -28,6 +30,20 @@ Set `NODE_CORS_ORIGIN=http://localhost:8080` in the backend `.env`.
 ## OpenAPI contract discipline
 
 `openapi.yaml` is the single source of truth for both sides.
+Lint rules live in [`spectral.yaml`](./spectral.yaml) (see [Spectral docs](https://stoplight.io/open-source/spectral)).
+
+```mermaid
+flowchart LR
+    Edit[Edit openapi.yaml] --> Lint{lint:openapi<br/>Spectral OK?}
+    Lint -- no --> Edit
+    Lint -- yes --> FE[Frontend: npm run genapi<br/>regenerates /api axios client]
+    Lint -- yes --> BE[Backend: npm run genapi<br/>regenerates /api server stubs]
+    FE --> Commit[Commit /api diff on each side]
+    BE --> Commit
+    Commit --> CI{CI: /api matches openapi.yaml?}
+    CI -- no --> Fail[CI fails — regenerate & commit]
+    CI -- yes --> Merge[Ready to merge]
+```
 
 After any change to `openapi.yaml`:
 
