@@ -4,6 +4,8 @@ Repo = Vue frontend boilerplate.
 This repo = `boilerplate-vue-frontend`.
 Single package. SPA. Vue 3 + Pinia + Vue Router + OpenAPI-generated client.
 
+Human-facing docs: [README.md](./README.md) · [PAIRING.md](./PAIRING.md).
+
 ## Code brain
 
 - Keep code SOLID.
