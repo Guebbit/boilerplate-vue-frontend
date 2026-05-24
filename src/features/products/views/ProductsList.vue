@@ -40,7 +40,7 @@
             </div>
         </form>
 
-        <CoreDataTable
+        <DataTable
             v-model="selectedProductId"
             :headers="tableHeaders"
             :items="pageItemList"
@@ -90,7 +90,7 @@
                     </button>
                 </div>
             </template>
-        </CoreDataTable>
+        </DataTable>
 
         <ListPagination v-model="pageCurrent" :length="pageTotal" />
     </LayoutDefault>
@@ -116,10 +116,10 @@ import { notifyErrorMessages } from '@/utils/errors.ts';
 import type { SearchProductsRequest } from '@types';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import ListPagination from '@/components/ui/ListPagination.vue';
-import CoreDataTable from '@/components/ui/CoreDataTable.vue';
-import BaseInput from '@/components/ui/BaseInput.vue';
-import BaseSelect from '@/components/ui/BaseSelect.vue';
+import ListPagination from '@/components/molecules/ListPagination.vue';
+import DataTable from '@/components/organisms/DataTable.vue';
+import BaseInput from '@/components/atoms/BaseInput.vue';
+import BaseSelect from '@/components/atoms/BaseSelect.vue';
 import { useListPage } from '@/composables/useListPage.ts';
 
 const { t } = useI18n();

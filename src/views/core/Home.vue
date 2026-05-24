@@ -26,13 +26,17 @@
         <section class="home-featured-wrapper">
             <h2 class="home-featured-title">{{ t('home-page.featured-title') }}</h2>
             <div class="home-featured-grid">
-                <MaterialGraphicCard
+                <CardInfo
                     v-for="product in featuredProducts"
                     :key="product.title"
                     :title="product.title"
                     :description="product.description"
                     :variant="product.variant"
-                />
+                >
+                    <template #icon>
+                        <component :is="product.icon" :size="28" />
+                    </template>
+                </CardInfo>
             </div>
         </section>
     </LayoutDefault>
@@ -79,9 +83,11 @@ export default {
 import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { Package, Tag, Star } from 'lucide-vue-next';
+import type { Component } from 'vue';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import MaterialGraphicCard from '@/components/ui/MaterialGraphicCard.vue';
+import CardInfo from '@/components/organisms/CardInfo.vue';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 
 const { t } = useI18n();
@@ -91,22 +97,26 @@ const featuredProducts = computed<
         title: string;
         description: string;
         variant: 'primary' | 'secondary' | 'tertiary';
+        icon: Component;
     }[]
 >(() => [
     {
         title: t('home-page.featured-product-1-title'),
         description: t('home-page.featured-product-1-description'),
-        variant: 'primary'
+        variant: 'primary',
+        icon: Package
     },
     {
         title: t('home-page.featured-product-2-title'),
         description: t('home-page.featured-product-2-description'),
-        variant: 'secondary'
+        variant: 'secondary',
+        icon: Tag
     },
     {
         title: t('home-page.featured-product-3-title'),
         description: t('home-page.featured-product-3-description'),
-        variant: 'tertiary'
+        variant: 'tertiary',
+        icon: Star
     }
 ]);
 </script>

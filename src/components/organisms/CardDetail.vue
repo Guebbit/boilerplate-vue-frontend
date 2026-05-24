@@ -1,14 +1,15 @@
 <template>
-    <component :is="props.as ?? 'article'" class="theme-card detail-card" v-bind="$attrs">
+    <BaseCard :as="as ?? 'article'" class="detail-card" v-bind="$attrs">
         <slot />
-    </component>
+    </BaseCard>
 </template>
 
 <script setup lang="ts">
-/**
- * Lightweight wrapper around the generic theme card for detail-page surfaces.
- */
-const props = defineProps<{
+import BaseCard from '@/components/atoms/BaseCard.vue';
+
+defineOptions({ inheritAttrs: false });
+
+defineProps<{
     as?: 'article' | 'aside' | 'div' | 'section';
 }>();
 </script>

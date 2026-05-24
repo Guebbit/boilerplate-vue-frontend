@@ -91,6 +91,7 @@ export const useUsersStore = defineStore('users', () => {
                 ).then((response) => response.items),
             filters,
             page,
+            pageSizeValue,
             { forced }
         );
     };

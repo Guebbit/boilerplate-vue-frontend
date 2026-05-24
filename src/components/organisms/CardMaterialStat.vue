@@ -1,13 +1,14 @@
 <template>
-    <div class="theme-card material-stat-card animate-on-hover" :class="'accent-' + resolvedAccent">
-        <p class="eyebrow">{{ props.title }}</p>
-        <p class="value">{{ props.value }}</p>
-        <p v-if="props.subtitle" class="subtitle">{{ props.subtitle }}</p>
-    </div>
+    <BaseCard class="material-stat-card animate-on-hover" :class="'accent-' + resolvedAccent">
+        <p class="eyebrow">{{ title }}</p>
+        <p class="value">{{ value }}</p>
+        <p v-if="subtitle" class="subtitle">{{ subtitle }}</p>
+    </BaseCard>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import BaseCard from '@/components/atoms/BaseCard.vue';
 
 const props = defineProps<{
     title: string;

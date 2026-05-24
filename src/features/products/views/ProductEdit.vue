@@ -8,26 +8,21 @@
 
         <section class="item-detail-page-content">
             <div class="item-detail-page-grid-top">
-                <DetailCard class="item-detail-page-hero animate-on-hover">
-                    <div class="item-detail-page-hero-icon" aria-hidden="true">✏️</div>
-                    <div>
-                        <p v-if="id" class="item-detail-page-eyebrow">{{ id }}</p>
-                        <h2 class="item-detail-page-hero-title">{{ heroTitle }}</h2>
-                        <p class="item-detail-page-hero-description">{{ heroDescription }}</p>
-                    </div>
-                </DetailCard>
+                <ItemDetailHero :title="heroTitle" :description="heroDescription" :eyebrow="id">
+                    <template #icon><Pencil :size="32" /></template>
+                </ItemDetailHero>
 
                 <div class="item-detail-page-stats">
-                    <MaterialStatCard
+                    <CardMaterialStat
                         :title="t('product-target-page.label-id')"
                         :value="id ?? EMPTY_VALUE"
                     />
-                    <MaterialStatCard
+                    <CardMaterialStat
                         :title="t('product-target-page.label-price')"
                         :value="formatCurrency(currentProduct?.price)"
                         accent="secondary"
                     />
-                    <MaterialStatCard
+                    <CardMaterialStat
                         :title="t('product-target-page.label-active')"
                         :value="
                             formatFlag(
@@ -42,7 +37,7 @@
             </div>
 
             <div class="item-detail-page-grid-main item-detail-page-grid-main-with-aside">
-                <DetailCard class="item-detail-page-main">
+                <CardDetail class="item-detail-page-main">
                     <div class="item-detail-page-section-header">
                         <h3>{{ t('generic.details') }}</h3>
                         <p>{{ t('product-edit-page.page-title') }}</p>
@@ -85,14 +80,12 @@
                             </BaseButton>
                         </div>
                     </form>
-                </DetailCard>
+                </CardDetail>
 
-                <DetailCard as="aside" class="item-detail-page-aside">
-                    <MaterialGraphicCard
-                        :title="heroTitle"
-                        :description="heroDescription"
-                        variant="primary"
-                    />
+                <CardDetail as="aside" class="item-detail-page-aside">
+                    <CardInfo :title="heroTitle" :description="heroDescription" variant="primary">
+                        <template #icon><Package :size="28" /></template>
+                    </CardInfo>
                     <ItemDetailField
                         :label="t('product-target-page.label-id')"
                         :value="id ?? EMPTY_VALUE"
@@ -108,7 +101,7 @@
                         :value="formatDateTime(currentProduct?.updatedAt)"
                         icon="🕘"
                     />
-                </DetailCard>
+                </CardDetail>
             </div>
 
             <div class="item-detail-page-actions">
@@ -144,13 +137,15 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useProductsStore } from '@/features/products/store';
 import { z } from 'zod';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import BaseInput from '@/components/ui/BaseInput.vue';
-import BaseCheckbox from '@/components/ui/BaseCheckbox.vue';
-import BaseButton from '@/components/ui/BaseButton.vue';
-import ItemDetailField from '@/components/ui/ItemDetailField.vue';
-import DetailCard from '@/components/ui/DetailCard.vue';
-import MaterialGraphicCard from '@/components/ui/MaterialGraphicCard.vue';
-import MaterialStatCard from '@/components/ui/MaterialStatCard.vue';
+import BaseInput from '@/components/atoms/BaseInput.vue';
+import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
+import BaseButton from '@/components/atoms/BaseButton.vue';
+import { Package, Pencil } from 'lucide-vue-next';
+import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
+import CardDetail from '@/components/organisms/CardDetail.vue';
+import CardInfo from '@/components/organisms/CardInfo.vue';
+import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
+import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
 import { useItemDetailRecord } from '@/composables/useItemDetailRecord.ts';
 import { useItemDetailForm } from '@/composables/useItemDetailForm.ts';
 import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';

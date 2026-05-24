@@ -8,26 +8,21 @@
 
         <section class="item-detail-page-content">
             <div class="item-detail-page-grid-top">
-                <DetailCard class="item-detail-page-hero animate-on-hover">
-                    <div class="item-detail-page-hero-icon" aria-hidden="true">✏️</div>
-                    <div>
-                        <p v-if="id" class="item-detail-page-eyebrow">{{ id }}</p>
-                        <h2 class="item-detail-page-hero-title">{{ heroTitle }}</h2>
-                        <p class="item-detail-page-hero-description">{{ heroDescription }}</p>
-                    </div>
-                </DetailCard>
+                <ItemDetailHero :title="heroTitle" :description="heroDescription" :eyebrow="id">
+                    <template #icon><Pencil :size="32" /></template>
+                </ItemDetailHero>
 
                 <div class="item-detail-page-stats">
-                    <MaterialStatCard
+                    <CardMaterialStat
                         :title="t('order-target-page.label-order-id')"
                         :value="id ?? EMPTY_VALUE"
                     />
-                    <MaterialStatCard
+                    <CardMaterialStat
                         :title="t('order-target-page.label-status')"
                         :value="orderStatus"
                         accent="secondary"
                     />
-                    <MaterialStatCard
+                    <CardMaterialStat
                         :title="t('order-target-page.label-total')"
                         :value="formatCurrency(currentOrder?.total)"
                         accent="tertiary"
@@ -36,7 +31,7 @@
             </div>
 
             <div class="item-detail-page-grid-main item-detail-page-grid-main-with-aside">
-                <DetailCard class="item-detail-page-main">
+                <CardDetail class="item-detail-page-main">
                     <div class="item-detail-page-section-header">
                         <h3>{{ t('generic.details') }}</h3>
                         <p>{{ t('order-edit-page.page-title') }}</p>
@@ -67,14 +62,12 @@
                             </BaseButton>
                         </div>
                     </form>
-                </DetailCard>
+                </CardDetail>
 
-                <DetailCard as="aside" class="item-detail-page-aside">
-                    <MaterialGraphicCard
-                        :title="heroTitle"
-                        :description="heroDescription"
-                        variant="tertiary"
-                    />
+                <CardDetail as="aside" class="item-detail-page-aside">
+                    <CardInfo :title="heroTitle" :description="heroDescription" variant="tertiary">
+                        <template #icon><ShoppingCart :size="28" /></template>
+                    </CardInfo>
                     <ItemDetailField
                         :label="t('order-target-page.label-date')"
                         :value="formatDateTime(currentOrder?.createdAt)"
@@ -90,7 +83,7 @@
                         :value="currentOrder?.items?.length ?? 0"
                         icon="📦"
                     />
-                </DetailCard>
+                </CardDetail>
             </div>
 
             <div class="item-detail-page-actions">
@@ -126,13 +119,15 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useOrdersStore } from '@/features/orders/store.ts';
 import { z } from 'zod';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import BaseInput from '@/components/ui/BaseInput.vue';
-import BaseSelect from '@/components/ui/BaseSelect.vue';
-import BaseButton from '@/components/ui/BaseButton.vue';
-import ItemDetailField from '@/components/ui/ItemDetailField.vue';
-import DetailCard from '@/components/ui/DetailCard.vue';
-import MaterialGraphicCard from '@/components/ui/MaterialGraphicCard.vue';
-import MaterialStatCard from '@/components/ui/MaterialStatCard.vue';
+import BaseInput from '@/components/atoms/BaseInput.vue';
+import BaseSelect from '@/components/atoms/BaseSelect.vue';
+import BaseButton from '@/components/atoms/BaseButton.vue';
+import { Pencil, ShoppingCart } from 'lucide-vue-next';
+import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
+import CardDetail from '@/components/organisms/CardDetail.vue';
+import CardInfo from '@/components/organisms/CardInfo.vue';
+import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
+import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
 import { useItemDetailRecord } from '@/composables/useItemDetailRecord.ts';
 import { useItemDetailForm } from '@/composables/useItemDetailForm.ts';
 import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';

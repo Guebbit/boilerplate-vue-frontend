@@ -8,23 +8,20 @@
 
         <section class="item-detail-page-content">
             <div class="item-detail-page-grid-top">
-                <DetailCard class="item-detail-page-hero animate-on-hover">
-                    <div class="item-detail-page-hero-icon" aria-hidden="true">📦</div>
-                    <div>
-                        <p v-if="currentProduct?.id" class="item-detail-page-eyebrow">
-                            {{ currentProduct.id }}
-                        </p>
-                        <h2 class="item-detail-page-hero-title">{{ heroTitle }}</h2>
-                        <p class="item-detail-page-hero-description">{{ heroDescription }}</p>
-                    </div>
-                </DetailCard>
+                <ItemDetailHero
+                    :title="heroTitle"
+                    :description="heroDescription"
+                    :eyebrow="currentProduct?.id"
+                >
+                    <template #icon><Package :size="32" /></template>
+                </ItemDetailHero>
 
                 <div class="item-detail-page-stats">
-                    <MaterialStatCard
+                    <CardMaterialStat
                         :title="t('product-target-page.label-price')"
                         :value="formatCurrency(currentProduct?.price)"
                     />
-                    <MaterialStatCard
+                    <CardMaterialStat
                         :title="t('product-target-page.label-active')"
                         :value="
                             formatFlag(
@@ -35,7 +32,7 @@
                         "
                         accent="secondary"
                     />
-                    <MaterialStatCard
+                    <CardMaterialStat
                         :title="t('product-target-page.label-created-at')"
                         :value="formatDateTime(currentProduct?.createdAt)"
                         accent="tertiary"
@@ -44,7 +41,7 @@
             </div>
 
             <div class="item-detail-page-grid-main item-detail-page-grid-main-with-aside">
-                <DetailCard class="item-detail-page-main">
+                <CardDetail class="item-detail-page-main">
                     <div class="item-detail-page-section-header">
                         <h3>{{ t('generic.details') }}</h3>
                     </div>
@@ -82,14 +79,12 @@
                         />
                     </div>
                     <p v-else class="item-detail-page-empty">{{ t('generic.loading-state') }}</p>
-                </DetailCard>
+                </CardDetail>
 
-                <DetailCard as="aside" class="item-detail-page-aside">
-                    <MaterialGraphicCard
-                        :title="heroTitle"
-                        :description="heroDescription"
-                        variant="primary"
-                    />
+                <CardDetail as="aside" class="item-detail-page-aside">
+                    <CardInfo :title="heroTitle" :description="heroDescription" variant="primary">
+                        <template #icon><Package :size="28" /></template>
+                    </CardInfo>
                     <ItemDetailField
                         :label="t('product-target-page.label-created-at')"
                         :value="formatDateTime(currentProduct?.createdAt)"
@@ -100,7 +95,7 @@
                         :value="formatDateTime(currentProduct?.updatedAt)"
                         icon="🕘"
                     />
-                </DetailCard>
+                </CardDetail>
             </div>
 
             <div class="item-detail-page-actions">
@@ -134,10 +129,12 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useProductsStore } from '@/features/products/store';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import ItemDetailField from '@/components/ui/ItemDetailField.vue';
-import DetailCard from '@/components/ui/DetailCard.vue';
-import MaterialGraphicCard from '@/components/ui/MaterialGraphicCard.vue';
-import MaterialStatCard from '@/components/ui/MaterialStatCard.vue';
+import { Package } from 'lucide-vue-next';
+import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
+import CardDetail from '@/components/organisms/CardDetail.vue';
+import CardInfo from '@/components/organisms/CardInfo.vue';
+import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
+import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
 import { useItemDetailRecord } from '@/composables/useItemDetailRecord.ts';
 import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';
 

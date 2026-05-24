@@ -113,7 +113,7 @@
                 {{ t('navigation.label-logout') }}
             </button>
 
-            <LanguageSwitcher />
+            <AppLanguageSwitcher />
         </nav>
     </header>
 </template>
@@ -165,7 +165,7 @@
 import { RouterLink, useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import LanguageSwitcher from '@/components/ui/LanguageSwitcher.vue';
+import AppLanguageSwitcher from '@/components/organisms/AppLanguageSwitcher.vue';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { loginContinueTo } from '@/utils/navigation.ts';
 import { PUBLIC_PATH } from '@/utils/constants';

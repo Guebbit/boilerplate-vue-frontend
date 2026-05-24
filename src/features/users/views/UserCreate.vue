@@ -58,9 +58,9 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useUsersStore } from '@/features/users/store';
 import { z } from 'zod';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import BaseInput from '@/components/ui/BaseInput.vue';
-import BaseCheckbox from '@/components/ui/BaseCheckbox.vue';
-import BaseButton from '@/components/ui/BaseButton.vue';
+import BaseInput from '@/components/atoms/BaseInput.vue';
+import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
+import BaseButton from '@/components/atoms/BaseButton.vue';
 import { notifyErrorMessages } from '@/utils/errors.ts';
 
 /**

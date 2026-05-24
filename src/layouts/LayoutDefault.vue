@@ -1,8 +1,8 @@
 <template>
-    <Navigation>
+    <AppNavigation>
         <slot name="navigation" />
         <h3 v-if="isAuth && profile">Hello {{ profile.email }}</h3>
-    </Navigation>
+    </AppNavigation>
 
     <div v-show="messages.length > 0" class="toast-container">
         <div
@@ -33,10 +33,10 @@
     </main>
 
     <transition name="loaders-fade">
-        <LoadingCore v-show="loadings.core" />
+        <FeedbackLoadingCore v-show="loadings.core" />
     </transition>
     <transition name="loaders-fade">
-        <LoadingSide v-show="isLoading" />
+        <FeedbackLoadingSide v-show="isLoading" />
     </transition>
 </template>
 
@@ -64,9 +64,9 @@
 <script setup lang="ts">
 import { useSlots } from 'vue';
 import { storeToRefs } from 'pinia';
-import LoadingCore from '@/components/ui/LoadingCore.vue';
-import LoadingSide from '@/components/ui/LoadingSide.vue';
-import Navigation from '@/components/shared/Navigation.vue';
+import FeedbackLoadingCore from '@/components/molecules/FeedbackLoadingCore.vue';
+import FeedbackLoadingSide from '@/components/molecules/FeedbackLoadingSide.vue';
+import AppNavigation from '@/components/organisms/AppNavigation.vue';
 import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
 import { getCookie } from '@/utils/generics.ts';

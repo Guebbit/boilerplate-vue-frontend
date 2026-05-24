@@ -11,8 +11,6 @@ import productsRoutes from '@/features/products/routes';
 import cartRoutes from '@/features/cart/routes';
 import ordersRoutes from '@/features/orders/routes';
 
-import HomeView from '@/views/core/Home.vue';
-
 const isRouterDebugEnabled =
     import.meta.env.DEV && import.meta.env.VITE_APP_DEBUG_ROUTER === 'true';
 
@@ -36,13 +34,18 @@ const router = createRouter({
                 {
                     path: '',
                     name: 'Home',
-
-                    component: HomeView
+                    component: () => import('@/views/core/Home.vue')
                 },
                 {
                     path: 'playground',
                     name: 'Playground',
                     component: () => import('@/views/core/Playground.vue')
+                },
+                {
+                    path: 'error/:status/:message?',
+                    name: 'Error',
+                    component: () => import('@/views/core/Error.vue'),
+                    props: true
                 },
                 ...accountRoutes,
                 ...adminRoutes,
@@ -51,19 +54,6 @@ const router = createRouter({
                 ...cartRoutes,
                 ...ordersRoutes,
 
-                {
-                    path: 'error/:status/:message?',
-                    name: 'Error',
-                    // route level code-splitting
-                    // this generates a separate chunk (About.[hash].js) for this route
-                    // which is lazy-loaded when the route is visited.
-                    component: () => import('@/views/core/Error.vue'),
-                    props: true
-                },
-
-                /**
-                 * Catch all route for all wrong routes
-                 */
                 {
                     path: ':catchAll(.*)',
                     redirect: (to) => ({
@@ -78,9 +68,6 @@ const router = createRouter({
             ]
         },
 
-        /**
-         * Catch if a route doesn't have the locale and assign one
-         */
         {
             path: '/:catchAll(.*)',
             redirect: () => ({
@@ -95,9 +82,6 @@ const router = createRouter({
     ]
 });
 
-/**
- * Global error handler
- */
 router.onError((error: Error) => {
     const currentRoute = router.currentRoute.value;
     const locale =
@@ -145,21 +129,6 @@ router.onError((error: Error) => {
     });
 });
 
-/**
- * Global guards
- *  - beforeEach
- *  - beforeResolve
- *  - afterEach
- *
- * Order of global and per-route guards:
- *  - Global beforeEach
- *  - Per-route beforeEnter
- *  - In-component beforeRouteEnter
- *  - Global beforeResolve
- *  - Global afterEach
- *  - In-component beforeRouteUpdate (when component is reused)
- *  - In-component beforeRouteLeave
- */
 router.beforeEach((to, from, next) => {
     if (isRouterDebugEnabled) {
         // eslint-disable-next-line no-console
@@ -168,9 +137,6 @@ router.beforeEach((to, from, next) => {
     next();
 });
 
-/**
- * Check that requeste locale is supported and loadeds
- */
 router.beforeResolve(localeChoice);
 
 export default router;

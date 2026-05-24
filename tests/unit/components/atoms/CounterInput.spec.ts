@@ -1,26 +1,26 @@
 import { describe, it, expect } from 'vitest';
 import { mount } from '@vue/test-utils';
-import CounterInput from '@/components/atoms/CounterInput.vue';
+import FormCounterInput from '@/components/molecules/FormCounterInput.vue';
 
 describe('CounterInput component UNIT TEST', () => {
     it('Renders the component', () => {
-        expect(mount(CounterInput).exists()).toBe(true);
+        expect(mount(FormCounterInput).exists()).toBe(true);
     });
 
     it('Expect X = 5', () => {
-        const mountedComponent = mount(CounterInput, {
+        const mountedComponent = mount(FormCounterInput, {
             props: {
                 modelValue: 5
             }
         });
-        expect(mount(CounterInput).classes()).toContain('counter-input');
+        expect(mount(FormCounterInput).classes()).toContain('counter-input');
         expect(
             (mountedComponent.find('.counter-input input').element as HTMLInputElement).value
         ).toBe('5');
     });
 
     it('Expect 2 <= X <= 9', async () => {
-        const mountedComponent = mount(CounterInput, {
+        const mountedComponent = mount(FormCounterInput, {
             props: {
                 modelValue: 8,
                 min: 2,

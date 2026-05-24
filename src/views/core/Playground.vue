@@ -7,13 +7,13 @@
         </template>
 
         <section class="info-wrapper stats-grid">
-            <MaterialStatCard
+            <CardMaterialStat
                 :title="t('playground-page.label-count')"
                 :value="count"
                 :subtitle="`(${doubleCount})`"
                 accent="primary"
             />
-            <MaterialStatCard
+            <CardMaterialStat
                 :title="t('playground-page.label-websocket-messages')"
                 :value="websocketMessages.length"
                 :subtitle="t('playground-page.label-live-messages')"
@@ -25,7 +25,7 @@
             <BaseButton @click="incrementDelayed">
                 {{ t('playground-page.label-delayed-increment') }}
             </BaseButton>
-            <CounterInput v-model="count" :min="0" :max="5" />
+            <FormCounterInput v-model="count" :min="0" :max="5" />
         </section>
 
         <section class="info-wrapper">
@@ -53,15 +53,11 @@
                     />
                 </div>
             </div>
-            <div class="websocket-messages">
-                <div
-                    v-for="message in websocketMessages"
-                    :key="'ws-message-' + message"
-                    class="theme-card"
-                >
-                    {{ message }}
-                </div>
-            </div>
+            <FeedbackMessageFeed
+                :messages="websocketMessages"
+                max-height="300px"
+                :empty-text="t('playground-page.label-no-messages')"
+            />
         </section>
 
         <section class="info-wrapper">
@@ -99,14 +95,8 @@
         font-weight: 500;
     }
 
-    .websocket-messages {
-        overflow-y: auto;
-        max-height: 300px;
+    .message-feed {
         width: min(460px, 100%);
-
-        & > * {
-            margin-bottom: 12px;
-        }
     }
 }
 </style>
@@ -118,7 +108,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, inject, watch, onMounted, onUnmounted, computed } from 'vue';
+import { ref, inject, watch, onMounted, onUnmounted } from 'vue';
 import type { Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -127,11 +117,11 @@ import { useCounterStore } from '@/stores/counter';
 import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { createSocket } from '@/utils/sockets.ts';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import BaseButton from '@/components/ui/BaseButton.vue';
-import BaseInput from '@/components/ui/BaseInput.vue';
-import CounterInput from '@/components/ui/CounterInput.vue';
-import MaterialStatCard from '@/components/ui/MaterialStatCard.vue';
-import MaterialGraphicCard from '@/components/ui/MaterialGraphicCard.vue';
+import BaseButton from '@/components/atoms/BaseButton.vue';
+import BaseInput from '@/components/atoms/BaseInput.vue';
+import FormCounterInput from '@/components/molecules/FormCounterInput.vue';
+import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
+import FeedbackMessageFeed from '@/components/organisms/FeedbackMessageFeed.vue';
 
 import type { IProvidedVariableMutationFunction, IProvidedVariableType } from '@/types';
 

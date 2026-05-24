@@ -91,6 +91,7 @@ export const useOrdersStore = defineStore('orders', () => {
                 ).then((response) => response.items),
             filters,
             page,
+            pageSizeValue,
             { forced }
         );
     };

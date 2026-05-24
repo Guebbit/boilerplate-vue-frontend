@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getErrorMessages } from '@/utils/helperErrors.ts';
+import { getErrorMessages } from '@/utils/errors.ts';
 
 describe('getErrorMessages', () => {
     it('maps 401 errors to authentication state messaging', () => {

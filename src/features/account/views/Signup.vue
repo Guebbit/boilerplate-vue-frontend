@@ -58,9 +58,9 @@ import { useProfileStore } from '@/stores/profile.ts';
 import { useRouter, useRoute } from 'vue-router';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { useUsersStore } from '@/features/users/store.ts';
-import BaseInput from '@/components/ui/BaseInput.vue';
-import BaseCheckbox from '@/components/ui/BaseCheckbox.vue';
-import BaseButton from '@/components/ui/BaseButton.vue';
+import BaseInput from '@/components/atoms/BaseInput.vue';
+import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
+import BaseButton from '@/components/atoms/BaseButton.vue';
 import { notifyErrorMessages } from '@/utils/errors.ts';
 import { focusFirstErrorField } from '@/utils/forms.ts';
 
