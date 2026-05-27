@@ -28,6 +28,10 @@ export const useCartStore = defineStore('cart', () => {
      */
     const cartCount = computed(() => cartSummary.value?.itemsCount ?? 0);
 
+    const fetchCartItems = () =>
+        fetchAny(() => CartService.getCart().then((data) => {
+            cart.value = data;
+        }))
     /**
      * Fetch the full cart
      */
