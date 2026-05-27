@@ -3,19 +3,19 @@
 /* tslint:disable */
 /* eslint-disable */
 export type AuditEventItem = {
-    actorUserId: string;
-    actorRole: 'admin' | 'user' | 'anonymous';
+    actor_user_id: string;
+    actor_role: 'admin' | 'user' | 'anonymous';
     /**
      * Dot-notation action name (e.g. auth.login.succeeded)
      */
     action: string;
     outcome: 'success' | 'failure';
     ip?: string;
-    userAgent?: string;
-    requestId?: string;
-    traceId?: string;
-    targetType?: string;
-    targetId?: string;
+    user_agent?: string;
+    request_id?: string;
+    trace_id?: string;
+    target_type?: string;
+    target_id?: string;
     metadata?: Record<string, any>;
     timestamp: string;
     level: 'info' | 'warn';

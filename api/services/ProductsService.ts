@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { CreateProductRequest } from '../models/CreateProductRequest';
+import type { CreateProductRequestMultipart } from '../models/CreateProductRequestMultipart';
 import type { DeleteProductRequest } from '../models/DeleteProductRequest';
 import type { Id } from '../models/Id';
 import type { MessageResponse } from '../models/MessageResponse';
@@ -12,8 +12,8 @@ import type { Product } from '../models/Product';
 import type { ProductsResponse } from '../models/ProductsResponse';
 import type { SearchProductsRequest } from '../models/SearchProductsRequest';
 import type { Text } from '../models/Text';
-import type { UpdateProductByIdRequest } from '../models/UpdateProductByIdRequest';
-import type { UpdateProductRequest } from '../models/UpdateProductRequest';
+import type { UpdateProductByIdRequestMultipart } from '../models/UpdateProductByIdRequestMultipart';
+import type { UpdateProductRequestMultipart } from '../models/UpdateProductRequestMultipart';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -57,18 +57,18 @@ export class ProductsService {
     /**
      * Create product
      * Creates a new product with optional image upload
-     * @param requestBody
+     * @param formData
      * @returns Product Created product
      * @throws ApiError
      */
     public static createProduct(
-        requestBody: CreateProductRequest,
+        formData: CreateProductRequestMultipart,
     ): CancelablePromise<Product> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/products',
-            body: requestBody,
-            mediaType: 'application/json',
+            formData: formData,
+            mediaType: 'multipart/form-data',
             errors: {
                 401: `Unauthorized`,
                 403: `Forbidden`,
@@ -80,18 +80,18 @@ export class ProductsService {
     /**
      * Edit product
      * Updates an existing product with optional image upload
-     * @param requestBody
+     * @param formData
      * @returns Product Updated product
      * @throws ApiError
      */
     public static updateProduct(
-        requestBody: UpdateProductRequest,
+        formData: UpdateProductRequestMultipart,
     ): CancelablePromise<Product> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/products',
-            body: requestBody,
-            mediaType: 'application/json',
+            formData: formData,
+            mediaType: 'multipart/form-data',
             errors: {
                 401: `Unauthorized`,
                 403: `Forbidden`,
@@ -151,13 +151,13 @@ export class ProductsService {
      * Edit product
      * Updates the product identified by `{id}` in the path with optional image upload. Functionally equivalent to `PUT /products` with the id in the body.
      * @param id Resource identifier
-     * @param requestBody
+     * @param formData
      * @returns Product Updated product
      * @throws ApiError
      */
     public static updateProductById(
         id: Id,
-        requestBody: UpdateProductByIdRequest,
+        formData: UpdateProductByIdRequestMultipart,
     ): CancelablePromise<Product> {
         return __request(OpenAPI, {
             method: 'PUT',
@@ -165,8 +165,8 @@ export class ProductsService {
             path: {
                 'id': id,
             },
-            body: requestBody,
-            mediaType: 'application/json',
+            formData: formData,
+            mediaType: 'multipart/form-data',
             errors: {
                 401: `Unauthorized`,
                 404: `Resource not found`,

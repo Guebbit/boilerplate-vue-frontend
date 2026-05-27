@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { CreateUserRequest } from '../models/CreateUserRequest';
+import type { CreateUserRequestMultipart } from '../models/CreateUserRequestMultipart';
 import type { DeleteUserRequest } from '../models/DeleteUserRequest';
 import type { Email } from '../models/Email';
 import type { Id } from '../models/Id';
@@ -11,8 +11,8 @@ import type { Page } from '../models/Page';
 import type { PageSize } from '../models/PageSize';
 import type { SearchUsersRequest } from '../models/SearchUsersRequest';
 import type { Text } from '../models/Text';
-import type { UpdateUserByIdRequest } from '../models/UpdateUserByIdRequest';
-import type { UpdateUserRequest } from '../models/UpdateUserRequest';
+import type { UpdateUserByIdRequestMultipart } from '../models/UpdateUserByIdRequestMultipart';
+import type { UpdateUserRequestMultipart } from '../models/UpdateUserRequestMultipart';
 import type { User } from '../models/User';
 import type { UsersResponse } from '../models/UsersResponse';
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -63,18 +63,18 @@ export class UsersService {
     /**
      * Create user
      * Creates a new user account with the supplied email, username, and password. Optional image can be uploaded.
-     * @param requestBody
+     * @param formData
      * @returns User Created user
      * @throws ApiError
      */
     public static createUser(
-        requestBody: CreateUserRequest,
+        formData: CreateUserRequestMultipart,
     ): CancelablePromise<User> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/users',
-            body: requestBody,
-            mediaType: 'application/json',
+            formData: formData,
+            mediaType: 'multipart/form-data',
             errors: {
                 401: `Unauthorized`,
                 403: `Forbidden`,
@@ -86,18 +86,18 @@ export class UsersService {
     /**
      * Edit user
      * Updates an existing user's email or password. Optional image can be uploaded.
-     * @param requestBody
+     * @param formData
      * @returns User Updated user
      * @throws ApiError
      */
     public static updateUser(
-        requestBody: UpdateUserRequest,
+        formData: UpdateUserRequestMultipart,
     ): CancelablePromise<User> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/users',
-            body: requestBody,
-            mediaType: 'application/json',
+            formData: formData,
+            mediaType: 'multipart/form-data',
             errors: {
                 401: `Unauthorized`,
                 403: `Forbidden`,
@@ -157,13 +157,13 @@ export class UsersService {
      * Edit user
      * Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
      * @param id Resource identifier
-     * @param requestBody
+     * @param formData
      * @returns User Updated user
      * @throws ApiError
      */
     public static updateUserById(
         id: Id,
-        requestBody: UpdateUserByIdRequest,
+        formData: UpdateUserByIdRequestMultipart,
     ): CancelablePromise<User> {
         return __request(OpenAPI, {
             method: 'PUT',
@@ -171,8 +171,8 @@ export class UsersService {
             path: {
                 'id': id,
             },
-            body: requestBody,
-            mediaType: 'application/json',
+            formData: formData,
+            mediaType: 'multipart/form-data',
             errors: {
                 401: `Unauthorized`,
                 403: `Forbidden`,
