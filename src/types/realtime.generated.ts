@@ -1,78 +1,104 @@
 /*
- * This file is auto-generated from asyncapi.yaml.
+ * This file is auto-generated from asyncapi.yaml via @asyncapi/modelina.
  * Run `npm run genasyncapi` after AsyncAPI contract changes.
  */
 
-export type IChatSystemPayload = {
-    type: "chat:system";
-    payload: {
-        message: string;
-        room: "general";
-        timestamp: string;
-    };
-};
+export interface IChatSystemPayload {
+  type: IAnonymousSchema_10;
+  payload: IAnonymousSchema_11;
+}
 
-export type IChatMessagePayload = {
-    type: "chat:message";
-    payload: {
-        id: string;
-        username: string;
-        room: "general";
-        message: string;
-        timestamp: string;
-    };
-};
+export type IAnonymousSchema_10 = "chat:system";
 
-export type IChatPresencePayload = {
-    type: "chat:presence";
-    payload: {
-        room: "general";
-        users: (string)[];
-    };
-};
+export interface IAnonymousSchema_11 {
+  message: string;
+  room: IAnonymousSchema_13;
+  timestamp: string;
+}
 
-export type IObservabilityMetricsPayload = {
-    timestamp: string;
-    uptimeSeconds: number;
-    memory: {
-        rss: number;
-        heapUsed: number;
-        heapTotal: number;
-        external: number;
-    };
-    http: {
-        totalRequests: number;
-        totalErrors: number;
-    };
-    realtime: {
-        websocketConnections: number;
-        sseClients: number;
-    };
-};
+export type IAnonymousSchema_13 = "general";
 
-export type IEmailJobPayload = {
-    request: {
-        to: string;
-        subject?: string;
-        text?: string;
-        html?: string;
-    };
-    from?: string;
-    templateName: string;
-    data: Record<string, unknown>;
-};
+export interface IChatMessagePayload {
+  type: IAnonymousSchema_15;
+  payload: IAnonymousSchema_16;
+}
 
-export type IPdfJobPayload = {
-    templatePath: string;
-    templateData: Record<string, unknown>;
-    outputPath: string;
-};
+export type IAnonymousSchema_15 = "chat:message";
 
-export type ICacheTagsInvalidatedPayload = {
-    tags: (string)[];
-    origin: string;
-    timestamp: string;
-};
+export interface IAnonymousSchema_16 {
+  id: string;
+  username: string;
+  room: IAnonymousSchema_19;
+  message: string;
+  timestamp: string;
+}
+
+export type IAnonymousSchema_19 = "general";
+
+export interface IChatPresencePayload {
+  type: IAnonymousSchema_22;
+  payload: IAnonymousSchema_23;
+}
+
+export type IAnonymousSchema_22 = "chat:presence";
+
+export interface IAnonymousSchema_23 {
+  room: IAnonymousSchema_24;
+  users: string[];
+}
+
+export type IAnonymousSchema_24 = "general";
+
+export interface IObservabilityMetricsPayload {
+  timestamp: string;
+  uptimeSeconds: number;
+  memory: IAnonymousSchema_38;
+  http: IAnonymousSchema_43;
+  realtime: IAnonymousSchema_46;
+}
+
+export interface IAnonymousSchema_38 {
+  rss: number;
+  heapUsed: number;
+  heapTotal: number;
+  external: number;
+}
+
+export interface IAnonymousSchema_43 {
+  totalRequests: number;
+  totalErrors: number;
+}
+
+export interface IAnonymousSchema_46 {
+  websocketConnections: number;
+  sseClients: number;
+}
+
+export interface IEmailJobPayload {
+  request: IAnonymousSchema_57;
+  from?: string;
+  templateName: string;
+  data: Map<string, any>;
+}
+
+export interface IAnonymousSchema_57 {
+  to: string;
+  subject?: string;
+  text?: string;
+  html?: string;
+}
+
+export interface IPdfJobPayload {
+  templatePath: string;
+  templateData: Map<string, any>;
+  outputPath: string;
+}
+
+export interface ICacheTagsInvalidatedPayload {
+  tags: string[];
+  origin: string;
+  timestamp: string;
+}
 
 export type IChatJoinCommand = {
     type: "chat:join";
