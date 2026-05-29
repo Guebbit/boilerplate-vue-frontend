@@ -231,6 +231,13 @@ export default defineConfigWithVueTs(
         }
     },
     {
+        files: ['scripts/**/*.ts'],
+        rules: {
+            'unicorn/filename-case': 'off',
+            'no-console': 'off'
+        }
+    },
+    {
         files: ['**/*.d.ts'],
         rules: {
             '@typescript-eslint/naming-convention': 'off'

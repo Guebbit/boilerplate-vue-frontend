@@ -16,6 +16,7 @@ export const getIsoDateNow = () => new Date().toISOString();
 
 export const createMessageResponse = (message: string): MessageResponse => ({
     success: true,
+    status: 200,
     message
 });
 

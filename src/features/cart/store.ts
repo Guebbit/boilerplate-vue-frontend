@@ -29,16 +29,20 @@ export const useCartStore = defineStore('cart', () => {
     const cartCount = computed(() => cartSummary.value?.itemsCount ?? 0);
 
     const fetchCartItems = () =>
-        fetchAny(() => CartService.getCart().then((data) => {
-            cart.value = data;
-        }))
+        fetchAny(() =>
+            CartService.getCart().then((response) => {
+                cart.value = response.data;
+                return response.data;
+            })
+        );
     /**
      * Fetch the full cart
      */
     const fetchCart = () =>
         fetchAny(() =>
-            CartService.getCart().then((data) => {
-                cart.value = data;
+            CartService.getCart().then((response) => {
+                cart.value = response.data;
+                return response.data;
             })
         );
 
@@ -50,8 +54,9 @@ export const useCartStore = defineStore('cart', () => {
      */
     const upsertCartItem = (productId: string, quantity: number) =>
         fetchAny(() =>
-            CartService.upsertCartItem({ productId, quantity }).then((data) => {
-                cart.value = data;
+            CartService.upsertCartItem({ productId, quantity }).then((response) => {
+                cart.value = response.data;
+                return response.data;
             })
         );
 
@@ -63,8 +68,9 @@ export const useCartStore = defineStore('cart', () => {
      */
     const updateCartItem = (productId: string, quantity: number) =>
         fetchAny(() =>
-            CartService.updateCartItemById(productId, { quantity }).then((data) => {
-                cart.value = data;
+            CartService.updateCartItemById(productId, { quantity }).then((response) => {
+                cart.value = response.data;
+                return response.data;
             })
         );
 
@@ -75,8 +81,9 @@ export const useCartStore = defineStore('cart', () => {
      */
     const removeCartItem = (productId: string) =>
         fetchAny(() =>
-            CartService.removeCartItem(productId).then((data) => {
-                cart.value = data;
+            CartService.removeCartItem(productId).then((response) => {
+                cart.value = response.data;
+                return response.data;
             })
         );
 
@@ -89,8 +96,9 @@ export const useCartStore = defineStore('cart', () => {
      */
     const clearCart = (productId?: string) =>
         fetchAny(() =>
-            CartService.clearCart(productId ? { productId } : undefined).then((data) => {
-                cart.value = data;
+            CartService.clearCart(productId ? { productId } : undefined).then((response) => {
+                cart.value = response.data;
+                return response.data;
             })
         );
 

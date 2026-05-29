@@ -28,6 +28,11 @@ export default [
         component: () => import('@/features/account/views/PasswordResetConfirm.vue')
     },
     {
+        path: 'account-delete/confirm',
+        name: 'AccountDeleteConfirm',
+        component: () => import('@/features/account/views/AccountDeleteConfirm.vue')
+    },
+    {
         path: 'profile',
         name: 'Profile',
         beforeEnter: [isAuth],

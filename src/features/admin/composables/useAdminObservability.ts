@@ -42,57 +42,63 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
     const errorMetrics = ref<string | undefined>(undefined);
     const errorAudit = ref<string | undefined>(undefined);
 
-    const fetchHealth = async () => {
+    const fetchHealth = () => {
         loadingHealth.value = true;
         errorHealth.value = undefined;
-        try {
-            const response = await AdminService.getAdminHealth();
-            health.value = response.data;
-        } catch (error: unknown) {
-            errorHealth.value =
-                error instanceof Error ? error.message : 'Failed to load health data';
-        } finally {
-            loadingHealth.value = false;
-        }
+        return AdminService.getAdminHealth()
+            .then((response) => {
+                health.value = response.data.data;
+            })
+            .catch((error: unknown) => {
+                errorHealth.value =
+                    error instanceof Error ? error.message : 'Failed to load health data';
+            })
+            .finally(() => {
+                loadingHealth.value = false;
+            });
     };
 
-    const fetchMetrics = async () => {
+    const fetchMetrics = () => {
         loadingMetrics.value = true;
         errorMetrics.value = undefined;
-        try {
-            const response = await AdminService.getAdminMetricsSummary();
-            metrics.value = response.data;
-        } catch (error: unknown) {
-            errorMetrics.value =
-                error instanceof Error ? error.message : 'Failed to load metrics data';
-        } finally {
-            loadingMetrics.value = false;
-        }
+        return AdminService.getAdminMetrics()
+            .then((response) => {
+                metrics.value = response.data.data;
+            })
+            .catch((error: unknown) => {
+                errorMetrics.value =
+                    error instanceof Error ? error.message : 'Failed to load metrics data';
+            })
+            .finally(() => {
+                loadingMetrics.value = false;
+            });
     };
 
-    const fetchAuditLogs = async (filters: IAdminAuditFilters = {}) => {
+    const fetchAuditLogs = (filters: IAdminAuditFilters = {}) => {
         loadingAudit.value = true;
         errorAudit.value = undefined;
-        try {
-            const response = await AdminService.getAdminAuditLogs(
-                filters.actor,
-                filters.action,
-                filters.outcome,
-                filters.since,
-                filters.limit
-            );
-            auditEvents.value = response.data.items;
-            auditTotal.value = response.data.total;
-        } catch (error: unknown) {
-            errorAudit.value = error instanceof Error ? error.message : 'Failed to load audit logs';
-        } finally {
-            loadingAudit.value = false;
-        }
+        return AdminService.getAdminAuditLogs(
+            filters.actor,
+            filters.action,
+            filters.outcome,
+            filters.since,
+            filters.limit
+        )
+            .then((response) => {
+                auditEvents.value = response.data.data.items;
+                auditTotal.value = response.data.data.total;
+            })
+            .catch((error: unknown) => {
+                errorAudit.value =
+                    error instanceof Error ? error.message : 'Failed to load audit logs';
+            })
+            .finally(() => {
+                loadingAudit.value = false;
+            });
     };
 
-    const fetchAll = async () => {
-        await Promise.all([fetchHealth(), fetchMetrics(), fetchAuditLogs()]);
-    };
+    const fetchAll = () =>
+        Promise.all([fetchHealth(), fetchMetrics(), fetchAuditLogs()]).then(() => {});
 
     return {
         health,

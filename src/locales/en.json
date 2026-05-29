@@ -185,7 +185,19 @@
         "button-submit": "Save changes",
         "reset-form": "Reset changes",
         "success-update": "Profile updated successfully",
-        "button-change-password": "Change password"
+        "button-change-password": "Change password",
+        "button-delete-account": "Delete account",
+        "confirm-delete-account": "Are you sure you want to delete your account? This action cannot be undone.",
+        "success-delete-request": "We sent a confirmation email. Please check your inbox to complete the deletion."
+    },
+    "account-delete-confirm-page": {
+        "page-title": "Confirm account deletion",
+        "warning-message": "Please think carefully. Deleting your account is permanent and cannot be undone. All your data will be lost.",
+        "label-token": "Deletion token",
+        "token-required": "Deletion token is required",
+        "button-submit": "Delete my account permanently",
+        "button-go-back": "Cancel, keep my account",
+        "success": "Your account has been deleted. We're sorry to see you go."
     },
     "cart-page": {
         "page-title": "My Cart",

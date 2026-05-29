@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { CreateUserRequestMultipart } from '../models/CreateUserRequestMultipart';
+import type { CreateUserRequest } from '../models/CreateUserRequest';
 import type { DeleteUserRequest } from '../models/DeleteUserRequest';
 import type { Email } from '../models/Email';
 import type { Id } from '../models/Id';
@@ -11,10 +11,10 @@ import type { Page } from '../models/Page';
 import type { PageSize } from '../models/PageSize';
 import type { SearchUsersRequest } from '../models/SearchUsersRequest';
 import type { Text } from '../models/Text';
-import type { UpdateUserByIdRequestMultipart } from '../models/UpdateUserByIdRequestMultipart';
-import type { UpdateUserRequestMultipart } from '../models/UpdateUserRequestMultipart';
-import type { User } from '../models/User';
-import type { UsersResponse } from '../models/UsersResponse';
+import type { UpdateUserByIdRequest } from '../models/UpdateUserByIdRequest';
+import type { UpdateUserRequest } from '../models/UpdateUserRequest';
+import type { UserEnvelope } from '../models/UserEnvelope';
+import type { UsersResponseEnvelope } from '../models/UsersResponseEnvelope';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -29,7 +29,7 @@ export class UsersService {
      * @param email
      * @param username
      * @param active
-     * @returns UsersResponse Users list page
+     * @returns UsersResponseEnvelope Users list page
      * @throws ApiError
      */
     public static listUsers(
@@ -40,7 +40,7 @@ export class UsersService {
         email?: Email,
         username?: string,
         active?: boolean,
-    ): CancelablePromise<UsersResponse> {
+    ): CancelablePromise<UsersResponseEnvelope> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/users',
@@ -63,18 +63,18 @@ export class UsersService {
     /**
      * Create user
      * Creates a new user account with the supplied email, username, and password. Optional image can be uploaded.
-     * @param formData
-     * @returns User Created user
+     * @param requestBody
+     * @returns UserEnvelope Created user
      * @throws ApiError
      */
     public static createUser(
-        formData: CreateUserRequestMultipart,
-    ): CancelablePromise<User> {
+        requestBody: CreateUserRequest,
+    ): CancelablePromise<UserEnvelope> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/users',
-            formData: formData,
-            mediaType: 'multipart/form-data',
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 401: `Unauthorized`,
                 403: `Forbidden`,
@@ -86,18 +86,18 @@ export class UsersService {
     /**
      * Edit user
      * Updates an existing user's email or password. Optional image can be uploaded.
-     * @param formData
-     * @returns User Updated user
+     * @param requestBody
+     * @returns UserEnvelope Updated user
      * @throws ApiError
      */
     public static updateUser(
-        formData: UpdateUserRequestMultipart,
-    ): CancelablePromise<User> {
+        requestBody: UpdateUserRequest,
+    ): CancelablePromise<UserEnvelope> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/users',
-            formData: formData,
-            mediaType: 'multipart/form-data',
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 401: `Unauthorized`,
                 403: `Forbidden`,
@@ -133,12 +133,12 @@ export class UsersService {
      * User details
      * Returns the full profile of the user identified by `{id}`. Functionally equivalent to `GET /users?id={id}`.
      * @param id Resource identifier
-     * @returns User User
+     * @returns UserEnvelope User
      * @throws ApiError
      */
     public static getUserById(
         id: Id,
-    ): CancelablePromise<User> {
+    ): CancelablePromise<UserEnvelope> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/users/{id}',
@@ -157,22 +157,22 @@ export class UsersService {
      * Edit user
      * Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
      * @param id Resource identifier
-     * @param formData
-     * @returns User Updated user
+     * @param requestBody
+     * @returns UserEnvelope Updated user
      * @throws ApiError
      */
     public static updateUserById(
         id: Id,
-        formData: UpdateUserByIdRequestMultipart,
-    ): CancelablePromise<User> {
+        requestBody: UpdateUserByIdRequest,
+    ): CancelablePromise<UserEnvelope> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/users/{id}',
             path: {
                 'id': id,
             },
-            formData: formData,
-            mediaType: 'multipart/form-data',
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 401: `Unauthorized`,
                 403: `Forbidden`,
@@ -215,12 +215,12 @@ export class UsersService {
      * Search users (DTO-friendly)
      * Searches and filters users via a JSON request body. Functionally equivalent to `GET /users` with query parameters
      * @param requestBody
-     * @returns UsersResponse Users search results
+     * @returns UsersResponseEnvelope Users search results
      * @throws ApiError
      */
     public static searchUsers(
         requestBody: SearchUsersRequest,
-    ): CancelablePromise<UsersResponse> {
+    ): CancelablePromise<UsersResponseEnvelope> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/users/search',

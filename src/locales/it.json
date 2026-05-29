@@ -185,7 +185,19 @@
         "button-submit": "Salva modifiche",
         "reset-form": "Cancella modifiche",
         "success-update": "Profilo aggiornato con successo",
-        "button-change-password": "Cambia password"
+        "button-change-password": "Cambia password",
+        "button-delete-account": "Elimina account",
+        "confirm-delete-account": "Sei sicuro di voler eliminare il tuo account? Questa azione è irreversibile.",
+        "success-delete-request": "Ti abbiamo inviato un'email di conferma. Controlla la tua casella per completare l'eliminazione."
+    },
+    "account-delete-confirm-page": {
+        "page-title": "Conferma eliminazione account",
+        "warning-message": "Pensaci bene. L'eliminazione del tuo account è permanente e non può essere annullata. Tutti i tuoi dati andranno persi.",
+        "label-token": "Token di eliminazione",
+        "token-required": "Il token di eliminazione è obbligatorio",
+        "button-submit": "Elimina il mio account definitivamente",
+        "button-go-back": "Annulla, mantieni il mio account",
+        "success": "Il tuo account è stato eliminato. Ci dispiace vederti andare via."
     },
     "cart-page": {
         "page-title": "Il mio carrello",
