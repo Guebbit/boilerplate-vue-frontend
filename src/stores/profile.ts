@@ -4,6 +4,7 @@ import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { i18n } from '@/utils/i18n.ts';
 import type { AuthTokens, RefreshTokenResponse, User } from '@types';
 import { AccountService, AuthService, UsersService } from '@/utils/api.ts';
+import type { AccountDeleteConfirmRequest } from '@api';
 
 /**
  * Extract token from both wrapped ({ data: { token } }) and direct ({ token }) responses
@@ -202,6 +203,29 @@ export const useProfileStore = defineStore('profile', () => {
         });
     };
 
+    /**
+     * Initiates account deletion flow, sends confirmation token to user's email.
+     */
+    const requestAccountDelete = () =>
+        fetchAny(() => AccountService.requestAccountDelete());
+
+    /**
+     * Completes account deletion using one-time token.
+     *
+     * @param token
+     */
+    const confirmAccountDelete = (token: string) =>
+        fetchAny(() =>
+            AccountService.confirmAccountDelete({ token } as AccountDeleteConfirmRequest).then(
+                () => {
+                    itemDictionary.value = {};
+                    selectedIdentifier.value = undefined;
+                    accessToken.value = undefined;
+                    setCookie('isAuth=; path=/; max-age=0; SameSite=Lax');
+                }
+            )
+        );
+
     return {
         profileLanguage,
         profile,
@@ -214,6 +238,8 @@ export const useProfileStore = defineStore('profile', () => {
         signup,
         requestPasswordReset,
         confirmPasswordReset,
+        requestAccountDelete,
+        confirmAccountDelete,
         refreshToken,
         fetchProfile,
         updateProfile,

@@ -4,99 +4,99 @@
  * Run `npm run genasyncapi` after AsyncAPI contract changes.
  */
 
-export interface IAnonymousSchema1 {
-  'type': IAnonymousSchema2;
-  'payload': IAnonymousSchema3;
+export interface IChatJoinCommand {
+  'type': IAnonymousSchema1;
+  'payload': IAnonymousSchema2;
 }
-export type IAnonymousSchema2 = "chat:join";
-export interface IAnonymousSchema3 {
+export type IAnonymousSchema1 = "chat:join";
+export interface IAnonymousSchema2 {
   'username': string;
-  'room'?: IAnonymousSchema5;
+  'room'?: IAnonymousSchema4;
 }
-export type IAnonymousSchema5 = "general";
+export type IAnonymousSchema4 = "general";
+export interface IChatMessageSendCommand {
+  'type': IAnonymousSchema5;
+  'payload': IAnonymousSchema6;
+}
+export type IAnonymousSchema5 = "chat:message:send";
 export interface IAnonymousSchema6 {
-  'type': IAnonymousSchema7;
-  'payload': IAnonymousSchema8;
-}
-export type IAnonymousSchema7 = "chat:message:send";
-export interface IAnonymousSchema8 {
   'message': string;
 }
 export interface IChatSystemPayload {
-  'type': IAnonymousSchema10;
-  'payload': IAnonymousSchema11;
+  'type': IAnonymousSchema8;
+  'payload': IAnonymousSchema9;
 }
-export type IAnonymousSchema10 = "chat:system";
-export interface IAnonymousSchema11 {
+export type IAnonymousSchema8 = "chat:system";
+export interface IAnonymousSchema9 {
   'message': string;
-  'room': IAnonymousSchema13;
+  'room': IAnonymousSchema11;
   'timestamp': string;
 }
-export type IAnonymousSchema13 = "general";
+export type IAnonymousSchema11 = "general";
 export interface IChatMessagePayload {
-  'type': IAnonymousSchema15;
-  'payload': IAnonymousSchema16;
+  'type': IAnonymousSchema13;
+  'payload': IAnonymousSchema14;
 }
-export type IAnonymousSchema15 = "chat:message";
-export interface IAnonymousSchema16 {
+export type IAnonymousSchema13 = "chat:message";
+export interface IAnonymousSchema14 {
   'id': string;
   'username': string;
-  'room': IAnonymousSchema19;
+  'room': IAnonymousSchema17;
   'message': string;
   'timestamp': string;
 }
-export type IAnonymousSchema19 = "general";
+export type IAnonymousSchema17 = "general";
 export interface IChatPresencePayload {
-  'type': IAnonymousSchema22;
-  'payload': IAnonymousSchema23;
+  'type': IAnonymousSchema20;
+  'payload': IAnonymousSchema21;
 }
-export type IAnonymousSchema22 = "chat:presence";
-export interface IAnonymousSchema23 {
-  'room': IAnonymousSchema24;
+export type IAnonymousSchema20 = "chat:presence";
+export interface IAnonymousSchema21 {
+  'room': IAnonymousSchema22;
   'users': string[];
 }
-export type IAnonymousSchema24 = "general";
-export interface IAnonymousSchema27 {
-  'type': IAnonymousSchema28;
-  'payload': IAnonymousSchema29;
+export type IAnonymousSchema22 = "general";
+export interface IChatJoinedEvent {
+  'type': IAnonymousSchema25;
+  'payload': IAnonymousSchema26;
 }
-export type IAnonymousSchema28 = "chat:joined";
-export interface IAnonymousSchema29 {
+export type IAnonymousSchema25 = "chat:joined";
+export interface IAnonymousSchema26 {
   'username': string;
-  'room': IAnonymousSchema31;
+  'room': IAnonymousSchema28;
 }
-export type IAnonymousSchema31 = "general";
-export interface IAnonymousSchema32 {
-  'type': IAnonymousSchema33;
-  'payload': IAnonymousSchema34;
+export type IAnonymousSchema28 = "general";
+export interface IChatErrorEvent {
+  'type': IAnonymousSchema29;
+  'payload': IAnonymousSchema30;
 }
-export type IAnonymousSchema33 = "chat:error";
-export interface IAnonymousSchema34 {
+export type IAnonymousSchema29 = "chat:error";
+export interface IAnonymousSchema30 {
   'message': string;
 }
 export interface IObservabilityMetricsPayload {
   'timestamp': string;
   'uptimeSeconds': number;
-  'memory': IAnonymousSchema38;
-  'http': IAnonymousSchema43;
-  'realtime': IAnonymousSchema46;
+  'memory': IAnonymousSchema34;
+  'http': IAnonymousSchema39;
+  'realtime': IAnonymousSchema42;
 }
-export interface IAnonymousSchema38 {
+export interface IAnonymousSchema34 {
   'rss': number;
   'heapUsed': number;
   'heapTotal': number;
   'external': number;
 }
-export interface IAnonymousSchema43 {
+export interface IAnonymousSchema39 {
   'totalRequests': number;
   'totalErrors': number;
 }
-export interface IAnonymousSchema46 {
+export interface IAnonymousSchema42 {
   'websocketConnections': number;
   'sseClients': number;
 }
-export interface IAnonymousSchema49 {
-  'eventName': IAnonymousSchema50;
+export interface ICartCheckedOutEvent {
+  'eventName': IAnonymousSchema45;
   'eventId': string;
   'occurredAt': string;
   'cartId': string;
@@ -104,14 +104,14 @@ export interface IAnonymousSchema49 {
   'orderId': string;
   'itemCount': number;
 }
-export type IAnonymousSchema50 = "ecommerce.cart.checked_out";
+export type IAnonymousSchema45 = "ecommerce.cart.checked_out";
 export interface IEmailJobPayload {
-  'request': IAnonymousSchema57;
+  'request': IAnonymousSchema52;
   'from'?: string;
   'templateName': string;
   'data': Record<string, unknown>;
 }
-export interface IAnonymousSchema57 {
+export interface IAnonymousSchema52 {
   'to': string;
   'subject'?: string;
   'text'?: string;
@@ -128,48 +128,13 @@ export interface ICacheTagsInvalidatedPayload {
   'timestamp': string;
 }
 
-export type IChatJoinCommand = {
-    type: "chat:join";
-    payload: {
-        username: string;
-        room?: "general";
-    };
-};
-export type IChatMessageSendCommand = {
-    type: "chat:message:send";
-    payload: {
-        message: string;
-    };
-};
 export type IChatSystemUserJoinedEvent = IChatSystemPayload;
 export type IChatSystemUserLeftEvent = IChatSystemPayload;
 export type IChatMessageNewEvent = IChatMessagePayload;
 export type IChatPresenceUpdatedEvent = IChatPresencePayload;
-export type IChatErrorEvent = {
-    type: "chat:error";
-    payload: {
-        message: string;
-    };
-};
-export type IChatJoinedEvent = {
-    type: "chat:joined";
-    payload: {
-        username: string;
-        room: "general";
-    };
-};
 export type IMetricsSnapshotEvent = IObservabilityMetricsPayload;
 export type IMetricsUpdatedEvent = IObservabilityMetricsPayload;
 export type IHeartbeatEvent = IObservabilityMetricsPayload;
-export type ICartCheckedOutEvent = {
-    eventName: "ecommerce.cart.checked_out";
-    eventId: string;
-    occurredAt: string;
-    cartId: string;
-    userId: string;
-    orderId: string;
-    itemCount: number;
-};
 export type IEmailJobMessage = IEmailJobPayload;
 export type IPdfJobMessage = IPdfJobPayload;
 export type ICacheTagsInvalidatedMessage = ICacheTagsInvalidatedPayload;

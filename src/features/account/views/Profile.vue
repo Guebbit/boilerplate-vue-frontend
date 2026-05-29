@@ -66,6 +66,9 @@
                 <BaseButton type="button" @click="resetForm">
                     {{ t('profile-page.reset-form') }}
                 </BaseButton>
+                <BaseButton type="button" class="profile-page-delete-button" @click="handleDeleteAccount">
+                    {{ t('profile-page.button-delete-account') }}
+                </BaseButton>
             </form>
         </div>
     </LayoutDefault>
@@ -92,6 +95,18 @@ import { notifyErrorMessages } from '@/utils/errors.ts';
 
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Account deletion request with confirmation dialog
+ */
+const { requestAccountDelete } = useProfileStore();
+
+const handleDeleteAccount = () => {
+    if (!window.confirm(t('profile-page.confirm-delete-account'))) return;
+    requestAccountDelete()
+        .then(() => addMessage(t('profile-page.success-delete-request')))
+        .catch((error) => notifyErrorMessages(addMessage, error));
+};
 
 /**
  * Profile logic
@@ -212,6 +227,13 @@ const submitForm = () => {
         max-width: 600px;
         margin: 100px auto;
         padding: 2rem;
+    }
+
+    .profile-page-delete-button {
+        margin-top: 2rem;
+        background: #e74c3c;
+        color: #fff;
+        border-color: #e74c3c;
     }
 }
 </style>

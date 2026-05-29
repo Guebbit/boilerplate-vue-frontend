@@ -224,11 +224,18 @@ const sseEntries = collectChannelMessageEntries(channels, 'observability.', 'sub
 const chatEventEntries = collectChannelMessageEntries(channels, 'realtime.chat.event.', 'subscribe');
 const chatCommandEntries = collectChannelMessageEntries(channels, 'realtime.chat.command.', 'publish');
 
-const messageTypeBlocks = Object.entries(messages).map(([messageName, message]) => {
-    if (message.payload?.$ref)
-        return `export type ${toInterfaceName(messageName)} = ${refToTypeName(message.payload.$ref)};`;
-    return `export type ${toInterfaceName(messageName)} = ${schemaToType(message.payload)};`;
-});
+const messageTypeBlocks = Object.entries(messages)
+    .map(([messageName, message]) => {
+        const aliasName = toInterfaceName(messageName);
+        if (message.payload?.$ref) {
+            const targetName = refToTypeName(message.payload.$ref);
+            // Skip self-referential aliases (message name resolves to same type as schema)
+            if (aliasName === targetName) return '';
+            return `export type ${aliasName} = ${targetName};`;
+        }
+        return `export type ${aliasName} = ${schemaToType(message.payload)};`;
+    })
+    .filter(Boolean);
 
 /*
  * Builds the full generated file output content.
