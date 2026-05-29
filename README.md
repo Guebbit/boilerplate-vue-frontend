@@ -155,7 +155,7 @@ flowchart LR
 Key principles:
 
 - **OpenAPI first.** `openapi.yaml` is the contract. Types and the axios client are generated from it.
-- **AsyncAPI for realtime.** `asyncapi.yaml` drives generated realtime payload types in `src/types/realtime.generated.ts`.
+- **AsyncAPI for realtime.** `asyncapi.yaml` drives generated realtime/channel types in `src/types/realtime.generated.ts`; `src/types/realtime.ts` stays as thin app-only helpers.
 - **Stores own data.** Views call composables/stores; stores call the generated API.
 - **Interceptors own error shape.** Every HTTP error becomes an `IResponseReject` envelope.
 - **Mocks are toggled by env.** MSW activates only when `VITE_API_MOCK_ENABLED=true`.
@@ -238,7 +238,7 @@ Reference: [`.env-example`](./.env-example).
 | `npm run test:e2e`       | Start Vite (with MSW) + run [Cypress](https://www.cypress.io/) e2e             |
 | `npm run test`           | `test:unit` then `test:e2e`                                                    |
 | `npm run genapi`         | Regenerate `/api` client from `openapi.yaml`                                   |
-| `npm run genasyncapi`    | Regenerate `src/types/realtime.generated.ts` from `asyncapi.yaml`              |
+| `npm run genasyncapi`    | Run `tsx scripts/gen-asyncapi-types.ts` to regenerate `src/types/realtime.generated.ts` |
 | `npm run complete`       | build + lint:fix + lint:openapi + prettier:fix + tests (local hardening)       |
 | `npm run complete:check` | build + lint + lint:openapi + prettier:check + tests (CI gate)                 |
 
