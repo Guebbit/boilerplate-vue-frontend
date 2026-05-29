@@ -46,7 +46,9 @@ export const useUsersStore = defineStore('users', () => {
      * @param forced
      */
     const fetchUsers = (forced = false) =>
-        fetchAll(() => UsersService.listUsers().then((response) => response.items), { forced });
+        fetchAll(() => UsersService.listUsers().then((response) => response.data.items), {
+            forced
+        });
 
     /**
      * @param page
@@ -54,9 +56,12 @@ export const useUsersStore = defineStore('users', () => {
      * @param forced
      */
     const fetchPaginationUsers = (page = 1, pageSize = 10, forced = false) =>
-        fetchAny(() => UsersService.listUsers(page, pageSize).then((response) => response.items), {
-            forced
-        });
+        fetchAny(
+            () => UsersService.listUsers(page, pageSize).then((response) => response.data.items),
+            {
+                forced
+            }
+        );
 
     type IUsersFilters = Omit<SearchUsersRequest, 'page' | 'pageSize'>;
 
@@ -88,7 +93,7 @@ export const useUsersStore = defineStore('users', () => {
                     filters.email,
                     filters.username,
                     filters.active
-                ).then((response) => response.items),
+                ).then((response) => response.data.items),
             filters,
             page,
             { forced }
@@ -101,9 +106,13 @@ export const useUsersStore = defineStore('users', () => {
      * @param forced
      */
     const fetchUser = (userId: string, forced = false) =>
-        fetchTarget(() => UsersService.getUserById(userId), userId, {
-            forced
-        });
+        fetchTarget(
+            () => UsersService.getUserById(userId).then((response) => response.data),
+            userId,
+            {
+                forced
+            }
+        );
 
     /**
      *
@@ -120,7 +129,7 @@ export const useUsersStore = defineStore('users', () => {
                         password: userData.password,
                         admin: userData.admin,
                         active: userData.active
-                    })
+                    }).then((response) => response.data)
             })
         );
 
@@ -169,7 +178,7 @@ export const useUsersStore = defineStore('users', () => {
                             email: userData.email,
                             password: userData.password,
                             username: userData.username
-                        })
+                        }).then((response) => response.data)
                 }),
             {
                 email: userData.email,

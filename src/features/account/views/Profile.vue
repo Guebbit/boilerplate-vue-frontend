@@ -66,7 +66,11 @@
                 <BaseButton type="button" @click="resetForm">
                     {{ t('profile-page.reset-form') }}
                 </BaseButton>
-                <BaseButton type="button" class="profile-page-delete-button" @click="handleDeleteAccount">
+                <BaseButton
+                    type="button"
+                    class="profile-page-delete-button"
+                    @click="handleDeleteAccount"
+                >
                     {{ t('profile-page.button-delete-account') }}
                 </BaseButton>
             </form>
@@ -102,7 +106,7 @@ const { addMessage } = useNotificationsStore();
 const { requestAccountDelete } = useProfileStore();
 
 const handleDeleteAccount = () => {
-    if (!window.confirm(t('profile-page.confirm-delete-account'))) return;
+    if (!globalThis.confirm(t('profile-page.confirm-delete-account'))) return;
     requestAccountDelete()
         .then(() => addMessage(t('profile-page.success-delete-request')))
         .catch((error) => notifyErrorMessages(addMessage, error));

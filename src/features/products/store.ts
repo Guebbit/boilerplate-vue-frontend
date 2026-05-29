@@ -44,7 +44,7 @@ export const useProductsStore = defineStore('products', () => {
      * @param forced
      */
     const fetchProducts = (forced = false) =>
-        fetchAll(() => ProductsService.listProducts().then((response) => response.items), {
+        fetchAll(() => ProductsService.listProducts().then((response) => response.data.items), {
             forced
         });
 
@@ -55,7 +55,10 @@ export const useProductsStore = defineStore('products', () => {
      */
     const fetchPaginationProducts = (page = 1, pageSize = 10, forced = false) =>
         fetchAny(
-            () => ProductsService.listProducts(page, pageSize).then((response) => response.items),
+            () =>
+                ProductsService.listProducts(page, pageSize).then(
+                    (response) => response.data.items
+                ),
             {
                 forced
             }
@@ -89,7 +92,7 @@ export const useProductsStore = defineStore('products', () => {
                     filters.id,
                     filters.minPrice,
                     filters.maxPrice
-                ).then((response) => response.items),
+                ).then((response) => response.data.items),
             filters,
             page,
             { forced }
@@ -102,7 +105,11 @@ export const useProductsStore = defineStore('products', () => {
      * @param forced
      */
     const fetchProduct = (productId: string, forced = false) =>
-        fetchTarget(() => ProductsService.getProductById(productId), productId, { forced });
+        fetchTarget(
+            () => ProductsService.getProductById(productId).then((response) => response.data),
+            productId,
+            { forced }
+        );
 
     /**
      * Create a new product.
@@ -123,7 +130,7 @@ export const useProductsStore = defineStore('products', () => {
                         active: productData.active,
                         categories: productData.categories,
                         tags: productData.tags
-                    })
+                    }).then((response) => response.data)
             })
         );
 
@@ -188,7 +195,7 @@ export const useProductsStore = defineStore('products', () => {
                                 active: productData.active,
                                 categories: productData.categories,
                                 tags: productData.tags
-                            })
+                            }).then((response) => response.data)
                     }
                 ),
             productData as Partial<Product>,

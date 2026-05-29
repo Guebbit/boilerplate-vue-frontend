@@ -224,23 +224,23 @@ Reference: [`.env-example`](./.env-example).
 
 ## npm scripts
 
-| Script                   | Purpose                                                                        |
-| ------------------------ | ------------------------------------------------------------------------------ |
-| `npm run dev`            | Start [Vite](https://vite.dev/) dev server on `:8080`                          |
-| `npm run build`          | `vue-tsc` type-check **+** production build                                    |
-| `npm run preview`        | Preview built app                                                              |
-| `npm run lint`           | Run [ESLint](https://eslint.org/) (check)                                      |
-| `npm run lint:fix`       | Run ESLint with `--fix`                                                        |
-| `npm run lint:openapi`   | Lint `openapi.yaml` with [Spectral](https://stoplight.io/open-source/spectral) |
-| `npm run prettier`       | [Prettier](https://prettier.io/) check (alias for `prettier:check`)            |
-| `npm run prettier:fix`   | Prettier write                                                                 |
-| `npm run test:unit`      | [Vitest](https://vitest.dev/) unit tests                                       |
-| `npm run test:e2e`       | Start Vite (with MSW) + run [Cypress](https://www.cypress.io/) e2e             |
-| `npm run test`           | `test:unit` then `test:e2e`                                                    |
-| `npm run genapi`         | Regenerate `/api` client from `openapi.yaml`                                   |
+| Script                   | Purpose                                                                                 |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| `npm run dev`            | Start [Vite](https://vite.dev/) dev server on `:8080`                                   |
+| `npm run build`          | `vue-tsc` type-check **+** production build                                             |
+| `npm run preview`        | Preview built app                                                                       |
+| `npm run lint`           | Run [ESLint](https://eslint.org/) (check)                                               |
+| `npm run lint:fix`       | Run ESLint with `--fix`                                                                 |
+| `npm run lint:openapi`   | Lint `openapi.yaml` with [Spectral](https://stoplight.io/open-source/spectral)          |
+| `npm run prettier`       | [Prettier](https://prettier.io/) check (alias for `prettier:check`)                     |
+| `npm run prettier:fix`   | Prettier write                                                                          |
+| `npm run test:unit`      | [Vitest](https://vitest.dev/) unit tests                                                |
+| `npm run test:e2e`       | Start Vite (with MSW) + run [Cypress](https://www.cypress.io/) e2e                      |
+| `npm run test`           | `test:unit` then `test:e2e`                                                             |
+| `npm run genapi`         | Regenerate `/api` client from `openapi.yaml`                                            |
 | `npm run genasyncapi`    | Run `tsx scripts/gen-asyncapi-types.ts` to regenerate `src/types/realtime.generated.ts` |
-| `npm run complete`       | build + lint:fix + lint:openapi + prettier:fix + tests (local hardening)       |
-| `npm run complete:check` | build + lint + lint:openapi + prettier:check + tests (CI gate)                 |
+| `npm run complete`       | build + lint:fix + lint:openapi + prettier:fix + tests (local hardening)                |
+| `npm run complete:check` | build + lint + lint:openapi + prettier:check + tests (CI gate)                          |
 
 ---
 

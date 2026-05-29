@@ -206,8 +206,7 @@ export const useProfileStore = defineStore('profile', () => {
     /**
      * Initiates account deletion flow, sends confirmation token to user's email.
      */
-    const requestAccountDelete = () =>
-        fetchAny(() => AccountService.requestAccountDelete());
+    const requestAccountDelete = () => fetchAny(() => AccountService.requestAccountDelete());
 
     /**
      * Completes account deletion using one-time token.

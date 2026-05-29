@@ -73,7 +73,8 @@ const toInterfaceName = (value: string): string => `I${toPascalCase(value)}`;
  * @param reference AsyncAPI `$ref` value.
  * @returns TypeScript type name for the referenced model.
  */
-const refToTypeName = (reference: string): string => toInterfaceName(reference.split('/').pop() ?? '');
+const refToTypeName = (reference: string): string =>
+    toInterfaceName(reference.split('/').pop() ?? '');
 
 /*
  * Converts an object key into a valid TypeScript property declaration key.
@@ -191,7 +192,9 @@ const renderPayloadMap = (
     entries: Array<{ channelName: string; messageType: string }>
 ): string => {
     const rows = entries
-        .map(({ channelName, messageType }) => `    ${JSON.stringify(channelName)}: ${messageType};`)
+        .map(
+            ({ channelName, messageType }) => `    ${JSON.stringify(channelName)}: ${messageType};`
+        )
         .join('\n');
     return `export interface ${interfaceName} {\n${rows}\n}`;
 };
@@ -216,13 +219,20 @@ const channels = document.channels ?? {};
 const messages = document.components?.messages ?? {};
 const channelNames = Object.keys(channels).toSorted((a, b) => a.localeCompare(b));
 const realtimeChannelNames = channelNames.filter(
-    (channelName) =>
-        channelName.startsWith('realtime.') || channelName.startsWith('observability.')
+    (channelName) => channelName.startsWith('realtime.') || channelName.startsWith('observability.')
 );
 
 const sseEntries = collectChannelMessageEntries(channels, 'observability.', 'subscribe');
-const chatEventEntries = collectChannelMessageEntries(channels, 'realtime.chat.event.', 'subscribe');
-const chatCommandEntries = collectChannelMessageEntries(channels, 'realtime.chat.command.', 'publish');
+const chatEventEntries = collectChannelMessageEntries(
+    channels,
+    'realtime.chat.event.',
+    'subscribe'
+);
+const chatCommandEntries = collectChannelMessageEntries(
+    channels,
+    'realtime.chat.command.',
+    'publish'
+);
 
 const messageTypeBlocks = Object.entries(messages)
     .map(([messageName, message]) => {
@@ -288,8 +298,9 @@ const buildOutput = (modelBlocks: string[]): string => {
  * Generates contract models and writes the final realtime types file.
  */
 generator.generate(specText).then((models) => {
-    const modelBlocks = models.map((model) =>
-        `export ${model.result.replaceAll('Map<string, any>', 'Record<string, unknown>')}`
+    const modelBlocks = models.map(
+        (model) =>
+            `export ${model.result.replaceAll('Map<string, any>', 'Record<string, unknown>')}`
     );
     writeFileSync(OUTPUT, buildOutput(modelBlocks), 'utf8');
     console.log(`✓ Generated ${OUTPUT}`);

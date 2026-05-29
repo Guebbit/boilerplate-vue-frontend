@@ -1269,7 +1269,7 @@ components:
         AdminHealth:
             type: object
             required:
-              [status, environment, service, nodeVersion, uptimeSeconds, database, timestamp]
+                [status, environment, service, nodeVersion, uptimeSeconds, database, timestamp]
             properties:
                 status:
                     type: string
@@ -1360,10 +1360,10 @@ components:
                     type: string
                     enum: [admin, user, anonymous]
                 action:
-                  {
-                      type: string,
-                      description: 'Dot-notation action name (e.g. auth.login.succeeded)'
-                  }
+                    {
+                        type: string,
+                        description: 'Dot-notation action name (e.g. auth.login.succeeded)'
+                    }
                 outcome:
                     type: string
                     enum: [success, failure]
