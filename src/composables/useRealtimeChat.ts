@@ -4,7 +4,7 @@ import { createChatClient } from '@/realtime/chat/createChatClient';
 
 let activeClient: ReturnType<typeof createChatClient> | undefined;
 
-const resolveWebsocketUrl = () => {
+const getWebsocketUrl = () => {
     const configuredUrl = import.meta.env.VITE_API_WEBSOCKET ?? 'ws://localhost:3000/ws/chat';
 
     return configuredUrl.replace(/^http:\/\//u, 'ws://').replace(/^https:\/\//u, 'wss://');
@@ -19,7 +19,7 @@ export const useRealtimeChat = () => {
         activeClient?.close();
         store.setStatus('connecting');
 
-        activeClient = createChatClient(resolveWebsocketUrl(), {
+        activeClient = createChatClient(getWebsocketUrl(), {
             onOpen: () => store.setStatus('open'),
             onClose: () => store.setStatus('closed'),
             onError: () => {

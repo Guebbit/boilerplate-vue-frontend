@@ -5,7 +5,7 @@ import { REALTIME_SSE_EVENT_NAMES } from '@types';
 
 let activeClient: ReturnType<typeof createSseClient> | undefined;
 
-const resolveSseUrl = () => import.meta.env.VITE_API_SSE ?? 'http://localhost:3000/observability/events';
+const getSseUrl = () => import.meta.env.VITE_API_SSE ?? 'http://localhost:3000/observability/events';
 
 export const useRealtimeObservability = () => {
     const store = useRealtimeObservabilityStore();
@@ -14,7 +14,7 @@ export const useRealtimeObservability = () => {
         activeClient?.close();
         store.setStatus('connecting');
 
-        activeClient = createSseClient(resolveSseUrl(), REALTIME_SSE_EVENT_NAMES, {
+        activeClient = createSseClient(getSseUrl(), REALTIME_SSE_EVENT_NAMES, {
             onOpen: () => store.setStatus('open'),
             onError: () => {
                 store.setStatus('error');
