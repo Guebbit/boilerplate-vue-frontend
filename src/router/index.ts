@@ -8,6 +8,7 @@ import accountRoutes from '@/features/account/routes';
 import adminRoutes from '@/features/admin/routes';
 import usersRoutes from '@/features/users/routes';
 import productsRoutes from '@/features/products/routes';
+import realtimeRoutes from '@/features/realtime/routes';
 import cartRoutes from '@/features/cart/routes';
 import ordersRoutes from '@/features/orders/routes';
 
@@ -34,22 +35,23 @@ const router = createRouter({
                 {
                     path: '',
                     name: 'Home',
-                    component: () => import('@/views/core/Home.vue')
+                    component: () => import('@/views/Home.vue')
                 },
                 {
                     path: 'playground',
                     name: 'Playground',
-                    component: () => import('@/views/core/Playground.vue')
+                    component: () => import('@/views/Playground.vue')
                 },
                 {
                     path: 'error/:status/:message?',
                     name: 'Error',
-                    component: () => import('@/views/core/Error.vue'),
+                    component: () => import('@/views/Error.vue'),
                     props: true
                 },
                 ...accountRoutes,
                 ...adminRoutes,
                 ...productsRoutes,
+                ...realtimeRoutes,
                 ...usersRoutes,
                 ...cartRoutes,
                 ...ordersRoutes,

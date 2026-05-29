@@ -16,6 +16,7 @@ See also: [PAIRING.md](./PAIRING.md) for FE/BE pairing rules, [AI_README.md](./A
 - [npm scripts](#npm-scripts)
 - [Validation gate](#validation-gate)
 - [OpenAPI contract flow](#openapi-contract-flow)
+- [AsyncAPI realtime flow](#asyncapi-realtime-flow)
 - [HTTP & error handling](#http--error-handling)
 - [Routing, auth & i18n](#routing-auth--i18n)
 - [Mocking with MSW](#mocking-with-msw)
@@ -74,6 +75,7 @@ Every tool below has a one-line "why we use it" + a link to its official documen
 | Tool                                                                                        | Why it's here                                              | Docs                                                                                              |
 | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | **[OpenAPI 3.x](https://www.openapis.org/)** (`openapi.yaml`)                               | Single source of truth for FE ⇄ BE contract                | [OpenAPI specification](https://spec.openapis.org/oas/latest.html)                                |
+| **[AsyncAPI 2.x](https://www.asyncapi.com/)** (`asyncapi.yaml`)                              | Single source of truth for SSE/WebSocket realtime contracts | [AsyncAPI specification](https://www.asyncapi.com/docs/reference/specification/latest)             |
 | **[openapi-typescript-codegen](https://github.com/ferdikoomen/openapi-typescript-codegen)** | Generates typed axios client into `/api`                   | [package readme](https://github.com/ferdikoomen/openapi-typescript-codegen#readme)                |
 | **[Axios](https://axios-http.com/)**                                                        | HTTP client used under the generated services              | [axios-http.com/docs](https://axios-http.com/docs/intro)                                          |
 | **[Zod](https://zod.dev/)**                                                                 | Runtime schema validation (forms, parsing untrusted input) | [zod.dev](https://zod.dev/)                                                                       |
@@ -153,6 +155,7 @@ flowchart LR
 Key principles:
 
 - **OpenAPI first.** `openapi.yaml` is the contract. Types and the axios client are generated from it.
+- **AsyncAPI for realtime.** `asyncapi.yaml` drives generated realtime payload types in `src/types/realtime.generated.ts`.
 - **Stores own data.** Views call composables/stores; stores call the generated API.
 - **Interceptors own error shape.** Every HTTP error becomes an `IResponseReject` envelope.
 - **Mocks are toggled by env.** MSW activates only when `VITE_API_MOCK_ENABLED=true`.
@@ -165,7 +168,7 @@ Key principles:
 src/
 ├── components/      reusable UI components (atoms/molecules/organisms)
 ├── composables/     generic, cross-feature composables
-├── features/        feature modules (account, admin, cart, orders, products, users)
+├── features/        feature modules (account, admin, cart, orders, products, realtime, users)
 │   └── <feature>/
 │       ├── components/
 │       ├── composables/
@@ -205,7 +208,8 @@ Reference: [`.env-example`](./.env-example).
 | `VITE_APP_PUBLIC_PATH`           | Public path served by Vite                                                                  |
 | `VITE_APP_BASE_URL`              | Router history base URL (optional)                                                          |
 | `VITE_API_URL`                   | Backend API base URL                                                                        |
-| `VITE_API_WEBSOCKET`             | WebSocket URL used by demo page (`ws://…`; `http://…` is auto-converted)                    |
+| `VITE_API_WEBSOCKET`             | WebSocket URL used by realtime playground chat (`ws://…`; `http://…` is auto-converted)      |
+| `VITE_API_SSE`                   | SSE URL used by realtime playground observability stream                                      |
 | `VITE_API_MOCK_ENABLED`          | Enable [MSW](https://mswjs.io/) mocking (`true`/`false`) — see [Mocking](#mocking-with-msw) |
 | `VITE_AXIOS_TIMEOUT`             | [Axios](https://axios-http.com/) timeout (ms)                                               |
 | `VITE_APP_DEBUG_ROUTER`          | Router debug logs in dev (`true`/`false`)                                                   |
@@ -234,6 +238,7 @@ Reference: [`.env-example`](./.env-example).
 | `npm run test:e2e`       | Start Vite (with MSW) + run [Cypress](https://www.cypress.io/) e2e             |
 | `npm run test`           | `test:unit` then `test:e2e`                                                    |
 | `npm run genapi`         | Regenerate `/api` client from `openapi.yaml`                                   |
+| `npm run genasyncapi`    | Regenerate `src/types/realtime.generated.ts` from `asyncapi.yaml`              |
 | `npm run complete`       | build + lint:fix + lint:openapi + prettier:fix + tests (local hardening)       |
 | `npm run complete:check` | build + lint + lint:openapi + prettier:check + tests (CI gate)                 |
 
@@ -280,6 +285,34 @@ Steps:
 3. `npm run genapi` — regenerates `/api` (commit the diff).
 4. Update store/view usages if any operation signatures changed.
 5. Sync with backend (see [PAIRING.md](./PAIRING.md)).
+
+---
+
+## AsyncAPI realtime flow
+
+`asyncapi.yaml` is the source of truth for frontend realtime contracts. Generated types stay under `src/types/*` and are consumed by realtime clients/composables/stores.
+
+```mermaid
+flowchart LR
+    A[asyncapi.yaml] --> G[npm run genasyncapi]
+    G --> T[src/types/realtime.generated.ts]
+    T --> C[src/realtime/* clients]
+    C --> S[src/stores/realtime*]
+    S --> V[Realtime playground view]
+```
+
+Current incremental rollout:
+
+1. **Contracts first**: update `openapi.yaml` / `asyncapi.yaml`.
+2. **Generate clients/types**: `npm run genapi` and `npm run genasyncapi`.
+3. **Playground-first integration**: route `/:locale/playground/realtime`.
+4. **Broader app integration**: wire feature flows after playground validation.
+
+Dev/test strategy for realtime:
+
+- HTTP stays mocked by MSW (`VITE_API_MOCK_ENABLED=true`).
+- SSE/WebSocket can be tested with lightweight fake adapters in unit tests.
+- Keep realtime logic in clients/composables/stores; keep views thin.
 
 ---
 
@@ -468,3 +501,4 @@ All types are driven by `openapi.yaml` (admin section) and reflected in:
 - Extend `useI18n` (or create a new one) to add custom helpers from `utils/i18n.ts`
 - From skeleton: bootstrap version
 - Do Lighthouse metrics tests
+├── realtime/        transport clients (SSE + WebSocket chat adapters)

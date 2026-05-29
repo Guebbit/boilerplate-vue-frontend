@@ -28,6 +28,7 @@
         "kill:port": "fuser -k 4173/tcp || true",
         "pretest:e2e": "npm run kill:port",
         "genapi": "rm -rf ./api && npx openapi-typescript-codegen --input openapi.yaml --output ./api --useUnionTypes",
+        "genasyncapi": "node scripts/genasyncapiTypes.mjs",
         "update:all": "npx npm-check-updates -u",
         "complete": "npm run build && npm run lint:fix && npm run lint:openapi && npm run prettier:fix && npm run test",
         "complete:check": "npm run build && npm run lint && npm run lint:openapi && npm run prettier:check && npm run test",
@@ -84,7 +85,8 @@
         "vitepress": "^1.6.4",
         "vitest": "^4.0.18",
         "vue-eslint-parser": "^10.4.0",
-        "vue-tsc": "^3.2.5"
+        "vue-tsc": "^3.2.5",
+        "yaml": "^2.8.1"
     },
     "msw": {
         "workerDirectory": [
