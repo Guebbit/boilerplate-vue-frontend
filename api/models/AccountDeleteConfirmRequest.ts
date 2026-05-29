@@ -2,9 +2,10 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type ErrorDetail = {
-    code: string;
-    message?: string;
-    details?: Record<string, any>;
+export type AccountDeleteConfirmRequest = {
+    /**
+     * One-time account deletion token (NOT a JWT).
+     */
+    token: string;
 };
 

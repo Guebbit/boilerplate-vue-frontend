@@ -2,18 +2,18 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { CreateProductRequestMultipart } from '../models/CreateProductRequestMultipart';
+import type { CreateProductRequest } from '../models/CreateProductRequest';
 import type { DeleteProductRequest } from '../models/DeleteProductRequest';
 import type { Id } from '../models/Id';
 import type { MessageResponse } from '../models/MessageResponse';
 import type { Page } from '../models/Page';
 import type { PageSize } from '../models/PageSize';
-import type { Product } from '../models/Product';
-import type { ProductsResponse } from '../models/ProductsResponse';
+import type { ProductEnvelope } from '../models/ProductEnvelope';
+import type { ProductsResponseEnvelope } from '../models/ProductsResponseEnvelope';
 import type { SearchProductsRequest } from '../models/SearchProductsRequest';
 import type { Text } from '../models/Text';
-import type { UpdateProductByIdRequestMultipart } from '../models/UpdateProductByIdRequestMultipart';
-import type { UpdateProductRequestMultipart } from '../models/UpdateProductRequestMultipart';
+import type { UpdateProductByIdRequest } from '../models/UpdateProductByIdRequest';
+import type { UpdateProductRequest } from '../models/UpdateProductRequest';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -27,7 +27,7 @@ export class ProductsService {
      * @param productId
      * @param minPrice
      * @param maxPrice
-     * @returns ProductsResponse Products page
+     * @returns ProductsResponseEnvelope Products page
      * @throws ApiError
      */
     public static listProducts(
@@ -37,7 +37,7 @@ export class ProductsService {
         productId?: Id,
         minPrice?: number,
         maxPrice?: number,
-    ): CancelablePromise<ProductsResponse> {
+    ): CancelablePromise<ProductsResponseEnvelope> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/products',
@@ -57,18 +57,18 @@ export class ProductsService {
     /**
      * Create product
      * Creates a new product with optional image upload
-     * @param formData
-     * @returns Product Created product
+     * @param requestBody
+     * @returns ProductEnvelope Created product
      * @throws ApiError
      */
     public static createProduct(
-        formData: CreateProductRequestMultipart,
-    ): CancelablePromise<Product> {
+        requestBody: CreateProductRequest,
+    ): CancelablePromise<ProductEnvelope> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/products',
-            formData: formData,
-            mediaType: 'multipart/form-data',
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 401: `Unauthorized`,
                 403: `Forbidden`,
@@ -80,18 +80,18 @@ export class ProductsService {
     /**
      * Edit product
      * Updates an existing product with optional image upload
-     * @param formData
-     * @returns Product Updated product
+     * @param requestBody
+     * @returns ProductEnvelope Updated product
      * @throws ApiError
      */
     public static updateProduct(
-        formData: UpdateProductRequestMultipart,
-    ): CancelablePromise<Product> {
+        requestBody: UpdateProductRequest,
+    ): CancelablePromise<ProductEnvelope> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/products',
-            formData: formData,
-            mediaType: 'multipart/form-data',
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 401: `Unauthorized`,
                 403: `Forbidden`,
@@ -129,12 +129,12 @@ export class ProductsService {
      * Product details
      * Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`.
      * @param id Resource identifier
-     * @returns Product Product
+     * @returns ProductEnvelope Product
      * @throws ApiError
      */
     public static getProductById(
         id: Id,
-    ): CancelablePromise<Product> {
+    ): CancelablePromise<ProductEnvelope> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/products/{id}',
@@ -151,22 +151,22 @@ export class ProductsService {
      * Edit product
      * Updates the product identified by `{id}` in the path with optional image upload. Functionally equivalent to `PUT /products` with the id in the body.
      * @param id Resource identifier
-     * @param formData
-     * @returns Product Updated product
+     * @param requestBody
+     * @returns ProductEnvelope Updated product
      * @throws ApiError
      */
     public static updateProductById(
         id: Id,
-        formData: UpdateProductByIdRequestMultipart,
-    ): CancelablePromise<Product> {
+        requestBody: UpdateProductByIdRequest,
+    ): CancelablePromise<ProductEnvelope> {
         return __request(OpenAPI, {
             method: 'PUT',
             url: '/products/{id}',
             path: {
                 'id': id,
             },
-            formData: formData,
-            mediaType: 'multipart/form-data',
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 401: `Unauthorized`,
                 404: `Resource not found`,
@@ -207,12 +207,12 @@ export class ProductsService {
      * Search products (DTO-friendly)
      * Searches and filters products via a JSON request body. Functionally equivalent to `GET /products` with query parameters.
      * @param requestBody
-     * @returns ProductsResponse Products search results
+     * @returns ProductsResponseEnvelope Products search results
      * @throws ApiError
      */
     public static searchProducts(
         requestBody: SearchProductsRequest,
-    ): CancelablePromise<ProductsResponse> {
+    ): CancelablePromise<ProductsResponseEnvelope> {
         return __request(OpenAPI, {
             method: 'POST',
             url: '/products/search',

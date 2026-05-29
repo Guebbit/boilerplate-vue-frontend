@@ -2,9 +2,9 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { AdminHealthResponse } from '../models/AdminHealthResponse';
-import type { AdminMetricsSummaryResponse } from '../models/AdminMetricsSummaryResponse';
-import type { AuditLogsResponse } from '../models/AuditLogsResponse';
+import type { AdminHealthResponseEnvelope } from '../models/AdminHealthResponseEnvelope';
+import type { AdminMetricsSummaryResponseEnvelope } from '../models/AdminMetricsSummaryResponseEnvelope';
+import type { AuditLogsResponseEnvelope } from '../models/AuditLogsResponseEnvelope';
 import type { MessageResponse } from '../models/MessageResponse';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -26,7 +26,7 @@ export class AdminService {
      * Prometheus metrics
      * Raw Prometheus text (exposition format 0.0.4).
      * Intended for Prometheus scraping, not for browser clients.
-     * Use `GET /admin/metrics/summary` for a JSON summary suitable for dashboards.
+     * Use `GET /admin/metrics` for a JSON summary suitable for dashboards.
      *
      * @returns string Prometheus exposition text
      * @throws ApiError
@@ -57,10 +57,10 @@ export class AdminService {
      * Includes uptime, database status, memory, integrations, and system info.
      * Requires admin role.
      *
-     * @returns AdminHealthResponse Health summary
+     * @returns AdminHealthResponseEnvelope Health summary
      * @throws ApiError
      */
-    public static getAdminHealth(): CancelablePromise<AdminHealthResponse> {
+    public static getAdminHealth(): CancelablePromise<AdminHealthResponseEnvelope> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/admin/health',
@@ -77,13 +77,13 @@ export class AdminService {
      * returned as structured JSON for dashboard KPI cards and charts.
      * Requires admin role.
      *
-     * @returns AdminMetricsSummaryResponse Metrics summary
+     * @returns AdminMetricsSummaryResponseEnvelope Metrics summary
      * @throws ApiError
      */
-    public static getAdminMetricsSummary(): CancelablePromise<AdminMetricsSummaryResponse> {
+    public static getAdminMetrics(): CancelablePromise<AdminMetricsSummaryResponseEnvelope> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/admin/metrics/summary',
+            url: '/admin/metrics',
             errors: {
                 401: `Unauthorized`,
                 403: `Forbidden`,
@@ -102,7 +102,7 @@ export class AdminService {
      * @param outcome Filter by outcome
      * @param since Return events after this ISO-8601 timestamp
      * @param limit Maximum number of events to return
-     * @returns AuditLogsResponse Audit events
+     * @returns AuditLogsResponseEnvelope Audit events
      * @throws ApiError
      */
     public static getAdminAuditLogs(
@@ -111,7 +111,7 @@ export class AdminService {
         outcome?: 'success' | 'failure',
         since?: string,
         limit: number = 50,
-    ): CancelablePromise<AuditLogsResponse> {
+    ): CancelablePromise<AuditLogsResponseEnvelope> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/admin/audit',

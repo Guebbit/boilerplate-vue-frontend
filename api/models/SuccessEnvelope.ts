@@ -2,7 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-export type MessageResponse = {
+export type SuccessEnvelope = {
     success: boolean;
     status: number;
     message: string;
