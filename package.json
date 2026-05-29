@@ -36,7 +36,8 @@
     },
     "dependencies": {
         "@guebbit/css-toolkit": "^1.4.1",
-        "@guebbit/vue-toolkit": "file:../vue-toolkit",
+        "@guebbit/js-toolkit": "^1.0.8",
+        "@guebbit/vue-toolkit": "^1.0.3",
         "@sentry/vue": "^10.51.0",
         "axios": "^1.13.6",
         "lucide-vue-next": "^1.0.0",

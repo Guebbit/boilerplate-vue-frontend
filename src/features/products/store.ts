@@ -92,7 +92,6 @@ export const useProductsStore = defineStore('products', () => {
                 ).then((response) => response.items),
             filters,
             page,
-            pageSizeValue,
             { forced }
         );
     };

@@ -13,12 +13,12 @@ import { parse } from 'yaml';
  */
 const require = createRequire(import.meta.url);
 const { TypeScriptGenerator, AsyncAPIInputProcessor } = require('@asyncapi/modelina');
-const { defaultModelNameConstraints } = require(
-    '@asyncapi/modelina/lib/cjs/generators/typescript/constrainer/ModelNameConstrainer.js'
-);
-const { defaultPropertyKeyConstraints } = require(
-    '@asyncapi/modelina/lib/cjs/generators/typescript/constrainer/PropertyKeyConstrainer.js'
-);
+const {
+    defaultModelNameConstraints
+} = require('@asyncapi/modelina/lib/cjs/generators/typescript/constrainer/ModelNameConstrainer.js');
+const {
+    defaultPropertyKeyConstraints
+} = require('@asyncapi/modelina/lib/cjs/generators/typescript/constrainer/PropertyKeyConstrainer.js');
 const { FormatHelpers } = require('@asyncapi/modelina/lib/cjs/helpers/index.js');
 
 /*
@@ -81,7 +81,7 @@ const allModels = await generator.generate(inputModel);
  * reference for nested objects/enums.  Message-payload anonymous models are excluded here
  * because message types are handled separately below.
  */
-const collectTransitiveRefs = (startNames, modelsByName) => {
+const collectTransitiveReferences = (startNames, modelsByName) => {
     const visited = new Set(startNames);
     const queue = [...startNames];
 
@@ -91,8 +91,8 @@ const collectTransitiveRefs = (startNames, modelsByName) => {
         if (!model) continue;
 
         // Extract all IAnonymousSchema_N identifiers referenced inside this model's source
-        const refs = model.result.match(/\bI[A-Za-z]\w*\b/g) ?? [];
-        for (const ref of refs) {
+        const references = model.result.match(/\bI[A-Za-z]\w*\b/g) ?? [];
+        for (const ref of references) {
             if (!visited.has(ref)) {
                 visited.add(ref);
                 queue.push(ref);
@@ -104,7 +104,7 @@ const collectTransitiveRefs = (startNames, modelsByName) => {
 };
 
 const modelsByName = new Map(allModels.map((m) => [m.modelName, m]));
-const requiredModelNames = collectTransitiveRefs(schemaNameSet, modelsByName);
+const requiredModelNames = collectTransitiveReferences(schemaNameSet, modelsByName);
 
 /*
  * Emit the schema section: named component schemas and their anonymous sub-types,
@@ -155,12 +155,18 @@ const schemaToType = (schema, depth = 0) => {
             return `${childIndentation}${safeKey}${optional}: ${schemaToType(propSchema, depth + 1)};`;
         });
 
-        if (typeof schema.additionalProperties === 'object' && !Array.isArray(schema.additionalProperties))
+        if (
+            typeof schema.additionalProperties === 'object' &&
+            !Array.isArray(schema.additionalProperties)
+        )
             properties.push(
                 `${childIndentation}[key: string]: ${schemaToType(schema.additionalProperties, depth + 1)};`
             );
 
-        if ((schema.additionalProperties === true || schema.additionalProperties === undefined) && properties.length === 0)
+        if (
+            (schema.additionalProperties === true || schema.additionalProperties === undefined) &&
+            properties.length === 0
+        )
             return 'Record<string, unknown>';
 
         return `{\n${properties.join('\n')}\n${indentation}}`;
@@ -176,7 +182,8 @@ const schemaToType = (schema, depth = 0) => {
 const messageTypeBlocks = Object.entries(messages).map(([messageName, message]) => {
     const typeName = `I${messageName}`;
     // $ref payload: reuse the already-generated named schema type
-    if (message.payload?.$ref) return `export type ${typeName} = ${refToTypeName(message.payload.$ref)};`;
+    if (message.payload?.$ref)
+        return `export type ${typeName} = ${refToTypeName(message.payload.$ref)};`;
     // Inline payload: expand the schema inline to keep the alias self-contained
     return `export type ${typeName} = ${schemaToType(message.payload, 0)};`;
 });
@@ -194,7 +201,8 @@ const realtimeChannelUnion =
         ? realtimeChannels.map((channel) => JSON.stringify(channel)).join(' | ')
         : 'never';
 
-const generatedSource = `/*
+const generatedSource = `/* eslint-disable @typescript-eslint/naming-convention, @typescript-eslint/no-explicit-any */
+/*
  * This file is auto-generated from asyncapi.yaml via @asyncapi/modelina.
  * Run \`npm run genasyncapi\` after AsyncAPI contract changes.
  */

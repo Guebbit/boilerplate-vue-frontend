@@ -31,7 +31,7 @@ vi.mock('@/utils/sockets.ts', () => ({
 
 describe('createChatClient', () => {
     it('sends join and message commands with AsyncAPI payload shapes', async () => {
-        const { createChatClient } = await import('@/realtime/chat/createChatClient');
+        const { createChatClient } = await import('@/utils/createChatClient');
         const client = createChatClient('ws://localhost:3000/ws/chat');
 
         client.sendJoin('alice');
@@ -58,31 +58,37 @@ describe('createChatClient', () => {
 
     it('dispatches parsed incoming chat events to typed callbacks', async () => {
         const onEvent = vi.fn();
-        const { createChatClient } = await import('@/realtime/chat/createChatClient');
+        const { createChatClient } = await import('@/utils/createChatClient');
 
         createChatClient('ws://localhost:3000/ws/chat', { onEvent });
 
-        socketMocks.getHandlers().onMessage?.({} as WebSocket, {
-            data: JSON.stringify({
-                channel: 'realtime.chat.event.joined',
-                payload: {
-                    type: 'chat:joined',
+        socketMocks.getHandlers().onMessage?.(
+            {} as WebSocket,
+            {
+                data: JSON.stringify({
+                    channel: 'realtime.chat.event.joined',
                     payload: {
-                        username: 'alice',
-                        room: 'general'
+                        type: 'chat:joined',
+                        payload: {
+                            username: 'alice',
+                            room: 'general'
+                        }
                     }
-                }
-            })
-        } as MessageEvent);
+                })
+            } as MessageEvent
+        );
 
-        socketMocks.getHandlers().onMessage?.({} as WebSocket, {
-            data: JSON.stringify({
-                type: 'chat:error',
-                payload: {
-                    message: 'Boom'
-                }
-            })
-        } as MessageEvent);
+        socketMocks.getHandlers().onMessage?.(
+            {} as WebSocket,
+            {
+                data: JSON.stringify({
+                    type: 'chat:error',
+                    payload: {
+                        message: 'Boom'
+                    }
+                })
+            } as MessageEvent
+        );
 
         expect(onEvent).toHaveBeenCalledWith('realtime.chat.event.joined', {
             type: 'chat:joined',

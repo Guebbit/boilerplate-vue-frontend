@@ -10,7 +10,8 @@ import { REALTIME_SSE_EVENT_NAMES } from '@types';
 let activeClient: ReturnType<typeof createSseClient> | undefined;
 
 /** Resolves the SSE endpoint URL from env, falling back to the local dev server. */
-const getSseUrl = () => import.meta.env.VITE_API_SSE ?? 'http://localhost:3000/observability/events';
+const getSseUrl = () =>
+    import.meta.env.VITE_API_SSE ?? 'http://localhost:3000/observability/events';
 
 /**
  * Composable that manages the SSE connection for the observability dashboard.

@@ -30,22 +30,23 @@ describe('createSseClient', () => {
         );
 
         const onEvent = vi.fn();
-        const { createSseClient } = await import('@/realtime/sse/createSseClient');
+        const { createSseClient } = await import('@/utils/createSseClient');
 
         createSseClient(
             'http://localhost:3000/observability/events',
-            ['observability.metrics.snapshot', 'observability.metrics.updated', 'observability.heartbeat'],
+            [
+                'observability.metrics.snapshot',
+                'observability.metrics.updated',
+                'observability.heartbeat'
+            ],
             {
                 onEvent
             }
         );
 
-        source.emit(
-            'observability.metrics.snapshot',
-            {
-                data: JSON.stringify({ timestamp: '2026-01-01T00:00:00.000Z' })
-            } as MessageEvent
-        );
+        source.emit('observability.metrics.snapshot', {
+            data: JSON.stringify({ timestamp: '2026-01-01T00:00:00.000Z' })
+        } as MessageEvent);
 
         expect(onEvent).toHaveBeenCalledWith('observability.metrics.snapshot', {
             timestamp: '2026-01-01T00:00:00.000Z'

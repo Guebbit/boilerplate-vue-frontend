@@ -108,7 +108,10 @@ const sendCommand = (ws: WebSocket, command: IChatCommand) => {
  *
  * @returns An {@link IChatClient} handle with typed send helpers and a `close` method.
  */
-export const createChatClient = (url: string, callbacks: IChatClientCallbacks = {}): IChatClient => {
+export const createChatClient = (
+    url: string,
+    callbacks: IChatClientCallbacks = {}
+): IChatClient => {
     const ws = createSocket(url, {
         onOpen: () => callbacks.onOpen?.(),
         onClose: (_, code, reason) => callbacks.onClose?.(code, reason),

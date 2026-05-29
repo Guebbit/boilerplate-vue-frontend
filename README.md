@@ -72,15 +72,15 @@ Every tool below has a one-line "why we use it" + a link to its official documen
 
 ### API & contract
 
-| Tool                                                                                        | Why it's here                                              | Docs                                                                                              |
-| ------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| **[OpenAPI 3.x](https://www.openapis.org/)** (`openapi.yaml`)                               | Single source of truth for FE ⇄ BE contract                | [OpenAPI specification](https://spec.openapis.org/oas/latest.html)                                |
-| **[AsyncAPI 2.x](https://www.asyncapi.com/)** (`asyncapi.yaml`)                              | Single source of truth for SSE/WebSocket realtime contracts | [AsyncAPI specification](https://www.asyncapi.com/docs/reference/specification/latest)             |
-| **[openapi-typescript-codegen](https://github.com/ferdikoomen/openapi-typescript-codegen)** | Generates typed axios client into `/api`                   | [package readme](https://github.com/ferdikoomen/openapi-typescript-codegen#readme)                |
-| **[Axios](https://axios-http.com/)**                                                        | HTTP client used under the generated services              | [axios-http.com/docs](https://axios-http.com/docs/intro)                                          |
-| **[Zod](https://zod.dev/)**                                                                 | Runtime schema validation (forms, parsing untrusted input) | [zod.dev](https://zod.dev/)                                                                       |
-| **[openapi-zod-client](https://github.com/astahmer/openapi-zod-client)**                    | Optional: generate Zod schemas from `openapi.yaml`         | [package readme](https://github.com/astahmer/openapi-zod-client#readme)                           |
-| **[Spectral](https://stoplight.io/open-source/spectral)**                                   | Lints `openapi.yaml` (rules in `spectral.yaml`)            | [meta.stoplight.io/docs/spectral](https://meta.stoplight.io/docs/spectral/674b27b261c3c-overview) |
+| Tool                                                                                        | Why it's here                                               | Docs                                                                                              |
+| ------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **[OpenAPI 3.x](https://www.openapis.org/)** (`openapi.yaml`)                               | Single source of truth for FE ⇄ BE contract                 | [OpenAPI specification](https://spec.openapis.org/oas/latest.html)                                |
+| **[AsyncAPI 2.x](https://www.asyncapi.com/)** (`asyncapi.yaml`)                             | Single source of truth for SSE/WebSocket realtime contracts | [AsyncAPI specification](https://www.asyncapi.com/docs/reference/specification/latest)            |
+| **[openapi-typescript-codegen](https://github.com/ferdikoomen/openapi-typescript-codegen)** | Generates typed axios client into `/api`                    | [package readme](https://github.com/ferdikoomen/openapi-typescript-codegen#readme)                |
+| **[Axios](https://axios-http.com/)**                                                        | HTTP client used under the generated services               | [axios-http.com/docs](https://axios-http.com/docs/intro)                                          |
+| **[Zod](https://zod.dev/)**                                                                 | Runtime schema validation (forms, parsing untrusted input)  | [zod.dev](https://zod.dev/)                                                                       |
+| **[openapi-zod-client](https://github.com/astahmer/openapi-zod-client)**                    | Optional: generate Zod schemas from `openapi.yaml`          | [package readme](https://github.com/astahmer/openapi-zod-client#readme)                           |
+| **[Spectral](https://stoplight.io/open-source/spectral)**                                   | Lints `openapi.yaml` (rules in `spectral.yaml`)             | [meta.stoplight.io/docs/spectral](https://meta.stoplight.io/docs/spectral/674b27b261c3c-overview) |
 
 ### Quality & tooling
 
@@ -208,8 +208,8 @@ Reference: [`.env-example`](./.env-example).
 | `VITE_APP_PUBLIC_PATH`           | Public path served by Vite                                                                  |
 | `VITE_APP_BASE_URL`              | Router history base URL (optional)                                                          |
 | `VITE_API_URL`                   | Backend API base URL                                                                        |
-| `VITE_API_WEBSOCKET`             | WebSocket URL used by realtime playground chat (`ws://…`; `http://…` is auto-converted)      |
-| `VITE_API_SSE`                   | SSE URL used by realtime playground observability stream                                      |
+| `VITE_API_WEBSOCKET`             | WebSocket URL used by realtime playground chat (`ws://…`; `http://…` is auto-converted)     |
+| `VITE_API_SSE`                   | SSE URL used by realtime playground observability stream                                    |
 | `VITE_API_MOCK_ENABLED`          | Enable [MSW](https://mswjs.io/) mocking (`true`/`false`) — see [Mocking](#mocking-with-msw) |
 | `VITE_AXIOS_TIMEOUT`             | [Axios](https://axios-http.com/) timeout (ms)                                               |
 | `VITE_APP_DEBUG_ROUTER`          | Router debug logs in dev (`true`/`false`)                                                   |
@@ -501,4 +501,4 @@ All types are driven by `openapi.yaml` (admin section) and reflected in:
 - Extend `useI18n` (or create a new one) to add custom helpers from `utils/i18n.ts`
 - From skeleton: bootstrap version
 - Do Lighthouse metrics tests
-├── realtime/        transport clients (SSE + WebSocket chat adapters)
+  ├── realtime/ transport clients (SSE + WebSocket chat adapters)

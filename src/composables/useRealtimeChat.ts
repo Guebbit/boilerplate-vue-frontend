@@ -1,6 +1,13 @@
 import { storeToRefs } from 'pinia';
 import { useRealtimeChatStore } from '@/stores/realtimeChat';
 import { createChatClient } from '@/utils/createChatClient';
+import type {
+    IChatMessageNewEvent,
+    IChatPresenceUpdatedEvent,
+    IChatJoinedEvent,
+    IChatErrorEvent,
+    IChatSystemUserJoinedEvent
+} from '@types';
 
 /**
  * Module-level singleton: ensures only one WebSocket is open at a time
@@ -49,50 +56,55 @@ export const useRealtimeChat = () => {
             },
             onEvent: (eventName, payload) => {
                 if (eventName === 'realtime.chat.event.message.new') {
+                    // TypeScript cannot narrow a conditional generic type at runtime; cast is safe
+                    const p = payload as IChatMessageNewEvent;
                     store.addEntry({
-                        id: payload.payload.id,
+                        id: p.payload.id,
                         kind: 'message',
-                        username: payload.payload.username,
-                        text: payload.payload.message,
-                        timestamp: payload.payload.timestamp
+                        username: p.payload.username,
+                        text: p.payload.message,
+                        timestamp: p.payload.timestamp
                     });
                     return;
                 }
 
                 if (eventName === 'realtime.chat.event.presence.updated') {
-                    store.setPresence(payload);
+                    store.setPresence(payload as IChatPresenceUpdatedEvent);
                     return;
                 }
 
                 if (eventName === 'realtime.chat.event.joined') {
-                    store.setJoined(payload);
+                    const p = payload as IChatJoinedEvent;
+                    store.setJoined(p);
                     store.addEntry({
                         id: `joined-${buildTimestamp()}`,
                         kind: 'system',
-                        text: `${payload.payload.username} joined ${payload.payload.room}`,
+                        text: `${p.payload.username} joined ${p.payload.room}`,
                         timestamp: buildTimestamp(),
-                        username: payload.payload.username
+                        username: p.payload.username
                     });
                     return;
                 }
 
                 if (eventName === 'realtime.chat.event.error') {
+                    const p = payload as IChatErrorEvent;
                     store.addEntry({
                         id: `error-${buildTimestamp()}`,
                         kind: 'error',
-                        text: payload.payload.message,
+                        text: p.payload.message,
                         timestamp: buildTimestamp()
                     });
-                    store.setError(payload.payload.message);
+                    store.setError(p.payload.message);
                     return;
                 }
 
                 // Fallback: treat unrecognised events as system messages
+                const p = payload as IChatSystemUserJoinedEvent;
                 store.addEntry({
                     id: `system-${buildTimestamp()}`,
                     kind: 'system',
-                    text: payload.payload.message,
-                    timestamp: payload.payload.timestamp
+                    text: p.payload.message,
+                    timestamp: p.payload.timestamp
                 });
             }
         });

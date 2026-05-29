@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention, @typescript-eslint/no-explicit-any */
 /*
  * This file is auto-generated from asyncapi.yaml via @asyncapi/modelina.
  * Run `npm run genasyncapi` after AsyncAPI contract changes.

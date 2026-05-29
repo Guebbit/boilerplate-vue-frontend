@@ -130,13 +130,13 @@ const formatDate = (iso: string) => {
                         <td class="admin-audit-cell-timestamp">
                             {{ formatDate(event.timestamp) }}
                         </td>
-                        <td class="admin-audit-cell-actor">{{ event.actorUserId }}</td>
+                        <td class="admin-audit-cell-actor">{{ event.actor_user_id }}</td>
                         <td>
                             <span
                                 class="admin-audit-badge"
-                                :class="`admin-audit-role-${event.actorRole}`"
+                                :class="`admin-audit-role-${event.actor_role}`"
                             >
-                                {{ event.actorRole }}
+                                {{ event.actor_role }}
                             </span>
                         </td>
                         <td class="admin-audit-cell-action">{{ event.action }}</td>
@@ -153,11 +153,11 @@ const formatDate = (iso: string) => {
                             </span>
                         </td>
                         <td>{{ event.ip ?? '—' }}</td>
-                        <td class="admin-audit-cell-id" :title="event.requestId">
-                            {{ truncateId(event.requestId) }}
+                        <td class="admin-audit-cell-id" :title="event.request_id">
+                            {{ truncateId(event.request_id) }}
                         </td>
-                        <td class="admin-audit-cell-id" :title="event.traceId">
-                            {{ truncateId(event.traceId) }}
+                        <td class="admin-audit-cell-id" :title="event.trace_id">
+                            {{ truncateId(event.trace_id) }}
                         </td>
                     </tr>
                 </tbody>

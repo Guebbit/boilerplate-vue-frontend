@@ -56,10 +56,7 @@ export const createSseClient = (
             const payload = parseJsonData((event as MessageEvent<string>).data);
             if (!payload) return;
 
-            callbacks.onEvent?.(
-                eventName,
-                payload as ISseEventPayload<typeof eventName>
-            );
+            callbacks.onEvent?.(eventName, payload as ISseEventPayload<typeof eventName>);
         });
     }
 
