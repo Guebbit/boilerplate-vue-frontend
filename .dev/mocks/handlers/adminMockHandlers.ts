@@ -86,17 +86,17 @@ const MOCK_AUDIT_EVENTS: AuditLogsResponse = {
 };
 
 export const registerAdminMockHandlers = (): HttpHandler[] => [
-    http.get(`${API_BASE}/admin/health`, () =>
+    http.get(`${API_BASE}/observability/health`, () =>
         toMockJsonResponse({
             ...MOCK_HEALTH_RESPONSE,
             data: { ...MOCK_HEALTH_RESPONSE.data, timestamp: getIsoDateNow() }
         })
     ),
-    http.get(`${API_BASE}/admin/metrics/summary`, () =>
+    http.get(`${API_BASE}/observability/metrics/overview`, () =>
         toMockJsonResponse({
             ...MOCK_METRICS_RESPONSE,
             data: { ...MOCK_METRICS_RESPONSE.data, timestamp: getIsoDateNow() }
         })
     ),
-    http.get(`${API_BASE}/admin/audit`, () => toMockJsonResponse(MOCK_AUDIT_EVENTS))
+    http.get(`${API_BASE}/observability/audit`, () => toMockJsonResponse(MOCK_AUDIT_EVENTS))
 ];

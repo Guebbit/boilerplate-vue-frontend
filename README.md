@@ -2,7 +2,7 @@
 
 > Vue 3 + TypeScript SPA boilerplate, OpenAPI-first, paired with [`boilerplate-node-backend`](https://github.com/Guebbit/boilerplate-node-backend).
 
-See also: [PAIRING.md](./PAIRING.md) for FE/BE pairing rules, [AI_README.md](./AI_README.md) for AI-agent guidance.
+See also: [PAIRING.md](./PAIRING.md) for FE/BE pairing rules.
 
 ---
 
@@ -436,10 +436,10 @@ Route: `/:locale/admin` — requires admin role (non-admins are redirected Home)
 
 Fetches live data from two contract-defined endpoints:
 
-| Endpoint                     | What it shows                                                                                |
-| ---------------------------- | -------------------------------------------------------------------------------------------- |
-| `GET /admin/health`          | API status, database status, uptime, memory, integrations (Loki, PostHog, OTEL), system info |
-| `GET /admin/metrics/summary` | HTTP totals, error rate, in-flight requests, p50/p95 latency, auth events, business events   |
+| Endpoint                              | What it shows                                                                                |
+| ------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `GET /observability/health`           | API status, database status, uptime, memory, integrations (Loki, PostHog, OTEL), system info |
+| `GET /observability/metrics/overview` | HTTP totals, error rate, in-flight requests, p50/p95 latency, auth events, business events   |
 
 KPI cards at the top give an instant health snapshot:
 
@@ -456,7 +456,7 @@ KPI cards at the top give an instant health snapshot:
 
 ### Audit Log tab
 
-Fetches from `GET /admin/audit` with optional filters:
+Fetches from `GET /observability/audit` with optional filters:
 
 - **Actor** — filter by user ID
 - **Action** — dot-notation action (e.g. `auth.login.failed`)
@@ -467,7 +467,7 @@ Displays a colour-coded table with truncated request/trace IDs (hover for full v
 
 ### Data contract
 
-All types are driven by `openapi.yaml` (admin section) and reflected in:
+All types are driven by `openapi.yaml` (observability section) and reflected in:
 
 - `api/api.ts` — generated interfaces (`AdminHealth`, `AdminMetricsSummary`, `AuditEventItem`, …)
 - `src/features/admin/types.ts` — FE view-model types (`IAdminKpi`, `IAdminAuditFilters`)
@@ -480,7 +480,7 @@ All types are driven by `openapi.yaml` (admin section) and reflected in:
 
 - Fix tests
 - Signup should send an email with a link to confirm the account
-  (CHECK `api-mongodb-mongoose` — currently it just creates the user)
+  (CHECK backend `main` — currently it just creates the user)
     - Create the registration confirmation page
 - Create the reset password page and reset password confirm page
 - Add image upload in the various forms

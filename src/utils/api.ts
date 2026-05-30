@@ -22,9 +22,9 @@ OpenAPI.HEADERS = async () => ({ 'Accept-Language': getCurrentLocale() });
  */
 export {
     AccountService,
-    AdminService,
     AuthService,
     CartService,
+    ObservabilityService,
     OrdersService,
     ProductsService,
     UsersService

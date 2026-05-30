@@ -2,14 +2,14 @@
 
 Quick reference for working with the paired backend boilerplate.
 
-See also: [README.md](./README.md) (frontend overview) · [AI_README.md](./AI_README.md) (AI-agent guidance).
+See also: [README.md](./README.md) (frontend overview).
 
 ## Paired repositories
 
-| Side     | Repository                         | Default branch         |
-| -------- | ---------------------------------- | ---------------------- |
-| Frontend | `Guebbit/boilerplate-vue-frontend` | `main`                 |
-| Backend  | `Guebbit/boilerplate-node-backend` | `api-mongodb-mongoose` |
+| Side     | Repository                         | Default branch |
+| -------- | ---------------------------------- | -------------- |
+| Frontend | `Guebbit/boilerplate-vue-frontend` | `main`         |
+| Backend  | `Guebbit/boilerplate-node-backend` | `main`         |
 
 Keep the paired branches in sync before merging contract changes.
 
