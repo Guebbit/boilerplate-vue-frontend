@@ -24,12 +24,14 @@ const restoreTokenIfNeeded = () => {
  * Safe to use as a global guard or on public routes that show different
  * content depending on whether the visitor is an authenticated user or admin.
  */
-export const tryRestoreAuth = () => {
+export const tryRestoreAuth = (): Promise<void> => {
     const store = useProfileStore();
     return restoreTokenIfNeeded()
         .then(() => {
             if (store.accessToken) return store.fetchProfile();
         })
+        // Discard the User return value so the guard resolves to void (NavigationGuardReturn)
+        .then(() => {})
         .catch(() => {});
 };
 
