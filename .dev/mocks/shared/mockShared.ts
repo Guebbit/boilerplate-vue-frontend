@@ -20,6 +20,14 @@ export const createMessageResponse = (message: string): MessageResponse => ({
     message
 });
 
+// Wrap any payload in the standard success envelope expected by the OpenAPI-generated services.
+export const createSuccessEnvelope = <T>(data: T) => ({
+    success: true as const,
+    status: 200,
+    message: 'success',
+    data
+});
+
 const parseValue = (value: FormDataEntryValue | unknown) => {
     if (value === 'true') return true;
     if (value === 'false') return false;

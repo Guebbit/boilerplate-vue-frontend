@@ -1,10 +1,11 @@
 import { http, type HttpHandler } from 'msw';
-import type { CartItem, Order, OrdersResponse, UpdateOrderByIdRequest, UpdateOrderRequest } from '@/types';
+import type { CartItem, Order, UpdateOrderByIdRequest, UpdateOrderRequest } from '@/types';
 import {
     cartItemToOrderItem,
     createMessageResponse,
     createMockInvoicePdf,
     createMockOrder,
+    createSuccessEnvelope,
     getIsoDateNow,
     getQueryParameters,
     mockDatabase,
@@ -34,10 +35,10 @@ const replyOrdersList = (url: string | undefined, parameters?: unknown) => {
         return true;
     });
 
-    return toMockJsonResponse<OrdersResponse>({
+    return toMockJsonResponse(createSuccessEnvelope({
         items: slicePaginatedData(filteredItems, page, pageSize),
         meta: toPaginationMeta(filteredItems.length, page, pageSize)
-    });
+    }));
 };
 
 export const registerOrdersMockHandlers = (): HttpHandler[] => {
@@ -62,7 +63,7 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
             });
 
             mockDatabase.sampleOrders.unshift(createdOrder);
-            return toMockJsonResponse(createdOrder, { status: 201 });
+            return toMockJsonResponse(createSuccessEnvelope(createdOrder), { status: 201 });
         }),
         http.put(`${API_BASE}/orders`, async ({ request }) => {
             const requestBody = await readRequestBody<UpdateOrderRequest>(request);
@@ -86,7 +87,7 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
             };
 
             mockDatabase.sampleOrders[targetIndex] = updatedOrder;
-            return toMockJsonResponse(updatedOrder);
+            return toMockJsonResponse(createSuccessEnvelope(updatedOrder));
         }),
         http.delete(`${API_BASE}/orders`, async ({ request }) => {
             const requestBody = await readRequestBody<Record<string, unknown>>(request);
@@ -116,7 +117,7 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
                     { status: 404 }
                 );
 
-            return toMockJsonResponse(targetOrder);
+            return toMockJsonResponse(createSuccessEnvelope(targetOrder));
         }),
         http.put(`${API_BASE}/orders/:orderId`, async ({ request, params }) => {
             const orderId = String(params.orderId);
@@ -141,7 +142,7 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
             };
 
             mockDatabase.sampleOrders[targetIndex] = updatedOrder;
-            return toMockJsonResponse(updatedOrder);
+            return toMockJsonResponse(createSuccessEnvelope(updatedOrder));
         }),
         http.delete(`${API_BASE}/orders/:orderId`, ({ params }) => {
             const orderId = String(params.orderId);
