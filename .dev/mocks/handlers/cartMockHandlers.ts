@@ -2,6 +2,7 @@ import { http, type HttpHandler } from 'msw';
 import {
     cartItemToOrderItem,
     createMockOrder,
+    createSuccessEnvelope,
     getCartResponse,
     calculateCartSummary,
     mockDatabase,
@@ -12,8 +13,8 @@ import { toMockJsonResponse } from '../shared/mockTransport.ts';
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
 export const registerCartMockHandlers = (): HttpHandler[] => [
-    http.get(`${API_BASE}/cart/summary`, () => toMockJsonResponse(calculateCartSummary())),
-    http.get(`${API_BASE}/cart`, () => toMockJsonResponse(getCartResponse())),
+    http.get(`${API_BASE}/cart/summary`, () => toMockJsonResponse(createSuccessEnvelope(calculateCartSummary()))),
+    http.get(`${API_BASE}/cart`, () => toMockJsonResponse(createSuccessEnvelope(getCartResponse()))),
     http.post(`${API_BASE}/cart`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const productId = String(requestBody.productId ?? '');
@@ -36,7 +37,7 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
                 quantity || mockDatabase.sampleCartItems[existingItemIndex].quantity;
 
         mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter((item) => item.quantity > 0);
-        return toMockJsonResponse(getCartResponse());
+        return toMockJsonResponse(createSuccessEnvelope(getCartResponse()));
     }),
     http.delete(`${API_BASE}/cart`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
@@ -44,13 +45,13 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
 
         if (!productId) {
             mockDatabase.sampleCartItems = [];
-            return toMockJsonResponse(getCartResponse());
+            return toMockJsonResponse(createSuccessEnvelope(getCartResponse()));
         }
 
         mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter(
             (item) => item.productId !== productId
         );
-        return toMockJsonResponse(getCartResponse());
+        return toMockJsonResponse(createSuccessEnvelope(getCartResponse()));
     }),
     http.put(`${API_BASE}/cart/:productId`, async ({ request, params }) => {
         const productId = String(params.productId);
@@ -72,14 +73,14 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
         else mockDatabase.sampleCartItems[existingItemIndex].quantity = quantity;
 
         mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter((item) => item.quantity > 0);
-        return toMockJsonResponse(getCartResponse());
+        return toMockJsonResponse(createSuccessEnvelope(getCartResponse()));
     }),
     http.delete(`${API_BASE}/cart/:productId`, ({ params }) => {
         const productId = String(params.productId);
         mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter(
             (item) => item.productId !== productId
         );
-        return toMockJsonResponse(getCartResponse());
+        return toMockJsonResponse(createSuccessEnvelope(getCartResponse()));
     }),
     http.post(`${API_BASE}/cart/checkout`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
@@ -101,6 +102,6 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
 
         mockDatabase.sampleOrders.unshift(createdOrder);
         mockDatabase.sampleCartItems = [];
-        return toMockJsonResponse({ order: createdOrder, message: 'Checkout completed' }, { status: 201 });
+        return toMockJsonResponse(createSuccessEnvelope({ order: createdOrder, message: 'Checkout completed' }), { status: 201 });
     })
 ];

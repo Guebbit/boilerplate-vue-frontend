@@ -1,7 +1,8 @@
 import { http, type HttpHandler } from 'msw';
-import type { Product, ProductsResponse } from '@/types';
+import type { Product } from '@/types';
 import {
     createMessageResponse,
+    createSuccessEnvelope,
     getIsoDateNow,
     getQueryParameters,
     mockDatabase,
@@ -39,10 +40,10 @@ const replyProductsList = (url: string | undefined, parameters?: unknown) => {
         return true;
     });
 
-    return toMockJsonResponse<ProductsResponse>({
+    return toMockJsonResponse(createSuccessEnvelope({
         items: slicePaginatedData(filteredItems, page, pageSize),
         meta: toPaginationMeta(filteredItems.length, page, pageSize)
-    });
+    }));
 };
 
 export const registerProductsMockHandlers = (): HttpHandler[] => [
@@ -60,7 +61,7 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
             updatedAt: getIsoDateNow()
         };
         mockDatabase.sampleProducts.unshift(createdProduct);
-        return toMockJsonResponse(createdProduct, { status: 201 });
+        return toMockJsonResponse(createSuccessEnvelope(createdProduct), { status: 201 });
     }),
     http.put(`${API_BASE}/products`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
@@ -94,7 +95,7 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
         };
 
         mockDatabase.sampleProducts[targetIndex] = updatedProduct;
-        return toMockJsonResponse(updatedProduct);
+        return toMockJsonResponse(createSuccessEnvelope(updatedProduct));
     }),
     http.delete(`${API_BASE}/products`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
@@ -124,7 +125,7 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
                 { status: 404 }
             );
 
-        return toMockJsonResponse(targetProduct);
+        return toMockJsonResponse(createSuccessEnvelope(targetProduct));
     }),
     http.put(`${API_BASE}/products/:productId`, async ({ request, params }) => {
         const productId = String(params.productId);
@@ -158,7 +159,7 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
         };
 
         mockDatabase.sampleProducts[targetIndex] = updatedProduct;
-        return toMockJsonResponse(updatedProduct);
+        return toMockJsonResponse(createSuccessEnvelope(updatedProduct));
     }),
     http.delete(`${API_BASE}/products/:productId`, ({ params }) => {
         const productId = String(params.productId);
