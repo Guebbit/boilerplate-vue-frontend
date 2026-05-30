@@ -1,5 +1,5 @@
 import { ref, type Ref } from 'vue';
-import { AdminService } from '@/utils/api.ts';
+import { ObservabilityService } from '@/utils/api.ts';
 import type { AdminHealth, AdminMetricsSummary, AuditEventItem } from '@types';
 import type { IAdminAuditFilters } from '@/features/admin/types.ts';
 
@@ -24,9 +24,9 @@ export interface IUseAdminObservabilityReturn {
  * Unified composable for the Admin observability dashboard.
  *
  * It exposes the three contract-backed endpoints behind one shared state:
- * - GET /admin/health
- * - GET /admin/metrics/summary
- * - GET /admin/audit
+ * - GET /observability/health
+ * - GET /observability/metrics/overview
+ * - GET /observability/audit
  */
 export const useAdminObservability = (): IUseAdminObservabilityReturn => {
     const health = ref<AdminHealth | undefined>(undefined);
@@ -45,7 +45,7 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
     const fetchHealth = () => {
         loadingHealth.value = true;
         errorHealth.value = undefined;
-        return AdminService.getAdminHealth()
+        return ObservabilityService.getObservabilityHealth()
             .then((response) => {
                 health.value = response.data.data;
             })
@@ -61,7 +61,7 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
     const fetchMetrics = () => {
         loadingMetrics.value = true;
         errorMetrics.value = undefined;
-        return AdminService.getAdminMetrics()
+        return ObservabilityService.getObservabilityMetricsOverview()
             .then((response) => {
                 metrics.value = response.data.data;
             })
@@ -77,7 +77,7 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
     const fetchAuditLogs = (filters: IAdminAuditFilters = {}) => {
         loadingAudit.value = true;
         errorAudit.value = undefined;
-        return AdminService.getAdminAuditLogs(
+        return ObservabilityService.getObservabilityAuditLogs(
             filters.actor,
             filters.action,
             filters.outcome,
