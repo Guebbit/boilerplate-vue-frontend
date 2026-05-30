@@ -20,6 +20,20 @@ const restoreTokenIfNeeded = () => {
 };
 
 /**
+ * Silently restore auth state (token + profile) without redirecting.
+ * Safe to use as a global guard or on public routes that show different
+ * content depending on whether the visitor is an authenticated user or admin.
+ */
+export const tryRestoreAuth = () => {
+    const store = useProfileStore();
+    return restoreTokenIfNeeded()
+        .then(() => {
+            if (store.accessToken) return store.fetchProfile();
+        })
+        .catch(() => {});
+};
+
+/**
  * Check if user is a guest
  *
  * @param to

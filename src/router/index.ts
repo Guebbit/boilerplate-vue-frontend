@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, RouterView } from 'vue-router';
 import { demoMiddleware } from '@/middlewares/demoMiddleware';
 import { localeChoice } from '@/middlewares/localeChoice';
+import { tryRestoreAuth } from '@/middlewares/authentications.ts';
 import { getDefaultLocale } from '@/utils/i18n.ts';
 import { loginContinueTo } from '@/utils/navigation.ts';
 
@@ -131,12 +132,14 @@ router.onError((error: Error) => {
     });
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from) => {
     if (isRouterDebugEnabled) {
         // eslint-disable-next-line no-console
         console.log(`Navigating from ${from.path} to ${to.path}`);
     }
-    next();
+    // Silently restore token + profile on every navigation so that public pages
+    // (e.g. ProductsList) render the correct admin controls after a page reload.
+    return tryRestoreAuth();
 });
 
 router.beforeResolve(localeChoice);
