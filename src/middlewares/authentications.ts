@@ -26,13 +26,15 @@ const restoreTokenIfNeeded = () => {
  */
 export const tryRestoreAuth = (): Promise<void> => {
     const store = useProfileStore();
-    return restoreTokenIfNeeded()
-        .then(() => {
-            if (store.accessToken) return store.fetchProfile();
-        })
-        // Discard the User return value so the guard resolves to void (NavigationGuardReturn)
-        .then(() => {})
-        .catch(() => {});
+    return (
+        restoreTokenIfNeeded()
+            .then(() => {
+                if (store.accessToken) return store.fetchProfile();
+            })
+            // Discard the User return value so the guard resolves to void (NavigationGuardReturn)
+            .then(() => {})
+            .catch(() => {})
+    );
 };
 
 /**
