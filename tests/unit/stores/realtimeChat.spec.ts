@@ -77,7 +77,7 @@ describe('useRealtimeChatStore', () => {
 
         expect(store.entries).toHaveLength(100);
         // Oldest entries are dropped; the last entry should be the newest
-        expect(store.entries.at(-1).text).toBe('msg 109');
+        expect(store.entries.at(-1)?.text).toBe('msg 109');
     });
 
     it('stores the joined event via setJoined', () => {
