@@ -7,7 +7,7 @@ import httpClient from '@/utils/http.ts';
  *
  * httpClient already handles:
  * - Base URL (VITE_API_URL)
- * - ****** injection
+ * - Bearer token header injection
  * - Accept-Language header
  * - Cookie forwarding (refresh token)
  * - 401 -> token refresh -> retry logic
