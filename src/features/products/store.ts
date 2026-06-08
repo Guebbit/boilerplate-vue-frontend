@@ -4,7 +4,13 @@ import type { AxiosProgressEvent } from 'axios';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 
-import { ProductsService } from '@/utils/api.ts';
+import {
+    listProducts,
+    getProductById,
+    createProduct as apiCreateProduct,
+    updateProductById,
+    deleteProductById,
+} from '@/utils/api.ts';
 import httpClient from '@/utils/http.ts';
 import { toMultipartFormData, withOptionalMultipartUpload } from '@/utils/multipart.ts';
 import type {
@@ -44,7 +50,7 @@ export const useProductsStore = defineStore('products', () => {
      * @param forced
      */
     const fetchProducts = (forced = false) =>
-        fetchAll(() => ProductsService.listProducts().then((response) => response.data.items), {
+        fetchAll(() => listProducts().then((response) => response.data.items), {
             forced
         });
 
@@ -56,7 +62,7 @@ export const useProductsStore = defineStore('products', () => {
     const fetchPaginationProducts = (page = 1, pageSize = 10, forced = false) =>
         fetchAny(
             () =>
-                ProductsService.listProducts(page, pageSize).then(
+                listProducts({ page, pageSize }).then(
                     (response) => response.data.items
                 ),
             {
@@ -85,14 +91,14 @@ export const useProductsStore = defineStore('products', () => {
         pageSize.value = pageSizeValue;
         return fetchSearch(
             () =>
-                ProductsService.listProducts(
+                listProducts({
                     page,
-                    pageSizeValue,
-                    filters.text,
-                    filters.id,
-                    filters.minPrice,
-                    filters.maxPrice
-                ).then((response) => response.data.items),
+                    pageSize: pageSizeValue,
+                    text: filters.text,
+                    productId: filters.id,
+                    minPrice: filters.minPrice,
+                    maxPrice: filters.maxPrice,
+                }).then((response) => response.data.items),
             filters,
             page,
             { forced }
@@ -106,7 +112,7 @@ export const useProductsStore = defineStore('products', () => {
      */
     const fetchProduct = (productId: string, forced = false) =>
         fetchTarget(
-            () => ProductsService.getProductById(productId).then((response) => response.data),
+            () => getProductById(productId).then((response) => response.data),
             productId,
             { forced }
         );
@@ -123,7 +129,7 @@ export const useProductsStore = defineStore('products', () => {
                 sendMultipart: (formData) =>
                     httpClient.post<Product, Product>('/products', formData),
                 sendJson: () =>
-                    ProductsService.createProduct({
+                    apiCreateProduct({
                         title: productData.title,
                         price: productData.price,
                         description: productData.description,
@@ -188,7 +194,7 @@ export const useProductsStore = defineStore('products', () => {
                                 formData
                             ),
                         sendJson: () =>
-                            ProductsService.updateProductById(productId, {
+                            updateProductById(productId, {
                                 title: productData.title,
                                 price: productData.price,
                                 description: productData.description,
@@ -209,7 +215,7 @@ export const useProductsStore = defineStore('products', () => {
      * @param productId
      */
     const deleteProduct = (productId: string) =>
-        deleteTarget(() => ProductsService.deleteProductById(productId), productId);
+        deleteTarget(() => deleteProductById(productId), productId);
 
     /**
      * Zod schema for product title

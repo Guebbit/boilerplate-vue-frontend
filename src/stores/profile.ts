@@ -3,8 +3,18 @@ import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { i18n } from '@/utils/i18n.ts';
 import type { AuthTokens, RefreshTokenResponse, User } from '@types';
-import { AccountService, AuthService, UsersService } from '@/utils/api.ts';
-import type { AccountDeleteConfirmRequest } from '@api';
+import {
+    getAccount as apiGetAccount,
+    requestAccountDelete as apiRequestAccountDelete,
+    confirmAccountDelete as apiConfirmAccountDelete,
+    login as apiLogin,
+    signup as apiSignup,
+    requestPasswordReset as apiRequestPasswordReset,
+    confirmPasswordReset as apiConfirmPasswordReset,
+    refreshToken as apiRefreshToken,
+    logoutAll as apiLogoutAll,
+    updateUserById as apiUpdateUserById,
+} from '@/utils/api.ts';
 
 /**
  * Extract token from both wrapped ({ data: { token } }) and direct ({ token }) responses
@@ -78,7 +88,7 @@ export const useProfileStore = defineStore('profile', () => {
      */
     const login = (email: string, password: string) =>
         fetchAny(() =>
-            AuthService.login({ email, password })
+            apiLogin({ email, password })
                 .then((data) => {
                     accessToken.value = getTokenFromResponse(data);
                     setCookie('isAuth=true; path=/; SameSite=Lax');
@@ -100,7 +110,7 @@ export const useProfileStore = defineStore('profile', () => {
         passwordConfirm = password
     ) =>
         fetchAny(() =>
-            AuthService.signup({ email, username, password, passwordConfirm }).then((data) => {
+            apiSignup({ email, username, password, passwordConfirm }).then((data) => {
                 accessToken.value = getTokenFromResponse(data);
                 if (accessToken.value) setCookie('isAuth=true; path=/; SameSite=Lax');
             })
@@ -112,7 +122,7 @@ export const useProfileStore = defineStore('profile', () => {
      * @param email
      */
     const requestPasswordReset = (email: string) =>
-        fetchAny(() => AuthService.requestPasswordReset({ email }));
+        fetchAny(() => apiRequestPasswordReset({ email }));
 
     /**
      * Completes password reset using one-time token and the new password.
@@ -122,14 +132,14 @@ export const useProfileStore = defineStore('profile', () => {
      * @param passwordConfirm
      */
     const confirmPasswordReset = (token: string, password: string, passwordConfirm: string) =>
-        fetchAny(() => AuthService.confirmPasswordReset({ token, password, passwordConfirm }));
+        fetchAny(() => apiConfirmPasswordReset({ token, password, passwordConfirm }));
 
     /**
      * Refresh access token
      */
     const refreshToken = () =>
         fetchAny(() =>
-            AuthService.refreshToken().then((data) => {
+            apiRefreshToken().then((data) => {
                 accessToken.value = getTokenFromResponse(data);
             })
         );
@@ -144,7 +154,7 @@ export const useProfileStore = defineStore('profile', () => {
     const fetchProfile = (forced = false) => {
         return fetchTarget(
             () =>
-                AccountService.getAccount().then((data) => {
+                apiGetAccount().then((data) => {
                     const payload = getPayloadFromResponse<User>(data);
                     if (!payload) return;
                     // to handle single-target stores we just need to select the correct identifier
@@ -167,7 +177,7 @@ export const useProfileStore = defineStore('profile', () => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
         return updateTarget(
             () =>
-                UsersService.updateUserById(selectedIdentifier.value!, {
+                apiUpdateUserById(selectedIdentifier.value!, {
                     email: userData.email,
                     password: userData.password,
                     username: userData.username
@@ -195,7 +205,7 @@ export const useProfileStore = defineStore('profile', () => {
      */
     const logout = () => {
         // The httpOnly jwt cookie can only be cleared server-side; isAuth is JS-accessible.
-        return AuthService.logoutAll().then(() => {
+        return apiLogoutAll().then(() => {
             itemDictionary.value = {};
             selectedIdentifier.value = undefined;
             accessToken.value = undefined;
@@ -206,7 +216,7 @@ export const useProfileStore = defineStore('profile', () => {
     /**
      * Initiates account deletion flow, sends confirmation token to user's email.
      */
-    const requestAccountDelete = () => fetchAny(() => AccountService.requestAccountDelete());
+    const requestAccountDelete = () => fetchAny(() => apiRequestAccountDelete());
 
     /**
      * Completes account deletion using one-time token.
@@ -215,7 +225,7 @@ export const useProfileStore = defineStore('profile', () => {
      */
     const confirmAccountDelete = (token: string) =>
         fetchAny(() =>
-            AccountService.confirmAccountDelete({ token } as AccountDeleteConfirmRequest).then(
+            apiConfirmAccountDelete({ token }).then(
                 () => {
                     itemDictionary.value = {};
                     selectedIdentifier.value = undefined;

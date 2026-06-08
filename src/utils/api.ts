@@ -1,31 +1,116 @@
-import { OpenAPI } from '@api';
-import { getCurrentLocale } from '@/utils/i18n.ts';
+import { getEcommerceDemoAPI } from '@api';
 
 /**
- * Configure the openapi-typescript-codegen OpenAPI singleton.
- * The base URL is driven by the VITE_API_URL env variable.
- * The access token is resolved lazily at request time to avoid circular imports.
+ * Single instance of the orval-generated API factory.
+ * HTTP configuration (base URL, auth, language, refresh logic) lives in
+ * httpClient (http.ts), which the apiMutator (apiMutator.ts) delegates to.
  */
-OpenAPI.BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
-OpenAPI.WITH_CREDENTIALS = true;
-OpenAPI.CREDENTIALS = 'include';
-OpenAPI.TOKEN = async () => {
-    const { useProfileStore } = await import('@/stores/profile.ts');
-    return useProfileStore().accessToken ?? '';
-};
-// eslint-disable-next-line @typescript-eslint/naming-convention
-OpenAPI.HEADERS = async () => ({ 'Accept-Language': getCurrentLocale() });
+const {
+    getHealth,
+    getObservabilityEvents,
+    getObservabilityHealth,
+    getObservabilityMetrics,
+    getObservabilityMetricsOverview,
+    getObservabilityAuditLogs,
+    getAccount,
+    requestAccountDelete,
+    confirmAccountDelete,
+    login,
+    signup,
+    requestPasswordReset,
+    confirmPasswordReset,
+    refreshToken,
+    refreshTokenWithPath,
+    logoutAll,
+    deleteExpiredTokens,
+    listUsers,
+    createUser,
+    updateUser,
+    deleteUser,
+    getUserById,
+    updateUserById,
+    deleteUserById,
+    searchUsers,
+    createFeedbackRequest,
+    listFeedbackRequests,
+    updateFeedbackRequestStatus,
+    listProducts,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    getProductById,
+    updateProductById,
+    deleteProductById,
+    searchProducts,
+    getCart,
+    upsertCartItem,
+    clearCart,
+    updateCartItemById,
+    removeCartItem,
+    getCartSummary,
+    checkout,
+    listOrders,
+    createOrder,
+    updateOrder,
+    deleteOrder,
+    searchOrders,
+    getOrderById,
+    updateOrderById,
+    deleteOrderById,
+    getOrderInvoice,
+} = getEcommerceDemoAPI();
 
-/**
- * Re-export generated service classes so that callers can import from a single
- * location while being guaranteed that the OpenAPI singleton is already configured.
- */
 export {
-    AccountService,
-    AuthService,
-    CartService,
-    ObservabilityService,
-    OrdersService,
-    ProductsService,
-    UsersService
-} from '@api';
+    getHealth,
+    getObservabilityEvents,
+    getObservabilityHealth,
+    getObservabilityMetrics,
+    getObservabilityMetricsOverview,
+    getObservabilityAuditLogs,
+    getAccount,
+    requestAccountDelete,
+    confirmAccountDelete,
+    login,
+    signup,
+    requestPasswordReset,
+    confirmPasswordReset,
+    refreshToken,
+    refreshTokenWithPath,
+    logoutAll,
+    deleteExpiredTokens,
+    listUsers,
+    createUser,
+    updateUser,
+    deleteUser,
+    getUserById,
+    updateUserById,
+    deleteUserById,
+    searchUsers,
+    createFeedbackRequest,
+    listFeedbackRequests,
+    updateFeedbackRequestStatus,
+    listProducts,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    getProductById,
+    updateProductById,
+    deleteProductById,
+    searchProducts,
+    getCart,
+    upsertCartItem,
+    clearCart,
+    updateCartItemById,
+    removeCartItem,
+    getCartSummary,
+    checkout,
+    listOrders,
+    createOrder,
+    updateOrder,
+    deleteOrder,
+    searchOrders,
+    getOrderById,
+    updateOrderById,
+    deleteOrderById,
+    getOrderInvoice,
+};

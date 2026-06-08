@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
-import { CartService } from '@/utils/api.ts';
+import { getCart, upsertCartItem, updateCartItemById, removeCartItem, clearCart } from '@/utils/api.ts';
 import type { CartItem, CartResponse, CartSummaryResponse } from '@types';
 
 export const useCartStore = defineStore('cart', () => {
@@ -30,7 +30,7 @@ export const useCartStore = defineStore('cart', () => {
 
     const fetchCartItems = () =>
         fetchAny(() =>
-            CartService.getCart().then((response) => {
+            getCart().then((response) => {
                 cart.value = response.data;
                 return response.data;
             })
@@ -40,7 +40,7 @@ export const useCartStore = defineStore('cart', () => {
      */
     const fetchCart = () =>
         fetchAny(() =>
-            CartService.getCart().then((response) => {
+            getCart().then((response) => {
                 cart.value = response.data;
                 return response.data;
             })
@@ -52,9 +52,9 @@ export const useCartStore = defineStore('cart', () => {
      * @param productId
      * @param quantity
      */
-    const upsertCartItem = (productId: string, quantity: number) =>
+    const upsertCartItemAction = (productId: string, quantity: number) =>
         fetchAny(() =>
-            CartService.upsertCartItem({ productId, quantity }).then((response) => {
+            upsertCartItem({ productId, quantity }).then((response) => {
                 cart.value = response.data;
                 return response.data;
             })
@@ -68,7 +68,7 @@ export const useCartStore = defineStore('cart', () => {
      */
     const updateCartItem = (productId: string, quantity: number) =>
         fetchAny(() =>
-            CartService.updateCartItemById(productId, { quantity }).then((response) => {
+            updateCartItemById(productId, { quantity }).then((response) => {
                 cart.value = response.data;
                 return response.data;
             })
@@ -79,9 +79,9 @@ export const useCartStore = defineStore('cart', () => {
      *
      * @param productId
      */
-    const removeCartItem = (productId: string) =>
+    const removeCartItemAction = (productId: string) =>
         fetchAny(() =>
-            CartService.removeCartItem(productId).then((response) => {
+            removeCartItem(productId).then((response) => {
                 cart.value = response.data;
                 return response.data;
             })
@@ -94,9 +94,9 @@ export const useCartStore = defineStore('cart', () => {
      *
      * @param productId  When provided, only this product's line is removed
      */
-    const clearCart = (productId?: string) =>
+    const clearCartAction = (productId?: string) =>
         fetchAny(() =>
-            CartService.clearCart(productId ? { productId } : undefined).then((response) => {
+            clearCart(productId ? { productId } : undefined).then((response) => {
                 cart.value = response.data;
                 return response.data;
             })
@@ -110,9 +110,9 @@ export const useCartStore = defineStore('cart', () => {
 
         loading,
         fetchCart,
-        upsertCartItem,
+        upsertCartItem: upsertCartItemAction,
         updateCartItem,
-        removeCartItem,
-        clearCart
+        removeCartItem: removeCartItemAction,
+        clearCart: clearCartAction,
     };
 });

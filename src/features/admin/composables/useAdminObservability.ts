@@ -1,5 +1,9 @@
 import { ref, type Ref } from 'vue';
-import { ObservabilityService } from '@/utils/api.ts';
+import {
+    getObservabilityHealth,
+    getObservabilityMetricsOverview,
+    getObservabilityAuditLogs,
+} from '@/utils/api.ts';
 import type { AdminHealth, AdminMetricsSummary, AuditEventItem } from '@types';
 import type { IAdminAuditFilters } from '@/features/admin/types.ts';
 
@@ -45,7 +49,7 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
     const fetchHealth = () => {
         loadingHealth.value = true;
         errorHealth.value = undefined;
-        return ObservabilityService.getObservabilityHealth()
+        return getObservabilityHealth()
             .then((response) => {
                 health.value = response.data.data;
             })
@@ -61,7 +65,7 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
     const fetchMetrics = () => {
         loadingMetrics.value = true;
         errorMetrics.value = undefined;
-        return ObservabilityService.getObservabilityMetricsOverview()
+        return getObservabilityMetricsOverview()
             .then((response) => {
                 metrics.value = response.data.data;
             })
@@ -77,13 +81,13 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
     const fetchAuditLogs = (filters: IAdminAuditFilters = {}) => {
         loadingAudit.value = true;
         errorAudit.value = undefined;
-        return ObservabilityService.getObservabilityAuditLogs(
-            filters.actor,
-            filters.action,
-            filters.outcome,
-            filters.since,
-            filters.limit
-        )
+        return getObservabilityAuditLogs({
+            actor: filters.actor,
+            action: filters.action,
+            outcome: filters.outcome,
+            since: filters.since,
+            limit: filters.limit,
+        })
             .then((response) => {
                 auditEvents.value = response.data.data.items;
                 auditTotal.value = response.data.data.total;
