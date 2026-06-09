@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAdminObservability } from '@/features/admin/composables/useAdminObservability.ts';
 import type { AdminTabKey } from '@/features/admin/types.ts';
-import { AuthService } from '@/utils/api.ts';
+import { deleteExpiredTokens } from '@/utils/api.ts';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import AdminOverviewTab from '@/features/admin/components/AdminOverviewTab.vue';
@@ -43,7 +43,7 @@ const clearExpiredTokens = async () => {
     if (!shouldContinue) return;
     cleaningExpiredTokens.value = true;
     try {
-        await AuthService.deleteExpiredTokens();
+        await deleteExpiredTokens();
         addMessage(t('admin-page.success-clear-expired-tokens'));
     } catch {
         addMessage(t('admin-page.error-clear-expired-tokens'));
