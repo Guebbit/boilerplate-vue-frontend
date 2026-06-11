@@ -5,6 +5,7 @@ import { i18n } from '@/utils/i18n.ts';
 import type { AuthTokens, RefreshTokenResponse, User } from '@types';
 import { AccountService, AuthService, UsersService } from '@/utils/api.ts';
 import type { AccountDeleteConfirmRequest } from '@api';
+import { track, AnalyticsEvents } from '@/plugins/observability';
 
 /**
  * Extract token from both wrapped ({ data: { token } }) and direct ({ token }) responses
@@ -83,7 +84,10 @@ export const useProfileStore = defineStore('profile', () => {
                     accessToken.value = getTokenFromResponse(data);
                     setCookie('isAuth=true; path=/; SameSite=Lax');
                 })
-                .then(() => fetchProfile(true))
+                .then(() => {
+                    track(AnalyticsEvents.USER_LOGGED_IN, { email });
+                    return fetchProfile(true);
+                })
         );
 
     /**
@@ -92,6 +96,7 @@ export const useProfileStore = defineStore('profile', () => {
      * @param email
      * @param password
      * @param username
+     * @param passwordConfirm
      */
     const signup = (
         email: string,
@@ -102,7 +107,10 @@ export const useProfileStore = defineStore('profile', () => {
         fetchAny(() =>
             AuthService.signup({ email, username, password, passwordConfirm }).then((data) => {
                 accessToken.value = getTokenFromResponse(data);
-                if (accessToken.value) setCookie('isAuth=true; path=/; SameSite=Lax');
+                if (accessToken.value) {
+                    setCookie('isAuth=true; path=/; SameSite=Lax');
+                    track(AnalyticsEvents.USER_SIGNED_UP, { email, username });
+                }
             })
         );
 
@@ -195,6 +203,7 @@ export const useProfileStore = defineStore('profile', () => {
      */
     const logout = () => {
         // The httpOnly jwt cookie can only be cleared server-side; isAuth is JS-accessible.
+        track(AnalyticsEvents.USER_LOGGED_OUT);
         return AuthService.logoutAll().then(() => {
             itemDictionary.value = {};
             selectedIdentifier.value = undefined;

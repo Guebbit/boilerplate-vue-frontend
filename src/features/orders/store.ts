@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 import { OrdersService } from '@/utils/api.ts';
 import httpClient from '@/utils/http.ts';
+import { track, AnalyticsEvents } from '@/plugins/observability';
 import type {
     Order,
     CreateOrderRequest,
@@ -140,7 +141,16 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param checkoutData
      */
     const checkout = (checkoutData?: CheckoutRequest) =>
-        fetchAny(() => OrdersService.checkout(checkoutData).then((response) => response.data));
+        fetchAny(() =>
+            OrdersService.checkout(checkoutData)
+                .then((response) => {
+                    track(AnalyticsEvents.CHECKOUT_COMPLETED, {
+                        order_id: response.data?.order?.id,
+                        total: response.data?.order?.total
+                    });
+                    return response.data;
+                })
+        );
 
     /**
      * Delete an order by ID

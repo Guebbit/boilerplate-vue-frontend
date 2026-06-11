@@ -1,7 +1,7 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
-import * as Sentry from '@sentry/vue';
 import { i18n } from '@/utils/i18n.ts';
+import { initSentry, initPostHog, track, AnalyticsEvents } from '@/plugins/observability';
 
 import App from './App.vue';
 import router from './router';
@@ -21,31 +21,26 @@ const bootstrapApplication = async () => {
     await initializeApiMocking();
     const app = createApp(App);
 
-    // Sentry = error/performance monitoring.
-    // It helps you see crashes and slow pages in production.
-    const sentryDsn = (import.meta.env.VITE_SENTRY_DSN as string | undefined)?.trim();
-    const tracesSampleRateRaw =
-        (import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE as string | undefined) ?? '0';
-    const tracesSampleRateParsed = Number.parseFloat(tracesSampleRateRaw);
-    const tracesSampleRate = Number.isFinite(tracesSampleRateParsed)
-        ? Math.min(Math.max(tracesSampleRateParsed, 0), 1)
-        : 0;
-
-    // No DSN => Sentry stays off.
-    if (sentryDsn)
-        Sentry.init({
-            app,
-            dsn: sentryDsn,
-            environment: import.meta.env.MODE,
-            // 0 = no tracing, 1 = trace everything.
-            tracesSampleRate
-        });
-
     app.use(createPinia()).use(router).use(i18n).mount('#app');
+
+    // Track application mount
+    track(AnalyticsEvents.APP_STARTED);
+
+    // Sentry = error/performance monitoring.
+    // Initialised after the app is mounted so the router is available.
+    initSentry(router);
+
+    // PostHog = product analytics + feature flags.
+    // Initialised alongside Sentry so both collectors share the same bootstrap cycle.
+    initPostHog();
+
     await router.isReady();
     // Signal to Cypress (or any test runner) that the app is fully ready:
     // MSW is running, Vue is mounted, and the initial navigation has resolved.
     (globalThis as typeof globalThis & { _appReady?: boolean })._appReady = true;
+
+    // Track application fully ready
+    track(AnalyticsEvents.APP_READY);
 };
 
 void bootstrapApplication().catch((error) => {

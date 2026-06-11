@@ -4,6 +4,7 @@ import { localeChoice } from '@/middlewares/localeChoice';
 import { tryRestoreAuth } from '@/middlewares/authentications.ts';
 import { getDefaultLocale } from '@/utils/i18n.ts';
 import { loginContinueTo } from '@/utils/navigation.ts';
+import { track, AnalyticsEvents } from '@/plugins/observability';
 
 import accountRoutes from '@/features/account/routes';
 import adminRoutes from '@/features/admin/routes';
@@ -143,5 +144,15 @@ router.beforeEach((to, from) => {
 });
 
 router.beforeResolve(localeChoice);
+
+// Track page views for analytics
+router.afterEach((to) => {
+  track(AnalyticsEvents.PAGE_VIEW, {
+    path: to.path,
+    name: to.name as string,
+    params: to.params as Record<string, unknown>,
+    query: to.query as Record<string, unknown>
+  });
+});
 
 export default router;
