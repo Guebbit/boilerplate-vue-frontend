@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 import { OrdersService } from '@/utils/api.ts';
 import httpClient from '@/utils/http.ts';
-import { track, AnalyticsEvents } from '@/plugins/observability';
+import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
 import type {
     Order,
     CreateOrderRequest,
@@ -144,7 +144,8 @@ export const useOrdersStore = defineStore('orders', () => {
         fetchAny(() =>
             OrdersService.checkout(checkoutData)
                 .then((response) => {
-                    track(AnalyticsEvents.CHECKOUT_COMPLETED, {
+                    const obs = useObservabilityStore();
+                    obs.track(analyticsEvents.CHECKOUT_COMPLETED, {
                         order_id: response.data?.order?.id,
                         total: response.data?.order?.total
                     });

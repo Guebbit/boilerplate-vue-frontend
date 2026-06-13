@@ -3,7 +3,7 @@ import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { CartService } from '@/utils/api.ts';
 import type { CartItem, CartResponse, CartSummaryResponse } from '@types';
-import { track, AnalyticsEvents } from '@/plugins/observability';
+import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
 
 export const useCartStore = defineStore('cart', () => {
     const { getLoading, setLoading } = useCoreStore();
@@ -49,7 +49,8 @@ export const useCartStore = defineStore('cart', () => {
     const upsertCartItem = (productId: string, quantity: number) =>
         fetchAny(() =>
             CartService.upsertCartItem({ productId, quantity }).then((response) => {
-                track(AnalyticsEvents.ITEM_ADDED_TO_CART, { product_id: productId, quantity });
+                const obs = useObservabilityStore();
+                obs.track(analyticsEvents.ITEM_ADDED_TO_CART, { product_id: productId, quantity });
                 cart.value = response.data;
                 return response.data;
             })
@@ -77,7 +78,8 @@ export const useCartStore = defineStore('cart', () => {
     const removeCartItem = (productId: string) =>
         fetchAny(() =>
             CartService.removeCartItem(productId).then((response) => {
-                track(AnalyticsEvents.ITEM_REMOVED_FROM_CART, { product_id: productId });
+                const obs = useObservabilityStore();
+                obs.track(analyticsEvents.ITEM_REMOVED_FROM_CART, { product_id: productId });
                 cart.value = response.data;
                 return response.data;
             })
@@ -94,7 +96,8 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             CartService.clearCart(productId ? { productId } : undefined).then((response) => {
                 if (!productId) {
-                    track(AnalyticsEvents.CART_CLEARED);
+                    const obs = useObservabilityStore();
+                    obs.track(analyticsEvents.CART_CLEARED);
                 }
                 cart.value = response.data;
                 return response.data;

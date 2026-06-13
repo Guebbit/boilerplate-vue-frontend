@@ -4,7 +4,7 @@ import { localeChoice } from '@/middlewares/localeChoice';
 import { tryRestoreAuth } from '@/middlewares/authentications.ts';
 import { getDefaultLocale } from '@/utils/i18n.ts';
 import { loginContinueTo } from '@/utils/navigation.ts';
-import { track, AnalyticsEvents } from '@/plugins/observability';
+import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
 
 import accountRoutes from '@/features/account/routes';
 import adminRoutes from '@/features/admin/routes';
@@ -87,6 +87,15 @@ const router = createRouter({
 });
 
 router.onError((error: Error) => {
+    // Report unhandled router errors to Sentry (if initialised) so they are
+    // visible in the error dashboard rather than silently swallowed.
+    try {
+        const obs = useObservabilityStore();
+        obs.captureException(error);
+    } catch {
+        // Store may not be initialised yet in edge cases — ignore.
+    }
+
     const currentRoute = router.currentRoute.value;
     const locale =
         typeof currentRoute.params.locale === 'string'
@@ -147,12 +156,17 @@ router.beforeResolve(localeChoice);
 
 // Track page views for analytics
 router.afterEach((to) => {
-  track(AnalyticsEvents.PAGE_VIEW, {
-    path: to.path,
-    name: to.name as string,
-    params: to.params as Record<string, unknown>,
-    query: to.query as Record<string, unknown>
-  });
+  try {
+    const obs = useObservabilityStore();
+    obs.track(analyticsEvents.PAGE_VIEW, {
+      path: to.path,
+      name: to.name as string,
+      params: to.params as Record<string, unknown>,
+      query: to.query as Record<string, unknown>
+    });
+  } catch {
+    // Store may not be initialised yet — ignore.
+  }
 });
 
 export default router;

@@ -1,7 +1,7 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import { i18n } from '@/utils/i18n.ts';
-import { initSentry, initPostHog, track, AnalyticsEvents } from '@/plugins/observability';
+import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
 
 import App from './App.vue';
 import router from './router';
@@ -21,18 +21,22 @@ const bootstrapApplication = async () => {
     await initializeApiMocking();
     const app = createApp(App);
 
+    // Pinia must be registered before any store is instantiated.
     app.use(createPinia()).use(router).use(i18n).mount('#app');
 
-    // Track application mount
-    track(AnalyticsEvents.APP_STARTED);
+    // Obtain the observability store (Sentry + PostHog).
+    const observability = useObservabilityStore();
 
     // Sentry = error/performance monitoring.
     // Initialised after the app is mounted so the router is available.
-    initSentry(router);
+    observability.initSentry(router);
 
     // PostHog = product analytics + feature flags.
-    // Initialised alongside Sentry so both collectors share the same bootstrap cycle.
-    initPostHog();
+    // Must be initialised before any track() call, which is a no-op when posthogReady is false.
+    observability.initPostHog();
+
+    // Track application mount (after init so the event is not silently dropped).
+    observability.track(analyticsEvents.APP_STARTED);
 
     await router.isReady();
     // Signal to Cypress (or any test runner) that the app is fully ready:
@@ -40,7 +44,7 @@ const bootstrapApplication = async () => {
     (globalThis as typeof globalThis & { _appReady?: boolean })._appReady = true;
 
     // Track application fully ready
-    track(AnalyticsEvents.APP_READY);
+    observability.track(analyticsEvents.APP_READY);
 };
 
 void bootstrapApplication().catch((error) => {
