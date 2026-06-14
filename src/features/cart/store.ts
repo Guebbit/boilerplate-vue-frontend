@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { getCart, upsertCartItem, updateCartItemById, removeCartItem, clearCart } from '@/utils/api.ts';
 import type { CartItem, CartResponse, CartSummaryResponse } from '@types';
+import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
 
 export const useCartStore = defineStore('cart', () => {
     const { getLoading, setLoading } = useCoreStore();
@@ -28,13 +29,6 @@ export const useCartStore = defineStore('cart', () => {
      */
     const cartCount = computed(() => cartSummary.value?.itemsCount ?? 0);
 
-    const fetchCartItems = () =>
-        fetchAny(() =>
-            getCart().then((response) => {
-                cart.value = response.data;
-                return response.data;
-            })
-        );
     /**
      * Fetch the full cart
      */
@@ -55,6 +49,8 @@ export const useCartStore = defineStore('cart', () => {
     const upsertCartItemAction = (productId: string, quantity: number) =>
         fetchAny(() =>
             upsertCartItem({ productId, quantity }).then((response) => {
+                const obs = useObservabilityStore();
+                obs.track(analyticsEvents.ITEM_ADDED_TO_CART, { product_id: productId, quantity });
                 cart.value = response.data;
                 return response.data;
             })
@@ -82,6 +78,8 @@ export const useCartStore = defineStore('cart', () => {
     const removeCartItemAction = (productId: string) =>
         fetchAny(() =>
             removeCartItem(productId).then((response) => {
+                const obs = useObservabilityStore();
+                obs.track(analyticsEvents.ITEM_REMOVED_FROM_CART, { product_id: productId });
                 cart.value = response.data;
                 return response.data;
             })
@@ -97,6 +95,10 @@ export const useCartStore = defineStore('cart', () => {
     const clearCartAction = (productId?: string) =>
         fetchAny(() =>
             clearCart(productId ? { productId } : undefined).then((response) => {
+                if (!productId) {
+                    const obs = useObservabilityStore();
+                    obs.track(analyticsEvents.CART_CLEARED);
+                }
                 cart.value = response.data;
                 return response.data;
             })

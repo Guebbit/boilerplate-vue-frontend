@@ -2,8 +2,6 @@
 
 > Vue 3 + TypeScript SPA boilerplate, OpenAPI-first, paired with [`boilerplate-node-backend`](https://github.com/Guebbit/boilerplate-node-backend).
 
-See also: [PAIRING.md](./PAIRING.md) for FE/BE pairing rules.
-
 ---
 
 ## Table of contents
@@ -284,7 +282,13 @@ Steps:
 2. `npm run lint:openapi` — must be green.
 3. `npm run genapi` — regenerates `/api` (commit the diff).
 4. Update store/view usages if any operation signatures changed.
-5. Sync with backend (see [PAIRING.md](./PAIRING.md)).
+5. Sync with backend. Keep the paired branches in sync before merging contract changes.
+
+| Side     | Repository                         | Default branch |
+| -------- | ---------------------------------- | -------------- |
+| Frontend | `Guebbit/boilerplate-vue-frontend` | `main`         |
+| Backend  | `Guebbit/boilerplate-node-backend` | `main`         |
+
 
 ---
 
@@ -349,7 +353,7 @@ Conventions:
 - **`401`** = _not logged in_. Route-level failures redirect to Login with `?continue=` preserved; form/list actions show auth-focused messages instead of generic server errors.
 - **`403`** = _forbidden_. Shown as a clear authorization message (never as 500).
 - **`5xx`** = real server failure → `/error/500` flow.
-- Backend correlation headers (`x-request-id`, `x-trace-id`) are captured into `IResponseReject` for cross-service debugging — see [PAIRING.md](./PAIRING.md#request--trace-ids-in-errors).
+- Backend correlation headers (`x-request-id`, `x-trace-id`) are captured into `IResponseReject` for cross-service debugging.
 
 ---
 

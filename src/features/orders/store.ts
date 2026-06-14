@@ -11,6 +11,7 @@ import {
     checkout as apiCheckout,
 } from '@/utils/api.ts';
 import httpClient from '@/utils/http.ts';
+import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
 import type {
     Order,
     CreateOrderRequest,
@@ -146,7 +147,16 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param checkoutData
      */
     const checkout = (checkoutData?: CheckoutRequest) =>
-        fetchAny(() => apiCheckout(checkoutData).then((response) => response.data));
+        fetchAny(() =>
+            apiCheckout(checkoutData).then((response) => {
+                const obs = useObservabilityStore();
+                obs.track(analyticsEvents.CHECKOUT_COMPLETED, {
+                    order_id: response.data?.order?.id,
+                    total: response.data?.order?.total
+                });
+                return response.data;
+            })
+        );
 
     /**
      * Delete an order by ID

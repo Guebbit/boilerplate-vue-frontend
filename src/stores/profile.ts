@@ -2,7 +2,7 @@ import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { i18n } from '@/utils/i18n.ts';
-import type { AuthTokens, RefreshTokenResponse, User } from '@types';
+import type { User } from '@types';
 import {
     getAccount as apiGetAccount,
     requestAccountDelete as apiRequestAccountDelete,
@@ -15,6 +15,7 @@ import {
     logoutAll as apiLogoutAll,
     updateUserById as apiUpdateUserById,
 } from '@/utils/api.ts';
+import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
 
 /**
  * Extract token from both wrapped ({ data: { token } }) and direct ({ token }) responses
@@ -81,7 +82,6 @@ export const useProfileStore = defineStore('profile', () => {
 
     /**
      * Authenticate users
-     * TODO se l'utente non è ancora loggato non so con quale lingua restituire gli errori
      *
      * @param email
      * @param password
@@ -93,7 +93,11 @@ export const useProfileStore = defineStore('profile', () => {
                     accessToken.value = getTokenFromResponse(data);
                     setCookie('isAuth=true; path=/; SameSite=Lax');
                 })
-                .then(() => fetchProfile(true))
+                .then(() => {
+                    const obs = useObservabilityStore();
+                    obs.track(analyticsEvents.USER_LOGGED_IN, { method: 'email' });
+                    return fetchProfile(true);
+                })
         );
 
     /**
@@ -102,6 +106,7 @@ export const useProfileStore = defineStore('profile', () => {
      * @param email
      * @param password
      * @param username
+     * @param passwordConfirm
      */
     const signup = (
         email: string,
@@ -112,7 +117,11 @@ export const useProfileStore = defineStore('profile', () => {
         fetchAny(() =>
             apiSignup({ email, username, password, passwordConfirm }).then((data) => {
                 accessToken.value = getTokenFromResponse(data);
-                if (accessToken.value) setCookie('isAuth=true; path=/; SameSite=Lax');
+                if (accessToken.value) {
+                    setCookie('isAuth=true; path=/; SameSite=Lax');
+                    const obs = useObservabilityStore();
+                    obs.track(analyticsEvents.USER_SIGNED_UP, { method: 'email' });
+                }
             })
         );
 
@@ -159,6 +168,9 @@ export const useProfileStore = defineStore('profile', () => {
                     if (!payload) return;
                     // to handle single-target stores we just need to select the correct identifier
                     selectedIdentifier.value = payload.id;
+                    // Identify user in observability tools after profile is fetched
+                    const obs = useObservabilityStore();
+                    obs.identifyUser(payload.id, payload.email);
                     return payload;
                 }),
             undefined,
@@ -205,6 +217,9 @@ export const useProfileStore = defineStore('profile', () => {
      */
     const logout = () => {
         // The httpOnly jwt cookie can only be cleared server-side; isAuth is JS-accessible.
+        const obs = useObservabilityStore();
+        obs.track(analyticsEvents.USER_LOGGED_OUT);
+        obs.unidentifyUser();
         return apiLogoutAll().then(() => {
             itemDictionary.value = {};
             selectedIdentifier.value = undefined;
@@ -227,6 +242,9 @@ export const useProfileStore = defineStore('profile', () => {
         fetchAny(() =>
             apiConfirmAccountDelete({ token }).then(
                 () => {
+                    // Clear user identity from observability tools
+                    const obs = useObservabilityStore();
+                    obs.unidentifyUser();
                     itemDictionary.value = {};
                     selectedIdentifier.value = undefined;
                     accessToken.value = undefined;
