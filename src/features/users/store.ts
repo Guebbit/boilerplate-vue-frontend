@@ -2,7 +2,13 @@ import { defineStore } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
-import { UsersService } from '@/utils/api.ts';
+import {
+    listUsers,
+    getUserById,
+    createUser as apiCreateUser,
+    updateUserById,
+    deleteUserById,
+} from '@/utils/api.ts';
 import httpClient from '@/utils/http.ts';
 import { toMultipartFormData, withOptionalMultipartUpload } from '@/utils/multipart.ts';
 import type { AxiosProgressEvent } from 'axios';
@@ -46,7 +52,7 @@ export const useUsersStore = defineStore('users', () => {
      * @param forced
      */
     const fetchUsers = (forced = false) =>
-        fetchAll(() => UsersService.listUsers().then((response) => response.data.items), {
+        fetchAll(() => listUsers().then((response) => response.data.items), {
             forced
         });
 
@@ -57,7 +63,7 @@ export const useUsersStore = defineStore('users', () => {
      */
     const fetchPaginationUsers = (page = 1, pageSize = 10, forced = false) =>
         fetchAny(
-            () => UsersService.listUsers(page, pageSize).then((response) => response.data.items),
+            () => listUsers({ page, pageSize }).then((response) => response.data.items),
             {
                 forced
             }
@@ -85,15 +91,15 @@ export const useUsersStore = defineStore('users', () => {
         pageSize.value = pageSizeValue;
         return fetchSearch(
             () =>
-                UsersService.listUsers(
+                listUsers({
                     page,
-                    pageSizeValue,
-                    filters.text,
-                    filters.id,
-                    filters.email,
-                    filters.username,
-                    filters.active
-                ).then((response) => response.data.items),
+                    pageSize: pageSizeValue,
+                    text: filters.text,
+                    id: filters.id,
+                    email: filters.email,
+                    username: filters.username,
+                    active: filters.active,
+                }).then((response) => response.data.items),
             filters,
             page,
             { forced }
@@ -107,7 +113,7 @@ export const useUsersStore = defineStore('users', () => {
      */
     const fetchUser = (userId: string, forced = false) =>
         fetchTarget(
-            () => UsersService.getUserById(userId).then((response) => response.data),
+            () => getUserById(userId).then((response) => response.data),
             userId,
             {
                 forced
@@ -123,7 +129,7 @@ export const useUsersStore = defineStore('users', () => {
             withOptionalMultipartUpload<CreateUserRequestMultipart, User>(userData, {
                 sendMultipart: (formData) => httpClient.post<User, User>('/users', formData),
                 sendJson: () =>
-                    UsersService.createUser({
+                    apiCreateUser({
                         email: userData.email,
                         username: userData.username,
                         password: userData.password,
@@ -174,7 +180,7 @@ export const useUsersStore = defineStore('users', () => {
                             formData
                         ),
                     sendJson: () =>
-                        UsersService.updateUserById(userId, {
+                        updateUserById(userId, {
                             email: userData.email,
                             password: userData.password,
                             username: userData.username
@@ -193,7 +199,7 @@ export const useUsersStore = defineStore('users', () => {
      * @param userId
      */
     const deleteUser = (userId: string) =>
-        deleteTarget(() => UsersService.deleteUserById(userId), userId);
+        deleteTarget(() => deleteUserById(userId), userId);
 
     /**
      * Zod schema for a valid email

@@ -2,7 +2,14 @@ import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
-import { OrdersService } from '@/utils/api.ts';
+import {
+    listOrders,
+    getOrderById,
+    createOrder as apiCreateOrder,
+    updateOrderById,
+    deleteOrderById,
+    checkout as apiCheckout,
+} from '@/utils/api.ts';
 import httpClient from '@/utils/http.ts';
 import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
 import type {
@@ -45,7 +52,7 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param forced
      */
     const fetchOrders = (forced = false) =>
-        fetchAll(() => OrdersService.listOrders().then((response) => response.data.items), {
+        fetchAll(() => listOrders().then((response) => response.data.items), {
             forced
         });
 
@@ -56,7 +63,7 @@ export const useOrdersStore = defineStore('orders', () => {
      */
     const fetchPaginationOrders = (page = 1, pageSize = 10, forced = false) =>
         fetchAny(
-            () => OrdersService.listOrders(page, pageSize).then((response) => response.data.items),
+            () => listOrders({ page, pageSize }).then((response) => response.data.items),
             {
                 forced
             }
@@ -84,14 +91,14 @@ export const useOrdersStore = defineStore('orders', () => {
         pageSize.value = pageSizeValue;
         return fetchSearch(
             () =>
-                OrdersService.listOrders(
+                listOrders({
                     page,
-                    pageSizeValue,
-                    filters.id,
-                    filters.userId,
-                    filters.productId,
-                    filters.email
-                ).then((response) => response.data.items),
+                    pageSize: pageSizeValue,
+                    id: filters.id,
+                    userId: filters.userId,
+                    productId: filters.productId,
+                    email: filters.email,
+                }).then((response) => response.data.items),
             filters,
             page,
             { forced }
@@ -106,7 +113,7 @@ export const useOrdersStore = defineStore('orders', () => {
      */
     const fetchOrder = (orderId: string, forced = false) =>
         fetchTarget(
-            () => OrdersService.getOrderById(orderId).then((response) => response.data),
+            () => getOrderById(orderId).then((response) => response.data),
             orderId,
             {
                 forced
@@ -119,7 +126,7 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param orderData
      */
     const createOrder = (orderData: CreateOrderRequest) =>
-        createTarget(() => OrdersService.createOrder(orderData).then((response) => response.data));
+        createTarget(() => apiCreateOrder(orderData).then((response) => response.data));
 
     /**
      * Update an existing order by ID
@@ -129,8 +136,7 @@ export const useOrdersStore = defineStore('orders', () => {
      */
     const updateOrder = (orderId: string, orderData: UpdateOrderByIdRequest) =>
         updateTarget(
-            () =>
-                OrdersService.updateOrderById(orderId, orderData).then((response) => response.data),
+            () => updateOrderById(orderId, orderData).then((response) => response.data),
             orderData as Partial<Order>,
             orderId
         );
@@ -142,15 +148,14 @@ export const useOrdersStore = defineStore('orders', () => {
      */
     const checkout = (checkoutData?: CheckoutRequest) =>
         fetchAny(() =>
-            OrdersService.checkout(checkoutData)
-                .then((response) => {
-                    const obs = useObservabilityStore();
-                    obs.track(analyticsEvents.CHECKOUT_COMPLETED, {
-                        order_id: response.data?.order?.id,
-                        total: response.data?.order?.total
-                    });
-                    return response.data;
-                })
+            apiCheckout(checkoutData).then((response) => {
+                const obs = useObservabilityStore();
+                obs.track(analyticsEvents.CHECKOUT_COMPLETED, {
+                    order_id: response.data?.order?.id,
+                    total: response.data?.order?.total
+                });
+                return response.data;
+            })
         );
 
     /**
@@ -159,7 +164,7 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param orderId
      */
     const deleteOrder = (orderId: string) =>
-        deleteTarget(() => OrdersService.deleteOrderById(orderId), orderId);
+        deleteTarget(() => deleteOrderById(orderId), orderId);
 
     /**
      * Download order invoice (PDF binary)
