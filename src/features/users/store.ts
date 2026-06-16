@@ -7,7 +7,7 @@ import {
     getUserById,
     createUser as apiCreateUser,
     updateUserById,
-    deleteUserById,
+    deleteUserById
 } from '@/utils/api.ts';
 import httpClient from '@/utils/http.ts';
 import { toMultipartFormData, withOptionalMultipartUpload } from '@/utils/multipart.ts';
@@ -62,12 +62,9 @@ export const useUsersStore = defineStore('users', () => {
      * @param forced
      */
     const fetchPaginationUsers = (page = 1, pageSize = 10, forced = false) =>
-        fetchAny(
-            () => listUsers({ page, pageSize }).then((response) => response.data.items),
-            {
-                forced
-            }
-        );
+        fetchAny(() => listUsers({ page, pageSize }).then((response) => response.data.items), {
+            forced
+        });
 
     type IUsersFilters = Omit<SearchUsersRequest, 'page' | 'pageSize'>;
 
@@ -98,7 +95,7 @@ export const useUsersStore = defineStore('users', () => {
                     id: filters.id,
                     email: filters.email,
                     username: filters.username,
-                    active: filters.active,
+                    active: filters.active
                 }).then((response) => response.data.items),
             filters,
             page,
@@ -112,13 +109,9 @@ export const useUsersStore = defineStore('users', () => {
      * @param forced
      */
     const fetchUser = (userId: string, forced = false) =>
-        fetchTarget(
-            () => getUserById(userId).then((response) => response.data),
-            userId,
-            {
-                forced
-            }
-        );
+        fetchTarget(() => getUserById(userId).then((response) => response.data), userId, {
+            forced
+        });
 
     /**
      *
@@ -198,8 +191,7 @@ export const useUsersStore = defineStore('users', () => {
      *
      * @param userId
      */
-    const deleteUser = (userId: string) =>
-        deleteTarget(() => deleteUserById(userId), userId);
+    const deleteUser = (userId: string) => deleteTarget(() => deleteUserById(userId), userId);
 
     /**
      * Zod schema for a valid email

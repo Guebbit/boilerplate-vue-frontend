@@ -17,51 +17,51 @@ import posthog from 'posthog-js';
 // ─── Config types ────────────────────────────────────────────────────────────
 
 export interface ISentryConfig {
-  dsn: string;
-  environment: string;
-  tracesSampleRate: number;
-  replaysSessionSampleRate: number;
-  replaysOnErrorSampleRate: number;
-  debug: boolean;
+    dsn: string;
+    environment: string;
+    tracesSampleRate: number;
+    replaysSessionSampleRate: number;
+    replaysOnErrorSampleRate: number;
+    debug: boolean;
 }
 
 export interface IPostHogConfig {
-  apiKey: string;
-  apiHost: string;
-  debug: boolean;
+    apiKey: string;
+    apiHost: string;
+    debug: boolean;
 }
 
 // ─── Event catalog (moved from analytics.ts) ────────────────────────────────
 
 export const analyticsEvents = {
-  // Application Lifecycle
-  APP_STARTED: 'app_started',
-  APP_READY: 'app_ready',
+    // Application Lifecycle
+    APP_STARTED: 'app_started',
+    APP_READY: 'app_ready',
 
-  // Navigation
-  PAGE_VIEW: 'page_view',
+    // Navigation
+    PAGE_VIEW: 'page_view',
 
-  // Authentication
-  USER_SIGNED_UP: 'user_signed_up',
-  USER_LOGGED_IN: 'user_logged_in',
-  USER_LOGGED_OUT: 'user_logged_out',
+    // Authentication
+    USER_SIGNED_UP: 'user_signed_up',
+    USER_LOGGED_IN: 'user_logged_in',
+    USER_LOGGED_OUT: 'user_logged_out',
 
-  // Cart
-  ITEM_ADDED_TO_CART: 'item_added_to_cart',
-  ITEM_REMOVED_FROM_CART: 'item_removed_from_cart',
-  CART_CLEARED: 'cart_cleared',
+    // Cart
+    ITEM_ADDED_TO_CART: 'item_added_to_cart',
+    ITEM_REMOVED_FROM_CART: 'item_removed_from_cart',
+    CART_CLEARED: 'cart_cleared',
 
-  // Orders
-  ORDER_CHECKOUT_STARTED: 'order_checkout_started',
-  CHECKOUT_COMPLETED: 'checkout_completed',
-  ORDER_PLACED: 'order_placed',
+    // Orders
+    ORDER_CHECKOUT_STARTED: 'order_checkout_started',
+    CHECKOUT_COMPLETED: 'checkout_completed',
+    ORDER_PLACED: 'order_placed',
 
-  // Products
-  PRODUCT_VIEWED: 'product_viewed',
-  PRODUCT_SEARCHED: 'product_searched',
+    // Products
+    PRODUCT_VIEWED: 'product_viewed',
+    PRODUCT_SEARCHED: 'product_searched',
 
-  // Feedback
-  FEEDBACK_SUBMITTED: 'feedback_submitted',
+    // Feedback
+    FEEDBACK_SUBMITTED: 'feedback_submitted'
 } as const;
 
 export type AnalyticsEventName = (typeof analyticsEvents)[keyof typeof analyticsEvents];
@@ -69,384 +69,391 @@ export type AnalyticsEventName = (typeof analyticsEvents)[keyof typeof analytics
 // ─── Config readers ──────────────────────────────────────────────────────────
 
 function readSentryConfig(): ISentryConfig | undefined {
-  const dsn = (import.meta.env.VITE_SENTRY_DSN as string | undefined)?.trim();
+    const dsn = (import.meta.env.VITE_SENTRY_DSN as string | undefined)?.trim();
 
-  if (!dsn) {
-    return undefined;
-  }
+    if (!dsn) {
+        return undefined;
+    }
 
-  const tracesSampleRateRaw = (import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE as string | undefined) ?? '0';
-  const tracesSampleRate = Number.parseFloat(tracesSampleRateRaw);
+    const tracesSampleRateRaw =
+        (import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE as string | undefined) ?? '0';
+    const tracesSampleRate = Number.parseFloat(tracesSampleRateRaw);
 
-  const replaysSessionSampleRateRaw =
-    (import.meta.env.VITE_SENTRY_REPLAYS_SESSION_SAMPLE_RATE as string | undefined) ?? '0.1';
-  const replaysSessionSampleRate = Number.parseFloat(replaysSessionSampleRateRaw);
+    const replaysSessionSampleRateRaw =
+        (import.meta.env.VITE_SENTRY_REPLAYS_SESSION_SAMPLE_RATE as string | undefined) ?? '0.1';
+    const replaysSessionSampleRate = Number.parseFloat(replaysSessionSampleRateRaw);
 
-  const replaysOnErrorSampleRateRaw =
-    (import.meta.env.VITE_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE as string | undefined) ?? '1';
-  const replaysOnErrorSampleRate = Number.parseFloat(replaysOnErrorSampleRateRaw);
+    const replaysOnErrorSampleRateRaw =
+        (import.meta.env.VITE_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE as string | undefined) ?? '1';
+    const replaysOnErrorSampleRate = Number.parseFloat(replaysOnErrorSampleRateRaw);
 
-  const debug = (import.meta.env.VITE_SENTRY_DEBUG as string | undefined)?.toLowerCase() === 'true';
+    const debug =
+        (import.meta.env.VITE_SENTRY_DEBUG as string | undefined)?.toLowerCase() === 'true';
 
-  const environment =
-    (import.meta.env.VITE_SENTRY_ENVIRONMENT as string | undefined)?.trim() || import.meta.env.MODE;
+    const environment =
+        (import.meta.env.VITE_SENTRY_ENVIRONMENT as string | undefined)?.trim() ||
+        import.meta.env.MODE;
 
-  return {
-    dsn,
-    environment,
-    tracesSampleRate: Number.isFinite(tracesSampleRate) ? Math.min(Math.max(tracesSampleRate, 0), 1) : 0,
-    replaysSessionSampleRate: Number.isFinite(replaysSessionSampleRate)
-      ? Math.min(Math.max(replaysSessionSampleRate, 0), 1)
-      : 0.1,
-    replaysOnErrorSampleRate: Number.isFinite(replaysOnErrorSampleRate)
-      ? Math.min(Math.max(replaysOnErrorSampleRate, 0), 1)
-      : 1,
-    debug,
-  };
+    return {
+        dsn,
+        environment,
+        tracesSampleRate: Number.isFinite(tracesSampleRate)
+            ? Math.min(Math.max(tracesSampleRate, 0), 1)
+            : 0,
+        replaysSessionSampleRate: Number.isFinite(replaysSessionSampleRate)
+            ? Math.min(Math.max(replaysSessionSampleRate, 0), 1)
+            : 0.1,
+        replaysOnErrorSampleRate: Number.isFinite(replaysOnErrorSampleRate)
+            ? Math.min(Math.max(replaysOnErrorSampleRate, 0), 1)
+            : 1,
+        debug
+    };
 }
 
 function readPostHogConfig(): IPostHogConfig | undefined {
-  const apiKey = (import.meta.env.VITE_POSTHOG_API_KEY as string | undefined)?.trim();
+    const apiKey = (import.meta.env.VITE_POSTHOG_API_KEY as string | undefined)?.trim();
 
-  if (!apiKey) {
-    return undefined;
-  }
+    if (!apiKey) {
+        return undefined;
+    }
 
-  return {
-    apiKey,
-    apiHost: (import.meta.env.VITE_POSTHOG_API_HOST as string | undefined) ?? 'https://app.posthog.com',
-    debug: (import.meta.env.VITE_POSTHOG_DEBUG as string | undefined)?.toLowerCase() === 'true',
-  };
+    return {
+        apiKey,
+        apiHost:
+            (import.meta.env.VITE_POSTHOG_API_HOST as string | undefined) ??
+            'https://app.posthog.com',
+        debug: (import.meta.env.VITE_POSTHOG_DEBUG as string | undefined)?.toLowerCase() === 'true'
+    };
 }
 
 // ─── Store ───────────────────────────────────────────────────────────────────
 
 export const useObservabilityStore = defineStore('observability', () => {
-  // ── State ────────────────────────────────────────────────────────────────
+    // ── State ────────────────────────────────────────────────────────────────
 
-  const sentryReady = ref(false);
-  const posthogReady = ref(false);
+    const sentryReady = ref(false);
+    const posthogReady = ref(false);
 
-  // ── Sentry ───────────────────────────────────────────────────────────────
+    // ── Sentry ───────────────────────────────────────────────────────────────
 
-  /**
-   * Initialise Sentry with all integrations.
-   * Returns true when Sentry was initialised, false when disabled.
-   */
-  const initSentry = (router: Router | undefined): boolean => {
-    const config = readSentryConfig();
+    /**
+     * Initialise Sentry with all integrations.
+     * Returns true when Sentry was initialised, false when disabled.
+     */
+    const initSentry = (router: Router | undefined): boolean => {
+        const config = readSentryConfig();
 
-    if (!config) {
-      // eslint-disable-next-line no-console
-      console.debug('[Sentry] Disabled — no DSN configured');
-      return false;
-    }
-
-    const integrations = [
-      Sentry.browserTracingIntegration({
-        router,
-      }),
-      Sentry.replayIntegration({
-        maskAllText: true,
-        blockAllMedia: true,
-      }),
-    ];
-
-    Sentry.init({
-      dsn: config.dsn,
-      environment: config.environment,
-      tracesSampleRate: config.tracesSampleRate,
-      replaysSessionSampleRate: config.replaysSessionSampleRate,
-      replaysOnErrorSampleRate: config.replaysOnErrorSampleRate,
-      debug: config.debug,
-      integrations,
-      beforeSend(event) {
-        // Strip sensitive headers from error events
-        if (event.request?.headers) {
-          delete event.request.headers.authorization;
+        if (!config) {
+            // eslint-disable-next-line no-console
+            console.debug('[Sentry] Disabled — no DSN configured');
+            return false;
         }
-        return event;
-      },
-    });
 
-    // Register global tag
-    Sentry.getCurrentScope().setTag('app', 'boilerplate-vue-frontend');
+        const integrations = [
+            Sentry.browserTracingIntegration({
+                router
+            }),
+            Sentry.replayIntegration({
+                maskAllText: true,
+                blockAllMedia: true
+            })
+        ];
 
-    // Wire router tracking (setTransactionName on navigation)
-    if (router) {
-      setRouter(router);
-    }
+        Sentry.init({
+            dsn: config.dsn,
+            environment: config.environment,
+            tracesSampleRate: config.tracesSampleRate,
+            replaysSessionSampleRate: config.replaysSessionSampleRate,
+            replaysOnErrorSampleRate: config.replaysOnErrorSampleRate,
+            debug: config.debug,
+            integrations,
+            beforeSend(event) {
+                // Strip sensitive headers from error events
+                if (event.request?.headers) {
+                    delete event.request.headers.authorization;
+                }
+                return event;
+            }
+        });
 
-    sentryReady.value = true;
-    // eslint-disable-next-line no-console
-    console.debug('[Sentry] Initialized in', config.environment);
+        // Register global tag
+        Sentry.getCurrentScope().setTag('app', 'boilerplate-vue-frontend');
 
-    return true;
-  };
+        // Wire router tracking (setTransactionName on navigation)
+        if (router) {
+            setRouter(router);
+        }
 
-  /**
-   * Attach router to Sentry so navigation is traced.
-   * Safe to call before initSentry (no-op if Sentry is not initialised).
-   */
-  const setRouter = (router: Router): void => {
-    if (!sentryReady.value) {
-      return;
-    }
+        sentryReady.value = true;
+        // eslint-disable-next-line no-console
+        console.debug('[Sentry] Initialized in', config.environment);
 
-    router.afterEach((to) => {
-      Sentry.getCurrentScope().setTransactionName(to.name?.toString() ?? to.fullPath);
-    });
-  };
+        return true;
+    };
 
-  /**
-   * Identify the current user in Sentry.
-   */
-  const sentryIdentifyUser = (userId: string, email?: string): void => {
-    if (!sentryReady.value) {
-      return;
-    }
+    /**
+     * Attach router to Sentry so navigation is traced.
+     * Safe to call before initSentry (no-op if Sentry is not initialised).
+     */
+    const setRouter = (router: Router): void => {
+        if (!sentryReady.value) {
+            return;
+        }
 
-    Sentry.getCurrentScope().setUser({
-      id: userId,
-      email,
-    });
-  };
+        router.afterEach((to) => {
+            Sentry.getCurrentScope().setTransactionName(to.name?.toString() ?? to.fullPath);
+        });
+    };
 
-  /**
-   * Clear user context from Sentry.
-   */
-  const sentryUnidentifyUser = (): void => {
-    if (!sentryReady.value) {
-      return;
-    }
+    /**
+     * Identify the current user in Sentry.
+     */
+    const sentryIdentifyUser = (userId: string, email?: string): void => {
+        if (!sentryReady.value) {
+            return;
+        }
 
-    // eslint-disable-next-line unicorn/no-null
-    Sentry.getCurrentScope().setUser(null);
-  };
+        Sentry.getCurrentScope().setUser({
+            id: userId,
+            email
+        });
+    };
 
-  /**
-   * Attach custom properties to the current Sentry scope.
-   */
-  const sentrySetSessionProperties = (props: Record<string, unknown>): void => {
-    if (!sentryReady.value) {
-      return;
-    }
+    /**
+     * Clear user context from Sentry.
+     */
+    const sentryUnidentifyUser = (): void => {
+        if (!sentryReady.value) {
+            return;
+        }
 
-    const scope = Sentry.getCurrentScope();
-    for (const [key, value] of Object.entries(props)) {
-      scope.setExtra(key, value);
-    }
-  };
+        // eslint-disable-next-line unicorn/no-null
+        Sentry.getCurrentScope().setUser(null);
+    };
 
-  /**
-   * Capture an exception in Sentry.
-   */
-  const captureException = (error: unknown, hints?: { data?: Record<string, unknown> }): void => {
-    if (!sentryReady.value) {
-      return;
-    }
+    /**
+     * Attach custom properties to the current Sentry scope.
+     */
+    const sentrySetSessionProperties = (props: Record<string, unknown>): void => {
+        if (!sentryReady.value) {
+            return;
+        }
 
-    Sentry.captureException(error, hints);
-  };
+        const scope = Sentry.getCurrentScope();
+        for (const [key, value] of Object.entries(props)) {
+            scope.setExtra(key, value);
+        }
+    };
 
-  /**
-   * Reset Sentry state (useful for testing or logout).
-   */
-  const resetSentryState = (): void => {
-    Sentry.getCurrentScope().clear();
-    sentryReady.value = false;
-  };
+    /**
+     * Capture an exception in Sentry.
+     */
+    const captureException = (error: unknown, hints?: { data?: Record<string, unknown> }): void => {
+        if (!sentryReady.value) {
+            return;
+        }
 
-  // ── PostHog ──────────────────────────────────────────────────────────────
+        Sentry.captureException(error, hints);
+    };
 
-  /**
-   * Initialise PostHog.
-   * Returns true when PostHog was initialised, false when disabled.
-   */
-  const initPostHog = (): boolean => {
-    const config = readPostHogConfig();
+    /**
+     * Reset Sentry state (useful for testing or logout).
+     */
+    const resetSentryState = (): void => {
+        Sentry.getCurrentScope().clear();
+        sentryReady.value = false;
+    };
 
-    if (!config) {
-      // eslint-disable-next-line no-console
-      console.debug('[PostHog] Disabled — no API key configured');
-      return false;
-    }
+    // ── PostHog ──────────────────────────────────────────────────────────────
 
-    // FIX: capture_pageview: false to avoid double-tracking (router.afterEach is the single source of truth)
-    posthog.init(config.apiKey, {
-      api_host: config.apiHost,
-      debug: config.debug,
-      capture_pageview: false,
-      capture_pageleave: true,
-    });
+    /**
+     * Initialise PostHog.
+     * Returns true when PostHog was initialised, false when disabled.
+     */
+    const initPostHog = (): boolean => {
+        const config = readPostHogConfig();
 
-    posthogReady.value = true;
-    // eslint-disable-next-line no-console
-    console.debug('[PostHog] Initialized');
+        if (!config) {
+            // eslint-disable-next-line no-console
+            console.debug('[PostHog] Disabled — no API key configured');
+            return false;
+        }
 
-    return true;
-  };
+        // FIX: capture_pageview: false to avoid double-tracking (router.afterEach is the single source of truth)
+        posthog.init(config.apiKey, {
+            api_host: config.apiHost,
+            debug: config.debug,
+            capture_pageview: false,
+            capture_pageleave: true
+        });
 
-  /**
-   * Identify the current user in PostHog.
-   */
-  const posthogIdentifyUser = (userId: string, email?: string): void => {
-    if (!posthogReady.value) {
-      return;
-    }
+        posthogReady.value = true;
+        // eslint-disable-next-line no-console
+        console.debug('[PostHog] Initialized');
 
-    posthog.identify(userId, {
-      email,
-    });
-  };
+        return true;
+    };
 
-  /**
-   * Clear user context from PostHog.
-   */
-  const posthogUnidentifyUser = (): void => {
-    if (!posthogReady.value) {
-      return;
-    }
+    /**
+     * Identify the current user in PostHog.
+     */
+    const posthogIdentifyUser = (userId: string, email?: string): void => {
+        if (!posthogReady.value) {
+            return;
+        }
 
-    posthog.reset();
-  };
+        posthog.identify(userId, {
+            email
+        });
+    };
 
-  /**
-   * Attach custom user properties to the PostHog profile.
-   */
-  const setPostHogUserProperties = (props: Record<string, unknown>): void => {
-    if (!posthogReady.value) {
-      return;
-    }
+    /**
+     * Clear user context from PostHog.
+     */
+    const posthogUnidentifyUser = (): void => {
+        if (!posthogReady.value) {
+            return;
+        }
 
-    posthog.register(props);
-  };
+        posthog.reset();
+    };
 
-  /**
-   * Check whether a feature flag is enabled for the current user.
-   */
-  const isFeatureEnabled = (flagKey: string): boolean => {
-    if (!posthogReady.value) {
-      return false;
-    }
+    /**
+     * Attach custom user properties to the PostHog profile.
+     */
+    const setPostHogUserProperties = (props: Record<string, unknown>): void => {
+        if (!posthogReady.value) {
+            return;
+        }
 
-    return posthog.isFeatureEnabled(flagKey) ?? false;
-  };
+        posthog.register(props);
+    };
 
-  /**
-   * Reset PostHog state (useful for testing or logout).
-   */
-  const resetPostHogState = (): void => {
-    posthog.reset();
-    posthogReady.value = false;
-  };
+    /**
+     * Check whether a feature flag is enabled for the current user.
+     */
+    const isFeatureEnabled = (flagKey: string): boolean => {
+        if (!posthogReady.value) {
+            return false;
+        }
 
-  // ── Unified API ──────────────────────────────────────────────────────────
+        return posthog.isFeatureEnabled(flagKey) ?? false;
+    };
 
-  /**
-   * Track an analytics event (fires to PostHog if available).
-   */
-  const track = (event: AnalyticsEventName, properties?: Record<string, unknown>): void => {
-    if (!posthogReady.value) {
-      return;
-    }
+    /**
+     * Reset PostHog state (useful for testing or logout).
+     */
+    const resetPostHogState = (): void => {
+        posthog.reset();
+        posthogReady.value = false;
+    };
 
-    posthog.capture(event, properties);
-  };
+    // ── Unified API ──────────────────────────────────────────────────────────
 
-  /**
-   * Identify the current user across both Sentry and PostHog.
-   * Call after successful authentication.
-   */
-  const identifyUser = (userId: string, email?: string): void => {
-    sentryIdentifyUser(userId, email);
-    posthogIdentifyUser(userId, email);
-  };
+    /**
+     * Track an analytics event (fires to PostHog if available).
+     */
+    const track = (event: AnalyticsEventName, properties?: Record<string, unknown>): void => {
+        if (!posthogReady.value) {
+            return;
+        }
 
-  /**
-   * Clear user identity across both Sentry and PostHog.
-   * Call on logout / account deletion.
-   */
-  const unidentifyUser = (): void => {
-    sentryUnidentifyUser();
-    posthogUnidentifyUser();
-  };
+        posthog.capture(event, properties);
+    };
 
-  // ── Convenience helpers ──────────────────────────────────────────────────
+    /**
+     * Identify the current user across both Sentry and PostHog.
+     * Call after successful authentication.
+     */
+    const identifyUser = (userId: string, email?: string): void => {
+        sentryIdentifyUser(userId, email);
+        posthogIdentifyUser(userId, email);
+    };
 
-  /**
-   * Track a product view event.
-   */
-  const trackProductView = (productId: string, productName?: string): void => {
-    track(analyticsEvents.PRODUCT_VIEWED, {
-      product_id: productId,
-      product_name: productName,
-    });
-  };
+    /**
+     * Clear user identity across both Sentry and PostHog.
+     * Call on logout / account deletion.
+     */
+    const unidentifyUser = (): void => {
+        sentryUnidentifyUser();
+        posthogUnidentifyUser();
+    };
 
-  /**
-   * Track a cart addition event.
-   */
-  const trackItemAddedToCart = (productId: string, quantity: number): void => {
-    track(analyticsEvents.ITEM_ADDED_TO_CART, {
-      product_id: productId,
-      quantity,
-    });
-  };
+    // ── Convenience helpers ──────────────────────────────────────────────────
 
-  /**
-   * Track an order placement event.
-   */
-  const trackOrderPlaced = (orderId: string, totalAmount: number, itemCount: number): void => {
-    track(analyticsEvents.ORDER_PLACED, {
-      order_id: orderId,
-      total_amount: totalAmount,
-      item_count: itemCount,
-    });
-  };
+    /**
+     * Track a product view event.
+     */
+    const trackProductView = (productId: string, productName?: string): void => {
+        track(analyticsEvents.PRODUCT_VIEWED, {
+            product_id: productId,
+            product_name: productName
+        });
+    };
 
-  /**
-   * Track a product search event.
-   */
-  const trackProductSearched = (query: string): void => {
-    track(analyticsEvents.PRODUCT_SEARCHED, {
-      query,
-    });
-  };
+    /**
+     * Track a cart addition event.
+     */
+    const trackItemAddedToCart = (productId: string, quantity: number): void => {
+        track(analyticsEvents.ITEM_ADDED_TO_CART, {
+            product_id: productId,
+            quantity
+        });
+    };
 
-  return {
-    // State
-    sentryReady,
-    posthogReady,
+    /**
+     * Track an order placement event.
+     */
+    const trackOrderPlaced = (orderId: string, totalAmount: number, itemCount: number): void => {
+        track(analyticsEvents.ORDER_PLACED, {
+            order_id: orderId,
+            total_amount: totalAmount,
+            item_count: itemCount
+        });
+    };
 
-    // Init
-    initSentry,
-    initPostHog,
+    /**
+     * Track a product search event.
+     */
+    const trackProductSearched = (query: string): void => {
+        track(analyticsEvents.PRODUCT_SEARCHED, {
+            query
+        });
+    };
 
-    // Unified API
-    track,
-    identifyUser,
-    unidentifyUser,
-    captureException,
+    return {
+        // State
+        sentryReady,
+        posthogReady,
 
-    // Sentry-specific
-    setRouter,
-    sentryIdentifyUser,
-    sentryUnidentifyUser,
-    sentrySetSessionProperties,
-    resetSentryState,
+        // Init
+        initSentry,
+        initPostHog,
 
-    // PostHog-specific
-    posthogIdentifyUser,
-    posthogUnidentifyUser,
-    setPostHogUserProperties,
-    isFeatureEnabled,
-    resetPostHogState,
+        // Unified API
+        track,
+        identifyUser,
+        unidentifyUser,
+        captureException,
 
-    // Convenience helpers
-    trackProductView,
-    trackItemAddedToCart,
-    trackOrderPlaced,
-    trackProductSearched,
-  };
+        // Sentry-specific
+        setRouter,
+        sentryIdentifyUser,
+        sentryUnidentifyUser,
+        sentrySetSessionProperties,
+        resetSentryState,
+
+        // PostHog-specific
+        posthogIdentifyUser,
+        posthogUnidentifyUser,
+        setPostHogUserProperties,
+        isFeatureEnabled,
+        resetPostHogState,
+
+        // Convenience helpers
+        trackProductView,
+        trackItemAddedToCart,
+        trackOrderPlaced,
+        trackProductSearched
+    };
 });

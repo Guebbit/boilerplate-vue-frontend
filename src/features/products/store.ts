@@ -9,7 +9,7 @@ import {
     getProductById,
     createProduct as apiCreateProduct,
     updateProductById,
-    deleteProductById,
+    deleteProductById
 } from '@/utils/api.ts';
 import httpClient from '@/utils/http.ts';
 import { toMultipartFormData, withOptionalMultipartUpload } from '@/utils/multipart.ts';
@@ -60,15 +60,9 @@ export const useProductsStore = defineStore('products', () => {
      * @param forced
      */
     const fetchPaginationProducts = (page = 1, pageSize = 10, forced = false) =>
-        fetchAny(
-            () =>
-                listProducts({ page, pageSize }).then(
-                    (response) => response.data.items
-                ),
-            {
-                forced
-            }
-        );
+        fetchAny(() => listProducts({ page, pageSize }).then((response) => response.data.items), {
+            forced
+        });
 
     type IProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
 
@@ -97,7 +91,7 @@ export const useProductsStore = defineStore('products', () => {
                     text: filters.text,
                     productId: filters.id,
                     minPrice: filters.minPrice,
-                    maxPrice: filters.maxPrice,
+                    maxPrice: filters.maxPrice
                 }).then((response) => response.data.items),
             filters,
             page,
@@ -111,11 +105,9 @@ export const useProductsStore = defineStore('products', () => {
      * @param forced
      */
     const fetchProduct = (productId: string, forced = false) =>
-        fetchTarget(
-            () => getProductById(productId).then((response) => response.data),
-            productId,
-            { forced }
-        );
+        fetchTarget(() => getProductById(productId).then((response) => response.data), productId, {
+            forced
+        });
 
     /**
      * Create a new product.

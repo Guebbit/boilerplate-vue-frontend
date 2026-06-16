@@ -1,7 +1,13 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
-import { getCart, upsertCartItem, updateCartItemById, removeCartItem, clearCart } from '@/utils/api.ts';
+import {
+    getCart,
+    upsertCartItem,
+    updateCartItemById,
+    removeCartItem,
+    clearCart
+} from '@/utils/api.ts';
 import type { CartItem, CartResponse, CartSummaryResponse } from '@types';
 import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
 
@@ -115,6 +121,6 @@ export const useCartStore = defineStore('cart', () => {
         upsertCartItem: upsertCartItemAction,
         updateCartItem,
         removeCartItem: removeCartItemAction,
-        clearCart: clearCartAction,
+        clearCart: clearCartAction
     };
 });

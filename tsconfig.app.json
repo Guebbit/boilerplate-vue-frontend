@@ -1,6 +1,6 @@
 {
     "extends": "@vue/tsconfig/tsconfig.dom.json",
-    "include": ["api", "src/**/*", "src/**/*.vue", ".dev/**/*.ts"],
+    "include": ["api", "src/**/*", "src/**/*.vue", "tests/mocks/**/*", ".dev/**/*.ts"],
     "exclude": ["src/**/__tests__/*"],
     "compilerOptions": {
         "target": "ESNext",
@@ -16,7 +16,8 @@
         "paths": {
             "@/*": ["./src/*"],
             "@types": ["./src/types"],
-            "@api": ["./api/index"]
+            "@api": ["./api/index"],
+            "@api/schemas": ["./api/schemas.zod"]
         }
     }
 }

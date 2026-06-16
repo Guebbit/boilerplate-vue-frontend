@@ -13,7 +13,7 @@ import {
     confirmPasswordReset as apiConfirmPasswordReset,
     refreshToken as apiRefreshToken,
     logoutAll as apiLogoutAll,
-    updateUserById as apiUpdateUserById,
+    updateUserById as apiUpdateUserById
 } from '@/utils/api.ts';
 import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
 
@@ -180,8 +180,6 @@ export const useProfileStore = defineStore('profile', () => {
 
     /**
      * Edit profile
-     * NOTE: /account PATCH is not defined in the OpenAPI spec; we keep the
-     * legacy apiOld call until the spec is extended.
      *
      * @param userData
      */
@@ -240,17 +238,15 @@ export const useProfileStore = defineStore('profile', () => {
      */
     const confirmAccountDelete = (token: string) =>
         fetchAny(() =>
-            apiConfirmAccountDelete({ token }).then(
-                () => {
-                    // Clear user identity from observability tools
-                    const obs = useObservabilityStore();
-                    obs.unidentifyUser();
-                    itemDictionary.value = {};
-                    selectedIdentifier.value = undefined;
-                    accessToken.value = undefined;
-                    setCookie('isAuth=; path=/; max-age=0; SameSite=Lax');
-                }
-            )
+            apiConfirmAccountDelete({ token }).then(() => {
+                // Clear user identity from observability tools
+                const obs = useObservabilityStore();
+                obs.unidentifyUser();
+                itemDictionary.value = {};
+                selectedIdentifier.value = undefined;
+                accessToken.value = undefined;
+                setCookie('isAuth=; path=/; max-age=0; SameSite=Lax');
+            })
         );
 
     return {

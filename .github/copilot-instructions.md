@@ -18,8 +18,10 @@ Human-facing docs: [README.md](../README.md) · [PAIRING.md](../PAIRING.md).
 - Keep code DRY.
 - Keep code KISS.
 - Prefer composables/stores over duplicated view logic.
-- `openapi.yaml` first. Contract and generated client types start there.
-- Use generated API client from `/api`; avoid manual endpoint wrappers unless required.
+- `openapi.yaml` first. Contract and all generated code starts there.
+- Use generated API functions from `@api` (`api/index.ts`); avoid manual endpoint wrappers unless required.
+- Use generated Zod schemas from `@api/schemas` (`api/schemas.zod.ts`) for form and response validation; never hand-write schemas that duplicate the spec.
+- When adding a new endpoint handler for MSW, start from the generated stub in `tests/mocks/generated.ts`, then move business logic to `tests/mocks/handlers/`.
 - Keep comments short and practical.
 - Avoid `async` / `await` + `try/catch` unless necessary.
 - Comments short. ADHD friendly. Explain function/constant/block fast.
@@ -60,11 +62,11 @@ src/plugins/observability/
 ```ts
 // Import from barrel
 import {
-  AnalyticsEvents,
-  track,
-  trackProductView,
-  trackItemAddedToCart,
-  trackOrderPlaced,
+    AnalyticsEvents,
+    track,
+    trackProductView,
+    trackItemAddedToCart,
+    trackOrderPlaced
 } from '@/plugins/observability';
 
 // Track a named event
@@ -78,15 +80,15 @@ trackOrderPlaced('order-abc', 49.99, 3);
 
 ### Event taxonomy
 
-| Category | Events |
-|----------|--------|
-| Lifecycle | `app_started`, `app_ready` |
-| Navigation | `page_view` |
-| Auth | `user_signed_up`, `user_logged_in`, `user_logged_out` |
-| Cart | `item_added_to_cart`, `item_removed_from_cart`, `cart_cleared` |
-| Orders | `order_checkout_started`, `checkout_completed`, `order_placed` |
-| Products | `product_viewed`, `product_searched` |
-| Feedback | `feedback_submitted` |
+| Category   | Events                                                         |
+| ---------- | -------------------------------------------------------------- |
+| Lifecycle  | `app_started`, `app_ready`                                     |
+| Navigation | `page_view`                                                    |
+| Auth       | `user_signed_up`, `user_logged_in`, `user_logged_out`          |
+| Cart       | `item_added_to_cart`, `item_removed_from_cart`, `cart_cleared` |
+| Orders     | `order_checkout_started`, `checkout_completed`, `order_placed` |
+| Products   | `product_viewed`, `product_searched`                           |
+| Feedback   | `feedback_submitted`                                           |
 
 ### Rules
 
@@ -98,9 +100,9 @@ trackOrderPlaced('order-abc', 49.99, 3);
 
 ### Environment variables
 
-| Variable | Purpose |
-|----------|---------|
-| `VITE_SENTRY_DSN` | Sentry DSN (empty = disabled) |
-| `VITE_SENTRY_TRACES_SAMPLE_RATE` | Sentry trace sample rate (`0`..`1`) |
-| `VITE_POSTHOG_API_KEY` | PostHog project API key (empty = disabled) |
-| `VITE_POSTHOG_HOST` | PostHog host URL (default: `https://app.posthog.com`) |
+| Variable                         | Purpose                                               |
+| -------------------------------- | ----------------------------------------------------- |
+| `VITE_SENTRY_DSN`                | Sentry DSN (empty = disabled)                         |
+| `VITE_SENTRY_TRACES_SAMPLE_RATE` | Sentry trace sample rate (`0`..`1`)                   |
+| `VITE_POSTHOG_API_KEY`           | PostHog project API key (empty = disabled)            |
+| `VITE_POSTHOG_HOST`              | PostHog host URL (default: `https://app.posthog.com`) |

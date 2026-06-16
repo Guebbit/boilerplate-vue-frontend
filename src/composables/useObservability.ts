@@ -9,34 +9,38 @@
  * singleton instance.
  */
 
-import { useObservabilityStore, type AnalyticsEventName, analyticsEvents } from '@/stores/observability';
+import {
+    useObservabilityStore,
+    type AnalyticsEventName,
+    analyticsEvents
+} from '@/stores/observability';
 
 export function useObservability() {
-  const store = useObservabilityStore();
+    const store = useObservabilityStore();
 
-  return {
-    // ── State ───
-    sentryReady: store.sentryReady,
-    posthogReady: store.posthogReady,
+    return {
+        // ── State ───
+        sentryReady: store.sentryReady,
+        posthogReady: store.posthogReady,
 
-    // ── Unified tracking ──
-    track: store.track,
-    identifyUser: store.identifyUser,
-    unidentifyUser: store.unidentifyUser,
-    captureException: store.captureException,
+        // ── Unified tracking ──
+        track: store.track,
+        identifyUser: store.identifyUser,
+        unidentifyUser: store.unidentifyUser,
+        captureException: store.captureException,
 
-    // ── Feature flags ──
-    isFeatureEnabled: store.isFeatureEnabled,
+        // ── Feature flags ──
+        isFeatureEnabled: store.isFeatureEnabled,
 
-    // ── Convenience helpers ──
-    trackProductView: store.trackProductView,
-    trackItemAddedToCart: store.trackItemAddedToCart,
-    trackOrderPlaced: store.trackOrderPlaced,
-    trackProductSearched: store.trackProductSearched,
+        // ── Convenience helpers ──
+        trackProductView: store.trackProductView,
+        trackItemAddedToCart: store.trackItemAddedToCart,
+        trackOrderPlaced: store.trackOrderPlaced,
+        trackProductSearched: store.trackProductSearched,
 
-    // ── Event catalog (read-only reference) ──
-    analyticsEvents,
-  };
+        // ── Event catalog (read-only reference) ──
+        analyticsEvents
+    };
 }
 
 // Re-export types for convenience

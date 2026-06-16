@@ -2,7 +2,7 @@ import { ref, type Ref } from 'vue';
 import {
     getObservabilityHealth,
     getObservabilityMetricsOverview,
-    getObservabilityAuditLogs,
+    getObservabilityAuditLogs
 } from '@/utils/api.ts';
 import type { AdminHealth, AdminMetricsSummary, AuditEventItem } from '@types';
 import type { IAdminAuditFilters } from '@/features/admin/types.ts';
@@ -86,7 +86,7 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
             action: filters.action,
             outcome: filters.outcome,
             since: filters.since,
-            limit: filters.limit,
+            limit: filters.limit
         })
             .then((response) => {
                 auditEvents.value = response.data.data.items;

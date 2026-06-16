@@ -57,5 +57,5 @@ export const {
     getOrderById,
     updateOrderById,
     deleteOrderById,
-    getOrderInvoice,
+    getOrderInvoice
 } = getEcommerceDemoAPI();

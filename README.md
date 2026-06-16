@@ -10,6 +10,7 @@
 - [Tech stack & official docs](#tech-stack--official-docs)
 - [Architecture at a glance](#architecture-at-a-glance)
 - [Folder structure](#folder-structure)
+- [Sitemap & access control](#sitemap--access-control)
 - [Environment variables](#environment-variables)
 - [npm scripts](#npm-scripts)
 - [Validation gate](#validation-gate)
@@ -19,7 +20,7 @@
 - [Routing, auth & i18n](#routing-auth--i18n)
 - [Mocking with MSW](#mocking-with-msw)
 - [Testing](#testing)
-- [Observability (Sentry, request/trace IDs)](#observability-sentry-requesttrace-ids)
+- [Observability (Sentry, PostHog, analytics)](#observability-sentry-posthog-analytics)
 - [Admin Dashboard](#admin-dashboard)
 - [TODO / roadmap](#todo--roadmap)
 
@@ -70,15 +71,15 @@ Every tool below has a one-line "why we use it" + a link to its official documen
 
 ### API & contract
 
-| Tool                                                                                        | Why it's here                                               | Docs                                                                                              |
-| ------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| **[OpenAPI 3.x](https://www.openapis.org/)** (`openapi.yaml`)                               | Single source of truth for FE ⇄ BE contract                 | [OpenAPI specification](https://spec.openapis.org/oas/latest.html)                                |
-| **[AsyncAPI 2.x](https://www.asyncapi.com/)** (`asyncapi.yaml`)                             | Single source of truth for SSE/WebSocket realtime contracts | [AsyncAPI specification](https://www.asyncapi.com/docs/reference/specification/latest)            |
-| **[openapi-typescript-codegen](https://github.com/ferdikoomen/openapi-typescript-codegen)** | Generates typed axios client into `/api`                    | [package readme](https://github.com/ferdikoomen/openapi-typescript-codegen#readme)                |
-| **[Axios](https://axios-http.com/)**                                                        | HTTP client used under the generated services               | [axios-http.com/docs](https://axios-http.com/docs/intro)                                          |
-| **[Zod](https://zod.dev/)**                                                                 | Runtime schema validation (forms, parsing untrusted input)  | [zod.dev](https://zod.dev/)                                                                       |
-| **[openapi-zod-client](https://github.com/astahmer/openapi-zod-client)**                    | Optional: generate Zod schemas from `openapi.yaml`          | [package readme](https://github.com/astahmer/openapi-zod-client#readme)                           |
-| **[Spectral](https://stoplight.io/open-source/spectral)**                                   | Lints `openapi.yaml` (rules in `spectral.yaml`)             | [meta.stoplight.io/docs/spectral](https://meta.stoplight.io/docs/spectral/674b27b261c3c-overview) |
+| Tool                                                            | Why it's here                                                                | Docs                                                                                              |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **[OpenAPI 3.x](https://www.openapis.org/)** (`openapi.yaml`)   | Single source of truth for FE ⇄ BE contract                                  | [OpenAPI specification](https://spec.openapis.org/oas/latest.html)                                |
+| **[AsyncAPI 2.x](https://www.asyncapi.com/)** (`asyncapi.yaml`) | Single source of truth for SSE/WebSocket realtime contracts                  | [AsyncAPI specification](https://www.asyncapi.com/docs/reference/specification/latest)            |
+| **[Orval](https://orval.dev/)**                                 | Generates typed axios client, Zod schemas, and MSW stubs from `openapi.yaml` | [orval.dev/overview](https://orval.dev/overview)                                                  |
+| **[@faker-js/faker](https://fakerjs.dev/)**                     | Fake data used by orval-generated MSW handler stubs                          | [fakerjs.dev/guide](https://fakerjs.dev/guide/)                                                   |
+| **[Axios](https://axios-http.com/)**                            | HTTP client used under the generated services                                | [axios-http.com/docs](https://axios-http.com/docs/intro)                                          |
+| **[Zod](https://zod.dev/)**                                     | Runtime schema validation (forms, parsing untrusted input)                   | [zod.dev](https://zod.dev/)                                                                       |
+| **[Spectral](https://stoplight.io/open-source/spectral)**       | Lints `openapi.yaml` (rules in `spectral.yaml`)                              | [meta.stoplight.io/docs/spectral](https://meta.stoplight.io/docs/spectral/674b27b261c3c-overview) |
 
 ### Quality & tooling
 
@@ -91,24 +92,25 @@ Every tool below has a one-line "why we use it" + a link to its official documen
 
 ### Testing
 
-| Tool                                                                           | Why it's here                                     | Docs                                                                       |
-| ------------------------------------------------------------------------------ | ------------------------------------------------- | -------------------------------------------------------------------------- |
-| **[Vitest](https://vitest.dev/)**                                              | Unit tests (`tests/unit/`, `vitest.config.ts`)    | [vitest.dev/guide](https://vitest.dev/guide/)                              |
-| **[@vue/test-utils](https://test-utils.vuejs.org/)**                           | Component mounting/assertions                     | [test-utils.vuejs.org/guide](https://test-utils.vuejs.org/guide/)          |
-| **[jsdom](https://github.com/jsdom/jsdom)**                                    | DOM environment for unit tests                    | [jsdom readme](https://github.com/jsdom/jsdom#readme)                      |
-| **[Cypress](https://www.cypress.io/)**                                         | E2E tests (`cypress/e2e/`)                        | [docs.cypress.io](https://docs.cypress.io/)                                |
-| **[MSW](https://mswjs.io/)**                                                   | Request mocking for dev + Cypress (`.dev/mocks/`) | [mswjs.io/docs](https://mswjs.io/docs/)                                    |
-| **[start-server-and-test](https://github.com/bahmutov/start-server-and-test)** | Boots Vite + waits before running Cypress         | [package readme](https://github.com/bahmutov/start-server-and-test#readme) |
+| Tool                                                                           | Why it's here                                      | Docs                                                                       |
+| ------------------------------------------------------------------------------ | -------------------------------------------------- | -------------------------------------------------------------------------- |
+| **[Vitest](https://vitest.dev/)**                                              | Unit tests (`tests/unit/`, `vitest.config.ts`)     | [vitest.dev/guide](https://vitest.dev/guide/)                              |
+| **[@vue/test-utils](https://test-utils.vuejs.org/)**                           | Component mounting/assertions                      | [test-utils.vuejs.org/guide](https://test-utils.vuejs.org/guide/)          |
+| **[jsdom](https://github.com/jsdom/jsdom)**                                    | DOM environment for unit tests                     | [jsdom readme](https://github.com/jsdom/jsdom#readme)                      |
+| **[Cypress](https://www.cypress.io/)**                                         | E2E tests (`cypress/e2e/`)                         | [docs.cypress.io](https://docs.cypress.io/)                                |
+| **[MSW](https://mswjs.io/)**                                                   | Request mocking for dev + Cypress (`tests/mocks/`) | [mswjs.io/docs](https://mswjs.io/docs/)                                    |
+| **[start-server-and-test](https://github.com/bahmutov/start-server-and-test)** | Boots Vite + waits before running Cypress          | [package readme](https://github.com/bahmutov/start-server-and-test#readme) |
 
 ### Observability & UI libs
 
-| Tool                                                                           | Why it's here                                                 | Docs                                                                                                      |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| **[@sentry/vue](https://docs.sentry.io/platforms/javascript/guides/vue/)**     | Crash + performance monitoring (opt-in via `VITE_SENTRY_DSN`) | [docs.sentry.io/platforms/javascript/guides/vue](https://docs.sentry.io/platforms/javascript/guides/vue/) |
-| **[@guebbit/css-toolkit](https://www.npmjs.com/package/@guebbit/css-toolkit)** | Shared SCSS utilities / tokens                                | [npm](https://www.npmjs.com/package/@guebbit/css-toolkit)                                                 |
-| **[@guebbit/vue-toolkit](https://www.npmjs.com/package/@guebbit/vue-toolkit)** | Shared Vue components / composables                           | [npm](https://www.npmjs.com/package/@guebbit/vue-toolkit)                                                 |
+| Tool                                                                           | Why it's here                                                    | Docs                                                                                                      |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **[@sentry/vue](https://docs.sentry.io/platforms/javascript/guides/vue/)**     | Crash + performance monitoring + session replay (opt-in via DSN) | [docs.sentry.io/platforms/javascript/guides/vue](https://docs.sentry.io/platforms/javascript/guides/vue/) |
+| **[posthog-js](https://posthog.com/docs/libraries/js)**                        | Product analytics + feature flags (opt-in via API key)           | [posthog.com/docs/libraries/js](https://posthog.com/docs/libraries/js)                                    |
+| **[@guebbit/css-toolkit](https://www.npmjs.com/package/@guebbit/css-toolkit)** | Shared SCSS utilities / tokens                                   | [npm](https://www.npmjs.com/package/@guebbit/css-toolkit)                                                 |
+| **[@guebbit/vue-toolkit](https://www.npmjs.com/package/@guebbit/vue-toolkit)** | Shared Vue components / composables                              | [npm](https://www.npmjs.com/package/@guebbit/vue-toolkit)                                                 |
 
-> 💡 If you bump any of these, check the matching docs page first — most breaking changes are documented on the front page of each tool's site.
+> If you bump any of these, check the matching docs page first — most breaking changes are documented on the front page of each tool's site.
 
 ---
 
@@ -121,6 +123,7 @@ flowchart LR
         P[Pinia stores<br/>src/stores]
         R[Vue Router<br/>src/router]
         I18N[Vue I18n<br/>src/locales]
+        OBS[Observability store<br/>Sentry + PostHog]
     end
 
     subgraph Generated["📦 Generated layer"]
@@ -129,7 +132,6 @@ flowchart LR
 
     subgraph Shared["🔧 Shared utils"]
         HTTP[utils/http.ts<br/>axios + interceptors]
-        SENTRY[@sentry/vue]
     end
 
     subgraph Backend["🖥️ Backend"]
@@ -137,7 +139,7 @@ flowchart LR
     end
 
     subgraph DevOnly["🧪 Dev / Test only"]
-        MSW[MSW handlers<br/>.dev/mocks]
+        MSW[MSW handlers<br/>tests/mocks]
     end
 
     V --> P
@@ -147,7 +149,8 @@ flowchart LR
     API --> HTTP
     HTTP -->|HTTP/JSON| BE
     HTTP -.intercepted by.-> MSW
-    HTTP -->|errors| SENTRY
+    HTTP -->|errors| OBS
+    R -->|afterEach page_view| OBS
 ```
 
 Key principles:
@@ -157,6 +160,7 @@ Key principles:
 - **Stores own data.** Views call composables/stores; stores call the generated API.
 - **Interceptors own error shape.** Every HTTP error becomes an `IResponseReject` envelope.
 - **Mocks are toggled by env.** MSW activates only when `VITE_API_MOCK_ENABLED=true`.
+- **Single observability store.** Sentry and PostHog are consolidated in `src/stores/observability.ts`; never scatter vendor calls into components.
 
 ---
 
@@ -165,7 +169,6 @@ Key principles:
 ```text
 src/
 ├── components/      reusable UI components (atoms/molecules/organisms)
-├── composables/     generic, cross-feature composables
 ├── features/        feature modules (account, admin, cart, orders, products, realtime, users)
 │   └── <feature>/
 │       ├── components/
@@ -173,25 +176,65 @@ src/
 │       ├── views/
 │       ├── routes.ts
 │       └── types.ts
-├── layouts/         page layout shells
+├── layouts/         page layout shells (LayoutDefault.vue)
 ├── locales/         vue-i18n messages
-├── middlewares/     route navigation guards
+├── middlewares/     route navigation guards (authentications, localeChoice, demoMiddleware)
 ├── router/          router instance + locale routing
-├── stores/          Pinia stores
+├── stores/          Pinia stores (counter, observability, profile, realtimeChat, realtimeObservability)
 ├── styles/          global SCSS (theme, main)
 ├── types/           shared TS types (incl. re-exports from @api)
-├── utils/           http, api wiring, i18n, forms, multipart, sockets, errors
-├── views/           top-level (non-feature) views
+├── utils/           http, api wiring, i18n, forms, multipart, sockets, errors, navigation, composables
+├── views/           top-level (non-feature) views (Home, Playground, Error)
 ├── App.vue
-└── main.ts          bootstrap (Pinia + Router + i18n + Sentry + MSW)
+└── main.ts          bootstrap (Pinia + Router + i18n + Sentry + PostHog + MSW)
 
-api/                 generated OpenAPI client (DO NOT edit by hand)
-.dev/mocks/          MSW handlers + mock fixtures
+api/
+├── index.ts         generated axios functions + TS types  (DO NOT edit by hand)
+└── schemas.zod.ts   generated Zod schemas                 (DO NOT edit by hand)
+tests/mocks/
+├── generated.ts     orval-generated MSW stubs + faker factories (DO NOT edit)
+└── handlers/        hand-written MSW handlers with in-memory DB logic
 cypress/             e2e specs
 tests/               vitest unit tests
 openapi.yaml         API contract (source of truth)
+asyncapi.yaml        Realtime contract (source of truth)
 spectral.yaml        OpenAPI lint rules
 ```
+
+---
+
+## Sitemap & access control
+
+All routes are locale-prefixed (`/:locale/…`). Missing locale is injected automatically.
+
+| Route                              | Name                   | Access                     |
+| ---------------------------------- | ---------------------- | -------------------------- |
+| `/:locale/`                        | `Home`                 | public                     |
+| `/:locale/playground`              | `Playground`           | public                     |
+| `/:locale/playground/realtime`     | `RealtimePlayground`   | public                     |
+| `/:locale/error/:status/:message?` | `Error`                | public                     |
+| `/:locale/login`                   | `Login`                | guest only                 |
+| `/:locale/signup`                  | `Signup`               | guest only                 |
+| `/:locale/password-reset`          | `PasswordResetRequest` | guest only                 |
+| `/:locale/password-reset/confirm`  | `PasswordResetConfirm` | guest only                 |
+| `/:locale/account-delete/confirm`  | `AccountDeleteConfirm` | public                     |
+| `/:locale/profile`                 | `Profile`              | auth                       |
+| `/:locale/logout`                  | `Logout`               | public (redirects to Home) |
+| `/:locale/products`                | `ProductsList`         | public                     |
+| `/:locale/products/:id`            | `ProductTarget`        | public                     |
+| `/:locale/products/:id/edit`       | `ProductEdit`          | admin                      |
+| `/:locale/cart`                    | `Cart`                 | auth                       |
+| `/:locale/orders`                  | `OrdersList`           | auth                       |
+| `/:locale/orders/:id`              | `OrderTarget`          | auth                       |
+| `/:locale/orders/:id/edit`         | `OrderEdit`            | admin                      |
+| `/:locale/users`                   | `UsersList`            | admin                      |
+| `/:locale/users/create`            | `UserCreate`           | admin                      |
+| `/:locale/users/:id`               | `UserTarget`           | admin                      |
+| `/:locale/users/:id/edit`          | `UserEdit`             | admin                      |
+| `/:locale/admin`                   | `Admin`                | admin                      |
+| `/:locale/:catchAll(.*)`           | —                      | redirect → `Error 404`     |
+
+Access level legend: **public** = no guard · **guest only** = `isGuest` (logged-in users are redirected away) · **auth** = `isAuth` (must be logged in) · **admin** = `isAdmin` (must have admin role).
 
 ---
 
@@ -199,24 +242,29 @@ spectral.yaml        OpenAPI lint rules
 
 Reference: [`.env-example`](./.env-example).
 
-| Variable                         | Purpose                                                                                     |
-| -------------------------------- | ------------------------------------------------------------------------------------------- |
-| `VITE_APP_DEFAULT_LOCALE`        | Initial locale (e.g. `en`)                                                                  |
-| `VITE_APP_SUPPORTED_LOCALES`     | Comma-separated supported locales (e.g. `en,it,es`)                                         |
-| `VITE_APP_PUBLIC_PATH`           | Public path served by Vite                                                                  |
-| `VITE_APP_BASE_URL`              | Router history base URL (optional)                                                          |
-| `VITE_API_URL`                   | Backend API base URL                                                                        |
-| `VITE_API_WEBSOCKET`             | WebSocket URL used by realtime playground chat (`ws://…`; `http://…` is auto-converted)     |
-| `VITE_API_SSE`                   | SSE URL used by realtime playground observability stream                                    |
-| `VITE_API_MOCK_ENABLED`          | Enable [MSW](https://mswjs.io/) mocking (`true`/`false`) — see [Mocking](#mocking-with-msw) |
-| `VITE_AXIOS_TIMEOUT`             | [Axios](https://axios-http.com/) timeout (ms)                                               |
-| `VITE_APP_DEBUG_ROUTER`          | Router debug logs in dev (`true`/`false`)                                                   |
-| `VITE_APP_DEBUG_HOME`            | Home view demo logs in dev (`true`/`false`)                                                 |
-| `VITE_APP_DEBUG_HTTP`            | HTTP interceptor debug logs for server errors (`true`/`false`)                              |
-| `VITE_SENTRY_DSN`                | [Sentry](https://docs.sentry.io/platforms/javascript/guides/vue/) DSN (empty = off)         |
-| `VITE_SENTRY_TRACES_SAMPLE_RATE` | Sentry tracing sample rate (`0`..`1`, clamped)                                              |
-
-> ℹ️ **What Sentry does:** it collects FE crashes + optional performance traces so you can see what broke, where, and for which users in production. Disabled when `VITE_SENTRY_DSN` is empty.
+| Variable                                   | Purpose                                                                                     |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `VITE_APP_DEFAULT_LOCALE`                  | Initial locale (e.g. `en`)                                                                  |
+| `VITE_APP_SUPPORTED_LOCALES`               | Comma-separated supported locales (e.g. `en,it,es`)                                         |
+| `VITE_APP_PUBLIC_PATH`                     | Public path served by Vite                                                                  |
+| `VITE_APP_BASE_URL`                        | Router history base URL (optional)                                                          |
+| `VITE_API_URL`                             | Backend API base URL                                                                        |
+| `VITE_API_WEBSOCKET`                       | WebSocket URL used by realtime playground chat (`ws://…`; `http://…` is auto-converted)     |
+| `VITE_API_SSE`                             | SSE URL used by realtime playground observability stream                                    |
+| `VITE_API_MOCK_ENABLED`                    | Enable [MSW](https://mswjs.io/) mocking (`true`/`false`) — see [Mocking](#mocking-with-msw) |
+| `VITE_AXIOS_TIMEOUT`                       | [Axios](https://axios-http.com/) timeout (ms)                                               |
+| `VITE_APP_DEBUG_ROUTER`                    | Router debug logs in dev (`true`/`false`)                                                   |
+| `VITE_APP_DEBUG_HOME`                      | Home view demo logs in dev (`true`/`false`)                                                 |
+| `VITE_APP_DEBUG_HTTP`                      | HTTP interceptor debug logs for server errors (`true`/`false`)                              |
+| `VITE_SENTRY_DSN`                          | [Sentry](https://docs.sentry.io/platforms/javascript/guides/vue/) DSN (empty = off)         |
+| `VITE_SENTRY_ENVIRONMENT`                  | Sentry environment tag (defaults to Vite `MODE`)                                            |
+| `VITE_SENTRY_TRACES_SAMPLE_RATE`           | Sentry tracing sample rate (`0`..`1`, clamped)                                              |
+| `VITE_SENTRY_REPLAYS_SESSION_SAMPLE_RATE`  | Session replay sample rate (`0`..`1`, default `0.1`)                                        |
+| `VITE_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE` | Replay-on-error sample rate (`0`..`1`, default `1`)                                         |
+| `VITE_SENTRY_DEBUG`                        | Enable Sentry debug logging (`true`/`false`)                                                |
+| `VITE_POSTHOG_API_KEY`                     | [PostHog](https://posthog.com/) project API key (empty = off)                               |
+| `VITE_POSTHOG_API_HOST`                    | PostHog host URL (default: `https://app.posthog.com`)                                       |
+| `VITE_POSTHOG_DEBUG`                       | Enable PostHog debug logging (`true`/`false`)                                               |
 
 ---
 
@@ -270,8 +318,11 @@ flowchart LR
     L -- no --> X[Fix contract]
     X --> A
     L -- yes --> G[npm run genapi]
-    G --> CLIENT[/api typed axios client/]
-    CLIENT --> STORES[Pinia stores call<br/>generated services]
+    G --> CLIENT[api/index.ts<br/>typed axios functions]
+    G --> ZOD[api/schemas.zod.ts<br/>Zod schemas]
+    G --> MOCKS[tests/mocks/generated.ts<br/>MSW handler stubs]
+    CLIENT --> STORES[Pinia stores call<br/>generated functions]
+    ZOD --> STORES
     STORES --> VIEWS[Views render data]
     A -.shared with.-> BE[boilerplate-node-backend]
 ```
@@ -282,13 +333,9 @@ Steps:
 2. `npm run lint:openapi` — must be green.
 3. `npm run genapi` — regenerates `/api` (commit the diff).
 4. Update store/view usages if any operation signatures changed.
-5. Sync with backend. Keep the paired branches in sync before merging contract changes.
-
-| Side     | Repository                         | Default branch |
-| -------- | ---------------------------------- | -------------- |
-| Frontend | `Guebbit/boilerplate-vue-frontend` | `main`         |
-| Backend  | `Guebbit/boilerplate-node-backend` | `main`         |
-
+    - Import Zod schemas from `@api/schemas` instead of writing them by hand.
+    - Use `tests/mocks/generated.ts` as a skeleton if you need a new MSW handler stub.
+5. Coordinate with the backend team — both repos consume `openapi.yaml` as the shared contract; keep paired branches in sync before merging.
 
 ---
 
@@ -300,14 +347,14 @@ Steps:
 flowchart LR
     A[asyncapi.yaml] --> G[npm run genasyncapi]
     G --> T[src/types/realtime.generated.ts]
-    T --> C[src/realtime/* clients]
-    C --> S[src/stores/realtime*]
-    S --> V[Realtime playground view]
+    T --> C[src/utils/createChatClient.ts<br/>src/utils/createSseClient.ts]
+    C --> S[src/stores/realtimeChat<br/>src/stores/realtimeObservability]
+    S --> V[RealtimePlayground view]
 ```
 
 Current incremental rollout:
 
-1. **Contracts first**: update `openapi.yaml` / `asyncapi.yaml`.
+1. **Contracts first**: update `asyncapi.yaml`.
 2. **Generate clients/types**: `npm run genapi` and `npm run genasyncapi`.
 3. **Playground-first integration**: route `/:locale/playground/realtime`.
 4. **Broader app integration**: wire feature flows after playground validation.
@@ -328,10 +375,10 @@ Single axios instance lives in `src/utils/http.ts`, wired into the generated cli
 sequenceDiagram
     autonumber
     participant V as View / Store
-    participant S as Generated Service<br/>(api/)
+    participant S as Generated function<br/>(api/index.ts)
     participant H as utils/http.ts<br/>(axios + interceptors)
     participant B as Backend (or MSW)
-    V->>S: AuthService.login({...})
+    V->>S: login({...})
     S->>H: HTTP request
     H->>B: GET/POST ...
     B-->>H: response (+ x-request-id, x-trace-id)
@@ -344,7 +391,7 @@ sequenceDiagram
         H-->>V: IResponseReject → forbidden UI
     else 5xx
         H-->>V: IResponseReject → /error/500
-        H->>Sentry: capture exception
+        H->>Sentry: captureException
     end
 ```
 
@@ -353,7 +400,7 @@ Conventions:
 - **`401`** = _not logged in_. Route-level failures redirect to Login with `?continue=` preserved; form/list actions show auth-focused messages instead of generic server errors.
 - **`403`** = _forbidden_. Shown as a clear authorization message (never as 500).
 - **`5xx`** = real server failure → `/error/500` flow.
-- Backend correlation headers (`x-request-id`, `x-trace-id`) are captured into `IResponseReject` for cross-service debugging.
+- Error objects carry correlation IDs (`x-request-id`, `x-trace-id`) useful when reporting issues to the backend team.
 
 ---
 
@@ -392,12 +439,12 @@ flowchart LR
     Env{VITE_API_MOCK_ENABLED == 'true'?}
     Env -- no --> Real[Real HTTP → backend]
     Env -- yes --> Worker[MSW Service Worker<br/>public/mockServiceWorker.js]
-    Worker --> Handlers[.dev/mocks/handlers/*]
+    Worker --> Handlers[tests/mocks/handlers/*]
     Handlers --> DB[(in-memory mockDatabase)]
 ```
 
 - Worker file is committed in `public/mockServiceWorker.js` (generated by `msw init`).
-- Handlers live in `.dev/mocks/handlers/*` and share an in-memory DB via `.dev/mocks/shared/`.
+- Handlers live in `tests/mocks/handlers/*` and share an in-memory DB via `tests/mocks/shared/`.
 - Cypress runs with `VITE_API_MOCK_ENABLED=true` so e2e is deterministic.
 
 Official: [mswjs.io/docs](https://mswjs.io/docs/) · [browser integration](https://mswjs.io/docs/integrations/browser).
@@ -419,16 +466,60 @@ npm run test:e2e      # boots Vite (with MSW) + cypress run
 npm run test:e2e:dev  # opens Cypress UI
 ```
 
-> 🧪 New tests should target behavior, not implementation. Prefer component contracts (props/emits/slots) over snapshots.
+> New tests should target behavior, not implementation. Prefer component contracts (props/emits/slots) over snapshots.
 
 ---
 
-## Observability (Sentry, request/trace IDs)
+## Observability (Sentry, PostHog, analytics)
 
-- [@sentry/vue](https://docs.sentry.io/platforms/javascript/guides/vue/) is initialized in `src/main.ts` only when `VITE_SENTRY_DSN` is set.
-- `VITE_SENTRY_TRACES_SAMPLE_RATE` is clamped to `[0, 1]`.
-- This frontend does **not** emit browser OpenTelemetry spans by default. For cross-service debugging, keep using `x-request-id` / `x-trace-id` from backend responses (captured by `utils/http.ts`).
-- Future option: add browser OTel instrumentation and forward `traceparent` / `tracestate`. Reference: [opentelemetry.io/docs/languages/js](https://opentelemetry.io/docs/languages/js/).
+All observability code is consolidated in `src/stores/observability.ts` (a Pinia store). Never scatter vendor calls directly from components.
+
+### What each tool does
+
+| Tool        | Role                                                                                             |
+| ----------- | ------------------------------------------------------------------------------------------------ |
+| **Sentry**  | Crash reporting, performance tracing, session replay. Disabled when `VITE_SENTRY_DSN` is empty.  |
+| **PostHog** | Product analytics, event tracking, feature flags. Disabled when `VITE_POSTHOG_API_KEY` is empty. |
+
+Both are initialized in `src/main.ts` and are no-ops when their env vars are absent, so local dev works without any external accounts.
+
+### Tracking events
+
+```ts
+import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
+
+const obs = useObservabilityStore();
+
+// Generic event
+obs.track(analyticsEvents.PRODUCT_VIEWED, { product_id: '123' });
+
+// Convenience helpers
+obs.trackProductView('123', 'Widget');
+obs.trackItemAddedToCart('123', 2);
+obs.trackOrderPlaced('order-abc', 49.99, 3);
+obs.trackProductSearched('blue shoes');
+```
+
+Router page views are tracked automatically via `router.afterEach` — no manual call needed in views.
+
+### Event taxonomy
+
+| Category   | Events                                                         |
+| ---------- | -------------------------------------------------------------- |
+| Lifecycle  | `app_started`, `app_ready`                                     |
+| Navigation | `page_view`                                                    |
+| Auth       | `user_signed_up`, `user_logged_in`, `user_logged_out`          |
+| Cart       | `item_added_to_cart`, `item_removed_from_cart`, `cart_cleared` |
+| Orders     | `order_checkout_started`, `checkout_completed`, `order_placed` |
+| Products   | `product_viewed`, `product_searched`                           |
+| Feedback   | `feedback_submitted`                                           |
+
+### Rules
+
+- **No PII** in event properties — never send email, name, or personal data.
+- **Use constants** from `analyticsEvents` — never hardcode event name strings.
+- **Fire-and-forget** — never `await` a `track()` call.
+- **Sentry for errors, PostHog for product events** — both are wired but serve different purposes.
 
 ---
 
@@ -438,14 +529,7 @@ Route: `/:locale/admin` — requires admin role (non-admins are redirected Home)
 
 ### Overview tab
 
-Fetches live data from two contract-defined endpoints:
-
-| Endpoint                              | What it shows                                                                                |
-| ------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `GET /observability/health`           | API status, database status, uptime, memory, integrations (Loki, PostHog, OTEL), system info |
-| `GET /observability/metrics/overview` | HTTP totals, error rate, in-flight requests, p50/p95 latency, auth events, business events   |
-
-KPI cards at the top give an instant health snapshot:
+Fetches live backend health and metrics via the composable `src/features/admin/composables/useAdminObservability.ts` and displays KPI cards:
 
 ```text
 ┌─────────────┐ ┌──────────────┐ ┌──────────┐ ┌──────────────┐
@@ -460,32 +544,30 @@ KPI cards at the top give an instant health snapshot:
 
 ### Audit Log tab
 
-Fetches from `GET /observability/audit` with optional filters:
+Fetches audit events with optional filters:
 
 - **Actor** — filter by user ID
-- **Action** — dot-notation action (e.g. `auth.login.failed`)
+- **Action** — dot-notation action string
 - **Outcome** — success / failure
 - **Since** — ISO-8601 timestamp
 
 Displays a colour-coded table with truncated request/trace IDs (hover for full value).
 
-### Data contract
+### FE implementation
 
-All types are driven by `openapi.yaml` (observability section) and reflected in:
-
-- `api/api.ts` — generated interfaces (`AdminHealth`, `AdminMetricsSummary`, `AuditEventItem`, …)
-- `src/features/admin/types.ts` — FE view-model types (`IAdminKpi`, `IAdminAuditFilters`)
-- `src/features/admin/composables/useAdminObservability.ts` — single composable for health + metrics + audit
-- `.dev/mocks/handlers/adminMockHandlers.ts` — MSW mock responses for dev/test
+| File                                                      | Role                                                     |
+| --------------------------------------------------------- | -------------------------------------------------------- |
+| `src/features/admin/views/Admin.vue`                      | Tab shell (Overview + Audit Log)                         |
+| `src/features/admin/composables/useAdminObservability.ts` | Fetches health + metrics + audit; exposes reactive state |
+| `src/features/admin/types.ts`                             | View-model types (`IAdminKpi`, `IAdminAuditFilters`)     |
+| `tests/mocks/handlers/adminMockHandlers.ts`               | MSW mock responses for dev/test                          |
 
 ---
 
 ## TODO / roadmap
 
 - Fix tests
-- Signup should send an email with a link to confirm the account
-  (CHECK backend `main` — currently it just creates the user)
-    - Create the registration confirmation page
+- Signup: create the registration confirmation page (email confirmation flow)
 - Create the reset password page and reset password confirm page
 - Add image upload in the various forms
 - Always call `useXYZStore()` inside functions, not at top level — avoids circular dependency issues (unless explicitly dependent)
@@ -505,4 +587,3 @@ All types are driven by `openapi.yaml` (observability section) and reflected in:
 - Extend `useI18n` (or create a new one) to add custom helpers from `utils/i18n.ts`
 - From skeleton: bootstrap version
 - Do Lighthouse metrics tests
-  ├── realtime/ transport clients (SSE + WebSocket chat adapters)

@@ -5,7 +5,7 @@ import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
 
 import App from './App.vue';
 import router from './router';
-import { initializeApiMocking } from '../.dev/mocks/apiMock.ts';
+import { initializeApiMocking } from '../tests/mocks/apiMock.ts';
 
 /**
  * Global CSS

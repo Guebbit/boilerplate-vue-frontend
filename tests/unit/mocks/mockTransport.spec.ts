@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mockResponse } from '../../../.dev/mocks/shared/mockTransport.ts';
+import { mockResponse } from '../../mocks/shared/mockTransport.ts';
 
 describe('mock transport helpers', () => {
     it('builds an axios-like response envelope with defaults', () => {

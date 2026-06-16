@@ -6,6 +6,7 @@
         "src/**/*.vue",
         "tests/unit/**/*.ts",
         "tests/unit/**/*.tsx",
+        "tests/mocks/**/*",
         ".dev/**/*.ts"
     ],
     "exclude": [],

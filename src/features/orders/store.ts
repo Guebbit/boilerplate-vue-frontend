@@ -8,7 +8,7 @@ import {
     createOrder as apiCreateOrder,
     updateOrderById,
     deleteOrderById,
-    checkout as apiCheckout,
+    checkout as apiCheckout
 } from '@/utils/api.ts';
 import httpClient from '@/utils/http.ts';
 import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
@@ -62,12 +62,9 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param forced
      */
     const fetchPaginationOrders = (page = 1, pageSize = 10, forced = false) =>
-        fetchAny(
-            () => listOrders({ page, pageSize }).then((response) => response.data.items),
-            {
-                forced
-            }
-        );
+        fetchAny(() => listOrders({ page, pageSize }).then((response) => response.data.items), {
+            forced
+        });
 
     type IOrdersFilters = Omit<SearchOrdersRequest, 'page' | 'pageSize'>;
 
@@ -97,7 +94,7 @@ export const useOrdersStore = defineStore('orders', () => {
                     id: filters.id,
                     userId: filters.userId,
                     productId: filters.productId,
-                    email: filters.email,
+                    email: filters.email
                 }).then((response) => response.data.items),
             filters,
             page,
@@ -112,13 +109,9 @@ export const useOrdersStore = defineStore('orders', () => {
      * @param forced
      */
     const fetchOrder = (orderId: string, forced = false) =>
-        fetchTarget(
-            () => getOrderById(orderId).then((response) => response.data),
-            orderId,
-            {
-                forced
-            }
-        );
+        fetchTarget(() => getOrderById(orderId).then((response) => response.data), orderId, {
+            forced
+        });
 
     /**
      * Create a new order directly (admin)
@@ -163,8 +156,7 @@ export const useOrdersStore = defineStore('orders', () => {
      *
      * @param orderId
      */
-    const deleteOrder = (orderId: string) =>
-        deleteTarget(() => deleteOrderById(orderId), orderId);
+    const deleteOrder = (orderId: string) => deleteTarget(() => deleteOrderById(orderId), orderId);
 
     /**
      * Download order invoice (PDF binary)

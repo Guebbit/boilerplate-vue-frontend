@@ -3,11 +3,16 @@ import { defineConfig } from 'orval';
 /**
  * Orval configuration: generates the API client from openapi.yaml.
  *
- * mode: 'single' puts all types and functions into one file (api/index.ts),
- * preserving the existing @api alias without any tsconfig/vite changes.
+ * api:         typed axios functions + TS types → api/index.ts
+ *              mutator delegates HTTP to apiMutator (auth headers, token refresh)
  *
- * mutator: every generated function delegates HTTP calls to apiMutator,
- * which uses the shared httpClient (auth headers, token refresh, etc.).
+ * zodSchemas:  Zod schemas matching each OpenAPI model → api/schemas.zod.ts
+ *              Import from @api/schemas to validate forms or parse API responses.
+ *              Always in sync with the spec — never hand-write these.
+ *
+ * mocks:       MSW handler stubs + faker factories → tests/mocks/generated.ts
+ *              Use as a skeleton when adding a new endpoint.
+ *              The rich in-memory-DB logic stays in tests/mocks/handlers/*.
  */
 export default defineConfig({
     api: {
@@ -19,9 +24,26 @@ export default defineConfig({
             override: {
                 mutator: {
                     path: './src/utils/apiMutator.ts',
-                    name: 'apiMutator',
-                },
-            },
-        },
+                    name: 'apiMutator'
+                }
+            }
+        }
     },
+    zodSchemas: {
+        input: './openapi.yaml',
+        output: {
+            mode: 'single',
+            target: './api/schemas.zod.ts',
+            client: 'zod'
+        }
+    },
+    mocks: {
+        input: './openapi.yaml',
+        output: {
+            mode: 'single',
+            target: './tests/mocks/generated.ts',
+            client: 'axios',
+            mock: true
+        }
+    }
 });

@@ -75,11 +75,13 @@ describe('Authentication', () => {
 
     describe('Route guards', () => {
         it('redirects an unauthenticated user from /cart to login', () => {
+            cy.clearCookies();
             cy.visit('/en/cart');
             cy.url().should('include', '/login');
         });
 
         it('redirects an unauthenticated user from /orders to login', () => {
+            cy.clearCookies();
             cy.visit('/en/orders');
             cy.url().should('include', '/login');
         });
@@ -91,6 +93,7 @@ describe('Authentication', () => {
         });
 
         it('redirects an unauthenticated user from admin-only /users to login', () => {
+            cy.clearCookies();
             cy.visit('/en/users');
             cy.url().should('include', '/login');
         });

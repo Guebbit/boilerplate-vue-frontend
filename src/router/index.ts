@@ -156,17 +156,17 @@ router.beforeResolve(localeChoice);
 
 // Track page views for analytics
 router.afterEach((to) => {
-  try {
-    const obs = useObservabilityStore();
-    obs.track(analyticsEvents.PAGE_VIEW, {
-      path: to.path,
-      name: to.name as string,
-      params: to.params as Record<string, unknown>,
-      query: to.query as Record<string, unknown>
-    });
-  } catch {
-    // Store may not be initialised yet — ignore.
-  }
+    try {
+        const obs = useObservabilityStore();
+        obs.track(analyticsEvents.PAGE_VIEW, {
+            path: to.path,
+            name: to.name as string,
+            params: to.params as Record<string, unknown>,
+            query: to.query as Record<string, unknown>
+        });
+    } catch {
+        // Store may not be initialised yet — ignore.
+    }
 });
 
 export default router;
