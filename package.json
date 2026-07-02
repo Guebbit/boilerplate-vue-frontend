@@ -107,5 +107,20 @@
         "workerDirectory": [
             "public"
         ]
+    },
+    "allowScripts": {
+        "@hyperjump/json-pointer@0.9.8": true,
+        "@hyperjump/json-schema@0.23.5": true,
+        "@hyperjump/json-schema-core@0.28.5": true,
+        "@hyperjump/pact@0.2.5": true,
+        "esbuild@0.28.1": true,
+        "esbuild@0.27.2": true,
+        "esbuild@0.28.0": true,
+        "esbuild@0.21.5": true,
+        "@parcel/watcher@2.5.4": true,
+        "core-js@3.49.0": true,
+        "cypress@15.14.2": true,
+        "msw@2.13.4": true,
+        "protobufjs@7.6.1": true
     }
 }
