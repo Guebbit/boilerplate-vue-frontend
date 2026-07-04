@@ -1,34 +1,13 @@
 <template>
-    <div class="loading-side" />
+    <div class="loading-side position-fixed bottom-0 right-0 pa-4">
+        <VProgressCircular indeterminate color="primary" size="48" width="5" />
+    </div>
 </template>
 
-<style lang="scss">
-.loading-side {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    padding: 1em;
+<script setup lang="ts">
+import { VProgressCircular } from 'vuetify/components';
 
-    &:after {
-        content: '';
-        display: block;
-        width: 4em;
-        height: 4em;
-        border-radius: 50%;
-        border-width: 6px;
-        border-style: solid;
-        border-color: rgb(var(--theme-on-surface)) transparent rgb(var(--theme-on-surface))
-            transparent;
-        animation: loading-side-animation 1s linear infinite;
-    }
-
-    @keyframes loading-side-animation {
-        0% {
-            transform: rotate(0deg);
-        }
-        100% {
-            transform: rotate(360deg);
-        }
-    }
-}
-</style>
+/*
+ * Non-blocking corner loader (side loading state).
+ */
+</script>

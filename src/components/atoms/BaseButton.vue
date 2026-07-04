@@ -1,12 +1,14 @@
 <template>
-    <button :type="type ?? 'button'" :disabled="disabled" class="theme-button">
+    <VBtn :type="type ?? 'button'" :disabled="disabled" color="primary" variant="flat">
         <slot />
-    </button>
+    </VBtn>
 </template>
 
 <script setup lang="ts">
-/**
- * Reusable button using the theme-button style.
+import { VBtn } from 'vuetify/components';
+
+/*
+ * Reusable button on top of Vuetify VBtn.
  * Defaults to type="button" to avoid accidental form submissions.
  */
 defineProps<{

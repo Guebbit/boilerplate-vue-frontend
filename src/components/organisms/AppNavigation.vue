@@ -1,170 +1,93 @@
 <template>
-    <header class="page-header">
-        <img alt="logo" class="logo" :src="PUBLIC_PATH + 'images/guebbit-logo-colored.png'" />
+    <VAppBar class="page-header" density="comfortable" elevation="2">
+        <template #prepend>
+            <img alt="logo" class="logo" :src="PUBLIC_PATH + 'images/guebbit-logo-colored.png'" />
+        </template>
 
-        <nav>
-            <RouterLink
-                :to="
-                    routerLinkI18n({
-                        name: 'Home'
-                    })
-                "
-            >
-                {{ t('navigation.label-home') }}
-            </RouterLink>
-            <RouterLink
-                :to="
-                    routerLinkI18n({
-                        name: 'Playground'
-                    })
-                "
-            >
-                {{ t('navigation.label-playground') }}
-            </RouterLink>
-            <RouterLink
-                v-show="isAdmin"
-                :to="
-                    routerLinkI18n({
-                        name: 'Admin'
-                    })
-                "
-            >
-                {{ t('navigation.label-admin') }}
-            </RouterLink>
-            <RouterLink
-                v-show="isAdmin"
-                :to="
-                    routerLinkI18n({
-                        name: 'UsersList'
-                    })
-                "
-            >
-                {{ t('navigation.label-users-list', 2) }}
-            </RouterLink>
-            <RouterLink
-                :to="
-                    routerLinkI18n({
-                        name: 'ProductsList'
-                    })
-                "
-            >
-                {{ t('navigation.label-products-list', 2) }}
-            </RouterLink>
-            <RouterLink
-                v-show="isAuth"
-                :to="
-                    routerLinkI18n({
-                        name: 'Profile'
-                    })
-                "
-            >
-                {{ t('navigation.label-profile', 2) }}
-            </RouterLink>
-            <RouterLink
-                v-show="isAuth"
-                :to="
-                    routerLinkI18n({
-                        name: 'Cart'
-                    })
-                "
-            >
-                {{ t('navigation.label-cart') }}
-            </RouterLink>
-            <RouterLink
-                v-show="isAuth"
-                :to="
-                    routerLinkI18n({
-                        name: 'OrdersList'
-                    })
-                "
-            >
-                {{ t('navigation.label-orders') }}
-            </RouterLink>
+        <VBtn :to="routerLinkI18n({ name: 'Home' })" prepend-icon="$home" exact>
+            {{ t('navigation.label-home') }}
+        </VBtn>
+        <VBtn :to="routerLinkI18n({ name: 'Playground' })">
+            {{ t('navigation.label-playground') }}
+        </VBtn>
+        <VBtn v-show="isAdmin" :to="routerLinkI18n({ name: 'Admin' })" prepend-icon="$admin">
+            {{ t('navigation.label-admin') }}
+        </VBtn>
+        <VBtn v-show="isAdmin" :to="routerLinkI18n({ name: 'UsersList' })" prepend-icon="$account">
+            {{ t('navigation.label-users-list', 2) }}
+        </VBtn>
+        <VBtn :to="routerLinkI18n({ name: 'ProductsList' })" prepend-icon="$package">
+            {{ t('navigation.label-products-list', 2) }}
+        </VBtn>
+        <VBtn v-show="isAuth" :to="routerLinkI18n({ name: 'Profile' })">
+            {{ t('navigation.label-profile', 2) }}
+        </VBtn>
+        <VBtn v-show="isAuth" :to="routerLinkI18n({ name: 'Cart' })" prepend-icon="$cart">
+            {{ t('navigation.label-cart') }}
+        </VBtn>
+        <VBtn v-show="isAuth" :to="routerLinkI18n({ name: 'OrdersList' })">
+            {{ t('navigation.label-orders') }}
+        </VBtn>
 
-            <slot name="nav-left" />
-        </nav>
+        <slot name="nav-left" />
 
         <slot />
 
-        <nav>
-            <slot name="nav-right" />
+        <VSpacer />
 
-            <button
-                v-show="!isAuth && !route.fullPath.includes('login')"
-                class="theme-button"
-                @click="router.push(routerLinkI18n(loginContinueTo(route.fullPath)))"
-            >
-                {{ t('navigation.label-login') }}
-            </button>
+        <slot name="nav-right" />
 
-            <button
-                v-show="!isAuth && !route.fullPath.includes('signup')"
-                class="theme-button"
-                @click="router.push(routerLinkI18n({ name: 'Signup' }))"
-            >
-                {{ t('navigation.label-signup') }}
-            </button>
+        <VBtn
+            v-show="!isAuth && !route.fullPath.includes('login')"
+            prepend-icon="$login"
+            variant="tonal"
+            color="primary"
+            class="mx-1"
+            @click="router.push(routerLinkI18n(loginContinueTo(route.fullPath)))"
+        >
+            {{ t('navigation.label-login') }}
+        </VBtn>
 
-            <button
-                v-show="isAuth"
-                class="theme-button"
-                @click="router.push(routerLinkI18n({ name: 'Logout' }))"
-            >
-                {{ t('navigation.label-logout') }}
-            </button>
+        <VBtn
+            v-show="!isAuth && !route.fullPath.includes('signup')"
+            prepend-icon="$accountPlus"
+            variant="tonal"
+            color="secondary"
+            class="mx-1"
+            @click="router.push(routerLinkI18n({ name: 'Signup' }))"
+        >
+            {{ t('navigation.label-signup') }}
+        </VBtn>
 
-            <AppLanguageSwitcher />
-        </nav>
-    </header>
+        <VBtn
+            v-show="isAuth"
+            prepend-icon="$logout"
+            variant="tonal"
+            class="mx-1"
+            @click="router.push(routerLinkI18n({ name: 'Logout' }))"
+        >
+            {{ t('navigation.label-logout') }}
+        </VBtn>
+
+        <AppLanguageSwitcher class="mx-2" />
+    </VAppBar>
 </template>
 
 <style lang="scss">
-@use '@/styles/functions' as fn;
-
 .page-header {
     .logo {
         display: block;
-        max-height: 100%;
-        padding: 0.5em 1em;
-    }
-
-    nav {
-        display: flex;
-        gap: 1em;
-
-        & > a {
-            height: 100%;
-            display: inline-flex;
-            align-items: center;
-            padding: 0 1em;
-            border-left: 1px solid var(--color-border);
-            text-shadow: 1px -1px 1em #000;
-            text-transform: capitalize;
-
-            &:hover,
-            &.router-link-exact-active {
-                color: rgb(var(--on-secondary-600));
-                background: rgb(var(--secondary-600));
-            }
-        }
-    }
-
-    @include fn.for-tablet-and-desktop() {
-        nav {
-            justify-content: flex-start;
-
-            &:last-child {
-                justify-content: flex-end;
-            }
-        }
+        max-height: 40px;
+        padding: 0 1em;
     }
 }
 </style>
 
 <script setup lang="ts">
-import { RouterLink, useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
+import { VAppBar, VBtn, VSpacer } from 'vuetify/components';
 import AppLanguageSwitcher from '@/components/organisms/AppLanguageSwitcher.vue';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { loginContinueTo } from '@/utils/navigation.ts';

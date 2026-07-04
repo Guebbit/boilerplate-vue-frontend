@@ -1,39 +1,42 @@
 <template>
-    <div class="theme-form-input" :class="{ 'form-error': showErrors && errors?.length }">
-        <label v-if="label" :for="uuid">{{ label }}</label>
-        <textarea
-            v-if="multiline"
-            :id="uuid"
-            v-model="inputValue"
-            :placeholder="placeholder"
-            :disabled="disabled"
-            :rows="rows"
-            class="theme-input"
-        />
-        <input
-            v-else
-            :id="uuid"
-            v-model="inputValue"
-            :type="type ?? 'text'"
-            :placeholder="placeholder"
-            :disabled="disabled"
-            :min="min"
-            :max="max"
-            :step="step"
-            class="theme-input"
-        />
-        <p v-if="showErrors && errors?.length" class="form-error-message">
-            {{ errors!.join(', ') }}
-        </p>
-    </div>
+    <VTextarea
+        v-if="multiline"
+        v-model="inputValue"
+        :label="label"
+        :placeholder="placeholder"
+        :disabled="disabled"
+        :rows="rows"
+        :error-messages="showErrors ? errors : []"
+    >
+        <template #message="{ message }">
+            <span class="form-error-message">{{ message }}</span>
+        </template>
+    </VTextarea>
+    <VTextField
+        v-else
+        v-model="inputValue"
+        :label="label"
+        :type="type ?? 'text'"
+        :placeholder="placeholder"
+        :disabled="disabled"
+        :min="min"
+        :max="max"
+        :step="step"
+        :error-messages="showErrors ? errors : []"
+    >
+        <template #message="{ message }">
+            <span class="form-error-message">{{ message }}</span>
+        </template>
+    </VTextField>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { VTextField, VTextarea } from 'vuetify/components';
 
-/**
- * Reusable form field: wraps a text/password/email/number/url/tel input (or textarea)
- * with a label, the theme-form-input layout, and inline validation error display.
+/*
+ * Reusable form field on top of Vuetify VTextField/VTextarea,
+ * with label and inline validation error display.
  */
 const props = defineProps<{
     label?: string;
@@ -49,10 +52,9 @@ const props = defineProps<{
     showErrors?: boolean;
 }>();
 
-const uuid = globalThis.crypto.randomUUID();
 const model = defineModel<string | number | undefined>();
 
-/**
+/*
  * Computed wrapper that coerces the emitted value to number when type="number",
  * keeping the parent model correctly typed without requiring v-model.number.
  */

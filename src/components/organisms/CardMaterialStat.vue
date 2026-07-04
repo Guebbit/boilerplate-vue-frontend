@@ -1,15 +1,19 @@
 <template>
-    <BaseCard class="material-stat-card animate-on-hover" :class="'accent-' + resolvedAccent">
-        <p class="eyebrow">{{ title }}</p>
-        <p class="value">{{ value }}</p>
-        <p v-if="subtitle" class="subtitle">{{ subtitle }}</p>
-    </BaseCard>
+    <VCard class="material-stat-card pa-5" variant="tonal" :color="resolvedAccent" min-width="180">
+        <p class="text-overline ma-0">{{ title }}</p>
+        <p class="text-h4 font-weight-medium ma-0 mt-2">{{ value }}</p>
+        <p v-if="subtitle" class="text-caption ma-0 mt-2">{{ subtitle }}</p>
+    </VCard>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import BaseCard from '@/components/atoms/BaseCard.vue';
+import { VCard } from 'vuetify/components';
 
+/*
+ * Stat card: overline title + big value + optional subtitle,
+ * tinted with the accent theme color.
+ */
 const props = defineProps<{
     title: string;
     value: string | number;
@@ -17,48 +21,11 @@ const props = defineProps<{
     accent?: 'primary' | 'secondary' | 'tertiary';
 }>();
 
-const resolvedAccent = computed(() => props.accent ?? 'primary');
+/*
+ * Maps the "tertiary" accent (not in the Vuetify palette) to "info".
+ */
+const resolvedAccent = computed(() => {
+    const accent = props.accent ?? 'primary';
+    return accent === 'tertiary' ? 'info' : accent;
+});
 </script>
-
-<style lang="scss">
-.material-stat-card {
-    min-width: 180px;
-    padding: 1.25rem;
-    border-radius: 1rem;
-    border: 1px solid rgba(var(--theme-on-surface) / 0.08);
-    box-shadow: 0 10px 28px rgba(0 0 0 / 0.08);
-
-    .eyebrow {
-        margin: 0;
-        font-size: 0.75rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        opacity: 0.7;
-    }
-
-    .value {
-        margin: 0.5rem 0 0;
-        font-size: 2rem;
-        font-weight: 600;
-        line-height: 1.1;
-    }
-
-    .subtitle {
-        margin: 0.5rem 0 0;
-        font-size: 0.85rem;
-        opacity: 0.8;
-    }
-
-    &.accent-primary {
-        border-top: 4px solid rgb(var(--primary-500));
-    }
-
-    &.accent-secondary {
-        border-top: 4px solid rgb(var(--secondary-500));
-    }
-
-    &.accent-tertiary {
-        border-top: 4px solid rgb(var(--tertiary-500));
-    }
-}
-</style>

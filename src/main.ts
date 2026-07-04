@@ -8,10 +8,9 @@ import router from './router';
 import { initializeApiMocking } from '../tests/mocks/apiMock.ts';
 
 /**
- * Global CSS
+ * Vuetify (material UI framework, custom instance with SVG icon sets)
  */
-import '@/styles/theme.scss';
-import '@/styles/main.scss';
+import { vuetify } from '@/plugins/vuetify';
 
 /**
  * Vue3 App
@@ -22,7 +21,7 @@ const bootstrapApplication = async () => {
     const app = createApp(App);
 
     // Pinia must be registered before any store is instantiated.
-    app.use(createPinia()).use(router).use(i18n).mount('#app');
+    app.use(createPinia()).use(router).use(i18n).use(vuetify).mount('#app');
 
     // Obtain the observability store (Sentry + PostHog).
     const observability = useObservabilityStore();

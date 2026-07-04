@@ -1,17 +1,23 @@
 <template>
-    <div class="theme-form-input-checkbox" :class="{ 'form-error': showErrors && errors?.length }">
-        <input :id="uuid" v-model="model" type="checkbox" :disabled="disabled" />
-        <label v-if="label" :for="uuid">{{ label }}</label>
-        <p v-if="showErrors && errors?.length" class="form-error-message">
-            {{ errors!.join(', ') }}
-        </p>
-    </div>
+    <VCheckbox
+        v-model="model"
+        :label="label"
+        :disabled="disabled"
+        :error-messages="showErrors ? errors : []"
+        hide-details="auto"
+    >
+        <template #message="{ message }">
+            <span class="form-error-message">{{ message }}</span>
+        </template>
+    </VCheckbox>
 </template>
 
 <script setup lang="ts">
-/**
- * Reusable checkbox field: wraps a checkbox input with a label in the
- * theme-form-input-checkbox layout, with optional validation error display.
+import { VCheckbox } from 'vuetify/components';
+
+/*
+ * Reusable checkbox on top of Vuetify VCheckbox,
+ * with optional validation error display.
  */
 defineProps<{
     label?: string;
@@ -20,6 +26,5 @@ defineProps<{
     showErrors?: boolean;
 }>();
 
-const uuid = globalThis.crypto.randomUUID();
 const model = defineModel<boolean | undefined>();
 </script>

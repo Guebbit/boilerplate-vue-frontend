@@ -1,43 +1,18 @@
 <template>
-    <div class="loading-core" />
+    <VOverlay
+        class="loading-core align-center justify-center"
+        :model-value="true"
+        persistent
+        contained
+    >
+        <VProgressCircular indeterminate color="primary" size="64" width="6" />
+    </VOverlay>
 </template>
 
-<style lang="scss">
-.loading-core {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 9999;
-    background: rgb(var(--theme-surface));
+<script setup lang="ts">
+import { VOverlay, VProgressCircular } from 'vuetify/components';
 
-    &:after {
-        // TODO cambiare e centrare
-        position: absolute;
-        top: 50%;
-        right: 50%;
-        transform: translate(-50%, -50%);
-
-        content: '';
-        display: block;
-        width: 4em;
-        height: 4em;
-        border-radius: 50%;
-        border-width: 6px;
-        border-style: solid;
-        border-color: rgb(var(--theme-on-surface)) transparent rgb(var(--theme-on-surface))
-            transparent;
-        animation: loading-core-animation 1s linear infinite;
-    }
-
-    @keyframes loading-core-animation {
-        0% {
-            transform: rotate(0deg);
-        }
-        100% {
-            transform: rotate(360deg);
-        }
-    }
-}
-</style>
+/*
+ * Full-page blocking loader (core loading state).
+ */
+</script>

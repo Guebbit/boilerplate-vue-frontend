@@ -1,23 +1,38 @@
 <template>
-    <div class="counter-input">
-        <label v-show="label.length > 0" :for="uuid">{{ label }}</label>
-        <div>
-            <button class="counter-sub" @click="updateCounter(-step)">-</button>
-            <input
-                :value="count?.toString()"
-                @input="triggerUpdateInput"
-                :id="uuid"
-                type="text"
-                :max="max"
-                :min="min"
-            />
-            <button class="counter-add" @click="updateCounter(step)">+</button>
-        </div>
+    <div class="counter-input d-inline-flex align-center ga-2">
+        <VBtn
+            class="counter-sub"
+            icon="$minus"
+            size="small"
+            variant="tonal"
+            color="primary"
+            @click="updateCounter(-step)"
+        />
+        <VTextField
+            :model-value="count?.toString()"
+            @update:model-value="triggerUpdateInput"
+            :label="label.length > 0 ? label : undefined"
+            type="text"
+            :max="max"
+            :min="min"
+            density="compact"
+            hide-details
+            style="width: 6em"
+        />
+        <VBtn
+            class="counter-add"
+            icon="$plus"
+            size="small"
+            variant="tonal"
+            color="primary"
+            @click="updateCounter(step)"
+        />
     </div>
 </template>
 
 <script setup lang="ts">
 import { watch } from 'vue';
+import { VBtn, VTextField } from 'vuetify/components';
 
 const {
     label = '',
@@ -26,7 +41,7 @@ const {
     max
 } = defineProps<{
     /**
-     * Max possible value
+     * Field label
      */
     label?: string;
     /**
@@ -43,36 +58,32 @@ const {
     min?: number;
 }>();
 
-/**
- * Unique ID to link input and label
- */
-const uuid = globalThis.crypto.randomUUID();
-
-/**
- *    Counter value
+/*
+ * Counter value
  */
 const count = defineModel<number>();
 
-/**
- *
+/*
+ * Parse manual input and update the model when valid.
+ * @param value - raw input string
  */
-const triggerUpdateInput = (event: Event) => {
-    if (!event.target) return;
-    const countInt = Number.parseInt((event.target as HTMLInputElement).value);
+const triggerUpdateInput = (value: string) => {
+    const countInt = Number.parseInt(value);
     if (countInt || countInt === 0) count.value = countInt;
 };
 
-/**
+/*
  * Update counter
+ * @param delta - amount to add (can be negative)
  */
 const updateCounter = (delta = 0) => {
     if (!count.value && count.value !== 0) return;
     count.value += delta;
 };
 
-/**
- * HTML5 fix
- * Input type number "min" and "max" can't be trusted
+/*
+ * Clamp the counter between min and max
+ * ("min"/"max" input attributes can't be trusted)
  */
 const fixCounter = () => {
     // if undefined or null
@@ -87,41 +98,3 @@ watch([count, () => min, () => max], () => {
     fixCounter();
 });
 </script>
-
-<style lang="scss">
-.counter-input {
-    & > * {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-    input {
-        font-size: 1.2em;
-        appearance: none;
-        border: none;
-        outline: none;
-        padding: 0.5em 1em;
-        background: rgba(var(--secondary-200) / 0.5);
-    }
-
-    button {
-        outline: none;
-        text-transform: none;
-        user-select: none;
-        border-style: none;
-        color: rgb(var(--on-primary-500));
-        background: rgb(var(--secondary-200));
-        padding: 1em 2em;
-        cursor: pointer;
-
-        &:first-child {
-            border-radius: 0.2em 0 0 0.2em;
-        }
-
-        &:last-child {
-            border-radius: 0 0.2em 0.2em 0;
-        }
-    }
-}
-</style>
