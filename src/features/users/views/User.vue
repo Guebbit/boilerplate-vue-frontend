@@ -1,107 +1,145 @@
 <template>
-    <LayoutDefault id="user-target" class="item-detail-page item-detail-page-user">
+    <LayoutDefault id="user-target">
         <template #header>
-            <h1 class="theme-page-title">
+            <h1 class="text-h4 mb-6">
                 <span>{{ t('user-target-page.page-title') }}</span>
             </h1>
         </template>
 
-        <section class="item-detail-page-content">
-            <div class="item-detail-page-grid-top">
+        <VRow class="mb-6" dense>
+            <VCol cols="12" lg="6">
                 <ItemDetailHero
                     :title="heroTitle"
                     :description="heroDescription"
                     :eyebrow="currentUser?.id"
                 >
-                    <template #icon><User :size="32" /></template>
+                    <template #icon><VIcon icon="$account" size="32" /></template>
                 </ItemDetailHero>
+            </VCol>
+            <VCol cols="12" sm="4" lg="2">
+                <CardMaterialStat
+                    :title="t('user-target-page.label-email')"
+                    :value="formatText(currentUser?.email)"
+                />
+            </VCol>
+            <VCol cols="12" sm="4" lg="2">
+                <CardMaterialStat
+                    :title="t('user-target-page.label-admin')"
+                    :value="userRole"
+                    accent="secondary"
+                />
+            </VCol>
+            <VCol cols="12" sm="4" lg="2">
+                <CardMaterialStat
+                    :title="t('user-target-page.label-active')"
+                    :value="userStatus"
+                    accent="tertiary"
+                />
+            </VCol>
+        </VRow>
 
-                <div class="item-detail-page-stats">
-                    <CardMaterialStat
-                        :title="t('user-target-page.label-email')"
-                        :value="formatText(currentUser?.email)"
-                    />
-                    <CardMaterialStat
-                        :title="t('user-target-page.label-admin')"
-                        :value="userRole"
-                        accent="secondary"
-                    />
-                    <CardMaterialStat
-                        :title="t('user-target-page.label-active')"
-                        :value="userStatus"
-                        accent="tertiary"
-                    />
-                </div>
-            </div>
-
-            <div class="item-detail-page-grid-main item-detail-page-grid-main-with-aside">
-                <CardDetail class="item-detail-page-main">
-                    <div class="item-detail-page-section-header">
-                        <h3>{{ t('generic.details') }}</h3>
+        <VRow dense>
+            <VCol cols="12" lg="8">
+                <CardDetail>
+                    <div class="mb-4">
+                        <h3 class="text-h6">{{ t('generic.details') }}</h3>
                     </div>
 
-                    <div v-if="currentUser" class="item-detail-page-grid-fields">
+                    <VRow v-if="currentUser" dense>
+                        <VCol cols="12" sm="6">
+                            <ItemDetailField
+                                :label="t('user-target-page.label-id')"
+                                :value="currentUser.id"
+                                icon="#"
+                            />
+                        </VCol>
+                        <VCol cols="12" sm="6">
+                            <ItemDetailField
+                                :label="t('user-target-page.label-username')"
+                                :value="currentUser.username"
+                                icon="$account"
+                            />
+                        </VCol>
+                        <VCol cols="12" sm="6">
+                            <ItemDetailField
+                                :label="t('user-target-page.label-email')"
+                                :value="currentUser.email"
+                                icon="✉"
+                            />
+                        </VCol>
+                        <VCol cols="12" sm="6">
+                            <ItemDetailField
+                                :label="t('user-target-page.label-admin')"
+                                icon="$admin"
+                            >
+                                <VChip color="secondary" size="small" variant="tonal">{{
+                                    userRole
+                                }}</VChip>
+                            </ItemDetailField>
+                        </VCol>
+                        <VCol cols="12" sm="6">
+                            <ItemDetailField
+                                :label="t('user-target-page.label-active')"
+                                icon="$success"
+                            >
+                                <VChip color="success" size="small" variant="tonal">{{
+                                    userStatus
+                                }}</VChip>
+                            </ItemDetailField>
+                        </VCol>
+                        <VCol cols="12" sm="6">
+                            <ItemDetailField
+                                :label="t('user-target-page.label-updated-at')"
+                                :value="formatDateTime(currentUser.updatedAt)"
+                                icon="🕒"
+                                full-width
+                            />
+                        </VCol>
+                    </VRow>
+                    <p v-else class="text-body-2 text-medium-emphasis mb-0">
+                        {{ t('generic.loading-state') }}
+                    </p>
+                </CardDetail>
+            </VCol>
+
+            <VCol cols="12" lg="4">
+                <CardDetail as="aside">
+                    <div class="d-flex flex-column ga-4">
+                        <CardInfo
+                            :title="heroTitle"
+                            :description="heroDescription"
+                            variant="secondary"
+                        >
+                            <template #icon><VIcon icon="$account" size="28" /></template>
+                        </CardInfo>
                         <ItemDetailField
-                            :label="t('user-target-page.label-id')"
-                            :value="currentUser.id"
-                            icon="#"
+                            :label="t('user-target-page.label-created-at')"
+                            :value="formatDateTime(currentUser?.createdAt)"
+                            icon="📅"
                         />
-                        <ItemDetailField
-                            :label="t('user-target-page.label-username')"
-                            :value="currentUser.username"
-                            icon="🙂"
-                        />
-                        <ItemDetailField
-                            :label="t('user-target-page.label-email')"
-                            :value="currentUser.email"
-                            icon="✉"
-                        />
-                        <ItemDetailField :label="t('user-target-page.label-admin')" icon="🛡">
-                            <span class="item-detail-page-status-chip">{{ userRole }}</span>
-                        </ItemDetailField>
-                        <ItemDetailField :label="t('user-target-page.label-active')" icon="●">
-                            <span class="item-detail-page-status-chip">{{ userStatus }}</span>
-                        </ItemDetailField>
                         <ItemDetailField
                             :label="t('user-target-page.label-updated-at')"
-                            :value="formatDateTime(currentUser.updatedAt)"
-                            icon="🕒"
-                            full-width
+                            :value="formatDateTime(currentUser?.updatedAt)"
+                            icon="🕘"
                         />
                     </div>
-                    <p v-else class="item-detail-page-empty">{{ t('generic.loading-state') }}</p>
                 </CardDetail>
+            </VCol>
+        </VRow>
 
-                <CardDetail as="aside" class="item-detail-page-aside">
-                    <CardInfo :title="heroTitle" :description="heroDescription" variant="secondary">
-                        <template #icon><User :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('user-target-page.label-created-at')"
-                        :value="formatDateTime(currentUser?.createdAt)"
-                        icon="📅"
-                    />
-                    <ItemDetailField
-                        :label="t('user-target-page.label-updated-at')"
-                        :value="formatDateTime(currentUser?.updatedAt)"
-                        icon="🕘"
-                    />
-                </CardDetail>
-            </div>
-
-            <div class="item-detail-page-actions">
-                <RouterLink
-                    v-if="currentUser"
-                    :to="routerLinkI18n({ name: 'UserEdit', params: { id: currentUser.id } })"
-                    class="theme-button"
-                >
-                    {{ t('user-target-page.button-go-to-edit') }}
-                </RouterLink>
-                <RouterLink :to="routerLinkI18n({ name: 'UsersList' })" class="theme-button">
-                    {{ t('user-target-page.button-go-to-list') }}
-                </RouterLink>
-            </div>
-        </section>
+        <div class="d-flex flex-wrap ga-3 mt-6">
+            <VBtn
+                v-if="currentUser"
+                :to="routerLinkI18n({ name: 'UserEdit', params: { id: currentUser.id } })"
+                color="primary"
+            >
+                <VIcon icon="$pencil" start />
+                {{ t('user-target-page.button-go-to-edit') }}
+            </VBtn>
+            <VBtn :to="routerLinkI18n({ name: 'UsersList' })" variant="tonal">
+                {{ t('user-target-page.button-go-to-list') }}
+            </VBtn>
+        </div>
     </LayoutDefault>
 </template>
 
@@ -112,15 +150,13 @@ export default {
 </script>
 
 <script setup lang="ts">
-import '@/styles/features/itemDetail.scss';
 import { computed } from 'vue';
-import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useUsersStore } from '@/features/users/store';
+import { VBtn, VChip, VCol, VIcon, VRow } from 'vuetify/components';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import { User } from 'lucide-vue-next';
 import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
 import CardDetail from '@/components/organisms/CardDetail.vue';
 import CardInfo from '@/components/organisms/CardInfo.vue';
@@ -129,30 +165,30 @@ import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
 import { useItemDetailRecord } from '@/composables/useItemDetailRecord.ts';
 import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';
 
-/**
+/*
  * Translations helper.
  */
 const { t } = useI18n();
 
-/**
+/*
  * Route user id.
  */
 const { id } = defineProps<{
     id?: string;
 }>();
 
-/**
+/*
  * User store API and state references.
  */
 const { fetchUser } = useUsersStore();
 const { currentUser, selectedUserId } = storeToRefs(useUsersStore());
 
-/**
+/*
  * Shared display/format helpers.
  */
 const { formatText, formatDateTime, formatFlag } = useItemDetailDisplay();
 
-/**
+/*
  * Hero and status computed values.
  */
 const heroTitle = computed(
@@ -166,7 +202,7 @@ const userStatus = computed(() =>
     formatFlag(currentUser.value?.active, t('generic.enabled'), t('generic.disabled'))
 );
 
-/**
+/*
  * Activates route-based user selection and mount-time fetch.
  */
 useItemDetailRecord({

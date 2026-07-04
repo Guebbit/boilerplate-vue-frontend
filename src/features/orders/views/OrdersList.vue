@@ -1,51 +1,69 @@
 <template>
-    <LayoutDefault id="orders-list-page" class="item-list-page">
+    <LayoutDefault id="orders-list-page">
         <template #header>
-            <h1 class="theme-page-title">
+            <h1 class="text-h4 mb-6">
                 <span>{{ t('orders-list-page.page-title') }}</span>
             </h1>
         </template>
 
-        <form class="list-filters" @submit.prevent="handleSearch">
-            <BaseInput
-                v-model="filters.id"
-                :label="t('orders-list-page.filter-id')"
-                :placeholder="t('orders-list-page.filter-id')"
-            />
-            <BaseInput
-                v-model="filters.userId"
-                :label="t('orders-list-page.filter-user-id')"
-                :placeholder="t('orders-list-page.filter-user-id')"
-            />
-            <BaseInput
-                v-model="filters.productId"
-                :label="t('orders-list-page.filter-product-id')"
-                :placeholder="t('orders-list-page.filter-product-id')"
-            />
-            <BaseInput
-                v-model="filters.email"
-                :label="t('orders-list-page.filter-email')"
-                :placeholder="t('orders-list-page.filter-email')"
-            />
-            <BaseSelect
-                v-model="pageSize"
-                :label="t('generic.page-size')"
-                :options="pageSizeOptions"
-            />
-            <div class="list-filters-actions">
-                <button type="submit" class="theme-button">{{ t('generic.search') }}</button>
-                <button type="button" class="theme-button" @click="handleReset">
-                    {{ t('generic.reset') }}
-                </button>
-            </div>
-        </form>
+        <VCard class="pa-4 mb-6" variant="flat" border>
+            <form @submit.prevent="handleSearch">
+                <VRow align="end" dense>
+                    <VCol cols="12" md="6" lg="3">
+                        <BaseInput
+                            v-model="filters.id"
+                            :label="t('orders-list-page.filter-id')"
+                            :placeholder="t('orders-list-page.filter-id')"
+                        />
+                    </VCol>
+                    <VCol cols="12" md="6" lg="3">
+                        <BaseInput
+                            v-model="filters.userId"
+                            :label="t('orders-list-page.filter-user-id')"
+                            :placeholder="t('orders-list-page.filter-user-id')"
+                        />
+                    </VCol>
+                    <VCol cols="12" md="6" lg="3">
+                        <BaseInput
+                            v-model="filters.productId"
+                            :label="t('orders-list-page.filter-product-id')"
+                            :placeholder="t('orders-list-page.filter-product-id')"
+                        />
+                    </VCol>
+                    <VCol cols="12" md="6" lg="3">
+                        <BaseInput
+                            v-model="filters.email"
+                            :label="t('orders-list-page.filter-email')"
+                            :placeholder="t('orders-list-page.filter-email')"
+                        />
+                    </VCol>
+                    <VCol cols="12" md="6" lg="3">
+                        <BaseSelect
+                            v-model="pageSize"
+                            :label="t('generic.page-size')"
+                            :options="pageSizeOptions"
+                        />
+                    </VCol>
+                    <VCol cols="12" md="6" lg="9">
+                        <div class="d-flex flex-wrap justify-end ga-3">
+                            <VBtn type="submit" color="primary" prepend-icon="$search">
+                                {{ t('generic.search') }}
+                            </VBtn>
+                            <VBtn type="button" variant="tonal" @click="handleReset">
+                                {{ t('generic.reset') }}
+                            </VBtn>
+                        </div>
+                    </VCol>
+                </VRow>
+            </form>
+        </VCard>
 
-        <div v-if="ordersList.length === 0" class="theme-card">
-            <p>{{ t('orders-list-page.empty-orders') }}</p>
-            <RouterLink :to="routerLinkI18n({ name: 'Cart' })">
+        <VCard v-if="ordersList.length === 0" class="pa-6 mb-6" variant="flat" border>
+            <p class="mb-4">{{ t('orders-list-page.empty-orders') }}</p>
+            <VBtn :to="routerLinkI18n({ name: 'Cart' })" color="primary" prepend-icon="$cart">
                 {{ t('orders-list-page.button-go-to-cart') }}
-            </RouterLink>
-        </div>
+            </VBtn>
+        </VCard>
 
         <DataTable
             v-else
@@ -60,28 +78,38 @@
             </template>
 
             <template v-slot:[`item.actions`]="{ item }">
-                <div class="actions-cell">
-                    <RouterLink
+                <div class="d-flex flex-wrap ga-2">
+                    <VBtn
                         :to="routerLinkI18n({ name: 'OrderTarget', params: { id: item.id } })"
-                        class="theme-button view-button"
+                        class="view-button"
+                        size="small"
+                        variant="tonal"
+                        prepend-icon="$eye"
                     >
                         {{ t('orders-list-page.button-view') }}
-                    </RouterLink>
-                    <RouterLink
+                    </VBtn>
+                    <VBtn
                         v-if="isAdmin"
                         :to="routerLinkI18n({ name: 'OrderEdit', params: { id: item.id } })"
-                        class="theme-button edit-button"
+                        class="edit-button"
+                        size="small"
+                        variant="tonal"
+                        prepend-icon="$pencil"
                     >
                         {{ t('orders-list-page.button-edit') }}
-                    </RouterLink>
-                    <button
+                    </VBtn>
+                    <VBtn
                         v-if="isAdmin"
-                        class="theme-button delete-button"
+                        class="delete-button"
+                        size="small"
+                        variant="tonal"
+                        color="error"
+                        prepend-icon="$delete"
                         :disabled="loading"
                         @click.stop="handleDelete(item.id)"
                     >
                         {{ t('orders-list-page.button-delete') }}
-                    </button>
+                    </VBtn>
                 </div>
             </template>
         </DataTable>
@@ -97,9 +125,8 @@ export default {
 </script>
 
 <script setup lang="ts">
-import '@/styles/features/orders.scss';
 import { computed, reactive } from 'vue';
-import { RouterLink } from 'vue-router';
+import { VBtn, VCard, VCol, VRow } from 'vuetify/components';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';

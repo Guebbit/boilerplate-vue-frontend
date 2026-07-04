@@ -5,9 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import '@/styles/features/users.scss';
 import { computed, reactive } from 'vue';
-import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -15,6 +13,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/features/users/store';
 import { notifyErrorMessages } from '@/utils/errors.ts';
 import type { SearchUsersRequest } from '@types';
+import { VBtn, VCard, VCardText, VChip, VCol, VIcon, VRow } from 'vuetify/components';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import ListPagination from '@/components/molecules/ListPagination.vue';
@@ -72,56 +71,78 @@ const formatDate = (date?: string) => (date ? new Date(date).toLocaleDateString(
 </script>
 
 <template>
-    <LayoutDefault id="users-list-page" class="item-list-page">
+    <LayoutDefault id="users-list-page">
         <template #header>
-            <h1 class="theme-page-title">
+            <h1 class="text-h4 mb-6">
                 <span>{{ t('users-list-page.page-title') }}</span>
             </h1>
         </template>
 
-        <form class="list-filters" @submit.prevent="handleSearch">
-            <BaseInput
-                v-model="filters.text"
-                :label="t('users-list-page.filter-text')"
-                :placeholder="t('users-list-page.filter-text')"
-            />
-            <BaseInput
-                v-model="filters.id"
-                :label="t('users-list-page.filter-id')"
-                :placeholder="t('users-list-page.filter-id')"
-            />
-            <BaseInput
-                v-model="filters.email"
-                :label="t('users-list-page.filter-email')"
-                :placeholder="t('users-list-page.filter-email')"
-            />
-            <BaseInput
-                v-model="filters.username"
-                :label="t('users-list-page.filter-username')"
-                :placeholder="t('users-list-page.filter-username')"
-            />
-            <BaseSelect
-                v-model="filters.active"
-                :label="t('users-list-page.filter-active')"
-                :options="activeOptions"
-            />
-            <BaseSelect
-                v-model="pageSize"
-                :label="t('generic.page-size')"
-                :options="pageSizeOptions"
-            />
-            <div class="list-filters-actions">
-                <button type="submit" class="theme-button">{{ t('generic.search') }}</button>
-                <button type="button" class="theme-button" @click="handleReset">
-                    {{ t('generic.reset') }}
-                </button>
-            </div>
-        </form>
+        <VCard class="mb-6" rounded="lg" variant="outlined">
+            <VCardText>
+                <form @submit.prevent="handleSearch">
+                    <VRow dense>
+                        <VCol cols="12" md="4">
+                            <BaseInput
+                                v-model="filters.text"
+                                :label="t('users-list-page.filter-text')"
+                                :placeholder="t('users-list-page.filter-text')"
+                            />
+                        </VCol>
+                        <VCol cols="12" md="4">
+                            <BaseInput
+                                v-model="filters.id"
+                                :label="t('users-list-page.filter-id')"
+                                :placeholder="t('users-list-page.filter-id')"
+                            />
+                        </VCol>
+                        <VCol cols="12" md="4">
+                            <BaseInput
+                                v-model="filters.email"
+                                :label="t('users-list-page.filter-email')"
+                                :placeholder="t('users-list-page.filter-email')"
+                            />
+                        </VCol>
+                        <VCol cols="12" md="4">
+                            <BaseInput
+                                v-model="filters.username"
+                                :label="t('users-list-page.filter-username')"
+                                :placeholder="t('users-list-page.filter-username')"
+                            />
+                        </VCol>
+                        <VCol cols="12" md="4">
+                            <BaseSelect
+                                v-model="filters.active"
+                                :label="t('users-list-page.filter-active')"
+                                :options="activeOptions"
+                            />
+                        </VCol>
+                        <VCol cols="12" md="4">
+                            <BaseSelect
+                                v-model="pageSize"
+                                :label="t('generic.page-size')"
+                                :options="pageSizeOptions"
+                            />
+                        </VCol>
+                        <VCol cols="12" class="d-flex flex-wrap ga-3 justify-end">
+                            <VBtn type="submit" color="primary">
+                                <VIcon icon="$search" start />
+                                {{ t('generic.search') }}
+                            </VBtn>
+                            <VBtn type="button" variant="tonal" @click="handleReset">
+                                {{ t('generic.reset') }}
+                            </VBtn>
+                        </VCol>
+                    </VRow>
+                </form>
+            </VCardText>
+        </VCard>
 
-        <div class="users-list-actions">
-            <RouterLink :to="routerLinkI18n({ name: 'UserCreate' })" class="theme-button">
+        <div class="d-flex justify-end mb-4">
+            <VBtn :to="routerLinkI18n({ name: 'UserCreate' })" color="primary">
+                <VIcon icon="$accountPlus" start />
                 {{ t('users-list-page.button-create-user') }}
-            </RouterLink>
+            </VBtn>
         </div>
 
         <DataTable
@@ -132,11 +153,15 @@ const formatDate = (date?: string) => (date ? new Date(date).toLocaleDateString(
             :loading-text="t('generic.loading')"
         >
             <template v-slot:[`item.admin`]="{ item }">
-                {{ item.admin ? '✓' : '✗' }}
+                <VChip :color="item.admin ? 'success' : 'default'" size="small" variant="tonal">
+                    {{ item.admin ? '✓' : '✗' }}
+                </VChip>
             </template>
 
             <template v-slot:[`item.active`]="{ item }">
-                {{ item.active ? '✓' : '✗' }}
+                <VChip :color="item.active ? 'success' : 'warning'" size="small" variant="tonal">
+                    {{ item.active ? '✓' : '✗' }}
+                </VChip>
             </template>
 
             <template v-slot:[`item.createdAt`]="{ item }">
@@ -144,30 +169,44 @@ const formatDate = (date?: string) => (date ? new Date(date).toLocaleDateString(
             </template>
 
             <template v-slot:[`item.actions`]="{ item }">
-                <div class="actions-cell">
-                    <RouterLink
+                <div class="d-flex flex-wrap ga-2">
+                    <VBtn
                         :to="routerLinkI18n({ name: 'UserTarget', params: { id: item.id } })"
-                        class="theme-button view-button"
+                        class="view-button"
+                        color="primary"
+                        size="small"
+                        variant="tonal"
                     >
+                        <VIcon icon="$eye" start />
                         {{ t('users-list-page.button-view') }}
-                    </RouterLink>
-                    <RouterLink
+                    </VBtn>
+                    <VBtn
                         :to="routerLinkI18n({ name: 'UserEdit', params: { id: item.id } })"
-                        class="theme-button edit-button"
+                        class="edit-button"
+                        color="secondary"
+                        size="small"
+                        variant="tonal"
                     >
+                        <VIcon icon="$pencil" start />
                         {{ t('users-list-page.button-edit') }}
-                    </RouterLink>
-                    <button
-                        class="theme-button delete-button"
+                    </VBtn>
+                    <VBtn
+                        class="delete-button"
+                        color="error"
+                        size="small"
+                        variant="tonal"
                         :disabled="loading"
                         @click.stop="handleDelete(item.id!)"
                     >
+                        <VIcon icon="$delete" start />
                         {{ t('users-list-page.button-delete') }}
-                    </button>
+                    </VBtn>
                 </div>
             </template>
         </DataTable>
 
-        <ListPagination v-model="pageCurrent" :length="pageTotal" />
+        <div class="mt-4">
+            <ListPagination v-model="pageCurrent" :length="pageTotal" />
+        </div>
     </LayoutDefault>
 </template>

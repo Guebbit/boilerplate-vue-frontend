@@ -1,13 +1,13 @@
 <template>
     <LayoutDefault id="login-page">
         <template #header>
-            <h1 class="theme-page-title">
+            <h1 class="text-h4 mb-6">
                 <span>{{ t('login-page.page-title') }}</span>
             </h1>
         </template>
 
-        <div class="theme-card theme-form-container">
-            <form ref="formElement" class="theme-form" @submit.prevent="submitForm">
+        <VCard class="mx-auto my-16 pa-6" max-width="480" elevation="2">
+            <form ref="formElement" class="d-flex flex-column ga-4" @submit.prevent="submitForm">
                 <BaseInput
                     v-model="form.email"
                     type="email"
@@ -29,7 +29,7 @@
                             name: 'PasswordResetRequest'
                         })
                     "
-                    class="login-page-password-reset-link"
+                    class="text-decoration-none align-self-start text-primary"
                 >
                     {{ t('login-page.link-password-reset') }}
                 </RouterLink>
@@ -37,7 +37,7 @@
                     {{ t('login-page.button-submit') }}
                 </BaseButton>
             </form>
-        </div>
+        </VCard>
     </LayoutDefault>
 </template>
 
@@ -52,6 +52,7 @@ import { nextTick, ref } from 'vue';
 import { RouterLink, useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
+import { VCard } from 'vuetify/components';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
 import { useUsersStore } from '@/features/users/store.ts';
@@ -64,7 +65,7 @@ import { focusFirstErrorField } from '@/utils/forms.ts';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import type { LoginRequest } from '@api';
 
-/**
+/*
  * UI logics
  */
 const { t } = useI18n();
@@ -72,7 +73,7 @@ const { addMessage } = useNotificationsStore();
 const router = useRouter();
 const route = useRoute();
 
-/**
+/*
  * Form logics
  */
 const { zodSchemaUsers } = useUsersStore();
@@ -99,7 +100,7 @@ const { form, formErrors, validate } = useStructureFormValidation<
 const showErrors = ref(false);
 const formElement = ref<HTMLFormElement>();
 
-/**
+/*
  * If not in production, dummy user of local database
  */
 if (import.meta.env.NODE_ENV !== 'production')
@@ -108,7 +109,7 @@ if (import.meta.env.NODE_ENV !== 'production')
         password: 'rootroot'
     };
 
-/**
+/*
  * Submit form and try to authenticate
  */
 const submitForm = async () => {
@@ -130,18 +131,3 @@ const submitForm = async () => {
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
 </script>
-
-<style lang="scss">
-#login-page {
-    .theme-form-container {
-        max-width: 400px;
-        margin: 100px auto;
-        padding: 2rem;
-    }
-
-    .login-page-password-reset-link {
-        display: inline-flex;
-        margin-bottom: 1rem;
-    }
-}
-</style>

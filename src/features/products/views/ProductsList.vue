@@ -1,44 +1,62 @@
 <template>
-    <LayoutDefault id="products-list-page" class="item-list-page">
+    <LayoutDefault id="products-list-page">
         <template #header>
-            <h1 class="theme-page-title">
+            <h1 class="text-h4 mb-6">
                 <span>{{ t('products-list-page.page-title') }}</span>
             </h1>
         </template>
 
-        <form class="list-filters" @submit.prevent="handleSearch">
-            <BaseInput
-                v-model="filters.text"
-                :label="t('products-list-page.filter-text')"
-                :placeholder="t('products-list-page.filter-text')"
-            />
-            <BaseInput
-                v-model="filters.id"
-                :label="t('products-list-page.filter-id')"
-                :placeholder="t('products-list-page.filter-id')"
-            />
-            <BaseInput
-                v-model.number="filters.minPrice"
-                :label="t('products-list-page.filter-min-price')"
-                type="number"
-            />
-            <BaseInput
-                v-model.number="filters.maxPrice"
-                :label="t('products-list-page.filter-max-price')"
-                type="number"
-            />
-            <BaseSelect
-                v-model="pageSize"
-                :label="t('generic.page-size')"
-                :options="pageSizeOptions"
-            />
-            <div class="list-filters-actions">
-                <button type="submit" class="theme-button">{{ t('generic.search') }}</button>
-                <button type="button" class="theme-button" @click="handleReset">
-                    {{ t('generic.reset') }}
-                </button>
-            </div>
-        </form>
+        <VCard class="pa-4 mb-6" variant="flat" border>
+            <form @submit.prevent="handleSearch">
+                <VRow align="end" dense>
+                    <VCol cols="12" md="6" lg="3">
+                        <BaseInput
+                            v-model="filters.text"
+                            :label="t('products-list-page.filter-text')"
+                            :placeholder="t('products-list-page.filter-text')"
+                        />
+                    </VCol>
+                    <VCol cols="12" md="6" lg="3">
+                        <BaseInput
+                            v-model="filters.id"
+                            :label="t('products-list-page.filter-id')"
+                            :placeholder="t('products-list-page.filter-id')"
+                        />
+                    </VCol>
+                    <VCol cols="12" md="6" lg="3">
+                        <BaseInput
+                            v-model.number="filters.minPrice"
+                            :label="t('products-list-page.filter-min-price')"
+                            type="number"
+                        />
+                    </VCol>
+                    <VCol cols="12" md="6" lg="3">
+                        <BaseInput
+                            v-model.number="filters.maxPrice"
+                            :label="t('products-list-page.filter-max-price')"
+                            type="number"
+                        />
+                    </VCol>
+                    <VCol cols="12" md="6" lg="3">
+                        <BaseSelect
+                            v-model="pageSize"
+                            :label="t('generic.page-size')"
+                            :options="pageSizeOptions"
+                        />
+                    </VCol>
+                    <VCol cols="12" md="6" lg="9">
+                        <div class="d-flex flex-wrap justify-end ga-3">
+                            <VBtn type="submit" color="primary" prepend-icon="$search">
+                                {{ t('generic.search') }}
+                            </VBtn>
+                            <VBtn type="button" variant="tonal" @click="handleReset">
+                                {{ t('generic.reset') }}
+                            </VBtn>
+                        </div>
+                    </VCol>
+                </VRow>
+            </form>
+        </VCard>
 
         <DataTable
             v-model="selectedProductId"
@@ -56,19 +74,22 @@
             </template>
 
             <template v-slot:[`item.actions`]="{ item }">
-                <div class="actions-cell">
-                    <RouterLink
+                <div class="d-flex flex-wrap ga-2">
+                    <VBtn
                         :to="
                             routerLinkI18n({
                                 name: 'ProductTarget',
                                 params: { id: item.id }
                             })
                         "
-                        class="theme-button view-button"
+                        class="view-button"
+                        size="small"
+                        variant="tonal"
+                        prepend-icon="$eye"
                     >
                         {{ t('products-list-page.button-view') }}
-                    </RouterLink>
-                    <RouterLink
+                    </VBtn>
+                    <VBtn
                         v-if="isAdmin"
                         :to="
                             routerLinkI18n({
@@ -76,18 +97,25 @@
                                 params: { id: item.id }
                             })
                         "
-                        class="theme-button edit-button"
+                        class="edit-button"
+                        size="small"
+                        variant="tonal"
+                        prepend-icon="$pencil"
                     >
                         {{ t('products-list-page.button-edit') }}
-                    </RouterLink>
-                    <button
+                    </VBtn>
+                    <VBtn
                         v-if="isAdmin"
-                        class="theme-button delete-button"
+                        class="delete-button"
+                        size="small"
+                        variant="tonal"
+                        color="error"
+                        prepend-icon="$delete"
                         :disabled="loading"
                         @click.stop="handleDelete(item.id)"
                     >
                         {{ t('products-list-page.button-delete') }}
-                    </button>
+                    </VBtn>
                 </div>
             </template>
         </DataTable>
@@ -103,9 +131,8 @@ export default {
 </script>
 
 <script setup lang="ts">
-import '@/styles/features/products.scss';
 import { computed, reactive } from 'vue';
-import { RouterLink } from 'vue-router';
+import { VBtn, VCard, VCol, VRow } from 'vuetify/components';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';

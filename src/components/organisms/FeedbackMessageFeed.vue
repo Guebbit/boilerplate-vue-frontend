@@ -1,8 +1,5 @@
 <template>
-    <div
-        class="message-feed w-100 overflow-y-auto"
-        :style="maxHeight ? { maxHeight } : undefined"
-    >
+    <div class="message-feed w-100 overflow-y-auto" :style="maxHeight ? { maxHeight } : undefined">
         <template v-if="messages.length > 0">
             <VAlert
                 v-for="(message, index) in messages"
@@ -40,14 +37,18 @@ const props = defineProps<{
  */
 const alertType = computed(() => {
     switch (props.variant) {
-        case 'error':
+        case 'error': {
             return 'error';
-        case 'success':
+        }
+        case 'success': {
             return 'success';
-        case 'alert':
+        }
+        case 'alert': {
             return 'warning';
-        default:
+        }
+        default: {
             return 'info';
+        }
     }
 });
 </script>

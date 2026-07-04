@@ -1,80 +1,115 @@
 <template>
     <LayoutDefault id="cart-page">
         <template #header>
-            <h1 class="theme-page-title">
+            <h1 class="text-h4 mb-6">
                 <span>{{ t('cart-page.page-title') }}</span>
             </h1>
         </template>
 
-        <div v-if="cartItems.length === 0" class="theme-card">
-            <p>{{ t('cart-page.empty-cart') }}</p>
-            <RouterLink
+        <VCard v-if="cartItems.length === 0" class="mx-auto my-8 pa-6 text-center" max-width="640">
+            <VIcon icon="$cart" size="48" color="primary" class="mb-4" />
+            <p class="text-body-1 mb-4">{{ t('cart-page.empty-cart') }}</p>
+            <VBtn
                 :to="
                     routerLinkI18n({
                         name: 'ProductsList'
                     })
                 "
+                color="primary"
+                variant="flat"
             >
                 {{ t('cart-page.button-go-to-products') }}
-            </RouterLink>
-        </div>
+            </VBtn>
+        </VCard>
 
-        <div v-else>
-            <div class="cart-items">
-                <div
+        <VRow v-else justify="center" class="ga-4">
+            <VCol cols="12" md="8" class="d-flex flex-column ga-4">
+                <VCard
                     v-for="item in cartItems"
                     :key="'cart-item-' + item.productId"
-                    class="theme-card cart-item"
+                    class="cart-item"
+                    elevation="2"
                 >
-                    <div class="card-content">
-                        <h3 class="card-title">
-                            {{ t('cart-page.label-product-id') }}: <b>{{ item.productId }}</b>
-                        </h3>
-                        <p>{{ t('cart-page.label-quantity') }}: {{ item.quantity }}</p>
-                        <div class="cart-item-actions">
-                            <button
-                                class="theme-button decrease-button"
-                                :disabled="item.quantity <= 1"
-                                @click="updateCartItem(item.productId, item.quantity - 1)"
-                            >
-                                -
-                            </button>
-                            <button
-                                class="theme-button increase-button"
-                                @click="updateCartItem(item.productId, item.quantity + 1)"
-                            >
-                                +
-                            </button>
-                            <button
-                                class="theme-button remove-button"
-                                @click="removeCartItem(item.productId)"
-                            >
-                                {{ t('cart-page.button-remove') }}
-                            </button>
+                    <VCardText>
+                        <div class="d-flex flex-column flex-sm-row justify-space-between ga-4">
+                            <div>
+                                <h3 class="text-h6 mb-2">
+                                    {{ t('cart-page.label-product-id') }}:
+                                    <b>{{ item.productId }}</b>
+                                </h3>
+                                <p class="text-body-2 text-medium-emphasis mb-0">
+                                    {{ t('cart-page.label-quantity') }}: {{ item.quantity }}
+                                </p>
+                            </div>
+                            <div class="d-flex align-center ga-2 flex-wrap">
+                                <VBtn
+                                    class="decrease-button"
+                                    :disabled="item.quantity <= 1"
+                                    icon="$minus"
+                                    size="small"
+                                    variant="tonal"
+                                    :aria-label="t('cart-page.label-quantity')"
+                                    @click="updateCartItem(item.productId, item.quantity - 1)"
+                                />
+                                <VBtn
+                                    class="increase-button"
+                                    icon="$plus"
+                                    size="small"
+                                    variant="tonal"
+                                    :aria-label="t('cart-page.label-quantity')"
+                                    @click="updateCartItem(item.productId, item.quantity + 1)"
+                                />
+                                <VBtn
+                                    class="remove-button"
+                                    color="error"
+                                    variant="tonal"
+                                    prepend-icon="$delete"
+                                    @click="removeCartItem(item.productId)"
+                                >
+                                    {{ t('cart-page.button-remove') }}
+                                </VBtn>
+                            </div>
                         </div>
-                    </div>
+                    </VCardText>
+                </VCard>
+            </VCol>
+
+            <VCol cols="12" md="4">
+                <VCard v-if="cartSummary" class="cart-summary" elevation="2">
+                    <VCardTitle class="text-h6">
+                        {{ t('cart-page.label-summary') }}
+                    </VCardTitle>
+                    <VDivider />
+                    <VList density="comfortable">
+                        <VListItem>
+                            <VListItemTitle>{{ t('cart-page.label-items-count') }}</VListItemTitle>
+                            <template #append>{{ cartSummary.itemsCount }}</template>
+                        </VListItem>
+                        <VListItem>
+                            <VListItemTitle>{{
+                                t('cart-page.label-total-quantity')
+                            }}</VListItemTitle>
+                            <template #append>{{ cartSummary.totalQuantity }}</template>
+                        </VListItem>
+                        <VListItem>
+                            <VListItemTitle>{{ t('cart-page.label-total') }}</VListItemTitle>
+                            <template #append>
+                                {{ formatCurrency(cartSummary.total, cartSummary.currency) }}
+                            </template>
+                        </VListItem>
+                    </VList>
+                </VCard>
+
+                <div class="d-flex flex-column flex-sm-row flex-md-column ga-3 mt-4">
+                    <VBtn class="clear-button" variant="tonal" color="error" @click="clearCart()">
+                        {{ t('cart-page.button-clear') }}
+                    </VBtn>
+                    <VBtn class="checkout-button" color="primary" variant="flat" @click="checkout">
+                        {{ t('cart-page.button-checkout') }}
+                    </VBtn>
                 </div>
-            </div>
-
-            <div v-if="cartSummary" class="theme-card cart-summary">
-                <h3>{{ t('cart-page.label-summary') }}</h3>
-                <p>{{ t('cart-page.label-items-count') }}: {{ cartSummary.itemsCount }}</p>
-                <p>{{ t('cart-page.label-total-quantity') }}: {{ cartSummary.totalQuantity }}</p>
-                <p>
-                    {{ t('cart-page.label-total') }}:
-                    {{ formatCurrency(cartSummary.total, cartSummary.currency) }}
-                </p>
-            </div>
-
-            <div class="cart-actions">
-                <button class="theme-button clear-button" @click="clearCart()">
-                    {{ t('cart-page.button-clear') }}
-                </button>
-                <button class="theme-button checkout-button" @click="checkout">
-                    {{ t('cart-page.button-checkout') }}
-                </button>
-            </div>
-        </div>
+            </VCol>
+        </VRow>
     </LayoutDefault>
 </template>
 
@@ -86,9 +121,22 @@ export default {
 
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import { useRouter, RouterLink } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
+import {
+    VBtn,
+    VCard,
+    VCardText,
+    VCardTitle,
+    VCol,
+    VDivider,
+    VIcon,
+    VList,
+    VListItem,
+    VListItemTitle,
+    VRow
+} from 'vuetify/components';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useCartStore } from '@/features/cart/store.ts';
 import { useOrdersStore } from '@/features/orders/store.ts';
@@ -98,7 +146,7 @@ import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 
-/**
+/*
  * Generics
  */
 const { t } = useI18n();
@@ -106,14 +154,14 @@ const router = useRouter();
 const { addMessage } = useNotificationsStore();
 const { formatCurrency } = useItemDetailDisplay();
 
-/**
+/*
  * Cart store
  */
 const { fetchCart, updateCartItem, removeCartItem, clearCart } = useCartStore();
 const { cartItems, cartSummary } = storeToRefs(useCartStore());
 const { checkout: checkoutOrder } = useOrdersStore();
 
-/**
+/*
  * Checkout: place an order from the current cart
  */
 const checkout = () =>
@@ -127,40 +175,8 @@ const checkout = () =>
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 
-/**
+/*
  * Load cart on mount
  */
 onMounted(fetchCart);
 </script>
-
-<style lang="scss">
-#cart-page {
-    .cart-items {
-        max-width: 800px;
-        margin: 0 auto;
-    }
-
-    .cart-item {
-        margin-bottom: 1rem;
-
-        .cart-item-actions {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-    }
-
-    .cart-summary {
-        max-width: 800px;
-        margin: 1rem auto;
-        padding: 1rem;
-    }
-
-    .cart-actions {
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-        margin-top: 1rem;
-    }
-}
-</style>

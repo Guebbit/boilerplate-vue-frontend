@@ -1,11 +1,20 @@
 <script setup lang="ts">
-import '@/styles/features/admin.scss';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAdminObservability } from '@/features/admin/composables/useAdminObservability.ts';
 import type { AdminTabKey } from '@/features/admin/types.ts';
 import { deleteExpiredTokens } from '@/utils/api.ts';
+import {
+    VBtn,
+    VCard,
+    VCardText,
+    VIcon,
+    VTab,
+    VTabs,
+    VWindow,
+    VWindowItem
+} from 'vuetify/components';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import AdminOverviewTab from '@/features/admin/components/AdminOverviewTab.vue';
@@ -56,59 +65,60 @@ const clearExpiredTokens = async () => {
 <template>
     <LayoutDefault id="admin-page">
         <template #header>
-            <h1 class="theme-page-title">
+            <h1 class="text-h4 mb-6">
                 <span>{{ t('admin-page.page-title') }}</span>
             </h1>
         </template>
 
-        <nav class="admin-tabs">
-            <button
-                class="admin-tab-button"
-                :class="{ 'admin-tab-button-active': activeTab === 'overview' }"
-                @click="activeTab = 'overview'"
-            >
-                {{ t('admin-page.tab-overview') }}
-            </button>
-            <button
-                class="admin-tab-button"
-                :class="{ 'admin-tab-button-active': activeTab === 'audit' }"
-                @click="activeTab = 'audit'"
-            >
-                {{ t('admin-page.tab-audit') }}
-            </button>
-        </nav>
-        <div class="admin-maintenance-actions">
-            <button
-                class="admin-maintenance-button"
-                :disabled="cleaningExpiredTokens"
-                @click="clearExpiredTokens"
-            >
-                {{
-                    cleaningExpiredTokens
-                        ? t('admin-page.button-cleaning-expired-tokens')
-                        : t('admin-page.button-clear-expired-tokens')
-                }}
-            </button>
-        </div>
+        <VCard class="mb-6" rounded="lg" variant="outlined">
+            <VTabs v-model="activeTab" color="primary">
+                <VTab value="overview">
+                    <VIcon icon="$admin" start />
+                    {{ t('admin-page.tab-overview') }}
+                </VTab>
+                <VTab value="audit">
+                    <VIcon icon="$info" start />
+                    {{ t('admin-page.tab-audit') }}
+                </VTab>
+            </VTabs>
+            <VCardText class="d-flex justify-end">
+                <VBtn
+                    color="warning"
+                    variant="tonal"
+                    :disabled="cleaningExpiredTokens"
+                    :loading="cleaningExpiredTokens"
+                    @click="clearExpiredTokens"
+                >
+                    <VIcon icon="$delete" start />
+                    {{
+                        cleaningExpiredTokens
+                            ? t('admin-page.button-cleaning-expired-tokens')
+                            : t('admin-page.button-clear-expired-tokens')
+                    }}
+                </VBtn>
+            </VCardText>
+        </VCard>
 
-        <div class="admin-tab-content">
-            <AdminOverviewTab
-                v-if="activeTab === 'overview'"
-                :health="health"
-                :metrics="metrics"
-                :loading="overviewLoading"
-                :health-error="errorHealth"
-                :metrics-error="errorMetrics"
-                :on-refresh="fetchAll"
-            />
-            <AdminAuditTab
-                v-else
-                :audit-events="auditEvents"
-                :total="auditTotal"
-                :loading="loadingAudit"
-                :error="errorAudit"
-                :on-search="fetchAuditLogs"
-            />
-        </div>
+        <VWindow v-model="activeTab">
+            <VWindowItem value="overview">
+                <AdminOverviewTab
+                    :health="health"
+                    :metrics="metrics"
+                    :loading="overviewLoading"
+                    :health-error="errorHealth"
+                    :metrics-error="errorMetrics"
+                    :on-refresh="fetchAll"
+                />
+            </VWindowItem>
+            <VWindowItem value="audit">
+                <AdminAuditTab
+                    :audit-events="auditEvents"
+                    :total="auditTotal"
+                    :loading="loadingAudit"
+                    :error="errorAudit"
+                    :on-search="fetchAuditLogs"
+                />
+            </VWindowItem>
+        </VWindow>
     </LayoutDefault>
 </template>

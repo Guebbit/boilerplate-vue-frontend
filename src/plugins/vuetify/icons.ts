@@ -33,7 +33,8 @@ import {
  */
 export const customSvgPaths: Record<string, string> = {
     // Example custom icon: hexagon "G" placeholder
-    guebbit: 'M21 16.5v-9L12 3 3 7.5v9L12 21l9-4.5zM12 8a4 4 0 0 1 4 4h-2a2 2 0 1 0-2 2v2a4 4 0 1 1 0-8z'
+    guebbit:
+        'M21 16.5v-9L12 3 3 7.5v9L12 21l9-4.5zM12 8a4 4 0 0 1 4 4h-2a2 2 0 1 0-2 2v2a4 4 0 1 1 0-8z'
 };
 
 /*

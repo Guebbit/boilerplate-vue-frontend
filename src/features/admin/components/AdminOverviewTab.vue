@@ -3,6 +3,16 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { AdminHealth, AdminMetricsSummary } from '@types';
 import type { IAdminKpiCard } from '@/features/admin/types.ts';
+import {
+    VAlert,
+    VBtn,
+    VCard,
+    VCardText,
+    VChip,
+    VCol,
+    VProgressCircular,
+    VRow
+} from 'vuetify/components';
 
 const { t } = useI18n();
 
@@ -17,6 +27,9 @@ const props = defineProps<{
 
 const loading = computed(() => props.loading);
 
+/*
+ * Formats API uptime for compact KPI display.
+ */
 const formatUptime = (seconds?: number): string => {
     if (seconds === undefined) return '—';
     const h = Math.floor(seconds / 3600);
@@ -24,11 +37,17 @@ const formatUptime = (seconds?: number): string => {
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
 };
 
+/*
+ * Formats decimal error rates as percentages.
+ */
 const formatErrorRate = (rate?: number): string => {
     if (rate === undefined) return '—';
     return `${(rate * 100).toFixed(1)}%`;
 };
 
+/*
+ * Maps admin health into a visual status.
+ */
 const healthStatus = computed((): IAdminKpiCard['status'] => {
     if (loading.value) return 'loading';
     if (props.healthError) return 'error';
@@ -99,155 +118,234 @@ const kpiCards = computed<IAdminKpiCard[]>(() => [
         status: 'ok'
     }
 ]);
+
+/*
+ * Chooses Material color by KPI status.
+ */
+const statusColor = (status: IAdminKpiCard['status']) => {
+    if (status === 'ok') return 'success';
+    if (status === 'warn') return 'warning';
+    if (status === 'error') return 'error';
+    if (status === 'loading') return 'primary';
+    return 'default';
+};
 </script>
 
 <template>
-    <div class="admin-overview-tab">
-        <div class="admin-overview-controls">
-            <button class="theme-button" :disabled="loading" @click="props.onRefresh">
+    <div>
+        <div class="d-flex flex-wrap align-center justify-space-between ga-3 mb-6">
+            <VBtn :disabled="loading" :loading="loading" color="primary" @click="props.onRefresh">
                 {{ loading ? t('generic.loading-state') : t('admin-page.button-refresh') }}
-            </button>
-            <span v-if="props.health?.timestamp" class="admin-overview-timestamp">
+            </VBtn>
+            <span v-if="props.health?.timestamp" class="text-body-2 text-medium-emphasis">
                 {{ t('admin-page.label-last-updated') }}:
                 {{ new Date(props.health.timestamp).toLocaleTimeString() }}
             </span>
         </div>
 
-        <div class="admin-kpi-grid">
-            <div
-                v-for="card in kpiCards"
-                :key="card.title"
-                class="admin-kpi-card"
-                :class="`admin-kpi-card-${card.status}`"
-            >
-                <div class="admin-kpi-title">{{ card.title }}</div>
-                <div class="admin-kpi-value">{{ card.value }}</div>
-                <div v-if="card.hint" class="admin-kpi-hint">{{ card.hint }}</div>
-            </div>
-        </div>
+        <VRow class="mb-6" dense>
+            <VCol v-for="card in kpiCards" :key="card.title" cols="12" sm="6" lg="3">
+                <VCard class="h-100" rounded="lg" variant="outlined">
+                    <VCardText>
+                        <div class="d-flex align-center justify-space-between mb-3 ga-3">
+                            <div class="text-body-2 text-medium-emphasis">{{ card.title }}</div>
+                            <VChip :color="statusColor(card.status)" size="small" variant="tonal">
+                                {{ card.status }}
+                            </VChip>
+                        </div>
+                        <div class="text-h5 font-weight-bold">{{ card.value }}</div>
+                        <div v-if="card.hint" class="text-caption text-error mt-2">
+                            {{ card.hint }}
+                        </div>
+                    </VCardText>
+                </VCard>
+            </VCol>
+        </VRow>
 
-        <div v-if="props.metrics?.auth" class="admin-section">
-            <h3 class="admin-section-title">{{ t('admin-page.section-auth') }}</h3>
-            <div class="admin-detail-grid">
-                <div class="admin-detail-item">
-                    <span class="admin-detail-label">{{
-                        t('admin-page.label-login-success')
-                    }}</span>
-                    <span class="admin-detail-value">{{
-                        props.metrics.auth.loginSuccess ?? 0
-                    }}</span>
-                </div>
-                <div class="admin-detail-item">
-                    <span class="admin-detail-label">{{
-                        t('admin-page.label-login-failure')
-                    }}</span>
-                    <span class="admin-detail-value admin-detail-value-warn">{{
-                        props.metrics.auth.loginFailure ?? 0
-                    }}</span>
-                </div>
-                <div class="admin-detail-item">
-                    <span class="admin-detail-label">{{
-                        t('admin-page.label-signup-success')
-                    }}</span>
-                    <span class="admin-detail-value">{{
-                        props.metrics.auth.signupSuccess ?? 0
-                    }}</span>
-                </div>
-            </div>
-        </div>
+        <VRow dense>
+            <VCol v-if="props.metrics?.auth" cols="12" md="6">
+                <VCard class="h-100" rounded="lg" variant="outlined">
+                    <VCardText>
+                        <h3 class="text-h6 mb-4">{{ t('admin-page.section-auth') }}</h3>
+                        <VRow dense>
+                            <VCol cols="12" sm="4">
+                                <div class="text-body-2 text-medium-emphasis">
+                                    {{ t('admin-page.label-login-success') }}
+                                </div>
+                                <div class="text-h6">
+                                    {{ props.metrics.auth.loginSuccess ?? 0 }}
+                                </div>
+                            </VCol>
+                            <VCol cols="12" sm="4">
+                                <div class="text-body-2 text-medium-emphasis">
+                                    {{ t('admin-page.label-login-failure') }}
+                                </div>
+                                <div class="text-h6 text-warning">
+                                    {{ props.metrics.auth.loginFailure ?? 0 }}
+                                </div>
+                            </VCol>
+                            <VCol cols="12" sm="4">
+                                <div class="text-body-2 text-medium-emphasis">
+                                    {{ t('admin-page.label-signup-success') }}
+                                </div>
+                                <div class="text-h6">
+                                    {{ props.metrics.auth.signupSuccess ?? 0 }}
+                                </div>
+                            </VCol>
+                        </VRow>
+                    </VCardText>
+                </VCard>
+            </VCol>
 
-        <div v-if="props.metrics?.business" class="admin-section">
-            <h3 class="admin-section-title">{{ t('admin-page.section-business') }}</h3>
-            <div class="admin-detail-grid">
-                <div class="admin-detail-item">
-                    <span class="admin-detail-label">{{
-                        t('admin-page.label-orders-created')
-                    }}</span>
-                    <span class="admin-detail-value">{{
-                        props.metrics.business.ordersCreated ?? 0
-                    }}</span>
-                </div>
-                <div class="admin-detail-item">
-                    <span class="admin-detail-label">{{
-                        t('admin-page.label-checkout-success')
-                    }}</span>
-                    <span class="admin-detail-value">{{
-                        props.metrics.business.checkoutSuccess ?? 0
-                    }}</span>
-                </div>
-            </div>
-        </div>
+            <VCol v-if="props.metrics?.business" cols="12" md="6">
+                <VCard class="h-100" rounded="lg" variant="outlined">
+                    <VCardText>
+                        <h3 class="text-h6 mb-4">{{ t('admin-page.section-business') }}</h3>
+                        <VRow dense>
+                            <VCol cols="12" sm="6">
+                                <div class="text-body-2 text-medium-emphasis">
+                                    {{ t('admin-page.label-orders-created') }}
+                                </div>
+                                <div class="text-h6">
+                                    {{ props.metrics.business.ordersCreated ?? 0 }}
+                                </div>
+                            </VCol>
+                            <VCol cols="12" sm="6">
+                                <div class="text-body-2 text-medium-emphasis">
+                                    {{ t('admin-page.label-checkout-success') }}
+                                </div>
+                                <div class="text-h6">
+                                    {{ props.metrics.business.checkoutSuccess ?? 0 }}
+                                </div>
+                            </VCol>
+                        </VRow>
+                    </VCardText>
+                </VCard>
+            </VCol>
 
-        <div v-if="props.health" class="admin-section">
-            <h3 class="admin-section-title">{{ t('admin-page.section-system') }}</h3>
-            <div class="admin-detail-grid">
-                <div class="admin-detail-item">
-                    <span class="admin-detail-label">{{ t('admin-page.label-environment') }}</span>
-                    <span class="admin-detail-value">{{ props.health.environment }}</span>
-                </div>
-                <div class="admin-detail-item">
-                    <span class="admin-detail-label">{{ t('admin-page.label-service') }}</span>
-                    <span class="admin-detail-value">{{ props.health.service }}</span>
-                </div>
-                <div class="admin-detail-item">
-                    <span class="admin-detail-label">{{ t('admin-page.label-node-version') }}</span>
-                    <span class="admin-detail-value">{{ props.health.nodeVersion }}</span>
-                </div>
-                <template v-if="props.health.memory">
-                    <div class="admin-detail-item">
-                        <span class="admin-detail-label">{{
-                            t('admin-page.label-heap-used')
-                        }}</span>
-                        <span class="admin-detail-value"
-                            >{{ props.health.memory.heapUsedMb }} MB</span
-                        >
-                    </div>
-                    <div class="admin-detail-item">
-                        <span class="admin-detail-label">{{
-                            t('admin-page.label-heap-total')
-                        }}</span>
-                        <span class="admin-detail-value"
-                            >{{ props.health.memory.heapTotalMb }} MB</span
-                        >
-                    </div>
-                </template>
-                <template v-if="props.health.system">
-                    <div class="admin-detail-item">
-                        <span class="admin-detail-label">{{ t('admin-page.label-platform') }}</span>
-                        <span class="admin-detail-value">{{ props.health.system.platform }}</span>
-                    </div>
-                    <div class="admin-detail-item">
-                        <span class="admin-detail-label">{{
-                            t('admin-page.label-cpu-count')
-                        }}</span>
-                        <span class="admin-detail-value">{{ props.health.system.cpuCount }}</span>
-                    </div>
-                </template>
-                <template v-if="props.health.integrations">
-                    <div class="admin-detail-item">
-                        <span class="admin-detail-label">{{ t('admin-page.label-loki') }}</span>
-                        <span class="admin-detail-value">{{
-                            props.health.integrations.loki ? '✓' : '✗'
-                        }}</span>
-                    </div>
-                    <div class="admin-detail-item">
-                        <span class="admin-detail-label">{{ t('admin-page.label-posthog') }}</span>
-                        <span class="admin-detail-value">{{
-                            props.health.integrations.posthog ? '✓' : '✗'
-                        }}</span>
-                    </div>
-                    <div class="admin-detail-item">
-                        <span class="admin-detail-label">{{ t('admin-page.label-otel') }}</span>
-                        <span class="admin-detail-value">{{
-                            props.health.integrations.otelEnabled ? '✓' : '✗'
-                        }}</span>
-                    </div>
-                </template>
-            </div>
-        </div>
+            <VCol v-if="props.health" cols="12">
+                <VCard rounded="lg" variant="outlined">
+                    <VCardText>
+                        <h3 class="text-h6 mb-4">{{ t('admin-page.section-system') }}</h3>
+                        <VRow dense>
+                            <VCol cols="12" sm="6" md="4">
+                                <div class="text-body-2 text-medium-emphasis">
+                                    {{ t('admin-page.label-environment') }}
+                                </div>
+                                <div class="font-weight-medium">{{ props.health.environment }}</div>
+                            </VCol>
+                            <VCol cols="12" sm="6" md="4">
+                                <div class="text-body-2 text-medium-emphasis">
+                                    {{ t('admin-page.label-service') }}
+                                </div>
+                                <div class="font-weight-medium">{{ props.health.service }}</div>
+                            </VCol>
+                            <VCol cols="12" sm="6" md="4">
+                                <div class="text-body-2 text-medium-emphasis">
+                                    {{ t('admin-page.label-node-version') }}
+                                </div>
+                                <div class="font-weight-medium">{{ props.health.nodeVersion }}</div>
+                            </VCol>
+                            <template v-if="props.health.memory">
+                                <VCol cols="12" sm="6" md="4">
+                                    <div class="text-body-2 text-medium-emphasis">
+                                        {{ t('admin-page.label-heap-used') }}
+                                    </div>
+                                    <div class="font-weight-medium">
+                                        {{ props.health.memory.heapUsedMb }} MB
+                                    </div>
+                                </VCol>
+                                <VCol cols="12" sm="6" md="4">
+                                    <div class="text-body-2 text-medium-emphasis">
+                                        {{ t('admin-page.label-heap-total') }}
+                                    </div>
+                                    <div class="font-weight-medium">
+                                        {{ props.health.memory.heapTotalMb }} MB
+                                    </div>
+                                </VCol>
+                            </template>
+                            <template v-if="props.health.system">
+                                <VCol cols="12" sm="6" md="4">
+                                    <div class="text-body-2 text-medium-emphasis">
+                                        {{ t('admin-page.label-platform') }}
+                                    </div>
+                                    <div class="font-weight-medium">
+                                        {{ props.health.system.platform }}
+                                    </div>
+                                </VCol>
+                                <VCol cols="12" sm="6" md="4">
+                                    <div class="text-body-2 text-medium-emphasis">
+                                        {{ t('admin-page.label-cpu-count') }}
+                                    </div>
+                                    <div class="font-weight-medium">
+                                        {{ props.health.system.cpuCount }}
+                                    </div>
+                                </VCol>
+                            </template>
+                            <template v-if="props.health.integrations">
+                                <VCol cols="12" sm="6" md="4">
+                                    <div class="text-body-2 text-medium-emphasis">
+                                        {{ t('admin-page.label-loki') }}
+                                    </div>
+                                    <VChip
+                                        :color="
+                                            props.health.integrations.loki ? 'success' : 'warning'
+                                        "
+                                        size="small"
+                                        variant="tonal"
+                                    >
+                                        {{ props.health.integrations.loki ? '✓' : '✗' }}
+                                    </VChip>
+                                </VCol>
+                                <VCol cols="12" sm="6" md="4">
+                                    <div class="text-body-2 text-medium-emphasis">
+                                        {{ t('admin-page.label-posthog') }}
+                                    </div>
+                                    <VChip
+                                        :color="
+                                            props.health.integrations.posthog
+                                                ? 'success'
+                                                : 'warning'
+                                        "
+                                        size="small"
+                                        variant="tonal"
+                                    >
+                                        {{ props.health.integrations.posthog ? '✓' : '✗' }}
+                                    </VChip>
+                                </VCol>
+                                <VCol cols="12" sm="6" md="4">
+                                    <div class="text-body-2 text-medium-emphasis">
+                                        {{ t('admin-page.label-otel') }}
+                                    </div>
+                                    <VChip
+                                        :color="
+                                            props.health.integrations.otelEnabled
+                                                ? 'success'
+                                                : 'warning'
+                                        "
+                                        size="small"
+                                        variant="tonal"
+                                    >
+                                        {{ props.health.integrations.otelEnabled ? '✓' : '✗' }}
+                                    </VChip>
+                                </VCol>
+                            </template>
+                        </VRow>
+                    </VCardText>
+                </VCard>
+            </VCol>
+        </VRow>
 
-        <div v-if="!loading && !props.health && !props.metrics" class="admin-empty-state">
+        <VAlert
+            v-if="!loading && !props.health && !props.metrics"
+            class="mt-6"
+            type="info"
+            variant="tonal"
+        >
             {{ t('generic.no-data') }}
+        </VAlert>
+        <div v-else-if="loading" class="d-flex justify-center py-6">
+            <VProgressCircular color="primary" indeterminate />
         </div>
     </div>
 </template>

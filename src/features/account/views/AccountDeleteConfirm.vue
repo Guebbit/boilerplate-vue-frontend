@@ -1,17 +1,17 @@
 <template>
     <LayoutDefault id="account-delete-confirm-page">
         <template #header>
-            <h1 class="theme-page-title">
+            <h1 class="text-h4 mb-6">
                 <span>{{ t('account-delete-confirm-page.page-title') }}</span>
             </h1>
         </template>
 
-        <div class="theme-card theme-form-container">
-            <p class="account-delete-confirm-page-warning">
+        <VCard class="mx-auto my-16 pa-6" max-width="480" elevation="2">
+            <VAlert color="warning" icon="$alert" variant="tonal" class="mb-6">
                 {{ t('account-delete-confirm-page.warning-message') }}
-            </p>
+            </VAlert>
 
-            <form ref="formElement" class="theme-form" @submit.prevent="submitForm">
+            <form ref="formElement" class="d-flex flex-column ga-4" @submit.prevent="submitForm">
                 <BaseInput
                     v-model="form.token"
                     :label="t('account-delete-confirm-page.label-token')"
@@ -23,12 +23,13 @@
                 </BaseButton>
             </form>
 
-            <div class="account-delete-confirm-page-actions">
-                <RouterLink :to="routerLinkI18n({ name: 'Profile' })" class="theme-button">
+            <VDivider class="my-4" />
+            <VCardActions class="justify-center pa-0">
+                <VBtn :to="routerLinkI18n({ name: 'Profile' })" variant="text" color="primary">
                     {{ t('account-delete-confirm-page.button-go-back') }}
-                </RouterLink>
-            </div>
-        </div>
+                </VBtn>
+            </VCardActions>
+        </VCard>
     </LayoutDefault>
 </template>
 
@@ -42,7 +43,8 @@ export default {
 import { nextTick, ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
-import { RouterLink, useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
+import { VAlert, VBtn, VCard, VCardActions, VDivider } from 'vuetify/components';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
@@ -91,30 +93,3 @@ const submitForm = () =>
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>
-
-<style lang="scss">
-#account-delete-confirm-page {
-    .theme-form-container {
-        max-width: 420px;
-        margin: 100px auto;
-        padding: 2rem;
-    }
-
-    .account-delete-confirm-page-warning {
-        margin-bottom: 1.5rem;
-        padding: 1rem;
-        border: 1px solid #e74c3c;
-        border-radius: 4px;
-        background: rgba(231, 76, 60, 0.05);
-        color: #c0392b;
-        text-align: center;
-        font-weight: 500;
-    }
-
-    .account-delete-confirm-page-actions {
-        margin-top: 1rem;
-        display: flex;
-        justify-content: center;
-    }
-}
-</style>

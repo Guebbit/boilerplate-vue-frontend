@@ -1,13 +1,13 @@
 <template>
     <LayoutDefault id="password-reset-request-page">
         <template #header>
-            <h1 class="theme-page-title">
+            <h1 class="text-h4 mb-6">
                 <span>{{ t('password-reset-request-page.page-title') }}</span>
             </h1>
         </template>
 
-        <div class="theme-card theme-form-container">
-            <form ref="formElement" class="theme-form" @submit.prevent="submitForm">
+        <VCard class="mx-auto my-16 pa-6" max-width="480" elevation="2">
+            <form ref="formElement" class="d-flex flex-column ga-4" @submit.prevent="submitForm">
                 <BaseInput
                     v-model="form.email"
                     type="email"
@@ -19,12 +19,13 @@
                     {{ t('password-reset-request-page.button-submit') }}
                 </BaseButton>
             </form>
-            <div class="password-reset-request-page-actions">
-                <RouterLink :to="routerLinkI18n({ name: 'Login' })" class="theme-button">
+            <VDivider class="my-4" />
+            <VCardActions class="justify-center pa-0">
+                <VBtn :to="routerLinkI18n({ name: 'Login' })" variant="text" color="primary">
                     {{ t('password-reset-request-page.button-go-to-login') }}
-                </RouterLink>
-            </div>
-        </div>
+                </VBtn>
+            </VCardActions>
+        </VCard>
     </LayoutDefault>
 </template>
 
@@ -37,7 +38,7 @@ export default {
 <script setup lang="ts">
 import { nextTick, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { RouterLink } from 'vue-router';
+import { VBtn, VCard, VCardActions, VDivider } from 'vuetify/components';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
@@ -75,19 +76,3 @@ const submitForm = () =>
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>
-
-<style lang="scss">
-#password-reset-request-page {
-    .theme-form-container {
-        max-width: 420px;
-        margin: 100px auto;
-        padding: 2rem;
-    }
-
-    .password-reset-request-page-actions {
-        margin-top: 1rem;
-        display: flex;
-        justify-content: center;
-    }
-}
-</style>

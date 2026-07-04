@@ -1,77 +1,61 @@
 <template>
     <LayoutDefault id="home-page">
         <template #header>
-            <h1 class="theme-page-title">
+            <h1 class="text-h3 text-md-h2 font-weight-bold text-center mb-8">
                 <span>{{ t('home-page.page-title') }}</span>
             </h1>
         </template>
 
-        <section class="home-intro-wrapper">
-            <div class="theme-card animate-on-hover card-outlined home-intro-card">
-                <h2>{{ t('home-page.hero-title') }}</h2>
-                <p>{{ t('home-page.hero-description') }}</p>
-                <RouterLink
-                    :to="
-                        routerLinkI18n({
-                            name: 'ProductsList'
-                        })
-                    "
-                    class="theme-button"
+        <VRow justify="center" class="mb-10">
+            <VCol cols="12" lg="9">
+                <VCard
+                    class="pa-6 pa-md-10 text-center"
+                    color="primary"
+                    variant="tonal"
+                    rounded="xl"
                 >
-                    {{ t('home-page.button-browse-products') }}
-                </RouterLink>
-            </div>
-        </section>
+                    <VIcon icon="custom:guebbit" size="56" class="mb-4" />
+                    <h2 class="text-h4 text-md-h3 font-weight-bold mb-4">
+                        {{ t('home-page.hero-title') }}
+                    </h2>
+                    <p class="text-body-1 text-md-h6 text-medium-emphasis mb-6">
+                        {{ t('home-page.hero-description') }}
+                    </p>
+                    <VBtn
+                        :to="
+                            routerLinkI18n({
+                                name: 'ProductsList'
+                            })
+                        "
+                        color="primary"
+                        size="large"
+                        prepend-icon="$cart"
+                    >
+                        {{ t('home-page.button-browse-products') }}
+                    </VBtn>
+                </VCard>
+            </VCol>
+        </VRow>
 
-        <section class="home-featured-wrapper">
-            <h2 class="home-featured-title">{{ t('home-page.featured-title') }}</h2>
-            <div class="home-featured-grid">
-                <CardInfo
-                    v-for="product in featuredProducts"
-                    :key="product.title"
-                    :title="product.title"
-                    :description="product.description"
-                    :variant="product.variant"
-                >
-                    <template #icon>
-                        <component :is="product.icon" :size="28" />
-                    </template>
-                </CardInfo>
-            </div>
+        <section>
+            <h2 class="text-h4 font-weight-bold mb-6">{{ t('home-page.featured-title') }}</h2>
+            <VRow>
+                <VCol v-for="product in featuredProducts" :key="product.title" cols="12" md="4">
+                    <CardInfo
+                        class="h-100"
+                        :title="product.title"
+                        :description="product.description"
+                        :variant="product.variant"
+                    >
+                        <template #icon>
+                            <VIcon :icon="product.icon" size="28" />
+                        </template>
+                    </CardInfo>
+                </VCol>
+            </VRow>
         </section>
     </LayoutDefault>
 </template>
-
-<style lang="scss">
-#home-page {
-    .home-intro-wrapper {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 2rem;
-    }
-
-    .home-intro-card {
-        width: min(760px, 100%);
-        display: grid;
-        gap: 0.9rem;
-    }
-
-    .home-featured-wrapper {
-        display: grid;
-        gap: 1rem;
-    }
-
-    .home-featured-title {
-        margin: 0;
-    }
-
-    .home-featured-grid {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 20px;
-    }
-}
-</style>
 
 <script lang="ts">
 export default {
@@ -81,10 +65,8 @@ export default {
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { RouterLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { Package, Tag, Star } from 'lucide-vue-next';
-import type { Component } from 'vue';
+import { VBtn, VCard, VCol, VIcon, VRow } from 'vuetify/components';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import CardInfo from '@/components/organisms/CardInfo.vue';
@@ -97,26 +79,26 @@ const featuredProducts = computed<
         title: string;
         description: string;
         variant: 'primary' | 'secondary' | 'tertiary';
-        icon: Component;
+        icon: string;
     }[]
 >(() => [
     {
         title: t('home-page.featured-product-1-title'),
         description: t('home-page.featured-product-1-description'),
         variant: 'primary',
-        icon: Package
+        icon: '$package'
     },
     {
         title: t('home-page.featured-product-2-title'),
         description: t('home-page.featured-product-2-description'),
         variant: 'secondary',
-        icon: Tag
+        icon: '$tag'
     },
     {
         title: t('home-page.featured-product-3-title'),
         description: t('home-page.featured-product-3-description'),
         variant: 'tertiary',
-        icon: Star
+        icon: '$star'
     }
 ]);
 </script>

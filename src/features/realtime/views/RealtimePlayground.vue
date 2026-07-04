@@ -1,56 +1,86 @@
 <template>
     <LayoutDefault id="realtime-playground-page">
         <template #header>
-            <h1 class="theme-page-title">
+            <h1 class="text-h4 mb-6">
                 <span>Realtime playground</span>
             </h1>
         </template>
 
-        <section class="realtime-grid">
-            <article class="theme-card card-outlined realtime-card">
-                <div class="card-header">
-                    <h3>SSE observability</h3>
-                    <p>Status: {{ observabilityStatus }}</p>
-                </div>
-                <div class="card-content">
-                    <p>Latest heartbeat: {{ latestHeartbeatAt ?? 'n/a' }}</p>
-                    <p>
-                        Latest websocket connections:
-                        {{ latestSnapshot?.realtime.websocketConnections ?? 'n/a' }}
-                    </p>
-                    <p>Latest SSE clients: {{ latestSnapshot?.realtime.sseClients ?? 'n/a' }}</p>
-                    <BaseButton @click="connectObservability">Connect SSE</BaseButton>
-                    <BaseButton @click="disconnectObservability">Disconnect SSE</BaseButton>
-                </div>
-            </article>
+        <VRow dense>
+            <VCol cols="12" lg="6">
+                <VCard class="h-100" rounded="lg" variant="outlined">
+                    <VCardTitle class="d-flex align-center ga-2">
+                        <VIcon icon="$info" />
+                        SSE observability
+                    </VCardTitle>
+                    <VCardText class="d-flex flex-column ga-4">
+                        <VChip color="primary" variant="tonal" class="align-self-start">
+                            Status: {{ observabilityStatus }}
+                        </VChip>
+                        <div>
+                            <p class="mb-2">Latest heartbeat: {{ latestHeartbeatAt ?? 'n/a' }}</p>
+                            <p class="mb-2">
+                                Latest websocket connections:
+                                {{ latestSnapshot?.realtime.websocketConnections ?? 'n/a' }}
+                            </p>
+                            <p class="mb-0">
+                                Latest SSE clients:
+                                {{ latestSnapshot?.realtime.sseClients ?? 'n/a' }}
+                            </p>
+                        </div>
+                        <div class="d-flex flex-wrap ga-3">
+                            <BaseButton @click="connectObservability">Connect SSE</BaseButton>
+                            <BaseButton @click="disconnectObservability">Disconnect SSE</BaseButton>
+                        </div>
+                    </VCardText>
+                </VCard>
+            </VCol>
 
-            <article class="theme-card card-outlined realtime-card">
-                <div class="card-header">
-                    <h3>WebSocket chat</h3>
-                    <p>Status: {{ chatStatus }}</p>
-                </div>
-                <div class="card-content realtime-chat-card-content">
-                    <BaseInput v-model="chatUsername" type="text" placeholder="username" />
-                    <div class="realtime-chat-actions">
-                        <BaseButton @click="connectChat">Connect WS</BaseButton>
-                        <BaseButton @click="joinChat">Join chat</BaseButton>
-                    </div>
-                    <BaseInput v-model="chatMessage" type="text" placeholder="message" />
-                    <BaseButton @click="sendChatMessage">Send message</BaseButton>
-                    <p>Active users: {{ presence?.payload.users.join(', ') || 'n/a' }}</p>
-                </div>
-                <FeedbackMessageFeed
-                    :messages="entries.map((entry) => `[${entry.kind}] ${entry.text}`)"
-                    max-height="220px"
-                    empty-text="No chat events yet"
-                />
-            </article>
-        </section>
+            <VCol cols="12" lg="6">
+                <VCard class="h-100" rounded="lg" variant="outlined">
+                    <VCardTitle class="d-flex align-center ga-2">
+                        <VIcon icon="$account" />
+                        WebSocket chat
+                    </VCardTitle>
+                    <VCardText class="d-flex flex-column ga-4">
+                        <VChip color="secondary" variant="tonal" class="align-self-start">
+                            Status: {{ chatStatus }}
+                        </VChip>
+                        <BaseInput v-model="chatUsername" type="text" placeholder="username" />
+                        <div class="d-flex flex-wrap ga-3">
+                            <BaseButton @click="connectChat">Connect WS</BaseButton>
+                            <BaseButton @click="joinChat">Join chat</BaseButton>
+                        </div>
+                        <BaseInput v-model="chatMessage" type="text" placeholder="message" />
+                        <BaseButton @click="sendChatMessage">Send message</BaseButton>
+                        <p class="mb-0">
+                            Active users: {{ presence?.payload.users.join(', ') || 'n/a' }}
+                        </p>
+                        <VDivider />
+                        <FeedbackMessageFeed
+                            :messages="entries.map((entry) => `[${entry.kind}] ${entry.text}`)"
+                            max-height="220px"
+                            empty-text="No chat events yet"
+                        />
+                    </VCardText>
+                </VCard>
+            </VCol>
+        </VRow>
     </LayoutDefault>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import {
+    VCard,
+    VCardText,
+    VCardTitle,
+    VChip,
+    VCol,
+    VDivider,
+    VIcon,
+    VRow
+} from 'vuetify/components';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseButton from '@/components/atoms/BaseButton.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
@@ -78,40 +108,18 @@ const {
     sendMessage
 } = useRealtimeChat();
 
+/*
+ * Joins the chat with the typed display name.
+ */
 const joinChat = () => {
     join(chatUsername.value);
 };
 
+/*
+ * Sends the typed message and clears the input.
+ */
 const sendChatMessage = () => {
     sendMessage(chatMessage.value);
     chatMessage.value = '';
 };
 </script>
-
-<style lang="scss">
-#realtime-playground-page {
-    .realtime-grid {
-        display: grid;
-        gap: 24px;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    }
-
-    .realtime-card {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-    }
-
-    .realtime-chat-card-content {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .realtime-chat-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-}
-</style>

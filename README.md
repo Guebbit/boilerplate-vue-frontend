@@ -10,6 +10,7 @@
 - [Tech stack & official docs](#tech-stack--official-docs)
 - [Architecture at a glance](#architecture-at-a-glance)
 - [Folder structure](#folder-structure)
+- [UI: Vuetify (Material Design)](#ui-vuetify-material-design)
 - [Sitemap & access control](#sitemap--access-control)
 - [Environment variables](#environment-variables)
 - [npm scripts](#npm-scripts)
@@ -54,12 +55,14 @@ Every tool below has a one-line "why we use it" + a link to its official documen
 
 ### Build & bundling
 
-| Tool                                                                            | Why it's here                       | Docs                                                                |
-| ------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------- |
-| **[Vite](https://vite.dev/)**                                                   | Dev server + production bundler     | [vite.dev/guide](https://vite.dev/guide/)                           |
-| **[@vitejs/plugin-vue](https://github.com/vitejs/vite-plugin-vue)**             | `.vue` SFC support in Vite          | [package readme](https://github.com/vitejs/vite-plugin-vue#readme)  |
-| **[vue-tsc](https://github.com/vuejs/language-tools/tree/master/packages/tsc)** | Type-check `.vue` files in CI/build | [language-tools repo](https://github.com/vuejs/language-tools)      |
-| **[Sass / sass-embedded](https://sass-lang.com/)**                              | SCSS authoring for shared styles    | [sass-lang.com/documentation](https://sass-lang.com/documentation/) |
+| Tool                                                                            | Why it's here                       | Docs                                                                 |
+| ------------------------------------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------- |
+| **[Vite](https://vite.dev/)**                                                   | Dev server + production bundler     | [vite.dev/guide](https://vite.dev/guide/)                            |
+| **[@vitejs/plugin-vue](https://github.com/vitejs/vite-plugin-vue)**             | `.vue` SFC support in Vite          | [package readme](https://github.com/vitejs/vite-plugin-vue#readme)   |
+| **[vue-tsc](https://github.com/vuejs/language-tools/tree/master/packages/tsc)** | Type-check `.vue` files in CI/build | [language-tools repo](https://github.com/vuejs/language-tools)       |
+| **[Sass / sass-embedded](https://sass-lang.com/)**                              | SCSS authoring for shared styles    | [sass-lang.com/documentation](https://sass-lang.com/documentation/)  |
+| **[Vuetify](https://vuetifyjs.com/)**                                           | Material Design component framework | [vuetifyjs.com/components](https://vuetifyjs.com/en/components/all/) |
+| **[@mdi/js](https://pictogrammers.com/library/mdi/)**                           | Tree-shakeable SVG material icons   | [pictogrammers.com](https://pictogrammers.com/library/mdi/)          |
 
 ### State, routing, i18n
 
@@ -107,7 +110,6 @@ Every tool below has a one-line "why we use it" + a link to its official documen
 | ------------------------------------------------------------------------------ | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | **[@sentry/vue](https://docs.sentry.io/platforms/javascript/guides/vue/)**     | Crash + performance monitoring + session replay (opt-in via DSN) | [docs.sentry.io/platforms/javascript/guides/vue](https://docs.sentry.io/platforms/javascript/guides/vue/) |
 | **[posthog-js](https://posthog.com/docs/libraries/js)**                        | Product analytics + feature flags (opt-in via API key)           | [posthog.com/docs/libraries/js](https://posthog.com/docs/libraries/js)                                    |
-| **[@guebbit/css-toolkit](https://www.npmjs.com/package/@guebbit/css-toolkit)** | Shared SCSS utilities / tokens                                   | [npm](https://www.npmjs.com/package/@guebbit/css-toolkit)                                                 |
 | **[@guebbit/vue-toolkit](https://www.npmjs.com/package/@guebbit/vue-toolkit)** | Shared Vue components / composables                              | [npm](https://www.npmjs.com/package/@guebbit/vue-toolkit)                                                 |
 
 > If you bump any of these, check the matching docs page first — most breaking changes are documented on the front page of each tool's site.
@@ -181,12 +183,12 @@ src/
 ├── middlewares/     route navigation guards (authentications, localeChoice, demoMiddleware)
 ├── router/          router instance + locale routing
 ├── stores/          Pinia stores (counter, observability, profile, realtimeChat, realtimeObservability)
-├── styles/          global SCSS (theme, main)
+├── plugins/         app plugins (vuetify: theme + custom SVG icon sets)
 ├── types/           shared TS types (incl. re-exports from @api)
 ├── utils/           http, api wiring, i18n, forms, multipart, sockets, errors, navigation, composables
 ├── views/           top-level (non-feature) views (Home, Playground, Error)
 ├── App.vue
-└── main.ts          bootstrap (Pinia + Router + i18n + Sentry + PostHog + MSW)
+└── main.ts          bootstrap (Pinia + Router + i18n + Vuetify + Sentry + PostHog + MSW)
 
 api/
 ├── index.ts         generated axios functions + TS types  (DO NOT edit by hand)
@@ -200,6 +202,40 @@ openapi.yaml         API contract (source of truth)
 asyncapi.yaml        Realtime contract (source of truth)
 spectral.yaml        OpenAPI lint rules
 ```
+
+---
+
+## UI: Vuetify (Material Design)
+
+The UI is built with [Vuetify](https://vuetifyjs.com/) through a **custom plugin** in `src/plugins/vuetify/`:
+
+```
+src/plugins/vuetify/
+├── index.ts    createVuetify (icons + themes + component defaults)
+├── theme.ts    light/dark brand themes
+└── icons.ts    SVG icon sets (mdi via @mdi/js) + custom SVG registry
+```
+
+### Icons
+
+- Default set is **mdi-svg** (tree-shakeable, no icon font).
+- Semantic aliases are defined in `icons.ts` and used as `icon="$cart"`, `icon="$pencil"`, ...
+- **Custom SVGs**: register your own path in `customSvgPaths` (`icons.ts`):
+
+```ts
+customSvgPaths['my-logo'] = 'M12 2L2 22h20L12 2z';
+```
+
+then use it anywhere Vuetify accepts an icon:
+
+```vue
+<VIcon icon="custom:my-logo" />
+```
+
+### Theming
+
+Brand colors live in `theme.ts` (`light` / `dark` definitions). Component-wide defaults
+(variants, density, rounding) live in `index.ts` under `defaults`.
 
 ---
 
@@ -572,7 +608,6 @@ Displays a colour-coded table with truncated request/trace IDs (hover for full v
 - Add image upload in the various forms
 - Always call `useXYZStore()` inside functions, not at top level — avoids circular dependency issues (unless explicitly dependent)
 - Create a NUXT variant
-- Create a Vuetify variant
 - Create a Quasar variant
 - Do Vitest tests
 - Do Cypress tests

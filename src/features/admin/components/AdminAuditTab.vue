@@ -3,6 +3,19 @@ import { reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { AuditEventItem } from '@types';
 import type { IAdminAuditFilters } from '@/features/admin/types.ts';
+import {
+    VAlert,
+    VBtn,
+    VCard,
+    VCardText,
+    VChip,
+    VCol,
+    VProgressCircular,
+    VRow,
+    VSelect,
+    VTable,
+    VTextField
+} from 'vuetify/components';
 
 const { t } = useI18n();
 
@@ -22,10 +35,23 @@ const filters = reactive<IAdminAuditFilters>({
     limit: 50
 });
 
+const outcomeOptions = [
+    { title: t('admin-page.audit-filter-outcome-all'), value: undefined },
+    { title: t('admin-page.audit-filter-outcome-success'), value: 'success' },
+    { title: t('admin-page.audit-filter-outcome-failure'), value: 'failure' }
+];
+const limitOptions = [20, 50, 100, 200];
+
+/*
+ * Loads audit events with the current filters.
+ */
 const handleSearch = () => {
     void props.onSearch(filters);
 };
 
+/*
+ * Restores defaults and reloads audit events.
+ */
 const handleReset = () => {
     filters.actor = undefined;
     filters.action = undefined;
@@ -37,6 +63,9 @@ const handleReset = () => {
 
 const truncateId = (value?: string, length = 8) => (value ? `${value.slice(0, length)}...` : '—');
 
+/*
+ * Formats audit timestamps safely.
+ */
 const formatDate = (iso: string) => {
     try {
         return new Date(iso).toLocaleString();
@@ -47,48 +76,75 @@ const formatDate = (iso: string) => {
 </script>
 
 <template>
-    <div class="admin-audit-tab">
-        <form class="admin-audit-filters" @submit.prevent="handleSearch">
-            <input
-                v-model="filters.actor"
-                class="theme-input"
-                type="text"
-                :placeholder="t('admin-page.audit-filter-actor')"
-            />
-            <input
-                v-model="filters.action"
-                class="theme-input"
-                type="text"
-                :placeholder="t('admin-page.audit-filter-action')"
-            />
-            <select v-model="filters.outcome" class="theme-select">
-                <option :value="undefined">{{ t('admin-page.audit-filter-outcome-all') }}</option>
-                <option value="success">{{ t('admin-page.audit-filter-outcome-success') }}</option>
-                <option value="failure">{{ t('admin-page.audit-filter-outcome-failure') }}</option>
-            </select>
-            <input
-                v-model="filters.since"
-                class="theme-input"
-                type="datetime-local"
-                :placeholder="t('admin-page.audit-filter-since')"
-            />
-            <select v-model="filters.limit" class="theme-select">
-                <option :value="20">20</option>
-                <option :value="50">50</option>
-                <option :value="100">100</option>
-                <option :value="200">200</option>
-            </select>
-            <div class="admin-audit-filter-actions">
-                <button type="submit" class="theme-button" :disabled="props.loading">
-                    {{ t('generic.search') }}
-                </button>
-                <button type="button" class="theme-button" @click="handleReset">
-                    {{ t('generic.reset') }}
-                </button>
-            </div>
-        </form>
+    <div>
+        <VCard class="mb-4" rounded="lg" variant="outlined">
+            <VCardText>
+                <form @submit.prevent="handleSearch">
+                    <VRow dense>
+                        <VCol cols="12" md="4" lg="2">
+                            <VTextField
+                                v-model="filters.actor"
+                                density="comfortable"
+                                hide-details
+                                :label="t('admin-page.audit-filter-actor')"
+                                type="text"
+                                variant="outlined"
+                            />
+                        </VCol>
+                        <VCol cols="12" md="4" lg="2">
+                            <VTextField
+                                v-model="filters.action"
+                                density="comfortable"
+                                hide-details
+                                :label="t('admin-page.audit-filter-action')"
+                                type="text"
+                                variant="outlined"
+                            />
+                        </VCol>
+                        <VCol cols="12" md="4" lg="2">
+                            <VSelect
+                                v-model="filters.outcome"
+                                density="comfortable"
+                                hide-details
+                                :items="outcomeOptions"
+                                :label="t('admin-page.audit-filter-outcome-all')"
+                                variant="outlined"
+                            />
+                        </VCol>
+                        <VCol cols="12" md="4" lg="3">
+                            <VTextField
+                                v-model="filters.since"
+                                density="comfortable"
+                                hide-details
+                                :label="t('admin-page.audit-filter-since')"
+                                type="datetime-local"
+                                variant="outlined"
+                            />
+                        </VCol>
+                        <VCol cols="12" md="4" lg="1">
+                            <VSelect
+                                v-model="filters.limit"
+                                density="comfortable"
+                                hide-details
+                                :items="limitOptions"
+                                label="Limit"
+                                variant="outlined"
+                            />
+                        </VCol>
+                        <VCol cols="12" md="4" lg="2" class="d-flex flex-wrap ga-2 justify-end">
+                            <VBtn type="submit" color="primary" :disabled="props.loading">
+                                {{ t('generic.search') }}
+                            </VBtn>
+                            <VBtn type="button" variant="tonal" @click="handleReset">
+                                {{ t('generic.reset') }}
+                            </VBtn>
+                        </VCol>
+                    </VRow>
+                </form>
+            </VCardText>
+        </VCard>
 
-        <div class="admin-audit-summary">
+        <div class="text-body-2 text-medium-emphasis mb-4">
             {{
                 t('admin-page.audit-showing', {
                     shown: props.auditEvents.length,
@@ -97,18 +153,25 @@ const formatDate = (iso: string) => {
             }}
         </div>
 
-        <div v-if="props.error" class="admin-error-state">{{ props.error }}</div>
+        <VAlert v-if="props.error" class="mb-4" type="error" variant="tonal">
+            {{ props.error }}
+        </VAlert>
 
-        <div v-else-if="!props.loading && props.auditEvents.length === 0" class="admin-empty-state">
+        <VAlert
+            v-else-if="!props.loading && props.auditEvents.length === 0"
+            class="mb-4"
+            type="info"
+            variant="tonal"
+        >
             {{ t('generic.no-data') }}
+        </VAlert>
+
+        <div v-else-if="props.loading" class="d-flex justify-center py-6">
+            <VProgressCircular color="primary" indeterminate />
         </div>
 
-        <div v-else-if="props.loading" class="admin-loading-state">
-            {{ t('generic.loading-state') }}
-        </div>
-
-        <div v-else class="admin-audit-table-wrapper">
-            <table class="admin-audit-table">
+        <VCard v-else rounded="lg" variant="outlined">
+            <VTable class="admin-audit-table">
                 <thead>
                     <tr>
                         <th>{{ t('admin-page.audit-col-timestamp') }}</th>
@@ -125,43 +188,35 @@ const formatDate = (iso: string) => {
                     <tr
                         v-for="(event, index) in props.auditEvents"
                         :key="`${event.timestamp}-${index}`"
-                        :class="event.outcome === 'failure' ? 'admin-audit-row-failure' : ''"
+                        :class="{ 'text-error': event.outcome === 'failure' }"
                     >
-                        <td class="admin-audit-cell-timestamp">
-                            {{ formatDate(event.timestamp) }}
-                        </td>
-                        <td class="admin-audit-cell-actor">{{ event.actor_user_id }}</td>
+                        <td class="text-no-wrap">{{ formatDate(event.timestamp) }}</td>
+                        <td>{{ event.actor_user_id }}</td>
                         <td>
-                            <span
-                                class="admin-audit-badge"
-                                :class="`admin-audit-role-${event.actor_role}`"
-                            >
+                            <VChip color="secondary" size="small" variant="tonal">
                                 {{ event.actor_role }}
-                            </span>
+                            </VChip>
                         </td>
-                        <td class="admin-audit-cell-action">{{ event.action }}</td>
+                        <td>{{ event.action }}</td>
                         <td>
-                            <span
-                                class="admin-audit-badge"
-                                :class="
-                                    event.outcome === 'success'
-                                        ? 'admin-audit-outcome-success'
-                                        : 'admin-audit-outcome-failure'
-                                "
+                            <VChip
+                                :color="event.outcome === 'success' ? 'success' : 'error'"
+                                size="small"
+                                variant="tonal"
                             >
                                 {{ event.outcome }}
-                            </span>
+                            </VChip>
                         </td>
                         <td>{{ event.ip ?? '—' }}</td>
-                        <td class="admin-audit-cell-id" :title="event.request_id">
+                        <td class="text-no-wrap" :title="event.request_id">
                             {{ truncateId(event.request_id) }}
                         </td>
-                        <td class="admin-audit-cell-id" :title="event.trace_id">
+                        <td class="text-no-wrap" :title="event.trace_id">
                             {{ truncateId(event.trace_id) }}
                         </td>
                     </tr>
                 </tbody>
-            </table>
-        </div>
+            </VTable>
+        </VCard>
     </div>
 </template>

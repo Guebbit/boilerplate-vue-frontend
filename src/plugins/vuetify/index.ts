@@ -1,9 +1,7 @@
 import { createVuetify } from 'vuetify';
 import 'vuetify/styles';
-import { aliases, sets, customSvgPaths } from './icons';
+import { aliases, sets } from './icons';
 import { light, dark } from './theme';
-
-export { customSvgPaths };
 
 /*
  * Custom Vuetify instance:
@@ -32,3 +30,5 @@ export const vuetify = createVuetify({
 });
 
 export default vuetify;
+
+export { customSvgPaths } from './icons';

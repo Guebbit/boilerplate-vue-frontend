@@ -28,9 +28,9 @@
             }"
             v-bind="$attrs"
         >
-            <div v-if="slots.header">
+            <VContainer v-if="slots.header" class="py-0" max-width="1280">
                 <slot name="header" />
-            </div>
+            </VContainer>
 
             <VContainer class="page-container" max-width="1280">
                 <slot />

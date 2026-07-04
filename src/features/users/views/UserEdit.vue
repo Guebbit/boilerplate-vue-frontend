@@ -1,43 +1,50 @@
 <template>
-    <LayoutDefault id="user-edit-page" class="item-detail-page item-detail-page-user">
+    <LayoutDefault id="user-edit-page">
         <template #header>
-            <h1 class="theme-page-title">
+            <h1 class="text-h4 mb-6">
                 <span>{{ t('user-edit-page.page-title') }}</span>
             </h1>
         </template>
 
-        <section class="item-detail-page-content">
-            <div class="item-detail-page-grid-top">
+        <VRow class="mb-6" dense>
+            <VCol cols="12" lg="6">
                 <ItemDetailHero :title="heroTitle" :description="heroDescription" :eyebrow="id">
-                    <template #icon><Pencil :size="32" /></template>
+                    <template #icon><VIcon icon="$pencil" size="32" /></template>
                 </ItemDetailHero>
+            </VCol>
+            <VCol cols="12" sm="4" lg="2">
+                <CardMaterialStat
+                    :title="t('user-target-page.label-id')"
+                    :value="id ?? EMPTY_VALUE"
+                />
+            </VCol>
+            <VCol cols="12" sm="4" lg="2">
+                <CardMaterialStat
+                    :title="t('user-target-page.label-admin')"
+                    :value="userRole"
+                    accent="secondary"
+                />
+            </VCol>
+            <VCol cols="12" sm="4" lg="2">
+                <CardMaterialStat
+                    :title="t('user-target-page.label-active')"
+                    :value="userStatus"
+                    accent="tertiary"
+                />
+            </VCol>
+        </VRow>
 
-                <div class="item-detail-page-stats">
-                    <CardMaterialStat
-                        :title="t('user-target-page.label-id')"
-                        :value="id ?? EMPTY_VALUE"
-                    />
-                    <CardMaterialStat
-                        :title="t('user-target-page.label-admin')"
-                        :value="userRole"
-                        accent="secondary"
-                    />
-                    <CardMaterialStat
-                        :title="t('user-target-page.label-active')"
-                        :value="userStatus"
-                        accent="tertiary"
-                    />
-                </div>
-            </div>
-
-            <div class="item-detail-page-grid-main item-detail-page-grid-main-with-aside">
-                <CardDetail class="item-detail-page-main">
-                    <div class="item-detail-page-section-header">
-                        <h3>{{ t('generic.details') }}</h3>
-                        <p>{{ t('user-edit-page.page-title') }}</p>
+        <VRow dense>
+            <VCol cols="12" lg="8">
+                <CardDetail>
+                    <div class="mb-4">
+                        <h3 class="text-h6">{{ t('generic.details') }}</h3>
+                        <p class="text-body-2 text-medium-emphasis mb-0">
+                            {{ t('user-edit-page.page-title') }}
+                        </p>
                     </div>
 
-                    <form class="theme-form item-detail-page-form" @submit.prevent="submitForm">
+                    <form class="d-flex flex-column ga-4" @submit.prevent="submitForm">
                         <BaseInput
                             v-model="form.email"
                             type="email"
@@ -53,7 +60,7 @@
                             :show-errors="showErrors"
                         />
 
-                        <div class="item-detail-page-form-actions">
+                        <div class="d-flex flex-wrap ga-3 justify-end">
                             <BaseButton type="submit" :disabled="isSubmitting || loading">
                                 {{ t('user-edit-page.button-submit') }}
                             </BaseButton>
@@ -63,42 +70,51 @@
                         </div>
                     </form>
                 </CardDetail>
+            </VCol>
 
-                <CardDetail as="aside" class="item-detail-page-aside">
-                    <CardInfo :title="heroTitle" :description="heroDescription" variant="secondary">
-                        <template #icon><User :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('user-target-page.label-id')"
-                        :value="id ?? EMPTY_VALUE"
-                        icon="#"
-                    />
-                    <ItemDetailField
-                        :label="t('user-target-page.label-created-at')"
-                        :value="formatDateTime(currentUser?.createdAt)"
-                        icon="📅"
-                    />
-                    <ItemDetailField
-                        :label="t('user-target-page.label-updated-at')"
-                        :value="formatDateTime(currentUser?.updatedAt)"
-                        icon="🕘"
-                    />
+            <VCol cols="12" lg="4">
+                <CardDetail as="aside">
+                    <div class="d-flex flex-column ga-4">
+                        <CardInfo
+                            :title="heroTitle"
+                            :description="heroDescription"
+                            variant="secondary"
+                        >
+                            <template #icon><VIcon icon="$account" size="28" /></template>
+                        </CardInfo>
+                        <ItemDetailField
+                            :label="t('user-target-page.label-id')"
+                            :value="id ?? EMPTY_VALUE"
+                            icon="#"
+                        />
+                        <ItemDetailField
+                            :label="t('user-target-page.label-created-at')"
+                            :value="formatDateTime(currentUser?.createdAt)"
+                            icon="📅"
+                        />
+                        <ItemDetailField
+                            :label="t('user-target-page.label-updated-at')"
+                            :value="formatDateTime(currentUser?.updatedAt)"
+                            icon="🕘"
+                        />
+                    </div>
                 </CardDetail>
-            </div>
+            </VCol>
+        </VRow>
 
-            <div class="item-detail-page-actions">
-                <RouterLink
-                    v-if="id"
-                    :to="routerLinkI18n({ name: 'UserTarget', params: { id } })"
-                    class="theme-button"
-                >
-                    {{ t('user-edit-page.button-go-to-details') }}
-                </RouterLink>
-                <RouterLink :to="routerLinkI18n({ name: 'UsersList' })" class="theme-button">
-                    {{ t('user-edit-page.button-go-to-list') }}
-                </RouterLink>
-            </div>
-        </section>
+        <div class="d-flex flex-wrap ga-3 mt-6">
+            <VBtn
+                v-if="id"
+                :to="routerLinkI18n({ name: 'UserTarget', params: { id } })"
+                color="primary"
+            >
+                <VIcon icon="$eye" start />
+                {{ t('user-edit-page.button-go-to-details') }}
+            </VBtn>
+            <VBtn :to="routerLinkI18n({ name: 'UsersList' })" variant="tonal">
+                {{ t('user-edit-page.button-go-to-list') }}
+            </VBtn>
+        </div>
     </LayoutDefault>
 </template>
 
@@ -109,19 +125,17 @@ export default {
 </script>
 
 <script setup lang="ts">
-import '@/styles/features/itemDetail.scss';
 import { computed } from 'vue';
-import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/features/users/store';
 import { z } from 'zod';
+import { VBtn, VCol, VIcon, VRow } from 'vuetify/components';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseButton from '@/components/atoms/BaseButton.vue';
-import { Pencil, User } from 'lucide-vue-next';
 import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
 import CardDetail from '@/components/organisms/CardDetail.vue';
 import CardInfo from '@/components/organisms/CardInfo.vue';
@@ -133,31 +147,31 @@ import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';
 import { notifyErrorMessages } from '@/utils/errors.ts';
 import { EMPTY_VALUE } from '@/utils/constants.ts';
 
-/**
+/*
  * Generic i18n/notifications helpers.
  */
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
-/**
+/*
  * User id route param.
  */
 const { id } = defineProps<{
     id?: string;
 }>();
 
-/**
+/*
  * User store APIs and references.
  */
 const { fetchUser, updateUser, zodSchemaUsers, zodSchemaUsersPassword } = useUsersStore();
 const { currentUser, selectedUserId, loading } = storeToRefs(useUsersStore());
 
-/**
+/*
  * Shared display formatting helpers.
  */
 const { formatText, formatDateTime, formatFlag } = useItemDetailDisplay();
 
-/**
+/*
  * Edit form data model.
  */
 interface IUserEditForm {
@@ -165,14 +179,14 @@ interface IUserEditForm {
     password?: string;
 }
 
-/**
+/*
  * Edit validation schema with optional password replacement.
  */
 const editSchema = zodSchemaUsers.pick({ email: true }).extend({
     password: z.preprocess((v) => (v === '' ? undefined : v), zodSchemaUsersPassword.optional())
 });
 
-/**
+/*
  * Toolkit form bindings.
  */
 const { form, formErrors, isSubmitting, handleSubmit } = useStructureFormValidation<IUserEditForm>(
@@ -180,7 +194,7 @@ const { form, formErrors, isSubmitting, handleSubmit } = useStructureFormValidat
     editSchema
 );
 
-/**
+/*
  * Shared watcher-based form hydration.
  */
 const { showErrors, resetForm } = useItemDetailForm({
@@ -192,7 +206,7 @@ const { showErrors, resetForm } = useItemDetailForm({
     })
 });
 
-/**
+/*
  * Hero and status labels.
  */
 const heroTitle = computed(
@@ -206,7 +220,7 @@ const userStatus = computed(() =>
     formatFlag(currentUser.value?.active, t('generic.enabled'), t('generic.disabled'))
 );
 
-/**
+/*
  * Validates and persists user updates.
  */
 const submitForm = () =>
@@ -224,7 +238,7 @@ const submitForm = () =>
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 
-/**
+/*
  * Activates route selection + onBeforeMount record load.
  */
 useItemDetailRecord({

@@ -8,23 +8,12 @@
  * OpenAPI spec version: 2.0.0
  */
 import axios from 'axios';
-import type {
-  AxiosInstance,
-  AxiosRequestConfig,
-  AxiosResponse
-} from 'axios';
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
-import {
-  faker
-} from '@faker-js/faker';
+import { faker } from '@faker-js/faker';
 
-import {
-  HttpResponse,
-  http
-} from 'msw';
-import type {
-  RequestHandlerOptions
-} from 'msw';
+import { HttpResponse, http } from 'msw';
+import type { RequestHandlerOptions } from 'msw';
 
 /**
  * 1-based page index
@@ -58,769 +47,766 @@ export type Email = string;
 export type Password = string;
 
 export interface PaginationMeta {
-  page: Page;
-  pageSize: PageSize;
-  /** @minimum 0 */
-  totalItems: number;
-  /** @minimum 0 */
-  totalPages: number;
+    page: Page;
+    pageSize: PageSize;
+    /** @minimum 0 */
+    totalItems: number;
+    /** @minimum 0 */
+    totalPages: number;
 }
 
 export interface MessageResponse {
-  success: true;
-  status: number;
-  message: string;
+    success: true;
+    status: number;
+    message: string;
 }
 
 export interface ErrorResponse {
-  success: false;
-  status: number;
-  /** Technical error code or description */
-  message: string;
-  /** User-friendly error messages */
-  errors: string[];
+    success: false;
+    status: number;
+    /** Technical error code or description */
+    message: string;
+    /** User-friendly error messages */
+    errors: string[];
 }
 
 export interface ValidationErrorResponse {
-  success: false;
-  status: number;
-  message: string;
-  /** Validation error messages */
-  errors: string[];
+    success: false;
+    status: number;
+    message: string;
+    /** Validation error messages */
+    errors: string[];
 }
 
 export interface SuccessEnvelope {
-  success: true;
-  status: number;
-  message: string;
+    success: true;
+    status: number;
+    message: string;
 }
 
 export interface AuthTokens {
-  /** Access JWT */
-  token: string;
-  /** Refresh token if returned by backend */
-  refreshToken?: string;
-  /** Access token expiry in seconds */
-  expiresIn?: number;
+    /** Access JWT */
+    token: string;
+    /** Refresh token if returned by backend */
+    refreshToken?: string;
+    /** Access token expiry in seconds */
+    expiresIn?: number;
 }
 
 export type AuthTokensEnvelope = SuccessEnvelope & {
-  data: AuthTokens;
+    data: AuthTokens;
 };
 
 export interface RefreshTokenResponse {
-  /** New access JWT */
-  token: string;
-  /** New refresh token if returned by backend */
-  refreshToken?: string;
-  /** New access token expiry in seconds */
-  expiresIn?: number;
+    /** New access JWT */
+    token: string;
+    /** New refresh token if returned by backend */
+    refreshToken?: string;
+    /** New access token expiry in seconds */
+    expiresIn?: number;
 }
 
 export type RefreshTokenEnvelope = SuccessEnvelope & {
-  data: RefreshTokenResponse;
+    data: RefreshTokenResponse;
 };
 
 export interface User {
-  id: Id;
-  email: Email;
-  username: string;
-  admin?: boolean;
-  active?: boolean;
-  imageUrl?: string;
-  createdAt?: string;
-  updatedAt?: string;
+    id: Id;
+    email: Email;
+    username: string;
+    admin?: boolean;
+    active?: boolean;
+    imageUrl?: string;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export type UserEnvelope = SuccessEnvelope & {
-  data: User;
+    data: User;
 };
 
 export interface UsersResponse {
-  items: User[];
-  meta: PaginationMeta;
+    items: User[];
+    meta: PaginationMeta;
 }
 
 export type UsersResponseEnvelope = SuccessEnvelope & {
-  data: UsersResponse;
+    data: UsersResponse;
 };
 
 export interface Product {
-  id: Id;
-  title: string;
-  /** @minimum 0 */
-  price: number;
-  description?: string;
-  active?: boolean;
-  imageUrl?: string;
-  categories?: string[];
-  tags?: string[];
-  createdAt?: string;
-  updatedAt?: string;
-  deletedAt?: string;
+    id: Id;
+    title: string;
+    /** @minimum 0 */
+    price: number;
+    description?: string;
+    active?: boolean;
+    imageUrl?: string;
+    categories?: string[];
+    tags?: string[];
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string;
 }
 
 export type ProductEnvelope = SuccessEnvelope & {
-  data: Product;
+    data: Product;
 };
 
 export interface ProductsResponse {
-  items: Product[];
-  meta: PaginationMeta;
+    items: Product[];
+    meta: PaginationMeta;
 }
 
 export type ProductsResponseEnvelope = SuccessEnvelope & {
-  data: ProductsResponse;
+    data: ProductsResponse;
 };
 
 export interface OrderItem {
-  product: Product;
-  /** @minimum 1 */
-  quantity: number;
+    product: Product;
+    /** @minimum 1 */
+    quantity: number;
 }
 
-export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
-
+export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
 
 export const OrderStatus = {
-  pending: 'pending',
-  paid: 'paid',
-  processing: 'processing',
-  shipped: 'shipped',
-  delivered: 'delivered',
-  cancelled: 'cancelled',
+    pending: 'pending',
+    paid: 'paid',
+    processing: 'processing',
+    shipped: 'shipped',
+    delivered: 'delivered',
+    cancelled: 'cancelled'
 } as const;
 
 export interface Order {
-  id: Id;
-  userId: Id;
-  email: Email;
-  items: OrderItem[];
-  /** @minimum 0 */
-  total: number;
-  /** Optional order notes */
-  notes?: string;
-  status: OrderStatus;
-  createdAt?: string;
-  updatedAt?: string;
+    id: Id;
+    userId: Id;
+    email: Email;
+    items: OrderItem[];
+    /** @minimum 0 */
+    total: number;
+    /** Optional order notes */
+    notes?: string;
+    status: OrderStatus;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export type OrderEnvelope = SuccessEnvelope & {
-  data: Order;
+    data: Order;
 };
 
 export interface OrdersResponse {
-  items: Order[];
-  meta: PaginationMeta;
+    items: Order[];
+    meta: PaginationMeta;
 }
 
 export type OrdersResponseEnvelope = SuccessEnvelope & {
-  data: OrdersResponse;
+    data: OrdersResponse;
 };
 
-export type FeedbackRequestStatus = typeof FeedbackRequestStatus[keyof typeof FeedbackRequestStatus];
-
+export type FeedbackRequestStatus =
+    (typeof FeedbackRequestStatus)[keyof typeof FeedbackRequestStatus];
 
 export const FeedbackRequestStatus = {
-  new: 'new',
-  in_progress: 'in_progress',
-  resolved: 'resolved',
-  spam: 'spam',
+    new: 'new',
+    in_progress: 'in_progress',
+    resolved: 'resolved',
+    spam: 'spam'
 } as const;
 
 export interface FeedbackRequest {
-  id: Id;
-  name?: string;
-  email: Email;
-  subject: string;
-  message: string;
-  status: FeedbackRequestStatus;
-  adminNotes?: string;
-  respondedAt?: string;
-  createdAt: string;
-  updatedAt?: string;
+    id: Id;
+    name?: string;
+    email: Email;
+    subject: string;
+    message: string;
+    status: FeedbackRequestStatus;
+    adminNotes?: string;
+    respondedAt?: string;
+    createdAt: string;
+    updatedAt?: string;
 }
 
 export type FeedbackRequestEnvelope = SuccessEnvelope & {
-  data: FeedbackRequest;
+    data: FeedbackRequest;
 };
 
 export interface FeedbackRequestsResponse {
-  items: FeedbackRequest[];
-  meta: PaginationMeta;
+    items: FeedbackRequest[];
+    meta: PaginationMeta;
 }
 
 export type FeedbackRequestsResponseEnvelope = SuccessEnvelope & {
-  data: FeedbackRequestsResponse;
+    data: FeedbackRequestsResponse;
 };
 
 export interface CartItem {
-  productId: Id;
-  /** @minimum 1 */
-  quantity: number;
+    productId: Id;
+    /** @minimum 1 */
+    quantity: number;
 }
 
 export interface CartSummaryResponse {
-  /**
+    /**
      * Number of distinct cart lines/items
      * @minimum 0
      */
-  itemsCount: number;
-  /**
+    itemsCount: number;
+    /**
      * Sum of quantities across all items
      * @minimum 0
      */
-  totalQuantity: number;
-  /**
+    totalQuantity: number;
+    /**
      * Sum of item prices * quantity (before tax/shipping/discounts)
      * @minimum 0
      */
-  total: number;
-  /** ISO-4217 currency code (e.g. USD) */
-  currency?: string;
+    total: number;
+    /** ISO-4217 currency code (e.g. USD) */
+    currency?: string;
 }
 
 export interface CartResponse {
-  items: CartItem[];
-  summary: CartSummaryResponse;
+    items: CartItem[];
+    summary: CartSummaryResponse;
 }
 
 export type CartResponseEnvelope = SuccessEnvelope & {
-  data: CartResponse;
+    data: CartResponse;
 };
 
 export type CartSummaryResponseEnvelope = SuccessEnvelope & {
-  data: CartSummaryResponse;
+    data: CartSummaryResponse;
 };
 
 export interface CheckoutResponse {
-  order: Order;
-  message?: string;
+    order: Order;
+    message?: string;
 }
 
 export type CheckoutResponseEnvelope = SuccessEnvelope & {
-  data: CheckoutResponse;
+    data: CheckoutResponse;
 };
 
-export type AdminHealthStatus = typeof AdminHealthStatus[keyof typeof AdminHealthStatus];
-
+export type AdminHealthStatus = (typeof AdminHealthStatus)[keyof typeof AdminHealthStatus];
 
 export const AdminHealthStatus = {
-  ok: 'ok',
-  degraded: 'degraded',
+    ok: 'ok',
+    degraded: 'degraded'
 } as const;
 
-export type AdminHealthDatabaseStatus = typeof AdminHealthDatabaseStatus[keyof typeof AdminHealthDatabaseStatus];
-
+export type AdminHealthDatabaseStatus =
+    (typeof AdminHealthDatabaseStatus)[keyof typeof AdminHealthDatabaseStatus];
 
 export const AdminHealthDatabaseStatus = {
-  connected: 'connected',
-  connecting: 'connecting',
-  disconnected: 'disconnected',
+    connected: 'connected',
+    connecting: 'connecting',
+    disconnected: 'disconnected'
 } as const;
 
 export interface AdminHealthIntegrations {
-  loki?: boolean;
-  posthog?: boolean;
-  otelEnabled?: boolean;
+    loki?: boolean;
+    posthog?: boolean;
+    otelEnabled?: boolean;
 }
 
 export interface AdminHealthMemory {
-  heapUsedMb: number;
-  heapTotalMb: number;
-  rssMb: number;
+    heapUsedMb: number;
+    heapTotalMb: number;
+    rssMb: number;
 }
 
 export interface AdminHealthSystem {
-  platform: string;
-  cpuCount: number;
-  loadAvg: number[];
+    platform: string;
+    cpuCount: number;
+    loadAvg: number[];
 }
 
 export type AdminHealthDatabase = {
-  status: AdminHealthDatabaseStatus;
+    status: AdminHealthDatabaseStatus;
 };
 
 export interface AdminHealth {
-  status: AdminHealthStatus;
-  environment: string;
-  service: string;
-  nodeVersion: string;
-  /** @minimum 0 */
-  uptimeSeconds: number;
-  database: AdminHealthDatabase;
-  integrations?: AdminHealthIntegrations;
-  memory?: AdminHealthMemory;
-  system?: AdminHealthSystem;
-  timestamp: string;
+    status: AdminHealthStatus;
+    environment: string;
+    service: string;
+    nodeVersion: string;
+    /** @minimum 0 */
+    uptimeSeconds: number;
+    database: AdminHealthDatabase;
+    integrations?: AdminHealthIntegrations;
+    memory?: AdminHealthMemory;
+    system?: AdminHealthSystem;
+    timestamp: string;
 }
 
 export interface AdminHealthResponse {
-  success: true;
-  data: AdminHealth;
+    success: true;
+    data: AdminHealth;
 }
 
 export type AdminHealthResponseEnvelope = SuccessEnvelope & {
-  data: AdminHealthResponse;
+    data: AdminHealthResponse;
 };
 
 export interface AdminMetricsLatency {
-  /** Median latency in ms */
-  p50: number;
-  /** 95th-percentile latency in ms */
-  p95: number;
+    /** Median latency in ms */
+    p50: number;
+    /** 95th-percentile latency in ms */
+    p95: number;
 }
 
 export type AdminMetricsSummaryHttp = {
-  /** @minimum 0 */
-  totalRequests: number;
-  /** @minimum 0 */
-  totalErrors: number;
-  /**
+    /** @minimum 0 */
+    totalRequests: number;
+    /** @minimum 0 */
+    totalErrors: number;
+    /**
      * Fraction of requests that returned 4xx/5xx
      * @minimum 0
      * @maximum 1
      */
-  errorRate: number;
-  /** @minimum 0 */
-  inFlight: number;
-  latencyMs: AdminMetricsLatency;
+    errorRate: number;
+    /** @minimum 0 */
+    inFlight: number;
+    latencyMs: AdminMetricsLatency;
 };
 
 export type AdminMetricsSummaryAuth = {
-  /** @minimum 0 */
-  loginSuccess?: number;
-  /** @minimum 0 */
-  loginFailure?: number;
-  /** @minimum 0 */
-  signupSuccess?: number;
+    /** @minimum 0 */
+    loginSuccess?: number;
+    /** @minimum 0 */
+    loginFailure?: number;
+    /** @minimum 0 */
+    signupSuccess?: number;
 };
 
 export type AdminMetricsSummaryBusiness = {
-  /** @minimum 0 */
-  checkoutSuccess?: number;
-  /** @minimum 0 */
-  ordersCreated?: number;
+    /** @minimum 0 */
+    checkoutSuccess?: number;
+    /** @minimum 0 */
+    ordersCreated?: number;
 };
 
 export type AdminMetricsSummaryDatabase = {
-  /** @minimum 0 */
-  queriesTotal?: number;
-  /** @minimum 0 */
-  errorsTotal?: number;
+    /** @minimum 0 */
+    queriesTotal?: number;
+    /** @minimum 0 */
+    errorsTotal?: number;
 };
 
 export type AdminMetricsSummaryProcess = {
-  /** @minimum 0 */
-  uptimeSeconds?: number;
-  /** @minimum 0 */
-  heapUsedMb?: number;
+    /** @minimum 0 */
+    uptimeSeconds?: number;
+    /** @minimum 0 */
+    heapUsedMb?: number;
 };
 
 export interface AdminMetricsSummary {
-  http: AdminMetricsSummaryHttp;
-  auth: AdminMetricsSummaryAuth;
-  business: AdminMetricsSummaryBusiness;
-  database: AdminMetricsSummaryDatabase;
-  process: AdminMetricsSummaryProcess;
-  timestamp: string;
+    http: AdminMetricsSummaryHttp;
+    auth: AdminMetricsSummaryAuth;
+    business: AdminMetricsSummaryBusiness;
+    database: AdminMetricsSummaryDatabase;
+    process: AdminMetricsSummaryProcess;
+    timestamp: string;
 }
 
 export interface AdminMetricsSummaryResponse {
-  success: true;
-  data: AdminMetricsSummary;
+    success: true;
+    data: AdminMetricsSummary;
 }
 
 export type AdminMetricsSummaryResponseEnvelope = SuccessEnvelope & {
-  data: AdminMetricsSummaryResponse;
+    data: AdminMetricsSummaryResponse;
 };
 
-export type AuditEventItemActorRole = typeof AuditEventItemActorRole[keyof typeof AuditEventItemActorRole];
-
+export type AuditEventItemActorRole =
+    (typeof AuditEventItemActorRole)[keyof typeof AuditEventItemActorRole];
 
 export const AuditEventItemActorRole = {
-  admin: 'admin',
-  user: 'user',
-  anonymous: 'anonymous',
+    admin: 'admin',
+    user: 'user',
+    anonymous: 'anonymous'
 } as const;
 
-export type AuditEventItemOutcome = typeof AuditEventItemOutcome[keyof typeof AuditEventItemOutcome];
-
+export type AuditEventItemOutcome =
+    (typeof AuditEventItemOutcome)[keyof typeof AuditEventItemOutcome];
 
 export const AuditEventItemOutcome = {
-  success: 'success',
-  failure: 'failure',
+    success: 'success',
+    failure: 'failure'
 } as const;
 
-export type AuditEventItemLevel = typeof AuditEventItemLevel[keyof typeof AuditEventItemLevel];
-
+export type AuditEventItemLevel = (typeof AuditEventItemLevel)[keyof typeof AuditEventItemLevel];
 
 export const AuditEventItemLevel = {
-  info: 'info',
-  warn: 'warn',
+    info: 'info',
+    warn: 'warn'
 } as const;
 
 export type AuditEventItemMetadata = { [key: string]: unknown };
 
 export interface AuditEventItem {
-  actor_user_id: string;
-  actor_role: AuditEventItemActorRole;
-  /** Dot-notation action name (e.g. auth.login.succeeded) */
-  action: string;
-  outcome: AuditEventItemOutcome;
-  ip?: string;
-  user_agent?: string;
-  request_id?: string;
-  trace_id?: string;
-  target_type?: string;
-  target_id?: string;
-  metadata?: AuditEventItemMetadata;
-  timestamp: string;
-  level: AuditEventItemLevel;
+    actor_user_id: string;
+    actor_role: AuditEventItemActorRole;
+    /** Dot-notation action name (e.g. auth.login.succeeded) */
+    action: string;
+    outcome: AuditEventItemOutcome;
+    ip?: string;
+    user_agent?: string;
+    request_id?: string;
+    trace_id?: string;
+    target_type?: string;
+    target_id?: string;
+    metadata?: AuditEventItemMetadata;
+    timestamp: string;
+    level: AuditEventItemLevel;
 }
 
 export type AuditLogsResponseData = {
-  items: AuditEventItem[];
-  /** @minimum 0 */
-  total: number;
+    items: AuditEventItem[];
+    /** @minimum 0 */
+    total: number;
 };
 
 export interface AuditLogsResponse {
-  success: true;
-  data: AuditLogsResponseData;
+    success: true;
+    data: AuditLogsResponseData;
 }
 
 export type AuditLogsResponseEnvelope = SuccessEnvelope & {
-  data: AuditLogsResponse;
+    data: AuditLogsResponse;
 };
 
 export interface LoginRequest {
-  email: Email;
-  password: Password;
+    email: Email;
+    password: Password;
 }
 
 export interface SignupRequest {
-  email: Email;
-  /** @minLength 3 */
-  username: string;
-  password: Password;
-  passwordConfirm: Password;
-  imageUrl?: string;
+    email: Email;
+    /** @minLength 3 */
+    username: string;
+    password: Password;
+    passwordConfirm: Password;
+    imageUrl?: string;
 }
 
 export interface SignupRequestMultipart {
-  email: Email;
-  /** @minLength 3 */
-  username: string;
-  password: Password;
-  passwordConfirm: Password;
-  /** Optional user profile image */
-  imageUpload?: Blob;
+    email: Email;
+    /** @minLength 3 */
+    username: string;
+    password: Password;
+    passwordConfirm: Password;
+    /** Optional user profile image */
+    imageUpload?: Blob;
 }
 
 export interface PasswordResetRequest {
-  email: Email;
+    email: Email;
 }
 
 export interface PasswordResetConfirmRequest {
-  /** One-time password reset token (NOT a JWT). */
-  token: string;
-  password: Password;
-  passwordConfirm: Password;
+    /** One-time password reset token (NOT a JWT). */
+    token: string;
+    password: Password;
+    passwordConfirm: Password;
 }
 
 export interface AccountDeleteConfirmRequest {
-  /** One-time account deletion token (NOT a JWT). */
-  token: string;
+    /** One-time account deletion token (NOT a JWT). */
+    token: string;
 }
 
 export interface SearchUsersRequest {
-  page?: Page;
-  pageSize?: PageSize;
-  text?: Text;
-  id?: Id;
-  email?: Email;
-  username?: string;
-  active?: boolean;
+    page?: Page;
+    pageSize?: PageSize;
+    text?: Text;
+    id?: Id;
+    email?: Email;
+    username?: string;
+    active?: boolean;
 }
 
 export interface CreateUserRequest {
-  email: Email;
-  username: string;
-  password: Password;
-  admin?: boolean;
-  active?: boolean;
-  imageUrl?: string;
+    email: Email;
+    username: string;
+    password: Password;
+    admin?: boolean;
+    active?: boolean;
+    imageUrl?: string;
 }
 
 export interface CreateUserRequestMultipart {
-  email: Email;
-  username: string;
-  password: Password;
-  admin?: boolean;
-  active?: boolean;
-  /** Optional user profile image */
-  imageUpload?: Blob;
+    email: Email;
+    username: string;
+    password: Password;
+    admin?: boolean;
+    active?: boolean;
+    /** Optional user profile image */
+    imageUpload?: Blob;
 }
 
 export interface UpdateUserRequest {
-  id: Id;
-  email?: Email;
-  username?: string;
-  password?: Password;
-  imageUrl?: string;
+    id: Id;
+    email?: Email;
+    username?: string;
+    password?: Password;
+    imageUrl?: string;
 }
 
 export interface UpdateUserRequestMultipart {
-  id: Id;
-  email?: Email;
-  username?: string;
-  password?: Password;
-  /** Optional user profile image */
-  imageUpload?: Blob;
+    id: Id;
+    email?: Email;
+    username?: string;
+    password?: Password;
+    /** Optional user profile image */
+    imageUpload?: Blob;
 }
 
 export interface UpdateUserByIdRequest {
-  email?: Email;
-  password?: Password;
-  username?: string;
-  imageUrl?: string;
+    email?: Email;
+    password?: Password;
+    username?: string;
+    imageUrl?: string;
 }
 
 export interface UpdateUserByIdRequestMultipart {
-  email?: Email;
-  password?: Password;
-  username?: string;
-  /** Optional user profile image */
-  imageUpload?: Blob;
+    email?: Email;
+    password?: Password;
+    username?: string;
+    /** Optional user profile image */
+    imageUpload?: Blob;
 }
 
 export interface DeleteUserRequest {
-  id: Id;
-  hardDelete?: boolean;
+    id: Id;
+    hardDelete?: boolean;
 }
 
 export interface SearchProductsRequest {
-  page?: Page;
-  pageSize?: PageSize;
-  text?: Text;
-  id?: Id;
-  /** @minimum 0 */
-  minPrice?: number;
-  /** @minimum 0 */
-  maxPrice?: number;
-  category?: string;
-  tag?: string;
+    page?: Page;
+    pageSize?: PageSize;
+    text?: Text;
+    id?: Id;
+    /** @minimum 0 */
+    minPrice?: number;
+    /** @minimum 0 */
+    maxPrice?: number;
+    category?: string;
+    tag?: string;
 }
 
 export interface CreateProductRequest {
-  title: string;
-  /** @minimum 0 */
-  price: number;
-  description?: string;
-  active?: boolean;
-  imageUrl?: string;
-  categories?: string[];
-  tags?: string[];
+    title: string;
+    /** @minimum 0 */
+    price: number;
+    description?: string;
+    active?: boolean;
+    imageUrl?: string;
+    categories?: string[];
+    tags?: string[];
 }
 
 export interface CreateProductRequestMultipart {
-  title: string;
-  /** @minimum 0 */
-  price: number;
-  description?: string;
-  active?: boolean;
-  /** Optional product image */
-  imageUpload?: Blob;
-  categories?: string[];
-  tags?: string[];
+    title: string;
+    /** @minimum 0 */
+    price: number;
+    description?: string;
+    active?: boolean;
+    /** Optional product image */
+    imageUpload?: Blob;
+    categories?: string[];
+    tags?: string[];
 }
 
 export interface UpdateProductRequest {
-  id: Id;
-  title: string;
-  description?: string;
-  /** @minimum 0 */
-  price: number;
-  active?: boolean;
-  imageUrl?: string;
-  categories?: string[];
-  tags?: string[];
+    id: Id;
+    title: string;
+    description?: string;
+    /** @minimum 0 */
+    price: number;
+    active?: boolean;
+    imageUrl?: string;
+    categories?: string[];
+    tags?: string[];
 }
 
 export interface UpdateProductRequestMultipart {
-  id: Id;
-  title: string;
-  description?: string;
-  /** @minimum 0 */
-  price: number;
-  active?: boolean;
-  /** Optional product image */
-  imageUpload?: Blob;
-  categories?: string[];
-  tags?: string[];
+    id: Id;
+    title: string;
+    description?: string;
+    /** @minimum 0 */
+    price: number;
+    active?: boolean;
+    /** Optional product image */
+    imageUpload?: Blob;
+    categories?: string[];
+    tags?: string[];
 }
 
 export interface UpdateProductByIdRequest {
-  title: string;
-  description?: string;
-  /** @minimum 0 */
-  price: number;
-  active?: boolean;
-  imageUrl?: string;
-  categories?: string[];
-  tags?: string[];
+    title: string;
+    description?: string;
+    /** @minimum 0 */
+    price: number;
+    active?: boolean;
+    imageUrl?: string;
+    categories?: string[];
+    tags?: string[];
 }
 
 export interface UpdateProductByIdRequestMultipart {
-  title: string;
-  description?: string;
-  /** @minimum 0 */
-  price: number;
-  active?: boolean;
-  /** Optional product image */
-  imageUpload?: Blob;
-  categories?: string[];
-  tags?: string[];
+    title: string;
+    description?: string;
+    /** @minimum 0 */
+    price: number;
+    active?: boolean;
+    /** Optional product image */
+    imageUpload?: Blob;
+    categories?: string[];
+    tags?: string[];
 }
 
 export interface DeleteProductRequest {
-  id: Id;
-  hardDelete?: boolean;
+    id: Id;
+    hardDelete?: boolean;
 }
 
 export interface UpsertCartItemRequest {
-  productId: Id;
-  /** @minimum 1 */
-  quantity: number;
+    productId: Id;
+    /** @minimum 1 */
+    quantity: number;
 }
 
 export interface UpdateCartItemByIdRequest {
-  productId?: Id;
-  /** @minimum 1 */
-  quantity: number;
+    productId?: Id;
+    /** @minimum 1 */
+    quantity: number;
 }
 
 export interface RemoveCartItemRequest {
-  productId?: Id;
+    productId?: Id;
 }
 
 export interface CheckoutRequest {
-  email?: Email;
-  /** Optional order notes */
-  notes?: string;
+    email?: Email;
+    /** Optional order notes */
+    notes?: string;
 }
 
 export interface SearchOrdersRequest {
-  page?: Page;
-  pageSize?: PageSize;
-  id?: Id;
-  userId?: Id;
-  productId?: Id;
-  email?: Email;
+    page?: Page;
+    pageSize?: PageSize;
+    id?: Id;
+    userId?: Id;
+    productId?: Id;
+    email?: Email;
 }
 
 /**
  * Create a new order.
  */
 export interface CreateOrderRequest {
-  userId: Id;
-  email: Email;
-  /** @minItems 1 */
-  items: CartItem[];
+    userId: Id;
+    email: Email;
+    /** @minItems 1 */
+    items: CartItem[];
 }
 
 /**
  * Updated order status
  */
-export type UpdateOrderRequestStatus = typeof UpdateOrderRequestStatus[keyof typeof UpdateOrderRequestStatus];
-
+export type UpdateOrderRequestStatus =
+    (typeof UpdateOrderRequestStatus)[keyof typeof UpdateOrderRequestStatus];
 
 export const UpdateOrderRequestStatus = {
-  pending: 'pending',
-  paid: 'paid',
-  processing: 'processing',
-  shipped: 'shipped',
-  delivered: 'delivered',
-  cancelled: 'cancelled',
+    pending: 'pending',
+    paid: 'paid',
+    processing: 'processing',
+    shipped: 'shipped',
+    delivered: 'delivered',
+    cancelled: 'cancelled'
 } as const;
 
 export interface UpdateOrderRequest {
-  id: Id;
-  /** Updated order status */
-  status?: UpdateOrderRequestStatus;
-  userId?: Id;
-  email?: Email;
-  /** @minItems 1 */
-  items?: CartItem[];
+    id: Id;
+    /** Updated order status */
+    status?: UpdateOrderRequestStatus;
+    userId?: Id;
+    email?: Email;
+    /** @minItems 1 */
+    items?: CartItem[];
 }
 
 /**
  * Updated order status
  */
-export type UpdateOrderByIdRequestStatus = typeof UpdateOrderByIdRequestStatus[keyof typeof UpdateOrderByIdRequestStatus];
-
+export type UpdateOrderByIdRequestStatus =
+    (typeof UpdateOrderByIdRequestStatus)[keyof typeof UpdateOrderByIdRequestStatus];
 
 export const UpdateOrderByIdRequestStatus = {
-  pending: 'pending',
-  paid: 'paid',
-  processing: 'processing',
-  shipped: 'shipped',
-  delivered: 'delivered',
-  cancelled: 'cancelled',
+    pending: 'pending',
+    paid: 'paid',
+    processing: 'processing',
+    shipped: 'shipped',
+    delivered: 'delivered',
+    cancelled: 'cancelled'
 } as const;
 
 export interface UpdateOrderByIdRequest {
-  /** Updated order status */
-  status?: UpdateOrderByIdRequestStatus;
-  userId?: Id;
-  email?: Email;
-  /** @minItems 1 */
-  items?: CartItem[];
+    /** Updated order status */
+    status?: UpdateOrderByIdRequestStatus;
+    userId?: Id;
+    email?: Email;
+    /** @minItems 1 */
+    items?: CartItem[];
 }
 
 export interface DeleteOrderRequest {
-  id: Id;
+    id: Id;
 }
 
 export interface CreateFeedbackRequest {
-  name?: string;
-  email: Email;
-  subject: string;
-  message: string;
+    name?: string;
+    email: Email;
+    subject: string;
+    message: string;
 }
 
-export type SearchFeedbackRequestsRequestStatus = typeof SearchFeedbackRequestsRequestStatus[keyof typeof SearchFeedbackRequestsRequestStatus];
-
+export type SearchFeedbackRequestsRequestStatus =
+    (typeof SearchFeedbackRequestsRequestStatus)[keyof typeof SearchFeedbackRequestsRequestStatus];
 
 export const SearchFeedbackRequestsRequestStatus = {
-  new: 'new',
-  in_progress: 'in_progress',
-  resolved: 'resolved',
-  spam: 'spam',
+    new: 'new',
+    in_progress: 'in_progress',
+    resolved: 'resolved',
+    spam: 'spam'
 } as const;
 
 export interface SearchFeedbackRequestsRequest {
-  page?: Page;
-  pageSize?: PageSize;
-  text?: Text;
-  status?: SearchFeedbackRequestsRequestStatus;
-  email?: Email;
+    page?: Page;
+    pageSize?: PageSize;
+    text?: Text;
+    status?: SearchFeedbackRequestsRequestStatus;
+    email?: Email;
 }
 
-export type UpdateFeedbackRequestStatusRequestStatus = typeof UpdateFeedbackRequestStatusRequestStatus[keyof typeof UpdateFeedbackRequestStatusRequestStatus];
-
+export type UpdateFeedbackRequestStatusRequestStatus =
+    (typeof UpdateFeedbackRequestStatusRequestStatus)[keyof typeof UpdateFeedbackRequestStatusRequestStatus];
 
 export const UpdateFeedbackRequestStatusRequestStatus = {
-  new: 'new',
-  in_progress: 'in_progress',
-  resolved: 'resolved',
-  spam: 'spam',
+    new: 'new',
+    in_progress: 'in_progress',
+    resolved: 'resolved',
+    spam: 'spam'
 } as const;
 
 export interface UpdateFeedbackRequestStatusRequest {
-  status?: UpdateFeedbackRequestStatusRequestStatus;
-  adminNotes?: string;
+    status?: UpdateFeedbackRequestStatusRequestStatus;
+    adminNotes?: string;
 }
 
 /**
@@ -861,1650 +847,3885 @@ export type UserIdParamParameter = Id;
 export type ProductIdParamParameter = Id;
 
 export type GetObservabilityAuditLogsParams = {
-/**
- * Filter by actor user ID
- */
-actor?: string;
-/**
- * Filter by action name (e.g. auth.login.failed)
- */
-action?: string;
-/**
- * Filter by outcome
- */
-outcome?: GetObservabilityAuditLogsOutcome;
-/**
- * Return events after this ISO-8601 timestamp
- */
-since?: string;
-/**
- * Maximum number of events to return
- * @minimum 1
- * @maximum 200
- */
-limit?: number;
+    /**
+     * Filter by actor user ID
+     */
+    actor?: string;
+    /**
+     * Filter by action name (e.g. auth.login.failed)
+     */
+    action?: string;
+    /**
+     * Filter by outcome
+     */
+    outcome?: GetObservabilityAuditLogsOutcome;
+    /**
+     * Return events after this ISO-8601 timestamp
+     */
+    since?: string;
+    /**
+     * Maximum number of events to return
+     * @minimum 1
+     * @maximum 200
+     */
+    limit?: number;
 };
 
-export type GetObservabilityAuditLogsOutcome = typeof GetObservabilityAuditLogsOutcome[keyof typeof GetObservabilityAuditLogsOutcome];
-
+export type GetObservabilityAuditLogsOutcome =
+    (typeof GetObservabilityAuditLogsOutcome)[keyof typeof GetObservabilityAuditLogsOutcome];
 
 export const GetObservabilityAuditLogsOutcome = {
-  success: 'success',
-  failure: 'failure',
+    success: 'success',
+    failure: 'failure'
 } as const;
 
 export type ListUsersParams = {
-/**
- * 1-based page index
- * @minimum 1
- */
-page?: PageParamParameter;
-/**
- * Optional override; server may clamp to a max
- * @minimum 1
- * @maximum 100
- */
-pageSize?: PageSizeParamParameter;
-/**
- * Free-text search string
- * @minLength 1
- */
-text?: TextParamParameter;
-/**
- * Resource identifier
- */
-id?: IdParamParameter;
-email?: Email;
-username?: string;
-active?: boolean;
+    /**
+     * 1-based page index
+     * @minimum 1
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Free-text search string
+     * @minLength 1
+     */
+    text?: TextParamParameter;
+    /**
+     * Resource identifier
+     */
+    id?: IdParamParameter;
+    email?: Email;
+    username?: string;
+    active?: boolean;
 };
 
 export type DeleteUserByIdParams = {
-hardDelete?: boolean;
+    hardDelete?: boolean;
 };
 
 export type ListProductsParams = {
-/**
- * 1-based page index
- * @minimum 1
- */
-page?: PageParamParameter;
-/**
- * Optional override; server may clamp to a max
- * @minimum 1
- * @maximum 100
- */
-pageSize?: PageSizeParamParameter;
-/**
- * Free-text search string
- * @minLength 1
- */
-text?: TextParamParameter;
-/**
- * Resource identifier
- */
-productId?: ProductIdParamParameter;
-/**
- * @minimum 0
- */
-minPrice?: number;
-/**
- * @minimum 0
- */
-maxPrice?: number;
+    /**
+     * 1-based page index
+     * @minimum 1
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Free-text search string
+     * @minLength 1
+     */
+    text?: TextParamParameter;
+    /**
+     * Resource identifier
+     */
+    productId?: ProductIdParamParameter;
+    /**
+     * @minimum 0
+     */
+    minPrice?: number;
+    /**
+     * @minimum 0
+     */
+    maxPrice?: number;
 };
 
 export type DeleteProductByIdParams = {
-hardDelete?: boolean;
+    hardDelete?: boolean;
 };
 
 export type ListOrdersParams = {
-/**
- * 1-based page index
- * @minimum 1
- */
-page?: PageParamParameter;
-/**
- * Optional override; server may clamp to a max
- * @minimum 1
- * @maximum 100
- */
-pageSize?: PageSizeParamParameter;
-/**
- * Resource identifier
- */
-id?: IdParamParameter;
-/**
- * Resource identifier
- */
-userId?: UserIdParamParameter;
-/**
- * Resource identifier
- */
-productId?: ProductIdParamParameter;
-email?: Email;
+    /**
+     * 1-based page index
+     * @minimum 1
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Resource identifier
+     */
+    id?: IdParamParameter;
+    /**
+     * Resource identifier
+     */
+    userId?: UserIdParamParameter;
+    /**
+     * Resource identifier
+     */
+    productId?: ProductIdParamParameter;
+    email?: Email;
 };
 
 export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
-/**
- * Public ping endpoint. Returns a simple liveness indicator confirming the API process is running.
- * @summary API health check
- */
-const getHealth = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<MessageResponse>> => {
-    return axiosInstance.get(
-      `/`,options
+    /**
+     * Public ping endpoint. Returns a simple liveness indicator confirming the API process is running.
+     * @summary API health check
+     */
+    const getHealth = (options?: AxiosRequestConfig): Promise<AxiosResponse<MessageResponse>> => {
+        return axiosInstance.get(`/`, options);
+    };
+
+    /**
+     * Live Server-Sent Events stream for demo dashboards.
+     * Sends `metrics.snapshot` on connect, followed by periodic `metrics.updated` and `heartbeat` events.
+     * @summary Observability SSE stream
+     */
+    const getObservabilityEvents = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<string>> => {
+        return axiosInstance.get(`/observability/events`, {
+            responseType: 'text',
+            ...options
+        });
+    };
+
+    /**
+     * Full JSON health snapshot for dashboard use.
+     * Includes uptime, database status, memory, integrations, and system info.
+     * Requires admin role.
+     * @summary Health snapshot
+     */
+    const getObservabilityHealth = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<AdminHealthResponseEnvelope>> => {
+        return axiosInstance.get(`/observability/health`, options);
+    };
+
+    /**
+     * Raw Prometheus text (exposition format 0.0.4).
+     * Intended for Prometheus scraping, not for browser clients.
+     * Use `GET /observability/metrics/overview` for a JSON summary suitable for dashboards.
+     * @summary Prometheus metrics
+     */
+    const getObservabilityMetrics = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<string>> => {
+        return axiosInstance.get(`/observability/metrics`, {
+            responseType: 'text',
+            ...options
+        });
+    };
+
+    /**
+     * Key operational metrics derived from Prometheus counters/histograms,
+     * returned as structured JSON for dashboard KPI cards and charts.
+     * Requires admin role.
+     * @summary Metrics overview (JSON)
+     */
+    const getObservabilityMetricsOverview = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<AdminMetricsSummaryResponseEnvelope>> => {
+        return axiosInstance.get(`/observability/metrics/overview`, options);
+    };
+
+    /**
+     * Returns the most recent audit events from the in-memory ring buffer (up to 200).
+     * Events include auth flows, admin CRUD actions, and security blocks.
+     * Requires admin role.
+     * @summary Recent audit events
+     */
+    const getObservabilityAuditLogs = (
+        params?: GetObservabilityAuditLogsParams,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<AuditLogsResponseEnvelope>> => {
+        return axiosInstance.get(`/observability/audit`, {
+            ...options,
+            params: { ...params, ...options?.params }
+        });
+    };
+
+    /**
+     * Returns the full profile of the currently authenticated user
+     * @summary Current user info
+     */
+    const getAccount = (options?: AxiosRequestConfig): Promise<AxiosResponse<UserEnvelope>> => {
+        return axiosInstance.get(`/account`, options);
+    };
+
+    /**
+     * Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion.
+     * @summary Request account deletion
+     */
+    const requestAccountDelete = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.delete(`/account`, options);
+    };
+
+    /**
+     * Completes the account-deletion flow. Validates the one-time token issued by `DELETE /account` and, if valid, permanently removes the user account.
+     * @summary Confirm account deletion
+     */
+    const confirmAccountDelete = (
+        accountDeleteConfirmRequest: AccountDeleteConfirmRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.delete(`/account/delete-confirm`, {
+            data: accountDeleteConfirmRequest,
+            ...options
+        });
+    };
+
+    /**
+     * Authenticates a user with email and password credentials. On success, returns a JWT access token that must be passed as a Bearer token on subsequent authenticated requests.
+     * @summary Login
+     */
+    const login = (
+        loginRequest: LoginRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<AuthTokensEnvelope>> => {
+        return axiosInstance.post(`/account/login`, loginRequest, options);
+    };
+
+    /**
+     * Registers a new user account with optional image upload. Returns the newly created user profile on success.
+     * @summary Signup
+     */
+    const signup = (
+        signupBody: SignupRequest | SignupRequestMultipart,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<UserEnvelope>> => {
+        return axiosInstance.post(`/account/signup`, signupBody, options);
+    };
+
+    /**
+     * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
+     */
+    const requestPasswordReset = (
+        passwordResetRequest: PasswordResetRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.post(`/account/reset`, passwordResetRequest, options);
+    };
+
+    /**
+     * Completes the password-reset flow. Validates the one-time reset token issued by `/account/reset` and, if valid, updates the user's password to the supplied value.
+     */
+    const confirmPasswordReset = (
+        passwordResetConfirmRequest: PasswordResetConfirmRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.post(`/account/reset-confirm`, passwordResetConfirmRequest, options);
+    };
+
+    /**
+     * Creates a new short-lived access token using a refresh token. The refresh token can be provided as a query parameter, path parameter, or retrieved from the `jwt` cookie.
+     * @summary Refresh access token
+     */
+    const refreshToken = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<RefreshTokenEnvelope>> => {
+        return axiosInstance.get(`/account/refresh`, options);
+    };
+
+    /**
+     * Creates a new short-lived access token using a refresh token provided in the URL path.
+     * @summary Refresh access token with token in path
+     */
+    const refreshTokenWithPath = (
+        token: string,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<RefreshTokenEnvelope>> => {
+        return axiosInstance.get(`/account/refresh/${token}`, options);
+    };
+
+    /**
+     * Logs out the authenticated user from ALL devices by removing all refresh tokens from the database and clearing authentication cookies.
+     * @summary Logout from all devices
+     */
+    const logoutAll = (options?: AxiosRequestConfig): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.post(`/account/logout-all`, undefined, options);
+    };
+
+    /**
+     * Removes all expired tokens (refresh, password-reset, etc.) from every user record in the database. Restricted to administrators.
+     * @summary Remove expired tokens
+     */
+    const deleteExpiredTokens = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.delete(`/account/tokens/expired`, options);
+    };
+
+    /**
+     * Returns a paginated list of user accounts.
+     * @summary List users (paginated)
+     */
+    const listUsers = (
+        params?: ListUsersParams,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<UsersResponseEnvelope>> => {
+        return axiosInstance.get(`/users`, {
+            ...options,
+            params: { ...params, ...options?.params }
+        });
+    };
+
+    /**
+     * Creates a new user account with the supplied email, username, and password. Optional image can be uploaded.
+     * @summary Create user
+     */
+    const createUser = (
+        createUserBody: CreateUserRequest | CreateUserRequestMultipart,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<UserEnvelope>> => {
+        return axiosInstance.post(`/users`, createUserBody, options);
+    };
+
+    /**
+     * Updates an existing user's email or password. Optional image can be uploaded.
+     * @summary Edit user
+     */
+    const updateUser = (
+        updateUserBody: UpdateUserRequest | UpdateUserRequestMultipart,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<UserEnvelope>> => {
+        return axiosInstance.put(`/users`, updateUserBody, options);
+    };
+
+    /**
+     * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record.
+     * @summary Delete user
+     */
+    const deleteUser = (
+        deleteUserRequest: DeleteUserRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.delete(`/users`, { data: deleteUserRequest, ...options });
+    };
+
+    /**
+     * Returns the full profile of the user identified by `{id}`. Functionally equivalent to `GET /users?id={id}`.
+     * @summary User details
+     */
+    const getUserById = (
+        id: string,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<UserEnvelope>> => {
+        return axiosInstance.get(`/users/${id}`, options);
+    };
+
+    /**
+     * Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
+     * @summary Edit user
+     */
+    const updateUserById = (
+        id: string,
+        updateUserByIdBody: UpdateUserByIdRequest | UpdateUserByIdRequestMultipart,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<UserEnvelope>> => {
+        return axiosInstance.put(`/users/${id}`, updateUserByIdBody, options);
+    };
+
+    /**
+     * Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /users`.
+     * @summary Delete user
+     */
+    const deleteUserById = (
+        id: string,
+        params?: DeleteUserByIdParams,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.delete(`/users/${id}`, {
+            ...options,
+            params: { ...params, ...options?.params }
+        });
+    };
+
+    /**
+     * Searches and filters users via a JSON request body. Functionally equivalent to `GET /users` with query parameters
+     * @summary Search users (DTO-friendly)
+     */
+    const searchUsers = (
+        searchUsersRequest: SearchUsersRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<UsersResponseEnvelope>> => {
+        return axiosInstance.post(`/users/search`, searchUsersRequest, options);
+    };
+
+    /**
+     * Creates a user feedback/contact request and notifies admins via email.
+     * @summary Submit contact request
+     */
+    const createFeedbackRequest = (
+        createFeedbackRequest: CreateFeedbackRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<FeedbackRequestEnvelope>> => {
+        return axiosInstance.post(`/feedback/contact`, createFeedbackRequest, options);
+    };
+
+    /**
+     * Returns feedback/contact requests for admin review.
+     * @summary List feedback requests
+     */
+    const listFeedbackRequests = (
+        searchFeedbackRequestsRequest?: SearchFeedbackRequestsRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<FeedbackRequestsResponseEnvelope>> => {
+        return axiosInstance.get(`/feedback`, options);
+    };
+
+    /**
+     * Updates status/notes of a feedback request.
+     * @summary Update feedback request status
+     */
+    const updateFeedbackRequestStatus = (
+        id: string,
+        updateFeedbackRequestStatusRequest: UpdateFeedbackRequestStatusRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<FeedbackRequestEnvelope>> => {
+        return axiosInstance.put(`/feedback/${id}`, updateFeedbackRequestStatusRequest, options);
+    };
+
+    /**
+     * Returns a paginated list of products.
+     * @summary List products (paginated)
+     */
+    const listProducts = (
+        params?: ListProductsParams,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<ProductsResponseEnvelope>> => {
+        return axiosInstance.get(`/products`, {
+            ...options,
+            params: { ...params, ...options?.params }
+        });
+    };
+
+    /**
+     * Creates a new product with optional image upload
+     * @summary Create product
+     */
+    const createProduct = (
+        createProductBody: CreateProductRequest | CreateProductRequestMultipart,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<ProductEnvelope>> => {
+        return axiosInstance.post(`/products`, createProductBody, options);
+    };
+
+    /**
+     * Updates an existing product with optional image upload
+     * @summary Edit product
+     */
+    const updateProduct = (
+        updateProductBody: UpdateProductRequest | UpdateProductRequestMultipart,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<ProductEnvelope>> => {
+        return axiosInstance.put(`/products`, updateProductBody, options);
+    };
+
+    /**
+     * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record
+     * @summary Delete product
+     */
+    const deleteProduct = (
+        deleteProductRequest: DeleteProductRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.delete(`/products`, { data: deleteProductRequest, ...options });
+    };
+
+    /**
+     * Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`.
+     * @summary Product details
+     */
+    const getProductById = (
+        id: string,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<ProductEnvelope>> => {
+        return axiosInstance.get(`/products/${id}`, options);
+    };
+
+    /**
+     * Updates the product identified by `{id}` in the path with optional image upload. Functionally equivalent to `PUT /products` with the id in the body.
+     * @summary Edit product
+     */
+    const updateProductById = (
+        id: string,
+        updateProductByIdBody: UpdateProductByIdRequest | UpdateProductByIdRequestMultipart,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<ProductEnvelope>> => {
+        return axiosInstance.put(`/products/${id}`, updateProductByIdBody, options);
+    };
+
+    /**
+     * Deletes the product identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /products`.
+     * @summary Delete product
+     */
+    const deleteProductById = (
+        id: string,
+        params?: DeleteProductByIdParams,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.delete(`/products/${id}`, {
+            ...options,
+            params: { ...params, ...options?.params }
+        });
+    };
+
+    /**
+     * Searches and filters products via a JSON request body. Functionally equivalent to `GET /products` with query parameters.
+     * @summary Search products (DTO-friendly)
+     */
+    const searchProducts = (
+        searchProductsRequest: SearchProductsRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<ProductsResponseEnvelope>> => {
+        return axiosInstance.post(`/products/search`, searchProductsRequest, options);
+    };
+
+    /**
+     * Returns all items currently in the authenticated user's cart along with a computed summary
+     * @summary Get cart
+     */
+    const getCart = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<CartResponseEnvelope>> => {
+        return axiosInstance.get(`/cart`, options);
+    };
+
+    /**
+     * Adds or edit a product to the authenticated user's cart. Returns the updated cart.
+     * @summary Add/Edit cart item
+     */
+    const upsertCartItem = (
+        upsertCartItemRequest: UpsertCartItemRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<CartResponseEnvelope>> => {
+        return axiosInstance.post(`/cart`, upsertCartItemRequest, options);
+    };
+
+    /**
+     * Clear cart or, ir productId is set, removes a specific product from the authenticated user's cart. Returns the updated cart (can be empty)
+     * @summary Empty cart or, if productId is set, remove target cart item
+     */
+    const clearCart = (
+        removeCartItemRequest?: RemoveCartItemRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<CartResponseEnvelope>> => {
+        return axiosInstance.delete(`/cart`, { data: removeCartItemRequest, ...options });
+    };
+
+    /**
+     * Sets the quantity of the cart line for the product identified by `{productId}` in the path. Functionally equivalent to `POST /cart`. Returns the updated cart.
+     * @summary Set cart item quantity
+     */
+    const updateCartItemById = (
+        productId: string,
+        updateCartItemByIdRequest: UpdateCartItemByIdRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<CartResponseEnvelope>> => {
+        return axiosInstance.put(`/cart/${productId}`, updateCartItemByIdRequest, options);
+    };
+
+    /**
+     * Removes the cart line for the product identified by `{productId}` in the path from the authenticated user's cart. Returns the updated cart.
+     * @summary Remove item from cart
+     */
+    const removeCartItem = (
+        productId: string,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<CartResponseEnvelope>> => {
+        return axiosInstance.delete(`/cart/${productId}`, options);
+    };
+
+    /**
+     * Returns a lightweight summary of the authenticated user's cart.
+     * @summary Get cart summary
+     */
+    const getCartSummary = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<CartSummaryResponseEnvelope>> => {
+        return axiosInstance.get(`/cart/summary`, options);
+    };
+
+    /**
+     * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. An optional email address and order notes can be supplied in the request body. Returns the created order.
+     * @summary Checkout (place order from cart)
+     */
+    const checkout = (
+        checkoutRequest?: CheckoutRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<CheckoutResponseEnvelope>> => {
+        return axiosInstance.post(`/cart/checkout`, checkoutRequest, options);
+    };
+
+    /**
+     * Returns a paginated list of orders.
+     * Non-admin users are automatically scoped to their own orders; the `userId` filter is ignored for non-admin callers.
+     * @summary List orders (paginated)
+     */
+    const listOrders = (
+        params?: ListOrdersParams,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<OrdersResponseEnvelope>> => {
+        return axiosInstance.get(`/orders`, {
+            ...options,
+            params: { ...params, ...options?.params }
+        });
+    };
+
+    /**
+     * Creates a new order directly from the supplied payload.
+     * @summary Create order
+     */
+    const createOrder = (
+        createOrderRequest: CreateOrderRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<OrderEnvelope>> => {
+        return axiosInstance.post(`/orders`, createOrderRequest, options);
+    };
+
+    /**
+     * Updates an existing order identified by id in the request body.
+     * @summary Update order
+     */
+    const updateOrder = (
+        updateOrderRequest: UpdateOrderRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<OrderEnvelope>> => {
+        return axiosInstance.put(`/orders`, updateOrderRequest, options);
+    };
+
+    /**
+     * Permanently removes the order identified by id.
+     * @summary Delete order
+     */
+    const deleteOrder = (
+        deleteOrderRequest: DeleteOrderRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.delete(`/orders`, { data: deleteOrderRequest, ...options });
+    };
+
+    /**
+     * Searches and filters orders via a JSON request body. Functionally equivalent to `GET /orders`.
+     * Non-admin users are automatically scoped to their own orders; the `userId` filter is ignored for non-admin callers.
+     * @summary Search orders (DTO-friendly)
+     */
+    const searchOrders = (
+        searchOrdersRequest: SearchOrdersRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<OrdersResponseEnvelope>> => {
+        return axiosInstance.post(`/orders/search`, searchOrdersRequest, options);
+    };
+
+    /**
+     * Returns the full details of the order identified by `{id}`. Functionally equivalent to `GET /orders?id={id}`.
+     * @summary Order details
+     */
+    const getOrderById = (
+        id: string,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<OrderEnvelope>> => {
+        return axiosInstance.get(`/orders/${id}`, options);
+    };
+
+    /**
+     * Updates the order identified by `{id}` in the path.
+     * @summary Edit order
+     */
+    const updateOrderById = (
+        id: string,
+        updateOrderByIdRequest: UpdateOrderByIdRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<OrderEnvelope>> => {
+        return axiosInstance.put(`/orders/${id}`, updateOrderByIdRequest, options);
+    };
+
+    /**
+     * Permanently removes the order identified by `id`.
+     * @summary Delete order
+     */
+    const deleteOrderById = (
+        id: string,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.delete(`/orders/${id}`, options);
+    };
+
+    /**
+     * Generates and returns the invoice for the order identified by `{id}` as a binary PDF file. The client should save or stream the response with an appropriate `Content-Disposition` header.
+     * @summary Download order invoice (PDF)
+     */
+    const getOrderInvoice = (
+        id: string,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<Blob>> => {
+        return axiosInstance.get(`/orders/${id}/invoice`, {
+            responseType: 'blob',
+            ...options
+        });
+    };
+
+    return {
+        getHealth,
+        getObservabilityEvents,
+        getObservabilityHealth,
+        getObservabilityMetrics,
+        getObservabilityMetricsOverview,
+        getObservabilityAuditLogs,
+        getAccount,
+        requestAccountDelete,
+        confirmAccountDelete,
+        login,
+        signup,
+        requestPasswordReset,
+        confirmPasswordReset,
+        refreshToken,
+        refreshTokenWithPath,
+        logoutAll,
+        deleteExpiredTokens,
+        listUsers,
+        createUser,
+        updateUser,
+        deleteUser,
+        getUserById,
+        updateUserById,
+        deleteUserById,
+        searchUsers,
+        createFeedbackRequest,
+        listFeedbackRequests,
+        updateFeedbackRequestStatus,
+        listProducts,
+        createProduct,
+        updateProduct,
+        deleteProduct,
+        getProductById,
+        updateProductById,
+        deleteProductById,
+        searchProducts,
+        getCart,
+        upsertCartItem,
+        clearCart,
+        updateCartItemById,
+        removeCartItem,
+        getCartSummary,
+        checkout,
+        listOrders,
+        createOrder,
+        updateOrder,
+        deleteOrder,
+        searchOrders,
+        getOrderById,
+        updateOrderById,
+        deleteOrderById,
+        getOrderInvoice
+    };
+};
+export type GetHealthResult = AxiosResponse<MessageResponse>;
+export type GetObservabilityEventsResult = AxiosResponse<string>;
+export type GetObservabilityHealthResult = AxiosResponse<AdminHealthResponseEnvelope>;
+export type GetObservabilityMetricsResult = AxiosResponse<string>;
+export type GetObservabilityMetricsOverviewResult =
+    AxiosResponse<AdminMetricsSummaryResponseEnvelope>;
+export type GetObservabilityAuditLogsResult = AxiosResponse<AuditLogsResponseEnvelope>;
+export type GetAccountResult = AxiosResponse<UserEnvelope>;
+export type RequestAccountDeleteResult = AxiosResponse<SuccessResponse>;
+export type ConfirmAccountDeleteResult = AxiosResponse<SuccessResponse>;
+export type LoginResult = AxiosResponse<AuthTokensEnvelope>;
+export type SignupResult = AxiosResponse<UserEnvelope>;
+export type RequestPasswordResetResult = AxiosResponse<SuccessResponse>;
+export type ConfirmPasswordResetResult = AxiosResponse<SuccessResponse>;
+export type RefreshTokenResult = AxiosResponse<RefreshTokenEnvelope>;
+export type RefreshTokenWithPathResult = AxiosResponse<RefreshTokenEnvelope>;
+export type LogoutAllResult = AxiosResponse<SuccessResponse>;
+export type DeleteExpiredTokensResult = AxiosResponse<SuccessResponse>;
+export type ListUsersResult = AxiosResponse<UsersResponseEnvelope>;
+export type CreateUserResult = AxiosResponse<UserEnvelope>;
+export type UpdateUserResult = AxiosResponse<UserEnvelope>;
+export type DeleteUserResult = AxiosResponse<SuccessResponse>;
+export type GetUserByIdResult = AxiosResponse<UserEnvelope>;
+export type UpdateUserByIdResult = AxiosResponse<UserEnvelope>;
+export type DeleteUserByIdResult = AxiosResponse<SuccessResponse>;
+export type SearchUsersResult = AxiosResponse<UsersResponseEnvelope>;
+export type CreateFeedbackRequestResult = AxiosResponse<FeedbackRequestEnvelope>;
+export type ListFeedbackRequestsResult = AxiosResponse<FeedbackRequestsResponseEnvelope>;
+export type UpdateFeedbackRequestStatusResult = AxiosResponse<FeedbackRequestEnvelope>;
+export type ListProductsResult = AxiosResponse<ProductsResponseEnvelope>;
+export type CreateProductResult = AxiosResponse<ProductEnvelope>;
+export type UpdateProductResult = AxiosResponse<ProductEnvelope>;
+export type DeleteProductResult = AxiosResponse<SuccessResponse>;
+export type GetProductByIdResult = AxiosResponse<ProductEnvelope>;
+export type UpdateProductByIdResult = AxiosResponse<ProductEnvelope>;
+export type DeleteProductByIdResult = AxiosResponse<SuccessResponse>;
+export type SearchProductsResult = AxiosResponse<ProductsResponseEnvelope>;
+export type GetCartResult = AxiosResponse<CartResponseEnvelope>;
+export type UpsertCartItemResult = AxiosResponse<CartResponseEnvelope>;
+export type ClearCartResult = AxiosResponse<CartResponseEnvelope>;
+export type UpdateCartItemByIdResult = AxiosResponse<CartResponseEnvelope>;
+export type RemoveCartItemResult = AxiosResponse<CartResponseEnvelope>;
+export type GetCartSummaryResult = AxiosResponse<CartSummaryResponseEnvelope>;
+export type CheckoutResult = AxiosResponse<CheckoutResponseEnvelope>;
+export type ListOrdersResult = AxiosResponse<OrdersResponseEnvelope>;
+export type CreateOrderResult = AxiosResponse<OrderEnvelope>;
+export type UpdateOrderResult = AxiosResponse<OrderEnvelope>;
+export type DeleteOrderResult = AxiosResponse<SuccessResponse>;
+export type SearchOrdersResult = AxiosResponse<OrdersResponseEnvelope>;
+export type GetOrderByIdResult = AxiosResponse<OrderEnvelope>;
+export type UpdateOrderByIdResult = AxiosResponse<OrderEnvelope>;
+export type DeleteOrderByIdResult = AxiosResponse<SuccessResponse>;
+export type GetOrderInvoiceResult = AxiosResponse<Blob>;
+
+export const getGetHealthResponseMock = (
+    overrideResponse: Partial<Extract<MessageResponse, object>> = {}
+): MessageResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getGetObservabilityEventsResponseMock = (): string => faker.word.sample();
+
+export const getGetObservabilityHealthResponseMock = (): AdminHealthResponseEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            success: faker.helpers.arrayElement([true] as const),
+            data: {
+                status: faker.helpers.arrayElement(['ok', 'degraded'] as const),
+                environment: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                service: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                nodeVersion: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                uptimeSeconds: faker.number.int({ min: 0 }),
+                database: {
+                    status: faker.helpers.arrayElement([
+                        'connected',
+                        'connecting',
+                        'disconnected'
+                    ] as const)
+                },
+                integrations: faker.helpers.arrayElement([
+                    {
+                        loki: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                        posthog: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                        otelEnabled: faker.helpers.arrayElement([
+                            faker.datatype.boolean(),
+                            undefined
+                        ])
+                    },
+                    undefined
+                ]),
+                memory: faker.helpers.arrayElement([
+                    {
+                        heapUsedMb: faker.number.int(),
+                        heapTotalMb: faker.number.int(),
+                        rssMb: faker.number.int()
+                    },
+                    undefined
+                ]),
+                system: faker.helpers.arrayElement([
+                    {
+                        platform: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        cpuCount: faker.number.int(),
+                        loadAvg: Array.from(
+                            { length: faker.number.int({ min: 1, max: 10 }) },
+                            (_, i) => i + 1
+                        ).map(() => faker.number.float({ fractionDigits: 2 }))
+                    },
+                    undefined
+                ]),
+                timestamp: faker.date.past().toISOString().slice(0, 19) + 'Z'
+            }
+        }
+    }
+});
+
+export const getGetObservabilityMetricsResponseMock = (): string => faker.word.sample();
+
+export const getGetObservabilityMetricsOverviewResponseMock =
+    (): AdminMetricsSummaryResponseEnvelope => ({
+        ...{
+            success: faker.helpers.arrayElement([true] as const),
+            status: faker.number.int(),
+            message: faker.string.alpha({ length: { min: 10, max: 20 } })
+        },
+        ...{
+            data: {
+                success: faker.helpers.arrayElement([true] as const),
+                data: {
+                    http: {
+                        totalRequests: faker.number.int({ min: 0 }),
+                        totalErrors: faker.number.int({ min: 0 }),
+                        errorRate: faker.number.float({ min: 0, max: 1, fractionDigits: 2 }),
+                        inFlight: faker.number.int({ min: 0 }),
+                        latencyMs: {
+                            p50: faker.number.float({ fractionDigits: 2 }),
+                            p95: faker.number.float({ fractionDigits: 2 })
+                        }
+                    },
+                    auth: {
+                        loginSuccess: faker.helpers.arrayElement([
+                            faker.number.int({ min: 0 }),
+                            undefined
+                        ]),
+                        loginFailure: faker.helpers.arrayElement([
+                            faker.number.int({ min: 0 }),
+                            undefined
+                        ]),
+                        signupSuccess: faker.helpers.arrayElement([
+                            faker.number.int({ min: 0 }),
+                            undefined
+                        ])
+                    },
+                    business: {
+                        checkoutSuccess: faker.helpers.arrayElement([
+                            faker.number.int({ min: 0 }),
+                            undefined
+                        ]),
+                        ordersCreated: faker.helpers.arrayElement([
+                            faker.number.int({ min: 0 }),
+                            undefined
+                        ])
+                    },
+                    database: {
+                        queriesTotal: faker.helpers.arrayElement([
+                            faker.number.int({ min: 0 }),
+                            undefined
+                        ]),
+                        errorsTotal: faker.helpers.arrayElement([
+                            faker.number.int({ min: 0 }),
+                            undefined
+                        ])
+                    },
+                    process: {
+                        uptimeSeconds: faker.helpers.arrayElement([
+                            faker.number.int({ min: 0 }),
+                            undefined
+                        ]),
+                        heapUsedMb: faker.helpers.arrayElement([
+                            faker.number.int({ min: 0 }),
+                            undefined
+                        ])
+                    },
+                    timestamp: faker.date.past().toISOString().slice(0, 19) + 'Z'
+                }
+            }
+        }
+    });
+
+export const getGetObservabilityAuditLogsResponseMock = (): AuditLogsResponseEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            success: faker.helpers.arrayElement([true] as const),
+            data: {
+                items: Array.from(
+                    { length: faker.number.int({ min: 1, max: 10 }) },
+                    (_, i) => i + 1
+                ).map(() => ({
+                    actor_user_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    actor_role: faker.helpers.arrayElement(['admin', 'user', 'anonymous'] as const),
+                    action: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    outcome: faker.helpers.arrayElement(['success', 'failure'] as const),
+                    ip: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
+                    user_agent: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
+                    request_id: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
+                    trace_id: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
+                    target_type: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
+                    target_id: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
+                    metadata: faker.helpers.arrayElement([{}, undefined]),
+                    timestamp: faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    level: faker.helpers.arrayElement(['info', 'warn'] as const)
+                })),
+                total: faker.number.int({ min: 0 })
+            }
+        }
+    }
+});
+
+export const getGetAccountResponseMock = (): UserEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            email: faker.internet.email(),
+            username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+            createdAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            updatedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ])
+        }
+    }
+});
+
+export const getRequestAccountDeleteResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getConfirmAccountDeleteResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getLoginResponseMock = (): AuthTokensEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            token: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            refreshToken: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            expiresIn: faker.helpers.arrayElement([faker.number.int(), undefined])
+        }
+    }
+});
+
+export const getSignupResponseMock = (): UserEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            email: faker.internet.email(),
+            username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+            createdAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            updatedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ])
+        }
+    }
+});
+
+export const getRequestPasswordResetResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getConfirmPasswordResetResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getRefreshTokenResponseMock = (): RefreshTokenEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            token: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            refreshToken: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            expiresIn: faker.helpers.arrayElement([faker.number.int(), undefined])
+        }
+    }
+});
+
+export const getRefreshTokenWithPathResponseMock = (): RefreshTokenEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            token: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            refreshToken: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            expiresIn: faker.helpers.arrayElement([faker.number.int(), undefined])
+        }
+    }
+});
+
+export const getLogoutAllResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getDeleteExpiredTokensResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getListUsersResponseMock = (): UsersResponseEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            items: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1
+            ).map(() => ({
+                id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                email: faker.internet.email(),
+                username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                createdAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ]),
+                updatedAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ])
+            })),
+            meta: {
+                page: faker.number.int({ min: 1 }),
+                pageSize: faker.number.int({ min: 1, max: 100 }),
+                totalItems: faker.number.int({ min: 0 }),
+                totalPages: faker.number.int({ min: 0 })
+            }
+        }
+    }
+});
+
+export const getCreateUserResponseMock = (): UserEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            email: faker.internet.email(),
+            username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+            createdAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            updatedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ])
+        }
+    }
+});
+
+export const getUpdateUserResponseMock = (): UserEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            email: faker.internet.email(),
+            username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+            createdAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            updatedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ])
+        }
+    }
+});
+
+export const getDeleteUserResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getGetUserByIdResponseMock = (): UserEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            email: faker.internet.email(),
+            username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+            createdAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            updatedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ])
+        }
+    }
+});
+
+export const getUpdateUserByIdResponseMock = (): UserEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            email: faker.internet.email(),
+            username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+            createdAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            updatedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ])
+        }
+    }
+});
+
+export const getDeleteUserByIdResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getSearchUsersResponseMock = (): UsersResponseEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            items: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1
+            ).map(() => ({
+                id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                email: faker.internet.email(),
+                username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                createdAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ]),
+                updatedAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ])
+            })),
+            meta: {
+                page: faker.number.int({ min: 1 }),
+                pageSize: faker.number.int({ min: 1, max: 100 }),
+                totalItems: faker.number.int({ min: 0 }),
+                totalPages: faker.number.int({ min: 0 })
+            }
+        }
+    }
+});
+
+export const getCreateFeedbackRequestResponseMock = (): FeedbackRequestEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            name: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            email: faker.internet.email(),
+            subject: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            status: faker.helpers.arrayElement(['new', 'in_progress', 'resolved', 'spam'] as const),
+            adminNotes: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            respondedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            createdAt: faker.date.past().toISOString().slice(0, 19) + 'Z',
+            updatedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ])
+        }
+    }
+});
+
+export const getListFeedbackRequestsResponseMock = (): FeedbackRequestsResponseEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            items: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1
+            ).map(() => ({
+                id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                name: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                email: faker.internet.email(),
+                subject: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                status: faker.helpers.arrayElement([
+                    'new',
+                    'in_progress',
+                    'resolved',
+                    'spam'
+                ] as const),
+                adminNotes: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                respondedAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ]),
+                createdAt: faker.date.past().toISOString().slice(0, 19) + 'Z',
+                updatedAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ])
+            })),
+            meta: {
+                page: faker.number.int({ min: 1 }),
+                pageSize: faker.number.int({ min: 1, max: 100 }),
+                totalItems: faker.number.int({ min: 0 }),
+                totalPages: faker.number.int({ min: 0 })
+            }
+        }
+    }
+});
+
+export const getUpdateFeedbackRequestStatusResponseMock = (): FeedbackRequestEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            name: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            email: faker.internet.email(),
+            subject: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            status: faker.helpers.arrayElement(['new', 'in_progress', 'resolved', 'spam'] as const),
+            adminNotes: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            respondedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            createdAt: faker.date.past().toISOString().slice(0, 19) + 'Z',
+            updatedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ])
+        }
+    }
+});
+
+export const getListProductsResponseMock = (): ProductsResponseEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            items: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1
+            ).map(() => ({
+                id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                description: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                categories: faker.helpers.arrayElement([
+                    Array.from(
+                        { length: faker.number.int({ min: 1, max: 10 }) },
+                        (_, i) => i + 1
+                    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                    undefined
+                ]),
+                tags: faker.helpers.arrayElement([
+                    Array.from(
+                        { length: faker.number.int({ min: 1, max: 10 }) },
+                        (_, i) => i + 1
+                    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                    undefined
+                ]),
+                createdAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ]),
+                updatedAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ]),
+                deletedAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ])
+            })),
+            meta: {
+                page: faker.number.int({ min: 1 }),
+                pageSize: faker.number.int({ min: 1, max: 100 }),
+                totalItems: faker.number.int({ min: 0 }),
+                totalPages: faker.number.int({ min: 0 })
+            }
+        }
+    }
+});
+
+export const getCreateProductResponseMock = (): ProductEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            price: faker.number.float({ min: 0, fractionDigits: 2 }),
+            description: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+            categories: faker.helpers.arrayElement([
+                Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+                    () => faker.string.alpha({ length: { min: 10, max: 20 } })
+                ),
+                undefined
+            ]),
+            tags: faker.helpers.arrayElement([
+                Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+                    () => faker.string.alpha({ length: { min: 10, max: 20 } })
+                ),
+                undefined
+            ]),
+            createdAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            updatedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            deletedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ])
+        }
+    }
+});
+
+export const getUpdateProductResponseMock = (): ProductEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            price: faker.number.float({ min: 0, fractionDigits: 2 }),
+            description: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+            categories: faker.helpers.arrayElement([
+                Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+                    () => faker.string.alpha({ length: { min: 10, max: 20 } })
+                ),
+                undefined
+            ]),
+            tags: faker.helpers.arrayElement([
+                Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+                    () => faker.string.alpha({ length: { min: 10, max: 20 } })
+                ),
+                undefined
+            ]),
+            createdAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            updatedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            deletedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ])
+        }
+    }
+});
+
+export const getDeleteProductResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getGetProductByIdResponseMock = (): ProductEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            price: faker.number.float({ min: 0, fractionDigits: 2 }),
+            description: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+            categories: faker.helpers.arrayElement([
+                Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+                    () => faker.string.alpha({ length: { min: 10, max: 20 } })
+                ),
+                undefined
+            ]),
+            tags: faker.helpers.arrayElement([
+                Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+                    () => faker.string.alpha({ length: { min: 10, max: 20 } })
+                ),
+                undefined
+            ]),
+            createdAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            updatedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            deletedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ])
+        }
+    }
+});
+
+export const getUpdateProductByIdResponseMock = (): ProductEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            price: faker.number.float({ min: 0, fractionDigits: 2 }),
+            description: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+            categories: faker.helpers.arrayElement([
+                Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+                    () => faker.string.alpha({ length: { min: 10, max: 20 } })
+                ),
+                undefined
+            ]),
+            tags: faker.helpers.arrayElement([
+                Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+                    () => faker.string.alpha({ length: { min: 10, max: 20 } })
+                ),
+                undefined
+            ]),
+            createdAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            updatedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            deletedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ])
+        }
+    }
+});
+
+export const getDeleteProductByIdResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getSearchProductsResponseMock = (): ProductsResponseEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            items: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1
+            ).map(() => ({
+                id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                description: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                categories: faker.helpers.arrayElement([
+                    Array.from(
+                        { length: faker.number.int({ min: 1, max: 10 }) },
+                        (_, i) => i + 1
+                    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                    undefined
+                ]),
+                tags: faker.helpers.arrayElement([
+                    Array.from(
+                        { length: faker.number.int({ min: 1, max: 10 }) },
+                        (_, i) => i + 1
+                    ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                    undefined
+                ]),
+                createdAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ]),
+                updatedAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ]),
+                deletedAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ])
+            })),
+            meta: {
+                page: faker.number.int({ min: 1 }),
+                pageSize: faker.number.int({ min: 1, max: 100 }),
+                totalItems: faker.number.int({ min: 0 }),
+                totalPages: faker.number.int({ min: 0 })
+            }
+        }
+    }
+});
+
+export const getGetCartResponseMock = (): CartResponseEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            items: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1
+            ).map(() => ({
+                productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                quantity: faker.number.int({ min: 1 })
+            })),
+            summary: {
+                itemsCount: faker.number.int({ min: 0 }),
+                totalQuantity: faker.number.int({ min: 0 }),
+                total: faker.number.float({ min: 0, fractionDigits: 2 }),
+                currency: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ])
+            }
+        }
+    }
+});
+
+export const getUpsertCartItemResponseMock = (): CartResponseEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            items: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1
+            ).map(() => ({
+                productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                quantity: faker.number.int({ min: 1 })
+            })),
+            summary: {
+                itemsCount: faker.number.int({ min: 0 }),
+                totalQuantity: faker.number.int({ min: 0 }),
+                total: faker.number.float({ min: 0, fractionDigits: 2 }),
+                currency: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ])
+            }
+        }
+    }
+});
+
+export const getClearCartResponseMock = (): CartResponseEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            items: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1
+            ).map(() => ({
+                productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                quantity: faker.number.int({ min: 1 })
+            })),
+            summary: {
+                itemsCount: faker.number.int({ min: 0 }),
+                totalQuantity: faker.number.int({ min: 0 }),
+                total: faker.number.float({ min: 0, fractionDigits: 2 }),
+                currency: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ])
+            }
+        }
+    }
+});
+
+export const getUpdateCartItemByIdResponseMock = (): CartResponseEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            items: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1
+            ).map(() => ({
+                productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                quantity: faker.number.int({ min: 1 })
+            })),
+            summary: {
+                itemsCount: faker.number.int({ min: 0 }),
+                totalQuantity: faker.number.int({ min: 0 }),
+                total: faker.number.float({ min: 0, fractionDigits: 2 }),
+                currency: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ])
+            }
+        }
+    }
+});
+
+export const getRemoveCartItemResponseMock = (): CartResponseEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            items: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1
+            ).map(() => ({
+                productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                quantity: faker.number.int({ min: 1 })
+            })),
+            summary: {
+                itemsCount: faker.number.int({ min: 0 }),
+                totalQuantity: faker.number.int({ min: 0 }),
+                total: faker.number.float({ min: 0, fractionDigits: 2 }),
+                currency: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ])
+            }
+        }
+    }
+});
+
+export const getGetCartSummaryResponseMock = (): CartSummaryResponseEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            itemsCount: faker.number.int({ min: 0 }),
+            totalQuantity: faker.number.int({ min: 0 }),
+            total: faker.number.float({ min: 0, fractionDigits: 2 }),
+            currency: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ])
+        }
+    }
+});
+
+export const getCheckoutResponseMock = (): CheckoutResponseEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            order: {
+                id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                email: faker.internet.email(),
+                items: Array.from(
+                    { length: faker.number.int({ min: 1, max: 10 }) },
+                    (_, i) => i + 1
+                ).map(() => ({
+                    product: {
+                        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                        description: faker.helpers.arrayElement([
+                            faker.string.alpha({ length: { min: 10, max: 20 } }),
+                            undefined
+                        ]),
+                        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                        categories: faker.helpers.arrayElement([
+                            Array.from(
+                                { length: faker.number.int({ min: 1, max: 10 }) },
+                                (_, i) => i + 1
+                            ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                            undefined
+                        ]),
+                        tags: faker.helpers.arrayElement([
+                            Array.from(
+                                { length: faker.number.int({ min: 1, max: 10 }) },
+                                (_, i) => i + 1
+                            ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                            undefined
+                        ]),
+                        createdAt: faker.helpers.arrayElement([
+                            faker.date.past().toISOString().slice(0, 19) + 'Z',
+                            undefined
+                        ]),
+                        updatedAt: faker.helpers.arrayElement([
+                            faker.date.past().toISOString().slice(0, 19) + 'Z',
+                            undefined
+                        ]),
+                        deletedAt: faker.helpers.arrayElement([
+                            faker.date.past().toISOString().slice(0, 19) + 'Z',
+                            undefined
+                        ])
+                    },
+                    quantity: faker.number.int({ min: 1 })
+                })),
+                total: faker.number.float({ min: 0, fractionDigits: 2 }),
+                notes: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                status: faker.helpers.arrayElement([
+                    'pending',
+                    'paid',
+                    'processing',
+                    'shipped',
+                    'delivered',
+                    'cancelled'
+                ] as const),
+                createdAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ]),
+                updatedAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ])
+            },
+            message: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ])
+        }
+    }
+});
+
+export const getListOrdersResponseMock = (): OrdersResponseEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            items: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1
+            ).map(() => ({
+                id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                email: faker.internet.email(),
+                items: Array.from(
+                    { length: faker.number.int({ min: 1, max: 10 }) },
+                    (_, i) => i + 1
+                ).map(() => ({
+                    product: {
+                        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                        description: faker.helpers.arrayElement([
+                            faker.string.alpha({ length: { min: 10, max: 20 } }),
+                            undefined
+                        ]),
+                        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                        categories: faker.helpers.arrayElement([
+                            Array.from(
+                                { length: faker.number.int({ min: 1, max: 10 }) },
+                                (_, i) => i + 1
+                            ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                            undefined
+                        ]),
+                        tags: faker.helpers.arrayElement([
+                            Array.from(
+                                { length: faker.number.int({ min: 1, max: 10 }) },
+                                (_, i) => i + 1
+                            ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                            undefined
+                        ]),
+                        createdAt: faker.helpers.arrayElement([
+                            faker.date.past().toISOString().slice(0, 19) + 'Z',
+                            undefined
+                        ]),
+                        updatedAt: faker.helpers.arrayElement([
+                            faker.date.past().toISOString().slice(0, 19) + 'Z',
+                            undefined
+                        ]),
+                        deletedAt: faker.helpers.arrayElement([
+                            faker.date.past().toISOString().slice(0, 19) + 'Z',
+                            undefined
+                        ])
+                    },
+                    quantity: faker.number.int({ min: 1 })
+                })),
+                total: faker.number.float({ min: 0, fractionDigits: 2 }),
+                notes: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                status: faker.helpers.arrayElement([
+                    'pending',
+                    'paid',
+                    'processing',
+                    'shipped',
+                    'delivered',
+                    'cancelled'
+                ] as const),
+                createdAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ]),
+                updatedAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ])
+            })),
+            meta: {
+                page: faker.number.int({ min: 1 }),
+                pageSize: faker.number.int({ min: 1, max: 100 }),
+                totalItems: faker.number.int({ min: 0 }),
+                totalPages: faker.number.int({ min: 0 })
+            }
+        }
+    }
+});
+
+export const getCreateOrderResponseMock = (): OrderEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            email: faker.internet.email(),
+            items: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1
+            ).map(() => ({
+                product: {
+                    id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                    description: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
+                    active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                    imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                    categories: faker.helpers.arrayElement([
+                        Array.from(
+                            { length: faker.number.int({ min: 1, max: 10 }) },
+                            (_, i) => i + 1
+                        ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                        undefined
+                    ]),
+                    tags: faker.helpers.arrayElement([
+                        Array.from(
+                            { length: faker.number.int({ min: 1, max: 10 }) },
+                            (_, i) => i + 1
+                        ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                        undefined
+                    ]),
+                    createdAt: faker.helpers.arrayElement([
+                        faker.date.past().toISOString().slice(0, 19) + 'Z',
+                        undefined
+                    ]),
+                    updatedAt: faker.helpers.arrayElement([
+                        faker.date.past().toISOString().slice(0, 19) + 'Z',
+                        undefined
+                    ]),
+                    deletedAt: faker.helpers.arrayElement([
+                        faker.date.past().toISOString().slice(0, 19) + 'Z',
+                        undefined
+                    ])
+                },
+                quantity: faker.number.int({ min: 1 })
+            })),
+            total: faker.number.float({ min: 0, fractionDigits: 2 }),
+            notes: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            status: faker.helpers.arrayElement([
+                'pending',
+                'paid',
+                'processing',
+                'shipped',
+                'delivered',
+                'cancelled'
+            ] as const),
+            createdAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            updatedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ])
+        }
+    }
+});
+
+export const getUpdateOrderResponseMock = (): OrderEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            email: faker.internet.email(),
+            items: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1
+            ).map(() => ({
+                product: {
+                    id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                    description: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
+                    active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                    imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                    categories: faker.helpers.arrayElement([
+                        Array.from(
+                            { length: faker.number.int({ min: 1, max: 10 }) },
+                            (_, i) => i + 1
+                        ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                        undefined
+                    ]),
+                    tags: faker.helpers.arrayElement([
+                        Array.from(
+                            { length: faker.number.int({ min: 1, max: 10 }) },
+                            (_, i) => i + 1
+                        ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                        undefined
+                    ]),
+                    createdAt: faker.helpers.arrayElement([
+                        faker.date.past().toISOString().slice(0, 19) + 'Z',
+                        undefined
+                    ]),
+                    updatedAt: faker.helpers.arrayElement([
+                        faker.date.past().toISOString().slice(0, 19) + 'Z',
+                        undefined
+                    ]),
+                    deletedAt: faker.helpers.arrayElement([
+                        faker.date.past().toISOString().slice(0, 19) + 'Z',
+                        undefined
+                    ])
+                },
+                quantity: faker.number.int({ min: 1 })
+            })),
+            total: faker.number.float({ min: 0, fractionDigits: 2 }),
+            notes: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            status: faker.helpers.arrayElement([
+                'pending',
+                'paid',
+                'processing',
+                'shipped',
+                'delivered',
+                'cancelled'
+            ] as const),
+            createdAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            updatedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ])
+        }
+    }
+});
+
+export const getDeleteOrderResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getSearchOrdersResponseMock = (): OrdersResponseEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            items: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1
+            ).map(() => ({
+                id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                email: faker.internet.email(),
+                items: Array.from(
+                    { length: faker.number.int({ min: 1, max: 10 }) },
+                    (_, i) => i + 1
+                ).map(() => ({
+                    product: {
+                        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                        description: faker.helpers.arrayElement([
+                            faker.string.alpha({ length: { min: 10, max: 20 } }),
+                            undefined
+                        ]),
+                        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                        categories: faker.helpers.arrayElement([
+                            Array.from(
+                                { length: faker.number.int({ min: 1, max: 10 }) },
+                                (_, i) => i + 1
+                            ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                            undefined
+                        ]),
+                        tags: faker.helpers.arrayElement([
+                            Array.from(
+                                { length: faker.number.int({ min: 1, max: 10 }) },
+                                (_, i) => i + 1
+                            ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                            undefined
+                        ]),
+                        createdAt: faker.helpers.arrayElement([
+                            faker.date.past().toISOString().slice(0, 19) + 'Z',
+                            undefined
+                        ]),
+                        updatedAt: faker.helpers.arrayElement([
+                            faker.date.past().toISOString().slice(0, 19) + 'Z',
+                            undefined
+                        ]),
+                        deletedAt: faker.helpers.arrayElement([
+                            faker.date.past().toISOString().slice(0, 19) + 'Z',
+                            undefined
+                        ])
+                    },
+                    quantity: faker.number.int({ min: 1 })
+                })),
+                total: faker.number.float({ min: 0, fractionDigits: 2 }),
+                notes: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                status: faker.helpers.arrayElement([
+                    'pending',
+                    'paid',
+                    'processing',
+                    'shipped',
+                    'delivered',
+                    'cancelled'
+                ] as const),
+                createdAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ]),
+                updatedAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ])
+            })),
+            meta: {
+                page: faker.number.int({ min: 1 }),
+                pageSize: faker.number.int({ min: 1, max: 100 }),
+                totalItems: faker.number.int({ min: 0 }),
+                totalPages: faker.number.int({ min: 0 })
+            }
+        }
+    }
+});
+
+export const getGetOrderByIdResponseMock = (): OrderEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            email: faker.internet.email(),
+            items: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1
+            ).map(() => ({
+                product: {
+                    id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                    description: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
+                    active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                    imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                    categories: faker.helpers.arrayElement([
+                        Array.from(
+                            { length: faker.number.int({ min: 1, max: 10 }) },
+                            (_, i) => i + 1
+                        ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                        undefined
+                    ]),
+                    tags: faker.helpers.arrayElement([
+                        Array.from(
+                            { length: faker.number.int({ min: 1, max: 10 }) },
+                            (_, i) => i + 1
+                        ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                        undefined
+                    ]),
+                    createdAt: faker.helpers.arrayElement([
+                        faker.date.past().toISOString().slice(0, 19) + 'Z',
+                        undefined
+                    ]),
+                    updatedAt: faker.helpers.arrayElement([
+                        faker.date.past().toISOString().slice(0, 19) + 'Z',
+                        undefined
+                    ]),
+                    deletedAt: faker.helpers.arrayElement([
+                        faker.date.past().toISOString().slice(0, 19) + 'Z',
+                        undefined
+                    ])
+                },
+                quantity: faker.number.int({ min: 1 })
+            })),
+            total: faker.number.float({ min: 0, fractionDigits: 2 }),
+            notes: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            status: faker.helpers.arrayElement([
+                'pending',
+                'paid',
+                'processing',
+                'shipped',
+                'delivered',
+                'cancelled'
+            ] as const),
+            createdAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            updatedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ])
+        }
+    }
+});
+
+export const getUpdateOrderByIdResponseMock = (): OrderEnvelope => ({
+    ...{
+        success: faker.helpers.arrayElement([true] as const),
+        status: faker.number.int(),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+    },
+    ...{
+        data: {
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            email: faker.internet.email(),
+            items: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1
+            ).map(() => ({
+                product: {
+                    id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                    description: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
+                    active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                    imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                    categories: faker.helpers.arrayElement([
+                        Array.from(
+                            { length: faker.number.int({ min: 1, max: 10 }) },
+                            (_, i) => i + 1
+                        ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                        undefined
+                    ]),
+                    tags: faker.helpers.arrayElement([
+                        Array.from(
+                            { length: faker.number.int({ min: 1, max: 10 }) },
+                            (_, i) => i + 1
+                        ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                        undefined
+                    ]),
+                    createdAt: faker.helpers.arrayElement([
+                        faker.date.past().toISOString().slice(0, 19) + 'Z',
+                        undefined
+                    ]),
+                    updatedAt: faker.helpers.arrayElement([
+                        faker.date.past().toISOString().slice(0, 19) + 'Z',
+                        undefined
+                    ]),
+                    deletedAt: faker.helpers.arrayElement([
+                        faker.date.past().toISOString().slice(0, 19) + 'Z',
+                        undefined
+                    ])
+                },
+                quantity: faker.number.int({ min: 1 })
+            })),
+            total: faker.number.float({ min: 0, fractionDigits: 2 }),
+            notes: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            status: faker.helpers.arrayElement([
+                'pending',
+                'paid',
+                'processing',
+                'shipped',
+                'delivered',
+                'cancelled'
+            ] as const),
+            createdAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            updatedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ])
+        }
+    }
+});
+
+export const getDeleteOrderByIdResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getGetOrderInvoiceResponseMock = (): ArrayBuffer =>
+    new ArrayBuffer(faker.number.int({ min: 1, max: 64 }));
+
+export const getGetHealthMockHandler = (
+    overrideResponse?:
+        | MessageResponse
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<MessageResponse> | MessageResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetHealthResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Live Server-Sent Events stream for demo dashboards.
- * Sends `metrics.snapshot` on connect, followed by periodic `metrics.updated` and `heartbeat` events.
- * @summary Observability SSE stream
- */
-const getObservabilityEvents = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<string>> => {
-    return axiosInstance.get(
-      `/observability/events`,{
-        responseType: 'text',
-    ...options,}
+export const getGetObservabilityEventsMockHandler = (
+    overrideResponse?:
+        | string
+        | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<string> | string),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/observability/events',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            const resolvedBody =
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetObservabilityEventsResponseMock();
+            const textBody =
+                typeof resolvedBody === 'string'
+                    ? resolvedBody
+                    : JSON.stringify(resolvedBody ?? null);
+            return HttpResponse.text(textBody, { status: 200 });
+        },
+        options
     );
-  }
+};
 
-/**
- * Full JSON health snapshot for dashboard use.
- * Includes uptime, database status, memory, integrations, and system info.
- * Requires admin role.
- * @summary Health snapshot
- */
-const getObservabilityHealth = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<AdminHealthResponseEnvelope>> => {
-    return axiosInstance.get(
-      `/observability/health`,options
+export const getGetObservabilityHealthMockHandler = (
+    overrideResponse?:
+        | AdminHealthResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<AdminHealthResponseEnvelope> | AdminHealthResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/observability/health',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetObservabilityHealthResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Raw Prometheus text (exposition format 0.0.4).
- * Intended for Prometheus scraping, not for browser clients.
- * Use `GET /observability/metrics/overview` for a JSON summary suitable for dashboards.
- * @summary Prometheus metrics
- */
-const getObservabilityMetrics = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<string>> => {
-    return axiosInstance.get(
-      `/observability/metrics`,{
-        responseType: 'text',
-    ...options,}
+export const getGetObservabilityMetricsMockHandler = (
+    overrideResponse?:
+        | string
+        | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<string> | string),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/observability/metrics',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            const resolvedBody =
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetObservabilityMetricsResponseMock();
+            const textBody =
+                typeof resolvedBody === 'string'
+                    ? resolvedBody
+                    : JSON.stringify(resolvedBody ?? null);
+            return HttpResponse.text(textBody, { status: 200 });
+        },
+        options
     );
-  }
+};
 
-/**
- * Key operational metrics derived from Prometheus counters/histograms,
- * returned as structured JSON for dashboard KPI cards and charts.
- * Requires admin role.
- * @summary Metrics overview (JSON)
- */
-const getObservabilityMetricsOverview = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<AdminMetricsSummaryResponseEnvelope>> => {
-    return axiosInstance.get(
-      `/observability/metrics/overview`,options
+export const getGetObservabilityMetricsOverviewMockHandler = (
+    overrideResponse?:
+        | AdminMetricsSummaryResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<AdminMetricsSummaryResponseEnvelope> | AdminMetricsSummaryResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/observability/metrics/overview',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetObservabilityMetricsOverviewResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Returns the most recent audit events from the in-memory ring buffer (up to 200).
- * Events include auth flows, admin CRUD actions, and security blocks.
- * Requires admin role.
- * @summary Recent audit events
- */
-const getObservabilityAuditLogs = (
-    params?: GetObservabilityAuditLogsParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<AuditLogsResponseEnvelope>> => {
-    return axiosInstance.get(
-      `/observability/audit`,{
-    ...options,
-        params: {...params, ...options?.params},}
+export const getGetObservabilityAuditLogsMockHandler = (
+    overrideResponse?:
+        | AuditLogsResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<AuditLogsResponseEnvelope> | AuditLogsResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/observability/audit',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetObservabilityAuditLogsResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Returns the full profile of the currently authenticated user
- * @summary Current user info
- */
-const getAccount = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<UserEnvelope>> => {
-    return axiosInstance.get(
-      `/account`,options
+export const getGetAccountMockHandler = (
+    overrideResponse?:
+        | UserEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<UserEnvelope> | UserEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/account',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetAccountResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion.
- * @summary Request account deletion
- */
-const requestAccountDelete = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SuccessResponse>> => {
-    return axiosInstance.delete(
-      `/account`,options
+export const getRequestAccountDeleteMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.delete>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.delete(
+        '*/account',
+        async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getRequestAccountDeleteResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Completes the account-deletion flow. Validates the one-time token issued by `DELETE /account` and, if valid, permanently removes the user account.
- * @summary Confirm account deletion
- */
-const confirmAccountDelete = (
-    accountDeleteConfirmRequest: AccountDeleteConfirmRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SuccessResponse>> => {
-    return axiosInstance.delete(
-      `/account/delete-confirm`,{data: accountDeleteConfirmRequest,...options}
+export const getConfirmAccountDeleteMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.delete>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.delete(
+        '*/account/delete-confirm',
+        async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getConfirmAccountDeleteResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Authenticates a user with email and password credentials. On success, returns a JWT access token that must be passed as a Bearer token on subsequent authenticated requests.
- * @summary Login
- */
-const login = (
-    loginRequest: LoginRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<AuthTokensEnvelope>> => {
-    return axiosInstance.post(
-      `/account/login`,
-      loginRequest,options
+export const getLoginMockHandler = (
+    overrideResponse?:
+        | AuthTokensEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<AuthTokensEnvelope> | AuthTokensEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/account/login',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getLoginResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Registers a new user account with optional image upload. Returns the newly created user profile on success.
- * @summary Signup
- */
-const signup = (
-    signupBody: SignupRequest | SignupRequestMultipart, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<UserEnvelope>> => {
-    return axiosInstance.post(
-      `/account/signup`,
-      signupBody,options
+export const getSignupMockHandler = (
+    overrideResponse?:
+        | UserEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<UserEnvelope> | UserEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/account/signup',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getSignupResponseMock(),
+                { status: 201 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
- */
-const requestPasswordReset = (
-    passwordResetRequest: PasswordResetRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SuccessResponse>> => {
-    return axiosInstance.post(
-      `/account/reset`,
-      passwordResetRequest,options
+export const getRequestPasswordResetMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/account/reset',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getRequestPasswordResetResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Completes the password-reset flow. Validates the one-time reset token issued by `/account/reset` and, if valid, updates the user's password to the supplied value.
- */
-const confirmPasswordReset = (
-    passwordResetConfirmRequest: PasswordResetConfirmRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SuccessResponse>> => {
-    return axiosInstance.post(
-      `/account/reset-confirm`,
-      passwordResetConfirmRequest,options
+export const getConfirmPasswordResetMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/account/reset-confirm',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getConfirmPasswordResetResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Creates a new short-lived access token using a refresh token. The refresh token can be provided as a query parameter, path parameter, or retrieved from the `jwt` cookie.
- * @summary Refresh access token
- */
-const refreshToken = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<RefreshTokenEnvelope>> => {
-    return axiosInstance.get(
-      `/account/refresh`,options
+export const getRefreshTokenMockHandler = (
+    overrideResponse?:
+        | RefreshTokenEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<RefreshTokenEnvelope> | RefreshTokenEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/account/refresh',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getRefreshTokenResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Creates a new short-lived access token using a refresh token provided in the URL path.
- * @summary Refresh access token with token in path
- */
-const refreshTokenWithPath = (
-    token: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<RefreshTokenEnvelope>> => {
-    return axiosInstance.get(
-      `/account/refresh/${token}`,options
+export const getRefreshTokenWithPathMockHandler = (
+    overrideResponse?:
+        | RefreshTokenEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<RefreshTokenEnvelope> | RefreshTokenEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/account/refresh/:token',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getRefreshTokenWithPathResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Logs out the authenticated user from ALL devices by removing all refresh tokens from the database and clearing authentication cookies.
- * @summary Logout from all devices
- */
-const logoutAll = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SuccessResponse>> => {
-    return axiosInstance.post(
-      `/account/logout-all`,
-      undefined,options
+export const getLogoutAllMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/account/logout-all',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getLogoutAllResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Removes all expired tokens (refresh, password-reset, etc.) from every user record in the database. Restricted to administrators.
- * @summary Remove expired tokens
- */
-const deleteExpiredTokens = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SuccessResponse>> => {
-    return axiosInstance.delete(
-      `/account/tokens/expired`,options
+export const getDeleteExpiredTokensMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.delete>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.delete(
+        '*/account/tokens/expired',
+        async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getDeleteExpiredTokensResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Returns a paginated list of user accounts.
- * @summary List users (paginated)
- */
-const listUsers = (
-    params?: ListUsersParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<UsersResponseEnvelope>> => {
-    return axiosInstance.get(
-      `/users`,{
-    ...options,
-        params: {...params, ...options?.params},}
+export const getListUsersMockHandler = (
+    overrideResponse?:
+        | UsersResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<UsersResponseEnvelope> | UsersResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/users',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getListUsersResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Creates a new user account with the supplied email, username, and password. Optional image can be uploaded.
- * @summary Create user
- */
-const createUser = (
-    createUserBody: CreateUserRequest | CreateUserRequestMultipart, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<UserEnvelope>> => {
-    return axiosInstance.post(
-      `/users`,
-      createUserBody,options
+export const getCreateUserMockHandler = (
+    overrideResponse?:
+        | UserEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<UserEnvelope> | UserEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/users',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getCreateUserResponseMock(),
+                { status: 201 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Updates an existing user's email or password. Optional image can be uploaded.
- * @summary Edit user
- */
-const updateUser = (
-    updateUserBody: UpdateUserRequest | UpdateUserRequestMultipart, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<UserEnvelope>> => {
-    return axiosInstance.put(
-      `/users`,
-      updateUserBody,options
+export const getUpdateUserMockHandler = (
+    overrideResponse?:
+        | UserEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.put>[1]>[0]
+          ) => Promise<UserEnvelope> | UserEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.put(
+        '*/users',
+        async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getUpdateUserResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record.
- * @summary Delete user
- */
-const deleteUser = (
-    deleteUserRequest: DeleteUserRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SuccessResponse>> => {
-    return axiosInstance.delete(
-      `/users`,{data: deleteUserRequest,...options}
+export const getDeleteUserMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.delete>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.delete(
+        '*/users',
+        async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getDeleteUserResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Returns the full profile of the user identified by `{id}`. Functionally equivalent to `GET /users?id={id}`.
- * @summary User details
- */
-const getUserById = (
-    id: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<UserEnvelope>> => {
-    return axiosInstance.get(
-      `/users/${id}`,options
+export const getGetUserByIdMockHandler = (
+    overrideResponse?:
+        | UserEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<UserEnvelope> | UserEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/users/:id',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetUserByIdResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
- * @summary Edit user
- */
-const updateUserById = (
-    id: string,
-    updateUserByIdBody: UpdateUserByIdRequest | UpdateUserByIdRequestMultipart, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<UserEnvelope>> => {
-    return axiosInstance.put(
-      `/users/${id}`,
-      updateUserByIdBody,options
+export const getUpdateUserByIdMockHandler = (
+    overrideResponse?:
+        | UserEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.put>[1]>[0]
+          ) => Promise<UserEnvelope> | UserEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.put(
+        '*/users/:id',
+        async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getUpdateUserByIdResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /users`.
- * @summary Delete user
- */
-const deleteUserById = (
-    id: string,
-    params?: DeleteUserByIdParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SuccessResponse>> => {
-    return axiosInstance.delete(
-      `/users/${id}`,{
-    ...options,
-        params: {...params, ...options?.params},}
+export const getDeleteUserByIdMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.delete>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.delete(
+        '*/users/:id',
+        async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getDeleteUserByIdResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Searches and filters users via a JSON request body. Functionally equivalent to `GET /users` with query parameters
- * @summary Search users (DTO-friendly)
- */
-const searchUsers = (
-    searchUsersRequest: SearchUsersRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<UsersResponseEnvelope>> => {
-    return axiosInstance.post(
-      `/users/search`,
-      searchUsersRequest,options
+export const getSearchUsersMockHandler = (
+    overrideResponse?:
+        | UsersResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<UsersResponseEnvelope> | UsersResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/users/search',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getSearchUsersResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Creates a user feedback/contact request and notifies admins via email.
- * @summary Submit contact request
- */
-const createFeedbackRequest = (
-    createFeedbackRequest: CreateFeedbackRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<FeedbackRequestEnvelope>> => {
-    return axiosInstance.post(
-      `/feedback/contact`,
-      createFeedbackRequest,options
+export const getCreateFeedbackRequestMockHandler = (
+    overrideResponse?:
+        | FeedbackRequestEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<FeedbackRequestEnvelope> | FeedbackRequestEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/feedback/contact',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getCreateFeedbackRequestResponseMock(),
+                { status: 201 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Returns feedback/contact requests for admin review.
- * @summary List feedback requests
- */
-const listFeedbackRequests = (
-    searchFeedbackRequestsRequest?: SearchFeedbackRequestsRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<FeedbackRequestsResponseEnvelope>> => {
-    return axiosInstance.get(
-      `/feedback`,options
+export const getListFeedbackRequestsMockHandler = (
+    overrideResponse?:
+        | FeedbackRequestsResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<FeedbackRequestsResponseEnvelope> | FeedbackRequestsResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/feedback',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getListFeedbackRequestsResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Updates status/notes of a feedback request.
- * @summary Update feedback request status
- */
-const updateFeedbackRequestStatus = (
-    id: string,
-    updateFeedbackRequestStatusRequest: UpdateFeedbackRequestStatusRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<FeedbackRequestEnvelope>> => {
-    return axiosInstance.put(
-      `/feedback/${id}`,
-      updateFeedbackRequestStatusRequest,options
+export const getUpdateFeedbackRequestStatusMockHandler = (
+    overrideResponse?:
+        | FeedbackRequestEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.put>[1]>[0]
+          ) => Promise<FeedbackRequestEnvelope> | FeedbackRequestEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.put(
+        '*/feedback/:id',
+        async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getUpdateFeedbackRequestStatusResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Returns a paginated list of products.
- * @summary List products (paginated)
- */
-const listProducts = (
-    params?: ListProductsParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ProductsResponseEnvelope>> => {
-    return axiosInstance.get(
-      `/products`,{
-    ...options,
-        params: {...params, ...options?.params},}
+export const getListProductsMockHandler = (
+    overrideResponse?:
+        | ProductsResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<ProductsResponseEnvelope> | ProductsResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/products',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getListProductsResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Creates a new product with optional image upload
- * @summary Create product
- */
-const createProduct = (
-    createProductBody: CreateProductRequest | CreateProductRequestMultipart, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ProductEnvelope>> => {
-    return axiosInstance.post(
-      `/products`,
-      createProductBody,options
+export const getCreateProductMockHandler = (
+    overrideResponse?:
+        | ProductEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<ProductEnvelope> | ProductEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/products',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getCreateProductResponseMock(),
+                { status: 201 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Updates an existing product with optional image upload
- * @summary Edit product
- */
-const updateProduct = (
-    updateProductBody: UpdateProductRequest | UpdateProductRequestMultipart, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ProductEnvelope>> => {
-    return axiosInstance.put(
-      `/products`,
-      updateProductBody,options
+export const getUpdateProductMockHandler = (
+    overrideResponse?:
+        | ProductEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.put>[1]>[0]
+          ) => Promise<ProductEnvelope> | ProductEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.put(
+        '*/products',
+        async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getUpdateProductResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record
- * @summary Delete product
- */
-const deleteProduct = (
-    deleteProductRequest: DeleteProductRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SuccessResponse>> => {
-    return axiosInstance.delete(
-      `/products`,{data: deleteProductRequest,...options}
+export const getDeleteProductMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.delete>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.delete(
+        '*/products',
+        async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getDeleteProductResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`.
- * @summary Product details
- */
-const getProductById = (
-    id: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ProductEnvelope>> => {
-    return axiosInstance.get(
-      `/products/${id}`,options
+export const getGetProductByIdMockHandler = (
+    overrideResponse?:
+        | ProductEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<ProductEnvelope> | ProductEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/products/:id',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetProductByIdResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Updates the product identified by `{id}` in the path with optional image upload. Functionally equivalent to `PUT /products` with the id in the body.
- * @summary Edit product
- */
-const updateProductById = (
-    id: string,
-    updateProductByIdBody: UpdateProductByIdRequest | UpdateProductByIdRequestMultipart, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ProductEnvelope>> => {
-    return axiosInstance.put(
-      `/products/${id}`,
-      updateProductByIdBody,options
+export const getUpdateProductByIdMockHandler = (
+    overrideResponse?:
+        | ProductEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.put>[1]>[0]
+          ) => Promise<ProductEnvelope> | ProductEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.put(
+        '*/products/:id',
+        async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getUpdateProductByIdResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Deletes the product identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /products`.
- * @summary Delete product
- */
-const deleteProductById = (
-    id: string,
-    params?: DeleteProductByIdParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SuccessResponse>> => {
-    return axiosInstance.delete(
-      `/products/${id}`,{
-    ...options,
-        params: {...params, ...options?.params},}
+export const getDeleteProductByIdMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.delete>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.delete(
+        '*/products/:id',
+        async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getDeleteProductByIdResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Searches and filters products via a JSON request body. Functionally equivalent to `GET /products` with query parameters.
- * @summary Search products (DTO-friendly)
- */
-const searchProducts = (
-    searchProductsRequest: SearchProductsRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<ProductsResponseEnvelope>> => {
-    return axiosInstance.post(
-      `/products/search`,
-      searchProductsRequest,options
+export const getSearchProductsMockHandler = (
+    overrideResponse?:
+        | ProductsResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<ProductsResponseEnvelope> | ProductsResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/products/search',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getSearchProductsResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Returns all items currently in the authenticated user's cart along with a computed summary
- * @summary Get cart
- */
-const getCart = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<CartResponseEnvelope>> => {
-    return axiosInstance.get(
-      `/cart`,options
+export const getGetCartMockHandler = (
+    overrideResponse?:
+        | CartResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<CartResponseEnvelope> | CartResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/cart',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetCartResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Adds or edit a product to the authenticated user's cart. Returns the updated cart.
- * @summary Add/Edit cart item
- */
-const upsertCartItem = (
-    upsertCartItemRequest: UpsertCartItemRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<CartResponseEnvelope>> => {
-    return axiosInstance.post(
-      `/cart`,
-      upsertCartItemRequest,options
+export const getUpsertCartItemMockHandler = (
+    overrideResponse?:
+        | CartResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<CartResponseEnvelope> | CartResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/cart',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getUpsertCartItemResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Clear cart or, ir productId is set, removes a specific product from the authenticated user's cart. Returns the updated cart (can be empty)
- * @summary Empty cart or, if productId is set, remove target cart item
- */
-const clearCart = (
-    removeCartItemRequest?: RemoveCartItemRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<CartResponseEnvelope>> => {
-    return axiosInstance.delete(
-      `/cart`,{data: removeCartItemRequest,...options}
+export const getClearCartMockHandler = (
+    overrideResponse?:
+        | CartResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.delete>[1]>[0]
+          ) => Promise<CartResponseEnvelope> | CartResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.delete(
+        '*/cart',
+        async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getClearCartResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Sets the quantity of the cart line for the product identified by `{productId}` in the path. Functionally equivalent to `POST /cart`. Returns the updated cart.
- * @summary Set cart item quantity
- */
-const updateCartItemById = (
-    productId: string,
-    updateCartItemByIdRequest: UpdateCartItemByIdRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<CartResponseEnvelope>> => {
-    return axiosInstance.put(
-      `/cart/${productId}`,
-      updateCartItemByIdRequest,options
+export const getUpdateCartItemByIdMockHandler = (
+    overrideResponse?:
+        | CartResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.put>[1]>[0]
+          ) => Promise<CartResponseEnvelope> | CartResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.put(
+        '*/cart/:productId',
+        async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getUpdateCartItemByIdResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Removes the cart line for the product identified by `{productId}` in the path from the authenticated user's cart. Returns the updated cart.
- * @summary Remove item from cart
- */
-const removeCartItem = (
-    productId: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<CartResponseEnvelope>> => {
-    return axiosInstance.delete(
-      `/cart/${productId}`,options
+export const getRemoveCartItemMockHandler = (
+    overrideResponse?:
+        | CartResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.delete>[1]>[0]
+          ) => Promise<CartResponseEnvelope> | CartResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.delete(
+        '*/cart/:productId',
+        async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getRemoveCartItemResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Returns a lightweight summary of the authenticated user's cart.
- * @summary Get cart summary
- */
-const getCartSummary = (
-     options?: AxiosRequestConfig
- ): Promise<AxiosResponse<CartSummaryResponseEnvelope>> => {
-    return axiosInstance.get(
-      `/cart/summary`,options
+export const getGetCartSummaryMockHandler = (
+    overrideResponse?:
+        | CartSummaryResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<CartSummaryResponseEnvelope> | CartSummaryResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/cart/summary',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetCartSummaryResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. An optional email address and order notes can be supplied in the request body. Returns the created order.
- * @summary Checkout (place order from cart)
- */
-const checkout = (
-    checkoutRequest?: CheckoutRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<CheckoutResponseEnvelope>> => {
-    return axiosInstance.post(
-      `/cart/checkout`,
-      checkoutRequest,options
+export const getCheckoutMockHandler = (
+    overrideResponse?:
+        | CheckoutResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<CheckoutResponseEnvelope> | CheckoutResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/cart/checkout',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getCheckoutResponseMock(),
+                { status: 201 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Returns a paginated list of orders.
- * Non-admin users are automatically scoped to their own orders; the `userId` filter is ignored for non-admin callers.
- * @summary List orders (paginated)
- */
-const listOrders = (
-    params?: ListOrdersParams, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<OrdersResponseEnvelope>> => {
-    return axiosInstance.get(
-      `/orders`,{
-    ...options,
-        params: {...params, ...options?.params},}
+export const getListOrdersMockHandler = (
+    overrideResponse?:
+        | OrdersResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<OrdersResponseEnvelope> | OrdersResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/orders',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getListOrdersResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Creates a new order directly from the supplied payload.
- * @summary Create order
- */
-const createOrder = (
-    createOrderRequest: CreateOrderRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<OrderEnvelope>> => {
-    return axiosInstance.post(
-      `/orders`,
-      createOrderRequest,options
+export const getCreateOrderMockHandler = (
+    overrideResponse?:
+        | OrderEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<OrderEnvelope> | OrderEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/orders',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getCreateOrderResponseMock(),
+                { status: 201 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Updates an existing order identified by id in the request body.
- * @summary Update order
- */
-const updateOrder = (
-    updateOrderRequest: UpdateOrderRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<OrderEnvelope>> => {
-    return axiosInstance.put(
-      `/orders`,
-      updateOrderRequest,options
+export const getUpdateOrderMockHandler = (
+    overrideResponse?:
+        | OrderEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.put>[1]>[0]
+          ) => Promise<OrderEnvelope> | OrderEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.put(
+        '*/orders',
+        async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getUpdateOrderResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Permanently removes the order identified by id.
- * @summary Delete order
- */
-const deleteOrder = (
-    deleteOrderRequest: DeleteOrderRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SuccessResponse>> => {
-    return axiosInstance.delete(
-      `/orders`,{data: deleteOrderRequest,...options}
+export const getDeleteOrderMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.delete>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.delete(
+        '*/orders',
+        async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getDeleteOrderResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Searches and filters orders via a JSON request body. Functionally equivalent to `GET /orders`.
- * Non-admin users are automatically scoped to their own orders; the `userId` filter is ignored for non-admin callers.
- * @summary Search orders (DTO-friendly)
- */
-const searchOrders = (
-    searchOrdersRequest: SearchOrdersRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<OrdersResponseEnvelope>> => {
-    return axiosInstance.post(
-      `/orders/search`,
-      searchOrdersRequest,options
+export const getSearchOrdersMockHandler = (
+    overrideResponse?:
+        | OrdersResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<OrdersResponseEnvelope> | OrdersResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/orders/search',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getSearchOrdersResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Returns the full details of the order identified by `{id}`. Functionally equivalent to `GET /orders?id={id}`.
- * @summary Order details
- */
-const getOrderById = (
-    id: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<OrderEnvelope>> => {
-    return axiosInstance.get(
-      `/orders/${id}`,options
+export const getGetOrderByIdMockHandler = (
+    overrideResponse?:
+        | OrderEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<OrderEnvelope> | OrderEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/orders/:id',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetOrderByIdResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Updates the order identified by `{id}` in the path.
- * @summary Edit order
- */
-const updateOrderById = (
-    id: string,
-    updateOrderByIdRequest: UpdateOrderByIdRequest, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<OrderEnvelope>> => {
-    return axiosInstance.put(
-      `/orders/${id}`,
-      updateOrderByIdRequest,options
+export const getUpdateOrderByIdMockHandler = (
+    overrideResponse?:
+        | OrderEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.put>[1]>[0]
+          ) => Promise<OrderEnvelope> | OrderEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.put(
+        '*/orders/:id',
+        async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getUpdateOrderByIdResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Permanently removes the order identified by `id`.
- * @summary Delete order
- */
-const deleteOrderById = (
-    id: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<SuccessResponse>> => {
-    return axiosInstance.delete(
-      `/orders/${id}`,options
+export const getDeleteOrderByIdMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.delete>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.delete(
+        '*/orders/:id',
+        async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getDeleteOrderByIdResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
     );
-  }
+};
 
-/**
- * Generates and returns the invoice for the order identified by `{id}` as a binary PDF file. The client should save or stream the response with an appropriate `Content-Disposition` header.
- * @summary Download order invoice (PDF)
- */
-const getOrderInvoice = (
-    id: string, options?: AxiosRequestConfig
- ): Promise<AxiosResponse<Blob>> => {
-    return axiosInstance.get(
-      `/orders/${id}/invoice`,{
-        responseType: 'blob',
-    ...options,}
+export const getGetOrderInvoiceMockHandler = (
+    overrideResponse?:
+        | ArrayBuffer
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<ArrayBuffer> | ArrayBuffer),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/orders/:id/invoice',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            const binaryBody =
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetOrderInvoiceResponseMock();
+            return HttpResponse.arrayBuffer(
+                binaryBody instanceof ArrayBuffer ? binaryBody : new ArrayBuffer(0),
+                { status: 200, headers: { 'Content-Type': 'application/pdf' } }
+            );
+        },
+        options
     );
-  }
-
-return {getHealth,getObservabilityEvents,getObservabilityHealth,getObservabilityMetrics,getObservabilityMetricsOverview,getObservabilityAuditLogs,getAccount,requestAccountDelete,confirmAccountDelete,login,signup,requestPasswordReset,confirmPasswordReset,refreshToken,refreshTokenWithPath,logoutAll,deleteExpiredTokens,listUsers,createUser,updateUser,deleteUser,getUserById,updateUserById,deleteUserById,searchUsers,createFeedbackRequest,listFeedbackRequests,updateFeedbackRequestStatus,listProducts,createProduct,updateProduct,deleteProduct,getProductById,updateProductById,deleteProductById,searchProducts,getCart,upsertCartItem,clearCart,updateCartItemById,removeCartItem,getCartSummary,checkout,listOrders,createOrder,updateOrder,deleteOrder,searchOrders,getOrderById,updateOrderById,deleteOrderById,getOrderInvoice}};
-export type GetHealthResult = AxiosResponse<MessageResponse>
-export type GetObservabilityEventsResult = AxiosResponse<string>
-export type GetObservabilityHealthResult = AxiosResponse<AdminHealthResponseEnvelope>
-export type GetObservabilityMetricsResult = AxiosResponse<string>
-export type GetObservabilityMetricsOverviewResult = AxiosResponse<AdminMetricsSummaryResponseEnvelope>
-export type GetObservabilityAuditLogsResult = AxiosResponse<AuditLogsResponseEnvelope>
-export type GetAccountResult = AxiosResponse<UserEnvelope>
-export type RequestAccountDeleteResult = AxiosResponse<SuccessResponse>
-export type ConfirmAccountDeleteResult = AxiosResponse<SuccessResponse>
-export type LoginResult = AxiosResponse<AuthTokensEnvelope>
-export type SignupResult = AxiosResponse<UserEnvelope>
-export type RequestPasswordResetResult = AxiosResponse<SuccessResponse>
-export type ConfirmPasswordResetResult = AxiosResponse<SuccessResponse>
-export type RefreshTokenResult = AxiosResponse<RefreshTokenEnvelope>
-export type RefreshTokenWithPathResult = AxiosResponse<RefreshTokenEnvelope>
-export type LogoutAllResult = AxiosResponse<SuccessResponse>
-export type DeleteExpiredTokensResult = AxiosResponse<SuccessResponse>
-export type ListUsersResult = AxiosResponse<UsersResponseEnvelope>
-export type CreateUserResult = AxiosResponse<UserEnvelope>
-export type UpdateUserResult = AxiosResponse<UserEnvelope>
-export type DeleteUserResult = AxiosResponse<SuccessResponse>
-export type GetUserByIdResult = AxiosResponse<UserEnvelope>
-export type UpdateUserByIdResult = AxiosResponse<UserEnvelope>
-export type DeleteUserByIdResult = AxiosResponse<SuccessResponse>
-export type SearchUsersResult = AxiosResponse<UsersResponseEnvelope>
-export type CreateFeedbackRequestResult = AxiosResponse<FeedbackRequestEnvelope>
-export type ListFeedbackRequestsResult = AxiosResponse<FeedbackRequestsResponseEnvelope>
-export type UpdateFeedbackRequestStatusResult = AxiosResponse<FeedbackRequestEnvelope>
-export type ListProductsResult = AxiosResponse<ProductsResponseEnvelope>
-export type CreateProductResult = AxiosResponse<ProductEnvelope>
-export type UpdateProductResult = AxiosResponse<ProductEnvelope>
-export type DeleteProductResult = AxiosResponse<SuccessResponse>
-export type GetProductByIdResult = AxiosResponse<ProductEnvelope>
-export type UpdateProductByIdResult = AxiosResponse<ProductEnvelope>
-export type DeleteProductByIdResult = AxiosResponse<SuccessResponse>
-export type SearchProductsResult = AxiosResponse<ProductsResponseEnvelope>
-export type GetCartResult = AxiosResponse<CartResponseEnvelope>
-export type UpsertCartItemResult = AxiosResponse<CartResponseEnvelope>
-export type ClearCartResult = AxiosResponse<CartResponseEnvelope>
-export type UpdateCartItemByIdResult = AxiosResponse<CartResponseEnvelope>
-export type RemoveCartItemResult = AxiosResponse<CartResponseEnvelope>
-export type GetCartSummaryResult = AxiosResponse<CartSummaryResponseEnvelope>
-export type CheckoutResult = AxiosResponse<CheckoutResponseEnvelope>
-export type ListOrdersResult = AxiosResponse<OrdersResponseEnvelope>
-export type CreateOrderResult = AxiosResponse<OrderEnvelope>
-export type UpdateOrderResult = AxiosResponse<OrderEnvelope>
-export type DeleteOrderResult = AxiosResponse<SuccessResponse>
-export type SearchOrdersResult = AxiosResponse<OrdersResponseEnvelope>
-export type GetOrderByIdResult = AxiosResponse<OrderEnvelope>
-export type UpdateOrderByIdResult = AxiosResponse<OrderEnvelope>
-export type DeleteOrderByIdResult = AxiosResponse<SuccessResponse>
-export type GetOrderInvoiceResult = AxiosResponse<Blob>
-
-
-export const getGetHealthResponseMock = (overrideResponse: Partial<Extract<MessageResponse, object>> = {}): MessageResponse => ({success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
-
-export const getGetObservabilityEventsResponseMock = (): string => (faker.word.sample())
-
-export const getGetObservabilityHealthResponseMock = (): AdminHealthResponseEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {success: faker.helpers.arrayElement([true] as const), data: {status: faker.helpers.arrayElement(['ok','degraded'] as const), environment: faker.string.alpha({length: {min: 10, max: 20}}), service: faker.string.alpha({length: {min: 10, max: 20}}), nodeVersion: faker.string.alpha({length: {min: 10, max: 20}}), uptimeSeconds: faker.number.int({min: 0}), database: {status: faker.helpers.arrayElement(['connected','connecting','disconnected'] as const)}, integrations: faker.helpers.arrayElement([{loki: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), posthog: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), otelEnabled: faker.helpers.arrayElement([faker.datatype.boolean(), undefined])}, undefined]), memory: faker.helpers.arrayElement([{heapUsedMb: faker.number.int(), heapTotalMb: faker.number.int(), rssMb: faker.number.int()}, undefined]), system: faker.helpers.arrayElement([{platform: faker.string.alpha({length: {min: 10, max: 20}}), cpuCount: faker.number.int(), loadAvg: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.number.float({fractionDigits: 2})))}, undefined]), timestamp: faker.date.past().toISOString().slice(0, 19) + 'Z'}}},})
-
-export const getGetObservabilityMetricsResponseMock = (): string => (faker.word.sample())
-
-export const getGetObservabilityMetricsOverviewResponseMock = (): AdminMetricsSummaryResponseEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {success: faker.helpers.arrayElement([true] as const), data: {http: {totalRequests: faker.number.int({min: 0}), totalErrors: faker.number.int({min: 0}), errorRate: faker.number.float({min: 0, max: 1, fractionDigits: 2}), inFlight: faker.number.int({min: 0}), latencyMs: {p50: faker.number.float({fractionDigits: 2}), p95: faker.number.float({fractionDigits: 2})}}, auth: {loginSuccess: faker.helpers.arrayElement([faker.number.int({min: 0}), undefined]), loginFailure: faker.helpers.arrayElement([faker.number.int({min: 0}), undefined]), signupSuccess: faker.helpers.arrayElement([faker.number.int({min: 0}), undefined])}, business: {checkoutSuccess: faker.helpers.arrayElement([faker.number.int({min: 0}), undefined]), ordersCreated: faker.helpers.arrayElement([faker.number.int({min: 0}), undefined])}, database: {queriesTotal: faker.helpers.arrayElement([faker.number.int({min: 0}), undefined]), errorsTotal: faker.helpers.arrayElement([faker.number.int({min: 0}), undefined])}, process: {uptimeSeconds: faker.helpers.arrayElement([faker.number.int({min: 0}), undefined]), heapUsedMb: faker.helpers.arrayElement([faker.number.int({min: 0}), undefined])}, timestamp: faker.date.past().toISOString().slice(0, 19) + 'Z'}}},})
-
-export const getGetObservabilityAuditLogsResponseMock = (): AuditLogsResponseEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {success: faker.helpers.arrayElement([true] as const), data: {items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({actor_user_id: faker.string.alpha({length: {min: 10, max: 20}}), actor_role: faker.helpers.arrayElement(['admin','user','anonymous'] as const), action: faker.string.alpha({length: {min: 10, max: 20}}), outcome: faker.helpers.arrayElement(['success','failure'] as const), ip: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), user_agent: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), request_id: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), trace_id: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), target_type: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), target_id: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), metadata: faker.helpers.arrayElement([{}, undefined]), timestamp: faker.date.past().toISOString().slice(0, 19) + 'Z', level: faker.helpers.arrayElement(['info','warn'] as const)})), total: faker.number.int({min: 0})}}},})
-
-export const getGetAccountResponseMock = (): UserEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {id: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), username: faker.string.alpha({length: {min: 10, max: 20}}), admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}},})
-
-export const getRequestAccountDeleteResponseMock = (overrideResponse: Partial<Extract<SuccessResponse, object>> = {}): SuccessResponse => ({success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
-
-export const getConfirmAccountDeleteResponseMock = (overrideResponse: Partial<Extract<SuccessResponse, object>> = {}): SuccessResponse => ({success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
-
-export const getLoginResponseMock = (): AuthTokensEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {token: faker.string.alpha({length: {min: 10, max: 20}}), refreshToken: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), expiresIn: faker.helpers.arrayElement([faker.number.int(), undefined])}},})
-
-export const getSignupResponseMock = (): UserEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {id: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), username: faker.string.alpha({length: {min: 10, max: 20}}), admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}},})
-
-export const getRequestPasswordResetResponseMock = (overrideResponse: Partial<Extract<SuccessResponse, object>> = {}): SuccessResponse => ({success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
-
-export const getConfirmPasswordResetResponseMock = (overrideResponse: Partial<Extract<SuccessResponse, object>> = {}): SuccessResponse => ({success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
-
-export const getRefreshTokenResponseMock = (): RefreshTokenEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {token: faker.string.alpha({length: {min: 10, max: 20}}), refreshToken: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), expiresIn: faker.helpers.arrayElement([faker.number.int(), undefined])}},})
-
-export const getRefreshTokenWithPathResponseMock = (): RefreshTokenEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {token: faker.string.alpha({length: {min: 10, max: 20}}), refreshToken: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), expiresIn: faker.helpers.arrayElement([faker.number.int(), undefined])}},})
-
-export const getLogoutAllResponseMock = (overrideResponse: Partial<Extract<SuccessResponse, object>> = {}): SuccessResponse => ({success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
-
-export const getDeleteExpiredTokensResponseMock = (overrideResponse: Partial<Extract<SuccessResponse, object>> = {}): SuccessResponse => ({success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
-
-export const getListUsersResponseMock = (): UsersResponseEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), username: faker.string.alpha({length: {min: 10, max: 20}}), admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])})), meta: {page: faker.number.int({min: 1}), pageSize: faker.number.int({min: 1, max: 100}), totalItems: faker.number.int({min: 0}), totalPages: faker.number.int({min: 0})}}},})
-
-export const getCreateUserResponseMock = (): UserEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {id: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), username: faker.string.alpha({length: {min: 10, max: 20}}), admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}},})
-
-export const getUpdateUserResponseMock = (): UserEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {id: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), username: faker.string.alpha({length: {min: 10, max: 20}}), admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}},})
-
-export const getDeleteUserResponseMock = (overrideResponse: Partial<Extract<SuccessResponse, object>> = {}): SuccessResponse => ({success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
-
-export const getGetUserByIdResponseMock = (): UserEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {id: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), username: faker.string.alpha({length: {min: 10, max: 20}}), admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}},})
-
-export const getUpdateUserByIdResponseMock = (): UserEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {id: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), username: faker.string.alpha({length: {min: 10, max: 20}}), admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}},})
-
-export const getDeleteUserByIdResponseMock = (overrideResponse: Partial<Extract<SuccessResponse, object>> = {}): SuccessResponse => ({success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
-
-export const getSearchUsersResponseMock = (): UsersResponseEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), username: faker.string.alpha({length: {min: 10, max: 20}}), admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])})), meta: {page: faker.number.int({min: 1}), pageSize: faker.number.int({min: 1, max: 100}), totalItems: faker.number.int({min: 0}), totalPages: faker.number.int({min: 0})}}},})
-
-export const getCreateFeedbackRequestResponseMock = (): FeedbackRequestEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {id: faker.string.alpha({length: {min: 10, max: 20}}), name: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), email: faker.internet.email(), subject: faker.string.alpha({length: {min: 10, max: 20}}), message: faker.string.alpha({length: {min: 10, max: 20}}), status: faker.helpers.arrayElement(['new','in_progress','resolved','spam'] as const), adminNotes: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), respondedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), createdAt: faker.date.past().toISOString().slice(0, 19) + 'Z', updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}},})
-
-export const getListFeedbackRequestsResponseMock = (): FeedbackRequestsResponseEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), name: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), email: faker.internet.email(), subject: faker.string.alpha({length: {min: 10, max: 20}}), message: faker.string.alpha({length: {min: 10, max: 20}}), status: faker.helpers.arrayElement(['new','in_progress','resolved','spam'] as const), adminNotes: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), respondedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), createdAt: faker.date.past().toISOString().slice(0, 19) + 'Z', updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])})), meta: {page: faker.number.int({min: 1}), pageSize: faker.number.int({min: 1, max: 100}), totalItems: faker.number.int({min: 0}), totalPages: faker.number.int({min: 0})}}},})
-
-export const getUpdateFeedbackRequestStatusResponseMock = (): FeedbackRequestEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {id: faker.string.alpha({length: {min: 10, max: 20}}), name: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), email: faker.internet.email(), subject: faker.string.alpha({length: {min: 10, max: 20}}), message: faker.string.alpha({length: {min: 10, max: 20}}), status: faker.helpers.arrayElement(['new','in_progress','resolved','spam'] as const), adminNotes: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), respondedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), createdAt: faker.date.past().toISOString().slice(0, 19) + 'Z', updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}},})
-
-export const getListProductsResponseMock = (): ProductsResponseEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), price: faker.number.float({min: 0, fractionDigits: 2}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), categories: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), deletedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])})), meta: {page: faker.number.int({min: 1}), pageSize: faker.number.int({min: 1, max: 100}), totalItems: faker.number.int({min: 0}), totalPages: faker.number.int({min: 0})}}},})
-
-export const getCreateProductResponseMock = (): ProductEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), price: faker.number.float({min: 0, fractionDigits: 2}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), categories: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), deletedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}},})
-
-export const getUpdateProductResponseMock = (): ProductEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), price: faker.number.float({min: 0, fractionDigits: 2}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), categories: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), deletedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}},})
-
-export const getDeleteProductResponseMock = (overrideResponse: Partial<Extract<SuccessResponse, object>> = {}): SuccessResponse => ({success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
-
-export const getGetProductByIdResponseMock = (): ProductEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), price: faker.number.float({min: 0, fractionDigits: 2}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), categories: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), deletedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}},})
-
-export const getUpdateProductByIdResponseMock = (): ProductEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), price: faker.number.float({min: 0, fractionDigits: 2}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), categories: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), deletedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}},})
-
-export const getDeleteProductByIdResponseMock = (overrideResponse: Partial<Extract<SuccessResponse, object>> = {}): SuccessResponse => ({success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
-
-export const getSearchProductsResponseMock = (): ProductsResponseEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), price: faker.number.float({min: 0, fractionDigits: 2}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), categories: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), deletedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])})), meta: {page: faker.number.int({min: 1}), pageSize: faker.number.int({min: 1, max: 100}), totalItems: faker.number.int({min: 0}), totalPages: faker.number.int({min: 0})}}},})
-
-export const getGetCartResponseMock = (): CartResponseEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({productId: faker.string.alpha({length: {min: 10, max: 20}}), quantity: faker.number.int({min: 1})})), summary: {itemsCount: faker.number.int({min: 0}), totalQuantity: faker.number.int({min: 0}), total: faker.number.float({min: 0, fractionDigits: 2}), currency: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined])}}},})
-
-export const getUpsertCartItemResponseMock = (): CartResponseEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({productId: faker.string.alpha({length: {min: 10, max: 20}}), quantity: faker.number.int({min: 1})})), summary: {itemsCount: faker.number.int({min: 0}), totalQuantity: faker.number.int({min: 0}), total: faker.number.float({min: 0, fractionDigits: 2}), currency: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined])}}},})
-
-export const getClearCartResponseMock = (): CartResponseEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({productId: faker.string.alpha({length: {min: 10, max: 20}}), quantity: faker.number.int({min: 1})})), summary: {itemsCount: faker.number.int({min: 0}), totalQuantity: faker.number.int({min: 0}), total: faker.number.float({min: 0, fractionDigits: 2}), currency: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined])}}},})
-
-export const getUpdateCartItemByIdResponseMock = (): CartResponseEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({productId: faker.string.alpha({length: {min: 10, max: 20}}), quantity: faker.number.int({min: 1})})), summary: {itemsCount: faker.number.int({min: 0}), totalQuantity: faker.number.int({min: 0}), total: faker.number.float({min: 0, fractionDigits: 2}), currency: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined])}}},})
-
-export const getRemoveCartItemResponseMock = (): CartResponseEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({productId: faker.string.alpha({length: {min: 10, max: 20}}), quantity: faker.number.int({min: 1})})), summary: {itemsCount: faker.number.int({min: 0}), totalQuantity: faker.number.int({min: 0}), total: faker.number.float({min: 0, fractionDigits: 2}), currency: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined])}}},})
-
-export const getGetCartSummaryResponseMock = (): CartSummaryResponseEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {itemsCount: faker.number.int({min: 0}), totalQuantity: faker.number.int({min: 0}), total: faker.number.float({min: 0, fractionDigits: 2}), currency: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined])}},})
-
-export const getCheckoutResponseMock = (): CheckoutResponseEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {order: {id: faker.string.alpha({length: {min: 10, max: 20}}), userId: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({product: {id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), price: faker.number.float({min: 0, fractionDigits: 2}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), categories: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), deletedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}, quantity: faker.number.int({min: 1})})), total: faker.number.float({min: 0, fractionDigits: 2}), notes: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), status: faker.helpers.arrayElement(['pending','paid','processing','shipped','delivered','cancelled'] as const), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}, message: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined])}},})
-
-export const getListOrdersResponseMock = (): OrdersResponseEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), userId: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({product: {id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), price: faker.number.float({min: 0, fractionDigits: 2}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), categories: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), deletedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}, quantity: faker.number.int({min: 1})})), total: faker.number.float({min: 0, fractionDigits: 2}), notes: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), status: faker.helpers.arrayElement(['pending','paid','processing','shipped','delivered','cancelled'] as const), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])})), meta: {page: faker.number.int({min: 1}), pageSize: faker.number.int({min: 1, max: 100}), totalItems: faker.number.int({min: 0}), totalPages: faker.number.int({min: 0})}}},})
-
-export const getCreateOrderResponseMock = (): OrderEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {id: faker.string.alpha({length: {min: 10, max: 20}}), userId: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({product: {id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), price: faker.number.float({min: 0, fractionDigits: 2}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), categories: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), deletedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}, quantity: faker.number.int({min: 1})})), total: faker.number.float({min: 0, fractionDigits: 2}), notes: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), status: faker.helpers.arrayElement(['pending','paid','processing','shipped','delivered','cancelled'] as const), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}},})
-
-export const getUpdateOrderResponseMock = (): OrderEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {id: faker.string.alpha({length: {min: 10, max: 20}}), userId: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({product: {id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), price: faker.number.float({min: 0, fractionDigits: 2}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), categories: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), deletedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}, quantity: faker.number.int({min: 1})})), total: faker.number.float({min: 0, fractionDigits: 2}), notes: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), status: faker.helpers.arrayElement(['pending','paid','processing','shipped','delivered','cancelled'] as const), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}},})
-
-export const getDeleteOrderResponseMock = (overrideResponse: Partial<Extract<SuccessResponse, object>> = {}): SuccessResponse => ({success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
-
-export const getSearchOrdersResponseMock = (): OrdersResponseEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({id: faker.string.alpha({length: {min: 10, max: 20}}), userId: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({product: {id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), price: faker.number.float({min: 0, fractionDigits: 2}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), categories: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), deletedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}, quantity: faker.number.int({min: 1})})), total: faker.number.float({min: 0, fractionDigits: 2}), notes: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), status: faker.helpers.arrayElement(['pending','paid','processing','shipped','delivered','cancelled'] as const), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])})), meta: {page: faker.number.int({min: 1}), pageSize: faker.number.int({min: 1, max: 100}), totalItems: faker.number.int({min: 0}), totalPages: faker.number.int({min: 0})}}},})
-
-export const getGetOrderByIdResponseMock = (): OrderEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {id: faker.string.alpha({length: {min: 10, max: 20}}), userId: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({product: {id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), price: faker.number.float({min: 0, fractionDigits: 2}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), categories: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), deletedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}, quantity: faker.number.int({min: 1})})), total: faker.number.float({min: 0, fractionDigits: 2}), notes: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), status: faker.helpers.arrayElement(['pending','paid','processing','shipped','delivered','cancelled'] as const), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}},})
-
-export const getUpdateOrderByIdResponseMock = (): OrderEnvelope => ({...{success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}})},...{data: {id: faker.string.alpha({length: {min: 10, max: 20}}), userId: faker.string.alpha({length: {min: 10, max: 20}}), email: faker.internet.email(), items: Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => ({product: {id: faker.string.alpha({length: {min: 10, max: 20}}), title: faker.string.alpha({length: {min: 10, max: 20}}), price: faker.number.float({min: 0, fractionDigits: 2}), description: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]), imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]), categories: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), tags: faker.helpers.arrayElement([Array.from({ length: faker.number.int({min: 1, max: 10}) }, (_, i) => i + 1).map(() => (faker.string.alpha({length: {min: 10, max: 20}}))), undefined]), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), deletedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}, quantity: faker.number.int({min: 1})})), total: faker.number.float({min: 0, fractionDigits: 2}), notes: faker.helpers.arrayElement([faker.string.alpha({length: {min: 10, max: 20}}), undefined]), status: faker.helpers.arrayElement(['pending','paid','processing','shipped','delivered','cancelled'] as const), createdAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined]), updatedAt: faker.helpers.arrayElement([faker.date.past().toISOString().slice(0, 19) + 'Z', undefined])}},})
-
-export const getDeleteOrderByIdResponseMock = (overrideResponse: Partial<Extract<SuccessResponse, object>> = {}): SuccessResponse => ({success: faker.helpers.arrayElement([true] as const), status: faker.number.int(), message: faker.string.alpha({length: {min: 10, max: 20}}), ...overrideResponse})
-
-export const getGetOrderInvoiceResponseMock = (): ArrayBuffer => (new ArrayBuffer(faker.number.int({ min: 1, max: 64 })))
-
-
-export const getGetHealthMockHandler = (overrideResponse?: MessageResponse | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<MessageResponse> | MessageResponse), options?: RequestHandlerOptions) => {
-  return http.get('*/', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGetHealthResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getGetObservabilityEventsMockHandler = (overrideResponse?: string | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<string> | string), options?: RequestHandlerOptions) => {
-  return http.get('*/observability/events', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-
-  const resolvedBody = overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGetObservabilityEventsResponseMock();
-    const textBody = typeof resolvedBody === 'string' ? resolvedBody : JSON.stringify(resolvedBody ?? null);
-    return HttpResponse.text(textBody,
-      { status: 200
-      })
-  }, options)
-}
-
-export const getGetObservabilityHealthMockHandler = (overrideResponse?: AdminHealthResponseEnvelope | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<AdminHealthResponseEnvelope> | AdminHealthResponseEnvelope), options?: RequestHandlerOptions) => {
-  return http.get('*/observability/health', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGetObservabilityHealthResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getGetObservabilityMetricsMockHandler = (overrideResponse?: string | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<string> | string), options?: RequestHandlerOptions) => {
-  return http.get('*/observability/metrics', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-
-  const resolvedBody = overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGetObservabilityMetricsResponseMock();
-    const textBody = typeof resolvedBody === 'string' ? resolvedBody : JSON.stringify(resolvedBody ?? null);
-    return HttpResponse.text(textBody,
-      { status: 200
-      })
-  }, options)
-}
-
-export const getGetObservabilityMetricsOverviewMockHandler = (overrideResponse?: AdminMetricsSummaryResponseEnvelope | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<AdminMetricsSummaryResponseEnvelope> | AdminMetricsSummaryResponseEnvelope), options?: RequestHandlerOptions) => {
-  return http.get('*/observability/metrics/overview', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGetObservabilityMetricsOverviewResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getGetObservabilityAuditLogsMockHandler = (overrideResponse?: AuditLogsResponseEnvelope | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<AuditLogsResponseEnvelope> | AuditLogsResponseEnvelope), options?: RequestHandlerOptions) => {
-  return http.get('*/observability/audit', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGetObservabilityAuditLogsResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getGetAccountMockHandler = (overrideResponse?: UserEnvelope | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<UserEnvelope> | UserEnvelope), options?: RequestHandlerOptions) => {
-  return http.get('*/account', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGetAccountResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getRequestAccountDeleteMockHandler = (overrideResponse?: SuccessResponse | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<SuccessResponse> | SuccessResponse), options?: RequestHandlerOptions) => {
-  return http.delete('*/account', async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getRequestAccountDeleteResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getConfirmAccountDeleteMockHandler = (overrideResponse?: SuccessResponse | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<SuccessResponse> | SuccessResponse), options?: RequestHandlerOptions) => {
-  return http.delete('*/account/delete-confirm', async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getConfirmAccountDeleteResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getLoginMockHandler = (overrideResponse?: AuthTokensEnvelope | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<AuthTokensEnvelope> | AuthTokensEnvelope), options?: RequestHandlerOptions) => {
-  return http.post('*/account/login', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getLoginResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getSignupMockHandler = (overrideResponse?: UserEnvelope | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<UserEnvelope> | UserEnvelope), options?: RequestHandlerOptions) => {
-  return http.post('*/account/signup', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getSignupResponseMock(),
-      { status: 201
-      })
-  }, options)
-}
-
-export const getRequestPasswordResetMockHandler = (overrideResponse?: SuccessResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<SuccessResponse> | SuccessResponse), options?: RequestHandlerOptions) => {
-  return http.post('*/account/reset', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getRequestPasswordResetResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getConfirmPasswordResetMockHandler = (overrideResponse?: SuccessResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<SuccessResponse> | SuccessResponse), options?: RequestHandlerOptions) => {
-  return http.post('*/account/reset-confirm', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getConfirmPasswordResetResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getRefreshTokenMockHandler = (overrideResponse?: RefreshTokenEnvelope | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<RefreshTokenEnvelope> | RefreshTokenEnvelope), options?: RequestHandlerOptions) => {
-  return http.get('*/account/refresh', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getRefreshTokenResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getRefreshTokenWithPathMockHandler = (overrideResponse?: RefreshTokenEnvelope | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<RefreshTokenEnvelope> | RefreshTokenEnvelope), options?: RequestHandlerOptions) => {
-  return http.get('*/account/refresh/:token', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getRefreshTokenWithPathResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getLogoutAllMockHandler = (overrideResponse?: SuccessResponse | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<SuccessResponse> | SuccessResponse), options?: RequestHandlerOptions) => {
-  return http.post('*/account/logout-all', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getLogoutAllResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getDeleteExpiredTokensMockHandler = (overrideResponse?: SuccessResponse | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<SuccessResponse> | SuccessResponse), options?: RequestHandlerOptions) => {
-  return http.delete('*/account/tokens/expired', async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getDeleteExpiredTokensResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getListUsersMockHandler = (overrideResponse?: UsersResponseEnvelope | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<UsersResponseEnvelope> | UsersResponseEnvelope), options?: RequestHandlerOptions) => {
-  return http.get('*/users', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getListUsersResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getCreateUserMockHandler = (overrideResponse?: UserEnvelope | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<UserEnvelope> | UserEnvelope), options?: RequestHandlerOptions) => {
-  return http.post('*/users', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getCreateUserResponseMock(),
-      { status: 201
-      })
-  }, options)
-}
-
-export const getUpdateUserMockHandler = (overrideResponse?: UserEnvelope | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<UserEnvelope> | UserEnvelope), options?: RequestHandlerOptions) => {
-  return http.put('*/users', async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getUpdateUserResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getDeleteUserMockHandler = (overrideResponse?: SuccessResponse | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<SuccessResponse> | SuccessResponse), options?: RequestHandlerOptions) => {
-  return http.delete('*/users', async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getDeleteUserResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getGetUserByIdMockHandler = (overrideResponse?: UserEnvelope | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<UserEnvelope> | UserEnvelope), options?: RequestHandlerOptions) => {
-  return http.get('*/users/:id', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGetUserByIdResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getUpdateUserByIdMockHandler = (overrideResponse?: UserEnvelope | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<UserEnvelope> | UserEnvelope), options?: RequestHandlerOptions) => {
-  return http.put('*/users/:id', async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getUpdateUserByIdResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getDeleteUserByIdMockHandler = (overrideResponse?: SuccessResponse | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<SuccessResponse> | SuccessResponse), options?: RequestHandlerOptions) => {
-  return http.delete('*/users/:id', async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getDeleteUserByIdResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getSearchUsersMockHandler = (overrideResponse?: UsersResponseEnvelope | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<UsersResponseEnvelope> | UsersResponseEnvelope), options?: RequestHandlerOptions) => {
-  return http.post('*/users/search', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getSearchUsersResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getCreateFeedbackRequestMockHandler = (overrideResponse?: FeedbackRequestEnvelope | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<FeedbackRequestEnvelope> | FeedbackRequestEnvelope), options?: RequestHandlerOptions) => {
-  return http.post('*/feedback/contact', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getCreateFeedbackRequestResponseMock(),
-      { status: 201
-      })
-  }, options)
-}
-
-export const getListFeedbackRequestsMockHandler = (overrideResponse?: FeedbackRequestsResponseEnvelope | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<FeedbackRequestsResponseEnvelope> | FeedbackRequestsResponseEnvelope), options?: RequestHandlerOptions) => {
-  return http.get('*/feedback', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getListFeedbackRequestsResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getUpdateFeedbackRequestStatusMockHandler = (overrideResponse?: FeedbackRequestEnvelope | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<FeedbackRequestEnvelope> | FeedbackRequestEnvelope), options?: RequestHandlerOptions) => {
-  return http.put('*/feedback/:id', async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getUpdateFeedbackRequestStatusResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getListProductsMockHandler = (overrideResponse?: ProductsResponseEnvelope | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<ProductsResponseEnvelope> | ProductsResponseEnvelope), options?: RequestHandlerOptions) => {
-  return http.get('*/products', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getListProductsResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getCreateProductMockHandler = (overrideResponse?: ProductEnvelope | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<ProductEnvelope> | ProductEnvelope), options?: RequestHandlerOptions) => {
-  return http.post('*/products', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getCreateProductResponseMock(),
-      { status: 201
-      })
-  }, options)
-}
-
-export const getUpdateProductMockHandler = (overrideResponse?: ProductEnvelope | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<ProductEnvelope> | ProductEnvelope), options?: RequestHandlerOptions) => {
-  return http.put('*/products', async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getUpdateProductResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getDeleteProductMockHandler = (overrideResponse?: SuccessResponse | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<SuccessResponse> | SuccessResponse), options?: RequestHandlerOptions) => {
-  return http.delete('*/products', async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getDeleteProductResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getGetProductByIdMockHandler = (overrideResponse?: ProductEnvelope | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<ProductEnvelope> | ProductEnvelope), options?: RequestHandlerOptions) => {
-  return http.get('*/products/:id', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGetProductByIdResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getUpdateProductByIdMockHandler = (overrideResponse?: ProductEnvelope | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<ProductEnvelope> | ProductEnvelope), options?: RequestHandlerOptions) => {
-  return http.put('*/products/:id', async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getUpdateProductByIdResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getDeleteProductByIdMockHandler = (overrideResponse?: SuccessResponse | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<SuccessResponse> | SuccessResponse), options?: RequestHandlerOptions) => {
-  return http.delete('*/products/:id', async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getDeleteProductByIdResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getSearchProductsMockHandler = (overrideResponse?: ProductsResponseEnvelope | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<ProductsResponseEnvelope> | ProductsResponseEnvelope), options?: RequestHandlerOptions) => {
-  return http.post('*/products/search', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getSearchProductsResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getGetCartMockHandler = (overrideResponse?: CartResponseEnvelope | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<CartResponseEnvelope> | CartResponseEnvelope), options?: RequestHandlerOptions) => {
-  return http.get('*/cart', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGetCartResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getUpsertCartItemMockHandler = (overrideResponse?: CartResponseEnvelope | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<CartResponseEnvelope> | CartResponseEnvelope), options?: RequestHandlerOptions) => {
-  return http.post('*/cart', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getUpsertCartItemResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getClearCartMockHandler = (overrideResponse?: CartResponseEnvelope | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<CartResponseEnvelope> | CartResponseEnvelope), options?: RequestHandlerOptions) => {
-  return http.delete('*/cart', async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getClearCartResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getUpdateCartItemByIdMockHandler = (overrideResponse?: CartResponseEnvelope | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<CartResponseEnvelope> | CartResponseEnvelope), options?: RequestHandlerOptions) => {
-  return http.put('*/cart/:productId', async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getUpdateCartItemByIdResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getRemoveCartItemMockHandler = (overrideResponse?: CartResponseEnvelope | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<CartResponseEnvelope> | CartResponseEnvelope), options?: RequestHandlerOptions) => {
-  return http.delete('*/cart/:productId', async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getRemoveCartItemResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getGetCartSummaryMockHandler = (overrideResponse?: CartSummaryResponseEnvelope | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<CartSummaryResponseEnvelope> | CartSummaryResponseEnvelope), options?: RequestHandlerOptions) => {
-  return http.get('*/cart/summary', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGetCartSummaryResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getCheckoutMockHandler = (overrideResponse?: CheckoutResponseEnvelope | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<CheckoutResponseEnvelope> | CheckoutResponseEnvelope), options?: RequestHandlerOptions) => {
-  return http.post('*/cart/checkout', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getCheckoutResponseMock(),
-      { status: 201
-      })
-  }, options)
-}
-
-export const getListOrdersMockHandler = (overrideResponse?: OrdersResponseEnvelope | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<OrdersResponseEnvelope> | OrdersResponseEnvelope), options?: RequestHandlerOptions) => {
-  return http.get('*/orders', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getListOrdersResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getCreateOrderMockHandler = (overrideResponse?: OrderEnvelope | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<OrderEnvelope> | OrderEnvelope), options?: RequestHandlerOptions) => {
-  return http.post('*/orders', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getCreateOrderResponseMock(),
-      { status: 201
-      })
-  }, options)
-}
-
-export const getUpdateOrderMockHandler = (overrideResponse?: OrderEnvelope | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<OrderEnvelope> | OrderEnvelope), options?: RequestHandlerOptions) => {
-  return http.put('*/orders', async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getUpdateOrderResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getDeleteOrderMockHandler = (overrideResponse?: SuccessResponse | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<SuccessResponse> | SuccessResponse), options?: RequestHandlerOptions) => {
-  return http.delete('*/orders', async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getDeleteOrderResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getSearchOrdersMockHandler = (overrideResponse?: OrdersResponseEnvelope | ((info: Parameters<Parameters<typeof http.post>[1]>[0]) => Promise<OrdersResponseEnvelope> | OrdersResponseEnvelope), options?: RequestHandlerOptions) => {
-  return http.post('*/orders/search', async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getSearchOrdersResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getGetOrderByIdMockHandler = (overrideResponse?: OrderEnvelope | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<OrderEnvelope> | OrderEnvelope), options?: RequestHandlerOptions) => {
-  return http.get('*/orders/:id', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGetOrderByIdResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getUpdateOrderByIdMockHandler = (overrideResponse?: OrderEnvelope | ((info: Parameters<Parameters<typeof http.put>[1]>[0]) => Promise<OrderEnvelope> | OrderEnvelope), options?: RequestHandlerOptions) => {
-  return http.put('*/orders/:id', async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getUpdateOrderByIdResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getDeleteOrderByIdMockHandler = (overrideResponse?: SuccessResponse | ((info: Parameters<Parameters<typeof http.delete>[1]>[0]) => Promise<SuccessResponse> | SuccessResponse), options?: RequestHandlerOptions) => {
-  return http.delete('*/orders/:id', async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
-
-
-    return HttpResponse.json(overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getDeleteOrderByIdResponseMock(),
-      { status: 200
-      })
-  }, options)
-}
-
-export const getGetOrderInvoiceMockHandler = (overrideResponse?: ArrayBuffer | ((info: Parameters<Parameters<typeof http.get>[1]>[0]) => Promise<ArrayBuffer> | ArrayBuffer), options?: RequestHandlerOptions) => {
-  return http.get('*/orders/:id/invoice', async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-
-  const binaryBody = overrideResponse !== undefined
-    ? (typeof overrideResponse === "function" ? await overrideResponse(info) : overrideResponse)
-    : getGetOrderInvoiceResponseMock();
-    return HttpResponse.arrayBuffer(
-      binaryBody instanceof ArrayBuffer
-        ? binaryBody
-        : new ArrayBuffer(0),
-      { status: 200,
-        headers: { 'Content-Type': 'application/pdf' }
-      })
-  }, options)
-}
+};
 export const getEcommerceDemoAPIMock = () => [
-  getGetHealthMockHandler(),
-  getGetObservabilityEventsMockHandler(),
-  getGetObservabilityHealthMockHandler(),
-  getGetObservabilityMetricsMockHandler(),
-  getGetObservabilityMetricsOverviewMockHandler(),
-  getGetObservabilityAuditLogsMockHandler(),
-  getGetAccountMockHandler(),
-  getRequestAccountDeleteMockHandler(),
-  getConfirmAccountDeleteMockHandler(),
-  getLoginMockHandler(),
-  getSignupMockHandler(),
-  getRequestPasswordResetMockHandler(),
-  getConfirmPasswordResetMockHandler(),
-  getRefreshTokenMockHandler(),
-  getRefreshTokenWithPathMockHandler(),
-  getLogoutAllMockHandler(),
-  getDeleteExpiredTokensMockHandler(),
-  getListUsersMockHandler(),
-  getCreateUserMockHandler(),
-  getUpdateUserMockHandler(),
-  getDeleteUserMockHandler(),
-  getGetUserByIdMockHandler(),
-  getUpdateUserByIdMockHandler(),
-  getDeleteUserByIdMockHandler(),
-  getSearchUsersMockHandler(),
-  getCreateFeedbackRequestMockHandler(),
-  getListFeedbackRequestsMockHandler(),
-  getUpdateFeedbackRequestStatusMockHandler(),
-  getListProductsMockHandler(),
-  getCreateProductMockHandler(),
-  getUpdateProductMockHandler(),
-  getDeleteProductMockHandler(),
-  getGetProductByIdMockHandler(),
-  getUpdateProductByIdMockHandler(),
-  getDeleteProductByIdMockHandler(),
-  getSearchProductsMockHandler(),
-  getGetCartMockHandler(),
-  getUpsertCartItemMockHandler(),
-  getClearCartMockHandler(),
-  getUpdateCartItemByIdMockHandler(),
-  getRemoveCartItemMockHandler(),
-  getGetCartSummaryMockHandler(),
-  getCheckoutMockHandler(),
-  getListOrdersMockHandler(),
-  getCreateOrderMockHandler(),
-  getUpdateOrderMockHandler(),
-  getDeleteOrderMockHandler(),
-  getSearchOrdersMockHandler(),
-  getGetOrderByIdMockHandler(),
-  getUpdateOrderByIdMockHandler(),
-  getDeleteOrderByIdMockHandler(),
-  getGetOrderInvoiceMockHandler()]
+    getGetHealthMockHandler(),
+    getGetObservabilityEventsMockHandler(),
+    getGetObservabilityHealthMockHandler(),
+    getGetObservabilityMetricsMockHandler(),
+    getGetObservabilityMetricsOverviewMockHandler(),
+    getGetObservabilityAuditLogsMockHandler(),
+    getGetAccountMockHandler(),
+    getRequestAccountDeleteMockHandler(),
+    getConfirmAccountDeleteMockHandler(),
+    getLoginMockHandler(),
+    getSignupMockHandler(),
+    getRequestPasswordResetMockHandler(),
+    getConfirmPasswordResetMockHandler(),
+    getRefreshTokenMockHandler(),
+    getRefreshTokenWithPathMockHandler(),
+    getLogoutAllMockHandler(),
+    getDeleteExpiredTokensMockHandler(),
+    getListUsersMockHandler(),
+    getCreateUserMockHandler(),
+    getUpdateUserMockHandler(),
+    getDeleteUserMockHandler(),
+    getGetUserByIdMockHandler(),
+    getUpdateUserByIdMockHandler(),
+    getDeleteUserByIdMockHandler(),
+    getSearchUsersMockHandler(),
+    getCreateFeedbackRequestMockHandler(),
+    getListFeedbackRequestsMockHandler(),
+    getUpdateFeedbackRequestStatusMockHandler(),
+    getListProductsMockHandler(),
+    getCreateProductMockHandler(),
+    getUpdateProductMockHandler(),
+    getDeleteProductMockHandler(),
+    getGetProductByIdMockHandler(),
+    getUpdateProductByIdMockHandler(),
+    getDeleteProductByIdMockHandler(),
+    getSearchProductsMockHandler(),
+    getGetCartMockHandler(),
+    getUpsertCartItemMockHandler(),
+    getClearCartMockHandler(),
+    getUpdateCartItemByIdMockHandler(),
+    getRemoveCartItemMockHandler(),
+    getGetCartSummaryMockHandler(),
+    getCheckoutMockHandler(),
+    getListOrdersMockHandler(),
+    getCreateOrderMockHandler(),
+    getUpdateOrderMockHandler(),
+    getDeleteOrderMockHandler(),
+    getSearchOrdersMockHandler(),
+    getGetOrderByIdMockHandler(),
+    getUpdateOrderByIdMockHandler(),
+    getDeleteOrderByIdMockHandler(),
+    getGetOrderInvoiceMockHandler()
+];

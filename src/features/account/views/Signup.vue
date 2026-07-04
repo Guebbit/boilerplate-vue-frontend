@@ -1,13 +1,13 @@
 <template>
     <LayoutDefault id="signup-page">
         <template #header>
-            <h1 class="theme-page-title">
+            <h1 class="text-h4 mb-6">
                 <span>{{ t('signup-page.page-title') }}</span>
             </h1>
         </template>
 
-        <div class="theme-card theme-form-container">
-            <form ref="formElement" class="theme-form" @submit.prevent="submitForm">
+        <VCard class="mx-auto my-16 pa-6" max-width="480" elevation="2">
+            <form ref="formElement" class="d-flex flex-column ga-4" @submit.prevent="submitForm">
                 <BaseInput
                     v-model="form.email"
                     type="email"
@@ -39,7 +39,7 @@
                     {{ t('signup-page.button-submit') }}
                 </BaseButton>
             </form>
-        </div>
+        </VCard>
     </LayoutDefault>
 </template>
 
@@ -53,6 +53,7 @@ export default {
 import { nextTick, ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
+import { VCard } from 'vuetify/components';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
 import { useRouter, useRoute } from 'vue-router';
@@ -64,7 +65,7 @@ import BaseButton from '@/components/atoms/BaseButton.vue';
 import { notifyErrorMessages } from '@/utils/errors.ts';
 import { focusFirstErrorField } from '@/utils/forms.ts';
 
-/**
+/*
  * UI logics
  */
 const { t } = useI18n();
@@ -72,7 +73,7 @@ const { addMessage } = useNotificationsStore();
 const router = useRouter();
 const route = useRoute();
 
-/**
+/*
  * Form logics
  */
 interface IUserSignupForm {
@@ -109,7 +110,7 @@ const { form, formErrors, isSubmitting, handleSubmit } =
             })
     );
 
-/**
+/*
  * Whether to display validation errors in the UI
  */
 const showErrors = ref(false);
@@ -117,7 +118,7 @@ const formElement = ref<HTMLFormElement>();
 
 const { signup, fetchProfile } = useProfileStore();
 
-/**
+/*
  * Submit form and try to authenticate.
  * handleSubmit returns false when validation fails (shows errors),
  * and re-throws when the onSubmit handler itself throws (API errors caught below).
@@ -146,13 +147,3 @@ const submitForm = () =>
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>
-
-<style lang="scss">
-#signup-page {
-    .theme-form-container {
-        max-width: 400px;
-        margin: 100px auto;
-        padding: 2rem;
-    }
-}
-</style>
