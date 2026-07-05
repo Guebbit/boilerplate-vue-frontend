@@ -1,61 +1,44 @@
 <template>
-    <LayoutDefault id="home-page">
-        <template #header>
-            <h1 class="text-h3 text-md-h2 font-weight-bold text-center mb-8">
-                <span>{{ t('home-page.page-title') }}</span>
-            </h1>
-        </template>
+    <LayoutDefault id="home-page" :full-width="true">
+        <HomeHero @scroll-to="scrollToSection" />
+        <HomeAbout />
+        <HomeExpertise />
+        <HomeServices @scroll-to="scrollToSection" />
+        <HomeContact />
 
-        <VRow justify="center" class="mb-10">
-            <VCol cols="12" lg="9">
-                <VCard
-                    class="pa-6 pa-md-10 text-center"
-                    color="primary"
-                    variant="tonal"
-                    rounded="xl"
-                >
-                    <VIcon icon="custom:guebbit" size="56" class="mb-4" />
-                    <h2 class="text-h4 text-md-h3 font-weight-bold mb-4">
-                        {{ t('home-page.hero-title') }}
-                    </h2>
-                    <p class="text-body-1 text-md-h6 text-medium-emphasis mb-6">
-                        {{ t('home-page.hero-description') }}
-                    </p>
+        <!-- Ecommerce section — kept in UX as secondary entry point -->
+        <section class="ecommerce-teaser py-12">
+            <VContainer max-width="1280">
+                <VCard class="pa-8 text-center" variant="tonal" color="secondary" rounded="xl">
+                    <VIcon icon="$package" size="40" class="mb-4" />
+                    <h2 class="text-h5 font-weight-bold mb-3">{{ t('home-page.button-browse-products') }}</h2>
                     <VBtn
-                        :to="
-                            routerLinkI18n({
-                                name: 'ProductsList'
-                            })
-                        "
-                        color="primary"
+                        :to="routerLinkI18n({ name: 'ProductsList' })"
+                        color="secondary"
                         size="large"
+                        rounded="xl"
                         prepend-icon="$cart"
+                        class="mt-2"
                     >
                         {{ t('home-page.button-browse-products') }}
                     </VBtn>
                 </VCard>
-            </VCol>
-        </VRow>
-
-        <section>
-            <h2 class="text-h4 font-weight-bold mb-6">{{ t('home-page.featured-title') }}</h2>
-            <VRow>
-                <VCol v-for="product in featuredProducts" :key="product.title" cols="12" md="4">
-                    <CardInfo
-                        class="h-100"
-                        :title="product.title"
-                        :description="product.description"
-                        :variant="product.variant"
-                    >
-                        <template #icon>
-                            <VIcon :icon="product.icon" size="28" />
-                        </template>
-                    </CardInfo>
-                </VCol>
-            </VRow>
+            </VContainer>
         </section>
     </LayoutDefault>
 </template>
+
+<style lang="scss">
+#home-page {
+    /* Remove default page-content padding so hero can be full-width */
+    .page-content {
+        padding-top: 0 !important;
+    }
+
+    /* Smooth section scroll */
+    scroll-behavior: smooth;
+}
+</style>
 
 <script lang="ts">
 export default {
@@ -64,41 +47,24 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { VBtn, VCard, VCol, VIcon, VRow } from 'vuetify/components';
+import { VBtn, VCard, VContainer, VIcon } from 'vuetify/components';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import CardInfo from '@/components/organisms/CardInfo.vue';
+import HomeHero from '@/components/organisms/HomeHero.vue';
+import HomeAbout from '@/components/organisms/HomeAbout.vue';
+import HomeExpertise from '@/components/organisms/HomeExpertise.vue';
+import HomeServices from '@/components/organisms/HomeServices.vue';
+import HomeContact from '@/components/organisms/HomeContact.vue';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 
 const { t } = useI18n();
 
-const featuredProducts = computed<
-    {
-        title: string;
-        description: string;
-        variant: 'primary' | 'secondary' | 'tertiary';
-        icon: string;
-    }[]
->(() => [
-    {
-        title: t('home-page.featured-product-1-title'),
-        description: t('home-page.featured-product-1-description'),
-        variant: 'primary',
-        icon: '$package'
-    },
-    {
-        title: t('home-page.featured-product-2-title'),
-        description: t('home-page.featured-product-2-description'),
-        variant: 'secondary',
-        icon: '$tag'
-    },
-    {
-        title: t('home-page.featured-product-3-title'),
-        description: t('home-page.featured-product-3-description'),
-        variant: 'tertiary',
-        icon: '$star'
-    }
-]);
+/*
+ * Smooth-scroll to a section by element id.
+ * @param id - target element id string
+ */
+function scrollToSection(id: string) {
+    document.querySelector(`#${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 </script>

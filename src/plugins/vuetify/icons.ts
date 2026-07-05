@@ -5,13 +5,20 @@ import {
     mdiAccount,
     mdiAccountPlus,
     mdiAlertCircle,
+    mdiArrowRight,
+    mdiBriefcase,
     mdiCartOutline,
     mdiCheckCircle,
     mdiChevronDown,
+    mdiCodeBraces,
     mdiDelete,
+    mdiEmail,
     mdiEye,
+    mdiGithub,
     mdiHome,
     mdiInformation,
+    mdiLightningBolt,
+    mdiLinkedin,
     mdiLogin,
     mdiLogout,
     mdiMagnify,
@@ -19,10 +26,12 @@ import {
     mdiPackageVariantClosed,
     mdiPencil,
     mdiPlus,
+    mdiRobotOutline,
     mdiShieldAccount,
     mdiStar,
     mdiTag,
-    mdiTranslate
+    mdiTranslate,
+    mdiWrench
 } from '@mdi/js';
 
 /*
@@ -59,23 +68,32 @@ export const aliases = {
     accountPlus: mdiAccountPlus,
     alert: mdiAlertCircle,
     admin: mdiShieldAccount,
+    arrowRight: mdiArrowRight,
+    briefcase: mdiBriefcase,
     cart: mdiCartOutline,
     chevronDown: mdiChevronDown,
+    code: mdiCodeBraces,
     delete: mdiDelete,
+    email: mdiEmail,
     eye: mdiEye,
+    github: mdiGithub,
     home: mdiHome,
     info: mdiInformation,
+    lightning: mdiLightningBolt,
+    linkedin: mdiLinkedin,
     login: mdiLogin,
     logout: mdiLogout,
     minus: mdiMinus,
     package: mdiPackageVariantClosed,
     pencil: mdiPencil,
     plus: mdiPlus,
+    robot: mdiRobotOutline,
     search: mdiMagnify,
     star: mdiStar,
     success: mdiCheckCircle,
     tag: mdiTag,
-    translate: mdiTranslate
+    translate: mdiTranslate,
+    wrench: mdiWrench
 };
 
 /*

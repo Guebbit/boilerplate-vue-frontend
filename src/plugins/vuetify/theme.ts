@@ -1,35 +1,37 @@
 import type { ThemeDefinition } from 'vuetify';
 
 /*
- * Light theme: orange primary / cyan secondary (brand colors).
+ * Light theme: indigo primary / violet secondary — professional consultant palette.
  */
 export const light: ThemeDefinition = {
     dark: false,
     colors: {
-        primary: '#ff9800',
-        secondary: '#00bcd4',
+        primary: '#4A5AF5',
+        secondary: '#9B59B6',
+        tertiary: '#00BCD4',
         surface: '#ffffff',
-        background: '#f5f5f5',
-        error: '#e53935',
-        info: '#2196f3',
-        success: '#43a047',
-        warning: '#fb8c00'
+        background: '#F4F6FB',
+        error: '#E53935',
+        info: '#2196F3',
+        success: '#43A047',
+        warning: '#FB8C00'
     }
 };
 
 /*
- * Dark theme: brand colors swapped (cyan primary / orange secondary).
+ * Dark theme: lighter indigo primary / soft violet secondary.
  */
 export const dark: ThemeDefinition = {
     dark: true,
     colors: {
-        primary: '#00bcd4',
-        secondary: '#ff9800',
-        surface: '#1e1e1e',
-        background: '#121212',
-        error: '#ef5350',
-        info: '#42a5f5',
-        success: '#66bb6a',
-        warning: '#ffa726'
+        primary: '#738FFF',
+        secondary: '#BB86FC',
+        tertiary: '#4DD0E1',
+        surface: '#1E1E2E',
+        background: '#12121F',
+        error: '#EF5350',
+        info: '#42A5F5',
+        success: '#66BB6A',
+        warning: '#FFA726'
     }
 };

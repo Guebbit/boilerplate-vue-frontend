@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="340" height="340" viewBox="0 0 340 340">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4A5AF5;stop-opacity:0.15"/>
+      <stop offset="100%" style="stop-color:#9B59B6;stop-opacity:0.2"/>
+    </linearGradient>
+    <linearGradient id="person" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4A5AF5;stop-opacity:0.4"/>
+      <stop offset="100%" style="stop-color:#9B59B6;stop-opacity:0.5"/>
+    </linearGradient>
+    <clipPath id="circle">
+      <circle cx="170" cy="170" r="170"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="170" cy="170" r="170" fill="url(#bg)" stroke="#4A5AF5" stroke-width="2" stroke-opacity="0.25"/>
+
+  <!-- Silhouette — head -->
+  <circle cx="170" cy="120" r="52" fill="url(#person)" clip-path="url(#circle)"/>
+
+  <!-- Silhouette — shoulders / body -->
+  <ellipse cx="170" cy="280" rx="90" ry="70" fill="url(#person)" clip-path="url(#circle)"/>
+
+  <!-- Label -->
+  <text x="170" y="316" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="600" fill="#4A5AF5" opacity="0.7">
+    [ Replace with profile photo ]
+  </text>
+</svg>

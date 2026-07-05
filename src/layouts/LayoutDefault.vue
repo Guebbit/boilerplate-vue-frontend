@@ -32,7 +32,11 @@
                 <slot name="header" />
             </VContainer>
 
-            <VContainer class="page-container" max-width="1280">
+            <!-- fullWidth: render slot without a constraining VContainer -->
+            <template v-if="fullWidth">
+                <slot />
+            </template>
+            <VContainer v-else class="page-container" max-width="1280">
                 <slot />
             </VContainer>
         </VMain>
@@ -86,6 +90,11 @@ defineProps<{
      * If the content should be minimum full page and centered
      */
     centered?: boolean;
+    /**
+     * If true, the default slot is rendered without a constraining VContainer,
+     * allowing full-bleed section backgrounds.
+     */
+    fullWidth?: boolean;
 }>();
 
 /**
