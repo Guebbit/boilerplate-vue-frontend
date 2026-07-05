@@ -11,7 +11,10 @@
                 <h2 class="text-h4 text-md-h3 font-weight-black mb-5">
                     {{ t('home-page.contact-title') }}
                 </h2>
-                <p class="text-body-1 text-medium-emphasis mx-auto mb-10" style="max-width: 560px; line-height: 1.7">
+                <p
+                    class="text-body-1 text-medium-emphasis mx-auto mb-10"
+                    style="max-width: 560px; line-height: 1.7"
+                >
                     {{ t('home-page.contact-description') }}
                 </p>
 
@@ -87,7 +90,11 @@
 .contact-bg {
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgb(var(--v-theme-primary), 0.05) 0%, rgb(var(--v-theme-secondary), 0.04) 100%);
+    background: linear-gradient(
+        135deg,
+        rgb(var(--v-theme-primary), 0.05) 0%,
+        rgb(var(--v-theme-secondary), 0.04) 100%
+    );
 }
 
 .contact-container {
@@ -102,7 +109,9 @@
 .reveal-block {
     opacity: 0;
     transform: translateY(28px);
-    transition: opacity 0.7s ease, transform 0.7s ease;
+    transition:
+        opacity 0.7s ease,
+        transform 0.7s ease;
 }
 
 .reveal-block.revealed {

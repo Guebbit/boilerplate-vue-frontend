@@ -24,24 +24,17 @@
                         :style="{ transitionDelay: `${i * 80}ms` }"
                         :class="['pillar-col', { revealed: isVisible }]"
                     >
-                        <VCard
-                            class="pillar-card h-100 pa-6"
-                            rounded="xl"
-                            variant="outlined"
-                            hover
-                        >
-                            <VAvatar
-                                :color="pillar.color"
-                                size="52"
-                                rounded="lg"
-                                class="mb-5"
-                            >
+                        <VCard class="pillar-card h-100 pa-6" rounded="xl" variant="outlined" hover>
+                            <VAvatar :color="pillar.color" size="52" rounded="lg" class="mb-5">
                                 <VIcon :icon="pillar.icon" size="26" />
                             </VAvatar>
                             <h3 class="text-h6 font-weight-bold mb-3">
                                 {{ t(pillar.titleKey) }}
                             </h3>
-                            <p class="text-body-2 text-medium-emphasis ma-0" style="line-height: 1.7">
+                            <p
+                                class="text-body-2 text-medium-emphasis ma-0"
+                                style="line-height: 1.7"
+                            >
                                 {{ t(pillar.descKey) }}
                             </p>
                         </VCard>
@@ -62,7 +55,10 @@
 }
 
 .pillar-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease,
+        border-color 0.3s ease;
     border-color: rgba(var(--v-border-color), 0.12) !important;
 }
 
@@ -76,7 +72,9 @@
 .pillar-col {
     opacity: 0;
     transform: translateY(28px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
+    transition:
+        opacity 0.6s ease,
+        transform 0.6s ease;
 }
 
 .pillar-col.revealed {
@@ -88,7 +86,9 @@
 .reveal-block {
     opacity: 0;
     transform: translateY(24px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
+    transition:
+        opacity 0.6s ease,
+        transform 0.6s ease;
 }
 
 .reveal-block.revealed {

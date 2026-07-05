@@ -95,7 +95,7 @@
         "contact-description": "Whether you need an architecture review, a rescue mission, or a steady fractional tech lead — let's start with a free 30-minute intro call.",
         "contact-cta-primary": "Book a Free Call",
         "contact-cta-secondary": "Send an Email",
-        "contact-email": "hello@guebbit.com",
+        "contact-email": "hello{'@'}guebbit.com",
         "contact-linkedin": "linkedin.com/in/andreaguerzoni",
         "contact-github": "github.com/Guebbit",
         "button-browse-products": "Browse Products",

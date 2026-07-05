@@ -11,7 +11,9 @@
             <VContainer max-width="1280">
                 <VCard class="pa-8 text-center" variant="tonal" color="secondary" rounded="xl">
                     <VIcon icon="$package" size="40" class="mb-4" />
-                    <h2 class="text-h5 font-weight-bold mb-3">{{ t('home-page.button-browse-products') }}</h2>
+                    <h2 class="text-h5 font-weight-bold mb-3">
+                        {{ t('home-page.button-browse-products') }}
+                    </h2>
                     <VBtn
                         :to="routerLinkI18n({ name: 'ProductsList' })"
                         color="secondary"

@@ -8,7 +8,12 @@
                 <!-- Text column -->
                 <VCol cols="12" md="7" lg="6" class="hero-text-col">
                     <div class="hero-eyebrow mb-3">
-                        <VChip color="primary" variant="tonal" size="small" class="font-weight-bold text-uppercase">
+                        <VChip
+                            color="primary"
+                            variant="tonal"
+                            size="small"
+                            class="font-weight-bold text-uppercase"
+                        >
                             {{ t('home-page.hero-eyebrow') }}
                         </VChip>
                     </div>
@@ -17,7 +22,10 @@
                         {{ t('home-page.hero-title') }}
                     </h1>
 
-                    <p class="hero-description text-body-1 text-md-h6 font-weight-regular mb-8" style="line-height: 1.7">
+                    <p
+                        class="hero-description text-body-1 text-md-h6 font-weight-regular mb-8"
+                        style="line-height: 1.7"
+                    >
                         {{ t('home-page.hero-description') }}
                     </p>
 
@@ -46,7 +54,12 @@
                 </VCol>
 
                 <!-- Profile image column -->
-                <VCol cols="12" md="5" lg="5" class="d-flex justify-center justify-md-end mt-10 mt-md-0">
+                <VCol
+                    cols="12"
+                    md="5"
+                    lg="5"
+                    class="d-flex justify-center justify-md-end mt-10 mt-md-0"
+                >
                     <div class="hero-avatar-wrapper">
                         <img
                             :src="PUBLIC_PATH + 'images/placeholder-profile.svg'"
@@ -77,7 +90,12 @@
 .hero-bg {
     position: absolute;
     inset: 0;
-    background: linear-gradient(135deg, rgb(var(--v-theme-primary), 0.06) 0%, rgb(var(--v-theme-secondary), 0.04) 60%, transparent 100%);
+    background: linear-gradient(
+        135deg,
+        rgb(var(--v-theme-primary), 0.06) 0%,
+        rgb(var(--v-theme-secondary), 0.04) 60%,
+        transparent 100%
+    );
     pointer-events: none;
 }
 
@@ -96,7 +114,11 @@
 }
 
 .hero-title {
-    background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
+    background: linear-gradient(
+        135deg,
+        rgb(var(--v-theme-primary)) 0%,
+        rgb(var(--v-theme-secondary)) 100%
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -140,13 +162,25 @@
 }
 
 @keyframes heroFloat {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-12px); }
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-12px);
+    }
 }
 
 @keyframes heroRing {
-    0%, 100% { transform: scale(1); opacity: 0.18; }
-    50% { transform: scale(1.04); opacity: 0.28; }
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.18;
+    }
+    50% {
+        transform: scale(1.04);
+        opacity: 0.28;
+    }
 }
 </style>
 

@@ -3,7 +3,11 @@
     <VAppBar class="page-header" density="comfortable" elevation="2">
         <template #prepend>
             <RouterLink :to="routerLinkI18n({ name: 'Home' })" class="logo-link">
-                <img alt="Guebbit logo" class="logo" :src="PUBLIC_PATH + 'images/guebbit-logo-colored.png'" />
+                <img
+                    alt="Guebbit logo"
+                    class="logo"
+                    :src="PUBLIC_PATH + 'images/guebbit-logo-colored.png'"
+                />
             </RouterLink>
         </template>
 
@@ -40,7 +44,11 @@
             <VBtn v-show="isAdmin" :to="routerLinkI18n({ name: 'Admin' })" prepend-icon="$admin">
                 {{ t('navigation.label-admin') }}
             </VBtn>
-            <VBtn v-show="isAdmin" :to="routerLinkI18n({ name: 'UsersList' })" prepend-icon="$account">
+            <VBtn
+                v-show="isAdmin"
+                :to="routerLinkI18n({ name: 'UsersList' })"
+                prepend-icon="$account"
+            >
                 {{ t('navigation.label-users-list', 2) }}
             </VBtn>
             <VBtn v-show="isAuth" :to="routerLinkI18n({ name: 'Profile' })">
@@ -103,17 +111,26 @@
                 <VListItem
                     prepend-icon="$account"
                     :title="t('navigation.label-about')"
-                    @click="scrollTo('home-about'); drawer = false"
+                    @click="
+                        scrollTo('home-about');
+                        drawer = false;
+                    "
                 />
                 <VListItem
                     prepend-icon="$briefcase"
                     :title="t('navigation.label-services')"
-                    @click="scrollTo('home-services'); drawer = false"
+                    @click="
+                        scrollTo('home-services');
+                        drawer = false;
+                    "
                 />
                 <VListItem
                     prepend-icon="$email"
                     :title="t('navigation.label-contact')"
-                    @click="scrollTo('home-contact'); drawer = false"
+                    @click="
+                        scrollTo('home-contact');
+                        drawer = false;
+                    "
                 />
             </template>
             <VDivider class="my-2" />
@@ -167,19 +184,28 @@
                 v-if="!isAuth"
                 prepend-icon="$login"
                 :title="t('navigation.label-login')"
-                @click="router.push(routerLinkI18n(loginContinueTo(route.fullPath))); drawer = false"
+                @click="
+                    router.push(routerLinkI18n(loginContinueTo(route.fullPath)));
+                    drawer = false;
+                "
             />
             <VListItem
                 v-if="!isAuth"
                 prepend-icon="$accountPlus"
                 :title="t('navigation.label-signup')"
-                @click="router.push(routerLinkI18n({ name: 'Signup' })); drawer = false"
+                @click="
+                    router.push(routerLinkI18n({ name: 'Signup' }));
+                    drawer = false;
+                "
             />
             <VListItem
                 v-if="isAuth"
                 prepend-icon="$logout"
                 :title="t('navigation.label-logout')"
-                @click="router.push(routerLinkI18n({ name: 'Logout' })); drawer = false"
+                @click="
+                    router.push(routerLinkI18n({ name: 'Logout' }));
+                    drawer = false;
+                "
             />
         </VList>
     </VNavigationDrawer>

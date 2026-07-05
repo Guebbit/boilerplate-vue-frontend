@@ -25,7 +25,10 @@
                         :class="['service-col', { revealed: isVisible }]"
                     >
                         <VCard
-                            :class="['service-card h-100 d-flex flex-column', { featured: pkg.featured }]"
+                            :class="[
+                                'service-card h-100 d-flex flex-column',
+                                { featured: pkg.featured }
+                            ]"
                             :color="pkg.featured ? 'primary' : undefined"
                             :variant="pkg.featured ? 'flat' : 'outlined'"
                             rounded="xl"
@@ -50,13 +53,20 @@
                                     {{ t(pkg.titleKey) }}
                                 </VCardTitle>
                                 <VCardSubtitle class="pa-0">
-                                    <VChip size="x-small" :color="pkg.featured ? 'white' : 'primary'" variant="tonal">
+                                    <VChip
+                                        size="x-small"
+                                        :color="pkg.featured ? 'white' : 'primary'"
+                                        variant="tonal"
+                                    >
                                         {{ t(pkg.durationKey) }}
                                     </VChip>
                                 </VCardSubtitle>
                             </VCardItem>
 
-                            <VCardText class="px-6 py-4 flex-grow-1 text-body-2" style="line-height: 1.7">
+                            <VCardText
+                                class="px-6 py-4 flex-grow-1 text-body-2"
+                                style="line-height: 1.7"
+                            >
                                 {{ t(pkg.descKey) }}
                             </VCardText>
 
@@ -91,7 +101,9 @@
 }
 
 .service-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease;
     border-color: rgba(var(--v-border-color), 0.12) !important;
 }
 
@@ -108,7 +120,9 @@
 .reveal-block {
     opacity: 0;
     transform: translateY(24px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
+    transition:
+        opacity 0.6s ease,
+        transform 0.6s ease;
 }
 
 .reveal-block.revealed {
@@ -119,7 +133,9 @@
 .service-col {
     opacity: 0;
     transform: translateY(28px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
+    transition:
+        opacity 0.6s ease,
+        transform 0.6s ease;
 }
 
 .service-col.revealed {

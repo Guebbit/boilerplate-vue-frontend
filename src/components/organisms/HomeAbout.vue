@@ -10,18 +10,16 @@
                         <h2 class="text-h4 text-md-h3 font-weight-black mb-6">
                             {{ t('home-page.about-title') }}
                         </h2>
-                        <p class="text-body-1 text-medium-emphasis mb-10" style="max-width: 760px; line-height: 1.8">
+                        <p
+                            class="text-body-1 text-medium-emphasis mb-10"
+                            style="max-width: 760px; line-height: 1.8"
+                        >
                             {{ t('home-page.about-body') }}
                         </p>
 
                         <!-- Highlight stats -->
                         <VRow class="about-stats">
-                            <VCol
-                                v-for="stat in stats"
-                                :key="stat.label"
-                                cols="12"
-                                sm="4"
-                            >
+                            <VCol v-for="stat in stats" :key="stat.label" cols="12" sm="4">
                                 <VCard
                                     class="about-stat-card text-center pa-6"
                                     variant="tonal"
@@ -31,7 +29,9 @@
                                     <div class="text-h3 font-weight-black text-primary mb-1">
                                         {{ stat.value }}
                                     </div>
-                                    <div class="text-body-2 text-medium-emphasis font-weight-medium">
+                                    <div
+                                        class="text-body-2 text-medium-emphasis font-weight-medium"
+                                    >
                                         {{ stat.label }}
                                     </div>
                                 </VCard>
@@ -54,7 +54,9 @@
 }
 
 .about-stat-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease;
 }
 
 .about-stat-card:hover {
@@ -66,7 +68,9 @@
 .reveal-block {
     opacity: 0;
     transform: translateY(32px);
-    transition: opacity 0.7s ease, transform 0.7s ease;
+    transition:
+        opacity 0.7s ease,
+        transform 0.7s ease;
 }
 
 .reveal-block.revealed {
@@ -92,8 +96,14 @@ const { el, isVisible } = useScrollReveal();
  * Stats shown as highlight cards below the about text.
  */
 const stats = computed(() => [
-    { value: t('home-page.about-highlight-1-value'), label: t('home-page.about-highlight-1-label') },
-    { value: t('home-page.about-highlight-2-value'), label: t('home-page.about-highlight-2-label') },
+    {
+        value: t('home-page.about-highlight-1-value'),
+        label: t('home-page.about-highlight-1-label')
+    },
+    {
+        value: t('home-page.about-highlight-2-value'),
+        label: t('home-page.about-highlight-2-label')
+    },
     { value: t('home-page.about-highlight-3-value'), label: t('home-page.about-highlight-3-label') }
 ]);
 </script>
