@@ -217,7 +217,7 @@ import {
 } from 'vuetify/components';
 import AppLanguageSwitcher from '@/components/organisms/AppLanguageSwitcher.vue';
 import { routerLinkI18n } from '@/utils/i18n.ts';
-import { loginContinueTo } from '@/utils/navigation.ts';
+import { loginContinueTo, scrollToSection as scrollTo } from '@/utils/navigation.ts';
 import { PUBLIC_PATH } from '@/utils/constants';
 import { useProfileStore } from '@/stores/profile.ts';
 
@@ -234,12 +234,4 @@ const drawer = ref(false);
  * True when the user is on the home route — shows anchor nav items.
  */
 const isHomePage = computed(() => route.name === 'Home');
-
-/*
- * Smooth-scroll to a homepage section by element id.
- * @param id - target element id
- */
-function scrollTo(id: string) {
-    document.querySelector(`#${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
 </script>

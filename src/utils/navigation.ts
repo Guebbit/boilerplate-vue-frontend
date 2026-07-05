@@ -19,3 +19,12 @@ export const loginContinueTo = (path: string, locale?: string) => {
         }
     };
 };
+
+/*
+ * Smooth-scroll to a page section by its element id.
+ * IDs are always compile-time constants from our own components — no user input.
+ * @param id - target element id (e.g. "home-contact")
+ */
+export const scrollToSection = (id: string) => {
+    document.querySelector(`#${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};

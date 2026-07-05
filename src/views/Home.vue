@@ -28,18 +28,6 @@
     </LayoutDefault>
 </template>
 
-<style lang="scss">
-#home-page {
-    /* Remove default page-content padding so hero can be full-width */
-    .page-content {
-        padding-top: 0 !important;
-    }
-
-    /* Smooth section scroll */
-    scroll-behavior: smooth;
-}
-</style>
-
 <script lang="ts">
 export default {
     name: 'HomePage'
@@ -57,14 +45,7 @@ import HomeExpertise from '@/components/organisms/HomeExpertise.vue';
 import HomeServices from '@/components/organisms/HomeServices.vue';
 import HomeContact from '@/components/organisms/HomeContact.vue';
 import { routerLinkI18n } from '@/utils/i18n.ts';
+import { scrollToSection } from '@/utils/navigation.ts';
 
 const { t } = useI18n();
-
-/*
- * Smooth-scroll to a section by element id.
- * @param id - target element id string
- */
-function scrollToSection(id: string) {
-    document.querySelector(`#${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
 </script>

@@ -162,7 +162,7 @@ import { PUBLIC_PATH } from '@/utils/constants';
 const { t } = useI18n();
 
 /*
- * @emits scrollTo - section element id to scroll to
+ * @emits scrollTo - section element id to scroll to (use @scroll-to in templates)
  */
 defineEmits<{ scrollTo: [id: string] }>();
 </script>

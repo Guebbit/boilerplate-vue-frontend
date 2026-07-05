@@ -155,7 +155,7 @@ const { t } = useI18n();
 const { el, isVisible } = useScrollReveal();
 
 /*
- * @emits scrollTo - section element id to scroll to
+ * @emits scrollTo - section element id to scroll to (use @scroll-to in templates)
  */
 defineEmits<{ scrollTo: [id: string] }>();
 
