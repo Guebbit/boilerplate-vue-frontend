@@ -22,7 +22,10 @@
                         sm="6"
                         lg="3"
                         :style="{ transitionDelay: `${i * 100}ms` }"
-                        :class="['service-col', { revealed: isVisible }]"
+                        :class="[
+                            'service-col',
+                            { revealed: isVisible, 'service-col-featured': pkg.featured }
+                        ]"
                     >
                         <VCard
                             :class="[
@@ -93,7 +96,30 @@
 
 <style scoped>
 .services-section {
+    position: relative;
+    overflow: hidden;
     background: rgb(var(--v-theme-surface));
+}
+
+/* Ambient glow */
+.services-section::after {
+    content: '';
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    top: -180px;
+    right: -160px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgb(var(--v-theme-primary), 0.1), transparent 70%);
+    filter: blur(70px);
+    pointer-events: none;
+    animation: servicesDrift 22s ease-in-out infinite alternate;
+}
+
+@keyframes servicesDrift {
+    to {
+        transform: translate(-70px, 70px) scale(1.2);
+    }
 }
 
 .section-eyebrow {
@@ -101,19 +127,79 @@
 }
 
 .service-card {
+    position: relative;
+    overflow: hidden;
     transition:
-        transform 0.3s ease,
-        box-shadow 0.3s ease;
-    border-color: rgba(var(--v-border-color), 0.12) !important;
+        transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 0.4s ease;
+    border-color: rgba(var(--v-border-color), 0.12);
+}
+
+/* Shine sweep on hover */
+.service-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -80%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+    transform: skewX(-20deg);
+    transition: left 0.7s ease;
+    pointer-events: none;
 }
 
 .service-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 20px 50px rgb(var(--v-theme-primary), 0.15) !important;
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 24px 56px rgb(var(--v-theme-primary), 0.2);
 }
 
+.service-card:hover::after {
+    left: 130%;
+}
+
+/* Featured card breathes with a pulsing glow */
 .service-card.featured {
-    box-shadow: 0 8px 32px rgb(var(--v-theme-primary), 0.35) !important;
+    animation: featuredGlow 4s ease-in-out infinite;
+}
+
+@keyframes featuredGlow {
+    0%,
+    100% {
+        box-shadow: 0 8px 32px rgb(var(--v-theme-primary), 0.35);
+    }
+    50% {
+        box-shadow: 0 12px 48px rgb(var(--v-theme-primary), 0.55);
+    }
+}
+
+/* Rotating conic halo behind the featured card */
+.service-col-featured {
+    position: relative;
+    z-index: 0;
+}
+
+.service-col-featured::before {
+    content: '';
+    position: absolute;
+    inset: 4px;
+    border-radius: 28px;
+    background: conic-gradient(
+        from 0deg,
+        rgb(var(--v-theme-primary), 0.6),
+        rgb(var(--v-theme-secondary), 0.6),
+        rgb(var(--v-theme-info), 0.5),
+        rgb(var(--v-theme-primary), 0.6)
+    );
+    filter: blur(18px);
+    z-index: -1;
+    animation: featuredHalo 8s linear infinite;
+}
+
+@keyframes featuredHalo {
+    to {
+        filter: blur(18px) hue-rotate(360deg);
+    }
 }
 
 /* Entrance */
@@ -132,15 +218,30 @@
 
 .service-col {
     opacity: 0;
-    transform: translateY(28px);
+    transform: translateY(28px) scale(0.97);
     transition:
         opacity 0.6s ease,
-        transform 0.6s ease;
+        transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .service-col.revealed {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .services-section::after,
+    .service-card.featured,
+    .service-col-featured::before {
+        animation: none;
+    }
+
+    .reveal-block,
+    .service-col {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
 }
 </style>
 
