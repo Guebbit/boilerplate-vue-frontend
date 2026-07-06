@@ -90,7 +90,6 @@ export default { name: 'SpaceStarfield' };
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 
 /*
  * Deterministic pseudo-random generator (Park–Miller LCG).
@@ -129,7 +128,7 @@ function buildStars(seed: number, count: number, maxSize: number): string {
     return stars.join(',');
 }
 
-const farStars = computed(() => buildStars(7, 34, 0.8));
-const midStars = computed(() => buildStars(21, 24, 1.1));
-const nearStars = computed(() => buildStars(42, 14, 1.6));
+const farStars = buildStars(7, 34, 0.8);
+const midStars = buildStars(21, 24, 1.1);
+const nearStars = buildStars(42, 14, 1.6);
 </script>

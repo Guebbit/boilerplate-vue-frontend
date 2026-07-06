@@ -35,7 +35,7 @@
                         size="large"
                         rounded="xl"
                         elevation="4"
-                        :href="'mailto:' + t('home-page.contact-email')"
+                        :href="mailtoLink"
                         prepend-icon="$email"
                     >
                         {{ t('home-page.contact-cta-primary') }}
@@ -45,7 +45,7 @@
                         color="primary"
                         size="large"
                         rounded="xl"
-                        :href="'mailto:' + t('home-page.contact-email')"
+                        :href="mailtoLink"
                         prepend-icon="$email"
                     >
                         {{ t('home-page.contact-cta-secondary') }}
@@ -77,7 +77,7 @@
                         aria-label="LinkedIn"
                     />
                     <VBtn
-                        :href="'mailto:' + t('home-page.contact-email')"
+                        :href="mailtoLink"
                         variant="tonal"
                         color="info"
                         icon="$email"
@@ -255,10 +255,16 @@ export default { name: 'HomeContact' };
 </script>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import { VBtn, VContainer } from 'vuetify/components';
 import { useI18n } from 'vue-i18n';
 import { useScrollReveal } from '@/composables/useScrollReveal';
 
 const { t } = useI18n();
 const { el, isVisible } = useScrollReveal();
+
+/*
+ * mailto: link built once from the localized contact email.
+ */
+const mailtoLink = computed(() => 'mailto:' + t('home-page.contact-email'));
 </script>
