@@ -90,7 +90,6 @@ export default { name: 'SpaceStarfield' };
 </script>
 
 <script setup lang="ts">
-
 /*
  * Deterministic pseudo-random generator (Park–Miller LCG).
  * Same seed = same sky on every render — zero hydration/layout shift.

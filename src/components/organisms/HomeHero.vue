@@ -23,7 +23,9 @@
                         </VChip>
                     </div>
 
-                    <h1 class="hero-title hero-enter hero-enter-2 text-h3 text-md-h2 font-weight-black mb-5">
+                    <h1
+                        class="hero-title hero-enter hero-enter-2 text-h3 text-md-h2 font-weight-black mb-5"
+                    >
                         {{ t('home-page.hero-title') }}
                     </h1>
 
