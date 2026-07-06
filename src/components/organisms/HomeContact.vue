@@ -1,18 +1,23 @@
 <template>
     <section id="home-contact" ref="el" class="contact-section py-16 py-md-24">
-        <!-- Gradient backdrop -->
-        <div class="contact-bg" aria-hidden="true" />
-
-        <!-- Drifting aurora blobs -->
-        <div class="contact-aurora contact-aurora-1" aria-hidden="true" />
-        <div class="contact-aurora contact-aurora-2" aria-hidden="true" />
+        <!-- Radar ping: expanding signal rings behind the beacon -->
+        <div class="signal-field" aria-hidden="true">
+            <div class="signal-ring signal-ring-1" />
+            <div class="signal-ring signal-ring-2" />
+            <div class="signal-ring signal-ring-3" />
+            <div class="signal-core" />
+        </div>
 
         <VContainer max-width="1280" class="contact-container">
             <div :class="['text-center reveal-block', { revealed: isVisible }]">
-                <p class="section-eyebrow text-overline font-weight-bold text-primary mb-2">
-                    {{ t('home-page.contact-eyebrow') }}
-                </p>
-                <h2 class="text-h4 text-md-h3 font-weight-black mb-5">
+                <div class="chapter-marker justify-center mb-4">
+                    <span class="chapter-number">04</span>
+                    <span class="chapter-line" aria-hidden="true" />
+                    <span class="section-eyebrow text-overline font-weight-bold">
+                        {{ t('home-page.contact-eyebrow') }}
+                    </span>
+                </div>
+                <h2 class="contact-title text-h4 text-md-h3 font-weight-black mb-5">
                     {{ t('home-page.contact-title') }}
                 </h2>
                 <p
@@ -92,63 +97,103 @@
     overflow: hidden;
 }
 
-.contact-bg {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        135deg,
-        rgb(var(--v-theme-primary), 0.05) 0%,
-        rgb(var(--v-theme-secondary), 0.04) 100%
-    );
-}
-
-/* Drifting aurora blobs */
-.contact-aurora {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.3;
-    pointer-events: none;
-    animation: contactAurora 20s ease-in-out infinite alternate;
-}
-
-.contact-aurora-1 {
-    width: 440px;
-    height: 440px;
-    top: -140px;
-    left: -120px;
-    background: radial-gradient(circle, rgb(var(--v-theme-primary), 0.5), transparent 70%);
-}
-
-.contact-aurora-2 {
-    width: 380px;
-    height: 380px;
-    bottom: -120px;
-    right: -100px;
-    background: radial-gradient(circle, rgb(var(--v-theme-secondary), 0.45), transparent 70%);
-    animation-delay: -8s;
-    animation-duration: 24s;
-}
-
-@keyframes contactAurora {
-    0% {
-        transform: translate(0, 0) scale(1);
-    }
-    100% {
-        transform: translate(50px, -40px) scale(1.15);
-    }
-}
-
 .contact-container {
     position: relative;
     z-index: 1;
 }
 
-.section-eyebrow {
-    letter-spacing: 0.12em;
+/* Signal field: concentric rings expanding from a glowing core */
+.signal-field {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
 }
 
-/* Pulsing glow on primary CTA */
+.signal-core {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgb(var(--v-theme-tertiary));
+    box-shadow: 0 0 24px rgb(var(--v-theme-tertiary));
+    animation: corePulse 3s ease-in-out infinite;
+}
+
+@keyframes corePulse {
+    0%,
+    100% {
+        opacity: 0.5;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.5);
+    }
+}
+
+.signal-ring {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    border: 1px solid rgba(77, 208, 225, 0.5);
+    border-radius: 50%;
+    opacity: 0;
+    animation: signalPing 6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+.signal-ring-2 {
+    animation-delay: 2s;
+}
+
+.signal-ring-3 {
+    animation-delay: 4s;
+}
+
+@keyframes signalPing {
+    0% {
+        opacity: 0.7;
+        transform: scale(0.3);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(8);
+    }
+}
+
+/* Chapter marker */
+.chapter-marker {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.chapter-number {
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    color: rgb(var(--v-theme-primary));
+}
+
+.chapter-line {
+    display: inline-block;
+    height: 1px;
+    width: 64px;
+    background: linear-gradient(90deg, rgb(var(--v-theme-primary), 0.8), transparent);
+}
+
+.section-eyebrow {
+    letter-spacing: 0.18em;
+    color: rgb(var(--v-theme-primary));
+}
+
+.contact-title {
+    color: #eef2ff;
+}
+
+/* Pulsing glow on primary CTA — the transmission beacon */
 .contact-cta-glow {
     animation: contactCtaPulse 3s ease-in-out infinite;
 }
@@ -186,9 +231,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .contact-aurora,
+    .signal-core,
+    .signal-ring,
     .contact-cta-glow {
         animation: none;
+    }
+
+    .signal-ring {
+        opacity: 0.25;
+        transform: scale(3);
     }
 
     .reveal-block {
