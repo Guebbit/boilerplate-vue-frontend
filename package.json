@@ -38,8 +38,7 @@
         "genasyncapi": "tsx scripts/gen-asyncapi-types.ts",
         "update:all": "npm-check-updates -u",
         "complete": "npm run build && npm run lint:fix && npm run lint:openapi && npm run prettier:fix && npm run test",
-        "complete:check": "npm run build && npm run lint && npm run lint:openapi && npm run prettier:check && npm run test",
-        "publish:public": "npm run complete && npm publish --access public"
+         "publish:public": "npm run complete && npm publish --access public"
     },
     "dependencies": {
         "@guebbit/js-toolkit": "^1.0.8",
