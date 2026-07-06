@@ -206,6 +206,19 @@ export default defineConfigWithVueTs(
     },
 
     /**
+     * CommonJS config files (e.g. .commitlintrc.cjs) run under Node, not the browser.
+     */
+    {
+        files: ['**/*.cjs'],
+        languageOptions: {
+            globals: {
+                ...globals.node
+            },
+            sourceType: 'commonjs'
+        }
+    },
+
+    /**
      * Specific naming conventions for components (PascalCase)
      * WARNING: Slows down a lot
      */

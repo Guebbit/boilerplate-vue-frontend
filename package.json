@@ -38,7 +38,9 @@
         "genasyncapi": "tsx scripts/gen-asyncapi-types.ts",
         "update:all": "npm-check-updates -u",
         "complete": "npm run build && npm run lint:fix && npm run lint:openapi && npm run prettier:fix && npm run test",
-         "publish:public": "npm run complete && npm publish --access public"
+        "complete:check": "npm run build && npm run lint && npm run lint:openapi && npm run prettier:check && npm run test",
+        "publish:public": "npm run complete && npm publish --access public",
+        "prepare": "husky"
     },
     "dependencies": {
         "@guebbit/js-toolkit": "^1.0.8",
@@ -47,6 +49,7 @@
         "@sentry/replay": "^7.116.0",
         "@sentry/vue": "^10.51.0",
         "axios": "^1.13.6",
+        "lucide-vue-next": "^1.0.0",
         "pinia": "^3.0.4",
         "posthog-js": "^1.381.0",
         "vue": "^3.5.29",
@@ -57,6 +60,8 @@
     },
     "devDependencies": {
         "@asyncapi/modelina": "^5.10.1",
+        "@commitlint/cli": "^21.2.0",
+        "@commitlint/config-conventional": "^21.2.0",
         "@eslint/eslintrc": "^3.3.5",
         "@eslint/js": "^9.39.2",
         "@faker-js/faker": "^10.4.0",
@@ -79,6 +84,7 @@
         "eslint-plugin-unicorn": "^63.0.0",
         "eslint-plugin-vue": "~10.8.0",
         "globals": "^17.4.0",
+        "husky": "^9.1.7",
         "jiti": "^2.6.1",
         "jsdom": "^28.1.0",
         "mermaid": "^11.15.0",
