@@ -13,29 +13,214 @@ concurrency:
     group: ci-${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
 
+env:
+    NODE_VERSION: 22
+
 jobs:
-    validate:
-        # Single "quality gate" job for this boilerplate.
+    commitlint:
+        # Lint pushed commit messages against the conventional-commit rules in .commitlintrc.cjs.
+        # Only meaningful on push (needs the before/after SHAs from the push event).
+        if: github.event_name == 'push'
         runs-on: ubuntu-latest
-        timeout-minutes: 30
-        # Principle of least privilege:
-        # workflow only needs to read repository contents.
+        timeout-minutes: 5
         permissions:
             contents: read
         steps:
-            # 1) Get the repository code.
             - name: Checkout
               uses: actions/checkout@v4
+              with:
+                  # Need full history to walk the pushed commit range.
+                  fetch-depth: 0
 
-            # 2) Configure Node and npm cache for faster installs.
             - name: Setup Node
               uses: actions/setup-node@v4
               with:
-                  node-version: 22
+                  node-version: ${{ env.NODE_VERSION }}
                   cache: npm
                   cache-dependency-path: package-lock.json
 
-            # 3) Cache the Cypress binary too, so e2e does not re-download it every run.
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Lint commit messages
+              run: npx commitlint --from ${{ github.event.before }} --to ${{ github.event.after }} --verbose
+
+    lint:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Lint
+              run: npm run lint
+
+    prettier:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Check formatting
+              run: npm run prettier:check
+
+    lint-openapi:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Lint OpenAPI spec
+              run: npm run lint:openapi
+
+    api-freshness:
+        # Verify the committed generated API client is up-to-date with openapi.yaml.
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Check generated API client is fresh
+              run: |
+                  npm run genapi
+                  if ! git diff --exit-code -- api/; then
+                      echo "Generated api/ is stale. Run 'npm run genapi' and commit the changes."
+                      exit 1
+                  fi
+
+    typecheck:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Type check
+              run: npm run type-check-only
+
+    build:
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build
+              run: npm run build-only
+
+    test-unit:
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Run unit tests
+              run: npm run test:unit
+
+    test-e2e:
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+
             - name: Cache Cypress binary
               uses: actions/cache@v4
               with:
@@ -44,19 +229,31 @@ jobs:
                   restore-keys: |
                       cypress-${{ runner.os }}-
 
-            # 4) Install exact lockfile dependencies (reproducible builds).
             - name: Install dependencies
               run: npm ci
 
-            # 5) Verify the committed generated API client is up-to-date with openapi.yaml.
-            - name: Check generated API freshness
+            - name: Run e2e tests
+              run: npm run test:e2e
+
+    ci:
+        # Single status check to require in branch protection, so adding/renaming
+        # jobs above doesn't require updating the required-checks list every time.
+        if: always()
+        needs:
+            - lint
+            - prettier
+            - lint-openapi
+            - api-freshness
+            - typecheck
+            - build
+            - test-unit
+            - test-e2e
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        steps:
+            - name: Check all jobs succeeded
               run: |
-                  npm run genapi
-                  if ! git diff --exit-code -- api/; then
-                      echo "Generated api/ is stale. Run 'npm run genapi' and commit the changes."
+                  if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+                      echo "One or more required jobs failed."
                       exit 1
                   fi
-
-            # 6) Run the strict repository validation gate; npm scripts already include unit + e2e.
-            - name: Complete validation check
-              run: npm run complete:check
