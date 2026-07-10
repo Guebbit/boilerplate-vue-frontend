@@ -21,7 +21,7 @@ flowchart LR
 
     subgraph Client ["Generated client"]
         direction TB
-        Fn["api/index.ts\ntyped axios function"]
+        Fn["contracts/rest/index.ts\ntyped axios function"]
         HTTP["utils/http.ts\ninterceptors"]
         Fn --> HTTP
     end
@@ -97,7 +97,7 @@ flowchart LR
 | View / template | Renders data, captures user events, delegates to composables |
 | Composable | Encapsulates form state, validation, and list logic for a specific feature |
 | Pinia store | Orchestrates API calls, holds reactive data, exposes actions |
-| Generated client (`api/index.ts`) | Typed axios function per operation — regenerated from `openapi.yaml` |
+| Generated client (`contracts/rest/index.ts`) | Typed axios function per operation — regenerated from `openapi.yaml` |
 | `utils/http.ts` | Single axios instance; request/response interceptors; shapes errors into `IResponseReject` |
 | MSW (dev/test) | Intercepts HTTP before it leaves the browser; returns deterministic in-memory responses |
 | Router guards | `isAuth`, `isAdmin`, `isGuest` — run before the view is entered; redirect on failure |

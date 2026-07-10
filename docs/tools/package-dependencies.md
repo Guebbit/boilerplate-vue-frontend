@@ -20,7 +20,7 @@ Groups are organised by concern, with same-namespace tools together where that h
 | ----- | -------- | ------------------- | --------- |
 | Build toolchain | `vite`, `@vitejs/plugin-vue`, `vue-tsc`, `sass`, `sass-embedded` | SFC compilation, type-check, styles | [Runtime](./runtime.md) |
 | TypeScript | `typescript` | source language | [Runtime](./runtime.md) |
-| API codegen | `orval`, `@faker-js/faker` | generate `api/` from `openapi.yaml`; faker for MSW stubs | [OpenAPI Workflow](../api/openapi-workflow.md) |
+| API codegen | `orval`, `@faker-js/faker` | generate `contracts/rest/` from `openapi.yaml`; faker for MSW stubs | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | AsyncAPI codegen | `@asyncapi/cli`, `@asyncapi/modelina` | validate `asyncapi.yaml`; generate `src/types/realtime.generated.ts` | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 | OpenAPI linting | `@stoplight/spectral-cli`, `@stoplight/spectral-rulesets` | lint `openapi.yaml` against `spectral.yaml` | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | Mocking | `msw` | MSW service worker + Node adapter for dev and tests | [Mocking (MSW)](./mocking.md) |

@@ -92,7 +92,7 @@ The Audit Log tab passes these filters from `IAdminAuditFilters` reactive state 
 
 ## Types
 
-All response types are driven by `openapi.yaml` and generated into `api/index.ts`:
+All response types are driven by `openapi.yaml` and generated into `contracts/rest/index.ts`:
 `AdminHealth`, `AdminMetricsSummary`, `AuditEventItem`, etc.
 
 View-model types specific to the FE layout (`IAdminKpi`, `IAdminAuditFilters`) live in `src/features/admin/types.ts`.

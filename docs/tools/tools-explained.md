@@ -83,11 +83,11 @@ Each section links to the dedicated page for configuration details and code poin
 
 ### Orval
 
-**What it is.** Orval is a code generator that reads `openapi.yaml` and outputs a typed axios client, Zod schemas, and MSW mock stubs. The generated `api/` directory is a derived artifact — never edit it by hand.
+**What it is.** Orval is a code generator that reads `openapi.yaml` and outputs a typed axios client, Zod schemas, and MSW mock stubs. The generated `contracts/rest/` directory is a derived artifact — never edit it by hand.
 
 **Problem it solves.** Maintaining a typed API client alongside the spec means they inevitably drift. Code generation makes the client an output of the spec.
 
-**In this repo.** `npm run genapi` regenerates `api/index.ts` (axios functions), `api/schemas.zod.ts` (Zod schemas), and `tests/mocks/generated.ts` (MSW stubs). Configured in `orval.config.ts`.
+**In this repo.** `npm run genapi` regenerates `contracts/rest/index.ts` (axios functions), `contracts/rest/schemas.zod.ts` (Zod schemas), and `tests/mocks/generated.ts` (MSW stubs). Configured in `orval.config.ts`.
 
 → [OpenAPI Workflow](../api/openapi-workflow.md)
 
@@ -111,7 +111,7 @@ Each section links to the dedicated page for configuration details and code poin
 
 **Problem it solves.** External input (form data, API responses at runtime boundaries) is untyped. Zod enforces shape and type at the boundary and narrows the TypeScript type automatically.
 
-**In this repo.** Zod schemas are generated from `openapi.yaml` by orval into `api/schemas.zod.ts`. Import them from `@api/schemas` — never hand-write schemas that duplicate the spec.
+**In this repo.** Zod schemas are generated from `openapi.yaml` by orval into `contracts/rest/schemas.zod.ts`. Import them from `@api/schemas` — never hand-write schemas that duplicate the spec.
 
 → [OpenAPI Workflow](../api/openapi-workflow.md)
 
@@ -199,7 +199,7 @@ Each section links to the dedicated page for configuration details and code poin
 
 **Problem it solves.** Unit tests cover logic; e2e tests cover the full user journey — navigating, filling forms, checking what's rendered. Cypress catches integration failures that unit tests miss.
 
-**In this repo.** E2E specs live in `cypress/e2e/`. `npm run test:e2e` boots Vite (with MSW) and runs Cypress headlessly. `test:e2e:dev` opens the Cypress UI.
+**In this repo.** E2E specs live in `tests/e2e/specs/`. `npm run test:e2e` boots Vite (with MSW) and runs Cypress headlessly. `test:e2e:dev` opens the Cypress UI.
 
 → [Testing](./testing-and-docs.md)
 

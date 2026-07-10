@@ -20,9 +20,9 @@ export default defineConfig({
             // eslint-disable-next-line @typescript-eslint/naming-convention
             '@types': fileURLToPath(new URL('src/types', import.meta.url)),
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            '@api': fileURLToPath(new URL('api/index', import.meta.url)),
+            '@api': fileURLToPath(new URL('contracts/rest/index', import.meta.url)),
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            '@api/schemas': fileURLToPath(new URL('api/schemas.zod', import.meta.url))
+            '@api/schemas': fileURLToPath(new URL('contracts/rest/schemas.zod', import.meta.url))
         }
     },
     css: {

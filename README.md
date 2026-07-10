@@ -100,7 +100,7 @@ Every tool below has a one-line "why we use it" + a link to its official documen
 | **[Vitest](https://vitest.dev/)**                                              | Unit tests (`tests/unit/`, `vitest.config.ts`)     | [vitest.dev/guide](https://vitest.dev/guide/)                              |
 | **[@vue/test-utils](https://test-utils.vuejs.org/)**                           | Component mounting/assertions                      | [test-utils.vuejs.org/guide](https://test-utils.vuejs.org/guide/)          |
 | **[jsdom](https://github.com/jsdom/jsdom)**                                    | DOM environment for unit tests                     | [jsdom readme](https://github.com/jsdom/jsdom#readme)                      |
-| **[Cypress](https://www.cypress.io/)**                                         | E2E tests (`cypress/e2e/`)                         | [docs.cypress.io](https://docs.cypress.io/)                                |
+| **[Cypress](https://www.cypress.io/)**                                         | E2E tests (`tests/e2e/specs/`)                     | [docs.cypress.io](https://docs.cypress.io/)                                |
 | **[MSW](https://mswjs.io/)**                                                   | Request mocking for dev + Cypress (`tests/mocks/`) | [mswjs.io/docs](https://mswjs.io/docs/)                                    |
 | **[start-server-and-test](https://github.com/bahmutov/start-server-and-test)** | Boots Vite + waits before running Cypress          | [package readme](https://github.com/bahmutov/start-server-and-test#readme) |
 
@@ -129,7 +129,7 @@ flowchart LR
     end
 
     subgraph Generated["📦 Generated layer"]
-        API["/api OpenAPI client<br/>(axios + types)"]
+        API["contracts/rest OpenAPI client<br/>(axios + types)"]
     end
 
     subgraph Shared["🔧 Shared utils"]
@@ -190,14 +190,16 @@ src/
 ├── App.vue
 └── main.ts          bootstrap (Pinia + Router + i18n + Vuetify + Sentry + PostHog + MSW)
 
-api/
-├── index.ts         generated axios functions + TS types  (DO NOT edit by hand)
-└── schemas.zod.ts   generated Zod schemas                 (DO NOT edit by hand)
-tests/mocks/
-├── generated.ts     orval-generated MSW stubs + faker factories (DO NOT edit)
-└── handlers/        hand-written MSW handlers with in-memory DB logic
-cypress/             e2e specs
-tests/               vitest unit tests
+contracts/
+└── rest/
+    ├── index.ts         generated axios functions + TS types  (DO NOT edit by hand)
+    └── schemas.zod.ts   generated Zod schemas                 (DO NOT edit by hand)
+tests/
+├── mocks/
+│   ├── generated.ts   orval-generated MSW stubs + faker factories (DO NOT edit)
+│   └── handlers/      hand-written MSW handlers with in-memory DB logic
+├── unit/              vitest unit tests
+└── e2e/               Cypress e2e specs, fixtures, support
 openapi.yaml         API contract (source of truth)
 asyncapi.yaml        Realtime contract (source of truth)
 spectral.yaml        OpenAPI lint rules
@@ -319,7 +321,7 @@ Reference: [`.env-example`](./.env-example).
 | `npm run test:unit`      | [Vitest](https://vitest.dev/) unit tests                                                |
 | `npm run test:e2e`       | Start Vite (with MSW) + run [Cypress](https://www.cypress.io/) e2e                      |
 | `npm run test`           | `test:unit` then `test:e2e`                                                             |
-| `npm run genapi`         | Regenerate `/api` client from `openapi.yaml`                                            |
+| `npm run genapi`         | Regenerate `contracts/rest` client from `openapi.yaml`                                  |
 | `npm run genasyncapi`    | Run `tsx scripts/gen-asyncapi-types.ts` to regenerate `src/types/realtime.generated.ts` |
 | `npm run complete`       | build + lint:fix + lint:openapi + prettier:fix + tests (local hardening)                |
 | `npm run complete:check` | build + lint + lint:openapi + prettier:check + tests (CI gate)                          |
@@ -346,7 +348,7 @@ npm run complete:check
 
 ## OpenAPI contract flow
 
-`openapi.yaml` is the contract; the `/api` folder is **generated**. Never hand-edit `/api`.
+`openapi.yaml` is the contract; the `contracts/rest` folder is **generated**. Never hand-edit `contracts/rest`.
 
 ```mermaid
 flowchart LR
@@ -354,8 +356,8 @@ flowchart LR
     L -- no --> X[Fix contract]
     X --> A
     L -- yes --> G[npm run genapi]
-    G --> CLIENT[api/index.ts<br/>typed axios functions]
-    G --> ZOD[api/schemas.zod.ts<br/>Zod schemas]
+    G --> CLIENT[contracts/rest/index.ts<br/>typed axios functions]
+    G --> ZOD[contracts/rest/schemas.zod.ts<br/>Zod schemas]
     G --> MOCKS[tests/mocks/generated.ts<br/>MSW handler stubs]
     CLIENT --> STORES[Pinia stores call<br/>generated functions]
     ZOD --> STORES
@@ -367,7 +369,7 @@ Steps:
 
 1. Edit [`openapi.yaml`](./openapi.yaml).
 2. `npm run lint:openapi` — must be green.
-3. `npm run genapi` — regenerates `/api` (commit the diff).
+3. `npm run genapi` — regenerates `contracts/rest` (commit the diff).
 4. Update store/view usages if any operation signatures changed.
     - Import Zod schemas from `@api/schemas` instead of writing them by hand.
     - Use `tests/mocks/generated.ts` as a skeleton if you need a new MSW handler stub.
@@ -411,7 +413,7 @@ Single axios instance lives in `src/utils/http.ts`, wired into the generated cli
 sequenceDiagram
     autonumber
     participant V as View / Store
-    participant S as Generated function<br/>(api/index.ts)
+    participant S as Generated function<br/>(contracts/rest/index.ts)
     participant H as utils/http.ts<br/>(axios + interceptors)
     participant B as Backend (or MSW)
     V->>S: login({...})
@@ -489,10 +491,10 @@ Official: [mswjs.io/docs](https://mswjs.io/docs/) · [browser integration](https
 
 ## Testing
 
-| Layer | Tool                                                                                                                       | Where          |
-| ----- | -------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| Unit  | [Vitest](https://vitest.dev/) + [@vue/test-utils](https://test-utils.vuejs.org/) + [jsdom](https://github.com/jsdom/jsdom) | `tests/unit/`  |
-| E2E   | [Cypress](https://www.cypress.io/) + MSW                                                                                   | `cypress/e2e/` |
+| Layer | Tool                                                                                                                       | Where              |
+| ----- | -------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| Unit  | [Vitest](https://vitest.dev/) + [@vue/test-utils](https://test-utils.vuejs.org/) + [jsdom](https://github.com/jsdom/jsdom) | `tests/unit/`      |
+| E2E   | [Cypress](https://www.cypress.io/) + MSW                                                                                   | `tests/e2e/specs/` |
 
 Commands:
 

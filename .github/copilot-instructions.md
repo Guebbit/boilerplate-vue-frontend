@@ -19,8 +19,8 @@ Human-facing docs: [README.md](../README.md) · [PAIRING.md](../PAIRING.md).
 - Keep code KISS.
 - Prefer composables/stores over duplicated view logic.
 - `openapi.yaml` first. Contract and all generated code starts there.
-- Use generated API functions from `@api` (`api/index.ts`); avoid manual endpoint wrappers unless required.
-- Use generated Zod schemas from `@api/schemas` (`api/schemas.zod.ts`) for form and response validation; never hand-write schemas that duplicate the spec.
+- Use generated API functions from `@api` (`contracts/rest/index.ts`); avoid manual endpoint wrappers unless required.
+- Use generated Zod schemas from `@api/schemas` (`contracts/rest/schemas.zod.ts`) for form and response validation; never hand-write schemas that duplicate the spec.
 - When adding a new endpoint handler for MSW, start from the generated stub in `tests/mocks/generated.ts`, then move business logic to `tests/mocks/handlers/`.
 - Keep comments short and practical.
 - Avoid `async` / `await` + `try/catch` unless necessary.
@@ -39,7 +39,7 @@ Human-facing docs: [README.md](../README.md) · [PAIRING.md](../PAIRING.md).
 
 - Boilerplate is example-focused: keep changes small but complete.
 - Do not break API contract without updating `openapi.yaml`.
-- After contract edits, regenerate `/api` with `npm run genapi`.
+- After contract edits, regenerate `contracts/rest` with `npm run genapi`.
 - Keep auth, i18n, and error-handling flows consistent across stores/composables.
 - **Never** create backward-compatibility shims, legacy aliases, or transitional code unless explicitly requested. Fix forward; remove old code immediately.
 

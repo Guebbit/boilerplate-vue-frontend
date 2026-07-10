@@ -6,7 +6,7 @@ This page covers the three libraries that manage reactive state, navigation, and
 
 ### Why it is here
 
-Pinia is the official state management library for Vue 3. Stores hold reactive data and expose actions that call the generated API client. Views never call `api/index.ts` directly — they always go through a store or feature composable.
+Pinia is the official state management library for Vue 3. Stores hold reactive data and expose actions that call the generated API client. Views never call `contracts/rest/index.ts` directly — they always go through a store or feature composable.
 
 ### Stores in this repo
 

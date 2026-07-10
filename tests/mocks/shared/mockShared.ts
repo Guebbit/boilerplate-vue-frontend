@@ -147,7 +147,7 @@ export const createMockInvoicePdf = () =>
 // reads this value and restores the correct user identity.
 //
 // sessionStorage is cleared between tests by `cy.clearAllSessionStorage()` in
-// cypress/support/e2e.ts, and also whenever the `/__mock/reset` endpoint is
+// tests/e2e/support/e2e.ts, and also whenever the `/__mock/reset` endpoint is
 // hit (which calls `resetMockDatabase`). Both code paths ensure a clean slate.
 //
 // The helpers are wrapped in try/catch so the mock module can also be imported

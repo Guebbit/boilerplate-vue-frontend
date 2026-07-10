@@ -16,7 +16,7 @@ flowchart LR
     end
 
     subgraph API["API & Contract"]
-        Orval[Orval codegen\nopenapi.yaml → api/]
+        Orval[Orval codegen\nopenapi.yaml → contracts/rest/]
         Axios[Axios\nHTTP client]
         Zod[Zod\nvalidation]
         MSW[MSW\ndev + test mocking]

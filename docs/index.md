@@ -86,8 +86,8 @@ Contract-first workflow: OpenAPI + AsyncAPI, codegen, generated client usage, an
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 55, 'rankSpacing': 70}}}%%
 flowchart LR
-    OpenSpec[openapi.yaml] --> Client[api/index.ts\naxios client]
-    OpenSpec --> Schemas[api/schemas.zod.ts\nZod schemas]
+    OpenSpec[openapi.yaml] --> Client[contracts/rest/index.ts\naxios client]
+    OpenSpec --> Schemas[contracts/rest/schemas.zod.ts\nZod schemas]
     OpenSpec --> Mocks[tests/mocks/generated.ts\nMSW stubs]
     AsyncSpec[asyncapi.yaml] --> Realtime[src/types/realtime.generated.ts]
 

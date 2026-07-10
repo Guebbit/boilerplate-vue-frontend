@@ -3,10 +3,10 @@ import { defineConfig } from 'orval';
 /**
  * Orval configuration: generates the API client from openapi.yaml.
  *
- * api:         typed axios functions + TS types → api/index.ts
+ * api:         typed axios functions + TS types → contracts/rest/index.ts
  *              mutator delegates HTTP to apiMutator (auth headers, token refresh)
  *
- * zodSchemas:  Zod schemas matching each OpenAPI model → api/schemas.zod.ts
+ * zodSchemas:  Zod schemas matching each OpenAPI model → contracts/rest/schemas.zod.ts
  *              Import from @api/schemas to validate forms or parse API responses.
  *              Always in sync with the spec — never hand-write these.
  *
@@ -19,7 +19,7 @@ export default defineConfig({
         input: './openapi.yaml',
         output: {
             mode: 'single',
-            target: './api/index.ts',
+            target: './contracts/rest/index.ts',
             client: 'axios',
             override: {
                 mutator: {
@@ -33,7 +33,7 @@ export default defineConfig({
         input: './openapi.yaml',
         output: {
             mode: 'single',
-            target: './api/schemas.zod.ts',
+            target: './contracts/rest/schemas.zod.ts',
             client: 'zod'
         }
     },

@@ -1,6 +1,6 @@
 # Endpoints
 
-All HTTP endpoints grouped by feature. These are what the generated client in `api/index.ts` calls.
+All HTTP endpoints grouped by feature. These are what the generated client in `contracts/rest/index.ts` calls.
 The **Auth** column shows the minimum access level the backend requires.
 
 > The backend-specific implementation details (Redis caching strategy, RabbitMQ events, PDF generation) are intentionally omitted here — they are transparent to the FE. What matters to the FE is the HTTP method, path, auth requirement, and response shape.

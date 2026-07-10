@@ -23,7 +23,7 @@ flowchart LR
     SFC --> Styles[Sass styles]
     Components --> Pinia[Pinia stores]
     Pinia --> Axios[Axios\nsrc/utils/http.ts]
-    Axios --> API[Generated client\napi/index.ts]
+    Axios --> API[Generated client\ncontracts/rest/index.ts]
 
     classDef build fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef app fill:#ddd6fe,stroke:#7c3aed,color:#111827;
@@ -45,8 +45,8 @@ flowchart LR
 | Alias | Resolves to |
 | ----- | ----------- |
 | `@/` | `src/` |
-| `@api` | `api/index.ts` |
-| `@api/schemas` | `api/schemas.zod.ts` |
+| `@api` | `contracts/rest/index.ts` |
+| `@api/schemas` | `contracts/rest/schemas.zod.ts` |
 
 ## Related pages
 

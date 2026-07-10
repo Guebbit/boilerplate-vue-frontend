@@ -33,7 +33,7 @@ This page groups the `package.json` scripts by job instead of raw list order.
 
 | Script | Job | Read more |
 | ------ | --- | --------- |
-| `genapi` | Regenerate `api/` from `openapi.yaml` via orval | [OpenAPI Workflow](../api/openapi-workflow.md) |
+| `genapi` | Regenerate `contracts/rest/` from `openapi.yaml` via orval | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | `genasyncapi` | Regenerate `src/types/realtime.generated.ts` from `asyncapi.yaml` | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 
 ## Docs scripts

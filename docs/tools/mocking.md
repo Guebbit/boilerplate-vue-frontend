@@ -19,7 +19,7 @@ Cypress e2e tests always run with `VITE_API_MOCK_ENABLED=true` for deterministic
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 65}}}%%
 flowchart LR
-    App["App\naxios → api/index.ts"] --> SW["MSW Service Worker\npublic/mockServiceWorker.js"]
+    App["App\naxios → contracts/rest/index.ts"] --> SW["MSW Service Worker\npublic/mockServiceWorker.js"]
     SW --> Handlers["tests/mocks/handlers/*"]
     Handlers --> DB[("tests/mocks/shared/\nin-memory mockDatabase")]
     DB --> Handlers
