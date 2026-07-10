@@ -59,7 +59,7 @@ export default withMermaid(
                         collapsed: false,
                         items: [
                             { text: 'Observability', link: '/tools/observability' },
-                            { text: 'PostHog', link: '/tools/posthog' }
+                            { text: 'Umami', link: '/tools/umami' }
                         ]
                     },
                     {

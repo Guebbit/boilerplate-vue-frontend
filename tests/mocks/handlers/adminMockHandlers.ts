@@ -1,7 +1,7 @@
 import { http, type HttpHandler } from 'msw';
 import type {
-    AdminHealthResponse,
-    AdminMetricsSummaryResponse,
+    ObservabilityHealthResponse,
+    ObservabilityMetricsSummaryResponse,
     AuditLogsResponse
 } from 'src/types';
 import { getIsoDateNow } from '../shared/mockShared.ts';
@@ -9,7 +9,7 @@ import { toMockJsonResponse } from '../shared/mockTransport.ts';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
-const MOCK_HEALTH_RESPONSE: AdminHealthResponse = {
+const MOCK_HEALTH_RESPONSE: ObservabilityHealthResponse = {
     success: true,
     data: {
         status: 'ok',
@@ -18,14 +18,14 @@ const MOCK_HEALTH_RESPONSE: AdminHealthResponse = {
         nodeVersion: 'v20.0.0',
         uptimeSeconds: 3600,
         database: { status: 'connected' },
-        integrations: { loki: false, posthog: false, otelEnabled: false },
+        integrations: { loki: true, otelEnabled: true, umami: true, faro: true },
         memory: { heapUsedMb: 64, heapTotalMb: 128, rssMb: 80 },
         system: { platform: 'linux', cpuCount: 4, loadAvg: [0.5, 0.4, 0.3] },
         timestamp: getIsoDateNow()
     }
 };
 
-const MOCK_METRICS_RESPONSE: AdminMetricsSummaryResponse = {
+const MOCK_METRICS_RESPONSE: ObservabilityMetricsSummaryResponse = {
     success: true,
     data: {
         http: {

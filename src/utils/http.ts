@@ -193,8 +193,7 @@ export const onResponseRejectWithRefresh = async (
 ) => {
     const { accessToken } = storeToRefs(useProfileStore());
     const originalRequest = error.config as
-        | (InternalAxiosRequestConfig & { _dontRetry?: boolean })
-        | undefined;
+        (InternalAxiosRequestConfig & { _dontRetry?: boolean }) | undefined;
     if (
         error.response?.status === 401 &&
         !originalRequest?._dontRetry &&

@@ -1,6 +1,4 @@
 import { defineStore } from 'pinia';
-import { useI18n } from 'vue-i18n';
-import { z } from 'zod';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import {
     listUsers,
@@ -23,7 +21,6 @@ export const useUsersStore = defineStore('users', () => {
     /**
      * Inherited
      */
-    const { t } = useI18n();
     const { getLoading, setLoading } = useCoreStore();
     const {
         itemDictionary: users,
@@ -99,6 +96,7 @@ export const useUsersStore = defineStore('users', () => {
                 }).then((response) => response.data.items),
             filters,
             page,
+            pageSizeValue,
             { forced }
         );
     };
@@ -193,49 +191,6 @@ export const useUsersStore = defineStore('users', () => {
      */
     const deleteUser = (userId: string) => deleteTarget(() => deleteUserById(userId), userId);
 
-    /**
-     * Zod schema for a valid email
-     */
-    const zodSchemaUsersEmail = z.email(t('users-form.email-invalid'));
-
-    /**
-     *
-     */
-    const zodSchemaUsersUsername = z.string().min(3, t('users-form.username-min'));
-
-    /**
-     *
-     */
-    const zodSchemaUsersPassword = z
-        .string()
-        .min(8, t('users-form.password-min'))
-        .refine((password) => password && /[a-z]/.test(password), {
-            message: t('users-form.password-minus-required')
-        })
-        .refine((password) => password && /[A-Z]/.test(password), {
-            message: t('users-form.password-maius-required')
-        })
-        .refine((password) => password && /\d/.test(password), {
-            message: t('users-form.password-number-required')
-        })
-        .refine((password) => password && /[^\dA-Za-z]/.test(password), {
-            message: t('users-form.password-special-required')
-        });
-
-    /**
-     *
-     */
-    const zodSchemaUsers = z.object({
-        id: z.string().nullish().optional(),
-        email: zodSchemaUsersEmail,
-        username: zodSchemaUsersUsername,
-        imageUrl: z.string().nullish().optional(),
-        admin: z.boolean().nullish().optional(),
-        active: z.boolean().nullish().optional(),
-        createdAt: z.string().nullish().optional(),
-        updatedAt: z.string().nullish().optional()
-    });
-
     return {
         users,
         usersList,
@@ -256,11 +211,6 @@ export const useUsersStore = defineStore('users', () => {
         createUser,
         updateUser,
         updateUserImage,
-        deleteUser,
-
-        zodSchemaUsersEmail,
-        zodSchemaUsersUsername,
-        zodSchemaUsersPassword,
-        zodSchemaUsers
+        deleteUser
     };
 });

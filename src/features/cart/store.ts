@@ -56,7 +56,7 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             upsertCartItem({ productId, quantity }).then((response) => {
                 const obs = useObservabilityStore();
-                obs.track(analyticsEvents.ITEM_ADDED_TO_CART, { product_id: productId, quantity });
+                obs.track(analyticsEvents.CART_ITEM_ADDED, { product_id: productId, quantity });
                 cart.value = response.data;
                 return response.data;
             })
@@ -85,7 +85,7 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             removeCartItem(productId).then((response) => {
                 const obs = useObservabilityStore();
-                obs.track(analyticsEvents.ITEM_REMOVED_FROM_CART, { product_id: productId });
+                obs.track(analyticsEvents.CART_ITEM_REMOVED, { product_id: productId });
                 cart.value = response.data;
                 return response.data;
             })

@@ -21,7 +21,7 @@ flowchart LR
 
     subgraph Client ["Generated client"]
         direction TB
-        Fn["api/index.ts\ntyped axios function"]
+        Fn["contracts/rest/index.ts\ntyped axios function"]
         HTTP["utils/http.ts\ninterceptors"]
         Fn --> HTTP
     end
@@ -42,7 +42,7 @@ flowchart LR
         HTTP -->|redirect| Login["Login\n?continue=…"]
     else 5xx
         HTTP -->|navigate| Error["/error/500"]
-        HTTP -->|captureException| Sentry["Sentry"]
+        HTTP -->|captureException| Faro["Grafana Faro"]
     end
 
     classDef user fill:#f0fdf4,stroke:#16a34a,color:#111827;
@@ -55,7 +55,7 @@ flowchart LR
     class Template,Comp view;
     class Store store;
     class Fn,HTTP,Backend http;
-    class Login,Error,Sentry err;
+    class Login,Error,Faro err;
 ```
 
 ## Observability signals
@@ -68,15 +68,15 @@ flowchart LR
     Nav(["Route\nchange"])
     Err(["HTTP\nerror"])
 
-    subgraph Analytics["PostHog (product analytics)"]
-        PH["posthog.capture()\npage_view, auth, cart …"]
+    subgraph Analytics["Umami (product analytics)"]
+        PH["umami.track()\nauth, cart, checkout …\nautomatic pageviews"]
     end
 
-    subgraph ErrorMon["Sentry (error monitoring)"]
-        SE["captureException()\nperformance spans\nsession replay"]
+    subgraph ErrorMon["Grafana Faro (error monitoring)"]
+        SE["captureException()\nfetch/XHR traces\nweb-vitals"]
     end
 
-    Nav -.->|"router.afterEach\npage_view event"| PH
+    Nav -.->|"automatic pageview"| PH
     Err -.->|"5xx / unhandled"| SE
 
     classDef nav fill:#dcfce7,stroke:#16a34a,color:#111827;
@@ -97,7 +97,7 @@ flowchart LR
 | View / template | Renders data, captures user events, delegates to composables |
 | Composable | Encapsulates form state, validation, and list logic for a specific feature |
 | Pinia store | Orchestrates API calls, holds reactive data, exposes actions |
-| Generated client (`api/index.ts`) | Typed axios function per operation — regenerated from `openapi.yaml` |
+| Generated client (`contracts/rest/index.ts`) | Typed axios function per operation — regenerated from `openapi.yaml` |
 | `utils/http.ts` | Single axios instance; request/response interceptors; shapes errors into `IResponseReject` |
 | MSW (dev/test) | Intercepts HTTP before it leaves the browser; returns deterministic in-memory responses |
 | Router guards | `isAuth`, `isAdmin`, `isGuest` — run before the view is entered; redirect on failure |
@@ -118,7 +118,7 @@ When `VITE_API_MOCK_ENABLED=true`, MSW intercepts all HTTP before it reaches the
 
 ### Analytics always async
 
-`track()` calls are fire-and-forget. Never `await` them. They are no-ops if PostHog is not configured.
+`track()` calls are fire-and-forget. Never `await` them. They are no-ops if Umami is not configured.
 
 ## Why the flow matters
 

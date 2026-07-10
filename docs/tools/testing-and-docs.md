@@ -20,7 +20,7 @@
 | Layer | Tool(s) | Where | Command |
 | ----- | ------- | ----- | ------- |
 | Unit | Vitest + @vue/test-utils + jsdom | `tests/unit/` | `npm run test:unit` |
-| E2E | Cypress + MSW | `cypress/e2e/` | `npm run test:e2e` |
+| E2E | Cypress + MSW | `tests/e2e/specs/` | `npm run test:e2e` |
 
 ## Maintenance flow
 

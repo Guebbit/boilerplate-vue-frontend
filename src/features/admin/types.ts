@@ -1,7 +1,7 @@
 /**
  * Admin dashboard view-layer types.
  *
- * Contract types (AdminHealth, AdminMetricsSummary, AuditEventItem, etc.)
+ * Contract types (ObservabilityHealth, ObservabilityMetricsSummary, AuditEventItem, etc.)
  * come from `@types`, which re-exports the generated `@api` client types.
  * Only UI/composition-specific types belong here.
  */

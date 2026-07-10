@@ -114,7 +114,7 @@ Migrate in order of complexity:
 - `stores/profile.ts` — manages global auth token state (access token, refresh, user identity)
 - `stores/counter.ts` — demo/UI-only counter
 - `stores/realtimeChat.ts` / `stores/realtimeObservability.ts` — WebSocket-based, not HTTP
-- `stores/observability.ts` — Sentry/PostHog integration
+- `stores/observability.ts` — Grafana Faro / Umami integration
 
 ---
 

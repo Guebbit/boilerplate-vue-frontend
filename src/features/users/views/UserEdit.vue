@@ -117,6 +117,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/features/users/store';
+import { createUsersSchema, createUsersPasswordSchema } from '@/features/users/schemas.ts';
 import { z } from 'zod';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
@@ -149,7 +150,9 @@ const { id } = defineProps<{
 /**
  * User store APIs and references.
  */
-const { fetchUser, updateUser, zodSchemaUsers, zodSchemaUsersPassword } = useUsersStore();
+const { fetchUser, updateUser } = useUsersStore();
+const zodSchemaUsers = createUsersSchema(t);
+const zodSchemaUsersPassword = createUsersPasswordSchema(t);
 const { currentUser, selectedUserId, loading } = storeToRefs(useUsersStore());
 
 /**

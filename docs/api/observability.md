@@ -38,8 +38,9 @@ tests/mocks/handlers/adminMockHandlers.ts   ← MSW mock responses for dev/test
   "database": { "status": "connected" },
   "integrations": {
     "loki": true,
-    "posthog": false,
-    "otelEnabled": true
+    "otelEnabled": true,
+    "umami": true,
+    "faro": true
   },
   "memory": { "heapUsedMb": 45, "heapTotalMb": 80, "rssMb": 120 },
   "system": { "platform": "linux", "cpuCount": 4, "loadAvg": [0.5, 0.3, 0.2] },
@@ -92,13 +93,13 @@ The Audit Log tab passes these filters from `IAdminAuditFilters` reactive state 
 
 ## Types
 
-All response types are driven by `openapi.yaml` and generated into `api/index.ts`:
-`AdminHealth`, `AdminMetricsSummary`, `AuditEventItem`, etc.
+All response types are driven by `openapi.yaml` and generated into `contracts/rest/index.ts`:
+`ObservabilityHealth`, `ObservabilityMetricsSummary`, `AuditEventItem`, etc.
 
 View-model types specific to the FE layout (`IAdminKpi`, `IAdminAuditFilters`) live in `src/features/admin/types.ts`.
 
 ## Related pages
 
 - [Endpoints](./endpoints.md)
-- [Observability (Sentry + PostHog)](../tools/observability.md)
+- [Observability (Grafana Faro + Umami)](../tools/observability.md)
 - [API overview](./index.md)

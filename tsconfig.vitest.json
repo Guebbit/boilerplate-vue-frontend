@@ -1,7 +1,7 @@
 {
     "extends": "./tsconfig.app.json",
     "include": [
-        "api",
+        "contracts/rest",
         "src/**/*",
         "src/**/*.vue",
         "tests/unit/**/*.ts",

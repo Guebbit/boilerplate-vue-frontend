@@ -6,14 +6,14 @@ This page covers the three libraries that manage reactive state, navigation, and
 
 ### Why it is here
 
-Pinia is the official state management library for Vue 3. Stores hold reactive data and expose actions that call the generated API client. Views never call `api/index.ts` directly — they always go through a store or feature composable.
+Pinia is the official state management library for Vue 3. Stores hold reactive data and expose actions that call the generated API client. Views never call `contracts/rest/index.ts` directly — they always go through a store or feature composable.
 
 ### Stores in this repo
 
 | Store | File | Owns |
 | ----- | ---- | ---- |
 | Profile | `src/stores/profile.ts` | auth state, access token, current user, login/logout/refresh |
-| Observability | `src/stores/observability.ts` | Sentry init, PostHog init, `track()`, `captureException()`, `identifyUser()` |
+| Observability | `src/stores/observability.ts` | Faro init, Umami init, `track()`, `captureException()`, `identifyUser()` |
 | Realtime chat | `src/stores/realtimeChat.ts` | WebSocket connection state, chat messages |
 | Realtime observability | `src/stores/realtimeObservability.ts` | SSE connection, live metrics stream |
 | Counter (example) | `src/stores/counter.ts` | minimal Pinia example |
@@ -80,7 +80,7 @@ flowchart LR
 | `401` from HTTP interceptor | Redirect to `Login` with `?continue=<path>` |
 | `403` from HTTP interceptor | Navigate to `Error` with `status=403` |
 | `5xx` from HTTP interceptor | Navigate to `Error` with `status=500` |
-| Unhandled `router.onError` | Navigate to `Error`; exception captured in Sentry |
+| Unhandled `router.onError` | Navigate to `Error`; exception captured in Grafana Faro |
 
 ### External references
 

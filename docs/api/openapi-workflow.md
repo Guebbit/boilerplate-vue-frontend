@@ -36,14 +36,14 @@ If the contract changes, always start with the contract. Coordinate with the bac
 | ---- | --- |
 | [`openapi.yaml`](https://spec.openapis.org/oas/latest.html) | single contract file (OpenAPI 3.x) |
 | [Spectral](https://stoplight.io/open-source/spectral) | lint the spec against `spectral.yaml` rules |
-| [orval](https://orval.dev) | generate `api/` — axios client, Zod schemas, MSW stubs |
+| [orval](https://orval.dev) | generate `contracts/rest/` — axios client, Zod schemas, MSW stubs |
 
-## Generated output (`api/`)
+## Generated output (`contracts/rest/`)
 
-Running `npm run genapi` regenerates the entire `api/` directory. **Never edit files inside `api/` manually** — they are overwritten.
+Running `npm run genapi` regenerates the entire `contracts/rest/` directory. **Never edit files inside `contracts/rest/` manually** — they are overwritten.
 
 ```
-api/
+contracts/rest/
 ├── index.ts          ← typed axios functions (one per operation)
 └── schemas.zod.ts    ← Zod schemas for every request/response shape
 ```
@@ -66,7 +66,7 @@ import type { Product, CreateProductRequest } from '@api';
 import { ProductSchema, CreateProductRequestSchema } from '@api/schemas';
 ```
 
-Never import from the file path directly (`../../api/index.ts`) — always use the alias.
+Never import from the file path directly (`../../contracts/rest/index.ts`) — always use the alias.
 
 ## Enum const objects
 
@@ -87,15 +87,15 @@ Naming convention: schema name + property name, PascalCase. Example: `UpdateFeed
 | Config key | Value | Effect |
 | ---------- | ----- | ------ |
 | `input.target` | `./openapi.yaml` | source spec |
-| `output.target` | `./api/index.ts` | generated axios client |
-| `output.schemas` | `./api/schemas.zod.ts` | generated Zod schemas |
-| `output.mock` | `./dev/mocks/generated.ts` | generated MSW stubs |
+| `output.target` | `./contracts/rest/index.ts` | generated axios client |
+| `output.schemas` | `./contracts/rest/schemas.zod.ts` | generated Zod schemas |
+| `output.mock` | `./tests/mocks/generated.ts` | generated MSW stubs |
 
 ## Commands
 
 ```bash
 npm run lint:openapi   # lint openapi.yaml with Spectral
-npm run genapi         # regenerate api/ from openapi.yaml
+npm run genapi         # regenerate contracts/rest/ from openapi.yaml
 ```
 
 ## MSW stub workflow

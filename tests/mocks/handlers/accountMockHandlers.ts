@@ -16,7 +16,7 @@ const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 export const registerAccountMockHandlers = (): HttpHandler[] => [
     // ── Dev / test utility ────────────────────────────────────────────────────
     //
-    // Cypress calls cy.resetMockState() (defined in cypress/support/commands.ts)
+    // Cypress calls cy.resetMockState() (defined in tests/e2e/support/commands.ts)
     // between tests to wipe the in-memory database back to its initial fixtures.
     // That command hits this endpoint via cy.request('POST', '/__mock/reset').
     // resetMockDatabase() also clears the sessionStorage mirror of the current

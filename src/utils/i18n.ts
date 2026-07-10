@@ -9,6 +9,12 @@ export interface ITranslationDictionaries {
 }
 
 /**
+ * Minimal translate signature compatible with vue-i18n's `t`,
+ * for modules (e.g. Zod schema factories) that only need key lookup
+ */
+export type TranslateFunction = (key: string) => string;
+
+/**
  * [on build]
  * List of supported languages (that we currently don't have loaded but that can be fetched)
  * - From watching the locales folder
@@ -189,7 +195,9 @@ export function changeLanguage(locale: string) {
  */
 export function getDefaultLocale() {
     const foundLocale = navigator.language.slice(0, 2);
-    if (loadedLanguages.includes(foundLocale)) return foundLocale;
+    // Must check supported (not loaded) languages: on first visit nothing is
+    // loaded yet, and browser-language detection would otherwise never match.
+    if (supportedLanguages.includes(foundLocale)) return foundLocale;
     return (
         (i18n.global.fallbackLocale as WritableComputedRef<string>).value ||
         (import.meta.env.VITE_APP_DEFAULT_LOCALE as string | undefined) ||
@@ -204,23 +212,40 @@ export function getDefaultLocale() {
 export const getCurrentLocale = () => i18n.global.locale.value;
 
 /**
+ * Prefix the given path with the locale, unless it already starts with a
+ * supported locale segment
+ *
+ * @param path
+ * @param locale
+ */
+function prefixLocalePath(path: string, locale: string) {
+    const normalized = path.startsWith('/') ? path : `/${path}`;
+    const firstSegment = normalized.split('/')[1];
+    return supportedLanguages.includes(firstSegment) ? normalized : `/${locale}${normalized}`;
+}
+
+/**
  * Fix Router Links adding our current Locale
+ *
+ * WARNING: vue-router ignores `params` whenever `path` is present,
+ * so path-based locations must have the locale prefixed onto the path itself
+ * (a bare `/products` would otherwise match `/:locale` with locale="products")
  *
  * @param to
  * @constructor
  */
-export function routerLinkI18n(to: RouteLocationRaw) {
-    if (typeof to === 'string')
+export function routerLinkI18n(to: RouteLocationRaw): RouteLocationRaw {
+    const locale = getCurrentLocale();
+    if (typeof to === 'string') return prefixLocalePath(to, locale);
+    if ('path' in to && typeof to.path === 'string')
         return {
-            path: to,
-            params: {
-                locale: getCurrentLocale()
-            }
+            ...to,
+            path: prefixLocalePath(to.path, locale)
         };
     return {
         ...to,
         params: {
-            locale: getCurrentLocale(),
+            locale,
             ...(to as RouteLocationNamedRaw).params
         }
     };

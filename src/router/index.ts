@@ -4,7 +4,7 @@ import { localeChoice } from '@/middlewares/localeChoice';
 import { tryRestoreAuth } from '@/middlewares/authentications.ts';
 import { getDefaultLocale } from '@/utils/i18n.ts';
 import { loginContinueTo } from '@/utils/navigation.ts';
-import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
+import { useObservabilityStore } from '@/stores/observability';
 
 import accountRoutes from '@/features/account/routes';
 import adminRoutes from '@/features/admin/routes';
@@ -87,8 +87,8 @@ const router = createRouter({
 });
 
 router.onError((error: Error) => {
-    // Report unhandled router errors to Sentry (if initialised) so they are
-    // visible in the error dashboard rather than silently swallowed.
+    // Report unhandled router errors to Grafana Faro (if initialised) so they
+    // are visible in the error dashboard rather than silently swallowed.
     try {
         const obs = useObservabilityStore();
         obs.captureException(error);
@@ -154,19 +154,7 @@ router.beforeEach((to, from) => {
 
 router.beforeResolve(localeChoice);
 
-// Track page views for analytics
-router.afterEach((to) => {
-    try {
-        const obs = useObservabilityStore();
-        obs.track(analyticsEvents.PAGE_VIEW, {
-            path: to.path,
-            name: to.name as string,
-            params: to.params as Record<string, unknown>,
-            query: to.query as Record<string, unknown>
-        });
-    } catch {
-        // Store may not be initialised yet — ignore.
-    }
-});
+// NOTE: pageviews are tracked automatically by the Umami tracker script
+// (it hooks SPA history changes), so there is no manual page_view event here.
 
 export default router;

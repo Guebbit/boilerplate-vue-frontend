@@ -90,7 +90,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
-import { useUsersStore } from '@/features/users/store.ts';
+import { createUsersSchema, createUsersPasswordSchema } from '@/features/users/schemas.ts';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseButton from '@/components/atoms/BaseButton.vue';
@@ -121,7 +121,8 @@ const { profile } = storeToRefs(useProfileStore());
 /**
  * Form logic
  */
-const { zodSchemaUsers, zodSchemaUsersPassword } = useUsersStore();
+const zodSchemaUsers = createUsersSchema(t);
+const zodSchemaUsersPassword = createUsersPasswordSchema(t);
 
 /**
  * Extended profile form interface to accommodate extra UI fields (phone, website)

@@ -4,12 +4,12 @@ import {
     getObservabilityMetricsOverview,
     getObservabilityAuditLogs
 } from '@/utils/api.ts';
-import type { AdminHealth, AdminMetricsSummary, AuditEventItem } from '@types';
+import type { ObservabilityHealth, ObservabilityMetricsSummary, AuditEventItem } from '@types';
 import type { IAdminAuditFilters } from '@/features/admin/types.ts';
 
 export interface IUseAdminObservabilityReturn {
-    health: Ref<AdminHealth | undefined>;
-    metrics: Ref<AdminMetricsSummary | undefined>;
+    health: Ref<ObservabilityHealth | undefined>;
+    metrics: Ref<ObservabilityMetricsSummary | undefined>;
     auditEvents: Ref<AuditEventItem[]>;
     auditTotal: Ref<number>;
     loadingHealth: Ref<boolean>;
@@ -33,8 +33,8 @@ export interface IUseAdminObservabilityReturn {
  * - GET /observability/audit
  */
 export const useAdminObservability = (): IUseAdminObservabilityReturn => {
-    const health = ref<AdminHealth | undefined>(undefined);
-    const metrics = ref<AdminMetricsSummary | undefined>(undefined);
+    const health = ref<ObservabilityHealth | undefined>(undefined);
+    const metrics = ref<ObservabilityMetricsSummary | undefined>(undefined);
     const auditEvents = ref<AuditEventItem[]>([]);
     const auditTotal = ref(0);
 

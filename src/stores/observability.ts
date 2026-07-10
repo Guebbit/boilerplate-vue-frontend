@@ -1,8 +1,15 @@
 /**
  * Observability Pinia store
  *
- * Consolidates Sentry (error/performance monitoring) and PostHog (product analytics/feature flags)
- * into a single reactive store. This eliminates module-level singletons and init-order issues.
+ * Wires the frontend into the self-hosted, local observability stack:
+ *
+ *   - Grafana Faro  → error/crash monitoring, frontend tracing, web-vitals.
+ *                     The browser only ever talks to Grafana Alloy's Faro
+ *                     receiver; Alloy fans out to Loki/Tempo/Prometheus.
+ *   - Umami         → product analytics (pageviews + custom events).
+ *
+ * Consolidating both into a single reactive store eliminates module-level
+ * singletons and init-order issues.
  *
  * Consumers use the `useObservability()` composable in components,
  * or access this store directly in non-setup contexts (stores, router, etc.).
@@ -10,120 +17,125 @@
 
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import * as Sentry from '@sentry/vue';
-import type { Router } from 'vue-router';
-import posthog from 'posthog-js';
+import type { Faro } from '@grafana/faro-web-sdk';
+
+// ─── Umami global ──────────────────────────────────────────────────────────────
+// The Umami tracker script attaches a `umami` object to `window` once loaded.
+interface IUmamiTracker {
+    track: (eventName: string, eventData?: Record<string, unknown>) => void;
+    identify?: (data: Record<string, unknown>) => void;
+}
+
+declare global {
+    var umami: IUmamiTracker | undefined;
+}
 
 // ─── Config types ────────────────────────────────────────────────────────────
 
-export interface ISentryConfig {
-    dsn: string;
+export interface IFaroConfig {
+    /** Grafana Alloy Faro receiver endpoint (e.g. http://localhost:12347/collect). */
+    url: string;
+    appName: string;
+    appVersion: string;
     environment: string;
-    tracesSampleRate: number;
-    replaysSessionSampleRate: number;
-    replaysOnErrorSampleRate: number;
-    debug: boolean;
+    /** API origin(s) to propagate the W3C `traceparent` header to (stitches FE↔BE traces). */
+    apiOrigin: string;
 }
 
-export interface IPostHogConfig {
-    apiKey: string;
-    apiHost: string;
-    debug: boolean;
+export interface IUmamiConfig {
+    /** Umami tracker script URL (e.g. http://localhost:8090/script.js). */
+    src: string;
+    websiteId: string;
 }
 
-// ─── Event catalog (moved from analytics.ts) ────────────────────────────────
+// ─── Event catalog ─────────────────────────────────────────────────────────────
+// IMPORTANT: these MUST match the canonical event names the backend emits so
+// that frontend and backend analytics line up in Umami/Grafana. Only the
+// `app_*` and `user_logged_out` events are frontend-only (the backend has no
+// equivalent).
 
 export const analyticsEvents = {
-    // Application Lifecycle
+    // Application Lifecycle (frontend-only)
     APP_STARTED: 'app_started',
     APP_READY: 'app_ready',
-
-    // Navigation
-    PAGE_VIEW: 'page_view',
 
     // Authentication
     USER_SIGNED_UP: 'user_signed_up',
     USER_LOGGED_IN: 'user_logged_in',
     USER_LOGGED_OUT: 'user_logged_out',
-
-    // Cart
-    ITEM_ADDED_TO_CART: 'item_added_to_cart',
-    ITEM_REMOVED_FROM_CART: 'item_removed_from_cart',
-    CART_CLEARED: 'cart_cleared',
-
-    // Orders
-    ORDER_CHECKOUT_STARTED: 'order_checkout_started',
-    CHECKOUT_COMPLETED: 'checkout_completed',
-    ORDER_PLACED: 'order_placed',
+    USER_PROFILE_VIEWED: 'user_profile_viewed',
+    ACCOUNT_DELETED: 'account_deleted',
 
     // Products
+    PRODUCTS_SEARCHED: 'products_searched',
     PRODUCT_VIEWED: 'product_viewed',
-    PRODUCT_SEARCHED: 'product_searched',
 
-    // Feedback
-    FEEDBACK_SUBMITTED: 'feedback_submitted'
+    // Cart
+    CART_VIEWED: 'cart_viewed',
+    CART_ITEM_ADDED: 'cart_item_added',
+    CART_ITEM_UPDATED: 'cart_item_updated',
+    CART_ITEM_REMOVED: 'cart_item_removed',
+    CART_CLEARED: 'cart_cleared',
+
+    // Checkout / Orders
+    CHECKOUT_COMPLETED: 'checkout_completed',
+    CHECKOUT_FAILED: 'checkout_failed',
+    ORDER_CREATED: 'order_created',
+    ORDERS_VIEWED: 'orders_viewed'
 } as const;
 
 export type AnalyticsEventName = (typeof analyticsEvents)[keyof typeof analyticsEvents];
 
 // ─── Config readers ──────────────────────────────────────────────────────────
 
-function readSentryConfig(): ISentryConfig | undefined {
-    const dsn = (import.meta.env.VITE_SENTRY_DSN as string | undefined)?.trim();
+function readFaroConfig(): IFaroConfig | undefined {
+    const url = (import.meta.env.VITE_FARO_URL as string | undefined)?.trim();
 
-    if (!dsn) {
+    if (!url) {
         return undefined;
     }
 
-    const tracesSampleRateRaw =
-        (import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE as string | undefined) ?? '0';
-    const tracesSampleRate = Number.parseFloat(tracesSampleRateRaw);
-
-    const replaysSessionSampleRateRaw =
-        (import.meta.env.VITE_SENTRY_REPLAYS_SESSION_SAMPLE_RATE as string | undefined) ?? '0.1';
-    const replaysSessionSampleRate = Number.parseFloat(replaysSessionSampleRateRaw);
-
-    const replaysOnErrorSampleRateRaw =
-        (import.meta.env.VITE_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE as string | undefined) ?? '1';
-    const replaysOnErrorSampleRate = Number.parseFloat(replaysOnErrorSampleRateRaw);
-
-    const debug =
-        (import.meta.env.VITE_SENTRY_DEBUG as string | undefined)?.toLowerCase() === 'true';
-
-    const environment =
-        (import.meta.env.VITE_SENTRY_ENVIRONMENT as string | undefined)?.trim() ||
-        import.meta.env.MODE;
-
     return {
-        dsn,
-        environment,
-        tracesSampleRate: Number.isFinite(tracesSampleRate)
-            ? Math.min(Math.max(tracesSampleRate, 0), 1)
-            : 0,
-        replaysSessionSampleRate: Number.isFinite(replaysSessionSampleRate)
-            ? Math.min(Math.max(replaysSessionSampleRate, 0), 1)
-            : 0.1,
-        replaysOnErrorSampleRate: Number.isFinite(replaysOnErrorSampleRate)
-            ? Math.min(Math.max(replaysOnErrorSampleRate, 0), 1)
-            : 1,
-        debug
+        url,
+        appName: (import.meta.env.VITE_FARO_APP_NAME as string | undefined)?.trim() || 'frontend',
+        appVersion:
+            (import.meta.env.VITE_FARO_APP_VERSION as string | undefined)?.trim() || '1.0.0',
+        environment:
+            (import.meta.env.VITE_FARO_ENVIRONMENT as string | undefined)?.trim() ||
+            import.meta.env.MODE,
+        // Reuse the API origin so browser fetch/XHR traces get stitched onto BE traces.
+        apiOrigin:
+            (import.meta.env.VITE_API_URL as string | undefined)?.trim() || 'http://localhost:3000'
     };
 }
 
-function readPostHogConfig(): IPostHogConfig | undefined {
-    const apiKey = (import.meta.env.VITE_POSTHOG_API_KEY as string | undefined)?.trim();
+function readUmamiConfig(): IUmamiConfig | undefined {
+    const websiteId = (import.meta.env.VITE_UMAMI_WEBSITE_ID as string | undefined)?.trim();
 
-    if (!apiKey) {
+    if (!websiteId) {
         return undefined;
     }
 
     return {
-        apiKey,
-        apiHost:
-            (import.meta.env.VITE_POSTHOG_API_HOST as string | undefined) ??
-            'https://app.posthog.com',
-        debug: (import.meta.env.VITE_POSTHOG_DEBUG as string | undefined)?.toLowerCase() === 'true'
+        src:
+            (import.meta.env.VITE_UMAMI_SRC as string | undefined)?.trim() ||
+            'http://localhost:8090/script.js',
+        websiteId
     };
+}
+
+/** Build an anchored RegExp matching the given origin, for trace header propagation. */
+function originToRegExp(origin: string): RegExp {
+    const escaped = origin.replaceAll(/[$()*+.?[\\\]^{|}]/g, String.raw`\$&`);
+    return new RegExp(`^${escaped}`);
+}
+
+/**
+ * Feature flags are not part of the local stack (Umami has none).
+ * Kept for API compatibility; always returns false.
+ */
+function isFeatureEnabled(_flagKey: string): boolean {
+    return false;
 }
 
 // ─── Store ───────────────────────────────────────────────────────────────────
@@ -131,252 +143,160 @@ function readPostHogConfig(): IPostHogConfig | undefined {
 export const useObservabilityStore = defineStore('observability', () => {
     // ── State ────────────────────────────────────────────────────────────────
 
-    const sentryReady = ref(false);
-    const posthogReady = ref(false);
+    const faroReady = ref(false);
+    const umamiReady = ref(false);
 
-    // ── Sentry ───────────────────────────────────────────────────────────────
+    // Faro instance handle (not reactive — used imperatively).
+    let faro: Faro | undefined;
+
+    // In-flight initialization, so concurrent initFaro() calls share one setup.
+    let faroInitPromise: Promise<boolean> | undefined;
+
+    // ── Faro (errors + tracing + web-vitals) ───────────────────────────────────
 
     /**
-     * Initialise Sentry with all integrations.
-     * Returns true when Sentry was initialised, false when disabled.
+     * Initialise Grafana Faro as early as possible in app bootstrap.
+     *
+     * `getWebInstrumentations()` captures uncaught errors + promise rejections,
+     * console errors, Core Web Vitals and session tracking. The tracing
+     * instrumentation opens a span for every fetch/XHR and propagates the W3C
+     * `traceparent` header to the API origin, so a single trace spans
+     * "browser interaction → API handler → database query" in Grafana/Tempo.
+     *
+     * Resolves true when Faro was initialised, false when disabled.
+     *
+     * The Faro SDK and its OpenTelemetry tracing package are dynamically
+     * imported so they live in a lazy chunk, off the critical entry bundle.
      */
-    const initSentry = (router: Router | undefined): boolean => {
-        const config = readSentryConfig();
+    const initFaro = (): Promise<boolean> => {
+        const config = readFaroConfig();
 
         if (!config) {
             // eslint-disable-next-line no-console
-            console.debug('[Sentry] Disabled — no DSN configured');
-            return false;
+            console.debug('[Faro] Disabled — no VITE_FARO_URL configured');
+            return Promise.resolve(false);
         }
 
-        const integrations = [
-            Sentry.browserTracingIntegration({
-                router
-            }),
-            Sentry.replayIntegration({
-                maskAllText: true,
-                blockAllMedia: true
-            })
-        ];
+        faroInitPromise ??= Promise.all([
+            import('@grafana/faro-web-sdk'),
+            import('@grafana/faro-web-tracing')
+        ]).then(([{ initializeFaro, getWebInstrumentations }, { TracingInstrumentation }]) => {
+            faro = initializeFaro({
+                url: config.url,
+                app: {
+                    name: config.appName,
+                    version: config.appVersion,
+                    environment: config.environment
+                },
+                instrumentations: [
+                    ...getWebInstrumentations(),
+                    new TracingInstrumentation({
+                        instrumentationOptions: {
+                            // Stitch FE traces onto BE traces: propagate `traceparent` to the API origin.
+                            propagateTraceHeaderCorsUrls: [originToRegExp(config.apiOrigin)]
+                        }
+                    })
+                ]
+            });
 
-        Sentry.init({
-            dsn: config.dsn,
-            environment: config.environment,
-            tracesSampleRate: config.tracesSampleRate,
-            replaysSessionSampleRate: config.replaysSessionSampleRate,
-            replaysOnErrorSampleRate: config.replaysOnErrorSampleRate,
-            debug: config.debug,
-            integrations,
-            beforeSend(event) {
-                // Strip sensitive headers from error events
-                if (event.request?.headers) {
-                    delete event.request.headers.authorization;
-                }
-                return event;
-            }
+            faroReady.value = true;
+            // eslint-disable-next-line no-console
+            console.debug('[Faro] Initialized', config.environment, '→', config.url);
+
+            return true;
         });
 
-        // Register global tag
-        Sentry.getCurrentScope().setTag('app', 'boilerplate-vue-frontend');
-
-        // Wire router tracking (setTransactionName on navigation)
-        if (router) {
-            setRouter(router);
-        }
-
-        sentryReady.value = true;
-        // eslint-disable-next-line no-console
-        console.debug('[Sentry] Initialized in', config.environment);
-
-        return true;
+        return faroInitPromise;
     };
 
     /**
-     * Attach router to Sentry so navigation is traced.
-     * Safe to call before initSentry (no-op if Sentry is not initialised).
+     * Identify the current user for error/session context in Faro.
      */
-    const setRouter = (router: Router): void => {
-        if (!sentryReady.value) {
-            return;
+    const identifyUser = (userId: string, email?: string): void => {
+        if (faroReady.value && faro) {
+            faro.api.setUser({ id: userId, email });
         }
 
-        router.afterEach((to) => {
-            Sentry.getCurrentScope().setTransactionName(to.name?.toString() ?? to.fullPath);
-        });
+        // Umami has a lightweight identify (v2.11+); best-effort.
+        globalThis.umami?.identify?.({ id: userId, email });
     };
 
     /**
-     * Identify the current user in Sentry.
+     * Clear user identity from Faro. Call on logout / account deletion.
      */
-    const sentryIdentifyUser = (userId: string, email?: string): void => {
-        if (!sentryReady.value) {
-            return;
-        }
-
-        Sentry.getCurrentScope().setUser({
-            id: userId,
-            email
-        });
-    };
-
-    /**
-     * Clear user context from Sentry.
-     */
-    const sentryUnidentifyUser = (): void => {
-        if (!sentryReady.value) {
-            return;
-        }
-
-        // eslint-disable-next-line unicorn/no-null
-        Sentry.getCurrentScope().setUser(null);
-    };
-
-    /**
-     * Attach custom properties to the current Sentry scope.
-     */
-    const sentrySetSessionProperties = (props: Record<string, unknown>): void => {
-        if (!sentryReady.value) {
-            return;
-        }
-
-        const scope = Sentry.getCurrentScope();
-        for (const [key, value] of Object.entries(props)) {
-            scope.setExtra(key, value);
+    const unidentifyUser = (): void => {
+        if (faroReady.value && faro) {
+            faro.api.resetUser();
         }
     };
 
     /**
-     * Capture an exception in Sentry.
+     * Capture / report an exception to Faro (visible in Grafana → Loki).
      */
     const captureException = (error: unknown, hints?: { data?: Record<string, unknown> }): void => {
-        if (!sentryReady.value) {
+        if (!faroReady.value || !faro) {
             return;
         }
 
-        Sentry.captureException(error, hints);
+        const normalizedError = error instanceof Error ? error : new Error(String(error));
+        faro.api.pushError(
+            normalizedError,
+            hints?.data ? { context: normalizeContext(hints.data) } : undefined
+        );
     };
 
-    /**
-     * Reset Sentry state (useful for testing or logout).
-     */
-    const resetSentryState = (): void => {
-        Sentry.getCurrentScope().clear();
-        sentryReady.value = false;
-    };
-
-    // ── PostHog ──────────────────────────────────────────────────────────────
+    // ── Umami (product analytics) ──────────────────────────────────────────────
 
     /**
-     * Initialise PostHog.
-     * Returns true when PostHog was initialised, false when disabled.
+     * Load the Umami tracker script. Pageviews (including SPA route changes) are
+     * tracked automatically; custom events go through `track()` below.
+     *
+     * Returns true when Umami was (asynchronously) loaded, false when disabled.
      */
-    const initPostHog = (): boolean => {
-        const config = readPostHogConfig();
+    const initUmami = (): boolean => {
+        const config = readUmamiConfig();
 
         if (!config) {
             // eslint-disable-next-line no-console
-            console.debug('[PostHog] Disabled — no API key configured');
+            console.debug('[Umami] Disabled — no VITE_UMAMI_WEBSITE_ID configured');
             return false;
         }
 
-        // FIX: capture_pageview: false to avoid double-tracking (router.afterEach is the single source of truth)
-        posthog.init(config.apiKey, {
-            api_host: config.apiHost,
-            debug: config.debug,
-            capture_pageview: false,
-            capture_pageleave: true
-        });
+        if (umamiReady.value) {
+            return true;
+        }
 
-        posthogReady.value = true;
+        // Avoid injecting twice (e.g. HMR).
+        if (!document.querySelector(`script[data-website-id="${config.websiteId}"]`)) {
+            const script = document.createElement('script');
+            script.defer = true;
+            script.src = config.src;
+            script.dataset.websiteId = config.websiteId;
+            document.head.append(script);
+        }
+
+        umamiReady.value = true;
         // eslint-disable-next-line no-console
-        console.debug('[PostHog] Initialized');
+        console.debug('[Umami] Tracker injected →', config.src);
 
         return true;
-    };
-
-    /**
-     * Identify the current user in PostHog.
-     */
-    const posthogIdentifyUser = (userId: string, email?: string): void => {
-        if (!posthogReady.value) {
-            return;
-        }
-
-        posthog.identify(userId, {
-            email
-        });
-    };
-
-    /**
-     * Clear user context from PostHog.
-     */
-    const posthogUnidentifyUser = (): void => {
-        if (!posthogReady.value) {
-            return;
-        }
-
-        posthog.reset();
-    };
-
-    /**
-     * Attach custom user properties to the PostHog profile.
-     */
-    const setPostHogUserProperties = (props: Record<string, unknown>): void => {
-        if (!posthogReady.value) {
-            return;
-        }
-
-        posthog.register(props);
-    };
-
-    /**
-     * Check whether a feature flag is enabled for the current user.
-     */
-    const isFeatureEnabled = (flagKey: string): boolean => {
-        if (!posthogReady.value) {
-            return false;
-        }
-
-        return posthog.isFeatureEnabled(flagKey) ?? false;
-    };
-
-    /**
-     * Reset PostHog state (useful for testing or logout).
-     */
-    const resetPostHogState = (): void => {
-        posthog.reset();
-        posthogReady.value = false;
     };
 
     // ── Unified API ──────────────────────────────────────────────────────────
 
     /**
-     * Track an analytics event (fires to PostHog if available).
+     * Track a product analytics event in Umami.
+     *
+     * The tracker script loads asynchronously, so `globalThis.umami` may not be
+     * ready on the very first calls; such early events are dropped, which is
+     * acceptable for analytics.
      */
     const track = (event: AnalyticsEventName, properties?: Record<string, unknown>): void => {
-        if (!posthogReady.value) {
+        if (!umamiReady.value) {
             return;
         }
 
-        posthog.capture(event, properties);
-    };
-
-    /**
-     * Identify the current user across both Sentry and PostHog.
-     * Call after successful authentication.
-     */
-    const identifyUser = (userId: string, email?: string): void => {
-        sentryIdentifyUser(userId, email);
-        posthogIdentifyUser(userId, email);
-    };
-
-    /**
-     * Clear user identity across both Sentry and PostHog.
-     * Call on logout / account deletion.
-     */
-    const unidentifyUser = (): void => {
-        sentryUnidentifyUser();
-        posthogUnidentifyUser();
+        globalThis.umami?.track(event, properties);
     };
 
     // ── Convenience helpers ──────────────────────────────────────────────────
@@ -395,17 +315,17 @@ export const useObservabilityStore = defineStore('observability', () => {
      * Track a cart addition event.
      */
     const trackItemAddedToCart = (productId: string, quantity: number): void => {
-        track(analyticsEvents.ITEM_ADDED_TO_CART, {
+        track(analyticsEvents.CART_ITEM_ADDED, {
             product_id: productId,
             quantity
         });
     };
 
     /**
-     * Track an order placement event.
+     * Track an order creation event.
      */
     const trackOrderPlaced = (orderId: string, totalAmount: number, itemCount: number): void => {
-        track(analyticsEvents.ORDER_PLACED, {
+        track(analyticsEvents.ORDER_CREATED, {
             order_id: orderId,
             total_amount: totalAmount,
             item_count: itemCount
@@ -416,39 +336,26 @@ export const useObservabilityStore = defineStore('observability', () => {
      * Track a product search event.
      */
     const trackProductSearched = (query: string): void => {
-        track(analyticsEvents.PRODUCT_SEARCHED, {
+        track(analyticsEvents.PRODUCTS_SEARCHED, {
             query
         });
     };
 
     return {
         // State
-        sentryReady,
-        posthogReady,
+        faroReady,
+        umamiReady,
 
         // Init
-        initSentry,
-        initPostHog,
+        initFaro,
+        initUmami,
 
         // Unified API
         track,
         identifyUser,
         unidentifyUser,
         captureException,
-
-        // Sentry-specific
-        setRouter,
-        sentryIdentifyUser,
-        sentryUnidentifyUser,
-        sentrySetSessionProperties,
-        resetSentryState,
-
-        // PostHog-specific
-        posthogIdentifyUser,
-        posthogUnidentifyUser,
-        setPostHogUserProperties,
         isFeatureEnabled,
-        resetPostHogState,
 
         // Convenience helpers
         trackProductView,
@@ -457,3 +364,13 @@ export const useObservabilityStore = defineStore('observability', () => {
         trackProductSearched
     };
 });
+
+/** Coerce arbitrary hint data into the string map Faro's error context expects. */
+function normalizeContext(data: Record<string, unknown>): Record<string, string> {
+    return Object.fromEntries(
+        Object.entries(data).map(([key, value]) => [
+            key,
+            typeof value === 'string' ? value : JSON.stringify(value)
+        ])
+    );
+}

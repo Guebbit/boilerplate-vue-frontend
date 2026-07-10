@@ -73,14 +73,14 @@ flowchart TD
 | ------ | ------------ |
 | `401` | Redirect to Login with `?continue=` preserved; form-level actions show auth-focused messages |
 | `403` | Show a clear "forbidden" message (never treated as a server error) |
-| `5xx` | Navigate to `/error/500`; `captureException()` sends the error to Sentry |
+| `5xx` | Navigate to `/error/500`; `captureException()` sends the error to Grafana Faro |
 
 ## Security properties provided
 
 - **Bearer transport**: access token is not auto-attached by the browser; every protected request must explicitly include it.
 - **HttpOnly refresh cookie**: the refresh token is inaccessible to JavaScript, reducing XSS exposure.
 - **`sameSite=lax`** (set by backend): reduces cross-site cookie sending in common CSRF scenarios.
-- **No PII in analytics**: `useObservabilityStore()` rules forbid sending email, name, or personal data in PostHog events.
+- **No PII in analytics**: `useObservabilityStore()` rules forbid sending email, name, or personal data in Umami events.
 
 ## External references
 

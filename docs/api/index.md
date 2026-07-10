@@ -9,8 +9,8 @@ This section explains the API contracts and how the FE consumes them.
 flowchart LR
     Spec[openapi.yaml] --> Lint[Spectral\nnpm run lint:openapi]
     Spec --> Generate[Orval\nnpm run genapi]
-    Generate --> Client[api/index.ts\ntyped axios functions]
-    Generate --> Schemas[api/schemas.zod.ts\nZod schemas]
+    Generate --> Client[contracts/rest/index.ts\ntyped axios functions]
+    Generate --> Schemas[contracts/rest/schemas.zod.ts\nZod schemas]
     Generate --> Mocks[tests/mocks/generated.ts\nMSW stubs]
     Client --> Stores[Pinia stores\ncall generated functions]
     Schemas --> Stores
@@ -30,7 +30,7 @@ flowchart LR
 
 - [`openapi.yaml`](./openapi-workflow.md) is the source of truth for REST — never hand-write what can be generated.
 - [`asyncapi.yaml`](./asyncapi-workflow.md) is the source of truth for SSE/WebSocket contracts.
-- The generated `api/` folder is **read-only** — `npm run genapi` overwrites it entirely.
+- The generated `contracts/rest/` folder is **read-only** — `npm run genapi` overwrites it entirely.
 - Coordinate contract changes with the backend team before merging.
 
 ## Read by task

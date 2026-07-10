@@ -1,6 +1,6 @@
 {
     "extends": "./tsconfig.app.json",
-    "include": ["cypress/**/*.ts", "cypress.config.ts"],
+    "include": ["tests/e2e/**/*.ts", "cypress.config.ts"],
     "exclude": [],
     "compilerOptions": {
         "composite": true,

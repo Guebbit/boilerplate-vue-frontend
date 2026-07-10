@@ -135,6 +135,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/features/products/store';
+import { createProductsSchema } from '@/features/products/schemas.ts';
 import { z } from 'zod';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
@@ -168,7 +169,8 @@ const { id } = defineProps<{
 /**
  * Product store APIs and reactive references.
  */
-const { fetchProduct, updateProduct, zodSchemaProducts } = useProductsStore();
+const { fetchProduct, updateProduct } = useProductsStore();
+const zodSchemaProducts = createProductsSchema(t);
 const { currentProduct, selectedProductId, loading } = storeToRefs(useProductsStore());
 
 /**

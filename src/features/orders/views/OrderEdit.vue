@@ -117,6 +117,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/features/orders/store.ts';
+import { createOrderStatusSchema } from '@/features/orders/schemas.ts';
 import { z } from 'zod';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
@@ -150,7 +151,8 @@ const { id } = defineProps<{
 /**
  * Orders store APIs and references.
  */
-const { fetchOrder, updateOrder, zodSchemaOrderStatus } = useOrdersStore();
+const { fetchOrder, updateOrder } = useOrdersStore();
+const zodSchemaOrderStatus = createOrderStatusSchema(t);
 const { currentOrder, selectedOrderId, loading } = storeToRefs(useOrdersStore());
 
 /**

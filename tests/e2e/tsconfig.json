@@ -1,0 +1,16 @@
+{
+    "extends": "../../tsconfig.app.json",
+    "compilerOptions": {
+        "sourceMap": false,
+        "types": ["cypress"],
+        "isolatedModules": false
+    },
+    "baseUrl": "./",
+    "include": [
+        "../../cypress.config.ts",
+        "**/*.cy.ts",
+        "**/*.cy.js",
+        "**/*.d.ts",
+        "support/**/*.ts"
+    ]
+}

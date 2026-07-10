@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { AdminHealth, AdminMetricsSummary } from '@types';
+import type { ObservabilityHealth, ObservabilityMetricsSummary } from '@types';
 import type { IAdminKpiCard } from '@/features/admin/types.ts';
 
 const { t } = useI18n();
 
 const props = defineProps<{
-    health?: AdminHealth;
-    metrics?: AdminMetricsSummary;
+    health?: ObservabilityHealth;
+    metrics?: ObservabilityMetricsSummary;
     loading: boolean;
     healthError?: string;
     metricsError?: string;
@@ -231,9 +231,15 @@ const kpiCards = computed<IAdminKpiCard[]>(() => [
                         }}</span>
                     </div>
                     <div class="admin-detail-item">
-                        <span class="admin-detail-label">{{ t('admin-page.label-posthog') }}</span>
+                        <span class="admin-detail-label">{{ t('admin-page.label-faro') }}</span>
                         <span class="admin-detail-value">{{
-                            props.health.integrations.posthog ? '✓' : '✗'
+                            props.health.integrations.faro ? '✓' : '✗'
+                        }}</span>
+                    </div>
+                    <div class="admin-detail-item">
+                        <span class="admin-detail-label">{{ t('admin-page.label-umami') }}</span>
+                        <span class="admin-detail-value">{{
+                            props.health.integrations.umami ? '✓' : '✗'
                         }}</span>
                     </div>
                     <div class="admin-detail-item">

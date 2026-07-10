@@ -26,7 +26,7 @@ export default defineConfigWithVueTs(
         'dist-ssr',
         'coverage',
         'docs',
-        'api',
+        'contracts',
         'node_modules',
         'eslint.config.ts',
         'public/mockServiceWorker.js',
@@ -266,6 +266,7 @@ export default defineConfigWithVueTs(
     {
         ...pluginVitest.configs.recommended,
         files: ['src/**/__tests__/*', 'tests/**/*', '**/*.{spec,test}.{ts,tsx}'],
+        ignores: ['tests/e2e/**/*'],
         languageOptions: {
             parserOptions: {
                 projectService: false,
@@ -276,8 +277,8 @@ export default defineConfigWithVueTs(
     {
         ...pluginCypress.configs.recommended,
         files: [
-            'cypress/e2e/**/*.{cy,spec}.{js,ts,jsx,tsx}',
-            'cypress/support/**/*.{js,ts,jsx,tsx}'
+            'tests/e2e/specs/**/*.{cy,spec}.{js,ts,jsx,tsx}',
+            'tests/e2e/support/**/*.{js,ts,jsx,tsx}'
         ],
         languageOptions: {
             parserOptions: {

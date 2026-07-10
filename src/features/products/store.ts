@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import type { AxiosProgressEvent } from 'axios';
-import { useI18n } from 'vue-i18n';
-import { z } from 'zod';
 
 import {
     listProducts,
@@ -21,7 +19,6 @@ import type {
 } from '@types';
 
 export const useProductsStore = defineStore('products', () => {
-    const { t } = useI18n();
     const { getLoading, setLoading } = useCoreStore();
     const {
         itemDictionary: products,
@@ -95,6 +92,7 @@ export const useProductsStore = defineStore('products', () => {
                 }).then((response) => response.data.items),
             filters,
             page,
+            pageSizeValue,
             { forced }
         );
     };
@@ -209,30 +207,6 @@ export const useProductsStore = defineStore('products', () => {
     const deleteProduct = (productId: string) =>
         deleteTarget(() => deleteProductById(productId), productId);
 
-    /**
-     * Zod schema for product title
-     */
-    const zodSchemaProductsTitle = z.string().min(1, t('products-form.title-required'));
-
-    /**
-     * Zod schema for product price
-     */
-    const zodSchemaProductsPrice = z.number().min(0, t('products-form.price-min'));
-
-    /**
-     * Product schema
-     */
-    const zodSchemaProducts = z.object({
-        id: z.string().nullish(),
-        title: zodSchemaProductsTitle,
-        price: zodSchemaProductsPrice,
-        description: z.string().nullish(),
-        active: z.boolean().nullish(),
-        imageUrl: z.string().nullish(),
-        createdAt: z.string().nullish(),
-        updatedAt: z.string().nullish()
-    });
-
     return {
         products,
         productsList,
@@ -253,10 +227,6 @@ export const useProductsStore = defineStore('products', () => {
         createProduct,
         updateProduct,
         updateProductImage,
-        deleteProduct,
-
-        zodSchemaProductsTitle,
-        zodSchemaProductsPrice,
-        zodSchemaProducts
+        deleteProduct
     };
 });

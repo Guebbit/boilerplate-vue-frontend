@@ -5,7 +5,6 @@ import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
 
 import App from './App.vue';
 import router from './router';
-import { initializeApiMocking } from '../tests/mocks/apiMock.ts';
 
 /**
  * Global CSS
@@ -18,22 +17,27 @@ import '@/styles/main.scss';
  */
 
 const bootstrapApplication = async () => {
-    await initializeApiMocking();
+    // Dynamic import so MSW and the mock handlers stay in a lazy chunk
+    // that is never downloaded when mocking is disabled.
+    if (import.meta.env.VITE_API_MOCK_ENABLED === 'true') {
+        const { initializeApiMocking } = await import('../tests/mocks/apiMock.ts');
+        await initializeApiMocking();
+    }
     const app = createApp(App);
 
     // Pinia must be registered before any store is instantiated.
     app.use(createPinia()).use(router).use(i18n).mount('#app');
 
-    // Obtain the observability store (Sentry + PostHog).
+    // Obtain the observability store (Grafana Faro + Umami).
     const observability = useObservabilityStore();
 
-    // Sentry = error/performance monitoring.
-    // Initialised after the app is mounted so the router is available.
-    observability.initSentry(router);
+    // Grafana Faro = error/crash monitoring + frontend tracing + web-vitals.
+    // Captures uncaught errors and starts tracing fetch/XHR to the API.
+    void observability.initFaro();
 
-    // PostHog = product analytics + feature flags.
-    // Must be initialised before any track() call, which is a no-op when posthogReady is false.
-    observability.initPostHog();
+    // Umami = product analytics. Injects the tracker script; pageviews are
+    // tracked automatically, custom events go through observability.track().
+    observability.initUmami();
 
     // Track application mount (after init so the event is not silently dropped).
     observability.track(analyticsEvents.APP_STARTED);

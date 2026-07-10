@@ -1,7 +1,5 @@
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
-import { useI18n } from 'vue-i18n';
-import { z } from 'zod';
 import {
     listOrders,
     getOrderById,
@@ -22,7 +20,6 @@ import type {
 } from '@types';
 
 export const useOrdersStore = defineStore('orders', () => {
-    const { t } = useI18n();
     const { getLoading, setLoading } = useCoreStore();
     const {
         itemDictionary: orders,
@@ -98,6 +95,7 @@ export const useOrdersStore = defineStore('orders', () => {
                 }).then((response) => response.data.items),
             filters,
             page,
+            pageSizeValue,
             { forced }
         );
     };
@@ -170,30 +168,6 @@ export const useOrdersStore = defineStore('orders', () => {
             })
         );
 
-    /**
-     * Zod schema for order status
-     */
-    const zodSchemaOrderStatus = z.enum(
-        ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'],
-        {
-            message: t('orders-form.status-invalid')
-        }
-    );
-
-    /**
-     * Order schema
-     */
-    const zodSchemaOrder = z.object({
-        id: z.string().nullish(),
-        userId: z.string().nullish(),
-        email: z.email(t('orders-form.email-invalid')).nullish(),
-        status: zodSchemaOrderStatus.nullish(),
-        total: z.number().nullish(),
-        notes: z.string().nullish(),
-        createdAt: z.string().nullish(),
-        updatedAt: z.string().nullish()
-    });
-
     return {
         orders,
         ordersList,
@@ -215,9 +189,6 @@ export const useOrdersStore = defineStore('orders', () => {
         updateOrder,
         checkout,
         deleteOrder,
-        getOrderInvoice,
-
-        zodSchemaOrderStatus,
-        zodSchemaOrder
+        getOrderInvoice
     };
 });

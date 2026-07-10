@@ -3,7 +3,7 @@
 Repo = Vue frontend boilerplate.
 This repo = `boilerplate-vue-frontend`.
 Single package. SPA. Vue 3 + Pinia + Vue Router + OpenAPI-generated client.
-Observability: Sentry (errors + performance) + PostHog (analytics + feature flags).
+Observability: Grafana Faro (errors + frontend tracing + web-vitals) + Umami (product analytics). Self-hosted local stack — no SaaS.
 
 Human-facing docs: [README.md](../README.md) · [PAIRING.md](../PAIRING.md).
 
@@ -19,8 +19,8 @@ Human-facing docs: [README.md](../README.md) · [PAIRING.md](../PAIRING.md).
 - Keep code KISS.
 - Prefer composables/stores over duplicated view logic.
 - `openapi.yaml` first. Contract and all generated code starts there.
-- Use generated API functions from `@api` (`api/index.ts`); avoid manual endpoint wrappers unless required.
-- Use generated Zod schemas from `@api/schemas` (`api/schemas.zod.ts`) for form and response validation; never hand-write schemas that duplicate the spec.
+- Use generated API functions from `@api` (`contracts/rest/index.ts`); avoid manual endpoint wrappers unless required.
+- Use generated Zod schemas from `@api/schemas` (`contracts/rest/schemas.zod.ts`) for form and response validation; never hand-write schemas that duplicate the spec.
 - When adding a new endpoint handler for MSW, start from the generated stub in `tests/mocks/generated.ts`, then move business logic to `tests/mocks/handlers/`.
 - Keep comments short and practical.
 - Avoid `async` / `await` + `try/catch` unless necessary.
@@ -39,70 +39,69 @@ Human-facing docs: [README.md](../README.md) · [PAIRING.md](../PAIRING.md).
 
 - Boilerplate is example-focused: keep changes small but complete.
 - Do not break API contract without updating `openapi.yaml`.
-- After contract edits, regenerate `/api` with `npm run genapi`.
+- After contract edits, regenerate `contracts/rest` with `npm run genapi`.
 - Keep auth, i18n, and error-handling flows consistent across stores/composables.
 - **Never** create backward-compatibility shims, legacy aliases, or transitional code unless explicitly requested. Fix forward; remove old code immediately.
 
 ## Observability brain
 
-All observability code lives in `src/plugins/observability/`. Never scatter tracking calls directly from vendors.
+All observability code lives in the Pinia store `src/stores/observability.ts`, accessed via `useObservabilityStore()` (or the `useObservability()` composable in components). Never import the Faro SDK or touch `window.umami` directly from features/components.
 
-### Module structure
+Two separate jobs — do not conflate them:
 
-```
-src/plugins/observability/
-├── index.ts        — barrel exports (use as import source)
-├── sentry.ts       — @sentry/vue init, identify/unidentify, breadcrumbs
-├── posthog.ts      — posthog-js init, identify/unidentify, feature flags
-└── analytics.ts    — AnalyticsEvents catalog + high-level track() helpers
-```
+1. **Grafana Faro** — errors/crashes, frontend tracing, web-vitals. Browser sends only to Grafana Alloy's Faro receiver (`:12347`), never directly to the OTel collector / Loki / Prometheus. Tracing propagates the W3C `traceparent` header to the API origin so FE and BE traces link.
+2. **Umami** — product analytics. Tracker script is injected; pageviews are automatic (no manual `page_view` event); custom events via `track()`.
 
 ### How to track events
 
 ```ts
-// Import from barrel
-import {
-    AnalyticsEvents,
-    track,
-    trackProductView,
-    trackItemAddedToCart,
-    trackOrderPlaced
-} from '@/plugins/observability';
+import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
+
+const obs = useObservabilityStore();
 
 // Track a named event
-track(AnalyticsEvents.PAGE_VIEW, { path: '/products' });
+obs.track(analyticsEvents.PRODUCT_VIEWED, { product_id: '123' });
 
-// Use convenience helpers
-trackProductView('123', 'Widget');
-trackItemAddedToCart('123', 2);
-trackOrderPlaced('order-abc', 49.99, 3);
+// Convenience helpers
+obs.trackProductView('123', 'Widget');
+obs.trackItemAddedToCart('123', 2);
+obs.trackOrderPlaced('order-abc', 49.99, 3);
+
+// Errors go to Faro
+obs.captureException(error);
 ```
 
 ### Event taxonomy
 
-| Category   | Events                                                         |
-| ---------- | -------------------------------------------------------------- |
-| Lifecycle  | `app_started`, `app_ready`                                     |
-| Navigation | `page_view`                                                    |
-| Auth       | `user_signed_up`, `user_logged_in`, `user_logged_out`          |
-| Cart       | `item_added_to_cart`, `item_removed_from_cart`, `cart_cleared` |
-| Orders     | `order_checkout_started`, `checkout_completed`, `order_placed` |
-| Products   | `product_viewed`, `product_searched`                           |
-| Feedback   | `feedback_submitted`                                           |
+Event names are the canonical names the backend also emits, so FE and BE analytics line up.
+
+| Category            | Events                                                                                          |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| Lifecycle (FE-only) | `app_started`, `app_ready`                                                                      |
+| Auth                | `user_signed_up`, `user_logged_in`, `user_logged_out`, `user_profile_viewed`, `account_deleted` |
+| Products            | `products_searched`, `product_viewed`                                                           |
+| Cart                | `cart_viewed`, `cart_item_added`, `cart_item_updated`, `cart_item_removed`, `cart_cleared`      |
+| Checkout / Orders   | `checkout_completed`, `checkout_failed`, `order_created`, `orders_viewed`                       |
+
+Pageviews are automatic (Umami) and are not in this table.
 
 ### Rules
 
 - **No PII** in event properties — never send email, name, or personal data.
-- **Use constants** from `AnalyticsEvents` — never hardcode event name strings.
+- **Use constants** from `analyticsEvents` — never hardcode event name strings, and keep them matching the backend's names.
 - **Fire-and-forget** — analytics calls must be async-safe; no `await` on `track()`.
-- **Both systems for errors** — Sentry captures exceptions + performance; PostHog captures product analytics + feature flags.
-- **Disabled locally** — both Sentry and PostHog are no-ops when DSN/API key env vars are missing.
+- **Two jobs, one store** — Faro handles errors/traces/web-vitals; Umami handles product analytics. No feature-flag provider exists (`isFeatureEnabled()` always returns `false`).
+- **Disabled locally** — Faro is a no-op without `VITE_FARO_URL`; Umami is a no-op without `VITE_UMAMI_WEBSITE_ID`.
 
 ### Environment variables
 
-| Variable                         | Purpose                                               |
-| -------------------------------- | ----------------------------------------------------- |
-| `VITE_SENTRY_DSN`                | Sentry DSN (empty = disabled)                         |
-| `VITE_SENTRY_TRACES_SAMPLE_RATE` | Sentry trace sample rate (`0`..`1`)                   |
-| `VITE_POSTHOG_API_KEY`           | PostHog project API key (empty = disabled)            |
-| `VITE_POSTHOG_HOST`              | PostHog host URL (default: `https://app.posthog.com`) |
+| Variable                | Purpose                                                              |
+| ----------------------- | -------------------------------------------------------------------- |
+| `VITE_FARO_URL`         | Grafana Alloy Faro receiver URL (empty = Faro disabled)              |
+| `VITE_FARO_APP_NAME`    | App name reported to Faro (default `frontend`)                       |
+| `VITE_FARO_APP_VERSION` | App version reported to Faro (default `1.0.0`)                       |
+| `VITE_FARO_ENVIRONMENT` | Environment tag (default: Vite `MODE`)                               |
+| `VITE_UMAMI_WEBSITE_ID` | Umami website id (empty = Umami disabled)                            |
+| `VITE_UMAMI_SRC`        | Umami tracker script URL (default `http://localhost:8090/script.js`) |
+
+Trace propagation targets `VITE_API_URL`.

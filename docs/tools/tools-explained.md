@@ -83,11 +83,11 @@ Each section links to the dedicated page for configuration details and code poin
 
 ### Orval
 
-**What it is.** Orval is a code generator that reads `openapi.yaml` and outputs a typed axios client, Zod schemas, and MSW mock stubs. The generated `api/` directory is a derived artifact — never edit it by hand.
+**What it is.** Orval is a code generator that reads `openapi.yaml` and outputs a typed axios client, Zod schemas, and MSW mock stubs. The generated `contracts/rest/` directory is a derived artifact — never edit it by hand.
 
 **Problem it solves.** Maintaining a typed API client alongside the spec means they inevitably drift. Code generation makes the client an output of the spec.
 
-**In this repo.** `npm run genapi` regenerates `api/index.ts` (axios functions), `api/schemas.zod.ts` (Zod schemas), and `tests/mocks/generated.ts` (MSW stubs). Configured in `orval.config.ts`.
+**In this repo.** `npm run genapi` regenerates `contracts/rest/index.ts` (axios functions), `contracts/rest/schemas.zod.ts` (Zod schemas), and `tests/mocks/generated.ts` (MSW stubs). Configured in `orval.config.ts`.
 
 → [OpenAPI Workflow](../api/openapi-workflow.md)
 
@@ -111,7 +111,7 @@ Each section links to the dedicated page for configuration details and code poin
 
 **Problem it solves.** External input (form data, API responses at runtime boundaries) is untyped. Zod enforces shape and type at the boundary and narrows the TypeScript type automatically.
 
-**In this repo.** Zod schemas are generated from `openapi.yaml` by orval into `api/schemas.zod.ts`. Import them from `@api/schemas` — never hand-write schemas that duplicate the spec.
+**In this repo.** Zod schemas are generated from `openapi.yaml` by orval into `contracts/rest/schemas.zod.ts`. Import them from `@api/schemas` — never hand-write schemas that duplicate the spec.
 
 → [OpenAPI Workflow](../api/openapi-workflow.md)
 
@@ -155,27 +155,27 @@ Each section links to the dedicated page for configuration details and code poin
 
 ## Observability stack
 
-### Sentry (@sentry/vue)
+### Grafana Faro (@grafana/faro-web-sdk)
 
-**What it is.** Sentry is an error and performance monitoring platform. It captures JavaScript exceptions, slow navigations, and session replays.
+**What it is.** Grafana Faro is an open-source frontend observability SDK. It captures JavaScript exceptions, Core Web Vitals, and distributed traces for every `fetch`/XHR, shipping them to a self-hosted Grafana Alloy receiver.
 
-**Problem it solves.** Console errors in production are invisible. Sentry surfaces crashes with full stack traces, the user's browser context, and a replay of what they did before the error.
+**Problem it solves.** Console errors in production are invisible. Faro surfaces crashes with full stack traces and browser context, and — by propagating the W3C `traceparent` header to the API — links a browser interaction to the backend handler and database query in one trace.
 
-**In this repo.** Initialized in `src/main.ts` when `VITE_SENTRY_DSN` is set. All Sentry calls go through `useObservabilityStore()` — never import `@sentry/vue` directly in components. Disabled (no-op) when DSN is absent.
+**In this repo.** Initialized in `src/main.ts` when `VITE_FARO_URL` is set. The browser only talks to Grafana Alloy (`:12347`). All Faro calls go through `useObservabilityStore()`. Disabled (no-op) when the URL is absent.
 
 → [Observability](./observability.md)
 
 ---
 
-### PostHog (posthog-js)
+### Umami (tracker script)
 
-**What it is.** PostHog is an open-source product analytics platform. It captures events (signups, product views, checkouts), lets you analyse funnels and retention, and supports feature flags.
+**What it is.** Umami is a self-hosted, open-source, privacy-friendly product analytics platform. It captures pageviews and custom events and lets you analyse funnels and retention.
 
-**Problem it solves.** Infrastructure metrics tell you the app is healthy but not whether users are completing signups or dropping off at checkout. PostHog answers product questions from a user perspective.
+**Problem it solves.** Infrastructure metrics tell you the app is healthy but not whether users are completing signups or dropping off at checkout. Umami answers product questions from a user perspective.
 
-**In this repo.** Initialized when `VITE_POSTHOG_API_KEY` is set. All tracking calls go through `useObservabilityStore().track()`. Page views are tracked automatically in `router.afterEach`. Disabled (no-op) when key is absent.
+**In this repo.** The tracker script is injected when `VITE_UMAMI_WEBSITE_ID` is set. Pageviews are automatic; all custom tracking goes through `useObservabilityStore().track()` using the canonical event names the backend also emits. Disabled (no-op) when the id is absent.
 
-→ [PostHog](./posthog.md) · [Observability](./observability.md)
+→ [Umami](./umami.md) · [Observability](./observability.md)
 
 ---
 
@@ -199,7 +199,7 @@ Each section links to the dedicated page for configuration details and code poin
 
 **Problem it solves.** Unit tests cover logic; e2e tests cover the full user journey — navigating, filling forms, checking what's rendered. Cypress catches integration failures that unit tests miss.
 
-**In this repo.** E2E specs live in `cypress/e2e/`. `npm run test:e2e` boots Vite (with MSW) and runs Cypress headlessly. `test:e2e:dev` opens the Cypress UI.
+**In this repo.** E2E specs live in `tests/e2e/specs/`. `npm run test:e2e` boots Vite (with MSW) and runs Cypress headlessly. `test:e2e:dev` opens the Cypress UI.
 
 → [Testing](./testing-and-docs.md)
 

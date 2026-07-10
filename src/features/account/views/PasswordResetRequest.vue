@@ -43,7 +43,7 @@ import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseButton from '@/components/atoms/BaseButton.vue';
 import { useProfileStore } from '@/stores/profile.ts';
-import { useUsersStore } from '@/features/users/store.ts';
+import { createUsersSchema } from '@/features/users/schemas.ts';
 import { notifyErrorMessages } from '@/utils/errors.ts';
 import { focusFirstErrorField } from '@/utils/forms.ts';
 import { routerLinkI18n } from '@/utils/i18n.ts';
@@ -51,7 +51,7 @@ import { routerLinkI18n } from '@/utils/i18n.ts';
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 const { requestPasswordReset } = useProfileStore();
-const { zodSchemaUsers } = useUsersStore();
+const zodSchemaUsers = createUsersSchema(t);
 
 const { form, formErrors, isSubmitting, handleSubmit } = useStructureFormValidation<{
     email?: string;

@@ -57,7 +57,7 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useProfileStore } from '@/stores/profile.ts';
 import { useRouter, useRoute } from 'vue-router';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import { useUsersStore } from '@/features/users/store.ts';
+import { createUsersSchema } from '@/features/users/schemas.ts';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
 import BaseButton from '@/components/atoms/BaseButton.vue';
@@ -83,7 +83,7 @@ interface IUserSignupForm {
     conditions?: boolean;
 }
 
-const { zodSchemaUsers } = useUsersStore();
+const zodSchemaUsers = createUsersSchema(t);
 
 const { form, formErrors, isSubmitting, handleSubmit } =
     useStructureFormValidation<IUserSignupForm>(

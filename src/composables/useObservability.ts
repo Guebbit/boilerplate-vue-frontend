@@ -20,8 +20,8 @@ export function useObservability() {
 
     return {
         // ── State ───
-        sentryReady: store.sentryReady,
-        posthogReady: store.posthogReady,
+        faroReady: store.faroReady,
+        umamiReady: store.umamiReady,
 
         // ── Unified tracking ──
         track: store.track,

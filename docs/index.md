@@ -20,7 +20,7 @@ features:
     - title: Layers stay visible
       details: Views, composables, stores, generated API client, and HTTP interceptors each keep a small, clear job.
     - title: Tooling is part of the boilerplate
-      details: Sentry, PostHog, MSW mocking, Vitest, Cypress, and VitePress are all wired in as examples.
+      details: Grafana Faro, Umami, MSW mocking, Vitest, Cypress, and VitePress are all wired in as examples.
     - title: Contract-first workflow
       details: openapi.yaml drives the generated axios client and Zod schemas. asyncapi.yaml drives the realtime types.
 ---
@@ -61,7 +61,7 @@ flowchart TD
 - **API client**: [OpenAPI-generated axios client](./api/openapi-workflow.md) — types and functions come from `openapi.yaml`, never written by hand.
 - **Realtime**: [SSE + WebSocket clients](./tools/websockets.md) driven by [`asyncapi.yaml`](./api/asyncapi-workflow.md).
 - **State**: [Pinia stores](./tools/state-and-routing.md) own data; views stay thin.
-- **Observability**: [Sentry + PostHog](./tools/observability.md) wired into a single store.
+- **Observability**: [Grafana Faro + Umami](./tools/observability.md) wired into a single store.
 - **Dev mocking**: [MSW](./tools/mocking.md) lets the app run without a backend.
 - **Contracts**: [`openapi.yaml`](./api/openapi-workflow.md) + [`asyncapi.yaml`](./api/asyncapi-workflow.md).
 - **Shape**: layered code explained in [Theory](./theory/) and the dedicated [Layers](./theory/layers.md) page.
@@ -86,8 +86,8 @@ Contract-first workflow: OpenAPI + AsyncAPI, codegen, generated client usage, an
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 55, 'rankSpacing': 70}}}%%
 flowchart LR
-    OpenSpec[openapi.yaml] --> Client[api/index.ts\naxios client]
-    OpenSpec --> Schemas[api/schemas.zod.ts\nZod schemas]
+    OpenSpec[openapi.yaml] --> Client[contracts/rest/index.ts\naxios client]
+    OpenSpec --> Schemas[contracts/rest/schemas.zod.ts\nZod schemas]
     OpenSpec --> Mocks[tests/mocks/generated.ts\nMSW stubs]
     AsyncSpec[asyncapi.yaml] --> Realtime[src/types/realtime.generated.ts]
 
@@ -99,7 +99,7 @@ flowchart LR
     Realtime --> RTClients[SSE + WS clients]
     RTClients --> Stores
 
-    Stores --> Obs[Sentry + PostHog\nobservability store]
+    Stores --> Obs[Grafana Faro + Umami\nobservability store]
 
     classDef contract fill:#dcfce7,stroke:#16a34a,color:#111827;
     classDef generated fill:#fef3c7,stroke:#d97706,color:#111827;

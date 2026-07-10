@@ -17,7 +17,7 @@ flowchart TD
     HTTP["HTTP layer\nsrc/utils/http.ts\naxios + interceptors"] --> Stores
     Generated --> HTTP
 
-    Obs["Observability\nSentry + PostHog\nsrc/stores/observability.ts"] --> Views
+    Obs["Observability\nGrafana Faro + Umami\nsrc/stores/observability.ts"] --> Views
     Obs --> Router
 
     MSW["MSW\ntests/mocks/\ndev + test only"] -.intercepted by.-> HTTP
@@ -47,7 +47,7 @@ flowchart TD
 | Pinia stores | data fetching, caching, reactive state, API calls | direct DOM manipulation |
 | Views + features | template rendering, UI composition, user events | data fetching logic |
 | Router + I18N | navigation, locale injection, route guards | deep business decisions |
-| Observability | error capture (Sentry) and analytics (PostHog) via a single store | scattered vendor calls |
+| Observability | error capture + tracing (Grafana Faro) and analytics (Umami) via a single store | scattered vendor calls |
 
 ## Why this page exists next to Layers
 

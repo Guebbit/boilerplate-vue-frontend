@@ -58,7 +58,7 @@ import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseButton from '@/components/atoms/BaseButton.vue';
 import { useProfileStore } from '@/stores/profile.ts';
-import { useUsersStore } from '@/features/users/store.ts';
+import { createUsersPasswordSchema } from '@/features/users/schemas.ts';
 import { notifyErrorMessages } from '@/utils/errors.ts';
 import { focusFirstErrorField } from '@/utils/forms.ts';
 import { routerLinkI18n } from '@/utils/i18n.ts';
@@ -74,7 +74,7 @@ const route = useRoute();
 const router = useRouter();
 const { addMessage } = useNotificationsStore();
 const { confirmPasswordReset } = useProfileStore();
-const { zodSchemaUsersPassword } = useUsersStore();
+const zodSchemaUsersPassword = createUsersPasswordSchema(t);
 
 const { form, formErrors, isSubmitting, handleSubmit } =
     useStructureFormValidation<IPasswordResetConfirmForm>(

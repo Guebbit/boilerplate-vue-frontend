@@ -54,7 +54,7 @@ import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
-import { useUsersStore } from '@/features/users/store.ts';
+import { createUsersSchema } from '@/features/users/schemas.ts';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
@@ -75,7 +75,7 @@ const route = useRoute();
 /**
  * Form logics
  */
-const { zodSchemaUsers } = useUsersStore();
+const zodSchemaUsers = createUsersSchema(t);
 
 const { form, formErrors, validate } = useStructureFormValidation<
     LoginRequest & {
@@ -100,9 +100,9 @@ const showErrors = ref(false);
 const formElement = ref<HTMLFormElement>();
 
 /**
- * If not in production, dummy user of local database
+ * When the mock API is active, prefill the dummy user of the mock database
  */
-if (import.meta.env.NODE_ENV !== 'production')
+if (import.meta.env.VITE_API_MOCK_ENABLED === 'true')
     form.value = {
         email: 'root@root.it',
         password: 'rootroot'

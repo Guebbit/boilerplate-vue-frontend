@@ -20,7 +20,7 @@
 - [Routing, auth & i18n](#routing-auth--i18n)
 - [Mocking with MSW](#mocking-with-msw)
 - [Testing](#testing)
-- [Observability (Sentry, PostHog, analytics)](#observability-sentry-posthog-analytics)
+- [Observability (Grafana Faro, Umami, analytics)](#observability-grafana-faro-umami-analytics)
 - [Admin Dashboard](#admin-dashboard)
 - [TODO / roadmap](#todo--roadmap)
 
@@ -97,18 +97,19 @@ Every tool below has a one-line "why we use it" + a link to its official documen
 | **[Vitest](https://vitest.dev/)**                                              | Unit tests (`tests/unit/`, `vitest.config.ts`)     | [vitest.dev/guide](https://vitest.dev/guide/)                              |
 | **[@vue/test-utils](https://test-utils.vuejs.org/)**                           | Component mounting/assertions                      | [test-utils.vuejs.org/guide](https://test-utils.vuejs.org/guide/)          |
 | **[jsdom](https://github.com/jsdom/jsdom)**                                    | DOM environment for unit tests                     | [jsdom readme](https://github.com/jsdom/jsdom#readme)                      |
-| **[Cypress](https://www.cypress.io/)**                                         | E2E tests (`cypress/e2e/`)                         | [docs.cypress.io](https://docs.cypress.io/)                                |
+| **[Cypress](https://www.cypress.io/)**                                         | E2E tests (`tests/e2e/specs/`)                     | [docs.cypress.io](https://docs.cypress.io/)                                |
 | **[MSW](https://mswjs.io/)**                                                   | Request mocking for dev + Cypress (`tests/mocks/`) | [mswjs.io/docs](https://mswjs.io/docs/)                                    |
 | **[start-server-and-test](https://github.com/bahmutov/start-server-and-test)** | Boots Vite + waits before running Cypress          | [package readme](https://github.com/bahmutov/start-server-and-test#readme) |
 
 ### Observability & UI libs
 
-| Tool                                                                           | Why it's here                                                    | Docs                                                                                                      |
-| ------------------------------------------------------------------------------ | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| **[@sentry/vue](https://docs.sentry.io/platforms/javascript/guides/vue/)**     | Crash + performance monitoring + session replay (opt-in via DSN) | [docs.sentry.io/platforms/javascript/guides/vue](https://docs.sentry.io/platforms/javascript/guides/vue/) |
-| **[posthog-js](https://posthog.com/docs/libraries/js)**                        | Product analytics + feature flags (opt-in via API key)           | [posthog.com/docs/libraries/js](https://posthog.com/docs/libraries/js)                                    |
-| **[@guebbit/css-toolkit](https://www.npmjs.com/package/@guebbit/css-toolkit)** | Shared SCSS utilities / tokens                                   | [npm](https://www.npmjs.com/package/@guebbit/css-toolkit)                                                 |
-| **[@guebbit/vue-toolkit](https://www.npmjs.com/package/@guebbit/vue-toolkit)** | Shared Vue components / composables                              | [npm](https://www.npmjs.com/package/@guebbit/vue-toolkit)                                                 |
+| Tool                                                                                                                              | Why it's here                                                                                                         | Docs                                                                                                                                            |
+| --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **[@grafana/faro-web-sdk](https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/faro-web-sdk/)**     | Error monitoring + frontend tracing + web-vitals to a self-hosted Grafana Alloy receiver (opt-in via `VITE_FARO_URL`) | [grafana.com · Faro Web SDK](https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/faro-web-sdk/)                  |
+| **[@grafana/faro-web-tracing](https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/faro-web-sdk/)** | Distributed tracing for fetch/XHR; propagates `traceparent` to the API so FE↔BE traces link                           | [grafana.com · Faro tracing](https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/faro-web-sdk/instrumentations/) |
+| **[Umami](https://umami.is/docs)**                                                                                                | Self-hosted product analytics — pageviews + custom events (opt-in via `VITE_UMAMI_WEBSITE_ID`)                        | [umami.is/docs](https://umami.is/docs)                                                                                                          |
+| **[@guebbit/css-toolkit](https://www.npmjs.com/package/@guebbit/css-toolkit)**                                                    | Shared SCSS utilities / tokens                                                                                        | [npm](https://www.npmjs.com/package/@guebbit/css-toolkit)                                                                                       |
+| **[@guebbit/vue-toolkit](https://www.npmjs.com/package/@guebbit/vue-toolkit)**                                                    | Shared Vue components / composables                                                                                   | [npm](https://www.npmjs.com/package/@guebbit/vue-toolkit)                                                                                       |
 
 > If you bump any of these, check the matching docs page first — most breaking changes are documented on the front page of each tool's site.
 
@@ -123,11 +124,11 @@ flowchart LR
         P[Pinia stores<br/>src/stores]
         R[Vue Router<br/>src/router]
         I18N[Vue I18n<br/>src/locales]
-        OBS[Observability store<br/>Sentry + PostHog]
+        OBS[Observability store<br/>Grafana Faro + Umami]
     end
 
     subgraph Generated["📦 Generated layer"]
-        API["/api OpenAPI client<br/>(axios + types)"]
+        API["contracts/rest OpenAPI client<br/>(axios + types)"]
     end
 
     subgraph Shared["🔧 Shared utils"]
@@ -160,7 +161,7 @@ Key principles:
 - **Stores own data.** Views call composables/stores; stores call the generated API.
 - **Interceptors own error shape.** Every HTTP error becomes an `IResponseReject` envelope.
 - **Mocks are toggled by env.** MSW activates only when `VITE_API_MOCK_ENABLED=true`.
-- **Single observability store.** Sentry and PostHog are consolidated in `src/stores/observability.ts`; never scatter vendor calls into components.
+- **Single observability store.** Grafana Faro and Umami are consolidated in `src/stores/observability.ts`; never scatter vendor calls into components.
 
 ---
 
@@ -186,16 +187,18 @@ src/
 ├── utils/           http, api wiring, i18n, forms, multipart, sockets, errors, navigation, composables
 ├── views/           top-level (non-feature) views (Home, Playground, Error)
 ├── App.vue
-└── main.ts          bootstrap (Pinia + Router + i18n + Sentry + PostHog + MSW)
+└── main.ts          bootstrap (Pinia + Router + i18n + Grafana Faro + Umami + MSW)
 
-api/
-├── index.ts         generated axios functions + TS types  (DO NOT edit by hand)
-└── schemas.zod.ts   generated Zod schemas                 (DO NOT edit by hand)
-tests/mocks/
-├── generated.ts     orval-generated MSW stubs + faker factories (DO NOT edit)
-└── handlers/        hand-written MSW handlers with in-memory DB logic
-cypress/             e2e specs
-tests/               vitest unit tests
+contracts/
+└── rest/
+    ├── index.ts         generated axios functions + TS types  (DO NOT edit by hand)
+    └── schemas.zod.ts   generated Zod schemas                 (DO NOT edit by hand)
+tests/
+├── mocks/
+│   ├── generated.ts   orval-generated MSW stubs + faker factories (DO NOT edit)
+│   └── handlers/      hand-written MSW handlers with in-memory DB logic
+├── unit/              vitest unit tests
+└── e2e/               Cypress e2e specs, fixtures, support
 openapi.yaml         API contract (source of truth)
 asyncapi.yaml        Realtime contract (source of truth)
 spectral.yaml        OpenAPI lint rules
@@ -242,29 +245,26 @@ Access level legend: **public** = no guard · **guest only** = `isGuest` (logged
 
 Reference: [`.env-example`](./.env-example).
 
-| Variable                                   | Purpose                                                                                     |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `VITE_APP_DEFAULT_LOCALE`                  | Initial locale (e.g. `en`)                                                                  |
-| `VITE_APP_SUPPORTED_LOCALES`               | Comma-separated supported locales (e.g. `en,it,es`)                                         |
-| `VITE_APP_PUBLIC_PATH`                     | Public path served by Vite                                                                  |
-| `VITE_APP_BASE_URL`                        | Router history base URL (optional)                                                          |
-| `VITE_API_URL`                             | Backend API base URL                                                                        |
-| `VITE_API_WEBSOCKET`                       | WebSocket URL used by realtime playground chat (`ws://…`; `http://…` is auto-converted)     |
-| `VITE_API_SSE`                             | SSE URL used by realtime playground observability stream                                    |
-| `VITE_API_MOCK_ENABLED`                    | Enable [MSW](https://mswjs.io/) mocking (`true`/`false`) — see [Mocking](#mocking-with-msw) |
-| `VITE_AXIOS_TIMEOUT`                       | [Axios](https://axios-http.com/) timeout (ms)                                               |
-| `VITE_APP_DEBUG_ROUTER`                    | Router debug logs in dev (`true`/`false`)                                                   |
-| `VITE_APP_DEBUG_HOME`                      | Home view demo logs in dev (`true`/`false`)                                                 |
-| `VITE_APP_DEBUG_HTTP`                      | HTTP interceptor debug logs for server errors (`true`/`false`)                              |
-| `VITE_SENTRY_DSN`                          | [Sentry](https://docs.sentry.io/platforms/javascript/guides/vue/) DSN (empty = off)         |
-| `VITE_SENTRY_ENVIRONMENT`                  | Sentry environment tag (defaults to Vite `MODE`)                                            |
-| `VITE_SENTRY_TRACES_SAMPLE_RATE`           | Sentry tracing sample rate (`0`..`1`, clamped)                                              |
-| `VITE_SENTRY_REPLAYS_SESSION_SAMPLE_RATE`  | Session replay sample rate (`0`..`1`, default `0.1`)                                        |
-| `VITE_SENTRY_REPLAYS_ON_ERROR_SAMPLE_RATE` | Replay-on-error sample rate (`0`..`1`, default `1`)                                         |
-| `VITE_SENTRY_DEBUG`                        | Enable Sentry debug logging (`true`/`false`)                                                |
-| `VITE_POSTHOG_API_KEY`                     | [PostHog](https://posthog.com/) project API key (empty = off)                               |
-| `VITE_POSTHOG_API_HOST`                    | PostHog host URL (default: `https://app.posthog.com`)                                       |
-| `VITE_POSTHOG_DEBUG`                       | Enable PostHog debug logging (`true`/`false`)                                               |
+| Variable                     | Purpose                                                                                                                                                        |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_APP_DEFAULT_LOCALE`    | Initial locale (e.g. `en`)                                                                                                                                     |
+| `VITE_APP_SUPPORTED_LOCALES` | Comma-separated supported locales (e.g. `en,it,es`)                                                                                                            |
+| `VITE_APP_PUBLIC_PATH`       | Public path served by Vite                                                                                                                                     |
+| `VITE_APP_BASE_URL`          | Router history base URL (optional)                                                                                                                             |
+| `VITE_API_URL`               | Backend API base URL                                                                                                                                           |
+| `VITE_API_WEBSOCKET`         | WebSocket URL used by realtime playground chat (`ws://…`; `http://…` is auto-converted)                                                                        |
+| `VITE_API_SSE`               | SSE URL used by realtime playground observability stream                                                                                                       |
+| `VITE_API_MOCK_ENABLED`      | Enable [MSW](https://mswjs.io/) mocking (`true`/`false`) — see [Mocking](#mocking-with-msw)                                                                    |
+| `VITE_AXIOS_TIMEOUT`         | [Axios](https://axios-http.com/) timeout (ms)                                                                                                                  |
+| `VITE_APP_DEBUG_ROUTER`      | Router debug logs in dev (`true`/`false`)                                                                                                                      |
+| `VITE_APP_DEBUG_HOME`        | Home view demo logs in dev (`true`/`false`)                                                                                                                    |
+| `VITE_APP_DEBUG_HTTP`        | HTTP interceptor debug logs for server errors (`true`/`false`)                                                                                                 |
+| `VITE_FARO_URL`              | [Grafana Faro](https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/faro-web-sdk/) receiver URL — Alloy `/collect` (empty = off) |
+| `VITE_FARO_APP_NAME`         | App name reported to Faro (default `frontend`)                                                                                                                 |
+| `VITE_FARO_APP_VERSION`      | App version reported to Faro (default `1.0.0`)                                                                                                                 |
+| `VITE_FARO_ENVIRONMENT`      | Faro environment tag (defaults to Vite `MODE`)                                                                                                                 |
+| `VITE_UMAMI_WEBSITE_ID`      | [Umami](https://umami.is/) website id (empty = off)                                                                                                            |
+| `VITE_UMAMI_SRC`             | Umami tracker script URL (default: `http://localhost:8090/script.js`)                                                                                          |
 
 ---
 
@@ -283,7 +283,7 @@ Reference: [`.env-example`](./.env-example).
 | `npm run test:unit`      | [Vitest](https://vitest.dev/) unit tests                                                |
 | `npm run test:e2e`       | Start Vite (with MSW) + run [Cypress](https://www.cypress.io/) e2e                      |
 | `npm run test`           | `test:unit` then `test:e2e`                                                             |
-| `npm run genapi`         | Regenerate `/api` client from `openapi.yaml`                                            |
+| `npm run genapi`         | Regenerate `contracts/rest` client from `openapi.yaml`                                  |
 | `npm run genasyncapi`    | Run `tsx scripts/gen-asyncapi-types.ts` to regenerate `src/types/realtime.generated.ts` |
 | `npm run complete`       | build + lint:fix + lint:openapi + prettier:fix + tests (local hardening)                |
 | `npm run complete:check` | build + lint + lint:openapi + prettier:check + tests (CI gate)                          |
@@ -310,7 +310,7 @@ npm run complete:check
 
 ## OpenAPI contract flow
 
-`openapi.yaml` is the contract; the `/api` folder is **generated**. Never hand-edit `/api`.
+`openapi.yaml` is the contract; the `contracts/rest` folder is **generated**. Never hand-edit `contracts/rest`.
 
 ```mermaid
 flowchart LR
@@ -318,8 +318,8 @@ flowchart LR
     L -- no --> X[Fix contract]
     X --> A
     L -- yes --> G[npm run genapi]
-    G --> CLIENT[api/index.ts<br/>typed axios functions]
-    G --> ZOD[api/schemas.zod.ts<br/>Zod schemas]
+    G --> CLIENT[contracts/rest/index.ts<br/>typed axios functions]
+    G --> ZOD[contracts/rest/schemas.zod.ts<br/>Zod schemas]
     G --> MOCKS[tests/mocks/generated.ts<br/>MSW handler stubs]
     CLIENT --> STORES[Pinia stores call<br/>generated functions]
     ZOD --> STORES
@@ -331,7 +331,7 @@ Steps:
 
 1. Edit [`openapi.yaml`](./openapi.yaml).
 2. `npm run lint:openapi` — must be green.
-3. `npm run genapi` — regenerates `/api` (commit the diff).
+3. `npm run genapi` — regenerates `contracts/rest` (commit the diff).
 4. Update store/view usages if any operation signatures changed.
     - Import Zod schemas from `@api/schemas` instead of writing them by hand.
     - Use `tests/mocks/generated.ts` as a skeleton if you need a new MSW handler stub.
@@ -375,7 +375,7 @@ Single axios instance lives in `src/utils/http.ts`, wired into the generated cli
 sequenceDiagram
     autonumber
     participant V as View / Store
-    participant S as Generated function<br/>(api/index.ts)
+    participant S as Generated function<br/>(contracts/rest/index.ts)
     participant H as utils/http.ts<br/>(axios + interceptors)
     participant B as Backend (or MSW)
     V->>S: login({...})
@@ -391,7 +391,7 @@ sequenceDiagram
         H-->>V: IResponseReject → forbidden UI
     else 5xx
         H-->>V: IResponseReject → /error/500
-        H->>Sentry: captureException
+        H->>Faro: captureException
     end
 ```
 
@@ -453,10 +453,10 @@ Official: [mswjs.io/docs](https://mswjs.io/docs/) · [browser integration](https
 
 ## Testing
 
-| Layer | Tool                                                                                                                       | Where          |
-| ----- | -------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| Unit  | [Vitest](https://vitest.dev/) + [@vue/test-utils](https://test-utils.vuejs.org/) + [jsdom](https://github.com/jsdom/jsdom) | `tests/unit/`  |
-| E2E   | [Cypress](https://www.cypress.io/) + MSW                                                                                   | `cypress/e2e/` |
+| Layer | Tool                                                                                                                       | Where              |
+| ----- | -------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| Unit  | [Vitest](https://vitest.dev/) + [@vue/test-utils](https://test-utils.vuejs.org/) + [jsdom](https://github.com/jsdom/jsdom) | `tests/unit/`      |
+| E2E   | [Cypress](https://www.cypress.io/) + MSW                                                                                   | `tests/e2e/specs/` |
 
 Commands:
 
@@ -470,18 +470,18 @@ npm run test:e2e:dev  # opens Cypress UI
 
 ---
 
-## Observability (Sentry, PostHog, analytics)
+## Observability (Grafana Faro, Umami, analytics)
 
-All observability code is consolidated in `src/stores/observability.ts` (a Pinia store). Never scatter vendor calls directly from components.
+All observability code is consolidated in `src/stores/observability.ts` (a Pinia store). Never scatter vendor calls directly from components. Everything runs against a **self-hosted local stack** (Docker/Podman) — no external SaaS. Verify data in **Grafana** (`http://localhost:3001`) and the **Umami dashboard** (`http://localhost:8090`).
 
 ### What each tool does
 
-| Tool        | Role                                                                                             |
-| ----------- | ------------------------------------------------------------------------------------------------ |
-| **Sentry**  | Crash reporting, performance tracing, session replay. Disabled when `VITE_SENTRY_DSN` is empty.  |
-| **PostHog** | Product analytics, event tracking, feature flags. Disabled when `VITE_POSTHOG_API_KEY` is empty. |
+| Tool             | Role                                                                                                                                       |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Grafana Faro** | Error/crash monitoring, frontend tracing, Core Web Vitals. Ships to Grafana Alloy's Faro receiver. Disabled when `VITE_FARO_URL` is empty. |
+| **Umami**        | Product analytics — pageviews (automatic) + custom events. Disabled when `VITE_UMAMI_WEBSITE_ID` is empty.                                 |
 
-Both are initialized in `src/main.ts` and are no-ops when their env vars are absent, so local dev works without any external accounts.
+Both are initialized in `src/main.ts` and are no-ops when their env vars are absent, so local dev works without the stack running. The browser only ever talks to Grafana Alloy (`:12347`); Faro tracing propagates the W3C `traceparent` header to `VITE_API_URL` so FE and BE traces link in Tempo.
 
 ### Tracking events
 
@@ -500,26 +500,28 @@ obs.trackOrderPlaced('order-abc', 49.99, 3);
 obs.trackProductSearched('blue shoes');
 ```
 
-Router page views are tracked automatically via `router.afterEach` — no manual call needed in views.
+Page views are tracked automatically by the Umami tracker (it hooks SPA history changes) — no manual call needed in views.
 
 ### Event taxonomy
 
-| Category   | Events                                                         |
-| ---------- | -------------------------------------------------------------- |
-| Lifecycle  | `app_started`, `app_ready`                                     |
-| Navigation | `page_view`                                                    |
-| Auth       | `user_signed_up`, `user_logged_in`, `user_logged_out`          |
-| Cart       | `item_added_to_cart`, `item_removed_from_cart`, `cart_cleared` |
-| Orders     | `order_checkout_started`, `checkout_completed`, `order_placed` |
-| Products   | `product_viewed`, `product_searched`                           |
-| Feedback   | `feedback_submitted`                                           |
+Event names match the canonical names the backend emits, so FE and BE analytics line up.
+
+| Category            | Events                                                                                          |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| Lifecycle (FE-only) | `app_started`, `app_ready`                                                                      |
+| Auth                | `user_signed_up`, `user_logged_in`, `user_logged_out`, `user_profile_viewed`, `account_deleted` |
+| Products            | `products_searched`, `product_viewed`                                                           |
+| Cart                | `cart_viewed`, `cart_item_added`, `cart_item_updated`, `cart_item_removed`, `cart_cleared`      |
+| Checkout / Orders   | `checkout_completed`, `checkout_failed`, `order_created`, `orders_viewed`                       |
+
+Pageviews are automatic (Umami) and are not in this table.
 
 ### Rules
 
 - **No PII** in event properties — never send email, name, or personal data.
-- **Use constants** from `analyticsEvents` — never hardcode event name strings.
+- **Use constants** from `analyticsEvents` — never hardcode event name strings, and keep them matching the backend.
 - **Fire-and-forget** — never `await` a `track()` call.
-- **Sentry for errors, PostHog for product events** — both are wired but serve different purposes.
+- **Faro for errors, Umami for product events** — two jobs, one store; there is no feature-flag provider (`isFeatureEnabled()` always returns `false`).
 
 ---
 

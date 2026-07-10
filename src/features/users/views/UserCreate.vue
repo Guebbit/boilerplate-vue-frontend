@@ -56,6 +56,7 @@ import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/features/users/store';
+import { createUsersSchema, createUsersPasswordSchema } from '@/features/users/schemas.ts';
 import { z } from 'zod';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
@@ -73,7 +74,9 @@ const router = useRouter();
 /**
  * Users store
  */
-const { createUser, zodSchemaUsers, zodSchemaUsersPassword } = useUsersStore();
+const { createUser } = useUsersStore();
+const zodSchemaUsers = createUsersSchema(t);
+const zodSchemaUsersPassword = createUsersPasswordSchema(t);
 
 /**
  * Form definition
