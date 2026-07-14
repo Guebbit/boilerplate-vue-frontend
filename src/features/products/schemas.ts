@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { TranslateFunction } from '@/utils/i18n.ts';
+import { createProductBodyPriceMin } from '@api/schemas';
 
 /**
  * Zod schema for product title
@@ -11,7 +12,7 @@ export const createProductsTitleSchema = (t: TranslateFunction) =>
  * Zod schema for product price
  */
 export const createProductsPriceSchema = (t: TranslateFunction) =>
-    z.number().min(0, t('products-form.price-min'));
+    z.number().min(createProductBodyPriceMin, t('products-form.price-min'));
 
 /**
  * Product schema

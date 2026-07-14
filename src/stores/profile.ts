@@ -101,7 +101,9 @@ export const useProfileStore = defineStore('profile', () => {
         );
 
     /**
-     * Register a new user account
+     * Register a new user account.
+     * The backend does not auto-login on signup: the user must confirm their
+     * email address and then log in separately, so no token/session is set here.
      *
      * @param email
      * @param password
@@ -115,13 +117,9 @@ export const useProfileStore = defineStore('profile', () => {
         passwordConfirm = password
     ) =>
         fetchAny(() =>
-            apiSignup({ email, username, password, passwordConfirm }).then((data) => {
-                accessToken.value = getTokenFromResponse(data);
-                if (accessToken.value) {
-                    setCookie('isAuth=true; path=/; SameSite=Lax');
-                    const obs = useObservabilityStore();
-                    obs.track(analyticsEvents.USER_SIGNED_UP, { method: 'email' });
-                }
+            apiSignup({ email, username, password, passwordConfirm }).then(() => {
+                const obs = useObservabilityStore();
+                obs.track(analyticsEvents.USER_SIGNED_UP, { method: 'email' });
             })
         );
 

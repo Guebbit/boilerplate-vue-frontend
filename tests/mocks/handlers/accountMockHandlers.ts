@@ -1,7 +1,20 @@
 import { http, type HttpHandler } from 'msw';
 import type { LoginRequest, User } from 'src/types';
 import {
+    GetAccountResponse,
+    LoginResponse,
+    SignupResponse,
+    RefreshTokenResponse as RefreshTokenResponseSchema,
+    RefreshTokenWithPathResponse,
+    RequestPasswordResetResponse,
+    ConfirmPasswordResetResponse,
+    LogoutAllResponse,
+    DeleteExpiredTokensResponse
+} from '@api/schemas';
+import {
+    createErrorEnvelope,
     createMessageResponse,
+    createSuccessEnvelope,
     defaultRefreshTokenResponse,
     getIsoDateNow,
     mockDatabase,
@@ -10,6 +23,7 @@ import {
     trySetSessionStorage
 } from '../shared/mockShared.ts';
 import { toMockJsonResponse } from '../shared/mockTransport.ts';
+import { MockErrorResponse } from '../shared/mockValidation.ts';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
@@ -41,19 +55,23 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
     // only form used by the current client.
     http.get(`${API_BASE}/account/refresh/:token`, () =>
         mockDatabase.currentAuthenticatedUserId
-            ? toMockJsonResponse(defaultRefreshTokenResponse)
-            : toMockJsonResponse(
-                  { success: false, error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } },
-                  { status: 401 }
-              )
+            ? toMockJsonResponse(createSuccessEnvelope(defaultRefreshTokenResponse), {
+                  schema: RefreshTokenWithPathResponse
+              })
+            : toMockJsonResponse(createErrorEnvelope(401, 'UNAUTHORIZED', 'Not authenticated'), {
+                  status: 401,
+                  schema: MockErrorResponse
+              })
     ),
     http.get(`${API_BASE}/account/refresh`, () =>
         mockDatabase.currentAuthenticatedUserId
-            ? toMockJsonResponse(defaultRefreshTokenResponse)
-            : toMockJsonResponse(
-                  { success: false, error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } },
-                  { status: 401 }
-              )
+            ? toMockJsonResponse(createSuccessEnvelope(defaultRefreshTokenResponse), {
+                  schema: RefreshTokenResponseSchema
+              })
+            : toMockJsonResponse(createErrorEnvelope(401, 'UNAUTHORIZED', 'Not authenticated'), {
+                  status: 401,
+                  schema: MockErrorResponse
+              })
     ),
 
     // ── Current authenticated user ────────────────────────────────────────────
@@ -67,18 +85,26 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
     http.get(`${API_BASE}/account`, ({ request }) => {
         if (!request.headers.get('Authorization'))
             return toMockJsonResponse(
-                { success: false, error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } },
-                { status: 401 }
+                createErrorEnvelope(401, 'UNAUTHORIZED', 'Not authenticated'),
+                {
+                    status: 401,
+                    schema: MockErrorResponse
+                }
             );
         const currentUser = mockDatabase.sampleUsers.find(
             (user) => user.id === mockDatabase.currentAuthenticatedUserId
         );
         if (!currentUser)
             return toMockJsonResponse(
-                { success: false, error: { code: 'UNAUTHORIZED', message: 'Not authenticated' } },
-                { status: 401 }
+                createErrorEnvelope(401, 'UNAUTHORIZED', 'Not authenticated'),
+                {
+                    status: 401,
+                    schema: MockErrorResponse
+                }
             );
-        return toMockJsonResponse(currentUser);
+        return toMockJsonResponse(createSuccessEnvelope(currentUser), {
+            schema: GetAccountResponse
+        });
     }),
 
     // ── Login ─────────────────────────────────────────────────────────────────
@@ -97,25 +123,29 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
 
         if (!matchedUser)
             return toMockJsonResponse(
-                { success: false, error: { code: 'UNAUTHORIZED', message: 'Invalid credentials' } },
-                { status: 401 }
+                createErrorEnvelope(401, 'UNAUTHORIZED', 'Invalid credentials'),
+                { status: 401, schema: MockErrorResponse }
             );
 
         mockDatabase.currentAuthenticatedUserId = matchedUser.id;
         trySetSessionStorage('mock_currentUserId', matchedUser.id);
-        return toMockJsonResponse({
-            token: `mock-token-for-${matchedUser.id}`,
-            refreshToken: 'mock-refresh-token',
-            expiresIn: 3600
-        });
+        return toMockJsonResponse(
+            createSuccessEnvelope({
+                token: `mock-token-for-${matchedUser.id}`,
+                refreshToken: 'mock-refresh-token',
+                expiresIn: 3600
+            }),
+            { schema: LoginResponse }
+        );
     }),
 
     // ── Signup ────────────────────────────────────────────────────────────────
     //
-    // Creates a new user from the request body, pushes it into the in-memory
-    // users array, and immediately marks it as the current authenticated user
-    // (mirrored to sessionStorage for the same reload-survival reason as login).
-    // Returns 201 with the new user object so the client can populate its store.
+    // Creates a new user from the request body and pushes it into the in-memory
+    // users array. Per openapi.yaml, signup returns the created User (UserEnvelope),
+    // not a token, and does NOT start a session — the client is expected to log in
+    // separately (after confirming the account) to obtain an access token. So,
+    // unlike login, this does not touch currentAuthenticatedUserId/sessionStorage.
     http.post(`${API_BASE}/account/signup`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const createdUser: User = {
@@ -124,22 +154,16 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
             username: String(requestBody.username ?? 'new-user'),
             admin: false,
             active: true,
-            imageUrl: '',
+            imageUrl: undefined,
             createdAt: getIsoDateNow(),
             updatedAt: getIsoDateNow()
         };
 
         mockDatabase.sampleUsers.unshift(createdUser);
-        mockDatabase.currentAuthenticatedUserId = createdUser.id;
-        trySetSessionStorage('mock_currentUserId', createdUser.id);
-        return toMockJsonResponse(
-            {
-                token: `mock-token-for-${createdUser.id}`,
-                refreshToken: 'mock-refresh-token',
-                expiresIn: 3600
-            },
-            { status: 201 }
-        );
+        return toMockJsonResponse(createSuccessEnvelope(createdUser), {
+            status: 201,
+            schema: SignupResponse
+        });
     }),
 
     // ── Password reset (two-step flow) ────────────────────────────────────────
@@ -152,10 +176,14 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
     // together with the token from the email link. Mock always succeeds so the
     // redirect-to-login flow can be tested.
     http.post(`${API_BASE}/account/reset`, () =>
-        toMockJsonResponse(createMessageResponse('Password reset email sent'))
+        toMockJsonResponse(createMessageResponse('Password reset email sent'), {
+            schema: RequestPasswordResetResponse
+        })
     ),
     http.post(`${API_BASE}/account/reset-confirm`, () =>
-        toMockJsonResponse(createMessageResponse('Password reset confirmed'))
+        toMockJsonResponse(createMessageResponse('Password reset confirmed'), {
+            schema: ConfirmPasswordResetResponse
+        })
     ),
 
     // ── Session management ────────────────────────────────────────────────────
@@ -170,9 +198,13 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
     http.post(`${API_BASE}/account/logout-all`, () => {
         mockDatabase.currentAuthenticatedUserId = undefined;
         trySetSessionStorage('mock_currentUserId', ''); // '' = "no session" sentinel
-        return toMockJsonResponse(createMessageResponse('Logged out from all devices'));
+        return toMockJsonResponse(createMessageResponse('Logged out from all devices'), {
+            schema: LogoutAllResponse
+        });
     }),
     http.delete(`${API_BASE}/account/tokens/expired`, () =>
-        toMockJsonResponse(createMessageResponse('Expired tokens removed'))
+        toMockJsonResponse(createMessageResponse('Expired tokens removed'), {
+            schema: DeleteExpiredTokensResponse
+        })
     )
 ];

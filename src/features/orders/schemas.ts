@@ -1,11 +1,12 @@
 import { z } from 'zod';
 import type { TranslateFunction } from '@/utils/i18n.ts';
+import { OrderStatus } from '@types';
 
 /**
  * Zod schema for order status
  */
 export const createOrderStatusSchema = (t: TranslateFunction) =>
-    z.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'], {
+    z.enum(OrderStatus, {
         message: t('orders-form.status-invalid')
     });
 

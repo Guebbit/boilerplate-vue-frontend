@@ -51,10 +51,14 @@
             v-else
             v-model="selectedOrderId"
             :headers="tableHeaders"
-            :items="pageItemList"
+            :items="pageItems"
             :loading="loading"
             :loading-text="t('generic.loading')"
         >
+            <template v-slot:[`item.status`]="{ item }">
+                {{ t(`orders-form.status-${item.status}`) }}
+            </template>
+
             <template v-slot:[`item.createdAt`]="{ item }">
                 {{ formatDate(item.createdAt) }}
             </template>
@@ -107,6 +111,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/features/orders/store.ts';
 import { useProfileStore } from '@/stores/profile.ts';
 import { notifyErrorMessages } from '@/utils/errors.ts';
+import type { Order } from '@types';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import ListPagination from '@/components/molecules/ListPagination.vue';
@@ -143,6 +148,8 @@ const tableHeaders = computed(() => [
     { title: t('orders-list-page.column-date'), key: 'createdAt' },
     { title: t('orders-list-page.column-actions'), key: 'actions' }
 ]);
+
+const pageItems = computed(() => pageItemList.value.filter((item): item is Order => !!item));
 
 const { search } = watchSearchOrders((error) => notifyErrorMessages(addMessage, error));
 

@@ -115,10 +115,12 @@ const { form, formErrors, isSubmitting, handleSubmit } =
 const showErrors = ref(false);
 const formElement = ref<HTMLFormElement>();
 
-const { signup, fetchProfile } = useProfileStore();
+const { signup } = useProfileStore();
 
 /**
- * Submit form and try to authenticate.
+ * Submit form and register the account.
+ * Signup does not log the user in: the account still needs email confirmation,
+ * so we send them to the login page instead of fetching a profile/session.
  * handleSubmit returns false when validation fails (shows errors),
  * and re-throws when the onSubmit handler itself throws (API errors caught below).
  */
@@ -131,10 +133,7 @@ const submitForm = () =>
             username || undefined,
             form.value.passwordConfirm!
         );
-        await fetchProfile();
-        await (route.query.continue
-            ? router.push({ path: route.query.continue as string })
-            : router.push({ name: 'Home' }));
+        await router.push({ name: 'Login', query: route.query });
         addMessage(t('signup-page.success-email-code-sent'));
     })
         .then(async (success) => {

@@ -1,4 +1,6 @@
 import { delay, HttpResponse } from 'msw';
+import type { ZodType } from 'zod';
+import { assertMockContract } from './mockValidation.ts';
 
 type MockTransportHeaders = Record<string, string>;
 
@@ -6,6 +8,10 @@ type MockTransportOptions = {
     status?: number;
     headers?: MockTransportHeaders;
     delayMs?: number;
+    // Zod schema (from '@api/schemas', generated off openapi.yaml) the payload must satisfy.
+    // Optional only because a few endpoints (binary/PDF, SSE, Prometheus text) have no JSON
+    // schema to check against — every JSON-returning handler should pass one.
+    schema?: ZodType;
 };
 
 /**
@@ -20,6 +26,7 @@ export const mockResponse = <T>(data: T, options: MockTransportOptions = {}) => 
 });
 
 export const toMockJsonResponse = async <T>(data: T, options: MockTransportOptions = {}) => {
+    if (options.schema) assertMockContract(options.schema, data);
     await delay(options.delayMs ?? 250);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return HttpResponse.json(data as any, {

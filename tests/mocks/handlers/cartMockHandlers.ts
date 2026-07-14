@@ -1,6 +1,16 @@
 import { http, type HttpHandler } from 'msw';
 import {
+    GetCartResponse,
+    GetCartSummaryResponse,
+    UpsertCartItemResponse,
+    ClearCartResponse,
+    UpdateCartItemByIdResponse,
+    RemoveCartItemResponse,
+    CheckoutResponse
+} from '@api/schemas';
+import {
     cartItemToOrderItem,
+    createErrorEnvelope,
     createMockOrder,
     createSuccessEnvelope,
     getCartResponse,
@@ -9,15 +19,18 @@ import {
     readRequestBody
 } from '../shared/mockShared.ts';
 import { toMockJsonResponse } from '../shared/mockTransport.ts';
+import { MockErrorResponse } from '../shared/mockValidation.ts';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
 export const registerCartMockHandlers = (): HttpHandler[] => [
     http.get(`${API_BASE}/cart/summary`, () =>
-        toMockJsonResponse(createSuccessEnvelope(calculateCartSummary()))
+        toMockJsonResponse(createSuccessEnvelope(calculateCartSummary()), {
+            schema: GetCartSummaryResponse
+        })
     ),
     http.get(`${API_BASE}/cart`, () =>
-        toMockJsonResponse(createSuccessEnvelope(getCartResponse()))
+        toMockJsonResponse(createSuccessEnvelope(getCartResponse()), { schema: GetCartResponse })
     ),
     http.post(`${API_BASE}/cart`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
@@ -25,10 +38,10 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
         const quantity = Math.max(0, Number(requestBody.quantity ?? 0));
 
         if (!mockDatabase.sampleProducts.some((product) => product.id === productId))
-            return toMockJsonResponse(
-                { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } },
-                { status: 404 }
-            );
+            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'Product not found'), {
+                status: 404,
+                schema: MockErrorResponse
+            });
 
         const existingItemIndex = mockDatabase.sampleCartItems.findIndex(
             (item) => item.productId === productId
@@ -43,7 +56,9 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
         mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter(
             (item) => item.quantity > 0
         );
-        return toMockJsonResponse(createSuccessEnvelope(getCartResponse()));
+        return toMockJsonResponse(createSuccessEnvelope(getCartResponse()), {
+            schema: UpsertCartItemResponse
+        });
     }),
     http.delete(`${API_BASE}/cart`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
@@ -51,13 +66,17 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
 
         if (!productId) {
             mockDatabase.sampleCartItems = [];
-            return toMockJsonResponse(createSuccessEnvelope(getCartResponse()));
+            return toMockJsonResponse(createSuccessEnvelope(getCartResponse()), {
+                schema: ClearCartResponse
+            });
         }
 
         mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter(
             (item) => item.productId !== productId
         );
-        return toMockJsonResponse(createSuccessEnvelope(getCartResponse()));
+        return toMockJsonResponse(createSuccessEnvelope(getCartResponse()), {
+            schema: ClearCartResponse
+        });
     }),
     http.put(`${API_BASE}/cart/:productId`, async ({ request, params }) => {
         const productId = String(params.productId);
@@ -65,10 +84,10 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
         const quantity = Math.max(0, Number(requestBody.quantity ?? 0));
 
         if (!productId || !mockDatabase.sampleProducts.some((product) => product.id === productId))
-            return toMockJsonResponse(
-                { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } },
-                { status: 404 }
-            );
+            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'Product not found'), {
+                status: 404,
+                schema: MockErrorResponse
+            });
 
         const existingItemIndex = mockDatabase.sampleCartItems.findIndex(
             (item) => item.productId === productId
@@ -81,14 +100,18 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
         mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter(
             (item) => item.quantity > 0
         );
-        return toMockJsonResponse(createSuccessEnvelope(getCartResponse()));
+        return toMockJsonResponse(createSuccessEnvelope(getCartResponse()), {
+            schema: UpdateCartItemByIdResponse
+        });
     }),
     http.delete(`${API_BASE}/cart/:productId`, ({ params }) => {
         const productId = String(params.productId);
         mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter(
             (item) => item.productId !== productId
         );
-        return toMockJsonResponse(createSuccessEnvelope(getCartResponse()));
+        return toMockJsonResponse(createSuccessEnvelope(getCartResponse()), {
+            schema: RemoveCartItemResponse
+        });
     }),
     http.post(`${API_BASE}/cart/checkout`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
@@ -112,7 +135,7 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
         mockDatabase.sampleCartItems = [];
         return toMockJsonResponse(
             createSuccessEnvelope({ order: createdOrder, message: 'Checkout completed' }),
-            { status: 201 }
+            { status: 201, schema: CheckoutResponse }
         );
     })
 ];

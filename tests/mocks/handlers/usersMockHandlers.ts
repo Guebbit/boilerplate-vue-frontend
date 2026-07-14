@@ -1,7 +1,19 @@
 import { http, type HttpHandler } from 'msw';
 import type { User, UsersResponse } from 'src/types';
 import {
+    ListUsersResponse,
+    CreateUserResponse,
+    UpdateUserResponse,
+    DeleteUserResponse,
+    SearchUsersResponse,
+    GetUserByIdResponse,
+    UpdateUserByIdResponse,
+    DeleteUserByIdResponse
+} from '@api/schemas';
+import {
+    createErrorEnvelope,
     createMessageResponse,
+    createSuccessEnvelope,
     getIsoDateNow,
     getQueryParameters,
     mockDatabase,
@@ -12,10 +24,15 @@ import {
     toPaginationMeta
 } from '../shared/mockShared.ts';
 import { toMockJsonResponse } from '../shared/mockTransport.ts';
+import { MockErrorResponse } from '../shared/mockValidation.ts';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
-const replyUsersList = (url: string | undefined, parameters?: unknown) => {
+const replyUsersList = (
+    url: string | undefined,
+    schema: typeof ListUsersResponse | typeof SearchUsersResponse,
+    parameters?: unknown
+) => {
     const query = getQueryParameters(url, parameters);
     const page = toNumberOrDefault(query.page, 1);
     const pageSize = toNumberOrDefault(query.pageSize, 10);
@@ -42,14 +59,17 @@ const replyUsersList = (url: string | undefined, parameters?: unknown) => {
         return true;
     });
 
-    return toMockJsonResponse<UsersResponse>({
-        items: slicePaginatedData(filteredItems, page, pageSize),
-        meta: toPaginationMeta(filteredItems.length, page, pageSize)
-    });
+    return toMockJsonResponse(
+        createSuccessEnvelope<UsersResponse>({
+            items: slicePaginatedData(filteredItems, page, pageSize),
+            meta: toPaginationMeta(filteredItems.length, page, pageSize)
+        }),
+        { schema }
+    );
 };
 
 export const registerUsersMockHandlers = (): HttpHandler[] => [
-    http.get(`${API_BASE}/users`, ({ request }) => replyUsersList(request.url)),
+    http.get(`${API_BASE}/users`, ({ request }) => replyUsersList(request.url, ListUsersResponse)),
     http.post(`${API_BASE}/users`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const createdUser: User = {
@@ -58,13 +78,16 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
             username: String(requestBody.username ?? 'created-user'),
             admin: Boolean(requestBody.admin),
             active: requestBody.active === undefined ? true : Boolean(requestBody.active),
-            imageUrl: '',
+            imageUrl: undefined,
             createdAt: getIsoDateNow(),
             updatedAt: getIsoDateNow()
         };
 
         mockDatabase.sampleUsers.unshift(createdUser);
-        return toMockJsonResponse(createdUser, { status: 201 });
+        return toMockJsonResponse(createSuccessEnvelope(createdUser), {
+            status: 201,
+            schema: CreateUserResponse
+        });
     }),
     http.put(`${API_BASE}/users`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
@@ -72,10 +95,10 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
         const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === targetId);
 
         if (targetIndex === -1)
-            return toMockJsonResponse(
-                { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } },
-                { status: 404 }
-            );
+            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'User not found'), {
+                status: 404,
+                schema: MockErrorResponse
+            });
 
         const updatedUser: User = {
             ...mockDatabase.sampleUsers[targetIndex],
@@ -93,7 +116,9 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
         };
 
         mockDatabase.sampleUsers[targetIndex] = updatedUser;
-        return toMockJsonResponse(updatedUser);
+        return toMockJsonResponse(createSuccessEnvelope(updatedUser), {
+            schema: UpdateUserResponse
+        });
     }),
     http.delete(`${API_BASE}/users`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
@@ -101,39 +126,43 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
         const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === targetId);
 
         if (targetIndex === -1)
-            return toMockJsonResponse(
-                { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } },
-                { status: 404 }
-            );
+            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'User not found'), {
+                status: 404,
+                schema: MockErrorResponse
+            });
 
         mockDatabase.sampleUsers.splice(targetIndex, 1);
-        return toMockJsonResponse(createMessageResponse('User deleted'));
+        return toMockJsonResponse(createMessageResponse('User deleted'), {
+            schema: DeleteUserResponse
+        });
     }),
     http.post(`${API_BASE}/users/search`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
-        return replyUsersList(request.url, requestBody);
+        return replyUsersList(request.url, SearchUsersResponse, requestBody);
     }),
     http.get(`${API_BASE}/users/:userId`, ({ params }) => {
         const userId = String(params.userId);
         const targetUser = mockDatabase.sampleUsers.find((user) => user.id === userId);
 
         if (!targetUser)
-            return toMockJsonResponse(
-                { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } },
-                { status: 404 }
-            );
+            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'User not found'), {
+                status: 404,
+                schema: MockErrorResponse
+            });
 
-        return toMockJsonResponse(targetUser);
+        return toMockJsonResponse(createSuccessEnvelope(targetUser), {
+            schema: GetUserByIdResponse
+        });
     }),
     http.put(`${API_BASE}/users/:userId`, async ({ request, params }) => {
         const userId = String(params.userId);
         const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === userId);
 
         if (targetIndex === -1)
-            return toMockJsonResponse(
-                { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } },
-                { status: 404 }
-            );
+            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'User not found'), {
+                status: 404,
+                schema: MockErrorResponse
+            });
 
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const updatedUser: User = {
@@ -148,19 +177,23 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
         };
 
         mockDatabase.sampleUsers[targetIndex] = updatedUser;
-        return toMockJsonResponse(updatedUser);
+        return toMockJsonResponse(createSuccessEnvelope(updatedUser), {
+            schema: UpdateUserByIdResponse
+        });
     }),
     http.delete(`${API_BASE}/users/:userId`, ({ params }) => {
         const userId = String(params.userId);
         const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === userId);
 
         if (targetIndex === -1)
-            return toMockJsonResponse(
-                { success: false, error: { code: 'NOT_FOUND', message: 'User not found' } },
-                { status: 404 }
-            );
+            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'User not found'), {
+                status: 404,
+                schema: MockErrorResponse
+            });
 
         mockDatabase.sampleUsers.splice(targetIndex, 1);
-        return toMockJsonResponse(createMessageResponse('User deleted'));
+        return toMockJsonResponse(createMessageResponse('User deleted'), {
+            schema: DeleteUserByIdResponse
+        });
     })
 ];

@@ -50,7 +50,7 @@
         "@grafana/faro-web-tracing": "^2.8.2",
         "@guebbit/css-toolkit": "^1.4.1",
         "@guebbit/js-toolkit": "^1.0.8",
-        "@guebbit/vue-toolkit": "file:../vue-toolkit",
+        "@guebbit/vue-toolkit": "^2.1.0",
         "@mdi/js": "^7.4.47",
         "axios": "^1.13.6",
         "lucide-vue-next": "^1.0.0",
@@ -58,7 +58,7 @@
         "vue": "^3.5.29",
         "vue-i18n": "^11.3.0",
         "vue-router": "^5.0.3",
-        "zod": "^4.3.6"
+        "zod": "^4.4.3"
     },
     "devDependencies": {
         "@asyncapi/modelina": "^5.10.1",

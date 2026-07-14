@@ -1,7 +1,18 @@
 import { http, type HttpHandler } from 'msw';
 import type { CartItem, Order, UpdateOrderByIdRequest, UpdateOrderRequest } from 'src/types';
 import {
+    ListOrdersResponse,
+    CreateOrderResponse,
+    UpdateOrderResponse,
+    DeleteOrderResponse,
+    SearchOrdersResponse,
+    GetOrderByIdResponse,
+    UpdateOrderByIdResponse,
+    DeleteOrderByIdResponse
+} from '@api/schemas';
+import {
     cartItemToOrderItem,
+    createErrorEnvelope,
     createMessageResponse,
     createMockInvoicePdf,
     createMockOrder,
@@ -15,10 +26,15 @@ import {
     toPaginationMeta
 } from '../shared/mockShared.ts';
 import { toMockArrayBufferResponse, toMockJsonResponse } from '../shared/mockTransport.ts';
+import { MockErrorResponse } from '../shared/mockValidation.ts';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
-const replyOrdersList = (url: string | undefined, parameters?: unknown) => {
+const replyOrdersList = (
+    url: string | undefined,
+    schema: typeof ListOrdersResponse | typeof SearchOrdersResponse,
+    parameters?: unknown
+) => {
     const query = getQueryParameters(url, parameters);
     const page = toNumberOrDefault(query.page, 1);
     const pageSize = toNumberOrDefault(query.pageSize, 10);
@@ -39,7 +55,8 @@ const replyOrdersList = (url: string | undefined, parameters?: unknown) => {
         createSuccessEnvelope({
             items: slicePaginatedData(filteredItems, page, pageSize),
             meta: toPaginationMeta(filteredItems.length, page, pageSize)
-        })
+        }),
+        { schema }
     );
 };
 
@@ -51,7 +68,9 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
         http.get(`${API_BASE}/orders/:orderId/invoice`, () =>
             toMockArrayBufferResponse(createMockInvoicePdf(), { headers: pdfHeaders })
         ),
-        http.get(`${API_BASE}/orders`, ({ request }) => replyOrdersList(request.url)),
+        http.get(`${API_BASE}/orders`, ({ request }) =>
+            replyOrdersList(request.url, ListOrdersResponse)
+        ),
         http.post(`${API_BASE}/orders`, async ({ request }) => {
             const requestBody = await readRequestBody<Record<string, unknown>>(request);
             const createdOrder = createMockOrder({
@@ -65,7 +84,10 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
             });
 
             mockDatabase.sampleOrders.unshift(createdOrder);
-            return toMockJsonResponse(createSuccessEnvelope(createdOrder), { status: 201 });
+            return toMockJsonResponse(createSuccessEnvelope(createdOrder), {
+                status: 201,
+                schema: CreateOrderResponse
+            });
         }),
         http.put(`${API_BASE}/orders`, async ({ request }) => {
             const requestBody = await readRequestBody<UpdateOrderRequest>(request);
@@ -75,8 +97,11 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
 
             if (targetIndex === -1)
                 return toMockJsonResponse(
-                    { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } },
-                    { status: 404 }
+                    createErrorEnvelope(404, 'NOT_FOUND', 'Order not found'),
+                    {
+                        status: 404,
+                        schema: MockErrorResponse
+                    }
                 );
 
             const updatedOrder: Order = {
@@ -91,7 +116,9 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
             };
 
             mockDatabase.sampleOrders[targetIndex] = updatedOrder;
-            return toMockJsonResponse(createSuccessEnvelope(updatedOrder));
+            return toMockJsonResponse(createSuccessEnvelope(updatedOrder), {
+                schema: UpdateOrderResponse
+            });
         }),
         http.delete(`${API_BASE}/orders`, async ({ request }) => {
             const requestBody = await readRequestBody<Record<string, unknown>>(request);
@@ -100,16 +127,21 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
 
             if (targetIndex === -1)
                 return toMockJsonResponse(
-                    { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } },
-                    { status: 404 }
+                    createErrorEnvelope(404, 'NOT_FOUND', 'Order not found'),
+                    {
+                        status: 404,
+                        schema: MockErrorResponse
+                    }
                 );
 
             mockDatabase.sampleOrders.splice(targetIndex, 1);
-            return toMockJsonResponse(createMessageResponse('Order deleted'));
+            return toMockJsonResponse(createMessageResponse('Order deleted'), {
+                schema: DeleteOrderResponse
+            });
         }),
         http.post(`${API_BASE}/orders/search`, async ({ request }) => {
             const requestBody = await readRequestBody<Record<string, unknown>>(request);
-            return replyOrdersList(request.url, requestBody);
+            return replyOrdersList(request.url, SearchOrdersResponse, requestBody);
         }),
         http.get(`${API_BASE}/orders/:orderId`, ({ params }) => {
             const orderId = String(params.orderId);
@@ -117,11 +149,16 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
 
             if (!targetOrder)
                 return toMockJsonResponse(
-                    { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } },
-                    { status: 404 }
+                    createErrorEnvelope(404, 'NOT_FOUND', 'Order not found'),
+                    {
+                        status: 404,
+                        schema: MockErrorResponse
+                    }
                 );
 
-            return toMockJsonResponse(createSuccessEnvelope(targetOrder));
+            return toMockJsonResponse(createSuccessEnvelope(targetOrder), {
+                schema: GetOrderByIdResponse
+            });
         }),
         http.put(`${API_BASE}/orders/:orderId`, async ({ request, params }) => {
             const orderId = String(params.orderId);
@@ -129,8 +166,11 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
 
             if (targetIndex === -1)
                 return toMockJsonResponse(
-                    { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } },
-                    { status: 404 }
+                    createErrorEnvelope(404, 'NOT_FOUND', 'Order not found'),
+                    {
+                        status: 404,
+                        schema: MockErrorResponse
+                    }
                 );
 
             const requestBody = await readRequestBody<UpdateOrderByIdRequest>(request);
@@ -146,7 +186,9 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
             };
 
             mockDatabase.sampleOrders[targetIndex] = updatedOrder;
-            return toMockJsonResponse(createSuccessEnvelope(updatedOrder));
+            return toMockJsonResponse(createSuccessEnvelope(updatedOrder), {
+                schema: UpdateOrderByIdResponse
+            });
         }),
         http.delete(`${API_BASE}/orders/:orderId`, ({ params }) => {
             const orderId = String(params.orderId);
@@ -154,12 +196,17 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
 
             if (targetIndex === -1)
                 return toMockJsonResponse(
-                    { success: false, error: { code: 'NOT_FOUND', message: 'Order not found' } },
-                    { status: 404 }
+                    createErrorEnvelope(404, 'NOT_FOUND', 'Order not found'),
+                    {
+                        status: 404,
+                        schema: MockErrorResponse
+                    }
                 );
 
             mockDatabase.sampleOrders.splice(targetIndex, 1);
-            return toMockJsonResponse(createMessageResponse('Order deleted'));
+            return toMockJsonResponse(createMessageResponse('Order deleted'), {
+                schema: DeleteOrderByIdResponse
+            });
         })
     ];
 };

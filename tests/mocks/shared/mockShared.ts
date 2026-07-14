@@ -28,6 +28,15 @@ export const createSuccessEnvelope = <T>(data: T) => ({
     data
 });
 
+// Wrap a single error in the standard error envelope (matches openapi.yaml's ErrorResponse
+// schema: success/status/message + an `errors` array — NOT a singular `error` field).
+export const createErrorEnvelope = (status: number, code: string, message: string) => ({
+    success: false as const,
+    status,
+    message,
+    errors: [{ code, message }]
+});
+
 const parseValue = (value: FormDataEntryValue | unknown) => {
     if (value === 'true') return true;
     if (value === 'false') return false;
@@ -185,7 +194,7 @@ const createInitialMockDatabase = () => {
             username: 'admin',
             admin: true,
             active: true,
-            imageUrl: '',
+            imageUrl: undefined,
             createdAt: getIsoDateNow(),
             updatedAt: getIsoDateNow()
         },
@@ -195,7 +204,7 @@ const createInitialMockDatabase = () => {
             username: 'john',
             admin: false,
             active: true,
-            imageUrl: '',
+            imageUrl: undefined,
             createdAt: getIsoDateNow(),
             updatedAt: getIsoDateNow()
         },
@@ -205,7 +214,7 @@ const createInitialMockDatabase = () => {
             username: 'jane',
             admin: false,
             active: false,
-            imageUrl: '',
+            imageUrl: undefined,
             createdAt: getIsoDateNow(),
             updatedAt: getIsoDateNow()
         }
@@ -218,7 +227,7 @@ const createInitialMockDatabase = () => {
             description: 'First test product',
             price: 10,
             active: true,
-            imageUrl: '',
+            imageUrl: undefined,
             createdAt: getIsoDateNow(),
             updatedAt: getIsoDateNow()
         },
@@ -228,7 +237,7 @@ const createInitialMockDatabase = () => {
             description: 'Second test product',
             price: 25.5,
             active: true,
-            imageUrl: '',
+            imageUrl: undefined,
             createdAt: getIsoDateNow(),
             updatedAt: getIsoDateNow()
         },
@@ -238,7 +247,7 @@ const createInitialMockDatabase = () => {
             description: 'Third test product',
             price: 20,
             active: false,
-            imageUrl: '',
+            imageUrl: undefined,
             createdAt: getIsoDateNow(),
             updatedAt: getIsoDateNow()
         }

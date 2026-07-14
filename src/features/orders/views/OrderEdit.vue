@@ -119,6 +119,7 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useOrdersStore } from '@/features/orders/store.ts';
 import { createOrderStatusSchema } from '@/features/orders/schemas.ts';
 import { z } from 'zod';
+import { OrderStatus } from '@types';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseSelect from '@/components/atoms/BaseSelect.vue';
@@ -157,7 +158,7 @@ const { currentOrder, loading } = storeToRefs(useOrdersStore());
  * Select options for status updates.
  */
 const statusOptions = computed(() =>
-    ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'].map((value) => ({
+    Object.values(OrderStatus).map((value) => ({
         value,
         label: t(`orders-form.status-${value}`)
     }))
@@ -167,7 +168,7 @@ const statusOptions = computed(() =>
  * Order edit form model.
  */
 interface IOrderEditForm {
-    status?: 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+    status?: OrderStatus;
     email?: string;
 }
 

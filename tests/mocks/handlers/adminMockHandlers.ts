@@ -4,7 +4,12 @@ import type {
     ObservabilityMetricsSummaryResponse,
     AuditLogsResponse
 } from 'src/types';
-import { getIsoDateNow } from '../shared/mockShared.ts';
+import {
+    GetObservabilityHealthResponse,
+    GetObservabilityMetricsOverviewResponse,
+    GetObservabilityAuditLogsResponse
+} from '@api/schemas';
+import { createSuccessEnvelope, getIsoDateNow } from '../shared/mockShared.ts';
 import { toMockJsonResponse } from '../shared/mockTransport.ts';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
@@ -87,16 +92,26 @@ const MOCK_AUDIT_EVENTS: AuditLogsResponse = {
 
 export const registerAdminMockHandlers = (): HttpHandler[] => [
     http.get(`${API_BASE}/observability/health`, () =>
-        toMockJsonResponse({
-            ...MOCK_HEALTH_RESPONSE,
-            data: { ...MOCK_HEALTH_RESPONSE.data, timestamp: getIsoDateNow() }
-        })
+        toMockJsonResponse(
+            createSuccessEnvelope({
+                ...MOCK_HEALTH_RESPONSE,
+                data: { ...MOCK_HEALTH_RESPONSE.data, timestamp: getIsoDateNow() }
+            }),
+            { schema: GetObservabilityHealthResponse }
+        )
     ),
     http.get(`${API_BASE}/observability/metrics/overview`, () =>
-        toMockJsonResponse({
-            ...MOCK_METRICS_RESPONSE,
-            data: { ...MOCK_METRICS_RESPONSE.data, timestamp: getIsoDateNow() }
-        })
+        toMockJsonResponse(
+            createSuccessEnvelope({
+                ...MOCK_METRICS_RESPONSE,
+                data: { ...MOCK_METRICS_RESPONSE.data, timestamp: getIsoDateNow() }
+            }),
+            { schema: GetObservabilityMetricsOverviewResponse }
+        )
     ),
-    http.get(`${API_BASE}/observability/audit`, () => toMockJsonResponse(MOCK_AUDIT_EVENTS))
+    http.get(`${API_BASE}/observability/audit`, () =>
+        toMockJsonResponse(createSuccessEnvelope(MOCK_AUDIT_EVENTS), {
+            schema: GetObservabilityAuditLogsResponse
+        })
+    )
 ];

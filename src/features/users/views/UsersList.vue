@@ -14,6 +14,7 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/features/users/store';
 import { notifyErrorMessages } from '@/utils/errors.ts';
+import type { User } from '@types';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import ListPagination from '@/components/molecules/ListPagination.vue';
@@ -48,6 +49,8 @@ const tableHeaders = computed(() => [
     { title: t('users-list-page.column-created-at'), key: 'createdAt' },
     { title: t('users-list-page.column-actions'), key: 'actions' }
 ]);
+
+const pageItems = computed(() => pageItemList.value.filter((item): item is User => !!item));
 
 const { search } = watchSearchUsers((error) => notifyErrorMessages(addMessage, error));
 
@@ -128,7 +131,7 @@ const formatDate = (date?: string) => (date ? new Date(date).toLocaleDateString(
         <DataTable
             v-model="selectedUserId"
             :headers="tableHeaders"
-            :items="pageItemList"
+            :items="pageItems"
             :loading="loading"
             :loading-text="t('generic.loading')"
         >

@@ -61,7 +61,7 @@ describe('Authentication', () => {
             cy.get('.form-error-message').should('exist');
         });
 
-        it('signs up successfully and redirects', () => {
+        it('signs up successfully and redirects to login (no auto-login)', () => {
             cy.get('[type=email]').type('newuser@example.com');
             cy.get('[type=password]').eq(0).type('rootroot');
             cy.get('[type=password]').eq(1).type('rootroot');
@@ -69,7 +69,8 @@ describe('Authentication', () => {
             cy.get('#signup-page button[type="submit"]').click();
 
             cy.url().should('not.include', '/signup');
-            cy.get('#home-page').should('exist');
+            cy.url().should('include', '/login');
+            cy.get('#login-page').should('exist');
         });
     });
 

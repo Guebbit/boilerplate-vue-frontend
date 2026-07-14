@@ -43,7 +43,7 @@
         <DataTable
             v-model="selectedProductId"
             :headers="tableHeaders"
-            :items="pageItemList"
+            :items="pageItems"
             :loading="loading"
             :loading-text="t('generic.loading')"
         >
@@ -113,6 +113,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/features/products/store';
 import { useProfileStore } from '@/stores/profile.ts';
 import { notifyErrorMessages } from '@/utils/errors.ts';
+import type { Product } from '@types';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import ListPagination from '@/components/molecules/ListPagination.vue';
@@ -142,6 +143,8 @@ const tableHeaders = computed(() => [
     { title: t('products-list-page.column-created-at'), key: 'createdAt' },
     { title: t('products-list-page.column-actions'), key: 'actions' }
 ]);
+
+const pageItems = computed(() => pageItemList.value.filter((item): item is Product => !!item));
 
 const { search } = watchSearchProducts((error) => notifyErrorMessages(addMessage, error));
 

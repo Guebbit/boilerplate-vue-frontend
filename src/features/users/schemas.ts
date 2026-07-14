@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { TranslateFunction } from '@/utils/i18n.ts';
+import { signupBodyUsernameMin, createUserBodyPasswordMin } from '@api/schemas';
 
 /**
  * Zod schema for a valid email
@@ -11,7 +12,7 @@ export const createUsersEmailSchema = (t: TranslateFunction) =>
  * Zod schema for a valid username
  */
 export const createUsersUsernameSchema = (t: TranslateFunction) =>
-    z.string().min(3, t('users-form.username-min'));
+    z.string().min(signupBodyUsernameMin, t('users-form.username-min'));
 
 /**
  * Zod schema for a valid password
@@ -19,7 +20,7 @@ export const createUsersUsernameSchema = (t: TranslateFunction) =>
 export const createUsersPasswordSchema = (t: TranslateFunction) =>
     z
         .string()
-        .min(8, t('users-form.password-min'))
+        .min(createUserBodyPasswordMin, t('users-form.password-min'))
         .refine((password) => password && /[a-z]/.test(password), {
             message: t('users-form.password-minus-required')
         })

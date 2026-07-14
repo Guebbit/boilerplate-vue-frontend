@@ -1,6 +1,17 @@
 import { http, type HttpHandler } from 'msw';
 import type { Product } from 'src/types';
 import {
+    ListProductsResponse,
+    CreateProductResponse,
+    UpdateProductResponse,
+    DeleteProductResponse,
+    SearchProductsResponse,
+    GetProductByIdResponse,
+    UpdateProductByIdResponse,
+    DeleteProductByIdResponse
+} from '@api/schemas';
+import {
+    createErrorEnvelope,
     createMessageResponse,
     createSuccessEnvelope,
     getIsoDateNow,
@@ -12,10 +23,15 @@ import {
     toPaginationMeta
 } from '../shared/mockShared.ts';
 import { toMockJsonResponse } from '../shared/mockTransport.ts';
+import { MockErrorResponse } from '../shared/mockValidation.ts';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
-const replyProductsList = (url: string | undefined, parameters?: unknown) => {
+const replyProductsList = (
+    url: string | undefined,
+    schema: typeof ListProductsResponse | typeof SearchProductsResponse,
+    parameters?: unknown
+) => {
     const query = getQueryParameters(url, parameters);
     const page = toNumberOrDefault(query.page, 1);
     const pageSize = toNumberOrDefault(query.pageSize, 10);
@@ -44,12 +60,15 @@ const replyProductsList = (url: string | undefined, parameters?: unknown) => {
         createSuccessEnvelope({
             items: slicePaginatedData(filteredItems, page, pageSize),
             meta: toPaginationMeta(filteredItems.length, page, pageSize)
-        })
+        }),
+        { schema }
     );
 };
 
 export const registerProductsMockHandlers = (): HttpHandler[] => [
-    http.get(`${API_BASE}/products`, ({ request }) => replyProductsList(request.url)),
+    http.get(`${API_BASE}/products`, ({ request }) =>
+        replyProductsList(request.url, ListProductsResponse)
+    ),
     http.post(`${API_BASE}/products`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const createdProduct: Product = {
@@ -58,12 +77,15 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
             description: requestBody.description ? String(requestBody.description) : '',
             price: Number(requestBody.price ?? 0),
             active: requestBody.active === undefined ? true : Boolean(requestBody.active),
-            imageUrl: '',
+            imageUrl: undefined,
             createdAt: getIsoDateNow(),
             updatedAt: getIsoDateNow()
         };
         mockDatabase.sampleProducts.unshift(createdProduct);
-        return toMockJsonResponse(createSuccessEnvelope(createdProduct), { status: 201 });
+        return toMockJsonResponse(createSuccessEnvelope(createdProduct), {
+            status: 201,
+            schema: CreateProductResponse
+        });
     }),
     http.put(`${API_BASE}/products`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
@@ -71,10 +93,10 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
         const targetIndex = mockDatabase.sampleProducts.findIndex(({ id }) => id === targetId);
 
         if (targetIndex === -1)
-            return toMockJsonResponse(
-                { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } },
-                { status: 404 }
-            );
+            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'Product not found'), {
+                status: 404,
+                schema: MockErrorResponse
+            });
 
         const updatedProduct: Product = {
             ...mockDatabase.sampleProducts[targetIndex],
@@ -97,7 +119,9 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
         };
 
         mockDatabase.sampleProducts[targetIndex] = updatedProduct;
-        return toMockJsonResponse(createSuccessEnvelope(updatedProduct));
+        return toMockJsonResponse(createSuccessEnvelope(updatedProduct), {
+            schema: UpdateProductResponse
+        });
     }),
     http.delete(`${API_BASE}/products`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
@@ -105,17 +129,19 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
         const targetIndex = mockDatabase.sampleProducts.findIndex(({ id }) => id === targetId);
 
         if (targetIndex === -1)
-            return toMockJsonResponse(
-                { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } },
-                { status: 404 }
-            );
+            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'Product not found'), {
+                status: 404,
+                schema: MockErrorResponse
+            });
 
         mockDatabase.sampleProducts.splice(targetIndex, 1);
-        return toMockJsonResponse(createMessageResponse('Product deleted'));
+        return toMockJsonResponse(createMessageResponse('Product deleted'), {
+            schema: DeleteProductResponse
+        });
     }),
     http.post(`${API_BASE}/products/search`, async ({ request }) => {
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
-        return replyProductsList(request.url, requestBody);
+        return replyProductsList(request.url, SearchProductsResponse, requestBody);
     }),
     http.get(`${API_BASE}/products/:productId`, ({ params }) => {
         const productId = String(params.productId);
@@ -124,22 +150,24 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
         );
 
         if (!targetProduct)
-            return toMockJsonResponse(
-                { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } },
-                { status: 404 }
-            );
+            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'Product not found'), {
+                status: 404,
+                schema: MockErrorResponse
+            });
 
-        return toMockJsonResponse(createSuccessEnvelope(targetProduct));
+        return toMockJsonResponse(createSuccessEnvelope(targetProduct), {
+            schema: GetProductByIdResponse
+        });
     }),
     http.put(`${API_BASE}/products/:productId`, async ({ request, params }) => {
         const productId = String(params.productId);
         const targetIndex = mockDatabase.sampleProducts.findIndex(({ id }) => id === productId);
 
         if (targetIndex === -1)
-            return toMockJsonResponse(
-                { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } },
-                { status: 404 }
-            );
+            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'Product not found'), {
+                status: 404,
+                schema: MockErrorResponse
+            });
 
         const requestBody = await readRequestBody<Record<string, unknown>>(request);
         const updatedProduct: Product = {
@@ -163,19 +191,23 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
         };
 
         mockDatabase.sampleProducts[targetIndex] = updatedProduct;
-        return toMockJsonResponse(createSuccessEnvelope(updatedProduct));
+        return toMockJsonResponse(createSuccessEnvelope(updatedProduct), {
+            schema: UpdateProductByIdResponse
+        });
     }),
     http.delete(`${API_BASE}/products/:productId`, ({ params }) => {
         const productId = String(params.productId);
         const targetIndex = mockDatabase.sampleProducts.findIndex(({ id }) => id === productId);
 
         if (targetIndex === -1)
-            return toMockJsonResponse(
-                { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } },
-                { status: 404 }
-            );
+            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'Product not found'), {
+                status: 404,
+                schema: MockErrorResponse
+            });
 
         mockDatabase.sampleProducts.splice(targetIndex, 1);
-        return toMockJsonResponse(createMessageResponse('Product deleted'));
+        return toMockJsonResponse(createMessageResponse('Product deleted'), {
+            schema: DeleteProductByIdResponse
+        });
     })
 ];

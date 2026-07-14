@@ -19,10 +19,13 @@ export default defineConfig({
             '@': fileURLToPath(new URL('src', import.meta.url)),
             // eslint-disable-next-line @typescript-eslint/naming-convention
             '@types': fileURLToPath(new URL('src/types', import.meta.url)),
+            // '@api/schemas' must be declared before '@api': Vite matches a string alias
+            // against both the exact key and `key + '/'` as a prefix, in declaration order,
+            // so the shorter '@api' would otherwise shadow every '@api/schemas' import.
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            '@api': fileURLToPath(new URL('contracts/rest/index', import.meta.url)),
+            '@api/schemas': fileURLToPath(new URL('contracts/rest/schemas.zod', import.meta.url)),
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            '@api/schemas': fileURLToPath(new URL('contracts/rest/schemas.zod', import.meta.url))
+            '@api': fileURLToPath(new URL('contracts/rest/index', import.meta.url))
         }
     },
     css: {
