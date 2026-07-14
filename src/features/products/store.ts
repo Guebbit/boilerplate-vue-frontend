@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
-import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useCoreStore, useStructureSearchApi } from '@guebbit/vue-toolkit';
 import type { AxiosProgressEvent } from 'axios';
+import { ref, type WatchSource } from 'vue';
 
 import {
     listProducts,
@@ -18,8 +19,18 @@ import type {
     SearchProductsRequest
 } from '@types';
 
+type IProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
+
 export const useProductsStore = defineStore('products', () => {
     const { getLoading, setLoading } = useCoreStore();
+
+    /**
+     * Current search filters. Owned by the store so `useStructureSearchApi`'s
+     * search-scoped `pageItemList` and `watchSearch` stay bound to the same
+     * source the list view mutates.
+     */
+    const filters = ref<IProductsFilters>({});
+
     const {
         itemDictionary: products,
         itemList: productsList,
@@ -33,14 +44,18 @@ export const useProductsStore = defineStore('products', () => {
         pageSize,
         pageTotal,
         pageItemList,
-        fetchSearch,
+        watchSearch,
         fetchAny,
         fetchAll,
         fetchTarget,
+        watchTarget,
         createTarget,
         updateTarget,
         deleteTarget
-    } = useStructureRestApi<Product, string>({ getLoading, setLoading });
+    } = useStructureSearchApi<Product, string, string | number, IProductsFilters>(
+        () => filters.value,
+        { getLoading, setLoading }
+    );
 
     /**
      *
@@ -61,41 +76,27 @@ export const useProductsStore = defineStore('products', () => {
             forced
         });
 
-    type IProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
-
     /**
-     * Fetches a filtered, paginated product list via GET /products.
-     * Filters are passed as query parameters; SearchProductsRequest is still
-     * used as the filter shape so callers stay type-safe.
+     * Reactive filtered product search via GET /products, built on the toolkit's
+     * `watchSearch`: fetches the current page immediately and re-fetches whenever
+     * `pageCurrent`/`pageSize` change. Filters are read from the store's `filters`
+     * on each run — mutate `filters` then call the returned `search()` to apply them.
      *
-     * @param filters
-     * @param page
-     * @param pageSize
-     * @param forced
+     * @param onError - notified on a failed search (immediate load, page change, or search())
      */
-    const fetchSearchProducts = (
-        filters: IProductsFilters = {},
-        page = 1,
-        pageSizeValue = 10,
-        forced = false
-    ) => {
-        pageSize.value = pageSizeValue;
-        return fetchSearch(
-            () =>
+    const watchSearchProducts = (onError?: (error: unknown) => void) =>
+        watchSearch(
+            (currentFilters, page, pageSizeValue) =>
                 listProducts({
                     page,
                     pageSize: pageSizeValue,
-                    text: filters.text,
-                    productId: filters.id,
-                    minPrice: filters.minPrice,
-                    maxPrice: filters.maxPrice
+                    text: currentFilters.text,
+                    productId: currentFilters.id,
+                    minPrice: currentFilters.minPrice,
+                    maxPrice: currentFilters.maxPrice
                 }).then((response) => response.data.items),
-            filters,
-            page,
-            pageSizeValue,
-            { forced }
+            { onError: (error) => onError?.(error) }
         );
-    };
 
     /**
      *
@@ -106,6 +107,17 @@ export const useProductsStore = defineStore('products', () => {
         fetchTarget(() => getProductById(productId).then((response) => response.data), productId, {
             forced
         });
+
+    /**
+     * Reactive counterpart of fetchProduct: selects and (re)fetches the product
+     * whenever idSource changes, including once immediately on setup.
+     *
+     * @param idSource
+     */
+    const watchProduct = (idSource: WatchSource<string | undefined | null>) =>
+        watchTarget(idSource, (productId) =>
+            getProductById(productId).then((response) => response.data)
+        );
 
     /**
      * Create a new product.
@@ -215,6 +227,7 @@ export const useProductsStore = defineStore('products', () => {
         selectedProductId,
         currentProduct,
 
+        filters,
         loading,
         pageCurrent,
         pageSize,
@@ -222,8 +235,9 @@ export const useProductsStore = defineStore('products', () => {
         pageItemList,
         fetchProducts,
         fetchPaginationProducts,
-        fetchSearchProducts,
+        watchSearchProducts,
         fetchProduct,
+        watchProduct,
         createProduct,
         updateProduct,
         updateProductImage,

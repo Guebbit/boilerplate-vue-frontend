@@ -1,0 +1,516 @@
+{
+    "nodes": [
+        {
+            "id": "target_repo_tsconfig_app_json",
+            "label": "tsconfig.app.json",
+            "file_type": "code",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L1"
+        },
+        {
+            "id": "target_repo_tsconfig_app_extends",
+            "label": "extends",
+            "file_type": "code",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L2"
+        },
+        {
+            "id": "ref_vue_tsconfig_tsconfig_dom_json",
+            "label": "@vue/tsconfig/tsconfig.dom.json",
+            "file_type": "concept",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L2"
+        },
+        {
+            "id": "target_repo_tsconfig_app_include",
+            "label": "include",
+            "file_type": "code",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L3"
+        },
+        {
+            "id": "ref_contracts_rest",
+            "label": "contracts/rest",
+            "file_type": "concept",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L3"
+        },
+        {
+            "id": "ref_src",
+            "label": "src/**/*",
+            "file_type": "concept",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L3"
+        },
+        {
+            "id": "ref_src_vue",
+            "label": "src/**/*.vue",
+            "file_type": "concept",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L3"
+        },
+        {
+            "id": "ref_tests_mocks",
+            "label": "tests/mocks/**/*",
+            "file_type": "concept",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L3"
+        },
+        {
+            "id": "ref_dev_ts",
+            "label": ".dev/**/*.ts",
+            "file_type": "concept",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L3"
+        },
+        {
+            "id": "target_repo_tsconfig_app_exclude",
+            "label": "exclude",
+            "file_type": "code",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L4"
+        },
+        {
+            "id": "ref_src_tests",
+            "label": "src/**/__tests__/*",
+            "file_type": "concept",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L4"
+        },
+        {
+            "id": "target_repo_tsconfig_app_compileroptions",
+            "label": "compilerOptions",
+            "file_type": "code",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L5"
+        },
+        {
+            "id": "target_repo_tsconfig_app_compileroptions_target",
+            "label": "target",
+            "file_type": "code",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L6"
+        },
+        {
+            "id": "target_repo_tsconfig_app_compileroptions_lib",
+            "label": "lib",
+            "file_type": "code",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L7"
+        },
+        {
+            "id": "ref_esnext",
+            "label": "ESNext",
+            "file_type": "concept",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L7"
+        },
+        {
+            "id": "ref_dom",
+            "label": "DOM",
+            "file_type": "concept",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L7"
+        },
+        {
+            "id": "target_repo_tsconfig_app_compileroptions_strict",
+            "label": "strict",
+            "file_type": "code",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L8"
+        },
+        {
+            "id": "target_repo_tsconfig_app_compileroptions_composite",
+            "label": "composite",
+            "file_type": "code",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L9"
+        },
+        {
+            "id": "target_repo_tsconfig_app_compileroptions_noemit",
+            "label": "noEmit",
+            "file_type": "code",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L10"
+        },
+        {
+            "id": "target_repo_tsconfig_app_compileroptions_tsbuildinfofile",
+            "label": "tsBuildInfoFile",
+            "file_type": "code",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L11"
+        },
+        {
+            "id": "target_repo_tsconfig_app_compileroptions_types",
+            "label": "types",
+            "file_type": "code",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L13"
+        },
+        {
+            "id": "ref_vite_client",
+            "label": "vite/client",
+            "file_type": "concept",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L13"
+        },
+        {
+            "id": "target_repo_tsconfig_app_compileroptions_baseurl",
+            "label": "baseUrl",
+            "file_type": "code",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L15"
+        },
+        {
+            "id": "target_repo_tsconfig_app_compileroptions_paths",
+            "label": "paths",
+            "file_type": "code",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L16"
+        },
+        {
+            "id": "target_repo_tsconfig_app_paths",
+            "label": "@/*",
+            "file_type": "code",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L17"
+        },
+        {
+            "id": "target_repo_tsconfig_app_paths_types",
+            "label": "@types",
+            "file_type": "code",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L18"
+        },
+        {
+            "id": "ref_src_types",
+            "label": "./src/types",
+            "file_type": "concept",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L18"
+        },
+        {
+            "id": "target_repo_tsconfig_app_paths_api",
+            "label": "@api",
+            "file_type": "code",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L19"
+        },
+        {
+            "id": "ref_contracts_rest_index",
+            "label": "./contracts/rest/index",
+            "file_type": "concept",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L19"
+        },
+        {
+            "id": "target_repo_tsconfig_app_paths_api_schemas",
+            "label": "@api/schemas",
+            "file_type": "code",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L20"
+        },
+        {
+            "id": "ref_contracts_rest_schemas_zod",
+            "label": "./contracts/rest/schemas.zod",
+            "file_type": "concept",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L20"
+        }
+    ],
+    "edges": [
+        {
+            "source": "target_repo_tsconfig_app_json",
+            "target": "target_repo_tsconfig_app_extends",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L2",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tsconfig_app_json",
+            "target": "ref_vue_tsconfig_tsconfig_dom_json",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L2",
+            "weight": 1.0,
+            "context": "import"
+        },
+        {
+            "source": "target_repo_tsconfig_app_json",
+            "target": "target_repo_tsconfig_app_include",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L3",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tsconfig_app_include",
+            "target": "ref_contracts_rest",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L3",
+            "weight": 1.0,
+            "context": "import"
+        },
+        {
+            "source": "target_repo_tsconfig_app_include",
+            "target": "ref_src",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L3",
+            "weight": 1.0,
+            "context": "import"
+        },
+        {
+            "source": "target_repo_tsconfig_app_include",
+            "target": "ref_src_vue",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L3",
+            "weight": 1.0,
+            "context": "import"
+        },
+        {
+            "source": "target_repo_tsconfig_app_include",
+            "target": "ref_tests_mocks",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L3",
+            "weight": 1.0,
+            "context": "import"
+        },
+        {
+            "source": "target_repo_tsconfig_app_include",
+            "target": "ref_dev_ts",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L3",
+            "weight": 1.0,
+            "context": "import"
+        },
+        {
+            "source": "target_repo_tsconfig_app_json",
+            "target": "target_repo_tsconfig_app_exclude",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L4",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tsconfig_app_exclude",
+            "target": "ref_src_tests",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L4",
+            "weight": 1.0,
+            "context": "import"
+        },
+        {
+            "source": "target_repo_tsconfig_app_json",
+            "target": "target_repo_tsconfig_app_compileroptions",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L5",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tsconfig_app_compileroptions",
+            "target": "target_repo_tsconfig_app_compileroptions_target",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L6",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tsconfig_app_compileroptions",
+            "target": "target_repo_tsconfig_app_compileroptions_lib",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L7",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tsconfig_app_compileroptions_lib",
+            "target": "ref_esnext",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L7",
+            "weight": 1.0,
+            "context": "import"
+        },
+        {
+            "source": "target_repo_tsconfig_app_compileroptions_lib",
+            "target": "ref_dom",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L7",
+            "weight": 1.0,
+            "context": "import"
+        },
+        {
+            "source": "target_repo_tsconfig_app_compileroptions",
+            "target": "target_repo_tsconfig_app_compileroptions_strict",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L8",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tsconfig_app_compileroptions",
+            "target": "target_repo_tsconfig_app_compileroptions_composite",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L9",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tsconfig_app_compileroptions",
+            "target": "target_repo_tsconfig_app_compileroptions_noemit",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L10",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tsconfig_app_compileroptions",
+            "target": "target_repo_tsconfig_app_compileroptions_tsbuildinfofile",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L11",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tsconfig_app_compileroptions",
+            "target": "target_repo_tsconfig_app_compileroptions_types",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L13",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tsconfig_app_compileroptions_types",
+            "target": "ref_vite_client",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L13",
+            "weight": 1.0,
+            "context": "import"
+        },
+        {
+            "source": "target_repo_tsconfig_app_compileroptions",
+            "target": "target_repo_tsconfig_app_compileroptions_baseurl",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L15",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tsconfig_app_compileroptions",
+            "target": "target_repo_tsconfig_app_compileroptions_paths",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L16",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tsconfig_app_compileroptions_paths",
+            "target": "target_repo_tsconfig_app_paths",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L17",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tsconfig_app_paths",
+            "target": "ref_src",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L17",
+            "weight": 1.0,
+            "context": "import"
+        },
+        {
+            "source": "target_repo_tsconfig_app_compileroptions_paths",
+            "target": "target_repo_tsconfig_app_paths_types",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L18",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tsconfig_app_paths_types",
+            "target": "ref_src_types",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L18",
+            "weight": 1.0,
+            "context": "import"
+        },
+        {
+            "source": "target_repo_tsconfig_app_compileroptions_paths",
+            "target": "target_repo_tsconfig_app_paths_api",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L19",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tsconfig_app_paths_api",
+            "target": "ref_contracts_rest_index",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L19",
+            "weight": 1.0,
+            "context": "import"
+        },
+        {
+            "source": "target_repo_tsconfig_app_compileroptions_paths",
+            "target": "target_repo_tsconfig_app_paths_api_schemas",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L20",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tsconfig_app_paths_api_schemas",
+            "target": "ref_contracts_rest_schemas_zod",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tsconfig.app.json",
+            "source_location": "L20",
+            "weight": 1.0,
+            "context": "import"
+        }
+    ]
+}

@@ -104,7 +104,7 @@ export default {
 
 <script setup lang="ts">
 import '@/styles/features/products.scss';
-import { computed, reactive } from 'vue';
+import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
@@ -113,24 +113,21 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/features/products/store';
 import { useProfileStore } from '@/stores/profile.ts';
 import { notifyErrorMessages } from '@/utils/errors.ts';
-import type { SearchProductsRequest } from '@types';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import ListPagination from '@/components/molecules/ListPagination.vue';
 import DataTable from '@/components/organisms/DataTable.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseSelect from '@/components/atoms/BaseSelect.vue';
-import { useListPage } from '@/composables/useListPage.ts';
 
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
-const { fetchSearchProducts, deleteProduct } = useProductsStore();
-const { pageItemList, selectedProductId, pageCurrent, pageTotal, pageSize, loading } =
+const { watchSearchProducts, deleteProduct } = useProductsStore();
+const { filters, pageItemList, selectedProductId, pageCurrent, pageTotal, pageSize, loading } =
     storeToRefs(useProductsStore());
 const { isAdmin } = storeToRefs(useProfileStore());
 
-const filters = reactive<Omit<SearchProductsRequest, 'page' | 'pageSize'>>({});
 const pageSizeOptions = [
     { value: 10, label: '10' },
     { value: 25, label: '25' },
@@ -146,13 +143,18 @@ const tableHeaders = computed(() => [
     { title: t('products-list-page.column-actions'), key: 'actions' }
 ]);
 
-const { handleSearch, handleReset } = useListPage({
-    filters,
-    pageCurrent,
-    pageSize,
-    fetchSearch: fetchSearchProducts,
-    onError: (error) => notifyErrorMessages(addMessage, error)
-});
+const { search } = watchSearchProducts((error) => notifyErrorMessages(addMessage, error));
+
+const handleSearch = () => {
+    pageCurrent.value = 1;
+    return search();
+};
+
+const handleReset = () => {
+    filters.value = {};
+    pageCurrent.value = 1;
+    return search(true);
+};
 
 const handleDelete = (productId: string) => {
     if (!confirm(t('products-list-page.confirm-delete'))) return;

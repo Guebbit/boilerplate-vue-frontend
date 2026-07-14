@@ -135,8 +135,7 @@ import CardDetail from '@/components/organisms/CardDetail.vue';
 import CardInfo from '@/components/organisms/CardInfo.vue';
 import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
-import { useItemDetailRecord } from '@/composables/useItemDetailRecord.ts';
-import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';
+import { formatText, formatDateTime, formatCurrency, formatFlag } from '@/utils/formatters.ts';
 
 /**
  * Localized dictionary helper.
@@ -153,13 +152,8 @@ const { id } = defineProps<{
 /**
  * Product store selectors and fetch API.
  */
-const { fetchProduct } = useProductsStore();
-const { currentProduct, selectedProductId } = storeToRefs(useProductsStore());
-
-/**
- * Shared value formatters for detail pages.
- */
-const { formatText, formatDateTime, formatCurrency, formatFlag } = useItemDetailDisplay();
+const { watchProduct } = useProductsStore();
+const { currentProduct } = storeToRefs(useProductsStore());
 
 /**
  * Hero title fallback chain.
@@ -181,11 +175,7 @@ const productStatus = computed(() =>
 );
 
 /**
- * Activates record selection + onBeforeMount record fetch.
+ * Selects and (re)fetches the product whenever the route id changes.
  */
-useItemDetailRecord({
-    id,
-    selectedId: selectedProductId,
-    fetchRecord: fetchProduct
-});
+watchProduct(() => id);
 </script>

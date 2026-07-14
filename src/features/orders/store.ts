@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
-import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useCoreStore, useStructureSearchApi } from '@guebbit/vue-toolkit';
+import { ref, type WatchSource } from 'vue';
 import {
     listOrders,
     getOrderById,
@@ -19,8 +20,18 @@ import type {
     SearchOrdersRequest
 } from '@types';
 
+type IOrdersFilters = Omit<SearchOrdersRequest, 'page' | 'pageSize'>;
+
 export const useOrdersStore = defineStore('orders', () => {
     const { getLoading, setLoading } = useCoreStore();
+
+    /**
+     * Current search filters. Owned by the store so `useStructureSearchApi`'s
+     * search-scoped `pageItemList` and `watchSearch` stay bound to the same
+     * source the list view mutates.
+     */
+    const filters = ref<IOrdersFilters>({});
+
     const {
         itemDictionary: orders,
         itemList: ordersList,
@@ -34,14 +45,18 @@ export const useOrdersStore = defineStore('orders', () => {
         pageSize,
         pageTotal,
         pageItemList,
-        fetchSearch,
+        watchSearch,
         fetchAll,
         fetchTarget,
+        watchTarget,
         fetchAny,
         createTarget,
         updateTarget,
         deleteTarget
-    } = useStructureRestApi<Order, string>({ getLoading, setLoading });
+    } = useStructureSearchApi<Order, string, string | number, IOrdersFilters>(() => filters.value, {
+        getLoading,
+        setLoading
+    });
 
     /**
      * Fetch all orders for the authenticated user
@@ -63,42 +78,27 @@ export const useOrdersStore = defineStore('orders', () => {
             forced
         });
 
-    type IOrdersFilters = Omit<SearchOrdersRequest, 'page' | 'pageSize'>;
-
     /**
-     * @param filters
-     * @param page
-     * @param pageSize
-     * @param forced
+     * Reactive filtered order search via GET /orders, built on the toolkit's
+     * `watchSearch`: fetches the current page immediately and re-fetches whenever
+     * `pageCurrent`/`pageSize` change. Filters are read from the store's `filters`
+     * on each run — mutate `filters` then call the returned `search()` to apply them.
+     *
+     * @param onError - notified on a failed search (immediate load, page change, or search())
      */
-    /**
-     * Fetches a filtered, paginated order list via GET /orders.
-     * Filters are passed as query parameters; SearchOrdersRequest is still
-     * used as the filter shape so callers stay type-safe.
-     */
-    const fetchSearchOrders = (
-        filters: IOrdersFilters = {},
-        page = 1,
-        pageSizeValue = 10,
-        forced = false
-    ) => {
-        pageSize.value = pageSizeValue;
-        return fetchSearch(
-            () =>
+    const watchSearchOrders = (onError?: (error: unknown) => void) =>
+        watchSearch(
+            (currentFilters, page, pageSizeValue) =>
                 listOrders({
                     page,
                     pageSize: pageSizeValue,
-                    id: filters.id,
-                    userId: filters.userId,
-                    productId: filters.productId,
-                    email: filters.email
+                    id: currentFilters.id,
+                    userId: currentFilters.userId,
+                    productId: currentFilters.productId,
+                    email: currentFilters.email
                 }).then((response) => response.data.items),
-            filters,
-            page,
-            pageSizeValue,
-            { forced }
+            { onError: (error) => onError?.(error) }
         );
-    };
 
     /**
      * Fetch a single order by ID
@@ -110,6 +110,15 @@ export const useOrdersStore = defineStore('orders', () => {
         fetchTarget(() => getOrderById(orderId).then((response) => response.data), orderId, {
             forced
         });
+
+    /**
+     * Reactive counterpart of fetchOrder: selects and (re)fetches the order
+     * whenever idSource changes, including once immediately on setup.
+     *
+     * @param idSource
+     */
+    const watchOrder = (idSource: WatchSource<string | undefined | null>) =>
+        watchTarget(idSource, (orderId) => getOrderById(orderId).then((response) => response.data));
 
     /**
      * Create a new order directly (admin)
@@ -176,6 +185,7 @@ export const useOrdersStore = defineStore('orders', () => {
         selectedOrderId,
         currentOrder,
 
+        filters,
         loading,
         pageCurrent,
         pageSize,
@@ -183,8 +193,9 @@ export const useOrdersStore = defineStore('orders', () => {
         pageItemList,
         fetchOrders,
         fetchPaginationOrders,
-        fetchSearchOrders,
+        watchSearchOrders,
         fetchOrder,
+        watchOrder,
         createOrder,
         updateOrder,
         checkout,

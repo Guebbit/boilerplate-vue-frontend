@@ -1,0 +1,244 @@
+{
+    "nodes": [
+        {
+            "id": "target_repo_tests_e2e_tsconfig_json",
+            "label": "tsconfig.json",
+            "file_type": "code",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L1"
+        },
+        {
+            "id": "target_repo_tests_e2e_tsconfig_extends",
+            "label": "extends",
+            "file_type": "code",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L2"
+        },
+        {
+            "id": "ref_tsconfig_app_json",
+            "label": "../../tsconfig.app.json",
+            "file_type": "concept",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L2"
+        },
+        {
+            "id": "target_repo_tests_e2e_tsconfig_compileroptions",
+            "label": "compilerOptions",
+            "file_type": "code",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L3"
+        },
+        {
+            "id": "target_repo_tests_e2e_tsconfig_compileroptions_sourcemap",
+            "label": "sourceMap",
+            "file_type": "code",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L4"
+        },
+        {
+            "id": "target_repo_tests_e2e_tsconfig_compileroptions_types",
+            "label": "types",
+            "file_type": "code",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L5"
+        },
+        {
+            "id": "ref_cypress",
+            "label": "cypress",
+            "file_type": "concept",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L5"
+        },
+        {
+            "id": "target_repo_tests_e2e_tsconfig_compileroptions_isolatedmodules",
+            "label": "isolatedModules",
+            "file_type": "code",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L6"
+        },
+        {
+            "id": "target_repo_tests_e2e_tsconfig_baseurl",
+            "label": "baseUrl",
+            "file_type": "code",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L8"
+        },
+        {
+            "id": "target_repo_tests_e2e_tsconfig_include",
+            "label": "include",
+            "file_type": "code",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L9"
+        },
+        {
+            "id": "ref_cypress_config_ts",
+            "label": "../../cypress.config.ts",
+            "file_type": "concept",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L9"
+        },
+        {
+            "id": "ref_cy_ts",
+            "label": "**/*.cy.ts",
+            "file_type": "concept",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L9"
+        },
+        {
+            "id": "ref_cy_js",
+            "label": "**/*.cy.js",
+            "file_type": "concept",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L9"
+        },
+        {
+            "id": "ref_d_ts",
+            "label": "**/*.d.ts",
+            "file_type": "concept",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L9"
+        },
+        {
+            "id": "ref_support_ts",
+            "label": "support/**/*.ts",
+            "file_type": "concept",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L9"
+        }
+    ],
+    "edges": [
+        {
+            "source": "target_repo_tests_e2e_tsconfig_json",
+            "target": "target_repo_tests_e2e_tsconfig_extends",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L2",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tests_e2e_tsconfig_json",
+            "target": "ref_tsconfig_app_json",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L2",
+            "weight": 1.0,
+            "context": "import"
+        },
+        {
+            "source": "target_repo_tests_e2e_tsconfig_json",
+            "target": "target_repo_tests_e2e_tsconfig_compileroptions",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L3",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tests_e2e_tsconfig_compileroptions",
+            "target": "target_repo_tests_e2e_tsconfig_compileroptions_sourcemap",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L4",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tests_e2e_tsconfig_compileroptions",
+            "target": "target_repo_tests_e2e_tsconfig_compileroptions_types",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L5",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tests_e2e_tsconfig_compileroptions_types",
+            "target": "ref_cypress",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L5",
+            "weight": 1.0,
+            "context": "import"
+        },
+        {
+            "source": "target_repo_tests_e2e_tsconfig_compileroptions",
+            "target": "target_repo_tests_e2e_tsconfig_compileroptions_isolatedmodules",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L6",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tests_e2e_tsconfig_json",
+            "target": "target_repo_tests_e2e_tsconfig_baseurl",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L8",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tests_e2e_tsconfig_json",
+            "target": "target_repo_tests_e2e_tsconfig_include",
+            "relation": "contains",
+            "confidence": "EXTRACTED",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L9",
+            "weight": 1.0
+        },
+        {
+            "source": "target_repo_tests_e2e_tsconfig_include",
+            "target": "ref_cypress_config_ts",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L9",
+            "weight": 1.0,
+            "context": "import"
+        },
+        {
+            "source": "target_repo_tests_e2e_tsconfig_include",
+            "target": "ref_cy_ts",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L9",
+            "weight": 1.0,
+            "context": "import"
+        },
+        {
+            "source": "target_repo_tests_e2e_tsconfig_include",
+            "target": "ref_cy_js",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L9",
+            "weight": 1.0,
+            "context": "import"
+        },
+        {
+            "source": "target_repo_tests_e2e_tsconfig_include",
+            "target": "ref_d_ts",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L9",
+            "weight": 1.0,
+            "context": "import"
+        },
+        {
+            "source": "target_repo_tests_e2e_tsconfig_include",
+            "target": "ref_support_ts",
+            "relation": "extends",
+            "confidence": "EXTRACTED",
+            "source_file": "tests/e2e/tsconfig.json",
+            "source_location": "L9",
+            "weight": 1.0,
+            "context": "import"
+        }
+    ]
+}

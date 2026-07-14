@@ -6,7 +6,7 @@ export default {
 
 <script setup lang="ts">
 import '@/styles/features/users.scss';
-import { computed, reactive } from 'vue';
+import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
@@ -14,23 +14,19 @@ import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/features/users/store';
 import { notifyErrorMessages } from '@/utils/errors.ts';
-import type { SearchUsersRequest } from '@types';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import ListPagination from '@/components/molecules/ListPagination.vue';
 import DataTable from '@/components/organisms/DataTable.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseSelect from '@/components/atoms/BaseSelect.vue';
-import { useListPage } from '@/composables/useListPage.ts';
 
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
-const { fetchSearchUsers, deleteUser } = useUsersStore();
-const { pageItemList, selectedUserId, pageCurrent, pageSize, pageTotal, loading } =
+const { watchSearchUsers, deleteUser } = useUsersStore();
+const { filters, pageItemList, selectedUserId, pageCurrent, pageSize, pageTotal, loading } =
     storeToRefs(useUsersStore());
-
-const filters = reactive<Omit<SearchUsersRequest, 'page' | 'pageSize'>>({});
 
 const activeOptions = [
     { value: undefined, label: t('users-list-page.filter-active-all') },
@@ -53,13 +49,18 @@ const tableHeaders = computed(() => [
     { title: t('users-list-page.column-actions'), key: 'actions' }
 ]);
 
-const { handleSearch, handleReset } = useListPage({
-    filters,
-    pageCurrent,
-    pageSize,
-    fetchSearch: fetchSearchUsers,
-    onError: (error) => notifyErrorMessages(addMessage, error)
-});
+const { search } = watchSearchUsers((error) => notifyErrorMessages(addMessage, error));
+
+const handleSearch = () => {
+    pageCurrent.value = 1;
+    return search();
+};
+
+const handleReset = () => {
+    filters.value = {};
+    pageCurrent.value = 1;
+    return search(true);
+};
 
 const handleDelete = (userId: string) => {
     if (!confirm(t('users-list-page.confirm-delete'))) return;

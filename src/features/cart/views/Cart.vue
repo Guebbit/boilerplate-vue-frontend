@@ -94,7 +94,7 @@ import { useCartStore } from '@/features/cart/store.ts';
 import { useOrdersStore } from '@/features/orders/store.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { notifyErrorMessages } from '@/utils/errors.ts';
-import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';
+import { formatCurrency } from '@/utils/formatters.ts';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 
@@ -104,8 +104,6 @@ import LayoutDefault from '@/layouts/LayoutDefault.vue';
 const { t } = useI18n();
 const router = useRouter();
 const { addMessage } = useNotificationsStore();
-const { formatCurrency } = useItemDetailDisplay();
-
 /**
  * Cart store
  */

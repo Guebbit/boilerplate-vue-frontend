@@ -126,8 +126,7 @@ import CardDetail from '@/components/organisms/CardDetail.vue';
 import CardInfo from '@/components/organisms/CardInfo.vue';
 import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
-import { useItemDetailRecord } from '@/composables/useItemDetailRecord.ts';
-import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';
+import { formatText, formatDateTime, formatFlag } from '@/utils/formatters.ts';
 
 /**
  * Translations helper.
@@ -144,13 +143,8 @@ const { id } = defineProps<{
 /**
  * User store API and state references.
  */
-const { fetchUser } = useUsersStore();
-const { currentUser, selectedUserId } = storeToRefs(useUsersStore());
-
-/**
- * Shared display/format helpers.
- */
-const { formatText, formatDateTime, formatFlag } = useItemDetailDisplay();
+const { watchUser } = useUsersStore();
+const { currentUser } = storeToRefs(useUsersStore());
 
 /**
  * Hero and status computed values.
@@ -167,11 +161,7 @@ const userStatus = computed(() =>
 );
 
 /**
- * Activates route-based user selection and mount-time fetch.
+ * Selects and (re)fetches the user whenever the route id changes.
  */
-useItemDetailRecord({
-    id,
-    selectedId: selectedUserId,
-    fetchRecord: fetchUser
-});
+watchUser(() => id);
 </script>

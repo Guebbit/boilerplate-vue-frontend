@@ -159,8 +159,7 @@ import CardDetail from '@/components/organisms/CardDetail.vue';
 import CardInfo from '@/components/organisms/CardInfo.vue';
 import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
-import { useItemDetailRecord } from '@/composables/useItemDetailRecord.ts';
-import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';
+import { formatText, formatDateTime, formatCurrency } from '@/utils/formatters.ts';
 import { notifyErrorMessages } from '@/utils/errors.ts';
 import { EMPTY_VALUE } from '@/utils/constants.ts';
 
@@ -180,13 +179,8 @@ const { id } = defineProps<{
 /**
  * Store API and reactive order references.
  */
-const { fetchOrder, getOrderInvoice } = useOrdersStore();
-const { currentOrder, selectedOrderId, loading } = storeToRefs(useOrdersStore());
-
-/**
- * Shared value formatting helpers.
- */
-const { formatText, formatDateTime, formatCurrency } = useItemDetailDisplay();
+const { watchOrder, getOrderInvoice } = useOrdersStore();
+const { currentOrder, loading } = storeToRefs(useOrdersStore());
 
 /**
  * Hero labels and localized status.
@@ -223,11 +217,7 @@ const downloadInvoice = async () => {
 };
 
 /**
- * Activates mount-time order loading.
+ * Selects and (re)fetches the order whenever the route id changes.
  */
-useItemDetailRecord({
-    id,
-    selectedId: selectedOrderId,
-    fetchRecord: fetchOrder
-});
+watchOrder(() => id);
 </script>

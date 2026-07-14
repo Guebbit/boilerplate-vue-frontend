@@ -43,14 +43,14 @@
                             :label="t('order-edit-page.label-status')"
                             :options="statusOptions"
                             :errors="formErrors.status"
-                            :show-errors="showErrors"
+                            :show-errors="showFormErrors"
                         />
                         <BaseInput
                             v-model="form.email"
                             type="email"
                             :label="t('order-edit-page.label-email')"
                             :errors="formErrors.email"
-                            :show-errors="showErrors"
+                            :show-errors="showFormErrors"
                         />
 
                         <div class="item-detail-page-form-actions">
@@ -129,9 +129,7 @@ import CardDetail from '@/components/organisms/CardDetail.vue';
 import CardInfo from '@/components/organisms/CardInfo.vue';
 import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
-import { useItemDetailRecord } from '@/composables/useItemDetailRecord.ts';
-import { useItemDetailForm } from '@/composables/useItemDetailForm.ts';
-import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';
+import { formatText, formatDateTime, formatCurrency } from '@/utils/formatters.ts';
 import { notifyErrorMessages } from '@/utils/errors.ts';
 import { EMPTY_VALUE } from '@/utils/constants.ts';
 
@@ -151,14 +149,9 @@ const { id } = defineProps<{
 /**
  * Orders store APIs and references.
  */
-const { fetchOrder, updateOrder } = useOrdersStore();
+const { watchOrder, updateOrder } = useOrdersStore();
 const zodSchemaOrderStatus = createOrderStatusSchema(t);
-const { currentOrder, selectedOrderId, loading } = storeToRefs(useOrdersStore());
-
-/**
- * Shared detail formatters.
- */
-const { formatText, formatDateTime, formatCurrency } = useItemDetailDisplay();
+const { currentOrder, loading } = storeToRefs(useOrdersStore());
 
 /**
  * Select options for status updates.
@@ -192,22 +185,29 @@ const editSchema = z.object({
 /**
  * Toolkit-managed form state.
  */
-const { form, formErrors, isSubmitting, handleSubmit } = useStructureFormValidation<IOrderEditForm>(
-    {},
-    editSchema
-);
+const {
+    form,
+    formErrors,
+    showFormErrors,
+    isSubmitting,
+    resetForm,
+    handleSubmit,
+    activateAutoHydrate
+} = useStructureFormValidation<IOrderEditForm>({}, editSchema);
 
 /**
- * Auto-hydration watcher and reset helper.
+ * Auto-hydrate the form from the fetched record once it resolves.
  */
-const { showErrors, resetForm } = useItemDetailForm({
-    currentItem: currentOrder,
-    form,
-    mapToForm: (order) => ({
-        status: order?.status,
-        email: order?.email ?? ''
-    })
-});
+activateAutoHydrate(
+    computed(() =>
+        currentOrder.value
+            ? {
+                  status: currentOrder.value.status,
+                  email: currentOrder.value.email ?? ''
+              }
+            : undefined
+    )
+);
 
 /**
  * Hero texts and status label.
@@ -232,19 +232,15 @@ const submitForm = () =>
             email: form.value.email || undefined
         });
         addMessage(t('order-edit-page.success-update'));
-        showErrors.value = false;
+        showFormErrors.value = false;
     })
         .then((success) => {
-            if (!success) showErrors.value = true;
+            if (!success) showFormErrors.value = true;
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 
 /**
- * Activates mount-time order loading.
+ * Selects and (re)fetches the order whenever the route id changes.
  */
-useItemDetailRecord({
-    id,
-    selectedId: selectedOrderId,
-    fetchRecord: fetchOrder
-});
+watchOrder(() => id);
 </script>

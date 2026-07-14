@@ -43,14 +43,14 @@
                             type="email"
                             :label="t('user-edit-page.label-email')"
                             :errors="formErrors.email"
-                            :show-errors="showErrors"
+                            :show-errors="showFormErrors"
                         />
                         <BaseInput
                             v-model="form.password"
                             type="password"
                             :label="t('user-edit-page.label-password')"
                             :errors="formErrors.password"
-                            :show-errors="showErrors"
+                            :show-errors="showFormErrors"
                         />
 
                         <div class="item-detail-page-form-actions">
@@ -128,9 +128,7 @@ import CardDetail from '@/components/organisms/CardDetail.vue';
 import CardInfo from '@/components/organisms/CardInfo.vue';
 import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
-import { useItemDetailRecord } from '@/composables/useItemDetailRecord.ts';
-import { useItemDetailForm } from '@/composables/useItemDetailForm.ts';
-import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';
+import { formatText, formatDateTime, formatFlag } from '@/utils/formatters.ts';
 import { notifyErrorMessages } from '@/utils/errors.ts';
 import { EMPTY_VALUE } from '@/utils/constants.ts';
 
@@ -150,15 +148,10 @@ const { id } = defineProps<{
 /**
  * User store APIs and references.
  */
-const { fetchUser, updateUser } = useUsersStore();
+const { watchUser, updateUser } = useUsersStore();
 const zodSchemaUsers = createUsersSchema(t);
 const zodSchemaUsersPassword = createUsersPasswordSchema(t);
-const { currentUser, selectedUserId, loading } = storeToRefs(useUsersStore());
-
-/**
- * Shared display formatting helpers.
- */
-const { formatText, formatDateTime, formatFlag } = useItemDetailDisplay();
+const { currentUser, loading } = storeToRefs(useUsersStore());
 
 /**
  * Edit form data model.
@@ -178,22 +171,29 @@ const editSchema = zodSchemaUsers.pick({ email: true }).extend({
 /**
  * Toolkit form bindings.
  */
-const { form, formErrors, isSubmitting, handleSubmit } = useStructureFormValidation<IUserEditForm>(
-    {},
-    editSchema
-);
+const {
+    form,
+    formErrors,
+    showFormErrors,
+    isSubmitting,
+    resetForm,
+    handleSubmit,
+    activateAutoHydrate
+} = useStructureFormValidation<IUserEditForm>({}, editSchema);
 
 /**
- * Shared watcher-based form hydration.
+ * Auto-hydrate the form from the fetched record once it resolves.
  */
-const { showErrors, resetForm } = useItemDetailForm({
-    currentItem: currentUser,
-    form,
-    mapToForm: (user) => ({
-        email: user?.email ?? '',
-        password: ''
-    })
-});
+activateAutoHydrate(
+    computed(() =>
+        currentUser.value
+            ? {
+                  email: currentUser.value.email ?? '',
+                  password: ''
+              }
+            : undefined
+    )
+);
 
 /**
  * Hero and status labels.
@@ -220,19 +220,15 @@ const submitForm = () =>
             password: form.value.password || undefined
         });
         addMessage(t('user-edit-page.success-update'));
-        showErrors.value = false;
+        showFormErrors.value = false;
     })
         .then((success) => {
-            if (!success) showErrors.value = true;
+            if (!success) showFormErrors.value = true;
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 
 /**
- * Activates route selection + onBeforeMount record load.
+ * Selects and (re)fetches the user whenever the route id changes.
  */
-useItemDetailRecord({
-    id,
-    selectedId: selectedUserId,
-    fetchRecord: fetchUser
-});
+watchUser(() => id);
 </script>

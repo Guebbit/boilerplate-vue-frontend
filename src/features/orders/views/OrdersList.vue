@@ -98,7 +98,7 @@ export default {
 
 <script setup lang="ts">
 import '@/styles/features/orders.scss';
-import { computed, reactive } from 'vue';
+import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
@@ -107,24 +107,29 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/features/orders/store.ts';
 import { useProfileStore } from '@/stores/profile.ts';
 import { notifyErrorMessages } from '@/utils/errors.ts';
-import type { SearchOrdersRequest } from '@types';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import ListPagination from '@/components/molecules/ListPagination.vue';
 import DataTable from '@/components/organisms/DataTable.vue';
 import BaseInput from '@/components/atoms/BaseInput.vue';
 import BaseSelect from '@/components/atoms/BaseSelect.vue';
-import { useListPage } from '@/composables/useListPage.ts';
 
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
-const { fetchSearchOrders, deleteOrder } = useOrdersStore();
-const { ordersList, pageItemList, selectedOrderId, pageCurrent, pageTotal, pageSize, loading } =
-    storeToRefs(useOrdersStore());
+const { watchSearchOrders, deleteOrder } = useOrdersStore();
+const {
+    filters,
+    ordersList,
+    pageItemList,
+    selectedOrderId,
+    pageCurrent,
+    pageTotal,
+    pageSize,
+    loading
+} = storeToRefs(useOrdersStore());
 const { isAdmin } = storeToRefs(useProfileStore());
 
-const filters = reactive<Omit<SearchOrdersRequest, 'page' | 'pageSize'>>({});
 const pageSizeOptions = [
     { value: 10, label: '10' },
     { value: 25, label: '25' },
@@ -139,13 +144,18 @@ const tableHeaders = computed(() => [
     { title: t('orders-list-page.column-actions'), key: 'actions' }
 ]);
 
-const { handleSearch, handleReset } = useListPage({
-    filters,
-    pageCurrent,
-    pageSize,
-    fetchSearch: fetchSearchOrders,
-    onError: (error) => notifyErrorMessages(addMessage, error)
-});
+const { search } = watchSearchOrders((error) => notifyErrorMessages(addMessage, error));
+
+const handleSearch = () => {
+    pageCurrent.value = 1;
+    return search();
+};
+
+const handleReset = () => {
+    filters.value = {};
+    pageCurrent.value = 1;
+    return search(true);
+};
 
 const handleDelete = (orderId: string) => {
     if (!confirm(t('orders-list-page.confirm-delete'))) return;

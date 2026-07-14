@@ -49,7 +49,7 @@
                             type="text"
                             :label="t('product-edit-page.label-title')"
                             :errors="formErrors.title"
-                            :show-errors="showErrors"
+                            :show-errors="showFormErrors"
                         />
                         <BaseInput
                             v-model="form.price"
@@ -58,7 +58,7 @@
                             :min="0"
                             :step="0.01"
                             :errors="formErrors.price"
-                            :show-errors="showErrors"
+                            :show-errors="showFormErrors"
                         />
                         <BaseInput
                             v-model="form.description"
@@ -147,9 +147,7 @@ import CardDetail from '@/components/organisms/CardDetail.vue';
 import CardInfo from '@/components/organisms/CardInfo.vue';
 import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
-import { useItemDetailRecord } from '@/composables/useItemDetailRecord.ts';
-import { useItemDetailForm } from '@/composables/useItemDetailForm.ts';
-import { useItemDetailDisplay } from '@/composables/useItemDetailDisplay.ts';
+import { formatText, formatDateTime, formatCurrency, formatFlag } from '@/utils/formatters.ts';
 import { notifyErrorMessages } from '@/utils/errors.ts';
 import { EMPTY_VALUE } from '@/utils/constants.ts';
 
@@ -169,14 +167,9 @@ const { id } = defineProps<{
 /**
  * Product store APIs and reactive references.
  */
-const { fetchProduct, updateProduct } = useProductsStore();
+const { watchProduct, updateProduct } = useProductsStore();
 const zodSchemaProducts = createProductsSchema(t);
-const { currentProduct, selectedProductId, loading } = storeToRefs(useProductsStore());
-
-/**
- * Shared detail display helpers.
- */
-const { formatText, formatDateTime, formatCurrency, formatFlag } = useItemDetailDisplay();
+const { currentProduct, loading } = storeToRefs(useProductsStore());
 
 /**
  * Form model used by the update workflow.
@@ -199,22 +192,31 @@ const editSchema = zodSchemaProducts.pick({ title: true, price: true }).extend({
 /**
  * Toolkit form state and submit handler.
  */
-const { form, formErrors, isSubmitting, handleSubmit } =
-    useStructureFormValidation<IProductEditForm>({}, editSchema);
+const {
+    form,
+    formErrors,
+    showFormErrors,
+    isSubmitting,
+    resetForm,
+    handleSubmit,
+    activateAutoHydrate
+} = useStructureFormValidation<IProductEditForm>({}, editSchema);
 
 /**
- * Shared form hydration + watcher activation.
+ * Auto-hydrate the form from the fetched record once it resolves.
  */
-const { showErrors, resetForm } = useItemDetailForm({
-    currentItem: currentProduct,
-    form,
-    mapToForm: (product) => ({
-        title: product?.title ?? '',
-        price: product?.price ?? 0,
-        description: product?.description ?? '',
-        active: product?.active ?? false
-    })
-});
+activateAutoHydrate(
+    computed(() =>
+        currentProduct.value
+            ? {
+                  title: currentProduct.value.title ?? '',
+                  price: currentProduct.value.price ?? 0,
+                  description: currentProduct.value.description ?? '',
+                  active: currentProduct.value.active ?? false
+              }
+            : undefined
+    )
+);
 
 /**
  * Hero metadata.
@@ -237,19 +239,15 @@ const submitForm = () =>
             active: form.value.active
         });
         addMessage(t('product-edit-page.success-update'));
-        showErrors.value = false;
+        showFormErrors.value = false;
     })
         .then((success) => {
-            if (!success) showErrors.value = true;
+            if (!success) showFormErrors.value = true;
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 
 /**
- * Activates record selection + onBeforeMount product load.
+ * Selects and (re)fetches the product whenever the route id changes.
  */
-useItemDetailRecord({
-    id,
-    selectedId: selectedProductId,
-    fetchRecord: fetchProduct
-});
+watchProduct(() => id);
 </script>

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
-import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
+import { useCoreStore, useStructureSearchApi } from '@guebbit/vue-toolkit';
+import { ref, type WatchSource } from 'vue';
 import {
     listUsers,
     getUserById,
@@ -17,11 +18,21 @@ import type {
     SearchUsersRequest
 } from '@types';
 
+type IUsersFilters = Omit<SearchUsersRequest, 'page' | 'pageSize'>;
+
 export const useUsersStore = defineStore('users', () => {
     /**
      * Inherited
      */
     const { getLoading, setLoading } = useCoreStore();
+
+    /**
+     * Current search filters. Owned by the store so `useStructureSearchApi`'s
+     * search-scoped `pageItemList` and `watchSearch` stay bound to the same
+     * source the list view mutates.
+     */
+    const filters = ref<IUsersFilters>({});
+
     const {
         itemDictionary: users,
         itemList: usersList,
@@ -35,14 +46,18 @@ export const useUsersStore = defineStore('users', () => {
         pageSize,
         pageTotal,
         pageItemList,
-        fetchSearch,
+        watchSearch,
         fetchAny,
         fetchAll,
         fetchTarget,
+        watchTarget,
         createTarget,
         updateTarget,
         deleteTarget
-    } = useStructureRestApi<User, string>({ getLoading, setLoading });
+    } = useStructureSearchApi<User, string, string | number, IUsersFilters>(() => filters.value, {
+        getLoading,
+        setLoading
+    });
 
     /**
      *
@@ -63,43 +78,28 @@ export const useUsersStore = defineStore('users', () => {
             forced
         });
 
-    type IUsersFilters = Omit<SearchUsersRequest, 'page' | 'pageSize'>;
-
     /**
-     * @param filters
-     * @param page
-     * @param pageSize
-     * @param forced
+     * Reactive filtered user search via GET /users, built on the toolkit's
+     * `watchSearch`: fetches the current page immediately and re-fetches whenever
+     * `pageCurrent`/`pageSize` change. Filters are read from the store's `filters`
+     * on each run — mutate `filters` then call the returned `search()` to apply them.
+     *
+     * @param onError - notified on a failed search (immediate load, page change, or search())
      */
-    /**
-     * Fetches a filtered, paginated user list via GET /users.
-     * Filters are passed as query parameters; SearchUsersRequest is still
-     * used as the filter shape so callers stay type-safe.
-     */
-    const fetchSearchUsers = (
-        filters: IUsersFilters = {},
-        page = 1,
-        pageSizeValue = 10,
-        forced = false
-    ) => {
-        pageSize.value = pageSizeValue;
-        return fetchSearch(
-            () =>
+    const watchSearchUsers = (onError?: (error: unknown) => void) =>
+        watchSearch(
+            (currentFilters, page, pageSizeValue) =>
                 listUsers({
                     page,
                     pageSize: pageSizeValue,
-                    text: filters.text,
-                    id: filters.id,
-                    email: filters.email,
-                    username: filters.username,
-                    active: filters.active
+                    text: currentFilters.text,
+                    id: currentFilters.id,
+                    email: currentFilters.email,
+                    username: currentFilters.username,
+                    active: currentFilters.active
                 }).then((response) => response.data.items),
-            filters,
-            page,
-            pageSizeValue,
-            { forced }
+            { onError: (error) => onError?.(error) }
         );
-    };
 
     /**
      *
@@ -110,6 +110,15 @@ export const useUsersStore = defineStore('users', () => {
         fetchTarget(() => getUserById(userId).then((response) => response.data), userId, {
             forced
         });
+
+    /**
+     * Reactive counterpart of fetchUser: selects and (re)fetches the user
+     * whenever idSource changes, including once immediately on setup.
+     *
+     * @param idSource
+     */
+    const watchUser = (idSource: WatchSource<string | undefined | null>) =>
+        watchTarget(idSource, (userId) => getUserById(userId).then((response) => response.data));
 
     /**
      *
@@ -199,6 +208,7 @@ export const useUsersStore = defineStore('users', () => {
         selectedUserId,
         currentUser,
 
+        filters,
         loading,
         pageCurrent,
         pageSize,
@@ -206,8 +216,9 @@ export const useUsersStore = defineStore('users', () => {
         pageItemList,
         fetchUsers,
         fetchPaginationUsers,
-        fetchSearchUsers,
+        watchSearchUsers,
         fetchUser,
+        watchUser,
         createUser,
         updateUser,
         updateUserImage,
