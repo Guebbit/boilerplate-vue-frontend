@@ -19,6 +19,7 @@
         "prettier:fix": "npx prettier . --write",
         "test": "npm run test:unit && npm run test:e2e",
         "test:unit": "vitest run",
+        "test:unit:coverage": "vitest run --coverage",
         "test:unit:target": "vitest run tests/unit/components/atoms/CounterInput.spec.ts",
         "test:e2e": "start-server-and-test 'VITE_API_MOCK_ENABLED=true vite dev --port 4173' http://localhost:4173 'cypress run --e2e'",
         "test:e2e:target": "start-server-and-test 'VITE_API_MOCK_ENABLED=true vite dev --port 4173' http://localhost:4173 \"cypress run --e2e --spec 'tests/e2e/specs/orders.cy.ts'\"",
@@ -74,6 +75,7 @@
         "@types/jsdom": "^28.0.0",
         "@types/node": "^25.3.5",
         "@vitejs/plugin-vue": "^6.0.4",
+        "@vitest/coverage-v8": "^4.1.10",
         "@vitest/eslint-plugin": "^1.6.9",
         "@vue/eslint-config-prettier": "^10.2.0",
         "@vue/eslint-config-typescript": "^14.7.0",
@@ -114,20 +116,5 @@
         "workerDirectory": [
             "public"
         ]
-    },
-    "allowScripts": {
-        "@hyperjump/json-pointer@0.9.8": true,
-        "@hyperjump/json-schema@0.23.5": true,
-        "@hyperjump/json-schema-core@0.28.5": true,
-        "@hyperjump/pact@0.2.5": true,
-        "esbuild@0.28.1": true,
-        "esbuild@0.27.2": true,
-        "esbuild@0.28.0": true,
-        "esbuild@0.21.5": true,
-        "@parcel/watcher@2.5.4": true,
-        "core-js@3.49.0": true,
-        "cypress@15.14.2": true,
-        "msw@2.13.4": true,
-        "protobufjs@7.6.1": true
     }
 }

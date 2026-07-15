@@ -111,6 +111,34 @@ jobs:
             - name: Lint OpenAPI spec
               run: npm run lint:openapi
 
+    audit:
+        # Scoped to the production dependency tree only: devDependencies (build
+        # tooling, codegen, test runners, etc.) are never shipped to users, so a
+        # vulnerability there carries a very different risk than one in a package
+        # that ends up in the bundle. Gating on the full tree (incl. dev) tends to
+        # block on things nobody can actually fix, which just trains people to
+        # ignore the check.
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Audit production dependencies
+              run: npm audit --omit=dev --audit-level=high
+
     api-freshness:
         # Verify the committed generated API client is up-to-date with openapi.yaml.
         runs-on: ubuntu-latest
@@ -202,8 +230,20 @@ jobs:
             - name: Install dependencies
               run: npm ci
 
-            - name: Run unit tests
-              run: npm run test:unit
+            - name: Run unit tests with coverage
+              run: npm run test:unit:coverage
+
+            - name: Upload coverage report
+              # Visibility only, not a gate: with no established baseline yet, a hard
+              # threshold would either block unrelated PRs or get set so low it's
+              # meaningless. Publish the report so trends are visible; revisit once
+              # we know a realistic number (ideally as a patch-coverage check).
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: coverage-report
+                  path: coverage/
+                  retention-days: 14
 
     test-e2e:
         runs-on: ubuntu-latest
@@ -235,6 +275,24 @@ jobs:
             - name: Run e2e tests
               run: npm run test:e2e
 
+            - name: Upload Cypress screenshots
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: cypress-screenshots
+                  path: tests/e2e/screenshots
+                  retention-days: 14
+                  if-no-files-found: ignore
+
+            - name: Upload Cypress videos
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: cypress-videos
+                  path: tests/e2e/videos
+                  retention-days: 14
+                  if-no-files-found: ignore
+
     ci:
         # Single status check to require in branch protection, so adding/renaming
         # jobs above doesn't require updating the required-checks list every time.
@@ -243,6 +301,7 @@ jobs:
             - lint
             - prettier
             - lint-openapi
+            - audit
             - api-freshness
             - typecheck
             - build

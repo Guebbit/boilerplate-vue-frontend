@@ -14,7 +14,12 @@ export default mergeConfig(
                     inline: ['@guebbit/vue-toolkit']
                 }
             },
-            root: fileURLToPath(new URL('./', import.meta.url))
+            root: fileURLToPath(new URL('./', import.meta.url)),
+            coverage: {
+                provider: 'v8',
+                reporter: ['text', 'html', 'lcov'],
+                reportsDirectory: './coverage'
+            }
         }
     })
 );
