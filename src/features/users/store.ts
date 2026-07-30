@@ -7,9 +7,9 @@ import {
     createUser as apiCreateUser,
     updateUserById,
     deleteUserById
-} from '@/utils/api.ts';
-import httpClient from '@/utils/http.ts';
-import { toMultipartFormData, withOptionalMultipartUpload } from '@/utils/multipart.ts';
+} from '@api';
+import httpClient from '@/plugins/http';
+import { toFormData } from '@guebbit/js-toolkit';
 import type { AxiosProgressEvent } from 'axios';
 import type {
     User,
@@ -18,8 +18,31 @@ import type {
     SearchUsersRequest
 } from '@types';
 
+/**
+ * Search criteria for the users list, i.e. everything but pagination (which is
+ * owned by the toolkit's search state).
+ */
 type IUsersFilters = Omit<SearchUsersRequest, 'page' | 'pageSize'>;
 
+/**
+ * Drops null/undefined entries from an object.
+ *
+ * `toFormData` appends `undefined` as the literal string `"undefined"` instead
+ * of omitting the field, so optional fields left unset must be stripped first.
+ *
+ * @typeParam T - Shape of the source object.
+ * @param data - Object to filter.
+ * @returns A shallow copy holding only the defined, non-null entries.
+ */
+const definedEntries = <T extends object>(data: T): Partial<T> =>
+    Object.fromEntries(
+        Object.entries(data).filter(([, value]) => value !== undefined && value !== null)
+    ) as Partial<T>;
+
+/**
+ * Users CRUD, paginated search and avatar upload, on top of the toolkit's
+ * search-API structure.
+ */
 export const useUsersStore = defineStore('users', () => {
     /**
      * Inherited
@@ -60,8 +83,10 @@ export const useUsersStore = defineStore('users', () => {
     });
 
     /**
+     * Fetches every user into the store dictionary.
      *
-     * @param forced
+     * @param forced - Bypass the cache and always hit the API.
+     * @returns A promise resolving with the fetched users.
      */
     const fetchUsers = (forced = false) =>
         fetchAll(() => listUsers().then((response) => response.data.items), {
@@ -69,9 +94,12 @@ export const useUsersStore = defineStore('users', () => {
         });
 
     /**
-     * @param page
-     * @param pageSize
-     * @param forced
+     * Fetches a single page of users, without touching the shared search state.
+     *
+     * @param page - 1-based page number. Defaults to `1`.
+     * @param pageSize - Items per page. Defaults to `10`.
+     * @param forced - Bypass the cache and always hit the API.
+     * @returns A promise resolving with that page's users.
      */
     const fetchPaginationUsers = (page = 1, pageSize = 10, forced = false) =>
         fetchAny(() => listUsers({ page, pageSize }).then((response) => response.data.items), {
@@ -84,7 +112,10 @@ export const useUsersStore = defineStore('users', () => {
      * `pageCurrent`/`pageSize` change. Filters are read from the store's `filters`
      * on each run — mutate `filters` then call the returned `search()` to apply them.
      *
-     * @param onError - notified on a failed search (immediate load, page change, or search())
+     * @param onError - Notified on a failed search (immediate load, page
+     *  change, or an explicit `search()` call).
+     * @returns The toolkit search handle, whose `search()` re-runs the query
+     *  with the current {@link filters}.
      */
     const watchSearchUsers = (onError?: (error: unknown) => void) =>
         watchSearch(
@@ -102,9 +133,11 @@ export const useUsersStore = defineStore('users', () => {
         );
 
     /**
+     * Fetches a single user and selects them as the current one.
      *
-     * @param userId
-     * @param forced
+     * @param userId - Identifier of the user to load.
+     * @param forced - Bypass the cache and always hit the API.
+     * @returns A promise resolving with the user.
      */
     const fetchUser = (userId: string, forced = false) =>
         fetchTarget(() => getUserById(userId).then((response) => response.data), userId, {
@@ -112,39 +145,45 @@ export const useUsersStore = defineStore('users', () => {
         });
 
     /**
-     * Reactive counterpart of fetchUser: selects and (re)fetches the user
-     * whenever idSource changes, including once immediately on setup.
+     * Reactive counterpart of `fetchUser`: selects and (re)fetches the user
+     * whenever the id changes, including once immediately on setup.
      *
-     * @param idSource
+     * @param idSource - Watch source yielding the user id; nullish values clear
+     *  the selection.
+     * @returns The toolkit watch handle (stop function + state).
      */
     const watchUser = (idSource: WatchSource<string | undefined | null>) =>
         watchTarget(idSource, (userId) => getUserById(userId).then((response) => response.data));
 
     /**
+     * Creates a user, as multipart when an avatar is attached and as plain JSON
+     * otherwise.
      *
-     * @param userData
+     * @param userData - User fields, optionally including `imageUpload`.
+     * @returns A promise resolving with the created user.
      */
     const createUser = (userData: CreateUserRequestMultipart) =>
         createTarget(() =>
-            withOptionalMultipartUpload<CreateUserRequestMultipart, User>(userData, {
-                sendMultipart: (formData) => httpClient.post<User, User>('/users', formData),
-                sendJson: () =>
-                    apiCreateUser({
-                        email: userData.email,
-                        username: userData.username,
-                        password: userData.password,
-                        admin: userData.admin,
-                        active: userData.active
-                    }).then((response) => response.data)
-            })
+            userData.imageUpload
+                ? httpClient.post<User, User>('/users', toFormData(definedEntries(userData)))
+                : apiCreateUser({
+                      email: userData.email,
+                      username: userData.username,
+                      password: userData.password,
+                      admin: userData.admin,
+                      active: userData.active
+                  }).then((response) => response.data)
         );
 
     /**
-     * Change user image via the generated API (imageUpload multipart endpoint)
+     * Replaces a user's avatar through the multipart `imageUpload` endpoint.
      *
-     * @param userId
-     * @param files
-     * @param onUploadProgress
+     * @param userId - Identifier of the user to update.
+     * @param files - Selected files; only the first is uploaded.
+     * @param onUploadProgress - Axios progress callback, for a progress bar.
+     * @returns A promise resolving with the updated user (the new `imageUrl`
+     *  comes from the API, so nothing is merged optimistically), rejected with a
+     *  `no file selected` error when `files` is empty.
      */
     const updateUserImage = (
         userId: string,
@@ -156,7 +195,7 @@ export const useUsersStore = defineStore('users', () => {
             () =>
                 httpClient.put<User, User>(
                     `/users/${encodeURIComponent(userId)}`,
-                    toMultipartFormData({ imageUpload: files[0] }),
+                    toFormData({ imageUpload: files[0] }),
                     { onUploadProgress }
                 ),
             // No fields to optimistically merge — the updated imageUrl is returned by the API
@@ -166,26 +205,27 @@ export const useUsersStore = defineStore('users', () => {
     };
 
     /**
+     * Updates a user, as multipart when a new avatar is attached and as plain
+     * JSON otherwise.
      *
-     * @param userId
-     * @param userData
+     * @param userId - Identifier of the user to update.
+     * @param userData - Fields to change, optionally including `imageUpload`.
+     *  Defaults to an empty object.
+     * @returns A promise resolving with the updated user.
      */
     const updateUser = (userId: string, userData: UpdateUserByIdRequestMultipart = {}) =>
         updateTarget(
             () =>
-                withOptionalMultipartUpload<UpdateUserByIdRequestMultipart, User>(userData, {
-                    sendMultipart: (formData) =>
-                        httpClient.put<User, User>(
-                            `/users/${encodeURIComponent(userId)}`,
-                            formData
-                        ),
-                    sendJson: () =>
-                        updateUserById(userId, {
-                            email: userData.email,
-                            password: userData.password,
-                            username: userData.username
-                        }).then((response) => response.data)
-                }),
+                userData.imageUpload
+                    ? httpClient.put<User, User>(
+                          `/users/${encodeURIComponent(userId)}`,
+                          toFormData(definedEntries(userData))
+                      )
+                    : updateUserById(userId, {
+                          email: userData.email,
+                          password: userData.password,
+                          username: userData.username
+                      }).then((response) => response.data),
             {
                 email: userData.email,
                 password: userData.password,
@@ -195,8 +235,10 @@ export const useUsersStore = defineStore('users', () => {
         );
 
     /**
+     * Deletes a user and drops them from the store.
      *
-     * @param userId
+     * @param userId - Identifier of the user to delete.
+     * @returns A promise resolving once the user is deleted.
      */
     const deleteUser = (userId: string) => deleteTarget(() => deleteUserById(userId), userId);
 

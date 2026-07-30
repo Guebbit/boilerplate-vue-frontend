@@ -1,9 +1,17 @@
 <template>
-    <article class="item-detail-field" :class="{ 'item-detail-field-full-width': props.fullWidth }">
-        <div class="item-detail-field-icon" aria-hidden="true">{{ props.icon ?? '' }}</div>
-        <div class="item-detail-field-content">
-            <p class="item-detail-field-label">{{ props.label }}</p>
-            <div class="item-detail-field-value">
+    <article
+        class="grid grid-cols-[3rem_minmax(0,1fr)] items-start gap-3.5 rounded-2xl border border-on-surface/10 bg-on-surface/3 p-4"
+        :class="props.fullWidth && 'col-span-full'"
+    >
+        <div
+            class="detail-field-icon grid h-12 w-12 place-items-center rounded-2xl text-xl"
+            aria-hidden="true"
+        >
+            {{ props.icon ?? '' }}
+        </div>
+        <div class="min-w-0">
+            <p class="text-xs uppercase tracking-[0.08em] opacity-65">{{ props.label }}</p>
+            <div class="mt-1.5 leading-relaxed [overflow-wrap:anywhere]">
                 <slot>{{ displayValue }}</slot>
             </div>
         </div>
@@ -12,10 +20,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { EMPTY_VALUE } from '@/utils/constants.ts';
+import { EMPTY_VALUE } from '@/utils/formatters.ts';
 
 /**
  * Atomic read-only field used by detail pages to render one label/value pair.
+ * The icon tile follows the page accent (--detail-accent, set by the view).
  */
 const props = defineProps<{
     label: string;
@@ -25,7 +34,10 @@ const props = defineProps<{
 }>();
 
 /**
- * Normalizes empty-like values to a single fallback glyph.
+ * Value actually rendered by the field.
+ *
+ * @returns The stringified prop value, or {@link EMPTY_VALUE} when it is
+ *  `undefined`, `null` or an empty string.
  */
 const displayValue = computed(() => {
     if (props.value === undefined || props.value === null || props.value === '') return EMPTY_VALUE;
@@ -33,53 +45,13 @@ const displayValue = computed(() => {
 });
 </script>
 
-<style lang="scss">
-.item-detail-field {
-    display: grid;
-    grid-template-columns: 3rem minmax(0, 1fr);
-    gap: 0.9rem;
-    align-items: start;
-    padding: 1rem;
-    border-radius: 1rem;
-    background: rgba(var(--theme-on-surface) / 0.03);
-    border: 1px solid rgba(var(--theme-on-surface) / 0.08);
-}
-
-.item-detail-field-full-width {
-    grid-column: 1 / -1;
-}
-
-.item-detail-field-icon {
-    width: 3rem;
-    height: 3rem;
-    border-radius: 1rem;
-    display: grid;
-    place-items: center;
-    font-size: 1.2rem;
+<style scoped>
+.detail-field-icon {
     background: linear-gradient(
         160deg,
-        rgba(var(--detail-accent) / 0.2),
-        rgba(var(--detail-accent) / 0.08)
+        rgb(var(--detail-accent) / 0.2),
+        rgb(var(--detail-accent) / 0.08)
     );
     color: rgb(var(--detail-accent));
-}
-
-.item-detail-field-content {
-    min-width: 0;
-}
-
-.item-detail-field-label {
-    margin: 0;
-    font-size: 0.78rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    opacity: 0.65;
-}
-
-.item-detail-field-value {
-    margin-top: 0.35rem;
-    font-size: 1rem;
-    line-height: 1.5;
-    overflow-wrap: anywhere;
 }
 </style>

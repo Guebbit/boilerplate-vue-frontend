@@ -1,70 +1,63 @@
 <template>
-    <LayoutDefault id="user-edit-page" class="item-detail-page item-detail-page-user">
-        <template #header>
-            <h1 class="theme-page-title">
-                <span>{{ t('user-edit-page.page-title') }}</span>
-            </h1>
-        </template>
-
-        <section class="item-detail-page-content">
-            <div class="item-detail-page-grid-top">
+    <LayoutDefault id="user-edit-page" :title="t('user-edit-page.page-title')">
+        <ItemDetailLayout accent="secondary">
+            <template #hero>
                 <ItemDetailHero :title="heroTitle" :description="heroDescription" :eyebrow="id">
                     <template #icon><Pencil :size="32" /></template>
                 </ItemDetailHero>
+            </template>
 
-                <div class="item-detail-page-stats">
-                    <CardMaterialStat
-                        :title="t('user-target-page.label-id')"
-                        :value="id ?? EMPTY_VALUE"
-                    />
-                    <CardMaterialStat
-                        :title="t('user-target-page.label-admin')"
-                        :value="userRole"
-                        accent="secondary"
-                    />
-                    <CardMaterialStat
-                        :title="t('user-target-page.label-active')"
-                        :value="userStatus"
-                        accent="tertiary"
-                    />
+            <template #stats>
+                <CardMaterialStat
+                    :title="t('user-target-page.label-id')"
+                    :value="id ?? EMPTY_VALUE"
+                />
+                <CardMaterialStat
+                    :title="t('user-target-page.label-admin')"
+                    :value="userRole"
+                    accent="secondary"
+                />
+                <CardMaterialStat
+                    :title="t('user-target-page.label-active')"
+                    :value="userStatus"
+                    accent="tertiary"
+                />
+            </template>
+
+            <CardDetail>
+                <div class="mb-5">
+                    <h3 class="text-lg font-semibold">{{ t('generic.details') }}</h3>
+                    <p class="mt-1 opacity-75">{{ t('user-edit-page.page-title') }}</p>
                 </div>
-            </div>
 
-            <div class="item-detail-page-grid-main item-detail-page-grid-main-with-aside">
-                <CardDetail class="item-detail-page-main">
-                    <div class="item-detail-page-section-header">
-                        <h3>{{ t('generic.details') }}</h3>
-                        <p>{{ t('user-edit-page.page-title') }}</p>
+                <form novalidate class="flex flex-col gap-2" @submit.prevent="submitForm">
+                    <v-text-field
+                        v-model="form.email"
+                        type="email"
+                        :label="t('user-edit-page.label-email')"
+                        :error-messages="showFormErrors ? formErrors.email : []"
+                    />
+                    <v-text-field
+                        v-model="form.password"
+                        type="password"
+                        autocomplete="new-password"
+                        :label="t('user-edit-page.label-password')"
+                        :error-messages="showFormErrors ? formErrors.password : []"
+                    />
+
+                    <div class="flex flex-wrap gap-2">
+                        <v-btn type="submit" color="primary" :disabled="isSubmitting || loading">
+                            {{ t('user-edit-page.button-submit') }}
+                        </v-btn>
+                        <v-btn variant="tonal" @click="resetForm">
+                            {{ t('user-edit-page.reset-form') }}
+                        </v-btn>
                     </div>
+                </form>
+            </CardDetail>
 
-                    <form class="theme-form item-detail-page-form" @submit.prevent="submitForm">
-                        <BaseInput
-                            v-model="form.email"
-                            type="email"
-                            :label="t('user-edit-page.label-email')"
-                            :errors="formErrors.email"
-                            :show-errors="showFormErrors"
-                        />
-                        <BaseInput
-                            v-model="form.password"
-                            type="password"
-                            :label="t('user-edit-page.label-password')"
-                            :errors="formErrors.password"
-                            :show-errors="showFormErrors"
-                        />
-
-                        <div class="item-detail-page-form-actions">
-                            <BaseButton type="submit" :disabled="isSubmitting || loading">
-                                {{ t('user-edit-page.button-submit') }}
-                            </BaseButton>
-                            <BaseButton type="button" @click="resetForm">
-                                {{ t('user-edit-page.reset-form') }}
-                            </BaseButton>
-                        </div>
-                    </form>
-                </CardDetail>
-
-                <CardDetail as="aside" class="item-detail-page-aside">
+            <template #aside>
+                <CardDetail as="aside" class="flex flex-col gap-4">
                     <CardInfo :title="heroTitle" :description="heroDescription" variant="secondary">
                         <template #icon><User :size="28" /></template>
                     </CardInfo>
@@ -84,21 +77,21 @@
                         icon="🕘"
                     />
                 </CardDetail>
-            </div>
+            </template>
 
-            <div class="item-detail-page-actions">
-                <RouterLink
+            <template #actions>
+                <v-btn
                     v-if="id"
+                    color="secondary"
                     :to="routerLinkI18n({ name: 'UserTarget', params: { id } })"
-                    class="theme-button"
                 >
                     {{ t('user-edit-page.button-go-to-details') }}
-                </RouterLink>
-                <RouterLink :to="routerLinkI18n({ name: 'UsersList' })" class="theme-button">
+                </v-btn>
+                <v-btn variant="tonal" :to="routerLinkI18n({ name: 'UsersList' })">
                     {{ t('user-edit-page.button-go-to-list') }}
-                </RouterLink>
-            </div>
-        </section>
+                </v-btn>
+            </template>
+        </ItemDetailLayout>
     </LayoutDefault>
 </template>
 
@@ -109,9 +102,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import '@/styles/features/itemDetail.scss';
 import { computed } from 'vue';
-import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -120,17 +111,15 @@ import { useUsersStore } from '@/features/users/store';
 import { createUsersSchema, createUsersPasswordSchema } from '@/features/users/schemas.ts';
 import { z } from 'zod';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import BaseInput from '@/components/atoms/BaseInput.vue';
-import BaseButton from '@/components/atoms/BaseButton.vue';
 import { Pencil, User } from 'lucide-vue-next';
 import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
+import ItemDetailLayout from '@/components/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/components/organisms/CardDetail.vue';
 import CardInfo from '@/components/organisms/CardInfo.vue';
 import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
-import { formatText, formatDateTime, formatFlag } from '@/utils/formatters.ts';
+import { EMPTY_VALUE, formatText, formatDateTime, formatFlag } from '@/utils/formatters.ts';
 import { notifyErrorMessages } from '@/utils/errors.ts';
-import { EMPTY_VALUE } from '@/utils/constants.ts';
 
 /**
  * Generic i18n/notifications helpers.
@@ -149,8 +138,6 @@ const { id } = defineProps<{
  * User store APIs and references.
  */
 const { watchUser, updateUser } = useUsersStore();
-const zodSchemaUsers = createUsersSchema(t);
-const zodSchemaUsersPassword = createUsersPasswordSchema(t);
 const { currentUser, loading } = storeToRefs(useUsersStore());
 
 /**
@@ -162,11 +149,24 @@ interface IUserEditForm {
 }
 
 /**
- * Edit validation schema with optional password replacement.
+ * Builds the validation schema of the edit form, where the password is an
+ * optional replacement (an empty field means "leave it as it is").
+ *
+ * A getter (rather than a resolved schema) so it is re-built on every
+ * `validate()` call and the messages stay in the active language after a runtime
+ * locale switch.
+ *
+ * @returns A Zod schema requiring a valid email, with an optional password.
  */
-const editSchema = zodSchemaUsers.pick({ email: true }).extend({
-    password: z.preprocess((v) => (v === '' ? undefined : v), zodSchemaUsersPassword.optional())
-});
+const editSchema = () =>
+    createUsersSchema(t)
+        .pick({ email: true })
+        .extend({
+            password: z.preprocess(
+                (v) => (v === '' ? undefined : v),
+                createUsersPasswordSchema(t).optional()
+            )
+        });
 
 /**
  * Toolkit form bindings.
@@ -196,21 +196,48 @@ activateAutoHydrate(
 );
 
 /**
- * Hero and status labels.
+ * Hero heading.
+ *
+ * @returns The loaded username, the route id while loading, or the generic page
+ *  title as a last resort.
  */
 const heroTitle = computed(
     () => currentUser.value?.username ?? id ?? t('user-edit-page.page-title')
 );
+
+/**
+ * Hero subheading.
+ *
+ * @returns The user email, or the empty-value glyph when unknown.
+ */
 const heroDescription = computed(() => formatText(currentUser.value?.email));
+
+/**
+ * Label of the role chip.
+ *
+ * @returns The localized administrator/standard-user wording, or the
+ *  empty-value glyph while the user is unknown.
+ */
 const userRole = computed(() =>
     formatFlag(currentUser.value?.admin, t('generic.administrator'), t('generic.standard-user'))
 );
+
+/**
+ * Label of the status chip.
+ *
+ * @returns The localized enabled/disabled wording, or the empty-value glyph
+ *  while the user is unknown.
+ */
 const userStatus = computed(() =>
     formatFlag(currentUser.value?.active, t('generic.enabled'), t('generic.disabled'))
 );
 
 /**
- * Validates and persists user updates.
+ * Validates the form and persists the user changes.
+ *
+ * @returns A promise resolving once the flow settles: a success toast, or the
+ *  revealed validation errors when the input is invalid. API failures surface as
+ *  a toast. A missing route id is a no-op.
  */
 const submitForm = () =>
     handleSubmit(async () => {

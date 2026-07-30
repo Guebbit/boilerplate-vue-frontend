@@ -99,7 +99,7 @@ Each section links to the dedicated page for configuration details and code poin
 
 **Problem it solves.** `fetch` requires manual error checking, JSON parsing, and has no interceptor system. Axios makes it easy to attach auth headers on every request and intercept errors globally.
 
-**In this repo.** A single axios instance lives in `src/utils/http.ts`. Request interceptors attach the Bearer token; response interceptors shape errors into `IResponseReject` and handle `401`/`403`/`5xx` redirects.
+**In this repo.** A single axios instance lives in `src/plugins/http/index.ts`. Request interceptors attach the Bearer token; response interceptors shape errors into `IResponseReject` and handle `401`/`403`/`5xx` redirects.
 
 → [Runtime](./runtime.md)
 

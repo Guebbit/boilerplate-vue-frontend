@@ -14,18 +14,35 @@ import {
     refreshToken as apiRefreshToken,
     logoutAll as apiLogoutAll,
     updateUserById as apiUpdateUserById
-} from '@/utils/api.ts';
+} from '@api';
 import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
 
 /**
- * Extract token from both wrapped ({ data: { token } }) and direct ({ token }) responses
+ * Narrows any value to a plain keyed object.
+ *
+ * @param value - Value to test.
+ * @returns `true` when `value` is a non-null object.
  */
 const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null;
 
+/**
+ * Detects the envelope shape (`{ data: ... }`) some endpoints wrap payloads in.
+ *
+ * @typeParam T - Expected type of the wrapped payload.
+ * @param response - Raw API response.
+ * @returns `true` when `response` is an object carrying a `data` key.
+ */
 const isWrappedResponse = <T>(response: unknown): response is { data?: T } =>
     isObjectRecord(response) && 'data' in response;
 
+/**
+ * Extracts the access token from both wrapped (`{ data: { token } }`) and direct
+ * (`{ token }`) responses.
+ *
+ * @param response - Raw response of a login/refresh call.
+ * @returns The token, or `undefined` when the response carries none.
+ */
 const getTokenFromResponse = (response?: unknown): string | undefined => {
     if (isObjectRecord(response)) {
         const maybeToken = (response as Record<string, unknown>).token;
@@ -36,11 +53,24 @@ const getTokenFromResponse = (response?: unknown): string | undefined => {
 };
 
 /**
- * Extract payload from both wrapped ({ data }) and direct responses
+ * Extracts the payload from both wrapped (`{ data }`) and direct responses.
+ *
+ * @typeParam T - Expected payload type.
+ * @param response - Raw API response.
+ * @returns The unwrapped payload, or `undefined` when absent.
  */
 const getPayloadFromResponse = <T>(response?: { data?: T } | T): T | undefined =>
     isWrappedResponse<T>(response) ? response.data : (response as T | undefined);
 
+/**
+ * Writes a cookie through the prototype setter rather than `document.cookie`.
+ *
+ * Going through the original descriptor keeps the write working even when a
+ * library (or a test double) has shadowed `document.cookie` on the instance.
+ *
+ * @param value - Full cookie string, attributes included, e.g.
+ *  `isAuth=true; path=/; SameSite=Lax`.
+ */
 const setCookie = (value: string) => {
     const cookieDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, 'cookie');
     cookieDescriptor?.set?.call(document, value);
@@ -81,10 +111,13 @@ export const useProfileStore = defineStore('profile', () => {
     const isAuth = computed(() => Boolean(accessToken.value && profile.value));
 
     /**
-     * Authenticate users
+     * Authenticates the user, stores the access token, flags the `isAuth`
+     * cookie and loads the profile.
      *
-     * @param email
-     * @param password
+     * @param email - Account email.
+     * @param password - Plain-text password, sent over the wire only.
+     * @returns A promise resolving once the token is stored and the profile has
+     *  been (re)fetched.
      */
     const login = (email: string, password: string) =>
         fetchAny(() =>
@@ -101,14 +134,16 @@ export const useProfileStore = defineStore('profile', () => {
         );
 
     /**
-     * Register a new user account.
+     * Registers a new user account.
+     *
      * The backend does not auto-login on signup: the user must confirm their
      * email address and then log in separately, so no token/session is set here.
      *
-     * @param email
-     * @param password
-     * @param username
-     * @param passwordConfirm
+     * @param email - Account email, also the confirmation target.
+     * @param password - Chosen password.
+     * @param username - Display name. Defaults to `email`.
+     * @param passwordConfirm - Confirmation field. Defaults to `password`.
+     * @returns A promise resolving once the account has been created.
      */
     const signup = (
         email: string,
@@ -124,25 +159,29 @@ export const useProfileStore = defineStore('profile', () => {
         );
 
     /**
-     * Starts password reset flow by sending a token to the provided email.
+     * Starts the password reset flow by sending a token to the provided email.
      *
-     * @param email
+     * @param email - Email of the account to reset.
+     * @returns A promise resolving once the request has been accepted.
      */
     const requestPasswordReset = (email: string) =>
         fetchAny(() => apiRequestPasswordReset({ email }));
 
     /**
-     * Completes password reset using one-time token and the new password.
+     * Completes the password reset using the one-time token and a new password.
      *
-     * @param token
-     * @param password
-     * @param passwordConfirm
+     * @param token - One-time token received by email.
+     * @param password - New password.
+     * @param passwordConfirm - Confirmation of the new password.
+     * @returns A promise resolving once the password has been changed.
      */
     const confirmPasswordReset = (token: string, password: string, passwordConfirm: string) =>
         fetchAny(() => apiConfirmPasswordReset({ token, password, passwordConfirm }));
 
     /**
-     * Refresh access token
+     * Renews the in-memory access token using the httpOnly refresh cookie.
+     *
+     * @returns A promise resolving once the new token is stored.
      */
     const refreshToken = () =>
         fetchAny(() =>
@@ -152,11 +191,15 @@ export const useProfileStore = defineStore('profile', () => {
         );
 
     /**
-     * Need to be authenticated, but if access token is expired or missing,
-     * A refresh request (that use jwt cookie with refresh token)
-     * will try automatically to renew it and redo the request
+     * Loads the authenticated user's profile and identifies them in the
+     * observability tools.
      *
-     * @param forced
+     * Requires authentication, but an expired or missing access token triggers
+     * an automatic refresh (using the jwt refresh cookie) and a retry.
+     *
+     * @param forced - Bypass the store cache and always hit the API.
+     * @returns A promise resolving with the profile, or `undefined` when the
+     *  response carries no payload.
      */
     const fetchProfile = (forced = false) => {
         return fetchTarget(
@@ -177,9 +220,12 @@ export const useProfileStore = defineStore('profile', () => {
     };
 
     /**
-     * Edit profile
+     * Updates the current user's own profile.
      *
-     * @param userData
+     * @param userData - Fields to change; only `email`, `username` and
+     *  `password` are sent to the API.
+     * @returns A promise resolving with the updated profile, rejected with an
+     *  `invalid user` error when no profile is selected.
      */
     const updateProfile = (userData: Partial<User> & { password?: string } = {}) => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
@@ -196,9 +242,11 @@ export const useProfileStore = defineStore('profile', () => {
     };
 
     /**
-     * Change user language
+     * Switches the user's language and persists the profile.
      *
-     * @param language
+     * @param language - Locale code to store, e.g. `it`. Defaults to an empty
+     *  string, which clears the preference.
+     * @returns A promise resolving with the updated profile.
      */
     const updateProfileLanguage = (language = '') => {
         // TODO check
@@ -209,7 +257,11 @@ export const useProfileStore = defineStore('profile', () => {
     };
 
     /**
-     * Logout and remove cached user data
+     * Logs out of every session and clears all cached user data.
+     *
+     * @returns A promise resolving once the API call succeeds and the local
+     *  token, cached records and `isAuth` cookie have been cleared. The httpOnly
+     *  jwt cookie can only be cleared server-side.
      */
     const logout = () => {
         // The httpOnly jwt cookie can only be cleared server-side; isAuth is JS-accessible.
@@ -225,14 +277,19 @@ export const useProfileStore = defineStore('profile', () => {
     };
 
     /**
-     * Initiates account deletion flow, sends confirmation token to user's email.
+     * Initiates the account deletion flow, sending a confirmation token to the
+     * user's email.
+     *
+     * @returns A promise resolving once the request has been accepted.
      */
     const requestAccountDelete = () => fetchAny(() => apiRequestAccountDelete());
 
     /**
-     * Completes account deletion using one-time token.
+     * Completes account deletion using the one-time token.
      *
-     * @param token
+     * @param token - Confirmation token received by email.
+     * @returns A promise resolving once the account is deleted and the local
+     *  session, cached records and observability identity have been cleared.
      */
     const confirmAccountDelete = (token: string) =>
         fetchAny(() =>

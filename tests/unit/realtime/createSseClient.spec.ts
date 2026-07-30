@@ -38,7 +38,7 @@ beforeEach(() => {
 describe('createSseClient', () => {
     it('routes named AsyncAPI SSE events to callbacks', async () => {
         const onEvent = vi.fn();
-        const { createSseClient } = await import('@/utils/createSseClient');
+        const { createSseClient } = await import('@/features/realtime/createSseClient');
 
         createSseClient(
             'http://localhost:3000/observability/events',
@@ -61,7 +61,7 @@ describe('createSseClient', () => {
 
     it('fires onOpen when the EventSource connection opens', async () => {
         const onOpen = vi.fn();
-        const { createSseClient } = await import('@/utils/createSseClient');
+        const { createSseClient } = await import('@/features/realtime/createSseClient');
 
         createSseClient('http://localhost:3000/observability/events', [], { onOpen });
 
@@ -72,7 +72,7 @@ describe('createSseClient', () => {
 
     it('fires onError when the EventSource emits an error', async () => {
         const onError = vi.fn();
-        const { createSseClient } = await import('@/utils/createSseClient');
+        const { createSseClient } = await import('@/features/realtime/createSseClient');
 
         createSseClient('http://localhost:3000/observability/events', [], { onError });
 
@@ -83,7 +83,7 @@ describe('createSseClient', () => {
     });
 
     it('closes the underlying EventSource via the returned handle', async () => {
-        const { createSseClient } = await import('@/utils/createSseClient');
+        const { createSseClient } = await import('@/features/realtime/createSseClient');
 
         const client = createSseClient('http://localhost:3000/observability/events', []);
         client.close();
@@ -93,7 +93,7 @@ describe('createSseClient', () => {
 
     it('silently ignores frames with invalid JSON', async () => {
         const onEvent = vi.fn();
-        const { createSseClient } = await import('@/utils/createSseClient');
+        const { createSseClient } = await import('@/features/realtime/createSseClient');
 
         createSseClient(
             'http://localhost:3000/observability/events',
@@ -110,7 +110,7 @@ describe('createSseClient', () => {
 
     it('dispatches all three observability event types independently', async () => {
         const onEvent = vi.fn();
-        const { createSseClient } = await import('@/utils/createSseClient');
+        const { createSseClient } = await import('@/features/realtime/createSseClient');
 
         createSseClient(
             'http://localhost:3000/observability/events',

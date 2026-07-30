@@ -1,80 +1,86 @@
 <template>
-    <LayoutDefault id="profile-page">
-        <template #header>
-            <h1 class="theme-page-title">
-                <span>{{ t('profile-page.page-title') }}</span>
-            </h1>
-        </template>
-
-        <div class="theme-card theme-form-container">
-            <form class="theme-form" @submit.prevent="submitForm">
+    <LayoutDefault id="profile-page" :title="t('profile-page.page-title')">
+        <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
+            <form novalidate @submit.prevent="submitForm">
                 <!-- TODO language select + roles (user edit, if admin) -->
-                <BaseInput
+                <v-text-field
                     v-model="form.username"
                     type="text"
+                    autocomplete="username"
                     :label="t('profile-page.label-username')"
-                    :errors="formErrors.username"
-                    :show-errors="showErrors"
+                    :error-messages="showErrors ? formErrors.username : []"
+                    class="mb-2"
                 />
-                <BaseInput
+                <v-text-field
                     v-model="form.email"
                     type="email"
+                    autocomplete="email"
                     :label="t('profile-page.label-email')"
-                    :errors="formErrors.email"
-                    :show-errors="showErrors"
+                    :error-messages="showErrors ? formErrors.email : []"
+                    class="mb-2"
                 />
-                <BaseInput
+                <v-text-field
                     v-model="form.phone"
                     type="tel"
+                    autocomplete="tel"
                     :label="t('profile-page.label-phone')"
-                    :errors="formErrors.phone"
-                    :show-errors="showErrors"
+                    :error-messages="showErrors ? formErrors.phone : []"
+                    class="mb-2"
                 />
-                <BaseInput
+                <v-text-field
                     v-model="form.website"
                     type="url"
+                    autocomplete="url"
                     :label="t('profile-page.label-website')"
-                    :errors="formErrors.website"
-                    :show-errors="showErrors"
+                    :error-messages="showErrors ? formErrors.website : []"
                 />
 
-                <BaseButton type="button" @click="showChangePassword = !showChangePassword">
+                <v-btn
+                    variant="tonal"
+                    color="secondary"
+                    class="my-4"
+                    @click="showChangePassword = !showChangePassword"
+                >
                     {{ t('profile-page.button-change-password') }}
-                </BaseButton>
+                </v-btn>
 
-                <template v-if="showChangePassword">
-                    <BaseInput
-                        v-model="passwordForm.password"
-                        type="password"
-                        :label="t('profile-page.label-password')"
-                        :errors="passwordErrors.password"
-                        :show-errors="true"
-                    />
-                    <BaseInput
-                        v-model="passwordForm.passwordConfirm"
-                        type="password"
-                        :label="t('profile-page.label-passwordConfirm')"
-                        :errors="passwordErrors.passwordConfirm"
-                        :show-errors="true"
-                    />
-                </template>
+                <v-expand-transition>
+                    <div v-show="showChangePassword">
+                        <v-text-field
+                            v-model="passwordForm.password"
+                            type="password"
+                            autocomplete="new-password"
+                            :label="t('profile-page.label-password')"
+                            :error-messages="passwordErrors.password ?? []"
+                            class="mb-2"
+                        />
+                        <v-text-field
+                            v-model="passwordForm.passwordConfirm"
+                            type="password"
+                            autocomplete="new-password"
+                            :label="t('profile-page.label-passwordConfirm')"
+                            :error-messages="passwordErrors.passwordConfirm ?? []"
+                        />
+                    </div>
+                </v-expand-transition>
 
                 <!-- If something has changed OR the password has changed (and it's valid) -->
-                <BaseButton type="submit" :disabled="!areFormsValid">
-                    {{ t('profile-page.button-submit') }}
-                </BaseButton>
-                <BaseButton type="button" @click="resetForm">
-                    {{ t('profile-page.reset-form') }}
-                </BaseButton>
-                <BaseButton
-                    type="button"
-                    class="profile-page-delete-button"
-                    @click="handleDeleteAccount"
-                >
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <v-btn type="submit" color="primary" :disabled="!areFormsValid">
+                        {{ t('profile-page.button-submit') }}
+                    </v-btn>
+                    <v-btn variant="tonal" @click="resetForm">
+                        {{ t('profile-page.reset-form') }}
+                    </v-btn>
+                </div>
+
+                <v-divider class="my-6" />
+
+                <v-btn color="error" variant="tonal" block @click="handleDeleteAccount">
                     {{ t('profile-page.button-delete-account') }}
-                </BaseButton>
+                </v-btn>
             </form>
-        </div>
+        </v-card>
     </LayoutDefault>
 </template>
 
@@ -92,8 +98,6 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useProfileStore } from '@/stores/profile.ts';
 import { createUsersSchema, createUsersPasswordSchema } from '@/features/users/schemas.ts';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import BaseInput from '@/components/atoms/BaseInput.vue';
-import BaseButton from '@/components/atoms/BaseButton.vue';
 import { z } from 'zod';
 import { notifyErrorMessages } from '@/utils/errors.ts';
 
@@ -105,6 +109,12 @@ const { addMessage } = useNotificationsStore();
  */
 const { requestAccountDelete } = useProfileStore();
 
+/**
+ * Starts the account deletion flow after an explicit confirmation.
+ *
+ * @returns Nothing; a toast reports either that the confirmation email was sent
+ *  or why the request failed.
+ */
 const handleDeleteAccount = () => {
     if (!globalThis.confirm(t('profile-page.confirm-delete-account'))) return;
     requestAccountDelete()
@@ -117,12 +127,6 @@ const handleDeleteAccount = () => {
  */
 const { updateProfile } = useProfileStore();
 const { profile } = storeToRefs(useProfileStore());
-
-/**
- * Form logic
- */
-const zodSchemaUsers = createUsersSchema(t);
-const zodSchemaUsersPassword = createUsersPasswordSchema(t);
 
 /**
  * Extended profile form interface to accommodate extra UI fields (phone, website)
@@ -143,7 +147,7 @@ interface IProfileForm {
 
 const { form, formErrors, isDirty, resetForm, validate, setForm } =
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    useStructureFormValidation<IProfileForm>({}, zodSchemaUsers as any);
+    useStructureFormValidation<IProfileForm>({}, () => createUsersSchema(t) as any);
 
 const showErrors = ref(false);
 
@@ -159,19 +163,20 @@ const {
         password: '',
         passwordConfirm: ''
     },
-    z
-        .object({
-            password: zodSchemaUsersPassword,
-            passwordConfirm: z.string().min(1, t('users-form.password-confirm-required'))
-        })
-        .superRefine(({ passwordConfirm, password }, ctx) => {
-            if (passwordConfirm !== password)
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    message: t('users-form.password-dont-match'),
-                    path: ['passwordConfirm']
-                });
-        })
+    () =>
+        z
+            .object({
+                password: createUsersPasswordSchema(t),
+                passwordConfirm: z.string().min(1, t('users-form.password-confirm-required'))
+            })
+            .superRefine(({ passwordConfirm, password }, ctx) => {
+                if (passwordConfirm !== password)
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        message: t('users-form.password-dont-match'),
+                        path: ['passwordConfirm']
+                    });
+            })
 );
 
 /**
@@ -194,7 +199,10 @@ watch(
 const showChangePassword = ref(false);
 
 /**
- * If both data and password forms are valid
+ * Whether the save button should be enabled.
+ *
+ * @returns `true` when the profile form has unsaved changes and no password
+ *  change is in progress, or when the password change itself is valid.
  */
 const areFormsValid = computed(
     () =>
@@ -203,7 +211,10 @@ const areFormsValid = computed(
 );
 
 /**
- * Submit profile changes, optionally including a password update
+ * Validates and saves the profile changes.
+ *
+ * @returns A promise resolving once the update settles, reported as a toast; on
+ *  invalid input it returns early and reveals the validation errors.
  */
 const submitForm = () => {
     if (!validate() || !areFormsValid.value) {
@@ -225,20 +236,3 @@ const submitForm = () => {
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
 </script>
-
-<style lang="scss">
-#profile-page {
-    .theme-form-container {
-        max-width: 600px;
-        margin: 100px auto;
-        padding: 2rem;
-    }
-
-    .profile-page-delete-button {
-        margin-top: 2rem;
-        background: #e74c3c;
-        color: #fff;
-        border-color: #e74c3c;
-    }
-}
-</style>

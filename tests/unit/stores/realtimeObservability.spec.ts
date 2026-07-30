@@ -9,7 +9,7 @@ const makeSnapshot = (timestamp: string): IMetricsSnapshotEvent => ({
     uptimeSeconds: 60,
     memory: { rss: 1, heapUsed: 1, heapTotal: 2, external: 0 },
     http: { totalRequests: 10, totalErrors: 0 },
-    realtime: { websocketConnections: 2, sseClients: 1 }
+    realtime: { sseClients: 1 }
 });
 
 describe('useRealtimeObservabilityStore', () => {

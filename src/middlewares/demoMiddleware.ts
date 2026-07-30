@@ -5,12 +5,17 @@ import { useCounterStore } from '@/stores/counter';
 import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router';
 
 /**
- * DUMMY authentication, will run in global guards (in the router object)
- * WARNING: CAN'T USE injected variables, because guards DON'T have access to the scope, they are not part of the "tree".
+ * DUMMY guard showing what is (and isn't) reachable from a global route guard.
  *
- * @param to
- * @param from
- * @param next
+ * Demonstrates that Pinia stores work anywhere, while translations may not be
+ * loaded yet this early in the navigation.
+ *
+ * WARNING: CAN'T USE injected variables, because guards DON'T have access to
+ * the component scope, they are not part of the "tree".
+ *
+ * @param to - Route being entered; its path is fed to a demo translation.
+ * @param from - Route being left (unused, kept for the guard signature).
+ * @param next - Navigation callback, always called to let the route through.
  */
 export const demoMiddleware = (
     to: RouteLocationNormalized,

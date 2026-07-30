@@ -1,30 +1,34 @@
 <template>
-    <LayoutDefault id="password-reset-request-page">
-        <template #header>
-            <h1 class="theme-page-title">
-                <span>{{ t('password-reset-request-page.page-title') }}</span>
-            </h1>
-        </template>
-
-        <div class="theme-card theme-form-container">
-            <form ref="formElement" class="theme-form" @submit.prevent="submitForm">
-                <BaseInput
+    <LayoutDefault
+        id="password-reset-request-page"
+        :title="t('password-reset-request-page.page-title')"
+    >
+        <v-card class="mx-auto mt-16 w-full max-w-md p-8">
+            <form ref="formElement" novalidate @submit.prevent="submitForm">
+                <v-text-field
                     v-model="form.email"
                     type="email"
+                    autocomplete="email"
                     :label="t('password-reset-request-page.label-email')"
-                    :errors="formErrors.email"
-                    :show-errors="showErrors"
+                    :error-messages="showErrors ? formErrors.email : []"
                 />
-                <BaseButton type="submit" :disabled="isSubmitting">
+                <v-btn
+                    type="submit"
+                    color="primary"
+                    size="large"
+                    block
+                    :loading="isSubmitting"
+                    class="mt-4"
+                >
                     {{ t('password-reset-request-page.button-submit') }}
-                </BaseButton>
+                </v-btn>
             </form>
-            <div class="password-reset-request-page-actions">
-                <RouterLink :to="routerLinkI18n({ name: 'Login' })" class="theme-button">
+            <div class="mt-4 flex justify-center">
+                <v-btn variant="text" :to="routerLinkI18n({ name: 'Login' })">
                     {{ t('password-reset-request-page.button-go-to-login') }}
-                </RouterLink>
+                </v-btn>
             </div>
-        </div>
+        </v-card>
     </LayoutDefault>
 </template>
 
@@ -37,29 +41,31 @@ export default {
 <script setup lang="ts">
 import { nextTick, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { RouterLink } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import BaseInput from '@/components/atoms/BaseInput.vue';
-import BaseButton from '@/components/atoms/BaseButton.vue';
 import { useProfileStore } from '@/stores/profile.ts';
 import { createUsersSchema } from '@/features/users/schemas.ts';
-import { notifyErrorMessages } from '@/utils/errors.ts';
-import { focusFirstErrorField } from '@/utils/forms.ts';
+import { notifyErrorMessages, focusFirstErrorField } from '@/utils/errors.ts';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 const { requestPasswordReset } = useProfileStore();
-const zodSchemaUsers = createUsersSchema(t);
 
 const { form, formErrors, isSubmitting, handleSubmit } = useStructureFormValidation<{
     email?: string;
-}>({ email: '' }, zodSchemaUsers.pick({ email: true }));
+}>({ email: '' }, () => createUsersSchema(t).pick({ email: true }));
 
 const showErrors = ref(false);
 const formElement = ref<HTMLFormElement>();
 
+/**
+ * Validates the email and asks the backend for a reset token.
+ *
+ * @returns A promise resolving once the flow settles: on success a toast
+ *  confirms the email was sent; on invalid input the errors are revealed and the
+ *  field focused; API failures are reported as toasts.
+ */
 const submitForm = () =>
     handleSubmit(async () => {
         await requestPasswordReset(form.value.email!);
@@ -75,19 +81,3 @@ const submitForm = () =>
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>
-
-<style lang="scss">
-#password-reset-request-page {
-    .theme-form-container {
-        max-width: 420px;
-        margin: 100px auto;
-        padding: 2rem;
-    }
-
-    .password-reset-request-page-actions {
-        margin-top: 1rem;
-        display: flex;
-        justify-content: center;
-    }
-}
-</style>

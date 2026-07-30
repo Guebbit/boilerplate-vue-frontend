@@ -28,7 +28,7 @@ If the contract changes, always start with the contract. Coordinate with the bac
 ## OpenAPI vs AsyncAPI in this repository
 
 - Use **OpenAPI** for REST endpoint contracts (`openapi.yaml`).
-- Use **AsyncAPI** for WebSocket/SSE/event-driven contracts (`asyncapi.yaml`).
+- Use **AsyncAPI** for SSE/event-driven contracts (`asyncapi.yaml`).
 
 ## Tools around the contract
 

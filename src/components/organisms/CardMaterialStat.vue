@@ -1,14 +1,15 @@
 <template>
-    <BaseCard class="material-stat-card animate-on-hover" :class="'accent-' + resolvedAccent">
-        <p class="eyebrow">{{ title }}</p>
-        <p class="value">{{ value }}</p>
-        <p v-if="subtitle" class="subtitle">{{ subtitle }}</p>
-    </BaseCard>
+    <v-card class="min-w-44 border-t-4" :class="accentBorderClass">
+        <v-card-text>
+            <p class="text-xs font-medium uppercase tracking-widest opacity-70">{{ title }}</p>
+            <p class="mt-2 text-3xl font-semibold leading-tight">{{ value }}</p>
+            <p v-if="subtitle" class="mt-2 text-sm opacity-80">{{ subtitle }}</p>
+        </v-card-text>
+    </v-card>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import BaseCard from '@/components/atoms/BaseCard.vue';
 
 const props = defineProps<{
     title: string;
@@ -17,48 +18,18 @@ const props = defineProps<{
     accent?: 'primary' | 'secondary' | 'tertiary';
 }>();
 
-const resolvedAccent = computed(() => props.accent ?? 'primary');
+/**
+ * Colored top border keyed to the theme accent.
+ *
+ * @returns The border utility class for the requested accent, falling back to
+ *  `primary`.
+ */
+const accentBorderClass = computed(
+    () =>
+        ({
+            primary: 'border-t-primary',
+            secondary: 'border-t-secondary',
+            tertiary: 'border-t-tertiary'
+        })[props.accent ?? 'primary']
+);
 </script>
-
-<style lang="scss">
-.material-stat-card {
-    min-width: 180px;
-    padding: 1.25rem;
-    border-radius: 1rem;
-    border: 1px solid rgba(var(--theme-on-surface) / 0.08);
-    box-shadow: 0 10px 28px rgba(0 0 0 / 0.08);
-
-    .eyebrow {
-        margin: 0;
-        font-size: 0.75rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        opacity: 0.7;
-    }
-
-    .value {
-        margin: 0.5rem 0 0;
-        font-size: 2rem;
-        font-weight: 600;
-        line-height: 1.1;
-    }
-
-    .subtitle {
-        margin: 0.5rem 0 0;
-        font-size: 0.85rem;
-        opacity: 0.8;
-    }
-
-    &.accent-primary {
-        border-top: 4px solid rgb(var(--primary-500));
-    }
-
-    &.accent-secondary {
-        border-top: 4px solid rgb(var(--secondary-500));
-    }
-
-    &.accent-tertiary {
-        border-top: 4px solid rgb(var(--tertiary-500));
-    }
-}
-</style>

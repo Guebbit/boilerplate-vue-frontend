@@ -3,7 +3,7 @@ import {
     getObservabilityHealth,
     getObservabilityMetricsOverview,
     getObservabilityAuditLogs
-} from '@/utils/api.ts';
+} from '@api';
 import type { ObservabilityHealth, ObservabilityMetricsSummary, AuditEventItem } from '@types';
 import type { IAdminAuditFilters } from '@/features/admin/types.ts';
 
@@ -32,6 +32,12 @@ export interface IUseAdminObservabilityReturn {
  * - GET /observability/metrics/overview
  * - GET /observability/audit
  */
+/**
+ * @returns Shared state (payloads, per-call loading flags and error messages)
+ *  plus the four fetchers. Every fetcher resolves rather than rejects: failures
+ *  land in the matching `error*` ref so a partially available stack still
+ *  renders.
+ */
 export const useAdminObservability = (): IUseAdminObservabilityReturn => {
     const health = ref<ObservabilityHealth | undefined>(undefined);
     const metrics = ref<ObservabilityMetricsSummary | undefined>(undefined);
@@ -46,6 +52,11 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
     const errorMetrics = ref<string | undefined>(undefined);
     const errorAudit = ref<string | undefined>(undefined);
 
+    /**
+     * Loads the stack health report.
+     *
+     * @returns A promise resolving once `health` or `errorHealth` is set.
+     */
     const fetchHealth = () => {
         loadingHealth.value = true;
         errorHealth.value = undefined;
@@ -62,6 +73,11 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
             });
     };
 
+    /**
+     * Loads the aggregated metrics overview.
+     *
+     * @returns A promise resolving once `metrics` or `errorMetrics` is set.
+     */
     const fetchMetrics = () => {
         loadingMetrics.value = true;
         errorMetrics.value = undefined;
@@ -78,6 +94,14 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
             });
     };
 
+    /**
+     * Loads the audit log page matching the given filters.
+     *
+     * @param filters - Actor/action/outcome/since/limit criteria; defaults to no
+     *  filtering at all.
+     * @returns A promise resolving once `auditEvents` + `auditTotal`, or
+     *  `errorAudit`, are set.
+     */
     const fetchAuditLogs = (filters: IAdminAuditFilters = {}) => {
         loadingAudit.value = true;
         errorAudit.value = undefined;
@@ -101,6 +125,12 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
             });
     };
 
+    /**
+     * Loads health, metrics and audit logs in parallel, for the initial
+     * dashboard render.
+     *
+     * @returns A promise resolving once all three calls have settled.
+     */
     const fetchAll = () =>
         Promise.all([fetchHealth(), fetchMetrics(), fetchAuditLogs()]).then(() => {});
 

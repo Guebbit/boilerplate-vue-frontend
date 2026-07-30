@@ -30,7 +30,7 @@ flowchart LR
     subgraph Testing["Testing & Docs"]
         Vitest[Vitest\nunit tests]
         Cypress[Cypress\ne2e tests]
-        Realtime[Realtime\nSSE + WebSocket clients]
+        Realtime[Realtime\nSSE clients]
         VitePress[VitePress\ndocs site]
     end
 
@@ -54,7 +54,7 @@ flowchart LR
 | Setup | **[Package Dependencies](./package-dependencies.md)** | Guided tour of `package.json` grouped by concern. |
 | Setup | **[Package Scripts](./package-scripts.md)** | What every `npm run <script>` does and when to reach for it. |
 | Framework | **[State & Routing](./state-and-routing.md)** | Pinia stores, Vue Router locale routing and guards, Vue I18n setup. |
-| Framework | **[Realtime](./websockets.md)** | FE SSE and WebSocket clients, `createSseClient`, `createChatClient`, realtime stores. |
+| Framework | **[Realtime](./realtime.md)** | FE SSE client, `createSseClient`, realtime observability store. |
 | Observability | **[Observability](./observability.md)** | Grafana Faro (errors + tracing + web-vitals) and Umami (product analytics) wired into one Pinia store. |
 | Observability | **[Umami](./umami.md)** | Product analytics events and the event taxonomy used in this repo. |
 | Testing | **[Testing](./testing-and-docs.md)** | Vitest, @vue/test-utils, Cypress, and VitePress: how the repo tests itself and builds this docs site. |

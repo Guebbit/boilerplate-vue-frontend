@@ -14,7 +14,7 @@ flowchart TD
     Views --> Router["Vue Router\nsrc/router/"]
     Views --> I18N["Vue I18n\nsrc/locales/"]
 
-    HTTP["HTTP layer\nsrc/utils/http.ts\naxios + interceptors"] --> Stores
+    HTTP["HTTP layer\nsrc/plugins/http/index.ts\naxios + interceptors"] --> Stores
     Generated --> HTTP
 
     Obs["Observability\nGrafana Faro + Umami\nsrc/stores/observability.ts"] --> Views

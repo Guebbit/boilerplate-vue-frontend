@@ -1,45 +1,47 @@
 <template>
-    <LayoutDefault id="signup-page">
-        <template #header>
-            <h1 class="theme-page-title">
-                <span>{{ t('signup-page.page-title') }}</span>
-            </h1>
-        </template>
-
-        <div class="theme-card theme-form-container">
-            <form ref="formElement" class="theme-form" @submit.prevent="submitForm">
-                <BaseInput
+    <LayoutDefault id="signup-page" :title="t('signup-page.page-title')">
+        <v-card class="mx-auto mt-16 w-full max-w-md p-8">
+            <form ref="formElement" novalidate @submit.prevent="submitForm">
+                <v-text-field
                     v-model="form.email"
                     type="email"
+                    autocomplete="email"
                     :label="t('signup-page.label-email')"
-                    :errors="formErrors.email"
-                    :show-errors="showErrors"
+                    :error-messages="showErrors ? formErrors.email : []"
+                    class="mb-2"
                 />
-                <BaseInput
+                <v-text-field
                     v-model="form.password"
                     type="password"
+                    autocomplete="new-password"
                     :label="t('signup-page.label-password')"
-                    :errors="formErrors.password"
-                    :show-errors="showErrors"
+                    :error-messages="showErrors ? formErrors.password : []"
+                    class="mb-2"
                 />
-                <BaseInput
+                <v-text-field
                     v-model="form.passwordConfirm"
                     type="password"
+                    autocomplete="new-password"
                     :label="t('users-form.label-passwordConfirm')"
-                    :errors="formErrors.passwordConfirm"
-                    :show-errors="showErrors"
+                    :error-messages="showErrors ? formErrors.passwordConfirm : []"
                 />
-                <BaseCheckbox
+                <v-checkbox
                     v-model="form.conditions"
                     :label="t('signup-page.text-conditions')"
-                    :errors="formErrors.conditions"
-                    :show-errors="showErrors"
+                    :error-messages="showErrors ? formErrors.conditions : []"
                 />
-                <BaseButton type="submit" :disabled="isSubmitting">
+                <v-btn
+                    type="submit"
+                    color="primary"
+                    size="large"
+                    block
+                    :loading="isSubmitting"
+                    class="mt-2"
+                >
                     {{ t('signup-page.button-submit') }}
-                </BaseButton>
+                </v-btn>
             </form>
-        </div>
+        </v-card>
     </LayoutDefault>
 </template>
 
@@ -58,11 +60,7 @@ import { useProfileStore } from '@/stores/profile.ts';
 import { useRouter, useRoute } from 'vue-router';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { createUsersSchema } from '@/features/users/schemas.ts';
-import BaseInput from '@/components/atoms/BaseInput.vue';
-import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
-import BaseButton from '@/components/atoms/BaseButton.vue';
-import { notifyErrorMessages } from '@/utils/errors.ts';
-import { focusFirstErrorField } from '@/utils/forms.ts';
+import { notifyErrorMessages, focusFirstErrorField } from '@/utils/errors.ts';
 
 /**
  * UI logics
@@ -83,8 +81,6 @@ interface IUserSignupForm {
     conditions?: boolean;
 }
 
-const zodSchemaUsers = createUsersSchema(t);
-
 const { form, formErrors, isSubmitting, handleSubmit } =
     useStructureFormValidation<IUserSignupForm>(
         {
@@ -94,19 +90,20 @@ const { form, formErrors, isSubmitting, handleSubmit } =
             passwordConfirm: '',
             conditions: false
         },
-        zodSchemaUsers
-            .pick({ email: true })
-            .extend({
-                password: z.string().min(8, t('users-form.password-required')),
-                passwordConfirm: z.string().min(8, t('users-form.password-confirm-required')),
-                conditions: z.boolean().refine((value) => value, {
-                    message: t('users-form.conditions-required')
+        () =>
+            createUsersSchema(t)
+                .pick({ email: true })
+                .extend({
+                    password: z.string().min(8, t('users-form.password-required')),
+                    passwordConfirm: z.string().min(8, t('users-form.password-confirm-required')),
+                    conditions: z.boolean().refine((value) => value, {
+                        message: t('users-form.conditions-required')
+                    })
                 })
-            })
-            .refine((data) => data.password === data.passwordConfirm, {
-                message: t('users-form.password-dont-match'),
-                path: ['passwordConfirm']
-            })
+                .refine((data) => data.password === data.passwordConfirm, {
+                    message: t('users-form.password-dont-match'),
+                    path: ['passwordConfirm']
+                })
     );
 
 /**
@@ -118,11 +115,14 @@ const formElement = ref<HTMLFormElement>();
 const { signup } = useProfileStore();
 
 /**
- * Submit form and register the account.
+ * Validates the form and registers the account.
+ *
  * Signup does not log the user in: the account still needs email confirmation,
- * so we send them to the login page instead of fetching a profile/session.
- * handleSubmit returns false when validation fails (shows errors),
- * and re-throws when the onSubmit handler itself throws (API errors caught below).
+ * so they are sent to the login page instead of getting a profile/session.
+ *
+ * @returns A promise resolving once the flow settles. `handleSubmit` resolves
+ *  `false` on invalid input — errors are then shown and the first invalid field
+ *  focused — and re-throws API errors, which are reported as toasts.
  */
 const submitForm = () =>
     handleSubmit(async () => {
@@ -145,13 +145,3 @@ const submitForm = () =>
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>
-
-<style lang="scss">
-#signup-page {
-    .theme-form-container {
-        max-width: 400px;
-        margin: 100px auto;
-        padding: 2rem;
-    }
-}
-</style>

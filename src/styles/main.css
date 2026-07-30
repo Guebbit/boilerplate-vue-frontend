@@ -1,0 +1,86 @@
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Global stylesheet: Tailwind v4 (utilities only) beside Vuetify.
+ *
+ * The contract (strict boundary):
+ * - Vuetify owns components, colors, typography and the CSS reset.
+ *   All design tokens live in src/plugins/vuetify/index.ts.
+ * - Tailwind provides layout/spacing/flex/grid utilities ONLY:
+ *   • Preflight is NOT imported (it would fight Vuetify's reset).
+ *   • Its default palette and fonts are wiped; the semantic colors below
+ *     alias Vuetify's runtime theme variables, so `text-primary` and
+ *     `<v-btn color="primary">` can never drift apart — and they follow
+ *     light/dark theme switches automatically.
+ *   • Breakpoints are re-aligned to Vuetify's grid (sm 600 / md 960 /
+ *     lg 1280 / xl 1920) so `md:flex` and `v-col md="6"` agree.
+ *
+ * The @layer statement below fixes the cascade order once and for all:
+ * Tailwind utilities beat Vuetify component styles when both target the
+ * same element, while Vuetify's deliberate finals (transitions, trumps)
+ * stay on top.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+@layer vuetify-core, vuetify-components, vuetify-overrides, vuetify-utilities,
+    theme, base, components, utilities, vuetify-final;
+
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@theme {
+    /* Vuetify owns color & typography — wipe Tailwind's own palettes */
+    --color-*: initial;
+    --font-*: initial;
+
+    /* unambiguous constants are allowed back in */
+    --color-white: #ffffff;
+    --color-black: #000000;
+    --color-transparent: transparent;
+    --font-mono: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+    /* breakpoints follow Vuetify's grid */
+    --breakpoint-*: initial;
+    --breakpoint-sm: 600px;
+    --breakpoint-md: 960px;
+    --breakpoint-lg: 1280px;
+    --breakpoint-xl: 1920px;
+}
+
+/*
+ * `inline` keeps the var() reference inside each generated utility, so it
+ * resolves against the *current* Vuetify theme at the element that uses it
+ * (light/dark switching keeps working — do not move these to plain @theme).
+ */
+@theme inline {
+    --color-primary: rgb(var(--v-theme-primary));
+    --color-on-primary: rgb(var(--v-theme-on-primary));
+    --color-secondary: rgb(var(--v-theme-secondary));
+    --color-on-secondary: rgb(var(--v-theme-on-secondary));
+    --color-tertiary: rgb(var(--v-theme-tertiary));
+    --color-on-tertiary: rgb(var(--v-theme-on-tertiary));
+    --color-surface: rgb(var(--v-theme-surface));
+    --color-on-surface: rgb(var(--v-theme-on-surface));
+    --color-surface-variant: rgb(var(--v-theme-surface-variant));
+    --color-on-surface-variant: rgb(var(--v-theme-on-surface-variant));
+    --color-background: rgb(var(--v-theme-background));
+    --color-on-background: rgb(var(--v-theme-on-background));
+    --color-error: rgb(var(--v-theme-error));
+    --color-success: rgb(var(--v-theme-success));
+    --color-warning: rgb(var(--v-theme-warning));
+    --color-info: rgb(var(--v-theme-info));
+}
+
+/**
+ * App globals — keep this section tiny. Anything bigger belongs either in a
+ * component or in the Vuetify defaults/theme.
+ */
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+
+    /* visible focus for keyboard users, brand-colored, on every element */
+    :focus-visible {
+        outline: 2px solid rgb(var(--v-theme-primary));
+        outline-offset: 2px;
+    }
+}

@@ -1,76 +1,61 @@
-import type { ZodSafeParseError } from 'zod';
-import type { IResponseReject } from '@/types';
-import { i18n } from '@/utils/i18n.ts';
+import { useObservabilityStore } from '@/stores/observability';
 
 /**
- * Zod error interpreter
- * @param parsedResult
+ * Extracts a human-readable message from any thrown/rejected value.
+ *
+ * @param error - Unknown value caught in a `catch` block or promise rejection:
+ *  a string, an `Error`, or any object exposing a non-empty `message`.
+ * @returns The best message found, or `'Unknown error'` when nothing usable is
+ *  available.
  */
-export type IInputError = [string, string];
-export function zodErrorInterpreter(parsedResult: ZodSafeParseError<Record<string, unknown>>) {
-    const issues: IInputError[] = [];
-    for (const [field, data] of Object.entries(parsedResult.error.format()))
-        // There can be 2 ways in which the error is formatted
-        if (field === '_errors' && data && (data as string[]).length > 0)
-            for (const i18n of data as string[]) issues.push([field, i18n]);
-        else if (Object.hasOwnProperty.call(data, '_errors'))
-            for (const i18n of (data as { _errors: string[] })._errors) issues.push([field, i18n]);
-    return issues;
-}
-
-const isResponseReject = (error: unknown): error is IResponseReject =>
-    typeof error === 'object' &&
-    error !== null &&
-    'message' in error &&
-    typeof error.message === 'string' &&
-    'errors' in error &&
-    Array.isArray(error.errors);
-
-const getErrorStatus = (error: unknown): number | undefined => {
-    if (!error || typeof error !== 'object' || !('status' in error)) return undefined;
-    const { status } = error as { status?: unknown };
-    return typeof status === 'number' ? status : undefined;
+const getErrorMessage = (error: unknown): string => {
+    if (typeof error === 'string' && error) return error;
+    if (error instanceof Error && error.message) return error.message;
+    // Covers non-Error rejects with a message field, e.g. parsed API error bodies
+    // or values thrown across a serialization boundary (workers, JSON RPC).
+    if (
+        error &&
+        typeof error === 'object' &&
+        'message' in error &&
+        typeof error.message === 'string' &&
+        error.message
+    )
+        return error.message;
+    return 'Unknown error';
 };
 
-const hasTranslationKey = (key: string): boolean => {
-    const locale = i18n.global.locale.value;
-    let current: unknown = i18n.global.getLocaleMessage(locale);
-    for (const part of key.split('.')) {
-        if (!current || typeof current !== 'object' || !(part in current)) return false;
-        current = (current as Record<string, unknown>)[part];
-    }
-    return typeof current === 'string';
-};
-
-const getStatusMessage = (status: number): string | undefined => {
-    if (status === 401) {
-        if (!hasTranslationKey('navigation.error-not-logged')) return 'Authentication required';
-        const message = i18n.global.t('navigation.error-not-logged');
-        return message === 'navigation.error-not-logged' ? 'Authentication required' : message;
-    }
-    if (status === 403) {
-        if (!hasTranslationKey('navigation.error-forbidden')) return 'Forbidden';
-        const message = i18n.global.t('navigation.error-forbidden');
-        return message === 'navigation.error-forbidden' ? 'Forbidden' : message;
-    }
-    return undefined;
-};
-
-export const getErrorMessages = (error: unknown): string[] => {
-    if (isResponseReject(error)) {
-        const statusMessage = getStatusMessage(error.status);
-        if (statusMessage) return [statusMessage];
-        return error.errors.length > 0 ? error.errors : [error.message];
-    }
-    const statusMessage = getStatusMessage(getErrorStatus(error) ?? 0);
-    if (statusMessage) return [statusMessage];
-    if (error instanceof Error && error.message) return [error.message];
-    return ['Unknown error'];
-};
-
+/**
+ * Shows a best-effort message to the user and always reports the real
+ * error to the observability logger (Faro), stack included when available.
+ *
+ * @param addMessage - Sink for the user-facing message, typically a feedback
+ *  store action or a toast helper. Its return value is ignored.
+ * @param error - The original thrown value, forwarded untouched to Faro.
+ */
 export const notifyErrorMessages = (
     addMessage: (message: string) => unknown,
     error: unknown
 ): void => {
-    for (const message of getErrorMessages(error)) addMessage(message);
+    addMessage(getErrorMessage(error));
+    useObservabilityStore().captureException(error);
 };
+
+/**
+ * Moves focus to the first invalid field of a form, for accessibility after a
+ * failed submit.
+ *
+ * Targets Vuetify's error state class rather than `:invalid`/`aria-invalid`,
+ * since `v-input` wraps the native control and only the wrapper carries that
+ * class. The trailing `[tabindex]` catches non-native inputs (e.g. `v-select`)
+ * that expose no focusable input/textarea/select of their own.
+ *
+ * @param formElement - The form to search; nullish is a no-op so callers can
+ *  pass an unmounted template ref directly.
+ * @param firstFormErrorFieldSelector - Override for the CSS selector used to
+ *  locate the field, for non-Vuetify markup.
+ * @returns Nothing; focus is applied as a side effect when a field is found.
+ */
+export const focusFirstErrorField = (
+    formElement?: HTMLFormElement,
+    firstFormErrorFieldSelector = '.v-input--error input, .v-input--error textarea, .v-input--error select, .v-input--error [tabindex]'
+) => formElement?.querySelector<HTMLElement>(firstFormErrorFieldSelector)?.focus();

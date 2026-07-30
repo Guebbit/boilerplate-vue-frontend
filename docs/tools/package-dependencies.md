@@ -11,7 +11,7 @@ Groups are organised by concern, with same-namespace tools together where that h
 | HTTP client | `axios` | single HTTP client used by the generated API client | [Runtime](./runtime.md) |
 | Validation | `zod` | form and response validation; schemas generated from `openapi.yaml` | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | Observability | `@grafana/faro-web-sdk`, `@grafana/faro-web-tracing` | error monitoring + frontend tracing + web-vitals; Umami analytics loads via injected script | [Observability](./observability.md) |
-| Realtime | — (clients in `src/utils/`) | SSE + WebSocket via native browser APIs | [Realtime](./websockets.md) |
+| Realtime | — (clients in `src/utils/`) | SSE via native browser APIs | [Realtime](./realtime.md) |
 | Guebbit shared | `@guebbit/css-toolkit`, `@guebbit/vue-toolkit` | shared SCSS tokens and Vue components | [Tools Explained](./tools-explained.md) |
 
 ## Dev dependencies

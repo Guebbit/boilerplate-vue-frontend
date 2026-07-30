@@ -3,19 +3,31 @@ import type { TranslateFunction } from '@/utils/i18n.ts';
 import { signupBodyUsernameMin, createUserBodyPasswordMin } from '@api/schemas';
 
 /**
- * Zod schema for a valid email
+ * Builds the validation schema for an email address.
+ *
+ * @param t - Translate function used to localize the error messages.
+ * @returns A Zod email schema.
  */
 export const createUsersEmailSchema = (t: TranslateFunction) =>
     z.email(t('users-form.email-invalid'));
 
 /**
- * Zod schema for a valid username
+ * Builds the validation schema for a username.
+ *
+ * @param t - Translate function used to localize the error messages.
+ * @returns A Zod string schema enforcing the minimum length declared by the API
+ *  contract.
  */
 export const createUsersUsernameSchema = (t: TranslateFunction) =>
     z.string().min(signupBodyUsernameMin, t('users-form.username-min'));
 
 /**
- * Zod schema for a valid password
+ * Builds the validation schema for a password.
+ *
+ * @param t - Translate function used to localize the error messages.
+ * @returns A Zod string schema enforcing the contract's minimum length plus one
+ *  lowercase, one uppercase, one digit and one special character, each with its
+ *  own message.
  */
 export const createUsersPasswordSchema = (t: TranslateFunction) =>
     z
@@ -35,7 +47,11 @@ export const createUsersPasswordSchema = (t: TranslateFunction) =>
         });
 
 /**
- * User schema
+ * Builds the validation schema of a whole user form.
+ *
+ * @param t - Translate function used to localize the error messages.
+ * @returns A Zod object schema requiring email and username, everything else
+ *  being optional/nullable.
  */
 export const createUsersSchema = (t: TranslateFunction) =>
     z.object({

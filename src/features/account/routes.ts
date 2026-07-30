@@ -43,10 +43,12 @@ export default [
         name: 'Logout',
         component: {
             /**
-             * No need for a true component, just logout the user and be redirected to Home
-             * @param to
-             * @param from
-             * @param next
+             * No need for a true component: log the user out, then leave.
+             *
+             * @param to - Route being entered; only its `locale` param is used.
+             * @param from - Route being left (unused, kept for the signature).
+             * @param next - Navigation callback, always sent to `Home` whether
+             *  the logout call succeeds or fails.
              */
             beforeRouteEnter: (to, from, next) => {
                 const { logout } = useProfileStore();

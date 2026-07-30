@@ -1,105 +1,57 @@
 <template>
-    <LayoutDefault id="playground-page">
-        <template #header>
-            <h1 class="theme-page-title">
-                <span>{{ t('playground-page.page-title') }}</span>
-            </h1>
-        </template>
-
-        <section class="info-wrapper stats-grid">
+    <LayoutDefault id="playground-page" :title="t('playground-page.page-title')">
+        <section class="mb-10 flex flex-wrap items-stretch justify-center gap-6">
             <CardMaterialStat
                 :title="t('playground-page.label-count')"
                 :value="count"
                 :subtitle="`(${doubleCount})`"
                 accent="primary"
             />
-            <CardMaterialStat
-                :title="t('playground-page.label-websocket-messages')"
-                :value="websocketMessages.length"
-                :subtitle="t('playground-page.label-live-messages')"
-                accent="secondary"
-            />
-            <BaseButton @click="increment">
-                {{ t('playground-page.label-increment') }}
-            </BaseButton>
-            <BaseButton @click="incrementDelayed">
-                {{ t('playground-page.label-delayed-increment') }}
-            </BaseButton>
-            <FormCounterInput v-model="count" :min="0" :max="5" />
-        </section>
-
-        <section class="info-wrapper">
-            <div class="theme-card animate-on-hover card-outlined">
-                <div class="card-header">
-                    <h3>
-                        <b>{{ providedVariable }}</b>
-                    </h3>
-                    <p>{{ t('playground-page.label-provided') }}</p>
-                </div>
-                <div class="card-content">
-                    <p class="field-label">
-                        {{ t('playground-page.label-provided-change-typing') }}
-                    </p>
-                    <BaseInput v-model="providedVariable" type="text" />
-                    <p class="field-label">
-                        {{ t('playground-page.label-provided-change-mutation') }}
-                    </p>
-                    <BaseInput
-                        :model-value="providedVariable"
-                        @update:model-value="
-                            (value) => setProvidedVariable(typeof value === 'string' ? value : '')
-                        "
-                        type="text"
-                    />
-                </div>
+            <div class="flex flex-col justify-center gap-2">
+                <v-btn color="primary" variant="tonal" @click="increment">
+                    {{ t('playground-page.label-increment') }}
+                </v-btn>
+                <v-btn color="secondary" variant="tonal" @click="incrementDelayed">
+                    {{ t('playground-page.label-delayed-increment') }}
+                </v-btn>
             </div>
-            <FeedbackMessageFeed
-                :messages="websocketMessages"
-                max-height="300px"
-                :empty-text="t('playground-page.label-no-messages')"
-            />
+            <div class="flex items-center">
+                <FormCounterInput v-model="count" :min="0" :max="5" />
+            </div>
         </section>
 
-        <section class="info-wrapper">
-            <BaseButton @click="testAddMessage">{{
-                t('playground-page.button-test-alert')
-            }}</BaseButton>
-            <BaseButton @click="websocketMessages = []">
-                {{ t('playground-page.button-reset-messages') }}
-            </BaseButton>
+        <section class="mb-10 flex flex-wrap items-start justify-center gap-6">
+            <v-card class="w-full max-w-md p-6">
+                <h3 class="text-lg font-semibold">
+                    <b>{{ providedVariable }}</b>
+                </h3>
+                <p class="mb-4 opacity-70">{{ t('playground-page.label-provided') }}</p>
+
+                <p class="mb-1 font-medium">
+                    {{ t('playground-page.label-provided-change-typing') }}
+                </p>
+                <v-text-field v-model="providedVariable" type="text" hide-details class="mb-4" />
+                <p class="mb-1 font-medium">
+                    {{ t('playground-page.label-provided-change-mutation') }}
+                </p>
+                <v-text-field
+                    :model-value="providedVariable"
+                    type="text"
+                    hide-details
+                    @update:model-value="
+                        (value) => setProvidedVariable(typeof value === 'string' ? value : '')
+                    "
+                />
+            </v-card>
+        </section>
+
+        <section class="flex flex-wrap justify-center gap-4">
+            <v-btn color="primary" @click="testAddMessage">
+                {{ t('playground-page.button-test-alert') }}
+            </v-btn>
         </section>
     </LayoutDefault>
 </template>
-
-<style lang="scss">
-#playground-page {
-    .info-wrapper {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 50px;
-        margin-bottom: 50px;
-    }
-
-    .stats-grid {
-        align-items: stretch;
-    }
-
-    .graphics-grid {
-        gap: 20px;
-    }
-
-    .field-label {
-        margin: 0.6rem 0 0.3rem;
-        font-weight: 500;
-    }
-
-    .message-feed {
-        width: min(460px, 100%);
-    }
-}
-</style>
 
 <script lang="ts">
 export default {
@@ -108,20 +60,16 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, inject, watch, onMounted, onUnmounted } from 'vue';
+import { ref, inject, watch, onMounted } from 'vue';
 import type { Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 
 import { useCounterStore } from '@/stores/counter';
 import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
-import { createSocket } from '@/utils/sockets.ts';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import BaseButton from '@/components/atoms/BaseButton.vue';
-import BaseInput from '@/components/atoms/BaseInput.vue';
 import FormCounterInput from '@/components/molecules/FormCounterInput.vue';
 import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
-import FeedbackMessageFeed from '@/components/organisms/FeedbackMessageFeed.vue';
 
 import type { IProvidedVariableMutationFunction, IProvidedVariableType } from '@/types';
 
@@ -135,6 +83,9 @@ const { t } = useI18n();
  */
 const { addMessage } = useNotificationsStore();
 
+/**
+ * Demo action: pushes a timestamped toast through the notifications store.
+ */
 const testAddMessage = () => {
     addMessage('Hello world ' + Date.now());
 };
@@ -207,30 +158,5 @@ console.log('PLAYGROUND was created');
 onMounted(() => {
     // eslint-disable-next-line no-console
     console.log('PLAYGROUND was mounted');
-});
-
-/**
- * Websocket
- */
-const websocketMessages = ref<string[]>([]);
-const defaultWebsocketUrl = 'ws://localhost:3000/ws';
-const websocketUrl = (import.meta.env.VITE_API_WEBSOCKET ?? defaultWebsocketUrl)
-    .replace(/^http:\/\//u, 'ws://')
-    .replace(/^https:\/\//u, 'wss://');
-
-onMounted(() => {
-    const ws = createSocket(websocketUrl, {
-        onOpen: (ws) => {
-            ws.send('Hello from client');
-        },
-        onMessage: (ws, { data }) => {
-            websocketMessages.value.push(data);
-            // eslint-disable-next-line no-console
-            console.log('Message received', data);
-        }
-    });
-    onUnmounted(() => {
-        ws.close();
-    });
 });
 </script>

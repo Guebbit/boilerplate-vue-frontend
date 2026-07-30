@@ -8,8 +8,8 @@ import {
     updateOrderById,
     deleteOrderById,
     checkout as apiCheckout
-} from '@/utils/api.ts';
-import httpClient from '@/utils/http.ts';
+} from '@api';
+import httpClient from '@/plugins/http';
 import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
 import type {
     Order,
@@ -20,8 +20,16 @@ import type {
     SearchOrdersRequest
 } from '@types';
 
+/**
+ * Search criteria for the orders list, i.e. everything but pagination (which is
+ * owned by the toolkit's search state).
+ */
 type IOrdersFilters = Omit<SearchOrdersRequest, 'page' | 'pageSize'>;
 
+/**
+ * Orders CRUD, paginated search and checkout, on top of the toolkit's
+ * search-API structure.
+ */
 export const useOrdersStore = defineStore('orders', () => {
     const { getLoading, setLoading } = useCoreStore();
 
@@ -59,9 +67,10 @@ export const useOrdersStore = defineStore('orders', () => {
     });
 
     /**
-     * Fetch all orders for the authenticated user
+     * Fetches every order of the authenticated user into the store dictionary.
      *
-     * @param forced
+     * @param forced - Bypass the cache and always hit the API.
+     * @returns A promise resolving with the fetched orders.
      */
     const fetchOrders = (forced = false) =>
         fetchAll(() => listOrders().then((response) => response.data.items), {
@@ -69,9 +78,12 @@ export const useOrdersStore = defineStore('orders', () => {
         });
 
     /**
-     * @param page
-     * @param pageSize
-     * @param forced
+     * Fetches a single page of orders, without touching the shared search state.
+     *
+     * @param page - 1-based page number. Defaults to `1`.
+     * @param pageSize - Items per page. Defaults to `10`.
+     * @param forced - Bypass the cache and always hit the API.
+     * @returns A promise resolving with that page's orders.
      */
     const fetchPaginationOrders = (page = 1, pageSize = 10, forced = false) =>
         fetchAny(() => listOrders({ page, pageSize }).then((response) => response.data.items), {
@@ -84,7 +96,10 @@ export const useOrdersStore = defineStore('orders', () => {
      * `pageCurrent`/`pageSize` change. Filters are read from the store's `filters`
      * on each run — mutate `filters` then call the returned `search()` to apply them.
      *
-     * @param onError - notified on a failed search (immediate load, page change, or search())
+     * @param onError - Notified on a failed search (immediate load, page
+     *  change, or an explicit `search()` call).
+     * @returns The toolkit search handle, whose `search()` re-runs the query
+     *  with the current {@link filters}.
      */
     const watchSearchOrders = (onError?: (error: unknown) => void) =>
         watchSearch(
@@ -101,10 +116,11 @@ export const useOrdersStore = defineStore('orders', () => {
         );
 
     /**
-     * Fetch a single order by ID
+     * Fetches a single order and selects it as the current one.
      *
-     * @param orderId
-     * @param forced
+     * @param orderId - Identifier of the order to load.
+     * @param forced - Bypass the cache and always hit the API.
+     * @returns A promise resolving with the order.
      */
     const fetchOrder = (orderId: string, forced = false) =>
         fetchTarget(() => getOrderById(orderId).then((response) => response.data), orderId, {
@@ -112,27 +128,31 @@ export const useOrdersStore = defineStore('orders', () => {
         });
 
     /**
-     * Reactive counterpart of fetchOrder: selects and (re)fetches the order
-     * whenever idSource changes, including once immediately on setup.
+     * Reactive counterpart of `fetchOrder`: selects and (re)fetches the order
+     * whenever the id changes, including once immediately on setup.
      *
-     * @param idSource
+     * @param idSource - Watch source yielding the order id; nullish values
+     *  clear the selection.
+     * @returns The toolkit watch handle (stop function + state).
      */
     const watchOrder = (idSource: WatchSource<string | undefined | null>) =>
         watchTarget(idSource, (orderId) => getOrderById(orderId).then((response) => response.data));
 
     /**
-     * Create a new order directly (admin)
+     * Creates an order directly, bypassing the cart (admin only).
      *
-     * @param orderData
+     * @param orderData - Full order payload.
+     * @returns A promise resolving with the created order.
      */
     const createOrder = (orderData: CreateOrderRequest) =>
         createTarget(() => apiCreateOrder(orderData).then((response) => response.data));
 
     /**
-     * Update an existing order by ID
+     * Updates an existing order.
      *
-     * @param orderId
-     * @param orderData
+     * @param orderId - Identifier of the order to update.
+     * @param orderData - Fields to change.
+     * @returns A promise resolving with the updated order.
      */
     const updateOrder = (orderId: string, orderData: UpdateOrderByIdRequest) =>
         updateTarget(
@@ -142,9 +162,11 @@ export const useOrdersStore = defineStore('orders', () => {
         );
 
     /**
-     * Convert the authenticated user's current cart into a new order
+     * Converts the authenticated user's current cart into a new order.
      *
-     * @param checkoutData
+     * @param checkoutData - Optional checkout payload (address, notes, ...).
+     * @returns A promise resolving with the checkout response, including the
+     *  created order. Also emits a `checkout_completed` analytics event.
      */
     const checkout = (checkoutData?: CheckoutRequest) =>
         fetchAny(() =>
@@ -159,16 +181,19 @@ export const useOrdersStore = defineStore('orders', () => {
         );
 
     /**
-     * Delete an order by ID
+     * Deletes an order and drops it from the store.
      *
-     * @param orderId
+     * @param orderId - Identifier of the order to delete.
+     * @returns A promise resolving once the order is deleted.
      */
     const deleteOrder = (orderId: string) => deleteTarget(() => deleteOrderById(orderId), orderId);
 
     /**
-     * Download order invoice (PDF binary)
+     * Downloads an order's invoice.
      *
-     * @param orderId
+     * @param orderId - Identifier of the order to invoice.
+     * @returns A promise resolving with the axios response whose `data` is the
+     *  PDF `Blob`.
      */
     const getOrderInvoice = (orderId: string) =>
         fetchAny(() =>

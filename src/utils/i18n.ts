@@ -89,10 +89,17 @@ if (supportedLanguages.length === 0) {
 }
 
 /**
- * Dynamic import (still from file) of vocabulary
+ * Loads a locale's vocabulary (from `src/locales/*.json`) and activates it.
  *
- * @param i18n
- * @param locale
+ * Locales already listed in {@link loadedLanguages} skip the import; locales
+ * fetched from a server must be registered with {@link updateLocale} before
+ * calling this.
+ *
+ * @param i18n - The vue-i18n instance to load the messages into.
+ * @param locale - Locale code to activate, e.g. `en`.
+ * @returns A promise resolving once the messages are registered and the active
+ *  locale has been switched. Unsupported locales and failed imports fall back
+ *  to {@link getDefaultLocale}.
  */
 export function _loadLocale(i18n: I18n, locale: string): Promise<unknown> {
     // Load locale
@@ -123,21 +130,23 @@ export function _loadLocale(i18n: I18n, locale: string): Promise<unknown> {
 }
 
 /**
- * Same as above, but with default I18n
+ * {@link _loadLocale} bound to the app-wide {@link i18n} instance.
  *
- * @param locale
+ * @param locale - Locale code to activate, e.g. `en`.
+ * @returns A promise resolving once the locale is loaded and active.
  */
 export function loadLocale(locale: string) {
     return _loadLocale(i18n, locale);
 }
 
 /**
- * Dynamic import from server of vocabulary
- * (It will overwrite existing locale if already present)
+ * Registers (or overwrites) the vocabulary of a locale, e.g. after fetching
+ * translations from a server.
  *
- * @param i18n
- * @param locale
- * @param messages
+ * @param i18n - The vue-i18n instance to register the messages on.
+ * @param locale - Locale code the messages belong to.
+ * @param messages - Nested translation dictionary for that locale.
+ * @returns A promise (`nextTick`) resolving once Vue has flushed the update.
  */
 export function _updateLocale(i18n: I18n, locale: string, messages: ITranslationDictionaries) {
     // Could be already present and this is just an update
@@ -147,20 +156,23 @@ export function _updateLocale(i18n: I18n, locale: string, messages: ITranslation
 }
 
 /**
- * Same as above, but with default I18n
+ * {@link _updateLocale} bound to the app-wide {@link i18n} instance.
  *
- * @param locale
- * @param messages
+ * @param locale - Locale code the messages belong to.
+ * @param messages - Nested translation dictionary for that locale.
+ * @returns A promise resolving once Vue has flushed the update.
  */
 export function updateLocale(locale: string, messages: ITranslationDictionaries) {
     return _updateLocale(i18n, locale, messages);
 }
 
 /**
- * Change i18n selected language
+ * Switches the active language, loading its vocabulary first when missing, and
+ * keeps the `<html lang>` attribute in sync.
  *
- * @param i18n
- * @param locale
+ * @param i18n - The vue-i18n instance to switch.
+ * @param locale - Locale code to activate, e.g. `en`.
+ * @returns A promise resolving once the locale is active and Vue has flushed.
  */
 export function _changeLanguage(i18n: I18n, locale: string): Promise<unknown> {
     const setLocale = () => {
@@ -182,16 +194,20 @@ export function _changeLanguage(i18n: I18n, locale: string): Promise<unknown> {
 }
 
 /**
- * Same as above, but with default I18n
+ * {@link _changeLanguage} bound to the app-wide {@link i18n} instance.
  *
- * @param locale
+ * @param locale - Locale code to activate, e.g. `en`.
+ * @returns A promise resolving once the locale is active.
  */
 export function changeLanguage(locale: string) {
     return _changeLanguage(i18n, locale);
 }
 
 /**
- * Get user locale, fallback if not available
+ * Best guess of the locale to use when the route carries none.
+ *
+ * @returns The browser language when supported, otherwise the configured
+ *  fallback locale, `VITE_APP_DEFAULT_LOCALE`, or `'en'` as a last resort.
  */
 export function getDefaultLocale() {
     const foundLocale = navigator.language.slice(0, 2);
@@ -206,17 +222,19 @@ export function getDefaultLocale() {
 }
 
 /**
- * Current locale value
- * Since i18n.global.locale can be both string and WritableComputedRef<string>, we need to cast it
+ * Reads the locale currently active on the app-wide {@link i18n} instance.
+ *
+ * @returns The active locale code, e.g. `en`.
  */
 export const getCurrentLocale = () => i18n.global.locale.value;
 
 /**
- * Prefix the given path with the locale, unless it already starts with a
- * supported locale segment
+ * Prefixes a path with a locale segment, unless it already starts with a
+ * supported one.
  *
- * @param path
- * @param locale
+ * @param path - Absolute or relative path, e.g. `/products` or `products`.
+ * @param locale - Locale code to prepend, e.g. `en`.
+ * @returns The normalized, locale-prefixed path, e.g. `/en/products`.
  */
 function prefixLocalePath(path: string, locale: string) {
     const normalized = path.startsWith('/') ? path : `/${path}`;
@@ -225,14 +243,17 @@ function prefixLocalePath(path: string, locale: string) {
 }
 
 /**
- * Fix Router Links adding our current Locale
+ * Rewrites a router location so it carries the current locale.
  *
- * WARNING: vue-router ignores `params` whenever `path` is present,
- * so path-based locations must have the locale prefixed onto the path itself
- * (a bare `/products` would otherwise match `/:locale` with locale="products")
+ * WARNING: vue-router ignores `params` whenever `path` is present, so
+ * path-based locations must have the locale prefixed onto the path itself
+ * (a bare `/products` would otherwise match `/:locale` with locale="products").
  *
- * @param to
- * @constructor
+ * @param to - Any router location: a path string, a `path`-based object, or a
+ *  named location.
+ * @returns The same location with the locale injected — into the path for
+ *  string/`path` forms, into `params.locale` for named ones. An explicit
+ *  `params.locale` on the input wins.
  */
 export function routerLinkI18n(to: RouteLocationRaw): RouteLocationRaw {
     const locale = getCurrentLocale();

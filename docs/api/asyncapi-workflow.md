@@ -9,7 +9,6 @@ Keep REST and async contracts separate:
 
 Current scope of `asyncapi.yaml` relevant to the FE:
 
-- WebSocket chat channels (`realtime.chat.*`)
 - SSE observability stream (`observability.*`)
 - Ecommerce cart checkout event (`ecommerce.cart.checked_out`)
 
@@ -17,7 +16,6 @@ Current scope of `asyncapi.yaml` relevant to the FE:
 
 | Name | Protocol | Purpose | Env var |
 | ---- | -------- | ------- | ------- |
-| `websocketLocal` | `ws` | WebSocket chat | `VITE_API_WEBSOCKET` |
 | `sseLocal` | `http` | SSE observability stream | `VITE_API_SSE` |
 
 The AMQP and Redis pub/sub servers exist in `asyncapi.yaml` for backend use; the FE does not connect to them directly.
@@ -33,8 +31,8 @@ npm run genasyncapi
 Import from `src/types/realtime.ts` (the thin app helper that re-exports from `realtime.generated.ts`):
 
 ```ts
-import type { IChatMessagePayload } from '@/types/realtime';
-import { CHAT_CHANNELS, OBSERVABILITY_CHANNELS } from '@/types/realtime';
+import type { ISseEventName, ISseEventPayload } from '@types';
+import { REALTIME_SSE_EVENT_NAMES } from '@types';
 ```
 
 **Never edit `realtime.generated.ts` by hand** — it is overwritten on every `genasyncapi` run.
@@ -60,8 +58,8 @@ npm run genasyncapi   # validate asyncapi.yaml + regenerate src/types/realtime.g
 flowchart LR
     Spec[asyncapi.yaml] --> Gen[npm run genasyncapi]
     Gen --> Types[src/types/realtime.generated.ts]
-    Types --> Clients[createChatClient\ncreateSSEClient]
-    Clients --> Stores[realtimeChat store\nrealtimeObservability store]
+    Types --> Clients[createSseClient]
+    Clients --> Stores[realtimeObservability store]
     Stores --> View[RealtimePlayground view]
 ```
 
@@ -73,7 +71,7 @@ After editing `asyncapi.yaml`:
 
 ## Naming convention
 
-Channels use dot-separated topic-style naming (e.g. `realtime.chat.message`). These names become event identifiers at runtime. The constants in `CHAT_CHANNELS` and `OBSERVABILITY_CHANNELS` are the single source of truth — never hardcode strings.
+Channels use dot-separated topic-style naming (e.g. `observability.metrics.snapshot`). The generator derives the FE types from them: `observability.*` (subscribe) feeds `REALTIME_SSE_EVENT_NAMES` and `ISseEventPayloadMap` — the single source of truth for SSE event names, never hardcode strings.
 
 ## How this complements OpenAPI
 
@@ -85,11 +83,10 @@ Channels use dot-separated topic-style naming (e.g. `realtime.chat.message`). Th
 
 - [AsyncAPI specification](https://www.asyncapi.com/docs/reference/specification/latest)
 - [@asyncapi/modelina](https://modelina.org/)
-- [WebSocket API (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
 - [EventSource / SSE (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/EventSource)
 
 ## Related pages
 
 - [OpenAPI Workflow](./openapi-workflow.md)
-- [Realtime](../tools/websockets.md)
+- [Realtime](../tools/realtime.md)
 - [API overview](./index.md)

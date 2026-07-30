@@ -1,179 +1,220 @@
 <template>
-    <header class="page-header">
-        <img alt="logo" class="logo" :src="PUBLIC_PATH + 'images/guebbit-logo-colored.png'" />
+    <v-app-bar flat border="b" density="comfortable">
+        <!-- Mobile: hamburger -->
+        <template #prepend>
+            <v-app-bar-nav-icon
+                class="lg:hidden"
+                :aria-label="t('navigation.label-menu')"
+                @click="drawer = !drawer"
+            >
+                <Menu :size="22" aria-hidden="true" />
+            </v-app-bar-nav-icon>
+            <RouterLink :to="routerLinkI18n({ name: 'Home' })" class="flex items-center">
+                <img
+                    alt="logo"
+                    class="mx-2 block h-9"
+                    :src="`${baseUrl}images/guebbit-logo-colored.png`"
+                />
+            </RouterLink>
+        </template>
 
-        <nav>
-            <RouterLink
-                :to="
-                    routerLinkI18n({
-                        name: 'Home'
-                    })
-                "
+        <!-- Desktop: inline nav -->
+        <nav class="hidden lg:flex items-center gap-1" :aria-label="t('navigation.label-menu')">
+            <v-btn
+                v-for="item in visibleNavItems"
+                :key="item.title"
+                :to="item.to"
+                variant="text"
+                class="px-3 capitalize"
             >
-                {{ t('navigation.label-home') }}
-            </RouterLink>
-            <RouterLink
-                :to="
-                    routerLinkI18n({
-                        name: 'Playground'
-                    })
-                "
-            >
-                {{ t('navigation.label-playground') }}
-            </RouterLink>
-            <RouterLink
-                v-show="isAdmin"
-                :to="
-                    routerLinkI18n({
-                        name: 'Admin'
-                    })
-                "
-            >
-                {{ t('navigation.label-admin') }}
-            </RouterLink>
-            <RouterLink
-                v-show="isAdmin"
-                :to="
-                    routerLinkI18n({
-                        name: 'UsersList'
-                    })
-                "
-            >
-                {{ t('navigation.label-users-list', 2) }}
-            </RouterLink>
-            <RouterLink
-                :to="
-                    routerLinkI18n({
-                        name: 'ProductsList'
-                    })
-                "
-            >
-                {{ t('navigation.label-products-list', 2) }}
-            </RouterLink>
-            <RouterLink
-                v-show="isAuth"
-                :to="
-                    routerLinkI18n({
-                        name: 'Profile'
-                    })
-                "
-            >
-                {{ t('navigation.label-profile', 2) }}
-            </RouterLink>
-            <RouterLink
-                v-show="isAuth"
-                :to="
-                    routerLinkI18n({
-                        name: 'Cart'
-                    })
-                "
-            >
-                {{ t('navigation.label-cart') }}
-            </RouterLink>
-            <RouterLink
-                v-show="isAuth"
-                :to="
-                    routerLinkI18n({
-                        name: 'OrdersList'
-                    })
-                "
-            >
-                {{ t('navigation.label-orders') }}
-            </RouterLink>
-
+                {{ item.title }}
+            </v-btn>
             <slot name="nav-left" />
         </nav>
 
         <slot />
 
-        <nav>
-            <slot name="nav-right" />
+        <template #append>
+            <div class="flex items-center gap-1">
+                <slot name="nav-right" />
 
-            <button
-                v-show="!isAuth && !route.fullPath.includes('login')"
-                class="theme-button"
+                <v-chip
+                    v-if="isAuth && profile"
+                    variant="tonal"
+                    color="secondary"
+                    class="mr-1 hidden md:inline-flex"
+                >
+                    <UserRound :size="14" class="mr-1" aria-hidden="true" />
+                    {{ profile.email }}
+                </v-chip>
+
+                <v-btn
+                    v-show="!isAuth && !route.fullPath.includes('login')"
+                    variant="text"
+                    @click="router.push(routerLinkI18n(loginContinueTo(route.fullPath)))"
+                >
+                    {{ t('navigation.label-login') }}
+                </v-btn>
+                <v-btn
+                    v-show="!isAuth && !route.fullPath.includes('signup')"
+                    color="primary"
+                    class="hidden sm:inline-flex"
+                    @click="router.push(routerLinkI18n({ name: 'Signup' }))"
+                >
+                    {{ t('navigation.label-signup') }}
+                </v-btn>
+                <v-btn
+                    v-show="isAuth"
+                    variant="text"
+                    @click="router.push(routerLinkI18n({ name: 'Logout' }))"
+                >
+                    {{ t('navigation.label-logout') }}
+                </v-btn>
+
+                <v-btn
+                    icon
+                    variant="text"
+                    :aria-label="t('navigation.label-theme')"
+                    @click="toggleTheme"
+                >
+                    <Sun v-if="theme.current.value.dark" :size="20" aria-hidden="true" />
+                    <Moon v-else :size="20" aria-hidden="true" />
+                </v-btn>
+
+                <AppLanguageSwitcher />
+            </div>
+        </template>
+    </v-app-bar>
+
+    <!-- Mobile: drawer -->
+    <v-navigation-drawer v-model="drawer" temporary>
+        <v-list nav :aria-label="t('navigation.label-menu')">
+            <v-list-item
+                v-for="item in visibleNavItems"
+                :key="'drawer-' + item.title"
+                :to="item.to"
+                color="primary"
+                class="capitalize"
+            >
+                <v-list-item-title>{{ item.title }}</v-list-item-title>
+            </v-list-item>
+
+            <v-divider class="my-2" />
+
+            <v-list-item
+                v-if="!isAuth"
+                color="primary"
                 @click="router.push(routerLinkI18n(loginContinueTo(route.fullPath)))"
             >
-                {{ t('navigation.label-login') }}
-            </button>
-
-            <button
-                v-show="!isAuth && !route.fullPath.includes('signup')"
-                class="theme-button"
+                <v-list-item-title>{{ t('navigation.label-login') }}</v-list-item-title>
+            </v-list-item>
+            <v-list-item
+                v-if="!isAuth"
+                color="primary"
                 @click="router.push(routerLinkI18n({ name: 'Signup' }))"
             >
-                {{ t('navigation.label-signup') }}
-            </button>
-
-            <button
-                v-show="isAuth"
-                class="theme-button"
+                <v-list-item-title>{{ t('navigation.label-signup') }}</v-list-item-title>
+            </v-list-item>
+            <v-list-item
+                v-if="isAuth"
+                color="primary"
                 @click="router.push(routerLinkI18n({ name: 'Logout' }))"
             >
-                {{ t('navigation.label-logout') }}
-            </button>
-
-            <AppLanguageSwitcher />
-        </nav>
-    </header>
+                <v-list-item-title>{{ t('navigation.label-logout') }}</v-list-item-title>
+            </v-list-item>
+        </v-list>
+    </v-navigation-drawer>
 </template>
 
-<style lang="scss">
-@use '@/styles/functions' as fn;
-
-.page-header {
-    .logo {
-        display: block;
-        max-height: 100%;
-        padding: 0.5em 1em;
-    }
-
-    nav {
-        display: flex;
-        gap: 1em;
-
-        & > a {
-            height: 100%;
-            display: inline-flex;
-            align-items: center;
-            padding: 0 1em;
-            border-left: 1px solid var(--color-border);
-            text-shadow: 1px -1px 1em #000;
-            text-transform: capitalize;
-
-            &:hover,
-            &.router-link-exact-active {
-                color: rgb(var(--on-secondary-600));
-                background: rgb(var(--secondary-600));
-            }
-        }
-    }
-
-    @include fn.for-tablet-and-desktop() {
-        nav {
-            justify-content: flex-start;
-
-            &:last-child {
-                justify-content: flex-end;
-            }
-        }
-    }
-}
-</style>
-
 <script setup lang="ts">
+import { computed, ref } from 'vue';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { useTheme } from 'vuetify';
 import { storeToRefs } from 'pinia';
+import { Menu, Moon, Sun, UserRound } from 'lucide-vue-next';
 import AppLanguageSwitcher from '@/components/organisms/AppLanguageSwitcher.vue';
 import { routerLinkI18n } from '@/utils/i18n.ts';
-import { loginContinueTo } from '@/utils/navigation.ts';
-import { PUBLIC_PATH } from '@/utils/constants';
+import { loginContinueTo } from '@/router/navigation.ts';
 import { useProfileStore } from '@/stores/profile.ts';
 
 const router = useRouter();
 const route = useRoute();
 const { t } = useI18n();
 
-const { isAuth, isAdmin } = storeToRefs(useProfileStore());
+const { isAuth, isAdmin, profile } = storeToRefs(useProfileStore());
+
+/**
+ * Vite public base path (always slash-terminated), used to resolve assets
+ * served from `public/` no matter where the app is mounted.
+ */
+const baseUrl = import.meta.env.BASE_URL;
+
+/**
+ * Mobile drawer open state
+ */
+const drawer = ref(false);
+
+/**
+ * Single source for nav entries: rendered inline on desktop, as a drawer list on
+ * mobile.
+ *
+ * @returns The localized, locale-prefixed entries the current visitor may see —
+ *  admin-only and authenticated-only links are filtered out for everyone else.
+ */
+const visibleNavItems = computed(() =>
+    [
+        { title: t('navigation.label-home'), to: routerLinkI18n({ name: 'Home' }), show: true },
+        {
+            title: t('navigation.label-playground'),
+            to: routerLinkI18n({ name: 'Playground' }),
+            show: true
+        },
+        {
+            title: t('navigation.label-realtime'),
+            to: routerLinkI18n({ name: 'RealtimePlayground' }),
+            show: true
+        },
+        {
+            title: t('navigation.label-admin'),
+            to: routerLinkI18n({ name: 'Admin' }),
+            show: isAdmin.value
+        },
+        {
+            title: t('navigation.label-users-list', 2),
+            to: routerLinkI18n({ name: 'UsersList' }),
+            show: isAdmin.value
+        },
+        {
+            title: t('navigation.label-products-list', 2),
+            to: routerLinkI18n({ name: 'ProductsList' }),
+            show: true
+        },
+        {
+            title: t('navigation.label-profile', 2),
+            to: routerLinkI18n({ name: 'Profile' }),
+            show: isAuth.value
+        },
+        {
+            title: t('navigation.label-cart'),
+            to: routerLinkI18n({ name: 'Cart' }),
+            show: isAuth.value
+        },
+        {
+            title: t('navigation.label-orders'),
+            to: routerLinkI18n({ name: 'OrdersList' }),
+            show: isAuth.value
+        }
+    ].filter((item) => item.show)
+);
+
+const theme = useTheme();
+
+/**
+ * Light/dark toggle. The default follows the OS ("system"); the first click pins
+ * an explicit theme.
+ */
+const toggleTheme = () => {
+    theme.global.name.value = theme.current.value.dark ? 'light' : 'dark';
+};
 </script>

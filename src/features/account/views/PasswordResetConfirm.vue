@@ -1,44 +1,49 @@
 <template>
-    <LayoutDefault id="password-reset-confirm-page">
-        <template #header>
-            <h1 class="theme-page-title">
-                <span>{{ t('password-reset-confirm-page.page-title') }}</span>
-            </h1>
-        </template>
-
-        <div class="theme-card theme-form-container">
-            <form ref="formElement" class="theme-form" @submit.prevent="submitForm">
-                <BaseInput
+    <LayoutDefault
+        id="password-reset-confirm-page"
+        :title="t('password-reset-confirm-page.page-title')"
+    >
+        <v-card class="mx-auto mt-16 w-full max-w-md p-8">
+            <form ref="formElement" novalidate @submit.prevent="submitForm">
+                <v-text-field
                     v-model="form.token"
                     :label="t('password-reset-confirm-page.label-token')"
-                    :errors="formErrors.token"
-                    :show-errors="showErrors"
+                    :error-messages="showErrors ? formErrors.token : []"
+                    class="mb-2"
                 />
-                <BaseInput
+                <v-text-field
                     v-model="form.password"
                     type="password"
+                    autocomplete="new-password"
                     :label="t('password-reset-confirm-page.label-password')"
-                    :errors="formErrors.password"
-                    :show-errors="showErrors"
+                    :error-messages="showErrors ? formErrors.password : []"
+                    class="mb-2"
                 />
-                <BaseInput
+                <v-text-field
                     v-model="form.passwordConfirm"
                     type="password"
+                    autocomplete="new-password"
                     :label="t('password-reset-confirm-page.label-password-confirm')"
-                    :errors="formErrors.passwordConfirm"
-                    :show-errors="showErrors"
+                    :error-messages="showErrors ? formErrors.passwordConfirm : []"
                 />
-                <BaseButton type="submit" :disabled="isSubmitting">
+                <v-btn
+                    type="submit"
+                    color="primary"
+                    size="large"
+                    block
+                    :loading="isSubmitting"
+                    class="mt-4"
+                >
                     {{ t('password-reset-confirm-page.button-submit') }}
-                </BaseButton>
+                </v-btn>
             </form>
 
-            <div class="password-reset-confirm-page-actions">
-                <RouterLink :to="routerLinkI18n({ name: 'Login' })" class="theme-button">
+            <div class="mt-4 flex justify-center">
+                <v-btn variant="text" :to="routerLinkI18n({ name: 'Login' })">
                     {{ t('password-reset-confirm-page.button-go-to-login') }}
-                </RouterLink>
+                </v-btn>
             </div>
-        </div>
+        </v-card>
     </LayoutDefault>
 </template>
 
@@ -52,17 +57,18 @@ export default {
 import { nextTick, ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
-import { RouterLink, useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import BaseInput from '@/components/atoms/BaseInput.vue';
-import BaseButton from '@/components/atoms/BaseButton.vue';
 import { useProfileStore } from '@/stores/profile.ts';
 import { createUsersPasswordSchema } from '@/features/users/schemas.ts';
-import { notifyErrorMessages } from '@/utils/errors.ts';
-import { focusFirstErrorField } from '@/utils/forms.ts';
+import { notifyErrorMessages, focusFirstErrorField } from '@/utils/errors.ts';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 
+/**
+ * Form state: the one-time token (prefilled from the email link) plus the new
+ * password and its confirmation.
+ */
 interface IPasswordResetConfirmForm {
     token?: string;
     password?: string;
@@ -98,6 +104,14 @@ const { form, formErrors, isSubmitting, handleSubmit } =
 const showErrors = ref(false);
 const formElement = ref<HTMLFormElement>();
 
+/**
+ * Validates the form and sets the new password.
+ *
+ * @returns A promise resolving once the flow settles: on success a toast is
+ *  shown and the user is sent to `Login`; on invalid input the errors are
+ *  revealed and the first invalid field focused; API failures are reported as
+ *  toasts.
+ */
 const submitForm = () =>
     handleSubmit(async () => {
         await confirmPasswordReset(
@@ -118,19 +132,3 @@ const submitForm = () =>
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>
-
-<style lang="scss">
-#password-reset-confirm-page {
-    .theme-form-container {
-        max-width: 420px;
-        margin: 100px auto;
-        padding: 2rem;
-    }
-
-    .password-reset-confirm-page-actions {
-        margin-top: 1rem;
-        display: flex;
-        justify-content: center;
-    }
-}
-</style>

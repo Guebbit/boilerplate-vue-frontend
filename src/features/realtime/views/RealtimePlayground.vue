@@ -1,117 +1,67 @@
 <template>
-    <LayoutDefault id="realtime-playground-page">
-        <template #header>
-            <h1 class="theme-page-title">
-                <span>Realtime playground</span>
-            </h1>
-        </template>
-
-        <section class="realtime-grid">
-            <article class="theme-card card-outlined realtime-card">
-                <div class="card-header">
-                    <h3>SSE observability</h3>
-                    <p>Status: {{ observabilityStatus }}</p>
+    <LayoutDefault id="realtime-playground-page" title="Realtime playground">
+        <section class="grid gap-6">
+            <v-card class="flex flex-col gap-4 p-6">
+                <div>
+                    <h3 class="text-lg font-semibold">SSE observability</h3>
+                    <v-chip size="small" variant="tonal" color="secondary" class="mt-1">
+                        {{ observabilityStatus }}
+                    </v-chip>
                 </div>
-                <div class="card-content">
-                    <p>Latest heartbeat: {{ latestHeartbeatAt ?? 'n/a' }}</p>
-                    <p>
-                        Latest websocket connections:
-                        {{ latestSnapshot?.realtime.websocketConnections ?? 'n/a' }}
-                    </p>
-                    <p>Latest SSE clients: {{ latestSnapshot?.realtime.sseClients ?? 'n/a' }}</p>
-                    <BaseButton @click="connectObservability">Connect SSE</BaseButton>
-                    <BaseButton @click="disconnectObservability">Disconnect SSE</BaseButton>
-                </div>
-            </article>
-
-            <article class="theme-card card-outlined realtime-card">
-                <div class="card-header">
-                    <h3>WebSocket chat</h3>
-                    <p>Status: {{ chatStatus }}</p>
-                </div>
-                <div class="card-content realtime-chat-card-content">
-                    <BaseInput v-model="chatUsername" type="text" placeholder="username" />
-                    <div class="realtime-chat-actions">
-                        <BaseButton @click="connectChat">Connect WS</BaseButton>
-                        <BaseButton @click="joinChat">Join chat</BaseButton>
-                    </div>
-                    <BaseInput v-model="chatMessage" type="text" placeholder="message" />
-                    <BaseButton @click="sendChatMessage">Send message</BaseButton>
-                    <p>Active users: {{ presence?.payload.users.join(', ') || 'n/a' }}</p>
+                <div class="flex flex-wrap gap-2">
+                    <v-btn color="primary" variant="tonal" @click="connectObservability">
+                        Connect SSE
+                    </v-btn>
+                    <v-btn variant="tonal" @click="disconnectObservability">Disconnect SSE</v-btn>
                 </div>
                 <FeedbackMessageFeed
-                    :messages="entries.map((entry) => `[${entry.kind}] ${entry.text}`)"
+                    :messages="observabilityEntries.map(formatMetricsEntry)"
+                    variant="alert"
                     max-height="220px"
-                    empty-text="No chat events yet"
+                    empty-text="No metrics events yet"
                 />
-            </article>
+            </v-card>
         </section>
     </LayoutDefault>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import BaseButton from '@/components/atoms/BaseButton.vue';
-import BaseInput from '@/components/atoms/BaseInput.vue';
 import FeedbackMessageFeed from '@/components/organisms/FeedbackMessageFeed.vue';
-import { useRealtimeObservability } from '@/composables/useRealtimeObservability';
-import { useRealtimeChat } from '@/composables/useRealtimeChat';
-
-const chatUsername = ref('');
-const chatMessage = ref('');
+import { useRealtimeObservability } from '@/features/realtime/useRealtimeObservability';
+import type { IRealtimeMetricsEntry } from '@types';
 
 const {
     status: observabilityStatus,
-    latestSnapshot,
-    latestHeartbeatAt,
+    entries: observabilityEntries,
     connect: connectObservability,
     disconnect: disconnectObservability
 } = useRealtimeObservability();
 
-const {
-    status: chatStatus,
-    entries,
-    presence,
-    connect: connectChat,
-    join,
-    sendMessage
-} = useRealtimeChat();
+/**
+ * Rounds a byte count to whole megabytes for compact display.
+ *
+ * @param bytes - Raw byte count.
+ * @returns The size in whole megabytes, e.g. `42MB`.
+ */
+const formatMb = (bytes: number) => `${Math.round(bytes / 1024 / 1024)}MB`;
 
-const joinChat = () => {
-    join(chatUsername.value);
-};
+/**
+ * Renders one metrics SSE event as a single feed line.
+ *
+ * @param entry - Feed entry holding the event kind, timestamp and payload.
+ * @returns A one-line summary prefixed with the kind, so snapshot / update /
+ *  heartbeat entries stay distinguishable from each other.
+ */
+const formatMetricsEntry = (entry: IRealtimeMetricsEntry) => {
+    const time = new Date(entry.timestamp).toLocaleTimeString();
+    const { uptimeSeconds, memory, http, realtime } = entry.payload;
 
-const sendChatMessage = () => {
-    sendMessage(chatMessage.value);
-    chatMessage.value = '';
+    return (
+        `[${entry.kind}] ${time} · up ${Math.round(uptimeSeconds)}s · ` +
+        `heap ${formatMb(memory.heapUsed)}/${formatMb(memory.heapTotal)} · ` +
+        `req ${http.totalRequests} (${http.totalErrors} err) · ` +
+        `sse ${realtime.sseClients}`
+    );
 };
 </script>
-
-<style lang="scss">
-#realtime-playground-page {
-    .realtime-grid {
-        display: grid;
-        gap: 24px;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    }
-
-    .realtime-card {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-    }
-
-    .realtime-chat-card-content {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-    }
-
-    .realtime-chat-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-}
-</style>

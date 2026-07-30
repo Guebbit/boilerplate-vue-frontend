@@ -51,7 +51,7 @@ export default withMermaid(
                         collapsed: false,
                         items: [
                             { text: 'State & Routing', link: '/tools/state-and-routing' },
-                            { text: 'Realtime', link: '/tools/websockets' }
+                            { text: 'Realtime', link: '/tools/realtime' }
                         ]
                     },
                     {

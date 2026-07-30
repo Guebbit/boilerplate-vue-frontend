@@ -20,7 +20,7 @@ const makeAxiosError = (status: number, data: unknown, headers: Record<string, s
 
 describe('onResponseReject', () => {
     it('passes through a standard reject envelope unchanged', async () => {
-        const { onResponseReject } = await import('@/utils/http.ts');
+        const { onResponseReject } = await import('@/plugins/http');
         const error = makeAxiosError(400, {
             success: false,
             message: 'Bad',
@@ -35,7 +35,7 @@ describe('onResponseReject', () => {
     });
 
     it('enriches a reject envelope with x-request-id and x-trace-id headers', async () => {
-        const { onResponseReject } = await import('@/utils/http.ts');
+        const { onResponseReject } = await import('@/plugins/http');
         const error = makeAxiosError(
             422,
             { success: false, message: 'Validation', errors: ['name required'] },
@@ -51,7 +51,7 @@ describe('onResponseReject', () => {
     });
 
     it('captures x-request-id on a fallback transport error', async () => {
-        const { onResponseReject } = await import('@/utils/http.ts');
+        const { onResponseReject } = await import('@/plugins/http');
         const error = makeAxiosError(
             503,
             {},
@@ -68,7 +68,7 @@ describe('onResponseReject', () => {
     });
 
     it('normalizes 401 responses as authentication state errors', async () => {
-        const { onResponseReject } = await import('@/utils/http.ts');
+        const { onResponseReject } = await import('@/plugins/http');
         const error = makeAxiosError(401, {});
 
         await expect(onResponseReject(error as never)).rejects.toMatchObject({
@@ -80,7 +80,7 @@ describe('onResponseReject', () => {
     });
 
     it('normalizes 403 responses as authorization state errors', async () => {
-        const { onResponseReject } = await import('@/utils/http.ts');
+        const { onResponseReject } = await import('@/plugins/http');
         const error = makeAxiosError(403, {});
 
         await expect(onResponseReject(error as never)).rejects.toMatchObject({
@@ -92,7 +92,7 @@ describe('onResponseReject', () => {
     });
 
     it('omits requestId and traceId when headers are absent', async () => {
-        const { onResponseReject } = await import('@/utils/http.ts');
+        const { onResponseReject } = await import('@/plugins/http');
         const error = makeAxiosError(500, {});
 
         const result = await onResponseReject(error as never).catch((error_: unknown) => error_);

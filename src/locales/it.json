@@ -34,7 +34,11 @@
         "label-logout": "Logout",
         "error-already-logged": "Sei già loggato",
         "error-not-logged": "Devi essere loggato per accedere a questa pagina",
-        "error-forbidden": "Non sei autorizzato ad accedere a questa pagina"
+        "error-forbidden": "Non sei autorizzato ad accedere a questa pagina",
+        "label-menu": "Menu",
+        "label-theme": "Cambia tema",
+        "label-language": "Lingua",
+        "label-realtime": "tempo reale"
     },
     "home-page": {
         "page-title": "Home",
@@ -57,10 +61,7 @@
         "label-provided-change-mutation": "Cambia usando la sua mutazione",
         "label-increment": "@.capitalize:generic.increment",
         "label-delayed-increment": "@.capitalize:generic.increment asincrono",
-        "label-websocket-messages": "Messaggi WebSocket",
-        "label-live-messages": "Attività in tempo reale",
-        "button-test-alert": "Aggiungi alert di test",
-        "button-reset-messages": "Reimposta messaggi"
+        "button-test-alert": "Aggiungi alert di test"
     },
     "error-page": {
         "page-title": "Errore",
@@ -146,7 +147,8 @@
         "label-remember": "Ricorda il mio accesso",
         "link-password-reset": "Password dimenticata?",
         "text-conditions": "Ho letto le condizioni della privacy",
-        "button-submit": "Login"
+        "button-submit": "Login",
+        "label-toggle-password": "Mostra o nascondi la password"
     },
     "signup-page": {
         "page-title": "Registrazione",
@@ -212,7 +214,9 @@
         "button-remove": "Rimuovi",
         "button-clear": "Svuota carrello",
         "button-checkout": "Acquista",
-        "success-checkout": "Ordine effettuato con successo!"
+        "success-checkout": "Ordine effettuato con successo!",
+        "button-decrease": "Diminuisci quantità",
+        "button-increase": "Aumenta quantità"
     },
     "orders-list-page": {
         "page-title": "I miei ordini",

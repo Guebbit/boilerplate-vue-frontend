@@ -11,7 +11,7 @@ flowchart TD
     A["src/views/ + src/features/*/views/\nView layer"] --> B["src/features/*/composables/\nsrc/utils/\nComposables + utils"]
     B --> C["src/stores/\nsrc/features/*/composables/\nPinia stores"]
     C --> D["contracts/rest/index.ts\nGenerated axios client"]
-    D --> E["src/utils/http.ts\nAxios + interceptors"]
+    D --> E["src/plugins/http/index.ts\nAxios + interceptors"]
     E --> F[("Backend\nor MSW")]
 
     classDef view fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -30,10 +30,10 @@ flowchart TD
 | ----- | --------- | -------- |
 | Views | `src/views/`, `src/features/*/views/` | template rendering, user events, layout |
 | Feature composables | `src/features/*/composables/` | feature-scoped logic, form handling |
-| Shared composables + utils | `src/utils/`, `src/composables/` | cross-feature helpers (http, i18n, forms, sockets) |
+| Shared composables + utils | `src/utils/`, `src/composables/` | cross-feature helpers (http, i18n, formatters, SSE client) |
 | Stores | `src/stores/`, `src/features/*/composables/` | global reactive state, API orchestration |
 | Generated client | `contracts/rest/index.ts`, `contracts/rest/schemas.zod.ts` | typed axios functions + Zod schemas (DO NOT edit) |
-| HTTP layer | `src/utils/http.ts`, `src/utils/api.ts` | axios instance, interceptors, error shaping |
+| HTTP layer | `src/plugins/http/index.ts` | axios instance, interceptors, error shaping, orval mutator |
 | Layouts | `src/layouts/` | page shell components |
 | Router | `src/router/`, `src/middlewares/`, `src/features/*/routes.ts` | navigation, locale prefix, guards |
 | Locales | `src/locales/` | vue-i18n message files |
@@ -49,7 +49,7 @@ flowchart LR
     View[Feature view] --> Composable[Feature composable\nor store]
     Composable --> Store[Pinia store]
     Store --> Client[Generated API function\ncontracts/rest/index.ts]
-    Client --> HTTP[utils/http.ts]
+    Client --> HTTP[plugins/http/index.ts]
 
     classDef view fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef comp fill:#ddd6fe,stroke:#7c3aed,color:#111827;
@@ -69,7 +69,7 @@ For a product flow you typically move through:
 - `src/features/products/composables/useProductsList.ts` (if it exists)
 - `src/stores/products.ts` (or feature-level composable)
 - `contracts/rest/index.ts` → `getProducts()`
-- `src/utils/http.ts`
+- `src/plugins/http/index.ts`
 
 The same shape repeats for every entity. The entity names are examples.
 

@@ -217,22 +217,8 @@ const document = parse(specText) as IAsyncApiDocument;
 
 const channels = document.channels ?? {};
 const messages = document.components?.messages ?? {};
-const channelNames = Object.keys(channels).toSorted((a, b) => a.localeCompare(b));
-const realtimeChannelNames = channelNames.filter(
-    (channelName) => channelName.startsWith('realtime.') || channelName.startsWith('observability.')
-);
 
 const sseEntries = collectChannelMessageEntries(channels, 'observability.', 'subscribe');
-const chatEventEntries = collectChannelMessageEntries(
-    channels,
-    'realtime.chat.event.',
-    'subscribe'
-);
-const chatCommandEntries = collectChannelMessageEntries(
-    channels,
-    'realtime.chat.command.',
-    'publish'
-);
 
 const messageTypeBlocks = Object.entries(messages)
     .map(([messageName, message]) => {
@@ -254,9 +240,6 @@ const messageTypeBlocks = Object.entries(messages)
  * @returns Complete TypeScript source for `realtime.generated.ts`.
  */
 const buildOutput = (modelBlocks: string[]): string => {
-    const chatCommandTypes = [...new Set(chatCommandEntries.map(({ messageType }) => messageType))];
-    const chatCommandUnion = chatCommandTypes.length > 0 ? chatCommandTypes.join(' | ') : 'never';
-
     const sections = [
         '/* eslint-disable @typescript-eslint/naming-convention */',
         '/*',
@@ -268,9 +251,6 @@ const buildOutput = (modelBlocks: string[]): string => {
         '',
         ...messageTypeBlocks,
         '',
-        renderLiteralArray('REALTIME_CHANNEL_NAMES', realtimeChannelNames),
-        `export type IRealtimeChannelName = (typeof REALTIME_CHANNEL_NAMES)[number];`,
-        '',
         renderLiteralArray(
             'REALTIME_SSE_EVENT_NAMES',
             sseEntries.map(({ channelName }) => channelName)
@@ -278,16 +258,6 @@ const buildOutput = (modelBlocks: string[]): string => {
         'export type ISseEventName = (typeof REALTIME_SSE_EVENT_NAMES)[number];',
         renderPayloadMap('ISseEventPayloadMap', sseEntries),
         'export type ISseEventPayload<TEventName extends ISseEventName> = ISseEventPayloadMap[TEventName];',
-        '',
-        renderLiteralArray(
-            'REALTIME_CHAT_EVENT_NAMES',
-            chatEventEntries.map(({ channelName }) => channelName)
-        ),
-        'export type IChatEventName = (typeof REALTIME_CHAT_EVENT_NAMES)[number];',
-        renderPayloadMap('IChatEventPayloadMap', chatEventEntries),
-        'export type IChatEventPayload<TEventName extends IChatEventName> = IChatEventPayloadMap[TEventName];',
-        '',
-        `export type IChatCommand = ${chatCommandUnion};`,
         ''
     ];
 

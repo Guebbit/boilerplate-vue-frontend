@@ -29,7 +29,7 @@ flowchart LR
 ## What matters most here
 
 - [`openapi.yaml`](./openapi-workflow.md) is the source of truth for REST — never hand-write what can be generated.
-- [`asyncapi.yaml`](./asyncapi-workflow.md) is the source of truth for SSE/WebSocket contracts.
+- [`asyncapi.yaml`](./asyncapi-workflow.md) is the source of truth for SSE contracts.
 - The generated `contracts/rest/` folder is **read-only** — `npm run genapi` overwrites it entirely.
 - Coordinate contract changes with the backend team before merging.
 
@@ -38,7 +38,7 @@ flowchart LR
 | Need | Go to |
 | ---- | ----- |
 | Change the contract or regenerate the client | [OpenAPI Workflow](./openapi-workflow.md) |
-| Change SSE/WebSocket event contracts | [AsyncAPI Workflow](./asyncapi-workflow.md) |
+| Change SSE event contracts | [AsyncAPI Workflow](./asyncapi-workflow.md) |
 | Browse all available endpoints | [Endpoints](./endpoints.md) |
 | Understand the Admin Dashboard's backend data | [Observability Endpoints](./observability.md) |
 | Understand how the FE handles HTTP errors | [Request Flow](../theory/request-flow.md) |
@@ -81,6 +81,6 @@ export const useProductsStore = defineStore('products', () => {
 ## API style used in this repo
 
 - Resource-oriented URLs (`/products`, `/products/:id`, `/orders/search`).
-- Consistent envelope: `{ data: T }` for success; `IResponseReject` for errors (shaped by `utils/http.ts`).
+- Consistent envelope: `{ data: T }` for success; `IResponseReject` for errors (shaped by `plugins/http/index.ts`).
 - Auth levels: `none` → `user` → `admin`.
 - Treat sample entities (`users`, `products`, `orders`, `cart`, `admin`) as pattern examples, not product law.

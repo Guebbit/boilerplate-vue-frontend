@@ -11,7 +11,7 @@ services:
         environment:
             NODE_ENV: 'development'
             VITE_API_URL: '${VITE_API_URL:-http://localhost:3000}'
-            VITE_API_WEBSOCKET: '${VITE_API_WEBSOCKET:-ws://localhost:3000/ws}'
+            VITE_API_SSE: '${VITE_API_SSE:-http://localhost:3000/observability/events}'
             VITE_API_MOCK_ENABLED: '${VITE_API_MOCK_ENABLED:-true}'
         volumes:
             - .:/app:Z

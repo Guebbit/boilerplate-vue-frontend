@@ -7,7 +7,7 @@
  *
  * OpenAPI spec version: 2.0.0
  */
-import { apiMutator } from '../../src/utils/apiMutator.js';
+import { apiMutator } from '../../src/plugins/http/index.js';
 /**
  * 1-based page index
  * @minimum 1
@@ -980,794 +980,651 @@ export type ListOrdersParams = {
     email?: Email;
 };
 
-export const getEcommerceDemoAPI = () => {
-    /**
-     * Public ping endpoint. Returns a simple liveness indicator confirming the API process is running.
-     * @summary API health check
-     */
-    const getHealth = () => {
-        return apiMutator<MessageResponse>({ url: `/`, method: 'GET' });
-    };
-
-    /**
-     * Live Server-Sent Events stream for demo dashboards.
-     * Sends `metrics.snapshot` on connect, followed by periodic `metrics.updated` and `heartbeat` events.
-     * @summary Observability SSE stream
-     */
-    const getObservabilityEvents = () => {
-        return apiMutator<string>({ url: `/observability/events`, method: 'GET' });
-    };
-
-    /**
-     * Full JSON health snapshot for dashboard use.
-     * Includes uptime, database status, memory, integrations, and system info.
-     * Requires admin role.
-     * @summary Health snapshot
-     */
-    const getObservabilityHealth = () => {
-        return apiMutator<ObservabilityHealthResponseEnvelope>({
-            url: `/observability/health`,
-            method: 'GET'
-        });
-    };
-
-    /**
-     * Raw Prometheus text (exposition format 0.0.4).
-     * Intended for Prometheus scraping, not for browser clients.
-     * Use `GET /observability/metrics/overview` for a JSON summary suitable for dashboards.
-     * @summary Prometheus metrics
-     */
-    const getObservabilityMetrics = () => {
-        return apiMutator<string>({ url: `/observability/metrics`, method: 'GET' });
-    };
-
-    /**
-     * Key operational metrics derived from Prometheus counters/histograms,
-     * returned as structured JSON for dashboard KPI cards and charts.
-     * Requires admin role.
-     * @summary Metrics overview (JSON)
-     */
-    const getObservabilityMetricsOverview = () => {
-        return apiMutator<ObservabilityMetricsSummaryResponseEnvelope>({
-            url: `/observability/metrics/overview`,
-            method: 'GET'
-        });
-    };
-
-    /**
-     * Returns the most recent audit events from the in-memory ring buffer (up to 200).
-     * Events include auth flows, admin CRUD actions, and security blocks.
-     * Requires admin role.
-     * @summary Recent audit events
-     */
-    const getObservabilityAuditLogs = (params?: GetObservabilityAuditLogsParams) => {
-        return apiMutator<AuditLogsResponseEnvelope>({
-            url: `/observability/audit`,
-            method: 'GET',
-            params
-        });
-    };
-
-    /**
-     * Returns the full profile of the currently authenticated user
-     * @summary Current user info
-     */
-    const getAccount = () => {
-        return apiMutator<UserEnvelope>({ url: `/account`, method: 'GET' });
-    };
-
-    /**
-     * Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion.
-     * @summary Request account deletion
-     */
-    const requestAccountDelete = () => {
-        return apiMutator<SuccessResponse>({ url: `/account`, method: 'DELETE' });
-    };
-
-    /**
-     * Completes the account-deletion flow. Validates the one-time token issued by `DELETE /account` and, if valid, permanently removes the user account.
-     * @summary Confirm account deletion
-     */
-    const confirmAccountDelete = (accountDeleteConfirmRequest: AccountDeleteConfirmRequest) => {
-        return apiMutator<SuccessResponse>({
-            url: `/account/delete-confirm`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: accountDeleteConfirmRequest
-        });
-    };
-
-    /**
-     * Authenticates a user with email and password credentials. On success, returns a JWT access token that must be passed as a Bearer token on subsequent authenticated requests.
-     * @summary Login
-     */
-    const login = (loginRequest: LoginRequest) => {
-        return apiMutator<AuthTokensEnvelope>({
-            url: `/account/login`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: loginRequest
-        });
-    };
-
-    /**
-     * Registers a new user account with optional image upload. Returns the newly created user profile on success.
-     * @summary Signup
-     */
-    const signup = (signupBody: SignupRequest | SignupRequestMultipart) => {
-        return apiMutator<UserEnvelope>({
-            url: `/account/signup`,
-            method: 'POST',
-            data: signupBody
-        });
-    };
-
-    /**
-     * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
-     */
-    const requestPasswordReset = (passwordResetRequest: PasswordResetRequest) => {
-        return apiMutator<SuccessResponse>({
-            url: `/account/reset`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: passwordResetRequest
-        });
-    };
-
-    /**
-     * Completes the password-reset flow. Validates the one-time reset token issued by `/account/reset` and, if valid, updates the user's password to the supplied value.
-     */
-    const confirmPasswordReset = (passwordResetConfirmRequest: PasswordResetConfirmRequest) => {
-        return apiMutator<SuccessResponse>({
-            url: `/account/reset-confirm`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: passwordResetConfirmRequest
-        });
-    };
-
-    /**
-     * Creates a new short-lived access token using a refresh token. The refresh token can be provided as a query parameter, path parameter, or retrieved from the `jwt` cookie.
-     * @summary Refresh access token
-     */
-    const refreshToken = () => {
-        return apiMutator<RefreshTokenEnvelope>({ url: `/account/refresh`, method: 'GET' });
-    };
-
-    /**
-     * Creates a new short-lived access token using a refresh token provided in the URL path.
-     * @summary Refresh access token with token in path
-     */
-    const refreshTokenWithPath = (token: string) => {
-        return apiMutator<RefreshTokenEnvelope>({
-            url: `/account/refresh/${token}`,
-            method: 'GET'
-        });
-    };
-
-    /**
-     * Logs out the authenticated user from ALL devices by removing all refresh tokens from the database and clearing authentication cookies.
-     * @summary Logout from all devices
-     */
-    const logoutAll = () => {
-        return apiMutator<SuccessResponse>({ url: `/account/logout-all`, method: 'POST' });
-    };
-
-    /**
-     * Removes all expired tokens (refresh, password-reset, etc.) from every user record in the database. Restricted to administrators.
-     * @summary Remove expired tokens
-     */
-    const deleteExpiredTokens = () => {
-        return apiMutator<SuccessResponse>({ url: `/account/tokens/expired`, method: 'DELETE' });
-    };
-
-    /**
-     * Returns a paginated list of user accounts.
-     * @summary List users (paginated)
-     */
-    const listUsers = (params?: ListUsersParams) => {
-        return apiMutator<UsersResponseEnvelope>({ url: `/users`, method: 'GET', params });
-    };
-
-    /**
-     * Creates a new user account with the supplied email, username, and password. Optional image can be uploaded.
-     * @summary Create user
-     */
-    const createUser = (createUserBody: CreateUserRequest | CreateUserRequestMultipart) => {
-        return apiMutator<UserEnvelope>({ url: `/users`, method: 'POST', data: createUserBody });
-    };
-
-    /**
-     * Updates an existing user's email or password. Optional image can be uploaded.
-     * @summary Edit user
-     */
-    const updateUser = (updateUserBody: UpdateUserRequest | UpdateUserRequestMultipart) => {
-        return apiMutator<UserEnvelope>({ url: `/users`, method: 'PUT', data: updateUserBody });
-    };
-
-    /**
-     * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record.
-     * @summary Delete user
-     */
-    const deleteUser = (deleteUserRequest: DeleteUserRequest) => {
-        return apiMutator<SuccessResponse>({
-            url: `/users`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: deleteUserRequest
-        });
-    };
-
-    /**
-     * Returns the full profile of the user identified by `{id}`. Functionally equivalent to `GET /users?id={id}`.
-     * @summary User details
-     */
-    const getUserById = (id: string) => {
-        return apiMutator<UserEnvelope>({ url: `/users/${id}`, method: 'GET' });
-    };
-
-    /**
-     * Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
-     * @summary Edit user
-     */
-    const updateUserById = (
-        id: string,
-        updateUserByIdBody: UpdateUserByIdRequest | UpdateUserByIdRequestMultipart
-    ) => {
-        return apiMutator<UserEnvelope>({
-            url: `/users/${id}`,
-            method: 'PUT',
-            data: updateUserByIdBody
-        });
-    };
-
-    /**
-     * Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /users`.
-     * @summary Delete user
-     */
-    const deleteUserById = (id: string, params?: DeleteUserByIdParams) => {
-        return apiMutator<SuccessResponse>({ url: `/users/${id}`, method: 'DELETE', params });
-    };
-
-    /**
-     * Searches and filters users via a JSON request body. Functionally equivalent to `GET /users` with query parameters
-     * @summary Search users (DTO-friendly)
-     */
-    const searchUsers = (searchUsersRequest: SearchUsersRequest) => {
-        return apiMutator<UsersResponseEnvelope>({
-            url: `/users/search`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: searchUsersRequest
-        });
-    };
-
-    /**
-     * Creates a user feedback/contact request and notifies admins via email.
-     * @summary Submit contact request
-     */
-    const createFeedbackRequest = (createFeedbackRequest: CreateFeedbackRequest) => {
-        return apiMutator<FeedbackRequestEnvelope>({
-            url: `/feedback/contact`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createFeedbackRequest
-        });
-    };
-
-    /**
-     * Returns feedback/contact requests for admin review.
-     * @summary List feedback requests
-     */
-    const listFeedbackRequests = (
-        searchFeedbackRequestsRequest?: SearchFeedbackRequestsRequest
-    ) => {
-        return apiMutator<FeedbackRequestsResponseEnvelope>({
-            url: `/feedback`,
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-        });
-    };
-
-    /**
-     * Updates status/notes of a feedback request.
-     * @summary Update feedback request status
-     */
-    const updateFeedbackRequestStatus = (
-        id: string,
-        updateFeedbackRequestStatusRequest: UpdateFeedbackRequestStatusRequest
-    ) => {
-        return apiMutator<FeedbackRequestEnvelope>({
-            url: `/feedback/${id}`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateFeedbackRequestStatusRequest
-        });
-    };
-
-    /**
-     * Returns a paginated list of products.
-     * @summary List products (paginated)
-     */
-    const listProducts = (params?: ListProductsParams) => {
-        return apiMutator<ProductsResponseEnvelope>({ url: `/products`, method: 'GET', params });
-    };
-
-    /**
-     * Creates a new product with optional image upload
-     * @summary Create product
-     */
-    const createProduct = (
-        createProductBody: CreateProductRequest | CreateProductRequestMultipart
-    ) => {
-        return apiMutator<ProductEnvelope>({
-            url: `/products`,
-            method: 'POST',
-            data: createProductBody
-        });
-    };
-
-    /**
-     * Updates an existing product with optional image upload
-     * @summary Edit product
-     */
-    const updateProduct = (
-        updateProductBody: UpdateProductRequest | UpdateProductRequestMultipart
-    ) => {
-        return apiMutator<ProductEnvelope>({
-            url: `/products`,
-            method: 'PUT',
-            data: updateProductBody
-        });
-    };
-
-    /**
-     * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record
-     * @summary Delete product
-     */
-    const deleteProduct = (deleteProductRequest: DeleteProductRequest) => {
-        return apiMutator<SuccessResponse>({
-            url: `/products`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: deleteProductRequest
-        });
-    };
-
-    /**
-     * Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`.
-     * @summary Product details
-     */
-    const getProductById = (id: string) => {
-        return apiMutator<ProductEnvelope>({ url: `/products/${id}`, method: 'GET' });
-    };
-
-    /**
-     * Updates the product identified by `{id}` in the path with optional image upload. Functionally equivalent to `PUT /products` with the id in the body.
-     * @summary Edit product
-     */
-    const updateProductById = (
-        id: string,
-        updateProductByIdBody: UpdateProductByIdRequest | UpdateProductByIdRequestMultipart
-    ) => {
-        return apiMutator<ProductEnvelope>({
-            url: `/products/${id}`,
-            method: 'PUT',
-            data: updateProductByIdBody
-        });
-    };
-
-    /**
-     * Deletes the product identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /products`.
-     * @summary Delete product
-     */
-    const deleteProductById = (id: string, params?: DeleteProductByIdParams) => {
-        return apiMutator<SuccessResponse>({ url: `/products/${id}`, method: 'DELETE', params });
-    };
-
-    /**
-     * Searches and filters products via a JSON request body. Functionally equivalent to `GET /products` with query parameters.
-     * @summary Search products (DTO-friendly)
-     */
-    const searchProducts = (searchProductsRequest: SearchProductsRequest) => {
-        return apiMutator<ProductsResponseEnvelope>({
-            url: `/products/search`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: searchProductsRequest
-        });
-    };
-
-    /**
-     * Returns all items currently in the authenticated user's cart along with a computed summary
-     * @summary Get cart
-     */
-    const getCart = () => {
-        return apiMutator<CartResponseEnvelope>({ url: `/cart`, method: 'GET' });
-    };
-
-    /**
-     * Adds or edit a product to the authenticated user's cart. Returns the updated cart.
-     * @summary Add/Edit cart item
-     */
-    const upsertCartItem = (upsertCartItemRequest: UpsertCartItemRequest) => {
-        return apiMutator<CartResponseEnvelope>({
-            url: `/cart`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: upsertCartItemRequest
-        });
-    };
-
-    /**
-     * Clear cart or, ir productId is set, removes a specific product from the authenticated user's cart. Returns the updated cart (can be empty)
-     * @summary Empty cart or, if productId is set, remove target cart item
-     */
-    const clearCart = (removeCartItemRequest?: RemoveCartItemRequest) => {
-        return apiMutator<CartResponseEnvelope>({
-            url: `/cart`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: removeCartItemRequest
-        });
-    };
-
-    /**
-     * Sets the quantity of the cart line for the product identified by `{productId}` in the path. Functionally equivalent to `POST /cart`. Returns the updated cart.
-     * @summary Set cart item quantity
-     */
-    const updateCartItemById = (
-        productId: string,
-        updateCartItemByIdRequest: UpdateCartItemByIdRequest
-    ) => {
-        return apiMutator<CartResponseEnvelope>({
-            url: `/cart/${productId}`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateCartItemByIdRequest
-        });
-    };
-
-    /**
-     * Removes the cart line for the product identified by `{productId}` in the path from the authenticated user's cart. Returns the updated cart.
-     * @summary Remove item from cart
-     */
-    const removeCartItem = (productId: string) => {
-        return apiMutator<CartResponseEnvelope>({ url: `/cart/${productId}`, method: 'DELETE' });
-    };
-
-    /**
-     * Returns a lightweight summary of the authenticated user's cart.
-     * @summary Get cart summary
-     */
-    const getCartSummary = () => {
-        return apiMutator<CartSummaryResponseEnvelope>({ url: `/cart/summary`, method: 'GET' });
-    };
-
-    /**
-     * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. An optional email address and order notes can be supplied in the request body. Returns the created order.
-     * @summary Checkout (place order from cart)
-     */
-    const checkout = (checkoutRequest?: CheckoutRequest) => {
-        return apiMutator<CheckoutResponseEnvelope>({
-            url: `/cart/checkout`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: checkoutRequest
-        });
-    };
-
-    /**
-     * Returns a paginated list of orders.
-     * Non-admin users are automatically scoped to their own orders; the `userId` filter is ignored for non-admin callers.
-     * @summary List orders (paginated)
-     */
-    const listOrders = (params?: ListOrdersParams) => {
-        return apiMutator<OrdersResponseEnvelope>({ url: `/orders`, method: 'GET', params });
-    };
-
-    /**
-     * Creates a new order directly from the supplied payload.
-     * @summary Create order
-     */
-    const createOrder = (createOrderRequest: CreateOrderRequest) => {
-        return apiMutator<OrderEnvelope>({
-            url: `/orders`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: createOrderRequest
-        });
-    };
-
-    /**
-     * Updates an existing order identified by id in the request body.
-     * @summary Update order
-     */
-    const updateOrder = (updateOrderRequest: UpdateOrderRequest) => {
-        return apiMutator<OrderEnvelope>({
-            url: `/orders`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateOrderRequest
-        });
-    };
-
-    /**
-     * Permanently removes the order identified by id.
-     * @summary Delete order
-     */
-    const deleteOrder = (deleteOrderRequest: DeleteOrderRequest) => {
-        return apiMutator<SuccessResponse>({
-            url: `/orders`,
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            data: deleteOrderRequest
-        });
-    };
-
-    /**
-     * Searches and filters orders via a JSON request body. Functionally equivalent to `GET /orders`.
-     * Non-admin users are automatically scoped to their own orders; the `userId` filter is ignored for non-admin callers.
-     * @summary Search orders (DTO-friendly)
-     */
-    const searchOrders = (searchOrdersRequest: SearchOrdersRequest) => {
-        return apiMutator<OrdersResponseEnvelope>({
-            url: `/orders/search`,
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            data: searchOrdersRequest
-        });
-    };
-
-    /**
-     * Returns the full details of the order identified by `{id}`. Functionally equivalent to `GET /orders?id={id}`.
-     * @summary Order details
-     */
-    const getOrderById = (id: string) => {
-        return apiMutator<OrderEnvelope>({ url: `/orders/${id}`, method: 'GET' });
-    };
-
-    /**
-     * Updates the order identified by `{id}` in the path.
-     * @summary Edit order
-     */
-    const updateOrderById = (id: string, updateOrderByIdRequest: UpdateOrderByIdRequest) => {
-        return apiMutator<OrderEnvelope>({
-            url: `/orders/${id}`,
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            data: updateOrderByIdRequest
-        });
-    };
-
-    /**
-     * Permanently removes the order identified by `id`.
-     * @summary Delete order
-     */
-    const deleteOrderById = (id: string) => {
-        return apiMutator<SuccessResponse>({ url: `/orders/${id}`, method: 'DELETE' });
-    };
-
-    /**
-     * Generates and returns the invoice for the order identified by `{id}` as a binary PDF file. The client should save or stream the response with an appropriate `Content-Disposition` header.
-     * @summary Download order invoice (PDF)
-     */
-    const getOrderInvoice = (id: string) => {
-        return apiMutator<Blob>({
-            url: `/orders/${id}/invoice`,
-            method: 'GET',
-            responseType: 'blob'
-        });
-    };
-
-    return {
-        getHealth,
-        getObservabilityEvents,
-        getObservabilityHealth,
-        getObservabilityMetrics,
-        getObservabilityMetricsOverview,
-        getObservabilityAuditLogs,
-        getAccount,
-        requestAccountDelete,
-        confirmAccountDelete,
-        login,
-        signup,
-        requestPasswordReset,
-        confirmPasswordReset,
-        refreshToken,
-        refreshTokenWithPath,
-        logoutAll,
-        deleteExpiredTokens,
-        listUsers,
-        createUser,
-        updateUser,
-        deleteUser,
-        getUserById,
-        updateUserById,
-        deleteUserById,
-        searchUsers,
-        createFeedbackRequest,
-        listFeedbackRequests,
-        updateFeedbackRequestStatus,
-        listProducts,
-        createProduct,
-        updateProduct,
-        deleteProduct,
-        getProductById,
-        updateProductById,
-        deleteProductById,
-        searchProducts,
-        getCart,
-        upsertCartItem,
-        clearCart,
-        updateCartItemById,
-        removeCartItem,
-        getCartSummary,
-        checkout,
-        listOrders,
-        createOrder,
-        updateOrder,
-        deleteOrder,
-        searchOrders,
-        getOrderById,
-        updateOrderById,
-        deleteOrderById,
-        getOrderInvoice
-    };
+/**
+ * Public ping endpoint. Returns a simple liveness indicator confirming the API process is running.
+ * @summary API health check
+ */
+export const getHealth = () => {
+    return apiMutator<MessageResponse>({ url: `/`, method: 'GET' });
 };
-export type GetHealthResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['getHealth']>>
->;
+
+/**
+ * Live Server-Sent Events stream for demo dashboards.
+ * Sends `metrics.snapshot` on connect, followed by periodic `metrics.updated` and `heartbeat` events.
+ * @summary Observability SSE stream
+ */
+export const getObservabilityEvents = () => {
+    return apiMutator<string>({ url: `/observability/events`, method: 'GET' });
+};
+
+/**
+ * Full JSON health snapshot for dashboard use.
+ * Includes uptime, database status, memory, integrations, and system info.
+ * Requires admin role.
+ * @summary Health snapshot
+ */
+export const getObservabilityHealth = () => {
+    return apiMutator<ObservabilityHealthResponseEnvelope>({
+        url: `/observability/health`,
+        method: 'GET'
+    });
+};
+
+/**
+ * Raw Prometheus text (exposition format 0.0.4).
+ * Intended for Prometheus scraping, not for browser clients.
+ * Use `GET /observability/metrics/overview` for a JSON summary suitable for dashboards.
+ * @summary Prometheus metrics
+ */
+export const getObservabilityMetrics = () => {
+    return apiMutator<string>({ url: `/observability/metrics`, method: 'GET' });
+};
+
+/**
+ * Key operational metrics derived from Prometheus counters/histograms,
+ * returned as structured JSON for dashboard KPI cards and charts.
+ * Requires admin role.
+ * @summary Metrics overview (JSON)
+ */
+export const getObservabilityMetricsOverview = () => {
+    return apiMutator<ObservabilityMetricsSummaryResponseEnvelope>({
+        url: `/observability/metrics/overview`,
+        method: 'GET'
+    });
+};
+
+/**
+ * Returns the most recent audit events from the in-memory ring buffer (up to 200).
+ * Events include auth flows, admin CRUD actions, and security blocks.
+ * Requires admin role.
+ * @summary Recent audit events
+ */
+export const getObservabilityAuditLogs = (params?: GetObservabilityAuditLogsParams) => {
+    return apiMutator<AuditLogsResponseEnvelope>({
+        url: `/observability/audit`,
+        method: 'GET',
+        params
+    });
+};
+
+/**
+ * Returns the full profile of the currently authenticated user
+ * @summary Current user info
+ */
+export const getAccount = () => {
+    return apiMutator<UserEnvelope>({ url: `/account`, method: 'GET' });
+};
+
+/**
+ * Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion.
+ * @summary Request account deletion
+ */
+export const requestAccountDelete = () => {
+    return apiMutator<SuccessResponse>({ url: `/account`, method: 'DELETE' });
+};
+
+/**
+ * Completes the account-deletion flow. Validates the one-time token issued by `DELETE /account` and, if valid, permanently removes the user account.
+ * @summary Confirm account deletion
+ */
+export const confirmAccountDelete = (accountDeleteConfirmRequest: AccountDeleteConfirmRequest) => {
+    return apiMutator<SuccessResponse>({
+        url: `/account/delete-confirm`,
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        data: accountDeleteConfirmRequest
+    });
+};
+
+/**
+ * Authenticates a user with email and password credentials. On success, returns a JWT access token that must be passed as a Bearer token on subsequent authenticated requests.
+ * @summary Login
+ */
+export const login = (loginRequest: LoginRequest) => {
+    return apiMutator<AuthTokensEnvelope>({
+        url: `/account/login`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: loginRequest
+    });
+};
+
+/**
+ * Registers a new user account with optional image upload. Returns the newly created user profile on success.
+ * @summary Signup
+ */
+export const signup = (signupBody: SignupRequest | SignupRequestMultipart) => {
+    return apiMutator<UserEnvelope>({ url: `/account/signup`, method: 'POST', data: signupBody });
+};
+
+/**
+ * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
+ */
+export const requestPasswordReset = (passwordResetRequest: PasswordResetRequest) => {
+    return apiMutator<SuccessResponse>({
+        url: `/account/reset`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: passwordResetRequest
+    });
+};
+
+/**
+ * Completes the password-reset flow. Validates the one-time reset token issued by `/account/reset` and, if valid, updates the user's password to the supplied value.
+ */
+export const confirmPasswordReset = (passwordResetConfirmRequest: PasswordResetConfirmRequest) => {
+    return apiMutator<SuccessResponse>({
+        url: `/account/reset-confirm`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: passwordResetConfirmRequest
+    });
+};
+
+/**
+ * Creates a new short-lived access token using a refresh token. The refresh token can be provided as a query parameter, path parameter, or retrieved from the `jwt` cookie.
+ * @summary Refresh access token
+ */
+export const refreshToken = () => {
+    return apiMutator<RefreshTokenEnvelope>({ url: `/account/refresh`, method: 'GET' });
+};
+
+/**
+ * Creates a new short-lived access token using a refresh token provided in the URL path.
+ * @summary Refresh access token with token in path
+ */
+export const refreshTokenWithPath = (token: string) => {
+    return apiMutator<RefreshTokenEnvelope>({ url: `/account/refresh/${token}`, method: 'GET' });
+};
+
+/**
+ * Logs out the authenticated user from ALL devices by removing all refresh tokens from the database and clearing authentication cookies.
+ * @summary Logout from all devices
+ */
+export const logoutAll = () => {
+    return apiMutator<SuccessResponse>({ url: `/account/logout-all`, method: 'POST' });
+};
+
+/**
+ * Removes all expired tokens (refresh, password-reset, etc.) from every user record in the database. Restricted to administrators.
+ * @summary Remove expired tokens
+ */
+export const deleteExpiredTokens = () => {
+    return apiMutator<SuccessResponse>({ url: `/account/tokens/expired`, method: 'DELETE' });
+};
+
+/**
+ * Returns a paginated list of user accounts.
+ * @summary List users (paginated)
+ */
+export const listUsers = (params?: ListUsersParams) => {
+    return apiMutator<UsersResponseEnvelope>({ url: `/users`, method: 'GET', params });
+};
+
+/**
+ * Creates a new user account with the supplied email, username, and password. Optional image can be uploaded.
+ * @summary Create user
+ */
+export const createUser = (createUserBody: CreateUserRequest | CreateUserRequestMultipart) => {
+    return apiMutator<UserEnvelope>({ url: `/users`, method: 'POST', data: createUserBody });
+};
+
+/**
+ * Updates an existing user's email or password. Optional image can be uploaded.
+ * @summary Edit user
+ */
+export const updateUser = (updateUserBody: UpdateUserRequest | UpdateUserRequestMultipart) => {
+    return apiMutator<UserEnvelope>({ url: `/users`, method: 'PUT', data: updateUserBody });
+};
+
+/**
+ * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record.
+ * @summary Delete user
+ */
+export const deleteUser = (deleteUserRequest: DeleteUserRequest) => {
+    return apiMutator<SuccessResponse>({
+        url: `/users`,
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        data: deleteUserRequest
+    });
+};
+
+/**
+ * Returns the full profile of the user identified by `{id}`. Functionally equivalent to `GET /users?id={id}`.
+ * @summary User details
+ */
+export const getUserById = (id: string) => {
+    return apiMutator<UserEnvelope>({ url: `/users/${id}`, method: 'GET' });
+};
+
+/**
+ * Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
+ * @summary Edit user
+ */
+export const updateUserById = (
+    id: string,
+    updateUserByIdBody: UpdateUserByIdRequest | UpdateUserByIdRequestMultipart
+) => {
+    return apiMutator<UserEnvelope>({
+        url: `/users/${id}`,
+        method: 'PUT',
+        data: updateUserByIdBody
+    });
+};
+
+/**
+ * Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /users`.
+ * @summary Delete user
+ */
+export const deleteUserById = (id: string, params?: DeleteUserByIdParams) => {
+    return apiMutator<SuccessResponse>({ url: `/users/${id}`, method: 'DELETE', params });
+};
+
+/**
+ * Searches and filters users via a JSON request body. Functionally equivalent to `GET /users` with query parameters
+ * @summary Search users (DTO-friendly)
+ */
+export const searchUsers = (searchUsersRequest: SearchUsersRequest) => {
+    return apiMutator<UsersResponseEnvelope>({
+        url: `/users/search`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: searchUsersRequest
+    });
+};
+
+/**
+ * Creates a user feedback/contact request and notifies admins via email.
+ * @summary Submit contact request
+ */
+export const createFeedbackRequest = (createFeedbackRequest: CreateFeedbackRequest) => {
+    return apiMutator<FeedbackRequestEnvelope>({
+        url: `/feedback/contact`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: createFeedbackRequest
+    });
+};
+
+/**
+ * Returns feedback/contact requests for admin review.
+ * @summary List feedback requests
+ */
+export const listFeedbackRequests = (
+    searchFeedbackRequestsRequest?: SearchFeedbackRequestsRequest
+) => {
+    return apiMutator<FeedbackRequestsResponseEnvelope>({
+        url: `/feedback`,
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    });
+};
+
+/**
+ * Updates status/notes of a feedback request.
+ * @summary Update feedback request status
+ */
+export const updateFeedbackRequestStatus = (
+    id: string,
+    updateFeedbackRequestStatusRequest: UpdateFeedbackRequestStatusRequest
+) => {
+    return apiMutator<FeedbackRequestEnvelope>({
+        url: `/feedback/${id}`,
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        data: updateFeedbackRequestStatusRequest
+    });
+};
+
+/**
+ * Returns a paginated list of products.
+ * @summary List products (paginated)
+ */
+export const listProducts = (params?: ListProductsParams) => {
+    return apiMutator<ProductsResponseEnvelope>({ url: `/products`, method: 'GET', params });
+};
+
+/**
+ * Creates a new product with optional image upload
+ * @summary Create product
+ */
+export const createProduct = (
+    createProductBody: CreateProductRequest | CreateProductRequestMultipart
+) => {
+    return apiMutator<ProductEnvelope>({
+        url: `/products`,
+        method: 'POST',
+        data: createProductBody
+    });
+};
+
+/**
+ * Updates an existing product with optional image upload
+ * @summary Edit product
+ */
+export const updateProduct = (
+    updateProductBody: UpdateProductRequest | UpdateProductRequestMultipart
+) => {
+    return apiMutator<ProductEnvelope>({
+        url: `/products`,
+        method: 'PUT',
+        data: updateProductBody
+    });
+};
+
+/**
+ * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record
+ * @summary Delete product
+ */
+export const deleteProduct = (deleteProductRequest: DeleteProductRequest) => {
+    return apiMutator<SuccessResponse>({
+        url: `/products`,
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        data: deleteProductRequest
+    });
+};
+
+/**
+ * Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`.
+ * @summary Product details
+ */
+export const getProductById = (id: string) => {
+    return apiMutator<ProductEnvelope>({ url: `/products/${id}`, method: 'GET' });
+};
+
+/**
+ * Updates the product identified by `{id}` in the path with optional image upload. Functionally equivalent to `PUT /products` with the id in the body.
+ * @summary Edit product
+ */
+export const updateProductById = (
+    id: string,
+    updateProductByIdBody: UpdateProductByIdRequest | UpdateProductByIdRequestMultipart
+) => {
+    return apiMutator<ProductEnvelope>({
+        url: `/products/${id}`,
+        method: 'PUT',
+        data: updateProductByIdBody
+    });
+};
+
+/**
+ * Deletes the product identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /products`.
+ * @summary Delete product
+ */
+export const deleteProductById = (id: string, params?: DeleteProductByIdParams) => {
+    return apiMutator<SuccessResponse>({ url: `/products/${id}`, method: 'DELETE', params });
+};
+
+/**
+ * Searches and filters products via a JSON request body. Functionally equivalent to `GET /products` with query parameters.
+ * @summary Search products (DTO-friendly)
+ */
+export const searchProducts = (searchProductsRequest: SearchProductsRequest) => {
+    return apiMutator<ProductsResponseEnvelope>({
+        url: `/products/search`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: searchProductsRequest
+    });
+};
+
+/**
+ * Returns all items currently in the authenticated user's cart along with a computed summary
+ * @summary Get cart
+ */
+export const getCart = () => {
+    return apiMutator<CartResponseEnvelope>({ url: `/cart`, method: 'GET' });
+};
+
+/**
+ * Adds or edit a product to the authenticated user's cart. Returns the updated cart.
+ * @summary Add/Edit cart item
+ */
+export const upsertCartItem = (upsertCartItemRequest: UpsertCartItemRequest) => {
+    return apiMutator<CartResponseEnvelope>({
+        url: `/cart`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: upsertCartItemRequest
+    });
+};
+
+/**
+ * Clear cart or, ir productId is set, removes a specific product from the authenticated user's cart. Returns the updated cart (can be empty)
+ * @summary Empty cart or, if productId is set, remove target cart item
+ */
+export const clearCart = (removeCartItemRequest?: RemoveCartItemRequest) => {
+    return apiMutator<CartResponseEnvelope>({
+        url: `/cart`,
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        data: removeCartItemRequest
+    });
+};
+
+/**
+ * Sets the quantity of the cart line for the product identified by `{productId}` in the path. Functionally equivalent to `POST /cart`. Returns the updated cart.
+ * @summary Set cart item quantity
+ */
+export const updateCartItemById = (
+    productId: string,
+    updateCartItemByIdRequest: UpdateCartItemByIdRequest
+) => {
+    return apiMutator<CartResponseEnvelope>({
+        url: `/cart/${productId}`,
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        data: updateCartItemByIdRequest
+    });
+};
+
+/**
+ * Removes the cart line for the product identified by `{productId}` in the path from the authenticated user's cart. Returns the updated cart.
+ * @summary Remove item from cart
+ */
+export const removeCartItem = (productId: string) => {
+    return apiMutator<CartResponseEnvelope>({ url: `/cart/${productId}`, method: 'DELETE' });
+};
+
+/**
+ * Returns a lightweight summary of the authenticated user's cart.
+ * @summary Get cart summary
+ */
+export const getCartSummary = () => {
+    return apiMutator<CartSummaryResponseEnvelope>({ url: `/cart/summary`, method: 'GET' });
+};
+
+/**
+ * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. An optional email address and order notes can be supplied in the request body. Returns the created order.
+ * @summary Checkout (place order from cart)
+ */
+export const checkout = (checkoutRequest?: CheckoutRequest) => {
+    return apiMutator<CheckoutResponseEnvelope>({
+        url: `/cart/checkout`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: checkoutRequest
+    });
+};
+
+/**
+ * Returns a paginated list of orders.
+ * Non-admin users are automatically scoped to their own orders; the `userId` filter is ignored for non-admin callers.
+ * @summary List orders (paginated)
+ */
+export const listOrders = (params?: ListOrdersParams) => {
+    return apiMutator<OrdersResponseEnvelope>({ url: `/orders`, method: 'GET', params });
+};
+
+/**
+ * Creates a new order directly from the supplied payload.
+ * @summary Create order
+ */
+export const createOrder = (createOrderRequest: CreateOrderRequest) => {
+    return apiMutator<OrderEnvelope>({
+        url: `/orders`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: createOrderRequest
+    });
+};
+
+/**
+ * Updates an existing order identified by id in the request body.
+ * @summary Update order
+ */
+export const updateOrder = (updateOrderRequest: UpdateOrderRequest) => {
+    return apiMutator<OrderEnvelope>({
+        url: `/orders`,
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        data: updateOrderRequest
+    });
+};
+
+/**
+ * Permanently removes the order identified by id.
+ * @summary Delete order
+ */
+export const deleteOrder = (deleteOrderRequest: DeleteOrderRequest) => {
+    return apiMutator<SuccessResponse>({
+        url: `/orders`,
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        data: deleteOrderRequest
+    });
+};
+
+/**
+ * Searches and filters orders via a JSON request body. Functionally equivalent to `GET /orders`.
+ * Non-admin users are automatically scoped to their own orders; the `userId` filter is ignored for non-admin callers.
+ * @summary Search orders (DTO-friendly)
+ */
+export const searchOrders = (searchOrdersRequest: SearchOrdersRequest) => {
+    return apiMutator<OrdersResponseEnvelope>({
+        url: `/orders/search`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        data: searchOrdersRequest
+    });
+};
+
+/**
+ * Returns the full details of the order identified by `{id}`. Functionally equivalent to `GET /orders?id={id}`.
+ * @summary Order details
+ */
+export const getOrderById = (id: string) => {
+    return apiMutator<OrderEnvelope>({ url: `/orders/${id}`, method: 'GET' });
+};
+
+/**
+ * Updates the order identified by `{id}` in the path.
+ * @summary Edit order
+ */
+export const updateOrderById = (id: string, updateOrderByIdRequest: UpdateOrderByIdRequest) => {
+    return apiMutator<OrderEnvelope>({
+        url: `/orders/${id}`,
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        data: updateOrderByIdRequest
+    });
+};
+
+/**
+ * Permanently removes the order identified by `id`.
+ * @summary Delete order
+ */
+export const deleteOrderById = (id: string) => {
+    return apiMutator<SuccessResponse>({ url: `/orders/${id}`, method: 'DELETE' });
+};
+
+/**
+ * Generates and returns the invoice for the order identified by `{id}` as a binary PDF file. The client should save or stream the response with an appropriate `Content-Disposition` header.
+ * @summary Download order invoice (PDF)
+ */
+export const getOrderInvoice = (id: string) => {
+    return apiMutator<Blob>({ url: `/orders/${id}/invoice`, method: 'GET', responseType: 'blob' });
+};
+
+export type GetHealthResult = NonNullable<Awaited<ReturnType<typeof getHealth>>>;
 export type GetObservabilityEventsResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['getObservabilityEvents']>>
+    Awaited<ReturnType<typeof getObservabilityEvents>>
 >;
 export type GetObservabilityHealthResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['getObservabilityHealth']>>
+    Awaited<ReturnType<typeof getObservabilityHealth>>
 >;
 export type GetObservabilityMetricsResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['getObservabilityMetrics']>>
+    Awaited<ReturnType<typeof getObservabilityMetrics>>
 >;
 export type GetObservabilityMetricsOverviewResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['getObservabilityMetricsOverview']>>
+    Awaited<ReturnType<typeof getObservabilityMetricsOverview>>
 >;
 export type GetObservabilityAuditLogsResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['getObservabilityAuditLogs']>>
+    Awaited<ReturnType<typeof getObservabilityAuditLogs>>
 >;
-export type GetAccountResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['getAccount']>>
->;
+export type GetAccountResult = NonNullable<Awaited<ReturnType<typeof getAccount>>>;
 export type RequestAccountDeleteResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['requestAccountDelete']>>
+    Awaited<ReturnType<typeof requestAccountDelete>>
 >;
 export type ConfirmAccountDeleteResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['confirmAccountDelete']>>
+    Awaited<ReturnType<typeof confirmAccountDelete>>
 >;
-export type LoginResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['login']>>
->;
-export type SignupResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['signup']>>
->;
+export type LoginResult = NonNullable<Awaited<ReturnType<typeof login>>>;
+export type SignupResult = NonNullable<Awaited<ReturnType<typeof signup>>>;
 export type RequestPasswordResetResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['requestPasswordReset']>>
+    Awaited<ReturnType<typeof requestPasswordReset>>
 >;
 export type ConfirmPasswordResetResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['confirmPasswordReset']>>
+    Awaited<ReturnType<typeof confirmPasswordReset>>
 >;
-export type RefreshTokenResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['refreshToken']>>
->;
+export type RefreshTokenResult = NonNullable<Awaited<ReturnType<typeof refreshToken>>>;
 export type RefreshTokenWithPathResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['refreshTokenWithPath']>>
+    Awaited<ReturnType<typeof refreshTokenWithPath>>
 >;
-export type LogoutAllResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['logoutAll']>>
->;
+export type LogoutAllResult = NonNullable<Awaited<ReturnType<typeof logoutAll>>>;
 export type DeleteExpiredTokensResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['deleteExpiredTokens']>>
+    Awaited<ReturnType<typeof deleteExpiredTokens>>
 >;
-export type ListUsersResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['listUsers']>>
->;
-export type CreateUserResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['createUser']>>
->;
-export type UpdateUserResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['updateUser']>>
->;
-export type DeleteUserResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['deleteUser']>>
->;
-export type GetUserByIdResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['getUserById']>>
->;
-export type UpdateUserByIdResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['updateUserById']>>
->;
-export type DeleteUserByIdResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['deleteUserById']>>
->;
-export type SearchUsersResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['searchUsers']>>
->;
+export type ListUsersResult = NonNullable<Awaited<ReturnType<typeof listUsers>>>;
+export type CreateUserResult = NonNullable<Awaited<ReturnType<typeof createUser>>>;
+export type UpdateUserResult = NonNullable<Awaited<ReturnType<typeof updateUser>>>;
+export type DeleteUserResult = NonNullable<Awaited<ReturnType<typeof deleteUser>>>;
+export type GetUserByIdResult = NonNullable<Awaited<ReturnType<typeof getUserById>>>;
+export type UpdateUserByIdResult = NonNullable<Awaited<ReturnType<typeof updateUserById>>>;
+export type DeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof deleteUserById>>>;
+export type SearchUsersResult = NonNullable<Awaited<ReturnType<typeof searchUsers>>>;
 export type CreateFeedbackRequestResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['createFeedbackRequest']>>
+    Awaited<ReturnType<typeof createFeedbackRequest>>
 >;
 export type ListFeedbackRequestsResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['listFeedbackRequests']>>
+    Awaited<ReturnType<typeof listFeedbackRequests>>
 >;
 export type UpdateFeedbackRequestStatusResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['updateFeedbackRequestStatus']>>
+    Awaited<ReturnType<typeof updateFeedbackRequestStatus>>
 >;
-export type ListProductsResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['listProducts']>>
->;
-export type CreateProductResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['createProduct']>>
->;
-export type UpdateProductResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['updateProduct']>>
->;
-export type DeleteProductResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['deleteProduct']>>
->;
-export type GetProductByIdResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['getProductById']>>
->;
-export type UpdateProductByIdResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['updateProductById']>>
->;
-export type DeleteProductByIdResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['deleteProductById']>>
->;
-export type SearchProductsResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['searchProducts']>>
->;
-export type GetCartResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['getCart']>>
->;
-export type UpsertCartItemResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['upsertCartItem']>>
->;
-export type ClearCartResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['clearCart']>>
->;
-export type UpdateCartItemByIdResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['updateCartItemById']>>
->;
-export type RemoveCartItemResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['removeCartItem']>>
->;
-export type GetCartSummaryResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['getCartSummary']>>
->;
-export type CheckoutResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['checkout']>>
->;
-export type ListOrdersResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['listOrders']>>
->;
-export type CreateOrderResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['createOrder']>>
->;
-export type UpdateOrderResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['updateOrder']>>
->;
-export type DeleteOrderResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['deleteOrder']>>
->;
-export type SearchOrdersResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['searchOrders']>>
->;
-export type GetOrderByIdResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['getOrderById']>>
->;
-export type UpdateOrderByIdResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['updateOrderById']>>
->;
-export type DeleteOrderByIdResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['deleteOrderById']>>
->;
-export type GetOrderInvoiceResult = NonNullable<
-    Awaited<ReturnType<ReturnType<typeof getEcommerceDemoAPI>['getOrderInvoice']>>
->;
+export type ListProductsResult = NonNullable<Awaited<ReturnType<typeof listProducts>>>;
+export type CreateProductResult = NonNullable<Awaited<ReturnType<typeof createProduct>>>;
+export type UpdateProductResult = NonNullable<Awaited<ReturnType<typeof updateProduct>>>;
+export type DeleteProductResult = NonNullable<Awaited<ReturnType<typeof deleteProduct>>>;
+export type GetProductByIdResult = NonNullable<Awaited<ReturnType<typeof getProductById>>>;
+export type UpdateProductByIdResult = NonNullable<Awaited<ReturnType<typeof updateProductById>>>;
+export type DeleteProductByIdResult = NonNullable<Awaited<ReturnType<typeof deleteProductById>>>;
+export type SearchProductsResult = NonNullable<Awaited<ReturnType<typeof searchProducts>>>;
+export type GetCartResult = NonNullable<Awaited<ReturnType<typeof getCart>>>;
+export type UpsertCartItemResult = NonNullable<Awaited<ReturnType<typeof upsertCartItem>>>;
+export type ClearCartResult = NonNullable<Awaited<ReturnType<typeof clearCart>>>;
+export type UpdateCartItemByIdResult = NonNullable<Awaited<ReturnType<typeof updateCartItemById>>>;
+export type RemoveCartItemResult = NonNullable<Awaited<ReturnType<typeof removeCartItem>>>;
+export type GetCartSummaryResult = NonNullable<Awaited<ReturnType<typeof getCartSummary>>>;
+export type CheckoutResult = NonNullable<Awaited<ReturnType<typeof checkout>>>;
+export type ListOrdersResult = NonNullable<Awaited<ReturnType<typeof listOrders>>>;
+export type CreateOrderResult = NonNullable<Awaited<ReturnType<typeof createOrder>>>;
+export type UpdateOrderResult = NonNullable<Awaited<ReturnType<typeof updateOrder>>>;
+export type DeleteOrderResult = NonNullable<Awaited<ReturnType<typeof deleteOrder>>>;
+export type SearchOrdersResult = NonNullable<Awaited<ReturnType<typeof searchOrders>>>;
+export type GetOrderByIdResult = NonNullable<Awaited<ReturnType<typeof getOrderById>>>;
+export type UpdateOrderByIdResult = NonNullable<Awaited<ReturnType<typeof updateOrderById>>>;
+export type DeleteOrderByIdResult = NonNullable<Awaited<ReturnType<typeof deleteOrderById>>>;
+export type GetOrderInvoiceResult = NonNullable<Awaited<ReturnType<typeof getOrderInvoice>>>;

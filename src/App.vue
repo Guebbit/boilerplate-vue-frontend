@@ -16,6 +16,13 @@ import type { IProvidedVariableType, IProvidedVariableMutationFunction } from '@
  * Since we are in App.vue: to all application
  */
 const providedVariable = ref<IProvidedVariableType>('From App.vue');
+
+/**
+ * Mutation paired with {@link providedVariable}, so descendants never write to
+ * the injected ref directly.
+ *
+ * @param value - New value; defaults to an empty string, which clears it.
+ */
 const setProvidedVariable: IProvidedVariableMutationFunction = (value = '') => {
     providedVariable.value = value;
 };

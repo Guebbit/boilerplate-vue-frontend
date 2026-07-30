@@ -3,7 +3,7 @@ import { demoMiddleware } from '@/middlewares/demoMiddleware';
 import { localeChoice } from '@/middlewares/localeChoice';
 import { tryRestoreAuth } from '@/middlewares/authentications.ts';
 import { getDefaultLocale } from '@/utils/i18n.ts';
-import { loginContinueTo } from '@/utils/navigation.ts';
+import { loginContinueTo } from '@/router/navigation.ts';
 import { useObservabilityStore } from '@/stores/observability';
 
 import accountRoutes from '@/features/account/routes';
@@ -14,6 +14,9 @@ import realtimeRoutes from '@/features/realtime/routes';
 import cartRoutes from '@/features/cart/routes';
 import ordersRoutes from '@/features/orders/routes';
 
+/**
+ * Whether navigation logging is on: dev builds with `VITE_APP_DEBUG_ROUTER`.
+ */
 const isRouterDebugEnabled =
     import.meta.env.DEV && import.meta.env.VITE_APP_DEBUG_ROUTER === 'true';
 
@@ -86,6 +89,16 @@ const router = createRouter({
     ]
 });
 
+/**
+ * Global navigation error handler: reports the failure and redirects to a
+ * meaningful page instead of leaving the user on a dead route.
+ *
+ * @param error - Error thrown by a guard, a lazy component import or a data
+ *  fetch. A numeric `status` property, when present, drives the redirect:
+ *  401 goes to login (keeping the target path), 403 and other <500 statuses go
+ *  to the error page with that status, anything else becomes a 500.
+ * @returns The `router.push` promise for the chosen redirect.
+ */
 router.onError((error: Error) => {
     // Report unhandled router errors to Grafana Faro (if initialised) so they
     // are visible in the error dashboard rather than silently swallowed.
@@ -142,6 +155,15 @@ router.onError((error: Error) => {
     });
 });
 
+/**
+ * Runs before every navigation: optional debug logging plus a silent auth
+ * restore, so public pages render the correct authenticated controls after a
+ * full page reload.
+ *
+ * @param to - Route being entered.
+ * @param from - Route being left.
+ * @returns The {@link tryRestoreAuth} result: a navigation guard verdict.
+ */
 router.beforeEach((to, from) => {
     if (isRouterDebugEnabled) {
         // eslint-disable-next-line no-console

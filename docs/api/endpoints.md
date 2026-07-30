@@ -108,32 +108,25 @@ Contact form submissions from any visitor.
 | GET | `/feedback` | admin | List all feedback |
 | PUT | `/feedback/:id` | admin | Update feedback status |
 
-## WebSocket
+## SSE
 
-Real-time chat. The FE connects via the `createChatClient` utility. See [Realtime](../tools/websockets.md) for the full message contract.
+Observability metrics stream. The FE connects via the `createSseClient` utility. See [Realtime](../tools/realtime.md) for the full event contract.
 
-**Connection:** `ws://<host>/ws/chat` (or value of `VITE_API_WEBSOCKET`)
-
-**Client → Server**
-
-| `type` | Payload | When |
-| ------ | ------- | ---- |
-| `chat:join` | `{ username: string }` | First message after connect |
-| `chat:message:send` | `{ message: string }` | Send a message |
+**Connection:** `http://<host>/observability/events` (or value of `VITE_API_SSE`)
 
 **Server → Client**
 
-| `type` | Payload | When |
-| ------ | ------- | ---- |
-| `chat:joined` | `{ username, room }` | Confirmation to the joining client |
-| `chat:message` | `{ id, username, room, message, timestamp }` | Broadcast to all clients |
-| `chat:system` | `{ room, message, timestamp }` | Join / leave announcements |
-| `chat:presence` | `{ room, users: string[] }` | User list after any join or disconnect |
-| `chat:error` | `{ message }` | Validation failure |
+| Event | Payload | When |
+| ----- | ------- | ---- |
+| `observability.metrics.snapshot` | `ObservabilityMetricsPayload` | Initial snapshot, sent on connect |
+| `observability.metrics.updated` | `ObservabilityMetricsPayload` | Periodic metrics update |
+| `observability.heartbeat` | `ObservabilityMetricsPayload` | Keep-alive heartbeat |
+
+The stream is server → client only; there is no client → server channel.
 
 ## Related pages
 
 - [Observability Endpoints](./observability.md)
 - [API overview](./index.md)
 - [OpenAPI Workflow](./openapi-workflow.md)
-- [Realtime](../tools/websockets.md)
+- [Realtime](../tools/realtime.md)

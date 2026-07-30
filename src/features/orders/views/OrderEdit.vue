@@ -1,70 +1,64 @@
 <template>
-    <LayoutDefault id="order-edit-page" class="item-detail-page item-detail-page-order">
-        <template #header>
-            <h1 class="theme-page-title">
-                <span>{{ t('order-edit-page.page-title') }}</span>
-            </h1>
-        </template>
-
-        <section class="item-detail-page-content">
-            <div class="item-detail-page-grid-top">
+    <LayoutDefault id="order-edit-page" :title="t('order-edit-page.page-title')">
+        <ItemDetailLayout accent="tertiary">
+            <template #hero>
                 <ItemDetailHero :title="heroTitle" :description="heroDescription" :eyebrow="id">
                     <template #icon><Pencil :size="32" /></template>
                 </ItemDetailHero>
+            </template>
 
-                <div class="item-detail-page-stats">
-                    <CardMaterialStat
-                        :title="t('order-target-page.label-order-id')"
-                        :value="id ?? EMPTY_VALUE"
-                    />
-                    <CardMaterialStat
-                        :title="t('order-target-page.label-status')"
-                        :value="orderStatus"
-                        accent="secondary"
-                    />
-                    <CardMaterialStat
-                        :title="t('order-target-page.label-total')"
-                        :value="formatCurrency(currentOrder?.total)"
-                        accent="tertiary"
-                    />
+            <template #stats>
+                <CardMaterialStat
+                    :title="t('order-target-page.label-order-id')"
+                    :value="id ?? EMPTY_VALUE"
+                />
+                <CardMaterialStat
+                    :title="t('order-target-page.label-status')"
+                    :value="orderStatus"
+                    accent="secondary"
+                />
+                <CardMaterialStat
+                    :title="t('order-target-page.label-total')"
+                    :value="formatCurrency(currentOrder?.total)"
+                    accent="tertiary"
+                />
+            </template>
+
+            <CardDetail>
+                <div class="mb-5">
+                    <h3 class="text-lg font-semibold">{{ t('generic.details') }}</h3>
+                    <p class="mt-1 opacity-75">{{ t('order-edit-page.page-title') }}</p>
                 </div>
-            </div>
 
-            <div class="item-detail-page-grid-main item-detail-page-grid-main-with-aside">
-                <CardDetail class="item-detail-page-main">
-                    <div class="item-detail-page-section-header">
-                        <h3>{{ t('generic.details') }}</h3>
-                        <p>{{ t('order-edit-page.page-title') }}</p>
+                <form novalidate class="flex flex-col gap-2" @submit.prevent="submitForm">
+                    <v-select
+                        v-model="form.status"
+                        :label="t('order-edit-page.label-status')"
+                        :items="statusOptions"
+                        item-title="label"
+                        item-value="value"
+                        :error-messages="showFormErrors ? formErrors.status : []"
+                    />
+                    <v-text-field
+                        v-model="form.email"
+                        type="email"
+                        :label="t('order-edit-page.label-email')"
+                        :error-messages="showFormErrors ? formErrors.email : []"
+                    />
+
+                    <div class="flex flex-wrap gap-2">
+                        <v-btn type="submit" color="primary" :disabled="isSubmitting || loading">
+                            {{ t('order-edit-page.button-submit') }}
+                        </v-btn>
+                        <v-btn variant="tonal" @click="resetForm">
+                            {{ t('order-edit-page.reset-form') }}
+                        </v-btn>
                     </div>
+                </form>
+            </CardDetail>
 
-                    <form class="theme-form item-detail-page-form" @submit.prevent="submitForm">
-                        <BaseSelect
-                            v-model="form.status"
-                            :label="t('order-edit-page.label-status')"
-                            :options="statusOptions"
-                            :errors="formErrors.status"
-                            :show-errors="showFormErrors"
-                        />
-                        <BaseInput
-                            v-model="form.email"
-                            type="email"
-                            :label="t('order-edit-page.label-email')"
-                            :errors="formErrors.email"
-                            :show-errors="showFormErrors"
-                        />
-
-                        <div class="item-detail-page-form-actions">
-                            <BaseButton type="submit" :disabled="isSubmitting || loading">
-                                {{ t('order-edit-page.button-submit') }}
-                            </BaseButton>
-                            <BaseButton type="button" @click="resetForm">
-                                {{ t('order-edit-page.reset-form') }}
-                            </BaseButton>
-                        </div>
-                    </form>
-                </CardDetail>
-
-                <CardDetail as="aside" class="item-detail-page-aside">
+            <template #aside>
+                <CardDetail as="aside" class="flex flex-col gap-4">
                     <CardInfo :title="heroTitle" :description="heroDescription" variant="tertiary">
                         <template #icon><ShoppingCart :size="28" /></template>
                     </CardInfo>
@@ -84,21 +78,21 @@
                         icon="📦"
                     />
                 </CardDetail>
-            </div>
+            </template>
 
-            <div class="item-detail-page-actions">
-                <RouterLink
+            <template #actions>
+                <v-btn
                     v-if="id"
+                    color="secondary"
                     :to="routerLinkI18n({ name: 'OrderTarget', params: { id } })"
-                    class="theme-button"
                 >
                     {{ t('order-edit-page.button-go-to-details') }}
-                </RouterLink>
-                <RouterLink :to="routerLinkI18n({ name: 'OrdersList' })" class="theme-button">
+                </v-btn>
+                <v-btn variant="tonal" :to="routerLinkI18n({ name: 'OrdersList' })">
                     {{ t('order-edit-page.button-go-to-list') }}
-                </RouterLink>
-            </div>
-        </section>
+                </v-btn>
+            </template>
+        </ItemDetailLayout>
     </LayoutDefault>
 </template>
 
@@ -109,9 +103,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import '@/styles/features/itemDetail.scss';
 import { computed } from 'vue';
-import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -121,18 +113,15 @@ import { createOrderStatusSchema } from '@/features/orders/schemas.ts';
 import { z } from 'zod';
 import { OrderStatus } from '@types';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import BaseInput from '@/components/atoms/BaseInput.vue';
-import BaseSelect from '@/components/atoms/BaseSelect.vue';
-import BaseButton from '@/components/atoms/BaseButton.vue';
 import { Pencil, ShoppingCart } from 'lucide-vue-next';
 import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
+import ItemDetailLayout from '@/components/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/components/organisms/CardDetail.vue';
 import CardInfo from '@/components/organisms/CardInfo.vue';
 import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
-import { formatText, formatDateTime, formatCurrency } from '@/utils/formatters.ts';
+import { EMPTY_VALUE, formatText, formatDateTime, formatCurrency } from '@/utils/formatters.ts';
 import { notifyErrorMessages } from '@/utils/errors.ts';
-import { EMPTY_VALUE } from '@/utils/constants.ts';
 
 /**
  * Generic utility hooks.
@@ -155,7 +144,9 @@ const zodSchemaOrderStatus = createOrderStatusSchema(t);
 const { currentOrder, loading } = storeToRefs(useOrdersStore());
 
 /**
- * Select options for status updates.
+ * Options of the status select.
+ *
+ * @returns One entry per `OrderStatus`, with a localized label.
  */
 const statusOptions = computed(() =>
     Object.values(OrderStatus).map((value) => ({
@@ -211,19 +202,40 @@ activateAutoHydrate(
 );
 
 /**
- * Hero texts and status label.
+ * Hero heading.
+ *
+ * @returns The loaded order id, the route id while loading, or the generic page
+ *  title as a last resort.
  */
 const heroTitle = computed(() => currentOrder.value?.id ?? id ?? t('order-edit-page.page-title'));
+
+/**
+ * Hero subheading.
+ *
+ * @returns The order notes, falling back to the customer email, then to the
+ *  empty-value glyph.
+ */
 const heroDescription = computed(() =>
     formatText(currentOrder.value?.notes || currentOrder.value?.email)
 );
+
+/**
+ * Localized order status.
+ *
+ * @returns The translated status label, or the empty-value glyph when the order
+ *  carries no status yet.
+ */
 const orderStatus = computed(() => {
     const status = currentOrder.value?.status;
     return status ? t(`orders-form.status-${status}`) : EMPTY_VALUE;
 });
 
 /**
- * Validates and persists order updates.
+ * Validates the form and persists the order changes.
+ *
+ * @returns A promise resolving once the flow settles: a success toast, or the
+ *  revealed validation errors when the input is invalid. API failures surface as
+ *  a toast. A missing route id is a no-op.
  */
 const submitForm = () =>
     handleSubmit(async () => {

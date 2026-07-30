@@ -15,6 +15,13 @@ import {
     analyticsEvents
 } from '@/stores/observability';
 
+/**
+ * Component-facing facade over the observability store.
+ *
+ * @returns The readiness flags, the tracking/identity API, the feature-flag
+ *  check, the per-domain convenience trackers and the {@link analyticsEvents}
+ *  catalog, all bound to the singleton store.
+ */
 export function useObservability() {
     const store = useObservabilityStore();
 

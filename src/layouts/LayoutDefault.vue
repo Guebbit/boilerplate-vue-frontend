@@ -1,80 +1,93 @@
 <template>
-    <AppNavigation>
-        <slot name="navigation" />
-        <h3 v-if="isAuth && profile">Hello {{ profile.email }}</h3>
-    </AppNavigation>
+    <v-app>
+        <AppNavigation>
+            <slot name="navigation" />
+        </AppNavigation>
 
-    <div v-show="messages.length > 0" class="toast-container">
+        <v-main v-bind="$attrs">
+            <!-- Page hero: every view gets a consistent, accessible title area -->
+            <header v-if="slots.header || title" class="page-hero py-8 lg:py-10">
+                <div class="mx-auto w-full max-w-[1280px] px-4">
+                    <slot name="header">
+                        <h1 class="text-3xl lg:text-4xl font-bold tracking-tight">
+                            {{ title }}
+                        </h1>
+                        <div
+                            class="mt-3 h-1 w-16 rounded-full bg-gradient-to-r from-primary to-tertiary"
+                            aria-hidden="true"
+                        />
+                    </slot>
+                </div>
+            </header>
+
+            <div
+                class="mx-auto w-full max-w-[1280px] px-4 pb-12"
+                :class="
+                    centered && 'flex min-h-[60vh] flex-col items-center justify-center text-center'
+                "
+            >
+                <slot />
+            </div>
+        </v-main>
+
+        <!-- Toast stack (screen-reader friendly: announced politely) -->
         <div
-            v-for="alert in messages"
-            :key="'alert-' + alert.id"
-            v-show="alert.visible"
-            :class="['theme-card', alert.type]"
+            class="fixed bottom-4 right-4 z-[9999] flex w-[min(420px,calc(100vw-2rem))] flex-col gap-2"
+            aria-live="polite"
         >
-            {{ alert.message }}
-            <button class="theme-button" @click="hideMessage(alert.id)">X</button>
-        </div>
-    </div>
-
-    <main
-        class="page-content"
-        :class="{
-            'full-page centered': centered
-        }"
-        v-bind="$attrs"
-    >
-        <div v-if="slots.header">
-            <slot name="header" />
+            <template v-for="alert in messages" :key="'alert-' + alert.id">
+                <v-alert
+                    v-show="alert.visible"
+                    :type="normalizeAlertType(alert.type)"
+                    closable
+                    density="comfortable"
+                    elevation="4"
+                    :text="alert.message"
+                    @click:close="hideMessage(alert.id)"
+                />
+            </template>
         </div>
 
-        <div class="page-container">
-            <slot />
-        </div>
-    </main>
+        <!-- Full-page loader (core bootstrapping) -->
+        <v-overlay
+            :model-value="!!loadings.core"
+            persistent
+            class="flex items-center justify-center"
+        >
+            <v-progress-circular indeterminate size="64" width="5" color="primary" />
+        </v-overlay>
 
-    <transition name="loaders-fade">
-        <FeedbackLoadingCore v-show="loadings.core" />
-    </transition>
-    <transition name="loaders-fade">
-        <FeedbackLoadingSide v-show="isLoading" />
-    </transition>
+        <!-- Discreet corner loader (background activity) -->
+        <v-fade-transition>
+            <div
+                v-show="isLoading && !loadings.core"
+                class="fixed bottom-4 left-4 z-[9998]"
+                role="status"
+                :aria-label="t('generic.loading-state')"
+            >
+                <v-progress-circular indeterminate size="40" width="4" color="secondary" />
+            </div>
+        </v-fade-transition>
+    </v-app>
 </template>
 
-<style lang="scss">
-.loaders-fade {
-    &-enter-active,
-    &-leave-active {
-        transition: opacity 0.2s;
-    }
-
-    &-enter,
-    &-leave-to {
-        opacity: 0;
-    }
-}
-
-.toast-container {
-    position: fixed;
-    bottom: 0;
-    right: 0;
-    z-index: 9999;
-}
-</style>
-
 <script setup lang="ts">
-import { useSlots } from 'vue';
+import { useSlots, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import FeedbackLoadingCore from '@/components/molecules/FeedbackLoadingCore.vue';
-import FeedbackLoadingSide from '@/components/molecules/FeedbackLoadingSide.vue';
+import { useI18n } from 'vue-i18n';
+import { useLocale } from 'vuetify';
 import AppNavigation from '@/components/organisms/AppNavigation.vue';
 import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
+import { getCookie } from '@guebbit/js-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
-import { getCookie } from '@/utils/generics.ts';
 
-/**
- *
- */
+defineOptions({ inheritAttrs: false });
+
 defineProps<{
+    /**
+     * Default page title rendered in the hero (overridable via #header slot)
+     */
+    title?: string;
     /**
      * If the content should be minimum full page and centered
      */
@@ -84,10 +97,25 @@ defineProps<{
 /**
  * Slots
  * - default
- * - header
+ * - header (replaces the default hero title)
  * - navigation
  */
 const slots = useSlots();
+
+const { t, locale } = useI18n();
+
+/**
+ * Keep Vuetify's internal strings (data-table, pagination, aria-labels…)
+ * in sync with the app locale.
+ */
+const { current: vuetifyLocale } = useLocale();
+watch(
+    locale,
+    (newLocale) => {
+        vuetifyLocale.value = newLocale;
+    },
+    { immediate: true }
+);
 
 /**
  * core loading
@@ -101,9 +129,18 @@ const { messages } = storeToRefs(useNotificationsStore());
 const { hideMessage } = useNotificationsStore();
 
 /**
+ * Coerces free-form message types into what `v-alert` accepts.
+ *
+ * @param type - Type carried by the notification, possibly unset or unknown.
+ * @returns The matching alert type, or `'info'` as a neutral fallback.
+ */
+const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'error' =>
+    type === 'success' || type === 'warning' || type === 'error' ? type : 'info';
+
+/**
  * Profile
  */
-const { profile, isAuth } = storeToRefs(useProfileStore());
+const { profile } = storeToRefs(useProfileStore());
 const { fetchProfile } = useProfileStore();
 
 /**

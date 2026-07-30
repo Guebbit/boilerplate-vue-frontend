@@ -21,7 +21,9 @@ import { storeToRefs } from 'pinia';
 type IAxiosRequestConfigWithRetry = AxiosRequestConfig & { _dontRetry?: boolean };
 
 /**
+ * Reads the current access token outside of a component scope.
  *
+ * @returns The in-memory bearer token, or `undefined` when not authenticated.
  */
 export const getAccessToken = () => {
     const { accessToken } = storeToRefs(useProfileStore());
@@ -29,20 +31,28 @@ export const getAccessToken = () => {
 };
 
 /**
- *
+ * Request payload type: deliberately unconstrained, since the generated clients
+ * send everything from JSON envelopes to `FormData`.
  */
 export type IAxiosRequestData = unknown;
 
 /**
- *
+ * Shape every rejected request is normalized to (the backend reject envelope).
  */
 export type IAxiosResponseErrorData = IResponseReject;
 
 /**
- *
+ * Raw error response body, before normalization.
  */
 export type IAxiosResponseErrorBody = unknown;
 
+/**
+ * Picks a user-facing message for a failed request.
+ *
+ * @param status - HTTP status code of the response.
+ * @param fallback - Message to use when the status carries no specific wording.
+ * @returns A canonical message for 401/403/5xx, the fallback otherwise.
+ */
 const getFallbackMessage = (status: number, fallback: string) => {
     if (status === 401) return 'Unauthorized';
     if (status === 403) return 'Forbidden';
@@ -50,6 +60,10 @@ const getFallbackMessage = (status: number, fallback: string) => {
     return fallback;
 };
 
+/**
+ * Endpoints that must never trigger the refresh-and-retry flow: a 401 there is
+ * a genuine credential failure, not an expired token.
+ */
 const refreshExcludedPaths = new Set([
     '/account/login',
     '/account/signup',
@@ -58,6 +72,13 @@ const refreshExcludedPaths = new Set([
     '/account/logout-all'
 ]);
 
+/**
+ * Tells whether a failed request should skip the token refresh flow.
+ *
+ * @param url - Request URL, absolute or relative.
+ * @returns `true` when the URL's pathname is one of the auth endpoints listed in
+ *  {@link refreshExcludedPaths}.
+ */
 const shouldSkipRefresh = (url?: string) => {
     if (!url) return false;
     const pathname =
@@ -91,11 +112,11 @@ const instance = axiosClient.create({
 instance.defaults.baseURL = import.meta.env.VITE_API_URL ?? '';
 
 /**
- * Request interceptor:
- * - injects Bearer token (if available)
- * - injects current language in `Accept-Language`
+ * Request interceptor: injects the bearer token (when authenticated) and the
+ * active language.
  *
- * @param config
+ * @param config - Outgoing request config.
+ * @returns The same config with `Authorization` and `Accept-Language` set.
  */
 export const onRequest = (config: InternalAxiosRequestConfig<IAxiosRequestData>) => {
     const { accessToken } = storeToRefs(useProfileStore());
@@ -106,10 +127,10 @@ export const onRequest = (config: InternalAxiosRequestConfig<IAxiosRequestData>)
 };
 
 /**
- * Request error interceptor.
- * Forwards transport/setup request errors as rejected promises.
+ * Request error interceptor: forwards transport/setup failures untouched.
  *
- * @param error
+ * @param error - Error raised before the request left the client.
+ * @returns A promise rejected with the same error.
  */
 export const onRequestReject = (error: AxiosError) => {
     // console.log('[request error]', error);
@@ -117,11 +138,11 @@ export const onRequestReject = (error: AxiosError) => {
 };
 
 /**
- * Response success interceptor.
- * Passes the full AxiosResponse through unchanged; callers unwrap the
- * backend success envelope ({ data }) themselves.
+ * Response success interceptor: unwraps the axios envelope so callers receive
+ * the backend payload (`{ data }`) directly.
  *
- * @param response
+ * @param response - Successful axios response.
+ * @returns The response body.
  */
 export const onResponseSuccess = (response: AxiosResponse): AxiosResponse['data'] => response.data;
 
@@ -129,7 +150,7 @@ export const onResponseSuccess = (response: AxiosResponse): AxiosResponse['data'
  * Response error normalizer.
  *
  * Behavior:
- * - if API already returned the standard reject envelope (`errors` field),
+ * - if the API already returned the standard reject envelope (`errors` field),
  *   pass it through (enriched with backend correlation IDs from headers)
  * - otherwise map unknown/transport errors to a safe fallback structure
  *
@@ -137,7 +158,9 @@ export const onResponseSuccess = (response: AxiosResponse): AxiosResponse['data'
  * - `x-request-id` → requestId
  * - `x-trace-id`   → traceId
  *
- * @param error
+ * @param error - Axios error, with or without a response.
+ * @returns A promise always rejected with an {@link IAxiosResponseErrorData}
+ *  envelope, so every call site sees the same error shape.
  */
 export const onResponseReject = (
     error: AxiosError<IAxiosResponseErrorData, IAxiosResponseErrorBody>
@@ -179,14 +202,15 @@ export const onResponseReject = (
  * Response error interceptor with refresh support.
  *
  * Flow:
- * 1) if request failed with 401 and this request was not already retried
+ * 1) if the request failed with 401 and was not already retried
  * 2) call `/account/refresh`
  * 3) store the new access token
  * 4) replay the original request once, marking `_dontRetry: true`
  *
- * If refresh cannot solve it, fallback to `onResponseReject`.
- *
- * @param error
+ * @param error - Axios error that triggered the interceptor.
+ * @returns The replayed request's response when the refresh succeeds; otherwise
+ *  the normalized rejection from {@link onResponseReject}. Auth endpoints
+ *  (see {@link shouldSkipRefresh}) never attempt a refresh.
  */
 export const onResponseRejectWithRefresh = async (
     error: AxiosError<IAxiosResponseErrorData, IAxiosResponseErrorBody>
@@ -231,3 +255,27 @@ instance.interceptors.response.use(onResponseSuccess, onResponseRejectWithRefres
  * Complete custom axios instance
  */
 export default instance;
+
+/**
+ * Custom orval mutator: routes all generated API calls through this shared
+ * axios instance.
+ *
+ * The instance already handles:
+ * - Base URL (VITE_API_URL)
+ * - Bearer token header injection
+ * - Accept-Language header
+ * - Cookie forwarding (refresh token)
+ * - 401 -> token refresh -> retry logic
+ * - Response unwrapping: the response interceptor returns response.data
+ *   directly, so the Promise resolves with the JSON envelope (e.g. CartResponseEnvelope)
+ *   rather than the raw AxiosResponse.
+ *
+ * The second generic parameter `<never, T>` tells TypeScript that the return
+ * type is `T` (matching what the interceptor actually returns at runtime).
+ *
+ * @typeParam T - Response payload type expected by the generated client.
+ * @param config - Request config produced by the generated client.
+ * @returns A promise resolving with the unwrapped response body.
+ */
+export const apiMutator = <T>(config: AxiosRequestConfig): Promise<T> =>
+    instance.request<never, T>(config);

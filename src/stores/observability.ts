@@ -88,6 +88,13 @@ export type AnalyticsEventName = (typeof analyticsEvents)[keyof typeof analytics
 
 // ─── Config readers ──────────────────────────────────────────────────────────
 
+/**
+ * Reads the Faro configuration from the `VITE_FARO_*` environment variables.
+ *
+ * @returns The config, or `undefined` when `VITE_FARO_URL` is unset/blank,
+ *  which disables Faro entirely. Missing optional values fall back to sensible
+ *  defaults (app name, version, current mode, local API origin).
+ */
 function readFaroConfig(): IFaroConfig | undefined {
     const url = (import.meta.env.VITE_FARO_URL as string | undefined)?.trim();
 
@@ -109,6 +116,12 @@ function readFaroConfig(): IFaroConfig | undefined {
     };
 }
 
+/**
+ * Reads the Umami configuration from the `VITE_UMAMI_*` environment variables.
+ *
+ * @returns The config, or `undefined` when `VITE_UMAMI_WEBSITE_ID` is
+ *  unset/blank, which disables analytics entirely.
+ */
 function readUmamiConfig(): IUmamiConfig | undefined {
     const websiteId = (import.meta.env.VITE_UMAMI_WEBSITE_ID as string | undefined)?.trim();
 
@@ -124,7 +137,14 @@ function readUmamiConfig(): IUmamiConfig | undefined {
     };
 }
 
-/** Build an anchored RegExp matching the given origin, for trace header propagation. */
+/**
+ * Builds an anchored RegExp matching the given origin, for trace header
+ * propagation.
+ *
+ * @param origin - Origin to match, e.g. `http://localhost:3000`. Regex
+ *  metacharacters are escaped.
+ * @returns A RegExp anchored at the start of the URL.
+ */
 function originToRegExp(origin: string): RegExp {
     const escaped = origin.replaceAll(/[$()*+.?[\\\]^{|}]/g, String.raw`\$&`);
     return new RegExp(`^${escaped}`);
@@ -132,7 +152,10 @@ function originToRegExp(origin: string): RegExp {
 
 /**
  * Feature flags are not part of the local stack (Umami has none).
- * Kept for API compatibility; always returns false.
+ * Kept for API compatibility.
+ *
+ * @param _flagKey - Flag name, ignored.
+ * @returns Always `false`.
  */
 function isFeatureEnabled(_flagKey: string): boolean {
     return false;
@@ -163,10 +186,11 @@ export const useObservabilityStore = defineStore('observability', () => {
      * `traceparent` header to the API origin, so a single trace spans
      * "browser interaction → API handler → database query" in Grafana/Tempo.
      *
-     * Resolves true when Faro was initialised, false when disabled.
-     *
      * The Faro SDK and its OpenTelemetry tracing package are dynamically
      * imported so they live in a lazy chunk, off the critical entry bundle.
+     *
+     * @returns A promise resolving to `true` when Faro was initialised, `false`
+     *  when disabled by configuration. Concurrent calls share a single setup.
      */
     const initFaro = (): Promise<boolean> => {
         const config = readFaroConfig();
@@ -210,7 +234,11 @@ export const useObservabilityStore = defineStore('observability', () => {
     };
 
     /**
-     * Identify the current user for error/session context in Faro.
+     * Identifies the current user for error/session context in Faro, and in
+     * Umami when its (v2.11+) `identify` is available.
+     *
+     * @param userId - Stable user identifier.
+     * @param email - Optional email, attached for easier triage.
      */
     const identifyUser = (userId: string, email?: string): void => {
         if (faroReady.value && faro) {
@@ -222,7 +250,7 @@ export const useObservabilityStore = defineStore('observability', () => {
     };
 
     /**
-     * Clear user identity from Faro. Call on logout / account deletion.
+     * Clears the user identity from Faro. Call on logout / account deletion.
      */
     const unidentifyUser = (): void => {
         if (faroReady.value && faro) {
@@ -231,7 +259,12 @@ export const useObservabilityStore = defineStore('observability', () => {
     };
 
     /**
-     * Capture / report an exception to Faro (visible in Grafana → Loki).
+     * Reports an exception to Faro (visible in Grafana → Loki).
+     *
+     * @param error - Thrown value; non-`Error` values are stringified into one.
+     * @param hints - Extra context; `hints.data` is flattened into a string map
+     *  and attached to the error.
+     * @returns Nothing; a no-op while Faro is disabled or not yet ready.
      */
     const captureException = (error: unknown, hints?: { data?: Record<string, unknown> }): void => {
         if (!faroReady.value || !faro) {
@@ -248,10 +281,12 @@ export const useObservabilityStore = defineStore('observability', () => {
     // ── Umami (product analytics) ──────────────────────────────────────────────
 
     /**
-     * Load the Umami tracker script. Pageviews (including SPA route changes) are
-     * tracked automatically; custom events go through `track()` below.
+     * Loads the Umami tracker script. Pageviews (including SPA route changes)
+     * are tracked automatically; custom events go through {@link track}.
      *
-     * Returns true when Umami was (asynchronously) loaded, false when disabled.
+     * @returns `true` when the tracker was injected (or already present),
+     *  `false` when analytics is disabled by configuration. Injection is
+     *  guarded against duplicates (e.g. HMR); the script itself loads async.
      */
     const initUmami = (): boolean => {
         const config = readUmamiConfig();
@@ -285,11 +320,14 @@ export const useObservabilityStore = defineStore('observability', () => {
     // ── Unified API ──────────────────────────────────────────────────────────
 
     /**
-     * Track a product analytics event in Umami.
+     * Tracks a product analytics event in Umami.
      *
      * The tracker script loads asynchronously, so `globalThis.umami` may not be
      * ready on the very first calls; such early events are dropped, which is
      * acceptable for analytics.
+     *
+     * @param event - Event name from the {@link analyticsEvents} catalog.
+     * @param properties - Optional event payload.
      */
     const track = (event: AnalyticsEventName, properties?: Record<string, unknown>): void => {
         if (!umamiReady.value) {
@@ -302,7 +340,10 @@ export const useObservabilityStore = defineStore('observability', () => {
     // ── Convenience helpers ──────────────────────────────────────────────────
 
     /**
-     * Track a product view event.
+     * Tracks a product view event.
+     *
+     * @param productId - Identifier of the viewed product.
+     * @param productName - Human-readable name, for readability in dashboards.
      */
     const trackProductView = (productId: string, productName?: string): void => {
         track(analyticsEvents.PRODUCT_VIEWED, {
@@ -312,7 +353,10 @@ export const useObservabilityStore = defineStore('observability', () => {
     };
 
     /**
-     * Track a cart addition event.
+     * Tracks a cart addition event.
+     *
+     * @param productId - Identifier of the added product.
+     * @param quantity - Number of units added.
      */
     const trackItemAddedToCart = (productId: string, quantity: number): void => {
         track(analyticsEvents.CART_ITEM_ADDED, {
@@ -322,7 +366,11 @@ export const useObservabilityStore = defineStore('observability', () => {
     };
 
     /**
-     * Track an order creation event.
+     * Tracks an order creation event.
+     *
+     * @param orderId - Identifier of the created order.
+     * @param totalAmount - Order total, in the order's currency.
+     * @param itemCount - Number of line items in the order.
      */
     const trackOrderPlaced = (orderId: string, totalAmount: number, itemCount: number): void => {
         track(analyticsEvents.ORDER_CREATED, {
@@ -333,7 +381,9 @@ export const useObservabilityStore = defineStore('observability', () => {
     };
 
     /**
-     * Track a product search event.
+     * Tracks a product search event.
+     *
+     * @param query - Raw search string submitted by the user.
      */
     const trackProductSearched = (query: string): void => {
         track(analyticsEvents.PRODUCTS_SEARCHED, {
@@ -365,7 +415,12 @@ export const useObservabilityStore = defineStore('observability', () => {
     };
 });
 
-/** Coerce arbitrary hint data into the string map Faro's error context expects. */
+/**
+ * Coerces arbitrary hint data into the string map Faro's error context expects.
+ *
+ * @param data - Arbitrary key/value context.
+ * @returns The same keys with values stringified (JSON for non-strings).
+ */
 function normalizeContext(data: Record<string, unknown>): Record<string, string> {
     return Object.fromEntries(
         Object.entries(data).map(([key, value]) => [

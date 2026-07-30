@@ -11,7 +11,7 @@
 | [@vitejs/plugin-vue](https://github.com/vitejs/vite-plugin-vue) | `.vue` SFC support in Vite | transforms SFCs in both dev and build |
 | [vue-tsc](https://github.com/vuejs/language-tools/tree/master/packages/tsc) | TypeScript type-check for `.vue` files | runs in `npm run build` and CI |
 | [Sass / sass-embedded](https://sass-lang.com/) | SCSS authoring | `src/styles/` global styles; design tokens from `@guebbit/css-toolkit` |
-| [Axios](https://axios-http.com/) | HTTP client | used by the generated API client; interceptors in `src/utils/http.ts` |
+| [Axios](https://axios-http.com/) | HTTP client | used by the generated API client; interceptors in `src/plugins/http/index.ts` |
 
 ## Runtime visual
 
@@ -22,7 +22,7 @@ flowchart LR
     SFC --> Components[Components + views]
     SFC --> Styles[Sass styles]
     Components --> Pinia[Pinia stores]
-    Pinia --> Axios[Axios\nsrc/utils/http.ts]
+    Pinia --> Axios[Axios\nsrc/plugins/http/index.ts]
     Axios --> API[Generated client\ncontracts/rest/index.ts]
 
     classDef build fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -37,7 +37,7 @@ flowchart LR
 
 - **Vite** owns the dev experience and production bundle — keep `vite.config.ts` minimal.
 - **Vue 3 Composition API** is the only style used — no Options API.
-- **Axios** is configured once in `src/utils/http.ts`; the generated client uses it transparently.
+- **Axios** is configured once in `src/plugins/http/index.ts`; the generated client uses it transparently.
 - **`vue-tsc`** runs in CI; fix type errors before merging.
 
 ## Path aliases
@@ -53,4 +53,4 @@ flowchart LR
 - [State & Routing](./state-and-routing.md)
 - [Security](./security.md)
 - [API overview](../api/)
-- [Realtime](./websockets.md)
+- [Realtime](./realtime.md)

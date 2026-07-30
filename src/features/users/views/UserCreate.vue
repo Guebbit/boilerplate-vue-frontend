@@ -1,45 +1,49 @@
 <template>
-    <LayoutDefault id="user-create-page">
-        <template #header>
-            <h1 class="theme-page-title">
-                <span>{{ t('user-create-page.page-title') }}</span>
-            </h1>
-        </template>
-
-        <div class="theme-card theme-form-container">
-            <form class="theme-form" @submit.prevent="submitForm">
-                <BaseInput
+    <LayoutDefault id="user-create-page" :title="t('user-create-page.page-title')">
+        <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
+            <form novalidate @submit.prevent="submitForm">
+                <v-text-field
                     v-model="form.email"
                     type="email"
                     :label="t('user-create-page.label-email')"
-                    :errors="formErrors.email"
-                    :show-errors="showErrors"
+                    :error-messages="showErrors ? formErrors.email : []"
+                    class="mb-2"
                 />
-                <BaseInput
+                <v-text-field
                     v-model="form.username"
                     type="text"
                     :label="t('user-create-page.label-username')"
-                    :errors="formErrors.username"
-                    :show-errors="showErrors"
+                    :error-messages="showErrors ? formErrors.username : []"
+                    class="mb-2"
                 />
-                <BaseInput
+                <v-text-field
                     v-model="form.password"
                     type="password"
+                    autocomplete="new-password"
                     :label="t('user-create-page.label-password')"
-                    :errors="formErrors.password"
-                    :show-errors="showErrors"
+                    :error-messages="showErrors ? formErrors.password : []"
                 />
-                <BaseCheckbox v-model="form.admin" :label="t('user-create-page.label-admin')" />
-                <BaseCheckbox v-model="form.active" :label="t('user-create-page.label-active')" />
-                <BaseButton type="submit" :disabled="isSubmitting">
+                <div class="flex flex-wrap gap-x-8">
+                    <v-switch v-model="form.admin" :label="t('user-create-page.label-admin')" />
+                    <v-switch v-model="form.active" :label="t('user-create-page.label-active')" />
+                </div>
+                <v-btn
+                    type="submit"
+                    color="primary"
+                    size="large"
+                    block
+                    :loading="isSubmitting"
+                    class="mt-2"
+                >
                     {{ t('user-create-page.button-submit') }}
-                </BaseButton>
+                </v-btn>
             </form>
-        </div>
-
-        <RouterLink :to="routerLinkI18n({ name: 'UsersList' })">
-            {{ t('user-create-page.button-go-to-list') }}
-        </RouterLink>
+            <div class="mt-4 flex justify-center">
+                <v-btn variant="text" :to="routerLinkI18n({ name: 'UsersList' })">
+                    {{ t('user-create-page.button-go-to-list') }}
+                </v-btn>
+            </div>
+        </v-card>
     </LayoutDefault>
 </template>
 
@@ -51,7 +55,7 @@ export default {
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { RouterLink, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
@@ -59,9 +63,6 @@ import { useUsersStore } from '@/features/users/store';
 import { createUsersSchema, createUsersPasswordSchema } from '@/features/users/schemas.ts';
 import { z } from 'zod';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import BaseInput from '@/components/atoms/BaseInput.vue';
-import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
-import BaseButton from '@/components/atoms/BaseButton.vue';
 import { notifyErrorMessages } from '@/utils/errors.ts';
 
 /**
@@ -75,8 +76,6 @@ const router = useRouter();
  * Users store
  */
 const { createUser } = useUsersStore();
-const zodSchemaUsers = createUsersSchema(t);
-const zodSchemaUsersPassword = createUsersPasswordSchema(t);
 
 /**
  * Form definition
@@ -92,11 +91,16 @@ interface IUserCreateForm {
 const { form, formErrors, isSubmitting, handleSubmit } =
     useStructureFormValidation<IUserCreateForm>(
         {},
-        zodSchemaUsers.pick({ email: true, username: true }).extend({
-            password: zodSchemaUsersPassword,
-            admin: z.boolean().optional(),
-            active: z.boolean().optional()
-        })
+        // Getter (not a resolved schema): re-built on every validate() call so
+        // messages stay in the active language after a runtime locale switch.
+        () =>
+            createUsersSchema(t)
+                .pick({ email: true, username: true })
+                .extend({
+                    password: createUsersPasswordSchema(t),
+                    admin: z.boolean().optional(),
+                    active: z.boolean().optional()
+                })
     );
 
 /**
@@ -105,7 +109,11 @@ const { form, formErrors, isSubmitting, handleSubmit } =
 const showErrors = ref(false);
 
 /**
- * Submit form and create a new user
+ * Validates the form and creates the user.
+ *
+ * @returns A promise resolving once the flow settles: on success a toast is
+ *  shown and the new user's detail page is opened; on invalid input the errors
+ *  are revealed; API failures are reported as toasts.
  */
 const submitForm = () =>
     handleSubmit(async () => {
@@ -125,13 +133,3 @@ const submitForm = () =>
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>
-
-<style lang="scss">
-#user-create-page {
-    .theme-form-container {
-        max-width: 600px;
-        margin: 100px auto;
-        padding: 2rem;
-    }
-}
-</style>

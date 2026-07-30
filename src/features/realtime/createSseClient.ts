@@ -23,7 +23,10 @@ export interface ISseClient {
 
 /**
  * Safely parses a raw JSON string.
- * Returns `undefined` when the string is not valid JSON so callers can skip bad frames.
+ *
+ * @param rawData - Raw `data` field of an SSE frame.
+ * @returns The parsed value, or `undefined` when the string is not valid JSON so
+ *  callers can skip bad frames.
  */
 const parseJsonData = (rawData: string) => {
     try {
@@ -34,11 +37,17 @@ const parseJsonData = (rawData: string) => {
 };
 
 /**
- * Opens a persistent SSE connection to `url` and registers listeners for each
- * `eventName` in the given list.  Raw event data is JSON-parsed before being
- * forwarded to `callbacks.onEvent`.
+ * Opens a persistent SSE connection and registers one listener per event name,
+ * JSON-parsing each frame before forwarding it.
  *
- * @returns An {@link ISseClient} handle whose `close` method tears down the connection.
+ * @param url - SSE endpoint; opened with credentials so the auth cookie travels
+ *  with it.
+ * @param eventNames - Typed event names to subscribe to; one listener is
+ *  registered per name so the browser dispatches them individually.
+ * @param callbacks - Open/error/event handlers. Frames that fail to parse are
+ *  dropped without invoking `onEvent`.
+ * @returns An {@link ISseClient} handle whose `close` method tears down the
+ *  connection.
  */
 export const createSseClient = (
     url: string,

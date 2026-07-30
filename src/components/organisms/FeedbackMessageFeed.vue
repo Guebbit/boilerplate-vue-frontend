@@ -1,58 +1,48 @@
 <template>
-    <div class="message-feed" :class="variant" :style="maxHeight ? { maxHeight } : undefined">
+    <div
+        class="w-full overflow-y-auto"
+        :style="maxHeight ? { maxHeight } : undefined"
+        aria-live="polite"
+    >
         <template v-if="messages.length > 0">
-            <div
+            <v-card
                 v-for="(message, index) in messages"
                 :key="index"
-                class="message-feed-item theme-card"
+                variant="flat"
+                border
+                class="mb-3 border-s-4 px-4 py-3 last:mb-0"
+                :class="variantBorderClass"
             >
                 <slot :message="message">{{ message }}</slot>
-            </div>
+            </v-card>
         </template>
-        <p v-else-if="emptyText" class="message-feed-empty">{{ emptyText }}</p>
+        <p v-else-if="emptyText" class="m-0 p-4 text-center opacity-60">{{ emptyText }}</p>
     </div>
 </template>
 
 <script setup lang="ts">
-defineProps<{
+import { computed } from 'vue';
+
+const props = defineProps<{
     messages: string[];
     variant?: 'feed' | 'alert' | 'error' | 'success';
     maxHeight?: string;
     emptyText?: string;
 }>();
+
+/**
+ * Left accent border keyed to the semantic variant.
+ *
+ * @returns The border utility class, or `undefined` for the plain `feed`
+ *  variant, which carries no accent.
+ */
+const variantBorderClass = computed(
+    () =>
+        ({
+            feed: undefined,
+            alert: 'border-s-primary',
+            error: 'border-s-error',
+            success: 'border-s-success'
+        })[props.variant ?? 'feed']
+);
 </script>
-
-<style lang="scss">
-.message-feed {
-    overflow-y: auto;
-    width: 100%;
-
-    .message-feed-item {
-        margin-bottom: 12px;
-        padding: 0.75rem 1rem;
-
-        &:last-child {
-            margin-bottom: 0;
-        }
-    }
-
-    &.alert .message-feed-item {
-        border-left: 4px solid rgb(var(--primary-500));
-    }
-
-    &.error .message-feed-item {
-        border-left: 4px solid rgb(var(--red-500, 239 68 68));
-    }
-
-    &.success .message-feed-item {
-        border-left: 4px solid rgb(var(--green-500, 34 197 94));
-    }
-
-    .message-feed-empty {
-        margin: 0;
-        opacity: 0.6;
-        text-align: center;
-        padding: 1rem;
-    }
-}
-</style>

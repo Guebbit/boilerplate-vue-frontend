@@ -1,16 +1,14 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
-import {
-    getCart,
-    upsertCartItem,
-    updateCartItemById,
-    removeCartItem,
-    clearCart
-} from '@/utils/api.ts';
+import { getCart, upsertCartItem, updateCartItemById, removeCartItem, clearCart } from '@api';
 import type { CartItem, CartResponse, CartSummaryResponse } from '@types';
 import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
 
+/**
+ * Owns the authenticated user's shopping cart: every action replaces the local
+ * cart with the authoritative payload returned by the API.
+ */
 export const useCartStore = defineStore('cart', () => {
     const { getLoading, setLoading } = useCoreStore();
     const { loading, fetchAny } = useStructureRestApi<CartItem, string>({ getLoading, setLoading });
@@ -36,7 +34,9 @@ export const useCartStore = defineStore('cart', () => {
     const cartCount = computed(() => cartSummary.value?.itemsCount ?? 0);
 
     /**
-     * Fetch the full cart
+     * Fetches the full cart (items + summary) and stores it.
+     *
+     * @returns A promise resolving with the cart response.
      */
     const fetchCart = () =>
         fetchAny(() =>
@@ -47,10 +47,11 @@ export const useCartStore = defineStore('cart', () => {
         );
 
     /**
-     * Add or update a cart item (upserts the item, creating it if absent)
+     * Adds a product to the cart, or updates its quantity when already present.
      *
-     * @param productId
-     * @param quantity
+     * @param productId - Product to upsert.
+     * @param quantity - Quantity to set for that product.
+     * @returns A promise resolving with the updated cart response.
      */
     const upsertCartItemAction = (productId: string, quantity: number) =>
         fetchAny(() =>
@@ -63,10 +64,11 @@ export const useCartStore = defineStore('cart', () => {
         );
 
     /**
-     * Set the exact quantity for an existing cart item
+     * Sets the exact quantity of an item already in the cart.
      *
-     * @param productId
-     * @param quantity
+     * @param productId - Product whose line is updated.
+     * @param quantity - New quantity.
+     * @returns A promise resolving with the updated cart response.
      */
     const updateCartItem = (productId: string, quantity: number) =>
         fetchAny(() =>
@@ -77,9 +79,10 @@ export const useCartStore = defineStore('cart', () => {
         );
 
     /**
-     * Remove a specific product from the cart
+     * Removes a product's line from the cart entirely.
      *
-     * @param productId
+     * @param productId - Product to remove.
+     * @returns A promise resolving with the updated cart response.
      */
     const removeCartItemAction = (productId: string) =>
         fetchAny(() =>
@@ -92,11 +95,15 @@ export const useCartStore = defineStore('cart', () => {
         );
 
     /**
-     * Empty the cart entirely, or remove a single item if productId is supplied.
-     * Delegates to DELETE /cart (body: { productId }) for single-item removal
-     * and DELETE /cart (no body) to clear all items.
+     * Empties the cart entirely, or removes a single item when a product is
+     * supplied.
      *
-     * @param productId  When provided, only this product's line is removed
+     * Delegates to `DELETE /cart` with a `{ productId }` body for single-item
+     * removal, and without a body to clear everything.
+     *
+     * @param productId - When provided, only this product's line is removed and
+     *  no `cart_cleared` analytics event is emitted.
+     * @returns A promise resolving with the updated cart response.
      */
     const clearCartAction = (productId?: string) =>
         fetchAny(() =>

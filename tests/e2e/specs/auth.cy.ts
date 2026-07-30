@@ -20,14 +20,14 @@ describe('Authentication', () => {
             cy.get('[type=email]').type('not-an-email');
             cy.get('[type=password]').type('somepassword');
             cy.get('form').submit();
-            cy.get('.form-error-message').should('exist');
+            cy.get('.v-messages__message').should('exist');
         });
 
         it('shows a validation error when the form is empty', () => {
             cy.get('[type=email]').clear();
             cy.get('[type=password]').clear();
             cy.get('form').submit();
-            cy.get('.form-error-message').should('exist');
+            cy.get('.v-messages__message').should('exist');
         });
 
         it('logs in successfully and redirects to home', () => {
@@ -58,7 +58,7 @@ describe('Authentication', () => {
             cy.get('[type=password]').eq(1).type('DifferentPass_456!');
             cy.get('[type=checkbox]').check();
             cy.get('#signup-page button[type="submit"]').click();
-            cy.get('.form-error-message').should('exist');
+            cy.get('.v-messages__message').should('exist');
         });
 
         it('signs up successfully and redirects to login (no auto-login)', () => {

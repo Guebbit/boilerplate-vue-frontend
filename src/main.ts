@@ -8,14 +8,22 @@ import router from './router';
 
 /**
  * Global CSS
+ * main.css must come first: it declares the @layer order for the whole app
+ * (Vuetify layers, then Tailwind utilities). Fonts are self-hosted.
  */
-import '@/styles/theme.scss';
-import '@/styles/main.scss';
+import '@fontsource/roboto/400.css';
+import '@fontsource/roboto/500.css';
+import '@fontsource/roboto/700.css';
+import '@/styles/main.css';
+import vuetify from '@/plugins/vuetify/index.ts';
 
 /**
- * Vue3 App
+ * Boots the Vue application: optional API mocking, plugin registration, mount,
+ * then observability init and readiness signalling.
+ *
+ * @returns A promise resolving once the app is mounted, the initial navigation
+ *  has resolved and `globalThis._appReady` has been set for test runners.
  */
-
 const bootstrapApplication = async () => {
     // Dynamic import so MSW and the mock handlers stay in a lazy chunk
     // that is never downloaded when mocking is disabled.
@@ -26,7 +34,7 @@ const bootstrapApplication = async () => {
     const app = createApp(App);
 
     // Pinia must be registered before any store is instantiated.
-    app.use(createPinia()).use(router).use(i18n).mount('#app');
+    app.use(createPinia()).use(router).use(i18n).use(vuetify).mount('#app');
 
     // Obtain the observability store (Grafana Faro + Umami).
     const observability = useObservabilityStore();

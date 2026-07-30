@@ -7,13 +7,16 @@ export default mergeConfig(
     defineConfig({
         test: {
             environment: 'jsdom',
+            setupFiles: ['tests/unit/setup.ts'],
             include: ['tests/unit/**/*.spec.ts'],
             exclude: [...configDefaults.exclude, 'e2e/**', 'src/**/__tests__/**'],
             server: {
                 deps: {
-                    inline: ['@guebbit/vue-toolkit']
+                    // vuetify ships raw .css imports in its ESM build
+                    inline: ['@guebbit/vue-toolkit', 'vuetify']
                 }
             },
+            css: true,
             root: fileURLToPath(new URL('./', import.meta.url)),
             coverage: {
                 provider: 'v8',

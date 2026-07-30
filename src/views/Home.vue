@@ -1,31 +1,26 @@
 <template>
-    <LayoutDefault id="home-page">
-        <template #header>
-            <h1 class="theme-page-title">
-                <span>{{ t('home-page.page-title') }}</span>
-            </h1>
-        </template>
-
-        <section class="home-intro-wrapper">
-            <div class="theme-card animate-on-hover card-outlined home-intro-card">
-                <h2>{{ t('home-page.hero-title') }}</h2>
-                <p>{{ t('home-page.hero-description') }}</p>
-                <RouterLink
-                    :to="
-                        routerLinkI18n({
-                            name: 'ProductsList'
-                        })
-                    "
-                    class="theme-button"
+    <LayoutDefault id="home-page" :title="t('home-page.page-title')">
+        <section class="mb-8 flex justify-center">
+            <v-card class="hero-card w-full max-w-3xl p-8 text-center sm:text-left">
+                <h2 class="text-2xl font-bold sm:text-3xl">{{ t('home-page.hero-title') }}</h2>
+                <p class="mt-3 leading-relaxed opacity-80">
+                    {{ t('home-page.hero-description') }}
+                </p>
+                <v-btn
+                    color="primary"
+                    size="large"
+                    class="mt-6"
+                    :to="routerLinkI18n({ name: 'ProductsList' })"
                 >
                     {{ t('home-page.button-browse-products') }}
-                </RouterLink>
-            </div>
+                    <ArrowRight :size="18" class="ml-2" aria-hidden="true" />
+                </v-btn>
+            </v-card>
         </section>
 
-        <section class="home-featured-wrapper">
-            <h2 class="home-featured-title">{{ t('home-page.featured-title') }}</h2>
-            <div class="home-featured-grid">
+        <section class="grid gap-4">
+            <h2 class="m-0 text-xl font-semibold">{{ t('home-page.featured-title') }}</h2>
+            <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 <CardInfo
                     v-for="product in featuredProducts"
                     :key="product.title"
@@ -42,34 +37,17 @@
     </LayoutDefault>
 </template>
 
-<style lang="scss">
-#home-page {
-    .home-intro-wrapper {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 2rem;
-    }
-
-    .home-intro-card {
-        width: min(760px, 100%);
-        display: grid;
-        gap: 0.9rem;
-    }
-
-    .home-featured-wrapper {
-        display: grid;
-        gap: 1rem;
-    }
-
-    .home-featured-title {
-        margin: 0;
-    }
-
-    .home-featured-grid {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 20px;
-    }
+<style scoped>
+/* soft brand-colored glow, driven by the active theme */
+.hero-card {
+    background:
+        radial-gradient(circle at top right, rgb(var(--v-theme-primary) / 0.14), transparent 45%),
+        radial-gradient(
+            circle at bottom left,
+            rgb(var(--v-theme-secondary) / 0.1),
+            transparent 45%
+        ),
+        rgb(var(--v-theme-surface));
 }
 </style>
 
@@ -81,9 +59,8 @@ export default {
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { RouterLink } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-import { Package, Tag, Star } from 'lucide-vue-next';
+import { ArrowRight, Package, Tag, Star } from 'lucide-vue-next';
 import type { Component } from 'vue';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
@@ -92,6 +69,11 @@ import { routerLinkI18n } from '@/utils/i18n.ts';
 
 const { t } = useI18n();
 
+/**
+ * Showcase entries of the landing page.
+ *
+ * @returns The three featured cards, re-translated whenever the locale changes.
+ */
 const featuredProducts = computed<
     {
         title: string;

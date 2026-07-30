@@ -74,7 +74,7 @@ Every tool below has a one-line "why we use it" + a link to its official documen
 | Tool                                                            | Why it's here                                                                | Docs                                                                                              |
 | --------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | **[OpenAPI 3.x](https://www.openapis.org/)** (`openapi.yaml`)   | Single source of truth for FE ⇄ BE contract                                  | [OpenAPI specification](https://spec.openapis.org/oas/latest.html)                                |
-| **[AsyncAPI 2.x](https://www.asyncapi.com/)** (`asyncapi.yaml`) | Single source of truth for SSE/WebSocket realtime contracts                  | [AsyncAPI specification](https://www.asyncapi.com/docs/reference/specification/latest)            |
+| **[AsyncAPI 2.x](https://www.asyncapi.com/)** (`asyncapi.yaml`) | Single source of truth for SSE realtime contracts                            | [AsyncAPI specification](https://www.asyncapi.com/docs/reference/specification/latest)            |
 | **[Orval](https://orval.dev/)**                                 | Generates typed axios client, Zod schemas, and MSW stubs from `openapi.yaml` | [orval.dev/overview](https://orval.dev/overview)                                                  |
 | **[@faker-js/faker](https://fakerjs.dev/)**                     | Fake data used by orval-generated MSW handler stubs                          | [fakerjs.dev/guide](https://fakerjs.dev/guide/)                                                   |
 | **[Axios](https://axios-http.com/)**                            | HTTP client used under the generated services                                | [axios-http.com/docs](https://axios-http.com/docs/intro)                                          |
@@ -132,7 +132,7 @@ flowchart LR
     end
 
     subgraph Shared["🔧 Shared utils"]
-        HTTP[utils/http.ts<br/>axios + interceptors]
+        HTTP[plugins/http/index.ts<br/>axios + interceptors]
     end
 
     subgraph Backend["🖥️ Backend"]
@@ -181,10 +181,10 @@ src/
 ├── locales/         vue-i18n messages
 ├── middlewares/     route navigation guards (authentications, localeChoice, demoMiddleware)
 ├── router/          router instance + locale routing
-├── stores/          Pinia stores (counter, observability, profile, realtimeChat, realtimeObservability)
+├── stores/          Pinia stores (counter, observability, profile, realtimeObservability)
 ├── styles/          global SCSS (theme, main)
 ├── types/           shared TS types (incl. re-exports from @api)
-├── utils/           http, api wiring, i18n, forms, multipart, sockets, errors, navigation, composables
+├── utils/           http, api wiring, i18n, sse client, errors, navigation, formatters
 ├── views/           top-level (non-feature) views (Home, Playground, Error)
 ├── App.vue
 └── main.ts          bootstrap (Pinia + Router + i18n + Grafana Faro + Umami + MSW)
@@ -249,10 +249,9 @@ Reference: [`.env-example`](./.env-example).
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `VITE_APP_DEFAULT_LOCALE`    | Initial locale (e.g. `en`)                                                                                                                                     |
 | `VITE_APP_SUPPORTED_LOCALES` | Comma-separated supported locales (e.g. `en,it,es`)                                                                                                            |
-| `VITE_APP_PUBLIC_PATH`       | Public path served by Vite                                                                                                                                     |
+| `VITE_APP_EMPTY_VALUE`       | Placeholder for empty/unavailable display values (default `—`)                                                                                                 |
 | `VITE_APP_BASE_URL`          | Router history base URL (optional)                                                                                                                             |
 | `VITE_API_URL`               | Backend API base URL                                                                                                                                           |
-| `VITE_API_WEBSOCKET`         | WebSocket URL used by realtime playground chat (`ws://…`; `http://…` is auto-converted)                                                                        |
 | `VITE_API_SSE`               | SSE URL used by realtime playground observability stream                                                                                                       |
 | `VITE_API_MOCK_ENABLED`      | Enable [MSW](https://mswjs.io/) mocking (`true`/`false`) — see [Mocking](#mocking-with-msw)                                                                    |
 | `VITE_AXIOS_TIMEOUT`         | [Axios](https://axios-http.com/) timeout (ms)                                                                                                                  |
@@ -347,8 +346,8 @@ Steps:
 flowchart LR
     A[asyncapi.yaml] --> G[npm run genasyncapi]
     G --> T[src/types/realtime.generated.ts]
-    T --> C[src/utils/createChatClient.ts<br/>src/utils/createSseClient.ts]
-    C --> S[src/stores/realtimeChat<br/>src/stores/realtimeObservability]
+    T --> C[src/features/realtime/createSseClient.ts]
+    C --> S[src/stores/realtimeObservability]
     S --> V[RealtimePlayground view]
 ```
 
@@ -362,21 +361,21 @@ Current incremental rollout:
 Dev/test strategy for realtime:
 
 - HTTP stays mocked by MSW (`VITE_API_MOCK_ENABLED=true`).
-- SSE/WebSocket can be tested with lightweight fake adapters in unit tests.
+- SSE can be tested with lightweight fake adapters in unit tests.
 - Keep realtime logic in clients/composables/stores; keep views thin.
 
 ---
 
 ## HTTP & error handling
 
-Single axios instance lives in `src/utils/http.ts`, wired into the generated client via `src/utils/api.ts`.
+Single axios instance lives in `src/plugins/http/index.ts`, wired into the generated client via its `apiMutator` export (registered as orval's mutator in `orval.config.ts`).
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant V as View / Store
     participant S as Generated function<br/>(contracts/rest/index.ts)
-    participant H as utils/http.ts<br/>(axios + interceptors)
+    participant H as plugins/http/index.ts<br/>(axios + interceptors)
     participant B as Backend (or MSW)
     V->>S: login({...})
     S->>H: HTTP request

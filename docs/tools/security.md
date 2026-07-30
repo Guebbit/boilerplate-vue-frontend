@@ -52,8 +52,8 @@ flowchart TD
 | Concern | File |
 | ------- | ---- |
 | Token storage + profile state | `src/stores/profile.ts` |
-| Attaching Bearer token to requests | `src/utils/http.ts` (request interceptor) |
-| Handling `401` responses | `src/utils/http.ts` (response interceptor) |
+| Attaching Bearer token to requests | `src/plugins/http/index.ts` (request interceptor) |
+| Handling `401` responses | `src/plugins/http/index.ts` (response interceptor) |
 | Restoring auth on page reload | `src/middlewares/authentications.ts` → `tryRestoreAuth` |
 | Route guards | `src/middlewares/authentications.ts` → `isAuth`, `isAdmin`, `isGuest` |
 

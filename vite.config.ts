@@ -2,12 +2,17 @@ import { fileURLToPath, URL } from 'node:url';
 
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import vuetify from 'vite-plugin-vuetify';
+import tailwindcss from '@tailwindcss/vite';
 import vueDevTools from 'vite-plugin-vue-devtools';
 
 // https://vite.dev/config/
 export default defineConfig({
     plugins: [
         vue(),
+        // auto-imports Vuetify components/directives on use (tree-shaken)
+        vuetify({ autoImport: true }),
+        tailwindcss(),
         vueDevTools({
             // open webstorm instead of vscode when using the __devtools__
             launchEditor: 'webstorm'

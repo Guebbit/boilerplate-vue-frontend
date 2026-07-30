@@ -8,7 +8,7 @@ describe('Orders', () => {
         beforeEach(() => {
             cy.loginAs('admin');
             cy.visit('/en/orders');
-            cy.get('.list-table tbody tr', { timeout: 10_000 }).should('have.length.at.least', 1);
+            cy.get('[data-test=list-row]', { timeout: 10_000 }).should('have.length.at.least', 1);
         });
 
         it('shows the page title', () => {
@@ -17,11 +17,11 @@ describe('Orders', () => {
         });
 
         it('renders one row per order returned by the API', () => {
-            cy.get('.list-table tbody tr').should('have.length.at.least', 1);
+            cy.get('[data-test=list-row]').should('have.length.at.least', 1);
         });
 
         it('displays order status and total in rows', () => {
-            cy.get('.list-table tbody tr')
+            cy.get('[data-test=list-row]')
                 .eq(0)
                 .within(() => {
                     cy.contains(/pending|paid|processing|shipped|delivered|cancelled/i).should(
@@ -32,17 +32,17 @@ describe('Orders', () => {
         });
 
         it('shows View, Edit and Delete actions per row', () => {
-            cy.get('.list-table tbody tr')
+            cy.get('[data-test=list-row]')
                 .eq(0)
                 .within(() => {
-                    cy.get('.view-button').should('exist');
-                    cy.get('.edit-button').should('exist');
-                    cy.get('.delete-button').should('exist');
+                    cy.get('[data-test=row-view]').should('exist');
+                    cy.get('[data-test=row-edit]').should('exist');
+                    cy.get('[data-test=row-delete]').should('exist');
                 });
         });
 
         it('navigates to order detail when clicking View', () => {
-            cy.get('.list-table tbody tr').eq(0).find('.view-button').click();
+            cy.get('[data-test=list-row]').eq(0).find('[data-test=row-view]').click();
             cy.url().should('include', '/orders/');
             cy.get('#order-target').should('exist');
         });

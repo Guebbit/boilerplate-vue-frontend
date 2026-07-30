@@ -1,88 +1,77 @@
 <template>
-    <LayoutDefault id="product-edit-page" class="item-detail-page">
-        <template #header>
-            <h1 class="theme-page-title">
-                <span>{{ t('product-edit-page.page-title') }}</span>
-            </h1>
-        </template>
-
-        <section class="item-detail-page-content">
-            <div class="item-detail-page-grid-top">
+    <LayoutDefault id="product-edit-page" :title="t('product-edit-page.page-title')">
+        <ItemDetailLayout accent="primary">
+            <template #hero>
                 <ItemDetailHero :title="heroTitle" :description="heroDescription" :eyebrow="id">
                     <template #icon><Pencil :size="32" /></template>
                 </ItemDetailHero>
+            </template>
 
-                <div class="item-detail-page-stats">
-                    <CardMaterialStat
-                        :title="t('product-target-page.label-id')"
-                        :value="id ?? EMPTY_VALUE"
-                    />
-                    <CardMaterialStat
-                        :title="t('product-target-page.label-price')"
-                        :value="formatCurrency(currentProduct?.price)"
-                        accent="secondary"
-                    />
-                    <CardMaterialStat
-                        :title="t('product-target-page.label-active')"
-                        :value="
-                            formatFlag(
-                                currentProduct?.active,
-                                t('generic.enabled'),
-                                t('generic.disabled')
-                            )
-                        "
-                        accent="tertiary"
-                    />
+            <template #stats>
+                <CardMaterialStat
+                    :title="t('product-target-page.label-id')"
+                    :value="id ?? EMPTY_VALUE"
+                />
+                <CardMaterialStat
+                    :title="t('product-target-page.label-price')"
+                    :value="formatCurrency(currentProduct?.price)"
+                    accent="secondary"
+                />
+                <CardMaterialStat
+                    :title="t('product-target-page.label-active')"
+                    :value="
+                        formatFlag(
+                            currentProduct?.active,
+                            t('generic.enabled'),
+                            t('generic.disabled')
+                        )
+                    "
+                    accent="tertiary"
+                />
+            </template>
+
+            <CardDetail>
+                <div class="mb-5">
+                    <h3 class="text-lg font-semibold">{{ t('generic.details') }}</h3>
+                    <p class="mt-1 opacity-75">{{ t('product-edit-page.page-title') }}</p>
                 </div>
-            </div>
 
-            <div class="item-detail-page-grid-main item-detail-page-grid-main-with-aside">
-                <CardDetail class="item-detail-page-main">
-                    <div class="item-detail-page-section-header">
-                        <h3>{{ t('generic.details') }}</h3>
-                        <p>{{ t('product-edit-page.page-title') }}</p>
+                <form novalidate class="flex flex-col gap-2" @submit.prevent="submitForm">
+                    <v-text-field
+                        v-model="form.title"
+                        type="text"
+                        :label="t('product-edit-page.label-title')"
+                        :error-messages="showFormErrors ? formErrors.title : []"
+                    />
+                    <v-number-input
+                        v-model="form.price"
+                        :label="t('product-edit-page.label-price')"
+                        :min="0"
+                        :step="0.01"
+                        :precision="2"
+                        control-variant="stacked"
+                        :error-messages="showFormErrors ? formErrors.price : []"
+                    />
+                    <v-textarea
+                        v-model="form.description"
+                        :label="t('product-edit-page.label-description')"
+                        :rows="5"
+                    />
+                    <v-switch v-model="form.active" :label="t('product-edit-page.label-active')" />
+
+                    <div class="flex flex-wrap gap-2">
+                        <v-btn type="submit" color="primary" :disabled="isSubmitting || loading">
+                            {{ t('product-edit-page.button-submit') }}
+                        </v-btn>
+                        <v-btn variant="tonal" @click="resetForm">
+                            {{ t('product-edit-page.reset-form') }}
+                        </v-btn>
                     </div>
+                </form>
+            </CardDetail>
 
-                    <form class="theme-form item-detail-page-form" @submit.prevent="submitForm">
-                        <BaseInput
-                            v-model="form.title"
-                            type="text"
-                            :label="t('product-edit-page.label-title')"
-                            :errors="formErrors.title"
-                            :show-errors="showFormErrors"
-                        />
-                        <BaseInput
-                            v-model="form.price"
-                            type="number"
-                            :label="t('product-edit-page.label-price')"
-                            :min="0"
-                            :step="0.01"
-                            :errors="formErrors.price"
-                            :show-errors="showFormErrors"
-                        />
-                        <BaseInput
-                            v-model="form.description"
-                            :label="t('product-edit-page.label-description')"
-                            multiline
-                            :rows="5"
-                        />
-                        <BaseCheckbox
-                            v-model="form.active"
-                            :label="t('product-edit-page.label-active')"
-                        />
-
-                        <div class="item-detail-page-form-actions">
-                            <BaseButton type="submit" :disabled="isSubmitting || loading">
-                                {{ t('product-edit-page.button-submit') }}
-                            </BaseButton>
-                            <BaseButton type="button" @click="resetForm">
-                                {{ t('product-edit-page.reset-form') }}
-                            </BaseButton>
-                        </div>
-                    </form>
-                </CardDetail>
-
-                <CardDetail as="aside" class="item-detail-page-aside">
+            <template #aside>
+                <CardDetail as="aside" class="flex flex-col gap-4">
                     <CardInfo :title="heroTitle" :description="heroDescription" variant="primary">
                         <template #icon><Package :size="28" /></template>
                     </CardInfo>
@@ -102,21 +91,21 @@
                         icon="🕘"
                     />
                 </CardDetail>
-            </div>
+            </template>
 
-            <div class="item-detail-page-actions">
-                <RouterLink
+            <template #actions>
+                <v-btn
                     v-if="id"
+                    color="secondary"
                     :to="routerLinkI18n({ name: 'ProductTarget', params: { id } })"
-                    class="theme-button"
                 >
                     {{ t('product-edit-page.button-go-to-details') }}
-                </RouterLink>
-                <RouterLink :to="routerLinkI18n({ name: 'ProductsList' })" class="theme-button">
+                </v-btn>
+                <v-btn variant="tonal" :to="routerLinkI18n({ name: 'ProductsList' })">
                     {{ t('product-edit-page.button-go-to-list') }}
-                </RouterLink>
-            </div>
-        </section>
+                </v-btn>
+            </template>
+        </ItemDetailLayout>
     </LayoutDefault>
 </template>
 
@@ -127,9 +116,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import '@/styles/features/itemDetail.scss';
 import { computed } from 'vue';
-import { RouterLink } from 'vue-router';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -138,18 +125,21 @@ import { useProductsStore } from '@/features/products/store';
 import { createProductsSchema } from '@/features/products/schemas.ts';
 import { z } from 'zod';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import BaseInput from '@/components/atoms/BaseInput.vue';
-import BaseCheckbox from '@/components/atoms/BaseCheckbox.vue';
-import BaseButton from '@/components/atoms/BaseButton.vue';
 import { Package, Pencil } from 'lucide-vue-next';
 import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
+import ItemDetailLayout from '@/components/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/components/organisms/CardDetail.vue';
 import CardInfo from '@/components/organisms/CardInfo.vue';
 import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
-import { formatText, formatDateTime, formatCurrency, formatFlag } from '@/utils/formatters.ts';
+import {
+    EMPTY_VALUE,
+    formatText,
+    formatDateTime,
+    formatCurrency,
+    formatFlag
+} from '@/utils/formatters.ts';
 import { notifyErrorMessages } from '@/utils/errors.ts';
-import { EMPTY_VALUE } from '@/utils/constants.ts';
 
 /**
  * Generic i18n and notification helpers.
@@ -168,7 +158,6 @@ const { id } = defineProps<{
  * Product store APIs and reactive references.
  */
 const { watchProduct, updateProduct } = useProductsStore();
-const zodSchemaProducts = createProductsSchema(t);
 const { currentProduct, loading } = storeToRefs(useProductsStore());
 
 /**
@@ -182,12 +171,20 @@ interface IProductEditForm {
 }
 
 /**
- * Edit validation schema.
+ * Builds the validation schema of the edit form.
+ *
+ * A getter (rather than a resolved schema) so it is re-built on every
+ * `validate()` call and the messages stay in the active language after a runtime
+ * locale switch.
+ *
+ * @returns A Zod schema requiring title and price, with optional description and
+ *  active flag.
  */
-const editSchema = zodSchemaProducts.pick({ title: true, price: true }).extend({
-    description: z.string().optional(),
-    active: z.boolean().optional()
-});
+const editSchema = () =>
+    createProductsSchema(t).pick({ title: true, price: true }).extend({
+        description: z.string().optional(),
+        active: z.boolean().optional()
+    });
 
 /**
  * Toolkit form state and submit handler.
@@ -219,15 +216,28 @@ activateAutoHydrate(
 );
 
 /**
- * Hero metadata.
+ * Hero heading.
+ *
+ * @returns The loaded product title, the route id while loading, or the generic
+ *  page title as a last resort.
  */
 const heroTitle = computed(
     () => currentProduct.value?.title ?? id ?? t('product-edit-page.page-title')
 );
+
+/**
+ * Hero subheading.
+ *
+ * @returns The product description, or the empty-value glyph when blank.
+ */
 const heroDescription = computed(() => formatText(currentProduct.value?.description));
 
 /**
- * Validates and submits product updates.
+ * Validates the form and persists the product changes.
+ *
+ * @returns A promise resolving once the flow settles: a success toast, or the
+ *  revealed validation errors when the input is invalid. API failures surface as
+ *  a toast. A missing route id, title or price is a no-op.
  */
 const submitForm = () =>
     handleSubmit(async () => {

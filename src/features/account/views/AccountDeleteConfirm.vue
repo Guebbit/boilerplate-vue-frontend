@@ -1,34 +1,37 @@
 <template>
-    <LayoutDefault id="account-delete-confirm-page">
-        <template #header>
-            <h1 class="theme-page-title">
-                <span>{{ t('account-delete-confirm-page.page-title') }}</span>
-            </h1>
-        </template>
-
-        <div class="theme-card theme-form-container">
-            <p class="account-delete-confirm-page-warning">
+    <LayoutDefault
+        id="account-delete-confirm-page"
+        :title="t('account-delete-confirm-page.page-title')"
+    >
+        <v-card class="mx-auto mt-16 w-full max-w-md p-8">
+            <v-alert type="warning" class="mb-6">
                 {{ t('account-delete-confirm-page.warning-message') }}
-            </p>
+            </v-alert>
 
-            <form ref="formElement" class="theme-form" @submit.prevent="submitForm">
-                <BaseInput
+            <form ref="formElement" novalidate @submit.prevent="submitForm">
+                <v-text-field
                     v-model="form.token"
                     :label="t('account-delete-confirm-page.label-token')"
-                    :errors="formErrors.token"
-                    :show-errors="showErrors"
+                    :error-messages="showErrors ? formErrors.token : []"
                 />
-                <BaseButton type="submit" :disabled="isSubmitting">
+                <v-btn
+                    type="submit"
+                    color="error"
+                    size="large"
+                    block
+                    :loading="isSubmitting"
+                    class="mt-4"
+                >
                     {{ t('account-delete-confirm-page.button-submit') }}
-                </BaseButton>
+                </v-btn>
             </form>
 
-            <div class="account-delete-confirm-page-actions">
-                <RouterLink :to="routerLinkI18n({ name: 'Profile' })" class="theme-button">
+            <div class="mt-4 flex justify-center">
+                <v-btn variant="text" :to="routerLinkI18n({ name: 'Profile' })">
                     {{ t('account-delete-confirm-page.button-go-back') }}
-                </RouterLink>
+                </v-btn>
             </div>
-        </div>
+        </v-card>
     </LayoutDefault>
 </template>
 
@@ -42,16 +45,16 @@ export default {
 import { nextTick, ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
-import { RouterLink, useRoute, useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import BaseInput from '@/components/atoms/BaseInput.vue';
-import BaseButton from '@/components/atoms/BaseButton.vue';
 import { useProfileStore } from '@/stores/profile.ts';
-import { notifyErrorMessages } from '@/utils/errors.ts';
-import { focusFirstErrorField } from '@/utils/forms.ts';
+import { notifyErrorMessages, focusFirstErrorField } from '@/utils/errors.ts';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 
+/**
+ * Form state: only the one-time token, prefilled from the email link.
+ */
 interface IAccountDeleteConfirmForm {
     token?: string;
 }
@@ -75,6 +78,13 @@ const { form, formErrors, isSubmitting, handleSubmit } =
 const showErrors = ref(false);
 const formElement = ref<HTMLFormElement>();
 
+/**
+ * Validates the token and deletes the account for good.
+ *
+ * @returns A promise resolving once the flow settles: on success a toast is
+ *  shown and the user is sent `Home`; on invalid input the errors are revealed
+ *  and the field focused; API failures are reported as toasts.
+ */
 const submitForm = () =>
     handleSubmit(async () => {
         await confirmAccountDelete(form.value.token!);
@@ -91,30 +101,3 @@ const submitForm = () =>
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>
-
-<style lang="scss">
-#account-delete-confirm-page {
-    .theme-form-container {
-        max-width: 420px;
-        margin: 100px auto;
-        padding: 2rem;
-    }
-
-    .account-delete-confirm-page-warning {
-        margin-bottom: 1.5rem;
-        padding: 1rem;
-        border: 1px solid #e74c3c;
-        border-radius: 4px;
-        background: rgba(231, 76, 60, 0.05);
-        color: #c0392b;
-        text-align: center;
-        font-weight: 500;
-    }
-
-    .account-delete-confirm-page-actions {
-        margin-top: 1rem;
-        display: flex;
-        justify-content: center;
-    }
-}
-</style>

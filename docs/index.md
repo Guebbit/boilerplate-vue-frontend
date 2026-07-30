@@ -59,7 +59,7 @@ flowchart TD
 
 - **SPA**: Vue 3 + Pinia + Vue Router, compiled by Vite.
 - **API client**: [OpenAPI-generated axios client](./api/openapi-workflow.md) — types and functions come from `openapi.yaml`, never written by hand.
-- **Realtime**: [SSE + WebSocket clients](./tools/websockets.md) driven by [`asyncapi.yaml`](./api/asyncapi-workflow.md).
+- **Realtime**: [SSE clients](./tools/realtime.md) driven by [`asyncapi.yaml`](./api/asyncapi-workflow.md).
 - **State**: [Pinia stores](./tools/state-and-routing.md) own data; views stay thin.
 - **Observability**: [Grafana Faro + Umami](./tools/observability.md) wired into a single store.
 - **Dev mocking**: [MSW](./tools/mocking.md) lets the app run without a backend.
