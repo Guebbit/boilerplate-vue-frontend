@@ -7,9 +7,9 @@ import {
     createOrder as apiCreateOrder,
     updateOrderById,
     deleteOrderById,
-    checkout as apiCheckout
+    checkout as apiCheckout,
+    getOrderInvoice
 } from '@api';
-import httpClient from '@/plugins/http';
 import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
 import type {
     Order,
@@ -192,15 +192,9 @@ export const useOrdersStore = defineStore('orders', () => {
      * Downloads an order's invoice.
      *
      * @param orderId - Identifier of the order to invoice.
-     * @returns A promise resolving with the axios response whose `data` is the
-     *  PDF `Blob`.
+     * @returns A promise resolving with the PDF `Blob`.
      */
-    const getOrderInvoice = (orderId: string) =>
-        fetchAny(() =>
-            httpClient.get(`/orders/${encodeURIComponent(orderId)}/invoice`, {
-                responseType: 'blob'
-            })
-        );
+    const downloadInvoice = (orderId: string) => fetchAny(() => getOrderInvoice(orderId));
 
     return {
         orders,
@@ -225,6 +219,6 @@ export const useOrdersStore = defineStore('orders', () => {
         updateOrder,
         checkout,
         deleteOrder,
-        getOrderInvoice
+        downloadInvoice
     };
 });

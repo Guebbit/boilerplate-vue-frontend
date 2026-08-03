@@ -10,10 +10,11 @@ import {
     updateProductById,
     deleteProductById
 } from '@api';
-import httpClient from '@/plugins/http';
+import { orvalMutator } from '@/plugins/http';
 import { toFormData } from '@guebbit/js-toolkit';
 import type {
     Product,
+    ProductEnvelope,
     CreateProductRequestMultipart,
     UpdateProductByIdRequestMultipart,
     SearchProductsRequest
@@ -188,7 +189,11 @@ export const useProductsStore = defineStore('products', () => {
     const createProduct = (productData: CreateProductRequestMultipart) =>
         createTarget(() =>
             productData.imageUpload
-                ? httpClient.post<Product, Product>('/products', productFormData(productData))
+                ? orvalMutator<ProductEnvelope>({
+                      url: '/products',
+                      method: 'POST',
+                      data: productFormData(productData)
+                  }).then((response) => response.data)
                 : apiCreateProduct({
                       title: productData.title,
                       price: productData.price,
@@ -219,9 +224,10 @@ export const useProductsStore = defineStore('products', () => {
         if (files.length === 0 || !files[0]) return Promise.reject(new Error('no file selected'));
         return updateTarget(
             () =>
-                httpClient.put<Product, Product>(
-                    `/products/${encodeURIComponent(product.id)}`,
-                    productFormData({
+                orvalMutator<ProductEnvelope>({
+                    url: `/products/${encodeURIComponent(product.id)}`,
+                    method: 'PUT',
+                    data: productFormData({
                         title: product.title,
                         price: product.price,
                         description: product.description,
@@ -230,8 +236,8 @@ export const useProductsStore = defineStore('products', () => {
                         tags: product.tags,
                         imageUpload: files[0]
                     }),
-                    { onUploadProgress }
-                ),
+                    onUploadProgress
+                }).then((response) => response.data),
             {} as Partial<Product>,
             product.id
         );
@@ -249,10 +255,11 @@ export const useProductsStore = defineStore('products', () => {
         updateTarget(
             () =>
                 productData.imageUpload
-                    ? httpClient.put<Product, Product>(
-                          `/products/${encodeURIComponent(productId)}`,
-                          productFormData(productData)
-                      )
+                    ? orvalMutator<ProductEnvelope>({
+                          url: `/products/${encodeURIComponent(productId)}`,
+                          method: 'PUT',
+                          data: productFormData(productData)
+                      }).then((response) => response.data)
                     : updateProductById(productId, {
                           title: productData.title,
                           price: productData.price,

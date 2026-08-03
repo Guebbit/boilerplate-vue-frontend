@@ -176,7 +176,7 @@ const { id } = defineProps<{
 /**
  * Store API and reactive order references.
  */
-const { watchOrder, getOrderInvoice } = useOrdersStore();
+const { watchOrder, downloadInvoice: fetchInvoice } = useOrdersStore();
 const { currentOrder, loading } = storeToRefs(useOrdersStore());
 
 /**
@@ -217,8 +217,7 @@ const orderStatus = computed(() => {
 const downloadInvoice = async () => {
     if (!id) return;
     try {
-        const response = await getOrderInvoice(id);
-        const blob = response?.data as Blob | undefined;
+        const blob = await fetchInvoice(id);
         if (!blob) return;
         downloadBlob(blob, `order-${id}-invoice.pdf`);
     } catch (error: unknown) {

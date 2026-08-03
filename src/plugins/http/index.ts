@@ -1,11 +1,6 @@
 import axiosClient from 'axios';
 import { getCurrentLocale } from '@/utils/i18n.ts';
-import type {
-    AxiosError,
-    AxiosResponse,
-    AxiosRequestConfig,
-    InternalAxiosRequestConfig
-} from 'axios';
+import type { AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import type { IResponseReject, IResponseSuccess } from '@/types';
 import { useProfileStore } from '@/stores/profile.ts';
 import { storeToRefs } from 'pinia';
@@ -138,13 +133,18 @@ export const onRequestReject = (error: AxiosError) => {
 };
 
 /**
- * Response success interceptor: unwraps the axios envelope so callers receive
- * the backend payload (`{ data }`) directly.
+ * Former response success interceptor: used to unwrap every response to
+ * `response.data` here, which made `instance.get()` et al. lie about their
+ * return type (still typed as `AxiosResponse<T>`, actually resolving to `T`).
+ *
+ * Disabled — `instance` now always resolves with the real `AxiosResponse`.
+ * The one sanctioned unwrap point is `orvalMutator` below. Kept for reference
+ * in case a future need for a global response transform comes up.
  *
  * @param response - Successful axios response.
  * @returns The response body.
  */
-export const onResponseSuccess = (response: AxiosResponse): AxiosResponse['data'] => response.data;
+// const onResponseSuccess = (response: AxiosResponse): AxiosResponse['data'] => response.data;
 
 /**
  * Response error normalizer.
@@ -249,33 +249,26 @@ instance.interceptors.request.use(onRequest, onRequestReject);
  * Handle all responses
  * (Intercept and modify responses after they are received)
  */
-instance.interceptors.response.use(onResponseSuccess, onResponseRejectWithRefresh);
+instance.interceptors.response.use(undefined, onResponseRejectWithRefresh);
 
 /**
- * Complete custom axios instance
- */
-export default instance;
-
-/**
- * Custom orval mutator: routes all generated API calls through this shared
- * axios instance.
+ * Custom orval mutator: the *only* function allowed to call the shared axios
+ * instance directly (see `orval.config.ts`'s `override.api.output.override.mutator`,
+ * which points every generated client function through here). Anything that
+ * needs to hit the API — generated or hand-written — goes through this, never
+ * through `instance` itself, so there is exactly one place that unwraps the
+ * response and exactly one place request/response behavior is configured.
  *
- * The instance already handles:
+ * `instance` already handles:
  * - Base URL (VITE_API_URL)
  * - Bearer token header injection
  * - Accept-Language header
  * - Cookie forwarding (refresh token)
  * - 401 -> token refresh -> retry logic
- * - Response unwrapping: the response interceptor returns response.data
- *   directly, so the Promise resolves with the JSON envelope (e.g. CartResponseEnvelope)
- *   rather than the raw AxiosResponse.
  *
- * The second generic parameter `<never, T>` tells TypeScript that the return
- * type is `T` (matching what the interceptor actually returns at runtime).
- *
- * @typeParam T - Response payload type expected by the generated client.
- * @param config - Request config produced by the generated client.
- * @returns A promise resolving with the unwrapped response body.
+ * @typeParam T - Response payload type expected by the caller.
+ * @param config - Request config.
+ * @returns A promise resolving with the unwrapped response body (`response.data`).
  */
-export const apiMutator = <T>(config: AxiosRequestConfig): Promise<T> =>
-    instance.request<never, T>(config);
+export const orvalMutator = <T>(config: AxiosRequestConfig): Promise<T> =>
+    instance.request<T>(config).then((response) => response.data);

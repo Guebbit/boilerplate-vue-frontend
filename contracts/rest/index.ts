@@ -7,7 +7,7 @@
  *
  * OpenAPI spec version: 2.0.0
  */
-import { apiMutator } from '../../src/plugins/http/index.js';
+import { orvalMutator } from '../../src/plugins/http/index.js';
 /**
  * 1-based page index
  * @minimum 1
@@ -985,7 +985,7 @@ export type ListOrdersParams = {
  * @summary API health check
  */
 export const getHealth = () => {
-    return apiMutator<MessageResponse>({ url: `/`, method: 'GET' });
+    return orvalMutator<MessageResponse>({ url: `/`, method: 'GET' });
 };
 
 /**
@@ -994,7 +994,7 @@ export const getHealth = () => {
  * @summary Observability SSE stream
  */
 export const getObservabilityEvents = () => {
-    return apiMutator<string>({ url: `/observability/events`, method: 'GET' });
+    return orvalMutator<string>({ url: `/observability/events`, method: 'GET' });
 };
 
 /**
@@ -1004,7 +1004,7 @@ export const getObservabilityEvents = () => {
  * @summary Health snapshot
  */
 export const getObservabilityHealth = () => {
-    return apiMutator<ObservabilityHealthResponseEnvelope>({
+    return orvalMutator<ObservabilityHealthResponseEnvelope>({
         url: `/observability/health`,
         method: 'GET'
     });
@@ -1017,7 +1017,7 @@ export const getObservabilityHealth = () => {
  * @summary Prometheus metrics
  */
 export const getObservabilityMetrics = () => {
-    return apiMutator<string>({ url: `/observability/metrics`, method: 'GET' });
+    return orvalMutator<string>({ url: `/observability/metrics`, method: 'GET' });
 };
 
 /**
@@ -1027,7 +1027,7 @@ export const getObservabilityMetrics = () => {
  * @summary Metrics overview (JSON)
  */
 export const getObservabilityMetricsOverview = () => {
-    return apiMutator<ObservabilityMetricsSummaryResponseEnvelope>({
+    return orvalMutator<ObservabilityMetricsSummaryResponseEnvelope>({
         url: `/observability/metrics/overview`,
         method: 'GET'
     });
@@ -1040,7 +1040,7 @@ export const getObservabilityMetricsOverview = () => {
  * @summary Recent audit events
  */
 export const getObservabilityAuditLogs = (params?: GetObservabilityAuditLogsParams) => {
-    return apiMutator<AuditLogsResponseEnvelope>({
+    return orvalMutator<AuditLogsResponseEnvelope>({
         url: `/observability/audit`,
         method: 'GET',
         params
@@ -1052,7 +1052,7 @@ export const getObservabilityAuditLogs = (params?: GetObservabilityAuditLogsPara
  * @summary Current user info
  */
 export const getAccount = () => {
-    return apiMutator<UserEnvelope>({ url: `/account`, method: 'GET' });
+    return orvalMutator<UserEnvelope>({ url: `/account`, method: 'GET' });
 };
 
 /**
@@ -1060,7 +1060,7 @@ export const getAccount = () => {
  * @summary Request account deletion
  */
 export const requestAccountDelete = () => {
-    return apiMutator<SuccessResponse>({ url: `/account`, method: 'DELETE' });
+    return orvalMutator<SuccessResponse>({ url: `/account`, method: 'DELETE' });
 };
 
 /**
@@ -1068,7 +1068,7 @@ export const requestAccountDelete = () => {
  * @summary Confirm account deletion
  */
 export const confirmAccountDelete = (accountDeleteConfirmRequest: AccountDeleteConfirmRequest) => {
-    return apiMutator<SuccessResponse>({
+    return orvalMutator<SuccessResponse>({
         url: `/account/delete-confirm`,
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -1081,7 +1081,7 @@ export const confirmAccountDelete = (accountDeleteConfirmRequest: AccountDeleteC
  * @summary Login
  */
 export const login = (loginRequest: LoginRequest) => {
-    return apiMutator<AuthTokensEnvelope>({
+    return orvalMutator<AuthTokensEnvelope>({
         url: `/account/login`,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1094,14 +1094,14 @@ export const login = (loginRequest: LoginRequest) => {
  * @summary Signup
  */
 export const signup = (signupBody: SignupRequest | SignupRequestMultipart) => {
-    return apiMutator<UserEnvelope>({ url: `/account/signup`, method: 'POST', data: signupBody });
+    return orvalMutator<UserEnvelope>({ url: `/account/signup`, method: 'POST', data: signupBody });
 };
 
 /**
  * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
  */
 export const requestPasswordReset = (passwordResetRequest: PasswordResetRequest) => {
-    return apiMutator<SuccessResponse>({
+    return orvalMutator<SuccessResponse>({
         url: `/account/reset`,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1113,7 +1113,7 @@ export const requestPasswordReset = (passwordResetRequest: PasswordResetRequest)
  * Completes the password-reset flow. Validates the one-time reset token issued by `/account/reset` and, if valid, updates the user's password to the supplied value.
  */
 export const confirmPasswordReset = (passwordResetConfirmRequest: PasswordResetConfirmRequest) => {
-    return apiMutator<SuccessResponse>({
+    return orvalMutator<SuccessResponse>({
         url: `/account/reset-confirm`,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1126,7 +1126,7 @@ export const confirmPasswordReset = (passwordResetConfirmRequest: PasswordResetC
  * @summary Refresh access token
  */
 export const refreshToken = () => {
-    return apiMutator<RefreshTokenEnvelope>({ url: `/account/refresh`, method: 'GET' });
+    return orvalMutator<RefreshTokenEnvelope>({ url: `/account/refresh`, method: 'GET' });
 };
 
 /**
@@ -1134,7 +1134,7 @@ export const refreshToken = () => {
  * @summary Refresh access token with token in path
  */
 export const refreshTokenWithPath = (token: string) => {
-    return apiMutator<RefreshTokenEnvelope>({ url: `/account/refresh/${token}`, method: 'GET' });
+    return orvalMutator<RefreshTokenEnvelope>({ url: `/account/refresh/${token}`, method: 'GET' });
 };
 
 /**
@@ -1142,7 +1142,7 @@ export const refreshTokenWithPath = (token: string) => {
  * @summary Logout from all devices
  */
 export const logoutAll = () => {
-    return apiMutator<SuccessResponse>({ url: `/account/logout-all`, method: 'POST' });
+    return orvalMutator<SuccessResponse>({ url: `/account/logout-all`, method: 'POST' });
 };
 
 /**
@@ -1150,7 +1150,7 @@ export const logoutAll = () => {
  * @summary Remove expired tokens
  */
 export const deleteExpiredTokens = () => {
-    return apiMutator<SuccessResponse>({ url: `/account/tokens/expired`, method: 'DELETE' });
+    return orvalMutator<SuccessResponse>({ url: `/account/tokens/expired`, method: 'DELETE' });
 };
 
 /**
@@ -1158,7 +1158,7 @@ export const deleteExpiredTokens = () => {
  * @summary List users (paginated)
  */
 export const listUsers = (params?: ListUsersParams) => {
-    return apiMutator<UsersResponseEnvelope>({ url: `/users`, method: 'GET', params });
+    return orvalMutator<UsersResponseEnvelope>({ url: `/users`, method: 'GET', params });
 };
 
 /**
@@ -1166,7 +1166,7 @@ export const listUsers = (params?: ListUsersParams) => {
  * @summary Create user
  */
 export const createUser = (createUserBody: CreateUserRequest | CreateUserRequestMultipart) => {
-    return apiMutator<UserEnvelope>({ url: `/users`, method: 'POST', data: createUserBody });
+    return orvalMutator<UserEnvelope>({ url: `/users`, method: 'POST', data: createUserBody });
 };
 
 /**
@@ -1174,7 +1174,7 @@ export const createUser = (createUserBody: CreateUserRequest | CreateUserRequest
  * @summary Edit user
  */
 export const updateUser = (updateUserBody: UpdateUserRequest | UpdateUserRequestMultipart) => {
-    return apiMutator<UserEnvelope>({ url: `/users`, method: 'PUT', data: updateUserBody });
+    return orvalMutator<UserEnvelope>({ url: `/users`, method: 'PUT', data: updateUserBody });
 };
 
 /**
@@ -1182,7 +1182,7 @@ export const updateUser = (updateUserBody: UpdateUserRequest | UpdateUserRequest
  * @summary Delete user
  */
 export const deleteUser = (deleteUserRequest: DeleteUserRequest) => {
-    return apiMutator<SuccessResponse>({
+    return orvalMutator<SuccessResponse>({
         url: `/users`,
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -1195,7 +1195,7 @@ export const deleteUser = (deleteUserRequest: DeleteUserRequest) => {
  * @summary User details
  */
 export const getUserById = (id: string) => {
-    return apiMutator<UserEnvelope>({ url: `/users/${id}`, method: 'GET' });
+    return orvalMutator<UserEnvelope>({ url: `/users/${id}`, method: 'GET' });
 };
 
 /**
@@ -1206,7 +1206,7 @@ export const updateUserById = (
     id: string,
     updateUserByIdBody: UpdateUserByIdRequest | UpdateUserByIdRequestMultipart
 ) => {
-    return apiMutator<UserEnvelope>({
+    return orvalMutator<UserEnvelope>({
         url: `/users/${id}`,
         method: 'PUT',
         data: updateUserByIdBody
@@ -1218,7 +1218,7 @@ export const updateUserById = (
  * @summary Delete user
  */
 export const deleteUserById = (id: string, params?: DeleteUserByIdParams) => {
-    return apiMutator<SuccessResponse>({ url: `/users/${id}`, method: 'DELETE', params });
+    return orvalMutator<SuccessResponse>({ url: `/users/${id}`, method: 'DELETE', params });
 };
 
 /**
@@ -1226,7 +1226,7 @@ export const deleteUserById = (id: string, params?: DeleteUserByIdParams) => {
  * @summary Search users (DTO-friendly)
  */
 export const searchUsers = (searchUsersRequest: SearchUsersRequest) => {
-    return apiMutator<UsersResponseEnvelope>({
+    return orvalMutator<UsersResponseEnvelope>({
         url: `/users/search`,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1239,7 +1239,7 @@ export const searchUsers = (searchUsersRequest: SearchUsersRequest) => {
  * @summary Submit contact request
  */
 export const createFeedbackRequest = (createFeedbackRequest: CreateFeedbackRequest) => {
-    return apiMutator<FeedbackRequestEnvelope>({
+    return orvalMutator<FeedbackRequestEnvelope>({
         url: `/feedback/contact`,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1254,7 +1254,7 @@ export const createFeedbackRequest = (createFeedbackRequest: CreateFeedbackReque
 export const listFeedbackRequests = (
     searchFeedbackRequestsRequest?: SearchFeedbackRequestsRequest
 ) => {
-    return apiMutator<FeedbackRequestsResponseEnvelope>({
+    return orvalMutator<FeedbackRequestsResponseEnvelope>({
         url: `/feedback`,
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
@@ -1269,7 +1269,7 @@ export const updateFeedbackRequestStatus = (
     id: string,
     updateFeedbackRequestStatusRequest: UpdateFeedbackRequestStatusRequest
 ) => {
-    return apiMutator<FeedbackRequestEnvelope>({
+    return orvalMutator<FeedbackRequestEnvelope>({
         url: `/feedback/${id}`,
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -1282,7 +1282,7 @@ export const updateFeedbackRequestStatus = (
  * @summary List products (paginated)
  */
 export const listProducts = (params?: ListProductsParams) => {
-    return apiMutator<ProductsResponseEnvelope>({ url: `/products`, method: 'GET', params });
+    return orvalMutator<ProductsResponseEnvelope>({ url: `/products`, method: 'GET', params });
 };
 
 /**
@@ -1292,7 +1292,7 @@ export const listProducts = (params?: ListProductsParams) => {
 export const createProduct = (
     createProductBody: CreateProductRequest | CreateProductRequestMultipart
 ) => {
-    return apiMutator<ProductEnvelope>({
+    return orvalMutator<ProductEnvelope>({
         url: `/products`,
         method: 'POST',
         data: createProductBody
@@ -1306,7 +1306,7 @@ export const createProduct = (
 export const updateProduct = (
     updateProductBody: UpdateProductRequest | UpdateProductRequestMultipart
 ) => {
-    return apiMutator<ProductEnvelope>({
+    return orvalMutator<ProductEnvelope>({
         url: `/products`,
         method: 'PUT',
         data: updateProductBody
@@ -1318,7 +1318,7 @@ export const updateProduct = (
  * @summary Delete product
  */
 export const deleteProduct = (deleteProductRequest: DeleteProductRequest) => {
-    return apiMutator<SuccessResponse>({
+    return orvalMutator<SuccessResponse>({
         url: `/products`,
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -1331,7 +1331,7 @@ export const deleteProduct = (deleteProductRequest: DeleteProductRequest) => {
  * @summary Product details
  */
 export const getProductById = (id: string) => {
-    return apiMutator<ProductEnvelope>({ url: `/products/${id}`, method: 'GET' });
+    return orvalMutator<ProductEnvelope>({ url: `/products/${id}`, method: 'GET' });
 };
 
 /**
@@ -1342,7 +1342,7 @@ export const updateProductById = (
     id: string,
     updateProductByIdBody: UpdateProductByIdRequest | UpdateProductByIdRequestMultipart
 ) => {
-    return apiMutator<ProductEnvelope>({
+    return orvalMutator<ProductEnvelope>({
         url: `/products/${id}`,
         method: 'PUT',
         data: updateProductByIdBody
@@ -1354,7 +1354,7 @@ export const updateProductById = (
  * @summary Delete product
  */
 export const deleteProductById = (id: string, params?: DeleteProductByIdParams) => {
-    return apiMutator<SuccessResponse>({ url: `/products/${id}`, method: 'DELETE', params });
+    return orvalMutator<SuccessResponse>({ url: `/products/${id}`, method: 'DELETE', params });
 };
 
 /**
@@ -1362,7 +1362,7 @@ export const deleteProductById = (id: string, params?: DeleteProductByIdParams) 
  * @summary Search products (DTO-friendly)
  */
 export const searchProducts = (searchProductsRequest: SearchProductsRequest) => {
-    return apiMutator<ProductsResponseEnvelope>({
+    return orvalMutator<ProductsResponseEnvelope>({
         url: `/products/search`,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1375,7 +1375,7 @@ export const searchProducts = (searchProductsRequest: SearchProductsRequest) => 
  * @summary Get cart
  */
 export const getCart = () => {
-    return apiMutator<CartResponseEnvelope>({ url: `/cart`, method: 'GET' });
+    return orvalMutator<CartResponseEnvelope>({ url: `/cart`, method: 'GET' });
 };
 
 /**
@@ -1383,7 +1383,7 @@ export const getCart = () => {
  * @summary Add/Edit cart item
  */
 export const upsertCartItem = (upsertCartItemRequest: UpsertCartItemRequest) => {
-    return apiMutator<CartResponseEnvelope>({
+    return orvalMutator<CartResponseEnvelope>({
         url: `/cart`,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1396,7 +1396,7 @@ export const upsertCartItem = (upsertCartItemRequest: UpsertCartItemRequest) => 
  * @summary Empty cart or, if productId is set, remove target cart item
  */
 export const clearCart = (removeCartItemRequest?: RemoveCartItemRequest) => {
-    return apiMutator<CartResponseEnvelope>({
+    return orvalMutator<CartResponseEnvelope>({
         url: `/cart`,
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -1412,7 +1412,7 @@ export const updateCartItemById = (
     productId: string,
     updateCartItemByIdRequest: UpdateCartItemByIdRequest
 ) => {
-    return apiMutator<CartResponseEnvelope>({
+    return orvalMutator<CartResponseEnvelope>({
         url: `/cart/${productId}`,
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -1425,7 +1425,7 @@ export const updateCartItemById = (
  * @summary Remove item from cart
  */
 export const removeCartItem = (productId: string) => {
-    return apiMutator<CartResponseEnvelope>({ url: `/cart/${productId}`, method: 'DELETE' });
+    return orvalMutator<CartResponseEnvelope>({ url: `/cart/${productId}`, method: 'DELETE' });
 };
 
 /**
@@ -1433,7 +1433,7 @@ export const removeCartItem = (productId: string) => {
  * @summary Get cart summary
  */
 export const getCartSummary = () => {
-    return apiMutator<CartSummaryResponseEnvelope>({ url: `/cart/summary`, method: 'GET' });
+    return orvalMutator<CartSummaryResponseEnvelope>({ url: `/cart/summary`, method: 'GET' });
 };
 
 /**
@@ -1441,7 +1441,7 @@ export const getCartSummary = () => {
  * @summary Checkout (place order from cart)
  */
 export const checkout = (checkoutRequest?: CheckoutRequest) => {
-    return apiMutator<CheckoutResponseEnvelope>({
+    return orvalMutator<CheckoutResponseEnvelope>({
         url: `/cart/checkout`,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1455,7 +1455,7 @@ export const checkout = (checkoutRequest?: CheckoutRequest) => {
  * @summary List orders (paginated)
  */
 export const listOrders = (params?: ListOrdersParams) => {
-    return apiMutator<OrdersResponseEnvelope>({ url: `/orders`, method: 'GET', params });
+    return orvalMutator<OrdersResponseEnvelope>({ url: `/orders`, method: 'GET', params });
 };
 
 /**
@@ -1463,7 +1463,7 @@ export const listOrders = (params?: ListOrdersParams) => {
  * @summary Create order
  */
 export const createOrder = (createOrderRequest: CreateOrderRequest) => {
-    return apiMutator<OrderEnvelope>({
+    return orvalMutator<OrderEnvelope>({
         url: `/orders`,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1476,7 +1476,7 @@ export const createOrder = (createOrderRequest: CreateOrderRequest) => {
  * @summary Update order
  */
 export const updateOrder = (updateOrderRequest: UpdateOrderRequest) => {
-    return apiMutator<OrderEnvelope>({
+    return orvalMutator<OrderEnvelope>({
         url: `/orders`,
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -1489,7 +1489,7 @@ export const updateOrder = (updateOrderRequest: UpdateOrderRequest) => {
  * @summary Delete order
  */
 export const deleteOrder = (deleteOrderRequest: DeleteOrderRequest) => {
-    return apiMutator<SuccessResponse>({
+    return orvalMutator<SuccessResponse>({
         url: `/orders`,
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -1503,7 +1503,7 @@ export const deleteOrder = (deleteOrderRequest: DeleteOrderRequest) => {
  * @summary Search orders (DTO-friendly)
  */
 export const searchOrders = (searchOrdersRequest: SearchOrdersRequest) => {
-    return apiMutator<OrdersResponseEnvelope>({
+    return orvalMutator<OrdersResponseEnvelope>({
         url: `/orders/search`,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1516,7 +1516,7 @@ export const searchOrders = (searchOrdersRequest: SearchOrdersRequest) => {
  * @summary Order details
  */
 export const getOrderById = (id: string) => {
-    return apiMutator<OrderEnvelope>({ url: `/orders/${id}`, method: 'GET' });
+    return orvalMutator<OrderEnvelope>({ url: `/orders/${id}`, method: 'GET' });
 };
 
 /**
@@ -1524,7 +1524,7 @@ export const getOrderById = (id: string) => {
  * @summary Edit order
  */
 export const updateOrderById = (id: string, updateOrderByIdRequest: UpdateOrderByIdRequest) => {
-    return apiMutator<OrderEnvelope>({
+    return orvalMutator<OrderEnvelope>({
         url: `/orders/${id}`,
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -1537,7 +1537,7 @@ export const updateOrderById = (id: string, updateOrderByIdRequest: UpdateOrderB
  * @summary Delete order
  */
 export const deleteOrderById = (id: string) => {
-    return apiMutator<SuccessResponse>({ url: `/orders/${id}`, method: 'DELETE' });
+    return orvalMutator<SuccessResponse>({ url: `/orders/${id}`, method: 'DELETE' });
 };
 
 /**
@@ -1545,7 +1545,11 @@ export const deleteOrderById = (id: string) => {
  * @summary Download order invoice (PDF)
  */
 export const getOrderInvoice = (id: string) => {
-    return apiMutator<Blob>({ url: `/orders/${id}/invoice`, method: 'GET', responseType: 'blob' });
+    return orvalMutator<Blob>({
+        url: `/orders/${id}/invoice`,
+        method: 'GET',
+        responseType: 'blob'
+    });
 };
 
 export type GetHealthResult = NonNullable<Awaited<ReturnType<typeof getHealth>>>;

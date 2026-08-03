@@ -102,6 +102,6 @@ Pageviews are automatic (Umami) and are not in this table.
 | `VITE_FARO_APP_VERSION` | App version reported to Faro (default `1.0.0`)                       |
 | `VITE_FARO_ENVIRONMENT` | Environment tag (default: Vite `MODE`)                               |
 | `VITE_UMAMI_WEBSITE_ID` | Umami website id (empty = Umami disabled)                            |
-| `VITE_UMAMI_SRC`        | Umami tracker script URL (default `http://localhost:8090/script.js`) |
+| `VITE_UMAMI_SRC`        | Umami tracker script URL (default `http://localhost:3080/script.js`) |
 
 Trace propagation targets `VITE_API_URL`.

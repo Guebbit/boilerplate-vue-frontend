@@ -148,7 +148,7 @@ export const createMockInvoicePdf = () =>
 // in Cypress causes a full page reload, which re-evaluates all ES modules,
 // including this file. That wipes the module-level `mockDatabase` back to its
 // initial state — most critically, `currentAuthenticatedUserId` reverts to
-// 'user-1' (admin), silently undoing any login performed in a previous step.
+// root (admin), silently undoing any login performed in a previous step.
 //
 // Solution: mirror `currentAuthenticatedUserId` in sessionStorage, which
 // survives page reloads within the same browser tab (Cypress runs all steps of
@@ -186,81 +186,101 @@ export const trySetSessionStorage = (key: string, value?: string) => {
 
 // ─── mock database ────────────────────────────────────────────────────────────
 
+// IDs, credentials and content below mirror db/seeds/index.ts in the BE (PROPOSAL §6-A), so the
+// same login and the same records work against both MSW and the real API.
+//
+// Each of these is a factory, not a plain array: handlers mutate items in place (splice, unshift,
+// index-assignment), so `resetMockDatabase` needs genuinely fresh objects on every call, not a
+// second reference to the same mutated ones.
+const createSeedUsers = (): User[] => [
+    {
+        id: '65dd2bdb923652b7800fe180',
+        email: 'root@root.it',
+        username: 'root',
+        admin: true,
+        active: true,
+        imageUrl: undefined,
+        createdAt: getIsoDateNow(),
+        updatedAt: getIsoDateNow()
+    },
+    {
+        id: '65de646a44f861fd83c13f13',
+        email: 'gino@pino.it',
+        username: 'ginopinoshow',
+        admin: false,
+        active: true,
+        imageUrl: undefined,
+        createdAt: getIsoDateNow(),
+        updatedAt: getIsoDateNow()
+    }
+];
+
+const createSeedProducts = (): Product[] => [
+    {
+        id: '65dc8a99604c307b702b5ccc',
+        title: 'Sallyno Panino',
+        description: 'Piccolo Sallyno panino. Da mangiare di coccole',
+        price: 100,
+        active: true,
+        imageUrl: undefined,
+        createdAt: getIsoDateNow(),
+        updatedAt: getIsoDateNow()
+    },
+    {
+        id: '65dc8ad8604c307b702b5cd4',
+        title: 'Sallyno Carino',
+        description: 'Sallyno incredibilmente carino. Illegale in 400 paesi. Soft deleted product.',
+        price: 50,
+        active: true,
+        imageUrl: undefined,
+        deletedAt: '2024-02-26T23:34:44.832Z',
+        createdAt: getIsoDateNow(),
+        updatedAt: getIsoDateNow()
+    },
+    {
+        id: '65dc9be92f2794d1c16741e1',
+        title: 'Miciona inutile',
+        description: 'Miciona inutile, piccolo catorcio che come lavoro produce pelo a non finire',
+        price: 1,
+        active: true,
+        imageUrl: undefined,
+        createdAt: getIsoDateNow(),
+        updatedAt: getIsoDateNow()
+    },
+    {
+        id: '65dcdec2b18ad5e4bd597f0f',
+        title: 'Micino pufettino',
+        description: 'Micino pufettino, incredibilmente pufino. Illegale in 400 paesi.',
+        price: 77,
+        active: true,
+        imageUrl: undefined,
+        createdAt: getIsoDateNow(),
+        updatedAt: getIsoDateNow()
+    },
+    {
+        id: '6622c88a5123b1e286f440f8',
+        title: 'Bundle micini',
+        description: 'Produttori di rumori molesti a tutte le ore. Inactive product.',
+        price: 40,
+        active: false,
+        imageUrl: undefined,
+        createdAt: getIsoDateNow(),
+        updatedAt: getIsoDateNow()
+    }
+];
+
 const createInitialMockDatabase = () => {
-    const sampleUsers: User[] = [
-        {
-            id: 'user-1',
-            email: 'root@root.it',
-            username: 'admin',
-            admin: true,
-            active: true,
-            imageUrl: undefined,
-            createdAt: getIsoDateNow(),
-            updatedAt: getIsoDateNow()
-        },
-        {
-            id: 'user-2',
-            email: 'john@example.com',
-            username: 'john',
-            admin: false,
-            active: true,
-            imageUrl: undefined,
-            createdAt: getIsoDateNow(),
-            updatedAt: getIsoDateNow()
-        },
-        {
-            id: 'user-3',
-            email: 'jane@example.com',
-            username: 'jane',
-            admin: false,
-            active: false,
-            imageUrl: undefined,
-            createdAt: getIsoDateNow(),
-            updatedAt: getIsoDateNow()
-        }
-    ];
+    const sampleProducts = createSeedProducts();
 
-    const sampleProducts: Product[] = [
-        {
-            id: 'prod-1',
-            title: 'Product Alpha',
-            description: 'First test product',
-            price: 10,
-            active: true,
-            imageUrl: undefined,
-            createdAt: getIsoDateNow(),
-            updatedAt: getIsoDateNow()
-        },
-        {
-            id: 'prod-2',
-            title: 'Product Beta',
-            description: 'Second test product',
-            price: 25.5,
-            active: true,
-            imageUrl: undefined,
-            createdAt: getIsoDateNow(),
-            updatedAt: getIsoDateNow()
-        },
-        {
-            id: 'prod-3',
-            title: 'Product Gamma',
-            description: 'Third test product',
-            price: 20,
-            active: false,
-            imageUrl: undefined,
-            createdAt: getIsoDateNow(),
-            updatedAt: getIsoDateNow()
-        }
-    ];
-
+    // Mirrors the admin's embedded `cart.items` in the seed: 2x Sallyno Panino, 3x Micino pufettino.
     const sampleCartItems: CartItem[] = [
         {
-            productId: 'prod-1',
+            productId: '65dc8a99604c307b702b5ccc',
             quantity: 2
         },
         {
-            productId: 'prod-2',
-            quantity: 1
+            productId: '65dcdec2b18ad5e4bd597f0f',
+            quantity: 3
         }
     ];
 
@@ -284,34 +304,34 @@ const createInitialMockDatabase = () => {
         };
     };
 
+    // Mirrors the two seeded orders (db/seeds/index.ts), both placed by root.
     const sampleOrders: Order[] = [
         createOrder({
-            userId: 'user-1',
-            email: 'root@root.it',
+            userId: '65dd2bdb923652b7800fe180',
+            email: 'oldpsw@root.it',
             items: [
-                { product: sampleProducts[0], quantity: 2 },
-                { product: sampleProducts[1], quantity: 1 }
+                { product: sampleProducts[0], quantity: 1 },
+                { product: sampleProducts[2], quantity: 10 }
             ],
             status: 'pending'
         }),
         createOrder({
-            userId: 'user-1',
+            userId: '65dd2bdb923652b7800fe180',
             email: 'root@root.it',
-            items: [{ product: sampleProducts[0], quantity: 2 }],
-            status: 'delivered',
-            notes: 'Fast delivery please'
+            items: [{ product: sampleProducts[3], quantity: 20 }],
+            status: 'pending'
         })
     ];
 
     // Sentinel convention for currentAuthenticatedUserId:
-    //   undefined key  → never set (fresh browser) → default to user-1 (admin)
+    //   undefined key  → never set (fresh browser) → default to root (admin)
     //   '' (empty str) → explicitly logged out / reset → no session
     //   '<id>'         → actively logged-in user
     const storedUserId = tryGetSessionStorage(MOCK_USER_ID_KEY);
     return {
         currentAuthenticatedUserId:
-            storedUserId === undefined ? 'user-1' : storedUserId || undefined,
-        sampleUsers,
+            storedUserId === undefined ? '65dd2bdb923652b7800fe180' : storedUserId || undefined,
+        sampleUsers: createSeedUsers(),
         sampleProducts,
         sampleCartItems,
         sampleOrders

@@ -43,7 +43,7 @@ export interface IFaroConfig {
 }
 
 export interface IUmamiConfig {
-    /** Umami tracker script URL (e.g. http://localhost:8090/script.js). */
+    /** Umami tracker script URL (e.g. http://localhost:3080/script.js). */
     src: string;
     websiteId: string;
 }
@@ -132,7 +132,7 @@ function readUmamiConfig(): IUmamiConfig | undefined {
     return {
         src:
             (import.meta.env.VITE_UMAMI_SRC as string | undefined)?.trim() ||
-            'http://localhost:8090/script.js',
+            'http://localhost:3080/script.js',
         websiteId
     };
 }

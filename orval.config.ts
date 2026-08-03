@@ -6,7 +6,7 @@ import { defineConfig } from 'orval';
  * Full output reference: https://orval.dev/docs/reference/configuration/output
  *
  * api:         typed axios functions + TS types → contracts/rest/index.ts
- *              mutator delegates HTTP to apiMutator (auth headers, token refresh)
+ *              mutator delegates HTTP to orvalMutator (auth headers, token refresh)
  *
  * zodSchemas:  Zod schemas matching each OpenAPI model → contracts/rest/schemas.zod.ts
  *              Import from @api/schemas to validate forms or parse API responses.
@@ -41,7 +41,7 @@ export default defineConfig({
                 // instead of orval's default bare axios.request(config).
                 mutator: {
                     path: './src/plugins/http/index.ts',
-                    name: 'apiMutator'
+                    name: 'orvalMutator'
                 }
             }
         }

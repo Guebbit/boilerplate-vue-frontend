@@ -1,4 +1,24 @@
 #!/usr/bin/env tsx
+/*
+ * Generates the TypeScript realtime contract types from asyncapi.yaml.
+ *
+ * SHARED SCRIPT — this file is byte-identical in `boilerplate-node-api-mongodb-mongoose` and
+ * `boilerplate-vue-frontend` (PROPOSAL §5, option B). Only the output path differs, and that
+ * comes from `--out` in each repo's `genasyncapi` script, so the two copies can be compared
+ * with a plain `diff`. Change it in one repo and copy it to the other, or the outputs drift.
+ *
+ * It emits a SUPERSET of what either repo needs, so neither has to rename anything:
+ *
+ *   - the modelina-generated payload interfaces          (both)
+ *   - `I<MessageName>` aliases for components.messages   (both)
+ *   - `<NAMESPACE>_CHANNELS` constant objects            (backend: OBSERVABILITY_CHANNELS, …)
+ *   - `T<Namespace>Channel` unions                       (backend: TObservabilityChannel, …)
+ *   - `REALTIME_SSE_EVENT_NAMES` + `ISseEventPayloadMap` (frontend: per-event payload typing)
+ *
+ * Unused exports are harmless — tree-shaken in the frontend bundle, type-only in the backend.
+ *
+ * Usage: tsx scripts/gen-asyncapi-types.ts --out <path>
+ */
 import { TypeScriptGenerator, typeScriptDefaultModelNameConstraints } from '@asyncapi/modelina';
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
@@ -42,7 +62,23 @@ interface IAsyncApiDocument {
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const INPUT = path.resolve(ROOT, 'asyncapi.yaml');
-const OUTPUT = path.resolve(ROOT, 'src/types/realtime.generated.ts');
+
+/*
+ * Reads the required `--out` argument.
+ *
+ * @returns Absolute path of the file to generate.
+ */
+const resolveOutputPath = (): string => {
+    const flagIndex = process.argv.indexOf('--out');
+    const value = flagIndex === -1 ? undefined : process.argv[flagIndex + 1];
+    if (!value) {
+        console.error('Missing required argument: --out <path>');
+        process.exit(1);
+    }
+    return path.resolve(ROOT, value);
+};
+
+const OUTPUT = resolveOutputPath();
 
 /*
  * Converts source names into `PascalCase`.
@@ -199,6 +235,65 @@ const renderPayloadMap = (
     return `export interface ${interfaceName} {\n${rows}\n}`;
 };
 
+/*
+ * Turns a channel name into the SCREAMING_SNAKE key used inside its namespace constant.
+ * `observability.metrics.snapshot` under `observability.` becomes `METRICS_SNAPSHOT`.
+ *
+ * @param channelName Full channel name.
+ * @param prefix Namespace prefix to strip.
+ * @returns Constant object key.
+ */
+const toConstantKey = (channelName: string, prefix: string): string =>
+    channelName
+        .slice(prefix.length)
+        .replaceAll(/[.\-_]+/gu, '_')
+        .toUpperCase();
+
+/*
+ * Renders one namespace's channel-name constant object plus its union type.
+ * Namespaces are discovered from the contract, so a new channel prefix generates its own
+ * group with no change to this script.
+ *
+ * @param namespace First dot-segment of the channel names (e.g. `observability`).
+ * @param channelNames Every channel in that namespace.
+ * @returns TypeScript source for the constant object and its union type.
+ */
+const renderChannelNamespace = (namespace: string, channelNames: string[]): string => {
+    const prefix = `${namespace}.`;
+    const constantName = `${namespace.toUpperCase()}_CHANNELS`;
+    const unionName = `T${toPascalCase(namespace)}Channel`;
+    const entries = channelNames
+        .map((channelName) => `    ${toConstantKey(channelName, prefix)}: '${channelName}',`)
+        .join('\n');
+
+    return [
+        `/* Channel names in the "${prefix}" namespace */`,
+        `export const ${constantName} = {`,
+        entries,
+        '} as const;',
+        '',
+        `/* Union of every "${prefix}" channel name */`,
+        `export type ${unionName} = (typeof ${constantName})[keyof typeof ${constantName}];`,
+        ''
+    ].join('\n');
+};
+
+/*
+ * Groups channel names by their first dot-segment, preserving contract order.
+ *
+ * @param channelNames Every channel name in the contract.
+ * @returns Namespace to channel-names map.
+ */
+const groupChannelsByNamespace = (channelNames: string[]): Map<string, string[]> => {
+    const groups = new Map<string, string[]>();
+    for (const channelName of channelNames) {
+        const namespace = channelName.split('.')[0];
+        if (!namespace) continue;
+        groups.set(namespace, [...(groups.get(namespace) ?? []), channelName]);
+    }
+    return groups;
+};
+
 const modelNameConstraints = typeScriptDefaultModelNameConstraints({
     NAMING_FORMATTER: (value: string) => toInterfaceName(value)
 });
@@ -220,6 +315,10 @@ const messages = document.components?.messages ?? {};
 
 const sseEntries = collectChannelMessageEntries(channels, 'observability.', 'subscribe');
 
+const channelNamespaceBlocks = [...groupChannelsByNamespace(Object.keys(channels))].map(
+    ([namespace, channelNames]) => renderChannelNamespace(namespace, channelNames)
+);
+
 const messageTypeBlocks = Object.entries(messages)
     .map(([messageName, message]) => {
         const aliasName = toInterfaceName(messageName);
@@ -237,20 +336,23 @@ const messageTypeBlocks = Object.entries(messages)
  * Builds the full generated file output content.
  *
  * @param modelBlocks Modelina-generated schema blocks.
- * @returns Complete TypeScript source for `realtime.generated.ts`.
+ * @returns Complete TypeScript source for the generated types file.
  */
 const buildOutput = (modelBlocks: string[]): string => {
     const sections = [
         '/* eslint-disable @typescript-eslint/naming-convention */',
         '/*',
-        ' * This file is auto-generated from asyncapi.yaml via @asyncapi/modelina.',
-        ' * Run `npm run genasyncapi` after AsyncAPI contract changes.',
+        ' * GENERATED — do not edit manually.',
+        ' * Source: asyncapi.yaml  |  Regenerate: npm run genasyncapi',
         ' */',
         '',
         ...modelBlocks,
         '',
         ...messageTypeBlocks,
         '',
+        '/* Channel name constants (canonical identifiers from asyncapi.yaml) */',
+        '',
+        ...channelNamespaceBlocks,
         renderLiteralArray(
             'REALTIME_SSE_EVENT_NAMES',
             sseEntries.map(({ channelName }) => channelName)

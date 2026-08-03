@@ -43,13 +43,32 @@ import { REALTIME_SSE_EVENT_NAMES } from '@types';
 | ---- | --- |
 | `@asyncapi/cli` | validates `asyncapi.yaml` (`npm run genasyncapi` internally) |
 | `@asyncapi/modelina` | generates TypeScript types from AsyncAPI schemas |
-| custom `scripts/gen-asyncapi-types.ts` | runs modelina + appends repo-specific channel constants |
+| custom `scripts/gen-asyncapi-types.ts` | runs modelina + appends the channel constants and the SSE payload map |
 
 ## Commands
 
 ```bash
 npm run genasyncapi   # validate asyncapi.yaml + regenerate src/types/realtime.generated.ts
 ```
+
+## Shared with the backend
+
+`scripts/gen-asyncapi-types.ts` is **byte-identical** to the one in
+`boilerplate-node-api-mongodb-mongoose` (PROPOSAL §5, option B — this repo's generator was the
+more capable of the two and became the shared implementation). Only the output path differs, and
+it comes from `--out`:
+
+| Repo | Command |
+| --- | --- |
+| Frontend | `tsx scripts/gen-asyncapi-types.ts --out src/types/realtime.generated.ts` |
+| Backend | `tsx scripts/gen-asyncapi-types.ts --out src/types/asyncapi.ts` |
+
+Because `asyncapi.yaml` is identical too, the two generated files are identical — `diff` proves
+it. The script emits a superset: this repo uses `ISseEventPayloadMap` for per-event payload
+typing, the backend uses `OBSERVABILITY_CHANNELS` / `TObservabilityChannel`. The exports this
+repo does not use are tree-shaken out of the bundle.
+
+**If you change this script, copy it to the other repo.** Nothing enforces it automatically.
 
 ## Realtime client workflow
 

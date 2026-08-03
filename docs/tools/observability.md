@@ -5,9 +5,9 @@ The FE observability layer covers two complementary concerns, both wired into a 
 | Tool | Role | Endpoint |
 | ---- | ---- | -------- |
 | **Grafana Faro** (`@grafana/faro-web-sdk` + `@grafana/faro-web-tracing`) | Error/crash monitoring, frontend tracing, Core Web Vitals | Grafana Alloy Faro receiver on `http://localhost:12347/collect` |
-| **Umami** (`script.js` tracker) | Product analytics — pageviews + custom events | `http://localhost:8090` |
+| **Umami** (`script.js` tracker) | Product analytics — pageviews + custom events | `http://localhost:3080` |
 
-Both are no-ops when their env vars are absent, so local dev works without the stack running. You verify the data in **Grafana** (`http://localhost:3001`, default `admin/admin`) and the **Umami dashboard** (`http://localhost:8090`).
+Both are no-ops when their env vars are absent, so local dev works without the stack running. You verify the data in **Grafana** (`http://localhost:3001`, default `admin/admin`) and the **Umami dashboard** (`http://localhost:3080`).
 
 > The browser **only ever talks to Alloy** on `:12347` (never directly to the OTel collector `:4318`, Loki, or Prometheus). Alloy fans the signals out to Loki/Tempo/Prometheus.
 
@@ -27,7 +27,7 @@ flowchart LR
     Store -->|VITE_FARO_URL set| Faro["Grafana Faro SDK"]
     Store -->|VITE_UMAMI_WEBSITE_ID set| Umami["Umami tracker"]
     Faro -->|errors, traces, web-vitals| Alloy["Grafana Alloy :12347"]
-    Umami -->|pageviews, events| UmamiServer["Umami :8090"]
+    Umami -->|pageviews, events| UmamiServer["Umami :3080"]
 ```
 
 ## Initialization
@@ -108,7 +108,7 @@ Pageviews are handled automatically by Umami and are **not** in this table.
 | Variable | Purpose |
 | -------- | ------- |
 | `VITE_UMAMI_WEBSITE_ID` | Umami website id (from the Umami dashboard) — empty disables Umami |
-| `VITE_UMAMI_SRC` | Tracker script URL (default `http://localhost:8090/script.js`) |
+| `VITE_UMAMI_SRC` | Tracker script URL (default `http://localhost:3080/script.js`) |
 
 ### Feature flags
 

@@ -8,11 +8,12 @@ import {
     updateUserById,
     deleteUserById
 } from '@api';
-import httpClient from '@/plugins/http';
+import { orvalMutator } from '@/plugins/http';
 import { toFormData } from '@guebbit/js-toolkit';
 import type { AxiosProgressEvent } from 'axios';
 import type {
     User,
+    UserEnvelope,
     CreateUserRequestMultipart,
     UpdateUserByIdRequestMultipart,
     SearchUsersRequest
@@ -165,7 +166,11 @@ export const useUsersStore = defineStore('users', () => {
     const createUser = (userData: CreateUserRequestMultipart) =>
         createTarget(() =>
             userData.imageUpload
-                ? httpClient.post<User, User>('/users', toFormData(definedEntries(userData)))
+                ? orvalMutator<UserEnvelope>({
+                      url: '/users',
+                      method: 'POST',
+                      data: toFormData(definedEntries(userData))
+                  }).then((response) => response.data)
                 : apiCreateUser({
                       email: userData.email,
                       username: userData.username,
@@ -193,11 +198,12 @@ export const useUsersStore = defineStore('users', () => {
         if (files.length === 0 || !files[0]) return Promise.reject(new Error('no file selected'));
         return updateTarget(
             () =>
-                httpClient.put<User, User>(
-                    `/users/${encodeURIComponent(userId)}`,
-                    toFormData({ imageUpload: files[0] }),
-                    { onUploadProgress }
-                ),
+                orvalMutator<UserEnvelope>({
+                    url: `/users/${encodeURIComponent(userId)}`,
+                    method: 'PUT',
+                    data: toFormData({ imageUpload: files[0] }),
+                    onUploadProgress
+                }).then((response) => response.data),
             // No fields to optimistically merge — the updated imageUrl is returned by the API
             {} as Partial<User>,
             userId
@@ -217,10 +223,11 @@ export const useUsersStore = defineStore('users', () => {
         updateTarget(
             () =>
                 userData.imageUpload
-                    ? httpClient.put<User, User>(
-                          `/users/${encodeURIComponent(userId)}`,
-                          toFormData(definedEntries(userData))
-                      )
+                    ? orvalMutator<UserEnvelope>({
+                          url: `/users/${encodeURIComponent(userId)}`,
+                          method: 'PUT',
+                          data: toFormData(definedEntries(userData))
+                      }).then((response) => response.data)
                     : updateUserById(userId, {
                           email: userData.email,
                           password: userData.password,

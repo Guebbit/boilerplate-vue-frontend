@@ -25,4 +25,6 @@ services:
             dockerfile: .docker/Dockerfile.docs
         restart: unless-stopped
         ports:
-            - '${VITE_DOCS_PORT:-4173}:80'
+            # 8090 sits in this repo's 8080-8099 host-port block; the paired backend owns
+            # 3000-3099 and puts its own docs on 3090.
+            - '${VITE_DOCS_PORT:-8090}:80'

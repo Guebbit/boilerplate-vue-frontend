@@ -11,7 +11,10 @@ export default defineConfig({
     e2e: {
         specPattern: 'tests/e2e/specs/**/*.{cy,spec}.{js,jsx,ts,tsx}',
         supportFile: 'tests/e2e/support/e2e.ts',
-        baseUrl: 'http://localhost:4173',
+        // 8085 sits in this repo's 8080-8099 host-port block. It used to be 4173, which the
+        // paired backend's docs container also claimed — and `pretest:e2e` used to free it with
+        // `fuser -k`, killing podman's port forwarder along with it.
+        baseUrl: 'http://localhost:8085',
         allowCypressEnv: false,
         env: {
             apiUrl: viteEnvironment.VITE_API_URL ?? 'http://localhost:3000'

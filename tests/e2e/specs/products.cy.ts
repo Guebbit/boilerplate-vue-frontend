@@ -16,21 +16,21 @@ describe('Products', () => {
         });
 
         it('renders one row per product returned by the API', () => {
-            cy.get('[data-test=list-row]').should('have.length', 3);
+            cy.get('[data-test=list-row]').should('have.length', 5);
         });
 
         it('displays product title and price in each row', () => {
             cy.get('[data-test=list-row]')
                 .eq(0)
                 .within(() => {
-                    cy.contains('Product Alpha').should('exist');
-                    cy.contains('10').should('exist');
+                    cy.contains('Sallyno Panino').should('exist');
+                    cy.contains('100').should('exist');
                 });
             cy.get('[data-test=list-row]')
                 .eq(1)
                 .within(() => {
-                    cy.contains('Product Beta').should('exist');
-                    cy.contains('25.5').should('exist');
+                    cy.contains('Sallyno Carino').should('exist');
+                    cy.contains('50').should('exist');
                 });
         });
 
@@ -59,14 +59,14 @@ describe('Products', () => {
 
         it('navigates to product detail when clicking View', () => {
             cy.get('[data-test=list-row]').eq(0).find('[data-test=row-view]').click();
-            cy.url().should('include', '/products/prod-1');
+            cy.url().should('include', '/products/65dc8a99604c307b702b5ccc');
             cy.get('#product-target').should('exist');
         });
     });
 
     describe('Product detail', () => {
         beforeEach(() => {
-            cy.visit('/en/products/prod-1');
+            cy.visit('/en/products/65dc8a99604c307b702b5ccc');
             cy.get('#product-target').should('exist');
         });
 
@@ -76,15 +76,15 @@ describe('Products', () => {
         });
 
         it('displays the product title', () => {
-            cy.contains('Product Alpha').should('exist');
+            cy.contains('Sallyno Panino').should('exist');
         });
 
         it('displays the product price', () => {
-            cy.contains('10').should('exist');
+            cy.contains('100').should('exist');
         });
 
         it('displays the product description', () => {
-            cy.contains('First test product').should('exist');
+            cy.contains('Piccolo Sallyno panino. Da mangiare di coccole').should('exist');
         });
 
         it('has a link back to the products list', () => {

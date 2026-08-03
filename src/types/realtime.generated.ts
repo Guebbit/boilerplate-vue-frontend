@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /*
- * This file is auto-generated from asyncapi.yaml via @asyncapi/modelina.
- * Run `npm run genasyncapi` after AsyncAPI contract changes.
+ * GENERATED — do not edit manually.
+ * Source: asyncapi.yaml  |  Regenerate: npm run genasyncapi
  */
 
 export interface IObservabilityMetricsPayload {
@@ -66,6 +66,43 @@ export type ICacheTagsInvalidatedMessage = ICacheTagsInvalidatedPayload;
 export type IEmailJobConsumeMessage = IEmailJobPayload;
 export type IPdfJobConsumeMessage = IPdfJobPayload;
 export type ICacheTagsInvalidatedConsumeMessage = ICacheTagsInvalidatedPayload;
+
+/* Channel name constants (canonical identifiers from asyncapi.yaml) */
+
+/* Channel names in the "observability." namespace */
+export const OBSERVABILITY_CHANNELS = {
+    METRICS_SNAPSHOT: 'observability.metrics.snapshot',
+    METRICS_UPDATED: 'observability.metrics.updated',
+    HEARTBEAT: 'observability.heartbeat',
+} as const;
+
+/* Union of every "observability." channel name */
+export type TObservabilityChannel = (typeof OBSERVABILITY_CHANNELS)[keyof typeof OBSERVABILITY_CHANNELS];
+
+/* Channel names in the "ecommerce." namespace */
+export const ECOMMERCE_CHANNELS = {
+    CART_CHECKED_OUT: 'ecommerce.cart.checked_out',
+} as const;
+
+/* Union of every "ecommerce." channel name */
+export type TEcommerceChannel = (typeof ECOMMERCE_CHANNELS)[keyof typeof ECOMMERCE_CHANNELS];
+
+/* Channel names in the "worker." namespace */
+export const WORKER_CHANNELS = {
+    EMAIL_SEND: 'worker.email.send',
+    PDF_GENERATE: 'worker.pdf.generate',
+} as const;
+
+/* Union of every "worker." channel name */
+export type TWorkerChannel = (typeof WORKER_CHANNELS)[keyof typeof WORKER_CHANNELS];
+
+/* Channel names in the "cache." namespace */
+export const CACHE_CHANNELS = {
+    TAGS_INVALIDATED: 'cache.tags.invalidated',
+} as const;
+
+/* Union of every "cache." channel name */
+export type TCacheChannel = (typeof CACHE_CHANNELS)[keyof typeof CACHE_CHANNELS];
 
 export const REALTIME_SSE_EVENT_NAMES = [
     "observability.heartbeat",

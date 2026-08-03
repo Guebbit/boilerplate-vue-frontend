@@ -38,6 +38,26 @@ npm run dev           # start Vite dev server on :8080
 
 Then open <http://localhost:8080>.
 
+### Host port map
+
+This repo owns the **`8080–8099`** host-port block; the paired backend owns **`3000–3099`**.
+Keeping the two blocks disjoint is what lets both stacks be up at the same time — they
+previously collided on `4173`, which this repo claimed twice (docs container _and_ e2e vite
+server) and the backend claimed once for its own docs.
+
+| Service                  | Host port | Where it is set                                     |
+| ------------------------ | --------- | --------------------------------------------------- |
+| Vite dev server          | `8080`    | `npm run dev`, `VITE_APP_PORT` (compose)            |
+| e2e vite server          | `8085`    | `test:e2e*` scripts + `cypress.config.ts` `baseUrl` |
+| Docs (VitePress + Nginx) | `8090`    | `VITE_DOCS_PORT`                                    |
+
+New services belong inside `8080–8099`.
+
+> The e2e scripts no longer free their port with `fuser -k` before starting. That command killed
+> _any_ process listening on it — including another project's container port forwarder.
+> `start-server-and-test` now simply fails loudly if `8085` is busy, which is the correct
+> behaviour.
+
 ---
 
 ## Tech stack & official docs
@@ -248,6 +268,7 @@ Reference: [`.env-example`](./.env-example).
 | Variable                     | Purpose                                                                                                                                                        |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `VITE_APP_DEFAULT_LOCALE`    | Initial locale (e.g. `en`)                                                                                                                                     |
+| `VITE_APP_FALLBACK_LOCALE`   | Locale used when a key is missing from the active one — `vue-i18n` `fallbackLocale` (default `en`)                                                             |
 | `VITE_APP_SUPPORTED_LOCALES` | Comma-separated supported locales (e.g. `en,it,es`)                                                                                                            |
 | `VITE_APP_EMPTY_VALUE`       | Placeholder for empty/unavailable display values (default `—`)                                                                                                 |
 | `VITE_APP_BASE_URL`          | Router history base URL (optional)                                                                                                                             |
@@ -263,29 +284,29 @@ Reference: [`.env-example`](./.env-example).
 | `VITE_FARO_APP_VERSION`      | App version reported to Faro (default `1.0.0`)                                                                                                                 |
 | `VITE_FARO_ENVIRONMENT`      | Faro environment tag (defaults to Vite `MODE`)                                                                                                                 |
 | `VITE_UMAMI_WEBSITE_ID`      | [Umami](https://umami.is/) website id (empty = off)                                                                                                            |
-| `VITE_UMAMI_SRC`             | Umami tracker script URL (default: `http://localhost:8090/script.js`)                                                                                          |
+| `VITE_UMAMI_SRC`             | Umami tracker script URL (default: `http://localhost:3080/script.js`)                                                                                          |
 
 ---
 
 ## npm scripts
 
-| Script                   | Purpose                                                                                 |
-| ------------------------ | --------------------------------------------------------------------------------------- |
-| `npm run dev`            | Start [Vite](https://vite.dev/) dev server on `:8080`                                   |
-| `npm run build`          | `vue-tsc` type-check **+** production build                                             |
-| `npm run preview`        | Preview built app                                                                       |
-| `npm run lint`           | Run [ESLint](https://eslint.org/) (check)                                               |
-| `npm run lint:fix`       | Run ESLint with `--fix`                                                                 |
-| `npm run lint:openapi`   | Lint `openapi.yaml` with [Spectral](https://stoplight.io/open-source/spectral)          |
-| `npm run prettier`       | [Prettier](https://prettier.io/) check (alias for `prettier:check`)                     |
-| `npm run prettier:fix`   | Prettier write                                                                          |
-| `npm run test:unit`      | [Vitest](https://vitest.dev/) unit tests                                                |
-| `npm run test:e2e`       | Start Vite (with MSW) + run [Cypress](https://www.cypress.io/) e2e                      |
-| `npm run test`           | `test:unit` then `test:e2e`                                                             |
-| `npm run genapi`         | Regenerate `contracts/rest` client from `openapi.yaml`                                  |
-| `npm run genasyncapi`    | Run `tsx scripts/gen-asyncapi-types.ts` to regenerate `src/types/realtime.generated.ts` |
-| `npm run complete`       | build + lint:fix + lint:openapi + prettier:fix + tests (local hardening)                |
-| `npm run complete:check` | build + lint + lint:openapi + prettier:check + tests (CI gate)                          |
+| Script                   | Purpose                                                                                                                                         |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`            | Start [Vite](https://vite.dev/) dev server on `:8080`                                                                                           |
+| `npm run build`          | `vue-tsc` type-check **+** production build                                                                                                     |
+| `npm run preview`        | Preview built app                                                                                                                               |
+| `npm run lint`           | Run [ESLint](https://eslint.org/) (check)                                                                                                       |
+| `npm run lint:fix`       | Run ESLint with `--fix`                                                                                                                         |
+| `npm run lint:openapi`   | Lint `openapi.yaml` with [Spectral](https://stoplight.io/open-source/spectral)                                                                  |
+| `npm run prettier`       | [Prettier](https://prettier.io/) check (alias for `prettier:check`)                                                                             |
+| `npm run prettier:fix`   | Prettier write                                                                                                                                  |
+| `npm run test:unit`      | [Vitest](https://vitest.dev/) unit tests                                                                                                        |
+| `npm run test:e2e`       | Start Vite (with MSW) + run [Cypress](https://www.cypress.io/) e2e                                                                              |
+| `npm run test`           | `test:unit` then `test:e2e`                                                                                                                     |
+| `npm run genapi`         | Regenerate `contracts/rest` client from `openapi.yaml`                                                                                          |
+| `npm run genasyncapi`    | Regenerate `src/types/realtime.generated.ts` from `asyncapi.yaml` (shared generator — see [AsyncAPI workflow](./docs/api/asyncapi-workflow.md)) |
+| `npm run complete`       | build + lint:fix + lint:openapi + prettier:fix + tests (local hardening)                                                                        |
+| `npm run complete:check` | build + lint + lint:openapi + prettier:check + tests (CI gate)                                                                                  |
 
 ---
 
@@ -368,7 +389,7 @@ Dev/test strategy for realtime:
 
 ## HTTP & error handling
 
-Single axios instance lives in `src/plugins/http/index.ts`, wired into the generated client via its `apiMutator` export (registered as orval's mutator in `orval.config.ts`).
+Single axios instance lives in `src/plugins/http/index.ts`, wired into the generated client via its `orvalMutator` export (registered as orval's mutator in `orval.config.ts`).
 
 ```mermaid
 sequenceDiagram
@@ -471,7 +492,7 @@ npm run test:e2e:dev  # opens Cypress UI
 
 ## Observability (Grafana Faro, Umami, analytics)
 
-All observability code is consolidated in `src/stores/observability.ts` (a Pinia store). Never scatter vendor calls directly from components. Everything runs against a **self-hosted local stack** (Docker/Podman) — no external SaaS. Verify data in **Grafana** (`http://localhost:3001`) and the **Umami dashboard** (`http://localhost:8090`).
+All observability code is consolidated in `src/stores/observability.ts` (a Pinia store). Never scatter vendor calls directly from components. Everything runs against a **self-hosted local stack** (Docker/Podman) — no external SaaS. Verify data in **Grafana** (`http://localhost:3001`) and the **Umami dashboard** (`http://localhost:3080`).
 
 ### What each tool does
 
