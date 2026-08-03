@@ -6,7 +6,9 @@ export default mergeConfig(
     viteConfig,
     defineConfig({
         test: {
-            environment: 'jsdom',
+            // Plain jsdom, with one class of parser noise filtered out.
+            // See the file itself for why, and for how to go back to 'jsdom'.
+            environment: './tests/unit/jsdom-quiet-css.env.ts',
             setupFiles: ['tests/unit/setup.ts'],
             include: ['tests/unit/**/*.spec.ts'],
             exclude: [...configDefaults.exclude, 'e2e/**', 'src/**/__tests__/**'],

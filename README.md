@@ -277,7 +277,6 @@ Reference: [`.env-example`](./.env-example).
 | `VITE_API_MOCK_ENABLED`      | Enable [MSW](https://mswjs.io/) mocking (`true`/`false`) — see [Mocking](#mocking-with-msw)                                                                    |
 | `VITE_AXIOS_TIMEOUT`         | [Axios](https://axios-http.com/) timeout (ms)                                                                                                                  |
 | `VITE_APP_DEBUG_ROUTER`      | Router debug logs in dev (`true`/`false`)                                                                                                                      |
-| `VITE_APP_DEBUG_HOME`        | Home view demo logs in dev (`true`/`false`)                                                                                                                    |
 | `VITE_APP_DEBUG_HTTP`        | HTTP interceptor debug logs for server errors (`true`/`false`)                                                                                                 |
 | `VITE_FARO_URL`              | [Grafana Faro](https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/faro-web-sdk/) receiver URL — Alloy `/collect` (empty = off) |
 | `VITE_FARO_APP_NAME`         | App name reported to Faro (default `frontend`)                                                                                                                 |

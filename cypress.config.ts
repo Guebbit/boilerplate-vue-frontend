@@ -4,7 +4,6 @@ import { loadEnv } from 'vite';
 const viteEnvironment = loadEnv('', process.cwd(), '');
 
 export default defineConfig({
-    fixturesFolder: 'tests/e2e/fixtures',
     screenshotsFolder: 'tests/e2e/screenshots',
     videosFolder: 'tests/e2e/videos',
     downloadsFolder: 'tests/e2e/downloads',
