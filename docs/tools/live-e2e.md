@@ -1,0 +1,125 @@
+# Live E2E (FE ↔ real backend)
+
+The fixed-seed mock profile ([Mocking](./mocking.md)) proves the frontend agrees with its own MSW handlers. It cannot prove those handlers agree with the real API — that gap is closed by running the same Cypress specs against a live, seeded backend instead. This page documents that profile: how to boot it, what guards it, and why it is run by hand rather than in CI.
+
+## Why this is not in CI
+
+This repo and `boilerplate-node-api-mongodb-mongoose` are two independently versioned repositories, hand-paired by a developer running both checkouts locally. There is no single pipeline that owns both, so there is nothing for a CI job to check out, boot and tear down together — a CI job here could only ever test one side's `openapi.yaml` against its own last-known-good copy of the other, which is worse than not testing it at all.
+
+The live run is **mandatory before tagging either repo**, not optional. What stands in for CI is:
+
+- the **preflight** below, which turns a misconfigured or unbooted backend into one actionable line instead of a wall of Cypress network noise
+- **response validation** (`VITE_VALIDATE_RESPONSES`), which turns any live contract violation into a hard failure instead of something that only surfaces if an unrelated assertion happens to trip on it
+- the **parity spec**, which turns a silent drift between the mock seed and the real seed into a failing test the first time this profile runs after the drift — not into a bug a user finds
+
+## Architecture
+
+```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 65}}}%%
+flowchart TB
+    Boot["npm run podman:restart\nnpm run db:bootstrap:host\n(backend repo)"] --> Preflight{"scripts/preflight-live.ts\nreachable? BACKEND_PATH ok? specs match?"}
+    Preflight -->|fail| Actionable["one-line failure,\n< 5s, no Cypress noise"]
+    Preflight -->|pass| Vite["vite dev :8085\nVITE_API_MOCK_ENABLED=false\nVITE_VALIDATE_RESPONSES=true"]
+    Vite --> Cypress["cypress run --e2e\nCYPRESS_apiMockEnabled=false"]
+    Cypress --> Real["real HTTP\n:8085 → :3000"]
+    Real --> Backend[("live backend\nreal seeded MongoDB")]
+    Real --> Mutator["orvalMutator\nparses every response\nvs @api/schemas"]
+    Mutator -->|mismatch| Fail["throws — live contract\nviolation caught"]
+    Cypress --> Parity["parity.cy.ts\nlive dataset vs mockShared.ts seed"]
+    Cypress --> Refresh["auth.cy.ts live case\nforced 401 → refresh cookie\n:8085 → :3000"]
+
+    classDef step fill:#dbeafe,stroke:#2563eb,color:#111827;
+    classDef check fill:#dcfce7,stroke:#16a34a,color:#111827;
+    classDef fail fill:#fee2e2,stroke:#dc2626,color:#111827;
+    classDef data fill:#fef3c7,stroke:#d97706,color:#111827;
+    class Boot,Vite,Cypress,Real step;
+    class Preflight,Mutator,Parity,Refresh check;
+    class Actionable,Fail fail;
+    class Backend data;
+```
+
+## Boot sequence
+
+```sh
+# terminal 1 — backend
+cd boilerplate-node-api-mongodb-mongoose
+npm run podman:restart   # or: npm run docker:restart
+npm run db:bootstrap:host
+
+# terminal 2 — frontend
+cd boilerplate-vue-frontend
+npm run test:e2e:live
+```
+
+`db:bootstrap:host` runs migrations and seeds against the containerized Mongo/Redis exposed on the host (`27017`/`6379`), matching the ports `db:seed:reset:host` uses to reset state between specs. `test:e2e:live` itself:
+
+1. runs `pretest:e2e:live` (npm's pre-script convention) — see **Preflight** below
+2. starts Vite on `:8085` with `VITE_API_MOCK_ENABLED=false` and `VITE_VALIDATE_RESPONSES=true`
+3. runs Cypress against it with `CYPRESS_apiMockEnabled=false`
+
+## Preflight
+
+`scripts/preflight-live.ts` runs automatically before every `test:e2e:live` invocation and fails fast, one actionable line per check, cheapest/most-likely-wrong first:
+
+| Check | Failure message names |
+| --- | --- |
+| `GET {VITE_API_URL}/` (the health route) responds | the unreachable URL, and the exact boot commands above |
+| The resolved backend checkout has a `db:seed:reset:host` script | the resolved absolute path, and the `BACKEND_PATH` override |
+| The two repos' `openapi.yaml` are byte-identical (`md5`) | both hashes, and which repo needs `npm run genapi` |
+
+With the backend down this fails in well under a second — there is no reason to wait for Cypress to even try.
+
+## `BACKEND_PATH`
+
+`cy.resetState()` shells out to the backend checkout for `db:seed:reset:host` (see [Mocking](./mocking.md) and `tests/e2e/support/commands.ts`). Which checkout that is comes from `scripts/backendPath.ts`, shared between the preflight and `cypress.config.ts` so the two can never disagree:
+
+```sh
+# default: a sibling checkout
+../boilerplate-node-api-mongodb-mongoose
+
+# override for a different layout
+BACKEND_PATH=/path/to/boilerplate-node-api-mongodb-mongoose npm run test:e2e:live
+```
+
+The resolved value is always an absolute path, so `npm --prefix` errors name a real location instead of something relative to whatever `cwd` Cypress happened to have.
+
+## Response validation
+
+`orvalMutator` (`src/plugins/http/index.ts`) normally just unwraps `response.data`. Behind `VITE_VALIDATE_RESPONSES`, it additionally parses every response through the Zod schema matching its route (`src/plugins/http/responseSchemaMap.ts`, hand-mapped from `contracts/rest/index.ts`) and throws on a mismatch — the live-backend mirror of `assertMockContract` on the mock side, and of the backend's own `toSatisfyApiSpec()` contract tests.
+
+- `test:e2e:live` sets it to `true` explicitly.
+- Otherwise it defaults to on for an actual `vite dev` server (`DEV` true) — so it also fires during ordinary local development against a live API — but off inside Vitest (`MODE === 'test'`), where plenty of unit tests exercise `orvalMutator` against deliberately partial fixtures.
+- A route with no entry in `responseSchemaMap.ts` logs a dev-only warning rather than throwing: a missing map entry means the map is stale, not that the response is wrong.
+
+This is the single highest-value piece of this profile: it converts all five pre-existing specs into live contract tests for free, closing the exact bug class that has previously shipped (an `_id`/`id` mismatch, a leaked password field) unnoticed by a green suite.
+
+## Mock/seed parity
+
+`tests/e2e/specs/parity.cy.ts` runs only under this profile (`cy.skipUnlessLive()` — reported as *pending* under the mock profile, not silently omitted). After logging in via `cy.request`, it hits the live API directly as admin and as anonymous and asserts the returned dataset matches the hand-mirrored seed in `tests/mocks/shared/mockShared.ts`: same product ids and visibility split, same user ids, same order ids and totals.
+
+This mechanises the "DATA parity" and "BEHAVIOUR parity" invariants documented at the top of `mockShared.ts`, which were previously held by review only. If a future edit changes a seed id, count or total in one repo without the other, this is the test that fails — loudly, the first time this profile runs after the drift, rather than silently describing an API that no longer exists.
+
+## Live session refresh
+
+`tests/e2e/specs/auth.cy.ts` has one live-only case: it forces a single `401` on an otherwise-valid authenticated request and asserts the session survives. MSW is same-origin, in-page, and never exercises `withCredentials: true` carrying the refresh cookie across `:8085 → :3000` — this does, over a real network round-trip, without needing a test-only hook into Pinia state.
+
+## File map
+
+| Path | Contents |
+| --- | --- |
+| `scripts/preflight-live.ts` | The three fail-fast checks, run via `pretest:e2e:live` |
+| `scripts/backendPath.ts` | `resolveBackendPath()` — shared between the preflight and `cypress.config.ts` |
+| `src/plugins/http/index.ts` | `orvalMutator`, `VITE_VALIDATE_RESPONSES` gate |
+| `src/plugins/http/responseSchemaMap.ts` | Route → Zod schema table `orvalMutator` validates against |
+| `tests/e2e/specs/parity.cy.ts` | Mock/seed parity, live profile only |
+| `tests/e2e/specs/auth.cy.ts` | Live session-refresh case (alongside the mock-profile auth specs) |
+| `tests/e2e/support/commands.ts` | `cy.resetState()`'s live branch, `cy.skipUnlessLive()` |
+| `cypress.config.ts` | `env.backendPath`, `env.apiMockEnabled` |
+
+## Related pages
+
+- [Testing](./testing-and-docs.md) — suite overview
+- [Unit Testing](./unit-testing.md) — `httpValidateResponses.spec.ts` unit-tests the gate this page's response validation relies on
+- [Mocking (MSW)](./mocking.md) — the fixed-seed profile this one checks against
+- [E2E — Random Profile](./e2e-random-profile.md) — the third Cypress profile
+- [OpenAPI Workflow](../api/openapi-workflow.md)

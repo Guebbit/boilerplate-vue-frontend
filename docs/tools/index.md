@@ -53,6 +53,7 @@ flowchart LR
 | Setup | **[Security](./security.md)** | How the FE handles JWT access tokens, refresh cookies, and route guards. |
 | Setup | **[Package Dependencies](./package-dependencies.md)** | Guided tour of `package.json` grouped by concern. |
 | Setup | **[Package Scripts](./package-scripts.md)** | What every `npm run <script>` does and when to reach for it. |
+| Setup | **[Docker & Podman](./docker-and-podman.md)** | The compose stack, and how this app pairs with the backend's without being joined to it. |
 | Framework | **[State & Routing](./state-and-routing.md)** | Pinia stores, Vue Router locale routing and guards, Vue I18n setup. |
 | Framework | **[Realtime](./realtime.md)** | FE SSE client, `createSseClient`, realtime observability store. |
 | Observability | **[Observability](./observability.md)** | Grafana Faro (errors + tracing + web-vitals) and Umami (product analytics) wired into one Pinia store. |

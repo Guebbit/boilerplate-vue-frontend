@@ -13,6 +13,18 @@ own mocks.
 
 ### ⚠ Breaking
 
+- **`GET /account/refresh/{token}` is gone from the contract**, following the backend's removal of
+  it on security grounds: a refresh token in a URL path leaks into browser history, proxy logs and
+  `Referer` headers, and it is a long-lived credential. No client code changes — this app has always
+  refreshed through the `HttpOnly` cookie via `GET /account/refresh`. The generated
+  `refreshTokenWithPath` client, its Zod schemas and the MSW handler that mirrored it are all
+  regenerated away.
+
+- **`Order.total` is gone**, replaced by `totalItems`, `totalQuantity` and `totalPrice`, following
+  the backend's contract change. The order views and the checkout analytics payload now read
+  `totalPrice`. This was a live defect: the API had never sent `total`, so order totals rendered
+  empty against the real backend while looking correct against the mocks — the mocks were the only
+  thing producing the field the spec promised.
 - **The axios `instance` is no longer exported** from `src/plugins/http/index.ts`. Every API call —
   generated or hand-written — goes through `orvalMutator`, so there is exactly one place that
   unwraps the response and one place request/response behaviour is configured.
@@ -28,6 +40,89 @@ own mocks.
   `Product Alpha` / `prod-1` / `john@example.com` needs updating.
 
 ### Added
+
+- **A [Docker & Podman](docs/tools/docker-and-podman.md) docs page**, and a pairing section in the
+  README. Both state the rule the compose setup depends on: the two stacks are separate projects on
+  separate networks and stay that way, because the only thing crossing between them is the browser
+  on the host — which is why `VITE_API_URL` and friends must always be **host** ports and never
+  compose service names. Both also document that `cp .env-example .env` is required for the
+  container path too (compose bind-mounts the repo, so Vite reads that same file from `/app`), and
+  why the compose `environment:` block is deliberately minimal: entries there become `process.env`,
+  which Vite's `loadEnv` applies _after_ `.env`, so anything added silently becomes unoverridable.
+- **Mutation testing** — Stryker with the vitest runner, `npm run test:mutation`, scoped to
+  `src/features/*/store.ts`, `src/middlewares/`, `src/plugins/http/` and `src/utils/`. It runs in
+  its own workflow (`.github/workflows/mutation.yml`, nightly + on demand) and deliberately **not**
+  in `ci.yml`: a run re-executes the suite once per mutant, so keeping it out of the `ci` aggregate
+  is structural rather than a convention. Thresholds come from real runs, not from numbers picked
+  in advance, and the rule is one-directional: raise `break` when the score rises, never lower it
+  to make a run pass. Final: **81.12% total / 84.13% covered**, 784 mutants, ~2 minutes;
+  `break` raised 50 → **70**.
+
+    Two earlier runs are worth recording, because each produced tests rather than just a number:
+
+    - **55.95% / 65.98%** over 435 mutants. This is the run that produced
+      `tests/unit/utils/formatters.spec.ts`: the file scored 0% because no test had ever called it,
+      and the coverage report had never said so (see `coverage.include` below, which is the cheap
+      way to see that class of gap without a mutation run).
+    - **55.74%** over 784 mutants, with **182 of the 318 survivors in `responseSchemaMap.ts` alone**
+      (30.53%). That file is a 52-row lookup table, and it had been tested by checking a handful of
+      representative rows — which reads like testing and is not. Replacing the sample with a
+      table-driven test over _every_ row, plus deeper-path, prefixed-path and empty-segment
+      negatives per row (targeting the two regex anchors and the `[^/]+` quantifier respectively),
+      took that file to **100%** and the suite as a whole from 55.74% to 81.12%. Sampling a
+      declarative table is the failure mode to watch for here.
+
+- **`coverage.include` in `vitest.config.ts`**, plus 70% per-glob thresholds on the paths Stryker
+  mutates. Without `include`, v8 reports only files a test imported — a source file nobody tests is
+  _absent_ from the report rather than a 0% row, so it never drags the average down and never
+  appears. That is precisely how `utils/formatters.ts` sat completely untested behind a clean
+  coverage report until a 435-mutant Stryker run named it. The glob puts every source file in the
+  denominator, so "no test at all" now shows up as 0% instead of showing up as nothing.
+- **Unit tests for the four feature stores**, the token-refresh flow, the router, all three
+  middlewares, the live-profile's response validation and its `responseSchemaMap`, and the mock
+  profile switch itself. The suite went from 8 files / 34 tests to **21 / 402**. The refresh spec
+  (`tests/unit/plugins/httpRefresh.spec.ts`) drives the **real** interceptor chain against an MSW
+  node server — `_dontRetry` and the replay going back through the same axios instance are exactly
+  what a stubbed adapter cannot reproduce. `tests/unit/utils/formatters.spec.ts` exists because the
+  first mutation run scored that file 0%: no test had ever called it. See
+  [Unit Testing](docs/tools/unit-testing.md).
+
+    Added last, closing the gaps the mutation runs named:
+    `tests/unit/middlewares/localeChoice.spec.ts` (the guard that must return literal `true` rather
+    than merely something truthy — a redirect object is truthy too, and returning one produces an
+    infinite navigation loop) and `demoMiddleware.spec.ts`;
+    `tests/unit/plugins/responseSchemaMap.spec.ts` (193 tests, table-driven over all 52 rows) and
+    `httpRequest.spec.ts` (the bearer/`Accept-Language` interceptor, and the refresh-exclusion list
+    asserted per entry — a 401 from `/account/login` means "wrong password", so refreshing there
+    turns a clean message into a misleading session-expired state). `http.spec.ts` and
+    `helperErrors.spec.ts` gained the fallback branches: the `>= 500` boundary from both sides, the
+    `statusText || message || 'Unknown error'` precedence chain, and the empty-message guards that
+    stop a blank string being shown to a user as if it were an explanation.
+
+- **`computeOrderTotals`**, mirroring the backend's `sumLineItems`, so orders and the cart summary
+  derive their totals the same way the real API does — including its rounding to cents, which the
+  cart summary previously skipped. Lives in the new `tests/mocks/shared/mockOrderMath.ts` alongside
+  `createMockOrder`, split out of `mockShared.ts` so the random mock profile below can use both
+  without an import cycle.
+- **`lint:asyncapi` script and the `lint-asyncapi` / `asyncapi-types-freshness` CI jobs**, matching
+  the backend's. The frontend had neither.
+- **A [Live E2E](docs/tools/live-e2e.md) profile** (`npm run test:e2e:live`) running the existing
+  Cypress specs against the real, seeded backend instead of MSW. A `scripts/preflight-live.ts`
+  check fails fast (backend reachable, checkouts paired, specs in sync) before Cypress even starts;
+  `VITE_VALIDATE_RESPONSES` makes `orvalMutator` parse every response through its OpenAPI schema
+  and throw on a mismatch, the live-side twin of `assertMockContract`; and
+  `tests/e2e/specs/parity.cy.ts` asserts the live dataset agrees with the hand-mirrored MSW seed.
+  Run by hand (mandatory before tagging either repo), not in CI — the two repos are independently
+  versioned with no shared pipeline to check them out together.
+- **A [random-data mock profile](docs/tools/e2e-random-profile.md)** (`VITE_MOCK_PROFILE=random`,
+  `npm run test:e2e:random`), driving the app off faker-generated, contract-valid data instead of
+  the fixed seed, so `tests/e2e/specs/resilience.cy.ts` can assert invariants ("every route
+  renders", "no console noise", "empty lists don't crash") that must hold for _any_ dataset rather
+  than the values the fixed seed happens to have. Runs nightly and on demand
+  (`.github/workflows/e2e-random.yml`), not on every PR — its assertions are invariants, not exact
+  values, so a failure needs a human to read the trace rather than a red X blocking a merge. The
+  RNG is seeded and the seed is logged, so a failure reproduces exactly with
+  `VITE_MOCK_SEED=<seed>`.
 
 - **`orvalMutator`** — the single sanctioned entry point to the shared axios instance, doing one
   honest unwrap (`instance.request<T>(config).then((response) => response.data)`) with a type that
@@ -50,6 +145,25 @@ own mocks.
 
 ### Changed
 
+- **One mock order factory instead of two.** `mockShared.ts` had a module-private `createOrder` for
+  the seed fixtures and an exported `createMockOrder` for orders placed at runtime, with identical
+  bodies — so a seeded order and a checked-out one could drift apart silently. The seed builder now
+  calls `createMockOrder`.
+- **`calculateCartSummary` derives its figures from `computeOrderTotals`** rather than repeating the
+  loop, which is what brings the mock cart total into line with the backend's rounding.
+- **`router.onError` resolves the locale through one helper** instead of a nested ternary over two
+  route objects, and reuses the module's existing `isRouterDebugEnabled` rather than re-testing
+  `import.meta.env.DEV && VITE_APP_DEBUG_ROUTER` inline.
+
+- **The generated Zod schemas are now strict.** `orval.config.ts` sets `override.zod.strict`, so
+  `contracts/rest/schemas.zod.ts` emits `zod.strictObject` throughout (191 of them, zero plain
+  `zod.object`) and an undeclared key is **rejected** instead of silently stripped. Every object
+  schema in `openapi.yaml` is `additionalProperties: false`; the two genuine free-form maps
+  generate as `zod.record` and are unaffected. Without this, a mock handler returning more than the
+  contract allows passed `assertMockContract` unremarked.
+- **`toMockJsonResponse` sends what it validated.** It previously called `assertMockContract` for
+  its exception and then shipped the original payload, so the guard could not have stripped a
+  leaked key, let alone rejected one.
 - **`onResponseSuccess` (the auto-unwrap interceptor) is disabled** — commented out rather than
   deleted, so the reasoning stays visible at the call site.
 - **All six direct `httpClient` call sites were migrated** across `features/products/store.ts`,
@@ -64,8 +178,10 @@ own mocks.
   third user is gone; nothing depended on it.
 - **`cy.loginAs('user')` logs in as `gino@pino.it` / `password`**, a credential that exists in both
   the mocks and the real database, instead of the mock-only `john@example.com` / `rootroot`.
-- **`tests/e2e/specs/products.cy.ts`** asserts on the real seed data and ObjectIds. The expected row
-  count went from 3 to 5 — see _Known issues_.
+- **`tests/e2e/specs/products.cy.ts`** asserts on the real seed data and ObjectIds, and on the
+  role that goes with a row count: an anonymous visitor sees 3 products, an admin 5. It asserted a
+  flat 5 for everyone while the mock handler ignored role — green against the mocks, wrong against
+  the real API.
 - **The mock database's seed arrays are factories again** (`createSeedUsers()` /
   `createSeedProducts()`), returning fresh objects on every call. Hoisting them to module-level
   constants broke `resetMockDatabase()`, because handlers mutate items in place (`.splice`,
@@ -77,6 +193,43 @@ own mocks.
 - **`src/stores/observability.ts`**'s default tracker URL follows the Umami port move.
 
 ### Fixed
+
+- **The dockerised dev server was unreachable from the browser.** `npm run dev` was
+  `vite --port 8080` with no `--host`, and Vite binds `127.0.0.1` by default — so inside the
+  container the published port forwarded to a socket nobody was listening on. `compose up`
+  reported success and every request was refused. Compose now runs the dev server with
+  `--host 0.0.0.0`; it is set there rather than in the `dev` script so host development is not
+  exposed to the LAN.
+- **`VITE_APP_PORT` did nothing.** Compose mapped `${VITE_APP_PORT:-8080}` on both sides of the
+  publish while the `dev` script hardcoded `--port 8080`, so changing the variable pointed the
+  mapping at a port nothing served. The port now comes from `VITE_APP_PORT` in `vite.config.ts`
+  via `loadEnv`, so the published and listening ports cannot drift; `strictPort` is on, because a
+  silent hop to the next free port is invisible from outside a container. A CLI `--port` still
+  wins, which is what the e2e scripts rely on.
+- **The dockerised frontend ignored the backend it was published alongside.**
+  `VITE_API_MOCK_ENABLED` defaulted to `true` in compose, so a fresh clone with no `.env` yet —
+  precisely the "start both repos" path — ran the container against MSW while pointing at a real
+  API. It rendered fine, with no error or warning to suggest the backend was not being used.
+  The default is now `false`; mock-backed standalone development is still one env var away.
+- **A failed navigation sent the user to login with the wrong `continue` target.**
+  `router.onError` read `router.currentRoute` for the redirect, but a navigation that fails in a
+  guard never commits — so `currentRoute` was still the page being _left_, and logging in returned
+  the user to where they already were rather than where they were going. The handler receives the
+  target as its second argument and now uses it, which is what its own doc comment already claimed.
+- **The `api-freshness` CI job checked a directory that does not exist.** Its pathspec was `api/`,
+  which this repo has never had, so `git diff` matched nothing, exited 0, and the job passed
+  without checking anything from the day it was written. It now covers `contracts/` and
+  `tests/mocks/generated.ts`, normalises formatting before diffing (orval emits 2-space
+  indentation, this repo's prettier uses 4), and flags untracked generated files. Verified to fail
+  by editing `openapi.yaml` without regenerating.
+- **`commitlint` could not block a merge** — it ran but was absent from the `ci` aggregate's
+  `needs:`. Added, along with the two new AsyncAPI jobs.
+- **The product mock handler ignored the backend's `active`/`deletedAt` filtering and admin
+  scoping**, so it returned all 5 seeded products to everyone while the real API returns 3 to
+  non-admins — and `products.cy.ts` asserted the mock's number. The handler now mirrors
+  `src/services/products.ts`, and the spec asserts both role branches.
+- **The order mock handler ignored per-user scoping**, letting any caller list every order by
+  passing `?userId=`. It now mirrors the backend's `userScope()`.
 
 - **The token-refresh interceptor never fired.** Because the success interceptor unwrapped every
   response, `instance.get()` resolved with the envelope rather than an `AxiosResponse`, so the
@@ -115,19 +268,17 @@ own mocks.
 
 ### Known issues
 
-- The `openapi.yaml` in this repo is hand-synced with the backend's and is currently behind by the
-  `/observability/load-test` path and its two schemas.
-- The MSW product-list handler does not replicate the backend's admin-scoped `active` / `deletedAt`
-  filtering, so it returns all five fixtures regardless of caller — which is why `products.cy.ts`
-  now expects 5 rows where a live backend would return fewer.
-- No test covers the 401 → refresh → retry path, which is precisely why the bug above went unnoticed.
-- The six multipart calls above go through `orvalMutator` but still build their requests by hand
-  rather than calling the generated client, so a contract change does not produce a type error
-  there. Orval's `override.formData` would cover all but `updateProductImage`, which needs
-  `onUploadProgress`.
-- `tests/mocks/generated.ts` is regenerated by every `npm run genapi` and imported by nothing.
-- The `api-freshness` CI job diffs `api/`, a directory this repo does not have, so it has passed
-  every run without checking anything. `commitlint` runs but is missing from the `ci` aggregate's
-  `needs:`, so it cannot fail a merge, and there is no `lint:asyncapi` job at all.
-- The dockerised app defaults `VITE_API_MOCK_ENABLED` to `true` and forwards none of the Faro or
-  Umami variables, so `compose up` on both repos produces two stacks that ignore each other.
+- The `openapi.yaml` in this repo is hand-synced with the backend's. The two are byte-identical as
+  of this entry, but nothing enforces that — keeping them so is still a manual step on every
+  contract change.
+- **The e2e suite is flaky under a full run.** Four `npm run test:e2e` runs during this work gave
+  two failures on different specs — `auth` 12/15 and `cart` 9/11, with two clean runs between and
+  after them — and every failing spec passes when run alone. The failures share a shape: an assertion made before an action that did
+  take effect had landed. Every mock response carries a deliberate 250 ms delay, Cypress' default
+  command timeout is 4 s, `cypress.config.ts` sets neither `defaultCommandTimeout` nor `retries`,
+  and a full run has the **dev** server still compiling lazy chunks. Not fixed here: raising the
+  timeout, serving a preview build, and enabling retries all trade something away. See §10.5 of
+  `TESTS_PLAN.md`.
+- The dockerised app forwards none of the Faro or Umami variables into the container, so
+  observability is silent under `compose up` even though `VITE_API_MOCK_ENABLED` now correctly
+  defaults to using the real, paired backend.

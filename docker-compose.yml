@@ -8,15 +8,29 @@ services:
         restart: unless-stopped
         ports:
             - '${VITE_APP_PORT:-8080}:${VITE_APP_PORT:-8080}'
+        # Only the pairing-critical variables live here. Everything else (Faro, Umami, locales,
+        # debug flags) reaches the app through the bind-mounted `.env` below — Vite reads it from
+        # /app just like it does on the host. Do NOT move those variables into this block:
+        # compose `environment:` entries become process.env, and Vite's loadEnv applies
+        # process.env *after* the .env files, so anything listed here overrides `.env` and can no
+        # longer be changed by editing it.
         environment:
             NODE_ENV: 'development'
+            # Published port and listening port are the same value; vite.config.ts reads this.
+            VITE_APP_PORT: '${VITE_APP_PORT:-8080}'
             VITE_API_URL: '${VITE_API_URL:-http://localhost:3000}'
             VITE_API_SSE: '${VITE_API_SSE:-http://localhost:3000/observability/events}'
-            VITE_API_MOCK_ENABLED: '${VITE_API_MOCK_ENABLED:-true}'
+            # Defaults to the real API, because starting both stacks is what this pair is for.
+            # A container that mocks its own paired backend looks like it works and isn't.
+            # Mock-only development is still one `VITE_API_MOCK_ENABLED=true` away.
+            VITE_API_MOCK_ENABLED: '${VITE_API_MOCK_ENABLED:-false}'
         volumes:
             - .:/app:Z
             - /app/node_modules
-        command: ['sh', '-c', 'npm run dev']
+        # `--host` is required: Vite binds 127.0.0.1 by default, which inside a container means
+        # the published port forwards to a socket nobody is listening on. It is set here rather
+        # than in the `dev` script so running on the host does not expose the server to the LAN.
+        command: ['sh', '-c', 'npm run dev -- --host 0.0.0.0']
 
     # Docs: VitePress static site served by Nginx.
     docs:

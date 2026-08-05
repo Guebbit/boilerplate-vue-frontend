@@ -38,6 +38,35 @@ npm run dev           # start Vite dev server on :8080
 
 Then open <http://localhost:8080>.
 
+### In containers, and pairing with the backend
+
+```bash
+cp .env-example .env       # required for compose too — see below
+podman compose up          # or: docker compose up
+```
+
+`cp .env-example .env` is **not optional for the container path**. The compose file bind-mounts
+the repo at `/app`, so Vite reads that same `.env` from inside the container; without it you get
+compose's built-in fallbacks and nothing else — no Faro, no Umami, no locale settings.
+
+The compose `environment:` block deliberately lists only the pairing-critical variables. Compose
+entries become `process.env`, and Vite applies `process.env` _after_ `.env`, so anything added
+there overrides `.env` and can no longer be changed by editing it. Leave the rest to `.env`.
+
+To run the pair:
+
+1. Start the **backend** stack first (it owns the API, Alloy and Umami the frontend points at).
+2. Start this one. `VITE_API_MOCK_ENABLED` defaults to `false`, so the app talks to the real API.
+3. Confirm `NODE_CORS_ORIGIN` in the backend `.env` contains `http://localhost:8080`.
+
+The two stacks stay **independent** — separate compose projects, separate networks, no shared
+network required. The only thing that crosses the boundary is your browser, which runs on the
+host: it is the browser, not the container, that resolves `VITE_API_URL` and `VITE_API_SSE`, so
+those must always be **host** ports (`http://localhost:3000`), never compose service names.
+
+Running this container alone is still fine, but it will have no API to call. Set
+`VITE_API_MOCK_ENABLED=true` in `.env` for standalone, mock-backed development.
+
 ### Host port map
 
 This repo owns the **`8080–8099`** host-port block; the paired backend owns **`3000–3099`**.
@@ -47,11 +76,16 @@ server) and the backend claimed once for its own docs.
 
 | Service                  | Host port | Where it is set                                     |
 | ------------------------ | --------- | --------------------------------------------------- |
-| Vite dev server          | `8080`    | `npm run dev`, `VITE_APP_PORT` (compose)            |
+| Vite dev server          | `8080`    | `VITE_APP_PORT` — host and compose alike            |
 | e2e vite server          | `8085`    | `test:e2e*` scripts + `cypress.config.ts` `baseUrl` |
 | Docs (VitePress + Nginx) | `8090`    | `VITE_DOCS_PORT`                                    |
 
 New services belong inside `8080–8099`.
+
+> `VITE_APP_PORT` is read in `vite.config.ts` via `loadEnv`, so the dev server and the compose
+> publish (`${VITE_APP_PORT}:${VITE_APP_PORT}`) always agree — moving the port is a one-line
+> change. `strictPort` is on: a busy port fails instead of quietly hopping to the next free one,
+> which in a container would leave the published port pointing at nothing.
 
 > The e2e scripts no longer free their port with `fuser -k` before starting. That command killed
 > _any_ process listening on it — including another project's container port forwarder.

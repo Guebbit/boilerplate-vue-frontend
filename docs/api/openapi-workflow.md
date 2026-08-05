@@ -25,6 +25,39 @@ flowchart LR
 
 If the contract changes, always start with the contract. Coordinate with the backend team — both repos share `openapi.yaml` as the contract.
 
+## Keeping the two copies in sync
+
+`openapi.yaml` and `asyncapi.yaml` are **duplicated by hand** in the frontend and backend repos. There is deliberately no shared package, submodule or cross-repo CI check: the two repos are published as a matched pair but must stay independently clonable.
+
+The cost of that decision is that nothing detects cross-repo drift — and it has happened: the backend added an endpoint and the frontend's copy sat 39 lines behind for days, so the generated client described an API the backend no longer had.
+
+**Whenever the backend's spec changes**, copy both specs over and regenerate, by hand:
+
+```bash
+cp ../boilerplate-node-api-mongodb-mongoose/openapi.yaml .
+cp ../boilerplate-node-api-mongodb-mongoose/asyncapi.yaml .
+npm run genapi
+npm run genasyncapi
+npm run prettier:fix   # orval emits 2-space indent; this repo commits 4
+```
+
+There is deliberately **no script** for this. Syncing is a judgement call, not a chore to automate: the copy is followed by reading the diff and deciding which stores and views have to change with it.
+
+Then review the diff — a spec change may require store or view updates. To confirm parity by hand, `diff openapi.yaml ../boilerplate-node-api-mongodb-mongoose/openapi.yaml` should print nothing.
+
+CI cannot catch a stale *copy*; it can only catch a spec edited **within this repo** without regenerating (see below). Cross-repo parity remains a human step.
+
+## Freshness enforcement in CI
+
+The `api-freshness` job regenerates the client and fails if the committed output differs. Two details matter when editing it:
+
+- **The pathspec must list every orval output.** It previously read `api/` — a directory this repo has never had — so `git diff` matched nothing, exited 0, and the job passed without checking anything from the day it was written. If you add or retarget an output block in `orval.config.ts`, update the pathspec in the same commit.
+- **Formatting must be normalised before diffing.** Orval emits 2-space indentation while this repo's Prettier config uses 4, and the committed output is formatted. Without `npx prettier --write` before the diff, the job reports thousands of lines of pure indentation churn on every run.
+
+The AsyncAPI side has the matching pair of jobs, `lint-asyncapi` and `asyncapi-types-freshness`.
+
+If you change this job, verify it can actually fail: edit `openapi.yaml` without regenerating and confirm the job goes red. A freshness guard nobody has seen fail is indistinguishable from one that does nothing.
+
 ## OpenAPI vs AsyncAPI in this repository
 
 - Use **OpenAPI** for REST endpoint contracts (`openapi.yaml`).
@@ -82,14 +115,55 @@ Naming convention: schema name + property name, PascalCase. Example: `UpdateFeed
 
 ## Orval configuration
 
-`orval.config.ts` at the project root controls code generation:
+`orval.config.ts` at the project root controls code generation. It defines **three independent output blocks**, each reading the same spec:
 
-| Config key | Value | Effect |
-| ---------- | ----- | ------ |
-| `input.target` | `./openapi.yaml` | source spec |
-| `output.target` | `./contracts/rest/index.ts` | generated axios client |
-| `output.schemas` | `./contracts/rest/schemas.zod.ts` | generated Zod schemas |
-| `output.mock` | `./tests/mocks/generated.ts` | generated MSW stubs |
+| Block | Target | Effect |
+| ----- | ------ | ------ |
+| `api` | `./contracts/rest/index.ts` | typed axios functions, routed through `orvalMutator` |
+| `zodSchemas` | `./contracts/rest/schemas.zod.ts` | Zod schema per request/response shape |
+| `mocks` | `./tests/mocks/generated.ts` | MSW stubs + faker factories |
+
+Every target listed here must also appear in the `api-freshness` CI job's pathspec, or changes to it go unguarded.
+
+### Multipart operations generate two functions
+
+Seven operations accept the same payload as either JSON or `multipart/form-data` — everything
+with an optional image: `signup`, create/update user, create/update product. Orval only emits
+`FormData` encoding for operations with a **single** request content type; given two, it passes
+the body straight to the mutator and generates no encoding at all.
+
+`splitByContentType` therefore generates one function per content type, and an inline
+`transformer` in `orval.config.ts` names them:
+
+| Call | Sends |
+| ---- | ----- |
+| `createProduct(body)` | `application/json` |
+| `createProductWithMultipart(body)` | `multipart/form-data`, encoded by the generated client |
+
+The JSON function keeps the plain operation name, so JSON call sites are unaffected by the split.
+Pick the `WithMultipart` variant only when there is a file to send — see `features/products/store.ts`,
+which branches on `imageUpload` and is the reference for this pattern.
+
+Do not hand-roll `FormData` in a store. The generated encoder already omits unset optional fields
+(rather than sending the string `"undefined"`) and writes arrays as repeated fields
+(`categories`, not `categories[0]`), which is what the API expects.
+
+### Per-call axios options
+
+`orvalMutator` declares a second `options` parameter, so every generated function takes an
+optional third argument forwarded to axios — this is how `updateProductImage` passes
+`onUploadProgress` without bypassing the generated client:
+
+```ts
+updateProductByIdWithMultipart(id, body, { onUploadProgress });
+```
+
+`options` cannot override the url, method or body: the codegen-built config is merged last.
+
+Note that generated routes do **not** URL-encode path parameters — `@orval/axios` ignores the
+`urlEncodeParameters` option that the fetch and query clients honour. Ids are server-issued, so
+this has never mattered in practice; do not add encoding at one call site only, which would make
+that call inconsistent with the other two dozen.
 
 ## Commands
 
@@ -102,8 +176,9 @@ npm run genapi         # regenerate contracts/rest/ from openapi.yaml
 
 Orval generates a stub for every operation into `tests/mocks/generated.ts`. Each stub returns random faker data.
 
-For stateful or auth-aware behavior, copy the stub to `tests/mocks/handlers/` and extend it.
-See [Mocking (MSW)](../tools/mocking.md) for the full handler workflow.
+**Nothing imports that file.** The mocks that actually run are the hand-written handlers in `tests/mocks/handlers/`, assembled in `tests/mocks/apiMock.ts`. Treat `generated.ts` as a skeleton to copy from, and as the raw material for the planned random-data test profile — not as live code.
+
+For stateful or auth-aware behavior, copy the stub to `tests/mocks/handlers/` and extend it. A handler must also mirror the filtering and role-scoping rules of the backend service behind the endpoint — see [Mocking (MSW)](../tools/mocking.md) for the parity invariants and the full handler workflow.
 
 ## Useful links
 

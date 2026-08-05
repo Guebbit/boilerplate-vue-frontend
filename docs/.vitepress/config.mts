@@ -43,6 +43,7 @@ export default withMermaid(
                             { text: 'Package Dependencies', link: '/tools/package-dependencies' },
                             { text: 'Package Scripts', link: '/tools/package-scripts' },
                             { text: 'Runtime', link: '/tools/runtime' },
+                            { text: 'Docker & Podman', link: '/tools/docker-and-podman' },
                             { text: 'Security', link: '/tools/security' }
                         ]
                     },
@@ -66,8 +67,12 @@ export default withMermaid(
                         text: 'Testing & Mocking',
                         collapsed: false,
                         items: [
-                            { text: 'Testing', link: '/tools/testing-and-docs' },
-                            { text: 'Mocking (MSW)', link: '/tools/mocking' }
+                            { text: 'Testing (overview)', link: '/tools/testing-and-docs' },
+                            { text: 'Unit Testing', link: '/tools/unit-testing' },
+                            { text: 'Mocking (MSW)', link: '/tools/mocking' },
+                            { text: 'E2E — Random Profile', link: '/tools/e2e-random-profile' },
+                            { text: 'Live E2E (FE ↔ real backend)', link: '/tools/live-e2e' },
+                            { text: 'Mutation Testing', link: '/tools/mutation-testing' }
                         ]
                     }
                 ],
