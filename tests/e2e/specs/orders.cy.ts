@@ -1,7 +1,7 @@
 describe('Orders', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetMockState();
+        cy.resetState();
     });
 
     describe('Orders list', () => {

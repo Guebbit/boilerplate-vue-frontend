@@ -18,6 +18,7 @@ import {
     createMockOrder,
     createSuccessEnvelope,
     getIsoDateNow,
+    getMockUserScope,
     getQueryParameters,
     mockDatabase,
     readRequestBody,
@@ -39,7 +40,11 @@ const replyOrdersList = (
     const page = toNumberOrDefault(query.page, 1);
     const pageSize = toNumberOrDefault(query.pageSize, 10);
     const id = query.id ? String(query.id) : undefined;
-    const userId = query.userId ? String(query.userId) : undefined;
+    // Non-admin callers are pinned to their own orders and their `userId` filter is
+    // discarded, exactly as `getOrders` does with `userScope(request)` in the BE. Without
+    // this the mock let any caller list every order by passing ?userId=…
+    const scopedUserId = getMockUserScope();
+    const userId = scopedUserId ?? (query.userId ? String(query.userId) : undefined);
     const productId = query.productId ? String(query.productId) : undefined;
     const email = query.email ? String(query.email).toLowerCase() : undefined;
 

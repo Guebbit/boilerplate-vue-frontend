@@ -26,10 +26,15 @@ export const mockResponse = <T>(data: T, options: MockTransportOptions = {}) => 
 });
 
 export const toMockJsonResponse = async <T>(data: T, options: MockTransportOptions = {}) => {
-    if (options.schema) assertMockContract(options.schema, data);
+    // Send what was validated, not what was passed in. The two are the same object for a
+    // conforming payload, but keeping the parse result is what makes the guard honest: previously
+    // this called the validator for its exception and then shipped the original, so a schema that
+    // stripped rather than rejected would have let the stray key through anyway.
+    // The schemas are generated with `strict`, so an undeclared key throws here (see orval.config.ts).
+    const payload = options.schema ? assertMockContract(options.schema, data) : data;
     await delay(options.delayMs ?? 250);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return HttpResponse.json(data as any, {
+    return HttpResponse.json(payload as any, {
         status: options.status ?? 200,
         headers: options.headers ?? {}
     });

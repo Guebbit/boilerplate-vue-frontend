@@ -100,3 +100,123 @@ describe('onResponseReject', () => {
         expect(result).not.toHaveProperty('traceId');
     });
 });
+
+/**
+ * The fallback branch of `onResponseReject` — everything that is *not* a well-formed reject
+ * envelope from the API. That covers real transport failures (no response at all), gateway errors
+ * from a proxy that never reached the app, and any 4xx the API answers without its envelope.
+ *
+ * The canonicalised messages matter because they are what a user sees: an axios `statusText` of
+ * "" or a raw "Network Error" is not something to put in front of someone, and 5xx detail must
+ * not leak server internals into the UI.
+ */
+describe('onResponseReject — fallback normalisation', () => {
+    it('canonicalises any 5xx to a single safe message', async () => {
+        const { onResponseReject } = await import('@/plugins/http');
+
+        await expect(onResponseReject(makeAxiosError(503, {}) as never)).rejects.toMatchObject({
+            status: 503,
+            message: 'Internal Server Error'
+        });
+    });
+
+    it('treats exactly 500 as a server error', async () => {
+        // The `>= 500` boundary. With `> 500` a plain 500 would fall through and surface the raw
+        // statusText instead — the single most common server failure, mis-messaged.
+        const { onResponseReject } = await import('@/plugins/http');
+
+        await expect(onResponseReject(makeAxiosError(500, {}) as never)).rejects.toMatchObject({
+            message: 'Internal Server Error'
+        });
+    });
+
+    it('leaves a 4xx below the server range on its own message', async () => {
+        // The other side of the same boundary: 499 must NOT be canonicalised.
+        const { onResponseReject } = await import('@/plugins/http');
+
+        await expect(onResponseReject(makeAxiosError(499, {}) as never)).rejects.toMatchObject({
+            status: 499,
+            message: 'Error'
+        });
+    });
+
+    it('carries no error items for a status that is neither 401 nor 403', async () => {
+        // 401/403 get a user-facing item because the UI renders them as a state change; other
+        // fallbacks deliberately carry an empty list rather than echoing a transport string.
+        const { onResponseReject } = await import('@/plugins/http');
+
+        const result = await onResponseReject(makeAxiosError(404, {}) as never).catch(
+            (error_: unknown) => error_
+        );
+
+        expect((result as { errors: string[] }).errors).toEqual([]);
+    });
+
+    it('falls back to status 500 when there is no response at all', async () => {
+        // A DNS failure, a refused connection, a CORS block: `error.response` is undefined, and
+        // every call site still needs a status to branch on.
+        const { onResponseReject } = await import('@/plugins/http');
+
+        await expect(
+            onResponseReject({ message: 'Network Error', config: { url: '/x' } } as never)
+        ).rejects.toMatchObject({ success: false, status: 500 });
+    });
+
+    it('prefers statusText over the axios message', async () => {
+        const { onResponseReject } = await import('@/plugins/http');
+        const error = {
+            response: { status: 418, statusText: "I'm a teapot", data: {}, headers: {} },
+            message: 'Request failed',
+            config: { url: '/x' }
+        };
+
+        await expect(onResponseReject(error as never)).rejects.toMatchObject({
+            message: "I'm a teapot"
+        });
+    });
+
+    it('falls back to the axios message when statusText is empty', async () => {
+        // `||`, not `??`: axios sets `statusText` to '' rather than undefined on many adapters,
+        // and an empty message would render as a blank error toast.
+        const { onResponseReject } = await import('@/plugins/http');
+        const error = {
+            response: { status: 418, statusText: '', data: {}, headers: {} },
+            message: 'Request failed',
+            config: { url: '/x' }
+        };
+
+        await expect(onResponseReject(error as never)).rejects.toMatchObject({
+            message: 'Request failed'
+        });
+    });
+
+    it('falls back to a generic message when neither is available', async () => {
+        const { onResponseReject } = await import('@/plugins/http');
+        const error = {
+            response: { status: 418, statusText: '', data: {}, headers: {} },
+            message: '',
+            config: { url: '/x' }
+        };
+
+        await expect(onResponseReject(error as never)).rejects.toMatchObject({
+            message: 'Unknown error'
+        });
+    });
+
+    it('passes an envelope through even when its errors list is empty', async () => {
+        // Detection is `hasOwnProperty('errors')`, not truthiness — an API reject that happens to
+        // carry no items is still the API's own envelope and must not be re-synthesised.
+        const { onResponseReject } = await import('@/plugins/http');
+        const error = makeAxiosError(422, {
+            success: false,
+            status: 422,
+            message: 'Validation failed',
+            errors: []
+        });
+
+        await expect(onResponseReject(error as never)).rejects.toMatchObject({
+            message: 'Validation failed',
+            errors: []
+        });
+    });
+});

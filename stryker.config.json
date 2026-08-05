@@ -1,0 +1,58 @@
+{
+    "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+    "_comment": [
+        "Mutation testing: breaks the source on purpose and checks the tests notice.",
+        "A mutant that leaves the suite green is a bug the tests cannot see — unlike line",
+        "coverage, this cannot be satisfied by executing code without asserting on it.",
+        "",
+        "Two rules keep it usable:",
+        "  1. NEVER gate a PR on this. A run re-executes the suite once per mutant. It belongs on",
+        "     a nightly schedule or in front of a refactor — see the `mutation` job in ci.yml.",
+        "  2. Keep `mutate` pointed at logic. Generated code (contracts/, tests/mocks/generated.ts),",
+        "     config and view templates produce noise exclusively.",
+        "",
+        "Thresholds come from a real run, not from a number invented in advance. Raise",
+        "`break` when the score rises; never lower it to make a run pass.",
+        "",
+        "Measured 2026-08-05: 81.12% total / 84.13% of covered code, 784 mutants, ~2m.",
+        "`break` sits below that on purpose — it catches a real regression, not normal drift.",
+        "",
+        "History, because both numbers are instructive:",
+        "  - An earlier run scored 55.95%/65.98% over 435 mutants. It is what produced",
+        "    tests/unit/utils/formatters.spec.ts: formatters.ts scored 0% because no test called",
+        "    it at all, and coverage reports had never said so (vitest.config.ts now sets",
+        "    `coverage.include`, which is the cheap way to see that class of gap).",
+        "  - A later run scored 55.74% over 784 mutants, with 182 of the 318 survivors in the",
+        "    single file responseSchemaMap.ts. That file is a 52-row lookup table, and it had",
+        "    been tested by sampling a handful of rows. Replacing the sample with a table-driven",
+        "    test over every row — plus deeper-path, prefixed-path and empty-segment negatives",
+        "    per row, which target the two anchors and the `[^/]+` quantifier — took it to 100%",
+        "    and the suite as a whole from 55.74% to 81.12%. Sampling a declarative table is",
+        "    the failure mode to watch for here."
+    ],
+    "packageManager": "npm",
+    "testRunner": "vitest",
+    "vitest": {
+        "configFile": "vitest.config.mutation.ts"
+    },
+    "reporters": ["html", "clear-text", "progress"],
+    "htmlReporter": {
+        "fileName": "reports/mutation/index.html"
+    },
+    "coverageAnalysis": "perTest",
+    "mutate": [
+        "src/features/*/store.ts",
+        "src/middlewares/**/*.ts",
+        "src/plugins/http/**/*.ts",
+        "src/utils/**/*.ts",
+        "!src/utils/i18n.ts"
+    ],
+    "ignorePatterns": ["coverage/**", "reports/**", "dist/**", "docs/**", "cypress/**"],
+    "thresholds": {
+        "high": 85,
+        "low": 75,
+        "break": 70
+    },
+    "timeoutMS": 20000,
+    "concurrency": 4
+}

@@ -5,7 +5,6 @@ import {
     LoginResponse,
     SignupResponse,
     RefreshTokenResponse as RefreshTokenResponseSchema,
-    RefreshTokenWithPathResponse,
     RequestPasswordResetResponse,
     ConfirmPasswordResetResponse,
     LogoutAllResponse,
@@ -35,8 +34,8 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
     // That command hits this endpoint via cy.request('POST', '/__mock/reset').
     // resetMockDatabase() also clears the sessionStorage mirror of the current
     // user ID so that the next test starts as a fresh, unauthenticated visitor.
-    http.post('/__mock/reset', () => {
-        resetMockDatabase();
+    http.post('/__mock/reset', async () => {
+        await resetMockDatabase();
         return toMockJsonResponse(createMessageResponse('Mock state reset'));
     }),
 
@@ -51,18 +50,9 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
     // (admin) auto-authenticate on page load, while a reset/logout produces a
     // proper 401 so that guest-only pages remain accessible.
     //
-    // Two routes cover both the legacy /:token path param form and the cookie-
-    // only form used by the current client.
-    http.get(`${API_BASE}/account/refresh/:token`, () =>
-        mockDatabase.currentAuthenticatedUserId
-            ? toMockJsonResponse(createSuccessEnvelope(defaultRefreshTokenResponse), {
-                  schema: RefreshTokenWithPathResponse
-              })
-            : toMockJsonResponse(createErrorEnvelope(401, 'UNAUTHORIZED', 'Not authenticated'), {
-                  status: 401,
-                  schema: MockErrorResponse
-              })
-    ),
+    // Cookie-only, like the real API: the `/account/refresh/:token` path form was
+    // dropped from the contract because a refresh token in a URL leaks into history,
+    // proxy logs and Referer headers.
     http.get(`${API_BASE}/account/refresh`, () =>
         mockDatabase.currentAuthenticatedUserId
             ? toMockJsonResponse(createSuccessEnvelope(defaultRefreshTokenResponse), {

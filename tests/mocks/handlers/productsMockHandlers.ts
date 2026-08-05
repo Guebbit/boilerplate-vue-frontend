@@ -16,6 +16,8 @@ import {
     createSuccessEnvelope,
     getIsoDateNow,
     getQueryParameters,
+    isCurrentMockUserAdmin,
+    isVisibleToCaller,
     mockDatabase,
     readRequestBody,
     slicePaginatedData,
@@ -42,7 +44,14 @@ const replyProductsList = (
     const minPrice = query.minPrice === undefined ? undefined : Number(query.minPrice);
     const maxPrice = query.maxPrice === undefined ? undefined : Number(query.maxPrice);
 
+    // Role-scoped visibility, applied before any user-supplied filter — same order as the BE,
+    // which folds `active`/`deletedAt` into the same `where` clause it builds the filters on.
+    // Without this the mock returned all 5 seeded products to everyone, while the real API
+    // returns 3 to anonymous callers: the exact divergence a mock-only suite cannot see.
+    const admin = isCurrentMockUserAdmin();
+
     const filteredItems = mockDatabase.sampleProducts.filter((product) => {
+        if (!isVisibleToCaller(product, admin)) return false;
         if (id && product.id !== id) return false;
         if (Number.isFinite(minPrice) && product.price < (minPrice as number)) return false;
         if (Number.isFinite(maxPrice) && product.price > (maxPrice as number)) return false;
@@ -148,6 +157,15 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
         const targetProduct = mockDatabase.sampleProducts.find(
             (product) => product.id === productId
         );
+
+        // Mirrors the BE's `getById(id, admin)`: a non-admin querying an inactive or
+        // soft-deleted product gets a 404, not a 403 — the record's existence is not
+        // disclosed. Same rule as the list, so the two can never disagree.
+        if (targetProduct && !isVisibleToCaller(targetProduct, isCurrentMockUserAdmin()))
+            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'Product not found'), {
+                status: 404,
+                schema: MockErrorResponse
+            });
 
         if (!targetProduct)
             return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'Product not found'), {
