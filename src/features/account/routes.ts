@@ -45,17 +45,18 @@ export default [
             /**
              * No need for a true component: log the user out, then leave.
              *
+             * Returns the destination instead of calling the `next(...)` callback — the
+             * callback style is deprecated in Vue Router 4 and logs a warning on every hit.
+             *
              * @param to - Route being entered; only its `locale` param is used.
-             * @param from - Route being left (unused, kept for the signature).
-             * @param next - Navigation callback, always sent to `Home` whether
-             *  the logout call succeeds or fails.
+             * @returns A promise resolving to `Home`, whether the logout call succeeds or fails.
              */
-            beforeRouteEnter: (to, from, next) => {
+            beforeRouteEnter: (to) => {
                 const { logout } = useProfileStore();
                 const locale = to.params.locale as string;
-                logout()
-                    .then(() => next({ name: 'Home', params: { locale } }))
-                    .catch(() => next({ name: 'Home', params: { locale } }));
+                return logout()
+                    .then(() => ({ name: 'Home', params: { locale } }))
+                    .catch(() => ({ name: 'Home', params: { locale } }));
             }
         }
     }

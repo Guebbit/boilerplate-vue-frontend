@@ -18,7 +18,7 @@
                 />
                 <CardMaterialStat
                     :title="t('order-target-page.label-total')"
-                    :value="formatCurrency(currentOrder?.total)"
+                    :value="formatCurrency(currentOrder?.totalPrice)"
                     accent="secondary"
                 />
                 <CardMaterialStat
@@ -44,7 +44,7 @@
                     </ItemDetailField>
                     <ItemDetailField
                         :label="t('order-target-page.label-total')"
-                        :value="formatCurrency(currentOrder.total)"
+                        :value="formatCurrency(currentOrder.totalPrice)"
                         icon="💶"
                     />
                     <ItemDetailField

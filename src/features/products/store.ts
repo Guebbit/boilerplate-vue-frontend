@@ -1,20 +1,19 @@
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureSearchApi } from '@guebbit/vue-toolkit';
-import type { AxiosProgressEvent } from 'axios';
+import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 import { ref, type WatchSource } from 'vue';
 
 import {
     listProducts,
     getProductById,
     createProduct as apiCreateProduct,
+    createProductWithMultipart,
     updateProductById,
+    updateProductByIdWithMultipart,
     deleteProductById
 } from '@api';
-import { orvalMutator } from '@/plugins/http';
-import { toFormData } from '@guebbit/js-toolkit';
 import type {
     Product,
-    ProductEnvelope,
     CreateProductRequestMultipart,
     UpdateProductByIdRequestMultipart,
     SearchProductsRequest
@@ -25,44 +24,6 @@ import type {
  * is owned by the toolkit's search state).
  */
 type IProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
-
-/**
- * Builds the multipart body of a product create/update request.
- *
- * `toFormData` appends `undefined` as the literal string `"undefined"` instead
- * of omitting the field, and recurses into arrays emitting bracket-indexed keys
- * (`categories[0]`, ...) instead of the repeated `categories` fields the API
- * expects. Arrays are therefore appended manually and scalars are stripped of
- * null/undefined before being handed to `toFormData`.
- *
- * @param data - Product fields to send; `imageUpload` carries the image file.
- * @returns A `FormData` with repeated `categories`/`tags` entries and no
- *  placeholder values for unset fields.
- */
-const productFormData = (data: {
-    title: string;
-    price: number;
-    description?: string;
-    active?: boolean;
-    categories?: string[];
-    tags?: string[];
-    imageUpload?: Blob;
-}): FormData => {
-    const formData = new FormData();
-    for (const category of data.categories ?? []) formData.append('categories', category);
-    for (const tag of data.tags ?? []) formData.append('tags', tag);
-
-    const scalars = Object.fromEntries(
-        Object.entries({
-            title: data.title,
-            price: data.price,
-            description: data.description,
-            active: data.active,
-            imageUpload: data.imageUpload
-        }).filter(([, value]) => value !== undefined && value !== null)
-    );
-    return toFormData(scalars, formData);
-};
 
 /**
  * Products CRUD, paginated search and image upload, on top of the toolkit's
@@ -186,22 +147,44 @@ export const useProductsStore = defineStore('products', () => {
      * @param productData - Product fields, optionally including `imageUpload`.
      * @returns A promise resolving with the created product.
      */
-    const createProduct = (productData: CreateProductRequestMultipart) =>
+    const createProduct = ({ imageUpload, ...productData }: CreateProductRequestMultipart) =>
         createTarget(() =>
-            productData.imageUpload
-                ? orvalMutator<ProductEnvelope>({
-                      url: '/products',
-                      method: 'POST',
-                      data: productFormData(productData)
-                  }).then((response) => response.data)
-                : apiCreateProduct({
-                      title: productData.title,
-                      price: productData.price,
-                      description: productData.description,
-                      active: productData.active,
-                      categories: productData.categories,
-                      tags: productData.tags
-                  }).then((response) => response.data)
+            imageUpload
+                ? createProductWithMultipart({ ...productData, imageUpload }).then(
+                      (response) => response.data
+                  )
+                : apiCreateProduct(productData).then((response) => response.data)
+        );
+
+    /**
+     * Updates a product, as multipart when a new image is attached and as plain
+     * JSON otherwise.
+     *
+     * @param productId - Identifier of the product to update.
+     * @param productData - Fields to change, optionally including `imageUpload`.
+     * @param options - Per-call axios overrides, forwarded to `orvalMutator`.
+     * @returns A promise resolving with the updated product.
+     */
+    const updateProduct = (
+        productId: string,
+        { imageUpload, ...productData }: UpdateProductByIdRequestMultipart,
+        options?: AxiosRequestConfig
+    ) =>
+        updateTarget(
+            () =>
+                imageUpload
+                    ? updateProductByIdWithMultipart(
+                          productId,
+                          { ...productData, imageUpload },
+                          options
+                      ).then((response) => response.data)
+                    : updateProductById(productId, productData, options).then(
+                          (response) => response.data
+                      ),
+            // `imageUpload` is deliberately excluded: the new imageUrl comes back
+            // from the API, and parking a Blob in store state would be nonsense.
+            productData as Partial<Product>,
+            productId
         );
 
     /**
@@ -209,6 +192,10 @@ export const useProductsStore = defineStore('products', () => {
      *
      * The existing product record must be provided so the required title and
      * price fields can be forwarded alongside the new image file.
+     *
+     * Thin wrapper over {@link updateProduct} — the same `PUT /products/{id}`
+     * with the same payload — adding only the file-picker handling and the
+     * progress callback that a plain field update has no use for.
      *
      * @param product - Current product record, used to re-send mandatory fields.
      * @param files - Selected files; only the first is uploaded.
@@ -222,55 +209,20 @@ export const useProductsStore = defineStore('products', () => {
         onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
     ) => {
         if (files.length === 0 || !files[0]) return Promise.reject(new Error('no file selected'));
-        return updateTarget(
-            () =>
-                orvalMutator<ProductEnvelope>({
-                    url: `/products/${encodeURIComponent(product.id)}`,
-                    method: 'PUT',
-                    data: productFormData({
-                        title: product.title,
-                        price: product.price,
-                        description: product.description,
-                        active: product.active,
-                        categories: product.categories,
-                        tags: product.tags,
-                        imageUpload: files[0]
-                    }),
-                    onUploadProgress
-                }).then((response) => response.data),
-            {} as Partial<Product>,
-            product.id
+        return updateProduct(
+            product.id,
+            {
+                title: product.title,
+                price: product.price,
+                description: product.description,
+                active: product.active,
+                categories: product.categories,
+                tags: product.tags,
+                imageUpload: files[0]
+            },
+            { onUploadProgress }
         );
     };
-
-    /**
-     * Updates a product, as multipart when a new image is attached and as plain
-     * JSON otherwise.
-     *
-     * @param productId - Identifier of the product to update.
-     * @param productData - Fields to change, optionally including `imageUpload`.
-     * @returns A promise resolving with the updated product.
-     */
-    const updateProduct = (productId: string, productData: UpdateProductByIdRequestMultipart) =>
-        updateTarget(
-            () =>
-                productData.imageUpload
-                    ? orvalMutator<ProductEnvelope>({
-                          url: `/products/${encodeURIComponent(productId)}`,
-                          method: 'PUT',
-                          data: productFormData(productData)
-                      }).then((response) => response.data)
-                    : updateProductById(productId, {
-                          title: productData.title,
-                          price: productData.price,
-                          description: productData.description,
-                          active: productData.active,
-                          categories: productData.categories,
-                          tags: productData.tags
-                      }).then((response) => response.data),
-            productData as Partial<Product>,
-            productId
-        );
 
     /**
      * Deletes a product and drops it from the store.

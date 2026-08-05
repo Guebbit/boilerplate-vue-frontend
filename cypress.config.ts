@@ -1,5 +1,6 @@
 import { defineConfig } from 'cypress';
 import { loadEnv } from 'vite';
+import { resolveBackendPath } from './scripts/backendPath';
 
 const viteEnvironment = loadEnv('', process.cwd(), '');
 
@@ -16,7 +17,18 @@ export default defineConfig({
         baseUrl: 'http://localhost:8085',
         allowCypressEnv: false,
         env: {
-            apiUrl: viteEnvironment.VITE_API_URL ?? 'http://localhost:3000'
+            apiUrl: viteEnvironment.VITE_API_URL ?? 'http://localhost:3000',
+            // Which profile the specs are running against. Defaults to the mock profile; the
+            // `test:e2e:live` script overrides it with CYPRESS_apiMockEnabled=false. Cypress maps
+            // any CYPRESS_* variable onto Cypress.env(), which is more predictable here than
+            // relying on loadEnv to have picked up a process-level override.
+            apiMockEnabled: true,
+            // Only used by the live profile: `cy.resetState()` shells out to this checkout's
+            // `db:seed:reset:host` to restore the seed dataset between tests. `BACKEND_PATH` env
+            // override, or a sibling-checkout default, always resolved to an absolute path — see
+            // scripts/backendPath.ts, shared with scripts/preflight-live.ts so the two can never
+            // silently disagree about which backend they mean.
+            backendPath: resolveBackendPath()
         }
     }
 });

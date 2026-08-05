@@ -71,6 +71,9 @@ export const fetchLanguageApi = (locale: string): Promise<[string, ITranslationD
         // downloaded: afterwards it counts as locally cached and loads instantly
         const delayMs = getDownloadedLocales().includes(locale) ? 0 : 1000;
         setTimeout(() => {
+            // Stryker disable next-line StringLiteral: mutating this template to "" leaves an
+            // `import("")` that Vite cannot statically analyse, so the whole module fails to
+            // transform and every suite errors out instead of one mutant surviving.
             import(`@/locales/${locale}.json`)
                 .then((module) => {
                     markLocaleDownloaded(locale);

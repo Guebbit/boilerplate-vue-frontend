@@ -5,15 +5,14 @@ import {
     listUsers,
     getUserById,
     createUser as apiCreateUser,
+    createUserWithMultipart,
     updateUserById,
+    updateUserByIdWithMultipart,
     deleteUserById
 } from '@api';
-import { orvalMutator } from '@/plugins/http';
-import { toFormData } from '@guebbit/js-toolkit';
-import type { AxiosProgressEvent } from 'axios';
+import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 import type {
     User,
-    UserEnvelope,
     CreateUserRequestMultipart,
     UpdateUserByIdRequestMultipart,
     SearchUsersRequest
@@ -24,21 +23,6 @@ import type {
  * owned by the toolkit's search state).
  */
 type IUsersFilters = Omit<SearchUsersRequest, 'page' | 'pageSize'>;
-
-/**
- * Drops null/undefined entries from an object.
- *
- * `toFormData` appends `undefined` as the literal string `"undefined"` instead
- * of omitting the field, so optional fields left unset must be stripped first.
- *
- * @typeParam T - Shape of the source object.
- * @param data - Object to filter.
- * @returns A shallow copy holding only the defined, non-null entries.
- */
-const definedEntries = <T extends object>(data: T): Partial<T> =>
-    Object.fromEntries(
-        Object.entries(data).filter(([, value]) => value !== undefined && value !== null)
-    ) as Partial<T>;
 
 /**
  * Users CRUD, paginated search and avatar upload, on top of the toolkit's
@@ -163,52 +147,14 @@ export const useUsersStore = defineStore('users', () => {
      * @param userData - User fields, optionally including `imageUpload`.
      * @returns A promise resolving with the created user.
      */
-    const createUser = (userData: CreateUserRequestMultipart) =>
+    const createUser = ({ imageUpload, ...userData }: CreateUserRequestMultipart) =>
         createTarget(() =>
-            userData.imageUpload
-                ? orvalMutator<UserEnvelope>({
-                      url: '/users',
-                      method: 'POST',
-                      data: toFormData(definedEntries(userData))
-                  }).then((response) => response.data)
-                : apiCreateUser({
-                      email: userData.email,
-                      username: userData.username,
-                      password: userData.password,
-                      admin: userData.admin,
-                      active: userData.active
-                  }).then((response) => response.data)
+            imageUpload
+                ? createUserWithMultipart({ ...userData, imageUpload }).then(
+                      (response) => response.data
+                  )
+                : apiCreateUser(userData).then((response) => response.data)
         );
-
-    /**
-     * Replaces a user's avatar through the multipart `imageUpload` endpoint.
-     *
-     * @param userId - Identifier of the user to update.
-     * @param files - Selected files; only the first is uploaded.
-     * @param onUploadProgress - Axios progress callback, for a progress bar.
-     * @returns A promise resolving with the updated user (the new `imageUrl`
-     *  comes from the API, so nothing is merged optimistically), rejected with a
-     *  `no file selected` error when `files` is empty.
-     */
-    const updateUserImage = (
-        userId: string,
-        files: File[] | FileList = [],
-        onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
-    ) => {
-        if (files.length === 0 || !files[0]) return Promise.reject(new Error('no file selected'));
-        return updateTarget(
-            () =>
-                orvalMutator<UserEnvelope>({
-                    url: `/users/${encodeURIComponent(userId)}`,
-                    method: 'PUT',
-                    data: toFormData({ imageUpload: files[0] }),
-                    onUploadProgress
-                }).then((response) => response.data),
-            // No fields to optimistically merge — the updated imageUrl is returned by the API
-            {} as Partial<User>,
-            userId
-        );
-    };
 
     /**
      * Updates a user, as multipart when a new avatar is attached and as plain
@@ -217,29 +163,51 @@ export const useUsersStore = defineStore('users', () => {
      * @param userId - Identifier of the user to update.
      * @param userData - Fields to change, optionally including `imageUpload`.
      *  Defaults to an empty object.
+     * @param options - Per-call axios overrides, forwarded to `orvalMutator`.
      * @returns A promise resolving with the updated user.
      */
-    const updateUser = (userId: string, userData: UpdateUserByIdRequestMultipart = {}) =>
+    const updateUser = (
+        userId: string,
+        { imageUpload, ...userData }: UpdateUserByIdRequestMultipart = {},
+        options?: AxiosRequestConfig
+    ) =>
         updateTarget(
             () =>
-                userData.imageUpload
-                    ? orvalMutator<UserEnvelope>({
-                          url: `/users/${encodeURIComponent(userId)}`,
-                          method: 'PUT',
-                          data: toFormData(definedEntries(userData))
-                      }).then((response) => response.data)
-                    : updateUserById(userId, {
-                          email: userData.email,
-                          password: userData.password,
-                          username: userData.username
-                      }).then((response) => response.data),
-            {
-                email: userData.email,
-                password: userData.password,
-                username: userData.username
-            } as Partial<User>,
+                imageUpload
+                    ? updateUserByIdWithMultipart(
+                          userId,
+                          { ...userData, imageUpload },
+                          options
+                      ).then((response) => response.data)
+                    : updateUserById(userId, userData, options).then((response) => response.data),
+            // `imageUpload` is deliberately excluded: the new imageUrl comes back
+            // from the API, and parking a Blob in store state would be nonsense.
+            userData as Partial<User>,
             userId
         );
+
+    /**
+     * Replaces a user's avatar through the multipart `imageUpload` endpoint.
+     *
+     * Thin wrapper over {@link updateUser} — the same `PUT /users/{id}` — adding
+     * only the file-picker handling and the progress callback. Passing no other
+     * field means nothing is merged optimistically, which is right: the new
+     * `imageUrl` is whatever the API returns.
+     *
+     * @param userId - Identifier of the user to update.
+     * @param files - Selected files; only the first is uploaded.
+     * @param onUploadProgress - Axios progress callback, for a progress bar.
+     * @returns A promise resolving with the updated user, rejected with a
+     *  `no file selected` error when `files` is empty.
+     */
+    const updateUserImage = (
+        userId: string,
+        files: File[] | FileList = [],
+        onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
+    ) => {
+        if (files.length === 0 || !files[0]) return Promise.reject(new Error('no file selected'));
+        return updateUser(userId, { imageUpload: files[0] }, { onUploadProgress });
+    };
 
     /**
      * Deletes a user and drops them from the store.

@@ -4,6 +4,7 @@ import type { AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } from 
 import type { IResponseReject, IResponseSuccess } from '@/types';
 import { useProfileStore } from '@/stores/profile.ts';
 import { storeToRefs } from 'pinia';
+import { resolveResponseSchema } from './responseSchemaMap.ts';
 
 /**
  * Custom request config for internal retry bookkeeping.
@@ -252,6 +253,61 @@ instance.interceptors.request.use(onRequest, onRequestReject);
 instance.interceptors.response.use(undefined, onResponseRejectWithRefresh);
 
 /**
+ * Whether `orvalMutator` should parse every response through its contract schema before
+ * resolving. Controlled by `VITE_VALIDATE_RESPONSES` ('true'/'false'); when unset, defaults to
+ * on for an actual `vite dev` server (`DEV` true) so it also fires during ordinary local
+ * development against a live API, not only in the `test:e2e:live` Cypress run that sets it
+ * explicitly.
+ *
+ * The `MODE !== 'test'` half of that default matters: Vitest also sets `DEV: true` (its mode is
+ * 'test', not 'production'), and plenty of unit tests — `httpRefresh.spec.ts` among them —
+ * exercise `orvalMutator` against hand-rolled fixtures that are deliberately partial. Without
+ * excluding 'test' mode, this validation would run inside Vitest by default and fail specs that
+ * were never meant to be contract-checked.
+ *
+ * This is the FE-side mirror of the BE's `toSatisfyApiSpec()` contract tests: MSW responses are
+ * already checked by `assertMockContract` at the point they're built, but a live backend's
+ * responses were previously unwrapped and never parsed — a live contract violation only
+ * surfaced if some unrelated assertion happened to trip on it.
+ */
+const shouldValidateResponses = (): boolean => {
+    const flag = import.meta.env.VITE_VALIDATE_RESPONSES;
+    if (flag === 'true') return true;
+    if (flag === 'false') return false;
+    return Boolean(import.meta.env.DEV) && import.meta.env.MODE !== 'test';
+};
+
+/**
+ * Parses a response body through the schema matching its request, throwing loudly on a
+ * mismatch. Requests whose route isn't in `responseSchemaMap`'s table fail open — logged once
+ * per call in dev rather than thrown — since a missing map entry means the map is stale, not
+ * that the response itself is wrong.
+ *
+ * @param config - The request config that produced `data` (used to resolve the schema).
+ * @param data - The already-unwrapped response body.
+ */
+const validateResponseAgainstContract = (config: AxiosRequestConfig, data: unknown): void => {
+    const schema = resolveResponseSchema(config.method, config.url);
+    if (!schema) {
+        // eslint-disable-next-line no-console
+        console.warn(
+            `[contract] no response schema mapped for ${(config.method ?? 'GET').toUpperCase()} ${config.url ?? '(no url)'} — skipping validation`
+        );
+        return;
+    }
+
+    const result = schema.safeParse(data);
+    if (result.success) return;
+
+    const issues = result.error.issues
+        .map((issue) => `  - ${issue.path.join('.') || '(root)'}: ${issue.message}`)
+        .join('\n');
+    throw new Error(
+        `[contract] response for ${(config.method ?? 'GET').toUpperCase()} ${config.url ?? '(no url)'} does not match the OpenAPI schema:\n${issues}`
+    );
+};
+
+/**
  * Custom orval mutator: the *only* function allowed to call the shared axios
  * instance directly (see `orval.config.ts`'s `override.api.output.override.mutator`,
  * which points every generated client function through here). Anything that
@@ -266,9 +322,39 @@ instance.interceptors.response.use(undefined, onResponseRejectWithRefresh);
  * - Cookie forwarding (refresh token)
  * - 401 -> token refresh -> retry logic
  *
+ * When `shouldValidateResponses()` is on, it also parses every response through the schema
+ * matching its route (see `responseSchemaMap.ts`) before resolving — see that function's
+ * docstring for why this exists.
+ *
+ * The second parameter is what orval calls the mutator's "second arg": because this signature
+ * declares one, every generated function gains an `options?` argument that lands here. It is
+ * the supported way to pass per-call axios config — `onUploadProgress` for the image uploads,
+ * `signal` for cancellation — without a call site reaching for `orvalMutator` directly.
+ * `config` comes from codegen and wins on conflict, so `options` cannot rewrite the url,
+ * method or body of a generated call.
+ *
+ * `headers` are merged one level deeper on purpose. Every generated call that has a body also
+ * sets `Content-Type`, so a plain top-level merge would make `config.headers` replace the
+ * caller's headers wholesale — silently dropping them on exactly the requests most likely to
+ * need one. Merging per-key keeps caller headers additive while codegen still wins on conflict,
+ * which is what protects the multipart boundary from being overwritten by hand.
+ *
  * @typeParam T - Response payload type expected by the caller.
- * @param config - Request config.
+ * @param config - Request config, built by the generated client.
+ * @param options - Per-call axios overrides supplied by the caller.
  * @returns A promise resolving with the unwrapped response body (`response.data`).
  */
-export const orvalMutator = <T>(config: AxiosRequestConfig): Promise<T> =>
-    instance.request<T>(config).then((response) => response.data);
+export const orvalMutator = <T>(
+    config: AxiosRequestConfig,
+    options?: AxiosRequestConfig
+): Promise<T> => {
+    const request: AxiosRequestConfig = {
+        ...options,
+        ...config,
+        headers: { ...options?.headers, ...config.headers }
+    };
+    return instance.request<T>(request).then((response) => {
+        if (shouldValidateResponses()) validateResponseAgainstContract(request, response.data);
+        return response.data;
+    });
+};

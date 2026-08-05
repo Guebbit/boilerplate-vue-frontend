@@ -19,7 +19,7 @@
                 />
                 <CardMaterialStat
                     :title="t('order-target-page.label-total')"
-                    :value="formatCurrency(currentOrder?.total)"
+                    :value="formatCurrency(currentOrder?.totalPrice)"
                     accent="tertiary"
                 />
             </template>

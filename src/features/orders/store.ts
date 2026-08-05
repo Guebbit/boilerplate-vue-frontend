@@ -174,7 +174,7 @@ export const useOrdersStore = defineStore('orders', () => {
                 const obs = useObservabilityStore();
                 obs.track(analyticsEvents.CHECKOUT_COMPLETED, {
                     order_id: response.data?.order?.id,
-                    total: response.data?.order?.total
+                    total_price: response.data?.order?.totalPrice
                 });
                 return response.data;
             })
