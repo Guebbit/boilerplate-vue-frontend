@@ -1,1 +1,8 @@
-npm run complete:check
+# Deliberately NOT `complete:check`. That runs `vite build`, the unit suite AND the full Cypress
+# e2e suite — around eight minutes per commit, which is long enough that people reach for
+# `--no-verify`, and a hook that gets bypassed protects nothing. CI already runs each of those as
+# its own parallel job, so the only thing a commit hook adds is catching what would be
+# embarrassing in a diff: a type error, a lint error, unformatted code. Those are seconds.
+#
+# Before pushing (or opening a PR), run the real gate by hand: `npm run complete:check`.
+npm run complete:fast

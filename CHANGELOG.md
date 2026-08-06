@@ -41,6 +41,10 @@ own mocks.
 
 ### Added
 
+- **`npm run complete:fast`** — `type-check-only`, `lint`, `prettier:check`, and nothing that takes
+  minutes. It is what `.husky/pre-commit` runs; `complete:check` stays the full gate, run by hand
+  before pushing.
+
 - **`TODO.md`** — deliberate deferrals with the reasoning attached: running e2e against a
   production build instead of `vite dev`, and keeping the mutation and e2e jobs off the same
   runner.
@@ -148,6 +152,14 @@ own mocks.
 - **`podman:kill` / `docker:kill`** — `<engine> compose kill`, scoped to this project's stack.
 
 ### Changed
+
+- **The pre-commit hook runs `complete:fast` instead of `complete:check`.** The full gate builds the
+  app and runs the entire Cypress suite — around eight minutes per commit, which is long enough
+  that people reach for `--no-verify`, and a hook that gets bypassed protects nothing. CI already
+  runs each of those as its own parallel job, where a failure names the job instead of failing one
+  long serial script. What a commit hook usefully adds is the class of thing that is merely
+  embarrassing in a diff — a type error, a lint error, unformatted code — and that costs about
+  seventeen seconds.
 
 - **`contracts/` and `tests/mocks/generated.ts` regenerated** for the backend's `imageUrl` contract
   change — `format: uri` became a shared `ImageUrl` schema with `format: uri-reference`, so
