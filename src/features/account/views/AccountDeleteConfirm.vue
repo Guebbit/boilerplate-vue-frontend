@@ -59,7 +59,7 @@ interface IAccountDeleteConfirmForm {
     token?: string;
 }
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const { addMessage } = useNotificationsStore();
@@ -71,8 +71,11 @@ const { form, formErrors, isSubmitting, handleSubmit } =
             token: typeof route.query.token === 'string' ? route.query.token : ''
         },
         z.object({
-            token: z.string().min(1, t('account-delete-confirm-page.token-required'))
-        })
+            token: z
+                .string()
+                .min(1, { error: () => t('account-delete-confirm-page.token-required') })
+        }),
+        { revalidateOn: locale }
     );
 
 const showErrors = ref(false);

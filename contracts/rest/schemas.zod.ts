@@ -5,6 +5,17 @@
  * Stable, codegen-oriented OpenAPI contract.
  * Designed for multi-project, multi-language use (client/server stubs, DTOs, SDKs).
  *
+ * Language: every endpoint honours `Accept-Language` (q-weights and region tags
+ * included). It selects the language of user-facing copy only — `errors[].message` and a
+ * success envelope's `message` — never the response shape, the status code, or a
+ * machine-readable field such as `errors[].code`. An unsupported language falls back
+ * instead of erroring; `Content-Language` states what was used and `Vary:
+ * Accept-Language` is always set. `GET /locales` lists what a deployment supports.
+ *
+ * The header is intentionally not declared per operation: it applies to all of them and
+ * clients set it once in an interceptor, so declaring it 33 times would only add a
+ * redundant argument to every generated function. This paragraph is its contract.
+ *
  * OpenAPI spec version: 2.0.0
  */
 import * as zod from 'zod';
@@ -22,6 +33,92 @@ export const GetHealthResponse = zod.strictObject({
             .enum(['ok'])
             .describe('Liveness indicator. Always `ok` when the process is answering.')
     })
+});
+
+/**
+ * Which languages this deployment can answer in, plus its default and fallback.
+ *
+ * Public, unauthenticated and cacheable: it is static copy that changes only on
+ * deploy, and a client that has just failed to reach the API is exactly who needs
+ * it.
+ * @summary Supported languages
+ */
+export const getLocalesResponseDataLocalesItemRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getLocalesResponseDataDefaultRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getLocalesResponseDataFallbackRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const GetLocalesResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod
+        .strictObject({
+            locales: zod
+                .array(
+                    zod
+                        .string()
+                        .regex(getLocalesResponseDataLocalesItemRegExp)
+                        .describe(
+                            'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                        )
+                )
+                .describe('Every supported language tag.'),
+            default: zod
+                .string()
+                .regex(getLocalesResponseDataDefaultRegExp)
+                .describe(
+                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                ),
+            fallback: zod
+                .string()
+                .regex(getLocalesResponseDataFallbackRegExp)
+                .describe(
+                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                )
+        })
+        .describe(
+            'Which languages a deployment can answer in. Runtime state, not contract state: it is derived from the dictionaries actually deployed, so it cannot be an enum here.'
+        )
+});
+
+/**
+ * This API's own dictionary for one language.
+ *
+ * Normally unnecessary — the API resolves its keys itself and puts finished text on
+ * the wire. It earns its place when no response arrives at all (a network failure, a
+ * bare 502) and the client must produce the copy itself, in the active language.
+ * @summary API message dictionary
+ */
+export const getLocaleDictionaryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const GetLocaleDictionaryParams = zod.strictObject({
+    locale: zod
+        .string()
+        .regex(getLocaleDictionaryPathLocaleRegExp)
+        .describe('A language tag from `GET \/locales`.')
+});
+
+export const getLocaleDictionaryResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const GetLocaleDictionaryResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod
+        .strictObject({
+            locale: zod
+                .string()
+                .regex(getLocaleDictionaryResponseDataLocaleRegExp)
+                .describe(
+                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                ),
+            messages: zod
+                .record(zod.string(), zod.unknown())
+                .describe('Nested key\/value dictionary, the same shape the API loads.')
+        })
+        .describe(
+            "The API's OWN message dictionary for one language — its API-response copy and nothing else. It is never a client's UI dictionary: the two are authored and deployed in separate repositories, and mixing them would put view copy in the API's keyspace. A client that wants these merges them under a namespace it reserves for the API, never at the root."
+        )
 });
 
 /**
@@ -276,6 +373,8 @@ export const GetObservabilityLoadTestResponse = zod.strictObject({
  * Returns the full profile of the currently authenticated user
  * @summary Current user info
  */
+export const getAccountResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
 export const GetAccountResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -291,6 +390,13 @@ export const GetAccountResponse = zod.strictObject({
             .optional()
             .describe(
                 'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            ),
+        locale: zod
+            .string()
+            .regex(getAccountResponseDataLocaleRegExp)
+            .optional()
+            .describe(
+                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
             ),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -366,6 +472,8 @@ export const SignupBody = zod.strictObject({
         )
 });
 
+export const signupResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
 export const SignupResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -381,6 +489,13 @@ export const SignupResponse = zod.strictObject({
             .optional()
             .describe(
                 'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            ),
+        locale: zod
+            .string()
+            .regex(signupResponseDataLocaleRegExp)
+            .optional()
+            .describe(
+                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
             ),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -477,6 +592,7 @@ export const ListUsersQueryParams = zod.strictObject({
     active: zod.boolean().optional()
 });
 
+export const listUsersResponseDataItemsItemLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const listUsersResponseDataMetaPageDefault = 1;
 
 export const listUsersResponseDataMetaPageSizeDefault = 10;
@@ -503,6 +619,13 @@ export const ListUsersResponse = zod.strictObject({
                     .optional()
                     .describe(
                         'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                    ),
+                locale: zod
+                    .string()
+                    .regex(listUsersResponseDataItemsItemLocaleRegExp)
+                    .optional()
+                    .describe(
+                        'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
                     ),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
                 updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -532,6 +655,8 @@ export const ListUsersResponse = zod.strictObject({
  */
 export const createUserBodyPasswordMin = 8;
 
+export const createUserBodyLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
 export const CreateUserBody = zod.strictObject({
     email: zod.email(),
     username: zod.string(),
@@ -543,8 +668,17 @@ export const CreateUserBody = zod.strictObject({
         .optional()
         .describe(
             'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+        ),
+    locale: zod
+        .string()
+        .regex(createUserBodyLocaleRegExp)
+        .optional()
+        .describe(
+            'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
         )
 });
+
+export const createUserResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
 export const CreateUserResponse = zod.strictObject({
     success: zod.literal(true),
@@ -562,6 +696,13 @@ export const CreateUserResponse = zod.strictObject({
             .describe(
                 'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
             ),
+        locale: zod
+            .string()
+            .regex(createUserResponseDataLocaleRegExp)
+            .optional()
+            .describe(
+                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+            ),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
@@ -573,6 +714,8 @@ export const CreateUserResponse = zod.strictObject({
  */
 export const updateUserBodyPasswordMin = 8;
 
+export const updateUserBodyLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
 export const UpdateUserBody = zod.strictObject({
     id: zod.string().describe('Resource identifier'),
     email: zod.email().optional(),
@@ -583,8 +726,17 @@ export const UpdateUserBody = zod.strictObject({
         .optional()
         .describe(
             'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+        ),
+    locale: zod
+        .string()
+        .regex(updateUserBodyLocaleRegExp)
+        .optional()
+        .describe(
+            'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
         )
 });
+
+export const updateUserResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
 export const UpdateUserResponse = zod.strictObject({
     success: zod.literal(true),
@@ -601,6 +753,13 @@ export const UpdateUserResponse = zod.strictObject({
             .optional()
             .describe(
                 'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            ),
+        locale: zod
+            .string()
+            .regex(updateUserResponseDataLocaleRegExp)
+            .optional()
+            .describe(
+                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
             ),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -632,6 +791,8 @@ export const GetUserByIdParams = zod.strictObject({
     id: zod.string().describe('Resource identifier')
 });
 
+export const getUserByIdResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
 export const GetUserByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -647,6 +808,13 @@ export const GetUserByIdResponse = zod.strictObject({
             .optional()
             .describe(
                 'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            ),
+        locale: zod
+            .string()
+            .regex(getUserByIdResponseDataLocaleRegExp)
+            .optional()
+            .describe(
+                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
             ),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -675,6 +843,8 @@ export const UpdateUserByIdBody = zod.strictObject({
         )
 });
 
+export const updateUserByIdResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
 export const UpdateUserByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -690,6 +860,13 @@ export const UpdateUserByIdResponse = zod.strictObject({
             .optional()
             .describe(
                 'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            ),
+        locale: zod
+            .string()
+            .regex(updateUserByIdResponseDataLocaleRegExp)
+            .optional()
+            .describe(
+                'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
             ),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
@@ -738,6 +915,9 @@ export const SearchUsersBody = zod.strictObject({
     active: zod.boolean().optional()
 });
 
+export const searchUsersResponseDataItemsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
 export const searchUsersResponseDataMetaPageDefault = 1;
 
 export const searchUsersResponseDataMetaPageSizeDefault = 10;
@@ -764,6 +944,13 @@ export const SearchUsersResponse = zod.strictObject({
                     .optional()
                     .describe(
                         'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                    ),
+                locale: zod
+                    .string()
+                    .regex(searchUsersResponseDataItemsItemLocaleRegExp)
+                    .optional()
+                    .describe(
+                        'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
                     ),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
                 updatedAt: zod.iso.datetime({ offset: true }).optional()

@@ -59,13 +59,13 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useProfileStore } from '@/stores/profile.ts';
 import { useRouter, useRoute } from 'vue-router';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import { createUsersSchema } from '@/features/users/schemas.ts';
+import { usersSchema } from '@/features/users/schemas.ts';
 import { notifyErrorMessages, focusFirstErrorField } from '@/utils/errors.ts';
 
 /**
  * UI logics
  */
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 const router = useRouter();
 const route = useRoute();
@@ -81,6 +81,26 @@ interface IUserSignupForm {
     conditions?: boolean;
 }
 
+/**
+ * Built once, with thunked messages so the wording is chosen at parse time — see
+ * `@/features/users/schemas.ts`. `revalidateOn` re-translates errors already on screen.
+ */
+const signupSchema = usersSchema
+    .pick({ email: true })
+    .extend({
+        password: z.string().min(8, { error: () => t('users-form.password-required') }),
+        passwordConfirm: z
+            .string()
+            .min(8, { error: () => t('users-form.password-confirm-required') }),
+        conditions: z.boolean().refine((value) => value, {
+            error: () => t('users-form.conditions-required')
+        })
+    })
+    .refine((data) => data.password === data.passwordConfirm, {
+        error: () => t('users-form.password-dont-match'),
+        path: ['passwordConfirm']
+    });
+
 const { form, formErrors, isSubmitting, handleSubmit } =
     useStructureFormValidation<IUserSignupForm>(
         {
@@ -90,20 +110,8 @@ const { form, formErrors, isSubmitting, handleSubmit } =
             passwordConfirm: '',
             conditions: false
         },
-        () =>
-            createUsersSchema(t)
-                .pick({ email: true })
-                .extend({
-                    password: z.string().min(8, t('users-form.password-required')),
-                    passwordConfirm: z.string().min(8, t('users-form.password-confirm-required')),
-                    conditions: z.boolean().refine((value) => value, {
-                        message: t('users-form.conditions-required')
-                    })
-                })
-                .refine((data) => data.password === data.passwordConfirm, {
-                    message: t('users-form.password-dont-match'),
-                    path: ['passwordConfirm']
-                })
+        signupSchema,
+        { revalidateOn: locale }
     );
 
 /**

@@ -41,6 +41,35 @@ own mocks.
 
 ### Added
 
+- **Forms re-translate the errors already on screen when the language changes.** A thunked schema
+  decides what the _next_ validation says; it cannot touch what is currently displayed, because
+  `validate()` copies resolved _strings_ into `formErrors` and re-rendering just re-prints them.
+  Every form now passes `{ revalidateOn: locale }` to `useStructureFormValidation`
+  (`@guebbit/vue-toolkit@2.2.0`), which re-runs validation over the unchanged data — and only
+  while errors are showing, so a pristine form does not sprout red text because someone switched
+  language.
+
+- **`api.*`, a reserved namespace for the API's own dictionary.** Each repository owns its
+  strings: this app never gets UI copy from the API, and the API never gets response copy from
+  here — either boilerplate has to work against a different counterpart. What they synchronize is
+  the _choice_ of language. The API's dictionary is nonetheless available at
+  `GET /locales/:locale` and merged under `api`, never at the root, where two
+  independently-authored keyspaces would eventually collide silently. `apiText(apiKey, localKey)`
+  reads it with a local stand-in, because the messages that need it are exactly the ones produced
+  when the API could not be reached.
+
+- **A language only the API has is offered anyway.** `mergeApiLocales()` takes the union of the
+  build-time list and `GET /locales` at boot, so the switcher shows what the server can actually
+  answer in. `es` is the worked example: declared in `VITE_APP_SUPPORTED_LOCALES`, no
+  `src/locales/es.json`, Spanish API copy inside an otherwise-English UI. Every fetch resolves
+  rather than rejects, so an unreachable API degrades the copy and never blocks a navigation.
+
+- **`vue/no-bare-strings-in-template`.** Catches the two shapes that slipped past review — a bare
+  text node, and a static `alt` / `title` / `label` / `placeholder` / `aria-label` that a screen
+  reader or a tab title reads. Symbols and SI units (`×`, `MB`, `ms`) are allowlisted: identical
+  in every language, and putting them through a dictionary only invites a translator to "fix"
+  them.
+
 - **`npm run complete:fast`** — `type-check-only`, `lint`, `prettier:check`, and nothing that takes
   minutes. It is what `.husky/pre-commit` runs; `complete:check` stays the full gate, run by hand
   before pushing.
@@ -153,6 +182,16 @@ own mocks.
 
 ### Changed
 
+- **Schema factories are gone; the schemas are module constants with thunked messages.**
+  `createUsersSchema(t)` consumed through a getter bought nothing —
+  `useStructureFormValidation` resolves `toValue(schema)` inside `validate()` and nowhere else,
+  so a getter was evaluated at exactly the moment a thunk is — and it was a live trap:
+  `createUsersSchema(t)` instead of `() => createUsersSchema(t)` type-checks, runs, and silently
+  freezes the language. A thunk inside `schemas.ts` has no call site to get wrong. Six views also
+  built inline schemas with eagerly-called `t()`, which froze the language the same way; those
+  are thunks too. Import `usersSchema` / `productsSchema` / `orderSchema` instead of the
+  `create*` factories.
+
 - **The pre-commit hook runs `complete:fast` instead of `complete:check`.** The full gate builds the
   app and runs the entire Cypress suite — around eight minutes per commit, which is long enough
   that people reach for `--no-verify`, and a hook that gets bypassed protects nothing. CI already
@@ -226,6 +265,31 @@ own mocks.
 - **`src/stores/observability.ts`**'s default tracker URL follows the Umami port move.
 
 ### Fixed
+
+- **`fallbackLocale` was inert for a language with no local dictionary.** Loading a locale never
+  loaded anything else, so landing directly on `/es/…` left `es` as the only registered
+  dictionary — and every UI key rendered as its own raw identifier
+  (`products-list-page.page-title`) instead of the English copy. Per-key fallback is not free:
+  `_ensureFallbackLoaded` now runs on every activation path.
+
+- **A stray comma or a space in `VITE_APP_SUPPORTED_LOCALES` broke locale routing, silently.**
+  `en, it` yielded the locale `' it'`, which matches no route and no dictionary; `en,,it` yielded
+  `''`, and an empty string matches the empty first segment of `/`, so `routerLinkI18n('/')`
+  stopped prefixing the locale and the root route lost its language. The list is trimmed and
+  empty-filtered — the same normalisation the API applies to `NODE_SUPPORTED_LOCALES`. The
+  unreachable "no languages found" guard that stood next to it is gone: it needed both an
+  unusable env list _and_ an empty `src/locales/`, and an app with no dictionary at all cannot
+  render one string, so every other test fails long before a warning would help.
+
+- **The bundled dictionary was registered by reference.** `_updateLocale` passed the imported
+  `en.json` module object straight to `setLocaleMessage`, so vue-i18n held _that_ object and a
+  later merge would have written into the bundled dictionary itself, process-wide, for every
+  importer. It is cloned now.
+
+- **Nine user-facing strings were hardcoded English.** Five in `RealtimePlayground.vue` /
+  `AppNavigation.vue`, and four error messages in `plugins/http` and `utils/errors` — the ones
+  shown when no response arrived at all, which is the worst moment to fall back to a language the
+  user may not read.
 
 - **The live e2e profile is 63/63**, from 58 passing / 5 failing. Three of the five were a single
   backend bug — cached responses reused across authentication scopes, so an authenticated user was

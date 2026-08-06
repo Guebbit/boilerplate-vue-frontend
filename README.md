@@ -481,6 +481,87 @@ Tools used here:
 - [Vue Router](https://router.vuejs.org/) for navigation + guards.
 - [Vue I18n](https://vue-i18n.intlify.dev/) for messages and locale switching.
 
+### Talking to the API in the right language
+
+The axios interceptor sends `Accept-Language: <active locale>` on every request
+(`src/plugins/http/index.ts`), reading the locale fresh each time — so the moment
+`changeLanguage('it')` resolves, every subsequent call is answered in Italian. The API is
+stateless about language: each request carries its own, and `Content-Language` on the response
+says what it actually used.
+
+That means API copy needs no client-side dictionary in normal operation: the server sends
+finished text and this app prints it.
+
+### Validation messages: thunks, not factories
+
+Schemas in `src/features/*/schemas.ts` are module constants whose messages are **thunks**:
+
+```ts
+export const usersEmailSchema = z.email({ error: () => t('users-form.email-invalid') });
+```
+
+Zod calls the thunk at parse time, so one schema object speaks whatever language is active then.
+They used to be `createUsersSchema(t)` factories consumed through a getter; that bought nothing —
+`useStructureFormValidation` resolves `toValue(schema)` inside `validate()` and nowhere else, so a
+getter was evaluated at exactly the moment a thunk is — and it was a live trap, because
+`createUsersSchema(t)` instead of `() => createUsersSchema(t)` type-checks, runs, and silently
+freezes the language.
+
+### Errors already on screen
+
+A thunk decides what the **next** validation says, not what is currently displayed: `formErrors`
+holds resolved strings, and re-rendering just re-prints them. Every form therefore passes
+`{ revalidateOn: locale }` to `useStructureFormValidation`, which re-runs `validate()` over the
+unchanged data on a language switch — and only while errors are showing, so a pristine form is
+not validated just because someone changed the language.
+
+Forgetting it is invisible until someone switches language mid-form, so
+`tests/unit/features/login-view-i18n.spec.ts` asserts it on a real view.
+
+### What is deliberately NOT translated
+
+These are technician-facing and stay English on purpose:
+
+- **console output** (`console.error`, debug logging)
+- **thrown `Error` messages**
+- **analytics event names and observability attributes**
+- **symbols and SI units** in templates (`×`, `MB`, `ms`) — identical in every language
+
+`vue/no-bare-strings-in-template` (see `eslint.config.ts`) enforces the rest: no literal text node
+and no static `alt` / `title` / `label` / `placeholder` / `aria-label` in any template.
+
+### `api.*` — the API's own dictionary
+
+**Each repository owns its own dictionary.** This app never gets its UI copy from the API, and the
+API never gets its response copy from here — either boilerplate has to work against a different
+counterpart, so neither may depend on the other for its own strings. What they synchronize is the
+_choice_ of language, via `Accept-Language`.
+
+The API's dictionary is nonetheless _available_, at `GET /locales/:locale`, and this app merges it
+under a **reserved root namespace**: `api`. Never at the root — two independently-authored
+keyspaces would eventually collide silently, and the loser would be whichever loaded last. No key
+under `api` may be authored here; `tests/unit/utils/i18n.spec.ts` enforces that.
+
+| Piece                            | Where                                                                                                                               |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| discover the API's languages     | `mergeApiLocales()` at boot (`src/main.ts`) — a **union** with the build-time list, so the app still works with the API unreachable |
+| fetch and merge the dictionary   | `fetchLanguageApi` (`src/middlewares/localeChoice.ts`), which returns UI copy at the root and API copy under `api.*`                |
+| read a key with a local stand-in | `apiText(apiKey, localKey)` (`src/utils/i18n.ts`)                                                                                   |
+
+In normal operation none of this is used: the API resolves its own keys and puts finished text on
+the wire, so this app prints what arrives. `api.*` earns its place for the handful of messages the
+client has to produce _itself_ because no response came back at all — a 401 with an empty body, a
+network failure. Those call `apiText`, which prefers the API's own wording when `api.*` is loaded
+and otherwise uses this app's `api-errors.*` copy — necessarily, since the request that would have
+downloaded the dictionary may have failed for the same reason.
+
+**A language only one side has degrades per key, not all-or-nothing.** `es` is the worked example:
+`VITE_APP_SUPPORTED_LOCALES` lists it and there is no `src/locales/es.json`, so a user who picks
+Spanish gets Spanish API messages inside an otherwise-English UI, one key at a time via
+`fallbackLocale`. A language only this app has works unchanged; the API answers in its own
+fallback. Every fetch here resolves rather than rejects, so a dead API degrades the copy and never
+blocks a navigation.
+
 ---
 
 ## Mocking with MSW

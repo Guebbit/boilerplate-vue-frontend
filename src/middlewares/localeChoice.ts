@@ -7,6 +7,7 @@ import {
     changeLanguage,
     type ITranslationDictionaries
 } from '@/utils/i18n.ts';
+import { withApiDictionary } from '@/utils/localeApi.ts';
 import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router';
 
 /**
@@ -50,23 +51,30 @@ const markLocaleDownloaded = (locale: string) => {
 };
 
 /**
- * Simulated "fetch translations from a server" call.
+ * Assembles a locale's full dictionary: this app's UI copy plus the API's own copy under the
+ * reserved `api.*` namespace.
  *
- * In a real app this would hit an endpoint; here it dynamically imports the
- * local JSON file and adds an artificial latency the *first* time a locale is
- * requested, so the loading UX can be exercised. Always resolves (never
- * rejects) so callers never need a `.catch`: an unsupported locale or a failed
- * import resolves to an empty dictionary.
+ * The UI half is a local import. It stays local on purpose — view copy belongs to this
+ * repository, and serving it from the API would put it in the API's keyspace (see
+ * `@/utils/localeApi.ts`). The artificial latency on a first download exercises the loading UX.
+ *
+ * The `api.*` half is a real network fetch, and it is why a language the API has and this app
+ * does not still works: the UI keys fall back per key to `fallbackLocale` while the API keys are
+ * in the requested language.
+ *
+ * **Always resolves, never rejects** — callers have no `.catch`, and a failed dictionary must
+ * never strand a navigation. An unsupported locale, a failed import and an unreachable API each
+ * degrade to an empty dictionary and fallback copy.
  *
  * @param locale - locale code to load (e.g. `en`, `it`)
  * @returns tuple of `[locale, translationDictionary]`
  */
-export const fetchLanguageApi = (locale: string): Promise<[string, ITranslationDictionaries]> =>
-    new Promise((resolve) => {
-        if (!supportedLanguages.includes(locale)) {
-            resolve([locale, {}]);
-            return;
-        }
+export const fetchLanguageApi = (locale: string): Promise<[string, ITranslationDictionaries]> => {
+    // Supported by neither side — `supportedLanguages` already includes anything the API
+    // reported at boot. Nothing to import and nothing to fetch, so return before doing either.
+    if (!supportedLanguages.includes(locale)) return Promise.resolve([locale, {}]);
+
+    return new Promise<ITranslationDictionaries>((resolve) => {
         // Simulated server latency, but only the first time a locale is ever
         // downloaded: afterwards it counts as locally cached and loads instantly
         const delayMs = getDownloadedLocales().includes(locale) ? 0 : 1000;
@@ -77,11 +85,16 @@ export const fetchLanguageApi = (locale: string): Promise<[string, ITranslationD
             import(`@/locales/${locale}.json`)
                 .then((module) => {
                     markLocaleDownloaded(locale);
-                    resolve([locale, module.default as ITranslationDictionaries]);
+                    resolve(module.default as ITranslationDictionaries);
                 })
-                .catch(() => resolve([locale, {}]));
+                // A locale the API has and this app does not has no file to import: an empty UI
+                // dictionary is the correct result, not an error.
+                .catch(() => resolve({}));
         }, delayMs);
-    });
+    })
+        .then((ownMessages) => withApiDictionary(locale, ownMessages))
+        .then((messages): [string, ITranslationDictionaries] => [locale, messages]);
+};
 
 /**
  * Router guard (registered on `beforeResolve`) that keeps the active i18n

@@ -108,7 +108,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/features/users/store';
-import { createUsersSchema, createUsersPasswordSchema } from '@/features/users/schemas.ts';
+import { usersSchema, usersPasswordSchema } from '@/features/users/schemas.ts';
 import { z } from 'zod';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { Pencil, User } from 'lucide-vue-next';
@@ -124,7 +124,7 @@ import { notifyErrorMessages } from '@/utils/errors.ts';
 /**
  * Generic i18n/notifications helpers.
  */
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
@@ -149,24 +149,15 @@ interface IUserEditForm {
 }
 
 /**
- * Builds the validation schema of the edit form, where the password is an
- * optional replacement (an empty field means "leave it as it is").
+ * Validation schema of the edit form, where the password is an optional replacement (an empty
+ * field means "leave it as it is").
  *
- * A getter (rather than a resolved schema) so it is re-built on every
- * `validate()` call and the messages stay in the active language after a runtime
- * locale switch.
- *
- * @returns A Zod schema requiring a valid email, with an optional password.
+ * Built once. Its messages are thunks resolved at parse time, so it speaks the active language
+ * without being rebuilt — see `@/features/users/schemas.ts`.
  */
-const editSchema = () =>
-    createUsersSchema(t)
-        .pick({ email: true })
-        .extend({
-            password: z.preprocess(
-                (v) => (v === '' ? undefined : v),
-                createUsersPasswordSchema(t).optional()
-            )
-        });
+const editSchema = usersSchema.pick({ email: true }).extend({
+    password: z.preprocess((v) => (v === '' ? undefined : v), usersPasswordSchema.optional())
+});
 
 /**
  * Toolkit form bindings.
@@ -179,7 +170,7 @@ const {
     resetForm,
     handleSubmit,
     activateAutoHydrate
-} = useStructureFormValidation<IUserEditForm>({}, editSchema);
+} = useStructureFormValidation<IUserEditForm>({}, editSchema, { revalidateOn: locale });
 
 /**
  * Auto-hydrate the form from the fetched record once it resolves.

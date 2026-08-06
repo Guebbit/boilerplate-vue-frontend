@@ -59,6 +59,12 @@ const routeSchemas: IRouteSchema[] = [
         pattern: /^\/observability\/load-test$/,
         schema: schemas.GetObservabilityLoadTestResponse
     },
+    { method: 'GET', pattern: /^\/locales$/, schema: schemas.GetLocalesResponse },
+    {
+        method: 'GET',
+        pattern: /^\/locales\/[^/]+$/,
+        schema: schemas.GetLocaleDictionaryResponse
+    },
     { method: 'GET', pattern: /^\/account$/, schema: schemas.GetAccountResponse },
     { method: 'DELETE', pattern: /^\/account$/, schema: schemas.RequestAccountDeleteResponse },
     {

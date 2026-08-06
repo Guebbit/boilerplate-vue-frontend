@@ -38,7 +38,8 @@
         "label-menu": "Menu",
         "label-theme": "Toggle theme",
         "label-language": "Language",
-        "label-realtime": "realtime"
+        "label-realtime": "realtime",
+        "label-logo": "Guebbit home"
     },
     "home-page": {
         "page-title": "Home",
@@ -420,5 +421,18 @@
         "metrics-no-data": "No metrics data available",
         "audit-total": "{count} events",
         "audit-empty": "No audit events"
+    },
+    "realtime-playground-page": {
+        "page-title": "Realtime playground",
+        "sse-observability": "SSE observability",
+        "button-connect": "Connect SSE",
+        "button-disconnect": "Disconnect SSE",
+        "empty-metrics": "No metrics events yet"
+    },
+    "api-errors": {
+        "unauthorized": "You are not signed in, or your session has expired.",
+        "forbidden": "You do not have permission to do that.",
+        "internal-server-error": "Something went wrong on our side. Please try again.",
+        "unknown": "Something went wrong. Please try again."
     }
 }

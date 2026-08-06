@@ -5,6 +5,17 @@
  * Stable, codegen-oriented OpenAPI contract.
  * Designed for multi-project, multi-language use (client/server stubs, DTOs, SDKs).
  *
+ * Language: every endpoint honours `Accept-Language` (q-weights and region tags
+ * included). It selects the language of user-facing copy only — `errors[].message` and a
+ * success envelope's `message` — never the response shape, the status code, or a
+ * machine-readable field such as `errors[].code`. An unsupported language falls back
+ * instead of erroring; `Content-Language` states what was used and `Vary:
+ * Accept-Language` is always set. `GET /locales` lists what a deployment supports.
+ *
+ * The header is intentionally not declared per operation: it applies to all of them and
+ * clients set it once in an interceptor, so declaring it 33 times would only add a
+ * redundant argument to every generated function. This paragraph is its contract.
+ *
  * OpenAPI spec version: 2.0.0
  */
 import axios from 'axios';
@@ -47,6 +58,12 @@ export type Email = string;
 export type Password = string;
 
 /**
+ * BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET /locales`.
+ * @pattern ^[a-z]{2}(-[A-Za-z0-9]+)*$
+ */
+export type Locale = string;
+
+/**
  * Absolute URL or server-relative upload path (e.g. `/uploads/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.
  */
 export type ImageUrl = string;
@@ -64,6 +81,44 @@ export interface MessageResponse {
     success: true;
     status: number;
     message: string;
+}
+
+/**
+ * Which languages a deployment can answer in. Runtime state, not contract state: it is derived from the dictionaries actually deployed, so it cannot be an enum here.
+ */
+export interface LocaleCapabilities {
+    /** Every supported language tag. */
+    locales: Locale[];
+    default: Locale;
+    fallback: Locale;
+}
+
+export interface LocaleCapabilitiesEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: LocaleCapabilities;
+}
+
+/**
+ * Nested key/value dictionary, the same shape the API loads.
+ */
+export type LocaleDictionaryMessages = { [key: string]: unknown };
+
+/**
+ * The API's OWN message dictionary for one language — its API-response copy and nothing else. It is never a client's UI dictionary: the two are authored and deployed in separate repositories, and mixing them would put view copy in the API's keyspace. A client that wants these merges them under a namespace it reserves for the API, never at the root.
+ */
+export interface LocaleDictionary {
+    locale: Locale;
+    /** Nested key/value dictionary, the same shape the API loads. */
+    messages: LocaleDictionaryMessages;
+}
+
+export interface LocaleDictionaryEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: LocaleDictionary;
 }
 
 /**
@@ -164,6 +219,7 @@ export interface User {
     admin?: boolean;
     active?: boolean;
     imageUrl?: ImageUrl;
+    locale?: Locale;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -654,6 +710,7 @@ export interface CreateUserRequest {
     admin?: boolean;
     active?: boolean;
     imageUrl?: ImageUrl;
+    locale?: Locale;
 }
 
 export interface CreateUserRequestMultipart {
@@ -664,6 +721,7 @@ export interface CreateUserRequestMultipart {
     active?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
+    locale?: Locale;
 }
 
 export interface UpdateUserRequest {
@@ -672,6 +730,7 @@ export interface UpdateUserRequest {
     username?: string;
     password?: Password;
     imageUrl?: ImageUrl;
+    locale?: Locale;
 }
 
 export interface UpdateUserRequestMultipart {
@@ -681,6 +740,7 @@ export interface UpdateUserRequestMultipart {
     password?: Password;
     /** Optional user profile image */
     imageUpload?: Blob;
+    locale?: Locale;
 }
 
 export interface UpdateUserByIdRequest {
@@ -1105,6 +1165,35 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
     };
 
     /**
+     * Which languages this deployment can answer in, plus its default and fallback.
+     *
+     * Public, unauthenticated and cacheable: it is static copy that changes only on
+     * deploy, and a client that has just failed to reach the API is exactly who needs
+     * it.
+     * @summary Supported languages
+     */
+    const getLocales = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<LocaleCapabilitiesEnvelope>> => {
+        return axiosInstance.get(`/locales`, options);
+    };
+
+    /**
+     * This API's own dictionary for one language.
+     *
+     * Normally unnecessary — the API resolves its keys itself and puts finished text on
+     * the wire. It earns its place when no response arrives at all (a network failure, a
+     * bare 502) and the client must produce the copy itself, in the active language.
+     * @summary API message dictionary
+     */
+    const getLocaleDictionary = (
+        locale: Locale,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<LocaleDictionaryEnvelope>> => {
+        return axiosInstance.get(`/locales/${locale}`, options);
+    };
+
+    /**
      * Live Server-Sent Events stream for demo dashboards.
      * Sends `metrics.snapshot` on connect, followed by periodic `metrics.updated` and `heartbeat` events.
      * @summary Observability SSE stream
@@ -1353,6 +1442,9 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         if (createUserRequestMultipart.imageUpload !== undefined) {
             formData.append(`imageUpload`, createUserRequestMultipart.imageUpload);
         }
+        if (createUserRequestMultipart.locale !== undefined) {
+            formData.append(`locale`, createUserRequestMultipart.locale);
+        }
 
         return axiosInstance.post(`/users`, formData, options);
     };
@@ -1389,6 +1481,9 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         }
         if (updateUserRequestMultipart.imageUpload !== undefined) {
             formData.append(`imageUpload`, updateUserRequestMultipart.imageUpload);
+        }
+        if (updateUserRequestMultipart.locale !== undefined) {
+            formData.append(`locale`, updateUserRequestMultipart.locale);
         }
 
         return axiosInstance.put(`/users`, formData, options);
@@ -1896,6 +1991,8 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
 
     return {
         getHealth,
+        getLocales,
+        getLocaleDictionary,
         getObservabilityEvents,
         getObservabilityHealth,
         getObservabilityMetrics,
@@ -1957,6 +2054,8 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
     };
 };
 export type GetHealthResult = AxiosResponse<HealthPingEnvelope>;
+export type GetLocalesResult = AxiosResponse<LocaleCapabilitiesEnvelope>;
+export type GetLocaleDictionaryResult = AxiosResponse<LocaleDictionaryEnvelope>;
 export type GetObservabilityEventsResult = AxiosResponse<string>;
 export type GetObservabilityHealthResult = AxiosResponse<ObservabilityHealthResponseEnvelope>;
 export type GetObservabilityMetricsResult = AxiosResponse<string>;
@@ -2024,6 +2123,32 @@ export const getGetHealthResponseMock = (
     status: faker.number.int(),
     message: faker.string.alpha({ length: { min: 10, max: 20 } }),
     data: { status: faker.helpers.arrayElement(['ok'] as const) },
+    ...overrideResponse
+});
+
+export const getGetLocalesResponseMock = (
+    overrideResponse: Partial<Extract<LocaleCapabilitiesEnvelope, object>> = {}
+): LocaleCapabilitiesEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        locales: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$')
+        ),
+        default: faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+        fallback: faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$')
+    },
+    ...overrideResponse
+});
+
+export const getGetLocaleDictionaryResponseMock = (
+    overrideResponse: Partial<Extract<LocaleDictionaryEnvelope, object>> = {}
+): LocaleDictionaryEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: { locale: faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'), messages: {} },
     ...overrideResponse
 });
 
@@ -2212,6 +2337,10 @@ export const getGetAccountResponseMock = (
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
         ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+            undefined
+        ]),
         createdAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
@@ -2275,6 +2404,10 @@ export const getSignupResponseMock = (
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
         ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+            undefined
+        ]),
         createdAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
@@ -2301,6 +2434,10 @@ export const getSignupWithMultipartResponseMock = (
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         imageUrl: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
             undefined
         ]),
         createdAt: faker.helpers.arrayElement([
@@ -2386,6 +2523,10 @@ export const getListUsersResponseMock = (
                     faker.string.alpha({ length: { min: 10, max: 20 } }),
                     undefined
                 ]),
+                locale: faker.helpers.arrayElement([
+                    faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+                    undefined
+                ]),
                 createdAt: faker.helpers.arrayElement([
                     faker.date.past().toISOString().slice(0, 19) + 'Z',
                     undefined
@@ -2422,6 +2563,10 @@ export const getCreateUserResponseMock = (
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
         ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+            undefined
+        ]),
         createdAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
@@ -2448,6 +2593,10 @@ export const getCreateUserWithMultipartResponseMock = (
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         imageUrl: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
             undefined
         ]),
         createdAt: faker.helpers.arrayElement([
@@ -2478,6 +2627,10 @@ export const getUpdateUserResponseMock = (
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
         ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+            undefined
+        ]),
         createdAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
@@ -2504,6 +2657,10 @@ export const getUpdateUserWithMultipartResponseMock = (
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         imageUrl: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
             undefined
         ]),
         createdAt: faker.helpers.arrayElement([
@@ -2543,6 +2700,10 @@ export const getGetUserByIdResponseMock = (
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
         ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+            undefined
+        ]),
         createdAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
@@ -2571,6 +2732,10 @@ export const getUpdateUserByIdResponseMock = (
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
         ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+            undefined
+        ]),
         createdAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
@@ -2597,6 +2762,10 @@ export const getUpdateUserByIdWithMultipartResponseMock = (
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         imageUrl: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
             undefined
         ]),
         createdAt: faker.helpers.arrayElement([
@@ -2636,6 +2805,10 @@ export const getSearchUsersResponseMock = (
                 active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
                 imageUrl: faker.helpers.arrayElement([
                     faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                locale: faker.helpers.arrayElement([
+                    faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
                     undefined
                 ]),
                 createdAt: faker.helpers.arrayElement([
@@ -4026,6 +4199,54 @@ export const getGetHealthMockHandler = (
                         ? await overrideResponse(info)
                         : overrideResponse
                     : getGetHealthResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getGetLocalesMockHandler = (
+    overrideResponse?:
+        | LocaleCapabilitiesEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<LocaleCapabilitiesEnvelope> | LocaleCapabilitiesEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/locales',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetLocalesResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getGetLocaleDictionaryMockHandler = (
+    overrideResponse?:
+        | LocaleDictionaryEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<LocaleDictionaryEnvelope> | LocaleDictionaryEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/locales/:locale',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetLocaleDictionaryResponseMock(),
                 { status: 200 }
             );
         },
@@ -5434,6 +5655,8 @@ export const getGetOrderInvoiceMockHandler = (
 };
 export const getEcommerceDemoAPIMock = () => [
     getGetHealthMockHandler(),
+    getGetLocalesMockHandler(),
+    getGetLocaleDictionaryMockHandler(),
     getGetObservabilityEventsMockHandler(),
     getGetObservabilityHealthMockHandler(),
     getGetObservabilityMetricsMockHandler(),

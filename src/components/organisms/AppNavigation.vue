@@ -11,7 +11,7 @@
             </v-app-bar-nav-icon>
             <RouterLink :to="routerLinkI18n({ name: 'Home' })" class="flex items-center">
                 <img
-                    alt="logo"
+                    :alt="t('navigation.label-logo')"
                     class="mx-2 block h-9"
                     :src="`${baseUrl}images/guebbit-logo-colored.png`"
                 />

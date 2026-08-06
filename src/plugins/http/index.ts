@@ -1,5 +1,5 @@
 import axiosClient from 'axios';
-import { getCurrentLocale } from '@/utils/i18n.ts';
+import { apiText, getCurrentLocale } from '@/utils/i18n.ts';
 import type { AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import type { IResponseReject, IResponseSuccess } from '@/types';
 import { useProfileStore } from '@/stores/profile.ts';
@@ -45,14 +45,24 @@ export type IAxiosResponseErrorBody = unknown;
 /**
  * Picks a user-facing message for a failed request.
  *
+ * These are the cases where the API sent no message of its own to display — an empty body, a
+ * proxy's bare 502, a request that never reached anything — so the client has to produce the copy
+ * itself. Everything else prints what the server sent, already in the language `Accept-Language`
+ * asked for.
+ *
+ * The keys live under `api-errors.*` in this app's own dictionary: they are FE-authored stand-ins
+ * for BE copy, and they have to work precisely when the BE is unreachable, so they cannot depend
+ * on anything fetched at runtime. `apiText` prefers the BE's own wording under `api.*` when that
+ * dictionary happens to be loaded — see `@/utils/i18n.ts`.
+ *
  * @param status - HTTP status code of the response.
  * @param fallback - Message to use when the status carries no specific wording.
  * @returns A canonical message for 401/403/5xx, the fallback otherwise.
  */
 const getFallbackMessage = (status: number, fallback: string) => {
-    if (status === 401) return 'Unauthorized';
-    if (status === 403) return 'Forbidden';
-    if (status >= 500) return 'Internal Server Error';
+    if (status === 401) return apiText('generic.error-unauthorized', 'api-errors.unauthorized');
+    if (status === 403) return apiText('generic.error-forbidden', 'api-errors.forbidden');
+    if (status >= 500) return apiText('generic.error-internal', 'api-errors.internal-server-error');
     return fallback;
 };
 
@@ -180,7 +190,10 @@ export const onResponseReject = (
     }
 
     const status = error.response?.status ?? 500;
-    const fallbackMessage = error.response?.statusText || error.message || 'Unknown error';
+    const fallbackMessage =
+        error.response?.statusText ||
+        error.message ||
+        apiText('generic.error-unknown', 'api-errors.unknown');
     const message = getFallbackMessage(status, fallbackMessage);
     const shouldLogServerError =
         import.meta.env.DEV && import.meta.env.VITE_APP_DEBUG_HTTP === 'true' && status >= 500;

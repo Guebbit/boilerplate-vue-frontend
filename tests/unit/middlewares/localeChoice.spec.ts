@@ -42,7 +42,24 @@ vi.mock('@/utils/i18n.ts', () => ({
     getCurrentLocale: () => i18nState.currentLocale,
     getDefaultLocale: () => i18nState.defaultLocale,
     changeLanguage: (locale: string) => changeLanguageMock(locale),
-    updateLocale: (locale: string, messages: unknown) => updateLocaleMock(locale, messages)
+    updateLocale: (locale: string, messages: unknown) => updateLocaleMock(locale, messages),
+    API_NAMESPACE: 'api'
+}));
+
+/**
+ * The API's dictionary endpoints. Mocked at the network boundary rather than by stubbing
+ * `withApiDictionary`, so the merge itself — this app's keys at the root, the API's under
+ * `api.*` — is exercised by the assertions below instead of being replaced by them.
+ */
+const getLocalesMock = vi.fn(() => Promise.resolve({ data: { locales: ['en', 'it', 'es'] } }));
+const getLocaleDictionaryMock = vi.fn(
+    (_locale: string): Promise<{ data?: { messages?: Record<string, unknown> } }> =>
+        Promise.resolve({ data: { messages: { greeting: 'from-the-api' } } })
+);
+
+vi.mock('@api', () => ({
+    getLocales: () => getLocalesMock(),
+    getLocaleDictionary: (locale: string) => getLocaleDictionaryMock(locale)
 }));
 
 const { fetchLanguageApi, localeChoice } = await import('@/middlewares/localeChoice');
@@ -78,6 +95,8 @@ describe('fetchLanguageApi', () => {
         const result = await fetchLanguageApi('kl');
 
         expect(result).toEqual(['kl', {}]);
+        // Supported by neither side, so nothing is imported AND nothing is fetched.
+        expect(getLocaleDictionaryMock).not.toHaveBeenCalled();
     });
 
     it('loads a supported locale and returns its dictionary', async () => {
@@ -139,15 +158,54 @@ describe('fetchLanguageApi', () => {
         expect(JSON.parse(localStorage.getItem('downloaded-locales') ?? '[]')).toEqual(['en']);
     });
 
-    it('resolves an empty dictionary when the locale file does not exist', async () => {
-        // 'es' is declared supported but has no src/locales/es.json — the import rejects, and
-        // the documented contract says resolve empty rather than reject.
+    /**
+     * The degradation design C is built around. `es` is supported and has no
+     * `src/locales/es.json`, so the UI import rejects — and that must resolve to an empty UI
+     * dictionary rather than reject, since callers have no `.catch`. The API's own copy is
+     * fetched regardless, so the result is Spanish API messages inside a UI that falls back per
+     * key: degrading key by key rather than all-or-nothing.
+     */
+    it('resolves API copy with an empty UI dictionary when the locale file does not exist', async () => {
         vi.useFakeTimers();
 
         const promise = fetchLanguageApi('es');
         await vi.advanceTimersByTimeAsync(1000);
 
-        await expect(promise).resolves.toEqual(['es', {}]);
+        await expect(promise).resolves.toEqual(['es', { api: { greeting: 'from-the-api' } }]);
+        expect(getLocaleDictionaryMock).toHaveBeenCalledWith('es');
+    });
+
+    it('never rejects when the API dictionary cannot be fetched', async () => {
+        getLocaleDictionaryMock.mockRejectedValueOnce(new Error('network down'));
+        vi.useFakeTimers();
+
+        const promise = fetchLanguageApi('it');
+        await vi.advanceTimersByTimeAsync(1000);
+        const [locale, dictionary] = await promise;
+
+        // The UI half still loaded; only `api.*` is empty. A dead API must never strand a
+        // navigation or blank the interface.
+        expect(locale).toBe('it');
+        expect(dictionary.api).toEqual({});
+        expect(Object.keys(dictionary).length).toBeGreaterThan(1);
+    });
+
+    it('puts the API dictionary under api.* and never at the root', async () => {
+        getLocaleDictionaryMock.mockResolvedValueOnce({
+            data: { messages: { ['users-form']: { ['email-invalid']: 'API COPY' } } }
+        });
+        vi.useFakeTimers();
+
+        const promise = fetchLanguageApi('it');
+        await vi.advanceTimersByTimeAsync(1000);
+        const [, dictionary] = await promise;
+
+        // The API's `users-form` key is namespaced, so it cannot shadow this app's own — which
+        // is the collision the reserved namespace exists to prevent.
+        expect(dictionary.api).toEqual({ ['users-form']: { ['email-invalid']: 'API COPY' } });
+        expect((dictionary['users-form'] as Record<string, string>)['email-invalid']).not.toBe(
+            'API COPY'
+        );
     });
 
     it('treats a corrupted downloaded-locales entry as empty rather than throwing', async () => {

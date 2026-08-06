@@ -66,7 +66,7 @@ import { z } from 'zod';
 import { Eye, EyeOff } from 'lucide-vue-next';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
-import { createUsersSchema } from '@/features/users/schemas.ts';
+import { usersSchema } from '@/features/users/schemas.ts';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { notifyErrorMessages, focusFirstErrorField } from '@/utils/errors.ts';
 import { routerLinkI18n } from '@/utils/i18n.ts';
@@ -75,14 +75,23 @@ import type { LoginRequest } from '@api';
 /**
  * UI logics
  */
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 const router = useRouter();
 const route = useRoute();
 
 /**
- * Form logics
+ * Form logics.
+ *
+ * Login only needs the email rule from the shared user schema, plus a password presence check.
+ * Built once: its messages are thunks, so it already speaks the active language at parse time
+ * (see `@/features/users/schemas.ts`). `revalidateOn` is what re-translates an error already on
+ * screen, which no schema shape can do — `formErrors` holds resolved strings by then.
  */
+const loginSchema = usersSchema.pick({ email: true }).extend({
+    password: z.string().min(8, { error: () => t('users-form.password-required') })
+});
+
 const { form, formErrors, validate } = useStructureFormValidation<
     LoginRequest & {
         remember?: boolean;
@@ -93,14 +102,8 @@ const { form, formErrors, validate } = useStructureFormValidation<
         password: '',
         remember: false
     },
-    () =>
-        createUsersSchema(t)
-            .pick({
-                email: true
-            })
-            .extend({
-                password: z.string().min(8, t('users-form.password-required'))
-            })
+    loginSchema,
+    { revalidateOn: locale }
 );
 
 const showErrors = ref(false);

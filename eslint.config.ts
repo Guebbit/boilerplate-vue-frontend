@@ -80,6 +80,77 @@ export default defineConfigWithVueTs(
             'vue/multi-word-component-names': 'off',
             'vue/require-default-prop': 'off',
             'vue/no-v-html': 'off',
+
+            /**
+             * Every user-facing string goes through vue-i18n. This catches the two shapes that
+             * used to slip past review — a bare text node (`<h3>SSE observability</h3>`) and a
+             * static attribute a screen reader or a tab title reads (`alt="logo"`,
+             * `title="Realtime playground"`) — since neither looks like "untranslated copy" at a
+             * glance the way a missing `t()` call does.
+             *
+             * The `attributes` list is the accessibility/UX surface only. Attributes that are
+             * NOT here (`class`, `id`, `type`, `name`, `variant`…) are markup, not copy.
+             *
+             * This governs templates. Technician-facing strings — console output, thrown
+             * `Error` messages, analytics event names — are deliberately English; see the i18n
+             * section of README.md.
+             */
+            'vue/no-bare-strings-in-template': [
+                'error',
+                {
+                    // Punctuation, symbols and SI unit abbreviations: identical in every
+                    // language, so putting them through a dictionary buys nothing and invites
+                    // a translator to "fix" them.
+                    allowlist: [
+                        '(',
+                        ')',
+                        ',',
+                        '.',
+                        '&',
+                        '+',
+                        '-',
+                        '=',
+                        '*',
+                        '/',
+                        '#',
+                        '%',
+                        '!',
+                        '?',
+                        ':',
+                        '[',
+                        ']',
+                        '{',
+                        '}',
+                        '<',
+                        '>',
+                        '·',
+                        '•',
+                        '–',
+                        '—',
+                        '|',
+                        '@',
+                        '©',
+                        '×',
+                        'MB',
+                        'GB',
+                        'KB',
+                        'ms'
+                    ],
+                    attributes: {
+                        '/.+/': [
+                            'alt',
+                            'aria-label',
+                            'aria-placeholder',
+                            'aria-roledescription',
+                            'aria-valuetext',
+                            'label',
+                            'placeholder',
+                            'title'
+                        ]
+                    },
+                    directives: ['v-text']
+                }
+            ],
             '@typescript-eslint/no-non-null-assertion': 'off',
             // '@typescript-eslint/no-confusing-void-expression': 'off',
             '@typescript-eslint/use-unknown-in-catch-callback-variable': 'off',

@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+import enMessages from '@/locales/en.json';
 
 vi.mock('@/stores/profile', () => ({
     useProfileStore: vi.fn(() => ({ accessToken: { value: undefined } }))
@@ -8,9 +9,20 @@ vi.mock('pinia', () => ({
     storeToRefs: (store: { accessToken: { value: undefined } }) => store
 }));
 
-vi.mock('@/utils/i18n.ts', () => ({
+/**
+ * Only `getCurrentLocale` is stubbed. `apiText` is deliberately the REAL one, resolving against
+ * the real vue-i18n instance: these assertions are about what a user is shown when the API sent
+ * no message of its own, and a stubbed translator would make every language look the same.
+ */
+vi.mock('@/utils/i18n.ts', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/utils/i18n.ts')>()),
     getCurrentLocale: vi.fn(() => 'en')
 }));
+
+beforeAll(async () => {
+    const { loadLocale } = await import('@/utils/i18n.ts');
+    await loadLocale('en');
+});
 
 const makeAxiosError = (status: number, data: unknown, headers: Record<string, string> = {}) => ({
     response: { status, statusText: 'Error', data, headers },
@@ -74,8 +86,8 @@ describe('onResponseReject', () => {
         await expect(onResponseReject(error as never)).rejects.toMatchObject({
             success: false,
             status: 401,
-            message: 'Unauthorized',
-            errors: ['Unauthorized']
+            message: enMessages['api-errors'].unauthorized,
+            errors: [enMessages['api-errors'].unauthorized]
         });
     });
 
@@ -86,8 +98,8 @@ describe('onResponseReject', () => {
         await expect(onResponseReject(error as never)).rejects.toMatchObject({
             success: false,
             status: 403,
-            message: 'Forbidden',
-            errors: ['Forbidden']
+            message: enMessages['api-errors'].forbidden,
+            errors: [enMessages['api-errors'].forbidden]
         });
     });
 
@@ -116,7 +128,7 @@ describe('onResponseReject — fallback normalisation', () => {
 
         await expect(onResponseReject(makeAxiosError(503, {}) as never)).rejects.toMatchObject({
             status: 503,
-            message: 'Internal Server Error'
+            message: enMessages['api-errors']['internal-server-error']
         });
     });
 
@@ -126,7 +138,7 @@ describe('onResponseReject — fallback normalisation', () => {
         const { onResponseReject } = await import('@/plugins/http');
 
         await expect(onResponseReject(makeAxiosError(500, {}) as never)).rejects.toMatchObject({
-            message: 'Internal Server Error'
+            message: enMessages['api-errors']['internal-server-error']
         });
     });
 
@@ -199,7 +211,7 @@ describe('onResponseReject — fallback normalisation', () => {
         };
 
         await expect(onResponseReject(error as never)).rejects.toMatchObject({
-            message: 'Unknown error'
+            message: enMessages['api-errors'].unknown
         });
     });
 

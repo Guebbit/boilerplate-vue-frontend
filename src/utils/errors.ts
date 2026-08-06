@@ -1,12 +1,13 @@
 import { useObservabilityStore } from '@/stores/observability';
+import { apiText } from '@/utils/i18n.ts';
 
 /**
  * Extracts a human-readable message from any thrown/rejected value.
  *
  * @param error - Unknown value caught in a `catch` block or promise rejection:
  *  a string, an `Error`, or any object exposing a non-empty `message`.
- * @returns The best message found, or `'Unknown error'` when nothing usable is
- *  available.
+ * @returns The best message found, or a translated "something went wrong" when nothing usable
+ *  is available — typically a network failure that produced no response body at all.
  */
 const getErrorMessage = (error: unknown): string => {
     if (typeof error === 'string' && error) return error;
@@ -21,7 +22,7 @@ const getErrorMessage = (error: unknown): string => {
         error.message
     )
         return error.message;
-    return 'Unknown error';
+    return apiText('generic.error-unknown', 'api-errors.unknown');
 };
 
 /**

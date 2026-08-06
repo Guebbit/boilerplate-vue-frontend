@@ -44,17 +44,17 @@ import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { useProfileStore } from '@/stores/profile.ts';
-import { createUsersSchema } from '@/features/users/schemas.ts';
+import { usersSchema } from '@/features/users/schemas.ts';
 import { notifyErrorMessages, focusFirstErrorField } from '@/utils/errors.ts';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 const { requestPasswordReset } = useProfileStore();
 
 const { form, formErrors, isSubmitting, handleSubmit } = useStructureFormValidation<{
     email?: string;
-}>({ email: '' }, () => createUsersSchema(t).pick({ email: true }));
+}>({ email: '' }, usersSchema.pick({ email: true }), { revalidateOn: locale });
 
 const showErrors = ref(false);
 const formElement = ref<HTMLFormElement>();

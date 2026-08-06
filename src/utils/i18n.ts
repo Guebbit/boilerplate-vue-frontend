@@ -16,17 +16,46 @@ export type TranslateFunction = (key: string) => string;
 
 /**
  * [on build]
- * List of supported languages (that we currently don't have loaded but that can be fetched)
- * - From watching the locales folder
- * - From custom ENV variable if present
+ * Locales named by `VITE_APP_SUPPORTED_LOCALES`, normalised.
  *
- * Env variable is necessary in case of dynamic loading of languages from server
+ * Trimmed and emptied-filtered rather than split raw, because both slips are silent and neither
+ * looks like a locale bug when it bites:
+ *
+ * - `en, it` (a space after the comma) yields `' it'`, which matches no route and no dictionary.
+ * - `en,,it` (a stray comma) yields `''`, and an empty string matches the empty first segment of
+ *   `/` — so `routerLinkI18n('/')` stops prefixing the locale and the root route silently loses
+ *   its language.
+ *
+ * Same normalisation the API applies to `NODE_SUPPORTED_LOCALES`, so the two agree on what a
+ * comma-separated locale list means.
  */
-export const supportedLanguages = import.meta.env.VITE_APP_SUPPORTED_LOCALES
-    ? ((import.meta.env.VITE_APP_SUPPORTED_LOCALES as string | undefined) ?? '').split(',')
-    : Object.keys(import.meta.glob('/src/locales/*.json')).map((file) =>
-          file.replace('/src/locales/', '').replace('.json', '')
-      );
+const declaredLocales =
+    (import.meta.env.VITE_APP_SUPPORTED_LOCALES as string | undefined)
+        ?.split(',')
+        .map((locale) => locale.trim())
+        .filter(Boolean) ?? [];
+
+/**
+ * [on build]
+ * Locales with a dictionary in the bundle, discovered from the folder.
+ */
+const bundledLocales = Object.keys(import.meta.glob('/src/locales/*.json')).map((file) =>
+    file.replace('/src/locales/', '').replace('.json', '')
+);
+
+/**
+ * [on build]
+ * List of supported languages (that we currently don't have loaded but that can be fetched).
+ *
+ * The env list wins when it names anything usable — that is how a locale with no local
+ * dictionary (served by the API at runtime) gets offered at all. An absent, empty or
+ * all-punctuation env value means "not configured", and the folder is the answer.
+ *
+ * There is deliberately no "no languages found" guard. It would need the env list to be unusable
+ * AND `src/locales/` to be empty, and an app with no dictionary at all cannot render one string —
+ * every other test fails long before a warning would help.
+ */
+export const supportedLanguages = declaredLocales.length > 0 ? declaredLocales : bundledLocales;
 
 /**
  * [on build]
@@ -72,21 +101,6 @@ export const i18n = createI18n({
         customSnakeCase: (value) => (typeof value === 'string' ? value.split(' ').join('_') : value)
     }
 });
-
-/**
- * [on build]
- * If no language are present, add a fake default one
- */
-if (supportedLanguages.length === 0) {
-    // eslint-disable-next-line no-console
-    console.error('---------- NO LANGUAGES FOUND ----------');
-    supportedLanguages.push(
-        (i18n.global.fallbackLocale as WritableComputedRef<string | undefined>).value ?? 'no-lang'
-    );
-    loadedLanguages.push(
-        (i18n.global.fallbackLocale as WritableComputedRef<string | undefined>).value ?? 'no-lang'
-    );
-}
 
 /**
  * Loads a locale's vocabulary (from `src/locales/*.json`) and activates it.
@@ -151,7 +165,12 @@ export function loadLocale(locale: string) {
 export function _updateLocale(i18n: I18n, locale: string, messages: ITranslationDictionaries) {
     // Could be already present and this is just an update
     if (!loadedLanguages.includes(locale)) loadedLanguages.push(locale);
-    i18n.global.setLocaleMessage(locale, messages);
+    // Cloned, not registered by reference. `_loadLocale` passes the imported `en.json` module
+    // object straight through, and vue-i18n would then hold that very object — so a later
+    // `mergeLocaleMessage` (which is how the API's `api.*` dictionary is added) would write into
+    // the bundled dictionary itself, for every consumer of that import, for the life of the
+    // process. Cheap insurance: these files are a few hundred keys.
+    i18n.global.setLocaleMessage(locale, structuredClone(messages));
     return nextTick();
 }
 
@@ -174,6 +193,37 @@ export function updateLocale(locale: string, messages: ITranslationDictionaries)
  * @param locale - Locale code to activate, e.g. `en`.
  * @returns A promise resolving once the locale is active and Vue has flushed.
  */
+/**
+ * Loads the fallback locale's dictionary, unless it is already there.
+ *
+ * `fallbackLocale` can only fall back to messages that are actually REGISTERED. Loading a locale
+ * never loads anything else, so a user who lands directly on `/es/...` had only `es` — and for a
+ * language this app has no UI dictionary for, that meant every UI key rendered as its own raw
+ * identifier (`products-list-page.page-title`) instead of the English copy. "Degrades per key
+ * rather than all-or-nothing" is not free; this is what pays for it.
+ *
+ * Never rejects: a missing fallback dictionary is a worse-looking page, not a broken navigation.
+ *
+ * @param i18n - The vue-i18n instance to load into.
+ * @param locale - The locale being activated; skipped when it IS the fallback.
+ * @returns A promise resolving once the fallback messages are registered, or immediately.
+ */
+export function _ensureFallbackLoaded(i18n: I18n, locale: string): Promise<unknown> {
+    const fallback = (i18n.global.fallbackLocale as WritableComputedRef<string | undefined>).value;
+
+    if (!fallback || fallback === locale || loadedLanguages.includes(fallback))
+        return Promise.resolve();
+
+    return (
+        import(/* webpackChunkName: "locale-[request]" */ `@/locales/${fallback}.json`)
+            .then((file: { default: ITranslationDictionaries }) =>
+                _updateLocale(i18n, fallback, file.default)
+            )
+            // A fallback with no local dictionary is a configuration choice, not an error.
+            .catch(() => {})
+    );
+}
+
 export function _changeLanguage(i18n: I18n, locale: string): Promise<unknown> {
     const setLocale = () => {
         (i18n.global.locale as WritableComputedRef<string>).value = locale;
@@ -190,7 +240,9 @@ export function _changeLanguage(i18n: I18n, locale: string): Promise<unknown> {
         return nextTick();
     };
     if (!loadedLanguages.includes(locale)) return _loadLocale(i18n, locale).then(() => setLocale());
-    return setLocale();
+    // Every activation path funnels through here, so this is the one place that guarantees the
+    // fallback dictionary is present before a locale becomes active.
+    return _ensureFallbackLoaded(i18n, locale).then(() => setLocale());
 }
 
 /**
@@ -227,6 +279,39 @@ export function getDefaultLocale() {
  * @returns The active locale code, e.g. `en`.
  */
 export const getCurrentLocale = () => i18n.global.locale.value;
+
+/**
+ * Reserved root namespace holding the API's OWN dictionary, fetched at runtime.
+ *
+ * The two repos are independent: neither may author the other's strings, and either boilerplate
+ * has to work against a different counterpart. So the API's dictionary is never merged at the
+ * root, where two independently-authored key spaces would eventually collide silently — it goes
+ * under `api.*`, which this app must never author by hand. `tests/unit/utils/i18n.spec.ts`
+ * enforces that.
+ */
+export const API_NAMESPACE = 'api';
+
+/**
+ * Copy that belongs to the API, with a local stand-in for when the API's dictionary is not there.
+ *
+ * In normal operation this is never needed: the API resolves its own keys and puts finished text
+ * on the wire, and the client prints what arrives. It matters for the handful of messages the
+ * client has to produce ITSELF because no response came back at all — a 401 with an empty body, a
+ * network failure, a proxy's bare 502.
+ *
+ * Which is exactly why it cannot depend on the fetched dictionary: the request that would have
+ * downloaded it may have failed for the same reason. So the local key is the guarantee and the
+ * API's own wording is the upgrade, used only once `api.*` is actually loaded.
+ *
+ * @param apiKey - Key inside the API's dictionary, WITHOUT the `api.` prefix, e.g.
+ *  `generic.error-unknown`.
+ * @param localKey - Key in this app's own dictionary, used whenever `api.*` cannot answer.
+ * @returns The best available translation, in the active locale.
+ */
+export const apiText = (apiKey: string, localKey: string): string => {
+    const namespacedKey = `${API_NAMESPACE}.${apiKey}`;
+    return i18n.global.te(namespacedKey) ? i18n.global.t(namespacedKey) : i18n.global.t(localKey);
+};
 
 /**
  * Prefixes a path with a locale segment, unless it already starts with a

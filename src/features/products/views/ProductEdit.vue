@@ -122,7 +122,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/features/products/store';
-import { createProductsSchema } from '@/features/products/schemas.ts';
+import { productsSchema } from '@/features/products/schemas.ts';
 import { z } from 'zod';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { Package, Pencil } from 'lucide-vue-next';
@@ -144,7 +144,7 @@ import { notifyErrorMessages } from '@/utils/errors.ts';
 /**
  * Generic i18n and notification helpers.
  */
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
@@ -171,20 +171,16 @@ interface IProductEditForm {
 }
 
 /**
- * Builds the validation schema of the edit form.
+ * Validation schema of the edit form: title and price required, description and active flag
+ * optional.
  *
- * A getter (rather than a resolved schema) so it is re-built on every
- * `validate()` call and the messages stay in the active language after a runtime
- * locale switch.
- *
- * @returns A Zod schema requiring title and price, with optional description and
- *  active flag.
+ * Built once. Its messages are thunks resolved at parse time, so it speaks the active language
+ * without being rebuilt — see `@/features/users/schemas.ts`.
  */
-const editSchema = () =>
-    createProductsSchema(t).pick({ title: true, price: true }).extend({
-        description: z.string().optional(),
-        active: z.boolean().optional()
-    });
+const editSchema = productsSchema.pick({ title: true, price: true }).extend({
+    description: z.string().optional(),
+    active: z.boolean().optional()
+});
 
 /**
  * Toolkit form state and submit handler.
@@ -197,7 +193,7 @@ const {
     resetForm,
     handleSubmit,
     activateAutoHydrate
-} = useStructureFormValidation<IProductEditForm>({}, editSchema);
+} = useStructureFormValidation<IProductEditForm>({}, editSchema, { revalidateOn: locale });
 
 /**
  * Auto-hydrate the form from the fetched record once it resolves.

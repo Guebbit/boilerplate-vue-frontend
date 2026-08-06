@@ -38,7 +38,8 @@
         "label-menu": "Menu",
         "label-theme": "Cambia tema",
         "label-language": "Lingua",
-        "label-realtime": "tempo reale"
+        "label-realtime": "tempo reale",
+        "label-logo": "Home di Guebbit"
     },
     "home-page": {
         "page-title": "Home",
@@ -420,5 +421,18 @@
         "metrics-no-data": "Nessun dato metriche disponibile",
         "audit-total": "{count} eventi",
         "audit-empty": "Nessun evento di audit"
+    },
+    "realtime-playground-page": {
+        "page-title": "Playground realtime",
+        "sse-observability": "Osservabilità SSE",
+        "button-connect": "Connetti SSE",
+        "button-disconnect": "Disconnetti SSE",
+        "empty-metrics": "Nessun evento di metriche"
+    },
+    "api-errors": {
+        "unauthorized": "Non hai effettuato l’accesso, oppure la sessione è scaduta.",
+        "forbidden": "Non hai i permessi per farlo.",
+        "internal-server-error": "Qualcosa è andato storto dalla nostra parte. Riprova.",
+        "unknown": "Qualcosa è andato storto. Riprova."
     }
 }

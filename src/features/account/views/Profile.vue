@@ -96,12 +96,12 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
-import { createUsersSchema, createUsersPasswordSchema } from '@/features/users/schemas.ts';
+import { usersSchema, usersPasswordSchema } from '@/features/users/schemas.ts';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { z } from 'zod';
 import { notifyErrorMessages } from '@/utils/errors.ts';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
@@ -147,7 +147,7 @@ interface IProfileForm {
 
 const { form, formErrors, isDirty, resetForm, validate, setForm } =
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    useStructureFormValidation<IProfileForm>({}, () => createUsersSchema(t) as any);
+    useStructureFormValidation<IProfileForm>({}, usersSchema as any, { revalidateOn: locale });
 
 const showErrors = ref(false);
 
@@ -163,20 +163,23 @@ const {
         password: '',
         passwordConfirm: ''
     },
-    () =>
-        z
-            .object({
-                password: createUsersPasswordSchema(t),
-                passwordConfirm: z.string().min(1, t('users-form.password-confirm-required'))
-            })
-            .superRefine(({ passwordConfirm, password }, ctx) => {
-                if (passwordConfirm !== password)
-                    ctx.addIssue({
-                        code: z.ZodIssueCode.custom,
-                        message: t('users-form.password-dont-match'),
-                        path: ['passwordConfirm']
-                    });
-            })
+    z
+        .object({
+            password: usersPasswordSchema,
+            passwordConfirm: z
+                .string()
+                .min(1, { error: () => t('users-form.password-confirm-required') })
+        })
+        // `superRefine` runs at parse time, so this `t()` is already lazy and needs no thunk
+        .superRefine(({ passwordConfirm, password }, ctx) => {
+            if (passwordConfirm !== password)
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: t('users-form.password-dont-match'),
+                    path: ['passwordConfirm']
+                });
+        }),
+    { revalidateOn: locale }
 );
 
 /**

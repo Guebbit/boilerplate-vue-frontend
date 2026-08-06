@@ -1,6 +1,7 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import { i18n } from '@/utils/i18n.ts';
+import { mergeApiLocales } from '@/utils/localeApi.ts';
 import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
 
 import App from './App.vue';
@@ -31,6 +32,16 @@ const bootstrapApplication = async () => {
         const { initializeApiMocking } = await import('../tests/mocks/apiMock.ts');
         await initializeApiMocking();
     }
+    // Ask the API which languages it can answer in and add any this build does not know about,
+    // so a language only the server has still appears in the switcher. Awaited because the
+    // router's locale guard reads `supportedLanguages` on the very first navigation, and a
+    // language missing from that list is redirected away before it can be offered.
+    //
+    // `mergeApiLocales` never rejects: with the API unreachable this is a no-op and the
+    // build-time `VITE_APP_SUPPORTED_LOCALES` list stands on its own, which is what keeps the
+    // app usable offline.
+    await mergeApiLocales();
+
     const app = createApp(App);
 
     // Pinia must be registered before any store is instantiated.

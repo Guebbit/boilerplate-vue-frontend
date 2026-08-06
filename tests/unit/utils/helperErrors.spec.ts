@@ -1,6 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { notifyErrorMessages, focusFirstErrorField } from '@/utils/errors.ts';
+import { loadLocale } from '@/utils/i18n.ts';
+import enMessages from '@/locales/en.json';
+
+/**
+ * The "nothing usable in the error" fallback is translated copy now, so the dictionary has to be
+ * loaded or every such assertion would compare against a raw key.
+ */
+beforeAll(() => loadLocale('en'));
 
 /**
  * The observability store is stubbed so the "reported to Faro" half of `notifyErrorMessages`
@@ -39,7 +47,7 @@ describe('notifyErrorMessages', () => {
     it('falls back to a generic message for unrecognized errors', () => {
         const addMessage = vi.fn();
         notifyErrorMessages(addMessage, 42);
-        expect(addMessage).toHaveBeenCalledWith('Unknown error');
+        expect(addMessage).toHaveBeenCalledWith(enMessages['api-errors'].unknown);
     });
 
     // The `&& error` / `&& error.message` guards below each exist to stop an *empty* message
@@ -49,20 +57,20 @@ describe('notifyErrorMessages', () => {
     it('falls back rather than showing an empty string', () => {
         const addMessage = vi.fn();
         notifyErrorMessages(addMessage, '');
-        expect(addMessage).toHaveBeenCalledWith('Unknown error');
+        expect(addMessage).toHaveBeenCalledWith(enMessages['api-errors'].unknown);
     });
 
     it('falls back rather than showing an Error with an empty message', () => {
         const addMessage = vi.fn();
         // eslint-disable-next-line unicorn/error-message -- the empty message is the input under test
         notifyErrorMessages(addMessage, new Error(''));
-        expect(addMessage).toHaveBeenCalledWith('Unknown error');
+        expect(addMessage).toHaveBeenCalledWith(enMessages['api-errors'].unknown);
     });
 
     it('falls back rather than showing an error-like object with an empty message', () => {
         const addMessage = vi.fn();
         notifyErrorMessages(addMessage, { message: '' });
-        expect(addMessage).toHaveBeenCalledWith('Unknown error');
+        expect(addMessage).toHaveBeenCalledWith(enMessages['api-errors'].unknown);
     });
 
     it('falls back when the message property is not a string', () => {
@@ -70,7 +78,7 @@ describe('notifyErrorMessages', () => {
         // that raw would put "[object Object]" in front of a user.
         const addMessage = vi.fn();
         notifyErrorMessages(addMessage, { message: { nested: true } });
-        expect(addMessage).toHaveBeenCalledWith('Unknown error');
+        expect(addMessage).toHaveBeenCalledWith(enMessages['api-errors'].unknown);
     });
 
     it('falls back for null without throwing', () => {
@@ -79,7 +87,7 @@ describe('notifyErrorMessages', () => {
         const addMessage = vi.fn();
         // eslint-disable-next-line unicorn/no-null -- null is what an empty rejected body deserialises to
         expect(() => notifyErrorMessages(addMessage, null)).not.toThrow();
-        expect(addMessage).toHaveBeenCalledWith('Unknown error');
+        expect(addMessage).toHaveBeenCalledWith(enMessages['api-errors'].unknown);
     });
 
     it('reports the original value to observability, not the derived message', () => {

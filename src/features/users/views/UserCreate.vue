@@ -60,7 +60,7 @@ import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/features/users/store';
-import { createUsersSchema, createUsersPasswordSchema } from '@/features/users/schemas.ts';
+import { usersSchema, usersPasswordSchema } from '@/features/users/schemas.ts';
 import { z } from 'zod';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { notifyErrorMessages } from '@/utils/errors.ts';
@@ -68,7 +68,7 @@ import { notifyErrorMessages } from '@/utils/errors.ts';
 /**
  * Generics
  */
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 const router = useRouter();
 
@@ -88,20 +88,17 @@ interface IUserCreateForm {
     active?: boolean;
 }
 
+/**
+ * Built once: the messages inside are thunks, resolved in the active language at parse time.
+ */
+const createSchema = usersSchema.pick({ email: true, username: true }).extend({
+    password: usersPasswordSchema,
+    admin: z.boolean().optional(),
+    active: z.boolean().optional()
+});
+
 const { form, formErrors, isSubmitting, handleSubmit } =
-    useStructureFormValidation<IUserCreateForm>(
-        {},
-        // Getter (not a resolved schema): re-built on every validate() call so
-        // messages stay in the active language after a runtime locale switch.
-        () =>
-            createUsersSchema(t)
-                .pick({ email: true, username: true })
-                .extend({
-                    password: createUsersPasswordSchema(t),
-                    admin: z.boolean().optional(),
-                    active: z.boolean().optional()
-                })
-    );
+    useStructureFormValidation<IUserCreateForm>({}, createSchema, { revalidateOn: locale });
 
 /**
  * Whether to display validation errors in the UI

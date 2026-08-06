@@ -19,6 +19,7 @@ import { registerUsersMockHandlers } from './handlers/usersMockHandlers.ts';
 import { registerProductsMockHandlers } from './handlers/productsMockHandlers.ts';
 import { registerCartMockHandlers } from './handlers/cartMockHandlers.ts';
 import { registerOrdersMockHandlers } from './handlers/ordersMockHandlers.ts';
+import { registerLocalesMockHandlers } from './handlers/localesMockHandlers.ts';
 import { mockDatabase } from './shared/mockShared.ts';
 import { resolveProfile, resolveMockSeed } from './shared/mockProfiles.ts';
 
@@ -34,7 +35,8 @@ export const initializeApiMocking = () => {
         ...registerUsersMockHandlers(),
         ...registerProductsMockHandlers(),
         ...registerCartMockHandlers(),
-        ...registerOrdersMockHandlers()
+        ...registerOrdersMockHandlers(),
+        ...registerLocalesMockHandlers()
     );
 
     const apiOrigin = new URL(import.meta.env.VITE_API_URL ?? 'http://localhost:3000').origin;
