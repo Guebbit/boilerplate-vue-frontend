@@ -54,6 +54,7 @@ describe('notifyErrorMessages', () => {
 
     it('falls back rather than showing an Error with an empty message', () => {
         const addMessage = vi.fn();
+        // eslint-disable-next-line unicorn/error-message -- the empty message is the input under test
         notifyErrorMessages(addMessage, new Error(''));
         expect(addMessage).toHaveBeenCalledWith('Unknown error');
     });
@@ -76,6 +77,7 @@ describe('notifyErrorMessages', () => {
         // `typeof null === 'object'`, so the `error &&` guard is the only thing preventing a
         // TypeError here — and `null` is what an empty rejected body deserialises to.
         const addMessage = vi.fn();
+        // eslint-disable-next-line unicorn/no-null -- null is what an empty rejected body deserialises to
         expect(() => notifyErrorMessages(addMessage, null)).not.toThrow();
         expect(addMessage).toHaveBeenCalledWith('Unknown error');
     });
@@ -170,6 +172,7 @@ describe('focusFirstErrorField', () => {
 
     it('is a no-op for an unmounted template ref', () => {
         // Documented: callers pass a template ref directly, which is undefined before mount.
+        // eslint-disable-next-line unicorn/no-useless-undefined -- an unmounted ref IS undefined
         expect(() => focusFirstErrorField(undefined)).not.toThrow();
     });
 });

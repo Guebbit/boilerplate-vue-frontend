@@ -21,6 +21,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import type { IAxiosResponseErrorData, IAxiosResponseErrorBody } from '@/plugins/http';
 
 const accessToken = ref<string | undefined>(undefined);
 const setAccessTokenMock = vi.fn();
@@ -52,7 +53,7 @@ const make401 = (url: string) =>
         response: { status: 401, data: {}, headers: {} },
         isAxiosError: true,
         message: 'Request failed with status code 401'
-    }) as unknown as AxiosError;
+    }) as unknown as AxiosError<IAxiosResponseErrorData, IAxiosResponseErrorBody>;
 
 beforeEach(() => {
     accessToken.value = undefined;
@@ -125,18 +126,18 @@ describe('onRequestReject', () => {
     });
 });
 
-describe('refresh exclusion list', () => {
-    /**
-     * Drives a 401 through the refresh interceptor and reports whether a refresh was attempted.
-     * A refresh attempt reaches the profile store via `setAccessToken`; an excluded path must
-     * reject without ever getting there.
-     */
-    const attemptedRefresh = async (url: string) => {
-        setAccessTokenMock.mockClear();
-        await onResponseRejectWithRefresh(make401(url)).catch(() => {});
-        return setAccessTokenMock.mock.calls.length > 0;
-    };
+/**
+ * Drives a 401 through the refresh interceptor and reports whether a refresh was attempted.
+ * A refresh attempt reaches the profile store via `setAccessToken`; an excluded path must
+ * reject without ever getting there.
+ */
+const attemptedRefresh = async (url: string) => {
+    setAccessTokenMock.mockClear();
+    await onResponseRejectWithRefresh(make401(url)).catch(() => {});
+    return setAccessTokenMock.mock.calls.length > 0;
+};
 
+describe('refresh exclusion list', () => {
     it.each([
         ['/account/login'],
         ['/account/signup'],

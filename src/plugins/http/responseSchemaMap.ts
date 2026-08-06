@@ -128,7 +128,11 @@ const routeSchemas: IRouteSchema[] = [
     { method: 'PUT', pattern: /^\/orders$/, schema: schemas.UpdateOrderResponse },
     { method: 'DELETE', pattern: /^\/orders$/, schema: schemas.DeleteOrderResponse },
     { method: 'POST', pattern: /^\/orders\/search$/, schema: schemas.SearchOrdersResponse },
-    { method: 'GET', pattern: /^\/orders\/[^/]+\/invoice$/, schema: schemas.GetOrderInvoiceResponse },
+    {
+        method: 'GET',
+        pattern: /^\/orders\/[^/]+\/invoice$/,
+        schema: schemas.GetOrderInvoiceResponse
+    },
     { method: 'GET', pattern: /^\/orders\/[^/]+$/, schema: schemas.GetOrderByIdResponse },
     { method: 'PUT', pattern: /^\/orders\/[^/]+$/, schema: schemas.UpdateOrderByIdResponse },
     { method: 'DELETE', pattern: /^\/orders\/[^/]+$/, schema: schemas.DeleteOrderByIdResponse }

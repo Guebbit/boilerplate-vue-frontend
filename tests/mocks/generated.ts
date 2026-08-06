@@ -46,6 +46,11 @@ export type Email = string;
  */
 export type Password = string;
 
+/**
+ * Absolute URL or server-relative upload path (e.g. `/uploads/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.
+ */
+export type ImageUrl = string;
+
 export interface PaginationMeta {
     page: Page;
     pageSize: PageSize;
@@ -158,7 +163,7 @@ export interface User {
     username: string;
     admin?: boolean;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -189,7 +194,7 @@ export interface Product {
     price: number;
     description?: string;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
     categories?: string[];
     tags?: string[];
     createdAt?: string;
@@ -603,7 +608,7 @@ export interface SignupRequest {
     username: string;
     password: Password;
     passwordConfirm: Password;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
 }
 
 export interface SignupRequestMultipart {
@@ -648,7 +653,7 @@ export interface CreateUserRequest {
     password: Password;
     admin?: boolean;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
 }
 
 export interface CreateUserRequestMultipart {
@@ -666,7 +671,7 @@ export interface UpdateUserRequest {
     email?: Email;
     username?: string;
     password?: Password;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
 }
 
 export interface UpdateUserRequestMultipart {
@@ -682,7 +687,7 @@ export interface UpdateUserByIdRequest {
     email?: Email;
     password?: Password;
     username?: string;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
 }
 
 export interface UpdateUserByIdRequestMultipart {
@@ -717,7 +722,7 @@ export interface CreateProductRequest {
     price: number;
     description?: string;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
     categories?: string[];
     tags?: string[];
 }
@@ -741,7 +746,7 @@ export interface UpdateProductRequest {
     /** @minimum 0 */
     price: number;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
     categories?: string[];
     tags?: string[];
 }
@@ -765,7 +770,7 @@ export interface UpdateProductByIdRequest {
     /** @minimum 0 */
     price: number;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
     categories?: string[];
     tags?: string[];
 }
@@ -2203,7 +2208,10 @@ export const getGetAccountResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
         createdAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
@@ -2263,7 +2271,10 @@ export const getSignupResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
         createdAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
@@ -2288,7 +2299,10 @@ export const getSignupWithMultipartResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
         createdAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
@@ -2368,7 +2382,10 @@ export const getListUsersResponseMock = (
                 username: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
                 active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                imageUrl: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
                 createdAt: faker.helpers.arrayElement([
                     faker.date.past().toISOString().slice(0, 19) + 'Z',
                     undefined
@@ -2401,7 +2418,10 @@ export const getCreateUserResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
         createdAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
@@ -2426,7 +2446,10 @@ export const getCreateUserWithMultipartResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
         createdAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
@@ -2451,7 +2474,10 @@ export const getUpdateUserResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
         createdAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
@@ -2476,7 +2502,10 @@ export const getUpdateUserWithMultipartResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
         createdAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
@@ -2510,7 +2539,10 @@ export const getGetUserByIdResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
         createdAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
@@ -2535,7 +2567,10 @@ export const getUpdateUserByIdResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
         createdAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
@@ -2560,7 +2595,10 @@ export const getUpdateUserByIdWithMultipartResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
         createdAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
@@ -2596,7 +2634,10 @@ export const getSearchUsersResponseMock = (
                 username: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
                 active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                imageUrl: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
                 createdAt: faker.helpers.arrayElement([
                     faker.date.past().toISOString().slice(0, 19) + 'Z',
                     undefined
@@ -2748,7 +2789,10 @@ export const getListProductsResponseMock = (
                     undefined
                 ]),
                 active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                imageUrl: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
                 categories: faker.helpers.arrayElement([
                     Array.from(
                         { length: faker.number.int({ min: 1, max: 10 }) },
@@ -2802,7 +2846,10 @@ export const getCreateProductResponseMock = (
             undefined
         ]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
         categories: faker.helpers.arrayElement([
             Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
                 faker.string.alpha({ length: { min: 10, max: 20 } })
@@ -2846,7 +2893,10 @@ export const getCreateProductWithMultipartResponseMock = (
             undefined
         ]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
         categories: faker.helpers.arrayElement([
             Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
                 faker.string.alpha({ length: { min: 10, max: 20 } })
@@ -2890,7 +2940,10 @@ export const getUpdateProductResponseMock = (
             undefined
         ]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
         categories: faker.helpers.arrayElement([
             Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
                 faker.string.alpha({ length: { min: 10, max: 20 } })
@@ -2934,7 +2987,10 @@ export const getUpdateProductWithMultipartResponseMock = (
             undefined
         ]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
         categories: faker.helpers.arrayElement([
             Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
                 faker.string.alpha({ length: { min: 10, max: 20 } })
@@ -2987,7 +3043,10 @@ export const getGetProductByIdResponseMock = (
             undefined
         ]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
         categories: faker.helpers.arrayElement([
             Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
                 faker.string.alpha({ length: { min: 10, max: 20 } })
@@ -3031,7 +3090,10 @@ export const getUpdateProductByIdResponseMock = (
             undefined
         ]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
         categories: faker.helpers.arrayElement([
             Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
                 faker.string.alpha({ length: { min: 10, max: 20 } })
@@ -3075,7 +3137,10 @@ export const getUpdateProductByIdWithMultipartResponseMock = (
             undefined
         ]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
         categories: faker.helpers.arrayElement([
             Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
                 faker.string.alpha({ length: { min: 10, max: 20 } })
@@ -3130,7 +3195,10 @@ export const getSearchProductsResponseMock = (
                     undefined
                 ]),
                 active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                imageUrl: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
                 categories: faker.helpers.arrayElement([
                     Array.from(
                         { length: faker.number.int({ min: 1, max: 10 }) },
@@ -3341,7 +3409,10 @@ export const getCheckoutResponseMock = (
                         undefined
                     ]),
                     active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                    imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                    imageUrl: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
                     categories: faker.helpers.arrayElement([
                         Array.from(
                             { length: faker.number.int({ min: 1, max: 10 }) },
@@ -3428,7 +3499,10 @@ export const getListOrdersResponseMock = (
                             undefined
                         ]),
                         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                        imageUrl: faker.helpers.arrayElement([
+                            faker.string.alpha({ length: { min: 10, max: 20 } }),
+                            undefined
+                        ]),
                         categories: faker.helpers.arrayElement([
                             Array.from(
                                 { length: faker.number.int({ min: 1, max: 10 }) },
@@ -3514,7 +3588,10 @@ export const getCreateOrderResponseMock = (
                         undefined
                     ]),
                     active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                    imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                    imageUrl: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
                     categories: faker.helpers.arrayElement([
                         Array.from(
                             { length: faker.number.int({ min: 1, max: 10 }) },
@@ -3593,7 +3670,10 @@ export const getUpdateOrderResponseMock = (
                         undefined
                     ]),
                     active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                    imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                    imageUrl: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
                     categories: faker.helpers.arrayElement([
                         Array.from(
                             { length: faker.number.int({ min: 1, max: 10 }) },
@@ -3685,7 +3765,10 @@ export const getSearchOrdersResponseMock = (
                             undefined
                         ]),
                         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                        imageUrl: faker.helpers.arrayElement([
+                            faker.string.alpha({ length: { min: 10, max: 20 } }),
+                            undefined
+                        ]),
                         categories: faker.helpers.arrayElement([
                             Array.from(
                                 { length: faker.number.int({ min: 1, max: 10 }) },
@@ -3771,7 +3854,10 @@ export const getGetOrderByIdResponseMock = (
                         undefined
                     ]),
                     active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                    imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                    imageUrl: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
                     categories: faker.helpers.arrayElement([
                         Array.from(
                             { length: faker.number.int({ min: 1, max: 10 }) },
@@ -3850,7 +3936,10 @@ export const getUpdateOrderByIdResponseMock = (
                         undefined
                     ]),
                     active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                    imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                    imageUrl: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
                     categories: faker.helpers.arrayElement([
                         Array.from(
                             { length: faker.number.int({ min: 1, max: 10 }) },

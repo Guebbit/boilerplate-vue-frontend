@@ -211,7 +211,10 @@ const buildRandomUsers = (): User[] => {
         success: true,
         status: 200,
         message: 'mock-profile:random',
-        data: { items: users, meta: { page: 1, pageSize: users.length, totalItems: users.length, totalPages: 1 } }
+        data: {
+            items: users,
+            meta: { page: 1, pageSize: users.length, totalItems: users.length, totalPages: 1 }
+        }
     });
     return users;
 };

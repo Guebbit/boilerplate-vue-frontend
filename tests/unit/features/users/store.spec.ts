@@ -34,6 +34,10 @@ const lastFormData = () => {
     return data;
 };
 
+/** Makes the transport answer with a paginated envelope for this test. */
+const respondWithItems = (items: unknown[]) =>
+    vi.mocked(orvalMutator).mockResolvedValue({ data: { items } } as never);
+
 describe('useUsersStore', () => {
     beforeEach(() => {
         setActivePinia(createPinia());
@@ -187,9 +191,6 @@ describe('useUsersStore', () => {
      * rather than becoming an accident someone "fixes" in one place.
      */
     describe('read paths', () => {
-        const respondWithItems = (items: unknown[]) =>
-            vi.mocked(orvalMutator).mockResolvedValue({ data: { items } } as never);
-
         const USER = { id: 'u1', username: 'ada', email: 'ada@example.com' };
 
         it('fetchUsers requests the collection and unwraps the paginated envelope', async () => {

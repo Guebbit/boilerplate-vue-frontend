@@ -144,7 +144,7 @@ describe('routeSchemas table', () => {
         // Each response schema belongs to exactly one operation. A duplicate means a row was
         // copy-pasted and its schema never updated — the request would be validated against a
         // sibling endpoint's shape, which usually still parses and so fails silently.
-        const names = ROUTES.map(([, , name]) => name);
+        const names = ROUTES.map((route) => route[2]);
 
         expect(new Set(names).size).toBe(names.length);
     });
@@ -153,6 +153,7 @@ describe('routeSchemas table', () => {
 describe('toPathname', () => {
     it('returns the root path for an undefined url', () => {
         // The health endpoint is `GET /`, so undefined must land there rather than nowhere.
+        // eslint-disable-next-line unicorn/no-useless-undefined -- `url` is a required parameter
         expect(toPathname(undefined)).toBe('/');
     });
 

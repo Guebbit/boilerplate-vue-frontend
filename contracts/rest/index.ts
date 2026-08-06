@@ -39,6 +39,11 @@ export type Email = string;
  */
 export type Password = string;
 
+/**
+ * Absolute URL or server-relative upload path (e.g. `/uploads/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.
+ */
+export type ImageUrl = string;
+
 export interface PaginationMeta {
     page: Page;
     pageSize: PageSize;
@@ -151,7 +156,7 @@ export interface User {
     username: string;
     admin?: boolean;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -182,7 +187,7 @@ export interface Product {
     price: number;
     description?: string;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
     categories?: string[];
     tags?: string[];
     createdAt?: string;
@@ -596,7 +601,7 @@ export interface SignupRequest {
     username: string;
     password: Password;
     passwordConfirm: Password;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
 }
 
 export interface SignupRequestMultipart {
@@ -641,7 +646,7 @@ export interface CreateUserRequest {
     password: Password;
     admin?: boolean;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
 }
 
 export interface CreateUserRequestMultipart {
@@ -659,7 +664,7 @@ export interface UpdateUserRequest {
     email?: Email;
     username?: string;
     password?: Password;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
 }
 
 export interface UpdateUserRequestMultipart {
@@ -675,7 +680,7 @@ export interface UpdateUserByIdRequest {
     email?: Email;
     password?: Password;
     username?: string;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
 }
 
 export interface UpdateUserByIdRequestMultipart {
@@ -710,7 +715,7 @@ export interface CreateProductRequest {
     price: number;
     description?: string;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
     categories?: string[];
     tags?: string[];
 }
@@ -734,7 +739,7 @@ export interface UpdateProductRequest {
     /** @minimum 0 */
     price: number;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
     categories?: string[];
     tags?: string[];
 }
@@ -758,7 +763,7 @@ export interface UpdateProductByIdRequest {
     /** @minimum 0 */
     price: number;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
     categories?: string[];
     tags?: string[];
 }

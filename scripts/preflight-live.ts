@@ -23,7 +23,9 @@ const fail = (message: string): never => {
 
 const checkBackendReachable = async (apiUrl: string): Promise<void> => {
     try {
-        const response = await fetch(apiUrl, { signal: AbortSignal.timeout(HEALTH_CHECK_TIMEOUT_MS) });
+        const response = await fetch(apiUrl, {
+            signal: AbortSignal.timeout(HEALTH_CHECK_TIMEOUT_MS)
+        });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
     } catch (error) {
         fail(
@@ -58,7 +60,8 @@ const checkBackendSeedScript = (backendPath: string): void => {
     }
 };
 
-const md5 = (filePath: string): string => createHash('md5').update(readFileSync(filePath)).digest('hex');
+const md5 = (filePath: string): string =>
+    createHash('md5').update(readFileSync(filePath)).digest('hex');
 
 const checkSpecParity = (backendPath: string): void => {
     const feSpecPath = path.resolve(process.cwd(), 'openapi.yaml');

@@ -41,6 +41,10 @@ own mocks.
 
 ### Added
 
+- **`TODO.md`** — deliberate deferrals with the reasoning attached: running e2e against a
+  production build instead of `vite dev`, and keeping the mutation and e2e jobs off the same
+  runner.
+
 - **A [Docker & Podman](docs/tools/docker-and-podman.md) docs page**, and a pairing section in the
   README. Both state the rule the compose setup depends on: the two stacks are separate projects on
   separate networks and stay that way, because the only thing crossing between them is the browser
@@ -145,6 +149,23 @@ own mocks.
 
 ### Changed
 
+- **`contracts/` and `tests/mocks/generated.ts` regenerated** for the backend's `imageUrl` contract
+  change — `format: uri` became a shared `ImageUrl` schema with `format: uri-reference`, so
+  `imageUrl` is now `zod.string()` rather than `zod.url()`. That is what the field has always held:
+  an absolute URL, or a server-relative upload path the API base is prefixed onto at render time.
+  `openapi.yaml` stays byte-identical to the backend's.
+- **`cypress.config.ts` sets `defaultCommandTimeout: 15_000`.** Cypress' 4 s default assumes a
+  prebuilt app; these specs run against `vite dev`, which compiles a route the first time it is
+  visited, so the first assertion of the first spec waits on a build rather than on the app. It
+  fits in 4 s on an idle machine and does not on a busy one.
+- **`vite.config.ts` sets `server.warmup.clientFiles`** over `main.ts`, the layouts and the route
+  views, moving that first-visit compile into server startup — which `start-server-and-test`
+  already waits through.
+- **`@typescript-eslint/naming-convention` is off for root `*.config.ts`.** Config files key objects
+  by path glob — `vitest.config.ts`'s per-directory coverage thresholds, orval's per-output entries
+  — and those keys are addresses whose spelling the tool defines, not identifiers. Four per-line
+  disables in `vite.config.ts` became redundant and are gone.
+
 - **One mock order factory instead of two.** `mockShared.ts` had a module-private `createOrder` for
   the seed fixtures and an exported `createMockOrder` for orders placed at runtime, with identical
   bodies — so a seeded order and a checked-out one could drift apart silently. The seed builder now
@@ -193,6 +214,19 @@ own mocks.
 - **`src/stores/observability.ts`**'s default tracker URL follows the Umami port move.
 
 ### Fixed
+
+- **`npm run build` failed on three type errors**, all of them in specs. `vi.fn(() => …)` infers a
+  zero-arity signature, so `localeChoice.spec.ts` could not pass arguments to its own mocks; and
+  `httpRequest.spec.ts` built an `AxiosError` without the payload generics the interceptor under
+  test declares.
+- **13 lint errors and 5 unformatted files.** One is worth recording, because the tool is actively
+  misleading: `unicorn/no-useless-undefined`'s autofix strips `undefined` from calls whose
+  parameter is _required_, which then fails `vue-tsc`. Those sites keep the argument, with a scoped
+  disable, rather than the "fix".
+- **The e2e suite's flakiness under a full run is mitigated** — see the timeout and warmup entries
+  under _Changed_. Three consecutive full runs are green, plus the random-data profile. Both
+  changes address the symptom: the root cause is that the suite tests a dev server that is still
+  compiling, and the cure is a production build (`TODO.md`).
 
 - **The dockerised dev server was unreachable from the browser.** `npm run dev` was
   `vite --port 8080` with no `--host`, and Vite binds `127.0.0.1` by default — so inside the
@@ -268,17 +302,17 @@ own mocks.
 
 ### Known issues
 
-- The `openapi.yaml` in this repo is hand-synced with the backend's. The two are byte-identical as
-  of this entry, but nothing enforces that — keeping them so is still a manual step on every
-  contract change.
-- **The e2e suite is flaky under a full run.** Four `npm run test:e2e` runs during this work gave
-  two failures on different specs — `auth` 12/15 and `cart` 9/11, with two clean runs between and
-  after them — and every failing spec passes when run alone. The failures share a shape: an assertion made before an action that did
-  take effect had landed. Every mock response carries a deliberate 250 ms delay, Cypress' default
-  command timeout is 4 s, `cypress.config.ts` sets neither `defaultCommandTimeout` nor `retries`,
-  and a full run has the **dev** server still compiling lazy chunks. Not fixed here: raising the
-  timeout, serving a preview build, and enabling retries all trade something away. See §10.5 of
-  `TESTS_PLAN.md`.
+- **The `openapi.yaml` in this repo is hand-synced with the backend's**, and the sync is only
+  partially enforced: `scripts/preflight-live.ts` md5-compares the two and refuses to run on a
+  mismatch, but it is wired to `pretest:e2e:live`, so nothing checks the pair on an ordinary
+  contract change or in CI. The two are byte-identical as of this entry.
+- **The e2e suite is still built on a dev server that compiles as it is tested.** The flakiness
+  this produced is mitigated rather than cured — see _Fixed_ — and the residual shape is worth
+  knowing: it is load-dependent, so the suite is green on an idle machine and can fail on a busy
+  one, pointing at whichever selector happened to be first rather than at the compile that actually
+  caused it. Running against `vite build` + `vite preview` removes the class outright; the tradeoff
+  and the scope are in `TODO.md`. Until then, do not co-schedule the mutation job with the e2e job:
+  Stryker saturates every core it is given, and e2e is what fails.
 - The dockerised app forwards none of the Faro or Umami variables into the container, so
   observability is silent under `compose up` even though `VITE_API_MOCK_ENABLED` now correctly
   defaults to using the real, paired backend.

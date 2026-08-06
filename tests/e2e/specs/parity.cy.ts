@@ -61,7 +61,9 @@ describe('Mock/seed parity (live profile only)', () => {
     it('data parity: anonymous product visibility matches the seed split', () => {
         apiUrl().then((baseUrl) => {
             cy.request(`${baseUrl}/products`).then((response) => {
-                const ids = response.body.data.items.map((item: { id: string }) => item.id).toSorted();
+                const ids = response.body.data.items
+                    .map((item: { id: string }) => item.id)
+                    .toSorted();
                 expect(ids).to.deep.equal(SEED_PRODUCT_IDS_PUBLIC.toSorted());
             });
         });
@@ -102,9 +104,9 @@ describe('Mock/seed parity (live profile only)', () => {
             login(baseUrl, ADMIN_CREDENTIALS).then((token) => {
                 cy.request({ url: `${baseUrl}/orders`, headers: authHeaders(token) }).then(
                     (response) => {
-                        const items = (
-                            response.body.data.items as { id: string }[]
-                        ).toSorted((a, b) => a.id.localeCompare(b.id));
+                        const items = (response.body.data.items as { id: string }[]).toSorted(
+                            (a, b) => a.id.localeCompare(b.id)
+                        );
                         const expected = SEED_ORDERS_ADMIN.toSorted((a, b) =>
                             a.id.localeCompare(b.id)
                         );

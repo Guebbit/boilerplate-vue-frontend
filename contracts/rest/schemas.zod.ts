@@ -286,7 +286,12 @@ export const GetAccountResponse = zod.strictObject({
         username: zod.string(),
         admin: zod.boolean().optional(),
         active: zod.boolean().optional(),
-        imageUrl: zod.url().optional(),
+        imageUrl: zod
+            .string()
+            .optional()
+            .describe(
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            ),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
@@ -353,7 +358,12 @@ export const SignupBody = zod.strictObject({
     username: zod.string().min(signupBodyUsernameMin),
     password: zod.string().min(signupBodyPasswordMin),
     passwordConfirm: zod.string().min(signupBodyPasswordConfirmMin),
-    imageUrl: zod.url().optional()
+    imageUrl: zod
+        .string()
+        .optional()
+        .describe(
+            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+        )
 });
 
 export const SignupResponse = zod.strictObject({
@@ -366,7 +376,12 @@ export const SignupResponse = zod.strictObject({
         username: zod.string(),
         admin: zod.boolean().optional(),
         active: zod.boolean().optional(),
-        imageUrl: zod.url().optional(),
+        imageUrl: zod
+            .string()
+            .optional()
+            .describe(
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            ),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
@@ -483,7 +498,12 @@ export const ListUsersResponse = zod.strictObject({
                 username: zod.string(),
                 admin: zod.boolean().optional(),
                 active: zod.boolean().optional(),
-                imageUrl: zod.url().optional(),
+                imageUrl: zod
+                    .string()
+                    .optional()
+                    .describe(
+                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                    ),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
                 updatedAt: zod.iso.datetime({ offset: true }).optional()
             })
@@ -518,7 +538,12 @@ export const CreateUserBody = zod.strictObject({
     password: zod.string().min(createUserBodyPasswordMin),
     admin: zod.boolean().optional(),
     active: zod.boolean().optional(),
-    imageUrl: zod.url().optional()
+    imageUrl: zod
+        .string()
+        .optional()
+        .describe(
+            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+        )
 });
 
 export const CreateUserResponse = zod.strictObject({
@@ -531,7 +556,12 @@ export const CreateUserResponse = zod.strictObject({
         username: zod.string(),
         admin: zod.boolean().optional(),
         active: zod.boolean().optional(),
-        imageUrl: zod.url().optional(),
+        imageUrl: zod
+            .string()
+            .optional()
+            .describe(
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            ),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
@@ -548,7 +578,12 @@ export const UpdateUserBody = zod.strictObject({
     email: zod.email().optional(),
     username: zod.string().optional(),
     password: zod.string().min(updateUserBodyPasswordMin).optional(),
-    imageUrl: zod.url().optional()
+    imageUrl: zod
+        .string()
+        .optional()
+        .describe(
+            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+        )
 });
 
 export const UpdateUserResponse = zod.strictObject({
@@ -561,7 +596,12 @@ export const UpdateUserResponse = zod.strictObject({
         username: zod.string(),
         admin: zod.boolean().optional(),
         active: zod.boolean().optional(),
-        imageUrl: zod.url().optional(),
+        imageUrl: zod
+            .string()
+            .optional()
+            .describe(
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            ),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
@@ -602,7 +642,12 @@ export const GetUserByIdResponse = zod.strictObject({
         username: zod.string(),
         admin: zod.boolean().optional(),
         active: zod.boolean().optional(),
-        imageUrl: zod.url().optional(),
+        imageUrl: zod
+            .string()
+            .optional()
+            .describe(
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            ),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
@@ -622,7 +667,12 @@ export const UpdateUserByIdBody = zod.strictObject({
     email: zod.email().optional(),
     password: zod.string().min(updateUserByIdBodyPasswordMin).optional(),
     username: zod.string().optional(),
-    imageUrl: zod.url().optional()
+    imageUrl: zod
+        .string()
+        .optional()
+        .describe(
+            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+        )
 });
 
 export const UpdateUserByIdResponse = zod.strictObject({
@@ -635,7 +685,12 @@ export const UpdateUserByIdResponse = zod.strictObject({
         username: zod.string(),
         admin: zod.boolean().optional(),
         active: zod.boolean().optional(),
-        imageUrl: zod.url().optional(),
+        imageUrl: zod
+            .string()
+            .optional()
+            .describe(
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            ),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
@@ -704,7 +759,12 @@ export const SearchUsersResponse = zod.strictObject({
                 username: zod.string(),
                 admin: zod.boolean().optional(),
                 active: zod.boolean().optional(),
-                imageUrl: zod.url().optional(),
+                imageUrl: zod
+                    .string()
+                    .optional()
+                    .describe(
+                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                    ),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
                 updatedAt: zod.iso.datetime({ offset: true }).optional()
             })
@@ -908,7 +968,12 @@ export const ListProductsResponse = zod.strictObject({
                 price: zod.number().min(listProductsResponseDataItemsItemPriceMin),
                 description: zod.string().optional(),
                 active: zod.boolean().optional(),
-                imageUrl: zod.url().optional(),
+                imageUrl: zod
+                    .string()
+                    .optional()
+                    .describe(
+                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                    ),
                 categories: zod.array(zod.string()).optional(),
                 tags: zod.array(zod.string()).optional(),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -945,7 +1010,12 @@ export const CreateProductBody = zod.strictObject({
     price: zod.number().min(createProductBodyPriceMin),
     description: zod.string().optional(),
     active: zod.boolean().optional(),
-    imageUrl: zod.url().optional(),
+    imageUrl: zod
+        .string()
+        .optional()
+        .describe(
+            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+        ),
     categories: zod.array(zod.string()).optional(),
     tags: zod.array(zod.string()).optional()
 });
@@ -962,7 +1032,12 @@ export const CreateProductResponse = zod.strictObject({
         price: zod.number().min(createProductResponseDataPriceMin),
         description: zod.string().optional(),
         active: zod.boolean().optional(),
-        imageUrl: zod.url().optional(),
+        imageUrl: zod
+            .string()
+            .optional()
+            .describe(
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            ),
         categories: zod.array(zod.string()).optional(),
         tags: zod.array(zod.string()).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -983,7 +1058,12 @@ export const UpdateProductBody = zod.strictObject({
     description: zod.string().optional(),
     price: zod.number().min(updateProductBodyPriceMin),
     active: zod.boolean().optional(),
-    imageUrl: zod.url().optional(),
+    imageUrl: zod
+        .string()
+        .optional()
+        .describe(
+            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+        ),
     categories: zod.array(zod.string()).optional(),
     tags: zod.array(zod.string()).optional()
 });
@@ -1000,7 +1080,12 @@ export const UpdateProductResponse = zod.strictObject({
         price: zod.number().min(updateProductResponseDataPriceMin),
         description: zod.string().optional(),
         active: zod.boolean().optional(),
-        imageUrl: zod.url().optional(),
+        imageUrl: zod
+            .string()
+            .optional()
+            .describe(
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            ),
         categories: zod.array(zod.string()).optional(),
         tags: zod.array(zod.string()).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -1046,7 +1131,12 @@ export const GetProductByIdResponse = zod.strictObject({
         price: zod.number().min(getProductByIdResponseDataPriceMin),
         description: zod.string().optional(),
         active: zod.boolean().optional(),
-        imageUrl: zod.url().optional(),
+        imageUrl: zod
+            .string()
+            .optional()
+            .describe(
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            ),
         categories: zod.array(zod.string()).optional(),
         tags: zod.array(zod.string()).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -1070,7 +1160,12 @@ export const UpdateProductByIdBody = zod.strictObject({
     description: zod.string().optional(),
     price: zod.number().min(updateProductByIdBodyPriceMin),
     active: zod.boolean().optional(),
-    imageUrl: zod.url().optional(),
+    imageUrl: zod
+        .string()
+        .optional()
+        .describe(
+            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+        ),
     categories: zod.array(zod.string()).optional(),
     tags: zod.array(zod.string()).optional()
 });
@@ -1087,7 +1182,12 @@ export const UpdateProductByIdResponse = zod.strictObject({
         price: zod.number().min(updateProductByIdResponseDataPriceMin),
         description: zod.string().optional(),
         active: zod.boolean().optional(),
-        imageUrl: zod.url().optional(),
+        imageUrl: zod
+            .string()
+            .optional()
+            .describe(
+                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+            ),
         categories: zod.array(zod.string()).optional(),
         tags: zod.array(zod.string()).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -1166,7 +1266,12 @@ export const SearchProductsResponse = zod.strictObject({
                 price: zod.number().min(searchProductsResponseDataItemsItemPriceMin),
                 description: zod.string().optional(),
                 active: zod.boolean().optional(),
-                imageUrl: zod.url().optional(),
+                imageUrl: zod
+                    .string()
+                    .optional()
+                    .describe(
+                        'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                    ),
                 categories: zod.array(zod.string()).optional(),
                 tags: zod.array(zod.string()).optional(),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -1476,7 +1581,12 @@ export const CheckoutResponse = zod.strictObject({
                         price: zod.number().min(checkoutResponseDataOrderItemsItemProductPriceMin),
                         description: zod.string().optional(),
                         active: zod.boolean().optional(),
-                        imageUrl: zod.url().optional(),
+                        imageUrl: zod
+                            .string()
+                            .optional()
+                            .describe(
+                                'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                            ),
                         categories: zod.array(zod.string()).optional(),
                         tags: zod.array(zod.string()).optional(),
                         createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -1576,7 +1686,12 @@ export const ListOrdersResponse = zod.strictObject({
                                 .min(listOrdersResponseDataItemsItemItemsItemProductPriceMin),
                             description: zod.string().optional(),
                             active: zod.boolean().optional(),
-                            imageUrl: zod.url().optional(),
+                            imageUrl: zod
+                                .string()
+                                .optional()
+                                .describe(
+                                    'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                                ),
                             categories: zod.array(zod.string()).optional(),
                             tags: zod.array(zod.string()).optional(),
                             createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -1675,7 +1790,12 @@ export const CreateOrderResponse = zod.strictObject({
                     price: zod.number().min(createOrderResponseDataItemsItemProductPriceMin),
                     description: zod.string().optional(),
                     active: zod.boolean().optional(),
-                    imageUrl: zod.url().optional(),
+                    imageUrl: zod
+                        .string()
+                        .optional()
+                        .describe(
+                            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                        ),
                     categories: zod.array(zod.string()).optional(),
                     tags: zod.array(zod.string()).optional(),
                     createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -1754,7 +1874,12 @@ export const UpdateOrderResponse = zod.strictObject({
                     price: zod.number().min(updateOrderResponseDataItemsItemProductPriceMin),
                     description: zod.string().optional(),
                     active: zod.boolean().optional(),
-                    imageUrl: zod.url().optional(),
+                    imageUrl: zod
+                        .string()
+                        .optional()
+                        .describe(
+                            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                        ),
                     categories: zod.array(zod.string()).optional(),
                     tags: zod.array(zod.string()).optional(),
                     createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -1860,7 +1985,12 @@ export const SearchOrdersResponse = zod.strictObject({
                                 .min(searchOrdersResponseDataItemsItemItemsItemProductPriceMin),
                             description: zod.string().optional(),
                             active: zod.boolean().optional(),
-                            imageUrl: zod.url().optional(),
+                            imageUrl: zod
+                                .string()
+                                .optional()
+                                .describe(
+                                    'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                                ),
                             categories: zod.array(zod.string()).optional(),
                             tags: zod.array(zod.string()).optional(),
                             createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -1947,7 +2077,12 @@ export const GetOrderByIdResponse = zod.strictObject({
                     price: zod.number().min(getOrderByIdResponseDataItemsItemProductPriceMin),
                     description: zod.string().optional(),
                     active: zod.boolean().optional(),
-                    imageUrl: zod.url().optional(),
+                    imageUrl: zod
+                        .string()
+                        .optional()
+                        .describe(
+                            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                        ),
                     categories: zod.array(zod.string()).optional(),
                     tags: zod.array(zod.string()).optional(),
                     createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -2028,7 +2163,12 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                     price: zod.number().min(updateOrderByIdResponseDataItemsItemProductPriceMin),
                     description: zod.string().optional(),
                     active: zod.boolean().optional(),
-                    imageUrl: zod.url().optional(),
+                    imageUrl: zod
+                        .string()
+                        .optional()
+                        .describe(
+                            'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                        ),
                     categories: zod.array(zod.string()).optional(),
                     tags: zod.array(zod.string()).optional(),
                     createdAt: zod.iso.datetime({ offset: true }).optional(),

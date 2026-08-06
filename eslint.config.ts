@@ -252,7 +252,10 @@ export default defineConfigWithVueTs(
         }
     },
     {
-        files: ['**/*.d.ts'],
+        // Config files key objects by path glob (`vitest.config.ts`'s per-directory coverage
+        // thresholds, orval's per-output entries). Those keys are addresses, not identifiers, and
+        // the tool defines their spelling — camelCasing one would just stop it matching anything.
+        files: ['**/*.d.ts', '*.config.ts'],
         rules: {
             '@typescript-eslint/naming-convention': 'off'
         }

@@ -49,6 +49,10 @@ const PRODUCT: Product = {
     active: true
 } as Product;
 
+/** Makes the transport answer with a paginated envelope for this test. */
+const respondWithItems = (items: unknown[]) =>
+    vi.mocked(orvalMutator).mockResolvedValue({ data: { items } } as never);
+
 describe('useProductsStore', () => {
     beforeEach(() => {
         setActivePinia(createPinia());
@@ -225,10 +229,6 @@ describe('useProductsStore', () => {
      * unfiltered catalogue if it regresses — a filter that appears to work but does nothing.
      */
     describe('read paths', () => {
-        /** Makes the transport answer with a paginated envelope for this test. */
-        const respondWithItems = (items: unknown[]) =>
-            vi.mocked(orvalMutator).mockResolvedValue({ data: { items } } as never);
-
         describe('fetchProducts', () => {
             it('requests the collection and unwraps the paginated envelope', async () => {
                 respondWithItems([PRODUCT]);

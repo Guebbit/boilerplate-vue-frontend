@@ -27,8 +27,10 @@ const i18nState = {
     defaultLocale: 'en'
 };
 
-const changeLanguageMock = vi.fn(() => Promise.resolve());
-const updateLocaleMock = vi.fn(() => Promise.resolve());
+// Parameters are declared even though the bodies ignore them: `vi.fn(() => ...)` infers a
+// zero-arity signature, so the call sites below (and `toHaveBeenCalledWith`) would not type-check.
+const changeLanguageMock = vi.fn((_locale: string) => Promise.resolve());
+const updateLocaleMock = vi.fn((_locale: string, _messages: unknown) => Promise.resolve());
 
 vi.mock('@/utils/i18n.ts', () => ({
     get supportedLanguages() {

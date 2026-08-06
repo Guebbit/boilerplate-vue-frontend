@@ -78,9 +78,10 @@ const assertNoConsoleNoise = () => {
     cy.window().should((win) => {
         const calls = (win as IWindowWithConsoleCapture)[CONSOLE_CAPTURE_KEY] ?? [];
         const unexpected = calls.filter((call) => !isKnownConsoleNoise(call.args));
-        expect(unexpected, `unexpected console calls: ${JSON.stringify(unexpected)}`).to.have.length(
-            0
-        );
+        expect(
+            unexpected,
+            `unexpected console calls: ${JSON.stringify(unexpected)}`
+        ).to.have.length(0);
     });
 };
 
