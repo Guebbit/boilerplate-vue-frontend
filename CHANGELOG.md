@@ -227,6 +227,13 @@ own mocks.
 
 ### Fixed
 
+- **`products.cy.ts` asserted the mock's row ordering against a real database.** The list was
+  addressed by index (`.eq(0)`, `.eq(2)`), which encodes the fixture's insertion order as though
+  it were behaviour. The API sorts by `createdAt` and seeded rows can share a millisecond, so
+  which product lands in which row is not a claim this spec should make. Products are now looked
+  up by title, which is what the assertion was actually about — a title paired with its price —
+  and survives any ordering.
+
 - **`npm run build` failed on three type errors**, all of them in specs. `vi.fn(() => …)` infers a
   zero-arity signature, so `localeChoice.spec.ts` could not pass arguments to its own mocks; and
   `httpRequest.spec.ts` built an `AxiosError` without the payload generics the interceptor under
@@ -319,12 +326,22 @@ own mocks.
   mismatch, but it is wired to `pretest:e2e:live`, so nothing checks the pair on an ordinary
   contract change or in CI. The two are byte-identical as of this entry.
 - **The e2e suite is still built on a dev server that compiles as it is tested.** The flakiness
-  this produced is mitigated rather than cured — see _Fixed_ — and the residual shape is worth
-  knowing: it is load-dependent, so the suite is green on an idle machine and can fail on a busy
-  one, pointing at whichever selector happened to be first rather than at the compile that actually
-  caused it. Running against `vite build` + `vite preview` removes the class outright; the tradeoff
-  and the scope are in `TODO.md`. Until then, do not co-schedule the mutation job with the e2e job:
-  Stryker saturates every core it is given, and e2e is what fails.
+  this produced is mitigated rather than cured — `defaultCommandTimeout` and `server.warmup` — and
+  the residual shape is worth knowing: it is load-dependent, so the suite is green on an idle
+  machine and can fail on a busy one, pointing at whichever selector happened to be first rather
+  than at the compile that actually caused it. Running against `vite build` + `vite preview`
+  removes the class outright; the tradeoff and the scope are in `TODO.md`. Until then, do not
+  co-schedule the mutation job with the e2e job: Stryker saturates every core it is given, and
+  e2e is what fails.
+- **`npm run test:e2e:live` fails 5 of 63 — root cause unknown.** Three of them share one shape:
+  the header renders a signed-in admin with admin-only controls, while the data on the page is
+  what an anonymous visitor would get. The backend was verified correct (it returns all 5 products
+  to an admin token), mock/seed parity passes, and four separate hypotheses were tested and
+  rejected. The blocking clue is that the failing test **passes when instrumented** — adding a
+  `cy.intercept` to observe the requests makes the symptom disappear — so it needs an observation
+  method that does not perturb timing. Everything learned, everything ruled out, and the two
+  Cypress gotchas that cost runs are written up in `PROBLEM_02_LIVE_E2E_FAILURES.md`. The mock
+  profile is unaffected at 57/57, so CI is not impacted.
 - The dockerised app forwards none of the Faro or Umami variables into the container, so
   observability is silent under `compose up` even though `VITE_API_MOCK_ENABLED` now correctly
   defaults to using the real, paired backend.

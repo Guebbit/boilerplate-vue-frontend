@@ -26,19 +26,19 @@ describe('Products', () => {
             cy.contains('[data-test=list-row]', 'Bundle micini').should('not.exist'); // inactive
         });
 
+        // Addressed by title rather than by row index. The API sorts by `createdAt`, and seeded
+        // rows can share a millisecond — so which product lands in which row is a property of
+        // the fixture's insertion timing, not behaviour this spec should pin. Indexing rows
+        // asserted the mock's array order against a real database and failed for that reason
+        // alone. The pairing of a title with its price is the actual claim, and it survives any
+        // ordering.
         it('displays product title and price in each row', () => {
-            cy.get('[data-test=list-row]')
-                .eq(0)
-                .within(() => {
-                    cy.contains('Sallyno Panino').should('exist');
-                    cy.contains('100').should('exist');
-                });
-            cy.get('[data-test=list-row]')
-                .eq(2)
-                .within(() => {
-                    cy.contains('Micino pufettino').should('exist');
-                    cy.contains('77').should('exist');
-                });
+            cy.contains('[data-test=list-row]', 'Sallyno Panino').within(() => {
+                cy.contains('100').should('exist');
+            });
+            cy.contains('[data-test=list-row]', 'Micino pufettino').within(() => {
+                cy.contains('77').should('exist');
+            });
         });
 
         it('shows only the View action for non-admin users', () => {
