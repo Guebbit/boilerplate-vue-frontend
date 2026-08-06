@@ -227,6 +227,31 @@ own mocks.
 
 ### Fixed
 
+- **The live e2e profile is 63/63**, from 58 passing / 5 failing. Three of the five were a single
+  backend bug — cached responses reused across authentication scopes, so an authenticated user was
+  served anonymous data by their own browser without the request reaching the API (see the
+  backend's changelog). The remaining two were faults in the specs themselves, below. Worth
+  recording for whoever meets the next caching bug: **`cy.intercept` bypasses the browser cache**,
+  because it proxies the request to the network — so it cannot be used to observe one. Adding an
+  observer made the failing test pass, which is what made these five read as a timing race for so
+  long.
+
+- **`auth.cy.ts`'s forced-401 test stubbed its own page instead of the API.**
+  `cy.intercept('GET', '**/orders*')` matches this app's route at `http://localhost:8085/en/orders`
+  every bit as readily as the API's `http://localhost:3000/orders` — so the request that received
+  the forced 401 was `cy.reload()`'s _document_ navigation. The browser rendered the error JSON as
+  the entire page and the SPA never booted, which meant the missing `[data-test=list-row]` was the
+  absence of an application rather than the failed token refresh the test exists to detect: the two
+  are indistinguishable from the assertion alone. Now pinned to the API origin via
+  `cy.env(['apiUrl'])` — `Cypress.env()` throws here, `allowCypressEnv: false`.
+
+- **`products.cy.ts` still hard-coded a product id in the View-navigation test** — the other half of
+  the row-ordering fault recorded below. It clicked row 0 and asserted the mock's _first_ product
+  id, which the API's `createdAt DESC, _id DESC` sort never promised. The id is now read off the row
+  actually being clicked, synchronously from the jQuery element inside a single `.then()`:
+  re-entering the chain with `.eq(0).find('td').first().invoke('text')` and clicking afterwards is
+  what produced `CypressError: cy.eq() failed because it requires a DOM element or document`.
+
 - **`products.cy.ts` asserted the mock's row ordering against a real database.** The list was
   addressed by index (`.eq(0)`, `.eq(2)`), which encodes the fixture's insertion order as though
   it were behaviour. The API sorts by `createdAt` and seeded rows can share a millisecond, so

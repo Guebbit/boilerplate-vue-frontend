@@ -74,9 +74,21 @@ describe('Products', () => {
             cy.contains('[data-test=list-row]', 'Bundle micini').should('exist');
         });
 
+        // The expected id is read off the row that gets clicked, not hard-coded. The API sorts by
+        // `createdAt DESC, _id DESC` and the seeded rows can share a millisecond, so which product
+        // occupies row 0 is a property of fixture insertion timing rather than of the navigation
+        // this spec is about — pinning the mock's first product asserted the fixture's array order
+        // against a real database. The id is read synchronously off the jQuery element inside a
+        // single `.then()`: re-entering the chain with `.eq(0).find('td').first().invoke('text')`
+        // and then clicking is what produced `cy.eq() failed because it requires a DOM element`.
         it('navigates to product detail when clicking View', () => {
-            cy.get('[data-test=list-row]').eq(0).find('[data-test=row-view]').click();
-            cy.url().should('include', '/products/65dc8a99604c307b702b5ccc');
+            cy.get('[data-test=list-row]')
+                .first()
+                .then(($row) => {
+                    const productId = $row.find('td').first().text().trim();
+                    cy.wrap($row).find('[data-test=row-view]').click();
+                    cy.url().should('include', `/products/${productId}`);
+                });
             cy.get('#product-target').should('exist');
         });
     });

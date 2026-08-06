@@ -145,22 +145,30 @@ describe('Authentication', () => {
             cy.get('[data-test=list-row]', { timeout: 10_000 }).should('have.length.at.least', 1);
 
             let forced401 = false;
-            cy.intercept('GET', '**/orders*', (request) => {
-                if (forced401) {
-                    request.continue();
-                    return;
-                }
-                forced401 = true;
-                request.reply({
-                    statusCode: 401,
-                    body: {
-                        success: false,
-                        status: 401,
-                        message: 'Unauthorized',
-                        errors: ['Unauthorized']
+            // Pinned to the API origin, and deliberately not `**/orders*`: that glob also matches
+            // this app's own route at `http://localhost:8085/en/orders`, so the request that got
+            // the forced 401 was `cy.reload()`'s *document* navigation. The browser then rendered
+            // the error JSON as the entire page and the SPA never booted — the row assertion below
+            // failed for want of an application, which looks identical to a failed token refresh
+            // and is what made this failure so hard to read.
+            cy.env(['apiUrl']).then(({ apiUrl }) => {
+                cy.intercept('GET', `${apiUrl}/orders*`, (request) => {
+                    if (forced401) {
+                        request.continue();
+                        return;
                     }
-                });
-            }).as('ordersForcedOnce');
+                    forced401 = true;
+                    request.reply({
+                        statusCode: 401,
+                        body: {
+                            success: false,
+                            status: 401,
+                            message: 'Unauthorized',
+                            errors: ['Unauthorized']
+                        }
+                    });
+                }).as('ordersForcedOnce');
+            });
 
             cy.reload();
 
