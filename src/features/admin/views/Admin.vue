@@ -49,18 +49,16 @@ onMounted(() => {
  * @returns A promise resolving once the call has settled; the outcome is
  *  reported as a toast, and the button's pending flag is always cleared.
  */
-const clearExpiredTokens = async () => {
+const clearExpiredTokens = () => {
     const shouldContinue = globalThis.confirm(t('admin-page.confirm-clear-expired-tokens'));
     if (!shouldContinue) return;
     cleaningExpiredTokens.value = true;
-    try {
-        await deleteExpiredTokens();
-        addMessage(t('admin-page.success-clear-expired-tokens'));
-    } catch {
-        addMessage(t('admin-page.error-clear-expired-tokens'));
-    } finally {
-        cleaningExpiredTokens.value = false;
-    }
+    return deleteExpiredTokens()
+        .then(() => addMessage(t('admin-page.success-clear-expired-tokens')))
+        .catch(() => addMessage(t('admin-page.error-clear-expired-tokens')))
+        .finally(() => {
+            cleaningExpiredTokens.value = false;
+        });
 };
 </script>
 

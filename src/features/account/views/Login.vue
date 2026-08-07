@@ -127,14 +127,14 @@ if (import.meta.env.VITE_API_MOCK_ENABLED === 'true')
  *  resolves early, showing the errors and focusing the first invalid field; API
  *  failures are reported as toasts.
  */
-const submitForm = async () => {
+const submitForm = () => {
     const { login } = useProfileStore();
     if (!validate()) {
         showErrors.value = true;
         addMessage(t('users-form.fix-errors'));
-        await nextTick();
-        focusFirstErrorField(formElement.value);
-        return;
+        // After nextTick so the messages `showErrors` just revealed are in the DOM —
+        // `focusFirstErrorField` looks for them.
+        return nextTick().then(() => focusFirstErrorField(formElement.value));
     }
     return login(form.value.email!, form.value.password!)
         .then(() =>

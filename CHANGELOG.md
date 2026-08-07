@@ -244,8 +244,17 @@ own mocks.
   This was already the house style — every `submitForm` ends
   `.then(…).catch((error) => notifyErrorMessages(addMessage, error))` and every store method ends
   `.then((response) => response.data)` — so the `async` usages were the outlier. Now applied
-  across `src/` and the **whole** test suite: all 27 unit spec files, the MSW handlers,
+  everywhere: the whole of `src/` — the four account views, `main.ts`'s bootstrap,
+  `middlewares/localeChoice.ts`, `utils/localeApi.ts`, `Admin`, `Order`, `OrderEdit` and
+  `AppLanguageSwitcher` — and the whole test suite: all 27 unit spec files, the MSW handlers,
   `mockTransport.ts`, `mockProfiles.ts` and the Cypress `commands.ts` retry.
+
+    Two conversions needed more than dropping the keyword. `localeChoice`'s redirect branch
+    returned a bare object that `async` had been auto-wrapping into a promise, and now says
+    `Promise.resolve` itself. Two views returned `router.push()`, whose
+    `NavigationFailure | undefined` the old `await` silently discarded and a `Promise<void>`
+    submit handler will not take; they now end on an explicit `.then` that drops it, with the
+    reason written down — a failed navigation is the router's own `onError` to report.
 
     Several places read better for it rather than merely differently. A cleanup that must run
     either way is `.finally()`, which forwards the resolved value and re-throws the rejection
@@ -353,6 +362,28 @@ own mocks.
 - **`src/stores/observability.ts`**'s default tracker URL follows the Umami port move.
 
 ### Fixed
+
+- **Six tests for the refresh-exclusion list asserted nothing at all.** `httpRequest.spec.ts`
+  drove a 401 through `onResponseRejectWithRefresh` for each auth endpoint and asserted that no
+  refresh followed, by counting calls to a `setAccessToken` mock — but nothing in `src/` has ever
+  called `setAccessToken`; the interceptor writes `accessToken.value` through `storeToRefs`. The
+  counter was therefore permanently zero and `resolves.toBe(false)` could not fail. A second
+  fault sat on top of it: the spec mocked `@/utils/i18n.ts` without `apiText`, which
+  `onResponseReject` needs to build the 401 message, so the call threw before reaching any
+  refresh logic at all — invisible because the function was `async`, which turned the throw into
+  a rejection that the probe's own `.catch` swallowed.
+
+    Surfaced by dropping that vestigial `async` (see _Changed_), and confirmed by deleting the
+    exclusion list outright and watching all six still pass. The cases moved to
+    `httpRefresh.spec.ts`, which drives the real interceptor chain against MSW and asserts on the
+    server's request log; the same deletion now fails all six. Coverage went up rather than down
+    — the old spec checked one endpoint properly, the table now checks all five plus the
+    absolute-URL spelling — while the test count drops by one, which is the six empty assertions
+    leaving.
+
+    Worth noting where this was hiding: the module's own header calls the refresh flow "the one
+    piece of client logic where a bug is both invisible to types and invisible to the e2e suite:
+    a broken refresh does not throw, it just logs the user out at some later moment."
 
 - **Filtering the product list by id did nothing, and the workaround was the bug.**
   `watchSearchProducts` sent `filters.id` as a `productId` query parameter, with a comment and a

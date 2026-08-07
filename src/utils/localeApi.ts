@@ -60,14 +60,14 @@ export const fetchApiDictionary = (locale: string): Promise<ITranslationDictiona
  *
  * @returns The languages that were added, for logging or tests. Never rejects.
  */
-export const mergeApiLocales = async (): Promise<string[]> => {
-    const discovered = await fetchApiLocales();
-    const added = discovered.filter((locale) => !supportedLanguages.includes(locale));
+export const mergeApiLocales = (): Promise<string[]> =>
+    fetchApiLocales().then((discovered) => {
+        const added = discovered.filter((locale) => !supportedLanguages.includes(locale));
 
-    supportedLanguages.push(...added);
+        supportedLanguages.push(...added);
 
-    return added;
-};
+        return added;
+    });
 
 /**
  * Merges the API's dictionary into a locale's messages under the reserved namespace.
@@ -77,10 +77,11 @@ export const mergeApiLocales = async (): Promise<string[]> => {
  *  language only the API has.
  * @returns One dictionary: this app's keys at the root, the API's under `api.*`. Never rejects.
  */
-export const withApiDictionary = async (
+export const withApiDictionary = (
     locale: string,
     ownMessages: ITranslationDictionaries
-): Promise<ITranslationDictionaries> => ({
-    ...ownMessages,
-    [API_NAMESPACE]: await fetchApiDictionary(locale)
-});
+): Promise<ITranslationDictionaries> =>
+    fetchApiDictionary(locale).then((apiMessages) => ({
+        ...ownMessages,
+        [API_NAMESPACE]: apiMessages
+    }));

@@ -67,17 +67,19 @@ const formElement = ref<HTMLFormElement>();
  *  field focused; API failures are reported as toasts.
  */
 const submitForm = () =>
-    handleSubmit(async () => {
-        await requestPasswordReset(form.value.email!);
-        addMessage(t('password-reset-request-page.success'));
-        showErrors.value = false;
-    })
-        .then(async (success) => {
+    handleSubmit(() =>
+        requestPasswordReset(form.value.email!).then(() => {
+            addMessage(t('password-reset-request-page.success'));
+            showErrors.value = false;
+        })
+    )
+        .then((success) => {
             if (success) return;
             showErrors.value = true;
             addMessage(t('users-form.fix-errors'));
-            await nextTick();
-            focusFirstErrorField(formElement.value);
+            // After nextTick so the messages `showErrors` just revealed are in the DOM —
+            // `focusFirstErrorField` looks for them.
+            return nextTick().then(() => focusFirstErrorField(formElement.value));
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>

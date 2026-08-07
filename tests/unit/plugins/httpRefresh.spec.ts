@@ -28,6 +28,21 @@ let refreshBudget = 1;
 /** Whether the protected route accepts the token it is given. */
 let protectedAccepts = false;
 
+/** Mirrors `refreshExcludedPaths` in `src/plugins/http/index.ts`. */
+const EXCLUDED_PATHS = [
+    '/account/login',
+    '/account/signup',
+    '/account/reset',
+    '/account/reset-confirm',
+    '/account/logout-all'
+];
+
+/**
+ * The same exclusion, spelled absolutely. Generated clients send relative urls, but a caller
+ * passing an absolute one must get the same treatment or the exclusion silently stops applying.
+ */
+const ABSOLUTE_EXCLUDED_URL = 'https://api.example.com/account/login';
+
 const server = setupServer(
     http.get(`${API}/account/refresh`, ({ request }) => {
         requestLog.push({
@@ -54,11 +69,22 @@ const server = setupServer(
         );
     }),
 
-    http.post(`${API}/account/login`, () =>
-        HttpResponse.json(
-            { success: false, status: 401, message: 'Unauthorized', errors: ['Bad credentials'] },
-            { status: 401 }
-        )
+    // Every path on the refresh-exclusion list, plus one spelled as an absolute URL. Each
+    // answers 401 as a normal business outcome (wrong password, expired reset link, session
+    // already invalidated) — the case the exclusion list exists for.
+    ...[...EXCLUDED_PATHS, ABSOLUTE_EXCLUDED_URL].map((path) =>
+        http.post(path.startsWith('http') ? path : `${API}${path}`, ({ request }) => {
+            requestLog.push({ route: `POST ${new URL(request.url).pathname}` });
+            return HttpResponse.json(
+                {
+                    success: false,
+                    status: 401,
+                    message: 'Unauthorized',
+                    errors: ['Bad credentials']
+                },
+                { status: 401 }
+            );
+        })
     )
 );
 
@@ -148,16 +174,32 @@ describe('401 refresh flow', () => {
             });
     });
 
-    it('never attempts a refresh for a failed login', () =>
-        loadHttp()
-            .then(({ orvalMutator }) =>
-                expect(
-                    orvalMutator({ url: '/account/login', method: 'POST', data: {} })
-                ).rejects.toMatchObject({ status: 401 })
-            )
-            .then(() => {
-                expect(requestLog.some(({ route }) => route === 'GET /account/refresh')).toBe(
-                    false
-                );
-            }));
+    /**
+     * Each excluded endpoint answers 401 as a normal business outcome, so refreshing there turns
+     * a clean error message into an extra round trip and — when the refresh also fails — a
+     * misleading session-expired state.
+     *
+     * Driven through `orvalMutator` against the real interceptor chain, and asserted on the
+     * server's own request log. `httpRequest.spec.ts` used to assert this by counting calls to a
+     * `setAccessToken` mock, but no such method exists in `src/`: the counter was permanently
+     * zero, so those cases passed whatever the exclusion list did.
+     */
+    it.each([...EXCLUDED_PATHS, ABSOLUTE_EXCLUDED_URL])(
+        'never attempts a refresh for a 401 from %s',
+        (url) =>
+            loadHttp()
+                .then(({ orvalMutator }) =>
+                    expect(orvalMutator({ url, method: 'POST', data: {} })).rejects.toMatchObject({
+                        status: 401
+                    })
+                )
+                .then(() => {
+                    // The endpoint itself was reached...
+                    expect(requestLog.some(({ route }) => route.startsWith('POST '))).toBe(true);
+                    // ...and no refresh was attempted off the back of its 401.
+                    expect(requestLog.some(({ route }) => route === 'GET /account/refresh')).toBe(
+                        false
+                    );
+                })
+    );
 });

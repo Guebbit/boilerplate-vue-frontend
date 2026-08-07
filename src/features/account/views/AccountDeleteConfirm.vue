@@ -89,18 +89,27 @@ const formElement = ref<HTMLFormElement>();
  *  and the field focused; API failures are reported as toasts.
  */
 const submitForm = () =>
-    handleSubmit(async () => {
-        await confirmAccountDelete(form.value.token!);
-        addMessage(t('account-delete-confirm-page.success'));
-        showErrors.value = false;
-        await router.push(routerLinkI18n({ name: 'Home' }));
-    })
-        .then(async (success) => {
+    handleSubmit(() =>
+        confirmAccountDelete(form.value.token!)
+            .then(() => {
+                addMessage(t('account-delete-confirm-page.success'));
+                showErrors.value = false;
+                return router.push(routerLinkI18n({ name: 'Home' }));
+            })
+            .then(() => {
+                // Swallows `router.push`'s resolved value: it is a
+                // `NavigationFailure | undefined`, which the submit handler's `Promise<void>`
+                // will not take, and a failed navigation is the router's own `onError` to
+                // report rather than this form's.
+            })
+    )
+        .then((success) => {
             if (success) return;
             showErrors.value = true;
             addMessage(t('users-form.fix-errors'));
-            await nextTick();
-            focusFirstErrorField(formElement.value);
+            // After nextTick so the messages `showErrors` just revealed are in the DOM —
+            // `focusFirstErrorField` looks for them.
+            return nextTick().then(() => focusFirstErrorField(formElement.value));
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>

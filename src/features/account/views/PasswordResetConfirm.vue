@@ -117,22 +117,27 @@ const formElement = ref<HTMLFormElement>();
  *  toasts.
  */
 const submitForm = () =>
-    handleSubmit(async () => {
-        await confirmPasswordReset(
-            form.value.token!,
-            form.value.password!,
-            form.value.passwordConfirm!
-        );
-        addMessage(t('password-reset-confirm-page.success'));
-        showErrors.value = false;
-        await router.push(routerLinkI18n({ name: 'Login' }));
-    })
-        .then(async (success) => {
+    handleSubmit(() =>
+        confirmPasswordReset(form.value.token!, form.value.password!, form.value.passwordConfirm!)
+            .then(() => {
+                addMessage(t('password-reset-confirm-page.success'));
+                showErrors.value = false;
+                return router.push(routerLinkI18n({ name: 'Login' }));
+            })
+            .then(() => {
+                // Swallows `router.push`'s resolved value: it is a
+                // `NavigationFailure | undefined`, which the submit handler's `Promise<void>`
+                // will not take, and a failed navigation is the router's own `onError` to
+                // report rather than this form's.
+            })
+    )
+        .then((success) => {
             if (success) return;
             showErrors.value = true;
             addMessage(t('users-form.fix-errors'));
-            await nextTick();
-            focusFirstErrorField(formElement.value);
+            // After nextTick so the messages `showErrors` just revealed are in the DOM —
+            // `focusFirstErrorField` looks for them.
+            return nextTick().then(() => focusFirstErrorField(formElement.value));
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>

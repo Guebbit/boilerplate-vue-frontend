@@ -237,14 +237,15 @@ const orderStatus = computed(() => {
  *  a toast. A missing route id is a no-op.
  */
 const submitForm = () =>
-    handleSubmit(async () => {
+    handleSubmit(() => {
         if (!id) return;
-        await updateOrder(id, {
+        return updateOrder(id, {
             status: form.value.status,
             email: form.value.email || undefined
+        }).then(() => {
+            addMessage(t('order-edit-page.success-update'));
+            showFormErrors.value = false;
         });
-        addMessage(t('order-edit-page.success-update'));
-        showFormErrors.value = false;
     })
         .then((success) => {
             if (!success) showFormErrors.value = true;

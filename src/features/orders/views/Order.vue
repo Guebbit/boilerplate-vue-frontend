@@ -214,15 +214,14 @@ const orderStatus = computed(() => {
  * @returns A promise resolving once the download has been triggered; a missing
  *  route id or empty response is a no-op, and failures surface as a toast.
  */
-const downloadInvoice = async () => {
+const downloadInvoice = () => {
     if (!id) return;
-    try {
-        const blob = await fetchInvoice(id);
-        if (!blob) return;
-        downloadBlob(blob, `order-${id}-invoice.pdf`);
-    } catch (error: unknown) {
-        notifyErrorMessages(addMessage, error);
-    }
+    return fetchInvoice(id)
+        .then((blob) => {
+            if (!blob) return;
+            downloadBlob(blob, `order-${id}-invoice.pdf`);
+        })
+        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
 };
 
 /**

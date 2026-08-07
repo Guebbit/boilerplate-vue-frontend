@@ -108,35 +108,35 @@ export const fetchLanguageApi = (locale: string): Promise<[string, ITranslationD
  * @param to - the target route being navigated to
  * @returns `true` to proceed, or a redirect location to force the default locale
  */
-export const localeChoice = async (
-    to: RouteLocationNormalized
-): Promise<true | RouteLocationRaw> => {
+export const localeChoice = (to: RouteLocationNormalized): Promise<true | RouteLocationRaw> => {
     // Locale segment coming from the URL (may be undefined on locale-less routes)
     const locale = to.params.locale as string;
 
     // Already loaded: just make sure it is the active language and proceed.
     // (covers back/forward navigation and direct URLs between loaded locales)
-    if (loadedLanguages.includes(locale)) {
-        if (getCurrentLocale() !== locale) await changeLanguage(locale);
-        return true;
-    }
+    if (loadedLanguages.includes(locale))
+        return (
+            getCurrentLocale() === locale ? Promise.resolve() : changeLanguage(locale)
+        ).then<true>(() => true);
 
     // Supported but not yet loaded: fetch it, register the messages, activate it.
-    if (supportedLanguages.includes(locale)) {
-        const [lang, vocabulary] = await fetchLanguageApi(locale);
-        await updateLocale(lang, vocabulary);
-        await changeLanguage(lang);
-        return true;
-    }
+    if (supportedLanguages.includes(locale))
+        return fetchLanguageApi(locale)
+            .then(([lang, vocabulary]) => updateLocale(lang, vocabulary).then(() => lang))
+            .then((lang) => changeLanguage(lang))
+            .then<true>(() => true);
 
     // Missing, unsupported or empty locale: redirect to the same route with the
     // browser/default locale injected into the params.
-    return {
+    //
+    // `Promise.resolve` rather than a bare object: the guard is declared to return a promise,
+    // and `async` is no longer here to wrap this branch for us.
+    return Promise.resolve({
         name: to.name as string,
         params: {
             ...to.params,
             locale: getDefaultLocale()
         },
         query: to.query
-    };
+    });
 };

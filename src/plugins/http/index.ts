@@ -226,7 +226,7 @@ export const onResponseReject = (
  *  the normalized rejection from {@link onResponseReject}. Auth endpoints
  *  (see {@link shouldSkipRefresh}) never attempt a refresh.
  */
-export const onResponseRejectWithRefresh = async (
+export const onResponseRejectWithRefresh = (
     error: AxiosError<IAxiosResponseErrorData, IAxiosResponseErrorBody>
 ) => {
     const { accessToken } = storeToRefs(useProfileStore());
