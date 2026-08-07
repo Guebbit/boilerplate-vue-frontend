@@ -76,77 +76,83 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
         http.get(`${API_BASE}/orders`, ({ request }) =>
             replyOrdersList(request.url, ListOrdersResponse)
         ),
-        http.post(`${API_BASE}/orders`, async ({ request }) => {
-            const requestBody = await readRequestBody<Record<string, unknown>>(request);
-            const createdOrder = createMockOrder({
-                userId: String(requestBody.userId ?? mockDatabase.currentAuthenticatedUserId),
-                email: String(requestBody.email ?? 'order@example.com'),
-                items: Array.isArray(requestBody.items)
-                    ? (requestBody.items as CartItem[]).map((item) => cartItemToOrderItem(item))
-                    : [],
-                notes: requestBody.notes ? String(requestBody.notes) : undefined,
-                status: 'pending'
-            });
+        http.post(`${API_BASE}/orders`, ({ request }) =>
+            readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
+                const createdOrder = createMockOrder({
+                    userId: String(requestBody.userId ?? mockDatabase.currentAuthenticatedUserId),
+                    email: String(requestBody.email ?? 'order@example.com'),
+                    items: Array.isArray(requestBody.items)
+                        ? (requestBody.items as CartItem[]).map((item) => cartItemToOrderItem(item))
+                        : [],
+                    notes: requestBody.notes ? String(requestBody.notes) : undefined,
+                    status: 'pending'
+                });
 
-            mockDatabase.sampleOrders.unshift(createdOrder);
-            return toMockJsonResponse(createSuccessEnvelope(createdOrder), {
-                status: 201,
-                schema: CreateOrderResponse
-            });
-        }),
-        http.put(`${API_BASE}/orders`, async ({ request }) => {
-            const requestBody = await readRequestBody<UpdateOrderRequest>(request);
-            const targetIndex = mockDatabase.sampleOrders.findIndex(
-                ({ id }) => id === requestBody.id
-            );
-
-            if (targetIndex === -1)
-                return toMockJsonResponse(
-                    createErrorEnvelope(404, 'NOT_FOUND', 'Order not found'),
-                    {
-                        status: 404,
-                        schema: MockErrorResponse
-                    }
+                mockDatabase.sampleOrders.unshift(createdOrder);
+                return toMockJsonResponse(createSuccessEnvelope(createdOrder), {
+                    status: 201,
+                    schema: CreateOrderResponse
+                });
+            })
+        ),
+        http.put(`${API_BASE}/orders`, ({ request }) => {
+            return readRequestBody<UpdateOrderRequest>(request).then((requestBody) => {
+                const targetIndex = mockDatabase.sampleOrders.findIndex(
+                    ({ id }) => id === requestBody.id
                 );
 
-            const updatedOrder: Order = {
-                ...mockDatabase.sampleOrders[targetIndex],
-                userId: requestBody.userId ?? mockDatabase.sampleOrders[targetIndex].userId,
-                email: requestBody.email ?? mockDatabase.sampleOrders[targetIndex].email,
-                items: requestBody.items
-                    ? requestBody.items.map((item) => cartItemToOrderItem(item))
-                    : mockDatabase.sampleOrders[targetIndex].items,
-                status: requestBody.status ?? mockDatabase.sampleOrders[targetIndex].status,
-                updatedAt: getIsoDateNow()
-            };
+                if (targetIndex === -1)
+                    return toMockJsonResponse(
+                        createErrorEnvelope(404, 'NOT_FOUND', 'Order not found'),
+                        {
+                            status: 404,
+                            schema: MockErrorResponse
+                        }
+                    );
 
-            mockDatabase.sampleOrders[targetIndex] = updatedOrder;
-            return toMockJsonResponse(createSuccessEnvelope(updatedOrder), {
-                schema: UpdateOrderResponse
+                const updatedOrder: Order = {
+                    ...mockDatabase.sampleOrders[targetIndex],
+                    userId: requestBody.userId ?? mockDatabase.sampleOrders[targetIndex].userId,
+                    email: requestBody.email ?? mockDatabase.sampleOrders[targetIndex].email,
+                    items: requestBody.items
+                        ? requestBody.items.map((item) => cartItemToOrderItem(item))
+                        : mockDatabase.sampleOrders[targetIndex].items,
+                    status: requestBody.status ?? mockDatabase.sampleOrders[targetIndex].status,
+                    updatedAt: getIsoDateNow()
+                };
+
+                mockDatabase.sampleOrders[targetIndex] = updatedOrder;
+                return toMockJsonResponse(createSuccessEnvelope(updatedOrder), {
+                    schema: UpdateOrderResponse
+                });
             });
         }),
-        http.delete(`${API_BASE}/orders`, async ({ request }) => {
-            const requestBody = await readRequestBody<Record<string, unknown>>(request);
-            const targetId = String(requestBody.id ?? '');
-            const targetIndex = mockDatabase.sampleOrders.findIndex(({ id }) => id === targetId);
-
-            if (targetIndex === -1)
-                return toMockJsonResponse(
-                    createErrorEnvelope(404, 'NOT_FOUND', 'Order not found'),
-                    {
-                        status: 404,
-                        schema: MockErrorResponse
-                    }
+        http.delete(`${API_BASE}/orders`, ({ request }) => {
+            return readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
+                const targetId = String(requestBody.id ?? '');
+                const targetIndex = mockDatabase.sampleOrders.findIndex(
+                    ({ id }) => id === targetId
                 );
 
-            mockDatabase.sampleOrders.splice(targetIndex, 1);
-            return toMockJsonResponse(createMessageResponse('Order deleted'), {
-                schema: DeleteOrderResponse
+                if (targetIndex === -1)
+                    return toMockJsonResponse(
+                        createErrorEnvelope(404, 'NOT_FOUND', 'Order not found'),
+                        {
+                            status: 404,
+                            schema: MockErrorResponse
+                        }
+                    );
+
+                mockDatabase.sampleOrders.splice(targetIndex, 1);
+                return toMockJsonResponse(createMessageResponse('Order deleted'), {
+                    schema: DeleteOrderResponse
+                });
             });
         }),
-        http.post(`${API_BASE}/orders/search`, async ({ request }) => {
-            const requestBody = await readRequestBody<Record<string, unknown>>(request);
-            return replyOrdersList(request.url, SearchOrdersResponse, requestBody);
+        http.post(`${API_BASE}/orders/search`, ({ request }) => {
+            return readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
+                return replyOrdersList(request.url, SearchOrdersResponse, requestBody);
+            });
         }),
         http.get(`${API_BASE}/orders/:orderId`, ({ params }) => {
             const orderId = String(params.orderId);
@@ -165,7 +171,7 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
                 schema: GetOrderByIdResponse
             });
         }),
-        http.put(`${API_BASE}/orders/:orderId`, async ({ request, params }) => {
+        http.put(`${API_BASE}/orders/:orderId`, ({ request, params }) => {
             const orderId = String(params.orderId);
             const targetIndex = mockDatabase.sampleOrders.findIndex(({ id }) => id === orderId);
 
@@ -177,22 +183,22 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
                         schema: MockErrorResponse
                     }
                 );
+            return readRequestBody<UpdateOrderByIdRequest>(request).then((requestBody) => {
+                const updatedOrder: Order = {
+                    ...mockDatabase.sampleOrders[targetIndex],
+                    userId: requestBody.userId ?? mockDatabase.sampleOrders[targetIndex].userId,
+                    email: requestBody.email ?? mockDatabase.sampleOrders[targetIndex].email,
+                    items: requestBody.items
+                        ? requestBody.items.map((item) => cartItemToOrderItem(item))
+                        : mockDatabase.sampleOrders[targetIndex].items,
+                    status: requestBody.status ?? mockDatabase.sampleOrders[targetIndex].status,
+                    updatedAt: getIsoDateNow()
+                };
 
-            const requestBody = await readRequestBody<UpdateOrderByIdRequest>(request);
-            const updatedOrder: Order = {
-                ...mockDatabase.sampleOrders[targetIndex],
-                userId: requestBody.userId ?? mockDatabase.sampleOrders[targetIndex].userId,
-                email: requestBody.email ?? mockDatabase.sampleOrders[targetIndex].email,
-                items: requestBody.items
-                    ? requestBody.items.map((item) => cartItemToOrderItem(item))
-                    : mockDatabase.sampleOrders[targetIndex].items,
-                status: requestBody.status ?? mockDatabase.sampleOrders[targetIndex].status,
-                updatedAt: getIsoDateNow()
-            };
-
-            mockDatabase.sampleOrders[targetIndex] = updatedOrder;
-            return toMockJsonResponse(createSuccessEnvelope(updatedOrder), {
-                schema: UpdateOrderByIdResponse
+                mockDatabase.sampleOrders[targetIndex] = updatedOrder;
+                return toMockJsonResponse(createSuccessEnvelope(updatedOrder), {
+                    schema: UpdateOrderByIdResponse
+                });
             });
         }),
         http.delete(`${API_BASE}/orders/:orderId`, ({ params }) => {

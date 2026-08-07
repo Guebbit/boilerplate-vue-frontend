@@ -32,76 +32,88 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
     http.get(`${API_BASE}/cart`, () =>
         toMockJsonResponse(createSuccessEnvelope(getCartResponse()), { schema: GetCartResponse })
     ),
-    http.post(`${API_BASE}/cart`, async ({ request }) => {
-        const requestBody = await readRequestBody<Record<string, unknown>>(request);
-        const productId = String(requestBody.productId ?? '');
-        const quantity = Math.max(0, Number(requestBody.quantity ?? 0));
+    http.post(`${API_BASE}/cart`, ({ request }) =>
+        readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
+            const productId = String(requestBody.productId ?? '');
+            const quantity = Math.max(0, Number(requestBody.quantity ?? 0));
 
-        if (!mockDatabase.sampleProducts.some((product) => product.id === productId))
-            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'Product not found'), {
-                status: 404,
-                schema: MockErrorResponse
+            if (!mockDatabase.sampleProducts.some((product) => product.id === productId))
+                return toMockJsonResponse(
+                    createErrorEnvelope(404, 'NOT_FOUND', 'Product not found'),
+                    {
+                        status: 404,
+                        schema: MockErrorResponse
+                    }
+                );
+
+            const existingItemIndex = mockDatabase.sampleCartItems.findIndex(
+                (item) => item.productId === productId
+            );
+
+            if (existingItemIndex === -1)
+                mockDatabase.sampleCartItems.push({ productId, quantity: quantity || 1 });
+            else
+                mockDatabase.sampleCartItems[existingItemIndex].quantity =
+                    quantity || mockDatabase.sampleCartItems[existingItemIndex].quantity;
+
+            mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter(
+                (item) => item.quantity > 0
+            );
+            return toMockJsonResponse(createSuccessEnvelope(getCartResponse()), {
+                schema: UpsertCartItemResponse
             });
+        })
+    ),
+    http.delete(`${API_BASE}/cart`, ({ request }) =>
+        readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
+            const productId = requestBody.productId ? String(requestBody.productId) : undefined;
 
-        const existingItemIndex = mockDatabase.sampleCartItems.findIndex(
-            (item) => item.productId === productId
-        );
+            if (!productId) {
+                mockDatabase.sampleCartItems = [];
+                return toMockJsonResponse(createSuccessEnvelope(getCartResponse()), {
+                    schema: ClearCartResponse
+                });
+            }
 
-        if (existingItemIndex === -1)
-            mockDatabase.sampleCartItems.push({ productId, quantity: quantity || 1 });
-        else
-            mockDatabase.sampleCartItems[existingItemIndex].quantity =
-                quantity || mockDatabase.sampleCartItems[existingItemIndex].quantity;
-
-        mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter(
-            (item) => item.quantity > 0
-        );
-        return toMockJsonResponse(createSuccessEnvelope(getCartResponse()), {
-            schema: UpsertCartItemResponse
-        });
-    }),
-    http.delete(`${API_BASE}/cart`, async ({ request }) => {
-        const requestBody = await readRequestBody<Record<string, unknown>>(request);
-        const productId = requestBody.productId ? String(requestBody.productId) : undefined;
-
-        if (!productId) {
-            mockDatabase.sampleCartItems = [];
+            mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter(
+                (item) => item.productId !== productId
+            );
             return toMockJsonResponse(createSuccessEnvelope(getCartResponse()), {
                 schema: ClearCartResponse
             });
-        }
-
-        mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter(
-            (item) => item.productId !== productId
-        );
-        return toMockJsonResponse(createSuccessEnvelope(getCartResponse()), {
-            schema: ClearCartResponse
-        });
-    }),
-    http.put(`${API_BASE}/cart/:productId`, async ({ request, params }) => {
+        })
+    ),
+    http.put(`${API_BASE}/cart/:productId`, ({ request, params }) => {
         const productId = String(params.productId);
-        const requestBody = await readRequestBody<Record<string, unknown>>(request);
-        const quantity = Math.max(0, Number(requestBody.quantity ?? 0));
+        return readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
+            const quantity = Math.max(0, Number(requestBody.quantity ?? 0));
 
-        if (!productId || !mockDatabase.sampleProducts.some((product) => product.id === productId))
-            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'Product not found'), {
-                status: 404,
-                schema: MockErrorResponse
+            if (
+                !productId ||
+                !mockDatabase.sampleProducts.some((product) => product.id === productId)
+            )
+                return toMockJsonResponse(
+                    createErrorEnvelope(404, 'NOT_FOUND', 'Product not found'),
+                    {
+                        status: 404,
+                        schema: MockErrorResponse
+                    }
+                );
+
+            const existingItemIndex = mockDatabase.sampleCartItems.findIndex(
+                (item) => item.productId === productId
+            );
+
+            if (existingItemIndex === -1)
+                mockDatabase.sampleCartItems.push({ productId, quantity: quantity || 1 });
+            else mockDatabase.sampleCartItems[existingItemIndex].quantity = quantity;
+
+            mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter(
+                (item) => item.quantity > 0
+            );
+            return toMockJsonResponse(createSuccessEnvelope(getCartResponse()), {
+                schema: UpdateCartItemByIdResponse
             });
-
-        const existingItemIndex = mockDatabase.sampleCartItems.findIndex(
-            (item) => item.productId === productId
-        );
-
-        if (existingItemIndex === -1)
-            mockDatabase.sampleCartItems.push({ productId, quantity: quantity || 1 });
-        else mockDatabase.sampleCartItems[existingItemIndex].quantity = quantity;
-
-        mockDatabase.sampleCartItems = mockDatabase.sampleCartItems.filter(
-            (item) => item.quantity > 0
-        );
-        return toMockJsonResponse(createSuccessEnvelope(getCartResponse()), {
-            schema: UpdateCartItemByIdResponse
         });
     }),
     http.delete(`${API_BASE}/cart/:productId`, ({ params }) => {
@@ -113,29 +125,30 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
             schema: RemoveCartItemResponse
         });
     }),
-    http.post(`${API_BASE}/cart/checkout`, async ({ request }) => {
-        const requestBody = await readRequestBody<Record<string, unknown>>(request);
-        const email = String(
-            requestBody.email ??
-                mockDatabase.sampleUsers.find(
-                    (user) => user.id === mockDatabase.currentAuthenticatedUserId
-                )?.email ??
-                'mock@example.com'
-        );
+    http.post(`${API_BASE}/cart/checkout`, ({ request }) =>
+        readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
+            const email = String(
+                requestBody.email ??
+                    mockDatabase.sampleUsers.find(
+                        (user) => user.id === mockDatabase.currentAuthenticatedUserId
+                    )?.email ??
+                    'mock@example.com'
+            );
 
-        const createdOrder = createMockOrder({
-            userId: mockDatabase.currentAuthenticatedUserId ?? 'anonymous',
-            email,
-            items: mockDatabase.sampleCartItems.map((item) => cartItemToOrderItem(item)),
-            notes: requestBody.notes ? String(requestBody.notes) : undefined,
-            status: 'pending'
-        });
+            const createdOrder = createMockOrder({
+                userId: mockDatabase.currentAuthenticatedUserId ?? 'anonymous',
+                email,
+                items: mockDatabase.sampleCartItems.map((item) => cartItemToOrderItem(item)),
+                notes: requestBody.notes ? String(requestBody.notes) : undefined,
+                status: 'pending'
+            });
 
-        mockDatabase.sampleOrders.unshift(createdOrder);
-        mockDatabase.sampleCartItems = [];
-        return toMockJsonResponse(
-            createSuccessEnvelope({ order: createdOrder, message: 'Checkout completed' }),
-            { status: 201, schema: CheckoutResponse }
-        );
-    })
+            mockDatabase.sampleOrders.unshift(createdOrder);
+            mockDatabase.sampleCartItems = [];
+            return toMockJsonResponse(
+                createSuccessEnvelope({ order: createdOrder, message: 'Checkout completed' }),
+                { status: 201, schema: CheckoutResponse }
+            );
+        })
+    )
 ];

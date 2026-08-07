@@ -69,7 +69,7 @@ const server = setupServer(
  * env has to be in place first and the registry has to be reset between tests — otherwise the
  * interceptors stack up across cases.
  */
-const loadHttp = async () => {
+const loadHttp = () => {
     vi.resetModules();
     vi.stubEnv('VITE_API_URL', API);
     return import('@/plugins/http');
@@ -88,64 +88,76 @@ beforeEach(() => {
 });
 
 describe('401 refresh flow', () => {
-    it('refreshes once and replays the original request with the new token', async () => {
+    it('refreshes once and replays the original request with the new token', () => {
         protectedAccepts = true;
-        const { orvalMutator } = await loadHttp();
 
-        const result = await orvalMutator<{ data: { items: unknown[] } }>({
-            url: '/orders',
-            method: 'GET'
-        });
-
-        expect(result.data.items).toEqual([]);
-        expect(requestLog.map(({ route }) => route)).toEqual([
-            'GET /orders',
-            'GET /account/refresh',
-            'GET /orders'
-        ]);
-        expect(requestLog.at(-1)?.authorization).toBe('Bearer fresh-token');
+        return loadHttp()
+            .then(({ orvalMutator }) =>
+                orvalMutator<{ data: { items: unknown[] } }>({ url: '/orders', method: 'GET' })
+            )
+            .then((result) => {
+                expect(result.data.items).toEqual([]);
+                expect(requestLog.map(({ route }) => route)).toEqual([
+                    'GET /orders',
+                    'GET /account/refresh',
+                    'GET /orders'
+                ]);
+                expect(requestLog.at(-1)?.authorization).toBe('Bearer fresh-token');
+            });
     });
 
-    it('stores the refreshed token on the profile, so later calls carry it', async () => {
+    it('stores the refreshed token on the profile, so later calls carry it', () => {
         protectedAccepts = true;
-        const { orvalMutator, getAccessToken } = await loadHttp();
 
-        await orvalMutator({ url: '/orders', method: 'GET' });
-
-        expect(getAccessToken()).toBe('fresh-token');
+        return loadHttp().then(({ orvalMutator, getAccessToken }) =>
+            orvalMutator({ url: '/orders', method: 'GET' }).then(() => {
+                expect(getAccessToken()).toBe('fresh-token');
+            })
+        );
     });
 
-    it('does not retry a second time when the replay also fails', async () => {
+    it('does not retry a second time when the replay also fails', () =>
         // protectedAccepts stays false: the replayed request 401s as well.
-        const { orvalMutator } = await loadHttp();
+        loadHttp()
+            .then(({ orvalMutator }) =>
+                expect(orvalMutator({ url: '/orders', method: 'GET' })).rejects.toMatchObject({
+                    status: 401
+                })
+            )
+            .then(() => {
+                // Exactly one refresh and exactly two /orders calls — `_dontRetry` stopped the
+                // loop.
+                expect(
+                    requestLog.filter(({ route }) => route === 'GET /account/refresh')
+                ).toHaveLength(1);
+                expect(requestLog.filter(({ route }) => route === 'GET /orders')).toHaveLength(2);
+            }));
 
-        await expect(orvalMutator({ url: '/orders', method: 'GET' })).rejects.toMatchObject({
-            status: 401
-        });
-
-        // Exactly one refresh and exactly two /orders calls — `_dontRetry` stopped the loop.
-        expect(requestLog.filter(({ route }) => route === 'GET /account/refresh')).toHaveLength(1);
-        expect(requestLog.filter(({ route }) => route === 'GET /orders')).toHaveLength(2);
-    });
-
-    it('rejects with the original error when the refresh itself fails', async () => {
+    it('rejects with the original error when the refresh itself fails', () => {
         refreshBudget = 0;
-        const { orvalMutator } = await loadHttp();
 
-        await expect(orvalMutator({ url: '/orders', method: 'GET' })).rejects.toMatchObject({
-            success: false,
-            status: 401
-        });
-        expect(requestLog.filter(({ route }) => route === 'GET /orders')).toHaveLength(1);
+        return loadHttp()
+            .then(({ orvalMutator }) =>
+                expect(orvalMutator({ url: '/orders', method: 'GET' })).rejects.toMatchObject({
+                    success: false,
+                    status: 401
+                })
+            )
+            .then(() => {
+                expect(requestLog.filter(({ route }) => route === 'GET /orders')).toHaveLength(1);
+            });
     });
 
-    it('never attempts a refresh for a failed login', async () => {
-        const { orvalMutator } = await loadHttp();
-
-        await expect(
-            orvalMutator({ url: '/account/login', method: 'POST', data: {} })
-        ).rejects.toMatchObject({ status: 401 });
-
-        expect(requestLog.some(({ route }) => route === 'GET /account/refresh')).toBe(false);
-    });
+    it('never attempts a refresh for a failed login', () =>
+        loadHttp()
+            .then(({ orvalMutator }) =>
+                expect(
+                    orvalMutator({ url: '/account/login', method: 'POST', data: {} })
+                ).rejects.toMatchObject({ status: 401 })
+            )
+            .then(() => {
+                expect(requestLog.some(({ route }) => route === 'GET /account/refresh')).toBe(
+                    false
+                );
+            }));
 });

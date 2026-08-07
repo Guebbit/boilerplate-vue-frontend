@@ -87,32 +87,35 @@ afterEach(() => {
 });
 
 describe('fetchLanguageApi', () => {
-    it('resolves an empty dictionary for an unsupported locale, without waiting', async () => {
+    it('resolves an empty dictionary for an unsupported locale, without waiting', () => {
         vi.useFakeTimers();
 
         // No timer is scheduled at all on this path, so the promise settles without any
-        // advancement — asserted by awaiting it before touching the clock.
-        const result = await fetchLanguageApi('kl');
-
-        expect(result).toEqual(['kl', {}]);
-        // Supported by neither side, so nothing is imported AND nothing is fetched.
-        expect(getLocaleDictionaryMock).not.toHaveBeenCalled();
+        // advancement — asserted by resolving it before touching the clock.
+        return fetchLanguageApi('kl').then((result) => {
+            expect(result).toEqual(['kl', {}]);
+            // Supported by neither side, so nothing is imported AND nothing is fetched.
+            expect(getLocaleDictionaryMock).not.toHaveBeenCalled();
+        });
     });
 
-    it('loads a supported locale and returns its dictionary', async () => {
+    it('loads a supported locale and returns its dictionary', () => {
         vi.useFakeTimers();
-
         const promise = fetchLanguageApi('en');
-        await vi.advanceTimersByTimeAsync(1000);
-        const [locale, dictionary] = await promise;
-
-        expect(locale).toBe('en');
-        // Real file, real import: asserting it is a non-empty object proves the dynamic import
-        // actually resolved rather than falling into the catch branch.
-        expect(Object.keys(dictionary).length).toBeGreaterThan(0);
+        return vi
+            .advanceTimersByTimeAsync(1000)
+            .then(() => {
+                return promise;
+            })
+            .then(([locale, dictionary]) => {
+                expect(locale).toBe('en');
+                // Real file, real import: asserting it is a non-empty object proves the dynamic import
+                // actually resolved rather than falling into the catch branch.
+                expect(Object.keys(dictionary).length).toBeGreaterThan(0);
+            });
     });
 
-    it('delays the first download of a locale by the simulated latency', async () => {
+    it('delays the first download of a locale by the simulated latency', () => {
         vi.useFakeTimers();
         const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
 
@@ -124,7 +127,7 @@ describe('fetchLanguageApi', () => {
         expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 1000);
     });
 
-    it('skips the delay for a locale already downloaded in a previous session', async () => {
+    it('skips the delay for a locale already downloaded in a previous session', () => {
         localStorage.setItem('downloaded-locales', JSON.stringify(['it']));
         vi.useFakeTimers();
         const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
@@ -136,26 +139,36 @@ describe('fetchLanguageApi', () => {
         expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 0);
     });
 
-    it('records a locale as downloaded once it has been fetched', async () => {
+    it('records a locale as downloaded once it has been fetched', () => {
         vi.useFakeTimers();
-
         const promise = fetchLanguageApi('it');
-        await vi.advanceTimersByTimeAsync(1000);
-        await promise;
-
-        expect(JSON.parse(localStorage.getItem('downloaded-locales') ?? '[]')).toContain('it');
+        return vi
+            .advanceTimersByTimeAsync(1000)
+            .then(() => {
+                return promise;
+            })
+            .then(() => {
+                expect(JSON.parse(localStorage.getItem('downloaded-locales') ?? '[]')).toContain(
+                    'it'
+                );
+            });
     });
 
-    it('deduplicates the stored locale list', async () => {
+    it('deduplicates the stored locale list', () => {
         localStorage.setItem('downloaded-locales', JSON.stringify(['en']));
         vi.useFakeTimers();
-
         const promise = fetchLanguageApi('en');
-        await vi.advanceTimersByTimeAsync(0);
-        await promise;
-
-        // Unbounded growth here would be a slow localStorage leak on a long-lived browser.
-        expect(JSON.parse(localStorage.getItem('downloaded-locales') ?? '[]')).toEqual(['en']);
+        return vi
+            .advanceTimersByTimeAsync(0)
+            .then(() => {
+                return promise;
+            })
+            .then(() => {
+                // Unbounded growth here would be a slow localStorage leak on a long-lived browser.
+                expect(JSON.parse(localStorage.getItem('downloaded-locales') ?? '[]')).toEqual([
+                    'en'
+                ]);
+            });
     });
 
     /**
@@ -165,163 +178,182 @@ describe('fetchLanguageApi', () => {
      * fetched regardless, so the result is Spanish API messages inside a UI that falls back per
      * key: degrading key by key rather than all-or-nothing.
      */
-    it('resolves API copy with an empty UI dictionary when the locale file does not exist', async () => {
+    it('resolves API copy with an empty UI dictionary when the locale file does not exist', () => {
         vi.useFakeTimers();
-
         const promise = fetchLanguageApi('es');
-        await vi.advanceTimersByTimeAsync(1000);
-
-        await expect(promise).resolves.toEqual(['es', { api: { greeting: 'from-the-api' } }]);
-        expect(getLocaleDictionaryMock).toHaveBeenCalledWith('es');
+        return vi
+            .advanceTimersByTimeAsync(1000)
+            .then(() => {
+                return expect(promise).resolves.toEqual([
+                    'es',
+                    { api: { greeting: 'from-the-api' } }
+                ]);
+            })
+            .then(() => {
+                expect(getLocaleDictionaryMock).toHaveBeenCalledWith('es');
+            });
     });
 
-    it('never rejects when the API dictionary cannot be fetched', async () => {
+    it('never rejects when the API dictionary cannot be fetched', () => {
         getLocaleDictionaryMock.mockRejectedValueOnce(new Error('network down'));
         vi.useFakeTimers();
-
         const promise = fetchLanguageApi('it');
-        await vi.advanceTimersByTimeAsync(1000);
-        const [locale, dictionary] = await promise;
-
-        // The UI half still loaded; only `api.*` is empty. A dead API must never strand a
-        // navigation or blank the interface.
-        expect(locale).toBe('it');
-        expect(dictionary.api).toEqual({});
-        expect(Object.keys(dictionary).length).toBeGreaterThan(1);
+        return vi
+            .advanceTimersByTimeAsync(1000)
+            .then(() => {
+                return promise;
+            })
+            .then(([locale, dictionary]) => {
+                // The UI half still loaded; only `api.*` is empty. A dead API must never strand a
+                // navigation or blank the interface.
+                expect(locale).toBe('it');
+                expect(dictionary.api).toEqual({});
+                expect(Object.keys(dictionary).length).toBeGreaterThan(1);
+            });
     });
 
-    it('puts the API dictionary under api.* and never at the root', async () => {
+    it('puts the API dictionary under api.* and never at the root', () => {
         getLocaleDictionaryMock.mockResolvedValueOnce({
             data: { messages: { ['users-form']: { ['email-invalid']: 'API COPY' } } }
         });
         vi.useFakeTimers();
-
         const promise = fetchLanguageApi('it');
-        await vi.advanceTimersByTimeAsync(1000);
-        const [, dictionary] = await promise;
-
-        // The API's `users-form` key is namespaced, so it cannot shadow this app's own — which
-        // is the collision the reserved namespace exists to prevent.
-        expect(dictionary.api).toEqual({ ['users-form']: { ['email-invalid']: 'API COPY' } });
-        expect((dictionary['users-form'] as Record<string, string>)['email-invalid']).not.toBe(
-            'API COPY'
-        );
+        return vi
+            .advanceTimersByTimeAsync(1000)
+            .then(() => {
+                return promise;
+            })
+            .then(([, dictionary]) => {
+                // The API's `users-form` key is namespaced, so it cannot shadow this app's own — which
+                // is the collision the reserved namespace exists to prevent.
+                expect(dictionary.api).toEqual({
+                    ['users-form']: { ['email-invalid']: 'API COPY' }
+                });
+                expect(
+                    (dictionary['users-form'] as Record<string, string>)['email-invalid']
+                ).not.toBe('API COPY');
+            });
     });
 
-    it('treats a corrupted downloaded-locales entry as empty rather than throwing', async () => {
+    it('treats a corrupted downloaded-locales entry as empty rather than throwing', () => {
         localStorage.setItem('downloaded-locales', 'not-json{');
         vi.useFakeTimers();
 
         const promise = fetchLanguageApi('en');
         // Corrupted store ⇒ "not downloaded" ⇒ the full delay applies.
-        await vi.advanceTimersByTimeAsync(1000);
-        const [locale, dictionary] = await promise;
-
-        // The locale still loads for real...
-        expect(locale).toBe('en');
-        expect(Object.keys(dictionary).length).toBeGreaterThan(0);
-        // ...and the corrupted value is replaced by a well-formed list, so the browser
-        // self-heals instead of re-paying the latency on every navigation forever.
-        expect(JSON.parse(localStorage.getItem('downloaded-locales') ?? 'null')).toEqual(['en']);
+        return vi
+            .advanceTimersByTimeAsync(1000)
+            .then(() => promise)
+            .then(([locale, dictionary]) => {
+                // The locale still loads for real...
+                expect(locale).toBe('en');
+                expect(Object.keys(dictionary).length).toBeGreaterThan(0);
+                // ...and the corrupted value is replaced by a well-formed list, so the browser
+                // self-heals instead of re-paying the latency on every navigation forever.
+                expect(JSON.parse(localStorage.getItem('downloaded-locales') ?? 'null')).toEqual([
+                    'en'
+                ]);
+            });
     });
 
-    it('still resolves when localStorage writes are unavailable', async () => {
+    it('still resolves when localStorage writes are unavailable', () => {
         // Private-mode / quota: the documented behaviour is to swallow and simply re-simulate
         // the latency next time, never to fail the navigation.
         const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
             throw new Error('QuotaExceededError');
         });
         vi.useFakeTimers();
-
         const promise = fetchLanguageApi('en');
-        await vi.advanceTimersByTimeAsync(1000);
-        const [, dictionary] = await promise;
-
-        expect(Object.keys(dictionary).length).toBeGreaterThan(0);
-        setItemSpy.mockRestore();
+        return vi
+            .advanceTimersByTimeAsync(1000)
+            .then(() => {
+                return promise;
+            })
+            .then(([, dictionary]) => {
+                expect(Object.keys(dictionary).length).toBeGreaterThan(0);
+                setItemSpy.mockRestore();
+            });
     });
 });
 
 describe('localeChoice', () => {
-    it('proceeds without reloading when the locale is already loaded and active', async () => {
+    it('proceeds without reloading when the locale is already loaded and active', () => {
         i18nState.loadedLanguages = ['en'];
         i18nState.currentLocale = 'en';
-
-        const result = await localeChoice(routeTo({ params: { locale: 'en' } }));
-
-        // Literal `true`, not merely truthy: a redirect object is also truthy, and returning one
-        // here is what produces an infinite navigation loop.
-        expect(result).toBe(true);
-        expect(changeLanguageMock).not.toHaveBeenCalled();
+        return localeChoice(routeTo({ params: { locale: 'en' } })).then((result) => {
+            // Literal `true`, not merely truthy: a redirect object is also truthy, and returning one
+            // here is what produces an infinite navigation loop.
+            expect(result).toBe(true);
+            expect(changeLanguageMock).not.toHaveBeenCalled();
+        });
     });
 
-    it('switches the active language when the loaded locale differs from the current one', async () => {
+    it('switches the active language when the loaded locale differs from the current one', () => {
         i18nState.loadedLanguages = ['en', 'it'];
         i18nState.currentLocale = 'en';
-
-        const result = await localeChoice(routeTo({ params: { locale: 'it' } }));
-
-        expect(result).toBe(true);
-        expect(changeLanguageMock).toHaveBeenCalledWith('it');
-        // Already loaded ⇒ no re-download.
-        expect(updateLocaleMock).not.toHaveBeenCalled();
+        return localeChoice(routeTo({ params: { locale: 'it' } })).then((result) => {
+            expect(result).toBe(true);
+            expect(changeLanguageMock).toHaveBeenCalledWith('it');
+            // Already loaded ⇒ no re-download.
+            expect(updateLocaleMock).not.toHaveBeenCalled();
+        });
     });
 
-    it('fetches, registers and activates a supported but unloaded locale', async () => {
+    it('fetches, registers and activates a supported but unloaded locale', () => {
         i18nState.loadedLanguages = [];
         i18nState.supportedLanguages = ['en', 'it'];
         vi.useFakeTimers();
-
         const promise = localeChoice(routeTo({ params: { locale: 'it' } }));
-        await vi.advanceTimersByTimeAsync(1000);
-        const result = await promise;
-
-        expect(result).toBe(true);
-        // Order matters: messages must be registered before the language is switched, or the
-        // first render after the switch has no translations.
-        expect(updateLocaleMock).toHaveBeenCalledWith('it', expect.any(Object));
-        expect(changeLanguageMock).toHaveBeenCalledWith('it');
+        return vi
+            .advanceTimersByTimeAsync(1000)
+            .then(() => {
+                return promise;
+            })
+            .then((result) => {
+                expect(result).toBe(true);
+                // Order matters: messages must be registered before the language is switched, or the
+                // first render after the switch has no translations.
+                expect(updateLocaleMock).toHaveBeenCalledWith('it', expect.any(Object));
+                expect(changeLanguageMock).toHaveBeenCalledWith('it');
+            });
     });
 
-    it('redirects an unsupported locale to the default, preserving route name and query', async () => {
+    it('redirects an unsupported locale to the default, preserving route name and query', () => {
         i18nState.supportedLanguages = ['en', 'it'];
         i18nState.defaultLocale = 'en';
-
-        const result = await localeChoice(
+        return localeChoice(
             routeTo({
                 name: 'products',
                 params: { locale: 'kl', id: '42' },
                 query: { page: '2' }
             })
-        );
-
-        // Dropping params or query here would silently lose the user's place on every
-        // locale-less deep link.
-        expect(result).toEqual({
-            name: 'products',
-            params: { locale: 'en', id: '42' },
-            query: { page: '2' }
+        ).then((result) => {
+            // Dropping params or query here would silently lose the user's place on every
+            // locale-less deep link.
+            expect(result).toEqual({
+                name: 'products',
+                params: { locale: 'en', id: '42' },
+                query: { page: '2' }
+            });
         });
     });
 
-    it('redirects when the route carries no locale at all', async () => {
+    it('redirects when the route carries no locale at all', () => {
         i18nState.defaultLocale = 'it';
-
-        const result = await localeChoice(routeTo({ name: 'home', params: {} }));
-
-        expect(result).toEqual({
-            name: 'home',
-            params: { locale: 'it' },
-            query: {}
+        return localeChoice(routeTo({ name: 'home', params: {} })).then((result) => {
+            expect(result).toEqual({
+                name: 'home',
+                params: { locale: 'it' },
+                query: {}
+            });
         });
     });
 
-    it('does not activate any language while redirecting', async () => {
+    it('does not activate any language while redirecting', () => {
         i18nState.supportedLanguages = ['en'];
-
-        await localeChoice(routeTo({ params: { locale: 'zz' } }));
-
-        expect(changeLanguageMock).not.toHaveBeenCalled();
-        expect(updateLocaleMock).not.toHaveBeenCalled();
+        return localeChoice(routeTo({ params: { locale: 'zz' } })).then(() => {
+            expect(changeLanguageMock).not.toHaveBeenCalled();
+            expect(updateLocaleMock).not.toHaveBeenCalled();
+        });
     });
 });

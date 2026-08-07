@@ -49,28 +49,34 @@ describe('Login view, language switched mid-form', () => {
     beforeEach(() => loadLocale('en'));
     afterEach(() => loadLocale('en'));
 
-    it('re-translates a displayed validation error', async () => {
+    it('re-translates a displayed validation error', () => {
         const wrapper = mountLogin();
 
-        await wrapper.get('input[type="email"]').setValue('not-an-email');
-        await wrapper.get('form').trigger('submit');
-        await nextTick();
-
-        expect(errorTexts(wrapper)).toContain(enMessages['users-form']['email-invalid']);
-
-        await loadLocale('it');
-        await nextTick();
-
-        expect(errorTexts(wrapper)).toContain(itMessages['users-form']['email-invalid']);
-        expect(errorTexts(wrapper)).not.toContain(enMessages['users-form']['email-invalid']);
+        return wrapper
+            .get('input[type="email"]')
+            .setValue('not-an-email')
+            .then(() => wrapper.get('form').trigger('submit'))
+            .then(() => nextTick())
+            .then(() => {
+                expect(errorTexts(wrapper)).toContain(enMessages['users-form']['email-invalid']);
+                return loadLocale('it');
+            })
+            .then(() => nextTick())
+            .then(() => {
+                expect(errorTexts(wrapper)).toContain(itMessages['users-form']['email-invalid']);
+                expect(errorTexts(wrapper)).not.toContain(
+                    enMessages['users-form']['email-invalid']
+                );
+            });
     });
 
-    it('does not put errors on a pristine form just because the language changed', async () => {
+    it('does not put errors on a pristine form just because the language changed', () => {
         const wrapper = mountLogin();
 
-        await loadLocale('it');
-        await nextTick();
-
-        expect(errorTexts(wrapper)).toEqual([]);
+        return loadLocale('it')
+            .then(() => nextTick())
+            .then(() => {
+                expect(errorTexts(wrapper)).toEqual([]);
+            });
     });
 });

@@ -61,82 +61,87 @@ describe('useCartStore', () => {
     });
 
     describe('fetchCart', () => {
-        it('stores the payload and derives items, summary and count from it', async () => {
+        it('stores the payload and derives items, summary and count from it', () => {
             const store = useCartStore();
-            await store.fetchCart();
 
-            expect(getCart).toHaveBeenCalled();
-            expect(store.cartItems).toEqual(CART.items);
-            expect(store.cartSummary).toEqual(CART.summary);
-            expect(store.cartCount).toBe(1);
+            return store.fetchCart().then(() => {
+                expect(getCart).toHaveBeenCalled();
+                expect(store.cartItems).toEqual(CART.items);
+                expect(store.cartSummary).toEqual(CART.summary);
+                expect(store.cartCount).toBe(1);
+            });
         });
     });
 
     describe('upsertCartItem', () => {
-        it('sends the product and quantity and replaces the local cart', async () => {
+        it('sends the product and quantity and replaces the local cart', () => {
             const store = useCartStore();
-            await store.upsertCartItem('p1', 2);
 
-            expect(upsertCartItem).toHaveBeenCalledWith({ productId: 'p1', quantity: 2 });
-            expect(store.cartItems).toEqual(CART.items);
-        });
-
-        it('tracks the add event with the product and quantity', async () => {
-            const store = useCartStore();
-            await store.upsertCartItem('p1', 2);
-
-            expect(track).toHaveBeenCalledWith(analyticsEvents.CART_ITEM_ADDED, {
-                product_id: 'p1',
-                quantity: 2
+            return store.upsertCartItem('p1', 2).then(() => {
+                expect(upsertCartItem).toHaveBeenCalledWith({ productId: 'p1', quantity: 2 });
+                expect(store.cartItems).toEqual(CART.items);
             });
         });
+
+        it('tracks the add event with the product and quantity', () =>
+            useCartStore()
+                .upsertCartItem('p1', 2)
+                .then(() => {
+                    expect(track).toHaveBeenCalledWith(analyticsEvents.CART_ITEM_ADDED, {
+                        product_id: 'p1',
+                        quantity: 2
+                    });
+                }));
     });
 
     describe('updateCartItem', () => {
-        it('sends only the quantity, with the product in the path', async () => {
-            const store = useCartStore();
-            await store.updateCartItem('p1', 5);
+        it('sends only the quantity, with the product in the path', () =>
+            useCartStore()
+                .updateCartItem('p1', 5)
+                .then(() => {
+                    expect(updateCartItemById).toHaveBeenCalledWith('p1', { quantity: 5 });
+                }));
 
-            expect(updateCartItemById).toHaveBeenCalledWith('p1', { quantity: 5 });
-        });
-
-        it('emits no analytics event', async () => {
-            const store = useCartStore();
-            await store.updateCartItem('p1', 5);
-
-            expect(track).not.toHaveBeenCalled();
-        });
+        it('emits no analytics event', () =>
+            useCartStore()
+                .updateCartItem('p1', 5)
+                .then(() => {
+                    expect(track).not.toHaveBeenCalled();
+                }));
     });
 
     describe('removeCartItem', () => {
-        it('replaces the local cart with the emptied one and tracks the removal', async () => {
+        it('replaces the local cart with the emptied one and tracks the removal', () => {
             const store = useCartStore();
-            await store.fetchCart();
-            await store.removeCartItem('p1');
 
-            expect(removeCartItem).toHaveBeenCalledWith('p1');
-            expect(store.cartItems).toEqual([]);
-            expect(track).toHaveBeenCalledWith(analyticsEvents.CART_ITEM_REMOVED, {
-                product_id: 'p1'
-            });
+            return store
+                .fetchCart()
+                .then(() => store.removeCartItem('p1'))
+                .then(() => {
+                    expect(removeCartItem).toHaveBeenCalledWith('p1');
+                    expect(store.cartItems).toEqual([]);
+                    expect(track).toHaveBeenCalledWith(analyticsEvents.CART_ITEM_REMOVED, {
+                        product_id: 'p1'
+                    });
+                });
         });
     });
 
     describe('clearCart', () => {
-        it('sends no body and tracks `cart_cleared` when clearing everything', async () => {
-            const store = useCartStore();
-            await store.clearCart();
+        it('sends no body and tracks `cart_cleared` when clearing everything', () =>
+            useCartStore()
+                .clearCart()
+                .then(() => {
+                    expect(clearCart).toHaveBeenCalledWith(undefined);
+                    expect(track).toHaveBeenCalledWith(analyticsEvents.CART_CLEARED);
+                }));
 
-            expect(clearCart).toHaveBeenCalledWith(undefined);
-            expect(track).toHaveBeenCalledWith(analyticsEvents.CART_CLEARED);
-        });
-
-        it('sends a productId body and tracks nothing when removing one line', async () => {
-            const store = useCartStore();
-            await store.clearCart('p1');
-
-            expect(clearCart).toHaveBeenCalledWith({ productId: 'p1' });
-            expect(track).not.toHaveBeenCalled();
-        });
+        it('sends a productId body and tracks nothing when removing one line', () =>
+            useCartStore()
+                .clearCart('p1')
+                .then(() => {
+                    expect(clearCart).toHaveBeenCalledWith({ productId: 'p1' });
+                    expect(track).not.toHaveBeenCalled();
+                }));
     });
 });

@@ -119,10 +119,10 @@ describe('onRequest', () => {
 });
 
 describe('onRequestReject', () => {
-    it('forwards a setup failure untouched', async () => {
+    it('forwards a setup failure untouched', () => {
         const error = { message: 'Network Error' } as AxiosError;
 
-        await expect(onRequestReject(error)).rejects.toBe(error);
+        return expect(onRequestReject(error)).rejects.toBe(error);
     });
 });
 
@@ -131,10 +131,11 @@ describe('onRequestReject', () => {
  * A refresh attempt reaches the profile store via `setAccessToken`; an excluded path must
  * reject without ever getting there.
  */
-const attemptedRefresh = async (url: string) => {
+const attemptedRefresh = (url: string) => {
     setAccessTokenMock.mockClear();
-    await onResponseRejectWithRefresh(make401(url)).catch(() => {});
-    return setAccessTokenMock.mock.calls.length > 0;
+    return onResponseRejectWithRefresh(make401(url))
+        .catch(() => {})
+        .then(() => setAccessTokenMock.mock.calls.length > 0);
 };
 
 describe('refresh exclusion list', () => {
@@ -144,17 +145,14 @@ describe('refresh exclusion list', () => {
         ['/account/reset'],
         ['/account/reset-confirm'],
         ['/account/logout-all']
-    ])('does not attempt a refresh for a 401 from %s', async (url) => {
+    ])('does not attempt a refresh for a 401 from %s', (url) =>
         // Each of these answers 401 as a normal business outcome — wrong password, expired reset
         // link, already-invalidated session. Refreshing would mask the real message.
-        await expect(attemptedRefresh(url)).resolves.toBe(false);
-    });
+        expect(attemptedRefresh(url)).resolves.toBe(false)
+    );
 
-    it('recognises an excluded path given as an absolute url', async () => {
+    it('recognises an excluded path given as an absolute url', () =>
         // Generated clients send relative urls, but a caller passing an absolute one must get
         // the same treatment — otherwise the exclusion silently stops applying.
-        await expect(attemptedRefresh('https://api.example.com/account/login')).resolves.toBe(
-            false
-        );
-    });
+        expect(attemptedRefresh('https://api.example.com/account/login')).resolves.toBe(false));
 });

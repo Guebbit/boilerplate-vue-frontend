@@ -17,10 +17,7 @@ import itMessages from '@/locales/it.json';
  * `t` would assert that a key was looked up, which is the thing that was already true and still
  * shipped the bug.
  */
-const setLocale = async (locale: string) => {
-    await loadLocale(locale);
-    await nextTick();
-};
+const setLocale = (locale: string) => loadLocale(locale).then(() => nextTick());
 
 /**
  * Every issue message a schema produces for a value, in the currently active locale.
@@ -34,55 +31,51 @@ describe('feature schemas follow the active locale', () => {
     beforeAll(() => setLocale('en'));
     afterEach(() => setLocale('en'));
 
-    it('resolves user messages in English, then in Italian, from the same schema object', async () => {
+    it('resolves user messages in English, then in Italian, from the same schema object', () => {
         expect(messagesOf(usersSchema, { email: 'nope', username: 'a' })).toEqual(
             expect.arrayContaining([enMessages['users-form']['email-invalid']])
         );
 
-        await setLocale('it');
-
-        expect(messagesOf(usersSchema, { email: 'nope', username: 'a' })).toEqual(
-            expect.arrayContaining([itMessages['users-form']['email-invalid']])
-        );
+        return setLocale('it').then(() => {
+            expect(messagesOf(usersSchema, { email: 'nope', username: 'a' })).toEqual(
+                expect.arrayContaining([itMessages['users-form']['email-invalid']])
+            );
+        });
     });
 
-    it('does the same for every password rule, including the refinements', async () => {
-        await setLocale('it');
+    it('does the same for every password rule, including the refinements', () =>
+        setLocale('it').then(() => {
+            expect(messagesOf(usersPasswordSchema, 'short')).toEqual(
+                expect.arrayContaining([
+                    itMessages['users-form']['password-min'],
+                    itMessages['users-form']['password-maius-required'],
+                    itMessages['users-form']['password-number-required'],
+                    itMessages['users-form']['password-special-required']
+                ])
+            );
+        }));
 
-        const messages = messagesOf(usersPasswordSchema, 'short');
-
-        expect(messages).toEqual(
-            expect.arrayContaining([
-                itMessages['users-form']['password-min'],
-                itMessages['users-form']['password-maius-required'],
-                itMessages['users-form']['password-number-required'],
-                itMessages['users-form']['password-special-required']
-            ])
-        );
-    });
-
-    it('does the same for products', async () => {
+    it('does the same for products', () => {
         expect(messagesOf(productsSchema, { title: '', price: -1 })).toEqual(
             expect.arrayContaining([enMessages['products-form']['title-required']])
         );
 
-        await setLocale('it');
-
-        expect(messagesOf(productsSchema, { title: '', price: -1 })).toEqual(
-            expect.arrayContaining([itMessages['products-form']['title-required']])
-        );
+        return setLocale('it').then(() => {
+            expect(messagesOf(productsSchema, { title: '', price: -1 })).toEqual(
+                expect.arrayContaining([itMessages['products-form']['title-required']])
+            );
+        });
     });
 
-    it('does the same for orders', async () => {
-        await setLocale('it');
-
-        expect(messagesOf(orderSchema, { email: 'nope', status: 'not-a-status' })).toEqual(
-            expect.arrayContaining([
-                itMessages['orders-form']['email-invalid'],
-                itMessages['orders-form']['status-invalid']
-            ])
-        );
-    });
+    it('does the same for orders', () =>
+        setLocale('it').then(() => {
+            expect(messagesOf(orderSchema, { email: 'nope', status: 'not-a-status' })).toEqual(
+                expect.arrayContaining([
+                    itMessages['orders-form']['email-invalid'],
+                    itMessages['orders-form']['status-invalid']
+                ])
+            );
+        }));
 });
 
 /**
@@ -115,28 +108,34 @@ describe('displayed errors and a locale switch', () => {
     beforeAll(() => setLocale('en'));
     afterEach(() => setLocale('en'));
 
-    it('re-translates an error already on screen when revalidateOn is wired', async () => {
+    it('re-translates an error already on screen when revalidateOn is wired', () => {
         const wrapper = mount(createHarness({ revalidateOn: i18n.global.locale }), {
             global: { plugins: [i18n] }
         });
 
         wrapper.vm.validate();
-        await nextTick();
-        expect(wrapper.get('.error').text()).toBe(enMessages['users-form']['email-invalid']);
-
-        await setLocale('it');
-
-        expect(wrapper.get('.error').text()).toBe(itMessages['users-form']['email-invalid']);
+        return nextTick()
+            .then(() => {
+                expect(wrapper.get('.error').text()).toBe(
+                    enMessages['users-form']['email-invalid']
+                );
+                return setLocale('it');
+            })
+            .then(() => {
+                expect(wrapper.get('.error').text()).toBe(
+                    itMessages['users-form']['email-invalid']
+                );
+            });
     });
 
-    it('leaves a form that was never validated untouched', async () => {
+    it('leaves a form that was never validated untouched', () => {
         const wrapper = mount(createHarness({ revalidateOn: i18n.global.locale }), {
             global: { plugins: [i18n] }
         });
 
-        await setLocale('it');
-
-        expect(wrapper.get('.error').text()).toBe('');
+        return setLocale('it').then(() => {
+            expect(wrapper.get('.error').text()).toBe('');
+        });
     });
 
     /**
@@ -144,14 +143,16 @@ describe('displayed errors and a locale switch', () => {
      * an Italian UI. If a future change makes this pass, `revalidateOn` has become redundant and
      * the option — not this test — is what should go.
      */
-    it('goes stale without revalidateOn, which is the whole reason the option exists', async () => {
+    it('goes stale without revalidateOn, which is the whole reason the option exists', () => {
         const wrapper = mount(createHarness(), { global: { plugins: [i18n] } });
 
         wrapper.vm.validate();
-        await nextTick();
-
-        await setLocale('it');
-
-        expect(wrapper.get('.error').text()).toBe(enMessages['users-form']['email-invalid']);
+        return nextTick()
+            .then(() => setLocale('it'))
+            .then(() => {
+                expect(wrapper.get('.error').text()).toBe(
+                    enMessages['users-form']['email-invalid']
+                );
+            });
     });
 });

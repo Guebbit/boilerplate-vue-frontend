@@ -39,44 +39,42 @@ afterEach(() => {
 });
 
 describe('fetchApiLocales', () => {
-    it('returns the languages the API reports', async () => {
-        await expect(fetchApiLocales()).resolves.toEqual(['en', 'it']);
+    it('returns the languages the API reports', () => {
+        return expect(fetchApiLocales()).resolves.toEqual(['en', 'it']);
     });
 
-    it('returns an empty list when the API is unreachable', async () => {
+    it('returns an empty list when the API is unreachable', () => {
         getLocalesMock.mockRejectedValue(new Error('network down'));
-
-        await expect(fetchApiLocales()).resolves.toEqual([]);
+        return expect(fetchApiLocales()).resolves.toEqual([]);
     });
 
     /**
      * An older API, or a different one entirely — these boilerplates are meant to be recombined,
      * so a counterpart without the endpoint is a supported configuration, not a fault.
      */
-    it('returns an empty list when the API does not implement the endpoint', async () => {
+    it('returns an empty list when the API does not implement the endpoint', () => {
         getLocalesMock.mockResolvedValue({ data: undefined });
-
-        await expect(fetchApiLocales()).resolves.toEqual([]);
+        return expect(fetchApiLocales()).resolves.toEqual([]);
     });
 });
 
 describe('fetchApiDictionary', () => {
-    it('returns the API’s messages', async () => {
-        await expect(fetchApiDictionary('it')).resolves.toEqual({ greeting: 'Ciao' });
-
-        expect(getLocaleDictionaryMock).toHaveBeenCalledWith('it');
+    it('returns the API’s messages', () => {
+        return expect(fetchApiDictionary('it'))
+            .resolves.toEqual({ greeting: 'Ciao' })
+            .then(() => {
+                expect(getLocaleDictionaryMock).toHaveBeenCalledWith('it');
+            });
     });
 
-    it('returns an empty dictionary rather than rejecting when the fetch fails', async () => {
+    it('returns an empty dictionary rather than rejecting when the fetch fails', () => {
         getLocaleDictionaryMock.mockRejectedValue(new Error('network down'));
-
-        await expect(fetchApiDictionary('it')).resolves.toEqual({});
+        return expect(fetchApiDictionary('it')).resolves.toEqual({});
     });
 
-    it('returns an empty dictionary when the API has no such locale', async () => {
+    it('returns an empty dictionary when the API has no such locale', () => {
         getLocaleDictionaryMock.mockResolvedValue({ data: undefined });
-
-        await expect(fetchApiDictionary('kl')).resolves.toEqual({});
+        return expect(fetchApiDictionary('kl')).resolves.toEqual({});
     });
 });
 
@@ -85,76 +83,77 @@ describe('mergeApiLocales', () => {
      * The whole point: a language only the server has must reach the switcher, or it can never be
      * chosen and the API's ability to answer in it is unreachable.
      */
-    it('adds a language only the API has', async () => {
+    it('adds a language only the API has', () => {
         supportedLanguages.splice(0, Number.POSITIVE_INFINITY, 'en');
         getLocalesMock.mockResolvedValue({ data: { locales: ['en', 'it', 'es'] } });
-
-        await expect(mergeApiLocales()).resolves.toEqual(['it', 'es']);
-
-        expect(supportedLanguages).toEqual(['en', 'it', 'es']);
+        return expect(mergeApiLocales())
+            .resolves.toEqual(['it', 'es'])
+            .then(() => {
+                expect(supportedLanguages).toEqual(['en', 'it', 'es']);
+            });
     });
 
-    it('is a union, so a language only this app has survives', async () => {
+    it('is a union, so a language only this app has survives', () => {
         supportedLanguages.splice(0, Number.POSITIVE_INFINITY, 'en', 'fr');
         getLocalesMock.mockResolvedValue({ data: { locales: ['en', 'it'] } });
-
-        await mergeApiLocales();
-
-        expect(supportedLanguages).toContain('fr');
-        expect(supportedLanguages).toContain('it');
+        return mergeApiLocales().then(() => {
+            expect(supportedLanguages).toContain('fr');
+            expect(supportedLanguages).toContain('it');
+        });
     });
 
-    it('adds nothing twice', async () => {
+    it('adds nothing twice', () => {
         supportedLanguages.splice(0, Number.POSITIVE_INFINITY, 'en', 'it');
-
-        await mergeApiLocales();
-        await mergeApiLocales();
-
-        expect(supportedLanguages).toEqual(['en', 'it']);
+        return mergeApiLocales()
+            .then(() => {
+                return mergeApiLocales();
+            })
+            .then(() => {
+                expect(supportedLanguages).toEqual(['en', 'it']);
+            });
     });
 
     /**
      * Boot must not depend on the API being up. `main.ts` awaits this before the first
      * navigation, so a rejection here would be a blank page rather than a degraded one.
      */
-    it('leaves the build-time list intact when the API is unreachable', async () => {
+    it('leaves the build-time list intact when the API is unreachable', () => {
         supportedLanguages.splice(0, Number.POSITIVE_INFINITY, 'en', 'it');
         getLocalesMock.mockRejectedValue(new Error('network down'));
-
-        await expect(mergeApiLocales()).resolves.toEqual([]);
-
-        expect(supportedLanguages).toEqual(['en', 'it']);
+        return expect(mergeApiLocales())
+            .resolves.toEqual([])
+            .then(() => {
+                expect(supportedLanguages).toEqual(['en', 'it']);
+            });
     });
 });
 
 describe('withApiDictionary', () => {
-    it('nests the API’s keys under the reserved namespace', async () => {
-        const merged = await withApiDictionary('it', { greeting: 'Ciao dalla UI' });
-
-        expect(merged.greeting).toBe('Ciao dalla UI');
-        expect(merged[API_NAMESPACE]).toEqual({ greeting: 'Ciao' });
+    it('nests the API’s keys under the reserved namespace', () => {
+        return withApiDictionary('it', { greeting: 'Ciao dalla UI' }).then((merged) => {
+            expect(merged.greeting).toBe('Ciao dalla UI');
+            expect(merged[API_NAMESPACE]).toEqual({ greeting: 'Ciao' });
+        });
     });
 
     /**
      * Two independently-authored keyspaces will eventually pick the same key. Namespacing is what
      * makes that a non-event instead of a silent overwrite decided by load order.
      */
-    it('cannot overwrite this app’s own copy', async () => {
+    it('cannot overwrite this app’s own copy', () => {
         getLocaleDictionaryMock.mockResolvedValue({
             data: { messages: { greeting: 'from the API' } }
         });
-
-        const merged = await withApiDictionary('it', { greeting: 'from the UI' });
-
-        expect(merged.greeting).toBe('from the UI');
+        return withApiDictionary('it', { greeting: 'from the UI' }).then((merged) => {
+            expect(merged.greeting).toBe('from the UI');
+        });
     });
 
-    it('still returns this app’s copy when the API dictionary cannot be fetched', async () => {
+    it('still returns this app’s copy when the API dictionary cannot be fetched', () => {
         getLocaleDictionaryMock.mockRejectedValue(new Error('network down'));
-
-        const merged = await withApiDictionary('it', { greeting: 'Ciao dalla UI' });
-
-        expect(merged.greeting).toBe('Ciao dalla UI');
-        expect(merged[API_NAMESPACE]).toEqual({});
+        return withApiDictionary('it', { greeting: 'Ciao dalla UI' }).then((merged) => {
+            expect(merged.greeting).toBe('Ciao dalla UI');
+            expect(merged[API_NAMESPACE]).toEqual({});
+        });
     });
 });

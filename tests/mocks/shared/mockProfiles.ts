@@ -165,17 +165,13 @@ export const buildSeedDatabase = (): IMockSeedData => {
  * Builds a faker-seeded, contract-valid database. See `mockProfilesRandom.ts` for the
  * implementation and the design constraints it has to satisfy.
  */
-export const buildRandomDatabase = async (): Promise<IMockSeedData> => {
-    const random = await import('./mockProfilesRandom.ts');
-    return random.buildRandomDatabase();
-};
+export const buildRandomDatabase = (): Promise<IMockSeedData> =>
+    import('./mockProfilesRandom.ts').then((random) => random.buildRandomDatabase());
 
 /**
  * The RNG seed backing the random profile — see `mockProfilesRandom.ts`'s `resolveMockSeed()`
  * for how it's resolved and why it's memoised. Exposed here so callers that only need the seed
  * for logging (`apiMock.ts`) don't need to know the random profile is a separate module.
  */
-export const resolveMockSeed = async (): Promise<number> => {
-    const random = await import('./mockProfilesRandom.ts');
-    return random.resolveMockSeed();
-};
+export const resolveMockSeed = (): Promise<number> =>
+    import('./mockProfilesRandom.ts').then((random) => random.resolveMockSeed());

@@ -64,39 +64,36 @@ describe('_loadLocale', () => {
     });
     afterEach(() => restore());
 
-    it('imports and activates a supported locale that is not loaded yet', async () => {
+    it('imports and activates a supported locale that is not loaded yet', () => {
         const instance = freshInstance();
         loadedLanguages.splice(0);
-
-        await _loadLocale(instance, 'it');
-
-        expect(instance.global.locale.value).toBe('it');
-        expect(loadedLanguages).toContain('it');
-        expect(instance.global.t('users-form.email-invalid')).toBe(
-            itMessages['users-form']['email-invalid']
-        );
+        return _loadLocale(instance, 'it').then(() => {
+            expect(instance.global.locale.value).toBe('it');
+            expect(loadedLanguages).toContain('it');
+            expect(instance.global.t('users-form.email-invalid')).toBe(
+                itMessages['users-form']['email-invalid']
+            );
+        });
     });
 
-    it('short-circuits when the locale is already loaded', async () => {
+    it('short-circuits when the locale is already loaded', () => {
         const instance = freshInstance();
         loadedLanguages.splice(0, Number.POSITIVE_INFINITY, 'it');
         // Registered by hand rather than imported: if the short circuit is broken and the real
         // file is fetched, this sentinel is overwritten and the assertion fails.
         instance.global.setLocaleMessage('it', { sentinel: 'not-from-the-file' });
-
-        await _loadLocale(instance, 'it');
-
-        expect(instance.global.t('sentinel')).toBe('not-from-the-file');
-        expect(instance.global.locale.value).toBe('it');
+        return _loadLocale(instance, 'it').then(() => {
+            expect(instance.global.t('sentinel')).toBe('not-from-the-file');
+            expect(instance.global.locale.value).toBe('it');
+        });
     });
 
-    it('falls back to the default locale for an unsupported one', async () => {
+    it('falls back to the default locale for an unsupported one', () => {
         const instance = freshInstance();
         loadedLanguages.splice(0);
-
-        await _loadLocale(instance, 'kl');
-
-        expect(instance.global.locale.value).toBe(getDefaultLocale());
+        return _loadLocale(instance, 'kl').then(() => {
+            expect(instance.global.locale.value).toBe(getDefaultLocale());
+        });
     });
 
     /**
@@ -104,13 +101,14 @@ describe('_loadLocale', () => {
      * is that this degrades to the default locale rather than rejecting: callers have no
      * `.catch`, and a failed dictionary must never strand a navigation.
      */
-    it('falls back to the default locale when the import fails', async () => {
+    it('falls back to the default locale when the import fails', () => {
         const instance = freshInstance();
         loadedLanguages.splice(0);
-
-        await expect(_loadLocale(instance, 'es')).resolves.not.toThrow();
-
-        expect(instance.global.locale.value).toBe(getDefaultLocale());
+        return expect(_loadLocale(instance, 'es'))
+            .resolves.not.toThrow()
+            .then(() => {
+                expect(instance.global.locale.value).toBe(getDefaultLocale());
+            });
     });
 });
 
@@ -122,25 +120,26 @@ describe('_updateLocale', () => {
     });
     afterEach(() => restore());
 
-    it('registers a dictionary fetched from somewhere other than the bundle', async () => {
+    it('registers a dictionary fetched from somewhere other than the bundle', () => {
         const instance = freshInstance();
-
-        await _updateLocale(instance, 'es', { greeting: 'Hola' });
-        instance.global.locale.value = 'es';
-
-        expect(instance.global.t('greeting')).toBe('Hola');
-        expect(loadedLanguages).toContain('es');
+        return _updateLocale(instance, 'es', { greeting: 'Hola' }).then(() => {
+            instance.global.locale.value = 'es';
+            expect(instance.global.t('greeting')).toBe('Hola');
+            expect(loadedLanguages).toContain('es');
+        });
     });
 
-    it('overwrites an existing dictionary without duplicating the loaded entry', async () => {
+    it('overwrites an existing dictionary without duplicating the loaded entry', () => {
         const instance = freshInstance();
-
-        await _updateLocale(instance, 'es', { greeting: 'Hola' });
-        await _updateLocale(instance, 'es', { greeting: 'Buenas' });
-        instance.global.locale.value = 'es';
-
-        expect(instance.global.t('greeting')).toBe('Buenas');
-        expect(loadedLanguages.filter((locale) => locale === 'es')).toHaveLength(1);
+        return _updateLocale(instance, 'es', { greeting: 'Hola' })
+            .then(() => {
+                return _updateLocale(instance, 'es', { greeting: 'Buenas' });
+            })
+            .then(() => {
+                instance.global.locale.value = 'es';
+                expect(instance.global.t('greeting')).toBe('Buenas');
+                expect(loadedLanguages.filter((locale) => locale === 'es')).toHaveLength(1);
+            });
     });
 });
 
@@ -156,13 +155,12 @@ describe('_changeLanguage', () => {
      * `<html lang>` is not decoration: it tells screen readers which pronunciation rules to use
      * and browsers whether to offer a translation. Nothing else in the app sets it.
      */
-    it('keeps <html lang> in sync', async () => {
+    it('keeps <html lang> in sync', () => {
         const instance = freshInstance();
         loadedLanguages.splice(0, Number.POSITIVE_INFINITY, 'it');
-
-        await _changeLanguage(instance, 'it');
-
-        expect(document.documentElement.getAttribute('lang')).toBe('it');
+        return _changeLanguage(instance, 'it').then(() => {
+            expect(document.documentElement.getAttribute('lang')).toBe('it');
+        });
     });
 
     /**
@@ -171,39 +169,38 @@ describe('_changeLanguage', () => {
      * raw identifier, because only that locale had been loaded and there was nothing to fall
      * back to.
      */
-    it('loads the fallback dictionary too, so per-key fallback actually works', async () => {
+    it('loads the fallback dictionary too, so per-key fallback actually works', () => {
         const instance = freshInstance();
         loadedLanguages.splice(0);
+
         // A locale with no local dictionary — the API-only case.
-        await _updateLocale(instance, 'es', { api: { greeting: 'Hola' } });
-
-        await _changeLanguage(instance, 'es');
-
-        expect(instance.global.locale.value).toBe('es');
-        expect(loadedLanguages).toContain('en');
-        // Falls through to the English copy rather than echoing the key back.
-        expect(instance.global.t('users-form.email-invalid')).toBe(
-            enMessages['users-form']['email-invalid']
-        );
+        return _updateLocale(instance, 'es', { api: { greeting: 'Hola' } })
+            .then(() => _changeLanguage(instance, 'es'))
+            .then(() => {
+                expect(instance.global.locale.value).toBe('es');
+                expect(loadedLanguages).toContain('en');
+                // Falls through to the English copy rather than echoing the key back.
+                expect(instance.global.t('users-form.email-invalid')).toBe(
+                    enMessages['users-form']['email-invalid']
+                );
+            });
     });
 
-    it('does not try to load the fallback when it is the locale being activated', async () => {
+    it('does not try to load the fallback when it is the locale being activated', () => {
         const instance = freshInstance();
         loadedLanguages.splice(0, Number.POSITIVE_INFINITY, 'en');
-
-        await expect(_ensureFallbackLoaded(instance, 'en')).resolves.toBeUndefined();
+        return expect(_ensureFallbackLoaded(instance, 'en')).resolves.toBeUndefined();
     });
 
-    it('loads the dictionary first when the locale has never been loaded', async () => {
+    it('loads the dictionary first when the locale has never been loaded', () => {
         const instance = freshInstance();
         loadedLanguages.splice(0);
-
-        await _changeLanguage(instance, 'it');
-
-        expect(instance.global.locale.value).toBe('it');
-        expect(instance.global.t('users-form.email-invalid')).toBe(
-            itMessages['users-form']['email-invalid']
-        );
+        return _changeLanguage(instance, 'it').then(() => {
+            expect(instance.global.locale.value).toBe('it');
+            expect(instance.global.t('users-form.email-invalid')).toBe(
+                itMessages['users-form']['email-invalid']
+            );
+        });
     });
 });
 
@@ -282,7 +279,8 @@ describe('routerLinkI18n', () => {
         expect(result.params).toBeUndefined();
     });
 
-    it('follows the active locale', async () => {
+    it('follows the active locale', () => {
+        // Synchronous: nothing here awaited anything, the `async` was vestigial.
         i18n.global.locale.value = 'it';
         expect(routerLinkI18n('/products')).toBe('/it/products');
         expect(getCurrentLocale()).toBe('it');
@@ -304,29 +302,29 @@ describe('apiText and the reserved api.* namespace', () => {
         void _updateLocale(i18n, 'en', enMessages as ITranslationDictionaries);
     });
 
-    it('uses this app’s own copy when the API dictionary is absent', async () => {
-        await _loadLocale(i18n, 'en');
-
-        expect(apiText('generic.error-unknown', 'api-errors.unknown')).toBe(
-            enMessages['api-errors'].unknown
-        );
-    });
-
-    it('prefers the API’s own wording once its dictionary is registered', async () => {
-        await _loadLocale(i18n, 'en');
-        i18n.global.mergeLocaleMessage('en', {
-            [API_NAMESPACE]: { generic: { ['error-unknown']: 'Server says so' } }
+    it('uses this app’s own copy when the API dictionary is absent', () => {
+        return _loadLocale(i18n, 'en').then(() => {
+            expect(apiText('generic.error-unknown', 'api-errors.unknown')).toBe(
+                enMessages['api-errors'].unknown
+            );
         });
-
-        expect(apiText('generic.error-unknown', 'api-errors.unknown')).toBe('Server says so');
     });
 
-    it('never returns a raw key', async () => {
-        await _loadLocale(i18n, 'en');
+    it('prefers the API’s own wording once its dictionary is registered', () => {
+        return _loadLocale(i18n, 'en').then(() => {
+            i18n.global.mergeLocaleMessage('en', {
+                [API_NAMESPACE]: { generic: { ['error-unknown']: 'Server says so' } }
+            });
+            expect(apiText('generic.error-unknown', 'api-errors.unknown')).toBe('Server says so');
+        });
+    });
 
-        expect(apiText('nothing.at.all', 'api-errors.unknown')).toBe(
-            enMessages['api-errors'].unknown
-        );
+    it('never returns a raw key', () => {
+        return _loadLocale(i18n, 'en').then(() => {
+            expect(apiText('nothing.at.all', 'api-errors.unknown')).toBe(
+                enMessages['api-errors'].unknown
+            );
+        });
     });
 });
 
@@ -388,28 +386,26 @@ describe('module-load configuration', () => {
         vi.resetModules();
     });
 
-    it('derives the locale list from src/locales when no env list is set', async () => {
+    it('derives the locale list from src/locales when no env list is set', () => {
         vi.stubEnv('VITE_APP_SUPPORTED_LOCALES', '');
-
-        const reloaded = await import('@/utils/i18n.ts');
-
-        // The glob sees the real directory: en.json and it.json ship, es.json deliberately does
-        // not (it is the API-only locale).
-        expect(reloaded.supportedLanguages).toContain('en');
-        expect(reloaded.supportedLanguages).toContain('it');
-        expect(reloaded.supportedLanguages).not.toContain('es');
+        return import('@/utils/i18n.ts').then((reloaded) => {
+            // The glob sees the real directory: en.json and it.json ship, es.json deliberately does
+            // not (it is the API-only locale).
+            expect(reloaded.supportedLanguages).toContain('en');
+            expect(reloaded.supportedLanguages).toContain('it');
+            expect(reloaded.supportedLanguages).not.toContain('es');
+        });
     });
 
     it.each([
         ['an empty value', ''],
         ['only separators', ',,'],
         ['only whitespace', '  ,  ']
-    ])('treats %s as "not configured" and discovers from the folder instead', async (_l, value) => {
+    ])('treats %s as "not configured" and discovers from the folder instead', (_l, value) => {
         vi.stubEnv('VITE_APP_SUPPORTED_LOCALES', value);
-
-        const reloaded = await import('@/utils/i18n.ts');
-
-        expect(reloaded.supportedLanguages).toEqual(['en', 'it']);
+        return import('@/utils/i18n.ts').then((reloaded) => {
+            expect(reloaded.supportedLanguages).toEqual(['en', 'it']);
+        });
     });
 
     /**
@@ -422,22 +418,20 @@ describe('module-load configuration', () => {
         ['spaces after the commas', 'en, it, es'],
         ['a stray comma', 'en,,it,es'],
         ['a trailing comma', 'en,it,es,']
-    ])('normalises %s', async (_label, value) => {
+    ])('normalises %s', (_label, value) => {
         vi.stubEnv('VITE_APP_SUPPORTED_LOCALES', value);
-
-        const reloaded = await import('@/utils/i18n.ts');
-
-        expect(reloaded.supportedLanguages).not.toContain('');
-        expect(reloaded.supportedLanguages.every((l) => l === l.trim())).toBe(true);
-        expect(reloaded.supportedLanguages).toEqual(expect.arrayContaining(['en', 'it', 'es']));
+        return import('@/utils/i18n.ts').then((reloaded) => {
+            expect(reloaded.supportedLanguages).not.toContain('');
+            expect(reloaded.supportedLanguages.every((l) => l === l.trim())).toBe(true);
+            expect(reloaded.supportedLanguages).toEqual(expect.arrayContaining(['en', 'it', 'es']));
+        });
     });
 
-    it('keeps a locale the bundle has no dictionary for, so the API can serve it', async () => {
+    it('keeps a locale the bundle has no dictionary for, so the API can serve it', () => {
         vi.stubEnv('VITE_APP_SUPPORTED_LOCALES', 'en,it,es');
-
-        const reloaded = await import('@/utils/i18n.ts');
-
-        expect(reloaded.supportedLanguages).toContain('es');
+        return import('@/utils/i18n.ts').then((reloaded) => {
+            expect(reloaded.supportedLanguages).toContain('es');
+        });
     });
 });
 
@@ -446,16 +440,15 @@ describe('module-load configuration', () => {
  * `products-list-page.modified-products-list` is `@.customSnakeCase:{'generic.product'}`.
  */
 describe('the customSnakeCase modifier', () => {
-    it('joins a linked message’s words with underscores', async () => {
-        await _updateLocale(i18n, 'en', {
+    it('joins a linked message’s words with underscores', () => {
+        return _updateLocale(i18n, 'en', {
             ...(enMessages as ITranslationDictionaries),
             ['modifier-probe']: "@.customSnakeCase:{'modifier-source'}",
             ['modifier-source']: 'two words'
+        }).then(() => {
+            i18n.global.locale.value = 'en';
+            expect(i18n.global.t('modifier-probe')).toBe('two_words');
+            return _updateLocale(i18n, 'en', enMessages as ITranslationDictionaries);
         });
-        i18n.global.locale.value = 'en';
-
-        expect(i18n.global.t('modifier-probe')).toBe('two_words');
-
-        await _updateLocale(i18n, 'en', enMessages as ITranslationDictionaries);
     });
 });

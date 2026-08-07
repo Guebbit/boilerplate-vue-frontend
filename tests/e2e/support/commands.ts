@@ -53,27 +53,54 @@ const resetLiveDatabase = (backendPath: string) =>
         timeout: LIVE_RESET_TIMEOUT_MS
     });
 
+const wait = (milliseconds: number) =>
+    new Promise((resolve) => {
+        setTimeout(resolve, milliseconds);
+    });
+
+/**
+ * Retries the mock reset until MSW is up, then gives up with the last failure attached.
+ *
+ * Recursive rather than a loop: a bounded retry is the one shape a promise chain cannot express
+ * as a flat sequence, since the number of links is not known up front.
+ *
+ * The two-argument `.then(onFulfilled, onRejected)` is load-bearing. A trailing `.catch` would
+ * also swallow the "gave up" rejection that `attempt` itself produces when `remaining` hits zero,
+ * turning the bound into an infinite retry — the failure mode being guarded against here is a
+ * worker that never starts, so that would hang the suite instead of failing it.
+ */
 const resetMswDatabase = () =>
-    cy.window().then(async (windowObject) => {
-        let lastError: unknown;
-        for (let attempt = 0; attempt < RESET_MOCK_MAX_ATTEMPTS; attempt += 1) {
-            try {
-                const response = await windowObject.fetch('/__mock/reset', { method: 'POST' });
-                if (response.ok) return;
-                lastError = `Mock reset returned HTTP ${response.status}`;
-            } catch (error) {
-                // Ignore transient failures while MSW starts, then retry.
-                lastError = error;
-            }
-            await new Promise((resolve) => {
-                setTimeout(resolve, RESET_MOCK_RETRY_DELAY_MS);
-            });
-        }
-        throw new Error(
-            `Unable to reset mock state after ${RESET_MOCK_MAX_ATTEMPTS} attempts.${
-                lastError ? ` Last error: ${String(lastError)}` : ''
-            }`
-        );
+    cy.window().then((windowObject) => {
+        const attempt = (remaining: number, lastError?: unknown): Promise<void> => {
+            if (remaining === 0)
+                return Promise.reject(
+                    new Error(
+                        `Unable to reset mock state after ${RESET_MOCK_MAX_ATTEMPTS} attempts.${
+                            lastError ? ` Last error: ${String(lastError)}` : ''
+                        }`
+                    )
+                );
+
+            return windowObject
+                .fetch('/__mock/reset', { method: 'POST' })
+                .then(
+                    (response) =>
+                        response.ok
+                            ? undefined
+                            : { retryAfter: `Mock reset returned HTTP ${response.status}` },
+                    // Ignore transient failures while MSW starts, then retry.
+                    (error: unknown) => ({ retryAfter: error })
+                )
+                .then((outcome) =>
+                    outcome
+                        ? wait(RESET_MOCK_RETRY_DELAY_MS).then(() =>
+                              attempt(remaining - 1, outcome.retryAfter)
+                          )
+                        : undefined
+                );
+        };
+
+        return attempt(RESET_MOCK_MAX_ATTEMPTS);
     });
 
 // `allowCypressEnv: false` in cypress.config.ts disables `Cypress.env()`, so the profile flag is

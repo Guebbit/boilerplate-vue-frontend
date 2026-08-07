@@ -12,7 +12,7 @@ const API = 'http://api.test';
 
 const server = setupServer();
 
-const loadHttp = async () => {
+const loadHttp = () => {
     vi.resetModules();
     vi.stubEnv('VITE_API_URL', API);
     return import('@/plugins/http');
@@ -28,7 +28,7 @@ beforeEach(() => {
 });
 
 describe('orvalMutator contract validation', () => {
-    it('is off by default inside Vitest, even though DEV is true (MODE is "test")', async () => {
+    it('is off by default inside Vitest, even though DEV is true (MODE is "test")', () => {
         // A response that violates GetAccountResponse (missing required `email`) — if
         // validation ran, this would throw.
         server.use(
@@ -36,14 +36,14 @@ describe('orvalMutator contract validation', () => {
                 HttpResponse.json({ success: true, status: 200, message: 'ok', data: { id: '1' } })
             )
         );
-        const { orvalMutator } = await loadHttp();
-
-        await expect(orvalMutator({ url: '/account', method: 'GET' })).resolves.toMatchObject({
-            data: { id: '1' }
-        });
+        return loadHttp().then(({ orvalMutator }) =>
+            expect(orvalMutator({ url: '/account', method: 'GET' })).resolves.toMatchObject({
+                data: { id: '1' }
+            })
+        );
     });
 
-    it('resolves normally when VITE_VALIDATE_RESPONSES=true and the response satisfies its schema', async () => {
+    it('resolves normally when VITE_VALIDATE_RESPONSES=true and the response satisfies its schema', () => {
         server.use(
             http.get(`${API}/account`, () =>
                 HttpResponse.json({
@@ -55,28 +55,28 @@ describe('orvalMutator contract validation', () => {
             )
         );
         vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
-        const { orvalMutator } = await loadHttp();
-
-        await expect(orvalMutator({ url: '/account', method: 'GET' })).resolves.toMatchObject({
-            data: { id: '1', email: 'a@b.com', username: 'alice' }
-        });
+        return loadHttp().then(({ orvalMutator }) =>
+            expect(orvalMutator({ url: '/account', method: 'GET' })).resolves.toMatchObject({
+                data: { id: '1', email: 'a@b.com', username: 'alice' }
+            })
+        );
     });
 
-    it('throws a contract error when VITE_VALIDATE_RESPONSES=true and a required field is missing', async () => {
+    it('throws a contract error when VITE_VALIDATE_RESPONSES=true and a required field is missing', () => {
         server.use(
             http.get(`${API}/account`, () =>
                 HttpResponse.json({ success: true, status: 200, message: 'ok', data: { id: '1' } })
             )
         );
         vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
-        const { orvalMutator } = await loadHttp();
-
-        await expect(orvalMutator({ url: '/account', method: 'GET' })).rejects.toThrow(
-            /\[contract] response for GET \/account does not match the OpenAPI schema/
+        return loadHttp().then(({ orvalMutator }) =>
+            expect(orvalMutator({ url: '/account', method: 'GET' })).rejects.toThrow(
+                /\[contract] response for GET \/account does not match the OpenAPI schema/
+            )
         );
     });
 
-    it('throws a contract error when the response carries an undeclared field (strict schema)', async () => {
+    it('throws a contract error when the response carries an undeclared field (strict schema)', () => {
         server.use(
             http.get(`${API}/account`, () =>
                 HttpResponse.json({
@@ -95,28 +95,26 @@ describe('orvalMutator contract validation', () => {
             )
         );
         vi.stubEnv('VITE_VALIDATE_RESPONSES', 'true');
-        const { orvalMutator } = await loadHttp();
-
-        await expect(orvalMutator({ url: '/account', method: 'GET' })).rejects.toThrow(
-            /\[contract]/
+        return loadHttp().then(({ orvalMutator }) =>
+            expect(orvalMutator({ url: '/account', method: 'GET' })).rejects.toThrow(/\[contract]/)
         );
     });
 
-    it('never validates when VITE_VALIDATE_RESPONSES=false, even for a non-conformant response', async () => {
+    it('never validates when VITE_VALIDATE_RESPONSES=false, even for a non-conformant response', () => {
         server.use(
             http.get(`${API}/account`, () =>
                 HttpResponse.json({ success: true, status: 200, message: 'ok', data: { id: '1' } })
             )
         );
         vi.stubEnv('VITE_VALIDATE_RESPONSES', 'false');
-        const { orvalMutator } = await loadHttp();
-
-        await expect(orvalMutator({ url: '/account', method: 'GET' })).resolves.toMatchObject({
-            data: { id: '1' }
-        });
+        return loadHttp().then(({ orvalMutator }) =>
+            expect(orvalMutator({ url: '/account', method: 'GET' })).resolves.toMatchObject({
+                data: { id: '1' }
+            })
+        );
     });
 
-    it('fails open (warns, does not throw) for a route absent from the schema map', async () => {
+    it('fails open (warns, does not throw) for a route absent from the schema map', () => {
         server.use(
             http.get(`${API}/not-a-real-route`, () => HttpResponse.json({ anything: 'goes' }))
         );
@@ -124,14 +122,17 @@ describe('orvalMutator contract validation', () => {
         const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
             /* no-op */
         });
-        const { orvalMutator } = await loadHttp();
-
-        await expect(
-            orvalMutator({ url: '/not-a-real-route', method: 'GET' })
-        ).resolves.toMatchObject({ anything: 'goes' });
-        expect(warnSpy).toHaveBeenCalledWith(
-            expect.stringContaining('no response schema mapped for GET /not-a-real-route')
-        );
-        warnSpy.mockRestore();
+        return loadHttp()
+            .then(({ orvalMutator }) =>
+                expect(
+                    orvalMutator({ url: '/not-a-real-route', method: 'GET' })
+                ).resolves.toMatchObject({ anything: 'goes' })
+            )
+            .then(() => {
+                expect(warnSpy).toHaveBeenCalledWith(
+                    expect.stringContaining('no response schema mapped for GET /not-a-real-route')
+                );
+                warnSpy.mockRestore();
+            });
     });
 });

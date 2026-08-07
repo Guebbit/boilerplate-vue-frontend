@@ -31,12 +31,14 @@ vi.mock('@/stores/observability', () => ({
 }));
 
 /** Fresh router per test: it holds navigation state, and history is global. */
-const loadRouter = async () => {
+const loadRouter = () => {
     vi.resetModules();
-    const { default: router } = await import('@/router');
-    await router.push('/');
-    await router.isReady();
-    return router;
+    return import('@/router').then(({ default: router }) =>
+        router
+            .push('/')
+            .then(() => router.isReady())
+            .then(() => router)
+    );
 };
 
 beforeEach(() => {
@@ -50,53 +52,51 @@ afterEach(() => {
 });
 
 describe('locale handling', () => {
-    it('redirects the bare root to the locale-prefixed home', async () => {
-        const router = await loadRouter();
-
-        expect(router.currentRoute.value.name).toBe('Home');
-        expect(router.currentRoute.value.params.locale).toBeTruthy();
-    });
+    it('redirects the bare root to the locale-prefixed home', () =>
+        loadRouter().then((router) => {
+            expect(router.currentRoute.value.name).toBe('Home');
+            expect(router.currentRoute.value.params.locale).toBeTruthy();
+        }));
 });
 
 describe('unknown routes', () => {
-    it('sends an unknown path under a locale to the 404 error page, keeping the locale', async () => {
-        const router = await loadRouter();
-        await router.push('/en/this-does-not-exist');
-
-        expect(router.currentRoute.value.name).toBe('Error');
-        expect(router.currentRoute.value.params.status).toBe('404');
-        expect(router.currentRoute.value.params.locale).toBe('en');
-    });
+    it('sends an unknown path under a locale to the 404 error page, keeping the locale', () =>
+        loadRouter().then((router) =>
+            router.push('/en/this-does-not-exist').then(() => {
+                expect(router.currentRoute.value.name).toBe('Error');
+                expect(router.currentRoute.value.params.status).toBe('404');
+                expect(router.currentRoute.value.params.locale).toBe('en');
+            })
+        ));
 
     // A single unknown segment is indistinguishable from a locale: `/:locale` matches it, the
     // empty child matches the rest, and `localeChoice` then rewrites the unsupported locale to
     // the default one. So `/nonsense` lands on Home, not on the 404 page — the top-level
     // `/:catchAll(.*)` route is only reachable for paths that cannot be read as a locale at all.
     // Asserted here so the behaviour is a decision on record rather than a surprise.
-    it('treats a single unknown segment as a locale and lands on home', async () => {
-        const router = await loadRouter();
-        await router.push('/nonsense');
-
-        expect(router.currentRoute.value.name).toBe('Home');
-        expect(router.currentRoute.value.params.locale).not.toBe('nonsense');
-    });
+    it('treats a single unknown segment as a locale and lands on home', () =>
+        loadRouter().then((router) =>
+            router.push('/nonsense').then(() => {
+                expect(router.currentRoute.value.name).toBe('Home');
+                expect(router.currentRoute.value.params.locale).not.toBe('nonsense');
+            })
+        ));
 });
 
 describe('global auth restore', () => {
-    it('runs on the initial navigation', async () => {
-        await loadRouter();
+    it('runs on the initial navigation', () =>
+        loadRouter().then(() => {
+            expect(tryRestoreAuth).toHaveBeenCalled();
+        }));
 
-        expect(tryRestoreAuth).toHaveBeenCalled();
-    });
+    it('runs again on every subsequent navigation', () =>
+        loadRouter().then((router) => {
+            const callsAfterBoot = tryRestoreAuth.mock.calls.length;
 
-    it('runs again on every subsequent navigation', async () => {
-        const router = await loadRouter();
-        const callsAfterBoot = tryRestoreAuth.mock.calls.length;
-
-        await router.push('/en/products');
-
-        expect(tryRestoreAuth.mock.calls.length).toBeGreaterThan(callsAfterBoot);
-    });
+            return router.push('/en/products').then(() => {
+                expect(tryRestoreAuth.mock.calls.length).toBeGreaterThan(callsAfterBoot);
+            });
+        }));
 });
 
 describe('guard wiring', () => {
@@ -106,53 +106,53 @@ describe('guard wiring', () => {
         ['/en/users', 'isAdmin', isAdmin],
         ['/en/admin', 'isAdmin', isAdmin],
         ['/en/login', 'isGuest', isGuest]
-    ])('%s is protected by %s', async (path, _name, guard) => {
-        const router = await loadRouter();
-        await router.push(path);
+    ])('%s is protected by %s', (path, _name, guard) =>
+        loadRouter().then((router) =>
+            router.push(path).then(() => {
+                expect(guard).toHaveBeenCalled();
+            })
+        )
+    );
 
-        expect(guard).toHaveBeenCalled();
-    });
-
-    it('leaves the public product list unguarded', async () => {
-        const router = await loadRouter();
-        await router.push('/en/products');
-
-        expect(isAuth).not.toHaveBeenCalled();
-        expect(isAdmin).not.toHaveBeenCalled();
-        expect(isGuest).not.toHaveBeenCalled();
-    });
+    it('leaves the public product list unguarded', () =>
+        loadRouter().then((router) =>
+            router.push('/en/products').then(() => {
+                expect(isAuth).not.toHaveBeenCalled();
+                expect(isAdmin).not.toHaveBeenCalled();
+                expect(isGuest).not.toHaveBeenCalled();
+            })
+        ));
 });
 
 /** Pushes a route whose guard throws the given error, then lets the redirect settle. */
-const failNavigationWith = async (error: Error) => {
-    const router = await loadRouter();
-    isAuth.mockImplementationOnce(() => {
-        throw error;
+const failNavigationWith = (error: Error) =>
+    loadRouter().then((router) => {
+        isAuth.mockImplementationOnce(() => {
+            throw error;
+        });
+        return router
+            .push('/en/cart')
+            .catch(() => {})
+            .then(() => new Promise((resolve) => setTimeout(resolve, 0)))
+            .then(() => router);
     });
-    await router.push('/en/cart').catch(() => {});
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    return router;
-};
 
 describe('onError redirects', () => {
-    it('sends a 401 to the login page, remembering where the user was going', async () => {
-        const router = await failNavigationWith(Object.assign(new Error('nope'), { status: 401 }));
+    it('sends a 401 to the login page, remembering where the user was going', () =>
+        failNavigationWith(Object.assign(new Error('nope'), { status: 401 })).then((router) => {
+            expect(router.currentRoute.value.name).toBe('Login');
+            expect(router.currentRoute.value.query.continue).toBe('/en/cart');
+        }));
 
-        expect(router.currentRoute.value.name).toBe('Login');
-        expect(router.currentRoute.value.query.continue).toBe('/en/cart');
-    });
+    it('sends a 403 to the forbidden error page', () =>
+        failNavigationWith(Object.assign(new Error('nope'), { status: 403 })).then((router) => {
+            expect(router.currentRoute.value.name).toBe('Error');
+            expect(router.currentRoute.value.params.status).toBe('403');
+        }));
 
-    it('sends a 403 to the forbidden error page', async () => {
-        const router = await failNavigationWith(Object.assign(new Error('nope'), { status: 403 }));
-
-        expect(router.currentRoute.value.name).toBe('Error');
-        expect(router.currentRoute.value.params.status).toBe('403');
-    });
-
-    it('treats an error with no status as a 500', async () => {
-        const router = await failNavigationWith(new Error('boom'));
-
-        expect(router.currentRoute.value.name).toBe('Error');
-        expect(router.currentRoute.value.params.status).toBe('500');
-    });
+    it('treats an error with no status as a 500', () =>
+        failNavigationWith(new Error('boom')).then((router) => {
+            expect(router.currentRoute.value.name).toBe('Error');
+            expect(router.currentRoute.value.params.status).toBe('500');
+        }));
 });
