@@ -7,6 +7,10 @@
  *
  * One extra thing is asserted here that has no products equivalent: `updateUser` receives a
  * password, and a password must not end up parked in client-side store state.
+ *
+ * Each `it` RETURNS its chain rather than awaiting — vitest fails a test whose returned promise
+ * rejects, so the assertions inside a `.then` are as binding as awaited ones. See
+ * `docs/tools/unit-testing.md`.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
@@ -38,6 +42,10 @@ const lastFormData = () => {
 const respondWithItems = (items: unknown[]) =>
     vi.mocked(orvalMutator).mockResolvedValue({ data: { items } } as never);
 
+/** The query parameters of the most recent request. */
+const lastParameters = () =>
+    (lastRequest() as unknown as { params: Record<string, unknown> }).params;
+
 describe('useUsersStore', () => {
     beforeEach(() => {
         setActivePinia(createPinia());
@@ -45,142 +53,137 @@ describe('useUsersStore', () => {
     });
 
     describe('createUser', () => {
-        it('posts JSON when no avatar is attached', async () => {
-            const store = useUsersStore();
-            await store.createUser({
-                email: 'ada@example.com',
-                username: 'ada',
-                password: 'password123'
-            });
+        it('posts JSON when no avatar is attached', () =>
+            useUsersStore()
+                .createUser({
+                    email: 'ada@example.com',
+                    username: 'ada',
+                    password: 'password123'
+                })
+                .then(() => {
+                    const request = lastRequest();
+                    expect(request).toMatchObject({ url: '/users', method: 'POST' });
+                    expect(request.data).not.toBeInstanceOf(FormData);
+                    expect(request.data).toMatchObject({
+                        email: 'ada@example.com',
+                        username: 'ada'
+                    });
+                }));
 
-            const request = lastRequest();
-            expect(request).toMatchObject({ url: '/users', method: 'POST' });
-            expect(request.data).not.toBeInstanceOf(FormData);
-            expect(request.data).toMatchObject({ email: 'ada@example.com', username: 'ada' });
-        });
+        it('posts multipart to /users when an avatar is attached', () =>
+            useUsersStore()
+                .createUser({
+                    email: 'ada@example.com',
+                    username: 'ada',
+                    password: 'password123',
+                    imageUpload: new Blob(['x'])
+                })
+                .then(() => {
+                    expect(lastRequest()).toMatchObject({ url: '/users', method: 'POST' });
+                    expect(lastFormData().get('email')).toBe('ada@example.com');
+                }));
 
-        it('posts multipart to /users when an avatar is attached', async () => {
-            const store = useUsersStore();
-            await store.createUser({
-                email: 'ada@example.com',
-                username: 'ada',
-                password: 'password123',
-                imageUpload: new Blob(['x'])
-            });
-
-            expect(lastRequest()).toMatchObject({ url: '/users', method: 'POST' });
-            expect(lastFormData().get('email')).toBe('ada@example.com');
-        });
-
-        it('sends a Blob avatar, not only a File', async () => {
+        it('sends a Blob avatar, not only a File', () =>
             // toFormData, which this store used to call, recursed into anything that was not a
             // File and silently dropped a plain Blob. The contract types the field as Blob.
-            const store = useUsersStore();
-            await store.createUser({
-                email: 'ada@example.com',
-                username: 'ada',
-                password: 'password123',
-                imageUpload: new Blob(['x'])
-            });
+            useUsersStore()
+                .createUser({
+                    email: 'ada@example.com',
+                    username: 'ada',
+                    password: 'password123',
+                    imageUpload: new Blob(['x'])
+                })
+                .then(() => {
+                    expect(lastFormData().get('imageUpload')).toBeInstanceOf(Blob);
+                }));
 
-            expect(lastFormData().get('imageUpload')).toBeInstanceOf(Blob);
-        });
-
-        it('omits unset optional fields instead of sending the string "undefined"', async () => {
-            const store = useUsersStore();
-            await store.createUser({
-                email: 'ada@example.com',
-                username: 'ada',
-                password: 'password123',
-                admin: undefined,
-                imageUpload: new Blob(['x'])
-            });
-
-            const formData = lastFormData();
-            expect(formData.has('admin')).toBe(false);
-            expect([...formData.values()]).not.toContain('undefined');
-        });
+        it('omits unset optional fields instead of sending the string "undefined"', () =>
+            useUsersStore()
+                .createUser({
+                    email: 'ada@example.com',
+                    username: 'ada',
+                    password: 'password123',
+                    admin: undefined,
+                    imageUpload: new Blob(['x'])
+                })
+                .then(() => {
+                    const formData = lastFormData();
+                    expect(formData.has('admin')).toBe(false);
+                    expect([...formData.values()]).not.toContain('undefined');
+                }));
     });
 
     describe('updateUser', () => {
-        it('puts JSON when no new avatar is attached', async () => {
-            const store = useUsersStore();
-            await store.updateUser('u1', { username: 'ada2' });
+        it('puts JSON when no new avatar is attached', () =>
+            useUsersStore()
+                .updateUser('u1', { username: 'ada2' })
+                .then(() => {
+                    const request = lastRequest();
+                    expect(request).toMatchObject({ url: '/users/u1', method: 'PUT' });
+                    expect(request.data).not.toBeInstanceOf(FormData);
+                    expect(request.data).toMatchObject({ username: 'ada2' });
+                }));
 
-            const request = lastRequest();
-            expect(request).toMatchObject({ url: '/users/u1', method: 'PUT' });
-            expect(request.data).not.toBeInstanceOf(FormData);
-            expect(request.data).toMatchObject({ username: 'ada2' });
-        });
+        it('puts multipart when an avatar is attached', () =>
+            useUsersStore()
+                .updateUser('u1', { username: 'ada2', imageUpload: new Blob(['x']) })
+                .then(() => {
+                    expect(lastRequest()).toMatchObject({ url: '/users/u1', method: 'PUT' });
+                    expect(lastFormData().get('username')).toBe('ada2');
+                }));
 
-        it('puts multipart when an avatar is attached', async () => {
-            const store = useUsersStore();
-            await store.updateUser('u1', { username: 'ada2', imageUpload: new Blob(['x']) });
-
-            expect(lastRequest()).toMatchObject({ url: '/users/u1', method: 'PUT' });
-            expect(lastFormData().get('username')).toBe('ada2');
-        });
-
-        it('never parks the submitted password in store state', async () => {
-            const store = useUsersStore();
-            store.addUser({ id: 'u1', username: 'ada', email: 'ada@example.com' });
-
-            await store.updateUser('u1', { username: 'ada2', password: 'hunter2hunter2' });
-
-            expect(JSON.stringify(store.users)).not.toContain('hunter2hunter2');
-        });
-
-        it('never parks the uploaded Blob in store state', async () => {
+        it('never parks the submitted password in store state', () => {
             const store = useUsersStore();
             store.addUser({ id: 'u1', username: 'ada', email: 'ada@example.com' });
 
-            await store.updateUser('u1', { username: 'ada2', imageUpload: new Blob(['x']) });
-
-            expect(store.users.u1).not.toHaveProperty('imageUpload');
-        });
-    });
-
-    describe('updateUserImage', () => {
-        it('rejects without calling the API when no file is selected', async () => {
-            const store = useUsersStore();
-
-            await expect(store.updateUserImage('u1', [])).rejects.toThrow('no file selected');
-            expect(orvalMutator).not.toHaveBeenCalled();
+            return store
+                .updateUser('u1', { username: 'ada2', password: 'hunter2hunter2' })
+                .then(() => {
+                    expect(JSON.stringify(store.users)).not.toContain('hunter2hunter2');
+                });
         });
 
-        it('sends only the file, letting the API return the new imageUrl', async () => {
+        it('never parks the uploaded Blob in store state', () => {
             const store = useUsersStore();
-            const file = new File(['x'], 'avatar.jpg', { type: 'image/jpeg' });
+            store.addUser({ id: 'u1', username: 'ada', email: 'ada@example.com' });
 
-            await store.updateUserImage('u1', [file]);
-
-            const formData = lastFormData();
-            expect([...formData.keys()]).toEqual(['imageUpload']);
-            expect(formData.get('imageUpload')).toBeInstanceOf(File);
+            return store
+                .updateUser('u1', { username: 'ada2', imageUpload: new Blob(['x']) })
+                .then(() => {
+                    expect(store.users.u1).not.toHaveProperty('imageUpload');
+                });
         });
 
-        it('forwards the upload progress callback to the transport', async () => {
-            const store = useUsersStore();
-            const file = new File(['x'], 'avatar.jpg', { type: 'image/jpeg' });
+        /**
+         * The reason `orvalMutator` takes a second argument at all — `UserEdit.vue` passes
+         * `onUploadProgress` through it to drive its progress bar. This used to be asserted
+         * through `updateUserImage`, a wrapper the edit form made redundant.
+         */
+        it('forwards the upload progress callback to the transport', () => {
             const onUploadProgress = vi.fn();
 
-            await store.updateUserImage('u1', [file], onUploadProgress);
-
-            // Second argument: orval passes the caller's `options` through to the mutator.
-            expect(orvalMutator).toHaveBeenCalledWith(
-                expect.anything(),
-                expect.objectContaining({ onUploadProgress })
-            );
+            return useUsersStore()
+                .updateUser(
+                    'u1',
+                    { username: 'ada2', imageUpload: new Blob(['x']) },
+                    { onUploadProgress }
+                )
+                .then(() => {
+                    expect(orvalMutator).toHaveBeenCalledWith(
+                        expect.anything(),
+                        expect.objectContaining({ onUploadProgress })
+                    );
+                });
         });
     });
 
     describe('deleteUser', () => {
-        it('calls the delete endpoint with the user id', async () => {
-            const store = useUsersStore();
-            await store.deleteUser('u1');
-
-            expect(lastRequest()).toMatchObject({ url: '/users/u1', method: 'DELETE' });
-        });
+        it('calls the delete endpoint with the user id', () =>
+            useUsersStore()
+                .deleteUser('u1')
+                .then(() => {
+                    expect(lastRequest()).toMatchObject({ url: '/users/u1', method: 'DELETE' });
+                }));
     });
 
     /**
@@ -193,49 +196,53 @@ describe('useUsersStore', () => {
     describe('read paths', () => {
         const USER = { id: 'u1', username: 'ada', email: 'ada@example.com' };
 
-        it('fetchUsers requests the collection and unwraps the paginated envelope', async () => {
+        it('fetchUsers requests the collection and unwraps the paginated envelope', () => {
             respondWithItems([USER]);
-            const store = useUsersStore();
 
-            const result = await store.fetchUsers();
-
-            expect(lastRequest()).toMatchObject({ url: '/users', method: 'GET' });
-            expect(result).toEqual([USER]);
+            return useUsersStore()
+                .fetchUsers()
+                .then((result) => {
+                    expect(lastRequest()).toMatchObject({ url: '/users', method: 'GET' });
+                    expect(result).toEqual([USER]);
+                });
         });
 
-        it('fetchPaginationUsers defaults to the first page of ten', async () => {
+        it('fetchPaginationUsers defaults to the first page of ten', () => {
             respondWithItems([]);
-            const store = useUsersStore();
 
-            await store.fetchPaginationUsers();
-
-            expect(lastRequest()).toMatchObject({
-                url: '/users',
-                method: 'GET',
-                params: { page: 1, pageSize: 10 }
-            });
+            return useUsersStore()
+                .fetchPaginationUsers()
+                .then(() => {
+                    expect(lastRequest()).toMatchObject({
+                        url: '/users',
+                        method: 'GET',
+                        params: { page: 1, pageSize: 10 }
+                    });
+                });
         });
 
-        it('fetchPaginationUsers passes an explicit page and size through', async () => {
+        it('fetchPaginationUsers passes an explicit page and size through', () => {
             respondWithItems([]);
-            const store = useUsersStore();
 
-            await store.fetchPaginationUsers(2, 50);
-
-            expect(lastRequest()).toMatchObject({ params: { page: 2, pageSize: 50 } });
+            return useUsersStore()
+                .fetchPaginationUsers(2, 50)
+                .then(() => {
+                    expect(lastRequest()).toMatchObject({ params: { page: 2, pageSize: 50 } });
+                });
         });
 
-        it('fetchUser requests one user and unwraps a single-record envelope', async () => {
+        it('fetchUser requests one user and unwraps a single-record envelope', () => {
             vi.mocked(orvalMutator).mockResolvedValue({ data: USER } as never);
-            const store = useUsersStore();
 
-            const result = await store.fetchUser('u1');
-
-            expect(lastRequest()).toMatchObject({ url: '/users/u1', method: 'GET' });
-            expect(result).toEqual(USER);
+            return useUsersStore()
+                .fetchUser('u1')
+                .then((result) => {
+                    expect(lastRequest()).toMatchObject({ url: '/users/u1', method: 'GET' });
+                    expect(result).toEqual(USER);
+                });
         });
 
-        it('watchSearchUsers sends every supported filter as a query parameter', async () => {
+        it('watchSearchUsers sends every supported filter as a query parameter', () => {
             respondWithItems([]);
             const store = useUsersStore();
             store.filters = {
@@ -246,45 +253,49 @@ describe('useUsersStore', () => {
                 active: true
             };
 
-            const handle = store.watchSearchUsers();
-            await handle.search();
-
-            const { params } = lastRequest() as unknown as { params: Record<string, unknown> };
-            expect(params).toMatchObject({
-                text: 'ada',
-                // Passed through under its own name here — contrast with the products store,
-                // where the same field is sent as `productId`.
-                id: 'u1',
-                email: 'ada@example.com',
-                username: 'ada',
-                active: true
-            });
+            return store
+                .watchSearchUsers()
+                .search()
+                .then(() => {
+                    expect(lastParameters()).toMatchObject({
+                        text: 'ada',
+                        // Passed through under its own name here — contrast with the products
+                        // store, where the same field is sent as `productId`.
+                        id: 'u1',
+                        email: 'ada@example.com',
+                        username: 'ada',
+                        active: true
+                    });
+                });
         });
 
-        it('watchSearchUsers keeps active:false distinct from "no filter"', async () => {
+        it('watchSearchUsers keeps active:false distinct from "no filter"', () => {
             // A truthiness check on `active` would drop `false` and silently return active AND
             // inactive users when an admin asked for inactive ones only.
             respondWithItems([]);
             const store = useUsersStore();
             store.filters = { active: false };
 
-            const handle = store.watchSearchUsers();
-            await handle.search();
-
-            const { params } = lastRequest() as unknown as { params: Record<string, unknown> };
-            expect(params.active).toBe(false);
+            return store
+                .watchSearchUsers()
+                .search()
+                .then(() => {
+                    expect(lastParameters().active).toBe(false);
+                });
         });
 
-        it('watchSearchUsers reports a failed search to the supplied error handler', async () => {
+        it('watchSearchUsers reports a failed search to the supplied error handler', () => {
             const failure = new Error('network down');
             vi.mocked(orvalMutator).mockRejectedValue(failure);
-            const store = useUsersStore();
             const onError = vi.fn();
 
-            const handle = store.watchSearchUsers(onError);
-            await handle.search().catch(() => {});
-
-            expect(onError).toHaveBeenCalledWith(failure);
+            return useUsersStore()
+                .watchSearchUsers(onError)
+                .search()
+                .catch(() => {})
+                .then(() => {
+                    expect(onError).toHaveBeenCalledWith(failure);
+                });
         });
     });
 });

@@ -41,6 +41,18 @@ describe('Products', () => {
             });
         });
 
+        // The list is public, the create page is not: `products/create` is guarded by `isAdmin`,
+        // so offering the button to an anonymous visitor would be an invitation to a redirect.
+        it('offers the Create product button to admins only', () => {
+            cy.get('[data-test=create-product]').should('not.exist');
+
+            cy.loginAs('admin');
+            cy.visit('/en/products');
+            cy.get('[data-test=create-product]').should('exist').click();
+
+            cy.url().should('include', '/products/create');
+        });
+
         it('shows only the View action for non-admin users', () => {
             cy.get('[data-test=list-row]')
                 .eq(0)

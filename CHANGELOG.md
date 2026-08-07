@@ -41,6 +41,58 @@ own mocks.
 
 ### Added
 
+- **Image upload, from the file picker to the served file.** Every layer of this feature existed
+  except the one a user touches: the contract declared `imageUpload` on six request bodies, orval
+  had generated seven `*WithMultipart` clients, the product and user stores already branched on
+  `imageUpload`, and the backend had a hardened multer + magic-byte pipeline waiting. There was no
+  file input anywhere in `src/`. There is now one — `components/molecules/FormImageUpload.vue` —
+  used by `ProductEdit`, `ProductCreate`, `UserEdit`, `UserCreate` and `Signup`, with a local preview, an upload
+  progress bar fed by axios' `onUploadProgress`, and the existing `imageUrl` as the initial preview
+  on edit forms. The preview's object URL is revoked on replacement as well as on unmount; the
+  replacement case is the one that leaks quietly through a long editing session.
+
+- **`useUploadProgress` owns the whole upload sequence, not just the percentage.** Its first form
+  exported a `trackUploadProgress` callback and a `resetUploadProgress`, which left all five
+  upload forms re-deriving the same three decisions by hand — attach `onUploadProgress` only when
+  there is a file to watch, surface the percentage, return to idle however the call ends — in five
+  near-identical `try`/`finally` blocks carrying the same comment word for word. It now exposes
+  `trackUpload(file, send)` and each view is one call. The duplicated comment was the tell: when
+  the same explanation has to be pasted into five files, the logic it explains is in the wrong
+  place.
+
+- **A product creation page.** `POST /products` had been in the contract, generated in both
+  content types and implemented in the store, but products could only be _edited_ from the UI —
+  the create endpoint had no caller. `products/create` is admin-guarded and declared before
+  `products/:id`; vue-router ranks a static segment above a dynamic one so `create` could not have
+  been swallowed as an id either way, but a reader should not need to know the ranking rules, and
+  a spec now pins it. `createProduct` and `createUser` both gained the per-call axios `options`
+  that `updateProduct` / `updateUser` already had, which is what feeds the progress bar on the two
+  create forms. Every form field is seeded rather than left
+  `undefined`: a `undefined` fails `z.string()` on its _type_, and zod answers that with its own
+  built-in English message, bypassing the thunked one attached to the `.min(1)` check the value
+  never reaches — so an untouched field would report itself in the wrong language.
+
+- **`stores/profile.ts`'s `signup` finally has its multipart branch.** It was the one store method
+  that always sent JSON, while `SignupRequest.imageUpload` had been in `openapi.yaml` and
+  `signupWithMultipart` generated for it all along — so a signup with a profile image would have
+  dropped the file on the floor silently. It also stopped taking its fields positionally: at six
+  arguments, two of them defaulted from earlier ones, a caller could transpose `imageUpload` and
+  `options` with nothing but argument order to catch it, so it now matches `createUser` /
+  `createProduct`'s `(data, options)` shape.
+
+- **`src/utils/uploads.ts`, holding the client-side limits, the rule that enforces them and the
+  progress helper.** The accepted types and the 5 MB cap are a hand-maintained copy of the
+  backend's `storage.ts`, and the file says so at length: `openapi.yaml` declares the binary
+  fields as a bare `type: string, format: binary`, and declaring `maxLength`/`contentMediaType`
+  there would buy nothing, because orval's zod generator short-circuits `format: binary` to
+  `zod.instanceof(File)` and the `zodSchemas` target has no `splitByContentType` — the multipart
+  bodies never become zod schemas at all. `VITE_MAX_UPLOAD_BYTES` lets a deployment follow a
+  backend running a non-default `NODE_MAX_UPLOAD_BYTES`. All of it is a UX affordance and none of
+  it is a gate: the backend still checks the declared type before the bytes touch disk and the
+  actual magic bytes afterwards, and a browser can only fail faster, never weaker. `openapi.yaml`
+  carries the same explanation as a comment beside `ImageUrl`, so the next person to notice the
+  missing `maxLength` finds out why before "fixing" it into something that generates nothing.
+
 - **Forms re-translate the errors already on screen when the language changes.** A thunked schema
   decides what the _next_ validation says; it cannot touch what is currently displayed, because
   `validate()` copies resolved _strings_ into `formErrors` and re-rendering just re-prints them.
@@ -177,6 +229,22 @@ own mocks.
 - **`podman:kill` / `docker:kill`** — `<engine> compose kill`, scoped to this project's stack.
 
 ### Changed
+
+- **Asynchronous code is written as promise chains, not `async`/`await` with `try`/`catch`.** This
+  was already the house style — every `submitForm` ends `.then(…).catch((error) =>
+notifyErrorMessages(addMessage, error))` and every store method ends
+  `.then((response) => response.data)` — so the `async` additions were the outlier. Applied to
+  `src/utils/uploads.ts`, the five upload views and the specs touched here, including the
+  products and users store specs that predate this work. Two spots read distinctly better for it:
+  a cleanup that must run either way is now `.finally()`, which forwards the resolved value and
+  re-throws the rejection untouched, and the mock body reader's three stacked `try`/`catch`
+  blocks became a `.catch()` cascade, where each link _is_ "that encoding was not it, try the
+  next" and the three `void error;` statements that silenced the linter are gone. A returned
+  chain is load-bearing in a spec — vitest fails on a rejected returned promise, but a converted
+  test that drops the `return` passes vacuously, so each file was checked by poisoning an
+  assertion and confirming the failure. `mockShared.ts`'s module-level top-level `await` stays: it
+  is what keeps the seed profile from ever loading faker. The remaining unit specs are untouched
+  and still use `async`/`await`.
 
 - **Schema factories are gone; the schemas are module constants with thunked messages.**
   `createUsersSchema(t)` consumed through a getter bought nothing —
@@ -330,7 +398,7 @@ own mocks.
 - **The e2e suite's flakiness under a full run is mitigated** — see the timeout and warmup entries
   under _Changed_. Three consecutive full runs are green, plus the random-data profile. Both
   changes address the symptom: the root cause is that the suite tests a dev server that is still
-  compiling, and the cure is a production build.
+  compiling, and the cure is a production build (`TODO.md`).
 
 - **The dockerised dev server was unreachable from the browser.** `npm run dev` was
   `vite --port 8080` with no `--host`, and Vite binds `127.0.0.1` by default — so inside the
@@ -383,12 +451,18 @@ own mocks.
   equivalents were typed as resolving to `Product` / `User` but actually resolved to
   `{ success, data, … }` — the same shape the JSON branches already unwrapped correctly.
 - **`apiMutator<never, T>`'s double-generic type cheat is gone.**
-- **`utils/i18n.ts` documented the wrong function.** `_changeLanguage`'s JSDoc block sat above
-  `_ensureFallbackLoaded`, which has its own block directly beneath it — so an editor tooltip on
-  `_ensureFallbackLoaded` showed the description of a different function, and `_changeLanguage`
-  showed none. The block moved to the function it describes; no behaviour change.
 
 ### Removed
+
+- **`updateProductImage` and `updateUserImage`.** Both were thin wrappers over `updateProduct` /
+  `updateUser` that uploaded an image on its own, and both were called by nothing but their own
+  unit tests — which is what put them on the unused-surface list to begin with. The edit forms now
+  carry an image field and make exactly that call themselves, so the wrappers had a choice between
+  a caller and the bin. The one caller that would have justified them, a standalone avatar control
+  on `Profile.vue`, needs a product decision (does a user edit their own avatar through the same
+  form an admin uses for someone else's?) and is not in this change. The property their tests
+  actually pinned — that `onUploadProgress` reaches the transport — is now asserted through
+  `updateProduct` / `updateUser`, where the views pass it.
 
 - **`kill:port`** (`fuser -k 4173/tcp`) and the **`pretest:e2e`** hook that called it. The old
   command killed _any_ process on the port, including another project's container port forwarder.
@@ -407,19 +481,6 @@ own mocks.
 - **`VITE_APP_DEBUG_HOME`** from `.env`, `.env-example` and the README's variable table. Its only
   consumer was dropped when `Home.vue` was reworked, so setting it did nothing; the two flags beside
   it (`VITE_APP_DEBUG_ROUTER`, `VITE_APP_DEBUG_HTTP`) are still read and still work.
-- **`src/composables/useObservability.ts`**, left behind when observability moved into the
-  `src/stores/observability.ts` Pinia store. Nothing imported it — every consumer (`main.ts`, the
-  router, `utils/errors.ts`, the cart/orders/profile stores) already called `useObservabilityStore()`
-  directly. The store's own header comment still pointed at the composable and now describes what
-  callers actually do.
-- **`getOrder`, `getProduct` and `getUser`** from the three feature stores. Each was the
-  `getRecord` passthrough from `useStructureDataManagement`, destructured and re-exported but never
-  called: components read `currentOrder` / `currentProduct` / `currentUser` after a fetch instead.
-  The composable still provides `getRecord` for anything that needs it later.
-- **`TODO.md`**. Its two entries were the e2e-against-a-production-build migration and the rule
-  about not co-scheduling the mutation and e2e jobs. The second survives in _Known issues_ below and
-  in the header comment of `.github/workflows/mutation.yml`; the first is still described there too,
-  minus the script-by-script scope list, which stays available in git history.
 
 ### Known issues
 
@@ -432,8 +493,9 @@ own mocks.
   the residual shape is worth knowing: it is load-dependent, so the suite is green on an idle
   machine and can fail on a busy one, pointing at whichever selector happened to be first rather
   than at the compile that actually caused it. Running against `vite build` + `vite preview`
-  removes the class outright. Until then, do not co-schedule the mutation job with the e2e job:
-  Stryker saturates every core it is given, and e2e is what fails.
+  removes the class outright; the tradeoff and the scope are in `TODO.md`. Until then, do not
+  co-schedule the mutation job with the e2e job: Stryker saturates every core it is given, and
+  e2e is what fails.
 - **`npm run test:e2e:live` fails 5 of 63 — root cause unknown.** Three of them share one shape:
   the header renders a signed-in admin with admin-only controls, while the data on the page is
   what an anonymous visitor would get. The backend was verified correct (it returns all 5 products

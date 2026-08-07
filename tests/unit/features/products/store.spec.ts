@@ -12,6 +12,9 @@
  * actually goes on the wire: repeated `categories` rather than `categories[0]`, and unset
  * optional fields omitted rather than sent as the string `"undefined"`. Both are invisible to
  * TypeScript, and a regression in either sends a request the backend silently misreads.
+ *
+ * Each `it` RETURNS its chain rather than awaiting — vitest fails a test whose returned promise
+ * rejects, so the assertions inside a `.then` are as binding as awaited ones.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
@@ -53,6 +56,10 @@ const PRODUCT: Product = {
 const respondWithItems = (items: unknown[]) =>
     vi.mocked(orvalMutator).mockResolvedValue({ data: { items } } as never);
 
+/** The query parameters of the most recent request. */
+const lastParameters = () =>
+    (lastRequest() as unknown as { params: Record<string, unknown> }).params;
+
 describe('useProductsStore', () => {
     beforeEach(() => {
         setActivePinia(createPinia());
@@ -60,162 +67,155 @@ describe('useProductsStore', () => {
     });
 
     describe('createProduct', () => {
-        it('posts JSON when no image is attached', async () => {
-            const store = useProductsStore();
-            await store.createProduct({ title: 'Gadget', price: 49.99 });
+        it('posts JSON when no image is attached', () =>
+            useProductsStore()
+                .createProduct({ title: 'Gadget', price: 49.99 })
+                .then(() => {
+                    const request = lastRequest();
+                    expect(request).toMatchObject({ url: '/products', method: 'POST' });
+                    expect(request.data).not.toBeInstanceOf(FormData);
+                    expect(request.data).toMatchObject({ title: 'Gadget', price: 49.99 });
+                }));
 
-            const request = lastRequest();
-            expect(request).toMatchObject({ url: '/products', method: 'POST' });
-            expect(request.data).not.toBeInstanceOf(FormData);
-            expect(request.data).toMatchObject({ title: 'Gadget', price: 49.99 });
-        });
+        it('posts multipart to /products when an image is attached', () =>
+            useProductsStore()
+                .createProduct({ title: 'Gadget', price: 49.99, imageUpload: new Blob(['x']) })
+                .then(() => {
+                    expect(lastRequest()).toMatchObject({ url: '/products', method: 'POST' });
+                    expect(lastFormData().get('title')).toBe('Gadget');
+                }));
 
-        it('posts multipart to /products when an image is attached', async () => {
-            const store = useProductsStore();
-            await store.createProduct({
-                title: 'Gadget',
-                price: 49.99,
-                imageUpload: new Blob(['x'])
-            });
-
-            expect(lastRequest()).toMatchObject({ url: '/products', method: 'POST' });
-            expect(lastFormData().get('title')).toBe('Gadget');
-        });
-
-        it('sends a Blob image, not only a File', async () => {
+        it('sends a Blob image, not only a File', () =>
             // toFormData, which this store used to call, recursed into anything that was not a
             // File and silently dropped a plain Blob. The contract types the field as Blob.
-            const store = useProductsStore();
-            await store.createProduct({
-                title: 'Gadget',
-                price: 49.99,
-                imageUpload: new Blob(['x'])
-            });
+            useProductsStore()
+                .createProduct({ title: 'Gadget', price: 49.99, imageUpload: new Blob(['x']) })
+                .then(() => {
+                    expect(lastFormData().get('imageUpload')).toBeInstanceOf(Blob);
+                }));
 
-            expect(lastFormData().get('imageUpload')).toBeInstanceOf(Blob);
-        });
+        it('sends categories and tags as repeated fields, not indexed keys', () =>
+            useProductsStore()
+                .createProduct({
+                    title: 'Gadget',
+                    price: 49.99,
+                    categories: ['tools', 'home'],
+                    tags: ['new'],
+                    imageUpload: new Blob(['x'])
+                })
+                .then(() => {
+                    const formData = lastFormData();
+                    expect(formData.getAll('categories')).toEqual(['tools', 'home']);
+                    expect(formData.getAll('tags')).toEqual(['new']);
+                    expect([...formData.keys()]).not.toContain('categories[0]');
+                }));
 
-        it('sends categories and tags as repeated fields, not indexed keys', async () => {
-            const store = useProductsStore();
-            await store.createProduct({
-                title: 'Gadget',
-                price: 49.99,
-                categories: ['tools', 'home'],
-                tags: ['new'],
-                imageUpload: new Blob(['x'])
-            });
+        it('omits unset optional fields instead of sending the string "undefined"', () =>
+            useProductsStore()
+                .createProduct({
+                    title: 'Gadget',
+                    price: 49.99,
+                    description: undefined,
+                    imageUpload: new Blob(['x'])
+                })
+                .then(() => {
+                    const formData = lastFormData();
+                    expect(formData.has('description')).toBe(false);
+                    expect([...formData.values()]).not.toContain('undefined');
+                }));
 
-            const formData = lastFormData();
-            expect(formData.getAll('categories')).toEqual(['tools', 'home']);
-            expect(formData.getAll('tags')).toEqual(['new']);
-            expect([...formData.keys()]).not.toContain('categories[0]');
-        });
+        /**
+         * `ProductCreate.vue` passes `onUploadProgress` through the second argument to drive its
+         * progress bar. `createProduct` had no `options` parameter until that view existed.
+         */
+        it('forwards the upload progress callback to the transport', () => {
+            const onUploadProgress = vi.fn();
 
-        it('omits unset optional fields instead of sending the string "undefined"', async () => {
-            const store = useProductsStore();
-            await store.createProduct({
-                title: 'Gadget',
-                price: 49.99,
-                description: undefined,
-                imageUpload: new Blob(['x'])
-            });
-
-            const formData = lastFormData();
-            expect(formData.has('description')).toBe(false);
-            expect([...formData.values()]).not.toContain('undefined');
+            return useProductsStore()
+                .createProduct(
+                    { title: 'Gadget', price: 49.99, imageUpload: new Blob(['x']) },
+                    { onUploadProgress }
+                )
+                .then(() => {
+                    expect(orvalMutator).toHaveBeenCalledWith(
+                        expect.anything(),
+                        expect.objectContaining({ onUploadProgress })
+                    );
+                });
         });
     });
 
     describe('updateProduct', () => {
-        it('puts JSON when no new image is attached', async () => {
-            const store = useProductsStore();
-            await store.updateProduct('p1', { title: 'Renamed', price: 9.99 });
+        it('puts JSON when no new image is attached', () =>
+            useProductsStore()
+                .updateProduct('p1', { title: 'Renamed', price: 9.99 })
+                .then(() => {
+                    const request = lastRequest();
+                    expect(request).toMatchObject({ url: '/products/p1', method: 'PUT' });
+                    expect(request.data).not.toBeInstanceOf(FormData);
+                    expect(request.data).toMatchObject({ title: 'Renamed' });
+                }));
 
-            const request = lastRequest();
-            expect(request).toMatchObject({ url: '/products/p1', method: 'PUT' });
-            expect(request.data).not.toBeInstanceOf(FormData);
-            expect(request.data).toMatchObject({ title: 'Renamed' });
-        });
+        it('puts multipart when an image is attached', () =>
+            useProductsStore()
+                .updateProduct('p1', {
+                    title: 'Renamed',
+                    price: 9.99,
+                    imageUpload: new Blob(['x'])
+                })
+                .then(() => {
+                    expect(lastRequest()).toMatchObject({ url: '/products/p1', method: 'PUT' });
+                    expect(lastFormData().get('title')).toBe('Renamed');
+                }));
 
-        it('puts multipart when an image is attached', async () => {
-            const store = useProductsStore();
-            await store.updateProduct('p1', {
-                title: 'Renamed',
-                price: 9.99,
-                imageUpload: new Blob(['x'])
-            });
-
-            expect(lastRequest()).toMatchObject({ url: '/products/p1', method: 'PUT' });
-            expect(lastFormData().get('title')).toBe('Renamed');
-        });
-
-        it('never parks the uploaded Blob in store state', async () => {
+        it('never parks the uploaded Blob in store state', () => {
             const store = useProductsStore();
             store.addProduct(PRODUCT);
 
-            await store.updateProduct('p1', {
-                title: 'Renamed',
-                price: 9.99,
-                imageUpload: new Blob(['x'])
-            });
-
-            expect(store.products.p1).not.toHaveProperty('imageUpload');
-        });
-    });
-
-    describe('updateProductImage', () => {
-        it('rejects without calling the API when no file is selected', async () => {
-            const store = useProductsStore();
-
-            await expect(store.updateProductImage(PRODUCT, [])).rejects.toThrow('no file selected');
-            expect(orvalMutator).not.toHaveBeenCalled();
+            return store
+                .updateProduct('p1', {
+                    title: 'Renamed',
+                    price: 9.99,
+                    imageUpload: new Blob(['x'])
+                })
+                .then(() => {
+                    expect(store.products.p1).not.toHaveProperty('imageUpload');
+                });
         });
 
-        it('re-sends the mandatory product fields alongside the new file', async () => {
-            const store = useProductsStore();
-            const file = new File(['x'], 'photo.jpg', { type: 'image/jpeg' });
-
-            await store.updateProductImage(PRODUCT, [file]);
-
-            const formData = lastFormData();
-            expect(formData.get('title')).toBe('Gadget');
-            expect(formData.get('price')).toBe('49.99');
-            expect(formData.get('imageUpload')).toBeInstanceOf(File);
-            expect(formData.getAll('categories')).toEqual(['tools']);
-        });
-
-        it('forwards the upload progress callback to the transport', async () => {
-            const store = useProductsStore();
-            const file = new File(['x'], 'photo.jpg', { type: 'image/jpeg' });
+        /**
+         * The reason `orvalMutator` takes a second argument at all — `ProductEdit.vue` passes
+         * `onUploadProgress` through it to drive its progress bar. This used to be asserted
+         * through `updateProductImage`, a wrapper the edit form made redundant.
+         */
+        it('forwards the upload progress callback to the transport', () => {
             const onUploadProgress = vi.fn();
 
-            await store.updateProductImage(PRODUCT, [file], onUploadProgress);
-
-            // Second argument: orval passes the caller's `options` through to the mutator.
-            expect(orvalMutator).toHaveBeenCalledWith(
-                expect.anything(),
-                expect.objectContaining({ onUploadProgress })
-            );
-        });
-
-        it('uploads only the first file when several are selected', async () => {
-            const store = useProductsStore();
-            const first = new File(['a'], 'first.jpg');
-            const second = new File(['b'], 'second.jpg');
-
-            await store.updateProductImage(PRODUCT, [first, second]);
-
-            expect(lastFormData().getAll('imageUpload')).toHaveLength(1);
+            return useProductsStore()
+                .updateProduct(
+                    'p1',
+                    { title: 'Renamed', price: 9.99, imageUpload: new Blob(['x']) },
+                    { onUploadProgress }
+                )
+                .then(() => {
+                    expect(orvalMutator).toHaveBeenCalledWith(
+                        expect.anything(),
+                        expect.objectContaining({ onUploadProgress })
+                    );
+                });
         });
     });
 
     describe('deleteProduct', () => {
-        it('calls the delete endpoint with the product id', async () => {
-            const store = useProductsStore();
-            await store.deleteProduct('p1');
-
-            expect(lastRequest()).toMatchObject({ url: '/products/p1', method: 'DELETE' });
-        });
+        it('calls the delete endpoint with the product id', () =>
+            useProductsStore()
+                .deleteProduct('p1')
+                .then(() => {
+                    expect(lastRequest()).toMatchObject({
+                        url: '/products/p1',
+                        method: 'DELETE'
+                    });
+                }));
     });
 
     /**
@@ -230,90 +230,101 @@ describe('useProductsStore', () => {
      */
     describe('read paths', () => {
         describe('fetchProducts', () => {
-            it('requests the collection and unwraps the paginated envelope', async () => {
+            it('requests the collection and unwraps the paginated envelope', () => {
                 respondWithItems([PRODUCT]);
-                const store = useProductsStore();
 
-                const result = await store.fetchProducts();
-
-                expect(lastRequest()).toMatchObject({ url: '/products', method: 'GET' });
-                // `.data.items`, not `.data` — one level too shallow yields the envelope itself,
-                // which renders as an empty list rather than as an error.
-                expect(result).toEqual([PRODUCT]);
+                return useProductsStore()
+                    .fetchProducts()
+                    .then((result) => {
+                        expect(lastRequest()).toMatchObject({ url: '/products', method: 'GET' });
+                        // `.data.items`, not `.data` — one level too shallow yields the envelope
+                        // itself, which renders as an empty list rather than as an error.
+                        expect(result).toEqual([PRODUCT]);
+                    });
             });
         });
 
         describe('fetchPaginationProducts', () => {
-            it('defaults to the first page of ten', async () => {
+            it('defaults to the first page of ten', () => {
                 respondWithItems([]);
-                const store = useProductsStore();
 
-                await store.fetchPaginationProducts();
-
-                expect(lastRequest()).toMatchObject({
-                    url: '/products',
-                    method: 'GET',
-                    params: { page: 1, pageSize: 10 }
-                });
+                return useProductsStore()
+                    .fetchPaginationProducts()
+                    .then(() => {
+                        expect(lastRequest()).toMatchObject({
+                            url: '/products',
+                            method: 'GET',
+                            params: { page: 1, pageSize: 10 }
+                        });
+                    });
             });
 
-            it('passes an explicit page and size through', async () => {
+            it('passes an explicit page and size through', () => {
                 respondWithItems([]);
-                const store = useProductsStore();
 
-                await store.fetchPaginationProducts(3, 25);
-
-                expect(lastRequest()).toMatchObject({ params: { page: 3, pageSize: 25 } });
+                return useProductsStore()
+                    .fetchPaginationProducts(3, 25)
+                    .then(() => {
+                        expect(lastRequest()).toMatchObject({
+                            params: { page: 3, pageSize: 25 }
+                        });
+                    });
             });
         });
 
         describe('fetchProduct', () => {
-            it('requests one product and unwraps a single-record envelope', async () => {
+            it('requests one product and unwraps a single-record envelope', () => {
                 vi.mocked(orvalMutator).mockResolvedValue({ data: PRODUCT } as never);
-                const store = useProductsStore();
 
-                const result = await store.fetchProduct('p1');
-
-                expect(lastRequest()).toMatchObject({ url: '/products/p1', method: 'GET' });
-                // One level shallower than the list case, deliberately.
-                expect(result).toEqual(PRODUCT);
+                return useProductsStore()
+                    .fetchProduct('p1')
+                    .then((result) => {
+                        expect(lastRequest()).toMatchObject({
+                            url: '/products/p1',
+                            method: 'GET'
+                        });
+                        // One level shallower than the list case, deliberately.
+                        expect(result).toEqual(PRODUCT);
+                    });
             });
         });
 
         describe('watchSearchProducts', () => {
-            it('sends the store filters as query parameters, renaming id to productId', async () => {
+            it('sends the store filters as query parameters, renaming id to productId', () => {
                 respondWithItems([]);
                 const store = useProductsStore();
                 store.filters = { text: 'gad', id: 'p1', minPrice: 5, maxPrice: 50 };
 
-                const handle = store.watchSearchProducts();
-                await handle.search();
-
-                const { params } = lastRequest() as unknown as {
-                    params: Record<string, unknown>;
-                };
-                expect(params).toMatchObject({
-                    text: 'gad',
-                    // The rename. `id` would be silently ignored by the API.
-                    productId: 'p1',
-                    minPrice: 5,
-                    maxPrice: 50
-                });
-                expect(params.id).toBeUndefined();
+                return store
+                    .watchSearchProducts()
+                    .search()
+                    .then(() => {
+                        const parameters = lastParameters();
+                        expect(parameters).toMatchObject({
+                            text: 'gad',
+                            // The rename. `id` would be silently ignored by the API.
+                            productId: 'p1',
+                            minPrice: 5,
+                            maxPrice: 50
+                        });
+                        expect(parameters.id).toBeUndefined();
+                    });
             });
 
-            it('reports a failed search to the supplied error handler', async () => {
+            it('reports a failed search to the supplied error handler', () => {
                 const failure = new Error('network down');
                 vi.mocked(orvalMutator).mockRejectedValue(failure);
-                const store = useProductsStore();
                 const onError = vi.fn();
 
-                const handle = store.watchSearchProducts(onError);
-                await handle.search().catch(() => {});
-
-                // The list view has no other way to learn the search failed — without this the
-                // page simply stops updating with no message.
-                expect(onError).toHaveBeenCalledWith(failure);
+                return useProductsStore()
+                    .watchSearchProducts(onError)
+                    .search()
+                    .catch(() => {})
+                    .then(() => {
+                        // The list view has no other way to learn the search failed — without
+                        // this the page simply stops updating with no message.
+                        expect(onError).toHaveBeenCalledWith(failure);
+                    });
             });
         });
     });

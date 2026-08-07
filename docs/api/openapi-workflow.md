@@ -151,8 +151,8 @@ Do not hand-roll `FormData` in a store. The generated encoder already omits unse
 ### Per-call axios options
 
 `orvalMutator` declares a second `options` parameter, so every generated function takes an
-optional third argument forwarded to axios — this is how `updateProductImage` passes
-`onUploadProgress` without bypassing the generated client:
+optional third argument forwarded to axios — this is how `ProductEdit.vue` passes
+`onUploadProgress` through `updateProduct` without bypassing the generated client:
 
 ```ts
 updateProductByIdWithMultipart(id, body, { onUploadProgress });

@@ -11,6 +11,9 @@ export default defineConfig({
     e2e: {
         specPattern: 'tests/e2e/specs/**/*.{cy,spec}.{js,jsx,ts,tsx}',
         supportFile: 'tests/e2e/support/e2e.ts',
+        // Everything else about these tests lives under tests/e2e; Cypress' default would put the
+        // upload fixtures in a `cypress/` folder at the repo root, alone.
+        fixturesFolder: 'tests/e2e/fixtures',
         // Cypress' 4s default assumes a prebuilt app. These specs run against `vite dev`, which
         // compiles each route the first time it is visited, so the first assertion on the first
         // spec waits for a build rather than for the app. It fits in 4s on an idle machine and

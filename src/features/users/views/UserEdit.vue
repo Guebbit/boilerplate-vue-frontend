@@ -44,6 +44,13 @@
                         :label="t('user-edit-page.label-password')"
                         :error-messages="showFormErrors ? formErrors.password : []"
                     />
+                    <FormImageUpload
+                        v-model="form.imageUpload"
+                        :current-image-url="currentUser?.imageUrl"
+                        :error-messages="showFormErrors ? formErrors.imageUpload : []"
+                        :progress="uploadProgress"
+                        :disabled="isSubmitting"
+                    />
 
                     <div class="flex flex-wrap gap-2">
                         <v-btn type="submit" color="primary" :disabled="isSubmitting || loading">
@@ -113,6 +120,7 @@ import { z } from 'zod';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { Pencil, User } from 'lucide-vue-next';
 import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
+import FormImageUpload from '@/components/molecules/FormImageUpload.vue';
 import ItemDetailLayout from '@/components/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/components/organisms/CardDetail.vue';
 import CardInfo from '@/components/organisms/CardInfo.vue';
@@ -120,6 +128,7 @@ import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
 import { EMPTY_VALUE, formatText, formatDateTime, formatFlag } from '@/utils/formatters.ts';
 import { notifyErrorMessages } from '@/utils/errors.ts';
+import { imageUploadSchema, useUploadProgress } from '@/utils/uploads.ts';
 
 /**
  * Generic i18n/notifications helpers.
@@ -146,17 +155,19 @@ const { currentUser, loading } = storeToRefs(useUsersStore());
 interface IUserEditForm {
     email?: string;
     password?: string;
+    imageUpload?: File;
 }
 
 /**
  * Validation schema of the edit form, where the password is an optional replacement (an empty
- * field means "leave it as it is").
+ * field means "leave it as it is") and so is the avatar.
  *
  * Built once. Its messages are thunks resolved at parse time, so it speaks the active language
  * without being rebuilt — see `@/features/users/schemas.ts`.
  */
 const editSchema = usersSchema.pick({ email: true }).extend({
-    password: z.preprocess((v) => (v === '' ? undefined : v), usersPasswordSchema.optional())
+    password: z.preprocess((v) => (v === '' ? undefined : v), usersPasswordSchema.optional()),
+    imageUpload: imageUploadSchema
 });
 
 /**
@@ -171,6 +182,11 @@ const {
     handleSubmit,
     activateAutoHydrate
 } = useStructureFormValidation<IUserEditForm>({}, editSchema, { revalidateOn: locale });
+
+/**
+ * Avatar upload progress, shown by `FormImageUpload` while a multipart save is in flight.
+ */
+const { uploadProgress, trackUpload } = useUploadProgress();
 
 /**
  * Auto-hydrate the form from the fetched record once it resolves.
@@ -231,14 +247,19 @@ const userStatus = computed(() =>
  *  a toast. A missing route id is a no-op.
  */
 const submitForm = () =>
-    handleSubmit(async () => {
+    handleSubmit(() => {
         if (!id) return;
-        await updateUser(id, {
-            email: form.value.email,
-            password: form.value.password || undefined
+        const { email, password, imageUpload } = form.value;
+        return trackUpload(imageUpload, (options) =>
+            updateUser(id, { email, password: password || undefined, imageUpload }, options)
+        ).then(() => {
+            // Same as `ProductEdit.vue`: the served `imageUrl` is back in `currentUser`, so the
+            // local File has done its job and holding it would only re-upload the same bytes on
+            // the next save.
+            form.value.imageUpload = undefined;
+            addMessage(t('user-edit-page.success-update'));
+            showFormErrors.value = false;
         });
-        addMessage(t('user-edit-page.success-update'));
-        showFormErrors.value = false;
     })
         .then((success) => {
             if (!success) showFormErrors.value = true;

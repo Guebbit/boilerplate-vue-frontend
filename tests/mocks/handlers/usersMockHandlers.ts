@@ -18,6 +18,8 @@ import {
     getQueryParameters,
     mockDatabase,
     readRequestBody,
+    readRequestParts,
+    resolveMockImageUrl,
     slicePaginatedData,
     toBooleanOrUndefined,
     toNumberOrDefault,
@@ -71,14 +73,15 @@ const replyUsersList = (
 export const registerUsersMockHandlers = (): HttpHandler[] => [
     http.get(`${API_BASE}/users`, ({ request }) => replyUsersList(request.url, ListUsersResponse)),
     http.post(`${API_BASE}/users`, async ({ request }) => {
-        const requestBody = await readRequestBody<Record<string, unknown>>(request);
+        const { fields: requestBody, files } =
+            await readRequestParts<Record<string, unknown>>(request);
         const createdUser: User = {
             id: `user-${Date.now()}`,
             email: String(requestBody.email ?? 'created.user@example.com'),
             username: String(requestBody.username ?? 'created-user'),
             admin: Boolean(requestBody.admin),
             active: requestBody.active === undefined ? true : Boolean(requestBody.active),
-            imageUrl: undefined,
+            imageUrl: resolveMockImageUrl(files),
             createdAt: getIsoDateNow(),
             updatedAt: getIsoDateNow()
         };
@@ -90,7 +93,8 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
         });
     }),
     http.put(`${API_BASE}/users`, async ({ request }) => {
-        const requestBody = await readRequestBody<Record<string, unknown>>(request);
+        const { fields: requestBody, files } =
+            await readRequestParts<Record<string, unknown>>(request);
         const targetId = String(requestBody.id ?? mockDatabase.currentAuthenticatedUserId);
         const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === targetId);
 
@@ -112,6 +116,7 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
                 requestBody.active === undefined
                     ? mockDatabase.sampleUsers[targetIndex].active
                     : Boolean(requestBody.active),
+            imageUrl: resolveMockImageUrl(files, mockDatabase.sampleUsers[targetIndex].imageUrl),
             updatedAt: getIsoDateNow()
         };
 
@@ -164,7 +169,8 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
                 schema: MockErrorResponse
             });
 
-        const requestBody = await readRequestBody<Record<string, unknown>>(request);
+        const { fields: requestBody, files } =
+            await readRequestParts<Record<string, unknown>>(request);
         const updatedUser: User = {
             ...mockDatabase.sampleUsers[targetIndex],
             email: requestBody.email
@@ -173,6 +179,7 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
             username: requestBody.username
                 ? String(requestBody.username)
                 : mockDatabase.sampleUsers[targetIndex].username,
+            imageUrl: resolveMockImageUrl(files, mockDatabase.sampleUsers[targetIndex].imageUrl),
             updatedAt: getIsoDateNow()
         };
 

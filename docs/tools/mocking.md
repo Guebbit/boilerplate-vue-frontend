@@ -136,6 +136,7 @@ Do not edit `generated.ts` — `npm run genapi` overwrites it.
 Recorded deliberately; none of these are accidents.
 
 - **The handlers do not model auth guards.** The backend guards every `/orders` route with `isAuth` and many write routes with `isAdmin`; the mocks apply role *scoping* but never return 401/403 for a missing or non-admin session. Specs therefore cannot test authorization failure through the mock profile.
+- **The handlers do not re-validate uploads.** The seven multipart operations send an `imageUpload` part; the handlers separate it from the scalar fields (`readRequestParts`) and synthesise an `imageUrl` in the backend's shape (`resolveMockImageUrl`), but they never look at the bytes. The real API gates twice — `fileFilter` on the declared `Content-Type`, then `identifyImageFile()` on the actual magic bytes, answering **422** when the two disagree. Only the live profile can exercise that; see `tests/e2e/specs/uploads.cy.ts`.
 - **Behaviour parity is maintained by review day-to-day, spot-checked by a test.** `tests/e2e/specs/parity.cy.ts` (live profile only, see [Live E2E](./live-e2e.md)) asserts the seeded ids/counts/totals still match, but only when someone runs the live profile — nothing in CI runs it automatically, since the two repos are independently versioned and hand-paired (see that page for why).
 
 ## Cypress integration

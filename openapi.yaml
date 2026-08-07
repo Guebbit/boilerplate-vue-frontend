@@ -200,6 +200,33 @@ components:
                 `uri-reference`, not `uri`: an uploaded image is stored and returned as a
                 path relative to the API host, which is not a valid absolute URI.
 
+        # ---------- On the `imageUpload` fields below (and why they carry no limits) ----------
+        #
+        # The six `*Multipart` request bodies each declare `imageUpload` as a bare
+        # `type: string, format: binary` — no `maxLength`, no `contentMediaType`. That is on
+        # purpose, and it is worth knowing why before someone "fixes" it.
+        #
+        # The real limits live in the backend, and only there:
+        #   - accepted mime types → src/core/adapters/storage.ts (image/png, jpg, jpeg, webp)
+        #   - maximum size        → NODE_MAX_UPLOAD_BYTES, default 5 MB
+        # enforced twice: `fileFilter` rejects on the client's declared Content-Type before the
+        # bytes touch disk, then `identifyImageFile()` re-reads the actual magic bytes and answers
+        # 422 when the declaration lied. Nothing a client declares can substitute for either gate.
+        #
+        # Declaring the constraints here would document them but generate nothing to read:
+        #   - orval's zod generator short-circuits on `format: binary` straight to
+        #     `zod.instanceof(File)` and emits no length constant for it
+        #     (@orval/zod, the `case "string"` branch);
+        #   - the `zodSchemas` target in orval.config.ts has no `splitByContentType`, so only the
+        #     JSON body of each operation becomes a schema — the multipart bodies never do.
+        # So a `maxLength` added here would reach no generated artefact in either repo, while
+        # looking like it had.
+        #
+        # The frontend therefore restates both numbers in src/utils/uploads.ts, which names
+        # storage.ts as the authority and explains the same thing at its own call site. If the
+        # backend's limits ever change, that file is what has to change with them — nothing will
+        # announce the drift.
+
         # ---------- Meta / envelope ----------
         PaginationMeta:
             type: object
@@ -799,6 +826,7 @@ components:
                 passwordConfirm:
                     $ref: '#/components/schemas/Password'
                 imageUpload:
+                    # No maxLength/contentMediaType by design — see the note under `ImageUrl`.
                     type: string
                     format: binary
                     description: Optional user profile image
@@ -889,6 +917,7 @@ components:
                 active:
                     type: boolean
                 imageUpload:
+                    # No maxLength/contentMediaType by design — see the note under `ImageUrl`.
                     type: string
                     format: binary
                     description: Optional user profile image
@@ -927,6 +956,7 @@ components:
                 password:
                     $ref: '#/components/schemas/Password'
                 imageUpload:
+                    # No maxLength/contentMediaType by design — see the note under `ImageUrl`.
                     type: string
                     format: binary
                     description: Optional user profile image
@@ -957,6 +987,7 @@ components:
                 username:
                     type: string
                 imageUpload:
+                    # No maxLength/contentMediaType by design — see the note under `ImageUrl`.
                     type: string
                     format: binary
                     description: Optional user profile image
@@ -1040,6 +1071,7 @@ components:
                 active:
                     type: boolean
                 imageUpload:
+                    # No maxLength/contentMediaType by design — see the note under `ImageUrl`.
                     type: string
                     format: binary
                     description: Optional product image
@@ -1098,6 +1130,7 @@ components:
                 active:
                     type: boolean
                 imageUpload:
+                    # No maxLength/contentMediaType by design — see the note under `ImageUrl`.
                     type: string
                     format: binary
                     description: Optional product image
@@ -1152,6 +1185,7 @@ components:
                 active:
                     type: boolean
                 imageUpload:
+                    # No maxLength/contentMediaType by design — see the note under `ImageUrl`.
                     type: string
                     format: binary
                     description: Optional product image

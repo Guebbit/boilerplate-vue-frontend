@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureSearchApi } from '@guebbit/vue-toolkit';
-import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
+import type { AxiosRequestConfig } from 'axios';
 import { ref, type WatchSource } from 'vue';
 
 import {
@@ -144,15 +144,20 @@ export const useProductsStore = defineStore('products', () => {
      * JSON otherwise.
      *
      * @param productData - Product fields, optionally including `imageUpload`.
+     * @param options - Per-call axios overrides, forwarded to `orvalMutator`.
+     *  `ProductCreate.vue` passes `onUploadProgress` through it to drive its
+     *  progress bar.
      * @returns A promise resolving with the created product.
      */
-    const createProduct = ({ imageUpload, ...productData }: CreateProductRequestMultipart) =>
+    const createProduct = (
+        { imageUpload, ...productData }: CreateProductRequestMultipart,
+        options?: AxiosRequestConfig
+    ) =>
         createTarget(() =>
-            imageUpload
-                ? createProductWithMultipart({ ...productData, imageUpload }).then(
-                      (response) => response.data
-                  )
-                : apiCreateProduct(productData).then((response) => response.data)
+            (imageUpload
+                ? createProductWithMultipart({ ...productData, imageUpload }, options)
+                : apiCreateProduct(productData, options)
+            ).then((response) => response.data)
         );
 
     /**
@@ -171,57 +176,19 @@ export const useProductsStore = defineStore('products', () => {
     ) =>
         updateTarget(
             () =>
-                imageUpload
+                (imageUpload
                     ? updateProductByIdWithMultipart(
                           productId,
                           { ...productData, imageUpload },
                           options
-                      ).then((response) => response.data)
-                    : updateProductById(productId, productData, options).then(
-                          (response) => response.data
-                      ),
+                      )
+                    : updateProductById(productId, productData, options)
+                ).then((response) => response.data),
             // `imageUpload` is deliberately excluded: the new imageUrl comes back
             // from the API, and parking a Blob in store state would be nonsense.
             productData as Partial<Product>,
             productId
         );
-
-    /**
-     * Replaces a product's image via multipart upload.
-     *
-     * The existing product record must be provided so the required title and
-     * price fields can be forwarded alongside the new image file.
-     *
-     * Thin wrapper over {@link updateProduct} — the same `PUT /products/{id}`
-     * with the same payload — adding only the file-picker handling and the
-     * progress callback that a plain field update has no use for.
-     *
-     * @param product - Current product record, used to re-send mandatory fields.
-     * @param files - Selected files; only the first is uploaded.
-     * @param onUploadProgress - Axios progress callback, for a progress bar.
-     * @returns A promise resolving with the updated product, rejected with a
-     *  `no file selected` error when `files` is empty.
-     */
-    const updateProductImage = (
-        product: Product,
-        files: File[] | FileList = [],
-        onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
-    ) => {
-        if (files.length === 0 || !files[0]) return Promise.reject(new Error('no file selected'));
-        return updateProduct(
-            product.id,
-            {
-                title: product.title,
-                price: product.price,
-                description: product.description,
-                active: product.active,
-                categories: product.categories,
-                tags: product.tags,
-                imageUpload: files[0]
-            },
-            { onUploadProgress }
-        );
-    };
 
     /**
      * Deletes a product and drops it from the store.
@@ -252,7 +219,6 @@ export const useProductsStore = defineStore('products', () => {
         watchProduct,
         createProduct,
         updateProduct,
-        updateProductImage,
         deleteProduct
     };
 });

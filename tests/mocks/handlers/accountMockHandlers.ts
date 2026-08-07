@@ -18,7 +18,9 @@ import {
     getIsoDateNow,
     mockDatabase,
     readRequestBody,
+    readRequestParts,
     resetMockDatabase,
+    resolveMockImageUrl,
     trySetSessionStorage
 } from '../shared/mockShared.ts';
 import { toMockJsonResponse } from '../shared/mockTransport.ts';
@@ -137,14 +139,15 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
     // separately (after confirming the account) to obtain an access token. So,
     // unlike login, this does not touch currentAuthenticatedUserId/sessionStorage.
     http.post(`${API_BASE}/account/signup`, async ({ request }) => {
-        const requestBody = await readRequestBody<Record<string, unknown>>(request);
+        const { fields: requestBody, files } =
+            await readRequestParts<Record<string, unknown>>(request);
         const createdUser: User = {
             id: `user-${Date.now()}`,
             email: String(requestBody.email ?? 'new.user@example.com'),
             username: String(requestBody.username ?? 'new-user'),
             admin: false,
             active: true,
-            imageUrl: undefined,
+            imageUrl: resolveMockImageUrl(files),
             createdAt: getIsoDateNow(),
             updatedAt: getIsoDateNow()
         };

@@ -10,7 +10,7 @@ import {
     updateUserByIdWithMultipart,
     deleteUserById
 } from '@api';
-import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
+import type { AxiosRequestConfig } from 'axios';
 import type {
     User,
     CreateUserRequestMultipart,
@@ -144,15 +144,20 @@ export const useUsersStore = defineStore('users', () => {
      * otherwise.
      *
      * @param userData - User fields, optionally including `imageUpload`.
+     * @param options - Per-call axios overrides, forwarded to `orvalMutator`.
+     *  `UserCreate.vue` passes `onUploadProgress` through it to drive its progress
+     *  bar.
      * @returns A promise resolving with the created user.
      */
-    const createUser = ({ imageUpload, ...userData }: CreateUserRequestMultipart) =>
+    const createUser = (
+        { imageUpload, ...userData }: CreateUserRequestMultipart,
+        options?: AxiosRequestConfig
+    ) =>
         createTarget(() =>
-            imageUpload
-                ? createUserWithMultipart({ ...userData, imageUpload }).then(
-                      (response) => response.data
-                  )
-                : apiCreateUser(userData).then((response) => response.data)
+            (imageUpload
+                ? createUserWithMultipart({ ...userData, imageUpload }, options)
+                : apiCreateUser(userData, options)
+            ).then((response) => response.data)
         );
 
     /**
@@ -172,41 +177,15 @@ export const useUsersStore = defineStore('users', () => {
     ) =>
         updateTarget(
             () =>
-                imageUpload
-                    ? updateUserByIdWithMultipart(
-                          userId,
-                          { ...userData, imageUpload },
-                          options
-                      ).then((response) => response.data)
-                    : updateUserById(userId, userData, options).then((response) => response.data),
+                (imageUpload
+                    ? updateUserByIdWithMultipart(userId, { ...userData, imageUpload }, options)
+                    : updateUserById(userId, userData, options)
+                ).then((response) => response.data),
             // `imageUpload` is deliberately excluded: the new imageUrl comes back
             // from the API, and parking a Blob in store state would be nonsense.
             userData as Partial<User>,
             userId
         );
-
-    /**
-     * Replaces a user's avatar through the multipart `imageUpload` endpoint.
-     *
-     * Thin wrapper over {@link updateUser} — the same `PUT /users/{id}` — adding
-     * only the file-picker handling and the progress callback. Passing no other
-     * field means nothing is merged optimistically, which is right: the new
-     * `imageUrl` is whatever the API returns.
-     *
-     * @param userId - Identifier of the user to update.
-     * @param files - Selected files; only the first is uploaded.
-     * @param onUploadProgress - Axios progress callback, for a progress bar.
-     * @returns A promise resolving with the updated user, rejected with a
-     *  `no file selected` error when `files` is empty.
-     */
-    const updateUserImage = (
-        userId: string,
-        files: File[] | FileList = [],
-        onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
-    ) => {
-        if (files.length === 0 || !files[0]) return Promise.reject(new Error('no file selected'));
-        return updateUser(userId, { imageUpload: files[0] }, { onUploadProgress });
-    };
 
     /**
      * Deletes a user and drops them from the store.
@@ -236,7 +215,6 @@ export const useUsersStore = defineStore('users', () => {
         watchUser,
         createUser,
         updateUser,
-        updateUserImage,
         deleteUser
     };
 });

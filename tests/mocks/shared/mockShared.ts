@@ -75,48 +75,128 @@ const parseValue = (value: FormDataEntryValue | unknown) => {
     return value;
 };
 
-export const parseRequestBody = <T>(data: unknown): Partial<T> => {
-    if (!data) return {};
+/**
+ * A parsed request body, with uploaded files separated from ordinary fields.
+ *
+ * The split exists because the seven multipart operations (`*WithMultipart`) send an
+ * `imageUpload` part alongside the scalar fields, and flattening the two together is actively
+ * harmful: the file would land on the record as `imageUpload: File`, a key no schema declares,
+ * and `toMockJsonResponse`'s strict validation would reject the response envelope — failing in a
+ * place that says nothing about the cause.
+ */
+export type MockRequestParts<T> = {
+    /** Scalar form fields, coerced by {@link parseValue}. Never contains a File or Blob. */
+    fields: Partial<T>;
+    /** Uploaded parts, keyed by form field name — `imageUpload` for every current operation. */
+    files: Record<string, File>;
+};
+
+const isUploadedFile = (value: unknown): value is File =>
+    (typeof File !== 'undefined' && value instanceof File) ||
+    (typeof Blob !== 'undefined' && value instanceof Blob);
+
+export const parseRequestBody = <T>(data: unknown): MockRequestParts<T> => {
+    if (!data) return { fields: {}, files: {} };
     if (typeof FormData !== 'undefined' && data instanceof FormData) {
         const parsedData: Record<string, unknown> = {};
+        const parsedFiles: Record<string, File> = {};
         // eslint-disable-next-line unicorn/no-array-for-each
         data.forEach((value, key) => {
-            parsedData[key] = parseValue(value);
+            if (isUploadedFile(value)) parsedFiles[key] = value;
+            else parsedData[key] = parseValue(value);
         });
-        return parsedData as Partial<T>;
+        return { fields: parsedData as Partial<T>, files: parsedFiles };
     }
     if (typeof data === 'string') {
         try {
-            return JSON.parse(data) as Partial<T>;
+            return { fields: JSON.parse(data) as Partial<T>, files: {} };
         } catch {
-            return {};
+            return { fields: {}, files: {} };
         }
     }
-    if (typeof data === 'object') return data as Partial<T>;
-    return {};
+    if (typeof data === 'object') return { fields: data as Partial<T>, files: {} };
+    return { fields: {}, files: {} };
 };
 
-export const readRequestBody = async <T>(request: Request): Promise<Partial<T>> => {
-    try {
-        return parseRequestBody<T>(await request.clone().json());
-    } catch (error) {
-        void error;
-    }
+/**
+ * Reads a request body as JSON, then multipart, then plain text — whichever parses first.
+ *
+ * @returns Scalar fields and uploaded files, kept apart. Handlers that ignore uploads should
+ *  use {@link readRequestBody} instead and never see the difference.
+ */
+export const readRequestParts = <T>(request: Request): Promise<MockRequestParts<T>> =>
+    // Each `.catch` is "that encoding was not it, try the next" — a rejected `.json()` on a
+    // multipart body is the expected path here, not an error worth reporting. The body is cloned
+    // per attempt because reading it consumes the stream.
+    request
+        .clone()
+        .json()
+        .then((data) => parseRequestBody<T>(data))
+        .catch(() =>
+            request
+                .clone()
+                .formData()
+                .then((data) => parseRequestBody<T>(data))
+        )
+        .catch(() =>
+            request
+                .clone()
+                .text()
+                .then((data) => parseRequestBody<T>(data))
+        )
+        .catch(() => ({ fields: {}, files: {} }));
 
-    try {
-        return parseRequestBody<T>(await request.clone().formData());
-    } catch (error) {
-        void error;
-    }
+/**
+ * The scalar half of {@link readRequestParts}, for the majority of handlers that take no upload.
+ */
+export const readRequestBody = <T>(request: Request): Promise<Partial<T>> =>
+    readRequestParts<T>(request).then(({ fields }) => fields);
 
-    try {
-        return parseRequestBody<T>(await request.clone().text());
-    } catch (error) {
-        void error;
-    }
+// ─── uploads ──────────────────────────────────────────────────────────────────
 
-    return {};
+/**
+ * Extension the backend would derive from a validated mime type, mirroring
+ * `BE src/core/adapters/storage.ts:105-107`.
+ */
+const UPLOAD_EXTENSIONS = new Map([
+    ['image/png', 'png'],
+    ['image/jpg', 'jpg'],
+    ['image/jpeg', 'jpg'],
+    ['image/webp', 'webp']
+]);
+
+/**
+ * Synthesises the `imageUrl` an upload would be stored under.
+ *
+ * Mirrors the backend's shape — a public-relative URL path built from a random name plus the
+ * extension implied by the mime type (`BE src/core/http/uploads.ts`) — without mirroring its
+ * gates. In particular the mock does NOT re-read the file's magic bytes, so it can never
+ * answer the 422 the real API gives when a declared type and the actual bytes disagree.
+ * That is deliberate: these mocks reproduce behaviour, not security. See
+ * docs/tools/mocking.md, "Known gaps".
+ *
+ * @param file - The uploaded part.
+ * @returns A server-relative path such as `/images/mock/9f2c…d1.png`.
+ */
+const toMockUploadUrl = (file: File) => {
+    const extension = UPLOAD_EXTENSIONS.get(file.type) ?? 'bin';
+    const randomName = Array.from({ length: 16 }, () =>
+        Math.floor(Math.random() * 256)
+            .toString(16)
+            .padStart(2, '0')
+    ).join('');
+    return `/images/mock/${randomName}.${extension}`;
 };
+
+/**
+ * The `imageUrl` to persist for a record after a write.
+ *
+ * @param files - Uploaded parts from {@link readRequestParts}.
+ * @param currentImageUrl - The record's existing image, kept when no new file was sent.
+ * @returns A freshly synthesised path when `imageUpload` is present, the current value otherwise.
+ */
+export const resolveMockImageUrl = (files: Record<string, File>, currentImageUrl?: string) =>
+    files.imageUpload ? toMockUploadUrl(files.imageUpload) : currentImageUrl;
 
 // URL helpers are shared by all resource handlers for id and query extraction.
 const getPathSegments = (url: string | undefined) =>

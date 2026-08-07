@@ -77,6 +77,7 @@
         "button-view": "Visualizza",
         "button-edit": "Modifica",
         "button-delete": "Elimina",
+        "button-create-product": "Crea prodotto",
         "confirm-delete": "Sei sicuro di voler eliminare questo prodotto?",
         "success-delete": "Prodotto eliminato con successo",
         "column-id": "ID",
@@ -262,6 +263,15 @@
         "title-required": "Il titolo è obbligatorio",
         "price-min": "Il prezzo deve essere maggiore o uguale a 0"
     },
+    "image-upload-form": {
+        "label": "Immagine",
+        "hint": "PNG, JPEG o WebP, fino a {size}",
+        "size-exceeded": "L'immagine non deve superare {size}",
+        "wrong-type": "L'immagine deve essere un file PNG, JPEG o WebP",
+        "upload-failed": "Non è stato possibile caricare l'immagine",
+        "upload-progress": "Caricamento… {percent}%",
+        "preview-alt": "Anteprima immagine"
+    },
     "orders-form": {
         "status-invalid": "Stato ordine non valido",
         "email-invalid": "Deve essere un'email valida",
@@ -271,6 +281,16 @@
         "status-shipped": "Spedito",
         "status-delivered": "Consegnato",
         "status-cancelled": "Annullato"
+    },
+    "product-create-page": {
+        "page-title": "Crea prodotto",
+        "label-title": "Titolo",
+        "label-price": "Prezzo",
+        "label-description": "Descrizione",
+        "label-active": "Attivo",
+        "button-submit": "Crea prodotto",
+        "button-go-to-list": "Torna alla lista prodotti",
+        "success-create": "Prodotto creato con successo"
     },
     "product-edit-page": {
         "page-title": "Modifica prodotto",

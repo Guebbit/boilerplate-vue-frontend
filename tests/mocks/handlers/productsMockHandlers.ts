@@ -20,6 +20,8 @@ import {
     isVisibleToCaller,
     mockDatabase,
     readRequestBody,
+    readRequestParts,
+    resolveMockImageUrl,
     slicePaginatedData,
     toNumberOrDefault,
     toPaginationMeta
@@ -79,14 +81,15 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
         replyProductsList(request.url, ListProductsResponse)
     ),
     http.post(`${API_BASE}/products`, async ({ request }) => {
-        const requestBody = await readRequestBody<Record<string, unknown>>(request);
+        const { fields: requestBody, files } =
+            await readRequestParts<Record<string, unknown>>(request);
         const createdProduct: Product = {
             id: `prod-${Date.now()}`,
             title: String(requestBody.title ?? 'New product'),
             description: requestBody.description ? String(requestBody.description) : '',
             price: Number(requestBody.price ?? 0),
             active: requestBody.active === undefined ? true : Boolean(requestBody.active),
-            imageUrl: undefined,
+            imageUrl: resolveMockImageUrl(files),
             createdAt: getIsoDateNow(),
             updatedAt: getIsoDateNow()
         };
@@ -97,7 +100,8 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
         });
     }),
     http.put(`${API_BASE}/products`, async ({ request }) => {
-        const requestBody = await readRequestBody<Record<string, unknown>>(request);
+        const { fields: requestBody, files } =
+            await readRequestParts<Record<string, unknown>>(request);
         const targetId = String(requestBody.id ?? '');
         const targetIndex = mockDatabase.sampleProducts.findIndex(({ id }) => id === targetId);
 
@@ -124,6 +128,7 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
                 requestBody.active === undefined
                     ? mockDatabase.sampleProducts[targetIndex].active
                     : Boolean(requestBody.active),
+            imageUrl: resolveMockImageUrl(files, mockDatabase.sampleProducts[targetIndex].imageUrl),
             updatedAt: getIsoDateNow()
         };
 
@@ -187,7 +192,8 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
                 schema: MockErrorResponse
             });
 
-        const requestBody = await readRequestBody<Record<string, unknown>>(request);
+        const { fields: requestBody, files } =
+            await readRequestParts<Record<string, unknown>>(request);
         const updatedProduct: Product = {
             ...mockDatabase.sampleProducts[targetIndex],
             title: requestBody.title
@@ -205,6 +211,7 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
                 requestBody.active === undefined
                     ? mockDatabase.sampleProducts[targetIndex].active
                     : Boolean(requestBody.active),
+            imageUrl: resolveMockImageUrl(files, mockDatabase.sampleProducts[targetIndex].imageUrl),
             updatedAt: getIsoDateNow()
         };
 
