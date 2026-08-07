@@ -722,6 +722,8 @@ export interface UpdateUserRequest {
     email?: Email;
     username?: string;
     password?: Password;
+    admin?: boolean;
+    active?: boolean;
     imageUrl?: ImageUrl;
     locale?: Locale;
 }
@@ -731,6 +733,8 @@ export interface UpdateUserRequestMultipart {
     email?: Email;
     username?: string;
     password?: Password;
+    admin?: boolean;
+    active?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
     locale?: Locale;
@@ -740,6 +744,8 @@ export interface UpdateUserByIdRequest {
     email?: Email;
     password?: Password;
     username?: string;
+    admin?: boolean;
+    active?: boolean;
     imageUrl?: ImageUrl;
 }
 
@@ -747,6 +753,8 @@ export interface UpdateUserByIdRequestMultipart {
     email?: Email;
     password?: Password;
     username?: string;
+    admin?: boolean;
+    active?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
 }
@@ -838,6 +846,10 @@ export interface UpdateProductByIdRequestMultipart {
     imageUpload?: Blob;
     categories?: string[];
     tags?: string[];
+}
+
+export interface HardDeleteRequest {
+    hardDelete?: boolean;
 }
 
 export interface DeleteProductRequest {
@@ -1084,6 +1096,27 @@ export type DeleteUserByIdParams = {
     hardDelete?: boolean;
 };
 
+export type ListFeedbackRequestsParams = {
+    /**
+     * 1-based page index
+     * @minimum 1
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Free-text search string
+     * @minLength 1
+     */
+    text?: TextParamParameter;
+    email?: Email;
+    status?: string;
+};
+
 export type ListProductsParams = {
     /**
      * 1-based page index
@@ -1104,7 +1137,9 @@ export type ListProductsParams = {
     /**
      * Resource identifier
      */
-    productId?: ProductIdParamParameter;
+    id?: IdParamParameter;
+    category?: string;
+    tag?: string;
     /**
      * @minimum 0
      */
@@ -1542,6 +1577,12 @@ export const updateUserWithMultipart = (
     if (updateUserRequestMultipart.password !== undefined) {
         formData.append(`password`, updateUserRequestMultipart.password);
     }
+    if (updateUserRequestMultipart.admin !== undefined) {
+        formData.append(`admin`, updateUserRequestMultipart.admin.toString());
+    }
+    if (updateUserRequestMultipart.active !== undefined) {
+        formData.append(`active`, updateUserRequestMultipart.active.toString());
+    }
     if (updateUserRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, updateUserRequestMultipart.imageUpload);
     }
@@ -1629,6 +1670,12 @@ export const updateUserByIdWithMultipart = (
     if (updateUserByIdRequestMultipart.username !== undefined) {
         formData.append(`username`, updateUserByIdRequestMultipart.username);
     }
+    if (updateUserByIdRequestMultipart.admin !== undefined) {
+        formData.append(`admin`, updateUserByIdRequestMultipart.admin.toString());
+    }
+    if (updateUserByIdRequestMultipart.active !== undefined) {
+        formData.append(`active`, updateUserByIdRequestMultipart.active.toString());
+    }
     if (updateUserByIdRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, updateUserByIdRequestMultipart.imageUpload);
     }
@@ -1650,13 +1697,31 @@ export const updateUserByIdWithMultipart = (
  */
 export const deleteUserById = (
     id: string,
+    hardDeleteRequest?: HardDeleteRequest,
     params?: DeleteUserByIdParams,
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>(
-        { url: `/users/${id}`, method: 'DELETE', params },
+        {
+            url: `/users/${id}`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: hardDeleteRequest,
+            params
+        },
         options
     );
+};
+
+/**
+ * Permanently removes the user identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /users/{id}?hardDelete=true`.
+ * @summary Permanently delete user
+ */
+export const hardDeleteUserById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>({ url: `/users/${id}/hard`, method: 'DELETE' }, options);
 };
 
 /**
@@ -1703,10 +1768,16 @@ export const createFeedbackRequest = (
  */
 export const listFeedbackRequests = (
     searchFeedbackRequestsRequest?: SearchFeedbackRequestsRequest,
+    params?: ListFeedbackRequestsParams,
     options?: SecondParameter<typeof orvalMutator<FeedbackRequestsResponseEnvelope>>
 ) => {
     return orvalMutator<FeedbackRequestsResponseEnvelope>(
-        { url: `/feedback`, method: 'GET', headers: { 'Content-Type': 'application/json' } },
+        {
+            url: `/feedback`,
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            params
+        },
         options
     );
 };
@@ -1961,11 +2032,32 @@ export const updateProductByIdWithMultipart = (
  */
 export const deleteProductById = (
     id: string,
+    hardDeleteRequest?: HardDeleteRequest,
     params?: DeleteProductByIdParams,
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>(
-        { url: `/products/${id}`, method: 'DELETE', params },
+        {
+            url: `/products/${id}`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: hardDeleteRequest,
+            params
+        },
+        options
+    );
+};
+
+/**
+ * Permanently removes the product identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /products/{id}?hardDelete=true`.
+ * @summary Permanently delete product
+ */
+export const hardDeleteProductById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        { url: `/products/${id}/hard`, method: 'DELETE' },
         options
     );
 };
@@ -2308,6 +2400,7 @@ export type UpdateUserByIdWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof updateUserByIdWithMultipart>>
 >;
 export type DeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof deleteUserById>>>;
+export type HardDeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof hardDeleteUserById>>>;
 export type SearchUsersResult = NonNullable<Awaited<ReturnType<typeof searchUsers>>>;
 export type CreateFeedbackRequestResult = NonNullable<
     Awaited<ReturnType<typeof createFeedbackRequest>>
@@ -2334,6 +2427,9 @@ export type UpdateProductByIdWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof updateProductByIdWithMultipart>>
 >;
 export type DeleteProductByIdResult = NonNullable<Awaited<ReturnType<typeof deleteProductById>>>;
+export type HardDeleteProductByIdResult = NonNullable<
+    Awaited<ReturnType<typeof hardDeleteProductById>>
+>;
 export type SearchProductsResult = NonNullable<Awaited<ReturnType<typeof searchProducts>>>;
 export type GetCartResult = NonNullable<Awaited<ReturnType<typeof getCart>>>;
 export type UpsertCartItemResult = NonNullable<Awaited<ReturnType<typeof upsertCartItem>>>;

@@ -729,6 +729,8 @@ export interface UpdateUserRequest {
     email?: Email;
     username?: string;
     password?: Password;
+    admin?: boolean;
+    active?: boolean;
     imageUrl?: ImageUrl;
     locale?: Locale;
 }
@@ -738,6 +740,8 @@ export interface UpdateUserRequestMultipart {
     email?: Email;
     username?: string;
     password?: Password;
+    admin?: boolean;
+    active?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
     locale?: Locale;
@@ -747,6 +751,8 @@ export interface UpdateUserByIdRequest {
     email?: Email;
     password?: Password;
     username?: string;
+    admin?: boolean;
+    active?: boolean;
     imageUrl?: ImageUrl;
 }
 
@@ -754,6 +760,8 @@ export interface UpdateUserByIdRequestMultipart {
     email?: Email;
     password?: Password;
     username?: string;
+    admin?: boolean;
+    active?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
 }
@@ -845,6 +853,10 @@ export interface UpdateProductByIdRequestMultipart {
     imageUpload?: Blob;
     categories?: string[];
     tags?: string[];
+}
+
+export interface HardDeleteRequest {
+    hardDelete?: boolean;
 }
 
 export interface DeleteProductRequest {
@@ -1091,6 +1103,27 @@ export type DeleteUserByIdParams = {
     hardDelete?: boolean;
 };
 
+export type ListFeedbackRequestsParams = {
+    /**
+     * 1-based page index
+     * @minimum 1
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Free-text search string
+     * @minLength 1
+     */
+    text?: TextParamParameter;
+    email?: Email;
+    status?: string;
+};
+
 export type ListProductsParams = {
     /**
      * 1-based page index
@@ -1111,7 +1144,9 @@ export type ListProductsParams = {
     /**
      * Resource identifier
      */
-    productId?: ProductIdParamParameter;
+    id?: IdParamParameter;
+    category?: string;
+    tag?: string;
     /**
      * @minimum 0
      */
@@ -1479,6 +1514,12 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         if (updateUserRequestMultipart.password !== undefined) {
             formData.append(`password`, updateUserRequestMultipart.password);
         }
+        if (updateUserRequestMultipart.admin !== undefined) {
+            formData.append(`admin`, updateUserRequestMultipart.admin.toString());
+        }
+        if (updateUserRequestMultipart.active !== undefined) {
+            formData.append(`active`, updateUserRequestMultipart.active.toString());
+        }
         if (updateUserRequestMultipart.imageUpload !== undefined) {
             formData.append(`imageUpload`, updateUserRequestMultipart.imageUpload);
         }
@@ -1542,6 +1583,12 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         if (updateUserByIdRequestMultipart.username !== undefined) {
             formData.append(`username`, updateUserByIdRequestMultipart.username);
         }
+        if (updateUserByIdRequestMultipart.admin !== undefined) {
+            formData.append(`admin`, updateUserByIdRequestMultipart.admin.toString());
+        }
+        if (updateUserByIdRequestMultipart.active !== undefined) {
+            formData.append(`active`, updateUserByIdRequestMultipart.active.toString());
+        }
         if (updateUserByIdRequestMultipart.imageUpload !== undefined) {
             formData.append(`imageUpload`, updateUserByIdRequestMultipart.imageUpload);
         }
@@ -1555,13 +1602,26 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
      */
     const deleteUserById = (
         id: string,
+        hardDeleteRequest?: HardDeleteRequest,
         params?: DeleteUserByIdParams,
         options?: AxiosRequestConfig
     ): Promise<AxiosResponse<SuccessResponse>> => {
         return axiosInstance.delete(`/users/${id}`, {
+            data: hardDeleteRequest,
             ...options,
             params: { ...params, ...options?.params }
         });
+    };
+
+    /**
+     * Permanently removes the user identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /users/{id}?hardDelete=true`.
+     * @summary Permanently delete user
+     */
+    const hardDeleteUserById = (
+        id: string,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.delete(`/users/${id}/hard`, options);
     };
 
     /**
@@ -1592,9 +1652,13 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
      */
     const listFeedbackRequests = (
         searchFeedbackRequestsRequest?: SearchFeedbackRequestsRequest,
+        params?: ListFeedbackRequestsParams,
         options?: AxiosRequestConfig
     ): Promise<AxiosResponse<FeedbackRequestsResponseEnvelope>> => {
-        return axiosInstance.get(`/feedback`, options);
+        return axiosInstance.get(`/feedback`, {
+            ...options,
+            params: { ...params, ...options?.params }
+        });
     };
 
     /**
@@ -1785,13 +1849,26 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
      */
     const deleteProductById = (
         id: string,
+        hardDeleteRequest?: HardDeleteRequest,
         params?: DeleteProductByIdParams,
         options?: AxiosRequestConfig
     ): Promise<AxiosResponse<SuccessResponse>> => {
         return axiosInstance.delete(`/products/${id}`, {
+            data: hardDeleteRequest,
             ...options,
             params: { ...params, ...options?.params }
         });
+    };
+
+    /**
+     * Permanently removes the product identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /products/{id}?hardDelete=true`.
+     * @summary Permanently delete product
+     */
+    const hardDeleteProductById = (
+        id: string,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.delete(`/products/${id}/hard`, options);
     };
 
     /**
@@ -2020,6 +2097,7 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         updateUserById,
         updateUserByIdWithMultipart,
         deleteUserById,
+        hardDeleteUserById,
         searchUsers,
         createFeedbackRequest,
         listFeedbackRequests,
@@ -2034,6 +2112,7 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         updateProductById,
         updateProductByIdWithMultipart,
         deleteProductById,
+        hardDeleteProductById,
         searchProducts,
         getCart,
         upsertCartItem,
@@ -2084,6 +2163,7 @@ export type GetUserByIdResult = AxiosResponse<UserEnvelope>;
 export type UpdateUserByIdResult = AxiosResponse<UserEnvelope>;
 export type UpdateUserByIdWithMultipartResult = AxiosResponse<UserEnvelope>;
 export type DeleteUserByIdResult = AxiosResponse<SuccessResponse>;
+export type HardDeleteUserByIdResult = AxiosResponse<SuccessResponse>;
 export type SearchUsersResult = AxiosResponse<UsersResponseEnvelope>;
 export type CreateFeedbackRequestResult = AxiosResponse<FeedbackRequestEnvelope>;
 export type ListFeedbackRequestsResult = AxiosResponse<FeedbackRequestsResponseEnvelope>;
@@ -2098,6 +2178,7 @@ export type GetProductByIdResult = AxiosResponse<ProductEnvelope>;
 export type UpdateProductByIdResult = AxiosResponse<ProductEnvelope>;
 export type UpdateProductByIdWithMultipartResult = AxiosResponse<ProductEnvelope>;
 export type DeleteProductByIdResult = AxiosResponse<SuccessResponse>;
+export type HardDeleteProductByIdResult = AxiosResponse<SuccessResponse>;
 export type SearchProductsResult = AxiosResponse<ProductsResponseEnvelope>;
 export type GetCartResult = AxiosResponse<CartResponseEnvelope>;
 export type UpsertCartItemResult = AxiosResponse<CartResponseEnvelope>;
@@ -2789,6 +2870,15 @@ export const getDeleteUserByIdResponseMock = (
     ...overrideResponse
 });
 
+export const getHardDeleteUserByIdResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
 export const getSearchUsersResponseMock = (
     overrideResponse: Partial<Extract<UsersResponseEnvelope, object>> = {}
 ): UsersResponseEnvelope => ({
@@ -3343,6 +3433,15 @@ export const getUpdateProductByIdWithMultipartResponseMock = (
 });
 
 export const getDeleteProductByIdResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getHardDeleteProductByIdResponseMock = (
     overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
 ): SuccessResponse => ({
     success: faker.helpers.arrayElement([true] as const),
@@ -4908,6 +5007,30 @@ export const getDeleteUserByIdMockHandler = (
     );
 };
 
+export const getHardDeleteUserByIdMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.delete>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.delete(
+        '*/users/:id/hard',
+        async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getHardDeleteUserByIdResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
 export const getSearchUsersMockHandler = (
     overrideResponse?:
         | UsersResponseEnvelope
@@ -5237,6 +5360,30 @@ export const getDeleteProductByIdMockHandler = (
                         ? await overrideResponse(info)
                         : overrideResponse
                     : getDeleteProductByIdResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getHardDeleteProductByIdMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.delete>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.delete(
+        '*/products/:id/hard',
+        async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getHardDeleteProductByIdResponseMock(),
                 { status: 200 }
             );
         },
@@ -5684,6 +5831,7 @@ export const getEcommerceDemoAPIMock = () => [
     getUpdateUserByIdMockHandler(),
     getUpdateUserByIdWithMultipartMockHandler(),
     getDeleteUserByIdMockHandler(),
+    getHardDeleteUserByIdMockHandler(),
     getSearchUsersMockHandler(),
     getCreateFeedbackRequestMockHandler(),
     getListFeedbackRequestsMockHandler(),
@@ -5698,6 +5846,7 @@ export const getEcommerceDemoAPIMock = () => [
     getUpdateProductByIdMockHandler(),
     getUpdateProductByIdWithMultipartMockHandler(),
     getDeleteProductByIdMockHandler(),
+    getHardDeleteProductByIdMockHandler(),
     getSearchProductsMockHandler(),
     getGetCartMockHandler(),
     getUpsertCartItemMockHandler(),

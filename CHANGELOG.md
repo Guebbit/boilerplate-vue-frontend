@@ -41,6 +41,16 @@ own mocks.
 
 ### Added
 
+- **The contract now declares four things the API had always accepted.** `category` and `tag` are
+  query parameters on `GET /products`, not body-only. `admin` and `active` are declared on
+  `UpdateUserRequest`, `UpdateUserByIdRequest` and both multipart variants — the backend has
+  always decoded and stored them on update, not only on create, so the generated multipart client
+  now appends them. `DELETE /products/{id}` and `DELETE /users/{id}` declare an optional
+  `HardDeleteRequest` body carrying just the flag. `GET /feedback` declares the query parameters
+  it reads, producing a `ListFeedbackRequestsParams` type where there was none. Each was
+  previously a silent superset: input no generated client could reach and no contract test could
+  guard.
+
 - **Image upload, from the file picker to the served file.** Every layer of this feature existed
   except the one a user touches: the contract declared `imageUpload` on six request bodies, orval
   had generated seven `*WithMultipart` clients, the product and user stores already branched on
@@ -230,21 +240,35 @@ own mocks.
 
 ### Changed
 
-- **Asynchronous code is written as promise chains, not `async`/`await` with `try`/`catch`.** This
-  was already the house style — every `submitForm` ends `.then(…).catch((error) =>
-notifyErrorMessages(addMessage, error))` and every store method ends
-  `.then((response) => response.data)` — so the `async` additions were the outlier. Applied to
-  `src/utils/uploads.ts`, the five upload views and the specs touched here, including the
-  products and users store specs that predate this work. Two spots read distinctly better for it:
-  a cleanup that must run either way is now `.finally()`, which forwards the resolved value and
-  re-throws the rejection untouched, and the mock body reader's three stacked `try`/`catch`
-  blocks became a `.catch()` cascade, where each link _is_ "that encoding was not it, try the
-  next" and the three `void error;` statements that silenced the linter are gone. A returned
-  chain is load-bearing in a spec — vitest fails on a rejected returned promise, but a converted
-  test that drops the `return` passes vacuously, so each file was checked by poisoning an
-  assertion and confirming the failure. `mockShared.ts`'s module-level top-level `await` stays: it
-  is what keeps the seed profile from ever loading faker. The remaining unit specs are untouched
-  and still use `async`/`await`.
+- **Asynchronous code is written as promise chains, not `async`/`await` with `try`/`catch`.**
+  This was already the house style — every `submitForm` ends
+  `.then(…).catch((error) => notifyErrorMessages(addMessage, error))` and every store method ends
+  `.then((response) => response.data)` — so the `async` usages were the outlier. Now applied
+  across `src/` and the **whole** test suite: all 27 unit spec files, the MSW handlers,
+  `mockTransport.ts`, `mockProfiles.ts` and the Cypress `commands.ts` retry.
+
+    Several places read better for it rather than merely differently. A cleanup that must run
+    either way is `.finally()`, which forwards the resolved value and re-throws the rejection
+    untouched. The mock body reader's three stacked `try`/`catch` blocks became a `.catch()`
+    cascade, where each link _is_ "that encoding was not it, try the next", and the three
+    `void error;` statements that existed only to silence the linter are gone. The one genuinely
+    awkward case is `resetMswDatabase`'s bounded retry, which becomes recursion — a retry is the
+    shape a flat chain cannot express, since the number of links is not known up front; it uses the
+    two-argument `.then(onFulfilled, onRejected)` so that a trailing `.catch` cannot swallow the
+    "gave up" rejection and turn the bound into an infinite retry.
+
+    **A returned chain is load-bearing in a spec.** Vitest fails a test whose returned promise
+    rejects, but a converted test that loses its `return` passes vacuously and looks identical, so
+    the conversion was verified two ways rather than by reading it: eslint's
+    `vitest/valid-expect-in-promise` (already an error in this config) catches an unreturned chain
+    containing expectations, and the full JSON test inventory was diffed before and after —
+    499 tests in, 499 out, name for name. That diff earned its keep: one scripted pass had nested
+    two `it()` calls inside another test's body in `mockProfiles.spec.ts`, silently deleting them
+    while the suite still reported green.
+
+    What deliberately keeps `await`: `vi.mock(…, async (importOriginal) => …)` factories, top-level
+    `await import()` used to order module mocking, and `mockShared.ts`'s module-level top-level
+    `await`, which is what keeps the seed profile from ever loading faker.
 
 - **Schema factories are gone; the schemas are module constants with thunked messages.**
   `createUsersSchema(t)` consumed through a getter bought nothing —
@@ -329,6 +353,16 @@ notifyErrorMessages(addMessage, error))` and every store method ends
 - **`src/stores/observability.ts`**'s default tracker URL follows the Umami port move.
 
 ### Fixed
+
+- **Filtering the product list by id did nothing, and the workaround was the bug.**
+  `watchSearchProducts` sent `filters.id` as a `productId` query parameter, with a comment and a
+  unit test both asserting that `id` "would be silently ignored by the API". The opposite was
+  true: the backend has always read `id` on `GET /products`, and `openapi.yaml` — in this repo and
+  in the backend's — declared the query filter as `productId`. So the parameter was sent, the API
+  ignored it, and the unfiltered catalogue came back looking like a working filter. The spec now
+  declares `id`, matching what `SearchProductsRequest` always said for `POST /products/search`;
+  the rename, its comment and the test that pinned it are gone. Re-run `npm run genapi` after
+  pulling — `ListProductsParams.productId` is now `ListProductsParams.id`.
 
 - **`fallbackLocale` was inert for a language with no local dictionary.** Loading a locale never
   loaded anything else, so landing directly on `/es/…` left `es` as the only registered

@@ -107,7 +107,11 @@ export const useProductsStore = defineStore('products', () => {
                     page,
                     pageSize: pageSizeValue,
                     text: currentFilters.text,
-                    productId: currentFilters.id,
+                    // `id`, not `productId`: the query filter used to be declared as `productId`
+                    // while the API read `id`, so this sent a parameter the backend ignored and
+                    // filtering the list by id silently did nothing. The spec now says `id` on
+                    // both the GET query and the POST /products/search body.
+                    id: currentFilters.id,
                     minPrice: currentFilters.minPrice,
                     maxPrice: currentFilters.maxPrice
                 }).then((response) => response.data.items),

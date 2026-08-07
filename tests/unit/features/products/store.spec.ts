@@ -224,9 +224,14 @@ describe('useProductsStore', () => {
      * The pagination/caching machinery belongs to the toolkit and is not re-tested here. What IS
      * this repo's logic is the request each wrapper builds and the envelope depth it unwraps:
      * list endpoints answer `{ data: { items } }` while single-record ones answer `{ data }`, and
-     * `watchSearchProducts` *renames* `filters.id` to the `productId` query parameter. That
-     * rename is invisible to TypeScript (both are `string | undefined`) and silently returns the
-     * unfiltered catalogue if it regresses — a filter that appears to work but does nothing.
+     * `watchSearchProducts` sends `filters.id` as the `id` query parameter.
+     *
+     * That last one used to be a *rename* to `productId`, and the rename was the bug rather than
+     * the fix: `openapi.yaml` declared the GET's filter as `productId` while the API had always
+     * read `id`, so the parameter was sent, ignored, and the unfiltered catalogue came back. The
+     * spec now says `id` on both the GET query and the `POST /products/search` body. Worth
+     * pinning either way, because the mistake is invisible to TypeScript — both are
+     * `string | undefined` — and shows up only as a filter that appears to work and does nothing.
      */
     describe('read paths', () => {
         describe('fetchProducts', () => {
@@ -290,7 +295,7 @@ describe('useProductsStore', () => {
         });
 
         describe('watchSearchProducts', () => {
-            it('sends the store filters as query parameters, renaming id to productId', () => {
+            it('sends the store filters as query parameters, id included', () => {
                 respondWithItems([]);
                 const store = useProductsStore();
                 store.filters = { text: 'gad', id: 'p1', minPrice: 5, maxPrice: 50 };
@@ -302,12 +307,13 @@ describe('useProductsStore', () => {
                         const parameters = lastParameters();
                         expect(parameters).toMatchObject({
                             text: 'gad',
-                            // The rename. `id` would be silently ignored by the API.
-                            productId: 'p1',
+                            // `id`, the name the API actually reads. Sending `productId` here —
+                            // what the spec used to declare — filtered nothing.
+                            id: 'p1',
                             minPrice: 5,
                             maxPrice: 50
                         });
-                        expect(parameters.id).toBeUndefined();
+                        expect(parameters.productId).toBeUndefined();
                     });
             });
 

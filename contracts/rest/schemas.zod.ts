@@ -721,6 +721,8 @@ export const UpdateUserBody = zod.strictObject({
     email: zod.email().optional(),
     username: zod.string().optional(),
     password: zod.string().min(updateUserBodyPasswordMin).optional(),
+    admin: zod.boolean().optional(),
+    active: zod.boolean().optional(),
     imageUrl: zod
         .string()
         .optional()
@@ -835,6 +837,8 @@ export const UpdateUserByIdBody = zod.strictObject({
     email: zod.email().optional(),
     password: zod.string().min(updateUserByIdBodyPasswordMin).optional(),
     username: zod.string().optional(),
+    admin: zod.boolean().optional(),
+    active: zod.boolean().optional(),
     imageUrl: zod
         .string()
         .optional()
@@ -885,7 +889,27 @@ export const DeleteUserByIdQueryParams = zod.strictObject({
     hardDelete: zod.boolean().optional()
 });
 
+export const deleteUserByIdBodyHardDeleteDefault = false;
+
+export const DeleteUserByIdBody = zod.strictObject({
+    hardDelete: zod.boolean().default(deleteUserByIdBodyHardDeleteDefault)
+});
+
 export const DeleteUserByIdResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
+});
+
+/**
+ * Permanently removes the user identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /users/{id}?hardDelete=true`.
+ * @summary Permanently delete user
+ */
+export const HardDeleteUserByIdParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const HardDeleteUserByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string()
@@ -1007,6 +1031,27 @@ export const CreateFeedbackRequestResponse = zod.strictObject({
  * Returns feedback/contact requests for admin review.
  * @summary List feedback requests
  */
+export const listFeedbackRequestsQueryPageDefault = 1;
+
+export const listFeedbackRequestsQueryPageSizeDefault = 10;
+export const listFeedbackRequestsQueryPageSizeMax = 100;
+
+export const ListFeedbackRequestsQueryParams = zod.strictObject({
+    page: zod
+        .number()
+        .min(1)
+        .default(listFeedbackRequestsQueryPageDefault)
+        .describe('1-based page index'),
+    pageSize: zod
+        .number()
+        .min(1)
+        .max(listFeedbackRequestsQueryPageSizeMax)
+        .default(listFeedbackRequestsQueryPageSizeDefault),
+    text: zod.string().min(1).optional(),
+    email: zod.email().optional(),
+    status: zod.string().optional()
+});
+
 export const listFeedbackRequestsBodyPageDefault = 1;
 
 export const listFeedbackRequestsBodyPageSizeDefault = 10;
@@ -1127,7 +1172,9 @@ export const ListProductsQueryParams = zod.strictObject({
         .max(listProductsQueryPageSizeMax)
         .default(listProductsQueryPageSizeDefault),
     text: zod.string().min(1).optional(),
-    productId: zod.string().optional(),
+    id: zod.string().optional(),
+    category: zod.string().optional(),
+    tag: zod.string().optional(),
     minPrice: zod.number().min(listProductsQueryMinPriceMin).optional(),
     maxPrice: zod.number().min(listProductsQueryMaxPriceMin).optional()
 });
@@ -1395,7 +1442,27 @@ export const DeleteProductByIdQueryParams = zod.strictObject({
     hardDelete: zod.boolean().optional()
 });
 
+export const deleteProductByIdBodyHardDeleteDefault = false;
+
+export const DeleteProductByIdBody = zod.strictObject({
+    hardDelete: zod.boolean().default(deleteProductByIdBodyHardDeleteDefault)
+});
+
 export const DeleteProductByIdResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
+});
+
+/**
+ * Permanently removes the product identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /products/{id}?hardDelete=true`.
+ * @summary Permanently delete product
+ */
+export const HardDeleteProductByIdParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const HardDeleteProductByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string()

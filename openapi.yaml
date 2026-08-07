@@ -937,6 +937,10 @@ components:
                     type: string
                 password:
                     $ref: '#/components/schemas/Password'
+                admin:
+                    type: boolean
+                active:
+                    type: boolean
                 imageUrl:
                     $ref: '#/components/schemas/ImageUrl'
                 locale:
@@ -955,6 +959,10 @@ components:
                     type: string
                 password:
                     $ref: '#/components/schemas/Password'
+                admin:
+                    type: boolean
+                active:
+                    type: boolean
                 imageUpload:
                     # No maxLength/contentMediaType by design — see the note under `ImageUrl`.
                     type: string
@@ -973,6 +981,10 @@ components:
                     $ref: '#/components/schemas/Password'
                 username:
                     type: string
+                admin:
+                    type: boolean
+                active:
+                    type: boolean
                 imageUrl:
                     $ref: '#/components/schemas/ImageUrl'
 
@@ -986,6 +998,10 @@ components:
                     $ref: '#/components/schemas/Password'
                 username:
                     type: string
+                admin:
+                    type: boolean
+                active:
+                    type: boolean
                 imageUpload:
                     # No maxLength/contentMediaType by design — see the note under `ImageUrl`.
                     type: string
@@ -1197,6 +1213,16 @@ components:
                     type: array
                     items:
                         type: string
+
+        # For the path-form deletes, which need no id — `{id}` already carries it — but do
+        # read the flag from a body as readily as from the query.
+        HardDeleteRequest:
+            type: object
+            additionalProperties: false
+            properties:
+                hardDelete:
+                    type: boolean
+                    default: false
 
         DeleteProductRequest:
             type: object
@@ -2078,6 +2104,7 @@ paths:
                                 $ref: '#/components/schemas/UsersResponseEnvelope'
                 '401': { $ref: '#/components/responses/Unauthorized' }
                 '403': { $ref: '#/components/responses/Forbidden' }
+                '422': { $ref: '#/components/responses/ValidationError' }
                 '500': { $ref: '#/components/responses/InternalError' }
         post:
             tags: [Users]
@@ -2151,6 +2178,7 @@ paths:
                 '401': { $ref: '#/components/responses/Unauthorized' }
                 '403': { $ref: '#/components/responses/Forbidden' }
                 '404': { $ref: '#/components/responses/NotFound' }
+                '422': { $ref: '#/components/responses/ValidationError' }
                 '500': { $ref: '#/components/responses/InternalError' }
 
     /users/{id}:
@@ -2219,11 +2247,38 @@ paths:
                   in: query
                   schema:
                       type: boolean
+            requestBody:
+                required: false
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/HardDeleteRequest'
             responses:
                 '200': { $ref: '#/components/responses/Success' }
                 '401': { $ref: '#/components/responses/Unauthorized' }
                 '403': { $ref: '#/components/responses/Forbidden' }
                 '404': { $ref: '#/components/responses/NotFound' }
+                '422': { $ref: '#/components/responses/ValidationError' }
+                '500': { $ref: '#/components/responses/InternalError' }
+
+    # Same as DELETE /users/{id}?hardDelete=true — the flag spelled in the path instead of
+    # in the query. Both reach the same handler; neither is the canonical one.
+    /users/{id}/hard:
+        delete:
+            tags: [Users]
+            summary: Permanently delete user
+            description: Permanently removes the user identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /users/{id}?hardDelete=true`.
+            operationId: hardDeleteUserById
+            security:
+                - bearerAuth: []
+            parameters:
+                - $ref: '#/components/parameters/IdPathParam'
+            responses:
+                '200': { $ref: '#/components/responses/Success' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '403': { $ref: '#/components/responses/Forbidden' }
+                '404': { $ref: '#/components/responses/NotFound' }
+                '422': { $ref: '#/components/responses/ValidationError' }
                 '500': { $ref: '#/components/responses/InternalError' }
 
     # Same as GET /users, but with JSON body, more suitable for DTOs and multi-language codegen
@@ -2284,6 +2339,23 @@ paths:
             operationId: listFeedbackRequests
             security:
                 - bearerAuth: []
+            # The controller merges query and body, so every filter below is reachable either way.
+            # The body stays declared because it is read; unlike the other three resources this
+            # one has no `POST /feedback/search` sibling to carry the DTO form.
+            parameters:
+                - $ref: '#/components/parameters/PageParam'
+                - $ref: '#/components/parameters/PageSizeParam'
+                - $ref: '#/components/parameters/TextParam'
+                - name: email
+                  in: query
+                  required: false
+                  schema:
+                      $ref: '#/components/schemas/Email'
+                - name: status
+                  in: query
+                  required: false
+                  schema:
+                      type: string
             requestBody:
                 required: false
                 content:
@@ -2299,6 +2371,7 @@ paths:
                                 $ref: '#/components/schemas/FeedbackRequestsResponseEnvelope'
                 '401': { $ref: '#/components/responses/Unauthorized' }
                 '403': { $ref: '#/components/responses/Forbidden' }
+                '422': { $ref: '#/components/responses/ValidationError' }
                 '500': { $ref: '#/components/responses/InternalError' }
 
     /feedback/{id}:
@@ -2342,7 +2415,20 @@ paths:
                 - $ref: '#/components/parameters/PageParam'
                 - $ref: '#/components/parameters/PageSizeParam'
                 - $ref: '#/components/parameters/TextParam'
-                - $ref: '#/components/parameters/ProductIdParam'
+                - $ref: '#/components/parameters/IdParam'
+                # Declared here as well as in SearchProductsRequest: the controller merges query
+                # and body, so `GET /products?category=x` and `POST /products/search {category}`
+                # are one filter reached two ways.
+                - name: category
+                  in: query
+                  required: false
+                  schema:
+                      type: string
+                - name: tag
+                  in: query
+                  required: false
+                  schema:
+                      type: string
                 - name: minPrice
                   in: query
                   required: false
@@ -2364,6 +2450,7 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ProductsResponseEnvelope'
+                '422': { $ref: '#/components/responses/ValidationError' }
                 '500': { $ref: '#/components/responses/InternalError' }
         post:
             tags: [Products]
@@ -2503,10 +2590,36 @@ paths:
                   in: query
                   schema:
                       type: boolean
+            requestBody:
+                required: false
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/HardDeleteRequest'
             responses:
                 '200': { $ref: '#/components/responses/Success' }
                 '401': { $ref: '#/components/responses/Unauthorized' }
                 '404': { $ref: '#/components/responses/NotFound' }
+                '422': { $ref: '#/components/responses/ValidationError' }
+                '500': { $ref: '#/components/responses/InternalError' }
+
+    # Same as DELETE /products/{id}?hardDelete=true — the flag spelled in the path instead of
+    # in the query. Both reach the same handler; neither is the canonical one.
+    /products/{id}/hard:
+        delete:
+            tags: [Products]
+            summary: Permanently delete product
+            description: Permanently removes the product identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /products/{id}?hardDelete=true`.
+            operationId: hardDeleteProductById
+            security:
+                - bearerAuth: []
+            parameters:
+                - $ref: '#/components/parameters/IdPathParam'
+            responses:
+                '200': { $ref: '#/components/responses/Success' }
+                '401': { $ref: '#/components/responses/Unauthorized' }
+                '404': { $ref: '#/components/responses/NotFound' }
+                '422': { $ref: '#/components/responses/ValidationError' }
                 '500': { $ref: '#/components/responses/InternalError' }
 
     # Same as GET /products, but with JSON body, more suitable for DTOs and multi-language codegen
@@ -2718,6 +2831,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/OrdersResponseEnvelope'
                 '401': { $ref: '#/components/responses/Unauthorized' }
+                '422': { $ref: '#/components/responses/ValidationError' }
                 '500': { $ref: '#/components/responses/InternalError' }
         post:
             tags: [Orders]
@@ -2787,6 +2901,7 @@ paths:
                 '401': { $ref: '#/components/responses/Unauthorized' }
                 '403': { $ref: '#/components/responses/Forbidden' }
                 '404': { $ref: '#/components/responses/NotFound' }
+                '422': { $ref: '#/components/responses/ValidationError' }
                 '500': { $ref: '#/components/responses/InternalError' }
 
     # Same as GET /orders, but with JSON body, more suitable for DTOs and multi-language codegen
@@ -2881,6 +2996,7 @@ paths:
                 '401': { $ref: '#/components/responses/Unauthorized' }
                 '403': { $ref: '#/components/responses/Forbidden' }
                 '404': { $ref: '#/components/responses/NotFound' }
+                '422': { $ref: '#/components/responses/ValidationError' }
                 '500': { $ref: '#/components/responses/InternalError' }
 
     /orders/{id}/invoice:
