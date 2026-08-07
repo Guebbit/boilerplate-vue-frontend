@@ -29,8 +29,8 @@ export default defineConfig(({ mode }) => ({
         // `start-server-and-test` already waits through.
         //
         // This is a mitigation, not the cure: the cure is running e2e against a production
-        // build (see TODO.md). Route views only — warming every file would just relocate the
-        // whole compile into startup.
+        // build. Route views only — warming every file would just relocate the whole compile
+        // into startup.
         warmup: {
             clientFiles: [
                 './src/main.ts',

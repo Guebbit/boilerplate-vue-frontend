@@ -44,7 +44,6 @@ export const useUsersStore = defineStore('users', () => {
     const {
         itemDictionary: users,
         itemList: usersList,
-        getRecord: getUser,
         addRecord: addUser,
         selectedIdentifier: selectedUserId,
         selectedRecord: currentUser,
@@ -220,7 +219,6 @@ export const useUsersStore = defineStore('users', () => {
     return {
         users,
         usersList,
-        getUser,
         addUser,
         selectedUserId,
         currentUser,

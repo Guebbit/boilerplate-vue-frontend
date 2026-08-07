@@ -74,10 +74,6 @@ own mocks.
   minutes. It is what `.husky/pre-commit` runs; `complete:check` stays the full gate, run by hand
   before pushing.
 
-- **`TODO.md`** — deliberate deferrals with the reasoning attached: running e2e against a
-  production build instead of `vite dev`, and keeping the mutation and e2e jobs off the same
-  runner.
-
 - **A [Docker & Podman](docs/tools/docker-and-podman.md) docs page**, and a pairing section in the
   README. Both state the rule the compose setup depends on: the two stacks are separate projects on
   separate networks and stay that way, because the only thing crossing between them is the browser
@@ -334,7 +330,7 @@ own mocks.
 - **The e2e suite's flakiness under a full run is mitigated** — see the timeout and warmup entries
   under _Changed_. Three consecutive full runs are green, plus the random-data profile. Both
   changes address the symptom: the root cause is that the suite tests a dev server that is still
-  compiling, and the cure is a production build (`TODO.md`).
+  compiling, and the cure is a production build.
 
 - **The dockerised dev server was unreachable from the browser.** `npm run dev` was
   `vite --port 8080` with no `--host`, and Vite binds `127.0.0.1` by default — so inside the
@@ -387,6 +383,10 @@ own mocks.
   equivalents were typed as resolving to `Product` / `User` but actually resolved to
   `{ success, data, … }` — the same shape the JSON branches already unwrapped correctly.
 - **`apiMutator<never, T>`'s double-generic type cheat is gone.**
+- **`utils/i18n.ts` documented the wrong function.** `_changeLanguage`'s JSDoc block sat above
+  `_ensureFallbackLoaded`, which has its own block directly beneath it — so an editor tooltip on
+  `_ensureFallbackLoaded` showed the description of a different function, and `_changeLanguage`
+  showed none. The block moved to the function it describes; no behaviour change.
 
 ### Removed
 
@@ -407,6 +407,19 @@ own mocks.
 - **`VITE_APP_DEBUG_HOME`** from `.env`, `.env-example` and the README's variable table. Its only
   consumer was dropped when `Home.vue` was reworked, so setting it did nothing; the two flags beside
   it (`VITE_APP_DEBUG_ROUTER`, `VITE_APP_DEBUG_HTTP`) are still read and still work.
+- **`src/composables/useObservability.ts`**, left behind when observability moved into the
+  `src/stores/observability.ts` Pinia store. Nothing imported it — every consumer (`main.ts`, the
+  router, `utils/errors.ts`, the cart/orders/profile stores) already called `useObservabilityStore()`
+  directly. The store's own header comment still pointed at the composable and now describes what
+  callers actually do.
+- **`getOrder`, `getProduct` and `getUser`** from the three feature stores. Each was the
+  `getRecord` passthrough from `useStructureDataManagement`, destructured and re-exported but never
+  called: components read `currentOrder` / `currentProduct` / `currentUser` after a fetch instead.
+  The composable still provides `getRecord` for anything that needs it later.
+- **`TODO.md`**. Its two entries were the e2e-against-a-production-build migration and the rule
+  about not co-scheduling the mutation and e2e jobs. The second survives in _Known issues_ below and
+  in the header comment of `.github/workflows/mutation.yml`; the first is still described there too,
+  minus the script-by-script scope list, which stays available in git history.
 
 ### Known issues
 
@@ -419,9 +432,8 @@ own mocks.
   the residual shape is worth knowing: it is load-dependent, so the suite is green on an idle
   machine and can fail on a busy one, pointing at whichever selector happened to be first rather
   than at the compile that actually caused it. Running against `vite build` + `vite preview`
-  removes the class outright; the tradeoff and the scope are in `TODO.md`. Until then, do not
-  co-schedule the mutation job with the e2e job: Stryker saturates every core it is given, and
-  e2e is what fails.
+  removes the class outright. Until then, do not co-schedule the mutation job with the e2e job:
+  Stryker saturates every core it is given, and e2e is what fails.
 - **`npm run test:e2e:live` fails 5 of 63 — root cause unknown.** Three of them share one shape:
   the header renders a signed-in admin with admin-only controls, while the data on the page is
   what an anonymous visitor would get. The backend was verified correct (it returns all 5 products

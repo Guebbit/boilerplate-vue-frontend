@@ -186,14 +186,6 @@ export function updateLocale(locale: string, messages: ITranslationDictionaries)
 }
 
 /**
- * Switches the active language, loading its vocabulary first when missing, and
- * keeps the `<html lang>` attribute in sync.
- *
- * @param i18n - The vue-i18n instance to switch.
- * @param locale - Locale code to activate, e.g. `en`.
- * @returns A promise resolving once the locale is active and Vue has flushed.
- */
-/**
  * Loads the fallback locale's dictionary, unless it is already there.
  *
  * `fallbackLocale` can only fall back to messages that are actually REGISTERED. Loading a locale
@@ -224,6 +216,14 @@ export function _ensureFallbackLoaded(i18n: I18n, locale: string): Promise<unkno
     );
 }
 
+/**
+ * Switches the active language, loading its vocabulary first when missing, and
+ * keeps the `<html lang>` attribute in sync.
+ *
+ * @param i18n - The vue-i18n instance to switch.
+ * @param locale - Locale code to activate, e.g. `en`.
+ * @returns A promise resolving once the locale is active and Vue has flushed.
+ */
 export function _changeLanguage(i18n: I18n, locale: string): Promise<unknown> {
     const setLocale = () => {
         (i18n.global.locale as WritableComputedRef<string>).value = locale;

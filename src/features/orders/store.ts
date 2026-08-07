@@ -43,7 +43,6 @@ export const useOrdersStore = defineStore('orders', () => {
     const {
         itemDictionary: orders,
         itemList: ordersList,
-        getRecord: getOrder,
         addRecord: addOrder,
         selectedIdentifier: selectedOrderId,
         selectedRecord: currentOrder,
@@ -199,7 +198,6 @@ export const useOrdersStore = defineStore('orders', () => {
     return {
         orders,
         ordersList,
-        getOrder,
         addOrder,
         selectedOrderId,
         currentOrder,

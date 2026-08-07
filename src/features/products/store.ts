@@ -42,7 +42,6 @@ export const useProductsStore = defineStore('products', () => {
     const {
         itemDictionary: products,
         itemList: productsList,
-        getRecord: getProduct,
         addRecord: addProduct,
         selectedIdentifier: selectedProductId,
         selectedRecord: currentProduct,
@@ -236,7 +235,6 @@ export const useProductsStore = defineStore('products', () => {
     return {
         products,
         productsList,
-        getProduct,
         addProduct,
         selectedProductId,
         currentProduct,

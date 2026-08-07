@@ -19,7 +19,7 @@ const MAX_HORIZONTAL_OVERFLOW_PX = 1;
  * Known, pre-existing console noise that has nothing to do with page correctness or mock data,
  * filtered out so it can't mask (or be confused for) a real regression:
  *
- * - Grafana Faro (`useObservability.ts`) logs its own `console.error` whenever it can't reach
+ * - Grafana Faro (`stores/observability.ts`) logs its own `console.error` whenever it can't reach
  *   its collector — args[0] is `'Faro\n'` (its logger appends a newline). Fires on every page
  *   load in this test environment (no Alloy collector running alongside a plain `vite dev`),
  *   regardless of profile.

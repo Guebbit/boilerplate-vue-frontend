@@ -11,8 +11,9 @@
  * Consolidating both into a single reactive store eliminates module-level
  * singletons and init-order issues.
  *
- * Consumers use the `useObservability()` composable in components,
- * or access this store directly in non-setup contexts (stores, router, etc.).
+ * Consumers call `useObservabilityStore()` — in components and equally in
+ * non-setup contexts (stores, router, etc.), as long as the call is inside a
+ * function rather than at module level.
  */
 
 import { defineStore } from 'pinia';
