@@ -488,6 +488,15 @@ own mocks.
 
 ### Removed
 
+- **`ecommerce.cart.checked_out` is gone from `asyncapi.yaml`**, following the backend's deletion of
+  the domain event bus it belonged to. The channel described an in-process `EventTarget` dispatch
+  that never crossed a process boundary and never had a subscriber, so nothing was ever on the wire
+  for a browser to receive — and a browser could not have subscribed to it in any case.
+  `ICartCheckedOutEvent`, `ECOMMERCE_CHANNELS` and `TEcommerceChannel` leave
+  `src/types/realtime.generated.ts`; nothing in this app imported them. Types regenerated with
+  `npm run genasyncapi` rather than hand-edited, so the next run does not reinstate them. The SSE
+  observability channels this app actually consumes are untouched.
+
 - **`updateProductImage` and `updateUserImage`.** Both were thin wrappers over `updateProduct` /
   `updateUser` that uploaded an image on its own, and both were called by nothing but their own
   unit tests — which is what put them on the unused-surface list to begin with. The edit forms now
