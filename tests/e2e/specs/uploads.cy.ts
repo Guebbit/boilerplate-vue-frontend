@@ -16,6 +16,37 @@
 /** The path MSW hands back for an uploaded file. Mirrors `toMockUploadUrl`. */
 const MOCK_UPLOAD_PATH = /^\/images\/mock\/[\da-f]{32}\.(png|jpg|webp)$/;
 
+/**
+ * The path the real API hands back — no `/mock/` segment, since nothing is pretending.
+ *
+ * Both shapes are needed because this file runs under BOTH profiles, and it stays that way rather
+ * than being mock-only: the live half is what exercises the real multipart write, where a field
+ * arriving as a string is a 422 no other suite can see.
+ */
+const LIVE_UPLOAD_PATH = /^\/images\/[\da-f]{32}\.(png|jpg|jpeg|webp)$/;
+
+const uploadedImagePath = () =>
+    cy
+        .env(['apiMockEnabled'])
+        .then(({ apiMockEnabled }) =>
+            apiMockEnabled === false ? LIVE_UPLOAD_PATH : MOCK_UPLOAD_PATH
+        );
+
+/**
+ * Asserts no locally-picked file is still sitting in the preview.
+ *
+ * Written as "nothing is a blob URL" rather than "there is no image", because the two profiles
+ * seed differently and both are correct: MSW's products carry no `imageUrl` — this repo ships
+ * none of the backend's seed images, see docs/tools/mocking.md — while the real API returns one.
+ * So an edit form legitimately shows an existing image under the live profile and nothing under
+ * the mock, and only the blob URL means "a file is picked but not yet uploaded".
+ */
+const expectNoPendingLocalPreview = () =>
+    cy.get('body').then(($body) => {
+        for (const image of $body.find('img[alt="Image preview"]'))
+            expect(image.getAttribute('src') ?? '').not.to.match(/^blob:/);
+    });
+
 const PRODUCT_ID = '65dc8a99604c307b702b5ccc';
 const PRODUCT_TITLE = 'Sallyno Panino';
 
@@ -39,7 +70,7 @@ describe('Image upload', () => {
         cy.resetState();
     });
 
-    describe('Product edit (mock profile)', () => {
+    describe('Product edit', () => {
         beforeEach(() => {
             cy.loginAs('admin');
             cy.visit(`/en/products/${PRODUCT_ID}/edit`);
@@ -57,7 +88,10 @@ describe('Image upload', () => {
          * that the user sees their choice without waiting for a round trip.
          */
         it('previews the picked file immediately, before any upload', () => {
-            cy.get('img[alt="Image preview"]').should('not.exist');
+            // Not `should('not.exist')`: under the live profile the seeded product HAS an image,
+            // so the form correctly shows it as the starting preview. What must be true on both
+            // is that nothing local is pending yet.
+            expectNoPendingLocalPreview();
 
             selectSampleImage();
 
@@ -76,11 +110,13 @@ describe('Image upload', () => {
             cy.get('form').submit();
 
             cy.contains('Product updated successfully').should('exist');
-            cy.get('img[alt="Image preview"]')
-                .should('have.attr', 'src')
-                .and((source) => {
-                    expect(String(source)).to.match(MOCK_UPLOAD_PATH);
-                });
+            uploadedImagePath().then((expectedPath) => {
+                cy.get('img[alt="Image preview"]')
+                    .should('have.attr', 'src')
+                    .and((source) => {
+                        expect(String(source)).to.match(expectedPath);
+                    });
+            });
         });
 
         /**
@@ -119,11 +155,13 @@ describe('Image upload', () => {
             cy.get('form').submit();
 
             cy.contains('Product updated successfully').should('exist');
-            cy.get('img[alt="Image preview"]').should('not.exist');
+            // The claim is "no image was uploaded", not "the product has no image": under the
+            // live profile the seeded image is still there afterwards, and correctly so.
+            expectNoPendingLocalPreview();
         });
     });
 
-    describe('Product create (mock profile)', () => {
+    describe('Product create', () => {
         beforeEach(() => {
             cy.loginAs('admin');
             cy.visit('/en/products/create');
@@ -167,7 +205,7 @@ describe('Image upload', () => {
         });
     });
 
-    describe('User create (mock profile)', () => {
+    describe('User create', () => {
         /**
          * The create branch, which takes a different generated client (`createUserWithMultipart`)
          * and a different mock handler from the update branch above.
@@ -187,7 +225,7 @@ describe('Image upload', () => {
         });
     });
 
-    describe('Signup (mock profile)', () => {
+    describe('Signup', () => {
         /**
          * `signup` was the one store method with no multipart branch, so this is the case that
          * would have silently sent JSON and dropped the file on the floor.

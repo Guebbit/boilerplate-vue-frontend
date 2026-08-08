@@ -17,7 +17,7 @@ The live run is **mandatory before tagging either repo**, not optional. What sta
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 65}}}%%
 flowchart TB
-    Boot["npm run podman:restart\nnpm run db:bootstrap:host\n(backend repo)"] --> Preflight{"scripts/preflight-live.ts\nreachable? BACKEND_PATH ok? specs match?"}
+    Boot["npm run podman:restart\nnpm run db:bootstrap:host\nNODE_RATE_LIMIT_MAX=1000 npm run dev:host\n(backend repo)"] --> Preflight{"scripts/preflight-live.ts\nreachable? BACKEND_PATH ok? specs match?"}
     Preflight -->|fail| Actionable["one-line failure,\n< 5s, no Cypress noise"]
     Preflight -->|pass| Vite["vite dev :8085\nVITE_API_MOCK_ENABLED=false\nVITE_VALIDATE_RESPONSES=true"]
     Vite --> Cypress["cypress run --e2e\nCYPRESS_apiMockEnabled=false"]
@@ -50,6 +50,19 @@ npm run db:bootstrap:host
 cd boilerplate-vue-frontend
 npm run test:e2e:live
 ```
+
+### Raise the backend's rate limits, or the suite fails halfway through
+
+The backend ships `NODE_RATE_LIMIT_MAX=100` per minute per IP — sized for a person browsing. This suite is not a person: 85 specs drive real page loads, real logins and real uploads from one address, and `uploads.cy.ts` alone clears 100 requests a minute on its own. Past the budget the API answers **429**, the app bounces to `/login`, and the failure reads as "login is broken" rather than "we ran out of allowance". That is a genuinely expensive hour of debugging, because every assertion downstream fails for a reason unrelated to what it was testing.
+
+Boot the backend with the same allowance its own test suites use (`tests/helpers/setup.ts` sets `1000`):
+
+```sh
+# terminal 1 — backend, for a live E2E run
+NODE_RATE_LIMIT_MAX=1000 NODE_AUTH_RATE_LIMIT_MAX=1000 npm run dev:host
+```
+
+Both are needed and they are separate buckets: the global one covers browsing, the auth one covers `POST /account/login` and its neighbours. Do not raise them in a deployed environment — the small credential budget is what makes password guessing expensive, and the two are deliberately decoupled so that widening one never widens the other (see `src/middlewares/security.ts` in the backend).
 
 `db:bootstrap:host` runs migrations and seeds against the containerized Mongo/Redis exposed on the host (`27017`/`6379`), matching the ports `db:seed:reset:host` uses to reset state between specs. `test:e2e:live` itself:
 

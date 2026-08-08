@@ -276,9 +276,8 @@ const buildRandomOrders = (products: Product[], users: User[]): Order[] => {
 /*
  * The observability payloads behind the admin dashboard.
  *
- * This is the family the random profile could not reach at all until the values moved out of
- * `adminMockHandlers.ts` and into the database, and it is worth being deliberate about the ranges:
- * the point is not "different numbers every run", it is the numbers that break a layout.
+ * The ranges are deliberate: the point is not "different numbers every run", it is the numbers
+ * that break a layout.
  *
  *   - counters span 0 to 7 digits, so both the cold-start dashboard (every tile reading zero) and
  *     the busy one (`totalRequests` wide enough to overflow its tile) actually occur

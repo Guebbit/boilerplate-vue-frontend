@@ -1,37 +1,28 @@
 /**
- * The mock handlers' own logic — the half of the data-parity invariant nothing was checking.
+ * BEHAVIOUR parity — that the mock handlers apply the same filtering, scoping and pagination
+ * rules as the backend services they mirror.
  *
- * `docs/tools/mocking.md` states two invariants: DATA parity (same records both sides) and
- * BEHAVIOUR parity (same filtering, scoping and visibility rules). Data parity is now structural
- * — both repos read a byte-identical `seed-identities.ts`. Behaviour parity was held by comments
- * naming the backend file each handler mirrors, and by nothing else: no unit test imported a
- * single handler, so the rules in `tests/mocks/handlers/*` were only ever exercised indirectly,
- * through Cypress, against data chosen to make specs readable rather than to probe the rules.
+ * `docs/tools/mocking.md` states this alongside DATA parity, which is structural: both repos read
+ * a byte-identical `seed-identities.ts`. Behaviour has no such mechanism. Without these cases the
+ * rules in `tests/mocks/handlers/*` are asserted only indirectly, through Cypress, against data
+ * chosen to make specs readable rather than to probe the rules — so a handler can drift from the
+ * service it mirrors and every spec stays green.
  *
- * That gap had already produced a real drift. `POST /products` with `active` omitted created a
- * publicly visible product here and a hidden one against the real API, because `openapi.yaml`
- * declared no default and the two sides each invented one. Nothing failed. The contract now
- * declares `default: true` and both sides derive it — and the case below is what stops it
- * silently diverging again.
+ * These are NOT a second copy of the backend's suite. The backend proves its own behaviour
+ * thoroughly (`tests/unit/services/products.test.ts` for role-scoped visibility,
+ * `tests/unit/repositories/search-pagination.test.ts` for pagination boundaries); each case here
+ * is shaped after its counterpart and names it, so that asserting THE MOCK answers the same
+ * question the same way is a one-line comparison for whoever changes either side.
  *
- * WHAT THESE TESTS ARE FOR, AND WHAT THEY ARE NOT
- * -----------------------------------------------
- * They are not a second copy of the backend's suite. The backend already proves its own
- * behaviour thoroughly — `tests/unit/services/products.test.ts` for role-scoped visibility,
- * `tests/unit/repositories/search-pagination.test.ts` for every pagination boundary. These
- * assert that THE MOCK still answers those same questions the same way. So each case below is
- * deliberately shaped after its backend counterpart, and the reference is named in the test, to
- * make a divergence obvious when someone changes one side.
+ * Cases sit where the two implementations can plausibly disagree, not where coverage is thin: the
+ * mock filters an in-memory array in JavaScript while the API builds a Mongo query, so
+ * combinations (`active` × `deletedAt` × role) and arithmetic boundaries are the risk, not the
+ * happy path a spec already walks.
  *
- * Cases are chosen for where the two implementations could plausibly disagree, not for coverage:
- * the mock filters an in-memory array in JavaScript while the API builds a Mongo query, so
- * combinations (`active` × `deletedAt` × role) and arithmetic boundaries are where they drift,
- * not the happy path a spec already walks.
- *
- * Driven through `setupServer` rather than by calling handler internals: the handlers are only
- * ever reached over HTTP in real use, and a test that bypassed the request layer would stop
- * covering the query-string parsing (`getQueryParameters`, `toNumberOrDefault`) that is itself a
- * place the two sides can disagree.
+ * Driven through `setupServer` rather than by calling handler internals, because the handlers are
+ * only ever reached over HTTP in real use — bypassing the request layer would stop covering the
+ * query-string parsing (`getQueryParameters`, `toNumberOrDefault`) that is itself a place the two
+ * sides can disagree.
  */
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -267,9 +258,9 @@ describe('creating a product', () => {
     it('defaults active to true when the caller omits it, as openapi.yaml declares', async () => {
         const { data } = await createProduct({ title: 'Fresh', price: 5 });
 
-        // This is the case that drifted: undeclared in the contract, the API defaulted it to
-        // false and the mock to true, so the same request produced a hidden product against one
-        // and a public product against the other.
+        // The default is declared in the contract precisely so both sides derive it. Left
+        // undeclared, each picks its own, and the same request yields a publicly visible product
+        // against one and a hidden one against the other with nothing failing.
         expect(data.active).toBe(true);
     });
 

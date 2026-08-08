@@ -66,9 +66,9 @@ export const resolveProfile = (): MockProfile =>
 // work against both MSW and the real API, and a `diff` between the two copies is the whole
 // drift check. See that file's header for why it holds identities only and not whole fixtures.
 //
-// Before it existed the two datasets were restated by hand on each side and kept in step by a
-// comment. That failed: the mock served all 5 products to everyone while the real API served 3 to
-// non-admins, and the spec asserted the mock's number and went green.
+// Restating them here instead would leave the two datasets held in step by a comment, and a
+// drift between them is silent: a mock serving 5 products to everyone while the real API serves 3
+// to non-admins still satisfies every spec that asserts the mock's number.
 //
 // Each of these is a factory, not a plain array: handlers mutate items in place (splice, unshift,
 // index-assignment), so a fresh call is needed on every reset, not a second reference to the
