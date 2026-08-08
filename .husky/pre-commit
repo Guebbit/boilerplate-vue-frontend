@@ -1,11 +1,9 @@
-# The middle of three gates. `complete:fast` is type-check, lint and format check; this adds the
-# unit suite; `complete:check` adds `vite build` and the full Cypress e2e run on top.
+# The full gate, and the only one: lint, openapi lint, format check, build, unit, Cypress e2e.
 #
-# Around 25 seconds, which is the point: a hook slow enough to be worth skipping gets skipped, and
-# a hook that gets bypassed protects nothing. Vitest fits easily — 510 tests in ~6s.
+# About eight and a half minutes, and that is accepted deliberately: the alternative is a lighter
+# hook that lets a broken e2e run reach a push, and Cypress is the only layer here that exercises
+# the app as a user meets it. Run it, or run `git commit --no-verify` knowingly — not by default.
 #
-# What stays out, deliberately: Cypress. It boots a dev server and drives a real browser, so it
-# costs minutes rather than seconds, and CI already runs it as its own job.
-#
-# Before pushing (or opening a PR), run the full gate by hand: `npm run complete:check`.
-npm run complete:commit
+# Deliberately not here, and run by hand for the occasions that want them: `test:mutation`
+# (re-executes the unit suite once per mutant) and `test:e2e:live` (needs the paired backend up).
+npm run complete:check

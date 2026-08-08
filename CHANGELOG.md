@@ -172,10 +172,6 @@ own mocks.
   in every language, and putting them through a dictionary only invites a translator to "fix"
   them.
 
-- **`npm run complete:fast`** — `type-check-only`, `lint`, `prettier:check`, and nothing that takes
-  minutes. It is what `.husky/pre-commit` runs; `complete:check` stays the full gate, run by hand
-  before pushing.
-
 - **A [Docker & Podman](docs/tools/docker-and-podman.md) docs page**, and a pairing section in the
   README. Both state the rule the compose setup depends on: the two stacks are separate projects on
   separate networks and stay that way, because the only thing crossing between them is the browser
@@ -280,16 +276,6 @@ own mocks.
 
 ### Changed
 
-- **The pre-commit hook runs the unit suite.** It was type-check, lint and format check only —
-  seconds, on the reasoning that a hook slow enough to be worth skipping gets skipped. Vitest costs
-  ~6s for 510 tests, which does not change that calculus, and it catches the class of break the
-  other three cannot see at all.
-
-    `complete:commit` is the new middle tier, and the hook now calls it: `complete:fast` (type-check,
-    lint, format) → `complete:commit` (+ unit) → `complete:check` (+ `vite build`, + Cypress).
-    Roughly 23 seconds end to end. Cypress stays out — it boots a dev server and drives a real
-    browser, so it costs minutes, and CI runs it as its own job.
-
 - **`User` carries `deletedAt`, and `User.active` now means what it says.** Both follow the
   backend separating two facts it had been storing as one: it had no `active` column at all —
   `active` was synthesised as `!deletedAt` and `deletedAt` was stripped — so a single derived flag
@@ -376,14 +362,6 @@ own mocks.
   built inline schemas with eagerly-called `t()`, which froze the language the same way; those
   are thunks too. Import `usersSchema` / `productsSchema` / `orderSchema` instead of the
   `create*` factories.
-
-- **The pre-commit hook runs `complete:fast` instead of `complete:check`.** The full gate builds the
-  app and runs the entire Cypress suite — around eight minutes per commit, which is long enough
-  that people reach for `--no-verify`, and a hook that gets bypassed protects nothing. CI already
-  runs each of those as its own parallel job, where a failure names the job instead of failing one
-  long serial script. What a commit hook usefully adds is the class of thing that is merely
-  embarrassing in a diff — a type error, a lint error, unformatted code — and that costs about
-  seventeen seconds.
 
 - **`contracts/` and `tests/mocks/generated.ts` regenerated** for the backend's `imageUrl` contract
   change — `format: uri` became a shared `ImageUrl` schema with `format: uri-reference`, so
