@@ -54,11 +54,6 @@ const routeSchemas: IRouteSchema[] = [
         pattern: /^\/observability\/audit$/,
         schema: schemas.GetObservabilityAuditLogsResponse
     },
-    {
-        method: 'GET',
-        pattern: /^\/observability\/load-test$/,
-        schema: schemas.GetObservabilityLoadTestResponse
-    },
     { method: 'GET', pattern: /^\/locales$/, schema: schemas.GetLocalesResponse },
     {
         method: 'GET',

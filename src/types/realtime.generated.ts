@@ -29,6 +29,7 @@ export interface IEmailJobPayload {
   'from'?: string;
   'templateName': string;
   'data': Record<string, unknown>;
+  'locale'?: string;
 }
 export interface IAnonymousSchema13 {
   'to': string;
@@ -39,12 +40,8 @@ export interface IAnonymousSchema13 {
 export interface IPdfJobPayload {
   'templatePath': string;
   'templateData': Record<string, unknown>;
+  'locale'?: string;
   'outputPath': string;
-}
-export interface ICacheTagsInvalidatedPayload {
-  'tags': string[];
-  'origin': string;
-  'timestamp': string;
 }
 
 export type IMetricsSnapshotEvent = IObservabilityMetricsPayload;
@@ -52,10 +49,8 @@ export type IMetricsUpdatedEvent = IObservabilityMetricsPayload;
 export type IHeartbeatEvent = IObservabilityMetricsPayload;
 export type IEmailJobMessage = IEmailJobPayload;
 export type IPdfJobMessage = IPdfJobPayload;
-export type ICacheTagsInvalidatedMessage = ICacheTagsInvalidatedPayload;
 export type IEmailJobConsumeMessage = IEmailJobPayload;
 export type IPdfJobConsumeMessage = IPdfJobPayload;
-export type ICacheTagsInvalidatedConsumeMessage = ICacheTagsInvalidatedPayload;
 
 /* Channel name constants (canonical identifiers from asyncapi.yaml) */
 
@@ -77,14 +72,6 @@ export const WORKER_CHANNELS = {
 
 /* Union of every "worker." channel name */
 export type TWorkerChannel = (typeof WORKER_CHANNELS)[keyof typeof WORKER_CHANNELS];
-
-/* Channel names in the "cache." namespace */
-export const CACHE_CHANNELS = {
-    TAGS_INVALIDATED: 'cache.tags.invalidated',
-} as const;
-
-/* Union of every "cache." channel name */
-export type TCacheChannel = (typeof CACHE_CHANNELS)[keyof typeof CACHE_CHANNELS];
 
 export const REALTIME_SSE_EVENT_NAMES = [
     "observability.heartbeat",

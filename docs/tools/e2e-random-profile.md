@@ -8,7 +8,7 @@ Run with `npm run test:e2e:random`. It boots its own Vite dev server with `VITE_
 
 This profile asserts invariants against a different faker-seeded dataset on every run, not exact values — a failure needs a human to read the trace and decide whether it's a real bug or a rare-but-valid combination the spec didn't anticipate, not something that should block a merge on its own. For that reason it isn't part of `.github/workflows/ci.yml`; it lives in its own workflow, `.github/workflows/e2e-random.yml`, on a nightly schedule plus `workflow_dispatch` — the same structural reason [mutation testing](./mutation-testing.md) lives apart from `ci.yml`. Before this workflow existed, the profile was reachable only via `npm run test:e2e:random` run by hand, which in practice meant it was never run at all.
 
-On failure, the run log carries the faker seed (`apiMock.ts`, via `resolveMockSeed()`) that produced the failing dataset — reproduce locally with `VITE_MOCK_SEED=<seed> npm run test:e2e:random`.
+On failure, the run log carries the faker seed (`apiMock.ts`, via `resolveMockSeed()`) that produced the failing dataset — reproduce locally with `RANDOM_DATA_SEED=<seed> npm run test:e2e:random`.
 
 ## Tools
 
@@ -55,7 +55,7 @@ This split exists because of a real regression, not upfront design: `mockProfile
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 60}}}%%
 flowchart LR
-    Boot["Page loads\n(cy.visit(), any reload)"] --> Check{"VITE_MOCK_SEED set?"}
+    Boot["Page loads\n(cy.visit(), any reload)"] --> Check{"RANDOM_DATA_SEED set?"}
     Check -->|yes| UseEnv["use it"]
     Check -->|no| CheckStorage{"sessionStorage\nhas a seed?"}
     CheckStorage -->|yes| UseStored["reuse it"]
@@ -81,13 +81,14 @@ These aren't incidental — violating any one of them defeats the profile's purp
 3. **Auth identity stays fixed.** `cy.loginAs()` types `root@root.it` / `gino@pino.it` into a real form. Only cosmetic fields (`username`, `imageUrl`, timestamps) are randomised; `active` is pinned `true` for both so login never randomly fails.
 4. **Relations are relinked after generating.** Each factory call is independent, so a fresh call for cart items would reference product ids that don't exist. Products are generated first; cart items and orders are built from ids that are actually present. `cartItemToOrderItem` (`mockShared.ts`) throws on incoherent data — the canary that this relinking broke.
 5. **Role-scoping branches are force-patched to survive randomisation.** `buildRandomProducts()` guarantees at least one `active: false` product, one soft-deleted product, one with every optional field populated, and one with every optional field absent — so `isVisibleToCaller`'s two branches are never untested just because faker didn't happen to roll them. (This mirrors a real incident: the fixed seed's split was added after a mock once returned all 5 products to everyone while the real API returned 3 — see [Mocking](./mocking.md).)
-6. **Orders are fully faker-derived, not `createMockOrder`.** `mockOrderMath.ts`'s `createMockOrder` — correct for the seed profile and for orders placed at runtime — stamps `id`/`createdAt`/`updatedAt` from wall-clock time and `Math.random()`, which would make this profile *unreproducible* under a fixed seed. `buildRandomOrders()` builds orders by hand instead, so every value traces back to the seeded PRNG.
+6. **Observability payloads are data, not constants.** The three `/observability/*` responses behind the admin dashboard live in `mockDatabase.observability`, populated per profile, not as frozen constants inside `adminMockHandlers.ts`. While they *were* constants, `AdminOverviewTab.vue` — the most numeric and most layout-fragile screen in the app — was the one screen this profile could never stress: `resilience.cy.ts` visited `/en/admin` and asserted it rendered, but it rendered the same `uptimeSeconds: 3600` / `totalRequests: 1042` / `loadAvg: [0.5, 0.4, 0.3]` every single run. The ranges are chosen for what breaks a layout rather than for variety: counters from a zero-request cold start to seven digits, a `loadAvg` whose length is *not* pinned to 3 (the contract says "array of number" — a component destructuring `[one, five, fifteen]` is assuming something the API never promised), an audit page that is sometimes empty, and an `errorRate` derived from its two counters so the dashboard is never asked to show 0 errors beside a 40% rate.
+7. **Orders are fully faker-derived, not `createMockOrder`.** `mockOrderMath.ts`'s `createMockOrder` — correct for the seed profile and for orders placed at runtime — stamps `id`/`createdAt`/`updatedAt` from wall-clock time and `Math.random()`, which would make this profile *unreproducible* under a fixed seed. `buildRandomOrders()` builds orders by hand instead, so every value traces back to the seeded PRNG.
 
 ## The resilience spec
 
 `tests/e2e/specs/resilience.cy.ts` is written to hold under **any** dataset this profile can produce — no exact counts, no exact titles. What it asserts:
 
-- every route renders (public, guest-only, authenticated, admin-only) without an uncaught exception
+- every route renders (public, guest-only, authenticated, admin-only) without an uncaught exception — including `/admin`, whose observability numbers are now randomised too (constraint 6), so "the dashboard rendered" means something it did not before
 - no `console.error`/`console.warn` beyond documented, known noise (Grafana Faro's own transport failure when no collector is running; a pre-existing vue-i18n lazy-load warning) — see the file for the exact filter and why each entry is there
 - every product an admin can see — including the one guaranteed to have every optional field absent — has a detail page that renders
 - a list that happens to be empty (a non-admin whose random order ownership left them with none) still renders, not crashes
@@ -99,6 +100,7 @@ These aren't incidental — violating any one of them defeats the profile's purp
 | Path | Contents |
 | --- | --- |
 | `tests/mocks/shared/mockProfiles.ts` | `resolveProfile()`, `buildSeedDatabase()` (sync, no heavy deps), the async `buildRandomDatabase()`/`resolveMockSeed()` wrappers |
+| `tests/mocks/shared/seed-identities.ts` | The seed dataset's ids/emails/prices — byte-identical to `db/seeds/seed-identities.ts` in the BE. Fixed profile only; the random profile overwrites everything but the two login identities |
 | `tests/mocks/shared/mockProfilesRandom.ts` | The random profile's real implementation; the only importer of faker + `generated.ts` |
 | `tests/mocks/shared/mockOrderMath.ts` | `computeOrderTotals`/`createMockOrder` — shared by the seed profile, the random profile (totals only), and runtime checkout |
 | `tests/mocks/generated.ts` | Orval-generated faker factories, one per operation — raw material, not consumed directly by handlers |

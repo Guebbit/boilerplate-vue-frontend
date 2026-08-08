@@ -51,6 +51,9 @@ components:
             bearerFormat: JWT
 
     parameters:
+        # `Accept-Language` is honoured by every operation and is documented in
+        # `info.description` rather than declared here — see the note there.
+
         # Common parameters
         PageParam:
             name: page
@@ -570,17 +573,6 @@ components:
                 data:
                     $ref: '#/components/schemas/ObservabilityMetricsSummaryResponse'
 
-        ObservabilityLoadTestResponseEnvelope:
-            type: object
-            additionalProperties: false
-            required: [success, status, message, data]
-            properties:
-                success: *envelopeSuccess
-                status: *envelopeStatus
-                message: *envelopeMessage
-                data:
-                    $ref: '#/components/schemas/ObservabilityLoadTestResult'
-
         AuditLogsResponseEnvelope:
             type: object
             additionalProperties: false
@@ -635,6 +627,9 @@ components:
                     type: string
                 admin:
                     type: boolean
+                # Independent of `deletedAt` below: an account can be deactivated without being
+                # deleted, and a deleted one keeps whatever `active` it had. They share an effect,
+                # not a value — see the note on `CreateProductRequest.active`.
                 active:
                     type: boolean
                 imageUrl:
@@ -645,6 +640,14 @@ components:
                     type: string
                     format: date-time
                 updatedAt:
+                    type: string
+                    format: date-time
+                # Present only on a soft-deleted account, exactly as on `Product`. It was stripped
+                # until `active` became a real column: while `active` was synthesised as
+                # `!deletedAt`, deletion was legible through that flag, and once the two separated
+                # an admin had no way to see it at all. Every route serving a `User` list is
+                # admin-only; `/account` serves the caller their own record.
+                deletedAt:
                     type: string
                     format: date-time
 
@@ -878,6 +881,10 @@ components:
                     $ref: '#/components/schemas/Email'
                 username:
                     type: string
+                # Filters the stored `active` column. It does NOT filter soft-deletion: the two
+                # are independent facts, and `deletedAt` is not exposed on `User` at all, so
+                # there is no filter for it here. `active: false` means "deactivated", not
+                # "deleted" — it used to mean both, back when users had no `active` column.
                 active:
                     type: boolean
 
@@ -894,8 +901,13 @@ components:
                     $ref: '#/components/schemas/Password'
                 admin:
                     type: boolean
+                # Same reasoning as `CreateProductRequest.active`: independent of soft-deletion,
+                # defaulted here because leaving it undeclared is how two implementations came to
+                # disagree about it. Create bodies only — an omitted `active` on an update means
+                # "leave it alone".
                 active:
                     type: boolean
+                    default: true
                 imageUrl:
                     $ref: '#/components/schemas/ImageUrl'
                 locale:
@@ -914,8 +926,10 @@ components:
                     $ref: '#/components/schemas/Password'
                 admin:
                     type: boolean
+                # Same default, same reasoning as `CreateUserRequest.active` above.
                 active:
                     type: boolean
+                    default: true
                 imageUpload:
                     # No maxLength/contentMediaType by design — see the note under `ImageUrl`.
                     type: string
@@ -1058,8 +1072,26 @@ components:
                     minimum: 0
                 description:
                     type: string
+                # ---------- On `active`, and why it is declared here but not on the updates ----------
+                #
+                # `active` and `deletedAt` are INDEPENDENT. A record can be active or not regardless
+                # of whether it has been soft-deleted, and the two are stored separately. What they
+                # share is an effect, not a value: a non-admin sees a record only when it is active
+                # AND not soft-deleted (`publicScope()` in the products repository requires both).
+                # So a soft-deleted record behaves exactly like an inactive one from outside, while
+                # remaining a distinct state inside.
+                #
+                # The default is declared because it is a real decision, and leaving it undeclared
+                # is how the two repos ended up disagreeing about it: this spec said only
+                # `type: boolean`, so the API defaulted a created product to `false` while the mock
+                # defaulted it to `true`. Same contract, opposite behaviour, and nothing failed.
+                #
+                # It appears on the CREATE bodies only. On an update, an omitted `active` means
+                # "leave it as it is" — a default there would silently republish a deactivated
+                # record on any unrelated edit.
                 active:
                     type: boolean
+                    default: true
                 imageUrl:
                     $ref: '#/components/schemas/ImageUrl'
                 categories:
@@ -1084,8 +1116,10 @@ components:
                     minimum: 0
                 description:
                     type: string
+                # Same default, same reasoning as `CreateProductRequest.active` above.
                 active:
                     type: boolean
+                    default: true
                 imageUpload:
                     # No maxLength/contentMediaType by design — see the note under `ImageUrl`.
                     type: string
@@ -1619,15 +1653,6 @@ components:
                 success: { type: boolean, enum: [true] }
                 data: { $ref: '#/components/schemas/ObservabilityMetricsSummary' }
 
-        ObservabilityLoadTestResult:
-            type: object
-            additionalProperties: false
-            required: [durationMs]
-            properties:
-                durationMs:
-                    type: number
-                    description: Wall-clock time in ms spent on the synthetic CPU load
-
         AuditEventItem:
             type: object
             additionalProperties: false
@@ -1823,8 +1848,10 @@ paths:
             tags: [Observability]
             summary: Recent audit events
             description: |
-                Returns the most recent audit events from the in-memory ring buffer (up to 200).
+                Returns the most recent audit events, newest first, from the persisted audit trail.
                 Events include auth flows, admin CRUD actions, and security blocks.
+                Entries are retained for `NODE_AUDIT_RETENTION_DAYS` (default 90) and expire after.
+                `total` counts every event matching the filters, not just the returned page.
                 Requires admin role.
             operationId: getObservabilityAuditLogs
             security:
@@ -1868,28 +1895,6 @@ paths:
                 '401': { $ref: '#/components/responses/Unauthorized' }
                 '403': { $ref: '#/components/responses/Forbidden' }
                 '422': { $ref: '#/components/responses/ValidationError' }
-                '500': { $ref: '#/components/responses/InternalError' }
-
-    /observability/load-test:
-        get:
-            tags: [Observability]
-            summary: Synthetic CPU load test
-            description: |
-                Dev/staging-only endpoint that busy-loops the event loop for a fixed amount of
-                work while emitting log lines, so dashboards and log pipelines can be exercised
-                under load. Not registered when `NODE_ENV=production`. Requires admin role.
-            operationId: getObservabilityLoadTest
-            security:
-                - bearerAuth: []
-            responses:
-                '200':
-                    description: Load test completed
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/ObservabilityLoadTestResponseEnvelope'
-                '401': { $ref: '#/components/responses/Unauthorized' }
-                '403': { $ref: '#/components/responses/Forbidden' }
                 '500': { $ref: '#/components/responses/InternalError' }
 
     # --------- Authentication and profile ---------

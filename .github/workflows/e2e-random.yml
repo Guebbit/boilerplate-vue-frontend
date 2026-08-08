@@ -11,7 +11,7 @@ name: E2E (random profile)
 # read the trace rather than a red X to block a merge on.
 #
 # On failure, the run log prints the faker seed (apiMock.ts, via resolveMockSeed()) that produced
-# the failing dataset — reproduce locally with VITE_MOCK_SEED=<seed> npm run test:e2e:random.
+# the failing dataset — reproduce locally with RANDOM_DATA_SEED=<seed> npm run test:e2e:random.
 #
 # Runs nightly, and on demand from the Actions tab.
 

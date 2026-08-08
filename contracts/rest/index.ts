@@ -215,6 +215,7 @@ export interface User {
     locale?: Locale;
     createdAt?: string;
     updatedAt?: string;
+    deletedAt?: string;
 }
 
 export interface UserEnvelope {
@@ -571,18 +572,6 @@ export interface ObservabilityMetricsSummaryResponseEnvelope {
     status: number;
     message: string;
     data: ObservabilityMetricsSummaryResponse;
-}
-
-export interface ObservabilityLoadTestResult {
-    /** Wall-clock time in ms spent on the synthetic CPU load */
-    durationMs: number;
-}
-
-export interface ObservabilityLoadTestResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: ObservabilityLoadTestResult;
 }
 
 export type AuditEventItemActorRole =
@@ -1273,8 +1262,10 @@ export const getObservabilityMetricsOverview = (
 };
 
 /**
- * Returns the most recent audit events from the in-memory ring buffer (up to 200).
+ * Returns the most recent audit events, newest first, from the persisted audit trail.
  * Events include auth flows, admin CRUD actions, and security blocks.
+ * Entries are retained for `NODE_AUDIT_RETENTION_DAYS` (default 90) and expire after.
+ * `total` counts every event matching the filters, not just the returned page.
  * Requires admin role.
  * @summary Recent audit events
  */
@@ -1284,21 +1275,6 @@ export const getObservabilityAuditLogs = (
 ) => {
     return orvalMutator<AuditLogsResponseEnvelope>(
         { url: `/observability/audit`, method: 'GET', params },
-        options
-    );
-};
-
-/**
- * Dev/staging-only endpoint that busy-loops the event loop for a fixed amount of
- * work while emitting log lines, so dashboards and log pipelines can be exercised
- * under load. Not registered when `NODE_ENV=production`. Requires admin role.
- * @summary Synthetic CPU load test
- */
-export const getObservabilityLoadTest = (
-    options?: SecondParameter<typeof orvalMutator<ObservabilityLoadTestResponseEnvelope>>
-) => {
-    return orvalMutator<ObservabilityLoadTestResponseEnvelope>(
-        { url: `/observability/load-test`, method: 'GET' },
         options
     );
 };
@@ -2357,9 +2333,6 @@ export type GetObservabilityMetricsOverviewResult = NonNullable<
 >;
 export type GetObservabilityAuditLogsResult = NonNullable<
     Awaited<ReturnType<typeof getObservabilityAuditLogs>>
->;
-export type GetObservabilityLoadTestResult = NonNullable<
-    Awaited<ReturnType<typeof getObservabilityLoadTest>>
 >;
 export type GetAccountResult = NonNullable<Awaited<ReturnType<typeof getAccount>>>;
 export type RequestAccountDeleteResult = NonNullable<

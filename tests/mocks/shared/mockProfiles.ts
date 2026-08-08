@@ -11,16 +11,44 @@
  *   short, it and its two heavy dependencies (`@faker-js/faker`, `tests/mocks/generated.ts`)
  *   must never end up in the seed profile's module graph.
  */
-import type { CartItem, Order, Product, User } from '@types';
+import type {
+    AuditLogsResponseData,
+    CartItem,
+    ObservabilityHealth,
+    ObservabilityMetricsSummary,
+    Order,
+    Product,
+    User
+} from '@types';
 import { createMockOrder } from './mockOrderMath.ts';
+import { seedUsers, seedProducts, seedOrders } from './seed-identities.ts';
 
 export type MockProfile = 'seed' | 'random';
+
+/**
+ * What the three `/observability/*` endpoints answer with.
+ *
+ * This lives in the database rather than in `adminMockHandlers.ts` because it used to live there,
+ * as three frozen module-level constants returned regardless of profile — which made
+ * `AdminOverviewTab.vue`, the most numeric and most layout-fragile screen in the app, the one
+ * screen `resilience.cy.ts` could never stress. It had never rendered a 7-digit request count, a
+ * zero-request cold start, or a `loadAvg` of unexpected length, because no profile could reach it.
+ *
+ * Stored as the INNER payloads (`ObservabilityHealthResponse['data']` and friends), not the
+ * envelopes: the handlers build the envelope, exactly as they do for every other family.
+ */
+export interface IMockObservability {
+    health: ObservabilityHealth;
+    metrics: ObservabilityMetricsSummary;
+    audit: AuditLogsResponseData;
+}
 
 export interface IMockSeedData {
     sampleUsers: User[];
     sampleProducts: Product[];
     sampleCartItems: CartItem[];
     sampleOrders: Order[];
+    observability: IMockObservability;
 }
 
 /**
@@ -32,8 +60,15 @@ export const resolveProfile = (): MockProfile =>
 
 // ─── seed profile ───────────────────────────────────────────────────────────────
 //
-// IDs, credentials and content below mirror db/seeds/index.ts in the BE (PROPOSAL §6-A), so the
-// same login and the same records work against both MSW and the real API.
+// The facts below — ids, emails, admin flags, titles, prices, who has what in their cart and
+// their orders — are not written here. They come from `./seed-identities.ts`, which is
+// byte-identical to `db/seeds/seed-identities.ts` in the BE, so the same login and the same records
+// work against both MSW and the real API, and a `diff` between the two copies is the whole
+// drift check. See that file's header for why it holds identities only and not whole fixtures.
+//
+// Before it existed the two datasets were restated by hand on each side and kept in step by a
+// comment. That failed: the mock served all 5 products to everyone while the real API served 3 to
+// non-admins, and the spec asserted the mock's number and went green.
 //
 // Each of these is a factory, not a plain array: handlers mutate items in place (splice, unshift,
 // index-assignment), so a fresh call is needed on every reset, not a second reference to the
@@ -41,116 +76,150 @@ export const resolveProfile = (): MockProfile =>
 
 const getIsoDateNow = () => new Date().toISOString();
 
-const createSeedUsers = (): User[] => [
-    {
-        id: '65dd2bdb923652b7800fe180',
-        email: 'root@root.it',
-        username: 'root',
-        admin: true,
+/*
+ * `imageUrl` is dropped rather than carried over from the shared identities, and that is not an
+ * oversight. Those paths (`/images/seed/*.jpg`) are served by the BE out of its own `public/`;
+ * this repo ships no such files, so under MSW they would resolve to 404s and every seeded avatar
+ * and product image would render broken. `test:e2e:live` gets the real URLs from the real API,
+ * which is the only mode where they mean anything.
+ *
+ * `active` is likewise not in the shared file: it is a BE model default (`true`), not a fact the
+ * fixtures state, so restating it there would invent a field the seeder never writes.
+ */
+const createSeedUsers = (): User[] =>
+    seedUsers.map((user) => ({
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        admin: user.admin,
         active: true,
         imageUrl: undefined,
         createdAt: getIsoDateNow(),
         updatedAt: getIsoDateNow()
-    },
-    {
-        id: '65de646a44f861fd83c13f13',
-        email: 'gino@pino.it',
-        username: 'ginopinoshow',
-        admin: false,
-        active: true,
-        imageUrl: undefined,
-        createdAt: getIsoDateNow(),
-        updatedAt: getIsoDateNow()
-    }
-];
+    }));
 
-const createSeedProducts = (): Product[] => [
-    {
-        id: '65dc8a99604c307b702b5ccc',
-        title: 'Sallyno Panino',
-        description: 'Piccolo Sallyno panino. Da mangiare di coccole',
-        price: 100,
-        active: true,
+const createSeedProducts = (): Product[] =>
+    seedProducts.map((product) => ({
+        id: product.id,
+        title: product.title,
+        description: product.description,
+        price: product.price,
+        active: product.active,
         imageUrl: undefined,
+        ...(product.deletedAt ? { deletedAt: product.deletedAt } : {}),
         createdAt: getIsoDateNow(),
         updatedAt: getIsoDateNow()
+    }));
+
+/*
+ * The fixed observability payloads — the values `adminMockHandlers` used to hold as frozen
+ * constants, unchanged, now reachable as data so the random profile can replace them.
+ */
+const createSeedObservability = (): IMockObservability => ({
+    health: {
+        status: 'ok',
+        environment: 'development',
+        service: 'boilerplate-node-backend',
+        nodeVersion: 'v20.0.0',
+        uptimeSeconds: 3600,
+        database: { status: 'connected' },
+        integrations: { loki: true, otelEnabled: true, umami: true, faro: true },
+        memory: { heapUsedMb: 64, heapTotalMb: 128, rssMb: 80 },
+        system: { platform: 'linux', cpuCount: 4, loadAvg: [0.5, 0.4, 0.3] },
+        timestamp: getIsoDateNow()
     },
-    {
-        id: '65dc8ad8604c307b702b5cd4',
-        title: 'Sallyno Carino',
-        description: 'Sallyno incredibilmente carino. Illegale in 400 paesi. Soft deleted product.',
-        price: 50,
-        active: true,
-        imageUrl: undefined,
-        deletedAt: '2024-02-26T23:34:44.832Z',
-        createdAt: getIsoDateNow(),
-        updatedAt: getIsoDateNow()
+    metrics: {
+        http: {
+            totalRequests: 1042,
+            totalErrors: 12,
+            errorRate: 0.0115,
+            inFlight: 2,
+            latencyMs: { p50: 18, p95: 85 }
+        },
+        auth: { loginSuccess: 58, loginFailure: 4, signupSuccess: 12 },
+        business: { checkoutSuccess: 22, ordersCreated: 22 },
+        database: { queriesTotal: 3120, errorsTotal: 0 },
+        process: { uptimeSeconds: 3600, heapUsedMb: 64 },
+        timestamp: getIsoDateNow()
     },
-    {
-        id: '65dc9be92f2794d1c16741e1',
-        title: 'Miciona inutile',
-        description: 'Miciona inutile, piccolo catorcio che come lavoro produce pelo a non finire',
-        price: 1,
-        active: true,
-        imageUrl: undefined,
-        createdAt: getIsoDateNow(),
-        updatedAt: getIsoDateNow()
-    },
-    {
-        id: '65dcdec2b18ad5e4bd597f0f',
-        title: 'Micino pufettino',
-        description: 'Micino pufettino, incredibilmente pufino. Illegale in 400 paesi.',
-        price: 77,
-        active: true,
-        imageUrl: undefined,
-        createdAt: getIsoDateNow(),
-        updatedAt: getIsoDateNow()
-    },
-    {
-        id: '6622c88a5123b1e286f440f8',
-        title: 'Bundle micini',
-        description: 'Produttori di rumori molesti a tutte le ore. Inactive product.',
-        price: 40,
-        active: false,
-        imageUrl: undefined,
-        createdAt: getIsoDateNow(),
-        updatedAt: getIsoDateNow()
+    audit: {
+        total: 3,
+        items: [
+            {
+                actor_user_id: 'user-admin-1',
+                actor_role: 'admin',
+                action: 'auth.login.succeeded',
+                outcome: 'success',
+                ip: '127.0.0.1',
+                request_id: 'req-abc12345',
+                trace_id: 'trace-def67890',
+                timestamp: new Date(Date.now() - 60_000).toISOString(),
+                level: 'info'
+            },
+            {
+                actor_user_id: 'user-guest-1',
+                actor_role: 'anonymous',
+                action: 'auth.login.failed',
+                outcome: 'failure',
+                ip: '192.168.1.50',
+                request_id: 'req-xyz99887',
+                trace_id: 'trace-uvw33221',
+                timestamp: new Date(Date.now() - 120_000).toISOString(),
+                level: 'warn'
+            },
+            {
+                actor_user_id: 'user-standard-2',
+                actor_role: 'user',
+                action: 'orders.create',
+                outcome: 'success',
+                ip: '10.0.0.5',
+                request_id: 'req-lmn55443',
+                trace_id: 'trace-opq11009',
+                timestamp: new Date(Date.now() - 300_000).toISOString(),
+                level: 'info'
+            }
+        ]
     }
-];
+});
 
 export const buildSeedDatabase = (): IMockSeedData => {
     const sampleProducts = createSeedProducts();
 
-    // Mirrors the admin's embedded `cart.items` in the seed: 2x Sallyno Panino, 3x Micino pufettino.
-    const sampleCartItems: CartItem[] = [
-        { productId: '65dc8a99604c307b702b5ccc', quantity: 2 },
-        { productId: '65dcdec2b18ad5e4bd597f0f', quantity: 3 }
-    ];
+    /*
+     * The admin's cart, as the BE embeds it on the user document. Only the admin has one in the
+     * fixtures; `mockDatabase.sampleCartItems` models a single active session's cart, so it takes
+     * whichever seeded user actually has items rather than merging the two.
+     */
+    const sampleCartItems: CartItem[] = (
+        seedUsers.find((user) => user.cart.length > 0)?.cart ?? []
+    ).map((item) => ({ productId: item.productId, quantity: item.quantity }));
 
-    // Mirrors the two seeded orders (db/seeds/index.ts), both placed by root.
-    const sampleOrders: Order[] = [
-        createMockOrder({
-            userId: '65dd2bdb923652b7800fe180',
-            email: 'oldpsw@root.it',
-            items: [
-                { product: sampleProducts[0], quantity: 1 },
-                { product: sampleProducts[2], quantity: 10 }
-            ],
+    /*
+     * `createMockOrder` mints a fresh `order-<timestamp>-<rand>` id, which is right for orders a
+     * spec creates at runtime and wrong for these: the BE seeds them with fixed `_id`s, so a spec
+     * deep-linking to `/orders/:id` would hit a different URL under MSW than against the real API.
+     * The id is put back afterwards, which is also why these two go through the factory at all —
+     * it is what computes `totals` from the items.
+     */
+    const sampleOrders: Order[] = seedOrders.map((order) => ({
+        ...createMockOrder({
+            userId: order.userId,
+            email: order.email,
+            items: order.items.map((item) => ({
+                product: sampleProducts.find((product) => product.id === item.productId)!,
+                quantity: item.quantity
+            })),
             status: 'pending'
         }),
-        createMockOrder({
-            userId: '65dd2bdb923652b7800fe180',
-            email: 'root@root.it',
-            items: [{ product: sampleProducts[3], quantity: 20 }],
-            status: 'pending'
-        })
-    ];
+        id: order.id
+    }));
 
     return {
         sampleUsers: createSeedUsers(),
         sampleProducts,
         sampleCartItems,
-        sampleOrders
+        sampleOrders,
+        observability: createSeedObservability()
     };
 };
 

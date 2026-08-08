@@ -39,7 +39,47 @@ own mocks.
 - **Mock data changed.** `mockShared.ts` now mirrors the backend's seeds, so any spec asserting on
   `Product Alpha` / `prod-1` / `john@example.com` needs updating.
 
+- **`VITE_MOCK_SEED` is now `RANDOM_DATA_SEED`** — no `VITE_` prefix, because the paired backend
+  reads a variable of exactly that name to seed its own contract-data generator. Two names for one
+  concept meant a seed printed by a failing nightly run said nothing to the other side. The two
+  keep separate PRNGs and, given one seed, still produce unrelated values — that is intended, they
+  generate opposite halves of the same contract. `vite.config.ts` widens `envPrefix` for this one
+  variable; it is the only unprefixed env var this app reads.
+
+- **The seed fixtures moved out of `mockProfiles.ts`** into `tests/mocks/shared/seed-identities.ts`,
+  which is byte-identical to `db/seeds/seed-identities.ts` in the backend. Anything referencing the
+  old inline arrays needs to go through the shared file (or its per-repo mapper) instead. Seeded
+  order ids are now the backend's fixed ids rather than freshly minted `order-<timestamp>-<rand>`
+  ones, so a spec deep-linking to `/orders/:id` hits the same URL under MSW as against the real API.
+
 ### Added
+
+- **`tests/unit/mocks/mockHandlerParity.spec.ts`** — the first unit coverage the mock handlers
+  have ever had. `docs/tools/mocking.md` declares two invariants: data parity and behaviour
+  parity. Data parity became structural when both repos started reading a byte-identical
+  `seed-identities.ts`; behaviour parity was held by comments naming the backend file each handler
+  mirrors, and by nothing else — no unit test imported a single handler, so the filtering, role
+  scoping and pagination in `tests/mocks/handlers/*` were only exercised indirectly through
+  Cypress, against data chosen to make specs readable rather than to probe the rules.
+
+    The cases are shaped after the backend's own tests and name them, so a divergence is obvious
+    when one side changes. They cover the combinations the fixed seed cannot reach — all four of
+    `active` × `deletedAt` against both roles, including deleted-but-active — pagination boundaries
+    (partial last page, exact division, a page past the end, page size above the total), the create
+    default, and `?active=false` arriving as the truthy string `'false'`. Driven through
+    `setupServer` from `msw/node`, so the query-string parsing is covered too rather than bypassed.
+    No new runner or script: it is picked up by the existing `npm run test:unit`.
+
+- **A "where test data comes from" map** in [`docs/tools/testing-and-docs.md`](docs/tools/testing-and-docs.md),
+  answering a question worth asking out loud: seven things across the two repos can hand you an
+  entity, so which are necessary? The page names each one's job, and shows the shape — one
+  hand-maintained dataset, two mappers over it (one per runtime, because mongoose documents and
+  API entities are different shapes of the same truth), and four generators that exist because
+  "the demo data", "some data" and "deliberately illegal data" are three different questions.
+  Merging any two of the four would mean one of those questions stops being asked. It also records
+  the one real gap: this repo has no counterpart to the backend's `tests/helpers/factories/`, so
+  "give me a product" is hand-rolled in two places — not yet a pattern, worth a shared builder at
+  the third.
 
 - **The contract now declares four things the API had always accepted.** `category` and `tag` are
   query parameters on `GET /products`, not body-only. `admin` and `active` are declared on
@@ -239,6 +279,44 @@ own mocks.
 - **`podman:kill` / `docker:kill`** — `<engine> compose kill`, scoped to this project's stack.
 
 ### Changed
+
+- **`User` carries `deletedAt`, and `User.active` now means what it says.** Both follow the
+  backend separating two facts it had been storing as one: it had no `active` column at all —
+  `active` was synthesised as `!deletedAt` and `deletedAt` was stripped — so a single derived flag
+  stood in for "is this account enabled" and "has it been soft-deleted". This app's admin UI was
+  already built to the split model (`UsersList.vue` filters on a real `active`, `UserCreate.vue`
+  sends an `active` switch), so no view code changed; what changed is that those controls now
+  reach a real column instead of silently doing nothing. `GET /users?active=false` returns
+  deactivated accounts rather than deleted ones, and the list can tell the two apart again because
+  `deletedAt` is on the wire — exactly as `Product` has always had it.
+
+- **`active` and soft-deletion are declared as independent facts in `openapi.yaml`.** A record can
+  be active or not whether or not it has been soft-deleted; what they share is an effect, not a
+  value — a non-admin sees a record only when it is active AND not deleted. Both create bodies now
+  declare `default: true` for `active`. Leaving that undeclared is exactly how the two repos came
+  to disagree: this app's mock created a product active, the real API created it inactive, and the
+  same request produced a publicly visible product against one and a hidden one against the other
+  with nothing failing. The mock's behaviour is unchanged — the backend and the contract moved to
+  meet it — and `mockHandlerParity.spec.ts` now pins it. Update bodies carry no default on
+  purpose: an omitted `active` means "leave it alone", never "republish".
+
+- **`openapi.yaml` and `asyncapi.yaml` are byte-identical to the backend's copies again.** Both had
+  drifted: this repo still declared `/observability/load-test` (a route the backend deleted) and the
+  whole `cache.tags.invalidated` Redis channel (an implementation the backend deleted), and was
+  missing the `locale` field the backend now carries on both job payloads because a request-scoped
+  locale does not survive the hop onto a queue. The audit endpoint's description still described an
+  in-memory ring buffer rather than the persisted, retention-bounded trail behind it. Everything is
+  regenerated, the dead `GetObservabilityLoadTestResponse` row is gone from `responseSchemaMap.ts`,
+  and `diff` on either file is now the whole drift check.
+
+- **The admin dashboard's observability data is randomisable.** `adminMockHandlers.ts` used to
+  return three frozen module-level constants regardless of profile, which made `AdminOverviewTab.vue`
+  — the most numeric, most layout-fragile screen in the app — the one screen `test:e2e:random` could
+  never stress: `resilience.cy.ts` visited `/en/admin` and asserted it rendered, against the same
+  `uptimeSeconds: 3600` / `totalRequests: 1042` / `loadAvg: [0.5, 0.4, 0.3]` every run. The payloads
+  now live in `mockDatabase.observability` like every other handler family's data, and the random
+  profile drives them: seven-digit request counts, zero-request cold starts, and a `loadAvg` whose
+  length is not pinned to 3 — the contract only ever promised "array of number".
 
 - **Asynchronous code is written as promise chains, not `async`/`await` with `try`/`catch`.**
   This was already the house style — every `submitForm` ends

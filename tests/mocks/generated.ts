@@ -222,6 +222,7 @@ export interface User {
     locale?: Locale;
     createdAt?: string;
     updatedAt?: string;
+    deletedAt?: string;
 }
 
 export interface UserEnvelope {
@@ -578,18 +579,6 @@ export interface ObservabilityMetricsSummaryResponseEnvelope {
     status: number;
     message: string;
     data: ObservabilityMetricsSummaryResponse;
-}
-
-export interface ObservabilityLoadTestResult {
-    /** Wall-clock time in ms spent on the synthetic CPU load */
-    durationMs: number;
-}
-
-export interface ObservabilityLoadTestResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: ObservabilityLoadTestResult;
 }
 
 export type AuditEventItemActorRole =
@@ -1282,8 +1271,10 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
     };
 
     /**
-     * Returns the most recent audit events from the in-memory ring buffer (up to 200).
+     * Returns the most recent audit events, newest first, from the persisted audit trail.
      * Events include auth flows, admin CRUD actions, and security blocks.
+     * Entries are retained for `NODE_AUDIT_RETENTION_DAYS` (default 90) and expire after.
+     * `total` counts every event matching the filters, not just the returned page.
      * Requires admin role.
      * @summary Recent audit events
      */
@@ -1295,18 +1286,6 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
             ...options,
             params: { ...params, ...options?.params }
         });
-    };
-
-    /**
-     * Dev/staging-only endpoint that busy-loops the event loop for a fixed amount of
-     * work while emitting log lines, so dashboards and log pipelines can be exercised
-     * under load. Not registered when `NODE_ENV=production`. Requires admin role.
-     * @summary Synthetic CPU load test
-     */
-    const getObservabilityLoadTest = (
-        options?: AxiosRequestConfig
-    ): Promise<AxiosResponse<ObservabilityLoadTestResponseEnvelope>> => {
-        return axiosInstance.get(`/observability/load-test`, options);
     };
 
     /**
@@ -2075,7 +2054,6 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         getObservabilityMetrics,
         getObservabilityMetricsOverview,
         getObservabilityAuditLogs,
-        getObservabilityLoadTest,
         getAccount,
         requestAccountDelete,
         confirmAccountDelete,
@@ -2141,7 +2119,6 @@ export type GetObservabilityMetricsResult = AxiosResponse<string>;
 export type GetObservabilityMetricsOverviewResult =
     AxiosResponse<ObservabilityMetricsSummaryResponseEnvelope>;
 export type GetObservabilityAuditLogsResult = AxiosResponse<AuditLogsResponseEnvelope>;
-export type GetObservabilityLoadTestResult = AxiosResponse<ObservabilityLoadTestResponseEnvelope>;
 export type GetAccountResult = AxiosResponse<UserEnvelope>;
 export type RequestAccountDeleteResult = AxiosResponse<SuccessResponse>;
 export type ConfirmAccountDeleteResult = AxiosResponse<SuccessResponse>;
@@ -2392,16 +2369,6 @@ export const getGetObservabilityAuditLogsResponseMock = (
     ...overrideResponse
 });
 
-export const getGetObservabilityLoadTestResponseMock = (
-    overrideResponse: Partial<Extract<ObservabilityLoadTestResponseEnvelope, object>> = {}
-): ObservabilityLoadTestResponseEnvelope => ({
-    success: faker.helpers.arrayElement([true] as const),
-    status: faker.number.int(),
-    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
-    data: { durationMs: faker.number.float({ fractionDigits: 2 }) },
-    ...overrideResponse
-});
-
 export const getGetAccountResponseMock = (
     overrideResponse: Partial<Extract<UserEnvelope, object>> = {}
 ): UserEnvelope => ({
@@ -2427,6 +2394,10 @@ export const getGetAccountResponseMock = (
             undefined
         ]),
         updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
         ])
@@ -2496,6 +2467,10 @@ export const getSignupResponseMock = (
         updatedAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
         ])
     },
     ...overrideResponse
@@ -2526,6 +2501,10 @@ export const getSignupWithMultipartResponseMock = (
             undefined
         ]),
         updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
         ])
@@ -2615,6 +2594,10 @@ export const getListUsersResponseMock = (
                 updatedAt: faker.helpers.arrayElement([
                     faker.date.past().toISOString().slice(0, 19) + 'Z',
                     undefined
+                ]),
+                deletedAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
                 ])
             })
         ),
@@ -2655,6 +2638,10 @@ export const getCreateUserResponseMock = (
         updatedAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
         ])
     },
     ...overrideResponse
@@ -2685,6 +2672,10 @@ export const getCreateUserWithMultipartResponseMock = (
             undefined
         ]),
         updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
         ])
@@ -2719,6 +2710,10 @@ export const getUpdateUserResponseMock = (
         updatedAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
         ])
     },
     ...overrideResponse
@@ -2749,6 +2744,10 @@ export const getUpdateUserWithMultipartResponseMock = (
             undefined
         ]),
         updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
         ])
@@ -2792,6 +2791,10 @@ export const getGetUserByIdResponseMock = (
         updatedAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
         ])
     },
     ...overrideResponse
@@ -2824,6 +2827,10 @@ export const getUpdateUserByIdResponseMock = (
         updatedAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
         ])
     },
     ...overrideResponse
@@ -2854,6 +2861,10 @@ export const getUpdateUserByIdWithMultipartResponseMock = (
             undefined
         ]),
         updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
         ])
@@ -2906,6 +2917,10 @@ export const getSearchUsersResponseMock = (
                     undefined
                 ]),
                 updatedAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ]),
+                deletedAt: faker.helpers.arrayElement([
                     faker.date.past().toISOString().slice(0, 19) + 'Z',
                     undefined
                 ])
@@ -4477,32 +4492,6 @@ export const getGetObservabilityAuditLogsMockHandler = (
     );
 };
 
-export const getGetObservabilityLoadTestMockHandler = (
-    overrideResponse?:
-        | ObservabilityLoadTestResponseEnvelope
-        | ((
-              info: Parameters<Parameters<typeof http.get>[1]>[0]
-          ) =>
-              | Promise<ObservabilityLoadTestResponseEnvelope>
-              | ObservabilityLoadTestResponseEnvelope),
-    options?: RequestHandlerOptions
-) => {
-    return http.get(
-        '*/observability/load-test',
-        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-            return HttpResponse.json(
-                overrideResponse !== undefined
-                    ? typeof overrideResponse === 'function'
-                        ? await overrideResponse(info)
-                        : overrideResponse
-                    : getGetObservabilityLoadTestResponseMock(),
-                { status: 200 }
-            );
-        },
-        options
-    );
-};
-
 export const getGetAccountMockHandler = (
     overrideResponse?:
         | UserEnvelope
@@ -5809,7 +5798,6 @@ export const getEcommerceDemoAPIMock = () => [
     getGetObservabilityMetricsMockHandler(),
     getGetObservabilityMetricsOverviewMockHandler(),
     getGetObservabilityAuditLogsMockHandler(),
-    getGetObservabilityLoadTestMockHandler(),
     getGetAccountMockHandler(),
     getRequestAccountDeleteMockHandler(),
     getConfirmAccountDeleteMockHandler(),

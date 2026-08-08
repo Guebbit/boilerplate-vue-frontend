@@ -297,8 +297,10 @@ export const GetObservabilityMetricsOverviewResponse = zod.strictObject({
 });
 
 /**
- * Returns the most recent audit events from the in-memory ring buffer (up to 200).
+ * Returns the most recent audit events, newest first, from the persisted audit trail.
  * Events include auth flows, admin CRUD actions, and security blocks.
+ * Entries are retained for `NODE_AUDIT_RETENTION_DAYS` (default 90) and expire after.
+ * `total` counts every event matching the filters, not just the returned page.
  * Requires admin role.
  * @summary Recent audit events
  */
@@ -355,21 +357,6 @@ export const GetObservabilityAuditLogsResponse = zod.strictObject({
 });
 
 /**
- * Dev/staging-only endpoint that busy-loops the event loop for a fixed amount of
- * work while emitting log lines, so dashboards and log pipelines can be exercised
- * under load. Not registered when `NODE_ENV=production`. Requires admin role.
- * @summary Synthetic CPU load test
- */
-export const GetObservabilityLoadTestResponse = zod.strictObject({
-    success: zod.literal(true),
-    status: zod.number(),
-    message: zod.string(),
-    data: zod.strictObject({
-        durationMs: zod.number().describe('Wall-clock time in ms spent on the synthetic CPU load')
-    })
-});
-
-/**
  * Returns the full profile of the currently authenticated user
  * @summary Current user info
  */
@@ -399,7 +386,8 @@ export const GetAccountResponse = zod.strictObject({
                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
             ),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 
@@ -498,7 +486,8 @@ export const SignupResponse = zod.strictObject({
                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
             ),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 
@@ -628,7 +617,8 @@ export const ListUsersResponse = zod.strictObject({
                         'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
                     ),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
-                updatedAt: zod.iso.datetime({ offset: true }).optional()
+                updatedAt: zod.iso.datetime({ offset: true }).optional(),
+                deletedAt: zod.iso.datetime({ offset: true }).optional()
             })
         ),
         meta: zod.strictObject({
@@ -655,6 +645,7 @@ export const ListUsersResponse = zod.strictObject({
  */
 export const createUserBodyPasswordMin = 8;
 
+export const createUserBodyActiveDefault = true;
 export const createUserBodyLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
 export const CreateUserBody = zod.strictObject({
@@ -662,7 +653,7 @@ export const CreateUserBody = zod.strictObject({
     username: zod.string(),
     password: zod.string().min(createUserBodyPasswordMin),
     admin: zod.boolean().optional(),
-    active: zod.boolean().optional(),
+    active: zod.boolean().default(createUserBodyActiveDefault),
     imageUrl: zod
         .string()
         .optional()
@@ -704,7 +695,8 @@ export const CreateUserResponse = zod.strictObject({
                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
             ),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 
@@ -764,7 +756,8 @@ export const UpdateUserResponse = zod.strictObject({
                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
             ),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 
@@ -819,7 +812,8 @@ export const GetUserByIdResponse = zod.strictObject({
                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
             ),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 
@@ -873,7 +867,8 @@ export const UpdateUserByIdResponse = zod.strictObject({
                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
             ),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 
@@ -977,7 +972,8 @@ export const SearchUsersResponse = zod.strictObject({
                         'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
                     ),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
-                updatedAt: zod.iso.datetime({ offset: true }).optional()
+                updatedAt: zod.iso.datetime({ offset: true }).optional(),
+                deletedAt: zod.iso.datetime({ offset: true }).optional()
             })
         ),
         meta: zod.strictObject({
@@ -1239,11 +1235,13 @@ export const ListProductsResponse = zod.strictObject({
  */
 export const createProductBodyPriceMin = 0;
 
+export const createProductBodyActiveDefault = true;
+
 export const CreateProductBody = zod.strictObject({
     title: zod.string(),
     price: zod.number().min(createProductBodyPriceMin),
     description: zod.string().optional(),
-    active: zod.boolean().optional(),
+    active: zod.boolean().default(createProductBodyActiveDefault),
     imageUrl: zod
         .string()
         .optional()

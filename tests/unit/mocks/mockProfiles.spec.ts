@@ -16,7 +16,7 @@ const loadMockProfiles = () => {
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 
 /** Blanks out ISO date strings so a comparison isn't defeated by wall-clock jitter — see the
- * reproducibility test below for why exact timestamps aren't part of what VITE_MOCK_SEED promises. */
+ * reproducibility test below for why exact timestamps aren't part of what RANDOM_DATA_SEED promises. */
 const normalizeVolatileDates = (value: unknown): unknown =>
     JSON.parse(
         JSON.stringify(value, (_key, entry) =>
@@ -174,14 +174,14 @@ describe('buildRandomDatabase', () => {
             });
     });
 
-    it('is reproducible for a given VITE_MOCK_SEED', () => {
-        vi.stubEnv('VITE_MOCK_SEED', '42');
+    it('is reproducible for a given RANDOM_DATA_SEED', () => {
+        vi.stubEnv('RANDOM_DATA_SEED', '42');
         // Nested rather than flat: the last step compares against `first`, which a flat chain
         // would have let fall out of scope.
         return loadMockProfiles()
             .then((firstModule) => firstModule.buildRandomDatabase())
             .then((first) => {
-                vi.stubEnv('VITE_MOCK_SEED', '42');
+                vi.stubEnv('RANDOM_DATA_SEED', '42');
                 return loadMockProfiles()
                     .then((secondModule) => secondModule.buildRandomDatabase())
                     .then((second) => [first, second] as const);
@@ -189,7 +189,7 @@ describe('buildRandomDatabase', () => {
             .then(([first, second]) => {
                 // Normalised: faker's default `refDate` for `date.past()`/`date.recent()` is real
                 // wall-clock time, so two sequential calls a few milliseconds apart never produce
-                // byte-identical timestamps even under the same seed. What VITE_MOCK_SEED actually
+                // byte-identical timestamps even under the same seed. What RANDOM_DATA_SEED actually
                 // promises to reproduce is the STRUCTURE a bug report would need — which product is
                 // inactive, which is fully empty, which ids a cart/order references, the quantities and
                 // totals — not the exact millisecond a date field landed on.
@@ -197,12 +197,12 @@ describe('buildRandomDatabase', () => {
             });
     });
 
-    it('produces a different dataset for a different VITE_MOCK_SEED', () => {
-        vi.stubEnv('VITE_MOCK_SEED', '1');
+    it('produces a different dataset for a different RANDOM_DATA_SEED', () => {
+        vi.stubEnv('RANDOM_DATA_SEED', '1');
         return loadMockProfiles()
             .then((firstModule) => firstModule.buildRandomDatabase())
             .then((first) => {
-                vi.stubEnv('VITE_MOCK_SEED', '2');
+                vi.stubEnv('RANDOM_DATA_SEED', '2');
                 return loadMockProfiles()
                     .then((secondModule) => secondModule.buildRandomDatabase())
                     .then((second) => [first, second] as const);
@@ -210,7 +210,7 @@ describe('buildRandomDatabase', () => {
             .then(([first, second]) => {
                 // Normalised for the same reason as the reproducibility test above — otherwise this
                 // would trivially pass even if the seed were silently ignored, since two sequential
-                // calls' wall-clock-anchored dates always differ regardless of VITE_MOCK_SEED.
+                // calls' wall-clock-anchored dates always differ regardless of RANDOM_DATA_SEED.
                 expect(normalizeVolatileDates(second)).not.toEqual(normalizeVolatileDates(first));
             });
     });
@@ -218,7 +218,7 @@ describe('buildRandomDatabase', () => {
 
 describe('resolveMockSeed', () => {
     it('memoises the resolved seed within one module instance', () => {
-        vi.stubEnv('VITE_MOCK_SEED', '7');
+        vi.stubEnv('RANDOM_DATA_SEED', '7');
 
         return loadMockProfiles().then(({ resolveMockSeed }) =>
             resolveMockSeed()
@@ -232,7 +232,7 @@ describe('resolveMockSeed', () => {
         );
     });
 
-    it('generates a fresh numeric seed when VITE_MOCK_SEED is unset', () =>
+    it('generates a fresh numeric seed when RANDOM_DATA_SEED is unset', () =>
         loadMockProfiles()
             .then(({ resolveMockSeed }) => resolveMockSeed())
             .then((seed) => {
@@ -267,12 +267,12 @@ describe('resolveMockSeed', () => {
             });
     });
 
-    it('prefers an explicit VITE_MOCK_SEED over whatever sessionStorage holds', () =>
+    it('prefers an explicit RANDOM_DATA_SEED over whatever sessionStorage holds', () =>
         loadMockProfiles()
             // persists a fresh seed to sessionStorage
             .then((firstModule) => firstModule.resolveMockSeed())
             .then(() => {
-                vi.stubEnv('VITE_MOCK_SEED', '999');
+                vi.stubEnv('RANDOM_DATA_SEED', '999');
                 return loadMockProfiles();
             })
             .then(({ resolveMockSeed }) => resolveMockSeed())

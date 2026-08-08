@@ -47,7 +47,6 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['GET', '/observability/metrics', 'GetObservabilityMetricsResponse'],
     ['GET', '/observability/metrics/overview', 'GetObservabilityMetricsOverviewResponse'],
     ['GET', '/observability/audit', 'GetObservabilityAuditLogsResponse'],
-    ['GET', '/observability/load-test', 'GetObservabilityLoadTestResponse'],
     ['GET', '/account', 'GetAccountResponse'],
     ['DELETE', '/account', 'RequestAccountDeleteResponse'],
     ['DELETE', '/account/delete-confirm', 'ConfirmAccountDeleteResponse'],
@@ -97,9 +96,9 @@ const ROUTES: [method: string, path: string, name: string][] = [
 
 describe('routeSchemas table', () => {
     it('covers every operation declared in openapi.yaml', () => {
-        // The spec has 52 operations. If this number moves, a row was added to the client
+        // The spec has 51 operations. If this number moves, a row was added to the client
         // without a row here — the "silently unvalidated request" case the module warns about.
-        expect(ROUTES).toHaveLength(52);
+        expect(ROUTES).toHaveLength(51);
     });
 
     it.each(ROUTES)('%s %s resolves to %s', (method, path, name) => {

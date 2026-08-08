@@ -44,7 +44,7 @@ export const initializeApiMocking = () => {
     // Which profile built `mockDatabase` (imported above, already constructed by the time this
     // runs) and, for the random profile, the seed that reproduces this exact run — printed once
     // at worker start so a flaky-looking `test:e2e:random` failure can be re-run with
-    // `VITE_MOCK_SEED=<seed>` instead of chased blind. See tests/mocks/shared/mockProfiles.ts.
+    // `RANDOM_DATA_SEED=<seed>` instead of chased blind. See tests/mocks/shared/mockProfiles.ts.
     //
     // The random branch's `resolveMockSeed()` re-enters the already-loaded (memoised) dynamic
     // import mockDatabase's own construction went through, so this never re-randomises anything

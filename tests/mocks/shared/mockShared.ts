@@ -37,7 +37,12 @@ import {
     type RefreshTokenResponse,
     type User
 } from '@types';
-import { buildSeedDatabase, buildRandomDatabase, resolveProfile } from './mockProfiles.ts';
+import {
+    buildSeedDatabase,
+    buildRandomDatabase,
+    resolveProfile,
+    type IMockObservability
+} from './mockProfiles.ts';
 import { getIsoDateNow, computeOrderTotals, createMockOrder } from './mockOrderMath.ts';
 
 // Re-exported so every existing `from '../shared/mockShared.ts'` import in the handler files
@@ -331,6 +336,7 @@ export const mockDatabase: {
     sampleProducts: Product[];
     sampleCartItems: CartItem[];
     sampleOrders: Order[];
+    observability: IMockObservability;
 } = await createInitialMockDatabase();
 
 // Called by the /__mock/reset MSW endpoint, which `cy.resetState()` hits under the mock profile.
@@ -344,6 +350,7 @@ export const resetMockDatabase = async () => {
     mockDatabase.sampleProducts = initialMockDatabase.sampleProducts;
     mockDatabase.sampleCartItems = initialMockDatabase.sampleCartItems;
     mockDatabase.sampleOrders = initialMockDatabase.sampleOrders;
+    mockDatabase.observability = initialMockDatabase.observability;
 };
 
 /**
