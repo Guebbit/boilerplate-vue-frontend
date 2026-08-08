@@ -144,13 +144,11 @@ export const onRequestReject = (error: AxiosError) => {
 };
 
 /**
- * Former response success interceptor: used to unwrap every response to
- * `response.data` here, which made `instance.get()` et al. lie about their
- * return type (still typed as `AxiosResponse<T>`, actually resolving to `T`).
+ * Response success interceptor — DISABLED, kept as the place a global response transform would go.
  *
- * Disabled — `instance` now always resolves with the real `AxiosResponse`.
- * The one sanctioned unwrap point is `orvalMutator` below. Kept for reference
- * in case a future need for a global response transform comes up.
+ * Unwrapping to `response.data` here makes `instance.get()` et al. lie about their return type:
+ * still typed as `AxiosResponse<T>`, actually resolving to `T`. So `instance` always resolves
+ * with the real `AxiosResponse`, and the one sanctioned unwrap point is `orvalMutator` below.
  *
  * @param response - Successful axios response.
  * @returns The response body.
@@ -273,15 +271,11 @@ instance.interceptors.response.use(undefined, onResponseRejectWithRefresh);
  * explicitly.
  *
  * The `MODE !== 'test'` half of that default matters: Vitest also sets `DEV: true` (its mode is
- * 'test', not 'production'), and plenty of unit tests — `httpRefresh.spec.ts` among them —
- * exercise `orvalMutator` against hand-rolled fixtures that are deliberately partial. Without
- * excluding 'test' mode, this validation would run inside Vitest by default and fail specs that
- * were never meant to be contract-checked.
+ * 'test', not 'production'), and plenty of unit tests exercise `orvalMutator` against
+ * hand-rolled fixtures that are deliberately partial.
  *
  * This is the FE-side mirror of the BE's `toSatisfyApiSpec()` contract tests: MSW responses are
- * already checked by `assertMockContract` at the point they're built, but a live backend's
- * responses were previously unwrapped and never parsed — a live contract violation only
- * surfaced if some unrelated assertion happened to trip on it.
+ * checked by `assertMockContract` at the point they're built, this covers a live backend's.
  */
 const shouldValidateResponses = (): boolean => {
     const flag = import.meta.env.VITE_VALIDATE_RESPONSES;

@@ -5,7 +5,7 @@
  * toolkit. What is *this repo's* logic is the multipart branch: whether a call goes out as JSON
  * or as `FormData`, and how that `FormData` is built.
  *
- * `@api` is deliberately NOT mocked. The FormData encoding lives in the generated client now
+ * `@api` is deliberately NOT mocked. The FormData encoding lives in the generated client
  * (orval's `splitByContentType` output), so mocking `@api` would assert only that the store
  * picked a function name and would stop covering the encoding itself. Mocking the transport
  * instead runs store → generated client → `orvalMutator` for real, and asserts the request that
@@ -86,8 +86,8 @@ describe('useProductsStore', () => {
                 }));
 
         it('sends a Blob image, not only a File', () =>
-            // toFormData, which this store used to call, recursed into anything that was not a
-            // File and silently dropped a plain Blob. The contract types the field as Blob.
+            // The contract types the field as Blob, and encoders that recurse into anything that
+            // is not a File (axios' `toFormData` among them) drop a plain Blob silently.
             useProductsStore()
                 .createProduct({ title: 'Gadget', price: 49.99, imageUpload: new Blob(['x']) })
                 .then(() => {
@@ -185,8 +185,7 @@ describe('useProductsStore', () => {
 
         /**
          * The reason `orvalMutator` takes a second argument at all — `ProductEdit.vue` passes
-         * `onUploadProgress` through it to drive its progress bar. This used to be asserted
-         * through `updateProductImage`, a wrapper the edit form made redundant.
+         * `onUploadProgress` through it to drive its progress bar.
          */
         it('forwards the upload progress callback to the transport', () => {
             const onUploadProgress = vi.fn();
@@ -226,12 +225,10 @@ describe('useProductsStore', () => {
      * list endpoints answer `{ data: { items } }` while single-record ones answer `{ data }`, and
      * `watchSearchProducts` sends `filters.id` as the `id` query parameter.
      *
-     * That last one used to be a *rename* to `productId`, and the rename was the bug rather than
-     * the fix: `openapi.yaml` declared the GET's filter as `productId` while the API had always
-     * read `id`, so the parameter was sent, ignored, and the unfiltered catalogue came back. The
-     * spec now says `id` on both the GET query and the `POST /products/search` body. Worth
-     * pinning either way, because the mistake is invisible to TypeScript — both are
-     * `string | undefined` — and shows up only as a filter that appears to work and does nothing.
+     * That last one is worth pinning: `id` is the name the API reads, on both the GET query and
+     * the `POST /products/search` body, and getting it wrong is invisible to TypeScript — every
+     * candidate name is `string | undefined` — so it shows up only as a filter that appears to
+     * work and returns the unfiltered catalogue.
      */
     describe('read paths', () => {
         describe('fetchProducts', () => {
@@ -307,8 +304,7 @@ describe('useProductsStore', () => {
                         const parameters = lastParameters();
                         expect(parameters).toMatchObject({
                             text: 'gad',
-                            // `id`, the name the API actually reads. Sending `productId` here —
-                            // what the spec used to declare — filtered nothing.
+                            // `id`, the name the API actually reads; `productId` filters nothing.
                             id: 'p1',
                             minPrice: 5,
                             maxPrice: 50

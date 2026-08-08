@@ -2,14 +2,14 @@
  * TL;DR — this is plain jsdom with one class of parser noise filtered out.
  *
  * Vuetify's stylesheets nest `@media` inside `@layer`, which jsdom's CSS parser cannot
- * read, so every run printed "Could not parse CSS stylesheet" 31 times. It is harmless
- * — jsdom keeps every rule it *could* parse — but it buried any warning that mattered.
- * Setting `css: false` would also silence it, at the price of never being able to assert
- * on computed styles; this keeps CSS fully on and suppresses only that one error type.
- * Everything else jsdom reports still comes through.
+ * read, so it prints "Could not parse CSS stylesheet" dozens of times per run. It is
+ * harmless — jsdom keeps every rule it *could* parse — but it buries the warnings that
+ * matter. Setting `css: false` would also silence it, at the price of never being able to
+ * assert on computed styles; this keeps CSS fully on and suppresses only that one error
+ * type. Everything else jsdom reports still comes through.
  *
  * Go back to `environment: 'jsdom'` in vitest.config.ts once the parser handles nested
- * at-rules inside `@layer`. See PROBLEM_17 for the full write-up.
+ * at-rules inside `@layer`.
  */
 import { builtinEnvironments } from 'vitest/runtime';
 import { VirtualConsole } from 'jsdom';

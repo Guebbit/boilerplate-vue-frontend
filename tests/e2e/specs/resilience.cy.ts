@@ -9,8 +9,7 @@
  * nothing throws, no console error, empty states don't crash, long strings don't break layout.
  *
  * `npm run test:e2e:random` targets this file directly (`--spec`) rather than a Cypress tag
- * filter — the plan considered `cypress-grep`, but a single always-random spec doesn't justify a
- * new dependency; `--spec` does the same job.
+ * filter: a single always-random spec doesn't justify a `cypress-grep` dependency.
  */
 
 const MAX_HORIZONTAL_OVERFLOW_PX = 1;

@@ -7,15 +7,12 @@ import { signupBodyUsernameMin, createUserBodyPasswordMin } from '@api/schemas';
  *
  * Every message is a THUNK — `{ error: () => t('…') }`, never `t('…')`. Zod v4 calls it at
  * PARSE time, and `i18n.global.t` resolves against whatever locale is active at that moment, so
- * one module-scope schema speaks every language. That is the whole reason these are constants
- * rather than the `createUsersSchema(t)` factories they used to be:
- *
- * - a factory bought nothing. `useStructureFormValidation` applies `toValue(schema)` inside
- *   `validate()` and nowhere else, so a getter was re-evaluated at exactly the moment a thunk is
- *   — same behaviour, more machinery.
- * - a factory was a live trap. `createUsersSchema(t)` instead of `() => createUsersSchema(t)`
- *   type-checks, runs, and silently freezes the language at setup. A thunk cannot be got wrong
- *   at the call site, because there is no call site.
+ * one module-scope schema speaks every language. That is why these are plain constants and not
+ * `createUsersSchema(t)` factories: `useStructureFormValidation` applies `toValue(schema)` inside
+ * `validate()` and nowhere else, so a getter would be re-evaluated at exactly the moment a thunk
+ * is — same behaviour, more machinery, and one way to get it wrong (passing
+ * `createUsersSchema(t)` instead of `() => createUsersSchema(t)` type-checks, runs, and silently
+ * freezes the language at setup).
  *
  * `i18n.global.t` rather than `useI18n()`: these are module constants, evaluated outside any
  * component's setup, where the composable is unavailable.

@@ -164,10 +164,9 @@ describe('_changeLanguage', () => {
     });
 
     /**
-     * `fallbackLocale` is inert unless the fallback's messages are registered. Landing directly
-     * on a locale this app has no dictionary for used to leave EVERY UI key rendering as its own
-     * raw identifier, because only that locale had been loaded and there was nothing to fall
-     * back to.
+     * `fallbackLocale` is inert unless the fallback's messages are registered. Without loading
+     * it, landing directly on a locale this app has no dictionary for leaves EVERY UI key
+     * rendering as its own raw identifier — there is nothing to fall back to.
      */
     it('loads the fallback dictionary too, so per-key fallback actually works', () => {
         const instance = freshInstance();

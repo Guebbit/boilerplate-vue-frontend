@@ -4,13 +4,12 @@
  * that file's dynamic `import()`, gated on `resolveProfile() === 'random'`.
  *
  * Why the split: this file is the only thing in the mock layer that imports `@faker-js/faker`
- * and the 4 800-line `tests/mocks/generated.ts`. Before this split, `mockProfiles.ts` imported
- * both unconditionally, which pulled them into the SEED profile's module graph too — every
- * `npm run test:e2e` run, not just `test:e2e:random` — and on a cold `vite dev` boot that
- * triggered a one-time dependency-pre-bundling reload Vite does the first time it discovers a
- * new dependency mid-session. That reload raced page-load assertions in specs that don't even
- * touch the random profile. A dynamic import keeps this entire module (and its two heavy
- * dependencies) out of the seed profile's graph completely.
+ * and the 4 800-line `tests/mocks/generated.ts`. Importing them from `mockProfiles.ts` would pull
+ * them into the SEED profile's module graph too — every `npm run test:e2e` run, not just
+ * `test:e2e:random` — and on a cold `vite dev` boot that triggers Vite's one-time
+ * dependency-pre-bundling reload, which races page-load assertions in specs that never touch the
+ * random profile. A dynamic import keeps this module and its two heavy dependencies out of the
+ * seed profile's graph completely.
  *
  * Design constraints (see docs/tools/mocking.md for the full rationale):
  *
@@ -32,8 +31,7 @@
  * 5. Role-scoping branches must survive randomisation. `isVisibleToCaller` (`mockShared.ts`)
  *    hides inactive and soft-deleted products from non-admins; the fixed seed exercises both
  *    branches on purpose (one of each). The random generator force-patches specific products to
- *    guarantee at least one of each, or the profile silently stops testing a branch that has
- *    already broken once for real (see the products.cy.ts comment on that incident).
+ *    guarantee at least one of each, or the profile silently stops testing a branch.
  * 6. The RNG is seeded and the seed is logged. `faker.seed(n)`, `n` from `RANDOM_DATA_SEED` or a
  *    fresh value when unset, resolved once per page load and printed by `apiMock.ts` at worker
  *    start. Without this, "random" means "flaky and unreproducible" — with it, a failure

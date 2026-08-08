@@ -27,9 +27,9 @@ export const mockResponse = <T>(data: T, options: MockTransportOptions = {}) => 
 
 export const toMockJsonResponse = <T>(data: T, options: MockTransportOptions = {}) => {
     // Send what was validated, not what was passed in. The two are the same object for a
-    // conforming payload, but keeping the parse result is what makes the guard honest: previously
-    // this called the validator for its exception and then shipped the original, so a schema that
-    // stripped rather than rejected would have let the stray key through anyway.
+    // conforming payload, but keeping the parse result is what makes the guard honest: calling the
+    // validator only for its exception would let a stray key through under a schema that strips
+    // rather than rejects.
     // The schemas are generated with `strict`, so an undeclared key throws here (see orval.config.ts).
     const payload = options.schema ? assertMockContract(options.schema, data) : data;
     return delay(options.delayMs ?? 250).then(() =>

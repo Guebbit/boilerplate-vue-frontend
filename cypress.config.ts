@@ -15,15 +15,10 @@ export default defineConfig({
         // upload fixtures in a `cypress/` folder at the repo root, alone.
         fixturesFolder: 'tests/e2e/fixtures',
         // Cypress' 4s default assumes a prebuilt app. These specs run against `vite dev`, which
-        // compiles each route the first time it is visited, so the first assertion on the first
-        // spec waits for a build rather than for the app. It fits in 4s on an idle machine and
-        // does not on a busy one: a full-suite run on a loaded box failed the first two
-        // assertions of auth.cy.ts while the same spec passed cold in isolation. Raised rather
-        // than papered over per-command, so the reason lives in one place.
+        // compiles each route the first time it is visited, so the first assertion on a spec
+        // waits for a build rather than for the app — and 4s is not enough on a loaded machine.
         defaultCommandTimeout: 15_000,
-        // 8085 sits in this repo's 8080-8099 host-port block. It used to be 4173, which the
-        // paired backend's docs container also claimed — and `pretest:e2e` used to free it with
-        // `fuser -k`, killing podman's port forwarder along with it.
+        // 8085 sits in this repo's 8080-8099 host-port block.
         baseUrl: 'http://localhost:8085',
         allowCypressEnv: false,
         env: {

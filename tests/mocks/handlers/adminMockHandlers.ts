@@ -1,15 +1,11 @@
 /**
  * The three `/observability/*` endpoints behind `AdminOverviewTab.vue` and the audit tab.
  *
- * These payloads used to be three frozen module-level constants declared right here, returned
- * identically under every profile. That made the admin dashboard — the most numeric, most
- * layout-fragile screen in the app — the one screen `resilience.cy.ts` could never stress: it had
- * never rendered a 7-digit request count, a zero-request cold start, or a `loadAvg` array of an
- * unexpected length, because no profile could reach it.
- *
- * They now live in `mockDatabase.observability`, populated by whichever profile is active, and
- * this file does what every other handler family already does: read the database and wrap it. The
- * fixed values themselves are unchanged — they moved to `mockProfiles.ts` verbatim.
+ * The payloads live in `mockDatabase.observability`, populated by whichever profile is active,
+ * so this file does what every other handler family does: read the database and wrap it. Serving
+ * them from frozen constants here instead would leave the admin dashboard — the most numeric,
+ * most layout-fragile screen in the app — the one screen `resilience.cy.ts` cannot stress with a
+ * 7-digit request count, a zero-request cold start, or an odd-length `loadAvg`.
  */
 import { http, type HttpHandler } from 'msw';
 import {

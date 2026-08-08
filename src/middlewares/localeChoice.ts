@@ -129,8 +129,7 @@ export const localeChoice = (to: RouteLocationNormalized): Promise<true | RouteL
     // Missing, unsupported or empty locale: redirect to the same route with the
     // browser/default locale injected into the params.
     //
-    // `Promise.resolve` rather than a bare object: the guard is declared to return a promise,
-    // and `async` is no longer here to wrap this branch for us.
+    // `Promise.resolve` rather than a bare object: the guard is declared to return a promise.
     return Promise.resolve({
         name: to.name as string,
         params: {

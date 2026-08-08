@@ -5,8 +5,7 @@ import type { GeneratorVerbOptions } from '@orval/core';
  * Seven operations accept the same payload as either JSON or multipart (anything with an
  * optional image: signup, create/update user, create/update product). Orval emits FormData
  * encoding ONLY for operations with a single request content type — with two, it hands the
- * body straight to the mutator and generates no encoding at all, which is why those calls
- * used to be written by hand in the stores.
+ * body straight to the mutator and generates no encoding at all.
  *
  * `splitByContentType` fixes that by generating one function per content type, but names them
  * `createProductWithJson` / `createProductWithFormData`. This transformer restores the plain
@@ -113,8 +112,7 @@ export default defineConfig({
                     //
                     // Without it, a mock handler returning more than the contract allows passes
                     // `assertMockContract` unremarked, and the mock ends up describing an API that
-                    // does not exist. That is not hypothetical — it is how mock/live parity has
-                    // broken before (product visibility, order scoping).
+                    // does not exist.
                     //
                     // If a schema ever legitimately needs to accept unknown keys, model it as a
                     // free-form map in the spec. Do not turn this off.

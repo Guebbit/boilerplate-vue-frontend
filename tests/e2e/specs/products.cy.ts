@@ -76,8 +76,8 @@ describe('Products', () => {
                 });
         });
 
-        // The other half of the same rule. Before the handler applied role scoping both
-        // roles saw 5 rows, so this distinction could not be tested at all.
+        // The other half of the same rule: an admin sees the inactive and soft-deleted rows a
+        // non-admin does not.
         it('shows inactive and soft-deleted products to admin users', () => {
             cy.loginAs('admin');
             cy.visit('/en/products');
@@ -89,10 +89,9 @@ describe('Products', () => {
         // The expected id is read off the row that gets clicked, not hard-coded. The API sorts by
         // `createdAt DESC, _id DESC` and the seeded rows can share a millisecond, so which product
         // occupies row 0 is a property of fixture insertion timing rather than of the navigation
-        // this spec is about — pinning the mock's first product asserted the fixture's array order
-        // against a real database. The id is read synchronously off the jQuery element inside a
-        // single `.then()`: re-entering the chain with `.eq(0).find('td').first().invoke('text')`
-        // and then clicking is what produced `cy.eq() failed because it requires a DOM element`.
+        // this spec is about. The id is read synchronously off the jQuery element inside a single
+        // `.then()`: re-entering the chain with `.eq(0).find('td').first().invoke('text')` before
+        // clicking fails with `cy.eq() failed because it requires a DOM element`.
         it('navigates to product detail when clicking View', () => {
             cy.get('[data-test=list-row]')
                 .first()

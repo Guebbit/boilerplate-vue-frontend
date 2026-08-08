@@ -84,8 +84,8 @@ describe('useUsersStore', () => {
                 }));
 
         it('sends a Blob avatar, not only a File', () =>
-            // toFormData, which this store used to call, recursed into anything that was not a
-            // File and silently dropped a plain Blob. The contract types the field as Blob.
+            // The contract types the field as Blob, and encoders that recurse into anything that
+            // is not a File (axios' `toFormData` among them) drop a plain Blob silently.
             useUsersStore()
                 .createUser({
                     email: 'ada@example.com',
@@ -156,8 +156,7 @@ describe('useUsersStore', () => {
 
         /**
          * The reason `orvalMutator` takes a second argument at all — `UserEdit.vue` passes
-         * `onUploadProgress` through it to drive its progress bar. This used to be asserted
-         * through `updateUserImage`, a wrapper the edit form made redundant.
+         * `onUploadProgress` through it to drive its progress bar.
          */
         it('forwards the upload progress callback to the transport', () => {
             const onUploadProgress = vi.fn();

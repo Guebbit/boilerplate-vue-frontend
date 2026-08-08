@@ -83,8 +83,8 @@ export default defineConfigWithVueTs(
 
             /**
              * Every user-facing string goes through vue-i18n. This catches the two shapes that
-             * used to slip past review — a bare text node (`<h3>SSE observability</h3>`) and a
-             * static attribute a screen reader or a tab title reads (`alt="logo"`,
+             * slip past review most easily — a bare text node (`<h3>SSE observability</h3>`) and
+             * a static attribute a screen reader or a tab title reads (`alt="logo"`,
              * `title="Realtime playground"`) — since neither looks like "untranslated copy" at a
              * glance the way a missing `t()` call does.
              *

@@ -28,11 +28,11 @@ export type MockProfile = 'seed' | 'random';
 /**
  * What the three `/observability/*` endpoints answer with.
  *
- * This lives in the database rather than in `adminMockHandlers.ts` because it used to live there,
- * as three frozen module-level constants returned regardless of profile — which made
- * `AdminOverviewTab.vue`, the most numeric and most layout-fragile screen in the app, the one
- * screen `resilience.cy.ts` could never stress. It had never rendered a 7-digit request count, a
- * zero-request cold start, or a `loadAvg` of unexpected length, because no profile could reach it.
+ * This lives in the database rather than as frozen constants in `adminMockHandlers.ts` so the
+ * random profile can reach it: `AdminOverviewTab.vue` is the most numeric and most
+ * layout-fragile screen in the app, and `resilience.cy.ts` can only stress it with a 7-digit
+ * request count, a zero-request cold start or a `loadAvg` of unexpected length if a profile can
+ * supply them.
  *
  * Stored as the INNER payloads (`ObservabilityHealthResponse['data']` and friends), not the
  * envelopes: the handlers build the envelope, exactly as they do for every other family.
@@ -112,8 +112,8 @@ const createSeedProducts = (): Product[] =>
     }));
 
 /*
- * The fixed observability payloads — the values `adminMockHandlers` used to hold as frozen
- * constants, unchanged, now reachable as data so the random profile can replace them.
+ * The fixed observability payloads the three `/observability/*` handlers serve under the seed
+ * profile.
  */
 const createSeedObservability = (): IMockObservability => ({
     health: {

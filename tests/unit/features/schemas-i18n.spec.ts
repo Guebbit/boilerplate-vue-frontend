@@ -10,12 +10,12 @@ import enMessages from '@/locales/en.json';
 import itMessages from '@/locales/it.json';
 
 /**
- * The property the thunks buy, and the factories did not: ONE schema object, parsed twice, in two
- * languages, with nothing rebuilt in between.
+ * The property the thunks buy: ONE schema object, parsed twice, in two languages, with nothing
+ * rebuilt in between.
  *
  * Deliberately against the real vue-i18n instance from `@/utils/i18n.ts` — no `vi.mock`. A mocked
- * `t` would assert that a key was looked up, which is the thing that was already true and still
- * shipped the bug.
+ * `t` would assert only that a key was looked up, which is true even when the message is frozen
+ * in the wrong language.
  */
 const setLocale = (locale: string) => loadLocale(locale).then(() => nextTick());
 

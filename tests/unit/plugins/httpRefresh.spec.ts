@@ -180,9 +180,8 @@ describe('401 refresh flow', () => {
      * misleading session-expired state.
      *
      * Driven through `orvalMutator` against the real interceptor chain, and asserted on the
-     * server's own request log. `httpRequest.spec.ts` used to assert this by counting calls to a
-     * `setAccessToken` mock, but no such method exists in `src/`: the counter was permanently
-     * zero, so those cases passed whatever the exclusion list did.
+     * server's own request log — the only place a refresh attempt is observable without
+     * mocking the very code under test.
      */
     it.each([...EXCLUDED_PATHS, ABSOLUTE_EXCLUDED_URL])(
         'never attempts a refresh for a 401 from %s',

@@ -195,9 +195,8 @@ describe('product visibility mirrors the backend publicScope', () => {
 
         const { data } = await listProducts();
 
-        // The bug this guards is the one the mocks already shipped once: `meta.totalItems`
-        // computed before role scoping would report 4 while returning 1, and a paginated UI
-        // would render pages that do not exist.
+        // `meta.totalItems` computed before role scoping would report 4 while returning 1, and a
+        // paginated UI would render pages that do not exist.
         expect(data.meta.totalItems).toBe(1);
         expect(data.meta.totalPages).toBe(1);
     });
@@ -283,8 +282,8 @@ describe('creating a product', () => {
 
 describe('user active filter', () => {
     // Backend counterpart: tests/unit/services/users.test.ts — "filters on the active column,
-    // not on soft-deletion". `active` is a real stored column on both sides now; it used to be
-    // derived from `deletedAt` in the API, so this filter meant something different per side.
+    // not on soft-deletion". `active` is a real stored column on both sides; deriving it from
+    // `deletedAt` on either would make this filter mean something different per side.
 
     beforeEach(() => {
         signIn(true);

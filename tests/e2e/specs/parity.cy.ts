@@ -1,7 +1,7 @@
 /**
  * Live profile only. Mechanises the "DATA parity" and "BEHAVIOUR parity" invariants documented
  * at the top of `tests/mocks/shared/mockShared.ts`: that file's seed data is hand-mirrored from
- * the backend's `db/seeds/index.ts`, and nothing previously caught the day the two diverged.
+ * the backend's `db/seeds/index.ts`, and this is the only thing that catches the two diverging.
  * Under the mock profile the mirror IS the source of truth, so there is nothing to compare it
  * against — this spec only has meaning against the real, seeded database, which is why every
  * `it()` below opens with `cy.skipUnlessLive()`.

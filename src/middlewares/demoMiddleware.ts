@@ -13,9 +13,8 @@ import type { RouteLocationNormalized } from 'vue-router';
  * WARNING: CAN'T USE injected variables, because guards DON'T have access to
  * the component scope, they are not part of the "tree".
  *
- * Returns nothing (rather than calling a `next()` callback) to let the navigation through — the
- * callback style is deprecated in Vue Router 4 and, since this guard runs on every navigation,
- * logged its warning on every single route change.
+ * Returns nothing (rather than calling a `next()` callback) to let the navigation through: the
+ * callback style is deprecated in Vue Router 4 and warns on every hit.
  *
  * @param to - Route being entered; its path is fed to a demo translation.
  */

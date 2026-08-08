@@ -6,10 +6,7 @@
  * believes they are signed in; failing to attach the language silently serves every response in
  * the fallback locale.
  *
- * The refresh-exclusion list used to be asserted here too, by counting calls to a
- * `setAccessToken` mock — but no such method exists in `src/`, which sets `accessToken.value`
- * through `storeToRefs` instead, so the counter was permanently zero and every case passed
- * whatever the exclusion list did. It now lives in `httpRefresh.spec.ts`, which drives the real
+ * The refresh-exclusion list is covered in `httpRefresh.spec.ts`, which drives the real
  * interceptor chain against MSW and asserts on the server's own request log.
  */
 
@@ -30,10 +27,7 @@ vi.mock('pinia', async (importOriginal) => ({
 }));
 
 // `apiText` is not decoration here: `onResponseReject` calls it to build the 401 message, so a
-// mock without it throws before the refresh logic is ever reached. That used to be invisible —
-// `onResponseRejectWithRefresh` was `async`, which turned the throw into a rejection that
-// `attemptedRefresh`'s `.catch` swallowed, so every case below reported "no refresh attempted"
-// for the wrong reason and would have passed even with the exclusion list deleted.
+// mock without it throws before the refresh logic is ever reached.
 vi.mock('@/utils/i18n.ts', () => ({
     getCurrentLocale: () => 'it',
     apiText: (_apiKey: string, localKey: string) => localKey,
