@@ -1,8 +1,11 @@
-# Deliberately NOT `complete:check`. That runs `vite build`, the unit suite AND the full Cypress
-# e2e suite — around eight minutes per commit, which is long enough that people reach for
-# `--no-verify`, and a hook that gets bypassed protects nothing. CI already runs each of those as
-# its own parallel job, so the only thing a commit hook adds is catching what would be
-# embarrassing in a diff: a type error, a lint error, unformatted code. Those are seconds.
+# The middle of three gates. `complete:fast` is type-check, lint and format check; this adds the
+# unit suite; `complete:check` adds `vite build` and the full Cypress e2e run on top.
 #
-# Before pushing (or opening a PR), run the real gate by hand: `npm run complete:check`.
-npm run complete:fast
+# Around 25 seconds, which is the point: a hook slow enough to be worth skipping gets skipped, and
+# a hook that gets bypassed protects nothing. Vitest fits easily — 510 tests in ~6s.
+#
+# What stays out, deliberately: Cypress. It boots a dev server and drives a real browser, so it
+# costs minutes rather than seconds, and CI already runs it as its own job.
+#
+# Before pushing (or opening a PR), run the full gate by hand: `npm run complete:check`.
+npm run complete:commit

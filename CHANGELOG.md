@@ -280,6 +280,16 @@ own mocks.
 
 ### Changed
 
+- **The pre-commit hook runs the unit suite.** It was type-check, lint and format check only —
+  seconds, on the reasoning that a hook slow enough to be worth skipping gets skipped. Vitest costs
+  ~6s for 510 tests, which does not change that calculus, and it catches the class of break the
+  other three cannot see at all.
+
+    `complete:commit` is the new middle tier, and the hook now calls it: `complete:fast` (type-check,
+    lint, format) → `complete:commit` (+ unit) → `complete:check` (+ `vite build`, + Cypress).
+    Roughly 23 seconds end to end. Cypress stays out — it boots a dev server and drives a real
+    browser, so it costs minutes, and CI runs it as its own job.
+
 - **`User` carries `deletedAt`, and `User.active` now means what it says.** Both follow the
   backend separating two facts it had been storing as one: it had no `active` column at all —
   `active` was synthesised as `!deletedAt` and `deletedAt` was stripped — so a single derived flag
