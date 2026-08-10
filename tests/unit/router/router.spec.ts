@@ -224,9 +224,102 @@ describe('onError redirects', () => {
             expect(router.currentRoute.value.params.message).toBe('teapot');
         }));
 
+    it('collapses a 5xx status to a plain 500', () =>
+        /*
+         * The `status !== undefined && status < 500` guard needs a DEFINED status at or above 500 to
+         * be meaningful: with an absent one both halves are false either way, so 401/403/418 and the
+         * no-status case together still cannot tell `&&` from `||`, nor a fixed `true` from the real
+         * condition. A 503 is the case that does.
+         *
+         * Collapsing is deliberate — the flavour of a server-side failure is not the visitor's
+         * business, and the error page has one 500 screen.
+         */
+        failNavigationWith(Object.assign(new Error('gateway'), { status: 503 })).then((router) => {
+            expect(router.currentRoute.value.params.status).toBe('500');
+        }));
+
     it('treats an error with no status as a 500', () =>
         failNavigationWith(new Error('boom')).then((router) => {
             expect(router.currentRoute.value.name).toBe('Error');
             expect(router.currentRoute.value.params.status).toBe('500');
         }));
+});
+
+/**
+ * The `VITE_APP_DEBUG_ROUTER` logging path.
+ *
+ * `isRouterDebugEnabled` is computed once at module scope, so the flag has to be stubbed BEFORE the
+ * import — which is why these cases load the router themselves instead of reusing `loadRouter`.
+ *
+ * It had no coverage at all, in either direction: nothing asserted that the logs appear when the
+ * flag is on, and nothing asserted they stay quiet when it is off. A `no-console` lint exemption
+ * guarding code no test executes is how a stray `console.log` reaches a production bundle.
+ */
+/** Loads a fresh router with the debug flag stubbed BEFORE import, since it is read at module scope. */
+const loadRouterWithDebug = (enabled: boolean) => {
+    vi.resetModules();
+    vi.stubEnv('DEV', true);
+    vi.stubEnv('VITE_APP_DEBUG_ROUTER', enabled ? 'true' : 'false');
+    return import('@/router').then(({ default: router }) =>
+        router
+            .push('/')
+            .then(() => router.isReady())
+            .then(() => router)
+    );
+};
+
+describe('router debug logging', () => {
+    it('logs each navigation when the flag is on', () => {
+        const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+        return loadRouterWithDebug(true)
+            .then((router) => router.push('/en/products'))
+            .then(() => {
+                expect(log).toHaveBeenCalled();
+                expect(log.mock.calls.some(([first]) => String(first).includes('Navigating'))).toBe(
+                    true
+                );
+                log.mockRestore();
+            });
+    });
+
+    it('stays silent when the flag is off', () => {
+        const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+        return loadRouterWithDebug(false)
+            .then((router) => router.push('/en/products'))
+            .then(() => {
+                // Scoped to the navigation line rather than asserting console silence outright:
+                // other modules log on boot (the counter store), and a blanket assertion would fail
+                // for reasons that say nothing about the router.
+                expect(log.mock.calls.some(([first]) => String(first).includes('Navigating'))).toBe(
+                    false
+                );
+                log.mockRestore();
+            });
+    });
+
+    it('reports a navigation failure when the flag is on', () => {
+        const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        return loadRouterWithDebug(true)
+            .then((router) => {
+                enforceRouteAccess.mockImplementationOnce(() => {
+                    throw new Error('boom');
+                });
+                return router.push('/en/cart').catch(() => router);
+            })
+            .then(() =>
+                vi.waitFor(() => {
+                    if (!errorLog.mock.calls.some(([first]) => String(first) === 'page error'))
+                        throw new Error('no page error log yet');
+                })
+            )
+            .then(() => {
+                expect(errorLog.mock.calls.some(([first]) => String(first) === 'page error')).toBe(
+                    true
+                );
+                errorLog.mockRestore();
+            });
+    });
 });

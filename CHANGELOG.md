@@ -28,6 +28,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `APP_READY`, `USER_LOGGED_OUT` — stay in a local `frontendOnlyAnalyticsEvents` spread on top, so
   "ours alone" is visible rather than implied by a comment.
 
+- Cases for the `VITE_APP_DEBUG_ROUTER` logging path, which had no coverage in either direction —
+  nothing asserted the navigation logs appear when the flag is on, or stay quiet when it is off. A
+  `no-console` exemption guarding code no test executes is how a stray `console.log` reaches a
+  bundle. Also a 5xx case for `onError`, which is the only input that can tell the
+  `status !== undefined && status < 500` guard from a looser one.
+
 - **`formatDate`** in `utils/formatters.ts`, the date-only counterpart to `formatDateTime`.
 
 - **Hard delete on the products, users and orders stores** (`hardDeleteProduct` and friends), and
