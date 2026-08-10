@@ -52,7 +52,11 @@ describe('supportedLanguages', () => {
      * `src/locales/es.json`, which is the case the runtime fetch exists for.
      */
     it('may list a locale with no local dictionary', () => {
-        expect(supportedLanguages).toContain('es');
+        vi.stubEnv('VITE_APP_SUPPORTED_LOCALES', 'en,it,es');
+        vi.resetModules();
+        return import('@/utils/i18n.ts').then((reloaded) => {
+            expect(reloaded.supportedLanguages).toContain('es');
+        });
     });
 });
 
@@ -204,7 +208,10 @@ describe('_changeLanguage', () => {
 });
 
 describe('getDefaultLocale', () => {
-    afterEach(() => vi.unstubAllGlobals());
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        vi.unstubAllEnvs();
+    });
 
     it('uses the browser language when it is supported', () => {
         vi.stubGlobal('navigator', { language: 'it-IT' });
@@ -223,7 +230,11 @@ describe('getDefaultLocale', () => {
      */
     it('matches a browser language whose dictionary is not loaded yet', () => {
         vi.stubGlobal('navigator', { language: 'es-ES' });
-        expect(getDefaultLocale()).toBe('es');
+        vi.stubEnv('VITE_APP_SUPPORTED_LOCALES', 'en,it,es');
+        vi.resetModules();
+        return import('@/utils/i18n.ts').then((reloaded) => {
+            expect(reloaded.getDefaultLocale()).toBe('es');
+        });
     });
 });
 
