@@ -277,6 +277,77 @@ export default defineConfigWithVueTs(
     },
 
     /**
+     * Architectural boundaries:
+     * - cross-feature imports must go through `@/features/<feature>` public entries
+     * - pages/views cannot call the generated API directly
+     * - entities stay independent from app/features/pages layers
+     */
+    {
+        files: ['src/features/**/*.{ts,vue}', 'src/router/**/*.ts', 'src/views/**/*.vue'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: ['@/features/*/*'],
+                            message:
+                                'Use the feature public entry (`@/features/<feature>`) or a relative import inside the same feature.'
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        files: ['src/views/**/*.vue', 'src/features/**/views/**/*.vue'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    paths: [
+                        {
+                            name: '@api',
+                            message:
+                                'Views/pages must not call generated API functions directly. Route API calls through feature stores/composables.'
+                        }
+                    ],
+                    patterns: [
+                        {
+                            group: ['@api/*', '@/features/*/*'],
+                            message:
+                                'Views/pages must not deep-import feature internals or generated API modules.'
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        files: ['src/entities/**/*.ts'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: [
+                                '@/features/*',
+                                '@/features/*/*',
+                                '@/views/*',
+                                '@/stores/*',
+                                '@/router/*'
+                            ],
+                            message:
+                                'Entities must remain framework/app independent and cannot depend on features, pages, stores, or router.'
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+
+    /**
      * CommonJS config files (e.g. .commitlintrc.cjs) run under Node, not the browser.
      */
     {

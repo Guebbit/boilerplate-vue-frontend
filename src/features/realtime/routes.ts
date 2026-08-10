@@ -4,6 +4,6 @@ export default [
     {
         path: 'playground/realtime',
         name: 'RealtimePlayground',
-        component: () => import('@/features/realtime/views/RealtimePlayground.vue')
+        component: () => import('./views/RealtimePlayground.vue')
     }
 ] as RouteRecordRaw[];

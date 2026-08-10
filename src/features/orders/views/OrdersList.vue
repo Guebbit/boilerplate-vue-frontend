@@ -120,7 +120,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Search } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useOrdersStore } from '@/features/orders/store.ts';
+import { useOrdersStore } from '../store';
 import { useProfileStore } from '@/stores/profile.ts';
 import { notifyErrorMessages } from '@/utils/errors.ts';
 import type { Order } from '@types';

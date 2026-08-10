@@ -61,7 +61,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { useProfileStore } from '@/stores/profile.ts';
-import { usersPasswordSchema } from '@/features/users/schemas.ts';
+import { usersPasswordSchema } from '@/features/users';
 import { notifyErrorMessages, focusFirstErrorField } from '@/utils/errors.ts';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 

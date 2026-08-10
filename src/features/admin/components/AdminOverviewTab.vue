@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { RefreshCw } from 'lucide-vue-next';
 import type { ObservabilityHealth, ObservabilityMetricsSummary } from '@types';
-import type { IAdminKpiCard } from '@/features/admin/types.ts';
+import type { IAdminKpiCard } from '../types';
 
 const { t } = useI18n();
 

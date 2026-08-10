@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import TableLoadingBar from '@/components/molecules/TableLoadingBar.vue';
 import { Search } from 'lucide-vue-next';
 import type { AuditEventItem } from '@types';
-import type { IAdminAuditFilters } from '@/features/admin/types.ts';
+import type { IAdminAuditFilters } from '../types';
 
 const { t } = useI18n();
 

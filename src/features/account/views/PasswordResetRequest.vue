@@ -44,7 +44,7 @@ import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { useProfileStore } from '@/stores/profile.ts';
-import { usersSchema } from '@/features/users/schemas.ts';
+import { usersSchema } from '@/features/users';
 import { notifyErrorMessages, focusFirstErrorField } from '@/utils/errors.ts';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 

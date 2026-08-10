@@ -67,7 +67,7 @@ import { useProfileStore } from '@/stores/profile.ts';
 import { useRouter, useRoute } from 'vue-router';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import FormImageUpload from '@/components/molecules/FormImageUpload.vue';
-import { usersSchema } from '@/features/users/schemas.ts';
+import { usersSchema } from '@/features/users';
 import { notifyErrorMessages, focusFirstErrorField } from '@/utils/errors.ts';
 import { imageUploadSchema, useUploadProgress } from '@/utils/uploads.ts';
 

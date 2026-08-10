@@ -19,6 +19,12 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { Faro } from '@grafana/faro-web-sdk';
+import {
+    buildCartItemAddedPayload,
+    buildOrderCreatedPayload,
+    buildProductSearchedPayload,
+    buildProductViewedPayload
+} from '@/entities';
 
 // ─── Umami global ──────────────────────────────────────────────────────────────
 // The Umami tracker script attaches a `umami` object to `window` once loaded.
@@ -347,10 +353,7 @@ export const useObservabilityStore = defineStore('observability', () => {
      * @param productName - Human-readable name, for readability in dashboards.
      */
     const trackProductView = (productId: string, productName?: string): void => {
-        track(analyticsEvents.PRODUCT_VIEWED, {
-            product_id: productId,
-            product_name: productName
-        });
+        track(analyticsEvents.PRODUCT_VIEWED, buildProductViewedPayload(productId, productName));
     };
 
     /**
@@ -360,10 +363,7 @@ export const useObservabilityStore = defineStore('observability', () => {
      * @param quantity - Number of units added.
      */
     const trackItemAddedToCart = (productId: string, quantity: number): void => {
-        track(analyticsEvents.CART_ITEM_ADDED, {
-            product_id: productId,
-            quantity
-        });
+        track(analyticsEvents.CART_ITEM_ADDED, buildCartItemAddedPayload(productId, quantity));
     };
 
     /**
@@ -374,11 +374,10 @@ export const useObservabilityStore = defineStore('observability', () => {
      * @param itemCount - Number of line items in the order.
      */
     const trackOrderPlaced = (orderId: string, totalAmount: number, itemCount: number): void => {
-        track(analyticsEvents.ORDER_CREATED, {
-            order_id: orderId,
-            total_amount: totalAmount,
-            item_count: itemCount
-        });
+        track(
+            analyticsEvents.ORDER_CREATED,
+            buildOrderCreatedPayload(orderId, totalAmount, itemCount)
+        );
     };
 
     /**
@@ -387,9 +386,7 @@ export const useObservabilityStore = defineStore('observability', () => {
      * @param query - Raw search string submitted by the user.
      */
     const trackProductSearched = (query: string): void => {
-        track(analyticsEvents.PRODUCTS_SEARCHED, {
-            query
-        });
+        track(analyticsEvents.PRODUCTS_SEARCHED, buildProductSearchedPayload(query));
     };
 
     return {

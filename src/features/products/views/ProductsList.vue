@@ -125,7 +125,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { PackagePlus, Search } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useProductsStore } from '@/features/products/store';
+import { useProductsStore } from '../store';
 import { useProfileStore } from '@/stores/profile.ts';
 import { notifyErrorMessages } from '@/utils/errors.ts';
 import type { Product } from '@types';

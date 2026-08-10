@@ -33,7 +33,7 @@
 import { useI18n } from 'vue-i18n';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import FeedbackMessageFeed from '@/components/organisms/FeedbackMessageFeed.vue';
-import { useRealtimeObservability } from '@/features/realtime/useRealtimeObservability';
+import { useRealtimeObservability } from '../useRealtimeObservability';
 import type { IRealtimeMetricsEntry } from '@types';
 
 const { t } = useI18n();

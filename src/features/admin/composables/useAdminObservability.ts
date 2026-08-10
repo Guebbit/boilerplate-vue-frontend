@@ -2,10 +2,11 @@ import { ref, type Ref } from 'vue';
 import {
     getObservabilityHealth,
     getObservabilityMetricsOverview,
-    getObservabilityAuditLogs
+    getObservabilityAuditLogs,
+    deleteExpiredTokens
 } from '@api';
 import type { ObservabilityHealth, ObservabilityMetricsSummary, AuditEventItem } from '@types';
-import type { IAdminAuditFilters } from '@/features/admin/types.ts';
+import type { IAdminAuditFilters } from '../types';
 
 export interface IUseAdminObservabilityReturn {
     health: Ref<ObservabilityHealth | undefined>;
@@ -22,7 +23,18 @@ export interface IUseAdminObservabilityReturn {
     fetchMetrics: () => Promise<void>;
     fetchAuditLogs: (filters?: IAdminAuditFilters) => Promise<void>;
     fetchAll: () => Promise<void>;
+    clearExpiredTokens: () => Promise<boolean>;
 }
+
+/*
+ * Purge expired refresh tokens from the backend.
+ *
+ * @returns A promise resolving to `true` on success, `false` on failure.
+ */
+const clearExpiredTokens = () =>
+    deleteExpiredTokens()
+        .then(() => true)
+        .catch(() => false);
 
 /**
  * Unified composable for the Admin observability dashboard.
@@ -148,6 +160,7 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
         fetchHealth,
         fetchMetrics,
         fetchAuditLogs,
-        fetchAll
+        fetchAll,
+        clearExpiredTokens
     };
 };

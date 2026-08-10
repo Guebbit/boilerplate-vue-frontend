@@ -7,16 +7,12 @@ import {
     createOrder as apiCreateOrder,
     updateOrderById,
     deleteOrderById,
-    checkout as apiCheckout,
     getOrderInvoice
 } from '@api';
-import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
 import type {
     Order,
     CreateOrderRequest,
     UpdateOrderByIdRequest,
-    CheckoutRequest,
-    CheckoutResponse,
     SearchOrdersRequest
 } from '@types';
 
@@ -27,8 +23,8 @@ import type {
 type IOrdersFilters = Omit<SearchOrdersRequest, 'page' | 'pageSize'>;
 
 /**
- * Orders CRUD, paginated search and checkout, on top of the toolkit's
- * search-API structure.
+ * Orders CRUD and paginated search, on top of the toolkit's search-API
+ * structure.
  */
 export const useOrdersStore = defineStore('orders', () => {
     const { getLoading, setLoading } = useCoreStore();
@@ -161,25 +157,6 @@ export const useOrdersStore = defineStore('orders', () => {
         );
 
     /**
-     * Converts the authenticated user's current cart into a new order.
-     *
-     * @param checkoutData - Optional checkout payload (address, notes, ...).
-     * @returns A promise resolving with the checkout response, including the
-     *  created order. Also emits a `checkout_completed` analytics event.
-     */
-    const checkout = (checkoutData?: CheckoutRequest) =>
-        fetchAny(() =>
-            apiCheckout(checkoutData).then((response) => {
-                const obs = useObservabilityStore();
-                obs.track(analyticsEvents.CHECKOUT_COMPLETED, {
-                    order_id: response.data?.order?.id,
-                    total_price: response.data?.order?.totalPrice
-                });
-                return response.data;
-            })
-        );
-
-    /**
      * Deletes an order and drops it from the store.
      *
      * @param orderId - Identifier of the order to delete.
@@ -215,7 +192,6 @@ export const useOrdersStore = defineStore('orders', () => {
         watchOrder,
         createOrder,
         updateOrder,
-        checkout,
         deleteOrder,
         downloadInvoice
     };

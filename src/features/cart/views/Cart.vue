@@ -113,8 +113,8 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Minus, Plus, ShoppingCart } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/utils/i18n.ts';
-import { useCartStore } from '@/features/cart/store.ts';
-import { useOrdersStore } from '@/features/orders/store.ts';
+import { useCartStore } from '../store';
+import { useCheckoutStore } from '@/features/checkout';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { notifyErrorMessages } from '@/utils/errors.ts';
 import { formatCurrency } from '@/utils/formatters.ts';
@@ -132,7 +132,7 @@ const { addMessage } = useNotificationsStore();
  */
 const { fetchCart, updateCartItem, removeCartItem, clearCart } = useCartStore();
 const { cartItems, cartSummary } = storeToRefs(useCartStore());
-const { checkout: checkoutOrder } = useOrdersStore();
+const { checkoutFromCart } = useCheckoutStore();
 
 /**
  * Places an order from the current cart.
@@ -141,7 +141,7 @@ const { checkout: checkoutOrder } = useOrdersStore();
  *  reload and a navigation to the orders list, or an error toast.
  */
 const checkout = () =>
-    checkoutOrder()
+    checkoutFromCart()
         .then(() => {
             addMessage(t('cart-page.success-checkout'));
             return fetchCart();

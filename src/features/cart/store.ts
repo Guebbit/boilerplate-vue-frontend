@@ -4,6 +4,11 @@ import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { getCart, upsertCartItem, updateCartItemById, removeCartItem, clearCart } from '@api';
 import type { CartItem, CartResponse, CartSummaryResponse } from '@types';
 import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
+import {
+    buildCartItemAddedPayload,
+    buildCartItemRemovedPayload,
+    buildCartItemUpdatedPayload
+} from '@/entities/cart';
 
 /**
  * Owns the authenticated user's shopping cart: every action replaces the local
@@ -57,7 +62,10 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             upsertCartItem({ productId, quantity }).then((response) => {
                 const obs = useObservabilityStore();
-                obs.track(analyticsEvents.CART_ITEM_ADDED, { product_id: productId, quantity });
+                obs.track(
+                    analyticsEvents.CART_ITEM_ADDED,
+                    buildCartItemAddedPayload(productId, quantity)
+                );
                 cart.value = response.data;
                 return response.data;
             })
@@ -73,6 +81,11 @@ export const useCartStore = defineStore('cart', () => {
     const updateCartItem = (productId: string, quantity: number) =>
         fetchAny(() =>
             updateCartItemById(productId, { quantity }).then((response) => {
+                const obs = useObservabilityStore();
+                obs.track(
+                    analyticsEvents.CART_ITEM_UPDATED,
+                    buildCartItemUpdatedPayload(productId, quantity)
+                );
                 cart.value = response.data;
                 return response.data;
             })
@@ -88,7 +101,10 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             removeCartItem(productId).then((response) => {
                 const obs = useObservabilityStore();
-                obs.track(analyticsEvents.CART_ITEM_REMOVED, { product_id: productId });
+                obs.track(
+                    analyticsEvents.CART_ITEM_REMOVED,
+                    buildCartItemRemovedPayload(productId)
+                );
                 cart.value = response.data;
                 return response.data;
             })

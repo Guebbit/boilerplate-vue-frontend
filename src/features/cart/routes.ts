@@ -6,6 +6,6 @@ export default [
         path: 'cart',
         name: 'Cart',
         beforeEnter: [isAuth],
-        component: () => import('@/features/cart/views/Cart.vue')
+        component: () => import('./views/Cart.vue')
     }
 ] as RouteRecordRaw[];

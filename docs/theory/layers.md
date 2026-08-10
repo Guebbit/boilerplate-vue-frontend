@@ -28,10 +28,13 @@ flowchart TD
 
 | Layer | Folder(s) | Main job |
 | ----- | --------- | -------- |
+| App | `src/main.ts`, `src/router/`, `src/middlewares/`, `src/plugins/` | bootstrap, routing, middleware, transport setup |
+| Pages | `src/views/` | top-level route pages not owned by one feature |
 | Views | `src/views/`, `src/features/*/views/` | template rendering, user events, layout |
 | Feature composables | `src/features/*/composables/` | feature-scoped logic, form handling |
 | Shared composables + utils | `src/utils/`, `src/composables/` | cross-feature helpers (http, i18n, formatters, SSE client) |
 | Stores | `src/stores/`, `src/features/*/composables/` | global reactive state, API orchestration |
+| Entities | `src/entities/` | reusable domain transformations (analytics payload mapping, domain helpers) |
 | Generated client | `contracts/rest/index.ts`, `contracts/rest/schemas.zod.ts` | typed axios functions + Zod schemas (DO NOT edit) |
 | HTTP layer | `src/plugins/http/index.ts` | axios instance, interceptors, error shaping, orval mutator |
 | Layouts | `src/layouts/` | page shell components |
@@ -72,10 +75,12 @@ For a product flow you typically move through:
 - `src/plugins/http/index.ts`
 
 The same shape repeats for every entity. The entity names are examples.
+Cross-feature orchestration lives in dedicated modules (example: `src/features/checkout/`) rather than in unrelated domain stores.
 
 ## What each layer should not do
 
 - Views should not call `contracts/rest/` directly — go through a store or composable.
+- Cross-feature imports should not deep-import internals (`@/features/x/store`) — use each feature public entry (`@/features/x`).
 - Stores should not contain template logic or DOM refs.
 - Composables should not scatter side effects across unrelated stores.
 - `contracts/rest/index.ts` is generated — never edit it by hand.

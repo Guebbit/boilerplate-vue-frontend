@@ -120,6 +120,10 @@ When `VITE_API_MOCK_ENABLED=true`, MSW intercepts all HTTP before it reaches the
 
 `track()` calls are fire-and-forget. Never `await` them. They are no-ops if Umami is not configured.
 
+### Cross-feature flows are explicit
+
+When one user action spans multiple domains, orchestration lives in a dedicated feature module (for example `src/features/checkout/`) instead of being hidden in an unrelated domain store.
+
 ## Why the flow matters
 
 When you change behavior, ask:

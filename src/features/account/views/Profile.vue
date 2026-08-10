@@ -96,7 +96,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
-import { usersSchema, usersPasswordSchema } from '@/features/users/schemas.ts';
+import { usersSchema, usersPasswordSchema } from '@/features/users';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { z } from 'zod';
 import { notifyErrorMessages } from '@/utils/errors.ts';

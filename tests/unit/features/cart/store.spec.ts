@@ -23,6 +23,7 @@ vi.mock('@/stores/observability', () => ({
     useObservabilityStore: () => ({ track }),
     analyticsEvents: {
         CART_ITEM_ADDED: 'cart_item_added',
+        CART_ITEM_UPDATED: 'cart_item_updated',
         CART_ITEM_REMOVED: 'cart_item_removed',
         CART_CLEARED: 'cart_cleared'
     }
@@ -102,11 +103,14 @@ describe('useCartStore', () => {
                     expect(updateCartItemById).toHaveBeenCalledWith('p1', { quantity: 5 });
                 }));
 
-        it('emits no analytics event', () =>
+        it('tracks the quantity update with canonical payload keys', () =>
             useCartStore()
                 .updateCartItem('p1', 5)
                 .then(() => {
-                    expect(track).not.toHaveBeenCalled();
+                    expect(track).toHaveBeenCalledWith(analyticsEvents.CART_ITEM_UPDATED, {
+                        product_id: 'p1',
+                        quantity: 5
+                    });
                 }));
     });
 

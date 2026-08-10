@@ -26,6 +26,8 @@ flowchart LR
 
 - **Contract first**: the [API section](../api/) starts from [`openapi.yaml`](../api/openapi-workflow.md). Types, the axios client, Zod schemas, and MSW stubs are all generated from it — never hand-written.
 - **Stores own data**: views call composables or stores; stores call the generated API. Views stay thin.
+- **Feature public APIs**: cross-feature imports go through `src/features/<feature>/index.ts`; internals stay private.
+- **Architecture linting**: deep feature imports and view-level `@api` calls are blocked by lint rules.
 - **Single observability store**: [Grafana Faro and Umami](../tools/observability.md) are wired together in `src/stores/observability.ts`; no vendor calls leak into components.
 - **Opt-in mocking**: [MSW](../tools/mocking.md) intercepts HTTP at the network layer when `VITE_API_MOCK_ENABLED=true`; the rest of the app is unchanged.
 - **Promise-oriented style**: prefer promise chaining over large `async`/`await` + `try/catch` blocks.
@@ -39,5 +41,6 @@ flowchart LR
 | Read the folder-by-folder explanation | [Layers](./layers.md) |
 | Follow one request end-to-end | [Request Flow](./request-flow.md) |
 | See all routes and access levels at a glance | [Sitemap & Access Control](./sitemap.md) |
+| Add a new feature with the expected shape | [New Feature Checklist](./feature-checklist.md) |
 | Understand dependency choices | [Tools](../tools/) |
 | Change contract, types, or mocks | [API](../api/) |
