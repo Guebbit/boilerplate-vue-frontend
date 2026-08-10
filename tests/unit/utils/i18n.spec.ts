@@ -8,7 +8,6 @@ import {
     getDefaultLocale,
     loadedLanguages,
     routerLinkI18n,
-    supportedLanguages,
     _changeLanguage,
     _ensureFallbackLoaded,
     _loadLocale,
@@ -41,9 +40,19 @@ const withLoadedLanguagesRestored = () => {
 };
 
 describe('supportedLanguages', () => {
+    afterEach(() => {
+        vi.unstubAllEnvs();
+        vi.resetModules();
+    });
+
     it('comes from VITE_APP_SUPPORTED_LOCALES', () => {
-        expect(supportedLanguages).toContain('en');
-        expect(supportedLanguages).toContain('it');
+        vi.stubEnv('VITE_APP_SUPPORTED_LOCALES', 'en,it,es');
+        vi.resetModules();
+        return import('@/utils/i18n.ts').then((reloaded) => {
+            expect(reloaded.supportedLanguages).toContain('en');
+            expect(reloaded.supportedLanguages).toContain('it');
+            expect(reloaded.supportedLanguages).toContain('es');
+        });
     });
 
     /**
@@ -211,6 +220,7 @@ describe('getDefaultLocale', () => {
     afterEach(() => {
         vi.unstubAllGlobals();
         vi.unstubAllEnvs();
+        vi.resetModules();
     });
 
     it('uses the browser language when it is supported', () => {
@@ -229,10 +239,10 @@ describe('getDefaultLocale', () => {
      * code that always returned the fallback.
      */
     it('matches a browser language whose dictionary is not loaded yet', () => {
-        vi.stubGlobal('navigator', { language: 'es-ES' });
         vi.stubEnv('VITE_APP_SUPPORTED_LOCALES', 'en,it,es');
         vi.resetModules();
         return import('@/utils/i18n.ts').then((reloaded) => {
+            vi.stubGlobal('navigator', { language: 'es-ES' });
             expect(reloaded.getDefaultLocale()).toBe('es');
         });
     });
