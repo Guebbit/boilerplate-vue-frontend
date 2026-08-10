@@ -6,6 +6,7 @@ import {
     deleteExpiredTokens
 } from '@api';
 import type { ObservabilityHealth, ObservabilityMetricsSummary, AuditEventItem } from '@types';
+import { useObservabilityStore } from '@/stores/observability';
 import type { IAdminAuditFilters } from '../types';
 
 export interface IUseAdminObservabilityReturn {
@@ -26,16 +27,6 @@ export interface IUseAdminObservabilityReturn {
     clearExpiredTokens: () => Promise<boolean>;
 }
 
-/*
- * Purge expired refresh tokens from the backend.
- *
- * @returns A promise resolving to `true` on success, `false` on failure.
- */
-const clearExpiredTokens = () =>
-    deleteExpiredTokens()
-        .then(() => true)
-        .catch(() => false);
-
 /**
  * Unified composable for the Admin observability dashboard.
  *
@@ -51,6 +42,7 @@ const clearExpiredTokens = () =>
  *  renders.
  */
 export const useAdminObservability = (): IUseAdminObservabilityReturn => {
+    const { captureException } = useObservabilityStore();
     const health = ref<ObservabilityHealth | undefined>(undefined);
     const metrics = ref<ObservabilityMetricsSummary | undefined>(undefined);
     const auditEvents = ref<AuditEventItem[]>([]);
@@ -145,6 +137,21 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
      */
     const fetchAll = () =>
         Promise.all([fetchHealth(), fetchMetrics(), fetchAuditLogs()]).then(() => {});
+
+    /*
+     * Purge expired refresh tokens from the backend.
+     *
+     * @returns A promise resolving to `true` on success, `false` on failure.
+     */
+    const clearExpiredTokens = () =>
+        deleteExpiredTokens()
+            .then(() => true)
+            .catch((error: unknown) => {
+                captureException(error, {
+                    data: { source: 'useAdminObservability.clearExpiredTokens' }
+                });
+                return false;
+            });
 
     return {
         health,

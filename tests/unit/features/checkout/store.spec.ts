@@ -55,14 +55,11 @@ describe('useCheckoutStore', () => {
                 });
             }));
 
-    it('tracks checkout failure and rethrows the original error', () => {
+    it('tracks checkout failure and rethrows the original error', async () => {
         const failure = new Error('checkout failed');
         vi.mocked(apiCheckout).mockRejectedValueOnce(failure);
 
-        return expect(useCheckoutStore().checkoutFromCart())
-            .rejects.toBe(failure)
-            .then(() => {
-                expect(track).toHaveBeenCalledWith(analyticsEvents.CHECKOUT_FAILED);
-            });
+        await expect(useCheckoutStore().checkoutFromCart()).rejects.toBe(failure);
+        expect(track).toHaveBeenCalledWith(analyticsEvents.CHECKOUT_FAILED);
     });
 });

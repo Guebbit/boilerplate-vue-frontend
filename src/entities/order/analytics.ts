@@ -1,5 +1,3 @@
-import type { CheckoutResponse } from '@api';
-
 /*
  * Payload for the `checkout_completed` analytics event.
  */
@@ -20,13 +18,23 @@ export interface IOrderCreatedPayload {
 }
 
 /*
+ * Minimal checkout response shape needed by analytics mapping.
+ */
+export interface ICheckoutResponseShape {
+    order?: {
+        id?: string;
+        totalPrice?: number;
+    };
+}
+
+/*
  * Build a checkout completion payload from the checkout response.
  *
  * @param checkoutResponse - API response body from `POST /cart/checkout`.
  * @returns Canonical checkout analytics payload.
  */
 export const buildCheckoutCompletedPayload = (
-    checkoutResponse?: CheckoutResponse
+    checkoutResponse?: ICheckoutResponseShape
 ): ICheckoutCompletedPayload => ({
     order_id: checkoutResponse?.order?.id,
     total_price: checkoutResponse?.order?.totalPrice
