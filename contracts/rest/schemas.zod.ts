@@ -1861,7 +1861,8 @@ export const CheckoutResponse = zod.strictObject({
                 'cancelled'
             ]),
             createdAt: zod.iso.datetime({ offset: true }).optional(),
-            updatedAt: zod.iso.datetime({ offset: true }).optional()
+            updatedAt: zod.iso.datetime({ offset: true }).optional(),
+            deletedAt: zod.iso.datetime({ offset: true }).optional()
         }),
         message: zod.string().optional()
     })
@@ -1966,7 +1967,8 @@ export const ListOrdersResponse = zod.strictObject({
                     'cancelled'
                 ]),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
-                updatedAt: zod.iso.datetime({ offset: true }).optional()
+                updatedAt: zod.iso.datetime({ offset: true }).optional(),
+                deletedAt: zod.iso.datetime({ offset: true }).optional()
             })
         ),
         meta: zod.strictObject({
@@ -2063,7 +2065,8 @@ export const CreateOrderResponse = zod.strictObject({
         notes: zod.string().optional().describe('Optional order notes'),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 
@@ -2147,16 +2150,20 @@ export const UpdateOrderResponse = zod.strictObject({
         notes: zod.string().optional().describe('Optional order notes'),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 
 /**
- * Permanently removes the order identified by id.
+ * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record
  * @summary Delete order
  */
+export const deleteOrderBodyHardDeleteDefault = false;
+
 export const DeleteOrderBody = zod.strictObject({
-    id: zod.string().describe('Resource identifier')
+    id: zod.string().describe('Resource identifier'),
+    hardDelete: zod.boolean().default(deleteOrderBodyHardDeleteDefault)
 });
 
 export const DeleteOrderResponse = zod.strictObject({
@@ -2265,7 +2272,8 @@ export const SearchOrdersResponse = zod.strictObject({
                     'cancelled'
                 ]),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
-                updatedAt: zod.iso.datetime({ offset: true }).optional()
+                updatedAt: zod.iso.datetime({ offset: true }).optional(),
+                deletedAt: zod.iso.datetime({ offset: true }).optional()
             })
         ),
         meta: zod.strictObject({
@@ -2350,7 +2358,8 @@ export const GetOrderByIdResponse = zod.strictObject({
         notes: zod.string().optional().describe('Optional order notes'),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 
@@ -2436,19 +2445,44 @@ export const UpdateOrderByIdResponse = zod.strictObject({
         notes: zod.string().optional().describe('Optional order notes'),
         status: zod.enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled']),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
-        updatedAt: zod.iso.datetime({ offset: true }).optional()
+        updatedAt: zod.iso.datetime({ offset: true }).optional(),
+        deletedAt: zod.iso.datetime({ offset: true }).optional()
     })
 });
 
 /**
- * Permanently removes the order identified by `id`.
+ * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /orders`.
  * @summary Delete order
  */
 export const DeleteOrderByIdParams = zod.strictObject({
     id: zod.string().describe('Resource identifier')
 });
 
+export const DeleteOrderByIdQueryParams = zod.strictObject({
+    hardDelete: zod.boolean().optional()
+});
+
+export const deleteOrderByIdBodyHardDeleteDefault = false;
+
+export const DeleteOrderByIdBody = zod.strictObject({
+    hardDelete: zod.boolean().default(deleteOrderByIdBodyHardDeleteDefault)
+});
+
 export const DeleteOrderByIdResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
+});
+
+/**
+ * Permanently removes the order identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /orders/{id}?hardDelete=true`.
+ * @summary Permanently delete order
+ */
+export const HardDeleteOrderByIdParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const HardDeleteOrderByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string()

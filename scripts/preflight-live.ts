@@ -12,7 +12,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { loadEnv } from 'vite';
 import { DEFAULT_BACKEND_PATH, resolveBackendPath } from './backendPath';
-import { compareSpecs, formatSpecProblems } from './specIdentity';
+import { compareSharedFiles, formatSharedFileProblems } from './specIdentity';
 
 const HEALTH_CHECK_TIMEOUT_MS = 3000;
 
@@ -61,14 +61,15 @@ const checkBackendSeedScript = (backendPath: string): void => {
 };
 
 /**
- * All three shared contract files, not just `openapi.yaml`.
+ * Every shared file, not just `openapi.yaml` — the seed identities included, since a live run
+ * is exactly where forked fixtures show up as a test asserting on data the API does not have.
  *
  * The comparison itself lives in `scripts/specIdentity.ts`, which `npm run check:spec-identity`
  * and the `spec-identity` CI job also drive — so a live run and a pull request cannot disagree
  * about what "the specs match" means.
  */
 const checkSpecParity = (backendPath: string): void => {
-    const problems = formatSpecProblems(compareSpecs(backendPath), backendPath);
+    const problems = formatSharedFileProblems(compareSharedFiles(backendPath), backendPath);
     if (problems) fail(`${problems}\n  Regenerate before trusting this run.`);
 };
 

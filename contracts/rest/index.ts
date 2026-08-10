@@ -313,6 +313,7 @@ export interface Order {
     status: OrderStatus;
     createdAt?: string;
     updatedAt?: string;
+    deletedAt?: string;
 }
 
 export interface OrderEnvelope {
@@ -923,6 +924,7 @@ export interface UpdateOrderByIdRequest {
 
 export interface DeleteOrderRequest {
     id: Id;
+    hardDelete?: boolean;
 }
 
 export interface CreateFeedbackRequest {
@@ -1153,6 +1155,10 @@ export type ListOrdersParams = {
      */
     productId?: ProductIdParamParameter;
     email?: Email;
+};
+
+export type DeleteOrderByIdParams = {
+    hardDelete?: boolean;
 };
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -2205,7 +2211,7 @@ export const updateOrder = (
 };
 
 /**
- * Permanently removes the order identified by id.
+ * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record
  * @summary Delete order
  */
 export const deleteOrder = (
@@ -2275,14 +2281,36 @@ export const updateOrderById = (
 };
 
 /**
- * Permanently removes the order identified by `id`.
+ * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /orders`.
  * @summary Delete order
  */
 export const deleteOrderById = (
     id: string,
+    hardDeleteRequest?: HardDeleteRequest,
+    params?: DeleteOrderByIdParams,
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>({ url: `/orders/${id}`, method: 'DELETE' }, options);
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/orders/${id}`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: hardDeleteRequest,
+            params
+        },
+        options
+    );
+};
+
+/**
+ * Permanently removes the order identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /orders/{id}?hardDelete=true`.
+ * @summary Permanently delete order
+ */
+export const hardDeleteOrderById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>({ url: `/orders/${id}/hard`, method: 'DELETE' }, options);
 };
 
 /**
@@ -2404,4 +2432,7 @@ export type SearchOrdersResult = NonNullable<Awaited<ReturnType<typeof searchOrd
 export type GetOrderByIdResult = NonNullable<Awaited<ReturnType<typeof getOrderById>>>;
 export type UpdateOrderByIdResult = NonNullable<Awaited<ReturnType<typeof updateOrderById>>>;
 export type DeleteOrderByIdResult = NonNullable<Awaited<ReturnType<typeof deleteOrderById>>>;
+export type HardDeleteOrderByIdResult = NonNullable<
+    Awaited<ReturnType<typeof hardDeleteOrderById>>
+>;
 export type GetOrderInvoiceResult = NonNullable<Awaited<ReturnType<typeof getOrderInvoice>>>;

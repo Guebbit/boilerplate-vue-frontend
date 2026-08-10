@@ -391,6 +391,21 @@ export const isVisibleToCaller = (product: Product, admin: boolean): boolean =>
     admin || (product.active === true && !product.deletedAt);
 
 /**
+ * Mirrors `BE src/repositories/orders.ts` `visibleScope()`:
+ *
+ *     { ...ownerScope(userId), deletedAt: { $exists: false } }
+ *
+ * The order equivalent of `isVisibleToCaller` above, and deliberately a separate function
+ * rather than a shared one: an order has no `active` flag, so `deletedAt` is the only fact
+ * that hides it. Ownership is the other half of the BE scope and is applied separately here,
+ * by `getMockUserScope`.
+ *
+ * Admins see soft-deleted orders; nobody else does, not even the order's own owner.
+ */
+export const isOrderVisibleToCaller = (order: Order, admin: boolean): boolean =>
+    admin || !order.deletedAt;
+
+/**
  * Mirrors `BE src/core/http/scopes.ts` `userScope()`, used by the order endpoints:
  * admins query unscoped, everyone else is pinned to their own `userId` — and a `userId`
  * filter supplied by a non-admin caller is ignored rather than honoured.

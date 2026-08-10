@@ -8,7 +8,7 @@ This is the part that is easy to get wrong when editing them, so it comes first.
 
 The mocks are **not** a convenience stub that returns "some plausible JSON". They are a deliberate offline replica of the backend, and they carry two invariants:
 
-1. **Data parity.** The seed records mirror the backend's — same ids, same credentials, same content. This is what lets `cy.loginAs('user')` (`gino@pino.it` / `password`) work identically against MSW and against the real API. It is no longer maintained by hand: both sides read `seed-identities.ts`, a dependency-free data file that is **byte-identical** in this repo (`tests/mocks/shared/`) and in the backend (`db/seeds/`), on the same convention as `scripts/gen-asyncapi-types.ts`. Change it in one repo, copy it to the other, and let `diff` answer "have the seeds drifted?":
+1. **Data parity.** The seed records mirror the backend's — same ids, same credentials, same content. This is what lets `cy.loginAs('user')` (`gino@pino.it` / `password`) work identically against MSW and against the real API. It is no longer maintained by hand: both sides read `seed-identities.ts`, a dependency-free data file that is **byte-identical** in this repo (`tests/mocks/shared/`) and in the backend (`db/seeds/`), on the same convention as `scripts/gen-asyncapi-types.ts`. Change it in one repo and copy it to the other; `npm run check:spec-identity` answers "have the seeds drifted?", and the `spec-identity` CI job fails the build on the commit that forks it:
 
     ```bash
     diff boilerplate-node-api-mongodb-mongoose/db/seeds/seed-identities.ts \

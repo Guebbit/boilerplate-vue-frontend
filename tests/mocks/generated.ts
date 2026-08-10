@@ -320,6 +320,7 @@ export interface Order {
     status: OrderStatus;
     createdAt?: string;
     updatedAt?: string;
+    deletedAt?: string;
 }
 
 export interface OrderEnvelope {
@@ -930,6 +931,7 @@ export interface UpdateOrderByIdRequest {
 
 export interface DeleteOrderRequest {
     id: Id;
+    hardDelete?: boolean;
 }
 
 export interface CreateFeedbackRequest {
@@ -1160,6 +1162,10 @@ export type ListOrdersParams = {
      */
     productId?: ProductIdParamParameter;
     email?: Email;
+};
+
+export type DeleteOrderByIdParams = {
+    hardDelete?: boolean;
 };
 
 export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
@@ -1960,7 +1966,7 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
     };
 
     /**
-     * Permanently removes the order identified by id.
+     * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record
      * @summary Delete order
      */
     const deleteOrder = (
@@ -2006,14 +2012,31 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
     };
 
     /**
-     * Permanently removes the order identified by `id`.
+     * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /orders`.
      * @summary Delete order
      */
     const deleteOrderById = (
         id: string,
+        hardDeleteRequest?: HardDeleteRequest,
+        params?: DeleteOrderByIdParams,
         options?: AxiosRequestConfig
     ): Promise<AxiosResponse<SuccessResponse>> => {
-        return axiosInstance.delete(`/orders/${id}`, options);
+        return axiosInstance.delete(`/orders/${id}`, {
+            data: hardDeleteRequest,
+            ...options,
+            params: { ...params, ...options?.params }
+        });
+    };
+
+    /**
+     * Permanently removes the order identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /orders/{id}?hardDelete=true`.
+     * @summary Permanently delete order
+     */
+    const hardDeleteOrderById = (
+        id: string,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.delete(`/orders/${id}/hard`, options);
     };
 
     /**
@@ -2092,6 +2115,7 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         getOrderById,
         updateOrderById,
         deleteOrderById,
+        hardDeleteOrderById,
         getOrderInvoice
     };
 };
@@ -2157,6 +2181,7 @@ export type SearchOrdersResult = AxiosResponse<OrdersResponseEnvelope>;
 export type GetOrderByIdResult = AxiosResponse<OrderEnvelope>;
 export type UpdateOrderByIdResult = AxiosResponse<OrderEnvelope>;
 export type DeleteOrderByIdResult = AxiosResponse<SuccessResponse>;
+export type HardDeleteOrderByIdResult = AxiosResponse<SuccessResponse>;
 export type GetOrderInvoiceResult = AxiosResponse<Blob>;
 
 export const getGetHealthResponseMock = (
@@ -3716,6 +3741,10 @@ export const getCheckoutResponseMock = (
             updatedAt: faker.helpers.arrayElement([
                 faker.date.past().toISOString().slice(0, 19) + 'Z',
                 undefined
+            ]),
+            deletedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
             ])
         },
         message: faker.helpers.arrayElement([
@@ -3804,6 +3833,10 @@ export const getListOrdersResponseMock = (
                     undefined
                 ]),
                 updatedAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ]),
+                deletedAt: faker.helpers.arrayElement([
                     faker.date.past().toISOString().slice(0, 19) + 'Z',
                     undefined
                 ])
@@ -3896,6 +3929,10 @@ export const getCreateOrderResponseMock = (
         updatedAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
         ])
     },
     ...overrideResponse
@@ -3976,6 +4013,10 @@ export const getUpdateOrderResponseMock = (
             undefined
         ]),
         updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
         ])
@@ -4072,6 +4113,10 @@ export const getSearchOrdersResponseMock = (
                 updatedAt: faker.helpers.arrayElement([
                     faker.date.past().toISOString().slice(0, 19) + 'Z',
                     undefined
+                ]),
+                deletedAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
                 ])
             })
         ),
@@ -4162,6 +4207,10 @@ export const getGetOrderByIdResponseMock = (
         updatedAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
         ])
     },
     ...overrideResponse
@@ -4244,12 +4293,25 @@ export const getUpdateOrderByIdResponseMock = (
         updatedAt: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + 'Z',
             undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
         ])
     },
     ...overrideResponse
 });
 
 export const getDeleteOrderByIdResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getHardDeleteOrderByIdResponseMock = (
     overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
 ): SuccessResponse => ({
     success: faker.helpers.arrayElement([true] as const),
@@ -5729,6 +5791,30 @@ export const getDeleteOrderByIdMockHandler = (
     );
 };
 
+export const getHardDeleteOrderByIdMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.delete>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.delete(
+        '*/orders/:id/hard',
+        async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getHardDeleteOrderByIdResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
 export const getGetOrderInvoiceMockHandler = (
     overrideResponse?:
         | ArrayBuffer
@@ -5816,5 +5902,6 @@ export const getEcommerceDemoAPIMock = () => [
     getGetOrderByIdMockHandler(),
     getUpdateOrderByIdMockHandler(),
     getDeleteOrderByIdMockHandler(),
+    getHardDeleteOrderByIdMockHandler(),
     getGetOrderInvoiceMockHandler()
 ];

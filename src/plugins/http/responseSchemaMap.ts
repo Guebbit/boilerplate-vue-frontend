@@ -95,6 +95,11 @@ const routeSchemas: IRouteSchema[] = [
     { method: 'PUT', pattern: /^\/users\/[^/]+$/, schema: schemas.UpdateUserByIdResponse },
     { method: 'DELETE', pattern: /^\/users\/[^/]+$/, schema: schemas.DeleteUserByIdResponse },
     {
+        method: 'DELETE',
+        pattern: /^\/users\/[^/]+\/hard$/,
+        schema: schemas.HardDeleteUserByIdResponse
+    },
+    {
         method: 'POST',
         pattern: /^\/feedback\/contact$/,
         schema: schemas.CreateFeedbackRequestResponse
@@ -117,6 +122,11 @@ const routeSchemas: IRouteSchema[] = [
         pattern: /^\/products\/[^/]+$/,
         schema: schemas.DeleteProductByIdResponse
     },
+    {
+        method: 'DELETE',
+        pattern: /^\/products\/[^/]+\/hard$/,
+        schema: schemas.HardDeleteProductByIdResponse
+    },
     { method: 'GET', pattern: /^\/cart$/, schema: schemas.GetCartResponse },
     { method: 'POST', pattern: /^\/cart$/, schema: schemas.UpsertCartItemResponse },
     { method: 'DELETE', pattern: /^\/cart$/, schema: schemas.ClearCartResponse },
@@ -136,7 +146,12 @@ const routeSchemas: IRouteSchema[] = [
     },
     { method: 'GET', pattern: /^\/orders\/[^/]+$/, schema: schemas.GetOrderByIdResponse },
     { method: 'PUT', pattern: /^\/orders\/[^/]+$/, schema: schemas.UpdateOrderByIdResponse },
-    { method: 'DELETE', pattern: /^\/orders\/[^/]+$/, schema: schemas.DeleteOrderByIdResponse }
+    { method: 'DELETE', pattern: /^\/orders\/[^/]+$/, schema: schemas.DeleteOrderByIdResponse },
+    {
+        method: 'DELETE',
+        pattern: /^\/orders\/[^/]+\/hard$/,
+        schema: schemas.HardDeleteOrderByIdResponse
+    }
 ];
 
 /**

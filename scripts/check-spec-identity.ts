@@ -13,21 +13,26 @@
  */
 import { existsSync } from 'node:fs';
 import { DEFAULT_BACKEND_PATH, resolveBackendPath } from './backendPath';
-import { compareSpecs, formatSpecProblems, SHARED_SPEC_FILES } from './specIdentity';
+import {
+    compareSharedFiles,
+    formatSharedFileProblems,
+    SHARED_FILES,
+    THIS_REPO
+} from './specIdentity';
 
 const siblingRoot = resolveBackendPath();
 
 if (!existsSync(siblingRoot)) {
     console.error(
         `\n[spec-identity] No checkout found at ${siblingRoot}.\n` +
-            `  This check compares ${SHARED_SPEC_FILES.join(', ')} against the paired backend.\n` +
+            `  This check compares ${SHARED_FILES.length} shared files against the paired backend.\n` +
             `  Clone it beside this repo as ${DEFAULT_BACKEND_PATH}, or point BACKEND_PATH at it.\n`
     );
     process.exit(2);
 }
 
-const comparisons = compareSpecs(siblingRoot);
-const problems = formatSpecProblems(comparisons, siblingRoot);
+const comparisons = compareSharedFiles(siblingRoot);
+const problems = formatSharedFileProblems(comparisons, siblingRoot);
 
 if (problems) {
     console.error(`\n[spec-identity] ${problems}\n`);
@@ -35,5 +40,5 @@ if (problems) {
 }
 
 console.log(
-    `[spec-identity] ${SHARED_SPEC_FILES.length} shared contract files identical to ${siblingRoot}.`
+    `[spec-identity] ${SHARED_FILES.length} shared files identical to ${siblingRoot} (as ${THIS_REPO}).`
 );

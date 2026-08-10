@@ -18,6 +18,9 @@
  * lookup it depends on.
  */
 
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { parse } from 'yaml';
 import { describe, expect, it } from 'vitest';
 import { toPathname, resolveResponseSchema } from '@/plugins/http/responseSchemaMap';
 import * as schemas from '@api/schemas';
@@ -42,6 +45,8 @@ const ID = '65dc8a99604c307b702b5ccc';
  */
 const ROUTES: [method: string, path: string, name: string][] = [
     ['GET', '/', 'GetHealthResponse'],
+    ['GET', '/locales', 'GetLocalesResponse'],
+    ['GET', '/locales/en', 'GetLocaleDictionaryResponse'],
     ['GET', '/observability/events', 'GetObservabilityEventsResponse'],
     ['GET', '/observability/health', 'GetObservabilityHealthResponse'],
     ['GET', '/observability/metrics', 'GetObservabilityMetricsResponse'],
@@ -65,6 +70,7 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['GET', `/users/${ID}`, 'GetUserByIdResponse'],
     ['PUT', `/users/${ID}`, 'UpdateUserByIdResponse'],
     ['DELETE', `/users/${ID}`, 'DeleteUserByIdResponse'],
+    ['DELETE', `/users/${ID}/hard`, 'HardDeleteUserByIdResponse'],
     ['POST', '/feedback/contact', 'CreateFeedbackRequestResponse'],
     ['GET', '/feedback', 'ListFeedbackRequestsResponse'],
     ['PUT', `/feedback/${ID}`, 'UpdateFeedbackRequestStatusResponse'],
@@ -76,6 +82,7 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['GET', `/products/${ID}`, 'GetProductByIdResponse'],
     ['PUT', `/products/${ID}`, 'UpdateProductByIdResponse'],
     ['DELETE', `/products/${ID}`, 'DeleteProductByIdResponse'],
+    ['DELETE', `/products/${ID}/hard`, 'HardDeleteProductByIdResponse'],
     ['GET', '/cart', 'GetCartResponse'],
     ['POST', '/cart', 'UpsertCartItemResponse'],
     ['DELETE', '/cart', 'ClearCartResponse'],
@@ -91,14 +98,51 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['GET', `/orders/${ID}/invoice`, 'GetOrderInvoiceResponse'],
     ['GET', `/orders/${ID}`, 'GetOrderByIdResponse'],
     ['PUT', `/orders/${ID}`, 'UpdateOrderByIdResponse'],
-    ['DELETE', `/orders/${ID}`, 'DeleteOrderByIdResponse']
+    ['DELETE', `/orders/${ID}`, 'DeleteOrderByIdResponse'],
+    ['DELETE', `/orders/${ID}/hard`, 'HardDeleteOrderByIdResponse']
 ];
+
+/**
+ * Every operation `openapi.yaml` declares, as `METHOD /path` with the spec's `{param}`
+ * placeholders substituted for a concrete value.
+ *
+ * Read from the spec rather than counted by hand. A hardcoded total only catches a table that
+ * shrank, and says nothing about *which* operation is missing — which is how
+ * `DELETE /products/{id}/hard` and `DELETE /users/{id}/hard` stayed absent from the map while the
+ * generated client happily called them, leaving both responses unvalidated.
+ */
+const SPEC_OPERATIONS: string[] = (() => {
+    // `process.cwd()` is the project root under vitest; `import.meta.url` is not a file URL once
+    // the suite has been through the jsdom transform.
+    const spec = parse(readFileSync(path.resolve(process.cwd(), 'openapi.yaml'), 'utf8')) as {
+        paths: Record<string, Record<string, unknown>>;
+    };
+    const methods = new Set(['get', 'post', 'put', 'delete', 'patch']);
+
+    return Object.entries(spec.paths).flatMap(([path, item]) =>
+        Object.keys(item)
+            .filter((method) => methods.has(method))
+            // `{id}`, `{productId}`, `{locale}` — the map matches a segment, not a name.
+            .map((method) => `${method.toUpperCase()} ${path.replaceAll(/{[^}]+}/g, ID)}`)
+    );
+})();
 
 describe('routeSchemas table', () => {
     it('covers every operation declared in openapi.yaml', () => {
-        // The spec has 51 operations. If this number moves, a row was added to the client
-        // without a row here — the "silently unvalidated request" case the module warns about.
-        expect(ROUTES).toHaveLength(51);
+        // `{locale}` is a language tag, not an ObjectId, but the pattern is `[^/]+` either way,
+        // so substituting ID uniformly is enough to exercise the lookup.
+        const unmapped = SPEC_OPERATIONS.filter((operation) => {
+            const [method, path] = operation.split(' ');
+            return !resolveResponseSchema(method, path);
+        });
+
+        // Named, not counted: the failure message is the list of operations whose responses go
+        // unvalidated, which is the thing someone has to act on.
+        expect(unmapped).toEqual([]);
+    });
+
+    it('has one table row per declared operation', () => {
+        expect(ROUTES).toHaveLength(SPEC_OPERATIONS.length);
     });
 
     it.each(ROUTES)('%s %s resolves to %s', (method, path, name) => {

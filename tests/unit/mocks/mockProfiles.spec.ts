@@ -53,7 +53,7 @@ describe('resolveProfile', () => {
 });
 
 describe('buildSeedDatabase', () => {
-    it('returns the fixed seed identities and counts, unchanged by the mockProfiles.ts move', () => {
+    it('returns the fixed seed identities and counts', () => {
         return loadMockProfiles().then(({ buildSeedDatabase }) => {
             const database = buildSeedDatabase();
             expect(database.sampleUsers.map((user) => user.id)).toEqual([
@@ -62,7 +62,19 @@ describe('buildSeedDatabase', () => {
             ]);
             expect(database.sampleProducts).toHaveLength(5);
             expect(database.sampleCartItems).toHaveLength(2);
-            expect(database.sampleOrders).toHaveLength(2);
+            expect(database.sampleOrders).toHaveLength(3);
+        });
+    });
+
+    it('carries the soft-deleted order fixture through the factory', () => {
+        // `createMockOrder` rebuilds each order to compute its totals, so a field the mapper
+        // forgets to spread back is silently dropped — which would leave every visibility
+        // branch in `isOrderVisibleToCaller` untested while the suite stayed green.
+        return loadMockProfiles().then(({ buildSeedDatabase }) => {
+            const softDeleted = buildSeedDatabase().sampleOrders.filter((order) => order.deletedAt);
+
+            expect(softDeleted).toHaveLength(1);
+            expect(softDeleted[0].id).toBe('66b3f0c14d2e8a91c7d4a015');
         });
     });
 });

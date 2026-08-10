@@ -7,6 +7,62 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Responses from `DELETE /products/{id}/hard` and `DELETE /users/{id}/hard` were never
+  validated.** `openapi.yaml` declares both operations and orval generated clients for both, but
+  `responseSchemaMap.ts` had no entry for either, so `orvalMutator` silently skipped them — the
+  "missing map entry" case the module's own docblock warns about. Both are mapped now, along with
+  the new `DELETE /orders/{id}/hard`.
+
+- **The test guarding that map asserted a hardcoded row count**, which is what let the gap
+  survive: it could only notice a table that shrank, and said nothing about _which_ operation was
+  missing. It now reads `openapi.yaml`, resolves every declared operation through the real lookup,
+  and fails with the list of unmapped ones. It also caught two further absences — `GET /locales`
+  and `GET /locales/{locale}` were mapped but untested.
+
+### Changed
+
+- **Order mocks follow the backend's new soft-delete semantics.** `DELETE /orders/:id` sets
+  `deletedAt` rather than splicing the record out, calling it twice restores the order, and
+  `DELETE /orders/:id/hard` (or `?hardDelete=true`) destroys it. Soft-deleted orders are hidden
+  from the list and answer 404 on the item route for everyone but an admin — `isOrderVisibleToCaller`
+  in `mockShared.ts` mirrors the backend's `visibleScope`.
+
+- **`Order` gained `deletedAt`** in the shared contract, and the seed fixtures gained a
+  soft-deleted order on the non-admin user, so the visibility branches have data behind them. The
+  seed database now holds three orders rather than two. The random profile guarantees one
+  soft-deleted order for the same reason.
+
+- **`check:spec-identity` covers ten shared files, not three.** It guarded `openapi.yaml`,
+  `asyncapi.yaml` and `spectral.yaml`; it now also guards `tests/mocks/shared/seed-identities.ts`,
+  `src/types/realtime.generated.ts`, the three `.dev/` API client collections, and
+  `scripts/check-mutation-baseline.ts` / `scripts/gen-asyncapi-types.ts`.
+
+    The omissions were structural rather than an oversight: `SHARED_SPEC_FILES` was a list of
+    **names**, compared at the same relative path in both repos, so any file living at a different
+    path in each was uncheckable by construction — and this repo keeps the seed identities under
+    `tests/mocks/shared/` while the backend keeps them under `db/seeds/`. `SHARED_FILES` is a list
+    of **path pairs**, and a per-repo `THIS_REPO` constant decides which side this checkout is.
+
+    That file is the reason it matters: `docs/tools/mocking.md` calls the seed records the thing
+    that lets `cy.loginAs('user')` behave identically against MSW and against the real API. A fork
+    leaves both repos green, because each is consistent with its own copy, and surfaces only in a
+    live-API run.
+
+    Renamed with it, since the module no longer handles only specs: `SHARED_SPEC_FILES` →
+    `SHARED_FILES`, `compareSpecs` → `compareSharedFiles`, `formatSpecProblems` →
+    `formatSharedFileProblems`, `specProblems` → `sharedFileProblems`. `scripts/preflight-live.ts`
+    follows, so a live run checks all ten before it starts. The npm script and the CI job keep
+    their `spec-identity` names.
+
+    Membership is decided by "would a fork cause a _silent_ bug", not by "do these match today" —
+    a dozen more files do, from favicons to `.prettierrc`, and are deliberately excluded because a
+    gate that fails when one repo legitimately changes its own icon is a gate people learn to
+    ignore. `scripts/specIdentity.ts` records the reasoning per entry.
+
+---
+
 A correctness pass over the HTTP layer, the mock data and port allocation, driven by running this
 app against its paired backend (`boilerplate-node-api-mongodb-mongoose`) rather than only against its
 own mocks.

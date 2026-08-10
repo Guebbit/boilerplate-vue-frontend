@@ -234,7 +234,7 @@ const buildRandomCartItems = (products: Product[]): CartItem[] => {
 
 const buildRandomOrders = (products: Product[], users: User[]): Order[] => {
     const templates = getListOrdersResponseMock().data.items as Order[];
-    const orders = templates.map((template) => {
+    const orders = templates.map((template, index) => {
         const lineCount = Math.max(1, Math.min(template.items.length, products.length));
         const items: OrderItem[] = faker.helpers
             .arrayElements(products, lineCount)
@@ -257,7 +257,11 @@ const buildRandomOrders = (products: Product[], users: User[]): Order[] => {
             status: template.status,
             notes: template.notes,
             createdAt,
-            updatedAt: createdAt
+            updatedAt: createdAt,
+            // One guaranteed soft-deleted order, the same force-patch trick the product pool uses
+            // for its `active: false` / `deletedAt` variants: `isOrderVisibleToCaller` has an
+            // admin-only branch, and a profile that never produces a hidden order never reaches it.
+            ...(index === 0 ? { deletedAt: faker.date.past().toISOString() } : {})
         };
     });
 

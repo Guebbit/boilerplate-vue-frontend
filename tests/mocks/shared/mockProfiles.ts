@@ -211,7 +211,10 @@ export const buildSeedDatabase = (): IMockSeedData => {
             })),
             status: 'pending'
         }),
-        id: order.id
+        id: order.id,
+        // Spread conditionally, like the product above: an explicit `deletedAt: undefined` key is
+        // still a key, and `isOrderVisibleToCaller` tests for the field's absence.
+        ...(order.deletedAt ? { deletedAt: order.deletedAt } : {})
     }));
 
     return {
