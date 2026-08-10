@@ -67,6 +67,7 @@
     --color-success: rgb(var(--v-theme-success));
     --color-warning: rgb(var(--v-theme-warning));
     --color-info: rgb(var(--v-theme-info));
+    --color-link: rgb(var(--v-theme-link));
 }
 
 /**
@@ -83,4 +84,46 @@
         outline: 2px solid rgb(var(--v-theme-primary));
         outline-offset: 2px;
     }
+}
+
+/**
+ * Input labels, at a contrast that passes WCAG AA.
+ *
+ * Vuetify renders `.v-field-label` at its "medium emphasis" opacity, which resolves to #898d95
+ * on a white surface — 3.32:1, where AA requires 4.5:1 for normal-size text. Every form in the
+ * app failed the accessibility gate on it, so this is one rule rather than a fix per screen.
+ *
+ * Two details make it work where the obvious version does not:
+ *
+ *   - It sets the opacity on the label classes rather than overriding
+ *     `--v-medium-emphasis-opacity`. Vuetify declares that variable at a specificity a bare
+ *     `:root` block loses to, so overriding it there changes nothing at all.
+ *   - It is deliberately OUTSIDE `@layer base`. Tailwind's layers rank below unlayered rules, so
+ *     a layered rule would lose to Vuetify's own stylesheet no matter what it contains.
+ *
+ * 0.82 measures around 7:1 on white and stays comfortably above the threshold on the slightly
+ * tinted field backgrounds, while still reading as secondary next to full-emphasis text.
+ */
+.v-application .v-label,
+.v-application .v-field-label {
+    opacity: 0.82;
+}
+
+/**
+ * Table column headers stay legible while the table is loading.
+ *
+ * Vuetify dims the whole header row to `opacity: 0.38` for as long as `loading` is set, which
+ * drops the column labels to roughly 1.7:1 against the surface — the worst contrast in the app,
+ * on the text that says what each column contains.
+ *
+ * It also made the accessibility suite depend on timing rather than on the page: audit before
+ * the rows arrive and the run fails, audit after and it passes, with nothing about the code
+ * having changed. A gate whose result depends on how fast a mock replied is not a gate.
+ *
+ * Undimming loses nothing. The loading bar above the header is the cue that data is on its way,
+ * and it is announced as well as drawn — whereas fading the labels only communicates to someone
+ * who can still read them.
+ */
+.v-application .v-data-table-headers--loading {
+    opacity: 1;
 }

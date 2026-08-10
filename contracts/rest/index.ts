@@ -488,16 +488,11 @@ export interface ObservabilityHealth {
     timestamp: string;
 }
 
-export interface ObservabilityHealthResponse {
-    success: true;
-    data: ObservabilityHealth;
-}
-
 export interface ObservabilityHealthResponseEnvelope {
     success: true;
     status: number;
     message: string;
-    data: ObservabilityHealthResponse;
+    data: ObservabilityHealth;
 }
 
 export interface ObservabilityMetricsLatency {
@@ -562,16 +557,11 @@ export interface ObservabilityMetricsSummary {
     timestamp: string;
 }
 
-export interface ObservabilityMetricsSummaryResponse {
-    success: true;
-    data: ObservabilityMetricsSummary;
-}
-
 export interface ObservabilityMetricsSummaryResponseEnvelope {
     success: true;
     status: number;
     message: string;
-    data: ObservabilityMetricsSummaryResponse;
+    data: ObservabilityMetricsSummary;
 }
 
 export type AuditEventItemActorRole =
@@ -617,22 +607,17 @@ export interface AuditEventItem {
     level: AuditEventItemLevel;
 }
 
-export type AuditLogsResponseData = {
+export interface AuditLogsPage {
     items: AuditEventItem[];
     /** @minimum 0 */
     total: number;
-};
-
-export interface AuditLogsResponse {
-    success: true;
-    data: AuditLogsResponseData;
 }
 
 export interface AuditLogsResponseEnvelope {
     success: true;
     status: number;
     message: string;
-    data: AuditLogsResponse;
+    data: AuditLogsPage;
 }
 
 export interface LoginRequest {

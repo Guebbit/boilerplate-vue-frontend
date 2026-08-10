@@ -54,6 +54,90 @@ own mocks.
 
 ### Added
 
+- **`TableLoadingBar.vue`** — the named loading bar every `v-data-table` supplies through its
+  `#loader` slot. Vuetify's own bar carries `role="progressbar"` with no accessible name, and it
+  cannot be fixed globally: component `defaults` apply only to declared props, and `aria-label` is
+  not one. Extracting it means a new table is accessible by using the component, and the
+  accessibility suite has one place to fail rather than one per table.
+
+- **Visual regression testing** (`npm run test:e2e:visual`) — four screens photographed at a pinned
+  1280×800 viewport and compared pixel by pixel against committed baselines in
+  `tests/e2e/snapshots/`. Catches the class of defect every other layer is blind to: a layout
+  shift, a dropped stylesheet, a font that failed to load, a theme token gone wrong — cases where
+  the DOM is correct and every existing assertion passes. Hand-rolled on `pixelmatch` rather than a
+  plugin, so the two numbers that decide whether the suite is useful or infuriating (per-pixel
+  colour tolerance, and the 0.2% differing-pixel budget) are readable and changeable rather than
+  hidden behind options. Documented in [Visual Regression](docs/tools/visual-regression.md),
+  including why it is capped at four screens and what it would take to run it in CI.
+
+- **A `link` colour in both themes.** Brand `primary` is designed as a background with `on-primary`
+  text over it; used the other way round, as coloured text on a white surface, it measures about
+  2:1 against the 4.5:1 WCAG AA requires. Inline links now have a token that passes.
+
+- **Documentation for the testing layers that had none** —
+  [Component Testing](docs/tools/component-testing.md),
+  [Property Testing](docs/tools/property-testing.md) and
+  [Accessibility Testing](docs/tools/accessibility-testing.md), plus a "gate or hunter" section on
+  the testing map explaining which suites block a merge and which are allowed to be slow and
+  merely report.
+
+- **The per-file mutation ratchet** — `scripts/mutationBaseline.ts`, a committed
+  `mutation-baseline.json`, and `npm run test:mutation:check` / `:baseline`, wired into
+  `mutation.yml`. Stryker's thresholds are GLOBAL (`high`/`low`/`break` and nothing else), which
+  is the same pooling failure as a directory-shaped coverage threshold one level up: a strong file
+  carries a weak one and the number that passes is an average nobody can act on.
+
+    A ratchet rather than a wall — improvements are recorded, regressions fail and **cannot be
+    laundered**: `--update` on a regressed file keeps the higher value and still exits non-zero.
+    New files are recorded at whatever they first measure, including `0`, because an honest zero
+    in a diff beats a zero dissolved into a mean.
+
+- **Mutation scope widened to every `.ts` under stores, router, features, middlewares,
+  plugins/http and utils** (plan §5.6 stage 1). `.vue` is deliberately still out: Stryker mutates
+  an SFC's `<script>` block but not its template, so including SFCs would report a number implying
+  template coverage nobody has. It is sequenced after component tests exist.
+
+- **Component tests for the two highest-risk components** — `FormImageUpload` and
+  `ListPagination`. The upload component's real subject is not validation but a **resource**:
+  `URL.createObjectURL` pins a blob until it is revoked, and there are three moments (replace,
+  clear, unmount) where a missed revoke leaks a whole image invisibly. All three are now asserted
+  against a counted stub, which is the only way to observe a revoke that did not happen.
+
+- **Accessibility checks (L9)** — `cypress-axe`, a `cy.checkPageA11y()` command and
+  `tests/e2e/specs/a11y.cy.ts` covering 13 routes across public, user and admin sessions. Fails on
+  `serious`/`critical` only; everything lighter is run and logged, so the information is recorded
+  and the threshold can be tightened later without rediscovering it.
+
+- **Property-based tests** (`fast-check`) over `utils/formatters.ts` and `utils/uploads.ts` —
+  `tests/unit/utils/formatters.property.spec.ts`. The general form of the fix that took
+  `responseSchemaMap.ts` from 182 survivors to ~96%: assert what holds for every input rather than
+  for the inputs someone thought of. Seeded, because an unseeded property test that fails one run
+  in fifty teaches the team to hit retry.
+
+- **The cross-repo contract check** — `scripts/specIdentity.ts`, `npm run check:spec-identity`, and
+  a `spec-identity` job in `ci.yml` that checks out the paired backend and compares `openapi.yaml`,
+  `asyncapi.yaml` and `spectral.yaml` by digest. All three exist in both repos, byte-identical,
+  maintained by hand, and were verified by nothing on the PR path: `lint:openapi` and
+  `lint:asyncapi` lint _this_ repo's copy and pass, because a forked spec is still a valid spec.
+  `preflight-live.ts` now reuses the same comparison instead of its own `openapi.yaml`-only md5
+  check, so a live run and a pull request cannot disagree about what "the specs match" means.
+
+- **`e2e-live.yml`** — the third e2e profile, nightly, standing the real backend up (Mongo, Redis,
+  migrated and seeded) and running the nine specs against it. `npm run test:e2e:live` existed and
+  was invoked by no workflow at all.
+
+    This is what switches `parity.cy.ts` on. That spec is the only guard against
+    `tests/mocks/shared/mockShared.ts` drifting from the backend's `db/seeds/index.ts`, and every
+    one of its cases opens with `cy.skipUnlessLive()` — under the mock profile the mirror IS the
+    source of truth, so there is nothing to compare against. The `test-e2e` job has been green all
+    along with those five cases reporting _pending_.
+
+- **Property-based tests** (`fast-check`) over `utils/formatters.ts` and `utils/uploads.ts` —
+  `tests/unit/utils/formatters.property.spec.ts`. The general form of the fix that took
+  `responseSchemaMap.ts` from 182 survivors to ~96% mutation score: assert what holds for every
+  input rather than for the inputs someone thought of. Seeded, because an unseeded property test
+  that fails one run in fifty teaches the team to hit retry.
+
 - **`tests/unit/mocks/mockHandlerParity.spec.ts`** — the first unit coverage the mock handlers
   have ever had. `docs/tools/mocking.md` declares two invariants: data parity and behaviour
   parity. Data parity became structural when both repos started reading a byte-identical
@@ -276,6 +360,44 @@ own mocks.
 
 ### Changed
 
+- **Test-configuration files now document their own patterns.** `vitest.config.ts` states why
+  `thresholds.perFile` is load-bearing (thresholds pool by default, so a covered file carries an
+  untested neighbour) and warns that Vitest does not type-check, so a green run is not evidence a
+  spec compiles. `cypress.config.ts` explains the three profiles running over one set of specs,
+  why the viewport is pinned at config level, and why the visual comparison has to live in Node.
+
+- **`stryker.config.json` re-baselined, because `mutate` changed.** 81.11% total / 83.96% covered
+  over 826 mutants became **59.82% / 79.45% over 1346**. Those are not two measurements of the
+  same thing — 520 mutants that did not exist before are now counted, 332 of them with no test
+  coverage at all — and note that the covered-code figure barely moved: the assertions did not
+  weaken, the denominator grew to include code nobody had measured.
+
+    **The gap is the deliverable.** 59.82 against 79.45 is the size of the untested surface, stated
+    as a number for the first time: `stores/observability.ts` 1.42%, `stores/profile.ts` 6.25%
+    (it _has_ a spec), `features/admin` 0%, `features/realtime` 24.56%.
+
+    `break` moved 70 → 50, which is the one sanctioned exception to "never lower it": a change to
+    `mutate` in the same commit, with both numbers and the reason recorded. It is no longer the
+    main gate either — per-file regressions are caught by the ratchet, which is what makes a
+    single weak file visible instead of averaged away.
+
+- **`FormImageUpload` carries a `data-testid` on its progress bar.** Vuetify's `v-file-input`
+  renders its own `.v-progress-linear` inside the field loader, so a spec written against the
+  class passes whether this component's bar is rendered or not — it asserted nothing. This is the
+  `data-testid` convention the testing plan asks for, and the first place it earned its keep.
+
+- **Coverage thresholds apply per file** — `coverage.thresholds.perFile: true` in
+  `vitest.config.ts`. Without it Vitest merges every file matching a glob into ONE coverage map and
+  checks the threshold against the merged total, so a glob covering four files — three at 95%, one
+  at 0% — passes a 70% floor comfortably. The floor is satisfied by exactly the file it exists to
+  catch.
+
+    Turning it on immediately named `middlewares/authentications.ts`: 50% branches, 55% functions,
+    inside a `src/middlewares/**` group that had been passing on the strength of its two neighbours
+    at 100%. It now carries its own floor at the measured value — an honest number on the record
+    rather than a zero hidden in an average — and it is corroborated independently by Stryker,
+    which scores the same file lowest in the repo at 59.09%.
+
 - **`User` carries `deletedAt`, and `User.active` now means what it says.** Both follow the
   backend separating two facts it had been storing as one: it had no `active` column at all —
   `active` was synthesised as `!deletedAt` and `deletedAt` was stripped — so a single derived flag
@@ -428,6 +550,51 @@ own mocks.
 - **`src/stores/observability.ts`**'s default tracker URL follows the Umami port move.
 
 ### Fixed
+
+- **`cy.visit()` could resolve against the page it was navigating away from.** The override in
+  `tests/e2e/support/commands.ts` waited for `window._appReady`, a flag the app sets once it has
+  booted — but the outgoing `window` survives until the new document commits, so a second visit
+  inside a test could see a flag set long ago, resolve immediately, and hand every following
+  command the **previous** screen. Ordinary specs hid it, because `cy.get()` retries until the page
+  swaps; anything reading the page once did not. The accessibility suite had been auditing the
+  wrong route for most of its cases, and a visual baseline for `/en/this-route-does-not-exist` was
+  a photograph of the home page. Each visit now mints a token, stamps it on the incoming window
+  before any application script runs, and waits for that exact value — something the old window can
+  never satisfy.
+
+- **Five accessibility violations, all of them in the agnostic layer rather than the demo app**, so
+  every project copied from this boilerplate carried them:
+    - the full-page and corner loaders in `LayoutDefault.vue` rendered `role="progressbar"` with no
+      accessible name — and the full-page one is the only thing on screen while the app boots;
+    - `v-data-table`'s internal loading bar had the same problem, fixed through the `#loader` slot
+      because Vuetify component `defaults` cannot supply `aria-label` (it is not a declared prop, so
+      the value never reaches the element);
+    - every input label in the app sat at 3.32:1 against a required 4.5:1;
+    - the "Forgot password?" link used `text-primary` at roughly 2:1;
+    - table column headers were dimmed to `opacity: 0.38` while loading, landing at 1.74:1 — which
+      also made the suite **timing-dependent**, passing or failing on how fast a mock replied.
+
+- **The admin dashboard's health, metrics and audit panels were rendering nothing.**
+  `useAdminObservability.ts` read `response.data.data` for all three, compensating for a
+  double-wrapped schema in `openapi.yaml` — but `orvalMutator` already unwraps the envelope, so
+  `response.data` **is** the payload and the extra `.data` resolved to `undefined`.
+
+    The spec was the cause: `ObservabilityHealthResponse`,
+    `ObservabilityMetricsSummaryResponse` and `AuditLogsResponse` each declared an envelope while
+    being used as the `data` inside one, so the generated types described a shape the backend has
+    never sent. The spec is corrected in the paired backend and re-synced here; the four
+    `.data.data` reads are now single, and `contracts/` is regenerated.
+
+    Found by the backend's new spec-driven fuzz suite. It went unnoticed here for the same reason
+    it went unnoticed there — `useAdminObservability.ts` is the least-tested file in this repo,
+    at roughly 3% coverage and 0% mutation score. The least-tested file held the live bug.
+
+- **`router.spec.ts` failed under `test:unit:coverage` and nowhere else.** The first test in the
+  file paid for the whole router module graph — every view, and therefore Vuetify — and with
+  coverage instrumentation added that one-off cost pushed it past the 5s default timeout. It passed
+  alone, passed in `test:unit`, and failed in the coverage run, which is the shape of a flake
+  nobody trusts. The graph is now warmed once in `beforeAll` with its own budget, so every real
+  case keeps the tight default where a genuine hang should still be caught.
 
 - **Six tests for the refresh-exclusion list asserted nothing at all.** `httpRequest.spec.ts`
   drove a 401 through `onResponseRejectWithRefresh` for each auth endpoint and asserted that no

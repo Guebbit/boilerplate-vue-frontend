@@ -11,11 +11,15 @@ flowchart TB
     Mock["E2E — Mock Profile\nCypress + MSW, fixed seed\nexact values"]
     Random["E2E — Random Profile\nCypress + MSW, faker-seeded\ninvariants only"]
     Live["E2E — Live\nCypress + real backend\nrun by hand"]
+    A11y["Accessibility\ncypress-axe\nis it usable?"]
+    Visual["Visual Regression\nCypress + pixelmatch\ndoes it still look right?"]
     Mutation["Mutation\nStryker\nchecks the checkers"]
 
     Unit --> Mock
     Mock --> Random
     Mock --> Live
+    Mock --> A11y
+    Mock --> Visual
     Mutation -.mutates.-> Unit
 
     classDef fast fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -24,6 +28,7 @@ flowchart TB
     classDef meta fill:#dcfce7,stroke:#16a34a,color:#111827;
     class Unit fast;
     class Mock,Random e2e;
+    class A11y,Visual e2e;
     class Live live;
     class Mutation meta;
 ```
@@ -31,6 +36,10 @@ flowchart TB
 | Layer | Question it answers | Tool(s) | Command | Detail page |
 | --- | --- | --- | --- | --- |
 | Unit | Does this one component/store/plugin behave correctly in isolation? | Vitest + @vue/test-utils + jsdom | `npm run test:unit` | [Unit Testing](./unit-testing.md) |
+| Component | Does this `.vue` render, emit and **clean up** correctly? | @vue/test-utils | `npm run test:unit` (same suite) | [Component Testing](./component-testing.md) |
+| Property | Does the rule hold for *every* input, not just the ones someone thought of? | fast-check | `npm run test:unit` (same suite) | [Property Testing](./property-testing.md) |
+| Accessibility | Are there mechanical a11y failures on the routes a user reaches? | cypress-axe | `npm run test:e2e` (same suite) | [Accessibility Testing](./accessibility-testing.md) |
+| Visual Regression | Does the page still **look** the way it did? | Cypress + pixelmatch | `npm run test:e2e:visual` | [Visual Regression](./visual-regression.md) |
 | E2E — Mock Profile | Does the app behave correctly against **known** data? | Cypress + MSW, fixed seed | `npm run test:e2e` | [Mocking (MSW)](./mocking.md) |
 | E2E — Random Profile | Does the app survive **any** contract-valid data? | Cypress + MSW, faker-seeded | `npm run test:e2e:random` | [E2E — Random Profile](./e2e-random-profile.md) |
 | E2E — Live | Does the frontend agree with the **actual** backend? | Cypress + real API, hand-run | `npm run test:e2e:live` | [Live E2E](./live-e2e.md) |
@@ -106,6 +115,10 @@ Worth being explicit, because the boundary has bitten this project before.
 | Failure | Caught by |
 | --- | --- |
 | Component or store logic error | [Unit Testing](./unit-testing.md) |
+| A component that leaks a resource, or confuses idle with zero | [Component Testing](./component-testing.md) |
+| A rule that holds for the tested inputs but not for all of them | [Property Testing](./property-testing.md) |
+| A control with no accessible name, an image with no alt text | [Accessibility Testing](./accessibility-testing.md) |
+| A layout shift, a dropped stylesheet, a font that failed to load — every DOM assertion still passing | [Visual Regression](./visual-regression.md) |
 | A test that asserts nothing | [Mutation Testing](./mutation-testing.md) |
 | Wrong response **shape** from a mock | `assertMockContract` in every handler, generated **strict** — see [Mocking](./mocking.md) |
 | Generated client out of step with `openapi.yaml` | the `api-freshness` CI job |
@@ -172,11 +185,72 @@ flowchart LR
 - [Cypress best practices](https://docs.cypress.io/guides/references/best-practices) — selector and assertion guidance
 - [Mermaid diagram syntax](https://mermaid.js.org/intro/syntax-reference.html) — for adding new diagrams to these docs
 
+## Gate or hunter
+
+Worth naming explicitly, because it decides where a suite runs and how a failure is read.
+
+A **gate** answers a yes/no question fast enough to block a merge. Unit, component, property, the mock e2e profile and the a11y pass are gates: they run on every push, and a failure means "do not merge this".
+
+A **hunter** goes looking for problems nobody asked about. Mutation, the random e2e profile and the live e2e profile are hunters: slower, nightly, and a failure is usually a **finding to read** rather than a merge to stop. A hunter wired as a gate gets switched off the first week it is inconvenient — which is why each lives in its own workflow file, where it cannot become a PR gate by accident.
+
+The corollary: a green pull request is not a claim the hunters agree. That is what the nightlies are for.
+
+## Deliberately not done
+
+Recorded rather than dropped silently, because "absent" and "rejected for a reason" look identical in
+a codebase. The backend keeps the same list, in its own `docs/tools/testing-and-docs.md`, and the
+reasoning is shared; what differs is the frontend-specific shape of each.
+
+### Performance testing
+
+**What it is.** Every layer above asks "is the answer correct?". This one asks "is it *fast enough*",
+and on a frontend that splits into two unrelated questions:
+
+| Kind | Question | Typical tool |
+| --- | --- | --- |
+| **Runtime** | Does this list still render in one frame with 500 rows, or did a `computed` become quadratic? | a benchmark harness |
+| **Delivery** | Did the bundle grow 400 KB, and did Largest Contentful Paint move? | Lighthouse CI, size-limit |
+
+**Why it is not here.** The demo's data volumes are fixtures — a handful of products and orders — so
+any threshold measured against them is inherited by forks as authoritative while describing nothing
+they will experience. Timing numbers are also a property of the machine, and on a shared CI runner a
+render benchmark largely measures the runner; that flakiness is what gets a job disabled.
+
+**What would change it.** In a fork with real page weights and a real device profile, the **delivery**
+half is the one to add first — a bundle-size budget is deterministic, cheap, and catches the single
+most common frontend regression (an accidental import pulling a library into the main chunk). It does
+not need the load rig that runtime benchmarking does.
+
+### Diff coverage as a separate gate
+
+Superseded here by two existing gates: `coverage.thresholds.perFile` answers "is this code executed",
+and the per-file mutation baseline answers "did the tests get weaker". A third gate over the same
+ground buys CI complexity and a second number to argue about. It becomes the right tool if a large
+untested area ever lands below the floors, where fixing history is not realistic.
+
+### Type-level tests
+
+Assertions about types rather than values — that a prop signature did not widen to `any`, that a
+generic infers correctly. They earn their place when the types **are** the product, as in a published
+library. Here the public contract is `openapi.yaml`, and the types over it are *generated* by orval
+rather than hand-written, then checked by `check:spec-identity` against the backend's copy. Writing
+type assertions over generated types mostly tests the generator.
+
+### Incremental mutation mode
+
+Stryker can cache per-mutant results and re-test only what a diff touched. Not enabled: the cache
+invalidates far more broadly than intuition suggests, so the saving is unpredictable rather than
+proportional to the diff, and a stale-but-trusted cache reports green for mutants nobody re-ran. Worth
+revisiting if mutation ever moves from nightly onto pull requests.
+
 ## Related pages
 
 - [Unit Testing](./unit-testing.md)
 - [Mocking (MSW)](./mocking.md)
 - [E2E — Random Profile](./e2e-random-profile.md)
 - [Live E2E (FE ↔ real backend)](./live-e2e.md)
+- [Component Testing](./component-testing.md) — resources, boundaries, and why not to select on vendor classes
+- [Property Testing](./property-testing.md) — generation over enumeration
+- [Accessibility Testing](./accessibility-testing.md) — what automated a11y can and cannot tell you
 - [Mutation Testing](./mutation-testing.md)
 - [API](../api/)

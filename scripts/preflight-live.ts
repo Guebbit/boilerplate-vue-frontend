@@ -8,11 +8,11 @@
  * didn't say *why*. Each check below fails with exactly one actionable line instead. Order
  * matters: the checks run cheapest/most-likely-wrong first, and only the first failure prints.
  */
-import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { loadEnv } from 'vite';
 import { DEFAULT_BACKEND_PATH, resolveBackendPath } from './backendPath';
+import { compareSpecs, formatSpecProblems } from './specIdentity';
 
 const HEALTH_CHECK_TIMEOUT_MS = 3000;
 
@@ -60,26 +60,16 @@ const checkBackendSeedScript = (backendPath: string): void => {
     }
 };
 
-const md5 = (filePath: string): string =>
-    createHash('md5').update(readFileSync(filePath)).digest('hex');
-
+/**
+ * All three shared contract files, not just `openapi.yaml`.
+ *
+ * The comparison itself lives in `scripts/specIdentity.ts`, which `npm run check:spec-identity`
+ * and the `spec-identity` CI job also drive — so a live run and a pull request cannot disagree
+ * about what "the specs match" means.
+ */
 const checkSpecParity = (backendPath: string): void => {
-    const feSpecPath = path.resolve(process.cwd(), 'openapi.yaml');
-    const beSpecPath = path.join(backendPath, 'openapi.yaml');
-    if (!existsSync(beSpecPath)) {
-        fail(`No openapi.yaml found at ${beSpecPath} — cannot verify spec parity.`);
-    }
-
-    const feHash = md5(feSpecPath);
-    const beHash = md5(beSpecPath);
-    if (feHash !== beHash) {
-        fail(
-            `Spec drift: this repo's openapi.yaml (md5 ${feHash}) does not match the backend's ` +
-                `(md5 ${beHash}) at ${beSpecPath}.\n` +
-                `  Regenerate before trusting this run — whichever repo is behind, sync openapi.yaml ` +
-                `then run "npm run genapi".`
-        );
-    }
+    const problems = formatSpecProblems(compareSpecs(backendPath), backendPath);
+    if (problems) fail(`${problems}\n  Regenerate before trusting this run.`);
 };
 
 const main = async (): Promise<void> => {

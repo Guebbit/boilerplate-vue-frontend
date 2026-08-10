@@ -1,3 +1,23 @@
+/**
+ * Vitest configuration — the unit and component suite.
+ *
+ * ── Where each layer runs, so this file is not mistaken for the whole story ──────────────────
+ * Vitest owns everything that can run in jsdom: pure functions, stores, composables, and single
+ * components mounted with @vue/test-utils. Anything needing a real browser, a service worker or a
+ * navigation belongs to Cypress (`cypress.config.ts`), and mutation testing merges its own
+ * overrides on top of this file (`vitest.config.mutation.ts`).
+ *
+ * ── The one setting that is load-bearing: `thresholds.perFile` ───────────────────────────────
+ * Coverage thresholds POOL by default. A glob covering twenty files passes if the average clears
+ * the bar, so a fully covered utility can carry an untested composable next to it and the gate
+ * stays green. `perFile: true` applies the number to each file separately and names the ones that
+ * fail. Anything else measures the wrong thing.
+ *
+ * ── Vitest does NOT type-check ───────────────────────────────────────────────────────────────
+ * A spec that fails to compile can still pass here, because the transform strips types without
+ * checking them. `npm run type-check-only` is the check; a green test run is not evidence that
+ * the file compiles.
+ */
 import { fileURLToPath } from 'node:url';
 import { mergeConfig, defineConfig, configDefaults } from 'vitest/config';
 import viteConfig from './vite.config';
@@ -50,17 +70,57 @@ export default mergeConfig(
                     //
                     // Same rule as the Stryker thresholds: raise these when the number rises,
                     // never lower one to make a run pass.
+
+                    // PER FILE, and this line is the whole gate rather than a detail.
+                    //
+                    // Without it, Vitest merges every file matching a glob into ONE coverage map
+                    // and checks the threshold against the merged total (see `resolveThresholds`
+                    // in @vitest/coverage-v8). A glob covering four files, three of them at 95%
+                    // and one at 0%, passes a 70% floor comfortably — so the floor is satisfied
+                    // by exactly the file it was meant to catch. That is how the backend's
+                    // directory-shaped Jest thresholds hid four completely untested files, and
+                    // the pooling is identical here.
+                    //
+                    // With `perFile`, each file is checked on its own and the error names it:
+                    //   ERROR: Coverage for statements (0%) does not meet "src/stores/**"
+                    //   threshold (70%) for src/stores/observability.ts
+                    //
+                    // It applies to every group below, so a new file under any of these paths
+                    // arrives with a floor instead of arriving inside an average.
+                    perFile: true,
+
                     'src/features/*/store.ts': {
                         statements: 70,
                         branches: 70,
                         functions: 70,
                         lines: 70
                     },
-                    'src/middlewares/**': {
+                    // Everything under middlewares EXCEPT authentications.ts, which is written
+                    // down below. The extglob negation is required rather than cosmetic: a file
+                    // matching two glob keys lands in BOTH groups, so an exemption listed
+                    // alongside the broad glob would still be failed by the broad glob. An
+                    // exemption has to leave the glob to be one.
+                    'src/middlewares/!(authentications).ts': {
                         statements: 70,
                         branches: 70,
                         functions: 70,
                         lines: 70
+                    },
+                    // Measured 2026-08-08, and the first thing `perFile: true` exposed: the
+                    // pooled `src/middlewares/**` group passed 70 across the board while this
+                    // file sat at 50% branches and 55% functions, carried by demoMiddleware.ts
+                    // and localeChoice.ts at 100%.
+                    //
+                    // Floored at the measured value rounded down, NOT at an aspiration — this is
+                    // a record of where it is, so a drop fails and an improvement can ratchet it
+                    // up. It is the guard layer, so it is also the most valuable of the three to
+                    // finish testing: the uncovered half is the failure paths of `tryRestoreAuth`
+                    // and the admin branch of `isAdmin`.
+                    'src/middlewares/authentications.ts': {
+                        statements: 75,
+                        branches: 50,
+                        functions: 55,
+                        lines: 80
                     },
                     'src/plugins/http/**': {
                         statements: 70,

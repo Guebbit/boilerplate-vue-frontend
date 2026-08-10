@@ -20,8 +20,14 @@
             class="max-h-40 w-auto self-start rounded object-contain"
         />
 
+        <!--
+            `data-testid` because Vuetify's own `v-file-input` renders an internal
+            `.v-progress-linear` inside its field loader: a class selector matches that one too,
+            so a spec written against the class passes whether this bar is rendered or not.
+        -->
         <v-progress-linear
             v-if="isUploading"
+            data-testid="upload-progress"
             :model-value="progressPercent"
             color="primary"
             height="18"

@@ -12,7 +12,7 @@
  *   must never end up in the seed profile's module graph.
  */
 import type {
-    AuditLogsResponseData,
+    AuditLogsPage,
     CartItem,
     ObservabilityHealth,
     ObservabilityMetricsSummary,
@@ -40,7 +40,7 @@ export type MockProfile = 'seed' | 'random';
 export interface IMockObservability {
     health: ObservabilityHealth;
     metrics: ObservabilityMetricsSummary;
-    audit: AuditLogsResponseData;
+    audit: AuditLogsPage;
 }
 
 export interface IMockSeedData {

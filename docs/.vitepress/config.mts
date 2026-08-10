@@ -72,6 +72,10 @@ export default withMermaid(
                             { text: 'Mocking (MSW)', link: '/tools/mocking' },
                             { text: 'E2E — Random Profile', link: '/tools/e2e-random-profile' },
                             { text: 'Live E2E (FE ↔ real backend)', link: '/tools/live-e2e' },
+                            { text: 'Component Testing', link: '/tools/component-testing' },
+                            { text: 'Property Testing', link: '/tools/property-testing' },
+                            { text: 'Accessibility Testing', link: '/tools/accessibility-testing' },
+                            { text: 'Visual Regression', link: '/tools/visual-regression' },
                             { text: 'Mutation Testing', link: '/tools/mutation-testing' }
                         ]
                     }

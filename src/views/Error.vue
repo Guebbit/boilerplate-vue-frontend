@@ -1,5 +1,5 @@
 <template>
-    <LayoutDefault centered>
+    <LayoutDefault id="error-page" centered>
         <template #header>
             <h1 class="text-3xl font-bold tracking-tight lg:text-4xl">
                 {{ t('error-page.page-title') }} {{ status }}

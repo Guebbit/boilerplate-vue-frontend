@@ -62,7 +62,7 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
         errorHealth.value = undefined;
         return getObservabilityHealth()
             .then((response) => {
-                health.value = response.data.data;
+                health.value = response.data;
             })
             .catch((error: unknown) => {
                 errorHealth.value =
@@ -83,7 +83,7 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
         errorMetrics.value = undefined;
         return getObservabilityMetricsOverview()
             .then((response) => {
-                metrics.value = response.data.data;
+                metrics.value = response.data;
             })
             .catch((error: unknown) => {
                 errorMetrics.value =
@@ -113,8 +113,8 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
             limit: filters.limit
         })
             .then((response) => {
-                auditEvents.value = response.data.data.items;
-                auditTotal.value = response.data.data.total;
+                auditEvents.value = response.data.items;
+                auditTotal.value = response.data.total;
             })
             .catch((error: unknown) => {
                 errorAudit.value =

@@ -9,7 +9,7 @@
  * locale redirect, the 404 catch-alls, the global auth restore, the error → redirect mapping),
  * plus the fact that each protected route reaches the guard it declares.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 const tryRestoreAuth = vi.fn(() => Promise.resolve());
@@ -40,6 +40,22 @@ const loadRouter = () => {
             .then(() => router)
     );
 };
+
+/**
+ * Pay for the router's module graph once, outside any test's budget.
+ *
+ * `@/router` pulls in every view, and therefore Vuetify — the most expensive import in the suite.
+ * `vi.resetModules()` in `loadRouter` clears the module registry but NOT Vite's transform cache,
+ * so only the first import in this file actually transpiles anything; the rest are cheap.
+ *
+ * Left inside the first test, that one-off cost is charged to it, and under `--coverage` the
+ * added instrumentation pushed it past the 5s default — a test that passed alone, passed in
+ * `test:unit`, and failed only in `test:unit:coverage`. Warming it here keeps every real case on
+ * the tight default budget, which is where a genuine hang should still be caught.
+ */
+beforeAll(async () => {
+    await import('@/router');
+}, 60_000);
 
 beforeEach(() => {
     setActivePinia(createPinia());

@@ -1,0 +1,168 @@
+name: E2E (live backend)
+
+# The third e2e profile, and the only one that is not talking to a mock.
+#
+# `test:e2e` (in ci.yml) runs the same nine specs against MSW handlers, and `e2e-random.yml` runs
+# the resilience spec against faker-generated data. Both are fast, hermetic, and structurally
+# unable to notice one class of failure: the mock handlers agreeing with a backend that has moved.
+# `tests/mocks/shared/mockShared.ts` mirrors the backend's `db/seeds/index.ts` BY HAND, and
+# `parity.cy.ts` exists to catch that mirror going stale — which it can only do when something
+# actually stands the real backend up. Until this workflow, nothing did: `npm run test:e2e:live`
+# was invoked by no CI job at all, so the one guard against seed drift ran only when a person
+# remembered to run it.
+#
+# Nightly rather than per-PR, and that is a cost decision rather than a confidence one: this needs
+# both repos, a Mongo, a Redis and a seeded database, so it is minutes where the mock profile is
+# seconds. The mock suite stays the merge gate; this is the thing that tells you the mock suite is
+# still describing reality.
+#
+# On failure, read it in this order:
+#   1. the preflight line — it fails with one actionable sentence when the pair is misconfigured;
+#   2. `parity.cy.ts` — a failure there is seed drift, i.e. fix mockShared.ts, not the app;
+#   3. anything else — a real disagreement between this frontend and that backend.
+
+on:
+    schedule:
+        # 03:15 UTC — between e2e-random.yml (03:00) and mutation.yml (03:30), so the three
+        # nightlies do not compete for runners.
+        - cron: '15 3 * * *'
+    workflow_dispatch:
+
+concurrency:
+    group: e2e-live-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+env:
+    NODE_VERSION: 22
+    # Where the backend checkout lands, and what the frontend's scripts/backendPath.ts resolves.
+    BACKEND_PATH: .backend
+
+jobs:
+    test-e2e-live:
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        permissions:
+            contents: read
+
+        services:
+            mongodb:
+                image: mongo:8
+                ports:
+                    - 27017:27017
+                options: >-
+                    --health-cmd "mongosh --quiet --eval 'db.runCommand({ ping: 1 }).ok'"
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 10
+            redis:
+                image: redis:8
+                ports:
+                    - 6379:6379
+                options: >-
+                    --health-cmd "redis-cli ping"
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 10
+
+        steps:
+            - name: Checkout frontend
+              uses: actions/checkout@v4
+
+            - name: Checkout backend
+              uses: actions/checkout@v4
+              with:
+                  repository: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
+                  path: ${{ env.BACKEND_PATH }}
+                  token: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+
+            - name: Cache Cypress binary
+              uses: actions/cache@v4
+              with:
+                  path: ~/.cache/Cypress
+                  key: cypress-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+                  restore-keys: |
+                      cypress-${{ runner.os }}-
+
+            - name: Install frontend dependencies
+              run: npm ci
+
+            - name: Install backend dependencies
+              working-directory: ${{ env.BACKEND_PATH }}
+              run: npm ci
+
+            # The specs are written against the seed dataset, so the database has to hold it
+            # before anything starts — and `cy.resetState()` re-runs this same script between
+            # specs, which is why the backend's `db:seed:reset:host` script is the one used.
+            - name: Migrate and seed
+              working-directory: ${{ env.BACKEND_PATH }}
+              env:
+                  NODE_DB_URI: ''
+                  NODE_MONGODB_HOST: localhost
+                  NODE_REDIS_URL: ''
+                  NODE_REDIS_HOST: localhost
+              run: npm run db:bootstrap:host
+
+            - name: Start the backend
+              working-directory: ${{ env.BACKEND_PATH }}
+              env:
+                  NODE_DB_URI: ''
+                  NODE_MONGODB_HOST: localhost
+                  NODE_REDIS_URL: ''
+                  NODE_REDIS_HOST: localhost
+                  # The live suite drives login, signup and reset far harder than a person does,
+                  # from one address. Same reasoning as tests/helpers/setup.ts in the backend:
+                  # raised so the limiter cannot silently truncate a spec, not disabled, so a
+                  # runaway loop still terminates.
+                  NODE_RATE_LIMIT_MAX: '1000'
+                  NODE_AUTH_RATE_LIMIT_MAX: '1000'
+                  NODE_METRICS_TOKEN: ci-metrics-token
+              run: |
+                  npm start > "$GITHUB_WORKSPACE/backend.log" 2>&1 &
+                  echo $! > "$GITHUB_WORKSPACE/backend.pid"
+
+            - name: Wait for the backend
+              run: npx wait-on http://localhost:3000 --timeout 120000
+
+            # `pretest:e2e:live` runs the preflight automatically: backend reachable, seed script
+            # present, and all three shared contract files identical across the two checkouts.
+            - name: Run e2e tests against the live backend
+              run: npm run test:e2e:live
+
+            - name: Stop the backend
+              if: always()
+              run: kill "$(cat "$GITHUB_WORKSPACE/backend.pid")" || true
+
+            - name: Upload backend log
+              # Uploaded even on success: a green run whose log is full of 500s is worth seeing.
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: backend-log
+                  path: backend.log
+                  retention-days: 14
+                  if-no-files-found: warn
+
+            - name: Upload Cypress screenshots
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: cypress-screenshots-live
+                  path: tests/e2e/screenshots
+                  retention-days: 14
+                  if-no-files-found: ignore
+
+            - name: Upload Cypress videos
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: cypress-videos-live
+                  path: tests/e2e/videos
+                  retention-days: 14
+                  if-no-files-found: ignore

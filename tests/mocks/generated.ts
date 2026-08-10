@@ -495,16 +495,11 @@ export interface ObservabilityHealth {
     timestamp: string;
 }
 
-export interface ObservabilityHealthResponse {
-    success: true;
-    data: ObservabilityHealth;
-}
-
 export interface ObservabilityHealthResponseEnvelope {
     success: true;
     status: number;
     message: string;
-    data: ObservabilityHealthResponse;
+    data: ObservabilityHealth;
 }
 
 export interface ObservabilityMetricsLatency {
@@ -569,16 +564,11 @@ export interface ObservabilityMetricsSummary {
     timestamp: string;
 }
 
-export interface ObservabilityMetricsSummaryResponse {
-    success: true;
-    data: ObservabilityMetricsSummary;
-}
-
 export interface ObservabilityMetricsSummaryResponseEnvelope {
     success: true;
     status: number;
     message: string;
-    data: ObservabilityMetricsSummaryResponse;
+    data: ObservabilityMetricsSummary;
 }
 
 export type AuditEventItemActorRole =
@@ -624,22 +614,17 @@ export interface AuditEventItem {
     level: AuditEventItemLevel;
 }
 
-export type AuditLogsResponseData = {
+export interface AuditLogsPage {
     items: AuditEventItem[];
     /** @minimum 0 */
     total: number;
-};
-
-export interface AuditLogsResponse {
-    success: true;
-    data: AuditLogsResponseData;
 }
 
 export interface AuditLogsResponseEnvelope {
     success: true;
     status: number;
     message: string;
-    data: AuditLogsResponse;
+    data: AuditLogsPage;
 }
 
 export interface LoginRequest {
@@ -2219,51 +2204,44 @@ export const getGetObservabilityHealthResponseMock = (
     status: faker.number.int(),
     message: faker.string.alpha({ length: { min: 10, max: 20 } }),
     data: {
-        success: faker.helpers.arrayElement([true] as const),
-        data: {
-            status: faker.helpers.arrayElement(['ok', 'degraded'] as const),
-            environment: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            service: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            nodeVersion: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            uptimeSeconds: faker.number.int({ min: 0 }),
-            database: {
-                status: faker.helpers.arrayElement([
-                    'connected',
-                    'connecting',
-                    'disconnected'
-                ] as const)
+        status: faker.helpers.arrayElement(['ok', 'degraded'] as const),
+        environment: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        service: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        nodeVersion: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        uptimeSeconds: faker.number.int({ min: 0 }),
+        database: {
+            status: faker.helpers.arrayElement(['connected', 'connecting', 'disconnected'] as const)
+        },
+        integrations: faker.helpers.arrayElement([
+            {
+                loki: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                posthog: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                otelEnabled: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                umami: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                faro: faker.helpers.arrayElement([faker.datatype.boolean(), undefined])
             },
-            integrations: faker.helpers.arrayElement([
-                {
-                    loki: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                    posthog: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                    otelEnabled: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                    umami: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                    faro: faker.helpers.arrayElement([faker.datatype.boolean(), undefined])
-                },
-                undefined
-            ]),
-            memory: faker.helpers.arrayElement([
-                {
-                    heapUsedMb: faker.number.int(),
-                    heapTotalMb: faker.number.int(),
-                    rssMb: faker.number.int()
-                },
-                undefined
-            ]),
-            system: faker.helpers.arrayElement([
-                {
-                    platform: faker.string.alpha({ length: { min: 10, max: 20 } }),
-                    cpuCount: faker.number.int(),
-                    loadAvg: Array.from(
-                        { length: faker.number.int({ min: 1, max: 10 }) },
-                        (_, i) => i + 1
-                    ).map(() => faker.number.float({ fractionDigits: 2 }))
-                },
-                undefined
-            ]),
-            timestamp: faker.date.past().toISOString().slice(0, 19) + 'Z'
-        }
+            undefined
+        ]),
+        memory: faker.helpers.arrayElement([
+            {
+                heapUsedMb: faker.number.int(),
+                heapTotalMb: faker.number.int(),
+                rssMb: faker.number.int()
+            },
+            undefined
+        ]),
+        system: faker.helpers.arrayElement([
+            {
+                platform: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                cpuCount: faker.number.int(),
+                loadAvg: Array.from(
+                    { length: faker.number.int({ min: 1, max: 10 }) },
+                    (_, i) => i + 1
+                ).map(() => faker.number.float({ fractionDigits: 2 }))
+            },
+            undefined
+        ]),
+        timestamp: faker.date.past().toISOString().slice(0, 19) + 'Z'
     },
     ...overrideResponse
 });
@@ -2277,43 +2255,34 @@ export const getGetObservabilityMetricsOverviewResponseMock = (
     status: faker.number.int(),
     message: faker.string.alpha({ length: { min: 10, max: 20 } }),
     data: {
-        success: faker.helpers.arrayElement([true] as const),
-        data: {
-            http: {
-                totalRequests: faker.number.int({ min: 0 }),
-                totalErrors: faker.number.int({ min: 0 }),
-                errorRate: faker.number.float({ min: 0, max: 1, fractionDigits: 2 }),
-                inFlight: faker.number.int({ min: 0 }),
-                latencyMs: {
-                    p50: faker.number.float({ fractionDigits: 2 }),
-                    p95: faker.number.float({ fractionDigits: 2 })
-                }
-            },
-            auth: {
-                loginSuccess: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
-                loginFailure: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
-                signupSuccess: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined])
-            },
-            business: {
-                checkoutSuccess: faker.helpers.arrayElement([
-                    faker.number.int({ min: 0 }),
-                    undefined
-                ]),
-                ordersCreated: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined])
-            },
-            database: {
-                queriesTotal: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
-                errorsTotal: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined])
-            },
-            process: {
-                uptimeSeconds: faker.helpers.arrayElement([
-                    faker.number.int({ min: 0 }),
-                    undefined
-                ]),
-                heapUsedMb: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined])
-            },
-            timestamp: faker.date.past().toISOString().slice(0, 19) + 'Z'
-        }
+        http: {
+            totalRequests: faker.number.int({ min: 0 }),
+            totalErrors: faker.number.int({ min: 0 }),
+            errorRate: faker.number.float({ min: 0, max: 1, fractionDigits: 2 }),
+            inFlight: faker.number.int({ min: 0 }),
+            latencyMs: {
+                p50: faker.number.float({ fractionDigits: 2 }),
+                p95: faker.number.float({ fractionDigits: 2 })
+            }
+        },
+        auth: {
+            loginSuccess: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+            loginFailure: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+            signupSuccess: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined])
+        },
+        business: {
+            checkoutSuccess: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+            ordersCreated: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined])
+        },
+        database: {
+            queriesTotal: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+            errorsTotal: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined])
+        },
+        process: {
+            uptimeSeconds: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+            heapUsedMb: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined])
+        },
+        timestamp: faker.date.past().toISOString().slice(0, 19) + 'Z'
     },
     ...overrideResponse
 });
@@ -2325,12 +2294,8 @@ export const getGetObservabilityAuditLogsResponseMock = (
     status: faker.number.int(),
     message: faker.string.alpha({ length: { min: 10, max: 20 } }),
     data: {
-        success: faker.helpers.arrayElement([true] as const),
-        data: {
-            items: Array.from(
-                { length: faker.number.int({ min: 1, max: 10 }) },
-                (_, i) => i + 1
-            ).map(() => ({
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
                 actor_user_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 actor_role: faker.helpers.arrayElement(['admin', 'user', 'anonymous'] as const),
                 action: faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -2362,9 +2327,9 @@ export const getGetObservabilityAuditLogsResponseMock = (
                 metadata: faker.helpers.arrayElement([{}, undefined]),
                 timestamp: faker.date.past().toISOString().slice(0, 19) + 'Z',
                 level: faker.helpers.arrayElement(['info', 'warn'] as const)
-            })),
-            total: faker.number.int({ min: 0 })
-        }
+            })
+        ),
+        total: faker.number.int({ min: 0 })
     },
     ...overrideResponse
 });

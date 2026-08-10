@@ -39,7 +39,7 @@
                     />
                     <RouterLink
                         :to="routerLinkI18n({ name: 'PasswordResetRequest' })"
-                        class="text-sm text-primary hover:underline"
+                        class="text-sm text-link hover:underline"
                     >
                         {{ t('login-page.link-password-reset') }}
                     </RouterLink>

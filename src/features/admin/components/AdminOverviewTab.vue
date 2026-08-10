@@ -183,7 +183,7 @@ const flag = (value?: boolean) => (value ? '✓' : '✗');
         <div class="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
             <v-card v-for="card in kpiCards" :key="card.title" class="p-4" variant="flat" border>
                 <div class="flex items-center justify-between gap-2">
-                    <p class="text-xs font-medium uppercase tracking-widest opacity-70">
+                    <p class="text-xs font-medium uppercase tracking-widest opacity-80">
                         {{ card.title }}
                     </p>
                     <span

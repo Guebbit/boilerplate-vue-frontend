@@ -42,7 +42,16 @@ const light: ThemeDefinition = {
         error: '#c62828',
         success: '#2e7d32',
         warning: '#b26a00',
-        info: '#0277bd'
+        info: '#0277bd',
+        /*
+         * Link text needs its OWN colour, and cannot reuse `primary`.
+         *
+         * `primary` is chosen to be a strong background with dark text on top of it — which is
+         * why `on-primary` exists. Used the other way round, as coloured text on a white surface,
+         * #ff9800 measures about 2:1 against 4.5:1 required, so every inline link in the app was
+         * a serious accessibility violation. This is the same orange darkened until it passes.
+         */
+        link: '#a35a00'
     }
 };
 
@@ -69,7 +78,9 @@ const dark: ThemeDefinition = {
         error: '#ef5350',
         success: '#66bb6a',
         warning: '#ffb74d',
-        info: '#4fc3f7'
+        info: '#4fc3f7',
+        // Light enough to pass AA against the dark surface — see the light theme for why.
+        link: '#ffb74d'
     }
 };
 /* eslint-enable @typescript-eslint/naming-convention */
