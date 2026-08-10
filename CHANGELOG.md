@@ -21,6 +21,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   and fails with the list of unmapped ones. It also caught two further absences — `GET /locales`
   and `GET /locales/{locale}` were mapped but untested.
 
+- **`docs/tools/live-e2e.md` said the live profile was not in CI**, under a section titled "Why
+  this is not in CI", arguing that no single pipeline could own both repos. `e2e-live.yml` does
+  exactly that — checks out both, starts Mongo and Redis, seeds, boots the backend and runs the
+  suite nightly. The page predates the workflow and was never updated, so it had been telling
+  readers to assume a guard did not exist.
+
+    It now states where the profile runs (nightly in CI **and** by hand) and, more usefully, where
+    it does **not**: a `cron` trigger only ever fires against the default branch, so work on a
+    feature branch is never covered by the nightly run. The first live exercise of a branch is
+    after it merges, or a manual `workflow_dispatch` against it. The rationale section is retitled
+    "Why it is nightly rather than a merge gate", matching what the workflow's own header says.
+
 ### Changed
 
 - **`scripts/preflight-live.ts` is gone**, along with its `pretest:e2e:live` hook. It checked

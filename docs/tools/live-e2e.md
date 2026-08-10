@@ -1,12 +1,23 @@
 # Live E2E (FE ↔ real backend)
 
-The fixed-seed mock profile ([Mocking](./mocking.md)) proves the frontend agrees with its own MSW handlers. It cannot prove those handlers agree with the real API — that gap is closed by running the same Cypress specs against a live, seeded backend instead. This page documents that profile: how to boot it, what guards it, and why it is run by hand rather than in CI.
+The fixed-seed mock profile ([Mocking](./mocking.md)) proves the frontend agrees with its own MSW handlers. It cannot prove those handlers agree with the real API — that gap is closed by running the same Cypress specs against a live, seeded backend instead. This page documents that profile: how to run it by hand, when CI runs it for you, and what guards it.
 
-## Why this is not in CI
+## Where it runs, and where it does not
 
-This repo and `boilerplate-node-api-mongodb-mongoose` are two independently versioned repositories, hand-paired by a developer running both checkouts locally. There is no single pipeline that owns both, so there is nothing for a CI job to check out, boot and tear down together — a CI job here could only ever test one side's `openapi.yaml` against its own last-known-good copy of the other, which is worse than not testing it at all.
+Two places, and the difference matters when you are deciding whether a change has been covered:
 
-The live run is **mandatory before tagging either repo**, not optional. What stands in for CI is:
+- **Nightly in CI**, via `.github/workflows/e2e-live.yml` (03:15 UTC, plus `workflow_dispatch`). That job checks out both repos, starts Mongo and Redis as service containers, migrates and seeds, boots the backend and runs the whole suite against it.
+- **By hand**, with the boot sequence below — which is the only option while your work is on a branch.
+
+**Scheduled workflows only ever run on the default branch.** A `cron` trigger fires against `main` and nothing else, so a feature branch is *not* covered by the nightly run no matter how long it sits there: the first live exercise of a change on a branch happens after it merges, or when someone dispatches the workflow manually against that branch from the Actions tab.
+
+That is the reason the live run is **mandatory before tagging either repo** rather than something to assume CI has handled.
+
+## Why it is nightly rather than a merge gate
+
+A cost decision, not a confidence one. This profile needs both repos, a Mongo, a Redis and a seeded database, so it is minutes where the mock profile is seconds. The mock suite stays the thing that blocks a merge; this is the thing that tells you the mock suite is still describing reality.
+
+What carries the weight in between:
 
 - **response validation** (`VITE_VALIDATE_RESPONSES`), which turns any live contract violation into a hard failure instead of something that only surfaces if an unrelated assertion happens to trip on it
 - the **parity spec**, which turns a silent drift between the mock seed and the real seed into a failing test the first time this profile runs after the drift — not into a bug a user finds
