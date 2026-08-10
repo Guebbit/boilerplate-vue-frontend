@@ -2,9 +2,9 @@ import path from 'node:path';
 
 /**
  * Default sibling-checkout location of the paired backend, relative to this repo's root.
- * Shared between `cypress.config.ts` (which passes it to `cy.exec('npm --prefix ...')`) and
- * `scripts/preflight-live.ts` (which validates it before a single spec runs), so the two can
- * never silently disagree about which backend they mean.
+ * Shared between `cypress.config.ts` (which passes it to `cy.exec('npm --prefix ...')` for
+ * `cy.resetState()`) and `scripts/check-spec-identity.ts`, so the two can never silently
+ * disagree about which backend they mean.
  */
 export const DEFAULT_BACKEND_PATH = '../boilerplate-node-api-mongodb-mongoose';
 

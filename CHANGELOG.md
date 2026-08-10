@@ -23,6 +23,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **`scripts/preflight-live.ts` is gone**, along with its `pretest:e2e:live` hook. It checked
+  three things before a live run: that a backend answered, that the backend checkout had a
+  `db:seed:reset:host` script, and that the shared contract files matched. The first two are
+  self-evident the moment the suite runs — an absent backend fails every spec on a network error,
+  and a missing seed script fails `cy.resetState()` — and its boot advice had gone stale anyway,
+  naming `docker compose up -d` rather than the `podman:restart` / `docker:restart` scripts the
+  backend actually ships.
+
+    The one check worth keeping was the shared-file comparison, and it did not need a bespoke
+    script: `.github/workflows/e2e-live.yml` now runs `npm run check:spec-identity` as an explicit
+    step before Cypress, which is the same guard with one fewer moving part. `README.md` and
+    `docs/tools/live-e2e.md` document the docker/podman boot sequence directly.
+
 - **Order mocks follow the backend's new soft-delete semantics.** `DELETE /orders/:id` sets
   `deletedAt` rather than splicing the record out, calling it twice restores the order, and
   `DELETE /orders/:id/hard` (or `?hardDelete=true`) destroys it. Soft-deleted orders are hidden
@@ -52,9 +65,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
     Renamed with it, since the module no longer handles only specs: `SHARED_SPEC_FILES` →
     `SHARED_FILES`, `compareSpecs` → `compareSharedFiles`, `formatSpecProblems` →
-    `formatSharedFileProblems`, `specProblems` → `sharedFileProblems`. `scripts/preflight-live.ts`
-    follows, so a live run checks all ten before it starts. The npm script and the CI job keep
-    their `spec-identity` names.
+    `formatSharedFileProblems`, `specProblems` → `sharedFileProblems`. The npm script and the CI
+    job keep their `spec-identity` names.
 
     Membership is decided by "would a fork cause a _silent_ bug", not by "do these match today" —
     a dozen more files do, from favicons to `.prettierrc`, and are deliberately excluded because a

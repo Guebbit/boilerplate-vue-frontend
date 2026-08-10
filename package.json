@@ -30,7 +30,6 @@
         "test:e2e:random": "start-server-and-test 'VITE_API_MOCK_ENABLED=true VITE_MOCK_PROFILE=random vite dev --port 8085' http://localhost:8085 \"cypress run --e2e --spec 'tests/e2e/specs/resilience.cy.ts'\"",
         "test:e2e:visual": "start-server-and-test 'VITE_API_MOCK_ENABLED=true vite dev --port 8085' http://localhost:8085 \"cypress run --e2e --spec 'tests/e2e/visual/visual.cy.ts'\"",
         "test:e2e:visual:update": "start-server-and-test 'VITE_API_MOCK_ENABLED=true vite dev --port 8085' http://localhost:8085 \"cypress run --e2e --spec 'tests/e2e/visual/visual.cy.ts' --env updateSnapshots=true\"",
-        "pretest:e2e:live": "tsx scripts/preflight-live.ts",
         "test:e2e:live": "start-server-and-test 'VITE_API_MOCK_ENABLED=false VITE_VALIDATE_RESPONSES=true vite dev --port 8085' http://localhost:8085 \"cross-env CYPRESS_apiMockEnabled=false cypress run --e2e --spec 'tests/e2e/specs/**/*.cy.ts'\"",
         "test:e2e:target": "start-server-and-test 'VITE_API_MOCK_ENABLED=true vite dev --port 8085' http://localhost:8085 \"cypress run --e2e --spec 'tests/e2e/specs/orders.cy.ts'\"",
         "test:e2e:dev": "start-server-and-test 'VITE_API_MOCK_ENABLED=true vite dev --port 8085' http://localhost:8085 'cypress open --e2e'",

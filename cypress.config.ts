@@ -83,8 +83,8 @@ export default defineConfig({
             // Only used by the live profile: `cy.resetState()` shells out to this checkout's
             // `db:seed:reset:host` to restore the seed dataset between tests. `BACKEND_PATH` env
             // override, or a sibling-checkout default, always resolved to an absolute path — see
-            // scripts/backendPath.ts, shared with scripts/preflight-live.ts so the two can never
-            // silently disagree about which backend they mean.
+            // scripts/backendPath.ts, shared with scripts/check-spec-identity.ts so the two can
+            // never silently disagree about which backend they mean.
             backendPath: resolveBackendPath(),
             // Where committed baselines live, and where a failing diff is written.
             visualBaselineDirectory: path.resolve('tests/e2e/snapshots'),

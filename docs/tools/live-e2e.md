@@ -8,7 +8,6 @@ This repo and `boilerplate-node-api-mongodb-mongoose` are two independently vers
 
 The live run is **mandatory before tagging either repo**, not optional. What stands in for CI is:
 
-- the **preflight** below, which turns a misconfigured or unbooted backend into one actionable line instead of a wall of Cypress network noise
 - **response validation** (`VITE_VALIDATE_RESPONSES`), which turns any live contract violation into a hard failure instead of something that only surfaces if an unrelated assertion happens to trip on it
 - the **parity spec**, which turns a silent drift between the mock seed and the real seed into a failing test the first time this profile runs after the drift — not into a bug a user finds
 
@@ -17,9 +16,7 @@ The live run is **mandatory before tagging either repo**, not optional. What sta
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 65}}}%%
 flowchart TB
-    Boot["npm run podman:restart\nnpm run db:bootstrap:host\nNODE_RATE_LIMIT_MAX=1000 npm run dev:host\n(backend repo)"] --> Preflight{"scripts/preflight-live.ts\nreachable? BACKEND_PATH ok? specs match?"}
-    Preflight -->|fail| Actionable["one-line failure,\n< 5s, no Cypress noise"]
-    Preflight -->|pass| Vite["vite dev :8085\nVITE_API_MOCK_ENABLED=false\nVITE_VALIDATE_RESPONSES=true"]
+    Boot["npm run podman:restart (or docker:restart)\nnpm run db:bootstrap:host\nNODE_RATE_LIMIT_MAX=1000 npm run dev:host\n(backend repo)"] --> Vite["vite dev :8085\nVITE_API_MOCK_ENABLED=false\nVITE_VALIDATE_RESPONSES=true"]
     Vite --> Cypress["cypress run --e2e\nCYPRESS_apiMockEnabled=false"]
     Cypress --> Real["real HTTP\n:8085 → :3000"]
     Real --> Backend[("live backend\nreal seeded MongoDB")]
@@ -33,8 +30,8 @@ flowchart TB
     classDef fail fill:#fee2e2,stroke:#dc2626,color:#111827;
     classDef data fill:#fef3c7,stroke:#d97706,color:#111827;
     class Boot,Vite,Cypress,Real step;
-    class Preflight,Mutator,Parity,Refresh check;
-    class Actionable,Fail fail;
+    class Mutator,Parity,Refresh check;
+    class Fail fail;
     class Backend data;
 ```
 
@@ -64,27 +61,15 @@ NODE_RATE_LIMIT_MAX=1000 NODE_AUTH_RATE_LIMIT_MAX=1000 npm run dev:host
 
 Both are needed and they are separate buckets: the global one covers browsing, the auth one covers `POST /account/login` and its neighbours. Do not raise them in a deployed environment — the small credential budget is what makes password guessing expensive, and the two are deliberately decoupled so that widening one never widens the other (see `src/middlewares/security.ts` in the backend).
 
-`db:bootstrap:host` runs migrations and seeds against the containerized Mongo/Redis exposed on the host (`27017`/`6379`), matching the ports `db:seed:reset:host` uses to reset state between specs. `test:e2e:live` itself:
+`db:bootstrap:host` runs migrations and seeds against the containerized Mongo/Redis exposed on the host (`27017`/`6379`), matching the ports `db:seed:reset:host` uses to reset state between specs. `test:e2e:live` itself starts Vite on `:8085` with `VITE_API_MOCK_ENABLED=false` and `VITE_VALIDATE_RESPONSES=true`, then runs Cypress against it with `CYPRESS_apiMockEnabled=false`.
 
-1. runs `pretest:e2e:live` (npm's pre-script convention) — see **Preflight** below
-2. starts Vite on `:8085` with `VITE_API_MOCK_ENABLED=false` and `VITE_VALIDATE_RESPONSES=true`
-3. runs Cypress against it with `CYPRESS_apiMockEnabled=false`
+Boot the backend first. Nothing here waits for it: with no backend listening on `VITE_API_URL` (default `http://localhost:3000`), every spec fails on a network error rather than on anything it was written to check.
 
-## Preflight
-
-`scripts/preflight-live.ts` runs automatically before every `test:e2e:live` invocation and fails fast, one actionable line per check, cheapest/most-likely-wrong first:
-
-| Check | Failure message names |
-| --- | --- |
-| `GET {VITE_API_URL}/` (the health route) responds | the unreachable URL, and the exact boot commands above |
-| The resolved backend checkout has a `db:seed:reset:host` script | the resolved absolute path, and the `BACKEND_PATH` override |
-| The two repos' `openapi.yaml` are byte-identical (`md5`) | both hashes, and which repo needs `npm run genapi` |
-
-With the backend down this fails in well under a second — there is no reason to wait for Cypress to even try.
+Run `npm run check:spec-identity` alongside it when the pair has moved — a forked `seed-identities.ts` makes a live run fail on *data* rather than on behaviour, and that is a confusing hour if you are not expecting it.
 
 ## `BACKEND_PATH`
 
-`cy.resetState()` shells out to the backend checkout for `db:seed:reset:host` (see [Mocking](./mocking.md) and `tests/e2e/support/commands.ts`). Which checkout that is comes from `scripts/backendPath.ts`, shared between the preflight and `cypress.config.ts` so the two can never disagree:
+`cy.resetState()` shells out to the backend checkout for `db:seed:reset:host` (see [Mocking](./mocking.md) and `tests/e2e/support/commands.ts`). Which checkout that is comes from `scripts/backendPath.ts`, which `cypress.config.ts` reads:
 
 ```sh
 # default: a sibling checkout
@@ -120,8 +105,7 @@ This mechanises the "DATA parity" and "BEHAVIOUR parity" invariants documented a
 
 | Path | Contents |
 | --- | --- |
-| `scripts/preflight-live.ts` | The three fail-fast checks, run via `pretest:e2e:live` |
-| `scripts/backendPath.ts` | `resolveBackendPath()` — shared between the preflight and `cypress.config.ts` |
+| `scripts/backendPath.ts` | `resolveBackendPath()`, read by `cypress.config.ts` |
 | `src/plugins/http/index.ts` | `orvalMutator`, `VITE_VALIDATE_RESPONSES` gate |
 | `src/plugins/http/responseSchemaMap.ts` | Route → Zod schema table `orvalMutator` validates against |
 | `tests/e2e/specs/parity.cy.ts` | Mock/seed parity, live profile only |

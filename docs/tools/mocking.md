@@ -112,7 +112,7 @@ They answer different questions and none replaces another:
 
 - **fixed** — does the app behave correctly against known data? Deterministic, so it can assert exact values. The rest of this page is about this profile specifically.
 - **random** — does the app survive *any* contract-valid data? Catches hardcoded assumptions, missing empty states, layout breaking on long strings, null handling. Cannot assert counts — full architecture, the seed lifecycle and the design constraints that keep it honest are on its own page: [E2E — Random Profile](./e2e-random-profile.md).
-- **live** — does the frontend agree with the *actual* backend? The only profile that catches behaviour drift structurally rather than by review — see [Live E2E](./live-e2e.md) for the preflight, response-validation and parity-spec machinery that makes it catch bugs rather than merely exercise code.
+- **live** — does the frontend agree with the *actual* backend? The only profile that catches behaviour drift structurally rather than by review — see [Live E2E](./live-e2e.md) for the response-validation and parity-spec machinery that makes it catch bugs rather than merely exercise code.
 
 ## Role scoping — the rules the handlers mirror
 

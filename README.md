@@ -587,10 +587,11 @@ Official: [mswjs.io/docs](https://mswjs.io/docs/) · [browser integration](https
 
 ## Testing
 
-| Layer | Tool                                                                                                                       | Where              |
-| ----- | -------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| Unit  | [Vitest](https://vitest.dev/) + [@vue/test-utils](https://test-utils.vuejs.org/) + [jsdom](https://github.com/jsdom/jsdom) | `tests/unit/`      |
-| E2E   | [Cypress](https://www.cypress.io/) + MSW                                                                                   | `tests/e2e/specs/` |
+| Layer     | Tool                                                                                                                       | Where              |
+| --------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| Unit      | [Vitest](https://vitest.dev/) + [@vue/test-utils](https://test-utils.vuejs.org/) + [jsdom](https://github.com/jsdom/jsdom) | `tests/unit/`      |
+| E2E       | [Cypress](https://www.cypress.io/) + MSW                                                                                   | `tests/e2e/specs/` |
+| E2E, live | [Cypress](https://www.cypress.io/) against the real backend                                                                | `tests/e2e/specs/` |
 
 Commands:
 
@@ -598,9 +599,34 @@ Commands:
 npm run test:unit     # vitest run (CI mode)
 npm run test:e2e      # boots Vite (with MSW) + cypress run
 npm run test:e2e:dev  # opens Cypress UI
+npm run test:e2e:live # same specs, no mocks — against a real backend
 ```
 
 > New tests should target behavior, not implementation. Prefer component contracts (props/emits/slots) over snapshots.
+
+### Live E2E: the two-repo run
+
+`test:e2e:live` runs the **same specs with MSW switched off**, so it is the only thing that exercises the real API, a real database and the two repos' contract at once — the mocked run cannot tell you that a migration was forgotten or that the seeds have forked.
+
+It needs a backend that is already up and seeded, so bring one up first in a separate terminal, with **docker or podman** (the backend ships a compose overlay and an npm script for each):
+
+```bash
+cd ../boilerplate-node-api-mongodb-mongoose
+npm run podman:restart      # or: npm run docker:restart
+npm run db:bootstrap:host   # migrations + seeds, against the containers' host ports
+```
+
+then, back here:
+
+```bash
+npm run test:e2e:live
+```
+
+The frontend needs no build or linking step for this — Vite serves it with `VITE_API_MOCK_ENABLED=false` and it talks to `VITE_API_URL` (default `http://localhost:3000`) over HTTP like any other client. Point it somewhere else with `VITE_API_URL=http://localhost:<port> npm run test:e2e:live`.
+
+Nothing waits for the backend: with none listening, every spec fails on a network error rather than on what it was written to check. If the pair has moved, run `npm run check:spec-identity` too — a forked `seed-identities.ts` makes the run fail on _data_ rather than on behaviour.
+
+Full detail, including the rate-limit trap that makes the suite fail halfway through: **[Live E2E](docs/tools/live-e2e.md)**.
 
 ---
 
