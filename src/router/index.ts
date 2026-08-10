@@ -7,13 +7,13 @@ import { getDefaultLocale } from '@/utils/i18n.ts';
 import { loginContinueTo } from '@/router/navigation.ts';
 import { useObservabilityStore } from '@/stores/observability';
 
-import accountRoutes from '@/features/account/routes';
-import adminRoutes from '@/features/admin/routes';
-import usersRoutes from '@/features/users/routes';
-import productsRoutes from '@/features/products/routes';
-import realtimeRoutes from '@/features/realtime/routes';
-import cartRoutes from '@/features/cart/routes';
-import ordersRoutes from '@/features/orders/routes';
+import accountRoutes from '@/features/account';
+import adminRoutes from '@/features/admin';
+import usersRoutes from '@/features/users';
+import productsRoutes from '@/features/products';
+import realtimeRoutes from '@/features/realtime';
+import cartRoutes from '@/features/cart';
+import ordersRoutes from '@/features/orders';
 
 /**
  * Whether navigation logging is on: dev builds with `VITE_APP_DEBUG_ROUTER`.

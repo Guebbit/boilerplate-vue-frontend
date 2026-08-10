@@ -147,7 +147,7 @@ import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useOrdersStore } from '@/features/orders/store.ts';
+import { useOrdersStore } from '../store';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { Download, ShoppingCart } from 'lucide-vue-next';
 import ItemDetailField from '@/components/molecules/ItemDetailField.vue';

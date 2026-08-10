@@ -66,11 +66,11 @@ import { z } from 'zod';
 import { Eye, EyeOff } from 'lucide-vue-next';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
-import { usersSchema } from '@/features/users/schemas.ts';
+import { usersSchema } from '@/features/users';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { notifyErrorMessages, focusFirstErrorField } from '@/utils/errors.ts';
 import { routerLinkI18n } from '@/utils/i18n.ts';
-import type { LoginRequest } from '@api';
+import type { LoginRequest } from '@types';
 
 /**
  * UI logics

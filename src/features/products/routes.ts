@@ -5,7 +5,7 @@ export default [
     {
         path: 'products',
         name: 'ProductsList',
-        component: () => import('@/features/products/views/ProductsList.vue')
+        component: () => import('./views/ProductsList.vue')
     },
     {
         // Declared before `products/:id` so the intent is obvious at a glance. vue-router ranks
@@ -15,19 +15,19 @@ export default [
         path: 'products/create',
         name: 'ProductCreate',
         beforeEnter: [isAdmin],
-        component: () => import('@/features/products/views/ProductCreate.vue')
+        component: () => import('./views/ProductCreate.vue')
     },
     {
         path: 'products/:id',
         name: 'ProductTarget',
-        component: () => import('@/features/products/views/Product.vue'),
+        component: () => import('./views/Product.vue'),
         props: true
     },
     {
         path: 'products/:id/edit',
         name: 'ProductEdit',
         beforeEnter: [isAdmin],
-        component: () => import('@/features/products/views/ProductEdit.vue'),
+        component: () => import('./views/ProductEdit.vue'),
         props: true
     }
 ] as RouteRecordRaw[];

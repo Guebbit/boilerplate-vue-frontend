@@ -216,6 +216,8 @@ Key principles:
 - **Interceptors own error shape.** Every HTTP error becomes an `IResponseReject` envelope.
 - **Mocks are toggled by env.** MSW activates only when `VITE_API_MOCK_ENABLED=true`.
 - **Single observability store.** Grafana Faro and Umami are consolidated in `src/stores/observability.ts`; never scatter vendor calls into components.
+- **Feature public API only.** Cross-feature imports go through `@/features/<feature>`; deep imports are blocked.
+- **No API in views.** Views/pages never import `@api` directly; API orchestration stays in stores/composables.
 
 ---
 
@@ -224,12 +226,16 @@ Key principles:
 ```text
 src/
 ├── components/      reusable UI components (atoms/molecules/organisms)
-├── features/        feature modules (account, admin, cart, orders, products, realtime, users)
+├── entities/        reusable domain transformations (analytics payload mappers, domain helpers)
+├── features/        feature modules (account, admin, cart, checkout, orders, products, realtime, users)
 │   └── <feature>/
+│       ├── index.ts       public API entry for cross-feature imports
 │       ├── components/
 │       ├── composables/
 │       ├── views/
 │       ├── routes.ts
+│       ├── store.ts
+│       ├── schemas.ts
 │       └── types.ts
 ├── layouts/         page layout shells (LayoutDefault.vue)
 ├── locales/         vue-i18n messages
@@ -257,6 +263,11 @@ openapi.yaml         API contract (source of truth)
 asyncapi.yaml        Realtime contract (source of truth)
 spectral.yaml        OpenAPI lint rules
 ```
+
+Architecture quality gates:
+
+- `npm run lint` → eslint + architecture coupling checks
+- `npm run lint:architecture` → feature coupling report + deep-import boundary gate
 
 ---
 

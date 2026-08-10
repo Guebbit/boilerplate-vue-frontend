@@ -11,7 +11,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Search, UserPlus } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useUsersStore } from '@/features/users/store';
+import { useUsersStore } from '../store';
 import { notifyErrorMessages } from '@/utils/errors.ts';
 import type { User } from '@types';
 

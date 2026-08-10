@@ -18,6 +18,7 @@ import {
     updateUserById as apiUpdateUserById
 } from '@api';
 import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
+import { buildEmailAuthPayload } from '@/entities/user';
 
 /**
  * Narrows any value to a plain keyed object.
@@ -130,7 +131,7 @@ export const useProfileStore = defineStore('profile', () => {
                 })
                 .then(() => {
                     const obs = useObservabilityStore();
-                    obs.track(analyticsEvents.USER_LOGGED_IN, { method: 'email' });
+                    obs.track(analyticsEvents.USER_LOGGED_IN, buildEmailAuthPayload());
                     return fetchProfile(true);
                 })
         );
@@ -181,7 +182,7 @@ export const useProfileStore = defineStore('profile', () => {
                 : apiSignup({ email, username, password, passwordConfirm }, options)
             ).then(() => {
                 const obs = useObservabilityStore();
-                obs.track(analyticsEvents.USER_SIGNED_UP, { method: 'email' });
+                obs.track(analyticsEvents.USER_SIGNED_UP, buildEmailAuthPayload());
             })
         );
 

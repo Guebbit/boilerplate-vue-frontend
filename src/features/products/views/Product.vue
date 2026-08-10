@@ -119,7 +119,7 @@ import { computed } from 'vue';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { useProductsStore } from '@/features/products/store';
+import { useProductsStore } from '../store';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { Package } from 'lucide-vue-next';
 import ItemDetailField from '@/components/molecules/ItemDetailField.vue';

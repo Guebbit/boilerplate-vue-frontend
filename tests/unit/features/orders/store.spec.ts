@@ -1,12 +1,8 @@
 /**
  * Unit tests for the orders store.
  *
- * Two things here are this repo's own logic rather than the toolkit's: `checkout`, which reads
- * the created order out of a nested envelope to emit an analytics event, and `downloadInvoice`,
- * which is the one call whose payload is a binary Blob rather than a JSON envelope.
- *
- * The checkout event reads `response.data.order.*`. That path is optional all the way down, so a
- * shape change would silently emit an event with undefined fields instead of failing.
+ * The only non-trivial path here is `downloadInvoice`, whose payload is a raw
+ * binary blob rather than a JSON envelope.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
@@ -18,17 +14,8 @@ import {
     createOrder as apiCreateOrder,
     updateOrderById,
     deleteOrderById,
-    checkout as apiCheckout,
     getOrderInvoice
 } from '@api';
-import { analyticsEvents } from '@/stores/observability';
-
-const track = vi.fn();
-
-vi.mock('@/stores/observability', () => ({
-    useObservabilityStore: () => ({ track }),
-    analyticsEvents: { CHECKOUT_COMPLETED: 'checkout_completed' }
-}));
 
 const ORDER = {
     id: 'o1',
@@ -49,7 +36,6 @@ vi.mock('@api', () => ({
     createOrder: vi.fn(() => Promise.resolve({ data: ORDER })),
     updateOrderById: vi.fn(() => Promise.resolve({ data: ORDER })),
     deleteOrderById: vi.fn(() => Promise.resolve({ data: undefined })),
-    checkout: vi.fn(() => Promise.resolve({ data: { order: ORDER } })),
     getOrderInvoice: vi.fn(() => Promise.resolve(INVOICE))
 }));
 
@@ -108,33 +94,6 @@ describe('useOrdersStore', () => {
                 .updateOrder('o1', { status: 'shipped' })
                 .then(() => {
                     expect(updateOrderById).toHaveBeenCalledWith('o1', { status: 'shipped' });
-                }));
-    });
-
-    describe('checkout', () => {
-        it('calls the endpoint with no payload when none is given', () =>
-            useOrdersStore()
-                .checkout()
-                .then(() => {
-                    expect(apiCheckout).toHaveBeenCalledWith(undefined);
-                }));
-
-        it('returns the checkout envelope, order included', () =>
-            useOrdersStore()
-                .checkout({ notes: 'leave at door' })
-                .then((result) => {
-                    expect(apiCheckout).toHaveBeenCalledWith({ notes: 'leave at door' });
-                    expect(result).toEqual({ order: ORDER });
-                }));
-
-        it('tracks the created order id and total, read from the nested envelope', () =>
-            useOrdersStore()
-                .checkout()
-                .then(() => {
-                    expect(track).toHaveBeenCalledWith(analyticsEvents.CHECKOUT_COMPLETED, {
-                        order_id: 'o1',
-                        total_price: 19.98
-                    });
                 }));
     });
 

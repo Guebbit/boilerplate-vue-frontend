@@ -7,36 +7,36 @@ export default [
         path: 'login',
         name: 'Login',
         beforeEnter: [isGuest],
-        component: () => import('@/features/account/views/Login.vue')
+        component: () => import('./views/Login.vue')
     },
     {
         path: 'signup',
         name: 'Signup',
         beforeEnter: [isGuest],
-        component: () => import('@/features/account/views/Signup.vue')
+        component: () => import('./views/Signup.vue')
     },
     {
         path: 'password-reset',
         name: 'PasswordResetRequest',
         beforeEnter: [isGuest],
-        component: () => import('@/features/account/views/PasswordResetRequest.vue')
+        component: () => import('./views/PasswordResetRequest.vue')
     },
     {
         path: 'password-reset/confirm',
         name: 'PasswordResetConfirm',
         beforeEnter: [isGuest],
-        component: () => import('@/features/account/views/PasswordResetConfirm.vue')
+        component: () => import('./views/PasswordResetConfirm.vue')
     },
     {
         path: 'account-delete/confirm',
         name: 'AccountDeleteConfirm',
-        component: () => import('@/features/account/views/AccountDeleteConfirm.vue')
+        component: () => import('./views/AccountDeleteConfirm.vue')
     },
     {
         path: 'profile',
         name: 'Profile',
         beforeEnter: [isAuth],
-        component: () => import('@/features/account/views/Profile.vue')
+        component: () => import('./views/Profile.vue')
     },
     {
         path: 'logout',

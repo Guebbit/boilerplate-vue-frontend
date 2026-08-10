@@ -25,7 +25,8 @@ added by compose so the published port is actually reachable.
 | Script | Job | Read more |
 | ------ | --- | --------- |
 | `build` | `vue-tsc` type-check + Vite production build | [Runtime](./runtime.md) |
-| `lint` / `lint:fix` | ESLint check or autofix | [Testing](./testing-and-docs.md) |
+| `lint` / `lint:eslint` / `lint:fix` | Lint gate (`lint` runs eslint + architecture checks; `lint:eslint` runs eslint only; `lint:fix` autofixes eslint issues) | [Testing](./testing-and-docs.md) |
+| `lint:architecture` | Feature coupling report + boundary gate (fails on deep feature imports) | [Theory](../theory/) |
 | `lint:openapi` | Lint `openapi.yaml` with Spectral | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | `prettier` / `prettier:fix` | Prettier check or rewrite | [Testing](./testing-and-docs.md) |
 | `complete` | build + lint:fix + lint:openapi + prettier:fix + tests (local hardening) | [Testing](./testing-and-docs.md) |

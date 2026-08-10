@@ -6,6 +6,6 @@ export default [
         path: 'admin',
         name: 'Admin',
         beforeEnter: [isAdmin],
-        component: () => import('@/features/admin/views/Admin.vue')
+        component: () => import('./views/Admin.vue')
     }
 ] as RouteRecordRaw[];

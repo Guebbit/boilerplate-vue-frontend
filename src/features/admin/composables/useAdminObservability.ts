@@ -2,10 +2,12 @@ import { ref, type Ref } from 'vue';
 import {
     getObservabilityHealth,
     getObservabilityMetricsOverview,
-    getObservabilityAuditLogs
+    getObservabilityAuditLogs,
+    deleteExpiredTokens
 } from '@api';
 import type { ObservabilityHealth, ObservabilityMetricsSummary, AuditEventItem } from '@types';
-import type { IAdminAuditFilters } from '@/features/admin/types.ts';
+import { useObservabilityStore } from '@/stores/observability';
+import type { IAdminAuditFilters } from '../types';
 
 export interface IUseAdminObservabilityReturn {
     health: Ref<ObservabilityHealth | undefined>;
@@ -22,6 +24,7 @@ export interface IUseAdminObservabilityReturn {
     fetchMetrics: () => Promise<void>;
     fetchAuditLogs: (filters?: IAdminAuditFilters) => Promise<void>;
     fetchAll: () => Promise<void>;
+    clearExpiredTokens: () => Promise<boolean>;
 }
 
 /**
@@ -39,6 +42,7 @@ export interface IUseAdminObservabilityReturn {
  *  renders.
  */
 export const useAdminObservability = (): IUseAdminObservabilityReturn => {
+    const { captureException } = useObservabilityStore();
     const health = ref<ObservabilityHealth | undefined>(undefined);
     const metrics = ref<ObservabilityMetricsSummary | undefined>(undefined);
     const auditEvents = ref<AuditEventItem[]>([]);
@@ -134,6 +138,21 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
     const fetchAll = () =>
         Promise.all([fetchHealth(), fetchMetrics(), fetchAuditLogs()]).then(() => {});
 
+    /*
+     * Purge expired refresh tokens from the backend.
+     *
+     * @returns A promise resolving to `true` on success, `false` on failure.
+     */
+    const clearExpiredTokens = () =>
+        deleteExpiredTokens()
+            .then(() => true)
+            .catch((error: unknown) => {
+                captureException(error, {
+                    data: { source: 'useAdminObservability.clearExpiredTokens' }
+                });
+                return false;
+            });
+
     return {
         health,
         metrics,
@@ -148,6 +167,7 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
         fetchHealth,
         fetchMetrics,
         fetchAuditLogs,
-        fetchAll
+        fetchAll,
+        clearExpiredTokens
     };
 };

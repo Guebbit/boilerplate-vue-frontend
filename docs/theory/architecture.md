@@ -49,6 +49,18 @@ flowchart TD
 | Router + I18N | navigation, locale injection, route guards | deep business decisions |
 | Observability | error capture + tracing (Grafana Faro) and analytics (Umami) via a single store | scattered vendor calls |
 
+## Layer model used for feature growth
+
+The repo enforces a domain/feature-first shape with five explicit layers:
+
+- **app**: bootstrap/runtime wiring (`main.ts`, router, middlewares, plugin setup)
+- **shared**: reusable UI + utilities (`components`, `layouts`, `utils`, styles)
+- **entities**: reusable business transformations (`src/entities`)
+- **features**: domain modules (`src/features/<feature>`)
+- **pages**: top-level route pages (`src/views`)
+
+Dependency direction is one-way: app/pages/features can depend downward, never upward.
+
 ## Why this page exists next to Layers
 
 - **Architecture** answers: "which major blocks talk to each other?"
@@ -68,6 +80,8 @@ The [Layers](./layers.md) page maps each block to an exact folder.
 - **DRY**: shared logic belongs in stores, composables, or utilities.
 - **KISS**: keep flows boring and predictable.
 - **OpenAPI first**: never hand-write what can be generated from the spec.
+- **Public feature API**: cross-feature imports use `@/features/<feature>` only.
+- **No API in views**: pages/views must delegate API calls to feature stores or composables.
 
 ## Related pages
 

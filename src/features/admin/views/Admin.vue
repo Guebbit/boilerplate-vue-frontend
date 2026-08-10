@@ -3,13 +3,12 @@ import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Trash2 } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useAdminObservability } from '@/features/admin/composables/useAdminObservability.ts';
-import type { AdminTabKey } from '@/features/admin/types.ts';
-import { deleteExpiredTokens } from '@api';
+import { useAdminObservability } from '../composables/useAdminObservability';
+import type { AdminTabKey } from '../types';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import AdminOverviewTab from '@/features/admin/components/AdminOverviewTab.vue';
-import AdminAuditTab from '@/features/admin/components/AdminAuditTab.vue';
+import AdminOverviewTab from '../components/AdminOverviewTab.vue';
+import AdminAuditTab from '../components/AdminAuditTab.vue';
 
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
@@ -29,7 +28,8 @@ const {
     errorMetrics,
     errorAudit,
     fetchAll,
-    fetchAuditLogs
+    fetchAuditLogs,
+    clearExpiredTokens: clearExpiredTokensApi
 } = useAdminObservability();
 
 /**
@@ -53,9 +53,14 @@ const clearExpiredTokens = () => {
     const shouldContinue = globalThis.confirm(t('admin-page.confirm-clear-expired-tokens'));
     if (!shouldContinue) return;
     cleaningExpiredTokens.value = true;
-    return deleteExpiredTokens()
-        .then(() => addMessage(t('admin-page.success-clear-expired-tokens')))
-        .catch(() => addMessage(t('admin-page.error-clear-expired-tokens')))
+    return clearExpiredTokensApi()
+        .then((wasSuccessful) =>
+            addMessage(
+                wasSuccessful
+                    ? t('admin-page.success-clear-expired-tokens')
+                    : t('admin-page.error-clear-expired-tokens')
+            )
+        )
         .finally(() => {
             cleaningExpiredTokens.value = false;
         });
