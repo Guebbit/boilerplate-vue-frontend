@@ -24,7 +24,7 @@ describe('CounterInput component UNIT TEST', () => {
         expect((mountedComponent.find('input').element as HTMLInputElement).value).toBe('5');
     });
 
-    it('Expect 2 <= X <= 9', async () => {
+    it('Expect 2 <= X <= 9', () => {
         const mountedComponent = mountCounter({ modelValue: 8, min: 2, max: 9 });
 
         // find elements
@@ -33,34 +33,44 @@ describe('CounterInput component UNIT TEST', () => {
         const inputElement = mountedComponent.find('input').element as HTMLInputElement;
 
         // the split controls step on pointerdown (hold-to-repeat)
-        const press = async (button: typeof addButtonElement) => {
-            await button.trigger('pointerdown');
-            await button.trigger('pointerup');
-            await mountedComponent.vm.$nextTick();
-        };
+        const press = (button: typeof addButtonElement) =>
+            button
+                .trigger('pointerdown')
+                .then(() => button.trigger('pointerup'))
+                .then(() => mountedComponent.vm.$nextTick());
 
         // Start adding and subtracting
         expect(inputElement.value).toBe('8');
-        await press(addButtonElement);
-        expect(inputElement.value).toBe('9');
+        return press(addButtonElement)
+            .then(() => {
+                expect(inputElement.value).toBe('9');
 
-        // capped at max: the increment button is disabled
-        expect(addButtonElement.attributes('disabled')).toBeDefined();
-        await press(addButtonElement);
-        expect(inputElement.value).toBe('9');
+                // capped at max: the increment button is disabled
+                expect(addButtonElement.attributes('disabled')).toBeDefined();
+                return press(addButtonElement);
+            })
+            .then(() => {
+                expect(inputElement.value).toBe('9');
 
-        // set value to 3
-        await mountedComponent.setProps({ modelValue: 3 });
-        await mountedComponent.vm.$nextTick();
-        expect(inputElement.value).toBe('3');
+                // set value to 3
+                return mountedComponent.setProps({ modelValue: 3 });
+            })
+            .then(() => mountedComponent.vm.$nextTick())
+            .then(() => {
+                expect(inputElement.value).toBe('3');
 
-        // start subtracting
-        await press(subButtonElement);
-        expect(inputElement.value).toBe('2');
+                // start subtracting
+                return press(subButtonElement);
+            })
+            .then(() => {
+                expect(inputElement.value).toBe('2');
 
-        // capped at min: the decrement button is disabled
-        expect(subButtonElement.attributes('disabled')).toBeDefined();
-        await press(subButtonElement);
-        expect(inputElement.value).toBe('2');
+                // capped at min: the decrement button is disabled
+                expect(subButtonElement.attributes('disabled')).toBeDefined();
+                return press(subButtonElement);
+            })
+            .then(() => {
+                expect(inputElement.value).toBe('2');
+            });
     });
 });

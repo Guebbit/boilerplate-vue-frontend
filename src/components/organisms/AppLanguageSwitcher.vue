@@ -55,11 +55,11 @@ const { isAuth } = storeToRefs(useProfileStore());
  * @returns A promise resolving once the router settles: on the same route with
  *  the new locale, or on `/` (locale recalculated) if that navigation fails.
  */
-async function switchLanguage(newLocale: string) {
-    // if logged in, change user language
-    if (isAuth.value) await updateProfileLanguage(newLocale);
-    // change language
-    return (
+function switchLanguage(newLocale: string) {
+    // if logged in, change user language first, so the persisted preference and the active
+    // locale can never disagree if the route change below fails
+    return Promise.resolve(isAuth.value ? updateProfileLanguage(newLocale) : undefined).then(() =>
+        // change language
         changeLanguage(newLocale)
             // then change route, according to new Locale
             .then(() =>

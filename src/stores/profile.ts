@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
+import type { AxiosRequestConfig } from 'axios';
 import { i18n } from '@/utils/i18n.ts';
 import type { User } from '@types';
 import {
@@ -9,6 +10,7 @@ import {
     confirmAccountDelete as apiConfirmAccountDelete,
     login as apiLogin,
     signup as apiSignup,
+    signupWithMultipart,
     requestPasswordReset as apiRequestPasswordReset,
     confirmPasswordReset as apiConfirmPasswordReset,
     refreshToken as apiRefreshToken,
@@ -134,25 +136,50 @@ export const useProfileStore = defineStore('profile', () => {
         );
 
     /**
-     * Registers a new user account.
+     * Registers a new user account, as multipart when a profile image is attached
+     * and as plain JSON otherwise.
      *
      * The backend does not auto-login on signup: the user must confirm their
      * email address and then log in separately, so no token/session is set here.
      *
-     * @param email - Account email, also the confirmation target.
-     * @param password - Chosen password.
-     * @param username - Display name. Defaults to `email`.
-     * @param passwordConfirm - Confirmation field. Defaults to `password`.
+     * Takes its fields as one object rather than positionally, matching
+     * `createUser` / `createProduct`. Positionally this reached six arguments,
+     * two of them defaulted from earlier ones — an arity at which a caller can
+     * transpose `imageUpload` and `options`, or forget that `passwordConfirm`
+     * defaults from `password` while `username` defaults from `email`, with
+     * nothing but argument order to catch it.
+     *
+     * @param credentials - Account fields. `username` defaults to `email` and
+     *  `passwordConfirm` to `password`; an `imageUpload` switches the call to
+     *  `multipart/form-data`.
+     * @param options - Per-call axios overrides, forwarded to `orvalMutator` —
+     *  `Signup.vue` passes `onUploadProgress` through it.
      * @returns A promise resolving once the account has been created.
      */
     const signup = (
-        email: string,
-        password: string,
-        username = email,
-        passwordConfirm = password
+        {
+            email,
+            password,
+            username = email,
+            passwordConfirm = password,
+            imageUpload
+        }: {
+            email: string;
+            password: string;
+            username?: string;
+            passwordConfirm?: string;
+            imageUpload?: File;
+        },
+        options?: AxiosRequestConfig
     ) =>
         fetchAny(() =>
-            apiSignup({ email, username, password, passwordConfirm }).then(() => {
+            (imageUpload
+                ? signupWithMultipart(
+                      { email, username, password, passwordConfirm, imageUpload },
+                      options
+                  )
+                : apiSignup({ email, username, password, passwordConfirm }, options)
+            ).then(() => {
                 const obs = useObservabilityStore();
                 obs.track(analyticsEvents.USER_SIGNED_UP, { method: 'email' });
             })

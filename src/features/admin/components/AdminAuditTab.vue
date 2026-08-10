@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
+import TableLoadingBar from '@/components/molecules/TableLoadingBar.vue';
 import { Search } from 'lucide-vue-next';
 import type { AuditEventItem } from '@types';
 import type { IAdminAuditFilters } from '@/features/admin/types.ts';
@@ -165,6 +166,11 @@ const formatDate = (iso: string) => {
             hide-default-footer
             class="rounded-xl border"
         >
+            <!-- Replaces Vuetify's unnamed internal bar — see `TableLoadingBar` for why. -->
+            <template #loader>
+                <TableLoadingBar />
+            </template>
+
             <template v-slot:[`item.timestamp`]="{ item }">
                 <span class="whitespace-nowrap">{{ formatDate(item.timestamp) }}</span>
             </template>

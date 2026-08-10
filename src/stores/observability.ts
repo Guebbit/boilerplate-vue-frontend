@@ -11,8 +11,9 @@
  * Consolidating both into a single reactive store eliminates module-level
  * singletons and init-order issues.
  *
- * Consumers use the `useObservability()` composable in components,
- * or access this store directly in non-setup contexts (stores, router, etc.).
+ * Consumers call `useObservabilityStore()` — in components and equally in
+ * non-setup contexts (stores, router, etc.), as long as the call is inside a
+ * function rather than at module level.
  */
 
 import { defineStore } from 'pinia';
@@ -43,7 +44,7 @@ export interface IFaroConfig {
 }
 
 export interface IUmamiConfig {
-    /** Umami tracker script URL (e.g. http://localhost:8090/script.js). */
+    /** Umami tracker script URL (e.g. http://localhost:3080/script.js). */
     src: string;
     websiteId: string;
 }
@@ -132,7 +133,7 @@ function readUmamiConfig(): IUmamiConfig | undefined {
     return {
         src:
             (import.meta.env.VITE_UMAMI_SRC as string | undefined)?.trim() ||
-            'http://localhost:8090/script.js',
+            'http://localhost:3080/script.js',
         websiteId
     };
 }

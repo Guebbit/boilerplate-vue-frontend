@@ -2,7 +2,7 @@ import { storeToRefs } from 'pinia';
 import { i18n } from '@/utils/i18n.ts';
 import { useCounterStore } from '@/stores/counter';
 
-import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router';
+import type { RouteLocationNormalized } from 'vue-router';
 
 /**
  * DUMMY guard showing what is (and isn't) reachable from a global route guard.
@@ -13,15 +13,12 @@ import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router';
  * WARNING: CAN'T USE injected variables, because guards DON'T have access to
  * the component scope, they are not part of the "tree".
  *
+ * Returns nothing (rather than calling a `next()` callback) to let the navigation through: the
+ * callback style is deprecated in Vue Router 4 and warns on every hit.
+ *
  * @param to - Route being entered; its path is fed to a demo translation.
- * @param from - Route being left (unused, kept for the guard signature).
- * @param next - Navigation callback, always called to let the route through.
  */
-export const demoMiddleware = (
-    to: RouteLocationNormalized,
-    from: RouteLocationNormalized,
-    next: NavigationGuardNext
-) => {
+export const demoMiddleware = (to: RouteLocationNormalized) => {
     /**
      * Can use the store
      */
@@ -37,6 +34,4 @@ export const demoMiddleware = (
     const { t, locale } = i18n.global;
     // eslint-disable-next-line no-console
     console.log('locale (will not work): ' + locale.value, t('generic.loading', { load: to.path }));
-
-    next();
 };

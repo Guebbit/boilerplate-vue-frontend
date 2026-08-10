@@ -18,6 +18,8 @@ import {
     getQueryParameters,
     mockDatabase,
     readRequestBody,
+    readRequestParts,
+    resolveMockImageUrl,
     slicePaginatedData,
     toBooleanOrUndefined,
     toNumberOrDefault,
@@ -70,76 +72,91 @@ const replyUsersList = (
 
 export const registerUsersMockHandlers = (): HttpHandler[] => [
     http.get(`${API_BASE}/users`, ({ request }) => replyUsersList(request.url, ListUsersResponse)),
-    http.post(`${API_BASE}/users`, async ({ request }) => {
-        const requestBody = await readRequestBody<Record<string, unknown>>(request);
-        const createdUser: User = {
-            id: `user-${Date.now()}`,
-            email: String(requestBody.email ?? 'created.user@example.com'),
-            username: String(requestBody.username ?? 'created-user'),
-            admin: Boolean(requestBody.admin),
-            active: requestBody.active === undefined ? true : Boolean(requestBody.active),
-            imageUrl: undefined,
-            createdAt: getIsoDateNow(),
-            updatedAt: getIsoDateNow()
-        };
+    http.post(`${API_BASE}/users`, ({ request }) =>
+        readRequestParts<Record<string, unknown>>(request).then(
+            ({ fields: requestBody, files }) => {
+                const createdUser: User = {
+                    id: `user-${Date.now()}`,
+                    email: String(requestBody.email ?? 'created.user@example.com'),
+                    username: String(requestBody.username ?? 'created-user'),
+                    admin: Boolean(requestBody.admin),
+                    active: requestBody.active === undefined ? true : Boolean(requestBody.active),
+                    imageUrl: resolveMockImageUrl(files),
+                    createdAt: getIsoDateNow(),
+                    updatedAt: getIsoDateNow()
+                };
 
-        mockDatabase.sampleUsers.unshift(createdUser);
-        return toMockJsonResponse(createSuccessEnvelope(createdUser), {
-            status: 201,
-            schema: CreateUserResponse
-        });
-    }),
-    http.put(`${API_BASE}/users`, async ({ request }) => {
-        const requestBody = await readRequestBody<Record<string, unknown>>(request);
-        const targetId = String(requestBody.id ?? mockDatabase.currentAuthenticatedUserId);
-        const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === targetId);
+                mockDatabase.sampleUsers.unshift(createdUser);
+                return toMockJsonResponse(createSuccessEnvelope(createdUser), {
+                    status: 201,
+                    schema: CreateUserResponse
+                });
+            }
+        )
+    ),
+    http.put(`${API_BASE}/users`, ({ request }) =>
+        readRequestParts<Record<string, unknown>>(request).then(
+            ({ fields: requestBody, files }) => {
+                const targetId = String(requestBody.id ?? mockDatabase.currentAuthenticatedUserId);
+                const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === targetId);
 
-        if (targetIndex === -1)
-            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'User not found'), {
-                status: 404,
-                schema: MockErrorResponse
+                if (targetIndex === -1)
+                    return toMockJsonResponse(
+                        createErrorEnvelope(404, 'NOT_FOUND', 'User not found'),
+                        {
+                            status: 404,
+                            schema: MockErrorResponse
+                        }
+                    );
+
+                const updatedUser: User = {
+                    ...mockDatabase.sampleUsers[targetIndex],
+                    email: requestBody.email
+                        ? String(requestBody.email)
+                        : mockDatabase.sampleUsers[targetIndex].email,
+                    username: requestBody.username
+                        ? String(requestBody.username)
+                        : mockDatabase.sampleUsers[targetIndex].username,
+                    active:
+                        requestBody.active === undefined
+                            ? mockDatabase.sampleUsers[targetIndex].active
+                            : Boolean(requestBody.active),
+                    imageUrl: resolveMockImageUrl(
+                        files,
+                        mockDatabase.sampleUsers[targetIndex].imageUrl
+                    ),
+                    updatedAt: getIsoDateNow()
+                };
+
+                mockDatabase.sampleUsers[targetIndex] = updatedUser;
+                return toMockJsonResponse(createSuccessEnvelope(updatedUser), {
+                    schema: UpdateUserResponse
+                });
+            }
+        )
+    ),
+    http.delete(`${API_BASE}/users`, ({ request }) =>
+        readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
+            const targetId = String(requestBody.id ?? '');
+            const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === targetId);
+
+            if (targetIndex === -1)
+                return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'User not found'), {
+                    status: 404,
+                    schema: MockErrorResponse
+                });
+
+            mockDatabase.sampleUsers.splice(targetIndex, 1);
+            return toMockJsonResponse(createMessageResponse('User deleted'), {
+                schema: DeleteUserResponse
             });
-
-        const updatedUser: User = {
-            ...mockDatabase.sampleUsers[targetIndex],
-            email: requestBody.email
-                ? String(requestBody.email)
-                : mockDatabase.sampleUsers[targetIndex].email,
-            username: requestBody.username
-                ? String(requestBody.username)
-                : mockDatabase.sampleUsers[targetIndex].username,
-            active:
-                requestBody.active === undefined
-                    ? mockDatabase.sampleUsers[targetIndex].active
-                    : Boolean(requestBody.active),
-            updatedAt: getIsoDateNow()
-        };
-
-        mockDatabase.sampleUsers[targetIndex] = updatedUser;
-        return toMockJsonResponse(createSuccessEnvelope(updatedUser), {
-            schema: UpdateUserResponse
-        });
-    }),
-    http.delete(`${API_BASE}/users`, async ({ request }) => {
-        const requestBody = await readRequestBody<Record<string, unknown>>(request);
-        const targetId = String(requestBody.id ?? '');
-        const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === targetId);
-
-        if (targetIndex === -1)
-            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'User not found'), {
-                status: 404,
-                schema: MockErrorResponse
-            });
-
-        mockDatabase.sampleUsers.splice(targetIndex, 1);
-        return toMockJsonResponse(createMessageResponse('User deleted'), {
-            schema: DeleteUserResponse
-        });
-    }),
-    http.post(`${API_BASE}/users/search`, async ({ request }) => {
-        const requestBody = await readRequestBody<Record<string, unknown>>(request);
-        return replyUsersList(request.url, SearchUsersResponse, requestBody);
-    }),
+        })
+    ),
+    http.post(`${API_BASE}/users/search`, ({ request }) =>
+        readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
+            return replyUsersList(request.url, SearchUsersResponse, requestBody);
+        })
+    ),
     http.get(`${API_BASE}/users/:userId`, ({ params }) => {
         const userId = String(params.userId);
         const targetUser = mockDatabase.sampleUsers.find((user) => user.id === userId);
@@ -154,7 +171,7 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
             schema: GetUserByIdResponse
         });
     }),
-    http.put(`${API_BASE}/users/:userId`, async ({ request, params }) => {
+    http.put(`${API_BASE}/users/:userId`, ({ request, params }) => {
         const userId = String(params.userId);
         const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === userId);
 
@@ -163,23 +180,29 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
                 status: 404,
                 schema: MockErrorResponse
             });
+        return readRequestParts<Record<string, unknown>>(request).then(
+            ({ fields: requestBody, files }) => {
+                const updatedUser: User = {
+                    ...mockDatabase.sampleUsers[targetIndex],
+                    email: requestBody.email
+                        ? String(requestBody.email)
+                        : mockDatabase.sampleUsers[targetIndex].email,
+                    username: requestBody.username
+                        ? String(requestBody.username)
+                        : mockDatabase.sampleUsers[targetIndex].username,
+                    imageUrl: resolveMockImageUrl(
+                        files,
+                        mockDatabase.sampleUsers[targetIndex].imageUrl
+                    ),
+                    updatedAt: getIsoDateNow()
+                };
 
-        const requestBody = await readRequestBody<Record<string, unknown>>(request);
-        const updatedUser: User = {
-            ...mockDatabase.sampleUsers[targetIndex],
-            email: requestBody.email
-                ? String(requestBody.email)
-                : mockDatabase.sampleUsers[targetIndex].email,
-            username: requestBody.username
-                ? String(requestBody.username)
-                : mockDatabase.sampleUsers[targetIndex].username,
-            updatedAt: getIsoDateNow()
-        };
-
-        mockDatabase.sampleUsers[targetIndex] = updatedUser;
-        return toMockJsonResponse(createSuccessEnvelope(updatedUser), {
-            schema: UpdateUserByIdResponse
-        });
+                mockDatabase.sampleUsers[targetIndex] = updatedUser;
+                return toMockJsonResponse(createSuccessEnvelope(updatedUser), {
+                    schema: UpdateUserByIdResponse
+                });
+            }
+        );
     }),
     http.delete(`${API_BASE}/users/:userId`, ({ params }) => {
         const userId = String(params.userId);

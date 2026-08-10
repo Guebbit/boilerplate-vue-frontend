@@ -111,6 +111,60 @@ jobs:
             - name: Lint OpenAPI spec
               run: npm run lint:openapi
 
+    lint-asyncapi:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Lint AsyncAPI spec
+              run: npm run lint:asyncapi
+
+    asyncapi-types-freshness:
+        # Verify the committed generated AsyncAPI types are up-to-date with asyncapi.yaml.
+        # Mirrors the backend's job of the same name — asyncapi.yaml is kept byte-identical
+        # between the two repos by hand, and this is the within-repo half of that guard:
+        # it cannot detect cross-repo drift, only a spec edited without regenerating here.
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Check generated AsyncAPI types are fresh
+              run: |
+                  npm run genasyncapi
+                  npx prettier --write src/types/realtime.generated.ts
+                  if ! git diff --exit-code -- src/types/realtime.generated.ts; then
+                      echo "Generated src/types/realtime.generated.ts is stale. Run 'npm run genasyncapi && npm run prettier:fix' and commit the changes."
+                      exit 1
+                  fi
+
     audit:
         # Scoped to the production dependency tree only: devDependencies (build
         # tooling, codegen, test runners, etc.) are never shipped to users, so a
@@ -160,10 +214,27 @@ jobs:
               run: npm ci
 
             - name: Check generated API client is fresh
+              # The pathspec must list every orval output in orval.config.ts. It previously
+              # read `api/` — a directory this repo has never had — so `git diff` matched
+              # nothing, exited 0, and the job passed without checking anything from the day
+              # it was written. If you add or retarget an output block in orval.config.ts,
+              # update this list in the same commit.
               run: |
                   npm run genapi
-                  if ! git diff --exit-code -- api/; then
-                      echo "Generated api/ is stale. Run 'npm run genapi' and commit the changes."
+                  # orval emits 2-space indentation; this repo's prettier config uses 4, and
+                  # the committed output is formatted. Without this normalisation step the
+                  # diff below is thousands of lines of pure indentation on every run.
+                  npx prettier --write contracts/ tests/mocks/generated.ts
+                  if ! git diff --exit-code -- contracts/ tests/mocks/generated.ts; then
+                      echo "Generated API client is stale. Run 'npm run genapi && npm run prettier:fix' and commit the changes."
+                      exit 1
+                  fi
+                  # `git diff` only sees tracked files, so a brand-new generated output would
+                  # slip through as untracked. Catch that too.
+                  if [ -n "$(git status --porcelain -- contracts/ tests/mocks/generated.ts)" ]; then
+                      echo "Codegen produced untracked files under contracts/ or tests/mocks/:"
+                      git status --porcelain -- contracts/ tests/mocks/generated.ts
+                      echo "Run 'npm run genapi' and commit the changes."
                       exit 1
                   fi
 
@@ -245,6 +316,64 @@ jobs:
                   path: coverage/
                   retention-days: 14
 
+    spec-identity:
+        # The cross-repo contract gate.
+        #
+        # openapi.yaml, asyncapi.yaml and spectral.yaml exist in BOTH repos, byte-identical,
+        # maintained by hand — and until this job existed, checked by nothing. Every other spec job
+        # here lints THIS repo's copy and passes, because a forked spec is still a valid spec. What
+        # nobody could see was the fork itself.
+        #
+        # The sibling is checked out read-only, at its default branch: the question is whether this
+        # PR agrees with what the backend has actually shipped, not with some pinned older copy.
+        #
+        # A fork in the pair is a genuine failure, but an unreachable sibling is an infrastructure
+        # problem — so `checkout` is allowed to fail and the step below says which of the two
+        # happened. A copy of this boilerplate that has no paired backend should delete this job
+        # rather than watch it fail forever.
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Checkout paired backend
+              id: sibling
+              continue-on-error: true
+              uses: actions/checkout@v4
+              with:
+                  # Override with a repository variable when the pair lives elsewhere.
+                  repository: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
+                  path: .spec-sibling
+                  # Only needed when the sibling is private; falls back to this repo's token.
+                  token: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
+
+            - name: Report an unreachable sibling
+              if: steps.sibling.outcome == 'failure'
+              run: |
+                  echo "::error::Could not check out the paired backend "\
+                  "(${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}). "\
+                  "Set the SPEC_SIBLING_REPO variable, add a SPEC_SIBLING_TOKEN secret if it is "\
+                  "private, or delete this job if this copy has no paired backend."
+                  exit 1
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Compare the shared contract files
+              env:
+                  BACKEND_PATH: .spec-sibling
+              run: npm run check:spec-identity
+
     test-e2e:
         runs-on: ubuntu-latest
         timeout-minutes: 20
@@ -297,16 +426,24 @@ jobs:
         # Single status check to require in branch protection, so adding/renaming
         # jobs above doesn't require updating the required-checks list every time.
         if: always()
+        # Every job above belongs in this list. `commitlint` only runs on push
+        # (see its `if:`), so on pull requests it reports `skipped` — which is
+        # neither `failure` nor `cancelled`, so listing it here is safe and does
+        # not block PRs.
         needs:
+            - commitlint
             - lint
             - prettier
             - lint-openapi
+            - lint-asyncapi
+            - asyncapi-types-freshness
             - audit
             - api-freshness
             - typecheck
             - build
             - test-unit
             - test-e2e
+            - spec-identity
         runs-on: ubuntu-latest
         timeout-minutes: 5
         steps:

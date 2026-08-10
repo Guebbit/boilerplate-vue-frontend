@@ -12,6 +12,11 @@
         :row-props="rowProps"
         @click:row="handleRowClick"
     >
+        <!-- Replaces Vuetify's unnamed internal bar — see `TableLoadingBar` for why. -->
+        <template #loader>
+            <TableLoadingBar />
+        </template>
+
         <!-- forward every `item.*` slot to keep the existing view API -->
         <template
             v-for="header in headers"
@@ -32,6 +37,7 @@
 
 <script setup lang="ts" generic="T extends object">
 import { computed } from 'vue';
+import TableLoadingBar from '@/components/molecules/TableLoadingBar.vue';
 
 /**
  * Minimal column definition: a visible title and the item key it reads.

@@ -19,7 +19,7 @@
                 />
                 <CardMaterialStat
                     :title="t('order-target-page.label-total')"
-                    :value="formatCurrency(currentOrder?.total)"
+                    :value="formatCurrency(currentOrder?.totalPrice)"
                     accent="tertiary"
                 />
             </template>
@@ -109,7 +109,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/features/orders/store.ts';
-import { createOrderStatusSchema } from '@/features/orders/schemas.ts';
+import { orderStatusSchema } from '@/features/orders/schemas.ts';
 import { z } from 'zod';
 import { OrderStatus } from '@types';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
@@ -126,7 +126,7 @@ import { notifyErrorMessages } from '@/utils/errors.ts';
 /**
  * Generic utility hooks.
  */
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
@@ -140,7 +140,6 @@ const { id } = defineProps<{
  * Orders store APIs and references.
  */
 const { watchOrder, updateOrder } = useOrdersStore();
-const zodSchemaOrderStatus = createOrderStatusSchema(t);
 const { currentOrder, loading } = storeToRefs(useOrdersStore());
 
 /**
@@ -167,10 +166,10 @@ interface IOrderEditForm {
  * Validation schema for order updates.
  */
 const editSchema = z.object({
-    status: zodSchemaOrderStatus.optional(),
+    status: orderStatusSchema.optional(),
     email: z.preprocess(
         (v) => (v === '' ? undefined : v),
-        z.email(t('orders-form.email-invalid')).optional()
+        z.email({ error: () => t('orders-form.email-invalid') }).optional()
     )
 });
 
@@ -185,7 +184,7 @@ const {
     resetForm,
     handleSubmit,
     activateAutoHydrate
-} = useStructureFormValidation<IOrderEditForm>({}, editSchema);
+} = useStructureFormValidation<IOrderEditForm>({}, editSchema, { revalidateOn: locale });
 
 /**
  * Auto-hydrate the form from the fetched record once it resolves.
@@ -238,14 +237,15 @@ const orderStatus = computed(() => {
  *  a toast. A missing route id is a no-op.
  */
 const submitForm = () =>
-    handleSubmit(async () => {
+    handleSubmit(() => {
         if (!id) return;
-        await updateOrder(id, {
+        return updateOrder(id, {
             status: form.value.status,
             email: form.value.email || undefined
+        }).then(() => {
+            addMessage(t('order-edit-page.success-update'));
+            showFormErrors.value = false;
         });
-        addMessage(t('order-edit-page.success-update'));
-        showFormErrors.value = false;
     })
         .then((success) => {
             if (!success) showFormErrors.value = true;

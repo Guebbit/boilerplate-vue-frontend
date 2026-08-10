@@ -61,7 +61,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { useProfileStore } from '@/stores/profile.ts';
-import { createUsersPasswordSchema } from '@/features/users/schemas.ts';
+import { usersPasswordSchema } from '@/features/users/schemas.ts';
 import { notifyErrorMessages, focusFirstErrorField } from '@/utils/errors.ts';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 
@@ -75,12 +75,11 @@ interface IPasswordResetConfirmForm {
     passwordConfirm?: string;
 }
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const { addMessage } = useNotificationsStore();
 const { confirmPasswordReset } = useProfileStore();
-const zodSchemaUsersPassword = createUsersPasswordSchema(t);
 
 const { form, formErrors, isSubmitting, handleSubmit } =
     useStructureFormValidation<IPasswordResetConfirmForm>(
@@ -91,14 +90,19 @@ const { form, formErrors, isSubmitting, handleSubmit } =
         },
         z
             .object({
-                token: z.string().min(1, t('password-reset-confirm-page.token-required')),
-                password: zodSchemaUsersPassword,
-                passwordConfirm: z.string().min(8, t('users-form.password-confirm-required'))
+                token: z
+                    .string()
+                    .min(1, { error: () => t('password-reset-confirm-page.token-required') }),
+                password: usersPasswordSchema,
+                passwordConfirm: z
+                    .string()
+                    .min(8, { error: () => t('users-form.password-confirm-required') })
             })
             .refine((data) => data.password === data.passwordConfirm, {
-                message: t('users-form.password-dont-match'),
+                error: () => t('users-form.password-dont-match'),
                 path: ['passwordConfirm']
-            })
+            }),
+        { revalidateOn: locale }
     );
 
 const showErrors = ref(false);
@@ -113,22 +117,27 @@ const formElement = ref<HTMLFormElement>();
  *  toasts.
  */
 const submitForm = () =>
-    handleSubmit(async () => {
-        await confirmPasswordReset(
-            form.value.token!,
-            form.value.password!,
-            form.value.passwordConfirm!
-        );
-        addMessage(t('password-reset-confirm-page.success'));
-        showErrors.value = false;
-        await router.push(routerLinkI18n({ name: 'Login' }));
-    })
-        .then(async (success) => {
+    handleSubmit(() =>
+        confirmPasswordReset(form.value.token!, form.value.password!, form.value.passwordConfirm!)
+            .then(() => {
+                addMessage(t('password-reset-confirm-page.success'));
+                showErrors.value = false;
+                return router.push(routerLinkI18n({ name: 'Login' }));
+            })
+            .then(() => {
+                // Swallows `router.push`'s resolved value: it is a
+                // `NavigationFailure | undefined`, which the submit handler's `Promise<void>`
+                // will not take, and a failed navigation is the router's own `onError` to
+                // report rather than this form's.
+            })
+    )
+        .then((success) => {
             if (success) return;
             showErrors.value = true;
             addMessage(t('users-form.fix-errors'));
-            await nextTick();
-            focusFirstErrorField(formElement.value);
+            // After nextTick so the messages `showErrors` just revealed are in the DOM —
+            // `focusFirstErrorField` looks for them.
+            return nextTick().then(() => focusFirstErrorField(formElement.value));
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>

@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, RouterView } from 'vue-router';
+import type { RouteLocationNormalized } from 'vue-router';
 import { demoMiddleware } from '@/middlewares/demoMiddleware';
 import { localeChoice } from '@/middlewares/localeChoice';
 import { tryRestoreAuth } from '@/middlewares/authentications.ts';
@@ -90,6 +91,15 @@ const router = createRouter({
 });
 
 /**
+ * Read a route's `:locale` param, or undefined when it has none.
+ *
+ * `params` values are `string | string[]`, so a repeated param would otherwise flow into a URL
+ * as a comma-joined string.
+ */
+const readLocaleParameter = ({ params }: RouteLocationNormalized): string | undefined =>
+    typeof params.locale === 'string' ? params.locale : undefined;
+
+/**
  * Global navigation error handler: reports the failure and redirects to a
  * meaningful page instead of leaving the user on a dead route.
  *
@@ -97,9 +107,13 @@ const router = createRouter({
  *  fetch. A numeric `status` property, when present, drives the redirect:
  *  401 goes to login (keeping the target path), 403 and other <500 statuses go
  *  to the error page with that status, anything else becomes a 500.
+ * @param to - Route the failed navigation was heading for. This, not
+ *  `router.currentRoute`, is the target: the navigation aborted before being
+ *  committed, so `currentRoute` still points at the page the user was leaving —
+ *  which sent them back where they already were after logging in.
  * @returns The `router.push` promise for the chosen redirect.
  */
-router.onError((error: Error) => {
+router.onError((error: Error, to: RouteLocationNormalized) => {
     // Report unhandled router errors to Grafana Faro (if initialised) so they
     // are visible in the error dashboard rather than silently swallowed.
     try {
@@ -109,17 +123,18 @@ router.onError((error: Error) => {
         // Store may not be initialised yet in edge cases — ignore.
     }
 
-    const currentRoute = router.currentRoute.value;
+    // The aborted target first, then the route being left, then the default. The second step
+    // matters when the failure came from a route that carries no `:locale` param of its own.
     const locale =
-        typeof currentRoute.params.locale === 'string'
-            ? currentRoute.params.locale
-            : getDefaultLocale();
+        readLocaleParameter(to) ??
+        readLocaleParameter(router.currentRoute.value) ??
+        getDefaultLocale();
     const status =
         typeof (error as { status?: unknown }).status === 'number'
             ? ((error as { status?: number }).status ?? 500)
             : undefined;
 
-    if (status === 401) return router.push(loginContinueTo(currentRoute.fullPath, locale));
+    if (status === 401) return router.push(loginContinueTo(to.fullPath, locale));
 
     if (status === 403)
         return router.push({
@@ -131,7 +146,7 @@ router.onError((error: Error) => {
             }
         });
 
-    if (import.meta.env.DEV && import.meta.env.VITE_APP_DEBUG_ROUTER === 'true')
+    if (isRouterDebugEnabled)
         // eslint-disable-next-line no-console
         console.error('page error', error);
 

@@ -1,0 +1,30 @@
+{
+    "generatedAt": "2026-08-08T23:45:33.755Z",
+    "files": {
+        "src/features/admin/composables/useAdminObservability.ts": 0,
+        "src/features/cart/store.ts": 91.89,
+        "src/features/orders/schemas.ts": 100,
+        "src/features/orders/store.ts": 65.31,
+        "src/features/products/schemas.ts": 60,
+        "src/features/products/store.ts": 63.41,
+        "src/features/realtime/createSseClient.ts": 70,
+        "src/features/realtime/useRealtimeObservability.ts": 0,
+        "src/features/users/schemas.ts": 60.87,
+        "src/features/users/store.ts": 63.41,
+        "src/middlewares/authentications.ts": 59.09,
+        "src/middlewares/demoMiddleware.ts": 66.67,
+        "src/middlewares/localeChoice.ts": 100,
+        "src/plugins/http/index.ts": 67.21,
+        "src/plugins/http/responseSchemaMap.ts": 96.27,
+        "src/router/index.ts": 55.21,
+        "src/router/navigation.ts": 80,
+        "src/stores/counter.ts": 10,
+        "src/stores/observability.ts": 1.42,
+        "src/stores/profile.ts": 6.25,
+        "src/stores/realtimeObservability.ts": 57.14,
+        "src/utils/errors.ts": 93.94,
+        "src/utils/formatters.ts": 79.41,
+        "src/utils/localeApi.ts": 94.44,
+        "src/utils/uploads.ts": 82.35
+    }
+}

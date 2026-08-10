@@ -1,7 +1,7 @@
 describe('Authentication', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetMockState();
+        cy.resetState();
     });
 
     describe('Login', () => {
@@ -128,6 +128,54 @@ describe('Authentication', () => {
             cy.visit('/en/logout');
             cy.url().should('not.include', '/logout');
             cy.get('#home-page').should('exist');
+        });
+    });
+
+    // Live profile only. `withCredentials: true` (src/plugins/http/index.ts) sends the refresh
+    // cookie cross-origin from :8085 to :3000, and MSW — same-origin, in-page — never exercises
+    // that boundary at all. A forced 401 is used instead of reaching into Pinia to clear the
+    // in-memory access token: it drives the exact same interceptor path
+    // (onResponseRejectWithRefresh -> GET /account/refresh -> retry) through a real network
+    // round-trip, without needing a test-only hook into application state.
+    describe('Live session refresh (live profile only)', () => {
+        it('recovers from a forced 401 by refreshing across the :8085 -> :3000 boundary', () => {
+            cy.skipUnlessLive();
+            cy.loginAs('admin');
+            cy.visit('/en/orders');
+            cy.get('[data-test=list-row]', { timeout: 10_000 }).should('have.length.at.least', 1);
+
+            let forced401 = false;
+            // Pinned to the API origin, and deliberately not `**/orders*`: that glob also matches
+            // this app's own route at `http://localhost:8085/en/orders`, so the request that got
+            // the forced 401 was `cy.reload()`'s *document* navigation. The browser then rendered
+            // the error JSON as the entire page and the SPA never booted — the row assertion below
+            // failed for want of an application, which looks identical to a failed token refresh
+            // and is what made this failure so hard to read.
+            cy.env(['apiUrl']).then(({ apiUrl }) => {
+                cy.intercept('GET', `${apiUrl}/orders*`, (request) => {
+                    if (forced401) {
+                        request.continue();
+                        return;
+                    }
+                    forced401 = true;
+                    request.reply({
+                        statusCode: 401,
+                        body: {
+                            success: false,
+                            status: 401,
+                            message: 'Unauthorized',
+                            errors: ['Unauthorized']
+                        }
+                    });
+                }).as('ordersForcedOnce');
+            });
+
+            cy.reload();
+
+            // If the refresh cookie hadn't crossed the origin boundary, the retried request would
+            // 401 again and the app would bounce to /login instead of re-rendering the list.
+            cy.url().should('not.include', '/login');
+            cy.get('[data-test=list-row]', { timeout: 10_000 }).should('have.length.at.least', 1);
         });
     });
 });

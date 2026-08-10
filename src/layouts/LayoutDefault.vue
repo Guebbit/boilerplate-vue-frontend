@@ -54,7 +54,19 @@
             persistent
             class="flex items-center justify-center"
         >
-            <v-progress-circular indeterminate size="64" width="5" color="primary" />
+            <!--
+                The label is required, not decorative: this renders role="progressbar", and a
+                progressbar with no accessible name is announced as an unlabelled control. It is
+                also the only thing on screen while the app boots, so without it a screen-reader
+                user is told nothing at all is happening.
+            -->
+            <v-progress-circular
+                indeterminate
+                size="64"
+                width="5"
+                color="primary"
+                :aria-label="t('generic.loading-state')"
+            />
         </v-overlay>
 
         <!-- Discreet corner loader (background activity) -->
@@ -65,7 +77,18 @@
                 role="status"
                 :aria-label="t('generic.loading-state')"
             >
-                <v-progress-circular indeterminate size="40" width="4" color="secondary" />
+                <!--
+                    Labelled even though the wrapper above carries role="status" and the same
+                    label: the wrapper names the live region, while this element is a separate
+                    role="progressbar" node that needs its own name.
+                -->
+                <v-progress-circular
+                    indeterminate
+                    size="40"
+                    width="4"
+                    color="secondary"
+                    :aria-label="t('generic.loading-state')"
+                />
             </div>
         </v-fade-transition>
     </v-app>

@@ -5,6 +5,17 @@
  * Stable, codegen-oriented OpenAPI contract.
  * Designed for multi-project, multi-language use (client/server stubs, DTOs, SDKs).
  *
+ * Language: every endpoint honours `Accept-Language` (q-weights and region tags
+ * included). It selects the language of user-facing copy only — `errors[].message` and a
+ * success envelope's `message` — never the response shape, the status code, or a
+ * machine-readable field such as `errors[].code`. An unsupported language falls back
+ * instead of erroring; `Content-Language` states what was used and `Vary:
+ * Accept-Language` is always set. `GET /locales` lists what a deployment supports.
+ *
+ * The header is intentionally not declared per operation: it applies to all of them and
+ * clients set it once in an interceptor, so declaring it 33 times would only add a
+ * redundant argument to every generated function. This paragraph is its contract.
+ *
  * OpenAPI spec version: 2.0.0
  */
 import axios from 'axios';
@@ -46,6 +57,17 @@ export type Email = string;
  */
 export type Password = string;
 
+/**
+ * BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET /locales`.
+ * @pattern ^[a-z]{2}(-[A-Za-z0-9]+)*$
+ */
+export type Locale = string;
+
+/**
+ * Absolute URL or server-relative upload path (e.g. `/uploads/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.
+ */
+export type ImageUrl = string;
+
 export interface PaginationMeta {
     page: Page;
     pageSize: PageSize;
@@ -59,6 +81,58 @@ export interface MessageResponse {
     success: true;
     status: number;
     message: string;
+}
+
+/**
+ * Which languages a deployment can answer in. Runtime state, not contract state: it is derived from the dictionaries actually deployed, so it cannot be an enum here.
+ */
+export interface LocaleCapabilities {
+    /** Every supported language tag. */
+    locales: Locale[];
+    default: Locale;
+    fallback: Locale;
+}
+
+export interface LocaleCapabilitiesEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: LocaleCapabilities;
+}
+
+/**
+ * Nested key/value dictionary, the same shape the API loads.
+ */
+export type LocaleDictionaryMessages = { [key: string]: unknown };
+
+/**
+ * The API's OWN message dictionary for one language — its API-response copy and nothing else. It is never a client's UI dictionary: the two are authored and deployed in separate repositories, and mixing them would put view copy in the API's keyspace. A client that wants these merges them under a namespace it reserves for the API, never at the root.
+ */
+export interface LocaleDictionary {
+    locale: Locale;
+    /** Nested key/value dictionary, the same shape the API loads. */
+    messages: LocaleDictionaryMessages;
+}
+
+export interface LocaleDictionaryEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: LocaleDictionary;
+}
+
+/**
+ * Liveness indicator. Always `ok` when the process is answering.
+ */
+export type HealthPingStatus = (typeof HealthPingStatus)[keyof typeof HealthPingStatus];
+
+export const HealthPingStatus = {
+    ok: 'ok'
+} as const;
+
+export interface HealthPing {
+    /** Liveness indicator. Always `ok` when the process is answering. */
+    status: HealthPingStatus;
 }
 
 /**
@@ -87,14 +161,23 @@ export interface ErrorResponse {
     errors: ErrorItem[];
 }
 
-export type ValidationErrorResponse = ErrorResponse & {
-    message?: string;
-};
+export interface ValidationErrorResponse {
+    success: false;
+    status: number;
+    /** Human-readable summary for this failure */
+    message: string;
+    /**
+     * Structured machine-friendly errors
+     * @minItems 1
+     */
+    errors: ErrorItem[];
+}
 
-export interface SuccessEnvelope {
+export interface HealthPingEnvelope {
     success: true;
     status: number;
     message: string;
+    data: HealthPing;
 }
 
 export interface AuthTokens {
@@ -106,9 +189,12 @@ export interface AuthTokens {
     expiresIn?: number;
 }
 
-export type AuthTokensEnvelope = SuccessEnvelope & {
+export interface AuthTokensEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: AuthTokens;
-};
+}
 
 export interface RefreshTokenResponse {
     /** New access JWT */
@@ -119,9 +205,12 @@ export interface RefreshTokenResponse {
     expiresIn?: number;
 }
 
-export type RefreshTokenEnvelope = SuccessEnvelope & {
+export interface RefreshTokenEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: RefreshTokenResponse;
-};
+}
 
 export interface User {
     id: Id;
@@ -129,23 +218,31 @@ export interface User {
     username: string;
     admin?: boolean;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
+    locale?: Locale;
     createdAt?: string;
     updatedAt?: string;
+    deletedAt?: string;
 }
 
-export type UserEnvelope = SuccessEnvelope & {
+export interface UserEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: User;
-};
+}
 
 export interface UsersResponse {
     items: User[];
     meta: PaginationMeta;
 }
 
-export type UsersResponseEnvelope = SuccessEnvelope & {
+export interface UsersResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: UsersResponse;
-};
+}
 
 export interface Product {
     id: Id;
@@ -154,7 +251,7 @@ export interface Product {
     price: number;
     description?: string;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
     categories?: string[];
     tags?: string[];
     createdAt?: string;
@@ -162,18 +259,24 @@ export interface Product {
     deletedAt?: string;
 }
 
-export type ProductEnvelope = SuccessEnvelope & {
+export interface ProductEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: Product;
-};
+}
 
 export interface ProductsResponse {
     items: Product[];
     meta: PaginationMeta;
 }
 
-export type ProductsResponseEnvelope = SuccessEnvelope & {
+export interface ProductsResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: ProductsResponse;
-};
+}
 
 export interface OrderItem {
     product: Product;
@@ -197,8 +300,21 @@ export interface Order {
     userId: Id;
     email: Email;
     items: OrderItem[];
-    /** @minimum 0 */
-    total: number;
+    /**
+     * Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.
+     * @minimum 0
+     */
+    totalItems: number;
+    /**
+     * Sum of `quantity` across every line item.
+     * @minimum 0
+     */
+    totalQuantity: number;
+    /**
+     * Sum of `product.price × quantity` across every line item.
+     * @minimum 0
+     */
+    totalPrice: number;
     /** Optional order notes */
     notes?: string;
     status: OrderStatus;
@@ -206,18 +322,24 @@ export interface Order {
     updatedAt?: string;
 }
 
-export type OrderEnvelope = SuccessEnvelope & {
+export interface OrderEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: Order;
-};
+}
 
 export interface OrdersResponse {
     items: Order[];
     meta: PaginationMeta;
 }
 
-export type OrdersResponseEnvelope = SuccessEnvelope & {
+export interface OrdersResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: OrdersResponse;
-};
+}
 
 export type FeedbackRequestStatus =
     (typeof FeedbackRequestStatus)[keyof typeof FeedbackRequestStatus];
@@ -242,18 +364,24 @@ export interface FeedbackRequest {
     updatedAt?: string;
 }
 
-export type FeedbackRequestEnvelope = SuccessEnvelope & {
+export interface FeedbackRequestEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: FeedbackRequest;
-};
+}
 
 export interface FeedbackRequestsResponse {
     items: FeedbackRequest[];
     meta: PaginationMeta;
 }
 
-export type FeedbackRequestsResponseEnvelope = SuccessEnvelope & {
+export interface FeedbackRequestsResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: FeedbackRequestsResponse;
-};
+}
 
 export interface CartItem {
     productId: Id;
@@ -286,22 +414,31 @@ export interface CartResponse {
     summary: CartSummaryResponse;
 }
 
-export type CartResponseEnvelope = SuccessEnvelope & {
+export interface CartResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: CartResponse;
-};
+}
 
-export type CartSummaryResponseEnvelope = SuccessEnvelope & {
+export interface CartSummaryResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: CartSummaryResponse;
-};
+}
 
 export interface CheckoutResponse {
     order: Order;
     message?: string;
 }
 
-export type CheckoutResponseEnvelope = SuccessEnvelope & {
+export interface CheckoutResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: CheckoutResponse;
-};
+}
 
 export type ObservabilityHealthStatus =
     (typeof ObservabilityHealthStatus)[keyof typeof ObservabilityHealthStatus];
@@ -358,14 +495,12 @@ export interface ObservabilityHealth {
     timestamp: string;
 }
 
-export interface ObservabilityHealthResponse {
+export interface ObservabilityHealthResponseEnvelope {
     success: true;
+    status: number;
+    message: string;
     data: ObservabilityHealth;
 }
-
-export type ObservabilityHealthResponseEnvelope = SuccessEnvelope & {
-    data: ObservabilityHealthResponse;
-};
 
 export interface ObservabilityMetricsLatency {
     /** Median latency in ms */
@@ -429,14 +564,12 @@ export interface ObservabilityMetricsSummary {
     timestamp: string;
 }
 
-export interface ObservabilityMetricsSummaryResponse {
+export interface ObservabilityMetricsSummaryResponseEnvelope {
     success: true;
+    status: number;
+    message: string;
     data: ObservabilityMetricsSummary;
 }
-
-export type ObservabilityMetricsSummaryResponseEnvelope = SuccessEnvelope & {
-    data: ObservabilityMetricsSummaryResponse;
-};
 
 export type AuditEventItemActorRole =
     (typeof AuditEventItemActorRole)[keyof typeof AuditEventItemActorRole];
@@ -481,20 +614,18 @@ export interface AuditEventItem {
     level: AuditEventItemLevel;
 }
 
-export type AuditLogsResponseData = {
+export interface AuditLogsPage {
     items: AuditEventItem[];
     /** @minimum 0 */
     total: number;
-};
-
-export interface AuditLogsResponse {
-    success: true;
-    data: AuditLogsResponseData;
 }
 
-export type AuditLogsResponseEnvelope = SuccessEnvelope & {
-    data: AuditLogsResponse;
-};
+export interface AuditLogsResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: AuditLogsPage;
+}
 
 export interface LoginRequest {
     email: Email;
@@ -507,7 +638,7 @@ export interface SignupRequest {
     username: string;
     password: Password;
     passwordConfirm: Password;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
 }
 
 export interface SignupRequestMultipart {
@@ -552,7 +683,8 @@ export interface CreateUserRequest {
     password: Password;
     admin?: boolean;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
+    locale?: Locale;
 }
 
 export interface CreateUserRequestMultipart {
@@ -563,6 +695,7 @@ export interface CreateUserRequestMultipart {
     active?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
+    locale?: Locale;
 }
 
 export interface UpdateUserRequest {
@@ -570,7 +703,10 @@ export interface UpdateUserRequest {
     email?: Email;
     username?: string;
     password?: Password;
-    imageUrl?: string;
+    admin?: boolean;
+    active?: boolean;
+    imageUrl?: ImageUrl;
+    locale?: Locale;
 }
 
 export interface UpdateUserRequestMultipart {
@@ -578,21 +714,28 @@ export interface UpdateUserRequestMultipart {
     email?: Email;
     username?: string;
     password?: Password;
+    admin?: boolean;
+    active?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
+    locale?: Locale;
 }
 
 export interface UpdateUserByIdRequest {
     email?: Email;
     password?: Password;
     username?: string;
-    imageUrl?: string;
+    admin?: boolean;
+    active?: boolean;
+    imageUrl?: ImageUrl;
 }
 
 export interface UpdateUserByIdRequestMultipart {
     email?: Email;
     password?: Password;
     username?: string;
+    admin?: boolean;
+    active?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
 }
@@ -621,7 +764,7 @@ export interface CreateProductRequest {
     price: number;
     description?: string;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
     categories?: string[];
     tags?: string[];
 }
@@ -645,7 +788,7 @@ export interface UpdateProductRequest {
     /** @minimum 0 */
     price: number;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
     categories?: string[];
     tags?: string[];
 }
@@ -669,7 +812,7 @@ export interface UpdateProductByIdRequest {
     /** @minimum 0 */
     price: number;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
     categories?: string[];
     tags?: string[];
 }
@@ -684,6 +827,10 @@ export interface UpdateProductByIdRequestMultipart {
     imageUpload?: Blob;
     categories?: string[];
     tags?: string[];
+}
+
+export interface HardDeleteRequest {
+    hardDelete?: boolean;
 }
 
 export interface DeleteProductRequest {
@@ -846,6 +993,11 @@ export type ForbiddenResponse = ErrorResponse;
 export type NotFoundResponse = ErrorResponse;
 
 /**
+ * The request conflicts with the current state of the resource
+ */
+export type ConflictResponse = ErrorResponse;
+
+/**
  * Internal server error
  */
 export type InternalErrorResponse = ErrorResponse;
@@ -925,6 +1077,27 @@ export type DeleteUserByIdParams = {
     hardDelete?: boolean;
 };
 
+export type ListFeedbackRequestsParams = {
+    /**
+     * 1-based page index
+     * @minimum 1
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Free-text search string
+     * @minLength 1
+     */
+    text?: TextParamParameter;
+    email?: Email;
+    status?: string;
+};
+
 export type ListProductsParams = {
     /**
      * 1-based page index
@@ -945,7 +1118,9 @@ export type ListProductsParams = {
     /**
      * Resource identifier
      */
-    productId?: ProductIdParamParameter;
+    id?: IdParamParameter;
+    category?: string;
+    tag?: string;
     /**
      * @minimum 0
      */
@@ -992,8 +1167,39 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
      * Public ping endpoint. Returns a simple liveness indicator confirming the API process is running.
      * @summary API health check
      */
-    const getHealth = (options?: AxiosRequestConfig): Promise<AxiosResponse<MessageResponse>> => {
+    const getHealth = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<HealthPingEnvelope>> => {
         return axiosInstance.get(`/`, options);
+    };
+
+    /**
+     * Which languages this deployment can answer in, plus its default and fallback.
+     *
+     * Public, unauthenticated and cacheable: it is static copy that changes only on
+     * deploy, and a client that has just failed to reach the API is exactly who needs
+     * it.
+     * @summary Supported languages
+     */
+    const getLocales = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<LocaleCapabilitiesEnvelope>> => {
+        return axiosInstance.get(`/locales`, options);
+    };
+
+    /**
+     * This API's own dictionary for one language.
+     *
+     * Normally unnecessary — the API resolves its keys itself and puts finished text on
+     * the wire. It earns its place when no response arrives at all (a network failure, a
+     * bare 502) and the client must produce the copy itself, in the active language.
+     * @summary API message dictionary
+     */
+    const getLocaleDictionary = (
+        locale: Locale,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<LocaleDictionaryEnvelope>> => {
+        return axiosInstance.get(`/locales/${locale}`, options);
     };
 
     /**
@@ -1050,8 +1256,10 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
     };
 
     /**
-     * Returns the most recent audit events from the in-memory ring buffer (up to 200).
+     * Returns the most recent audit events, newest first, from the persisted audit trail.
      * Events include auth flows, admin CRUD actions, and security blocks.
+     * Entries are retained for `NODE_AUDIT_RETENTION_DAYS` (default 90) and expire after.
+     * `total` counts every event matching the filters, not just the returned page.
      * Requires admin role.
      * @summary Recent audit events
      */
@@ -1113,10 +1321,30 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
      * @summary Signup
      */
     const signup = (
-        signupBody: SignupRequest | SignupRequestMultipart,
+        signupRequest: SignupRequest,
         options?: AxiosRequestConfig
     ): Promise<AxiosResponse<UserEnvelope>> => {
-        return axiosInstance.post(`/account/signup`, signupBody, options);
+        return axiosInstance.post(`/account/signup`, signupRequest, options);
+    };
+
+    /**
+     * Registers a new user account with optional image upload. Returns the newly created user profile on success.
+     * @summary Signup
+     */
+    const signupWithMultipart = (
+        signupRequestMultipart: SignupRequestMultipart,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<UserEnvelope>> => {
+        const formData = new FormData();
+        formData.append(`email`, signupRequestMultipart.email);
+        formData.append(`username`, signupRequestMultipart.username);
+        formData.append(`password`, signupRequestMultipart.password);
+        formData.append(`passwordConfirm`, signupRequestMultipart.passwordConfirm);
+        if (signupRequestMultipart.imageUpload !== undefined) {
+            formData.append(`imageUpload`, signupRequestMultipart.imageUpload);
+        }
+
+        return axiosInstance.post(`/account/signup`, formData, options);
     };
 
     /**
@@ -1140,24 +1368,13 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
     };
 
     /**
-     * Creates a new short-lived access token using a refresh token. The refresh token can be provided as a query parameter, path parameter, or retrieved from the `jwt` cookie.
+     * Creates a new short-lived access token from the refresh token in the `jwt` cookie. The cookie is `HttpOnly`, so the token is never readable by page scripts and never appears in a URL, a proxy log or a `Referer` header.
      * @summary Refresh access token
      */
     const refreshToken = (
         options?: AxiosRequestConfig
     ): Promise<AxiosResponse<RefreshTokenEnvelope>> => {
         return axiosInstance.get(`/account/refresh`, options);
-    };
-
-    /**
-     * Creates a new short-lived access token using a refresh token provided in the URL path.
-     * @summary Refresh access token with token in path
-     */
-    const refreshTokenWithPath = (
-        token: string,
-        options?: AxiosRequestConfig
-    ): Promise<AxiosResponse<RefreshTokenEnvelope>> => {
-        return axiosInstance.get(`/account/refresh/${token}`, options);
     };
 
     /**
@@ -1197,10 +1414,38 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
      * @summary Create user
      */
     const createUser = (
-        createUserBody: CreateUserRequest | CreateUserRequestMultipart,
+        createUserRequest: CreateUserRequest,
         options?: AxiosRequestConfig
     ): Promise<AxiosResponse<UserEnvelope>> => {
-        return axiosInstance.post(`/users`, createUserBody, options);
+        return axiosInstance.post(`/users`, createUserRequest, options);
+    };
+
+    /**
+     * Creates a new user account with the supplied email, username, and password. Optional image can be uploaded.
+     * @summary Create user
+     */
+    const createUserWithMultipart = (
+        createUserRequestMultipart: CreateUserRequestMultipart,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<UserEnvelope>> => {
+        const formData = new FormData();
+        formData.append(`email`, createUserRequestMultipart.email);
+        formData.append(`username`, createUserRequestMultipart.username);
+        formData.append(`password`, createUserRequestMultipart.password);
+        if (createUserRequestMultipart.admin !== undefined) {
+            formData.append(`admin`, createUserRequestMultipart.admin.toString());
+        }
+        if (createUserRequestMultipart.active !== undefined) {
+            formData.append(`active`, createUserRequestMultipart.active.toString());
+        }
+        if (createUserRequestMultipart.imageUpload !== undefined) {
+            formData.append(`imageUpload`, createUserRequestMultipart.imageUpload);
+        }
+        if (createUserRequestMultipart.locale !== undefined) {
+            formData.append(`locale`, createUserRequestMultipart.locale);
+        }
+
+        return axiosInstance.post(`/users`, formData, options);
     };
 
     /**
@@ -1208,10 +1453,45 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
      * @summary Edit user
      */
     const updateUser = (
-        updateUserBody: UpdateUserRequest | UpdateUserRequestMultipart,
+        updateUserRequest: UpdateUserRequest,
         options?: AxiosRequestConfig
     ): Promise<AxiosResponse<UserEnvelope>> => {
-        return axiosInstance.put(`/users`, updateUserBody, options);
+        return axiosInstance.put(`/users`, updateUserRequest, options);
+    };
+
+    /**
+     * Updates an existing user's email or password. Optional image can be uploaded.
+     * @summary Edit user
+     */
+    const updateUserWithMultipart = (
+        updateUserRequestMultipart: UpdateUserRequestMultipart,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<UserEnvelope>> => {
+        const formData = new FormData();
+        formData.append(`id`, updateUserRequestMultipart.id);
+        if (updateUserRequestMultipart.email !== undefined) {
+            formData.append(`email`, updateUserRequestMultipart.email);
+        }
+        if (updateUserRequestMultipart.username !== undefined) {
+            formData.append(`username`, updateUserRequestMultipart.username);
+        }
+        if (updateUserRequestMultipart.password !== undefined) {
+            formData.append(`password`, updateUserRequestMultipart.password);
+        }
+        if (updateUserRequestMultipart.admin !== undefined) {
+            formData.append(`admin`, updateUserRequestMultipart.admin.toString());
+        }
+        if (updateUserRequestMultipart.active !== undefined) {
+            formData.append(`active`, updateUserRequestMultipart.active.toString());
+        }
+        if (updateUserRequestMultipart.imageUpload !== undefined) {
+            formData.append(`imageUpload`, updateUserRequestMultipart.imageUpload);
+        }
+        if (updateUserRequestMultipart.locale !== undefined) {
+            formData.append(`locale`, updateUserRequestMultipart.locale);
+        }
+
+        return axiosInstance.put(`/users`, formData, options);
     };
 
     /**
@@ -1242,10 +1522,42 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
      */
     const updateUserById = (
         id: string,
-        updateUserByIdBody: UpdateUserByIdRequest | UpdateUserByIdRequestMultipart,
+        updateUserByIdRequest: UpdateUserByIdRequest,
         options?: AxiosRequestConfig
     ): Promise<AxiosResponse<UserEnvelope>> => {
-        return axiosInstance.put(`/users/${id}`, updateUserByIdBody, options);
+        return axiosInstance.put(`/users/${id}`, updateUserByIdRequest, options);
+    };
+
+    /**
+     * Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
+     * @summary Edit user
+     */
+    const updateUserByIdWithMultipart = (
+        id: string,
+        updateUserByIdRequestMultipart: UpdateUserByIdRequestMultipart,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<UserEnvelope>> => {
+        const formData = new FormData();
+        if (updateUserByIdRequestMultipart.email !== undefined) {
+            formData.append(`email`, updateUserByIdRequestMultipart.email);
+        }
+        if (updateUserByIdRequestMultipart.password !== undefined) {
+            formData.append(`password`, updateUserByIdRequestMultipart.password);
+        }
+        if (updateUserByIdRequestMultipart.username !== undefined) {
+            formData.append(`username`, updateUserByIdRequestMultipart.username);
+        }
+        if (updateUserByIdRequestMultipart.admin !== undefined) {
+            formData.append(`admin`, updateUserByIdRequestMultipart.admin.toString());
+        }
+        if (updateUserByIdRequestMultipart.active !== undefined) {
+            formData.append(`active`, updateUserByIdRequestMultipart.active.toString());
+        }
+        if (updateUserByIdRequestMultipart.imageUpload !== undefined) {
+            formData.append(`imageUpload`, updateUserByIdRequestMultipart.imageUpload);
+        }
+
+        return axiosInstance.put(`/users/${id}`, formData, options);
     };
 
     /**
@@ -1254,13 +1566,26 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
      */
     const deleteUserById = (
         id: string,
+        hardDeleteRequest?: HardDeleteRequest,
         params?: DeleteUserByIdParams,
         options?: AxiosRequestConfig
     ): Promise<AxiosResponse<SuccessResponse>> => {
         return axiosInstance.delete(`/users/${id}`, {
+            data: hardDeleteRequest,
             ...options,
             params: { ...params, ...options?.params }
         });
+    };
+
+    /**
+     * Permanently removes the user identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /users/{id}?hardDelete=true`.
+     * @summary Permanently delete user
+     */
+    const hardDeleteUserById = (
+        id: string,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.delete(`/users/${id}/hard`, options);
     };
 
     /**
@@ -1291,9 +1616,13 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
      */
     const listFeedbackRequests = (
         searchFeedbackRequestsRequest?: SearchFeedbackRequestsRequest,
+        params?: ListFeedbackRequestsParams,
         options?: AxiosRequestConfig
     ): Promise<AxiosResponse<FeedbackRequestsResponseEnvelope>> => {
-        return axiosInstance.get(`/feedback`, options);
+        return axiosInstance.get(`/feedback`, {
+            ...options,
+            params: { ...params, ...options?.params }
+        });
     };
 
     /**
@@ -1327,10 +1656,42 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
      * @summary Create product
      */
     const createProduct = (
-        createProductBody: CreateProductRequest | CreateProductRequestMultipart,
+        createProductRequest: CreateProductRequest,
         options?: AxiosRequestConfig
     ): Promise<AxiosResponse<ProductEnvelope>> => {
-        return axiosInstance.post(`/products`, createProductBody, options);
+        return axiosInstance.post(`/products`, createProductRequest, options);
+    };
+
+    /**
+     * Creates a new product with optional image upload
+     * @summary Create product
+     */
+    const createProductWithMultipart = (
+        createProductRequestMultipart: CreateProductRequestMultipart,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<ProductEnvelope>> => {
+        const formData = new FormData();
+        formData.append(`title`, createProductRequestMultipart.title);
+        formData.append(`price`, createProductRequestMultipart.price.toString());
+        if (createProductRequestMultipart.description !== undefined) {
+            formData.append(`description`, createProductRequestMultipart.description);
+        }
+        if (createProductRequestMultipart.active !== undefined) {
+            formData.append(`active`, createProductRequestMultipart.active.toString());
+        }
+        if (createProductRequestMultipart.imageUpload !== undefined) {
+            formData.append(`imageUpload`, createProductRequestMultipart.imageUpload);
+        }
+        if (createProductRequestMultipart.categories !== undefined) {
+            createProductRequestMultipart.categories.forEach((value) =>
+                formData.append(`categories`, value)
+            );
+        }
+        if (createProductRequestMultipart.tags !== undefined) {
+            createProductRequestMultipart.tags.forEach((value) => formData.append(`tags`, value));
+        }
+
+        return axiosInstance.post(`/products`, formData, options);
     };
 
     /**
@@ -1338,10 +1699,43 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
      * @summary Edit product
      */
     const updateProduct = (
-        updateProductBody: UpdateProductRequest | UpdateProductRequestMultipart,
+        updateProductRequest: UpdateProductRequest,
         options?: AxiosRequestConfig
     ): Promise<AxiosResponse<ProductEnvelope>> => {
-        return axiosInstance.put(`/products`, updateProductBody, options);
+        return axiosInstance.put(`/products`, updateProductRequest, options);
+    };
+
+    /**
+     * Updates an existing product with optional image upload
+     * @summary Edit product
+     */
+    const updateProductWithMultipart = (
+        updateProductRequestMultipart: UpdateProductRequestMultipart,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<ProductEnvelope>> => {
+        const formData = new FormData();
+        formData.append(`id`, updateProductRequestMultipart.id);
+        formData.append(`title`, updateProductRequestMultipart.title);
+        if (updateProductRequestMultipart.description !== undefined) {
+            formData.append(`description`, updateProductRequestMultipart.description);
+        }
+        formData.append(`price`, updateProductRequestMultipart.price.toString());
+        if (updateProductRequestMultipart.active !== undefined) {
+            formData.append(`active`, updateProductRequestMultipart.active.toString());
+        }
+        if (updateProductRequestMultipart.imageUpload !== undefined) {
+            formData.append(`imageUpload`, updateProductRequestMultipart.imageUpload);
+        }
+        if (updateProductRequestMultipart.categories !== undefined) {
+            updateProductRequestMultipart.categories.forEach((value) =>
+                formData.append(`categories`, value)
+            );
+        }
+        if (updateProductRequestMultipart.tags !== undefined) {
+            updateProductRequestMultipart.tags.forEach((value) => formData.append(`tags`, value));
+        }
+
+        return axiosInstance.put(`/products`, formData, options);
     };
 
     /**
@@ -1372,10 +1766,45 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
      */
     const updateProductById = (
         id: string,
-        updateProductByIdBody: UpdateProductByIdRequest | UpdateProductByIdRequestMultipart,
+        updateProductByIdRequest: UpdateProductByIdRequest,
         options?: AxiosRequestConfig
     ): Promise<AxiosResponse<ProductEnvelope>> => {
-        return axiosInstance.put(`/products/${id}`, updateProductByIdBody, options);
+        return axiosInstance.put(`/products/${id}`, updateProductByIdRequest, options);
+    };
+
+    /**
+     * Updates the product identified by `{id}` in the path with optional image upload. Functionally equivalent to `PUT /products` with the id in the body.
+     * @summary Edit product
+     */
+    const updateProductByIdWithMultipart = (
+        id: string,
+        updateProductByIdRequestMultipart: UpdateProductByIdRequestMultipart,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<ProductEnvelope>> => {
+        const formData = new FormData();
+        formData.append(`title`, updateProductByIdRequestMultipart.title);
+        if (updateProductByIdRequestMultipart.description !== undefined) {
+            formData.append(`description`, updateProductByIdRequestMultipart.description);
+        }
+        formData.append(`price`, updateProductByIdRequestMultipart.price.toString());
+        if (updateProductByIdRequestMultipart.active !== undefined) {
+            formData.append(`active`, updateProductByIdRequestMultipart.active.toString());
+        }
+        if (updateProductByIdRequestMultipart.imageUpload !== undefined) {
+            formData.append(`imageUpload`, updateProductByIdRequestMultipart.imageUpload);
+        }
+        if (updateProductByIdRequestMultipart.categories !== undefined) {
+            updateProductByIdRequestMultipart.categories.forEach((value) =>
+                formData.append(`categories`, value)
+            );
+        }
+        if (updateProductByIdRequestMultipart.tags !== undefined) {
+            updateProductByIdRequestMultipart.tags.forEach((value) =>
+                formData.append(`tags`, value)
+            );
+        }
+
+        return axiosInstance.put(`/products/${id}`, formData, options);
     };
 
     /**
@@ -1384,13 +1813,26 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
      */
     const deleteProductById = (
         id: string,
+        hardDeleteRequest?: HardDeleteRequest,
         params?: DeleteProductByIdParams,
         options?: AxiosRequestConfig
     ): Promise<AxiosResponse<SuccessResponse>> => {
         return axiosInstance.delete(`/products/${id}`, {
+            data: hardDeleteRequest,
             ...options,
             params: { ...params, ...options?.params }
         });
+    };
+
+    /**
+     * Permanently removes the product identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /products/{id}?hardDelete=true`.
+     * @summary Permanently delete product
+     */
+    const hardDeleteProductById = (
+        id: string,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.delete(`/products/${id}/hard`, options);
     };
 
     /**
@@ -1590,6 +2032,8 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
 
     return {
         getHealth,
+        getLocales,
+        getLocaleDictionary,
         getObservabilityEvents,
         getObservabilityHealth,
         getObservabilityMetrics,
@@ -1600,30 +2044,38 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         confirmAccountDelete,
         login,
         signup,
+        signupWithMultipart,
         requestPasswordReset,
         confirmPasswordReset,
         refreshToken,
-        refreshTokenWithPath,
         logoutAll,
         deleteExpiredTokens,
         listUsers,
         createUser,
+        createUserWithMultipart,
         updateUser,
+        updateUserWithMultipart,
         deleteUser,
         getUserById,
         updateUserById,
+        updateUserByIdWithMultipart,
         deleteUserById,
+        hardDeleteUserById,
         searchUsers,
         createFeedbackRequest,
         listFeedbackRequests,
         updateFeedbackRequestStatus,
         listProducts,
         createProduct,
+        createProductWithMultipart,
         updateProduct,
+        updateProductWithMultipart,
         deleteProduct,
         getProductById,
         updateProductById,
+        updateProductByIdWithMultipart,
         deleteProductById,
+        hardDeleteProductById,
         searchProducts,
         getCart,
         upsertCartItem,
@@ -1643,7 +2095,9 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         getOrderInvoice
     };
 };
-export type GetHealthResult = AxiosResponse<MessageResponse>;
+export type GetHealthResult = AxiosResponse<HealthPingEnvelope>;
+export type GetLocalesResult = AxiosResponse<LocaleCapabilitiesEnvelope>;
+export type GetLocaleDictionaryResult = AxiosResponse<LocaleDictionaryEnvelope>;
 export type GetObservabilityEventsResult = AxiosResponse<string>;
 export type GetObservabilityHealthResult = AxiosResponse<ObservabilityHealthResponseEnvelope>;
 export type GetObservabilityMetricsResult = AxiosResponse<string>;
@@ -1655,30 +2109,38 @@ export type RequestAccountDeleteResult = AxiosResponse<SuccessResponse>;
 export type ConfirmAccountDeleteResult = AxiosResponse<SuccessResponse>;
 export type LoginResult = AxiosResponse<AuthTokensEnvelope>;
 export type SignupResult = AxiosResponse<UserEnvelope>;
+export type SignupWithMultipartResult = AxiosResponse<UserEnvelope>;
 export type RequestPasswordResetResult = AxiosResponse<SuccessResponse>;
 export type ConfirmPasswordResetResult = AxiosResponse<SuccessResponse>;
 export type RefreshTokenResult = AxiosResponse<RefreshTokenEnvelope>;
-export type RefreshTokenWithPathResult = AxiosResponse<RefreshTokenEnvelope>;
 export type LogoutAllResult = AxiosResponse<SuccessResponse>;
 export type DeleteExpiredTokensResult = AxiosResponse<SuccessResponse>;
 export type ListUsersResult = AxiosResponse<UsersResponseEnvelope>;
 export type CreateUserResult = AxiosResponse<UserEnvelope>;
+export type CreateUserWithMultipartResult = AxiosResponse<UserEnvelope>;
 export type UpdateUserResult = AxiosResponse<UserEnvelope>;
+export type UpdateUserWithMultipartResult = AxiosResponse<UserEnvelope>;
 export type DeleteUserResult = AxiosResponse<SuccessResponse>;
 export type GetUserByIdResult = AxiosResponse<UserEnvelope>;
 export type UpdateUserByIdResult = AxiosResponse<UserEnvelope>;
+export type UpdateUserByIdWithMultipartResult = AxiosResponse<UserEnvelope>;
 export type DeleteUserByIdResult = AxiosResponse<SuccessResponse>;
+export type HardDeleteUserByIdResult = AxiosResponse<SuccessResponse>;
 export type SearchUsersResult = AxiosResponse<UsersResponseEnvelope>;
 export type CreateFeedbackRequestResult = AxiosResponse<FeedbackRequestEnvelope>;
 export type ListFeedbackRequestsResult = AxiosResponse<FeedbackRequestsResponseEnvelope>;
 export type UpdateFeedbackRequestStatusResult = AxiosResponse<FeedbackRequestEnvelope>;
 export type ListProductsResult = AxiosResponse<ProductsResponseEnvelope>;
 export type CreateProductResult = AxiosResponse<ProductEnvelope>;
+export type CreateProductWithMultipartResult = AxiosResponse<ProductEnvelope>;
 export type UpdateProductResult = AxiosResponse<ProductEnvelope>;
+export type UpdateProductWithMultipartResult = AxiosResponse<ProductEnvelope>;
 export type DeleteProductResult = AxiosResponse<SuccessResponse>;
 export type GetProductByIdResult = AxiosResponse<ProductEnvelope>;
 export type UpdateProductByIdResult = AxiosResponse<ProductEnvelope>;
+export type UpdateProductByIdWithMultipartResult = AxiosResponse<ProductEnvelope>;
 export type DeleteProductByIdResult = AxiosResponse<SuccessResponse>;
+export type HardDeleteProductByIdResult = AxiosResponse<SuccessResponse>;
 export type SearchProductsResult = AxiosResponse<ProductsResponseEnvelope>;
 export type GetCartResult = AxiosResponse<CartResponseEnvelope>;
 export type UpsertCartItemResult = AxiosResponse<CartResponseEnvelope>;
@@ -1698,225 +2160,214 @@ export type DeleteOrderByIdResult = AxiosResponse<SuccessResponse>;
 export type GetOrderInvoiceResult = AxiosResponse<Blob>;
 
 export const getGetHealthResponseMock = (
-    overrideResponse: Partial<Extract<MessageResponse, object>> = {}
-): MessageResponse => ({
+    overrideResponse: Partial<Extract<HealthPingEnvelope, object>> = {}
+): HealthPingEnvelope => ({
     success: faker.helpers.arrayElement([true] as const),
     status: faker.number.int(),
     message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: { status: faker.helpers.arrayElement(['ok'] as const) },
+    ...overrideResponse
+});
+
+export const getGetLocalesResponseMock = (
+    overrideResponse: Partial<Extract<LocaleCapabilitiesEnvelope, object>> = {}
+): LocaleCapabilitiesEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        locales: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$')
+        ),
+        default: faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+        fallback: faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$')
+    },
+    ...overrideResponse
+});
+
+export const getGetLocaleDictionaryResponseMock = (
+    overrideResponse: Partial<Extract<LocaleDictionaryEnvelope, object>> = {}
+): LocaleDictionaryEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: { locale: faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'), messages: {} },
     ...overrideResponse
 });
 
 export const getGetObservabilityEventsResponseMock = (): string => faker.word.sample();
 
-export const getGetObservabilityHealthResponseMock = (): ObservabilityHealthResponseEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+export const getGetObservabilityHealthResponseMock = (
+    overrideResponse: Partial<Extract<ObservabilityHealthResponseEnvelope, object>> = {}
+): ObservabilityHealthResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        status: faker.helpers.arrayElement(['ok', 'degraded'] as const),
+        environment: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        service: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        nodeVersion: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        uptimeSeconds: faker.number.int({ min: 0 }),
+        database: {
+            status: faker.helpers.arrayElement(['connected', 'connecting', 'disconnected'] as const)
+        },
+        integrations: faker.helpers.arrayElement([
+            {
+                loki: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                posthog: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                otelEnabled: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                umami: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                faro: faker.helpers.arrayElement([faker.datatype.boolean(), undefined])
+            },
+            undefined
+        ]),
+        memory: faker.helpers.arrayElement([
+            {
+                heapUsedMb: faker.number.int(),
+                heapTotalMb: faker.number.int(),
+                rssMb: faker.number.int()
+            },
+            undefined
+        ]),
+        system: faker.helpers.arrayElement([
+            {
+                platform: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                cpuCount: faker.number.int(),
+                loadAvg: Array.from(
+                    { length: faker.number.int({ min: 1, max: 10 }) },
+                    (_, i) => i + 1
+                ).map(() => faker.number.float({ fractionDigits: 2 }))
+            },
+            undefined
+        ]),
+        timestamp: faker.date.past().toISOString().slice(0, 19) + 'Z'
     },
-    ...{
-        data: {
-            success: faker.helpers.arrayElement([true] as const),
-            data: {
-                status: faker.helpers.arrayElement(['ok', 'degraded'] as const),
-                environment: faker.string.alpha({ length: { min: 10, max: 20 } }),
-                service: faker.string.alpha({ length: { min: 10, max: 20 } }),
-                nodeVersion: faker.string.alpha({ length: { min: 10, max: 20 } }),
-                uptimeSeconds: faker.number.int({ min: 0 }),
-                database: {
-                    status: faker.helpers.arrayElement([
-                        'connected',
-                        'connecting',
-                        'disconnected'
-                    ] as const)
-                },
-                integrations: faker.helpers.arrayElement([
-                    {
-                        loki: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                        posthog: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                        otelEnabled: faker.helpers.arrayElement([
-                            faker.datatype.boolean(),
-                            undefined
-                        ]),
-                        umami: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                        faro: faker.helpers.arrayElement([faker.datatype.boolean(), undefined])
-                    },
-                    undefined
-                ]),
-                memory: faker.helpers.arrayElement([
-                    {
-                        heapUsedMb: faker.number.int(),
-                        heapTotalMb: faker.number.int(),
-                        rssMb: faker.number.int()
-                    },
-                    undefined
-                ]),
-                system: faker.helpers.arrayElement([
-                    {
-                        platform: faker.string.alpha({ length: { min: 10, max: 20 } }),
-                        cpuCount: faker.number.int(),
-                        loadAvg: Array.from(
-                            { length: faker.number.int({ min: 1, max: 10 }) },
-                            (_, i) => i + 1
-                        ).map(() => faker.number.float({ fractionDigits: 2 }))
-                    },
-                    undefined
-                ]),
-                timestamp: faker.date.past().toISOString().slice(0, 19) + 'Z'
-            }
-        }
-    }
+    ...overrideResponse
 });
 
 export const getGetObservabilityMetricsResponseMock = (): string => faker.word.sample();
 
-export const getGetObservabilityMetricsOverviewResponseMock =
-    (): ObservabilityMetricsSummaryResponseEnvelope => ({
-        ...{
-            success: faker.helpers.arrayElement([true] as const),
-            status: faker.number.int(),
-            message: faker.string.alpha({ length: { min: 10, max: 20 } })
+export const getGetObservabilityMetricsOverviewResponseMock = (
+    overrideResponse: Partial<Extract<ObservabilityMetricsSummaryResponseEnvelope, object>> = {}
+): ObservabilityMetricsSummaryResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        http: {
+            totalRequests: faker.number.int({ min: 0 }),
+            totalErrors: faker.number.int({ min: 0 }),
+            errorRate: faker.number.float({ min: 0, max: 1, fractionDigits: 2 }),
+            inFlight: faker.number.int({ min: 0 }),
+            latencyMs: {
+                p50: faker.number.float({ fractionDigits: 2 }),
+                p95: faker.number.float({ fractionDigits: 2 })
+            }
         },
-        ...{
-            data: {
-                success: faker.helpers.arrayElement([true] as const),
-                data: {
-                    http: {
-                        totalRequests: faker.number.int({ min: 0 }),
-                        totalErrors: faker.number.int({ min: 0 }),
-                        errorRate: faker.number.float({ min: 0, max: 1, fractionDigits: 2 }),
-                        inFlight: faker.number.int({ min: 0 }),
-                        latencyMs: {
-                            p50: faker.number.float({ fractionDigits: 2 }),
-                            p95: faker.number.float({ fractionDigits: 2 })
-                        }
-                    },
-                    auth: {
-                        loginSuccess: faker.helpers.arrayElement([
-                            faker.number.int({ min: 0 }),
-                            undefined
-                        ]),
-                        loginFailure: faker.helpers.arrayElement([
-                            faker.number.int({ min: 0 }),
-                            undefined
-                        ]),
-                        signupSuccess: faker.helpers.arrayElement([
-                            faker.number.int({ min: 0 }),
-                            undefined
-                        ])
-                    },
-                    business: {
-                        checkoutSuccess: faker.helpers.arrayElement([
-                            faker.number.int({ min: 0 }),
-                            undefined
-                        ]),
-                        ordersCreated: faker.helpers.arrayElement([
-                            faker.number.int({ min: 0 }),
-                            undefined
-                        ])
-                    },
-                    database: {
-                        queriesTotal: faker.helpers.arrayElement([
-                            faker.number.int({ min: 0 }),
-                            undefined
-                        ]),
-                        errorsTotal: faker.helpers.arrayElement([
-                            faker.number.int({ min: 0 }),
-                            undefined
-                        ])
-                    },
-                    process: {
-                        uptimeSeconds: faker.helpers.arrayElement([
-                            faker.number.int({ min: 0 }),
-                            undefined
-                        ]),
-                        heapUsedMb: faker.helpers.arrayElement([
-                            faker.number.int({ min: 0 }),
-                            undefined
-                        ])
-                    },
-                    timestamp: faker.date.past().toISOString().slice(0, 19) + 'Z'
-                }
-            }
-        }
-    });
-
-export const getGetObservabilityAuditLogsResponseMock = (): AuditLogsResponseEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+        auth: {
+            loginSuccess: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+            loginFailure: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+            signupSuccess: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined])
+        },
+        business: {
+            checkoutSuccess: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+            ordersCreated: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined])
+        },
+        database: {
+            queriesTotal: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+            errorsTotal: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined])
+        },
+        process: {
+            uptimeSeconds: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+            heapUsedMb: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined])
+        },
+        timestamp: faker.date.past().toISOString().slice(0, 19) + 'Z'
     },
-    ...{
-        data: {
-            success: faker.helpers.arrayElement([true] as const),
-            data: {
-                items: Array.from(
-                    { length: faker.number.int({ min: 1, max: 10 }) },
-                    (_, i) => i + 1
-                ).map(() => ({
-                    actor_user_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-                    actor_role: faker.helpers.arrayElement(['admin', 'user', 'anonymous'] as const),
-                    action: faker.string.alpha({ length: { min: 10, max: 20 } }),
-                    outcome: faker.helpers.arrayElement(['success', 'failure'] as const),
-                    ip: faker.helpers.arrayElement([
-                        faker.string.alpha({ length: { min: 10, max: 20 } }),
-                        undefined
-                    ]),
-                    user_agent: faker.helpers.arrayElement([
-                        faker.string.alpha({ length: { min: 10, max: 20 } }),
-                        undefined
-                    ]),
-                    request_id: faker.helpers.arrayElement([
-                        faker.string.alpha({ length: { min: 10, max: 20 } }),
-                        undefined
-                    ]),
-                    trace_id: faker.helpers.arrayElement([
-                        faker.string.alpha({ length: { min: 10, max: 20 } }),
-                        undefined
-                    ]),
-                    target_type: faker.helpers.arrayElement([
-                        faker.string.alpha({ length: { min: 10, max: 20 } }),
-                        undefined
-                    ]),
-                    target_id: faker.helpers.arrayElement([
-                        faker.string.alpha({ length: { min: 10, max: 20 } }),
-                        undefined
-                    ]),
-                    metadata: faker.helpers.arrayElement([{}, undefined]),
-                    timestamp: faker.date.past().toISOString().slice(0, 19) + 'Z',
-                    level: faker.helpers.arrayElement(['info', 'warn'] as const)
-                })),
-                total: faker.number.int({ min: 0 })
-            }
-        }
-    }
+    ...overrideResponse
 });
 
-export const getGetAccountResponseMock = (): UserEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+export const getGetObservabilityAuditLogsResponseMock = (
+    overrideResponse: Partial<Extract<AuditLogsResponseEnvelope, object>> = {}
+): AuditLogsResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
+                actor_user_id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                actor_role: faker.helpers.arrayElement(['admin', 'user', 'anonymous'] as const),
+                action: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                outcome: faker.helpers.arrayElement(['success', 'failure'] as const),
+                ip: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                user_agent: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                request_id: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                trace_id: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                target_type: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                target_id: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                metadata: faker.helpers.arrayElement([{}, undefined]),
+                timestamp: faker.date.past().toISOString().slice(0, 19) + 'Z',
+                level: faker.helpers.arrayElement(['info', 'warn'] as const)
+            })
+        ),
+        total: faker.number.int({ min: 0 })
     },
-    ...{
-        data: {
-            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            email: faker.internet.email(),
-            username: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
-            createdAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            updatedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ])
-        }
-    }
+    ...overrideResponse
+});
+
+export const getGetAccountResponseMock = (
+    overrideResponse: Partial<Extract<UserEnvelope, object>> = {}
+): UserEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        email: faker.internet.email(),
+        username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
+    },
+    ...overrideResponse
 });
 
 export const getRequestAccountDeleteResponseMock = (
@@ -1937,48 +2388,93 @@ export const getConfirmAccountDeleteResponseMock = (
     ...overrideResponse
 });
 
-export const getLoginResponseMock = (): AuthTokensEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+export const getLoginResponseMock = (
+    overrideResponse: Partial<Extract<AuthTokensEnvelope, object>> = {}
+): AuthTokensEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        token: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        refreshToken: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        expiresIn: faker.helpers.arrayElement([faker.number.int(), undefined])
     },
-    ...{
-        data: {
-            token: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            refreshToken: faker.helpers.arrayElement([
-                faker.string.alpha({ length: { min: 10, max: 20 } }),
-                undefined
-            ]),
-            expiresIn: faker.helpers.arrayElement([faker.number.int(), undefined])
-        }
-    }
+    ...overrideResponse
 });
 
-export const getSignupResponseMock = (): UserEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+export const getSignupResponseMock = (
+    overrideResponse: Partial<Extract<UserEnvelope, object>> = {}
+): UserEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        email: faker.internet.email(),
+        username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
     },
-    ...{
-        data: {
-            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            email: faker.internet.email(),
-            username: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
-            createdAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            updatedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ])
-        }
-    }
+    ...overrideResponse
+});
+
+export const getSignupWithMultipartResponseMock = (
+    overrideResponse: Partial<Extract<UserEnvelope, object>> = {}
+): UserEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        email: faker.internet.email(),
+        username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
+    },
+    ...overrideResponse
 });
 
 export const getRequestPasswordResetResponseMock = (
@@ -1999,40 +2495,21 @@ export const getConfirmPasswordResetResponseMock = (
     ...overrideResponse
 });
 
-export const getRefreshTokenResponseMock = (): RefreshTokenEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+export const getRefreshTokenResponseMock = (
+    overrideResponse: Partial<Extract<RefreshTokenEnvelope, object>> = {}
+): RefreshTokenEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        token: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        refreshToken: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        expiresIn: faker.helpers.arrayElement([faker.number.int(), undefined])
     },
-    ...{
-        data: {
-            token: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            refreshToken: faker.helpers.arrayElement([
-                faker.string.alpha({ length: { min: 10, max: 20 } }),
-                undefined
-            ]),
-            expiresIn: faker.helpers.arrayElement([faker.number.int(), undefined])
-        }
-    }
-});
-
-export const getRefreshTokenWithPathResponseMock = (): RefreshTokenEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
-    },
-    ...{
-        data: {
-            token: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            refreshToken: faker.helpers.arrayElement([
-                faker.string.alpha({ length: { min: 10, max: 20 } }),
-                undefined
-            ]),
-            expiresIn: faker.helpers.arrayElement([faker.number.int(), undefined])
-        }
-    }
+    ...overrideResponse
 });
 
 export const getLogoutAllResponseMock = (
@@ -2053,24 +2530,28 @@ export const getDeleteExpiredTokensResponseMock = (
     ...overrideResponse
 });
 
-export const getListUsersResponseMock = (): UsersResponseEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
-    },
-    ...{
-        data: {
-            items: Array.from(
-                { length: faker.number.int({ min: 1, max: 10 }) },
-                (_, i) => i + 1
-            ).map(() => ({
+export const getListUsersResponseMock = (
+    overrideResponse: Partial<Extract<UsersResponseEnvelope, object>> = {}
+): UsersResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
                 id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 email: faker.internet.email(),
                 username: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
                 active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                imageUrl: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                locale: faker.helpers.arrayElement([
+                    faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+                    undefined
+                ]),
                 createdAt: faker.helpers.arrayElement([
                     faker.date.past().toISOString().slice(0, 19) + 'Z',
                     undefined
@@ -2078,68 +2559,165 @@ export const getListUsersResponseMock = (): UsersResponseEnvelope => ({
                 updatedAt: faker.helpers.arrayElement([
                     faker.date.past().toISOString().slice(0, 19) + 'Z',
                     undefined
+                ]),
+                deletedAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
                 ])
-            })),
-            meta: {
-                page: faker.number.int({ min: 1 }),
-                pageSize: faker.number.int({ min: 1, max: 100 }),
-                totalItems: faker.number.int({ min: 0 }),
-                totalPages: faker.number.int({ min: 0 })
-            }
+            })
+        ),
+        meta: {
+            page: faker.number.int({ min: 1 }),
+            pageSize: faker.number.int({ min: 1, max: 100 }),
+            totalItems: faker.number.int({ min: 0 }),
+            totalPages: faker.number.int({ min: 0 })
         }
-    }
+    },
+    ...overrideResponse
 });
 
-export const getCreateUserResponseMock = (): UserEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+export const getCreateUserResponseMock = (
+    overrideResponse: Partial<Extract<UserEnvelope, object>> = {}
+): UserEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        email: faker.internet.email(),
+        username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
     },
-    ...{
-        data: {
-            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            email: faker.internet.email(),
-            username: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
-            createdAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            updatedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ])
-        }
-    }
+    ...overrideResponse
 });
 
-export const getUpdateUserResponseMock = (): UserEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+export const getCreateUserWithMultipartResponseMock = (
+    overrideResponse: Partial<Extract<UserEnvelope, object>> = {}
+): UserEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        email: faker.internet.email(),
+        username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
     },
-    ...{
-        data: {
-            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            email: faker.internet.email(),
-            username: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
-            createdAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            updatedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ])
-        }
-    }
+    ...overrideResponse
+});
+
+export const getUpdateUserResponseMock = (
+    overrideResponse: Partial<Extract<UserEnvelope, object>> = {}
+): UserEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        email: faker.internet.email(),
+        username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
+    },
+    ...overrideResponse
+});
+
+export const getUpdateUserWithMultipartResponseMock = (
+    overrideResponse: Partial<Extract<UserEnvelope, object>> = {}
+): UserEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        email: faker.internet.email(),
+        username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
+    },
+    ...overrideResponse
 });
 
 export const getDeleteUserResponseMock = (
@@ -2151,56 +2729,112 @@ export const getDeleteUserResponseMock = (
     ...overrideResponse
 });
 
-export const getGetUserByIdResponseMock = (): UserEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+export const getGetUserByIdResponseMock = (
+    overrideResponse: Partial<Extract<UserEnvelope, object>> = {}
+): UserEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        email: faker.internet.email(),
+        username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
     },
-    ...{
-        data: {
-            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            email: faker.internet.email(),
-            username: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
-            createdAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            updatedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ])
-        }
-    }
+    ...overrideResponse
 });
 
-export const getUpdateUserByIdResponseMock = (): UserEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+export const getUpdateUserByIdResponseMock = (
+    overrideResponse: Partial<Extract<UserEnvelope, object>> = {}
+): UserEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        email: faker.internet.email(),
+        username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
     },
-    ...{
-        data: {
-            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            email: faker.internet.email(),
-            username: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
-            createdAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            updatedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ])
-        }
-    }
+    ...overrideResponse
+});
+
+export const getUpdateUserByIdWithMultipartResponseMock = (
+    overrideResponse: Partial<Extract<UserEnvelope, object>> = {}
+): UserEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        email: faker.internet.email(),
+        username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
+    },
+    ...overrideResponse
 });
 
 export const getDeleteUserByIdResponseMock = (
@@ -2212,24 +2846,37 @@ export const getDeleteUserByIdResponseMock = (
     ...overrideResponse
 });
 
-export const getSearchUsersResponseMock = (): UsersResponseEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
-    },
-    ...{
-        data: {
-            items: Array.from(
-                { length: faker.number.int({ min: 1, max: 10 }) },
-                (_, i) => i + 1
-            ).map(() => ({
+export const getHardDeleteUserByIdResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getSearchUsersResponseMock = (
+    overrideResponse: Partial<Extract<UsersResponseEnvelope, object>> = {}
+): UsersResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
                 id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 email: faker.internet.email(),
                 username: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
                 active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                imageUrl: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                locale: faker.helpers.arrayElement([
+                    faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+                    undefined
+                ]),
                 createdAt: faker.helpers.arrayElement([
                     faker.date.past().toISOString().slice(0, 19) + 'Z',
                     undefined
@@ -2237,64 +2884,65 @@ export const getSearchUsersResponseMock = (): UsersResponseEnvelope => ({
                 updatedAt: faker.helpers.arrayElement([
                     faker.date.past().toISOString().slice(0, 19) + 'Z',
                     undefined
+                ]),
+                deletedAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
                 ])
-            })),
-            meta: {
-                page: faker.number.int({ min: 1 }),
-                pageSize: faker.number.int({ min: 1, max: 100 }),
-                totalItems: faker.number.int({ min: 0 }),
-                totalPages: faker.number.int({ min: 0 })
-            }
+            })
+        ),
+        meta: {
+            page: faker.number.int({ min: 1 }),
+            pageSize: faker.number.int({ min: 1, max: 100 }),
+            totalItems: faker.number.int({ min: 0 }),
+            totalPages: faker.number.int({ min: 0 })
         }
-    }
+    },
+    ...overrideResponse
 });
 
-export const getCreateFeedbackRequestResponseMock = (): FeedbackRequestEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+export const getCreateFeedbackRequestResponseMock = (
+    overrideResponse: Partial<Extract<FeedbackRequestEnvelope, object>> = {}
+): FeedbackRequestEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        name: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        email: faker.internet.email(),
+        subject: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        status: faker.helpers.arrayElement(['new', 'in_progress', 'resolved', 'spam'] as const),
+        adminNotes: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        respondedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        createdAt: faker.date.past().toISOString().slice(0, 19) + 'Z',
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
     },
-    ...{
-        data: {
-            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            name: faker.helpers.arrayElement([
-                faker.string.alpha({ length: { min: 10, max: 20 } }),
-                undefined
-            ]),
-            email: faker.internet.email(),
-            subject: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            message: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            status: faker.helpers.arrayElement(['new', 'in_progress', 'resolved', 'spam'] as const),
-            adminNotes: faker.helpers.arrayElement([
-                faker.string.alpha({ length: { min: 10, max: 20 } }),
-                undefined
-            ]),
-            respondedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            createdAt: faker.date.past().toISOString().slice(0, 19) + 'Z',
-            updatedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ])
-        }
-    }
+    ...overrideResponse
 });
 
-export const getListFeedbackRequestsResponseMock = (): FeedbackRequestsResponseEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
-    },
-    ...{
-        data: {
-            items: Array.from(
-                { length: faker.number.int({ min: 1, max: 10 }) },
-                (_, i) => i + 1
-            ).map(() => ({
+export const getListFeedbackRequestsResponseMock = (
+    overrideResponse: Partial<Extract<FeedbackRequestsResponseEnvelope, object>> = {}
+): FeedbackRequestsResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
                 id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 name: faker.helpers.arrayElement([
                     faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -2322,63 +2970,60 @@ export const getListFeedbackRequestsResponseMock = (): FeedbackRequestsResponseE
                     faker.date.past().toISOString().slice(0, 19) + 'Z',
                     undefined
                 ])
-            })),
-            meta: {
-                page: faker.number.int({ min: 1 }),
-                pageSize: faker.number.int({ min: 1, max: 100 }),
-                totalItems: faker.number.int({ min: 0 }),
-                totalPages: faker.number.int({ min: 0 })
-            }
+            })
+        ),
+        meta: {
+            page: faker.number.int({ min: 1 }),
+            pageSize: faker.number.int({ min: 1, max: 100 }),
+            totalItems: faker.number.int({ min: 0 }),
+            totalPages: faker.number.int({ min: 0 })
         }
-    }
+    },
+    ...overrideResponse
 });
 
-export const getUpdateFeedbackRequestStatusResponseMock = (): FeedbackRequestEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+export const getUpdateFeedbackRequestStatusResponseMock = (
+    overrideResponse: Partial<Extract<FeedbackRequestEnvelope, object>> = {}
+): FeedbackRequestEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        name: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        email: faker.internet.email(),
+        subject: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        status: faker.helpers.arrayElement(['new', 'in_progress', 'resolved', 'spam'] as const),
+        adminNotes: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        respondedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        createdAt: faker.date.past().toISOString().slice(0, 19) + 'Z',
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
     },
-    ...{
-        data: {
-            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            name: faker.helpers.arrayElement([
-                faker.string.alpha({ length: { min: 10, max: 20 } }),
-                undefined
-            ]),
-            email: faker.internet.email(),
-            subject: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            message: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            status: faker.helpers.arrayElement(['new', 'in_progress', 'resolved', 'spam'] as const),
-            adminNotes: faker.helpers.arrayElement([
-                faker.string.alpha({ length: { min: 10, max: 20 } }),
-                undefined
-            ]),
-            respondedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            createdAt: faker.date.past().toISOString().slice(0, 19) + 'Z',
-            updatedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ])
-        }
-    }
+    ...overrideResponse
 });
 
-export const getListProductsResponseMock = (): ProductsResponseEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
-    },
-    ...{
-        data: {
-            items: Array.from(
-                { length: faker.number.int({ min: 1, max: 10 }) },
-                (_, i) => i + 1
-            ).map(() => ({
+export const getListProductsResponseMock = (
+    overrideResponse: Partial<Extract<ProductsResponseEnvelope, object>> = {}
+): ProductsResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
                 id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 price: faker.number.float({ min: 0, fractionDigits: 2 }),
@@ -2387,7 +3032,10 @@ export const getListProductsResponseMock = (): ProductsResponseEnvelope => ({
                     undefined
                 ]),
                 active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                imageUrl: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
                 categories: faker.helpers.arrayElement([
                     Array.from(
                         { length: faker.number.int({ min: 1, max: 10 }) },
@@ -2414,105 +3062,204 @@ export const getListProductsResponseMock = (): ProductsResponseEnvelope => ({
                     faker.date.past().toISOString().slice(0, 19) + 'Z',
                     undefined
                 ])
-            })),
-            meta: {
-                page: faker.number.int({ min: 1 }),
-                pageSize: faker.number.int({ min: 1, max: 100 }),
-                totalItems: faker.number.int({ min: 0 }),
-                totalPages: faker.number.int({ min: 0 })
-            }
+            })
+        ),
+        meta: {
+            page: faker.number.int({ min: 1 }),
+            pageSize: faker.number.int({ min: 1, max: 100 }),
+            totalItems: faker.number.int({ min: 0 }),
+            totalPages: faker.number.int({ min: 0 })
         }
-    }
+    },
+    ...overrideResponse
 });
 
-export const getCreateProductResponseMock = (): ProductEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+export const getCreateProductResponseMock = (
+    overrideResponse: Partial<Extract<ProductEnvelope, object>> = {}
+): ProductEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        price: faker.number.float({ min: 0, fractionDigits: 2 }),
+        description: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        categories: faker.helpers.arrayElement([
+            Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
+                faker.string.alpha({ length: { min: 10, max: 20 } })
+            ),
+            undefined
+        ]),
+        tags: faker.helpers.arrayElement([
+            Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
+                faker.string.alpha({ length: { min: 10, max: 20 } })
+            ),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
     },
-    ...{
-        data: {
-            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            title: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            price: faker.number.float({ min: 0, fractionDigits: 2 }),
-            description: faker.helpers.arrayElement([
-                faker.string.alpha({ length: { min: 10, max: 20 } }),
-                undefined
-            ]),
-            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
-            categories: faker.helpers.arrayElement([
-                Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
-                    () => faker.string.alpha({ length: { min: 10, max: 20 } })
-                ),
-                undefined
-            ]),
-            tags: faker.helpers.arrayElement([
-                Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
-                    () => faker.string.alpha({ length: { min: 10, max: 20 } })
-                ),
-                undefined
-            ]),
-            createdAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            updatedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            deletedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ])
-        }
-    }
+    ...overrideResponse
 });
 
-export const getUpdateProductResponseMock = (): ProductEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+export const getCreateProductWithMultipartResponseMock = (
+    overrideResponse: Partial<Extract<ProductEnvelope, object>> = {}
+): ProductEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        price: faker.number.float({ min: 0, fractionDigits: 2 }),
+        description: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        categories: faker.helpers.arrayElement([
+            Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
+                faker.string.alpha({ length: { min: 10, max: 20 } })
+            ),
+            undefined
+        ]),
+        tags: faker.helpers.arrayElement([
+            Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
+                faker.string.alpha({ length: { min: 10, max: 20 } })
+            ),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
     },
-    ...{
-        data: {
-            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            title: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            price: faker.number.float({ min: 0, fractionDigits: 2 }),
-            description: faker.helpers.arrayElement([
-                faker.string.alpha({ length: { min: 10, max: 20 } }),
-                undefined
-            ]),
-            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
-            categories: faker.helpers.arrayElement([
-                Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
-                    () => faker.string.alpha({ length: { min: 10, max: 20 } })
-                ),
-                undefined
-            ]),
-            tags: faker.helpers.arrayElement([
-                Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
-                    () => faker.string.alpha({ length: { min: 10, max: 20 } })
-                ),
-                undefined
-            ]),
-            createdAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            updatedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            deletedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ])
-        }
-    }
+    ...overrideResponse
+});
+
+export const getUpdateProductResponseMock = (
+    overrideResponse: Partial<Extract<ProductEnvelope, object>> = {}
+): ProductEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        price: faker.number.float({ min: 0, fractionDigits: 2 }),
+        description: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        categories: faker.helpers.arrayElement([
+            Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
+                faker.string.alpha({ length: { min: 10, max: 20 } })
+            ),
+            undefined
+        ]),
+        tags: faker.helpers.arrayElement([
+            Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
+                faker.string.alpha({ length: { min: 10, max: 20 } })
+            ),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
+    },
+    ...overrideResponse
+});
+
+export const getUpdateProductWithMultipartResponseMock = (
+    overrideResponse: Partial<Extract<ProductEnvelope, object>> = {}
+): ProductEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        price: faker.number.float({ min: 0, fractionDigits: 2 }),
+        description: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        categories: faker.helpers.arrayElement([
+            Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
+                faker.string.alpha({ length: { min: 10, max: 20 } })
+            ),
+            undefined
+        ]),
+        tags: faker.helpers.arrayElement([
+            Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
+                faker.string.alpha({ length: { min: 10, max: 20 } })
+            ),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
+    },
+    ...overrideResponse
 });
 
 export const getDeleteProductResponseMock = (
@@ -2524,94 +3271,145 @@ export const getDeleteProductResponseMock = (
     ...overrideResponse
 });
 
-export const getGetProductByIdResponseMock = (): ProductEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+export const getGetProductByIdResponseMock = (
+    overrideResponse: Partial<Extract<ProductEnvelope, object>> = {}
+): ProductEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        price: faker.number.float({ min: 0, fractionDigits: 2 }),
+        description: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        categories: faker.helpers.arrayElement([
+            Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
+                faker.string.alpha({ length: { min: 10, max: 20 } })
+            ),
+            undefined
+        ]),
+        tags: faker.helpers.arrayElement([
+            Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
+                faker.string.alpha({ length: { min: 10, max: 20 } })
+            ),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
     },
-    ...{
-        data: {
-            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            title: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            price: faker.number.float({ min: 0, fractionDigits: 2 }),
-            description: faker.helpers.arrayElement([
-                faker.string.alpha({ length: { min: 10, max: 20 } }),
-                undefined
-            ]),
-            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
-            categories: faker.helpers.arrayElement([
-                Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
-                    () => faker.string.alpha({ length: { min: 10, max: 20 } })
-                ),
-                undefined
-            ]),
-            tags: faker.helpers.arrayElement([
-                Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
-                    () => faker.string.alpha({ length: { min: 10, max: 20 } })
-                ),
-                undefined
-            ]),
-            createdAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            updatedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            deletedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ])
-        }
-    }
+    ...overrideResponse
 });
 
-export const getUpdateProductByIdResponseMock = (): ProductEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+export const getUpdateProductByIdResponseMock = (
+    overrideResponse: Partial<Extract<ProductEnvelope, object>> = {}
+): ProductEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        price: faker.number.float({ min: 0, fractionDigits: 2 }),
+        description: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        categories: faker.helpers.arrayElement([
+            Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
+                faker.string.alpha({ length: { min: 10, max: 20 } })
+            ),
+            undefined
+        ]),
+        tags: faker.helpers.arrayElement([
+            Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
+                faker.string.alpha({ length: { min: 10, max: 20 } })
+            ),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
     },
-    ...{
-        data: {
-            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            title: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            price: faker.number.float({ min: 0, fractionDigits: 2 }),
-            description: faker.helpers.arrayElement([
-                faker.string.alpha({ length: { min: 10, max: 20 } }),
-                undefined
-            ]),
-            active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-            imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
-            categories: faker.helpers.arrayElement([
-                Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
-                    () => faker.string.alpha({ length: { min: 10, max: 20 } })
-                ),
-                undefined
-            ]),
-            tags: faker.helpers.arrayElement([
-                Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
-                    () => faker.string.alpha({ length: { min: 10, max: 20 } })
-                ),
-                undefined
-            ]),
-            createdAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            updatedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            deletedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ])
-        }
-    }
+    ...overrideResponse
+});
+
+export const getUpdateProductByIdWithMultipartResponseMock = (
+    overrideResponse: Partial<Extract<ProductEnvelope, object>> = {}
+): ProductEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        price: faker.number.float({ min: 0, fractionDigits: 2 }),
+        description: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        categories: faker.helpers.arrayElement([
+            Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
+                faker.string.alpha({ length: { min: 10, max: 20 } })
+            ),
+            undefined
+        ]),
+        tags: faker.helpers.arrayElement([
+            Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(() =>
+                faker.string.alpha({ length: { min: 10, max: 20 } })
+            ),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
+    },
+    ...overrideResponse
 });
 
 export const getDeleteProductByIdResponseMock = (
@@ -2623,18 +3421,24 @@ export const getDeleteProductByIdResponseMock = (
     ...overrideResponse
 });
 
-export const getSearchProductsResponseMock = (): ProductsResponseEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
-    },
-    ...{
-        data: {
-            items: Array.from(
-                { length: faker.number.int({ min: 1, max: 10 }) },
-                (_, i) => i + 1
-            ).map(() => ({
+export const getHardDeleteProductByIdResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getSearchProductsResponseMock = (
+    overrideResponse: Partial<Extract<ProductsResponseEnvelope, object>> = {}
+): ProductsResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
                 id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 price: faker.number.float({ min: 0, fractionDigits: 2 }),
@@ -2643,7 +3447,10 @@ export const getSearchProductsResponseMock = (): ProductsResponseEnvelope => ({
                     undefined
                 ]),
                 active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                imageUrl: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
                 categories: faker.helpers.arrayElement([
                     Array.from(
                         { length: faker.number.int({ min: 1, max: 10 }) },
@@ -2670,165 +3477,32 @@ export const getSearchProductsResponseMock = (): ProductsResponseEnvelope => ({
                     faker.date.past().toISOString().slice(0, 19) + 'Z',
                     undefined
                 ])
-            })),
-            meta: {
-                page: faker.number.int({ min: 1 }),
-                pageSize: faker.number.int({ min: 1, max: 100 }),
-                totalItems: faker.number.int({ min: 0 }),
-                totalPages: faker.number.int({ min: 0 })
-            }
+            })
+        ),
+        meta: {
+            page: faker.number.int({ min: 1 }),
+            pageSize: faker.number.int({ min: 1, max: 100 }),
+            totalItems: faker.number.int({ min: 0 }),
+            totalPages: faker.number.int({ min: 0 })
         }
-    }
+    },
+    ...overrideResponse
 });
 
-export const getGetCartResponseMock = (): CartResponseEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
-    },
-    ...{
-        data: {
-            items: Array.from(
-                { length: faker.number.int({ min: 1, max: 10 }) },
-                (_, i) => i + 1
-            ).map(() => ({
+export const getGetCartResponseMock = (
+    overrideResponse: Partial<Extract<CartResponseEnvelope, object>> = {}
+): CartResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
                 productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 quantity: faker.number.int({ min: 1 })
-            })),
-            summary: {
-                itemsCount: faker.number.int({ min: 0 }),
-                totalQuantity: faker.number.int({ min: 0 }),
-                total: faker.number.float({ min: 0, fractionDigits: 2 }),
-                currency: faker.helpers.arrayElement([
-                    faker.string.alpha({ length: { min: 10, max: 20 } }),
-                    undefined
-                ])
-            }
-        }
-    }
-});
-
-export const getUpsertCartItemResponseMock = (): CartResponseEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
-    },
-    ...{
-        data: {
-            items: Array.from(
-                { length: faker.number.int({ min: 1, max: 10 }) },
-                (_, i) => i + 1
-            ).map(() => ({
-                productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
-                quantity: faker.number.int({ min: 1 })
-            })),
-            summary: {
-                itemsCount: faker.number.int({ min: 0 }),
-                totalQuantity: faker.number.int({ min: 0 }),
-                total: faker.number.float({ min: 0, fractionDigits: 2 }),
-                currency: faker.helpers.arrayElement([
-                    faker.string.alpha({ length: { min: 10, max: 20 } }),
-                    undefined
-                ])
-            }
-        }
-    }
-});
-
-export const getClearCartResponseMock = (): CartResponseEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
-    },
-    ...{
-        data: {
-            items: Array.from(
-                { length: faker.number.int({ min: 1, max: 10 }) },
-                (_, i) => i + 1
-            ).map(() => ({
-                productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
-                quantity: faker.number.int({ min: 1 })
-            })),
-            summary: {
-                itemsCount: faker.number.int({ min: 0 }),
-                totalQuantity: faker.number.int({ min: 0 }),
-                total: faker.number.float({ min: 0, fractionDigits: 2 }),
-                currency: faker.helpers.arrayElement([
-                    faker.string.alpha({ length: { min: 10, max: 20 } }),
-                    undefined
-                ])
-            }
-        }
-    }
-});
-
-export const getUpdateCartItemByIdResponseMock = (): CartResponseEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
-    },
-    ...{
-        data: {
-            items: Array.from(
-                { length: faker.number.int({ min: 1, max: 10 }) },
-                (_, i) => i + 1
-            ).map(() => ({
-                productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
-                quantity: faker.number.int({ min: 1 })
-            })),
-            summary: {
-                itemsCount: faker.number.int({ min: 0 }),
-                totalQuantity: faker.number.int({ min: 0 }),
-                total: faker.number.float({ min: 0, fractionDigits: 2 }),
-                currency: faker.helpers.arrayElement([
-                    faker.string.alpha({ length: { min: 10, max: 20 } }),
-                    undefined
-                ])
-            }
-        }
-    }
-});
-
-export const getRemoveCartItemResponseMock = (): CartResponseEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
-    },
-    ...{
-        data: {
-            items: Array.from(
-                { length: faker.number.int({ min: 1, max: 10 }) },
-                (_, i) => i + 1
-            ).map(() => ({
-                productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
-                quantity: faker.number.int({ min: 1 })
-            })),
-            summary: {
-                itemsCount: faker.number.int({ min: 0 }),
-                totalQuantity: faker.number.int({ min: 0 }),
-                total: faker.number.float({ min: 0, fractionDigits: 2 }),
-                currency: faker.helpers.arrayElement([
-                    faker.string.alpha({ length: { min: 10, max: 20 } }),
-                    undefined
-                ])
-            }
-        }
-    }
-});
-
-export const getGetCartSummaryResponseMock = (): CartSummaryResponseEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
-    },
-    ...{
-        data: {
+            })
+        ),
+        summary: {
             itemsCount: faker.number.int({ min: 0 }),
             totalQuantity: faker.number.int({ min: 0 }),
             total: faker.number.float({ min: 0, fractionDigits: 2 }),
@@ -2837,106 +3511,230 @@ export const getGetCartSummaryResponseMock = (): CartSummaryResponseEnvelope => 
                 undefined
             ])
         }
-    }
+    },
+    ...overrideResponse
 });
 
-export const getCheckoutResponseMock = (): CheckoutResponseEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
-    },
-    ...{
-        data: {
-            order: {
-                id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-                userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
-                email: faker.internet.email(),
-                items: Array.from(
-                    { length: faker.number.int({ min: 1, max: 10 }) },
-                    (_, i) => i + 1
-                ).map(() => ({
-                    product: {
-                        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-                        title: faker.string.alpha({ length: { min: 10, max: 20 } }),
-                        price: faker.number.float({ min: 0, fractionDigits: 2 }),
-                        description: faker.helpers.arrayElement([
-                            faker.string.alpha({ length: { min: 10, max: 20 } }),
-                            undefined
-                        ]),
-                        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
-                        categories: faker.helpers.arrayElement([
-                            Array.from(
-                                { length: faker.number.int({ min: 1, max: 10 }) },
-                                (_, i) => i + 1
-                            ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
-                            undefined
-                        ]),
-                        tags: faker.helpers.arrayElement([
-                            Array.from(
-                                { length: faker.number.int({ min: 1, max: 10 }) },
-                                (_, i) => i + 1
-                            ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
-                            undefined
-                        ]),
-                        createdAt: faker.helpers.arrayElement([
-                            faker.date.past().toISOString().slice(0, 19) + 'Z',
-                            undefined
-                        ]),
-                        updatedAt: faker.helpers.arrayElement([
-                            faker.date.past().toISOString().slice(0, 19) + 'Z',
-                            undefined
-                        ]),
-                        deletedAt: faker.helpers.arrayElement([
-                            faker.date.past().toISOString().slice(0, 19) + 'Z',
-                            undefined
-                        ])
-                    },
-                    quantity: faker.number.int({ min: 1 })
-                })),
-                total: faker.number.float({ min: 0, fractionDigits: 2 }),
-                notes: faker.helpers.arrayElement([
-                    faker.string.alpha({ length: { min: 10, max: 20 } }),
-                    undefined
-                ]),
-                status: faker.helpers.arrayElement([
-                    'pending',
-                    'paid',
-                    'processing',
-                    'shipped',
-                    'delivered',
-                    'cancelled'
-                ] as const),
-                createdAt: faker.helpers.arrayElement([
-                    faker.date.past().toISOString().slice(0, 19) + 'Z',
-                    undefined
-                ]),
-                updatedAt: faker.helpers.arrayElement([
-                    faker.date.past().toISOString().slice(0, 19) + 'Z',
-                    undefined
-                ])
-            },
-            message: faker.helpers.arrayElement([
+export const getUpsertCartItemResponseMock = (
+    overrideResponse: Partial<Extract<CartResponseEnvelope, object>> = {}
+): CartResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
+                productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                quantity: faker.number.int({ min: 1 })
+            })
+        ),
+        summary: {
+            itemsCount: faker.number.int({ min: 0 }),
+            totalQuantity: faker.number.int({ min: 0 }),
+            total: faker.number.float({ min: 0, fractionDigits: 2 }),
+            currency: faker.helpers.arrayElement([
                 faker.string.alpha({ length: { min: 10, max: 20 } }),
                 undefined
             ])
         }
-    }
+    },
+    ...overrideResponse
 });
 
-export const getListOrdersResponseMock = (): OrdersResponseEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
+export const getClearCartResponseMock = (
+    overrideResponse: Partial<Extract<CartResponseEnvelope, object>> = {}
+): CartResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
+                productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                quantity: faker.number.int({ min: 1 })
+            })
+        ),
+        summary: {
+            itemsCount: faker.number.int({ min: 0 }),
+            totalQuantity: faker.number.int({ min: 0 }),
+            total: faker.number.float({ min: 0, fractionDigits: 2 }),
+            currency: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ])
+        }
     },
-    ...{
-        data: {
+    ...overrideResponse
+});
+
+export const getUpdateCartItemByIdResponseMock = (
+    overrideResponse: Partial<Extract<CartResponseEnvelope, object>> = {}
+): CartResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
+                productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                quantity: faker.number.int({ min: 1 })
+            })
+        ),
+        summary: {
+            itemsCount: faker.number.int({ min: 0 }),
+            totalQuantity: faker.number.int({ min: 0 }),
+            total: faker.number.float({ min: 0, fractionDigits: 2 }),
+            currency: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ])
+        }
+    },
+    ...overrideResponse
+});
+
+export const getRemoveCartItemResponseMock = (
+    overrideResponse: Partial<Extract<CartResponseEnvelope, object>> = {}
+): CartResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
+                productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                quantity: faker.number.int({ min: 1 })
+            })
+        ),
+        summary: {
+            itemsCount: faker.number.int({ min: 0 }),
+            totalQuantity: faker.number.int({ min: 0 }),
+            total: faker.number.float({ min: 0, fractionDigits: 2 }),
+            currency: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ])
+        }
+    },
+    ...overrideResponse
+});
+
+export const getGetCartSummaryResponseMock = (
+    overrideResponse: Partial<Extract<CartSummaryResponseEnvelope, object>> = {}
+): CartSummaryResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        itemsCount: faker.number.int({ min: 0 }),
+        totalQuantity: faker.number.int({ min: 0 }),
+        total: faker.number.float({ min: 0, fractionDigits: 2 }),
+        currency: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ])
+    },
+    ...overrideResponse
+});
+
+export const getCheckoutResponseMock = (
+    overrideResponse: Partial<Extract<CheckoutResponseEnvelope, object>> = {}
+): CheckoutResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        order: {
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            email: faker.internet.email(),
             items: Array.from(
                 { length: faker.number.int({ min: 1, max: 10 }) },
                 (_, i) => i + 1
             ).map(() => ({
+                product: {
+                    id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                    description: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
+                    active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                    imageUrl: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
+                    categories: faker.helpers.arrayElement([
+                        Array.from(
+                            { length: faker.number.int({ min: 1, max: 10 }) },
+                            (_, i) => i + 1
+                        ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                        undefined
+                    ]),
+                    tags: faker.helpers.arrayElement([
+                        Array.from(
+                            { length: faker.number.int({ min: 1, max: 10 }) },
+                            (_, i) => i + 1
+                        ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                        undefined
+                    ]),
+                    createdAt: faker.helpers.arrayElement([
+                        faker.date.past().toISOString().slice(0, 19) + 'Z',
+                        undefined
+                    ]),
+                    updatedAt: faker.helpers.arrayElement([
+                        faker.date.past().toISOString().slice(0, 19) + 'Z',
+                        undefined
+                    ]),
+                    deletedAt: faker.helpers.arrayElement([
+                        faker.date.past().toISOString().slice(0, 19) + 'Z',
+                        undefined
+                    ])
+                },
+                quantity: faker.number.int({ min: 1 })
+            })),
+            totalItems: faker.number.int({ min: 0 }),
+            totalQuantity: faker.number.int({ min: 0 }),
+            totalPrice: faker.number.float({ min: 0, fractionDigits: 2 }),
+            notes: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            status: faker.helpers.arrayElement([
+                'pending',
+                'paid',
+                'processing',
+                'shipped',
+                'delivered',
+                'cancelled'
+            ] as const),
+            createdAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            updatedAt: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ])
+        },
+        message: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ])
+    },
+    ...overrideResponse
+});
+
+export const getListOrdersResponseMock = (
+    overrideResponse: Partial<Extract<OrdersResponseEnvelope, object>> = {}
+): OrdersResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
                 id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 email: faker.internet.email(),
@@ -2953,7 +3751,10 @@ export const getListOrdersResponseMock = (): OrdersResponseEnvelope => ({
                             undefined
                         ]),
                         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                        imageUrl: faker.helpers.arrayElement([
+                            faker.string.alpha({ length: { min: 10, max: 20 } }),
+                            undefined
+                        ]),
                         categories: faker.helpers.arrayElement([
                             Array.from(
                                 { length: faker.number.int({ min: 1, max: 10 }) },
@@ -2983,53 +3784,53 @@ export const getListOrdersResponseMock = (): OrdersResponseEnvelope => ({
                     },
                     quantity: faker.number.int({ min: 1 })
                 })),
-                total: faker.number.float({ min: 0, fractionDigits: 2 }),
-                notes: faker.helpers.arrayElement([
-                    faker.string.alpha({ length: { min: 10, max: 20 } }),
-                    undefined
-                ]),
-                status: faker.helpers.arrayElement([
-                    'pending',
-                    'paid',
-                    'processing',
-                    'shipped',
-                    'delivered',
-                    'cancelled'
-                ] as const),
-                createdAt: faker.helpers.arrayElement([
-                    faker.date.past().toISOString().slice(0, 19) + 'Z',
-                    undefined
-                ]),
-                updatedAt: faker.helpers.arrayElement([
-                    faker.date.past().toISOString().slice(0, 19) + 'Z',
-                    undefined
-                ])
-            })),
-            meta: {
-                page: faker.number.int({ min: 1 }),
-                pageSize: faker.number.int({ min: 1, max: 100 }),
                 totalItems: faker.number.int({ min: 0 }),
-                totalPages: faker.number.int({ min: 0 })
-            }
+                totalQuantity: faker.number.int({ min: 0 }),
+                totalPrice: faker.number.float({ min: 0, fractionDigits: 2 }),
+                notes: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                status: faker.helpers.arrayElement([
+                    'pending',
+                    'paid',
+                    'processing',
+                    'shipped',
+                    'delivered',
+                    'cancelled'
+                ] as const),
+                createdAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ]),
+                updatedAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ])
+            })
+        ),
+        meta: {
+            page: faker.number.int({ min: 1 }),
+            pageSize: faker.number.int({ min: 1, max: 100 }),
+            totalItems: faker.number.int({ min: 0 }),
+            totalPages: faker.number.int({ min: 0 })
         }
-    }
+    },
+    ...overrideResponse
 });
 
-export const getCreateOrderResponseMock = (): OrderEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
-    },
-    ...{
-        data: {
-            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            email: faker.internet.email(),
-            items: Array.from(
-                { length: faker.number.int({ min: 1, max: 10 }) },
-                (_, i) => i + 1
-            ).map(() => ({
+export const getCreateOrderResponseMock = (
+    overrideResponse: Partial<Extract<OrderEnvelope, object>> = {}
+): OrderEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        email: faker.internet.email(),
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
                 product: {
                     id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     title: faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -3039,7 +3840,10 @@ export const getCreateOrderResponseMock = (): OrderEnvelope => ({
                         undefined
                     ]),
                     active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                    imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                    imageUrl: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
                     categories: faker.helpers.arrayElement([
                         Array.from(
                             { length: faker.number.int({ min: 1, max: 10 }) },
@@ -3068,47 +3872,47 @@ export const getCreateOrderResponseMock = (): OrderEnvelope => ({
                     ])
                 },
                 quantity: faker.number.int({ min: 1 })
-            })),
-            total: faker.number.float({ min: 0, fractionDigits: 2 }),
-            notes: faker.helpers.arrayElement([
-                faker.string.alpha({ length: { min: 10, max: 20 } }),
-                undefined
-            ]),
-            status: faker.helpers.arrayElement([
-                'pending',
-                'paid',
-                'processing',
-                'shipped',
-                'delivered',
-                'cancelled'
-            ] as const),
-            createdAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            updatedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ])
-        }
-    }
+            })
+        ),
+        totalItems: faker.number.int({ min: 0 }),
+        totalQuantity: faker.number.int({ min: 0 }),
+        totalPrice: faker.number.float({ min: 0, fractionDigits: 2 }),
+        notes: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        status: faker.helpers.arrayElement([
+            'pending',
+            'paid',
+            'processing',
+            'shipped',
+            'delivered',
+            'cancelled'
+        ] as const),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
+    },
+    ...overrideResponse
 });
 
-export const getUpdateOrderResponseMock = (): OrderEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
-    },
-    ...{
-        data: {
-            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            email: faker.internet.email(),
-            items: Array.from(
-                { length: faker.number.int({ min: 1, max: 10 }) },
-                (_, i) => i + 1
-            ).map(() => ({
+export const getUpdateOrderResponseMock = (
+    overrideResponse: Partial<Extract<OrderEnvelope, object>> = {}
+): OrderEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        email: faker.internet.email(),
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
                 product: {
                     id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     title: faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -3118,7 +3922,10 @@ export const getUpdateOrderResponseMock = (): OrderEnvelope => ({
                         undefined
                     ]),
                     active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                    imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                    imageUrl: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
                     categories: faker.helpers.arrayElement([
                         Array.from(
                             { length: faker.number.int({ min: 1, max: 10 }) },
@@ -3147,30 +3954,33 @@ export const getUpdateOrderResponseMock = (): OrderEnvelope => ({
                     ])
                 },
                 quantity: faker.number.int({ min: 1 })
-            })),
-            total: faker.number.float({ min: 0, fractionDigits: 2 }),
-            notes: faker.helpers.arrayElement([
-                faker.string.alpha({ length: { min: 10, max: 20 } }),
-                undefined
-            ]),
-            status: faker.helpers.arrayElement([
-                'pending',
-                'paid',
-                'processing',
-                'shipped',
-                'delivered',
-                'cancelled'
-            ] as const),
-            createdAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            updatedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ])
-        }
-    }
+            })
+        ),
+        totalItems: faker.number.int({ min: 0 }),
+        totalQuantity: faker.number.int({ min: 0 }),
+        totalPrice: faker.number.float({ min: 0, fractionDigits: 2 }),
+        notes: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        status: faker.helpers.arrayElement([
+            'pending',
+            'paid',
+            'processing',
+            'shipped',
+            'delivered',
+            'cancelled'
+        ] as const),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
+    },
+    ...overrideResponse
 });
 
 export const getDeleteOrderResponseMock = (
@@ -3182,18 +3992,15 @@ export const getDeleteOrderResponseMock = (
     ...overrideResponse
 });
 
-export const getSearchOrdersResponseMock = (): OrdersResponseEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
-    },
-    ...{
-        data: {
-            items: Array.from(
-                { length: faker.number.int({ min: 1, max: 10 }) },
-                (_, i) => i + 1
-            ).map(() => ({
+export const getSearchOrdersResponseMock = (
+    overrideResponse: Partial<Extract<OrdersResponseEnvelope, object>> = {}
+): OrdersResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
                 id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 email: faker.internet.email(),
@@ -3210,7 +4017,10 @@ export const getSearchOrdersResponseMock = (): OrdersResponseEnvelope => ({
                             undefined
                         ]),
                         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                        imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                        imageUrl: faker.helpers.arrayElement([
+                            faker.string.alpha({ length: { min: 10, max: 20 } }),
+                            undefined
+                        ]),
                         categories: faker.helpers.arrayElement([
                             Array.from(
                                 { length: faker.number.int({ min: 1, max: 10 }) },
@@ -3240,7 +4050,9 @@ export const getSearchOrdersResponseMock = (): OrdersResponseEnvelope => ({
                     },
                     quantity: faker.number.int({ min: 1 })
                 })),
-                total: faker.number.float({ min: 0, fractionDigits: 2 }),
+                totalItems: faker.number.int({ min: 0 }),
+                totalQuantity: faker.number.int({ min: 0 }),
+                totalPrice: faker.number.float({ min: 0, fractionDigits: 2 }),
                 notes: faker.helpers.arrayElement([
                     faker.string.alpha({ length: { min: 10, max: 20 } }),
                     undefined
@@ -3261,32 +4073,30 @@ export const getSearchOrdersResponseMock = (): OrdersResponseEnvelope => ({
                     faker.date.past().toISOString().slice(0, 19) + 'Z',
                     undefined
                 ])
-            })),
-            meta: {
-                page: faker.number.int({ min: 1 }),
-                pageSize: faker.number.int({ min: 1, max: 100 }),
-                totalItems: faker.number.int({ min: 0 }),
-                totalPages: faker.number.int({ min: 0 })
-            }
+            })
+        ),
+        meta: {
+            page: faker.number.int({ min: 1 }),
+            pageSize: faker.number.int({ min: 1, max: 100 }),
+            totalItems: faker.number.int({ min: 0 }),
+            totalPages: faker.number.int({ min: 0 })
         }
-    }
+    },
+    ...overrideResponse
 });
 
-export const getGetOrderByIdResponseMock = (): OrderEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
-    },
-    ...{
-        data: {
-            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            email: faker.internet.email(),
-            items: Array.from(
-                { length: faker.number.int({ min: 1, max: 10 }) },
-                (_, i) => i + 1
-            ).map(() => ({
+export const getGetOrderByIdResponseMock = (
+    overrideResponse: Partial<Extract<OrderEnvelope, object>> = {}
+): OrderEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        email: faker.internet.email(),
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
                 product: {
                     id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     title: faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -3296,7 +4106,10 @@ export const getGetOrderByIdResponseMock = (): OrderEnvelope => ({
                         undefined
                     ]),
                     active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                    imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                    imageUrl: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
                     categories: faker.helpers.arrayElement([
                         Array.from(
                             { length: faker.number.int({ min: 1, max: 10 }) },
@@ -3325,47 +4138,47 @@ export const getGetOrderByIdResponseMock = (): OrderEnvelope => ({
                     ])
                 },
                 quantity: faker.number.int({ min: 1 })
-            })),
-            total: faker.number.float({ min: 0, fractionDigits: 2 }),
-            notes: faker.helpers.arrayElement([
-                faker.string.alpha({ length: { min: 10, max: 20 } }),
-                undefined
-            ]),
-            status: faker.helpers.arrayElement([
-                'pending',
-                'paid',
-                'processing',
-                'shipped',
-                'delivered',
-                'cancelled'
-            ] as const),
-            createdAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            updatedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ])
-        }
-    }
+            })
+        ),
+        totalItems: faker.number.int({ min: 0 }),
+        totalQuantity: faker.number.int({ min: 0 }),
+        totalPrice: faker.number.float({ min: 0, fractionDigits: 2 }),
+        notes: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        status: faker.helpers.arrayElement([
+            'pending',
+            'paid',
+            'processing',
+            'shipped',
+            'delivered',
+            'cancelled'
+        ] as const),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
+    },
+    ...overrideResponse
 });
 
-export const getUpdateOrderByIdResponseMock = (): OrderEnvelope => ({
-    ...{
-        success: faker.helpers.arrayElement([true] as const),
-        status: faker.number.int(),
-        message: faker.string.alpha({ length: { min: 10, max: 20 } })
-    },
-    ...{
-        data: {
-            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
-            email: faker.internet.email(),
-            items: Array.from(
-                { length: faker.number.int({ min: 1, max: 10 }) },
-                (_, i) => i + 1
-            ).map(() => ({
+export const getUpdateOrderByIdResponseMock = (
+    overrideResponse: Partial<Extract<OrderEnvelope, object>> = {}
+): OrderEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        email: faker.internet.email(),
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
                 product: {
                     id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     title: faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -3375,7 +4188,10 @@ export const getUpdateOrderByIdResponseMock = (): OrderEnvelope => ({
                         undefined
                     ]),
                     active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                    imageUrl: faker.helpers.arrayElement([faker.internet.url(), undefined]),
+                    imageUrl: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
                     categories: faker.helpers.arrayElement([
                         Array.from(
                             { length: faker.number.int({ min: 1, max: 10 }) },
@@ -3404,30 +4220,33 @@ export const getUpdateOrderByIdResponseMock = (): OrderEnvelope => ({
                     ])
                 },
                 quantity: faker.number.int({ min: 1 })
-            })),
-            total: faker.number.float({ min: 0, fractionDigits: 2 }),
-            notes: faker.helpers.arrayElement([
-                faker.string.alpha({ length: { min: 10, max: 20 } }),
-                undefined
-            ]),
-            status: faker.helpers.arrayElement([
-                'pending',
-                'paid',
-                'processing',
-                'shipped',
-                'delivered',
-                'cancelled'
-            ] as const),
-            createdAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ]),
-            updatedAt: faker.helpers.arrayElement([
-                faker.date.past().toISOString().slice(0, 19) + 'Z',
-                undefined
-            ])
-        }
-    }
+            })
+        ),
+        totalItems: faker.number.int({ min: 0 }),
+        totalQuantity: faker.number.int({ min: 0 }),
+        totalPrice: faker.number.float({ min: 0, fractionDigits: 2 }),
+        notes: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        status: faker.helpers.arrayElement([
+            'pending',
+            'paid',
+            'processing',
+            'shipped',
+            'delivered',
+            'cancelled'
+        ] as const),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
+    },
+    ...overrideResponse
 });
 
 export const getDeleteOrderByIdResponseMock = (
@@ -3444,10 +4263,10 @@ export const getGetOrderInvoiceResponseMock = (): ArrayBuffer =>
 
 export const getGetHealthMockHandler = (
     overrideResponse?:
-        | MessageResponse
+        | HealthPingEnvelope
         | ((
               info: Parameters<Parameters<typeof http.get>[1]>[0]
-          ) => Promise<MessageResponse> | MessageResponse),
+          ) => Promise<HealthPingEnvelope> | HealthPingEnvelope),
     options?: RequestHandlerOptions
 ) => {
     return http.get(
@@ -3459,6 +4278,54 @@ export const getGetHealthMockHandler = (
                         ? await overrideResponse(info)
                         : overrideResponse
                     : getGetHealthResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getGetLocalesMockHandler = (
+    overrideResponse?:
+        | LocaleCapabilitiesEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<LocaleCapabilitiesEnvelope> | LocaleCapabilitiesEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/locales',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetLocalesResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getGetLocaleDictionaryMockHandler = (
+    overrideResponse?:
+        | LocaleDictionaryEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<LocaleDictionaryEnvelope> | LocaleDictionaryEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/locales/:locale',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetLocaleDictionaryResponseMock(),
                 { status: 200 }
             );
         },
@@ -3710,6 +4577,30 @@ export const getSignupMockHandler = (
     );
 };
 
+export const getSignupWithMultipartMockHandler = (
+    overrideResponse?:
+        | UserEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<UserEnvelope> | UserEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/account/signup',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getSignupWithMultipartResponseMock(),
+                { status: 201 }
+            );
+        },
+        options
+    );
+};
+
 export const getRequestPasswordResetMockHandler = (
     overrideResponse?:
         | SuccessResponse
@@ -3775,30 +4666,6 @@ export const getRefreshTokenMockHandler = (
                         ? await overrideResponse(info)
                         : overrideResponse
                     : getRefreshTokenResponseMock(),
-                { status: 200 }
-            );
-        },
-        options
-    );
-};
-
-export const getRefreshTokenWithPathMockHandler = (
-    overrideResponse?:
-        | RefreshTokenEnvelope
-        | ((
-              info: Parameters<Parameters<typeof http.get>[1]>[0]
-          ) => Promise<RefreshTokenEnvelope> | RefreshTokenEnvelope),
-    options?: RequestHandlerOptions
-) => {
-    return http.get(
-        '*/account/refresh/:token',
-        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
-            return HttpResponse.json(
-                overrideResponse !== undefined
-                    ? typeof overrideResponse === 'function'
-                        ? await overrideResponse(info)
-                        : overrideResponse
-                    : getRefreshTokenWithPathResponseMock(),
                 { status: 200 }
             );
         },
@@ -3902,6 +4769,30 @@ export const getCreateUserMockHandler = (
     );
 };
 
+export const getCreateUserWithMultipartMockHandler = (
+    overrideResponse?:
+        | UserEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<UserEnvelope> | UserEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/users',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getCreateUserWithMultipartResponseMock(),
+                { status: 201 }
+            );
+        },
+        options
+    );
+};
+
 export const getUpdateUserMockHandler = (
     overrideResponse?:
         | UserEnvelope
@@ -3919,6 +4810,30 @@ export const getUpdateUserMockHandler = (
                         ? await overrideResponse(info)
                         : overrideResponse
                     : getUpdateUserResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getUpdateUserWithMultipartMockHandler = (
+    overrideResponse?:
+        | UserEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.put>[1]>[0]
+          ) => Promise<UserEnvelope> | UserEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.put(
+        '*/users',
+        async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getUpdateUserWithMultipartResponseMock(),
                 { status: 200 }
             );
         },
@@ -3998,6 +4913,30 @@ export const getUpdateUserByIdMockHandler = (
     );
 };
 
+export const getUpdateUserByIdWithMultipartMockHandler = (
+    overrideResponse?:
+        | UserEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.put>[1]>[0]
+          ) => Promise<UserEnvelope> | UserEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.put(
+        '*/users/:id',
+        async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getUpdateUserByIdWithMultipartResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
 export const getDeleteUserByIdMockHandler = (
     overrideResponse?:
         | SuccessResponse
@@ -4015,6 +4954,30 @@ export const getDeleteUserByIdMockHandler = (
                         ? await overrideResponse(info)
                         : overrideResponse
                     : getDeleteUserByIdResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getHardDeleteUserByIdMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.delete>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.delete(
+        '*/users/:id/hard',
+        async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getHardDeleteUserByIdResponseMock(),
                 { status: 200 }
             );
         },
@@ -4166,6 +5129,30 @@ export const getCreateProductMockHandler = (
     );
 };
 
+export const getCreateProductWithMultipartMockHandler = (
+    overrideResponse?:
+        | ProductEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<ProductEnvelope> | ProductEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/products',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getCreateProductWithMultipartResponseMock(),
+                { status: 201 }
+            );
+        },
+        options
+    );
+};
+
 export const getUpdateProductMockHandler = (
     overrideResponse?:
         | ProductEnvelope
@@ -4183,6 +5170,30 @@ export const getUpdateProductMockHandler = (
                         ? await overrideResponse(info)
                         : overrideResponse
                     : getUpdateProductResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getUpdateProductWithMultipartMockHandler = (
+    overrideResponse?:
+        | ProductEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.put>[1]>[0]
+          ) => Promise<ProductEnvelope> | ProductEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.put(
+        '*/products',
+        async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getUpdateProductWithMultipartResponseMock(),
                 { status: 200 }
             );
         },
@@ -4262,6 +5273,30 @@ export const getUpdateProductByIdMockHandler = (
     );
 };
 
+export const getUpdateProductByIdWithMultipartMockHandler = (
+    overrideResponse?:
+        | ProductEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.put>[1]>[0]
+          ) => Promise<ProductEnvelope> | ProductEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.put(
+        '*/products/:id',
+        async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getUpdateProductByIdWithMultipartResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
 export const getDeleteProductByIdMockHandler = (
     overrideResponse?:
         | SuccessResponse
@@ -4279,6 +5314,30 @@ export const getDeleteProductByIdMockHandler = (
                         ? await overrideResponse(info)
                         : overrideResponse
                     : getDeleteProductByIdResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getHardDeleteProductByIdMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.delete>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.delete(
+        '*/products/:id/hard',
+        async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getHardDeleteProductByIdResponseMock(),
                 { status: 200 }
             );
         },
@@ -4697,6 +5756,8 @@ export const getGetOrderInvoiceMockHandler = (
 };
 export const getEcommerceDemoAPIMock = () => [
     getGetHealthMockHandler(),
+    getGetLocalesMockHandler(),
+    getGetLocaleDictionaryMockHandler(),
     getGetObservabilityEventsMockHandler(),
     getGetObservabilityHealthMockHandler(),
     getGetObservabilityMetricsMockHandler(),
@@ -4707,30 +5768,38 @@ export const getEcommerceDemoAPIMock = () => [
     getConfirmAccountDeleteMockHandler(),
     getLoginMockHandler(),
     getSignupMockHandler(),
+    getSignupWithMultipartMockHandler(),
     getRequestPasswordResetMockHandler(),
     getConfirmPasswordResetMockHandler(),
     getRefreshTokenMockHandler(),
-    getRefreshTokenWithPathMockHandler(),
     getLogoutAllMockHandler(),
     getDeleteExpiredTokensMockHandler(),
     getListUsersMockHandler(),
     getCreateUserMockHandler(),
+    getCreateUserWithMultipartMockHandler(),
     getUpdateUserMockHandler(),
+    getUpdateUserWithMultipartMockHandler(),
     getDeleteUserMockHandler(),
     getGetUserByIdMockHandler(),
     getUpdateUserByIdMockHandler(),
+    getUpdateUserByIdWithMultipartMockHandler(),
     getDeleteUserByIdMockHandler(),
+    getHardDeleteUserByIdMockHandler(),
     getSearchUsersMockHandler(),
     getCreateFeedbackRequestMockHandler(),
     getListFeedbackRequestsMockHandler(),
     getUpdateFeedbackRequestStatusMockHandler(),
     getListProductsMockHandler(),
     getCreateProductMockHandler(),
+    getCreateProductWithMultipartMockHandler(),
     getUpdateProductMockHandler(),
+    getUpdateProductWithMultipartMockHandler(),
     getDeleteProductMockHandler(),
     getGetProductByIdMockHandler(),
     getUpdateProductByIdMockHandler(),
+    getUpdateProductByIdWithMultipartMockHandler(),
     getDeleteProductByIdMockHandler(),
+    getHardDeleteProductByIdMockHandler(),
     getSearchProductsMockHandler(),
     getGetCartMockHandler(),
     getUpsertCartItemMockHandler(),

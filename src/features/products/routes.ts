@@ -8,6 +8,16 @@ export default [
         component: () => import('@/features/products/views/ProductsList.vue')
     },
     {
+        // Declared before `products/:id` so the intent is obvious at a glance. vue-router ranks
+        // a static segment above a dynamic one regardless of order, so `create` could not be
+        // swallowed as an id either way — but the users routes read the same way, and a reader
+        // should not have to know the ranking rules to be sure.
+        path: 'products/create',
+        name: 'ProductCreate',
+        beforeEnter: [isAdmin],
+        component: () => import('@/features/products/views/ProductCreate.vue')
+    },
+    {
         path: 'products/:id',
         name: 'ProductTarget',
         component: () => import('@/features/products/views/Product.vue'),

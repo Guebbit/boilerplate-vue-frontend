@@ -46,44 +46,44 @@ describe('authentications middleware', () => {
         profileRefs.isAdmin.value = false;
     });
 
-    it('redirects guest to login for auth-only route', async () => {
-        const { isAuth } = await import('@/middlewares/authentications');
+    it('redirects guest to login for auth-only route', () =>
+        import('@/middlewares/authentications')
+            .then(({ isAuth }) =>
+                isAuth({ fullPath: '/en/admin', params: { locale: 'en' } } as never, {} as never)
+            )
+            .then((result) => {
+                expect(addMessageMock).toHaveBeenCalledWith('navigation.error-not-logged');
+                expect(result).toEqual(
+                    expect.objectContaining({ name: 'Login', params: { locale: 'en' } })
+                );
+            }));
 
-        const result = await isAuth(
-            { fullPath: '/en/admin', params: { locale: 'en' } } as never,
-            {} as never
-        );
+    it('redirects authenticated user away from guest-only route', () =>
+        import('@/middlewares/authentications')
+            .then(({ isGuest }) => {
+                profileRefs.isAuth.value = true;
+                return isGuest(
+                    { fullPath: '/en/login', params: { locale: 'en' } } as never,
+                    {} as never
+                );
+            })
+            .then((result) => {
+                expect(addMessageMock).toHaveBeenCalledWith('navigation.error-already-logged');
+                expect(result).toEqual({ name: 'Home', params: { locale: 'en' } });
+            }));
 
-        expect(addMessageMock).toHaveBeenCalledWith('navigation.error-not-logged');
-        expect(result).toEqual(
-            expect.objectContaining({ name: 'Login', params: { locale: 'en' } })
-        );
-    });
-
-    it('redirects authenticated user away from guest-only route', async () => {
-        const { isGuest } = await import('@/middlewares/authentications');
-        profileRefs.isAuth.value = true;
-
-        const result = await isGuest(
-            { fullPath: '/en/login', params: { locale: 'en' } } as never,
-            {} as never
-        );
-
-        expect(addMessageMock).toHaveBeenCalledWith('navigation.error-already-logged');
-        expect(result).toEqual({ name: 'Home', params: { locale: 'en' } });
-    });
-
-    it('blocks non-admin on admin middleware', async () => {
-        const { isAdmin } = await import('@/middlewares/authentications');
-        profileRefs.isAuth.value = true;
-        profileRefs.isAdmin.value = false;
-
-        const result = await isAdmin(
-            { fullPath: '/en/admin', params: { locale: 'en' } } as never,
-            {} as never
-        );
-
-        expect(addMessageMock).toHaveBeenCalledWith('navigation.error-forbidden');
-        expect(result).toEqual({ name: 'Home', params: { locale: 'en' } });
-    });
+    it('blocks non-admin on admin middleware', () =>
+        import('@/middlewares/authentications')
+            .then(({ isAdmin }) => {
+                profileRefs.isAuth.value = true;
+                profileRefs.isAdmin.value = false;
+                return isAdmin(
+                    { fullPath: '/en/admin', params: { locale: 'en' } } as never,
+                    {} as never
+                );
+            })
+            .then((result) => {
+                expect(addMessageMock).toHaveBeenCalledWith('navigation.error-forbidden');
+                expect(result).toEqual({ name: 'Home', params: { locale: 'en' } });
+            }));
 });

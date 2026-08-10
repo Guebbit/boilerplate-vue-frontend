@@ -7,9 +7,9 @@ import {
     createOrder as apiCreateOrder,
     updateOrderById,
     deleteOrderById,
-    checkout as apiCheckout
+    checkout as apiCheckout,
+    getOrderInvoice
 } from '@api';
-import httpClient from '@/plugins/http';
 import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
 import type {
     Order,
@@ -43,7 +43,6 @@ export const useOrdersStore = defineStore('orders', () => {
     const {
         itemDictionary: orders,
         itemList: ordersList,
-        getRecord: getOrder,
         addRecord: addOrder,
         selectedIdentifier: selectedOrderId,
         selectedRecord: currentOrder,
@@ -174,7 +173,7 @@ export const useOrdersStore = defineStore('orders', () => {
                 const obs = useObservabilityStore();
                 obs.track(analyticsEvents.CHECKOUT_COMPLETED, {
                     order_id: response.data?.order?.id,
-                    total: response.data?.order?.total
+                    total_price: response.data?.order?.totalPrice
                 });
                 return response.data;
             })
@@ -192,20 +191,13 @@ export const useOrdersStore = defineStore('orders', () => {
      * Downloads an order's invoice.
      *
      * @param orderId - Identifier of the order to invoice.
-     * @returns A promise resolving with the axios response whose `data` is the
-     *  PDF `Blob`.
+     * @returns A promise resolving with the PDF `Blob`.
      */
-    const getOrderInvoice = (orderId: string) =>
-        fetchAny(() =>
-            httpClient.get(`/orders/${encodeURIComponent(orderId)}/invoice`, {
-                responseType: 'blob'
-            })
-        );
+    const downloadInvoice = (orderId: string) => fetchAny(() => getOrderInvoice(orderId));
 
     return {
         orders,
         ordersList,
-        getOrder,
         addOrder,
         selectedOrderId,
         currentOrder,
@@ -225,6 +217,6 @@ export const useOrdersStore = defineStore('orders', () => {
         updateOrder,
         checkout,
         deleteOrder,
-        getOrderInvoice
+        downloadInvoice
     };
 });

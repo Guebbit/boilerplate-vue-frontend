@@ -1,14 +1,10 @@
 import axiosClient from 'axios';
-import { getCurrentLocale } from '@/utils/i18n.ts';
-import type {
-    AxiosError,
-    AxiosResponse,
-    AxiosRequestConfig,
-    InternalAxiosRequestConfig
-} from 'axios';
+import { apiText, getCurrentLocale } from '@/utils/i18n.ts';
+import type { AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
 import type { IResponseReject, IResponseSuccess } from '@/types';
 import { useProfileStore } from '@/stores/profile.ts';
 import { storeToRefs } from 'pinia';
+import { resolveResponseSchema } from './responseSchemaMap.ts';
 
 /**
  * Custom request config for internal retry bookkeeping.
@@ -49,14 +45,24 @@ export type IAxiosResponseErrorBody = unknown;
 /**
  * Picks a user-facing message for a failed request.
  *
+ * These are the cases where the API sent no message of its own to display — an empty body, a
+ * proxy's bare 502, a request that never reached anything — so the client has to produce the copy
+ * itself. Everything else prints what the server sent, already in the language `Accept-Language`
+ * asked for.
+ *
+ * The keys live under `api-errors.*` in this app's own dictionary: they are FE-authored stand-ins
+ * for BE copy, and they have to work precisely when the BE is unreachable, so they cannot depend
+ * on anything fetched at runtime. `apiText` prefers the BE's own wording under `api.*` when that
+ * dictionary happens to be loaded — see `@/utils/i18n.ts`.
+ *
  * @param status - HTTP status code of the response.
  * @param fallback - Message to use when the status carries no specific wording.
  * @returns A canonical message for 401/403/5xx, the fallback otherwise.
  */
 const getFallbackMessage = (status: number, fallback: string) => {
-    if (status === 401) return 'Unauthorized';
-    if (status === 403) return 'Forbidden';
-    if (status >= 500) return 'Internal Server Error';
+    if (status === 401) return apiText('generic.error-unauthorized', 'api-errors.unauthorized');
+    if (status === 403) return apiText('generic.error-forbidden', 'api-errors.forbidden');
+    if (status >= 500) return apiText('generic.error-internal', 'api-errors.internal-server-error');
     return fallback;
 };
 
@@ -138,13 +144,16 @@ export const onRequestReject = (error: AxiosError) => {
 };
 
 /**
- * Response success interceptor: unwraps the axios envelope so callers receive
- * the backend payload (`{ data }`) directly.
+ * Response success interceptor — DISABLED, kept as the place a global response transform would go.
+ *
+ * Unwrapping to `response.data` here makes `instance.get()` et al. lie about their return type:
+ * still typed as `AxiosResponse<T>`, actually resolving to `T`. So `instance` always resolves
+ * with the real `AxiosResponse`, and the one sanctioned unwrap point is `orvalMutator` below.
  *
  * @param response - Successful axios response.
  * @returns The response body.
  */
-export const onResponseSuccess = (response: AxiosResponse): AxiosResponse['data'] => response.data;
+// const onResponseSuccess = (response: AxiosResponse): AxiosResponse['data'] => response.data;
 
 /**
  * Response error normalizer.
@@ -179,7 +188,10 @@ export const onResponseReject = (
     }
 
     const status = error.response?.status ?? 500;
-    const fallbackMessage = error.response?.statusText || error.message || 'Unknown error';
+    const fallbackMessage =
+        error.response?.statusText ||
+        error.message ||
+        apiText('generic.error-unknown', 'api-errors.unknown');
     const message = getFallbackMessage(status, fallbackMessage);
     const shouldLogServerError =
         import.meta.env.DEV && import.meta.env.VITE_APP_DEBUG_HTTP === 'true' && status >= 500;
@@ -212,7 +224,7 @@ export const onResponseReject = (
  *  the normalized rejection from {@link onResponseReject}. Auth endpoints
  *  (see {@link shouldSkipRefresh}) never attempt a refresh.
  */
-export const onResponseRejectWithRefresh = async (
+export const onResponseRejectWithRefresh = (
     error: AxiosError<IAxiosResponseErrorData, IAxiosResponseErrorBody>
 ) => {
     const { accessToken } = storeToRefs(useProfileStore());
@@ -249,33 +261,107 @@ instance.interceptors.request.use(onRequest, onRequestReject);
  * Handle all responses
  * (Intercept and modify responses after they are received)
  */
-instance.interceptors.response.use(onResponseSuccess, onResponseRejectWithRefresh);
+instance.interceptors.response.use(undefined, onResponseRejectWithRefresh);
 
 /**
- * Complete custom axios instance
- */
-export default instance;
-
-/**
- * Custom orval mutator: routes all generated API calls through this shared
- * axios instance.
+ * Whether `orvalMutator` should parse every response through its contract schema before
+ * resolving. Controlled by `VITE_VALIDATE_RESPONSES` ('true'/'false'); when unset, defaults to
+ * on for an actual `vite dev` server (`DEV` true) so it also fires during ordinary local
+ * development against a live API, not only in the `test:e2e:live` Cypress run that sets it
+ * explicitly.
  *
- * The instance already handles:
+ * The `MODE !== 'test'` half of that default matters: Vitest also sets `DEV: true` (its mode is
+ * 'test', not 'production'), and plenty of unit tests exercise `orvalMutator` against
+ * hand-rolled fixtures that are deliberately partial.
+ *
+ * This is the FE-side mirror of the BE's `toSatisfyApiSpec()` contract tests: MSW responses are
+ * checked by `assertMockContract` at the point they're built, this covers a live backend's.
+ */
+const shouldValidateResponses = (): boolean => {
+    const flag = import.meta.env.VITE_VALIDATE_RESPONSES;
+    if (flag === 'true') return true;
+    if (flag === 'false') return false;
+    return Boolean(import.meta.env.DEV) && import.meta.env.MODE !== 'test';
+};
+
+/**
+ * Parses a response body through the schema matching its request, throwing loudly on a
+ * mismatch. Requests whose route isn't in `responseSchemaMap`'s table fail open — logged once
+ * per call in dev rather than thrown — since a missing map entry means the map is stale, not
+ * that the response itself is wrong.
+ *
+ * @param config - The request config that produced `data` (used to resolve the schema).
+ * @param data - The already-unwrapped response body.
+ */
+const validateResponseAgainstContract = (config: AxiosRequestConfig, data: unknown): void => {
+    const schema = resolveResponseSchema(config.method, config.url);
+    if (!schema) {
+        // eslint-disable-next-line no-console
+        console.warn(
+            `[contract] no response schema mapped for ${(config.method ?? 'GET').toUpperCase()} ${config.url ?? '(no url)'} — skipping validation`
+        );
+        return;
+    }
+
+    const result = schema.safeParse(data);
+    if (result.success) return;
+
+    const issues = result.error.issues
+        .map((issue) => `  - ${issue.path.join('.') || '(root)'}: ${issue.message}`)
+        .join('\n');
+    throw new Error(
+        `[contract] response for ${(config.method ?? 'GET').toUpperCase()} ${config.url ?? '(no url)'} does not match the OpenAPI schema:\n${issues}`
+    );
+};
+
+/**
+ * Custom orval mutator: the *only* function allowed to call the shared axios
+ * instance directly (see `orval.config.ts`'s `override.api.output.override.mutator`,
+ * which points every generated client function through here). Anything that
+ * needs to hit the API — generated or hand-written — goes through this, never
+ * through `instance` itself, so there is exactly one place that unwraps the
+ * response and exactly one place request/response behavior is configured.
+ *
+ * `instance` already handles:
  * - Base URL (VITE_API_URL)
  * - Bearer token header injection
  * - Accept-Language header
  * - Cookie forwarding (refresh token)
  * - 401 -> token refresh -> retry logic
- * - Response unwrapping: the response interceptor returns response.data
- *   directly, so the Promise resolves with the JSON envelope (e.g. CartResponseEnvelope)
- *   rather than the raw AxiosResponse.
  *
- * The second generic parameter `<never, T>` tells TypeScript that the return
- * type is `T` (matching what the interceptor actually returns at runtime).
+ * When `shouldValidateResponses()` is on, it also parses every response through the schema
+ * matching its route (see `responseSchemaMap.ts`) before resolving — see that function's
+ * docstring for why this exists.
  *
- * @typeParam T - Response payload type expected by the generated client.
- * @param config - Request config produced by the generated client.
- * @returns A promise resolving with the unwrapped response body.
+ * The second parameter is what orval calls the mutator's "second arg": because this signature
+ * declares one, every generated function gains an `options?` argument that lands here. It is
+ * the supported way to pass per-call axios config — `onUploadProgress` for the image uploads,
+ * `signal` for cancellation — without a call site reaching for `orvalMutator` directly.
+ * `config` comes from codegen and wins on conflict, so `options` cannot rewrite the url,
+ * method or body of a generated call.
+ *
+ * `headers` are merged one level deeper on purpose. Every generated call that has a body also
+ * sets `Content-Type`, so a plain top-level merge would make `config.headers` replace the
+ * caller's headers wholesale — silently dropping them on exactly the requests most likely to
+ * need one. Merging per-key keeps caller headers additive while codegen still wins on conflict,
+ * which is what protects the multipart boundary from being overwritten by hand.
+ *
+ * @typeParam T - Response payload type expected by the caller.
+ * @param config - Request config, built by the generated client.
+ * @param options - Per-call axios overrides supplied by the caller.
+ * @returns A promise resolving with the unwrapped response body (`response.data`).
  */
-export const apiMutator = <T>(config: AxiosRequestConfig): Promise<T> =>
-    instance.request<never, T>(config);
+export const orvalMutator = <T>(
+    config: AxiosRequestConfig,
+    options?: AxiosRequestConfig
+): Promise<T> => {
+    const request: AxiosRequestConfig = {
+        ...options,
+        ...config,
+        headers: { ...options?.headers, ...config.headers }
+    };
+    return instance.request<T>(request).then((response) => {
+        if (shouldValidateResponses()) validateResponseAgainstContract(request, response.data);
+        return response.data;
+    });
+};

@@ -18,7 +18,7 @@ const readFirstItemQuantity = () =>
 describe('Cart', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetMockState();
+        cy.resetState();
     });
 
     describe('Empty cart', () => {

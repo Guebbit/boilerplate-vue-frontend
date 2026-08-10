@@ -1,1 +1,9 @@
+# The full gate, and the only one: lint, openapi lint, format check, build, unit, Cypress e2e.
+#
+# About eight and a half minutes, and that is accepted deliberately: the alternative is a lighter
+# hook that lets a broken e2e run reach a push, and Cypress is the only layer here that exercises
+# the app as a user meets it. Run it, or run `git commit --no-verify` knowingly — not by default.
+#
+# Deliberately not here, and run by hand for the occasions that want them: `test:mutation`
+# (re-executes the unit suite once per mutant) and `test:e2e:live` (needs the paired backend up).
 npm run complete:check

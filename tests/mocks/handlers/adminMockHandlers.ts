@@ -1,101 +1,34 @@
+/**
+ * The three `/observability/*` endpoints behind `AdminOverviewTab.vue` and the audit tab.
+ *
+ * The payloads live in `mockDatabase.observability`, populated by whichever profile is active,
+ * so this file does what every other handler family does: read the database and wrap it. Serving
+ * them from frozen constants here instead would leave the admin dashboard — the most numeric,
+ * most layout-fragile screen in the app — the one screen `resilience.cy.ts` cannot stress with a
+ * 7-digit request count, a zero-request cold start, or an odd-length `loadAvg`.
+ */
 import { http, type HttpHandler } from 'msw';
-import type {
-    ObservabilityHealthResponse,
-    ObservabilityMetricsSummaryResponse,
-    AuditLogsResponse
-} from 'src/types';
 import {
     GetObservabilityHealthResponse,
     GetObservabilityMetricsOverviewResponse,
     GetObservabilityAuditLogsResponse
 } from '@api/schemas';
-import { createSuccessEnvelope, getIsoDateNow } from '../shared/mockShared.ts';
+import { createSuccessEnvelope, getIsoDateNow, mockDatabase } from '../shared/mockShared.ts';
 import { toMockJsonResponse } from '../shared/mockTransport.ts';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
-const MOCK_HEALTH_RESPONSE: ObservabilityHealthResponse = {
-    success: true,
-    data: {
-        status: 'ok',
-        environment: 'development',
-        service: 'boilerplate-node-backend',
-        nodeVersion: 'v20.0.0',
-        uptimeSeconds: 3600,
-        database: { status: 'connected' },
-        integrations: { loki: true, otelEnabled: true, umami: true, faro: true },
-        memory: { heapUsedMb: 64, heapTotalMb: 128, rssMb: 80 },
-        system: { platform: 'linux', cpuCount: 4, loadAvg: [0.5, 0.4, 0.3] },
-        timestamp: getIsoDateNow()
-    }
-};
-
-const MOCK_METRICS_RESPONSE: ObservabilityMetricsSummaryResponse = {
-    success: true,
-    data: {
-        http: {
-            totalRequests: 1042,
-            totalErrors: 12,
-            errorRate: 0.0115,
-            inFlight: 2,
-            latencyMs: { p50: 18, p95: 85 }
-        },
-        auth: { loginSuccess: 58, loginFailure: 4, signupSuccess: 12 },
-        business: { checkoutSuccess: 22, ordersCreated: 22 },
-        database: { queriesTotal: 3120, errorsTotal: 0 },
-        process: { uptimeSeconds: 3600, heapUsedMb: 64 },
-        timestamp: getIsoDateNow()
-    }
-};
-
-const MOCK_AUDIT_EVENTS: AuditLogsResponse = {
-    success: true,
-    data: {
-        total: 3,
-        items: [
-            {
-                actor_user_id: 'user-admin-1',
-                actor_role: 'admin',
-                action: 'auth.login.succeeded',
-                outcome: 'success',
-                ip: '127.0.0.1',
-                request_id: 'req-abc12345',
-                trace_id: 'trace-def67890',
-                timestamp: new Date(Date.now() - 60_000).toISOString(),
-                level: 'info'
-            },
-            {
-                actor_user_id: 'user-guest-1',
-                actor_role: 'anonymous',
-                action: 'auth.login.failed',
-                outcome: 'failure',
-                ip: '192.168.1.50',
-                request_id: 'req-xyz99887',
-                trace_id: 'trace-uvw33221',
-                timestamp: new Date(Date.now() - 120_000).toISOString(),
-                level: 'warn'
-            },
-            {
-                actor_user_id: 'user-standard-2',
-                actor_role: 'user',
-                action: 'orders.create',
-                outcome: 'success',
-                ip: '10.0.0.5',
-                request_id: 'req-lmn55443',
-                trace_id: 'trace-opq11009',
-                timestamp: new Date(Date.now() - 300_000).toISOString(),
-                level: 'info'
-            }
-        ]
-    }
-};
-
 export const registerAdminMockHandlers = (): HttpHandler[] => [
+    /*
+     * `timestamp` is stamped at response time rather than served from the database on both health
+     * and metrics: the dashboard renders it as "as of", and a value frozen at database-build time
+     * would age visibly across a spec run. The random profile varies everything else.
+     */
     http.get(`${API_BASE}/observability/health`, () =>
         toMockJsonResponse(
             createSuccessEnvelope({
-                ...MOCK_HEALTH_RESPONSE,
-                data: { ...MOCK_HEALTH_RESPONSE.data, timestamp: getIsoDateNow() }
+                success: true,
+                data: { ...mockDatabase.observability.health, timestamp: getIsoDateNow() }
             }),
             { schema: GetObservabilityHealthResponse }
         )
@@ -103,15 +36,16 @@ export const registerAdminMockHandlers = (): HttpHandler[] => [
     http.get(`${API_BASE}/observability/metrics/overview`, () =>
         toMockJsonResponse(
             createSuccessEnvelope({
-                ...MOCK_METRICS_RESPONSE,
-                data: { ...MOCK_METRICS_RESPONSE.data, timestamp: getIsoDateNow() }
+                success: true,
+                data: { ...mockDatabase.observability.metrics, timestamp: getIsoDateNow() }
             }),
             { schema: GetObservabilityMetricsOverviewResponse }
         )
     ),
     http.get(`${API_BASE}/observability/audit`, () =>
-        toMockJsonResponse(createSuccessEnvelope(MOCK_AUDIT_EVENTS), {
-            schema: GetObservabilityAuditLogsResponse
-        })
+        toMockJsonResponse(
+            createSuccessEnvelope({ success: true, data: mockDatabase.observability.audit }),
+            { schema: GetObservabilityAuditLogsResponse }
+        )
     )
 ];

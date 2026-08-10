@@ -1,0 +1,78 @@
+name: E2E (random profile)
+
+# The random mock profile (VITE_MOCK_PROFILE=random, see tests/mocks/shared/mockProfiles.ts and
+# docs/tools/mocking.md) drives the app off faker-generated, contract-valid data instead of the
+# fixed seed, and tests/e2e/specs/resilience.cy.ts asserts invariants that must hold for ANY such
+# dataset rather than exact values. That's exactly the kind of check that catches hardcoded
+# assumptions the fixed seed can't — but it was only reachable via `npm run test:e2e:random` run
+# by hand, which in practice means never. Kept in its own workflow, the same way mutation.yml is,
+# so it can never become a PR gate by accident: this profile is a smoke check for drift, not a
+# merge blocker, and it asserts invariants rather than exact values so failures need a human to
+# read the trace rather than a red X to block a merge on.
+#
+# On failure, the run log prints the faker seed (apiMock.ts, via resolveMockSeed()) that produced
+# the failing dataset — reproduce locally with RANDOM_DATA_SEED=<seed> npm run test:e2e:random.
+#
+# Runs nightly, and on demand from the Actions tab.
+
+on:
+    schedule:
+        # 03:00 UTC — after the day's merges, before mutation.yml's 03:30 run.
+        - cron: '0 3 * * *'
+    workflow_dispatch:
+
+concurrency:
+    group: e2e-random-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+env:
+    NODE_VERSION: 22
+
+jobs:
+    test-e2e-random:
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+
+            - name: Cache Cypress binary
+              uses: actions/cache@v4
+              with:
+                  path: ~/.cache/Cypress
+                  key: cypress-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+                  restore-keys: |
+                      cypress-${{ runner.os }}-
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Run e2e tests (random profile)
+              run: npm run test:e2e:random
+
+            - name: Upload Cypress screenshots
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: cypress-screenshots-random
+                  path: tests/e2e/screenshots
+                  retention-days: 14
+                  if-no-files-found: ignore
+
+            - name: Upload Cypress videos
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: cypress-videos-random
+                  path: tests/e2e/videos
+                  retention-days: 14
+                  if-no-files-found: ignore

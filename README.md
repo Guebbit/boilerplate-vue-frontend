@@ -38,6 +38,60 @@ npm run dev           # start Vite dev server on :8080
 
 Then open <http://localhost:8080>.
 
+### In containers, and pairing with the backend
+
+```bash
+cp .env-example .env       # required for compose too — see below
+podman compose up          # or: docker compose up
+```
+
+`cp .env-example .env` is **not optional for the container path**. The compose file bind-mounts
+the repo at `/app`, so Vite reads that same `.env` from inside the container; without it you get
+compose's built-in fallbacks and nothing else — no Faro, no Umami, no locale settings.
+
+The compose `environment:` block deliberately lists only the pairing-critical variables. Compose
+entries become `process.env`, and Vite applies `process.env` _after_ `.env`, so anything added
+there overrides `.env` and can no longer be changed by editing it. Leave the rest to `.env`.
+
+To run the pair:
+
+1. Start the **backend** stack first (it owns the API, Alloy and Umami the frontend points at).
+2. Start this one. `VITE_API_MOCK_ENABLED` defaults to `false`, so the app talks to the real API.
+3. Confirm `NODE_CORS_ORIGIN` in the backend `.env` contains `http://localhost:8080`.
+
+The two stacks stay **independent** — separate compose projects, separate networks, no shared
+network required. The only thing that crosses the boundary is your browser, which runs on the
+host: it is the browser, not the container, that resolves `VITE_API_URL` and `VITE_API_SSE`, so
+those must always be **host** ports (`http://localhost:3000`), never compose service names.
+
+Running this container alone is still fine, but it will have no API to call. Set
+`VITE_API_MOCK_ENABLED=true` in `.env` for standalone, mock-backed development.
+
+### Host port map
+
+This repo owns the **`8080–8099`** host-port block; the paired backend owns **`3000–3099`**.
+Keeping the two blocks disjoint is what lets both stacks be up at the same time — they
+previously collided on `4173`, which this repo claimed twice (docs container _and_ e2e vite
+server) and the backend claimed once for its own docs.
+
+| Service                  | Host port | Where it is set                                     |
+| ------------------------ | --------- | --------------------------------------------------- |
+| Vite dev server          | `8080`    | `VITE_APP_PORT` — host and compose alike            |
+| e2e vite server          | `8085`    | `test:e2e*` scripts + `cypress.config.ts` `baseUrl` |
+| Docs (VitePress + Nginx) | `8090`    | `VITE_DOCS_PORT`                                    |
+
+New services belong inside `8080–8099`.
+
+> `VITE_APP_PORT` is read in `vite.config.ts` via `loadEnv`, so the dev server and the compose
+> publish (`${VITE_APP_PORT}:${VITE_APP_PORT}`) always agree — moving the port is a one-line
+> change. `strictPort` is on: a busy port fails instead of quietly hopping to the next free one,
+> which in a container would leave the published port pointing at nothing.
+
+> The e2e scripts no longer free their port with `fuser -k` before starting. That command killed
+> _any_ process listening on it — including another project's container port forwarder.
+> `start-server-and-test` now simply fails loudly if `8085` is busy, which is the correct
+> behaviour.
+
 ---
 
 ## Tech stack & official docs
@@ -248,6 +302,7 @@ Reference: [`.env-example`](./.env-example).
 | Variable                     | Purpose                                                                                                                                                        |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `VITE_APP_DEFAULT_LOCALE`    | Initial locale (e.g. `en`)                                                                                                                                     |
+| `VITE_APP_FALLBACK_LOCALE`   | Locale used when a key is missing from the active one — `vue-i18n` `fallbackLocale` (default `en`)                                                             |
 | `VITE_APP_SUPPORTED_LOCALES` | Comma-separated supported locales (e.g. `en,it,es`)                                                                                                            |
 | `VITE_APP_EMPTY_VALUE`       | Placeholder for empty/unavailable display values (default `—`)                                                                                                 |
 | `VITE_APP_BASE_URL`          | Router history base URL (optional)                                                                                                                             |
@@ -256,36 +311,35 @@ Reference: [`.env-example`](./.env-example).
 | `VITE_API_MOCK_ENABLED`      | Enable [MSW](https://mswjs.io/) mocking (`true`/`false`) — see [Mocking](#mocking-with-msw)                                                                    |
 | `VITE_AXIOS_TIMEOUT`         | [Axios](https://axios-http.com/) timeout (ms)                                                                                                                  |
 | `VITE_APP_DEBUG_ROUTER`      | Router debug logs in dev (`true`/`false`)                                                                                                                      |
-| `VITE_APP_DEBUG_HOME`        | Home view demo logs in dev (`true`/`false`)                                                                                                                    |
 | `VITE_APP_DEBUG_HTTP`        | HTTP interceptor debug logs for server errors (`true`/`false`)                                                                                                 |
 | `VITE_FARO_URL`              | [Grafana Faro](https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/faro-web-sdk/) receiver URL — Alloy `/collect` (empty = off) |
 | `VITE_FARO_APP_NAME`         | App name reported to Faro (default `frontend`)                                                                                                                 |
 | `VITE_FARO_APP_VERSION`      | App version reported to Faro (default `1.0.0`)                                                                                                                 |
 | `VITE_FARO_ENVIRONMENT`      | Faro environment tag (defaults to Vite `MODE`)                                                                                                                 |
 | `VITE_UMAMI_WEBSITE_ID`      | [Umami](https://umami.is/) website id (empty = off)                                                                                                            |
-| `VITE_UMAMI_SRC`             | Umami tracker script URL (default: `http://localhost:8090/script.js`)                                                                                          |
+| `VITE_UMAMI_SRC`             | Umami tracker script URL (default: `http://localhost:3080/script.js`)                                                                                          |
 
 ---
 
 ## npm scripts
 
-| Script                   | Purpose                                                                                 |
-| ------------------------ | --------------------------------------------------------------------------------------- |
-| `npm run dev`            | Start [Vite](https://vite.dev/) dev server on `:8080`                                   |
-| `npm run build`          | `vue-tsc` type-check **+** production build                                             |
-| `npm run preview`        | Preview built app                                                                       |
-| `npm run lint`           | Run [ESLint](https://eslint.org/) (check)                                               |
-| `npm run lint:fix`       | Run ESLint with `--fix`                                                                 |
-| `npm run lint:openapi`   | Lint `openapi.yaml` with [Spectral](https://stoplight.io/open-source/spectral)          |
-| `npm run prettier`       | [Prettier](https://prettier.io/) check (alias for `prettier:check`)                     |
-| `npm run prettier:fix`   | Prettier write                                                                          |
-| `npm run test:unit`      | [Vitest](https://vitest.dev/) unit tests                                                |
-| `npm run test:e2e`       | Start Vite (with MSW) + run [Cypress](https://www.cypress.io/) e2e                      |
-| `npm run test`           | `test:unit` then `test:e2e`                                                             |
-| `npm run genapi`         | Regenerate `contracts/rest` client from `openapi.yaml`                                  |
-| `npm run genasyncapi`    | Run `tsx scripts/gen-asyncapi-types.ts` to regenerate `src/types/realtime.generated.ts` |
-| `npm run complete`       | build + lint:fix + lint:openapi + prettier:fix + tests (local hardening)                |
-| `npm run complete:check` | build + lint + lint:openapi + prettier:check + tests (CI gate)                          |
+| Script                   | Purpose                                                                                                                                         |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run dev`            | Start [Vite](https://vite.dev/) dev server on `:8080`                                                                                           |
+| `npm run build`          | `vue-tsc` type-check **+** production build                                                                                                     |
+| `npm run preview`        | Preview built app                                                                                                                               |
+| `npm run lint`           | Run [ESLint](https://eslint.org/) (check)                                                                                                       |
+| `npm run lint:fix`       | Run ESLint with `--fix`                                                                                                                         |
+| `npm run lint:openapi`   | Lint `openapi.yaml` with [Spectral](https://stoplight.io/open-source/spectral)                                                                  |
+| `npm run prettier`       | [Prettier](https://prettier.io/) check (alias for `prettier:check`)                                                                             |
+| `npm run prettier:fix`   | Prettier write                                                                                                                                  |
+| `npm run test:unit`      | [Vitest](https://vitest.dev/) unit tests                                                                                                        |
+| `npm run test:e2e`       | Start Vite (with MSW) + run [Cypress](https://www.cypress.io/) e2e                                                                              |
+| `npm run test`           | `test:unit` then `test:e2e`                                                                                                                     |
+| `npm run genapi`         | Regenerate `contracts/rest` client from `openapi.yaml`                                                                                          |
+| `npm run genasyncapi`    | Regenerate `src/types/realtime.generated.ts` from `asyncapi.yaml` (shared generator — see [AsyncAPI workflow](./docs/api/asyncapi-workflow.md)) |
+| `npm run complete`       | build + lint:fix + lint:openapi + prettier:fix + tests (local hardening)                                                                        |
+| `npm run complete:check` | build + lint + lint:openapi + prettier:check + tests (CI gate)                                                                                  |
 
 ---
 
@@ -368,7 +422,7 @@ Dev/test strategy for realtime:
 
 ## HTTP & error handling
 
-Single axios instance lives in `src/plugins/http/index.ts`, wired into the generated client via its `apiMutator` export (registered as orval's mutator in `orval.config.ts`).
+Single axios instance lives in `src/plugins/http/index.ts`, wired into the generated client via its `orvalMutator` export (registered as orval's mutator in `orval.config.ts`).
 
 ```mermaid
 sequenceDiagram
@@ -427,6 +481,87 @@ Tools used here:
 - [Vue Router](https://router.vuejs.org/) for navigation + guards.
 - [Vue I18n](https://vue-i18n.intlify.dev/) for messages and locale switching.
 
+### Talking to the API in the right language
+
+The axios interceptor sends `Accept-Language: <active locale>` on every request
+(`src/plugins/http/index.ts`), reading the locale fresh each time — so the moment
+`changeLanguage('it')` resolves, every subsequent call is answered in Italian. The API is
+stateless about language: each request carries its own, and `Content-Language` on the response
+says what it actually used.
+
+That means API copy needs no client-side dictionary in normal operation: the server sends
+finished text and this app prints it.
+
+### Validation messages: thunks, not factories
+
+Schemas in `src/features/*/schemas.ts` are module constants whose messages are **thunks**:
+
+```ts
+export const usersEmailSchema = z.email({ error: () => t('users-form.email-invalid') });
+```
+
+Zod calls the thunk at parse time, so one schema object speaks whatever language is active then.
+They used to be `createUsersSchema(t)` factories consumed through a getter; that bought nothing —
+`useStructureFormValidation` resolves `toValue(schema)` inside `validate()` and nowhere else, so a
+getter was evaluated at exactly the moment a thunk is — and it was a live trap, because
+`createUsersSchema(t)` instead of `() => createUsersSchema(t)` type-checks, runs, and silently
+freezes the language.
+
+### Errors already on screen
+
+A thunk decides what the **next** validation says, not what is currently displayed: `formErrors`
+holds resolved strings, and re-rendering just re-prints them. Every form therefore passes
+`{ revalidateOn: locale }` to `useStructureFormValidation`, which re-runs `validate()` over the
+unchanged data on a language switch — and only while errors are showing, so a pristine form is
+not validated just because someone changed the language.
+
+Forgetting it is invisible until someone switches language mid-form, so
+`tests/unit/features/login-view-i18n.spec.ts` asserts it on a real view.
+
+### What is deliberately NOT translated
+
+These are technician-facing and stay English on purpose:
+
+- **console output** (`console.error`, debug logging)
+- **thrown `Error` messages**
+- **analytics event names and observability attributes**
+- **symbols and SI units** in templates (`×`, `MB`, `ms`) — identical in every language
+
+`vue/no-bare-strings-in-template` (see `eslint.config.ts`) enforces the rest: no literal text node
+and no static `alt` / `title` / `label` / `placeholder` / `aria-label` in any template.
+
+### `api.*` — the API's own dictionary
+
+**Each repository owns its own dictionary.** This app never gets its UI copy from the API, and the
+API never gets its response copy from here — either boilerplate has to work against a different
+counterpart, so neither may depend on the other for its own strings. What they synchronize is the
+_choice_ of language, via `Accept-Language`.
+
+The API's dictionary is nonetheless _available_, at `GET /locales/:locale`, and this app merges it
+under a **reserved root namespace**: `api`. Never at the root — two independently-authored
+keyspaces would eventually collide silently, and the loser would be whichever loaded last. No key
+under `api` may be authored here; `tests/unit/utils/i18n.spec.ts` enforces that.
+
+| Piece                            | Where                                                                                                                               |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| discover the API's languages     | `mergeApiLocales()` at boot (`src/main.ts`) — a **union** with the build-time list, so the app still works with the API unreachable |
+| fetch and merge the dictionary   | `fetchLanguageApi` (`src/middlewares/localeChoice.ts`), which returns UI copy at the root and API copy under `api.*`                |
+| read a key with a local stand-in | `apiText(apiKey, localKey)` (`src/utils/i18n.ts`)                                                                                   |
+
+In normal operation none of this is used: the API resolves its own keys and puts finished text on
+the wire, so this app prints what arrives. `api.*` earns its place for the handful of messages the
+client has to produce _itself_ because no response came back at all — a 401 with an empty body, a
+network failure. Those call `apiText`, which prefers the API's own wording when `api.*` is loaded
+and otherwise uses this app's `api-errors.*` copy — necessarily, since the request that would have
+downloaded the dictionary may have failed for the same reason.
+
+**A language only one side has degrades per key, not all-or-nothing.** `es` is the worked example:
+`VITE_APP_SUPPORTED_LOCALES` lists it and there is no `src/locales/es.json`, so a user who picks
+Spanish gets Spanish API messages inside an otherwise-English UI, one key at a time via
+`fallbackLocale`. A language only this app has works unchanged; the API answers in its own
+fallback. Every fetch here resolves rather than rejects, so a dead API degrades the copy and never
+blocks a navigation.
+
 ---
 
 ## Mocking with MSW
@@ -471,7 +606,7 @@ npm run test:e2e:dev  # opens Cypress UI
 
 ## Observability (Grafana Faro, Umami, analytics)
 
-All observability code is consolidated in `src/stores/observability.ts` (a Pinia store). Never scatter vendor calls directly from components. Everything runs against a **self-hosted local stack** (Docker/Podman) — no external SaaS. Verify data in **Grafana** (`http://localhost:3001`) and the **Umami dashboard** (`http://localhost:8090`).
+All observability code is consolidated in `src/stores/observability.ts` (a Pinia store). Never scatter vendor calls directly from components. Everything runs against a **self-hosted local stack** (Docker/Podman) — no external SaaS. Verify data in **Grafana** (`http://localhost:3001`) and the **Umami dashboard** (`http://localhost:3080`).
 
 ### What each tool does
 

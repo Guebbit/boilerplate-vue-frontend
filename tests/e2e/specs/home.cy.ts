@@ -1,7 +1,7 @@
 describe('Public routes', () => {
     beforeEach(() => {
         cy.visit('/en');
-        cy.resetMockState();
+        cy.resetState();
     });
 
     it('loads home page at locale-prefixed URL', () => {

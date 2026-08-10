@@ -36,12 +36,22 @@
                         hide-details
                     />
                 </div>
-                <div class="mt-4 flex flex-wrap gap-2">
+                <div class="mt-4 flex flex-wrap items-center gap-2">
                     <v-btn type="submit" color="primary">
                         <Search :size="16" class="mr-1" aria-hidden="true" />
                         {{ t('generic.search') }}
                     </v-btn>
                     <v-btn variant="tonal" @click="handleReset">{{ t('generic.reset') }}</v-btn>
+                    <v-spacer />
+                    <v-btn
+                        v-if="isAdmin"
+                        color="secondary"
+                        data-test="create-product"
+                        :to="routerLinkI18n({ name: 'ProductCreate' })"
+                    >
+                        <PackagePlus :size="16" class="mr-1" aria-hidden="true" />
+                        {{ t('products-list-page.button-create-product') }}
+                    </v-btn>
                 </div>
             </form>
         </v-card>
@@ -113,7 +123,7 @@ import { computed } from 'vue';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { Search } from 'lucide-vue-next';
+import { PackagePlus, Search } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/features/products/store';
 import { useProfileStore } from '@/stores/profile.ts';

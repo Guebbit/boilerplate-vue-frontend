@@ -1,17 +1,17 @@
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureSearchApi } from '@guebbit/vue-toolkit';
-import type { AxiosProgressEvent } from 'axios';
+import type { AxiosRequestConfig } from 'axios';
 import { ref, type WatchSource } from 'vue';
 
 import {
     listProducts,
     getProductById,
     createProduct as apiCreateProduct,
+    createProductWithMultipart,
     updateProductById,
+    updateProductByIdWithMultipart,
     deleteProductById
 } from '@api';
-import httpClient from '@/plugins/http';
-import { toFormData } from '@guebbit/js-toolkit';
 import type {
     Product,
     CreateProductRequestMultipart,
@@ -24,44 +24,6 @@ import type {
  * is owned by the toolkit's search state).
  */
 type IProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
-
-/**
- * Builds the multipart body of a product create/update request.
- *
- * `toFormData` appends `undefined` as the literal string `"undefined"` instead
- * of omitting the field, and recurses into arrays emitting bracket-indexed keys
- * (`categories[0]`, ...) instead of the repeated `categories` fields the API
- * expects. Arrays are therefore appended manually and scalars are stripped of
- * null/undefined before being handed to `toFormData`.
- *
- * @param data - Product fields to send; `imageUpload` carries the image file.
- * @returns A `FormData` with repeated `categories`/`tags` entries and no
- *  placeholder values for unset fields.
- */
-const productFormData = (data: {
-    title: string;
-    price: number;
-    description?: string;
-    active?: boolean;
-    categories?: string[];
-    tags?: string[];
-    imageUpload?: Blob;
-}): FormData => {
-    const formData = new FormData();
-    for (const category of data.categories ?? []) formData.append('categories', category);
-    for (const tag of data.tags ?? []) formData.append('tags', tag);
-
-    const scalars = Object.fromEntries(
-        Object.entries({
-            title: data.title,
-            price: data.price,
-            description: data.description,
-            active: data.active,
-            imageUpload: data.imageUpload
-        }).filter(([, value]) => value !== undefined && value !== null)
-    );
-    return toFormData(scalars, formData);
-};
 
 /**
  * Products CRUD, paginated search and image upload, on top of the toolkit's
@@ -80,7 +42,6 @@ export const useProductsStore = defineStore('products', () => {
     const {
         itemDictionary: products,
         itemList: productsList,
-        getRecord: getProduct,
         addRecord: addProduct,
         selectedIdentifier: selectedProductId,
         selectedRecord: currentProduct,
@@ -146,7 +107,9 @@ export const useProductsStore = defineStore('products', () => {
                     page,
                     pageSize: pageSizeValue,
                     text: currentFilters.text,
-                    productId: currentFilters.id,
+                    // `id`, not `productId`: the spec names it `id` on both the GET query and the
+                    // POST /products/search body, and that is what the API reads.
+                    id: currentFilters.id,
                     minPrice: currentFilters.minPrice,
                     maxPrice: currentFilters.maxPrice
                 }).then((response) => response.data.items),
@@ -183,59 +146,21 @@ export const useProductsStore = defineStore('products', () => {
      * JSON otherwise.
      *
      * @param productData - Product fields, optionally including `imageUpload`.
+     * @param options - Per-call axios overrides, forwarded to `orvalMutator`.
+     *  `ProductCreate.vue` passes `onUploadProgress` through it to drive its
+     *  progress bar.
      * @returns A promise resolving with the created product.
      */
-    const createProduct = (productData: CreateProductRequestMultipart) =>
+    const createProduct = (
+        { imageUpload, ...productData }: CreateProductRequestMultipart,
+        options?: AxiosRequestConfig
+    ) =>
         createTarget(() =>
-            productData.imageUpload
-                ? httpClient.post<Product, Product>('/products', productFormData(productData))
-                : apiCreateProduct({
-                      title: productData.title,
-                      price: productData.price,
-                      description: productData.description,
-                      active: productData.active,
-                      categories: productData.categories,
-                      tags: productData.tags
-                  }).then((response) => response.data)
+            (imageUpload
+                ? createProductWithMultipart({ ...productData, imageUpload }, options)
+                : apiCreateProduct(productData, options)
+            ).then((response) => response.data)
         );
-
-    /**
-     * Replaces a product's image via multipart upload.
-     *
-     * The existing product record must be provided so the required title and
-     * price fields can be forwarded alongside the new image file.
-     *
-     * @param product - Current product record, used to re-send mandatory fields.
-     * @param files - Selected files; only the first is uploaded.
-     * @param onUploadProgress - Axios progress callback, for a progress bar.
-     * @returns A promise resolving with the updated product, rejected with a
-     *  `no file selected` error when `files` is empty.
-     */
-    const updateProductImage = (
-        product: Product,
-        files: File[] | FileList = [],
-        onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
-    ) => {
-        if (files.length === 0 || !files[0]) return Promise.reject(new Error('no file selected'));
-        return updateTarget(
-            () =>
-                httpClient.put<Product, Product>(
-                    `/products/${encodeURIComponent(product.id)}`,
-                    productFormData({
-                        title: product.title,
-                        price: product.price,
-                        description: product.description,
-                        active: product.active,
-                        categories: product.categories,
-                        tags: product.tags,
-                        imageUpload: files[0]
-                    }),
-                    { onUploadProgress }
-                ),
-            {} as Partial<Product>,
-            product.id
-        );
-    };
 
     /**
      * Updates a product, as multipart when a new image is attached and as plain
@@ -243,24 +168,26 @@ export const useProductsStore = defineStore('products', () => {
      *
      * @param productId - Identifier of the product to update.
      * @param productData - Fields to change, optionally including `imageUpload`.
+     * @param options - Per-call axios overrides, forwarded to `orvalMutator`.
      * @returns A promise resolving with the updated product.
      */
-    const updateProduct = (productId: string, productData: UpdateProductByIdRequestMultipart) =>
+    const updateProduct = (
+        productId: string,
+        { imageUpload, ...productData }: UpdateProductByIdRequestMultipart,
+        options?: AxiosRequestConfig
+    ) =>
         updateTarget(
             () =>
-                productData.imageUpload
-                    ? httpClient.put<Product, Product>(
-                          `/products/${encodeURIComponent(productId)}`,
-                          productFormData(productData)
+                (imageUpload
+                    ? updateProductByIdWithMultipart(
+                          productId,
+                          { ...productData, imageUpload },
+                          options
                       )
-                    : updateProductById(productId, {
-                          title: productData.title,
-                          price: productData.price,
-                          description: productData.description,
-                          active: productData.active,
-                          categories: productData.categories,
-                          tags: productData.tags
-                      }).then((response) => response.data),
+                    : updateProductById(productId, productData, options)
+                ).then((response) => response.data),
+            // `imageUpload` is deliberately excluded: the new imageUrl comes back
+            // from the API, and parking a Blob in store state would be nonsense.
             productData as Partial<Product>,
             productId
         );
@@ -277,7 +204,6 @@ export const useProductsStore = defineStore('products', () => {
     return {
         products,
         productsList,
-        getProduct,
         addProduct,
         selectedProductId,
         currentProduct,
@@ -295,7 +221,6 @@ export const useProductsStore = defineStore('products', () => {
         watchProduct,
         createProduct,
         updateProduct,
-        updateProductImage,
         deleteProduct
     };
 });

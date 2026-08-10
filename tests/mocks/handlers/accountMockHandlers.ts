@@ -5,7 +5,6 @@ import {
     LoginResponse,
     SignupResponse,
     RefreshTokenResponse as RefreshTokenResponseSchema,
-    RefreshTokenWithPathResponse,
     RequestPasswordResetResponse,
     ConfirmPasswordResetResponse,
     LogoutAllResponse,
@@ -19,7 +18,9 @@ import {
     getIsoDateNow,
     mockDatabase,
     readRequestBody,
+    readRequestParts,
     resetMockDatabase,
+    resolveMockImageUrl,
     trySetSessionStorage
 } from '../shared/mockShared.ts';
 import { toMockJsonResponse } from '../shared/mockTransport.ts';
@@ -35,10 +36,11 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
     // That command hits this endpoint via cy.request('POST', '/__mock/reset').
     // resetMockDatabase() also clears the sessionStorage mirror of the current
     // user ID so that the next test starts as a fresh, unauthenticated visitor.
-    http.post('/__mock/reset', () => {
-        resetMockDatabase();
-        return toMockJsonResponse(createMessageResponse('Mock state reset'));
-    }),
+    http.post('/__mock/reset', () =>
+        resetMockDatabase().then(() =>
+            toMockJsonResponse(createMessageResponse('Mock state reset'))
+        )
+    ),
 
     // ── Token refresh ─────────────────────────────────────────────────────────
     //
@@ -51,18 +53,9 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
     // (admin) auto-authenticate on page load, while a reset/logout produces a
     // proper 401 so that guest-only pages remain accessible.
     //
-    // Two routes cover both the legacy /:token path param form and the cookie-
-    // only form used by the current client.
-    http.get(`${API_BASE}/account/refresh/:token`, () =>
-        mockDatabase.currentAuthenticatedUserId
-            ? toMockJsonResponse(createSuccessEnvelope(defaultRefreshTokenResponse), {
-                  schema: RefreshTokenWithPathResponse
-              })
-            : toMockJsonResponse(createErrorEnvelope(401, 'UNAUTHORIZED', 'Not authenticated'), {
-                  status: 401,
-                  schema: MockErrorResponse
-              })
-    ),
+    // Cookie-only, like the real API: the `/account/refresh/:token` path form was
+    // dropped from the contract because a refresh token in a URL leaks into history,
+    // proxy logs and Referer headers.
     http.get(`${API_BASE}/account/refresh`, () =>
         mockDatabase.currentAuthenticatedUserId
             ? toMockJsonResponse(createSuccessEnvelope(defaultRefreshTokenResponse), {
@@ -115,29 +108,30 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
     //   3. Returns mock tokens; the real token value doesn't matter to the client,
     //      it just stores it in the Pinia accessToken ref.
     // On failure returns 401 so the login-page error-handling flow can be tested.
-    http.post(`${API_BASE}/account/login`, async ({ request }) => {
-        const requestBody = await readRequestBody<LoginRequest>(request);
-        const matchedUser = mockDatabase.sampleUsers.find(
-            (user) => user.email.toLowerCase() === String(requestBody.email ?? '').toLowerCase()
-        );
-
-        if (!matchedUser)
-            return toMockJsonResponse(
-                createErrorEnvelope(401, 'UNAUTHORIZED', 'Invalid credentials'),
-                { status: 401, schema: MockErrorResponse }
+    http.post(`${API_BASE}/account/login`, ({ request }) =>
+        readRequestBody<LoginRequest>(request).then((requestBody) => {
+            const matchedUser = mockDatabase.sampleUsers.find(
+                (user) => user.email.toLowerCase() === String(requestBody.email ?? '').toLowerCase()
             );
 
-        mockDatabase.currentAuthenticatedUserId = matchedUser.id;
-        trySetSessionStorage('mock_currentUserId', matchedUser.id);
-        return toMockJsonResponse(
-            createSuccessEnvelope({
-                token: `mock-token-for-${matchedUser.id}`,
-                refreshToken: 'mock-refresh-token',
-                expiresIn: 3600
-            }),
-            { schema: LoginResponse }
-        );
-    }),
+            if (!matchedUser)
+                return toMockJsonResponse(
+                    createErrorEnvelope(401, 'UNAUTHORIZED', 'Invalid credentials'),
+                    { status: 401, schema: MockErrorResponse }
+                );
+
+            mockDatabase.currentAuthenticatedUserId = matchedUser.id;
+            trySetSessionStorage('mock_currentUserId', matchedUser.id);
+            return toMockJsonResponse(
+                createSuccessEnvelope({
+                    token: `mock-token-for-${matchedUser.id}`,
+                    refreshToken: 'mock-refresh-token',
+                    expiresIn: 3600
+                }),
+                { schema: LoginResponse }
+            );
+        })
+    ),
 
     // ── Signup ────────────────────────────────────────────────────────────────
     //
@@ -146,25 +140,28 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
     // not a token, and does NOT start a session — the client is expected to log in
     // separately (after confirming the account) to obtain an access token. So,
     // unlike login, this does not touch currentAuthenticatedUserId/sessionStorage.
-    http.post(`${API_BASE}/account/signup`, async ({ request }) => {
-        const requestBody = await readRequestBody<Record<string, unknown>>(request);
-        const createdUser: User = {
-            id: `user-${Date.now()}`,
-            email: String(requestBody.email ?? 'new.user@example.com'),
-            username: String(requestBody.username ?? 'new-user'),
-            admin: false,
-            active: true,
-            imageUrl: undefined,
-            createdAt: getIsoDateNow(),
-            updatedAt: getIsoDateNow()
-        };
+    http.post(`${API_BASE}/account/signup`, ({ request }) =>
+        readRequestParts<Record<string, unknown>>(request).then(
+            ({ fields: requestBody, files }) => {
+                const createdUser: User = {
+                    id: `user-${Date.now()}`,
+                    email: String(requestBody.email ?? 'new.user@example.com'),
+                    username: String(requestBody.username ?? 'new-user'),
+                    admin: false,
+                    active: true,
+                    imageUrl: resolveMockImageUrl(files),
+                    createdAt: getIsoDateNow(),
+                    updatedAt: getIsoDateNow()
+                };
 
-        mockDatabase.sampleUsers.unshift(createdUser);
-        return toMockJsonResponse(createSuccessEnvelope(createdUser), {
-            status: 201,
-            schema: SignupResponse
-        });
-    }),
+                mockDatabase.sampleUsers.unshift(createdUser);
+                return toMockJsonResponse(createSuccessEnvelope(createdUser), {
+                    status: 201,
+                    schema: SignupResponse
+                });
+            }
+        )
+    ),
 
     // ── Password reset (two-step flow) ────────────────────────────────────────
     //

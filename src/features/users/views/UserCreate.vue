@@ -23,6 +23,13 @@
                     :label="t('user-create-page.label-password')"
                     :error-messages="showErrors ? formErrors.password : []"
                 />
+                <FormImageUpload
+                    v-model="form.imageUpload"
+                    :error-messages="showErrors ? formErrors.imageUpload : []"
+                    :progress="uploadProgress"
+                    :disabled="isSubmitting"
+                    class="mt-2"
+                />
                 <div class="flex flex-wrap gap-x-8">
                     <v-switch v-model="form.admin" :label="t('user-create-page.label-admin')" />
                     <v-switch v-model="form.active" :label="t('user-create-page.label-active')" />
@@ -60,15 +67,17 @@ import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/features/users/store';
-import { createUsersSchema, createUsersPasswordSchema } from '@/features/users/schemas.ts';
+import { usersSchema, usersPasswordSchema } from '@/features/users/schemas.ts';
 import { z } from 'zod';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
+import FormImageUpload from '@/components/molecules/FormImageUpload.vue';
 import { notifyErrorMessages } from '@/utils/errors.ts';
+import { imageUploadSchema, useUploadProgress } from '@/utils/uploads.ts';
 
 /**
  * Generics
  */
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 const router = useRouter();
 
@@ -86,22 +95,26 @@ interface IUserCreateForm {
     password?: string;
     admin?: boolean;
     active?: boolean;
+    imageUpload?: File;
 }
 
+/**
+ * Built once: the messages inside are thunks, resolved in the active language at parse time.
+ */
+const createSchema = usersSchema.pick({ email: true, username: true }).extend({
+    password: usersPasswordSchema,
+    admin: z.boolean().optional(),
+    active: z.boolean().optional(),
+    imageUpload: imageUploadSchema
+});
+
 const { form, formErrors, isSubmitting, handleSubmit } =
-    useStructureFormValidation<IUserCreateForm>(
-        {},
-        // Getter (not a resolved schema): re-built on every validate() call so
-        // messages stay in the active language after a runtime locale switch.
-        () =>
-            createUsersSchema(t)
-                .pick({ email: true, username: true })
-                .extend({
-                    password: createUsersPasswordSchema(t),
-                    admin: z.boolean().optional(),
-                    active: z.boolean().optional()
-                })
-    );
+    useStructureFormValidation<IUserCreateForm>({}, createSchema, { revalidateOn: locale });
+
+/**
+ * Avatar upload progress, shown by `FormImageUpload` while the multipart create is in flight.
+ */
+const { uploadProgress, trackUpload } = useUploadProgress();
 
 /**
  * Whether to display validation errors in the UI
@@ -116,18 +129,25 @@ const showErrors = ref(false);
  *  are revealed; API failures are reported as toasts.
  */
 const submitForm = () =>
-    handleSubmit(async () => {
-        const newUser = await createUser({
-            email: form.value.email!,
-            username: form.value.username!,
-            password: form.value.password!,
-            admin: form.value.admin,
-            active: form.value.active
-        });
-        if (!newUser) return;
-        addMessage(t('user-create-page.success-create'));
-        router.push(routerLinkI18n({ name: 'UserTarget', params: { id: newUser.id } }));
-    })
+    handleSubmit(() =>
+        trackUpload(form.value.imageUpload, (options) =>
+            createUser(
+                {
+                    email: form.value.email!,
+                    username: form.value.username!,
+                    password: form.value.password!,
+                    admin: form.value.admin,
+                    active: form.value.active,
+                    imageUpload: form.value.imageUpload
+                },
+                options
+            )
+        ).then((newUser) => {
+            if (!newUser) return;
+            addMessage(t('user-create-page.success-create'));
+            router.push(routerLinkI18n({ name: 'UserTarget', params: { id: newUser.id } }));
+        })
+    )
         .then((success) => {
             if (!success) showErrors.value = true;
         })

@@ -25,6 +25,13 @@
                     :label="t('users-form.label-passwordConfirm')"
                     :error-messages="showErrors ? formErrors.passwordConfirm : []"
                 />
+                <FormImageUpload
+                    v-model="form.imageUpload"
+                    :error-messages="showErrors ? formErrors.imageUpload : []"
+                    :progress="uploadProgress"
+                    :disabled="isSubmitting"
+                    class="mt-2"
+                />
                 <v-checkbox
                     v-model="form.conditions"
                     :label="t('signup-page.text-conditions')"
@@ -59,13 +66,15 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useProfileStore } from '@/stores/profile.ts';
 import { useRouter, useRoute } from 'vue-router';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import { createUsersSchema } from '@/features/users/schemas.ts';
+import FormImageUpload from '@/components/molecules/FormImageUpload.vue';
+import { usersSchema } from '@/features/users/schemas.ts';
 import { notifyErrorMessages, focusFirstErrorField } from '@/utils/errors.ts';
+import { imageUploadSchema, useUploadProgress } from '@/utils/uploads.ts';
 
 /**
  * UI logics
  */
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 const router = useRouter();
 const route = useRoute();
@@ -79,7 +88,29 @@ interface IUserSignupForm {
     password?: string;
     passwordConfirm?: string;
     conditions?: boolean;
+    imageUpload?: File;
 }
+
+/**
+ * Built once, with thunked messages so the wording is chosen at parse time — see
+ * `@/features/users/schemas.ts`. `revalidateOn` re-translates errors already on screen.
+ */
+const signupSchema = usersSchema
+    .pick({ email: true })
+    .extend({
+        password: z.string().min(8, { error: () => t('users-form.password-required') }),
+        passwordConfirm: z
+            .string()
+            .min(8, { error: () => t('users-form.password-confirm-required') }),
+        conditions: z.boolean().refine((value) => value, {
+            error: () => t('users-form.conditions-required')
+        }),
+        imageUpload: imageUploadSchema
+    })
+    .refine((data) => data.password === data.passwordConfirm, {
+        error: () => t('users-form.password-dont-match'),
+        path: ['passwordConfirm']
+    });
 
 const { form, formErrors, isSubmitting, handleSubmit } =
     useStructureFormValidation<IUserSignupForm>(
@@ -90,20 +121,8 @@ const { form, formErrors, isSubmitting, handleSubmit } =
             passwordConfirm: '',
             conditions: false
         },
-        () =>
-            createUsersSchema(t)
-                .pick({ email: true })
-                .extend({
-                    password: z.string().min(8, t('users-form.password-required')),
-                    passwordConfirm: z.string().min(8, t('users-form.password-confirm-required')),
-                    conditions: z.boolean().refine((value) => value, {
-                        message: t('users-form.conditions-required')
-                    })
-                })
-                .refine((data) => data.password === data.passwordConfirm, {
-                    message: t('users-form.password-dont-match'),
-                    path: ['passwordConfirm']
-                })
+        signupSchema,
+        { revalidateOn: locale }
     );
 
 /**
@@ -111,6 +130,12 @@ const { form, formErrors, isSubmitting, handleSubmit } =
  */
 const showErrors = ref(false);
 const formElement = ref<HTMLFormElement>();
+
+/**
+ * Profile image upload progress, shown by `FormImageUpload` while the multipart signup is in
+ * flight.
+ */
+const { uploadProgress, trackUpload } = useUploadProgress();
 
 const { signup } = useProfileStore();
 
@@ -125,23 +150,30 @@ const { signup } = useProfileStore();
  *  focused — and re-throws API errors, which are reported as toasts.
  */
 const submitForm = () =>
-    handleSubmit(async () => {
+    handleSubmit(() => {
         const username = form.value.username?.trim();
-        await signup(
-            form.value.email!,
-            form.value.password!,
-            username || undefined,
-            form.value.passwordConfirm!
-        );
-        await router.push({ name: 'Login', query: route.query });
-        addMessage(t('signup-page.success-email-code-sent'));
+        return trackUpload(form.value.imageUpload, (options) =>
+            signup(
+                {
+                    email: form.value.email!,
+                    password: form.value.password!,
+                    username: username || undefined,
+                    passwordConfirm: form.value.passwordConfirm!,
+                    imageUpload: form.value.imageUpload
+                },
+                options
+            )
+        )
+            .then(() => router.push({ name: 'Login', query: route.query }))
+            .then(() => addMessage(t('signup-page.success-email-code-sent')));
     })
-        .then(async (success) => {
+        .then((success) => {
             if (success) return;
             showErrors.value = true;
             addMessage(t('users-form.fix-errors'));
-            await nextTick();
-            focusFirstErrorField(formElement.value);
+            // After nextTick so the error messages `showErrors` just revealed are in the DOM —
+            // `focusFirstErrorField` looks for them.
+            return nextTick().then(() => focusFirstErrorField(formElement.value));
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>

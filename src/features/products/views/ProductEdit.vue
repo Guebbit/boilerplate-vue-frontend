@@ -58,6 +58,13 @@
                         :rows="5"
                     />
                     <v-switch v-model="form.active" :label="t('product-edit-page.label-active')" />
+                    <FormImageUpload
+                        v-model="form.imageUpload"
+                        :current-image-url="currentProduct?.imageUrl"
+                        :error-messages="showFormErrors ? formErrors.imageUpload : []"
+                        :progress="uploadProgress"
+                        :disabled="isSubmitting"
+                    />
 
                     <div class="flex flex-wrap gap-2">
                         <v-btn type="submit" color="primary" :disabled="isSubmitting || loading">
@@ -122,11 +129,12 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/features/products/store';
-import { createProductsSchema } from '@/features/products/schemas.ts';
+import { productsSchema } from '@/features/products/schemas.ts';
 import { z } from 'zod';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { Package, Pencil } from 'lucide-vue-next';
 import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
+import FormImageUpload from '@/components/molecules/FormImageUpload.vue';
 import ItemDetailLayout from '@/components/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/components/organisms/CardDetail.vue';
 import CardInfo from '@/components/organisms/CardInfo.vue';
@@ -140,11 +148,12 @@ import {
     formatFlag
 } from '@/utils/formatters.ts';
 import { notifyErrorMessages } from '@/utils/errors.ts';
+import { imageUploadSchema, useUploadProgress } from '@/utils/uploads.ts';
 
 /**
  * Generic i18n and notification helpers.
  */
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
@@ -168,23 +177,21 @@ interface IProductEditForm {
     price?: number;
     description?: string;
     active?: boolean;
+    imageUpload?: File;
 }
 
 /**
- * Builds the validation schema of the edit form.
+ * Validation schema of the edit form: title and price required, description, active flag and
+ * replacement image optional.
  *
- * A getter (rather than a resolved schema) so it is re-built on every
- * `validate()` call and the messages stay in the active language after a runtime
- * locale switch.
- *
- * @returns A Zod schema requiring title and price, with optional description and
- *  active flag.
+ * Built once. Its messages are thunks resolved at parse time, so it speaks the active language
+ * without being rebuilt — see `@/features/users/schemas.ts`.
  */
-const editSchema = () =>
-    createProductsSchema(t).pick({ title: true, price: true }).extend({
-        description: z.string().optional(),
-        active: z.boolean().optional()
-    });
+const editSchema = productsSchema.pick({ title: true, price: true }).extend({
+    description: z.string().optional(),
+    active: z.boolean().optional(),
+    imageUpload: imageUploadSchema
+});
 
 /**
  * Toolkit form state and submit handler.
@@ -197,7 +204,12 @@ const {
     resetForm,
     handleSubmit,
     activateAutoHydrate
-} = useStructureFormValidation<IProductEditForm>({}, editSchema);
+} = useStructureFormValidation<IProductEditForm>({}, editSchema, { revalidateOn: locale });
+
+/**
+ * Image upload progress, shown by `FormImageUpload` while a multipart save is in flight.
+ */
+const { uploadProgress, trackUpload } = useUploadProgress();
 
 /**
  * Auto-hydrate the form from the fetched record once it resolves.
@@ -240,16 +252,31 @@ const heroDescription = computed(() => formatText(currentProduct.value?.descript
  *  a toast. A missing route id, title or price is a no-op.
  */
 const submitForm = () =>
-    handleSubmit(async () => {
-        if (!id || form.value.title === undefined || form.value.price === undefined) return;
-        await updateProduct(id, {
-            title: form.value.title,
-            price: form.value.price,
-            description: form.value.description || undefined,
-            active: form.value.active
+    handleSubmit(() => {
+        // Read out before the callback below: TypeScript's narrowing of `form.value.title` from
+        // the guard does not survive into a closure, since `form` is a mutable ref.
+        const { title, price, description, active, imageUpload } = form.value;
+        if (!id || title === undefined || price === undefined) return;
+        return trackUpload(imageUpload, (options) =>
+            updateProduct(
+                id,
+                {
+                    title,
+                    price,
+                    description: description || undefined,
+                    active,
+                    imageUpload
+                },
+                options
+            )
+        ).then(() => {
+            // The API has answered with the stored `imageUrl`, which the store merged into
+            // `currentProduct`; dropping the local File hands the preview back to the served
+            // image and stops a second save re-uploading the same bytes.
+            form.value.imageUpload = undefined;
+            addMessage(t('product-edit-page.success-update'));
+            showFormErrors.value = false;
         });
-        addMessage(t('product-edit-page.success-update'));
-        showFormErrors.value = false;
     })
         .then((success) => {
             if (!success) showFormErrors.value = true;

@@ -6,6 +6,7 @@
         "orval.config.*",
         "scripts/**/*.ts",
         "cypress.config.*",
+        "tests/e2e/support/visual-task.ts",
         "nightwatch.conf.*",
         "playwright.config.*"
     ],

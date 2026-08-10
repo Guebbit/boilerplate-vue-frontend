@@ -5,9 +5,20 @@
  * Stable, codegen-oriented OpenAPI contract.
  * Designed for multi-project, multi-language use (client/server stubs, DTOs, SDKs).
  *
+ * Language: every endpoint honours `Accept-Language` (q-weights and region tags
+ * included). It selects the language of user-facing copy only — `errors[].message` and a
+ * success envelope's `message` — never the response shape, the status code, or a
+ * machine-readable field such as `errors[].code`. An unsupported language falls back
+ * instead of erroring; `Content-Language` states what was used and `Vary:
+ * Accept-Language` is always set. `GET /locales` lists what a deployment supports.
+ *
+ * The header is intentionally not declared per operation: it applies to all of them and
+ * clients set it once in an interceptor, so declaring it 33 times would only add a
+ * redundant argument to every generated function. This paragraph is its contract.
+ *
  * OpenAPI spec version: 2.0.0
  */
-import { apiMutator } from '../../src/plugins/http/index.js';
+import { orvalMutator } from '../../src/plugins/http/index.js';
 /**
  * 1-based page index
  * @minimum 1
@@ -39,6 +50,17 @@ export type Email = string;
  */
 export type Password = string;
 
+/**
+ * BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET /locales`.
+ * @pattern ^[a-z]{2}(-[A-Za-z0-9]+)*$
+ */
+export type Locale = string;
+
+/**
+ * Absolute URL or server-relative upload path (e.g. `/uploads/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.
+ */
+export type ImageUrl = string;
+
 export interface PaginationMeta {
     page: Page;
     pageSize: PageSize;
@@ -52,6 +74,58 @@ export interface MessageResponse {
     success: true;
     status: number;
     message: string;
+}
+
+/**
+ * Which languages a deployment can answer in. Runtime state, not contract state: it is derived from the dictionaries actually deployed, so it cannot be an enum here.
+ */
+export interface LocaleCapabilities {
+    /** Every supported language tag. */
+    locales: Locale[];
+    default: Locale;
+    fallback: Locale;
+}
+
+export interface LocaleCapabilitiesEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: LocaleCapabilities;
+}
+
+/**
+ * Nested key/value dictionary, the same shape the API loads.
+ */
+export type LocaleDictionaryMessages = { [key: string]: unknown };
+
+/**
+ * The API's OWN message dictionary for one language — its API-response copy and nothing else. It is never a client's UI dictionary: the two are authored and deployed in separate repositories, and mixing them would put view copy in the API's keyspace. A client that wants these merges them under a namespace it reserves for the API, never at the root.
+ */
+export interface LocaleDictionary {
+    locale: Locale;
+    /** Nested key/value dictionary, the same shape the API loads. */
+    messages: LocaleDictionaryMessages;
+}
+
+export interface LocaleDictionaryEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: LocaleDictionary;
+}
+
+/**
+ * Liveness indicator. Always `ok` when the process is answering.
+ */
+export type HealthPingStatus = (typeof HealthPingStatus)[keyof typeof HealthPingStatus];
+
+export const HealthPingStatus = {
+    ok: 'ok'
+} as const;
+
+export interface HealthPing {
+    /** Liveness indicator. Always `ok` when the process is answering. */
+    status: HealthPingStatus;
 }
 
 /**
@@ -80,14 +154,23 @@ export interface ErrorResponse {
     errors: ErrorItem[];
 }
 
-export type ValidationErrorResponse = ErrorResponse & {
-    message?: string;
-};
+export interface ValidationErrorResponse {
+    success: false;
+    status: number;
+    /** Human-readable summary for this failure */
+    message: string;
+    /**
+     * Structured machine-friendly errors
+     * @minItems 1
+     */
+    errors: ErrorItem[];
+}
 
-export interface SuccessEnvelope {
+export interface HealthPingEnvelope {
     success: true;
     status: number;
     message: string;
+    data: HealthPing;
 }
 
 export interface AuthTokens {
@@ -99,9 +182,12 @@ export interface AuthTokens {
     expiresIn?: number;
 }
 
-export type AuthTokensEnvelope = SuccessEnvelope & {
+export interface AuthTokensEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: AuthTokens;
-};
+}
 
 export interface RefreshTokenResponse {
     /** New access JWT */
@@ -112,9 +198,12 @@ export interface RefreshTokenResponse {
     expiresIn?: number;
 }
 
-export type RefreshTokenEnvelope = SuccessEnvelope & {
+export interface RefreshTokenEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: RefreshTokenResponse;
-};
+}
 
 export interface User {
     id: Id;
@@ -122,23 +211,31 @@ export interface User {
     username: string;
     admin?: boolean;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
+    locale?: Locale;
     createdAt?: string;
     updatedAt?: string;
+    deletedAt?: string;
 }
 
-export type UserEnvelope = SuccessEnvelope & {
+export interface UserEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: User;
-};
+}
 
 export interface UsersResponse {
     items: User[];
     meta: PaginationMeta;
 }
 
-export type UsersResponseEnvelope = SuccessEnvelope & {
+export interface UsersResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: UsersResponse;
-};
+}
 
 export interface Product {
     id: Id;
@@ -147,7 +244,7 @@ export interface Product {
     price: number;
     description?: string;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
     categories?: string[];
     tags?: string[];
     createdAt?: string;
@@ -155,18 +252,24 @@ export interface Product {
     deletedAt?: string;
 }
 
-export type ProductEnvelope = SuccessEnvelope & {
+export interface ProductEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: Product;
-};
+}
 
 export interface ProductsResponse {
     items: Product[];
     meta: PaginationMeta;
 }
 
-export type ProductsResponseEnvelope = SuccessEnvelope & {
+export interface ProductsResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: ProductsResponse;
-};
+}
 
 export interface OrderItem {
     product: Product;
@@ -190,8 +293,21 @@ export interface Order {
     userId: Id;
     email: Email;
     items: OrderItem[];
-    /** @minimum 0 */
-    total: number;
+    /**
+     * Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.
+     * @minimum 0
+     */
+    totalItems: number;
+    /**
+     * Sum of `quantity` across every line item.
+     * @minimum 0
+     */
+    totalQuantity: number;
+    /**
+     * Sum of `product.price × quantity` across every line item.
+     * @minimum 0
+     */
+    totalPrice: number;
     /** Optional order notes */
     notes?: string;
     status: OrderStatus;
@@ -199,18 +315,24 @@ export interface Order {
     updatedAt?: string;
 }
 
-export type OrderEnvelope = SuccessEnvelope & {
+export interface OrderEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: Order;
-};
+}
 
 export interface OrdersResponse {
     items: Order[];
     meta: PaginationMeta;
 }
 
-export type OrdersResponseEnvelope = SuccessEnvelope & {
+export interface OrdersResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: OrdersResponse;
-};
+}
 
 export type FeedbackRequestStatus =
     (typeof FeedbackRequestStatus)[keyof typeof FeedbackRequestStatus];
@@ -235,18 +357,24 @@ export interface FeedbackRequest {
     updatedAt?: string;
 }
 
-export type FeedbackRequestEnvelope = SuccessEnvelope & {
+export interface FeedbackRequestEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: FeedbackRequest;
-};
+}
 
 export interface FeedbackRequestsResponse {
     items: FeedbackRequest[];
     meta: PaginationMeta;
 }
 
-export type FeedbackRequestsResponseEnvelope = SuccessEnvelope & {
+export interface FeedbackRequestsResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: FeedbackRequestsResponse;
-};
+}
 
 export interface CartItem {
     productId: Id;
@@ -279,22 +407,31 @@ export interface CartResponse {
     summary: CartSummaryResponse;
 }
 
-export type CartResponseEnvelope = SuccessEnvelope & {
+export interface CartResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: CartResponse;
-};
+}
 
-export type CartSummaryResponseEnvelope = SuccessEnvelope & {
+export interface CartSummaryResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: CartSummaryResponse;
-};
+}
 
 export interface CheckoutResponse {
     order: Order;
     message?: string;
 }
 
-export type CheckoutResponseEnvelope = SuccessEnvelope & {
+export interface CheckoutResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
     data: CheckoutResponse;
-};
+}
 
 export type ObservabilityHealthStatus =
     (typeof ObservabilityHealthStatus)[keyof typeof ObservabilityHealthStatus];
@@ -351,14 +488,12 @@ export interface ObservabilityHealth {
     timestamp: string;
 }
 
-export interface ObservabilityHealthResponse {
+export interface ObservabilityHealthResponseEnvelope {
     success: true;
+    status: number;
+    message: string;
     data: ObservabilityHealth;
 }
-
-export type ObservabilityHealthResponseEnvelope = SuccessEnvelope & {
-    data: ObservabilityHealthResponse;
-};
 
 export interface ObservabilityMetricsLatency {
     /** Median latency in ms */
@@ -422,14 +557,12 @@ export interface ObservabilityMetricsSummary {
     timestamp: string;
 }
 
-export interface ObservabilityMetricsSummaryResponse {
+export interface ObservabilityMetricsSummaryResponseEnvelope {
     success: true;
+    status: number;
+    message: string;
     data: ObservabilityMetricsSummary;
 }
-
-export type ObservabilityMetricsSummaryResponseEnvelope = SuccessEnvelope & {
-    data: ObservabilityMetricsSummaryResponse;
-};
 
 export type AuditEventItemActorRole =
     (typeof AuditEventItemActorRole)[keyof typeof AuditEventItemActorRole];
@@ -474,20 +607,18 @@ export interface AuditEventItem {
     level: AuditEventItemLevel;
 }
 
-export type AuditLogsResponseData = {
+export interface AuditLogsPage {
     items: AuditEventItem[];
     /** @minimum 0 */
     total: number;
-};
-
-export interface AuditLogsResponse {
-    success: true;
-    data: AuditLogsResponseData;
 }
 
-export type AuditLogsResponseEnvelope = SuccessEnvelope & {
-    data: AuditLogsResponse;
-};
+export interface AuditLogsResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: AuditLogsPage;
+}
 
 export interface LoginRequest {
     email: Email;
@@ -500,7 +631,7 @@ export interface SignupRequest {
     username: string;
     password: Password;
     passwordConfirm: Password;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
 }
 
 export interface SignupRequestMultipart {
@@ -545,7 +676,8 @@ export interface CreateUserRequest {
     password: Password;
     admin?: boolean;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
+    locale?: Locale;
 }
 
 export interface CreateUserRequestMultipart {
@@ -556,6 +688,7 @@ export interface CreateUserRequestMultipart {
     active?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
+    locale?: Locale;
 }
 
 export interface UpdateUserRequest {
@@ -563,7 +696,10 @@ export interface UpdateUserRequest {
     email?: Email;
     username?: string;
     password?: Password;
-    imageUrl?: string;
+    admin?: boolean;
+    active?: boolean;
+    imageUrl?: ImageUrl;
+    locale?: Locale;
 }
 
 export interface UpdateUserRequestMultipart {
@@ -571,21 +707,28 @@ export interface UpdateUserRequestMultipart {
     email?: Email;
     username?: string;
     password?: Password;
+    admin?: boolean;
+    active?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
+    locale?: Locale;
 }
 
 export interface UpdateUserByIdRequest {
     email?: Email;
     password?: Password;
     username?: string;
-    imageUrl?: string;
+    admin?: boolean;
+    active?: boolean;
+    imageUrl?: ImageUrl;
 }
 
 export interface UpdateUserByIdRequestMultipart {
     email?: Email;
     password?: Password;
     username?: string;
+    admin?: boolean;
+    active?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
 }
@@ -614,7 +757,7 @@ export interface CreateProductRequest {
     price: number;
     description?: string;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
     categories?: string[];
     tags?: string[];
 }
@@ -638,7 +781,7 @@ export interface UpdateProductRequest {
     /** @minimum 0 */
     price: number;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
     categories?: string[];
     tags?: string[];
 }
@@ -662,7 +805,7 @@ export interface UpdateProductByIdRequest {
     /** @minimum 0 */
     price: number;
     active?: boolean;
-    imageUrl?: string;
+    imageUrl?: ImageUrl;
     categories?: string[];
     tags?: string[];
 }
@@ -677,6 +820,10 @@ export interface UpdateProductByIdRequestMultipart {
     imageUpload?: Blob;
     categories?: string[];
     tags?: string[];
+}
+
+export interface HardDeleteRequest {
+    hardDelete?: boolean;
 }
 
 export interface DeleteProductRequest {
@@ -839,6 +986,11 @@ export type ForbiddenResponse = ErrorResponse;
 export type NotFoundResponse = ErrorResponse;
 
 /**
+ * The request conflicts with the current state of the resource
+ */
+export type ConflictResponse = ErrorResponse;
+
+/**
  * Internal server error
  */
 export type InternalErrorResponse = ErrorResponse;
@@ -918,6 +1070,27 @@ export type DeleteUserByIdParams = {
     hardDelete?: boolean;
 };
 
+export type ListFeedbackRequestsParams = {
+    /**
+     * 1-based page index
+     * @minimum 1
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Free-text search string
+     * @minLength 1
+     */
+    text?: TextParamParameter;
+    email?: Email;
+    status?: string;
+};
+
 export type ListProductsParams = {
     /**
      * 1-based page index
@@ -938,7 +1111,9 @@ export type ListProductsParams = {
     /**
      * Resource identifier
      */
-    productId?: ProductIdParamParameter;
+    id?: IdParamParameter;
+    category?: string;
+    tag?: string;
     /**
      * @minimum 0
      */
@@ -980,12 +1155,46 @@ export type ListOrdersParams = {
     email?: Email;
 };
 
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 /**
  * Public ping endpoint. Returns a simple liveness indicator confirming the API process is running.
  * @summary API health check
  */
-export const getHealth = () => {
-    return apiMutator<MessageResponse>({ url: `/`, method: 'GET' });
+export const getHealth = (options?: SecondParameter<typeof orvalMutator<HealthPingEnvelope>>) => {
+    return orvalMutator<HealthPingEnvelope>({ url: `/`, method: 'GET' }, options);
+};
+
+/**
+ * Which languages this deployment can answer in, plus its default and fallback.
+ *
+ * Public, unauthenticated and cacheable: it is static copy that changes only on
+ * deploy, and a client that has just failed to reach the API is exactly who needs
+ * it.
+ * @summary Supported languages
+ */
+export const getLocales = (
+    options?: SecondParameter<typeof orvalMutator<LocaleCapabilitiesEnvelope>>
+) => {
+    return orvalMutator<LocaleCapabilitiesEnvelope>({ url: `/locales`, method: 'GET' }, options);
+};
+
+/**
+ * This API's own dictionary for one language.
+ *
+ * Normally unnecessary — the API resolves its keys itself and puts finished text on
+ * the wire. It earns its place when no response arrives at all (a network failure, a
+ * bare 502) and the client must produce the copy itself, in the active language.
+ * @summary API message dictionary
+ */
+export const getLocaleDictionary = (
+    locale: Locale,
+    options?: SecondParameter<typeof orvalMutator<LocaleDictionaryEnvelope>>
+) => {
+    return orvalMutator<LocaleDictionaryEnvelope>(
+        { url: `/locales/${locale}`, method: 'GET' },
+        options
+    );
 };
 
 /**
@@ -993,8 +1202,8 @@ export const getHealth = () => {
  * Sends `metrics.snapshot` on connect, followed by periodic `metrics.updated` and `heartbeat` events.
  * @summary Observability SSE stream
  */
-export const getObservabilityEvents = () => {
-    return apiMutator<string>({ url: `/observability/events`, method: 'GET' });
+export const getObservabilityEvents = (options?: SecondParameter<typeof orvalMutator<string>>) => {
+    return orvalMutator<string>({ url: `/observability/events`, method: 'GET' }, options);
 };
 
 /**
@@ -1003,11 +1212,13 @@ export const getObservabilityEvents = () => {
  * Requires admin role.
  * @summary Health snapshot
  */
-export const getObservabilityHealth = () => {
-    return apiMutator<ObservabilityHealthResponseEnvelope>({
-        url: `/observability/health`,
-        method: 'GET'
-    });
+export const getObservabilityHealth = (
+    options?: SecondParameter<typeof orvalMutator<ObservabilityHealthResponseEnvelope>>
+) => {
+    return orvalMutator<ObservabilityHealthResponseEnvelope>(
+        { url: `/observability/health`, method: 'GET' },
+        options
+    );
 };
 
 /**
@@ -1016,8 +1227,8 @@ export const getObservabilityHealth = () => {
  * Use `GET /observability/metrics/overview` for a JSON summary suitable for dashboards.
  * @summary Prometheus metrics
  */
-export const getObservabilityMetrics = () => {
-    return apiMutator<string>({ url: `/observability/metrics`, method: 'GET' });
+export const getObservabilityMetrics = (options?: SecondParameter<typeof orvalMutator<string>>) => {
+    return orvalMutator<string>({ url: `/observability/metrics`, method: 'GET' }, options);
 };
 
 /**
@@ -1026,176 +1237,359 @@ export const getObservabilityMetrics = () => {
  * Requires admin role.
  * @summary Metrics overview (JSON)
  */
-export const getObservabilityMetricsOverview = () => {
-    return apiMutator<ObservabilityMetricsSummaryResponseEnvelope>({
-        url: `/observability/metrics/overview`,
-        method: 'GET'
-    });
+export const getObservabilityMetricsOverview = (
+    options?: SecondParameter<typeof orvalMutator<ObservabilityMetricsSummaryResponseEnvelope>>
+) => {
+    return orvalMutator<ObservabilityMetricsSummaryResponseEnvelope>(
+        { url: `/observability/metrics/overview`, method: 'GET' },
+        options
+    );
 };
 
 /**
- * Returns the most recent audit events from the in-memory ring buffer (up to 200).
+ * Returns the most recent audit events, newest first, from the persisted audit trail.
  * Events include auth flows, admin CRUD actions, and security blocks.
+ * Entries are retained for `NODE_AUDIT_RETENTION_DAYS` (default 90) and expire after.
+ * `total` counts every event matching the filters, not just the returned page.
  * Requires admin role.
  * @summary Recent audit events
  */
-export const getObservabilityAuditLogs = (params?: GetObservabilityAuditLogsParams) => {
-    return apiMutator<AuditLogsResponseEnvelope>({
-        url: `/observability/audit`,
-        method: 'GET',
-        params
-    });
+export const getObservabilityAuditLogs = (
+    params?: GetObservabilityAuditLogsParams,
+    options?: SecondParameter<typeof orvalMutator<AuditLogsResponseEnvelope>>
+) => {
+    return orvalMutator<AuditLogsResponseEnvelope>(
+        { url: `/observability/audit`, method: 'GET', params },
+        options
+    );
 };
 
 /**
  * Returns the full profile of the currently authenticated user
  * @summary Current user info
  */
-export const getAccount = () => {
-    return apiMutator<UserEnvelope>({ url: `/account`, method: 'GET' });
+export const getAccount = (options?: SecondParameter<typeof orvalMutator<UserEnvelope>>) => {
+    return orvalMutator<UserEnvelope>({ url: `/account`, method: 'GET' }, options);
 };
 
 /**
  * Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion.
  * @summary Request account deletion
  */
-export const requestAccountDelete = () => {
-    return apiMutator<SuccessResponse>({ url: `/account`, method: 'DELETE' });
+export const requestAccountDelete = (
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>({ url: `/account`, method: 'DELETE' }, options);
 };
 
 /**
  * Completes the account-deletion flow. Validates the one-time token issued by `DELETE /account` and, if valid, permanently removes the user account.
  * @summary Confirm account deletion
  */
-export const confirmAccountDelete = (accountDeleteConfirmRequest: AccountDeleteConfirmRequest) => {
-    return apiMutator<SuccessResponse>({
-        url: `/account/delete-confirm`,
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        data: accountDeleteConfirmRequest
-    });
+export const confirmAccountDelete = (
+    accountDeleteConfirmRequest: AccountDeleteConfirmRequest,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/account/delete-confirm`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: accountDeleteConfirmRequest
+        },
+        options
+    );
 };
 
 /**
  * Authenticates a user with email and password credentials. On success, returns a JWT access token that must be passed as a Bearer token on subsequent authenticated requests.
  * @summary Login
  */
-export const login = (loginRequest: LoginRequest) => {
-    return apiMutator<AuthTokensEnvelope>({
-        url: `/account/login`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: loginRequest
-    });
+export const login = (
+    loginRequest: LoginRequest,
+    options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>
+) => {
+    return orvalMutator<AuthTokensEnvelope>(
+        {
+            url: `/account/login`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: loginRequest
+        },
+        options
+    );
 };
 
 /**
  * Registers a new user account with optional image upload. Returns the newly created user profile on success.
  * @summary Signup
  */
-export const signup = (signupBody: SignupRequest | SignupRequestMultipart) => {
-    return apiMutator<UserEnvelope>({ url: `/account/signup`, method: 'POST', data: signupBody });
+export const signup = (
+    signupRequest: SignupRequest,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/account/signup`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: signupRequest
+        },
+        options
+    );
+};
+
+/**
+ * Registers a new user account with optional image upload. Returns the newly created user profile on success.
+ * @summary Signup
+ */
+export const signupWithMultipart = (
+    signupRequestMultipart: SignupRequestMultipart,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    const formData = new FormData();
+    formData.append(`email`, signupRequestMultipart.email);
+    formData.append(`username`, signupRequestMultipart.username);
+    formData.append(`password`, signupRequestMultipart.password);
+    formData.append(`passwordConfirm`, signupRequestMultipart.passwordConfirm);
+    if (signupRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, signupRequestMultipart.imageUpload);
+    }
+
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/account/signup`,
+            method: 'POST',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
 };
 
 /**
  * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
  */
-export const requestPasswordReset = (passwordResetRequest: PasswordResetRequest) => {
-    return apiMutator<SuccessResponse>({
-        url: `/account/reset`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: passwordResetRequest
-    });
+export const requestPasswordReset = (
+    passwordResetRequest: PasswordResetRequest,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/account/reset`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: passwordResetRequest
+        },
+        options
+    );
 };
 
 /**
  * Completes the password-reset flow. Validates the one-time reset token issued by `/account/reset` and, if valid, updates the user's password to the supplied value.
  */
-export const confirmPasswordReset = (passwordResetConfirmRequest: PasswordResetConfirmRequest) => {
-    return apiMutator<SuccessResponse>({
-        url: `/account/reset-confirm`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: passwordResetConfirmRequest
-    });
+export const confirmPasswordReset = (
+    passwordResetConfirmRequest: PasswordResetConfirmRequest,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/account/reset-confirm`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: passwordResetConfirmRequest
+        },
+        options
+    );
 };
 
 /**
- * Creates a new short-lived access token using a refresh token. The refresh token can be provided as a query parameter, path parameter, or retrieved from the `jwt` cookie.
+ * Creates a new short-lived access token from the refresh token in the `jwt` cookie. The cookie is `HttpOnly`, so the token is never readable by page scripts and never appears in a URL, a proxy log or a `Referer` header.
  * @summary Refresh access token
  */
-export const refreshToken = () => {
-    return apiMutator<RefreshTokenEnvelope>({ url: `/account/refresh`, method: 'GET' });
-};
-
-/**
- * Creates a new short-lived access token using a refresh token provided in the URL path.
- * @summary Refresh access token with token in path
- */
-export const refreshTokenWithPath = (token: string) => {
-    return apiMutator<RefreshTokenEnvelope>({ url: `/account/refresh/${token}`, method: 'GET' });
+export const refreshToken = (
+    options?: SecondParameter<typeof orvalMutator<RefreshTokenEnvelope>>
+) => {
+    return orvalMutator<RefreshTokenEnvelope>({ url: `/account/refresh`, method: 'GET' }, options);
 };
 
 /**
  * Logs out the authenticated user from ALL devices by removing all refresh tokens from the database and clearing authentication cookies.
  * @summary Logout from all devices
  */
-export const logoutAll = () => {
-    return apiMutator<SuccessResponse>({ url: `/account/logout-all`, method: 'POST' });
+export const logoutAll = (options?: SecondParameter<typeof orvalMutator<SuccessResponse>>) => {
+    return orvalMutator<SuccessResponse>({ url: `/account/logout-all`, method: 'POST' }, options);
 };
 
 /**
  * Removes all expired tokens (refresh, password-reset, etc.) from every user record in the database. Restricted to administrators.
  * @summary Remove expired tokens
  */
-export const deleteExpiredTokens = () => {
-    return apiMutator<SuccessResponse>({ url: `/account/tokens/expired`, method: 'DELETE' });
+export const deleteExpiredTokens = (
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        { url: `/account/tokens/expired`, method: 'DELETE' },
+        options
+    );
 };
 
 /**
  * Returns a paginated list of user accounts.
  * @summary List users (paginated)
  */
-export const listUsers = (params?: ListUsersParams) => {
-    return apiMutator<UsersResponseEnvelope>({ url: `/users`, method: 'GET', params });
+export const listUsers = (
+    params?: ListUsersParams,
+    options?: SecondParameter<typeof orvalMutator<UsersResponseEnvelope>>
+) => {
+    return orvalMutator<UsersResponseEnvelope>({ url: `/users`, method: 'GET', params }, options);
 };
 
 /**
  * Creates a new user account with the supplied email, username, and password. Optional image can be uploaded.
  * @summary Create user
  */
-export const createUser = (createUserBody: CreateUserRequest | CreateUserRequestMultipart) => {
-    return apiMutator<UserEnvelope>({ url: `/users`, method: 'POST', data: createUserBody });
+export const createUser = (
+    createUserRequest: CreateUserRequest,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/users`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createUserRequest
+        },
+        options
+    );
+};
+
+/**
+ * Creates a new user account with the supplied email, username, and password. Optional image can be uploaded.
+ * @summary Create user
+ */
+export const createUserWithMultipart = (
+    createUserRequestMultipart: CreateUserRequestMultipart,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    const formData = new FormData();
+    formData.append(`email`, createUserRequestMultipart.email);
+    formData.append(`username`, createUserRequestMultipart.username);
+    formData.append(`password`, createUserRequestMultipart.password);
+    if (createUserRequestMultipart.admin !== undefined) {
+        formData.append(`admin`, createUserRequestMultipart.admin.toString());
+    }
+    if (createUserRequestMultipart.active !== undefined) {
+        formData.append(`active`, createUserRequestMultipart.active.toString());
+    }
+    if (createUserRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, createUserRequestMultipart.imageUpload);
+    }
+    if (createUserRequestMultipart.locale !== undefined) {
+        formData.append(`locale`, createUserRequestMultipart.locale);
+    }
+
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/users`,
+            method: 'POST',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
 };
 
 /**
  * Updates an existing user's email or password. Optional image can be uploaded.
  * @summary Edit user
  */
-export const updateUser = (updateUserBody: UpdateUserRequest | UpdateUserRequestMultipart) => {
-    return apiMutator<UserEnvelope>({ url: `/users`, method: 'PUT', data: updateUserBody });
+export const updateUser = (
+    updateUserRequest: UpdateUserRequest,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/users`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateUserRequest
+        },
+        options
+    );
+};
+
+/**
+ * Updates an existing user's email or password. Optional image can be uploaded.
+ * @summary Edit user
+ */
+export const updateUserWithMultipart = (
+    updateUserRequestMultipart: UpdateUserRequestMultipart,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    const formData = new FormData();
+    formData.append(`id`, updateUserRequestMultipart.id);
+    if (updateUserRequestMultipart.email !== undefined) {
+        formData.append(`email`, updateUserRequestMultipart.email);
+    }
+    if (updateUserRequestMultipart.username !== undefined) {
+        formData.append(`username`, updateUserRequestMultipart.username);
+    }
+    if (updateUserRequestMultipart.password !== undefined) {
+        formData.append(`password`, updateUserRequestMultipart.password);
+    }
+    if (updateUserRequestMultipart.admin !== undefined) {
+        formData.append(`admin`, updateUserRequestMultipart.admin.toString());
+    }
+    if (updateUserRequestMultipart.active !== undefined) {
+        formData.append(`active`, updateUserRequestMultipart.active.toString());
+    }
+    if (updateUserRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, updateUserRequestMultipart.imageUpload);
+    }
+    if (updateUserRequestMultipart.locale !== undefined) {
+        formData.append(`locale`, updateUserRequestMultipart.locale);
+    }
+
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/users`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
 };
 
 /**
  * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record.
  * @summary Delete user
  */
-export const deleteUser = (deleteUserRequest: DeleteUserRequest) => {
-    return apiMutator<SuccessResponse>({
-        url: `/users`,
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        data: deleteUserRequest
-    });
+export const deleteUser = (
+    deleteUserRequest: DeleteUserRequest,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/users`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: deleteUserRequest
+        },
+        options
+    );
 };
 
 /**
  * Returns the full profile of the user identified by `{id}`. Functionally equivalent to `GET /users?id={id}`.
  * @summary User details
  */
-export const getUserById = (id: string) => {
-    return apiMutator<UserEnvelope>({ url: `/users/${id}`, method: 'GET' });
+export const getUserById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>({ url: `/users/${id}`, method: 'GET' }, options);
 };
 
 /**
@@ -1204,47 +1598,129 @@ export const getUserById = (id: string) => {
  */
 export const updateUserById = (
     id: string,
-    updateUserByIdBody: UpdateUserByIdRequest | UpdateUserByIdRequestMultipart
+    updateUserByIdRequest: UpdateUserByIdRequest,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
 ) => {
-    return apiMutator<UserEnvelope>({
-        url: `/users/${id}`,
-        method: 'PUT',
-        data: updateUserByIdBody
-    });
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/users/${id}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateUserByIdRequest
+        },
+        options
+    );
+};
+
+/**
+ * Updates the email or password of the user identified by `{id}` in the path. Optional image can be uploaded.
+ * @summary Edit user
+ */
+export const updateUserByIdWithMultipart = (
+    id: string,
+    updateUserByIdRequestMultipart: UpdateUserByIdRequestMultipart,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    const formData = new FormData();
+    if (updateUserByIdRequestMultipart.email !== undefined) {
+        formData.append(`email`, updateUserByIdRequestMultipart.email);
+    }
+    if (updateUserByIdRequestMultipart.password !== undefined) {
+        formData.append(`password`, updateUserByIdRequestMultipart.password);
+    }
+    if (updateUserByIdRequestMultipart.username !== undefined) {
+        formData.append(`username`, updateUserByIdRequestMultipart.username);
+    }
+    if (updateUserByIdRequestMultipart.admin !== undefined) {
+        formData.append(`admin`, updateUserByIdRequestMultipart.admin.toString());
+    }
+    if (updateUserByIdRequestMultipart.active !== undefined) {
+        formData.append(`active`, updateUserByIdRequestMultipart.active.toString());
+    }
+    if (updateUserByIdRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, updateUserByIdRequestMultipart.imageUpload);
+    }
+
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/users/${id}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
 };
 
 /**
  * Deletes the user identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /users`.
  * @summary Delete user
  */
-export const deleteUserById = (id: string, params?: DeleteUserByIdParams) => {
-    return apiMutator<SuccessResponse>({ url: `/users/${id}`, method: 'DELETE', params });
+export const deleteUserById = (
+    id: string,
+    hardDeleteRequest?: HardDeleteRequest,
+    params?: DeleteUserByIdParams,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/users/${id}`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: hardDeleteRequest,
+            params
+        },
+        options
+    );
+};
+
+/**
+ * Permanently removes the user identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /users/{id}?hardDelete=true`.
+ * @summary Permanently delete user
+ */
+export const hardDeleteUserById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>({ url: `/users/${id}/hard`, method: 'DELETE' }, options);
 };
 
 /**
  * Searches and filters users via a JSON request body. Functionally equivalent to `GET /users` with query parameters
  * @summary Search users (DTO-friendly)
  */
-export const searchUsers = (searchUsersRequest: SearchUsersRequest) => {
-    return apiMutator<UsersResponseEnvelope>({
-        url: `/users/search`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: searchUsersRequest
-    });
+export const searchUsers = (
+    searchUsersRequest: SearchUsersRequest,
+    options?: SecondParameter<typeof orvalMutator<UsersResponseEnvelope>>
+) => {
+    return orvalMutator<UsersResponseEnvelope>(
+        {
+            url: `/users/search`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: searchUsersRequest
+        },
+        options
+    );
 };
 
 /**
  * Creates a user feedback/contact request and notifies admins via email.
  * @summary Submit contact request
  */
-export const createFeedbackRequest = (createFeedbackRequest: CreateFeedbackRequest) => {
-    return apiMutator<FeedbackRequestEnvelope>({
-        url: `/feedback/contact`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: createFeedbackRequest
-    });
+export const createFeedbackRequest = (
+    createFeedbackRequest: CreateFeedbackRequest,
+    options?: SecondParameter<typeof orvalMutator<FeedbackRequestEnvelope>>
+) => {
+    return orvalMutator<FeedbackRequestEnvelope>(
+        {
+            url: `/feedback/contact`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createFeedbackRequest
+        },
+        options
+    );
 };
 
 /**
@@ -1252,13 +1728,19 @@ export const createFeedbackRequest = (createFeedbackRequest: CreateFeedbackReque
  * @summary List feedback requests
  */
 export const listFeedbackRequests = (
-    searchFeedbackRequestsRequest?: SearchFeedbackRequestsRequest
+    searchFeedbackRequestsRequest?: SearchFeedbackRequestsRequest,
+    params?: ListFeedbackRequestsParams,
+    options?: SecondParameter<typeof orvalMutator<FeedbackRequestsResponseEnvelope>>
 ) => {
-    return apiMutator<FeedbackRequestsResponseEnvelope>({
-        url: `/feedback`,
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-    });
+    return orvalMutator<FeedbackRequestsResponseEnvelope>(
+        {
+            url: `/feedback`,
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            params
+        },
+        options
+    );
 };
 
 /**
@@ -1267,22 +1749,32 @@ export const listFeedbackRequests = (
  */
 export const updateFeedbackRequestStatus = (
     id: string,
-    updateFeedbackRequestStatusRequest: UpdateFeedbackRequestStatusRequest
+    updateFeedbackRequestStatusRequest: UpdateFeedbackRequestStatusRequest,
+    options?: SecondParameter<typeof orvalMutator<FeedbackRequestEnvelope>>
 ) => {
-    return apiMutator<FeedbackRequestEnvelope>({
-        url: `/feedback/${id}`,
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        data: updateFeedbackRequestStatusRequest
-    });
+    return orvalMutator<FeedbackRequestEnvelope>(
+        {
+            url: `/feedback/${id}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateFeedbackRequestStatusRequest
+        },
+        options
+    );
 };
 
 /**
  * Returns a paginated list of products.
  * @summary List products (paginated)
  */
-export const listProducts = (params?: ListProductsParams) => {
-    return apiMutator<ProductsResponseEnvelope>({ url: `/products`, method: 'GET', params });
+export const listProducts = (
+    params?: ListProductsParams,
+    options?: SecondParameter<typeof orvalMutator<ProductsResponseEnvelope>>
+) => {
+    return orvalMutator<ProductsResponseEnvelope>(
+        { url: `/products`, method: 'GET', params },
+        options
+    );
 };
 
 /**
@@ -1290,13 +1782,58 @@ export const listProducts = (params?: ListProductsParams) => {
  * @summary Create product
  */
 export const createProduct = (
-    createProductBody: CreateProductRequest | CreateProductRequestMultipart
+    createProductRequest: CreateProductRequest,
+    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
 ) => {
-    return apiMutator<ProductEnvelope>({
-        url: `/products`,
-        method: 'POST',
-        data: createProductBody
-    });
+    return orvalMutator<ProductEnvelope>(
+        {
+            url: `/products`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createProductRequest
+        },
+        options
+    );
+};
+
+/**
+ * Creates a new product with optional image upload
+ * @summary Create product
+ */
+export const createProductWithMultipart = (
+    createProductRequestMultipart: CreateProductRequestMultipart,
+    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+) => {
+    const formData = new FormData();
+    formData.append(`title`, createProductRequestMultipart.title);
+    formData.append(`price`, createProductRequestMultipart.price.toString());
+    if (createProductRequestMultipart.description !== undefined) {
+        formData.append(`description`, createProductRequestMultipart.description);
+    }
+    if (createProductRequestMultipart.active !== undefined) {
+        formData.append(`active`, createProductRequestMultipart.active.toString());
+    }
+    if (createProductRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, createProductRequestMultipart.imageUpload);
+    }
+    if (createProductRequestMultipart.categories !== undefined) {
+        createProductRequestMultipart.categories.forEach((value) =>
+            formData.append(`categories`, value)
+        );
+    }
+    if (createProductRequestMultipart.tags !== undefined) {
+        createProductRequestMultipart.tags.forEach((value) => formData.append(`tags`, value));
+    }
+
+    return orvalMutator<ProductEnvelope>(
+        {
+            url: `/products`,
+            method: 'POST',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
 };
 
 /**
@@ -1304,34 +1841,89 @@ export const createProduct = (
  * @summary Edit product
  */
 export const updateProduct = (
-    updateProductBody: UpdateProductRequest | UpdateProductRequestMultipart
+    updateProductRequest: UpdateProductRequest,
+    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
 ) => {
-    return apiMutator<ProductEnvelope>({
-        url: `/products`,
-        method: 'PUT',
-        data: updateProductBody
-    });
+    return orvalMutator<ProductEnvelope>(
+        {
+            url: `/products`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateProductRequest
+        },
+        options
+    );
+};
+
+/**
+ * Updates an existing product with optional image upload
+ * @summary Edit product
+ */
+export const updateProductWithMultipart = (
+    updateProductRequestMultipart: UpdateProductRequestMultipart,
+    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+) => {
+    const formData = new FormData();
+    formData.append(`id`, updateProductRequestMultipart.id);
+    formData.append(`title`, updateProductRequestMultipart.title);
+    if (updateProductRequestMultipart.description !== undefined) {
+        formData.append(`description`, updateProductRequestMultipart.description);
+    }
+    formData.append(`price`, updateProductRequestMultipart.price.toString());
+    if (updateProductRequestMultipart.active !== undefined) {
+        formData.append(`active`, updateProductRequestMultipart.active.toString());
+    }
+    if (updateProductRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, updateProductRequestMultipart.imageUpload);
+    }
+    if (updateProductRequestMultipart.categories !== undefined) {
+        updateProductRequestMultipart.categories.forEach((value) =>
+            formData.append(`categories`, value)
+        );
+    }
+    if (updateProductRequestMultipart.tags !== undefined) {
+        updateProductRequestMultipart.tags.forEach((value) => formData.append(`tags`, value));
+    }
+
+    return orvalMutator<ProductEnvelope>(
+        {
+            url: `/products`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
 };
 
 /**
  * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record
  * @summary Delete product
  */
-export const deleteProduct = (deleteProductRequest: DeleteProductRequest) => {
-    return apiMutator<SuccessResponse>({
-        url: `/products`,
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        data: deleteProductRequest
-    });
+export const deleteProduct = (
+    deleteProductRequest: DeleteProductRequest,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/products`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: deleteProductRequest
+        },
+        options
+    );
 };
 
 /**
  * Returns the full details of the product identified by `{id}`. Functionally equivalent to `GET /products?id={id}`.
  * @summary Product details
  */
-export const getProductById = (id: string) => {
-    return apiMutator<ProductEnvelope>({ url: `/products/${id}`, method: 'GET' });
+export const getProductById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+) => {
+    return orvalMutator<ProductEnvelope>({ url: `/products/${id}`, method: 'GET' }, options);
 };
 
 /**
@@ -1340,68 +1932,160 @@ export const getProductById = (id: string) => {
  */
 export const updateProductById = (
     id: string,
-    updateProductByIdBody: UpdateProductByIdRequest | UpdateProductByIdRequestMultipart
+    updateProductByIdRequest: UpdateProductByIdRequest,
+    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
 ) => {
-    return apiMutator<ProductEnvelope>({
-        url: `/products/${id}`,
-        method: 'PUT',
-        data: updateProductByIdBody
-    });
+    return orvalMutator<ProductEnvelope>(
+        {
+            url: `/products/${id}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateProductByIdRequest
+        },
+        options
+    );
+};
+
+/**
+ * Updates the product identified by `{id}` in the path with optional image upload. Functionally equivalent to `PUT /products` with the id in the body.
+ * @summary Edit product
+ */
+export const updateProductByIdWithMultipart = (
+    id: string,
+    updateProductByIdRequestMultipart: UpdateProductByIdRequestMultipart,
+    options?: SecondParameter<typeof orvalMutator<ProductEnvelope>>
+) => {
+    const formData = new FormData();
+    formData.append(`title`, updateProductByIdRequestMultipart.title);
+    if (updateProductByIdRequestMultipart.description !== undefined) {
+        formData.append(`description`, updateProductByIdRequestMultipart.description);
+    }
+    formData.append(`price`, updateProductByIdRequestMultipart.price.toString());
+    if (updateProductByIdRequestMultipart.active !== undefined) {
+        formData.append(`active`, updateProductByIdRequestMultipart.active.toString());
+    }
+    if (updateProductByIdRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, updateProductByIdRequestMultipart.imageUpload);
+    }
+    if (updateProductByIdRequestMultipart.categories !== undefined) {
+        updateProductByIdRequestMultipart.categories.forEach((value) =>
+            formData.append(`categories`, value)
+        );
+    }
+    if (updateProductByIdRequestMultipart.tags !== undefined) {
+        updateProductByIdRequestMultipart.tags.forEach((value) => formData.append(`tags`, value));
+    }
+
+    return orvalMutator<ProductEnvelope>(
+        {
+            url: `/products/${id}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
 };
 
 /**
  * Deletes the product identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /products`.
  * @summary Delete product
  */
-export const deleteProductById = (id: string, params?: DeleteProductByIdParams) => {
-    return apiMutator<SuccessResponse>({ url: `/products/${id}`, method: 'DELETE', params });
+export const deleteProductById = (
+    id: string,
+    hardDeleteRequest?: HardDeleteRequest,
+    params?: DeleteProductByIdParams,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/products/${id}`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: hardDeleteRequest,
+            params
+        },
+        options
+    );
+};
+
+/**
+ * Permanently removes the product identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /products/{id}?hardDelete=true`.
+ * @summary Permanently delete product
+ */
+export const hardDeleteProductById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        { url: `/products/${id}/hard`, method: 'DELETE' },
+        options
+    );
 };
 
 /**
  * Searches and filters products via a JSON request body. Functionally equivalent to `GET /products` with query parameters.
  * @summary Search products (DTO-friendly)
  */
-export const searchProducts = (searchProductsRequest: SearchProductsRequest) => {
-    return apiMutator<ProductsResponseEnvelope>({
-        url: `/products/search`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: searchProductsRequest
-    });
+export const searchProducts = (
+    searchProductsRequest: SearchProductsRequest,
+    options?: SecondParameter<typeof orvalMutator<ProductsResponseEnvelope>>
+) => {
+    return orvalMutator<ProductsResponseEnvelope>(
+        {
+            url: `/products/search`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: searchProductsRequest
+        },
+        options
+    );
 };
 
 /**
  * Returns all items currently in the authenticated user's cart along with a computed summary
  * @summary Get cart
  */
-export const getCart = () => {
-    return apiMutator<CartResponseEnvelope>({ url: `/cart`, method: 'GET' });
+export const getCart = (options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>) => {
+    return orvalMutator<CartResponseEnvelope>({ url: `/cart`, method: 'GET' }, options);
 };
 
 /**
  * Adds or edit a product to the authenticated user's cart. Returns the updated cart.
  * @summary Add/Edit cart item
  */
-export const upsertCartItem = (upsertCartItemRequest: UpsertCartItemRequest) => {
-    return apiMutator<CartResponseEnvelope>({
-        url: `/cart`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: upsertCartItemRequest
-    });
+export const upsertCartItem = (
+    upsertCartItemRequest: UpsertCartItemRequest,
+    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+) => {
+    return orvalMutator<CartResponseEnvelope>(
+        {
+            url: `/cart`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: upsertCartItemRequest
+        },
+        options
+    );
 };
 
 /**
  * Clear cart or, ir productId is set, removes a specific product from the authenticated user's cart. Returns the updated cart (can be empty)
  * @summary Empty cart or, if productId is set, remove target cart item
  */
-export const clearCart = (removeCartItemRequest?: RemoveCartItemRequest) => {
-    return apiMutator<CartResponseEnvelope>({
-        url: `/cart`,
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        data: removeCartItemRequest
-    });
+export const clearCart = (
+    removeCartItemRequest?: RemoveCartItemRequest,
+    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+) => {
+    return orvalMutator<CartResponseEnvelope>(
+        {
+            url: `/cart`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: removeCartItemRequest
+        },
+        options
+    );
 };
 
 /**
@@ -1410,43 +2094,64 @@ export const clearCart = (removeCartItemRequest?: RemoveCartItemRequest) => {
  */
 export const updateCartItemById = (
     productId: string,
-    updateCartItemByIdRequest: UpdateCartItemByIdRequest
+    updateCartItemByIdRequest: UpdateCartItemByIdRequest,
+    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
 ) => {
-    return apiMutator<CartResponseEnvelope>({
-        url: `/cart/${productId}`,
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        data: updateCartItemByIdRequest
-    });
+    return orvalMutator<CartResponseEnvelope>(
+        {
+            url: `/cart/${productId}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateCartItemByIdRequest
+        },
+        options
+    );
 };
 
 /**
  * Removes the cart line for the product identified by `{productId}` in the path from the authenticated user's cart. Returns the updated cart.
  * @summary Remove item from cart
  */
-export const removeCartItem = (productId: string) => {
-    return apiMutator<CartResponseEnvelope>({ url: `/cart/${productId}`, method: 'DELETE' });
+export const removeCartItem = (
+    productId: string,
+    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+) => {
+    return orvalMutator<CartResponseEnvelope>(
+        { url: `/cart/${productId}`, method: 'DELETE' },
+        options
+    );
 };
 
 /**
  * Returns a lightweight summary of the authenticated user's cart.
  * @summary Get cart summary
  */
-export const getCartSummary = () => {
-    return apiMutator<CartSummaryResponseEnvelope>({ url: `/cart/summary`, method: 'GET' });
+export const getCartSummary = (
+    options?: SecondParameter<typeof orvalMutator<CartSummaryResponseEnvelope>>
+) => {
+    return orvalMutator<CartSummaryResponseEnvelope>(
+        { url: `/cart/summary`, method: 'GET' },
+        options
+    );
 };
 
 /**
  * Converts the authenticated user's current cart into a new order. The cart is cleared upon success. An optional email address and order notes can be supplied in the request body. Returns the created order.
  * @summary Checkout (place order from cart)
  */
-export const checkout = (checkoutRequest?: CheckoutRequest) => {
-    return apiMutator<CheckoutResponseEnvelope>({
-        url: `/cart/checkout`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: checkoutRequest
-    });
+export const checkout = (
+    checkoutRequest?: CheckoutRequest,
+    options?: SecondParameter<typeof orvalMutator<CheckoutResponseEnvelope>>
+) => {
+    return orvalMutator<CheckoutResponseEnvelope>(
+        {
+            url: `/cart/checkout`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: checkoutRequest
+        },
+        options
+    );
 };
 
 /**
@@ -1454,47 +2159,68 @@ export const checkout = (checkoutRequest?: CheckoutRequest) => {
  * Non-admin users are automatically scoped to their own orders; the `userId` filter is ignored for non-admin callers.
  * @summary List orders (paginated)
  */
-export const listOrders = (params?: ListOrdersParams) => {
-    return apiMutator<OrdersResponseEnvelope>({ url: `/orders`, method: 'GET', params });
+export const listOrders = (
+    params?: ListOrdersParams,
+    options?: SecondParameter<typeof orvalMutator<OrdersResponseEnvelope>>
+) => {
+    return orvalMutator<OrdersResponseEnvelope>({ url: `/orders`, method: 'GET', params }, options);
 };
 
 /**
  * Creates a new order directly from the supplied payload.
  * @summary Create order
  */
-export const createOrder = (createOrderRequest: CreateOrderRequest) => {
-    return apiMutator<OrderEnvelope>({
-        url: `/orders`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: createOrderRequest
-    });
+export const createOrder = (
+    createOrderRequest: CreateOrderRequest,
+    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+) => {
+    return orvalMutator<OrderEnvelope>(
+        {
+            url: `/orders`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createOrderRequest
+        },
+        options
+    );
 };
 
 /**
  * Updates an existing order identified by id in the request body.
  * @summary Update order
  */
-export const updateOrder = (updateOrderRequest: UpdateOrderRequest) => {
-    return apiMutator<OrderEnvelope>({
-        url: `/orders`,
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        data: updateOrderRequest
-    });
+export const updateOrder = (
+    updateOrderRequest: UpdateOrderRequest,
+    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+) => {
+    return orvalMutator<OrderEnvelope>(
+        {
+            url: `/orders`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateOrderRequest
+        },
+        options
+    );
 };
 
 /**
  * Permanently removes the order identified by id.
  * @summary Delete order
  */
-export const deleteOrder = (deleteOrderRequest: DeleteOrderRequest) => {
-    return apiMutator<SuccessResponse>({
-        url: `/orders`,
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        data: deleteOrderRequest
-    });
+export const deleteOrder = (
+    deleteOrderRequest: DeleteOrderRequest,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/orders`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: deleteOrderRequest
+        },
+        options
+    );
 };
 
 /**
@@ -1502,53 +2228,82 @@ export const deleteOrder = (deleteOrderRequest: DeleteOrderRequest) => {
  * Non-admin users are automatically scoped to their own orders; the `userId` filter is ignored for non-admin callers.
  * @summary Search orders (DTO-friendly)
  */
-export const searchOrders = (searchOrdersRequest: SearchOrdersRequest) => {
-    return apiMutator<OrdersResponseEnvelope>({
-        url: `/orders/search`,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        data: searchOrdersRequest
-    });
+export const searchOrders = (
+    searchOrdersRequest: SearchOrdersRequest,
+    options?: SecondParameter<typeof orvalMutator<OrdersResponseEnvelope>>
+) => {
+    return orvalMutator<OrdersResponseEnvelope>(
+        {
+            url: `/orders/search`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: searchOrdersRequest
+        },
+        options
+    );
 };
 
 /**
  * Returns the full details of the order identified by `{id}`. Functionally equivalent to `GET /orders?id={id}`.
  * @summary Order details
  */
-export const getOrderById = (id: string) => {
-    return apiMutator<OrderEnvelope>({ url: `/orders/${id}`, method: 'GET' });
+export const getOrderById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+) => {
+    return orvalMutator<OrderEnvelope>({ url: `/orders/${id}`, method: 'GET' }, options);
 };
 
 /**
  * Updates the order identified by `{id}` in the path.
  * @summary Edit order
  */
-export const updateOrderById = (id: string, updateOrderByIdRequest: UpdateOrderByIdRequest) => {
-    return apiMutator<OrderEnvelope>({
-        url: `/orders/${id}`,
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        data: updateOrderByIdRequest
-    });
+export const updateOrderById = (
+    id: string,
+    updateOrderByIdRequest: UpdateOrderByIdRequest,
+    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+) => {
+    return orvalMutator<OrderEnvelope>(
+        {
+            url: `/orders/${id}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateOrderByIdRequest
+        },
+        options
+    );
 };
 
 /**
  * Permanently removes the order identified by `id`.
  * @summary Delete order
  */
-export const deleteOrderById = (id: string) => {
-    return apiMutator<SuccessResponse>({ url: `/orders/${id}`, method: 'DELETE' });
+export const deleteOrderById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>({ url: `/orders/${id}`, method: 'DELETE' }, options);
 };
 
 /**
  * Generates and returns the invoice for the order identified by `{id}` as a binary PDF file. The client should save or stream the response with an appropriate `Content-Disposition` header.
  * @summary Download order invoice (PDF)
  */
-export const getOrderInvoice = (id: string) => {
-    return apiMutator<Blob>({ url: `/orders/${id}/invoice`, method: 'GET', responseType: 'blob' });
+export const getOrderInvoice = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<Blob>>
+) => {
+    return orvalMutator<Blob>(
+        { url: `/orders/${id}/invoice`, method: 'GET', responseType: 'blob' },
+        options
+    );
 };
 
 export type GetHealthResult = NonNullable<Awaited<ReturnType<typeof getHealth>>>;
+export type GetLocalesResult = NonNullable<Awaited<ReturnType<typeof getLocales>>>;
+export type GetLocaleDictionaryResult = NonNullable<
+    Awaited<ReturnType<typeof getLocaleDictionary>>
+>;
 export type GetObservabilityEventsResult = NonNullable<
     Awaited<ReturnType<typeof getObservabilityEvents>>
 >;
@@ -1573,6 +2328,9 @@ export type ConfirmAccountDeleteResult = NonNullable<
 >;
 export type LoginResult = NonNullable<Awaited<ReturnType<typeof login>>>;
 export type SignupResult = NonNullable<Awaited<ReturnType<typeof signup>>>;
+export type SignupWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof signupWithMultipart>>
+>;
 export type RequestPasswordResetResult = NonNullable<
     Awaited<ReturnType<typeof requestPasswordReset>>
 >;
@@ -1580,20 +2338,27 @@ export type ConfirmPasswordResetResult = NonNullable<
     Awaited<ReturnType<typeof confirmPasswordReset>>
 >;
 export type RefreshTokenResult = NonNullable<Awaited<ReturnType<typeof refreshToken>>>;
-export type RefreshTokenWithPathResult = NonNullable<
-    Awaited<ReturnType<typeof refreshTokenWithPath>>
->;
 export type LogoutAllResult = NonNullable<Awaited<ReturnType<typeof logoutAll>>>;
 export type DeleteExpiredTokensResult = NonNullable<
     Awaited<ReturnType<typeof deleteExpiredTokens>>
 >;
 export type ListUsersResult = NonNullable<Awaited<ReturnType<typeof listUsers>>>;
 export type CreateUserResult = NonNullable<Awaited<ReturnType<typeof createUser>>>;
+export type CreateUserWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof createUserWithMultipart>>
+>;
 export type UpdateUserResult = NonNullable<Awaited<ReturnType<typeof updateUser>>>;
+export type UpdateUserWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof updateUserWithMultipart>>
+>;
 export type DeleteUserResult = NonNullable<Awaited<ReturnType<typeof deleteUser>>>;
 export type GetUserByIdResult = NonNullable<Awaited<ReturnType<typeof getUserById>>>;
 export type UpdateUserByIdResult = NonNullable<Awaited<ReturnType<typeof updateUserById>>>;
+export type UpdateUserByIdWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof updateUserByIdWithMultipart>>
+>;
 export type DeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof deleteUserById>>>;
+export type HardDeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof hardDeleteUserById>>>;
 export type SearchUsersResult = NonNullable<Awaited<ReturnType<typeof searchUsers>>>;
 export type CreateFeedbackRequestResult = NonNullable<
     Awaited<ReturnType<typeof createFeedbackRequest>>
@@ -1606,11 +2371,23 @@ export type UpdateFeedbackRequestStatusResult = NonNullable<
 >;
 export type ListProductsResult = NonNullable<Awaited<ReturnType<typeof listProducts>>>;
 export type CreateProductResult = NonNullable<Awaited<ReturnType<typeof createProduct>>>;
+export type CreateProductWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof createProductWithMultipart>>
+>;
 export type UpdateProductResult = NonNullable<Awaited<ReturnType<typeof updateProduct>>>;
+export type UpdateProductWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof updateProductWithMultipart>>
+>;
 export type DeleteProductResult = NonNullable<Awaited<ReturnType<typeof deleteProduct>>>;
 export type GetProductByIdResult = NonNullable<Awaited<ReturnType<typeof getProductById>>>;
 export type UpdateProductByIdResult = NonNullable<Awaited<ReturnType<typeof updateProductById>>>;
+export type UpdateProductByIdWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof updateProductByIdWithMultipart>>
+>;
 export type DeleteProductByIdResult = NonNullable<Awaited<ReturnType<typeof deleteProductById>>>;
+export type HardDeleteProductByIdResult = NonNullable<
+    Awaited<ReturnType<typeof hardDeleteProductById>>
+>;
 export type SearchProductsResult = NonNullable<Awaited<ReturnType<typeof searchProducts>>>;
 export type GetCartResult = NonNullable<Awaited<ReturnType<typeof getCart>>>;
 export type UpsertCartItemResult = NonNullable<Awaited<ReturnType<typeof upsertCartItem>>>;

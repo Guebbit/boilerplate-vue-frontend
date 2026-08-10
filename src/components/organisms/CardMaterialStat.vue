@@ -1,7 +1,7 @@
 <template>
     <v-card class="min-w-44 border-t-4" :class="accentBorderClass">
         <v-card-text>
-            <p class="text-xs font-medium uppercase tracking-widest opacity-70">{{ title }}</p>
+            <p class="text-xs font-medium uppercase tracking-widest opacity-80">{{ title }}</p>
             <p class="mt-2 text-3xl font-semibold leading-tight">{{ value }}</p>
             <p v-if="subtitle" class="mt-2 text-sm opacity-80">{{ subtitle }}</p>
         </v-card-text>

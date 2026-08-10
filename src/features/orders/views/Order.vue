@@ -18,7 +18,7 @@
                 />
                 <CardMaterialStat
                     :title="t('order-target-page.label-total')"
-                    :value="formatCurrency(currentOrder?.total)"
+                    :value="formatCurrency(currentOrder?.totalPrice)"
                     accent="secondary"
                 />
                 <CardMaterialStat
@@ -44,7 +44,7 @@
                     </ItemDetailField>
                     <ItemDetailField
                         :label="t('order-target-page.label-total')"
-                        :value="formatCurrency(currentOrder.total)"
+                        :value="formatCurrency(currentOrder.totalPrice)"
                         icon="💶"
                     />
                     <ItemDetailField
@@ -176,7 +176,7 @@ const { id } = defineProps<{
 /**
  * Store API and reactive order references.
  */
-const { watchOrder, getOrderInvoice } = useOrdersStore();
+const { watchOrder, downloadInvoice: fetchInvoice } = useOrdersStore();
 const { currentOrder, loading } = storeToRefs(useOrdersStore());
 
 /**
@@ -214,16 +214,14 @@ const orderStatus = computed(() => {
  * @returns A promise resolving once the download has been triggered; a missing
  *  route id or empty response is a no-op, and failures surface as a toast.
  */
-const downloadInvoice = async () => {
+const downloadInvoice = () => {
     if (!id) return;
-    try {
-        const response = await getOrderInvoice(id);
-        const blob = response?.data as Blob | undefined;
-        if (!blob) return;
-        downloadBlob(blob, `order-${id}-invoice.pdf`);
-    } catch (error: unknown) {
-        notifyErrorMessages(addMessage, error);
-    }
+    return fetchInvoice(id)
+        .then((blob) => {
+            if (!blob) return;
+            downloadBlob(blob, `order-${id}-invoice.pdf`);
+        })
+        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
 };
 
 /**
