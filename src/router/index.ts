@@ -2,7 +2,7 @@ import { createRouter, createWebHistory, RouterView } from 'vue-router';
 import type { RouteLocationNormalized } from 'vue-router';
 import { demoMiddleware } from '@/middlewares/demoMiddleware';
 import { localeChoice } from '@/middlewares/localeChoice';
-import { tryRestoreAuth } from '@/middlewares/authentications.ts';
+import { tryRestoreAuth, enforceRouteAccess } from '@/middlewares/authentications.ts';
 import { getDefaultLocale } from '@/utils/i18n.ts';
 import { loginContinueTo } from '@/router/navigation.ts';
 import { useObservabilityStore } from '@/stores/observability';
@@ -134,50 +134,48 @@ router.onError((error: Error, to: RouteLocationNormalized) => {
             ? ((error as { status?: number }).status ?? 500)
             : undefined;
 
+    // 401 is the one recoverable status: logging in fixes it, so keep where they were going.
     if (status === 401) return router.push(loginContinueTo(to.fullPath, locale));
-
-    if (status === 403)
-        return router.push({
-            name: 'Error',
-            params: {
-                locale,
-                status: 403,
-                message: 'navigation.error-forbidden'
-            }
-        });
 
     if (isRouterDebugEnabled)
         // eslint-disable-next-line no-console
         console.error('page error', error);
 
-    if (status && status < 500)
-        return router.push({
-            name: 'Error',
-            params: {
-                locale,
-                status,
-                message: error.message || 'error-page.unexpected'
-            }
-        });
+    /*
+     * Everything else is the error page, which needs only a status and a message key.
+     *
+     * 403 gets its own copy because "you may not see this" is a different thing to tell someone
+     * than whatever `error.message` happens to hold; every other client status shows the error's
+     * own message, and an absent or >=500 status collapses to a plain 500 — a failure with no
+     * status is a server-side one as far as the visitor is concerned.
+     */
+    const isClientError = status !== undefined && status < 500;
 
     return router.push({
         name: 'Error',
         params: {
             locale,
-            status: 500,
-            message: error.message || 'error-page.unexpected'
+            status: isClientError ? status : 500,
+            message:
+                status === 403
+                    ? 'navigation.error-forbidden'
+                    : error.message || 'error-page.unexpected'
         }
     });
 });
 
 /**
- * Runs before every navigation: optional debug logging plus a silent auth
- * restore, so public pages render the correct authenticated controls after a
- * full page reload.
+ * Runs before every navigation: optional debug logging, a silent auth restore, then the route's
+ * own access requirement.
+ *
+ * The order is load-bearing. `tryRestoreAuth` must settle first, so that `enforceRouteAccess`
+ * reads a profile that has been restored rather than bouncing a legitimately authenticated
+ * visitor who has just reloaded the page. Restoring once here — rather than inside each guard —
+ * is also what stops every protected navigation refetching the profile.
  *
  * @param to - Route being entered.
  * @param from - Route being left.
- * @returns The {@link tryRestoreAuth} result: a navigation guard verdict.
+ * @returns A navigation verdict: `undefined` to proceed, or the location to redirect to.
  */
 router.beforeEach((to, from) => {
     if (isRouterDebugEnabled) {
@@ -186,7 +184,7 @@ router.beforeEach((to, from) => {
     }
     // Silently restore token + profile on every navigation so that public pages
     // (e.g. ProductsList) render the correct admin controls after a page reload.
-    return tryRestoreAuth();
+    return tryRestoreAuth().then(() => enforceRouteAccess(to));
 });
 
 router.beforeResolve(localeChoice);

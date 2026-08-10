@@ -1,58 +1,3 @@
-<template>
-    <LayoutDefault id="playground-page" :title="t('playground-page.page-title')">
-        <section class="mb-10 flex flex-wrap items-stretch justify-center gap-6">
-            <CardMaterialStat
-                :title="t('playground-page.label-count')"
-                :value="count"
-                :subtitle="`(${doubleCount})`"
-                accent="primary"
-            />
-            <div class="flex flex-col justify-center gap-2">
-                <v-btn color="primary" variant="tonal" @click="increment">
-                    {{ t('playground-page.label-increment') }}
-                </v-btn>
-                <v-btn color="secondary" variant="tonal" @click="incrementDelayed">
-                    {{ t('playground-page.label-delayed-increment') }}
-                </v-btn>
-            </div>
-            <div class="flex items-center">
-                <FormCounterInput v-model="count" :min="0" :max="5" />
-            </div>
-        </section>
-
-        <section class="mb-10 flex flex-wrap items-start justify-center gap-6">
-            <v-card class="w-full max-w-md p-6">
-                <h3 class="text-lg font-semibold">
-                    <b>{{ providedVariable }}</b>
-                </h3>
-                <p class="mb-4 opacity-70">{{ t('playground-page.label-provided') }}</p>
-
-                <p class="mb-1 font-medium">
-                    {{ t('playground-page.label-provided-change-typing') }}
-                </p>
-                <v-text-field v-model="providedVariable" type="text" hide-details class="mb-4" />
-                <p class="mb-1 font-medium">
-                    {{ t('playground-page.label-provided-change-mutation') }}
-                </p>
-                <v-text-field
-                    :model-value="providedVariable"
-                    type="text"
-                    hide-details
-                    @update:model-value="
-                        (value) => setProvidedVariable(typeof value === 'string' ? value : '')
-                    "
-                />
-            </v-card>
-        </section>
-
-        <section class="flex flex-wrap justify-center gap-4">
-            <v-btn color="primary" @click="testAddMessage">
-                {{ t('playground-page.button-test-alert') }}
-            </v-btn>
-        </section>
-    </LayoutDefault>
-</template>
-
 <script lang="ts">
 export default {
     name: 'PlaygroundPage'
@@ -160,3 +105,58 @@ onMounted(() => {
     console.log('PLAYGROUND was mounted');
 });
 </script>
+
+<template>
+    <LayoutDefault id="playground-page" :title="t('playground-page.page-title')">
+        <section class="mb-10 flex flex-wrap items-stretch justify-center gap-6">
+            <CardMaterialStat
+                :title="t('playground-page.label-count')"
+                :value="count"
+                :subtitle="`(${doubleCount})`"
+                accent="primary"
+            />
+            <div class="flex flex-col justify-center gap-2">
+                <v-btn color="primary" variant="tonal" @click="increment">
+                    {{ t('playground-page.label-increment') }}
+                </v-btn>
+                <v-btn color="secondary" variant="tonal" @click="incrementDelayed">
+                    {{ t('playground-page.label-delayed-increment') }}
+                </v-btn>
+            </div>
+            <div class="flex items-center">
+                <FormCounterInput v-model="count" :min="0" :max="5" />
+            </div>
+        </section>
+
+        <section class="mb-10 flex flex-wrap items-start justify-center gap-6">
+            <v-card class="w-full max-w-md p-6">
+                <h3 class="text-lg font-semibold">
+                    <b>{{ providedVariable }}</b>
+                </h3>
+                <p class="mb-4 opacity-70">{{ t('playground-page.label-provided') }}</p>
+
+                <p class="mb-1 font-medium">
+                    {{ t('playground-page.label-provided-change-typing') }}
+                </p>
+                <v-text-field v-model="providedVariable" type="text" hide-details class="mb-4" />
+                <p class="mb-1 font-medium">
+                    {{ t('playground-page.label-provided-change-mutation') }}
+                </p>
+                <v-text-field
+                    :model-value="providedVariable"
+                    type="text"
+                    hide-details
+                    @update:model-value="
+                        (value) => setProvidedVariable(typeof value === 'string' ? value : '')
+                    "
+                />
+            </v-card>
+        </section>
+
+        <section class="flex flex-wrap justify-center gap-4">
+            <v-btn color="primary" @click="testAddMessage">
+                {{ t('playground-page.button-test-alert') }}
+            </v-btn>
+        </section>
+    </LayoutDefault>
+</template>

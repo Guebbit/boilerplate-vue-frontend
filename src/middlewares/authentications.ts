@@ -3,8 +3,52 @@ import { useProfileStore } from '@/stores/profile';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { getCookie } from '@guebbit/js-toolkit';
 import { loginContinueTo } from '@/router/navigation';
-import { i18n } from '@/utils/i18n.ts';
-import type { RouteLocationNormalized } from 'vue-router';
+import { translate } from '@/utils/i18n.ts';
+import type { RouteLocationNormalized, RouteMeta } from 'vue-router';
+
+/**
+ * What a visitor must be to enter a route. Absent means public.
+ *
+ * - `guest` — anonymous only (login, signup, password reset): an authenticated visitor has no
+ *   business on them and is sent home.
+ * - `auth` — any authenticated visitor.
+ * - `admin` — authenticated *and* admin.
+ */
+export type TRouteAccess = 'guest' | 'auth' | 'admin';
+
+/**
+ * Declared on the route record, so `meta.access` is checked at compile time and a typo
+ * (`acces: 'admin'`) is an error rather than a silently public page.
+ */
+declare module 'vue-router' {
+    // eslint-disable-next-line @typescript-eslint/naming-convention -- vue-router owns this name
+    interface RouteMeta {
+        access?: TRouteAccess;
+    }
+}
+
+/**
+ * Whether a visitor of the given standing may enter a route with the given requirement.
+ *
+ * The single expression of the access rule, so navigation and rendering cannot disagree: the
+ * router calls it through {@link enforceRouteAccess} to decide whether to *allow* a page, and
+ * `AppNavigation` calls it directly to decide whether to *show* the link to it. When those were
+ * two separate lists, changing one silently produced either a visible link that bounced you or a
+ * reachable page with no way to find it.
+ *
+ * @param access - The route's requirement, from `meta.access`. Absent means public.
+ * @param visitor - The visitor's current standing, as the profile store reports it.
+ * @returns `true` when the route may be entered and its link shown.
+ */
+export const canAccess = (
+    access: RouteMeta['access'],
+    visitor: { isAuth: boolean; isAdmin: boolean }
+): boolean => {
+    if (!access) return true;
+    if (access === 'guest') return !visitor.isAuth;
+    if (access === 'auth') return visitor.isAuth;
+    return visitor.isAuth && visitor.isAdmin;
+};
 
 /**
  * Silently restores the in-memory access token via the refresh endpoint.
@@ -46,71 +90,39 @@ export const tryRestoreAuth = (): Promise<void> => {
 };
 
 /**
- * Route guard allowing guests only: authenticated visitors are bounced home.
+ * Enforce a route's `meta.access`, notifying the visitor about any redirect.
  *
- * @param to - Route being entered; its `locale` param is reused for the
- *  redirect.
- * @param from - Route being left (unused, kept for the guard signature).
- * @returns A promise resolving to `undefined` to let guests through, or to a
- *  `Home` location — plus a notification — for authenticated users.
+ * Mounted once globally rather than as a per-route `beforeEnter`, which is what makes
+ * `meta.access` the only place a route's requirement is written down. It runs after
+ * {@link tryRestoreAuth} in the same `beforeEach`, so the profile is already loaded and this
+ * reads state instead of fetching it.
+ *
+ * @param to - Route being entered; supplies the requirement, the login `continue` target and the
+ *  locale any redirect keeps.
+ * @returns `undefined` to let the navigation through, or the location to redirect to. A blocked
+ *  visitor is always told why — silently bouncing someone reads as a broken link.
  */
-export const isGuest = (to: RouteLocationNormalized, from: RouteLocationNormalized) =>
-    restoreTokenIfNeeded()
-        .then(() => useProfileStore().fetchProfile())
-        .catch(() => {})
-        .then(() => {
-            const { isAuth } = storeToRefs(useProfileStore());
-            if (isAuth.value) {
-                useNotificationsStore().addMessage(
-                    i18n.global.t('navigation.error-already-logged')
-                );
-                return { name: 'Home', params: { locale: to.params.locale as string } };
-            }
-        });
+export const enforceRouteAccess = (to: RouteLocationNormalized) => {
+    const { isAuth, isAdmin } = storeToRefs(useProfileStore());
+    const visitor = { isAuth: isAuth.value, isAdmin: isAdmin.value };
+    if (canAccess(to.meta.access, visitor)) return;
 
-/**
- * Route guard requiring an authenticated user.
- *
- * @param to - Route being entered; its `fullPath` is remembered as the login
- *  `continue` target and its `locale` param is reused.
- * @param from - Route being left (unused, kept for the guard signature).
- * @returns A promise resolving to `undefined` when authenticated, or to a
- *  `Login` location — plus a notification — otherwise.
- */
-export const isAuth = (to: RouteLocationNormalized, from: RouteLocationNormalized) =>
-    restoreTokenIfNeeded()
-        .then(() => useProfileStore().fetchProfile())
-        .catch(() => {})
-        .then(() => {
-            const { isAuth } = storeToRefs(useProfileStore());
-            if (!isAuth.value) {
-                useNotificationsStore().addMessage(i18n.global.t('navigation.error-not-logged'));
-                return loginContinueTo(to.fullPath, to.params.locale as string);
-            }
-        });
+    const locale = to.params.locale as string;
+    const { addMessage } = useNotificationsStore();
 
-/**
- * Route guard requiring an authenticated user with admin privileges.
- *
- * @param to - Route being entered; used for the login `continue` target and
- *  the locale of any redirect.
- * @param from - Route being left (unused, kept for the guard signature).
- * @returns A promise resolving to `undefined` for admins, to a `Login` location
- *  for anonymous visitors, or to `Home` for authenticated non-admins; both
- *  redirects come with a notification.
- */
-export const isAdmin = (to: RouteLocationNormalized, from: RouteLocationNormalized) =>
-    restoreTokenIfNeeded()
-        .then(() => useProfileStore().fetchProfile())
-        .catch(() => {})
-        .then(() => {
-            const { isAuth, isAdmin } = storeToRefs(useProfileStore());
-            if (!isAuth.value) {
-                useNotificationsStore().addMessage(i18n.global.t('navigation.error-not-logged'));
-                return loginContinueTo(to.fullPath, to.params.locale as string);
-            }
-            if (!isAdmin.value) {
-                useNotificationsStore().addMessage(i18n.global.t('navigation.error-forbidden'));
-                return { name: 'Home', params: { locale: to.params.locale as string } };
-            }
-        });
+    // An authenticated visitor on a guests-only page: already where they wanted to be.
+    if (to.meta.access === 'guest') {
+        addMessage(translate('navigation.error-already-logged'));
+        return { name: 'Home', params: { locale } };
+    }
+
+    // Anonymous: recoverable by logging in, so keep where they were going.
+    if (!visitor.isAuth) {
+        addMessage(translate('navigation.error-not-logged'));
+        return loginContinueTo(to.fullPath, locale);
+    }
+
+    // Authenticated but not admin: logging in again cannot help, so no `continue` target.
+    addMessage(translate('navigation.error-forbidden'));
+    return { name: 'Home', params: { locale } };
+};

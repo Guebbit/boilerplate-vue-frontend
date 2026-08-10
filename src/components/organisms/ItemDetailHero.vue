@@ -1,3 +1,13 @@
+<script setup lang="ts">
+import CardDetail from '@/components/organisms/CardDetail.vue';
+
+defineProps<{
+    title: string;
+    description: string;
+    eyebrow?: string | number | null;
+}>();
+</script>
+
 <template>
     <CardDetail class="detail-hero grid items-center gap-5 sm:grid-cols-[auto_minmax(0,1fr)]">
         <div
@@ -18,16 +28,6 @@
         </div>
     </CardDetail>
 </template>
-
-<script setup lang="ts">
-import CardDetail from '@/components/organisms/CardDetail.vue';
-
-defineProps<{
-    title: string;
-    description: string;
-    eyebrow?: string | number | null;
-}>();
-</script>
 
 <style scoped>
 /* soft accent glow in the hero corner, driven by the page accent */

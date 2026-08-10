@@ -7,7 +7,88 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### ⚠ Breaking
+
+- **The three access guards `isAuth`, `isAdmin` and `isGuest` are gone.** A route declares
+  `meta: { access: 'guest' | 'auth' | 'admin' }` (absent means public) and one global
+  `enforceRouteAccess` applies it. `canAccess(access, visitor)` is the single expression of the rule,
+  which `AppNavigation` also calls — the menu and the router can no longer disagree.
+
+    `meta.access` is type-checked through a `vue-router` module augmentation, so a typo is a compile
+    error. A _missing_ `beforeEnter` never was, which is the failure that matters.
+
+- **`translate` takes an optional second argument** for interpolation values, so it covers every
+  key lookup outside a component scope. `TranslateFunction` widened to match.
+
+### Added
+
+- **`src/stores/analyticsEvents.ts`** — the analytics event names shared with the backend,
+  byte-identical with its `src/core/observability/analytics-events.ts` and guarded by
+  `check:spec-identity` (now eleven files). Events only this app can emit — `APP_STARTED`,
+  `APP_READY`, `USER_LOGGED_OUT` — stay in a local `frontendOnlyAnalyticsEvents` spread on top, so
+  "ours alone" is visible rather than implied by a comment.
+
+- **`formatDate`** in `utils/formatters.ts`, the date-only counterpart to `formatDateTime`.
+
+- **Hard delete on the products, users and orders stores** (`hardDeleteProduct` and friends), and
+  `DELETE /:id/hard` handlers in the products and users mocks. The three operations had a declared
+  response schema, no mock and no client path; only orders had been finished.
+
+- **`vue/block-order`** in `eslint.config.ts`, pinning `script` → `template` → `style`. The rule's
+  default allows either order, which is how both spellings coexisted.
+
 ### Fixed
+
+- **The products and users mocks hard-deleted on every request.** The real API soft-deletes by
+  default, setting `deletedAt`, which an admin can still see and toggle back. The mocks spliced the
+  row outright, so they agreed with the API only on the hard path — behaviour drift of exactly the
+  kind `mockShared.ts`'s docblock warns about. Seven cases in `mockHandlerParity.spec.ts` now pin
+  the soft/hard split, including `?hardDelete=false` (which `!!'false'` would read as true).
+
+- **`formatDate` was copy-pasted into three list views**, each using `toLocaleDateString()` with no
+  locale and a literal `'-'`. Dates now follow the language the visitor picked in-app, and a missing
+  one renders `EMPTY_VALUE`. `AdminAuditTab`'s fourth copy went too — it was named `formatDate` but
+  formatted date _and_ time, inside a `try/catch` that could never fire.
+
+- **Ten hardcoded `'—'` fallbacks** in the admin components now use `EMPTY_VALUE`, so
+  `VITE_APP_EMPTY_VALUE` governs every one of them.
+
+- **Field hints and validation messages failed WCAG AA, on every form that shows one.** Vuetify
+  renders `.v-messages` at its medium-emphasis opacity, about 4.0:1 on a white surface where AA
+  requires 4.5:1. `FormImageUpload` sets `persistent-hint`, so five screens showed it at all times.
+  Raised to the 0.82 the labels already use, on the `.v-messages` WRAPPER — setting it on
+  `.v-messages__message` leaves the wrapper's 0.6 in place and the two multiply to about 0.49,
+  darker than the default it was meant to lighten.
+
+    The same rule covers `opacity-70`, which measures 5.2:1 on pure white but drops below the
+    threshold on the `surface-variant` the cart summary and admin panels draw it on.
+
+- **The accessibility gate had been passing over those violations by accident.** `checkPageA11y`
+  injected axe immediately, and axe cannot compute a contrast ratio through a partly-transparent
+  element — so auditing mid-fade returned "incomplete" rather than a violation. It now waits until
+  no CSS transition is running, which is what surfaced the four real failures above. Filtered to
+  transitions, since an indefinite keyframe animation never finishes. Same lesson the
+  loading-header rule in `main.css` already records: a result that depends on when you looked is
+  not a result.
+
+- **`router.onError` had four `router.push` calls where one does.** 401 keeps its own line, being
+  the only recoverable status; 403 keeps its distinct copy. The 403 case had asserted only the
+  status, never the message — so the one thing that branch exists for was unverified.
+
+- **A stale mock in the guard spec** pointed at `@/utils/helperGenerics.ts` for `getCookie`, which
+  the source imports from `@guebbit/js-toolkit`. It had been mocking nothing.
+
+- **Every protected navigation fetched the profile twice.** Each guard opened with
+  `restoreTokenIfNeeded().then(fetchProfile)` — work the global `beforeEach` had already done.
+
+- **`createErrorEnvelope` set the envelope `message` to the error text.** The API derives it from
+  the status, so the mock now mirrors `resolveErrorMessage`.
+
+- **37 of 41 SFCs put `<template>` before `<script>`,** including two sibling list views that could
+  not be read side by side. All script-first now.
+
+- **The redundant `.optional()` after `.nullish()`** in the user schema (six fields), and
+  `orderSchema`/`orderStatusSchema` renamed to the plural form the other two features use.
 
 - **Responses from `DELETE /products/{id}/hard` and `DELETE /users/{id}/hard` were never
   validated.** `openapi.yaml` declares both operations and orval generated clients for both, but

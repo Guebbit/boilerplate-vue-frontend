@@ -1,30 +1,29 @@
 import type { RouteRecordRaw } from 'vue-router';
-import { isAdmin } from '@/middlewares/authentications.ts';
 
 export default [
     {
         path: 'users',
         name: 'UsersList',
-        beforeEnter: [isAdmin],
+        meta: { access: 'admin' },
         component: () => import('@/features/users/views/UsersList.vue')
     },
     {
         path: 'users/create',
         name: 'UserCreate',
-        beforeEnter: [isAdmin],
+        meta: { access: 'admin' },
         component: () => import('@/features/users/views/UserCreate.vue')
     },
     {
         path: 'users/:id',
         name: 'UserTarget',
-        beforeEnter: [isAdmin],
+        meta: { access: 'admin' },
         component: () => import('@/features/users/views/User.vue'),
         props: true
     },
     {
         path: 'users/:id/edit',
         name: 'UserEdit',
-        beforeEnter: [isAdmin],
+        meta: { access: 'admin' },
         component: () => import('@/features/users/views/UserEdit.vue'),
         props: true
     }

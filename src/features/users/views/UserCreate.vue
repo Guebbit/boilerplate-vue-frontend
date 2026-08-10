@@ -1,59 +1,3 @@
-<template>
-    <LayoutDefault id="user-create-page" :title="t('user-create-page.page-title')">
-        <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
-            <form novalidate @submit.prevent="submitForm">
-                <v-text-field
-                    v-model="form.email"
-                    type="email"
-                    :label="t('user-create-page.label-email')"
-                    :error-messages="showErrors ? formErrors.email : []"
-                    class="mb-2"
-                />
-                <v-text-field
-                    v-model="form.username"
-                    type="text"
-                    :label="t('user-create-page.label-username')"
-                    :error-messages="showErrors ? formErrors.username : []"
-                    class="mb-2"
-                />
-                <v-text-field
-                    v-model="form.password"
-                    type="password"
-                    autocomplete="new-password"
-                    :label="t('user-create-page.label-password')"
-                    :error-messages="showErrors ? formErrors.password : []"
-                />
-                <FormImageUpload
-                    v-model="form.imageUpload"
-                    :error-messages="showErrors ? formErrors.imageUpload : []"
-                    :progress="uploadProgress"
-                    :disabled="isSubmitting"
-                    class="mt-2"
-                />
-                <div class="flex flex-wrap gap-x-8">
-                    <v-switch v-model="form.admin" :label="t('user-create-page.label-admin')" />
-                    <v-switch v-model="form.active" :label="t('user-create-page.label-active')" />
-                </div>
-                <v-btn
-                    type="submit"
-                    color="primary"
-                    size="large"
-                    block
-                    :loading="isSubmitting"
-                    class="mt-2"
-                >
-                    {{ t('user-create-page.button-submit') }}
-                </v-btn>
-            </form>
-            <div class="mt-4 flex justify-center">
-                <v-btn variant="text" :to="routerLinkI18n({ name: 'UsersList' })">
-                    {{ t('user-create-page.button-go-to-list') }}
-                </v-btn>
-            </div>
-        </v-card>
-    </LayoutDefault>
-</template>
-
 <script lang="ts">
 export default {
     name: 'UserCreatePage'
@@ -153,3 +97,59 @@ const submitForm = () =>
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>
+
+<template>
+    <LayoutDefault id="user-create-page" :title="t('user-create-page.page-title')">
+        <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
+            <form novalidate @submit.prevent="submitForm">
+                <v-text-field
+                    v-model="form.email"
+                    type="email"
+                    :label="t('user-create-page.label-email')"
+                    :error-messages="showErrors ? formErrors.email : []"
+                    class="mb-2"
+                />
+                <v-text-field
+                    v-model="form.username"
+                    type="text"
+                    :label="t('user-create-page.label-username')"
+                    :error-messages="showErrors ? formErrors.username : []"
+                    class="mb-2"
+                />
+                <v-text-field
+                    v-model="form.password"
+                    type="password"
+                    autocomplete="new-password"
+                    :label="t('user-create-page.label-password')"
+                    :error-messages="showErrors ? formErrors.password : []"
+                />
+                <FormImageUpload
+                    v-model="form.imageUpload"
+                    :error-messages="showErrors ? formErrors.imageUpload : []"
+                    :progress="uploadProgress"
+                    :disabled="isSubmitting"
+                    class="mt-2"
+                />
+                <div class="flex flex-wrap gap-x-8">
+                    <v-switch v-model="form.admin" :label="t('user-create-page.label-admin')" />
+                    <v-switch v-model="form.active" :label="t('user-create-page.label-active')" />
+                </div>
+                <v-btn
+                    type="submit"
+                    color="primary"
+                    size="large"
+                    block
+                    :loading="isSubmitting"
+                    class="mt-2"
+                >
+                    {{ t('user-create-page.button-submit') }}
+                </v-btn>
+            </form>
+            <div class="mt-4 flex justify-center">
+                <v-btn variant="text" :to="routerLinkI18n({ name: 'UsersList' })">
+                    {{ t('user-create-page.button-go-to-list') }}
+                </v-btn>
+            </div>
+        </v-card>
+    </LayoutDefault>
+</template>

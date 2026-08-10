@@ -1,40 +1,3 @@
-<template>
-    <LayoutDefault
-        id="account-delete-confirm-page"
-        :title="t('account-delete-confirm-page.page-title')"
-    >
-        <v-card class="mx-auto mt-16 w-full max-w-md p-8">
-            <v-alert type="warning" class="mb-6">
-                {{ t('account-delete-confirm-page.warning-message') }}
-            </v-alert>
-
-            <form ref="formElement" novalidate @submit.prevent="submitForm">
-                <v-text-field
-                    v-model="form.token"
-                    :label="t('account-delete-confirm-page.label-token')"
-                    :error-messages="showErrors ? formErrors.token : []"
-                />
-                <v-btn
-                    type="submit"
-                    color="error"
-                    size="large"
-                    block
-                    :loading="isSubmitting"
-                    class="mt-4"
-                >
-                    {{ t('account-delete-confirm-page.button-submit') }}
-                </v-btn>
-            </form>
-
-            <div class="mt-4 flex justify-center">
-                <v-btn variant="text" :to="routerLinkI18n({ name: 'Profile' })">
-                    {{ t('account-delete-confirm-page.button-go-back') }}
-                </v-btn>
-            </div>
-        </v-card>
-    </LayoutDefault>
-</template>
-
 <script lang="ts">
 export default {
     name: 'AccountDeleteConfirmPage'
@@ -113,3 +76,40 @@ const submitForm = () =>
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>
+
+<template>
+    <LayoutDefault
+        id="account-delete-confirm-page"
+        :title="t('account-delete-confirm-page.page-title')"
+    >
+        <v-card class="mx-auto mt-16 w-full max-w-md p-8">
+            <v-alert type="warning" class="mb-6">
+                {{ t('account-delete-confirm-page.warning-message') }}
+            </v-alert>
+
+            <form ref="formElement" novalidate @submit.prevent="submitForm">
+                <v-text-field
+                    v-model="form.token"
+                    :label="t('account-delete-confirm-page.label-token')"
+                    :error-messages="showErrors ? formErrors.token : []"
+                />
+                <v-btn
+                    type="submit"
+                    color="error"
+                    size="large"
+                    block
+                    :loading="isSubmitting"
+                    class="mt-4"
+                >
+                    {{ t('account-delete-confirm-page.button-submit') }}
+                </v-btn>
+            </form>
+
+            <div class="mt-4 flex justify-center">
+                <v-btn variant="text" :to="routerLinkI18n({ name: 'Profile' })">
+                    {{ t('account-delete-confirm-page.button-go-back') }}
+                </v-btn>
+            </div>
+        </v-card>
+    </LayoutDefault>
+</template>

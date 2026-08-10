@@ -10,7 +10,8 @@ import {
     createProductWithMultipart,
     updateProductById,
     updateProductByIdWithMultipart,
-    deleteProductById
+    deleteProductById,
+    hardDeleteProductById
 } from '@api';
 import type {
     Product,
@@ -201,6 +202,19 @@ export const useProductsStore = defineStore('products', () => {
     const deleteProduct = (productId: string) =>
         deleteTarget(() => deleteProductById(productId), productId);
 
+    /**
+     * Permanently deletes a product, bypassing the soft delete.
+     *
+     * `deleteProduct` leaves the record in place with `deletedAt` set, which an admin can still see
+     * and toggle back; this removes it outright and cannot be undone. Distinct methods rather than a
+     * flag, so the irreversible one is never reached by passing the wrong boolean.
+     *
+     * @param productId - Identifier of the product to destroy.
+     * @returns A promise resolving once the product is gone.
+     */
+    const hardDeleteProduct = (productId: string) =>
+        deleteTarget(() => hardDeleteProductById(productId), productId);
+
     return {
         products,
         productsList,
@@ -221,6 +235,7 @@ export const useProductsStore = defineStore('products', () => {
         watchProduct,
         createProduct,
         updateProduct,
-        deleteProduct
+        deleteProduct,
+        hardDeleteProduct
     };
 });

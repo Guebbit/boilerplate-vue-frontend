@@ -1,89 +1,3 @@
-<template>
-    <LayoutDefault id="profile-page" :title="t('profile-page.page-title')">
-        <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
-            <form novalidate @submit.prevent="submitForm">
-                <!-- TODO language select + roles (user edit, if admin) -->
-                <v-text-field
-                    v-model="form.username"
-                    type="text"
-                    autocomplete="username"
-                    :label="t('profile-page.label-username')"
-                    :error-messages="showErrors ? formErrors.username : []"
-                    class="mb-2"
-                />
-                <v-text-field
-                    v-model="form.email"
-                    type="email"
-                    autocomplete="email"
-                    :label="t('profile-page.label-email')"
-                    :error-messages="showErrors ? formErrors.email : []"
-                    class="mb-2"
-                />
-                <v-text-field
-                    v-model="form.phone"
-                    type="tel"
-                    autocomplete="tel"
-                    :label="t('profile-page.label-phone')"
-                    :error-messages="showErrors ? formErrors.phone : []"
-                    class="mb-2"
-                />
-                <v-text-field
-                    v-model="form.website"
-                    type="url"
-                    autocomplete="url"
-                    :label="t('profile-page.label-website')"
-                    :error-messages="showErrors ? formErrors.website : []"
-                />
-
-                <v-btn
-                    variant="tonal"
-                    color="secondary"
-                    class="my-4"
-                    @click="showChangePassword = !showChangePassword"
-                >
-                    {{ t('profile-page.button-change-password') }}
-                </v-btn>
-
-                <v-expand-transition>
-                    <div v-show="showChangePassword">
-                        <v-text-field
-                            v-model="passwordForm.password"
-                            type="password"
-                            autocomplete="new-password"
-                            :label="t('profile-page.label-password')"
-                            :error-messages="passwordErrors.password ?? []"
-                            class="mb-2"
-                        />
-                        <v-text-field
-                            v-model="passwordForm.passwordConfirm"
-                            type="password"
-                            autocomplete="new-password"
-                            :label="t('profile-page.label-passwordConfirm')"
-                            :error-messages="passwordErrors.passwordConfirm ?? []"
-                        />
-                    </div>
-                </v-expand-transition>
-
-                <!-- If something has changed OR the password has changed (and it's valid) -->
-                <div class="mt-4 flex flex-wrap gap-2">
-                    <v-btn type="submit" color="primary" :disabled="!areFormsValid">
-                        {{ t('profile-page.button-submit') }}
-                    </v-btn>
-                    <v-btn variant="tonal" @click="resetForm">
-                        {{ t('profile-page.reset-form') }}
-                    </v-btn>
-                </div>
-
-                <v-divider class="my-6" />
-
-                <v-btn color="error" variant="tonal" block @click="handleDeleteAccount">
-                    {{ t('profile-page.button-delete-account') }}
-                </v-btn>
-            </form>
-        </v-card>
-    </LayoutDefault>
-</template>
-
 <script lang="ts">
 export default {
     name: 'ProfilePage'
@@ -239,3 +153,89 @@ const submitForm = () => {
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
 </script>
+
+<template>
+    <LayoutDefault id="profile-page" :title="t('profile-page.page-title')">
+        <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
+            <form novalidate @submit.prevent="submitForm">
+                <!-- TODO language select + roles (user edit, if admin) -->
+                <v-text-field
+                    v-model="form.username"
+                    type="text"
+                    autocomplete="username"
+                    :label="t('profile-page.label-username')"
+                    :error-messages="showErrors ? formErrors.username : []"
+                    class="mb-2"
+                />
+                <v-text-field
+                    v-model="form.email"
+                    type="email"
+                    autocomplete="email"
+                    :label="t('profile-page.label-email')"
+                    :error-messages="showErrors ? formErrors.email : []"
+                    class="mb-2"
+                />
+                <v-text-field
+                    v-model="form.phone"
+                    type="tel"
+                    autocomplete="tel"
+                    :label="t('profile-page.label-phone')"
+                    :error-messages="showErrors ? formErrors.phone : []"
+                    class="mb-2"
+                />
+                <v-text-field
+                    v-model="form.website"
+                    type="url"
+                    autocomplete="url"
+                    :label="t('profile-page.label-website')"
+                    :error-messages="showErrors ? formErrors.website : []"
+                />
+
+                <v-btn
+                    variant="tonal"
+                    color="secondary"
+                    class="my-4"
+                    @click="showChangePassword = !showChangePassword"
+                >
+                    {{ t('profile-page.button-change-password') }}
+                </v-btn>
+
+                <v-expand-transition>
+                    <div v-show="showChangePassword">
+                        <v-text-field
+                            v-model="passwordForm.password"
+                            type="password"
+                            autocomplete="new-password"
+                            :label="t('profile-page.label-password')"
+                            :error-messages="passwordErrors.password ?? []"
+                            class="mb-2"
+                        />
+                        <v-text-field
+                            v-model="passwordForm.passwordConfirm"
+                            type="password"
+                            autocomplete="new-password"
+                            :label="t('profile-page.label-passwordConfirm')"
+                            :error-messages="passwordErrors.passwordConfirm ?? []"
+                        />
+                    </div>
+                </v-expand-transition>
+
+                <!-- If something has changed OR the password has changed (and it's valid) -->
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <v-btn type="submit" color="primary" :disabled="!areFormsValid">
+                        {{ t('profile-page.button-submit') }}
+                    </v-btn>
+                    <v-btn variant="tonal" @click="resetForm">
+                        {{ t('profile-page.reset-form') }}
+                    </v-btn>
+                </div>
+
+                <v-divider class="my-6" />
+
+                <v-btn color="error" variant="tonal" block @click="handleDeleteAccount">
+                    {{ t('profile-page.button-delete-account') }}
+                </v-btn>
+            </form>
+        </v-card>
+    </LayoutDefault>
+</template>

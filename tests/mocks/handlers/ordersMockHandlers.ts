@@ -21,6 +21,7 @@ import {
     getIsoDateNow,
     getMockUserScope,
     getQueryParameters,
+    readHardDeleteFlag,
     isCurrentMockUserAdmin,
     isOrderVisibleToCaller,
     mockDatabase,
@@ -96,14 +97,6 @@ const removeOrderById = (orderId: string, hardDelete: boolean): boolean => {
         deletedAt: target.deletedAt ? undefined : getIsoDateNow()
     };
     return true;
-};
-
-/** The `hardDelete` flag as the three delete spellings carry it: query, body, or neither. */
-const readHardDeleteFlag = (url: string | undefined, body?: Record<string, unknown>): boolean => {
-    const query = getQueryParameters(url, body);
-    // A query entry is always a string; a JSON body carries a real boolean. Both spell the same
-    // flag, which is the whole point of the multi-source read on the BE.
-    return query.hardDelete === true || String(query.hardDelete) === 'true';
 };
 
 const orderNotFound = () =>

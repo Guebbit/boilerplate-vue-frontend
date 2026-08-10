@@ -247,9 +247,44 @@ const BLOCKING_IMPACTS = new Set(['serious', 'critical']);
  */
 const NOT_OUR_MARKUP = ['#vue-devtools-anchor', '.vue-devtools__anchor-btn'];
 
+/**
+ * Blocks until no CSS transition is still running.
+ *
+ * `color-contrast` is measured from computed colour, so it is only meaningful once colours have
+ * stopped moving. Vuetify renders hints and validation messages inside `.v-messages` at
+ * `--v-medium-emphasis-opacity` (0.6) and FADES THEM IN — and 0.6 against the surface is already a
+ * borderline ratio, so axe sampling part-way through that fade reports a violation on markup that
+ * is compliant once settled. It failed intermittently on `product create`, where
+ * `FormImageUpload`'s `persistent-hint` means the element is always there; four other pages use the
+ * same component.
+ *
+ * `should` retries, so this is a wait on a CONDITION rather than a guessed duration — the pages
+ * with no transitions at all pass it on the first tick.
+ *
+ * Filtered to `CSSTransition` deliberately: an indefinite keyframe animation (a progress bar, a
+ * spinner) never reaches a finished state, so waiting on every `getAnimations()` entry would hang
+ * on any page still showing a loader.
+ */
+const waitForTransitions = () => {
+    cy.window().should((win) => {
+        const running = win.document
+            .getAnimations()
+            .filter(
+                (animation) =>
+                    animation instanceof win.CSSTransition && animation.playState === 'running'
+            );
+
+        expect(
+            running,
+            'CSS transitions still running when axe was about to measure'
+        ).to.have.length(0);
+    });
+};
+
 Cypress.Commands.add('checkPageA11y', (context?: string) => {
     const label = context ? `[a11y ${context}]` : '[a11y]';
 
+    waitForTransitions();
     cy.injectAxe();
     cy.checkA11y(
         { exclude: NOT_OUR_MARKUP.map((selector) => [selector]) },

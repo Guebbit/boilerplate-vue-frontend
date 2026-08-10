@@ -1,3 +1,165 @@
+<script lang="ts">
+export default {
+    name: 'OrderEditPage'
+};
+</script>
+
+<script setup lang="ts">
+import { computed } from 'vue';
+import { routerLinkI18n } from '@/utils/i18n.ts';
+import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
+import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useOrdersStore } from '@/features/orders/store.ts';
+import { ordersStatusSchema } from '@/features/orders/schemas.ts';
+import { z } from 'zod';
+import { OrderStatus } from '@types';
+import LayoutDefault from '@/layouts/LayoutDefault.vue';
+import { Pencil, ShoppingCart } from 'lucide-vue-next';
+import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
+import ItemDetailLayout from '@/components/organisms/ItemDetailLayout.vue';
+import CardDetail from '@/components/organisms/CardDetail.vue';
+import CardInfo from '@/components/organisms/CardInfo.vue';
+import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
+import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
+import { EMPTY_VALUE, formatText, formatDateTime, formatCurrency } from '@/utils/formatters.ts';
+import { notifyErrorMessages } from '@/utils/errors.ts';
+
+/**
+ * Generic utility hooks.
+ */
+const { t, locale } = useI18n();
+const { addMessage } = useNotificationsStore();
+
+/**
+ * Route order id.
+ */
+const { id } = defineProps<{
+    id?: string;
+}>();
+
+/**
+ * Orders store APIs and references.
+ */
+const { watchOrder, updateOrder } = useOrdersStore();
+const { currentOrder, loading } = storeToRefs(useOrdersStore());
+
+/**
+ * Options of the status select.
+ *
+ * @returns One entry per `OrderStatus`, with a localized label.
+ */
+const statusOptions = computed(() =>
+    Object.values(OrderStatus).map((value) => ({
+        value,
+        label: t(`orders-form.status-${value}`)
+    }))
+);
+
+/**
+ * Order edit form model.
+ */
+interface IOrderEditForm {
+    status?: OrderStatus;
+    email?: string;
+}
+
+/**
+ * Validation schema for order updates.
+ */
+const editSchema = z.object({
+    status: ordersStatusSchema.optional(),
+    email: z.preprocess(
+        (v) => (v === '' ? undefined : v),
+        z.email({ error: () => t('orders-form.email-invalid') }).optional()
+    )
+});
+
+/**
+ * Toolkit-managed form state.
+ */
+const {
+    form,
+    formErrors,
+    showFormErrors,
+    isSubmitting,
+    resetForm,
+    handleSubmit,
+    activateAutoHydrate
+} = useStructureFormValidation<IOrderEditForm>({}, editSchema, { revalidateOn: locale });
+
+/**
+ * Auto-hydrate the form from the fetched record once it resolves.
+ */
+activateAutoHydrate(
+    computed(() =>
+        currentOrder.value
+            ? {
+                  status: currentOrder.value.status,
+                  email: currentOrder.value.email ?? ''
+              }
+            : undefined
+    )
+);
+
+/**
+ * Hero heading.
+ *
+ * @returns The loaded order id, the route id while loading, or the generic page
+ *  title as a last resort.
+ */
+const heroTitle = computed(() => currentOrder.value?.id ?? id ?? t('order-edit-page.page-title'));
+
+/**
+ * Hero subheading.
+ *
+ * @returns The order notes, falling back to the customer email, then to the
+ *  empty-value glyph.
+ */
+const heroDescription = computed(() =>
+    formatText(currentOrder.value?.notes || currentOrder.value?.email)
+);
+
+/**
+ * Localized order status.
+ *
+ * @returns The translated status label, or the empty-value glyph when the order
+ *  carries no status yet.
+ */
+const orderStatus = computed(() => {
+    const status = currentOrder.value?.status;
+    return status ? t(`orders-form.status-${status}`) : EMPTY_VALUE;
+});
+
+/**
+ * Validates the form and persists the order changes.
+ *
+ * @returns A promise resolving once the flow settles: a success toast, or the
+ *  revealed validation errors when the input is invalid. API failures surface as
+ *  a toast. A missing route id is a no-op.
+ */
+const submitForm = () =>
+    handleSubmit(() => {
+        if (!id) return;
+        return updateOrder(id, {
+            status: form.value.status,
+            email: form.value.email || undefined
+        }).then(() => {
+            addMessage(t('order-edit-page.success-update'));
+            showFormErrors.value = false;
+        });
+    })
+        .then((success) => {
+            if (!success) showFormErrors.value = true;
+        })
+        .catch((error) => notifyErrorMessages(addMessage, error));
+
+/**
+ * Selects and (re)fetches the order whenever the route id changes.
+ */
+watchOrder(() => id);
+</script>
+
 <template>
     <LayoutDefault id="order-edit-page" :title="t('order-edit-page.page-title')">
         <ItemDetailLayout accent="tertiary">
@@ -95,165 +257,3 @@
         </ItemDetailLayout>
     </LayoutDefault>
 </template>
-
-<script lang="ts">
-export default {
-    name: 'OrderEditPage'
-};
-</script>
-
-<script setup lang="ts">
-import { computed } from 'vue';
-import { routerLinkI18n } from '@/utils/i18n.ts';
-import { useI18n } from 'vue-i18n';
-import { storeToRefs } from 'pinia';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { useOrdersStore } from '@/features/orders/store.ts';
-import { orderStatusSchema } from '@/features/orders/schemas.ts';
-import { z } from 'zod';
-import { OrderStatus } from '@types';
-import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import { Pencil, ShoppingCart } from 'lucide-vue-next';
-import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
-import ItemDetailLayout from '@/components/organisms/ItemDetailLayout.vue';
-import CardDetail from '@/components/organisms/CardDetail.vue';
-import CardInfo from '@/components/organisms/CardInfo.vue';
-import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
-import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
-import { EMPTY_VALUE, formatText, formatDateTime, formatCurrency } from '@/utils/formatters.ts';
-import { notifyErrorMessages } from '@/utils/errors.ts';
-
-/**
- * Generic utility hooks.
- */
-const { t, locale } = useI18n();
-const { addMessage } = useNotificationsStore();
-
-/**
- * Route order id.
- */
-const { id } = defineProps<{
-    id?: string;
-}>();
-
-/**
- * Orders store APIs and references.
- */
-const { watchOrder, updateOrder } = useOrdersStore();
-const { currentOrder, loading } = storeToRefs(useOrdersStore());
-
-/**
- * Options of the status select.
- *
- * @returns One entry per `OrderStatus`, with a localized label.
- */
-const statusOptions = computed(() =>
-    Object.values(OrderStatus).map((value) => ({
-        value,
-        label: t(`orders-form.status-${value}`)
-    }))
-);
-
-/**
- * Order edit form model.
- */
-interface IOrderEditForm {
-    status?: OrderStatus;
-    email?: string;
-}
-
-/**
- * Validation schema for order updates.
- */
-const editSchema = z.object({
-    status: orderStatusSchema.optional(),
-    email: z.preprocess(
-        (v) => (v === '' ? undefined : v),
-        z.email({ error: () => t('orders-form.email-invalid') }).optional()
-    )
-});
-
-/**
- * Toolkit-managed form state.
- */
-const {
-    form,
-    formErrors,
-    showFormErrors,
-    isSubmitting,
-    resetForm,
-    handleSubmit,
-    activateAutoHydrate
-} = useStructureFormValidation<IOrderEditForm>({}, editSchema, { revalidateOn: locale });
-
-/**
- * Auto-hydrate the form from the fetched record once it resolves.
- */
-activateAutoHydrate(
-    computed(() =>
-        currentOrder.value
-            ? {
-                  status: currentOrder.value.status,
-                  email: currentOrder.value.email ?? ''
-              }
-            : undefined
-    )
-);
-
-/**
- * Hero heading.
- *
- * @returns The loaded order id, the route id while loading, or the generic page
- *  title as a last resort.
- */
-const heroTitle = computed(() => currentOrder.value?.id ?? id ?? t('order-edit-page.page-title'));
-
-/**
- * Hero subheading.
- *
- * @returns The order notes, falling back to the customer email, then to the
- *  empty-value glyph.
- */
-const heroDescription = computed(() =>
-    formatText(currentOrder.value?.notes || currentOrder.value?.email)
-);
-
-/**
- * Localized order status.
- *
- * @returns The translated status label, or the empty-value glyph when the order
- *  carries no status yet.
- */
-const orderStatus = computed(() => {
-    const status = currentOrder.value?.status;
-    return status ? t(`orders-form.status-${status}`) : EMPTY_VALUE;
-});
-
-/**
- * Validates the form and persists the order changes.
- *
- * @returns A promise resolving once the flow settles: a success toast, or the
- *  revealed validation errors when the input is invalid. API failures surface as
- *  a toast. A missing route id is a no-op.
- */
-const submitForm = () =>
-    handleSubmit(() => {
-        if (!id) return;
-        return updateOrder(id, {
-            status: form.value.status,
-            email: form.value.email || undefined
-        }).then(() => {
-            addMessage(t('order-edit-page.success-update'));
-            showFormErrors.value = false;
-        });
-    })
-        .then((success) => {
-            if (!success) showFormErrors.value = true;
-        })
-        .catch((error) => notifyErrorMessages(addMessage, error));
-
-/**
- * Selects and (re)fetches the order whenever the route id changes.
- */
-watchOrder(() => id);
-</script>

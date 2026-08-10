@@ -1,34 +1,3 @@
-<template>
-    <v-menu location="bottom end">
-        <template #activator="{ props: menuProps }">
-            <v-btn
-                v-bind="menuProps"
-                variant="text"
-                class="px-2"
-                :aria-label="t('navigation.label-language')"
-            >
-                <Languages :size="18" class="mr-1" aria-hidden="true" />
-                {{ locale.toUpperCase() }}
-            </v-btn>
-        </template>
-
-        <v-list density="compact" :aria-label="t('navigation.label-language')">
-            <v-list-item
-                v-for="sLocale in supportedLanguages"
-                :key="`locale-${sLocale}`"
-                :active="locale === sLocale"
-                color="primary"
-                @click="switchLanguage(sLocale)"
-            >
-                <v-list-item-title>{{ t(`generic.${sLocale}`) }}</v-list-item-title>
-                <template #append>
-                    <Check v-if="locale === sLocale" :size="16" aria-hidden="true" />
-                </template>
-            </v-list-item>
-        </v-list>
-    </v-menu>
-</template>
-
 <script setup lang="ts">
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -76,3 +45,34 @@ function switchLanguage(newLocale: string) {
     );
 }
 </script>
+
+<template>
+    <v-menu location="bottom end">
+        <template #activator="{ props: menuProps }">
+            <v-btn
+                v-bind="menuProps"
+                variant="text"
+                class="px-2"
+                :aria-label="t('navigation.label-language')"
+            >
+                <Languages :size="18" class="mr-1" aria-hidden="true" />
+                {{ locale.toUpperCase() }}
+            </v-btn>
+        </template>
+
+        <v-list density="compact" :aria-label="t('navigation.label-language')">
+            <v-list-item
+                v-for="sLocale in supportedLanguages"
+                :key="`locale-${sLocale}`"
+                :active="locale === sLocale"
+                color="primary"
+                @click="switchLanguage(sLocale)"
+            >
+                <v-list-item-title>{{ t(`generic.${sLocale}`) }}</v-list-item-title>
+                <template #append>
+                    <Check v-if="locale === sLocale" :size="16" aria-hidden="true" />
+                </template>
+            </v-list-item>
+        </v-list>
+    </v-menu>
+</template>

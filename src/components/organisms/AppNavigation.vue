@@ -1,3 +1,82 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+import { RouterLink, useRoute, useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { useTheme } from 'vuetify';
+import { storeToRefs } from 'pinia';
+import { Menu, Moon, Sun, UserRound } from 'lucide-vue-next';
+import AppLanguageSwitcher from '@/components/organisms/AppLanguageSwitcher.vue';
+import { routerLinkI18n } from '@/utils/i18n.ts';
+import { loginContinueTo } from '@/router/navigation.ts';
+import { canAccess } from '@/middlewares/authentications.ts';
+import { useProfileStore } from '@/stores/profile.ts';
+
+const router = useRouter();
+const route = useRoute();
+const { t } = useI18n();
+
+const { isAuth, isAdmin, profile } = storeToRefs(useProfileStore());
+
+/**
+ * Vite public base path (always slash-terminated), used to resolve assets
+ * served from `public/` no matter where the app is mounted.
+ */
+const baseUrl = import.meta.env.BASE_URL;
+
+/**
+ * Mobile drawer open state
+ */
+const drawer = ref(false);
+
+/**
+ * The nav, in order: a route name and the label to show for it.
+ *
+ * Deliberately carries no visibility flag. Whether a visitor may see an entry is a property of
+ * the route it points at (`meta.access`), and restating it here is what let the menu and the
+ * router disagree — see {@link canAccess}. Adding an entry means adding a line here; its
+ * permissions come along by themselves.
+ */
+const navEntries = [
+    { name: 'Home', label: 'navigation.label-home', plural: 1 },
+    { name: 'Playground', label: 'navigation.label-playground', plural: 1 },
+    { name: 'RealtimePlayground', label: 'navigation.label-realtime', plural: 1 },
+    { name: 'Admin', label: 'navigation.label-admin', plural: 1 },
+    { name: 'UsersList', label: 'navigation.label-users-list', plural: 2 },
+    { name: 'ProductsList', label: 'navigation.label-products-list', plural: 2 },
+    { name: 'Profile', label: 'navigation.label-profile', plural: 2 },
+    { name: 'Cart', label: 'navigation.label-cart', plural: 1 },
+    { name: 'OrdersList', label: 'navigation.label-orders', plural: 1 }
+] as const;
+
+/**
+ * Nav entries this visitor may see: rendered inline on desktop, as a drawer list on mobile.
+ *
+ * Each entry's requirement is read off the resolved route, so the menu shows exactly the pages
+ * the router would let the visitor enter.
+ *
+ * @returns The localized, locale-prefixed visible entries.
+ */
+const visibleNavItems = computed(() => {
+    const visitor = { isAuth: isAuth.value, isAdmin: isAdmin.value };
+    return navEntries
+        .filter(({ name }) => canAccess(router.resolve({ name }).meta.access, visitor))
+        .map(({ name, label, plural }) => ({
+            title: t(label, plural),
+            to: routerLinkI18n({ name })
+        }));
+});
+
+const theme = useTheme();
+
+/**
+ * Light/dark toggle. The default follows the OS ("system"); the first click pins
+ * an explicit theme.
+ */
+const toggleTheme = () => {
+    theme.global.name.value = theme.current.value.dark ? 'light' : 'dark';
+};
+</script>
+
 <template>
     <v-app-bar flat border="b" density="comfortable">
         <!-- Mobile: hamburger -->
@@ -125,96 +204,3 @@
         </v-list>
     </v-navigation-drawer>
 </template>
-
-<script setup lang="ts">
-import { computed, ref } from 'vue';
-import { RouterLink, useRoute, useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
-import { useTheme } from 'vuetify';
-import { storeToRefs } from 'pinia';
-import { Menu, Moon, Sun, UserRound } from 'lucide-vue-next';
-import AppLanguageSwitcher from '@/components/organisms/AppLanguageSwitcher.vue';
-import { routerLinkI18n } from '@/utils/i18n.ts';
-import { loginContinueTo } from '@/router/navigation.ts';
-import { useProfileStore } from '@/stores/profile.ts';
-
-const router = useRouter();
-const route = useRoute();
-const { t } = useI18n();
-
-const { isAuth, isAdmin, profile } = storeToRefs(useProfileStore());
-
-/**
- * Vite public base path (always slash-terminated), used to resolve assets
- * served from `public/` no matter where the app is mounted.
- */
-const baseUrl = import.meta.env.BASE_URL;
-
-/**
- * Mobile drawer open state
- */
-const drawer = ref(false);
-
-/**
- * Single source for nav entries: rendered inline on desktop, as a drawer list on
- * mobile.
- *
- * @returns The localized, locale-prefixed entries the current visitor may see —
- *  admin-only and authenticated-only links are filtered out for everyone else.
- */
-const visibleNavItems = computed(() =>
-    [
-        { title: t('navigation.label-home'), to: routerLinkI18n({ name: 'Home' }), show: true },
-        {
-            title: t('navigation.label-playground'),
-            to: routerLinkI18n({ name: 'Playground' }),
-            show: true
-        },
-        {
-            title: t('navigation.label-realtime'),
-            to: routerLinkI18n({ name: 'RealtimePlayground' }),
-            show: true
-        },
-        {
-            title: t('navigation.label-admin'),
-            to: routerLinkI18n({ name: 'Admin' }),
-            show: isAdmin.value
-        },
-        {
-            title: t('navigation.label-users-list', 2),
-            to: routerLinkI18n({ name: 'UsersList' }),
-            show: isAdmin.value
-        },
-        {
-            title: t('navigation.label-products-list', 2),
-            to: routerLinkI18n({ name: 'ProductsList' }),
-            show: true
-        },
-        {
-            title: t('navigation.label-profile', 2),
-            to: routerLinkI18n({ name: 'Profile' }),
-            show: isAuth.value
-        },
-        {
-            title: t('navigation.label-cart'),
-            to: routerLinkI18n({ name: 'Cart' }),
-            show: isAuth.value
-        },
-        {
-            title: t('navigation.label-orders'),
-            to: routerLinkI18n({ name: 'OrdersList' }),
-            show: isAuth.value
-        }
-    ].filter((item) => item.show)
-);
-
-const theme = useTheme();
-
-/**
- * Light/dark toggle. The default follows the OS ("system"); the first click pins
- * an explicit theme.
- */
-const toggleTheme = () => {
-    theme.global.name.value = theme.current.value.dark ? 'light' : 'dark';
-};
-</script>

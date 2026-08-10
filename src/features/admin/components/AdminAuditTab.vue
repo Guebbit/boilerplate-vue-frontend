@@ -5,6 +5,7 @@ import TableLoadingBar from '@/components/molecules/TableLoadingBar.vue';
 import { Search } from 'lucide-vue-next';
 import type { AuditEventItem } from '@types';
 import type { IAdminAuditFilters } from '@/features/admin/types.ts';
+import { EMPTY_VALUE, formatDateTime } from '@/utils/formatters.ts';
 
 const { t } = useI18n();
 
@@ -85,21 +86,8 @@ const handleReset = () => {
  * @param length - Number of leading characters to keep. Defaults to `8`.
  * @returns The truncated id followed by an ellipsis, or a dash when absent.
  */
-const truncateId = (value?: string, length = 8) => (value ? `${value.slice(0, length)}...` : '—');
-
-/**
- * Formats an audit timestamp for display.
- *
- * @param iso - ISO 8601 timestamp coming from the API.
- * @returns The locale-formatted date/time, or the raw string when unparseable.
- */
-const formatDate = (iso: string) => {
-    try {
-        return new Date(iso).toLocaleString();
-    } catch {
-        return iso;
-    }
-};
+const truncateId = (value?: string, length = 8) =>
+    value ? `${value.slice(0, length)}...` : EMPTY_VALUE;
 </script>
 
 <template>
@@ -172,7 +160,7 @@ const formatDate = (iso: string) => {
             </template>
 
             <template v-slot:[`item.timestamp`]="{ item }">
-                <span class="whitespace-nowrap">{{ formatDate(item.timestamp) }}</span>
+                <span class="whitespace-nowrap">{{ formatDateTime(item.timestamp) }}</span>
             </template>
 
             <template v-slot:[`item.actor_role`]="{ item }">
@@ -196,7 +184,7 @@ const formatDate = (iso: string) => {
             </template>
 
             <template v-slot:[`item.ip`]="{ item }">
-                {{ item.ip ?? '—' }}
+                {{ item.ip ?? EMPTY_VALUE }}
             </template>
 
             <template v-slot:[`item.request_id`]="{ item }">

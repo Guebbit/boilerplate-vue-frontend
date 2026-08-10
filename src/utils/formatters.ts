@@ -34,13 +34,26 @@ export const formatText = (value?: string | null) =>
     value && value.trim().length > 0 ? value : EMPTY_VALUE;
 
 /**
- * Formats ISO date values according to the browser locale.
+ * Formats ISO date values as date **and** time, in the active app locale.
  *
  * @param value - ISO 8601 date/datetime string, possibly nullish.
  * @returns The localized date/time string, or {@link EMPTY_VALUE}.
  */
 export const formatDateTime = (value?: string | null) =>
     value ? new Date(value).toLocaleString(getLocale()) : EMPTY_VALUE;
+
+/**
+ * Formats ISO date values as a date alone, in the active app locale.
+ *
+ * The date-only counterpart of {@link formatDateTime}, for table columns where a timestamp is
+ * noise. Both read the app locale rather than the browser's, so a visitor who switched language
+ * in-app sees dates in the language they chose.
+ *
+ * @param value - ISO 8601 date/datetime string, possibly nullish.
+ * @returns The localized date string, or {@link EMPTY_VALUE}.
+ */
+export const formatDate = (value?: string | null) =>
+    value ? new Date(value).toLocaleDateString(getLocale()) : EMPTY_VALUE;
 
 /**
  * Formats numeric values as currency with locale-aware separators and symbol.

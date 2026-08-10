@@ -1,57 +1,3 @@
-<template>
-    <LayoutDefault id="login-page" :title="t('login-page.page-title')">
-        <v-card class="mx-auto mt-16 w-full max-w-md p-8">
-            <form ref="formElement" novalidate @submit.prevent="submitForm">
-                <v-text-field
-                    v-model="form.email"
-                    type="email"
-                    autocomplete="email"
-                    :label="t('login-page.label-email')"
-                    :error-messages="showErrors ? formErrors.email : []"
-                    class="mb-2"
-                />
-                <v-text-field
-                    v-model="form.password"
-                    :type="showPassword ? 'text' : 'password'"
-                    autocomplete="current-password"
-                    :label="t('login-page.label-password')"
-                    :error-messages="showErrors ? formErrors.password : []"
-                >
-                    <template #append-inner>
-                        <v-btn
-                            icon
-                            variant="text"
-                            size="small"
-                            :aria-label="t('login-page.label-toggle-password')"
-                            @click="showPassword = !showPassword"
-                        >
-                            <EyeOff v-if="showPassword" :size="18" aria-hidden="true" />
-                            <Eye v-else :size="18" aria-hidden="true" />
-                        </v-btn>
-                    </template>
-                </v-text-field>
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                    <v-checkbox
-                        v-model="form.remember"
-                        :label="t('login-page.label-remember')"
-                        hide-details
-                        density="compact"
-                    />
-                    <RouterLink
-                        :to="routerLinkI18n({ name: 'PasswordResetRequest' })"
-                        class="text-sm text-link hover:underline"
-                    >
-                        {{ t('login-page.link-password-reset') }}
-                    </RouterLink>
-                </div>
-                <v-btn type="submit" color="primary" size="large" block class="mt-4">
-                    {{ t('login-page.button-submit') }}
-                </v-btn>
-            </form>
-        </v-card>
-    </LayoutDefault>
-</template>
-
 <script lang="ts">
 export default {
     name: 'LoginPage'
@@ -146,3 +92,57 @@ const submitForm = () => {
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
 </script>
+
+<template>
+    <LayoutDefault id="login-page" :title="t('login-page.page-title')">
+        <v-card class="mx-auto mt-16 w-full max-w-md p-8">
+            <form ref="formElement" novalidate @submit.prevent="submitForm">
+                <v-text-field
+                    v-model="form.email"
+                    type="email"
+                    autocomplete="email"
+                    :label="t('login-page.label-email')"
+                    :error-messages="showErrors ? formErrors.email : []"
+                    class="mb-2"
+                />
+                <v-text-field
+                    v-model="form.password"
+                    :type="showPassword ? 'text' : 'password'"
+                    autocomplete="current-password"
+                    :label="t('login-page.label-password')"
+                    :error-messages="showErrors ? formErrors.password : []"
+                >
+                    <template #append-inner>
+                        <v-btn
+                            icon
+                            variant="text"
+                            size="small"
+                            :aria-label="t('login-page.label-toggle-password')"
+                            @click="showPassword = !showPassword"
+                        >
+                            <EyeOff v-if="showPassword" :size="18" aria-hidden="true" />
+                            <Eye v-else :size="18" aria-hidden="true" />
+                        </v-btn>
+                    </template>
+                </v-text-field>
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <v-checkbox
+                        v-model="form.remember"
+                        :label="t('login-page.label-remember')"
+                        hide-details
+                        density="compact"
+                    />
+                    <RouterLink
+                        :to="routerLinkI18n({ name: 'PasswordResetRequest' })"
+                        class="text-sm text-link hover:underline"
+                    >
+                        {{ t('login-page.link-password-reset') }}
+                    </RouterLink>
+                </div>
+                <v-btn type="submit" color="primary" size="large" block class="mt-4">
+                    {{ t('login-page.button-submit') }}
+                </v-btn>
+            </form>
+        </v-card>
+    </LayoutDefault>
+</template>

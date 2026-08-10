@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 import { z } from 'zod';
-import { i18n } from '@/utils/i18n.ts';
+import { translate } from '@/utils/i18n.ts';
 
 /**
  * Client-side limits for the `imageUpload` multipart fields.
@@ -151,13 +151,12 @@ export const useUploadProgress = () => {
  *
  * Messages are THUNKS, resolved at parse time against whatever locale is active — the same
  * contract every other schema in this app keeps, and the reason a single module-scope schema can
- * speak both languages. See `@/features/users/schemas.ts` for the long version.
+ * speak both languages. See {@link translate} for the long version.
  */
 export const imageUploadSchema = z
-    .instanceof(File, { error: () => i18n.global.t('image-upload-form.wrong-type') })
-    .refine(isAcceptedImageType, { error: () => i18n.global.t('image-upload-form.wrong-type') })
+    .instanceof(File, { error: () => translate('image-upload-form.wrong-type') })
+    .refine(isAcceptedImageType, { error: () => translate('image-upload-form.wrong-type') })
     .refine(isWithinUploadSizeLimit, {
-        error: () =>
-            i18n.global.t('image-upload-form.size-exceeded', { size: MAX_UPLOAD_SIZE_LABEL })
+        error: () => translate('image-upload-form.size-exceeded', { size: MAX_UPLOAD_SIZE_LABEL })
     })
     .optional();

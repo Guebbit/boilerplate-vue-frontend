@@ -1,3 +1,76 @@
+<script lang="ts">
+export default {
+    name: 'ProductTargetPage'
+};
+</script>
+
+<script setup lang="ts">
+import { computed } from 'vue';
+import { routerLinkI18n } from '@/utils/i18n.ts';
+import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
+import { useProductsStore } from '@/features/products/store';
+import LayoutDefault from '@/layouts/LayoutDefault.vue';
+import { Package } from 'lucide-vue-next';
+import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
+import ItemDetailLayout from '@/components/organisms/ItemDetailLayout.vue';
+import CardDetail from '@/components/organisms/CardDetail.vue';
+import CardInfo from '@/components/organisms/CardInfo.vue';
+import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
+import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
+import { formatText, formatDateTime, formatCurrency, formatFlag } from '@/utils/formatters.ts';
+
+/**
+ * Localized dictionary helper.
+ */
+const { t } = useI18n();
+
+/**
+ * Route-provided product id.
+ */
+const { id } = defineProps<{
+    id?: string;
+}>();
+
+/**
+ * Product store selectors and fetch API.
+ */
+const { watchProduct } = useProductsStore();
+const { currentProduct } = storeToRefs(useProductsStore());
+
+/**
+ * Hero heading.
+ *
+ * @returns The loaded product title, the route id while loading, or the generic
+ *  page title as a last resort.
+ */
+const heroTitle = computed(
+    () => currentProduct.value?.title ?? id ?? t('product-target-page.page-title')
+);
+
+/**
+ * Hero subheading.
+ *
+ * @returns The product description, or the empty-value glyph when blank.
+ */
+const heroDescription = computed(() => formatText(currentProduct.value?.description));
+
+/**
+ * Label of the status chip.
+ *
+ * @returns The localized enabled/disabled wording, or the empty-value glyph
+ *  while the product is unknown.
+ */
+const productStatus = computed(() =>
+    formatFlag(currentProduct.value?.active, t('generic.enabled'), t('generic.disabled'))
+);
+
+/**
+ * Selects and (re)fetches the product whenever the route id changes.
+ */
+watchProduct(() => id);
+</script>
+
 <template>
     <LayoutDefault id="product-target" :title="t('product-target-page.page-title')">
         <ItemDetailLayout accent="primary">
@@ -107,76 +180,3 @@
         </ItemDetailLayout>
     </LayoutDefault>
 </template>
-
-<script lang="ts">
-export default {
-    name: 'ProductTargetPage'
-};
-</script>
-
-<script setup lang="ts">
-import { computed } from 'vue';
-import { routerLinkI18n } from '@/utils/i18n.ts';
-import { useI18n } from 'vue-i18n';
-import { storeToRefs } from 'pinia';
-import { useProductsStore } from '@/features/products/store';
-import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import { Package } from 'lucide-vue-next';
-import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
-import ItemDetailLayout from '@/components/organisms/ItemDetailLayout.vue';
-import CardDetail from '@/components/organisms/CardDetail.vue';
-import CardInfo from '@/components/organisms/CardInfo.vue';
-import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
-import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
-import { formatText, formatDateTime, formatCurrency, formatFlag } from '@/utils/formatters.ts';
-
-/**
- * Localized dictionary helper.
- */
-const { t } = useI18n();
-
-/**
- * Route-provided product id.
- */
-const { id } = defineProps<{
-    id?: string;
-}>();
-
-/**
- * Product store selectors and fetch API.
- */
-const { watchProduct } = useProductsStore();
-const { currentProduct } = storeToRefs(useProductsStore());
-
-/**
- * Hero heading.
- *
- * @returns The loaded product title, the route id while loading, or the generic
- *  page title as a last resort.
- */
-const heroTitle = computed(
-    () => currentProduct.value?.title ?? id ?? t('product-target-page.page-title')
-);
-
-/**
- * Hero subheading.
- *
- * @returns The product description, or the empty-value glyph when blank.
- */
-const heroDescription = computed(() => formatText(currentProduct.value?.description));
-
-/**
- * Label of the status chip.
- *
- * @returns The localized enabled/disabled wording, or the empty-value glyph
- *  while the product is unknown.
- */
-const productStatus = computed(() =>
-    formatFlag(currentProduct.value?.active, t('generic.enabled'), t('generic.disabled'))
-);
-
-/**
- * Selects and (re)fetches the product whenever the route id changes.
- */
-watchProduct(() => id);
-</script>

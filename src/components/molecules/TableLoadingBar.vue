@@ -1,13 +1,3 @@
-<template>
-    <v-progress-linear
-        absolute
-        indeterminate
-        height="2"
-        color="primary"
-        :aria-label="t('generic.loading-state')"
-    />
-</template>
-
 <script setup lang="ts">
 /**
  * The loading bar for a `v-data-table`, supplied through its `#loader` slot.
@@ -30,3 +20,13 @@ import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
 </script>
+
+<template>
+    <v-progress-linear
+        absolute
+        indeterminate
+        height="2"
+        color="primary"
+        :aria-label="t('generic.loading-state')"
+    />
+</template>

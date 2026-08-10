@@ -63,12 +63,38 @@ export const createSuccessEnvelope = <T>(data: T) => ({
     data
 });
 
-// Wrap a single error in the standard error envelope (matches openapi.yaml's ErrorResponse
-// schema: success/status/message + an `errors` array — NOT a singular `error` field).
+/**
+ * The canonical reason phrase for a status.
+ *
+ * Mirrors `resolveErrorMessage` in the backend's `src/core/http/response.ts`, which is the only
+ * thing that sets an error envelope's `message` there — no handler can pass one. Duplicated rather
+ * than shared because it is nine lines and the alternative is a cross-repo import, but it has to
+ * agree: a mock whose envelope reads differently from the real API is the divergence these mocks
+ * exist to avoid.
+ */
+const resolveErrorMessage = (status: number) => {
+    if (status === 400) return 'Bad Request';
+    if (status === 401) return 'Unauthorized';
+    if (status === 403) return 'Forbidden';
+    if (status === 404) return 'Not Found';
+    if (status === 409) return 'Conflict';
+    if (status === 422) return 'Unprocessable Entity';
+    if (status === 429) return 'Too Many Requests';
+    if (status >= 500) return 'Internal Server Error';
+    return 'Request Error';
+};
+
+/**
+ * Wrap a single error in the standard error envelope (matches openapi.yaml's ErrorResponse schema:
+ * success/status/message + an `errors` array — NOT a singular `error` field).
+ *
+ * `message` is derived from the status, exactly as the API derives it; the caller's text is the
+ * user-facing half and belongs in `errors[]`.
+ */
 export const createErrorEnvelope = (status: number, code: string, message: string) => ({
     success: false as const,
     status,
-    message,
+    message: resolveErrorMessage(status),
     errors: [{ code, message }]
 });
 
@@ -370,6 +396,26 @@ export const getCurrentMockUser = (): User | undefined =>
  * unless it explicitly calls `cy.loginAs('admin')`.
  */
 export const isCurrentMockUserAdmin = (): boolean => getCurrentMockUser()?.admin === true;
+
+/**
+ * The `hardDelete` flag, as the delete surface's three spellings carry it.
+ *
+ * One definition because it is one fact: a query entry is always a string, a JSON body carries a
+ * real boolean, and a `/hard` path segment carries neither — the caller passes `true` outright.
+ * That multi-source read is the BE's `surface: 'delete'`, and a mock that recognised only one
+ * spelling would answer a soft delete where the real API performs a hard one.
+ *
+ * @param url - The request URL, whose query string may carry the flag.
+ * @param body - A parsed JSON body, which may carry it as a real boolean.
+ * @returns Whether the caller asked for a permanent delete.
+ */
+export const readHardDeleteFlag = (
+    url: string | undefined,
+    body?: Record<string, unknown>
+): boolean => {
+    const query = getQueryParameters(url, body);
+    return query.hardDelete === true || String(query.hardDelete) === 'true';
+};
 
 /**
  * Mirrors `BE src/services/products.ts` `search()`:

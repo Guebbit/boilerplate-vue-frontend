@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { RefreshCw } from 'lucide-vue-next';
 import type { ObservabilityHealth, ObservabilityMetricsSummary } from '@types';
 import type { IAdminKpiCard } from '@/features/admin/types.ts';
+import { EMPTY_VALUE } from '@/utils/formatters.ts';
 
 const { t } = useI18n();
 
@@ -30,7 +31,7 @@ const loading = computed(() => props.loading);
  * @returns `"2h 15m"`, `"15m"`, or a dash when `seconds` is `undefined`.
  */
 const formatUptime = (seconds?: number): string => {
-    if (seconds === undefined) return '—';
+    if (seconds === undefined) return EMPTY_VALUE;
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
@@ -43,7 +44,7 @@ const formatUptime = (seconds?: number): string => {
  * @returns The rate with one decimal and a `%` sign, or a dash when unknown.
  */
 const formatErrorRate = (rate?: number): string => {
-    if (rate === undefined) return '—';
+    if (rate === undefined) return EMPTY_VALUE;
     return `${(rate * 100).toFixed(1)}%`;
 };
 
@@ -94,13 +95,13 @@ const errorRateStatus = computed((): IAdminKpiCard['status'] => {
 const kpiCards = computed<IAdminKpiCard[]>(() => [
     {
         title: t('admin-page.kpi-api-status'),
-        value: props.health?.status ?? '—',
+        value: props.health?.status ?? EMPTY_VALUE,
         hint: props.healthError ?? undefined,
         status: healthStatus.value
     },
     {
         title: t('admin-page.kpi-database'),
-        value: props.health?.database.status ?? '—',
+        value: props.health?.database.status ?? EMPTY_VALUE,
         status: databaseStatus.value
     },
     {
@@ -110,13 +111,13 @@ const kpiCards = computed<IAdminKpiCard[]>(() => [
     },
     {
         title: t('admin-page.kpi-requests'),
-        value: props.metrics?.http.totalRequests ?? '—',
+        value: props.metrics?.http.totalRequests ?? EMPTY_VALUE,
         hint: props.metricsError ?? undefined,
         status: loading.value ? 'loading' : 'ok'
     },
     {
         title: t('admin-page.kpi-errors'),
-        value: props.metrics?.http.totalErrors ?? '—',
+        value: props.metrics?.http.totalErrors ?? EMPTY_VALUE,
         status: errorRateStatus.value
     },
     {
@@ -128,7 +129,7 @@ const kpiCards = computed<IAdminKpiCard[]>(() => [
         title: t('admin-page.kpi-latency-p50'),
         value:
             props.metrics?.http.latencyMs.p50 === undefined
-                ? '—'
+                ? EMPTY_VALUE
                 : `${props.metrics.http.latencyMs.p50} ms`,
         status: 'ok'
     },
@@ -136,7 +137,7 @@ const kpiCards = computed<IAdminKpiCard[]>(() => [
         title: t('admin-page.kpi-latency-p95'),
         value:
             props.metrics?.http.latencyMs.p95 === undefined
-                ? '—'
+                ? EMPTY_VALUE
                 : `${props.metrics.http.latencyMs.p95} ms`,
         status: 'ok'
     }

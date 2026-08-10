@@ -1,34 +1,3 @@
-<template>
-    <LayoutDefault id="realtime-playground-page" :title="t('realtime-playground-page.page-title')">
-        <section class="grid gap-6">
-            <v-card class="flex flex-col gap-4 p-6">
-                <div>
-                    <h3 class="text-lg font-semibold">
-                        {{ t('realtime-playground-page.sse-observability') }}
-                    </h3>
-                    <v-chip size="small" variant="tonal" color="secondary" class="mt-1">
-                        {{ observabilityStatus }}
-                    </v-chip>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                    <v-btn color="primary" variant="tonal" @click="connectObservability">
-                        {{ t('realtime-playground-page.button-connect') }}
-                    </v-btn>
-                    <v-btn variant="tonal" @click="disconnectObservability">
-                        {{ t('realtime-playground-page.button-disconnect') }}
-                    </v-btn>
-                </div>
-                <FeedbackMessageFeed
-                    :messages="observabilityEntries.map(formatMetricsEntry)"
-                    variant="alert"
-                    max-height="220px"
-                    :empty-text="t('realtime-playground-page.empty-metrics')"
-                />
-            </v-card>
-        </section>
-    </LayoutDefault>
-</template>
-
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
@@ -72,3 +41,34 @@ const formatMetricsEntry = (entry: IRealtimeMetricsEntry) => {
     );
 };
 </script>
+
+<template>
+    <LayoutDefault id="realtime-playground-page" :title="t('realtime-playground-page.page-title')">
+        <section class="grid gap-6">
+            <v-card class="flex flex-col gap-4 p-6">
+                <div>
+                    <h3 class="text-lg font-semibold">
+                        {{ t('realtime-playground-page.sse-observability') }}
+                    </h3>
+                    <v-chip size="small" variant="tonal" color="secondary" class="mt-1">
+                        {{ observabilityStatus }}
+                    </v-chip>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <v-btn color="primary" variant="tonal" @click="connectObservability">
+                        {{ t('realtime-playground-page.button-connect') }}
+                    </v-btn>
+                    <v-btn variant="tonal" @click="disconnectObservability">
+                        {{ t('realtime-playground-page.button-disconnect') }}
+                    </v-btn>
+                </div>
+                <FeedbackMessageFeed
+                    :messages="observabilityEntries.map(formatMetricsEntry)"
+                    variant="alert"
+                    max-height="220px"
+                    :empty-text="t('realtime-playground-page.empty-metrics')"
+                />
+            </v-card>
+        </section>
+    </LayoutDefault>
+</template>

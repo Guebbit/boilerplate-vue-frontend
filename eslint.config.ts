@@ -82,6 +82,19 @@ export default defineConfigWithVueTs(
             'vue/no-v-html': 'off',
 
             /**
+             * One block order across every SFC: script, then template, then style.
+             *
+             * The rule's own default is `[['script', 'template'], 'style']` — script and template
+             * interchangeable — which is how this codebase ended up with both spellings and with
+             * two sibling list views that could not be read side by side. Naming the order
+             * explicitly is the point; which order it is matters far less than that there is one.
+             *
+             * Components declaring both a plain `<script>` (for `name`) and a `<script setup>`
+             * keep them adjacent in that order, since both count as `script` here.
+             */
+            'vue/block-order': ['error', { order: ['script', 'template', 'style'] }],
+
+            /**
              * Every user-facing string goes through vue-i18n. This catches the two shapes that
              * slip past review most easily — a bare text node (`<h3>SSE observability</h3>`) and
              * a static attribute a screen reader or a tab title reads (`alt="logo"`,

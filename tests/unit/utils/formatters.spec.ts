@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 import {
     EMPTY_VALUE,
     formatText,
+    formatDate,
     formatDateTime,
     formatCurrency,
     formatFlag
@@ -49,6 +50,27 @@ describe('formatDateTime', () => {
         // eslint-disable-next-line unicorn/no-null -- the API models absent values as null
         expect(formatDateTime(null)).toBe(EMPTY_VALUE);
         expect(formatDateTime('')).toBe(EMPTY_VALUE);
+    });
+});
+
+describe('formatDate', () => {
+    it('formats an ISO datetime into a localized date', () => {
+        const formatted = formatDate('2026-08-05T10:30:00.000Z');
+
+        expect(formatted).not.toBe(EMPTY_VALUE);
+        expect(formatted).toContain('2026');
+    });
+
+    it('drops the time part that formatDateTime keeps', () => {
+        // The whole reason both exist: table columns want the date alone. `10:30` must not survive.
+        expect(formatDate('2026-08-05T10:30:00.000Z')).not.toContain('30');
+    });
+
+    it('falls back for undefined, null and empty input', () => {
+        expect(formatDate()).toBe(EMPTY_VALUE);
+        // eslint-disable-next-line unicorn/no-null -- the API models absent values as null
+        expect(formatDate(null)).toBe(EMPTY_VALUE);
+        expect(formatDate('')).toBe(EMPTY_VALUE);
     });
 });
 

@@ -1,3 +1,20 @@
+<script setup lang="ts">
+import { useSlots } from 'vue';
+
+/**
+ * Shared skeleton for entity detail/edit pages (product, order, user…).
+ * Sets --detail-accent so ItemDetailField / ItemDetailHero / chips inside
+ * pick up the per-entity accent color automatically.
+ *
+ * Slots: hero, stats, default (main card), aside, actions.
+ */
+defineProps<{
+    accent?: 'primary' | 'secondary' | 'tertiary';
+}>();
+
+const slots = useSlots();
+</script>
+
 <template>
     <section
         class="mx-auto flex w-full max-w-6xl flex-col gap-6"
@@ -33,20 +50,3 @@
         </div>
     </section>
 </template>
-
-<script setup lang="ts">
-import { useSlots } from 'vue';
-
-/**
- * Shared skeleton for entity detail/edit pages (product, order, user…).
- * Sets --detail-accent so ItemDetailField / ItemDetailHero / chips inside
- * pick up the per-entity accent color automatically.
- *
- * Slots: hero, stats, default (main card), aside, actions.
- */
-defineProps<{
-    accent?: 'primary' | 'secondary' | 'tertiary';
-}>();
-
-const slots = useSlots();
-</script>

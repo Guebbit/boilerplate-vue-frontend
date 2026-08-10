@@ -217,6 +217,36 @@ describe('useProductsStore', () => {
                 }));
     });
 
+    describe('hardDeleteProduct', () => {
+        /*
+         * A separate method rather than a flag on `deleteProduct`, because the two are not the same
+         * operation: the soft form sets `deletedAt` and an admin can toggle it back, this one is
+         * irreversible. Distinct names mean the destructive path cannot be reached by passing the
+         * wrong boolean — so what is worth pinning is that it hits the `/hard` URL and nothing else.
+         */
+        it('calls the /hard endpoint with the product id', () =>
+            useProductsStore()
+                .hardDeleteProduct('p1')
+                .then(() => {
+                    expect(lastRequest()).toMatchObject({
+                        url: '/products/p1/hard',
+                        method: 'DELETE'
+                    });
+                }));
+
+        it('is a different URL from the soft delete', () =>
+            useProductsStore()
+                .deleteProduct('p1')
+                .then(() => {
+                    const soft = lastRequest()?.url;
+                    return useProductsStore()
+                        .hardDeleteProduct('p1')
+                        .then(() => {
+                            expect(lastRequest()?.url).not.toBe(soft);
+                        });
+                }));
+    });
+
     /**
      * Read paths.
      *

@@ -1,7 +1,3 @@
-<template>
-    <RouterView />
-</template>
-
 <script setup lang="ts">
 import { ref, provide } from 'vue';
 import { RouterView } from 'vue-router';
@@ -35,3 +31,7 @@ provide('providedVariable', {
     setProvidedVariable
 });
 </script>
+
+<template>
+    <RouterView />
+</template>

@@ -1,52 +1,3 @@
-<template>
-    <LayoutDefault
-        id="password-reset-confirm-page"
-        :title="t('password-reset-confirm-page.page-title')"
-    >
-        <v-card class="mx-auto mt-16 w-full max-w-md p-8">
-            <form ref="formElement" novalidate @submit.prevent="submitForm">
-                <v-text-field
-                    v-model="form.token"
-                    :label="t('password-reset-confirm-page.label-token')"
-                    :error-messages="showErrors ? formErrors.token : []"
-                    class="mb-2"
-                />
-                <v-text-field
-                    v-model="form.password"
-                    type="password"
-                    autocomplete="new-password"
-                    :label="t('password-reset-confirm-page.label-password')"
-                    :error-messages="showErrors ? formErrors.password : []"
-                    class="mb-2"
-                />
-                <v-text-field
-                    v-model="form.passwordConfirm"
-                    type="password"
-                    autocomplete="new-password"
-                    :label="t('password-reset-confirm-page.label-password-confirm')"
-                    :error-messages="showErrors ? formErrors.passwordConfirm : []"
-                />
-                <v-btn
-                    type="submit"
-                    color="primary"
-                    size="large"
-                    block
-                    :loading="isSubmitting"
-                    class="mt-4"
-                >
-                    {{ t('password-reset-confirm-page.button-submit') }}
-                </v-btn>
-            </form>
-
-            <div class="mt-4 flex justify-center">
-                <v-btn variant="text" :to="routerLinkI18n({ name: 'Login' })">
-                    {{ t('password-reset-confirm-page.button-go-to-login') }}
-                </v-btn>
-            </div>
-        </v-card>
-    </LayoutDefault>
-</template>
-
 <script lang="ts">
 export default {
     name: 'PasswordResetConfirmPage'
@@ -141,3 +92,52 @@ const submitForm = () =>
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>
+
+<template>
+    <LayoutDefault
+        id="password-reset-confirm-page"
+        :title="t('password-reset-confirm-page.page-title')"
+    >
+        <v-card class="mx-auto mt-16 w-full max-w-md p-8">
+            <form ref="formElement" novalidate @submit.prevent="submitForm">
+                <v-text-field
+                    v-model="form.token"
+                    :label="t('password-reset-confirm-page.label-token')"
+                    :error-messages="showErrors ? formErrors.token : []"
+                    class="mb-2"
+                />
+                <v-text-field
+                    v-model="form.password"
+                    type="password"
+                    autocomplete="new-password"
+                    :label="t('password-reset-confirm-page.label-password')"
+                    :error-messages="showErrors ? formErrors.password : []"
+                    class="mb-2"
+                />
+                <v-text-field
+                    v-model="form.passwordConfirm"
+                    type="password"
+                    autocomplete="new-password"
+                    :label="t('password-reset-confirm-page.label-password-confirm')"
+                    :error-messages="showErrors ? formErrors.passwordConfirm : []"
+                />
+                <v-btn
+                    type="submit"
+                    color="primary"
+                    size="large"
+                    block
+                    :loading="isSubmitting"
+                    class="mt-4"
+                >
+                    {{ t('password-reset-confirm-page.button-submit') }}
+                </v-btn>
+            </form>
+
+            <div class="mt-4 flex justify-center">
+                <v-btn variant="text" :to="routerLinkI18n({ name: 'Login' })">
+                    {{ t('password-reset-confirm-page.button-go-to-login') }}
+                </v-btn>
+            </div>
+        </v-card>
+    </LayoutDefault>
+</template>

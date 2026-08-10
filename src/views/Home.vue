@@ -1,3 +1,55 @@
+<script lang="ts">
+export default {
+    name: 'HomePage'
+};
+</script>
+
+<script setup lang="ts">
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { ArrowRight, Package, Tag, Star } from 'lucide-vue-next';
+import type { Component } from 'vue';
+
+import LayoutDefault from '@/layouts/LayoutDefault.vue';
+import CardInfo from '@/components/organisms/CardInfo.vue';
+import { routerLinkI18n } from '@/utils/i18n.ts';
+
+const { t } = useI18n();
+
+/**
+ * Showcase entries of the landing page.
+ *
+ * @returns The three featured cards, re-translated whenever the locale changes.
+ */
+const featuredProducts = computed<
+    {
+        title: string;
+        description: string;
+        variant: 'primary' | 'secondary' | 'tertiary';
+        icon: Component;
+    }[]
+>(() => [
+    {
+        title: t('home-page.featured-product-1-title'),
+        description: t('home-page.featured-product-1-description'),
+        variant: 'primary',
+        icon: Package
+    },
+    {
+        title: t('home-page.featured-product-2-title'),
+        description: t('home-page.featured-product-2-description'),
+        variant: 'secondary',
+        icon: Tag
+    },
+    {
+        title: t('home-page.featured-product-3-title'),
+        description: t('home-page.featured-product-3-description'),
+        variant: 'tertiary',
+        icon: Star
+    }
+]);
+</script>
+
 <template>
     <LayoutDefault id="home-page" :title="t('home-page.page-title')">
         <section class="mb-8 flex justify-center">
@@ -50,55 +102,3 @@
         rgb(var(--v-theme-surface));
 }
 </style>
-
-<script lang="ts">
-export default {
-    name: 'HomePage'
-};
-</script>
-
-<script setup lang="ts">
-import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { ArrowRight, Package, Tag, Star } from 'lucide-vue-next';
-import type { Component } from 'vue';
-
-import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import CardInfo from '@/components/organisms/CardInfo.vue';
-import { routerLinkI18n } from '@/utils/i18n.ts';
-
-const { t } = useI18n();
-
-/**
- * Showcase entries of the landing page.
- *
- * @returns The three featured cards, re-translated whenever the locale changes.
- */
-const featuredProducts = computed<
-    {
-        title: string;
-        description: string;
-        variant: 'primary' | 'secondary' | 'tertiary';
-        icon: Component;
-    }[]
->(() => [
-    {
-        title: t('home-page.featured-product-1-title'),
-        description: t('home-page.featured-product-1-description'),
-        variant: 'primary',
-        icon: Package
-    },
-    {
-        title: t('home-page.featured-product-2-title'),
-        description: t('home-page.featured-product-2-description'),
-        variant: 'secondary',
-        icon: Tag
-    },
-    {
-        title: t('home-page.featured-product-3-title'),
-        description: t('home-page.featured-product-3-description'),
-        variant: 'tertiary',
-        icon: Star
-    }
-]);
-</script>

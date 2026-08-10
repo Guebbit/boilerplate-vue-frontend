@@ -1,16 +1,3 @@
-<template>
-    <v-number-input
-        v-model="count"
-        :label="label || undefined"
-        :min="min"
-        :max="max"
-        :step="step"
-        control-variant="split"
-        :hide-details="true"
-        class="max-w-52"
-    />
-</template>
-
 <script setup lang="ts">
 const {
     label = '',
@@ -41,3 +28,16 @@ const {
  */
 const count = defineModel<number>();
 </script>
+
+<template>
+    <v-number-input
+        v-model="count"
+        :label="label || undefined"
+        :min="min"
+        :max="max"
+        :step="step"
+        control-variant="split"
+        :hide-details="true"
+        class="max-w-52"
+    />
+</template>

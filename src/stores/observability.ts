@@ -19,6 +19,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { Faro } from '@grafana/faro-web-sdk';
+import { analyticsEvents as sharedAnalyticsEvents } from '@/stores/analyticsEvents.ts';
 
 // ─── Umami global ──────────────────────────────────────────────────────────────
 // The Umami tracker script attaches a `umami` object to `window` once loaded.
@@ -50,39 +51,24 @@ export interface IUmamiConfig {
 }
 
 // ─── Event catalog ─────────────────────────────────────────────────────────────
-// IMPORTANT: these MUST match the canonical event names the backend emits so
-// that frontend and backend analytics line up in Umami/Grafana. Only the
-// `app_*` and `user_logged_out` events are frontend-only (the backend has no
-// equivalent).
+// The names shared with the backend come from `analyticsEvents.ts`, which is byte-identical in
+// both repos and guarded by `npm run check:spec-identity` — so the two sides of a funnel cannot
+// drift apart silently. Only the events below have no backend counterpart, which is why they are
+// the only ones written here.
 
-export const analyticsEvents = {
-    // Application Lifecycle (frontend-only)
+/** Events only this app can emit: the backend has no equivalent moment to report. */
+const frontendOnlyAnalyticsEvents = {
+    // Application lifecycle — there is no "app started" on a server that is always started.
     APP_STARTED: 'app_started',
     APP_READY: 'app_ready',
 
-    // Authentication
-    USER_SIGNED_UP: 'user_signed_up',
-    USER_LOGGED_IN: 'user_logged_in',
-    USER_LOGGED_OUT: 'user_logged_out',
-    USER_PROFILE_VIEWED: 'user_profile_viewed',
-    ACCOUNT_DELETED: 'account_deleted',
+    // Logging out is a client-side token discard; the API has no request to attribute it to.
+    USER_LOGGED_OUT: 'user_logged_out'
+} as const;
 
-    // Products
-    PRODUCTS_SEARCHED: 'products_searched',
-    PRODUCT_VIEWED: 'product_viewed',
-
-    // Cart
-    CART_VIEWED: 'cart_viewed',
-    CART_ITEM_ADDED: 'cart_item_added',
-    CART_ITEM_UPDATED: 'cart_item_updated',
-    CART_ITEM_REMOVED: 'cart_item_removed',
-    CART_CLEARED: 'cart_cleared',
-
-    // Checkout / Orders
-    CHECKOUT_COMPLETED: 'checkout_completed',
-    CHECKOUT_FAILED: 'checkout_failed',
-    ORDER_CREATED: 'order_created',
-    ORDERS_VIEWED: 'orders_viewed'
+export const analyticsEvents = {
+    ...sharedAnalyticsEvents,
+    ...frontendOnlyAnalyticsEvents
 } as const;
 
 export type AnalyticsEventName = (typeof analyticsEvents)[keyof typeof analyticsEvents];

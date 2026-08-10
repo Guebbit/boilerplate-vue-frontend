@@ -1,3 +1,86 @@
+<script lang="ts">
+export default {
+    name: 'UserTargetPage'
+};
+</script>
+
+<script setup lang="ts">
+import { computed } from 'vue';
+import { routerLinkI18n } from '@/utils/i18n.ts';
+import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
+import { useUsersStore } from '@/features/users/store';
+import LayoutDefault from '@/layouts/LayoutDefault.vue';
+import { User } from 'lucide-vue-next';
+import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
+import ItemDetailLayout from '@/components/organisms/ItemDetailLayout.vue';
+import CardDetail from '@/components/organisms/CardDetail.vue';
+import CardInfo from '@/components/organisms/CardInfo.vue';
+import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
+import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
+import { formatText, formatDateTime, formatFlag } from '@/utils/formatters.ts';
+
+/**
+ * Translations helper.
+ */
+const { t } = useI18n();
+
+/**
+ * Route user id.
+ */
+const { id } = defineProps<{
+    id?: string;
+}>();
+
+/**
+ * User store API and state references.
+ */
+const { watchUser } = useUsersStore();
+const { currentUser } = storeToRefs(useUsersStore());
+
+/**
+ * Hero heading.
+ *
+ * @returns The loaded username, the route id while loading, or the generic page
+ *  title as a last resort.
+ */
+const heroTitle = computed(
+    () => currentUser.value?.username ?? id ?? t('user-target-page.page-title')
+);
+
+/**
+ * Hero subheading.
+ *
+ * @returns The user email, or the empty-value glyph when unknown.
+ */
+const heroDescription = computed(() => formatText(currentUser.value?.email));
+
+/**
+ * Label of the role chip.
+ *
+ * @returns The localized administrator/standard-user wording, or the
+ *  empty-value glyph while the user is unknown.
+ */
+const userRole = computed(() =>
+    formatFlag(currentUser.value?.admin, t('generic.administrator'), t('generic.standard-user'))
+);
+
+/**
+ * Label of the status chip.
+ *
+ * @returns The localized enabled/disabled wording, or the empty-value glyph
+ *  while the user is unknown.
+ */
+const userStatus = computed(() =>
+    formatFlag(currentUser.value?.active, t('generic.enabled'), t('generic.disabled'))
+);
+
+/**
+ * Selects and (re)fetches the user whenever the route id changes.
+ */
+watchUser(() => id);
+</script>
+
 <template>
     <LayoutDefault id="user-target" :title="t('user-target-page.page-title')">
         <ItemDetailLayout accent="secondary">
@@ -100,86 +183,3 @@
         </ItemDetailLayout>
     </LayoutDefault>
 </template>
-
-<script lang="ts">
-export default {
-    name: 'UserTargetPage'
-};
-</script>
-
-<script setup lang="ts">
-import { computed } from 'vue';
-import { routerLinkI18n } from '@/utils/i18n.ts';
-import { useI18n } from 'vue-i18n';
-import { storeToRefs } from 'pinia';
-import { useUsersStore } from '@/features/users/store';
-import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import { User } from 'lucide-vue-next';
-import ItemDetailField from '@/components/molecules/ItemDetailField.vue';
-import ItemDetailLayout from '@/components/organisms/ItemDetailLayout.vue';
-import CardDetail from '@/components/organisms/CardDetail.vue';
-import CardInfo from '@/components/organisms/CardInfo.vue';
-import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
-import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
-import { formatText, formatDateTime, formatFlag } from '@/utils/formatters.ts';
-
-/**
- * Translations helper.
- */
-const { t } = useI18n();
-
-/**
- * Route user id.
- */
-const { id } = defineProps<{
-    id?: string;
-}>();
-
-/**
- * User store API and state references.
- */
-const { watchUser } = useUsersStore();
-const { currentUser } = storeToRefs(useUsersStore());
-
-/**
- * Hero heading.
- *
- * @returns The loaded username, the route id while loading, or the generic page
- *  title as a last resort.
- */
-const heroTitle = computed(
-    () => currentUser.value?.username ?? id ?? t('user-target-page.page-title')
-);
-
-/**
- * Hero subheading.
- *
- * @returns The user email, or the empty-value glyph when unknown.
- */
-const heroDescription = computed(() => formatText(currentUser.value?.email));
-
-/**
- * Label of the role chip.
- *
- * @returns The localized administrator/standard-user wording, or the
- *  empty-value glyph while the user is unknown.
- */
-const userRole = computed(() =>
-    formatFlag(currentUser.value?.admin, t('generic.administrator'), t('generic.standard-user'))
-);
-
-/**
- * Label of the status chip.
- *
- * @returns The localized enabled/disabled wording, or the empty-value glyph
- *  while the user is unknown.
- */
-const userStatus = computed(() =>
-    formatFlag(currentUser.value?.active, t('generic.enabled'), t('generic.disabled'))
-);
-
-/**
- * Selects and (re)fetches the user whenever the route id changes.
- */
-watchUser(() => id);
-</script>

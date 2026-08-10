@@ -1,28 +1,24 @@
 /**
  * Router wiring.
  *
- * `tests/unit/middlewares/authentications.spec.ts` proves the guards decide correctly. This
- * proves they are actually *attached* — a guard that is never wired in is indistinguishable from
- * a correct one until a route quietly stops being protected.
+ * `tests/unit/middlewares/authentications.spec.ts` proves `canAccess` decides correctly. This
+ * proves the enforcement is actually *attached*, and that every route declares the requirement it
+ * should — a route that quietly loses its `meta.access` is indistinguishable from a public one.
  *
- * The guards are therefore mocked here: what is under test is the router's own behaviour (the
- * locale redirect, the 404 catch-alls, the global auth restore, the error → redirect mapping),
- * plus the fact that each protected route reaches the guard it declares.
+ * Enforcement is therefore mocked here: what is under test is the router's own behaviour (the
+ * locale redirect, the 404 catch-alls, the global auth restore, the error → redirect mapping) and
+ * the declarations on the route records.
  */
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 const tryRestoreAuth = vi.fn(() => Promise.resolve());
-// Each guard returns nothing, i.e. "let the navigation through".
-const isAuth = vi.fn();
-const isAdmin = vi.fn();
-const isGuest = vi.fn();
+// Returns nothing, i.e. "let the navigation through".
+const enforceRouteAccess = vi.fn();
 
 vi.mock('@/middlewares/authentications.ts', () => ({
     tryRestoreAuth: () => tryRestoreAuth(),
-    isAuth: () => isAuth(),
-    isAdmin: () => isAdmin(),
-    isGuest: () => isGuest()
+    enforceRouteAccess: (to: unknown) => enforceRouteAccess(to)
 }));
 
 vi.mock('@/stores/observability', () => ({
@@ -115,41 +111,94 @@ describe('global auth restore', () => {
         }));
 });
 
-describe('guard wiring', () => {
-    it.each([
-        ['/en/cart', 'isAuth', isAuth],
-        ['/en/orders', 'isAuth', isAuth],
-        ['/en/users', 'isAdmin', isAdmin],
-        ['/en/admin', 'isAdmin', isAdmin],
-        ['/en/login', 'isGuest', isGuest]
-    ])('%s is protected by %s', (path, _name, guard) =>
-        loadRouter().then((router) =>
-            router.push(path).then(() => {
-                expect(guard).toHaveBeenCalled();
-            })
-        )
-    );
-
-    it('leaves the public product list unguarded', () =>
+describe('access enforcement', () => {
+    it('runs on every navigation, public routes included', () =>
         loadRouter().then((router) =>
             router.push('/en/products').then(() => {
-                expect(isAuth).not.toHaveBeenCalled();
-                expect(isAdmin).not.toHaveBeenCalled();
-                expect(isGuest).not.toHaveBeenCalled();
+                // Enforcement is global, so it is reached even where it has nothing to enforce.
+                // That is the point: a route cannot opt out of being checked by omission.
+                expect(enforceRouteAccess).toHaveBeenCalled();
             })
         ));
+
+    it('runs only after the auth restore has settled', () =>
+        loadRouter().then((router) => {
+            const order: string[] = [];
+            tryRestoreAuth.mockImplementationOnce(() =>
+                Promise.resolve().then(() => {
+                    order.push('restore');
+                })
+            );
+            enforceRouteAccess.mockImplementationOnce(() => {
+                order.push('enforce');
+            });
+
+            // Reversed, an authenticated visitor who reloads is bounced to login on every hit.
+            return router.push('/en/cart').then(() => {
+                expect(order).toEqual(['restore', 'enforce']);
+            });
+        }));
+
+    it.each([
+        ['/en/cart', 'auth'],
+        ['/en/orders', 'auth'],
+        ['/en/orders/abc', 'auth'],
+        ['/en/profile', 'auth'],
+        ['/en/orders/abc/edit', 'admin'],
+        ['/en/users', 'admin'],
+        ['/en/users/create', 'admin'],
+        ['/en/users/abc', 'admin'],
+        ['/en/users/abc/edit', 'admin'],
+        ['/en/admin', 'admin'],
+        ['/en/products/create', 'admin'],
+        ['/en/products/abc/edit', 'admin'],
+        ['/en/login', 'guest'],
+        ['/en/signup', 'guest'],
+        ['/en/password-reset', 'guest']
+    ])('%s declares access: %s', (path, access) =>
+        loadRouter().then((router) => {
+            expect(router.resolve(path).meta.access).toBe(access);
+        })
+    );
+
+    it.each([
+        ['/en/products'],
+        ['/en/products/abc'],
+        ['/en/'],
+        ['/en/playground'],
+        // The token in the URL is the credential; the visitor following it is not logged in.
+        ['/en/account-delete/confirm']
+    ])('%s is public', (path) =>
+        loadRouter().then((router) => {
+            expect(router.resolve(path).meta.access).toBeUndefined();
+        })
+    );
 });
 
-/** Pushes a route whose guard throws the given error, then lets the redirect settle. */
+/**
+ * Pushes a route whose guard throws the given error, then lets `onError`'s redirect settle.
+ *
+ * Waits for the router to actually leave the starting route rather than for a fixed number of
+ * ticks: `onError` handles the failure and issues a *second* navigation, which has its own guard
+ * chain to run, so how many microtasks that takes is an implementation detail of the guards.
+ */
 const failNavigationWith = (error: Error) =>
     loadRouter().then((router) => {
-        isAuth.mockImplementationOnce(() => {
+        const before = router.currentRoute.value.fullPath;
+        enforceRouteAccess.mockImplementationOnce(() => {
             throw error;
         });
         return router
             .push('/en/cart')
             .catch(() => {})
-            .then(() => new Promise((resolve) => setTimeout(resolve, 0)))
+            .then(() =>
+                // A thrown Error rather than `expect`, so this reads as a wait condition in a
+                // helper rather than as an assertion outside a test block.
+                vi.waitFor(() => {
+                    if (router.currentRoute.value.fullPath === before)
+                        throw new Error(`still on ${before}`);
+                })
+            )
             .then(() => router);
     });
 
@@ -164,6 +213,15 @@ describe('onError redirects', () => {
         failNavigationWith(Object.assign(new Error('nope'), { status: 403 })).then((router) => {
             expect(router.currentRoute.value.name).toBe('Error');
             expect(router.currentRoute.value.params.status).toBe('403');
+            // The reason 403 keeps a branch of its own: "you may not see this" is a different
+            // thing to tell someone than whatever `error.message` happened to hold ('nope').
+            expect(router.currentRoute.value.params.message).toBe('navigation.error-forbidden');
+        }));
+
+    it('shows the error’s own message for other client statuses', () =>
+        failNavigationWith(Object.assign(new Error('teapot'), { status: 418 })).then((router) => {
+            expect(router.currentRoute.value.params.status).toBe('418');
+            expect(router.currentRoute.value.params.message).toBe('teapot');
         }));
 
     it('treats an error with no status as a 500', () =>

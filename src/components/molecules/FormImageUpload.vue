@@ -1,45 +1,3 @@
-<template>
-    <div class="flex flex-col gap-2">
-        <v-file-input
-            v-model="pickedFile"
-            :accept="ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE"
-            :label="label || t('image-upload-form.label')"
-            :hint="hint || t('image-upload-form.hint', { size: MAX_UPLOAD_SIZE_LABEL })"
-            :persistent-hint="true"
-            :error-messages="errorMessages"
-            :disabled="disabled"
-            prepend-icon=""
-            prepend-inner-icon="$upload"
-            clearable
-        />
-
-        <img
-            v-if="previewSource"
-            :src="previewSource"
-            :alt="t('image-upload-form.preview-alt')"
-            class="max-h-40 w-auto self-start rounded object-contain"
-        />
-
-        <!--
-            `data-testid` because Vuetify's own `v-file-input` renders an internal
-            `.v-progress-linear` inside its field loader: a class selector matches that one too,
-            so a spec written against the class passes whether this bar is rendered or not.
-        -->
-        <v-progress-linear
-            v-if="isUploading"
-            data-testid="upload-progress"
-            :model-value="progressPercent"
-            color="primary"
-            height="18"
-            rounded
-        >
-            <span class="text-xs">
-                {{ t('image-upload-form.upload-progress', { percent: progressPercent }) }}
-            </span>
-        </v-progress-linear>
-    </div>
-</template>
-
 <script lang="ts">
 export default {
     name: 'FormImageUpload'
@@ -148,3 +106,45 @@ onBeforeUnmount(releaseObjectUrl);
  */
 const previewSource = computed(() => objectUrl.value ?? currentImageUrl ?? undefined);
 </script>
+
+<template>
+    <div class="flex flex-col gap-2">
+        <v-file-input
+            v-model="pickedFile"
+            :accept="ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE"
+            :label="label || t('image-upload-form.label')"
+            :hint="hint || t('image-upload-form.hint', { size: MAX_UPLOAD_SIZE_LABEL })"
+            :persistent-hint="true"
+            :error-messages="errorMessages"
+            :disabled="disabled"
+            prepend-icon=""
+            prepend-inner-icon="$upload"
+            clearable
+        />
+
+        <img
+            v-if="previewSource"
+            :src="previewSource"
+            :alt="t('image-upload-form.preview-alt')"
+            class="max-h-40 w-auto self-start rounded object-contain"
+        />
+
+        <!--
+            `data-testid` because Vuetify's own `v-file-input` renders an internal
+            `.v-progress-linear` inside its field loader: a class selector matches that one too,
+            so a spec written against the class passes whether this bar is rendered or not.
+        -->
+        <v-progress-linear
+            v-if="isUploading"
+            data-testid="upload-progress"
+            :model-value="progressPercent"
+            color="primary"
+            height="18"
+            rounded
+        >
+            <span class="text-xs">
+                {{ t('image-upload-form.upload-progress', { percent: progressPercent }) }}
+            </span>
+        </v-progress-linear>
+    </div>
+</template>

@@ -185,6 +185,36 @@ describe('useUsersStore', () => {
                 }));
     });
 
+    describe('hardDeleteUser', () => {
+        /*
+         * A separate method rather than a flag on `deleteUser`, because the two are not the same
+         * operation: the soft form sets `deletedAt` and an admin can toggle it back, this one is
+         * irreversible. Distinct names mean the destructive path cannot be reached by passing the
+         * wrong boolean — so what is worth pinning is the URL, and that it differs from the soft one.
+         */
+        it('calls the /hard endpoint with the user id', () =>
+            useUsersStore()
+                .hardDeleteUser('u1')
+                .then(() => {
+                    expect(lastRequest()).toMatchObject({
+                        url: '/users/u1/hard',
+                        method: 'DELETE'
+                    });
+                }));
+
+        it('is a different URL from the soft delete', () =>
+            useUsersStore()
+                .deleteUser('u1')
+                .then(() => {
+                    const soft = lastRequest()?.url;
+                    return useUsersStore()
+                        .hardDeleteUser('u1')
+                        .then(() => {
+                            expect(lastRequest()?.url).not.toBe(soft);
+                        });
+                }));
+    });
+
     /**
      * Read paths — same rationale as the products store: the toolkit's pagination and caching
      * are not re-tested, but the request each wrapper builds and the envelope depth it unwraps

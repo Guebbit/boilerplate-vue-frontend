@@ -1,37 +1,3 @@
-<template>
-    <LayoutDefault
-        id="password-reset-request-page"
-        :title="t('password-reset-request-page.page-title')"
-    >
-        <v-card class="mx-auto mt-16 w-full max-w-md p-8">
-            <form ref="formElement" novalidate @submit.prevent="submitForm">
-                <v-text-field
-                    v-model="form.email"
-                    type="email"
-                    autocomplete="email"
-                    :label="t('password-reset-request-page.label-email')"
-                    :error-messages="showErrors ? formErrors.email : []"
-                />
-                <v-btn
-                    type="submit"
-                    color="primary"
-                    size="large"
-                    block
-                    :loading="isSubmitting"
-                    class="mt-4"
-                >
-                    {{ t('password-reset-request-page.button-submit') }}
-                </v-btn>
-            </form>
-            <div class="mt-4 flex justify-center">
-                <v-btn variant="text" :to="routerLinkI18n({ name: 'Login' })">
-                    {{ t('password-reset-request-page.button-go-to-login') }}
-                </v-btn>
-            </div>
-        </v-card>
-    </LayoutDefault>
-</template>
-
 <script lang="ts">
 export default {
     name: 'PasswordResetRequestPage'
@@ -83,3 +49,37 @@ const submitForm = () =>
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>
+
+<template>
+    <LayoutDefault
+        id="password-reset-request-page"
+        :title="t('password-reset-request-page.page-title')"
+    >
+        <v-card class="mx-auto mt-16 w-full max-w-md p-8">
+            <form ref="formElement" novalidate @submit.prevent="submitForm">
+                <v-text-field
+                    v-model="form.email"
+                    type="email"
+                    autocomplete="email"
+                    :label="t('password-reset-request-page.label-email')"
+                    :error-messages="showErrors ? formErrors.email : []"
+                />
+                <v-btn
+                    type="submit"
+                    color="primary"
+                    size="large"
+                    block
+                    :loading="isSubmitting"
+                    class="mt-4"
+                >
+                    {{ t('password-reset-request-page.button-submit') }}
+                </v-btn>
+            </form>
+            <div class="mt-4 flex justify-center">
+                <v-btn variant="text" :to="routerLinkI18n({ name: 'Login' })">
+                    {{ t('password-reset-request-page.button-go-to-login') }}
+                </v-btn>
+            </div>
+        </v-card>
+    </LayoutDefault>
+</template>

@@ -1,57 +1,3 @@
-<template>
-    <LayoutDefault id="signup-page" :title="t('signup-page.page-title')">
-        <v-card class="mx-auto mt-16 w-full max-w-md p-8">
-            <form ref="formElement" novalidate @submit.prevent="submitForm">
-                <v-text-field
-                    v-model="form.email"
-                    type="email"
-                    autocomplete="email"
-                    :label="t('signup-page.label-email')"
-                    :error-messages="showErrors ? formErrors.email : []"
-                    class="mb-2"
-                />
-                <v-text-field
-                    v-model="form.password"
-                    type="password"
-                    autocomplete="new-password"
-                    :label="t('signup-page.label-password')"
-                    :error-messages="showErrors ? formErrors.password : []"
-                    class="mb-2"
-                />
-                <v-text-field
-                    v-model="form.passwordConfirm"
-                    type="password"
-                    autocomplete="new-password"
-                    :label="t('users-form.label-passwordConfirm')"
-                    :error-messages="showErrors ? formErrors.passwordConfirm : []"
-                />
-                <FormImageUpload
-                    v-model="form.imageUpload"
-                    :error-messages="showErrors ? formErrors.imageUpload : []"
-                    :progress="uploadProgress"
-                    :disabled="isSubmitting"
-                    class="mt-2"
-                />
-                <v-checkbox
-                    v-model="form.conditions"
-                    :label="t('signup-page.text-conditions')"
-                    :error-messages="showErrors ? formErrors.conditions : []"
-                />
-                <v-btn
-                    type="submit"
-                    color="primary"
-                    size="large"
-                    block
-                    :loading="isSubmitting"
-                    class="mt-2"
-                >
-                    {{ t('signup-page.button-submit') }}
-                </v-btn>
-            </form>
-        </v-card>
-    </LayoutDefault>
-</template>
-
 <script lang="ts">
 export default {
     name: 'SignupPage'
@@ -177,3 +123,57 @@ const submitForm = () =>
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 </script>
+
+<template>
+    <LayoutDefault id="signup-page" :title="t('signup-page.page-title')">
+        <v-card class="mx-auto mt-16 w-full max-w-md p-8">
+            <form ref="formElement" novalidate @submit.prevent="submitForm">
+                <v-text-field
+                    v-model="form.email"
+                    type="email"
+                    autocomplete="email"
+                    :label="t('signup-page.label-email')"
+                    :error-messages="showErrors ? formErrors.email : []"
+                    class="mb-2"
+                />
+                <v-text-field
+                    v-model="form.password"
+                    type="password"
+                    autocomplete="new-password"
+                    :label="t('signup-page.label-password')"
+                    :error-messages="showErrors ? formErrors.password : []"
+                    class="mb-2"
+                />
+                <v-text-field
+                    v-model="form.passwordConfirm"
+                    type="password"
+                    autocomplete="new-password"
+                    :label="t('users-form.label-passwordConfirm')"
+                    :error-messages="showErrors ? formErrors.passwordConfirm : []"
+                />
+                <FormImageUpload
+                    v-model="form.imageUpload"
+                    :error-messages="showErrors ? formErrors.imageUpload : []"
+                    :progress="uploadProgress"
+                    :disabled="isSubmitting"
+                    class="mt-2"
+                />
+                <v-checkbox
+                    v-model="form.conditions"
+                    :label="t('signup-page.text-conditions')"
+                    :error-messages="showErrors ? formErrors.conditions : []"
+                />
+                <v-btn
+                    type="submit"
+                    color="primary"
+                    size="large"
+                    block
+                    :loading="isSubmitting"
+                    class="mt-2"
+                >
+                    {{ t('signup-page.button-submit') }}
+                </v-btn>
+            </form>
+        </v-card>
+    </LayoutDefault>
+</template>

@@ -1,3 +1,86 @@
+<script setup lang="ts">
+import { useSlots, watch } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
+import { useLocale } from 'vuetify';
+import AppNavigation from '@/components/organisms/AppNavigation.vue';
+import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
+import { getCookie } from '@guebbit/js-toolkit';
+import { useProfileStore } from '@/stores/profile.ts';
+
+defineOptions({ inheritAttrs: false });
+
+defineProps<{
+    /**
+     * Default page title rendered in the hero (overridable via #header slot)
+     */
+    title?: string;
+    /**
+     * If the content should be minimum full page and centered
+     */
+    centered?: boolean;
+}>();
+
+/**
+ * Slots
+ * - default
+ * - header (replaces the default hero title)
+ * - navigation
+ */
+const slots = useSlots();
+
+const { t, locale } = useI18n();
+
+/**
+ * Keep Vuetify's internal strings (data-table, pagination, aria-labels…)
+ * in sync with the app locale.
+ */
+const { current: vuetifyLocale } = useLocale();
+watch(
+    locale,
+    (newLocale) => {
+        vuetifyLocale.value = newLocale;
+    },
+    { immediate: true }
+);
+
+/**
+ * core loading
+ */
+const { loadings, isLoading } = storeToRefs(useCoreStore());
+
+/**
+ * Toasts
+ */
+const { messages } = storeToRefs(useNotificationsStore());
+const { hideMessage } = useNotificationsStore();
+
+/**
+ * Coerces free-form message types into what `v-alert` accepts.
+ *
+ * @param type - Type carried by the notification, possibly unset or unknown.
+ * @returns The matching alert type, or `'info'` as a neutral fallback.
+ */
+const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'error' =>
+    type === 'success' || type === 'warning' || type === 'error' ? type : 'info';
+
+/**
+ * Profile
+ */
+const { profile } = storeToRefs(useProfileStore());
+const { fetchProfile } = useProfileStore();
+
+/**
+ * Fetch current user profile (if logged in)
+ */
+if (getCookie('isAuth') && !profile.value)
+    fetchProfile().catch((error) => {
+        if (import.meta.env.DEV)
+            // eslint-disable-next-line no-console
+            console.warn('Unable to preload profile from layout', error);
+    });
+</script>
+
 <template>
     <v-app>
         <AppNavigation>
@@ -93,86 +176,3 @@
         </v-fade-transition>
     </v-app>
 </template>
-
-<script setup lang="ts">
-import { useSlots, watch } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useI18n } from 'vue-i18n';
-import { useLocale } from 'vuetify';
-import AppNavigation from '@/components/organisms/AppNavigation.vue';
-import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
-import { getCookie } from '@guebbit/js-toolkit';
-import { useProfileStore } from '@/stores/profile.ts';
-
-defineOptions({ inheritAttrs: false });
-
-defineProps<{
-    /**
-     * Default page title rendered in the hero (overridable via #header slot)
-     */
-    title?: string;
-    /**
-     * If the content should be minimum full page and centered
-     */
-    centered?: boolean;
-}>();
-
-/**
- * Slots
- * - default
- * - header (replaces the default hero title)
- * - navigation
- */
-const slots = useSlots();
-
-const { t, locale } = useI18n();
-
-/**
- * Keep Vuetify's internal strings (data-table, pagination, aria-labels…)
- * in sync with the app locale.
- */
-const { current: vuetifyLocale } = useLocale();
-watch(
-    locale,
-    (newLocale) => {
-        vuetifyLocale.value = newLocale;
-    },
-    { immediate: true }
-);
-
-/**
- * core loading
- */
-const { loadings, isLoading } = storeToRefs(useCoreStore());
-
-/**
- * Toasts
- */
-const { messages } = storeToRefs(useNotificationsStore());
-const { hideMessage } = useNotificationsStore();
-
-/**
- * Coerces free-form message types into what `v-alert` accepts.
- *
- * @param type - Type carried by the notification, possibly unset or unknown.
- * @returns The matching alert type, or `'info'` as a neutral fallback.
- */
-const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'error' =>
-    type === 'success' || type === 'warning' || type === 'error' ? type : 'info';
-
-/**
- * Profile
- */
-const { profile } = storeToRefs(useProfileStore());
-const { fetchProfile } = useProfileStore();
-
-/**
- * Fetch current user profile (if logged in)
- */
-if (getCookie('isAuth') && !profile.value)
-    fetchProfile().catch((error) => {
-        if (import.meta.env.DEV)
-            // eslint-disable-next-line no-console
-            console.warn('Unable to preload profile from layout', error);
-    });
-</script>

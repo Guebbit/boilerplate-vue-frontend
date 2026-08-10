@@ -1,121 +1,3 @@
-<template>
-    <LayoutDefault id="product-edit-page" :title="t('product-edit-page.page-title')">
-        <ItemDetailLayout accent="primary">
-            <template #hero>
-                <ItemDetailHero :title="heroTitle" :description="heroDescription" :eyebrow="id">
-                    <template #icon><Pencil :size="32" /></template>
-                </ItemDetailHero>
-            </template>
-
-            <template #stats>
-                <CardMaterialStat
-                    :title="t('product-target-page.label-id')"
-                    :value="id ?? EMPTY_VALUE"
-                />
-                <CardMaterialStat
-                    :title="t('product-target-page.label-price')"
-                    :value="formatCurrency(currentProduct?.price)"
-                    accent="secondary"
-                />
-                <CardMaterialStat
-                    :title="t('product-target-page.label-active')"
-                    :value="
-                        formatFlag(
-                            currentProduct?.active,
-                            t('generic.enabled'),
-                            t('generic.disabled')
-                        )
-                    "
-                    accent="tertiary"
-                />
-            </template>
-
-            <CardDetail>
-                <div class="mb-5">
-                    <h3 class="text-lg font-semibold">{{ t('generic.details') }}</h3>
-                    <p class="mt-1 opacity-75">{{ t('product-edit-page.page-title') }}</p>
-                </div>
-
-                <form novalidate class="flex flex-col gap-2" @submit.prevent="submitForm">
-                    <v-text-field
-                        v-model="form.title"
-                        type="text"
-                        :label="t('product-edit-page.label-title')"
-                        :error-messages="showFormErrors ? formErrors.title : []"
-                    />
-                    <v-number-input
-                        v-model="form.price"
-                        :label="t('product-edit-page.label-price')"
-                        :min="0"
-                        :step="0.01"
-                        :precision="2"
-                        control-variant="stacked"
-                        :error-messages="showFormErrors ? formErrors.price : []"
-                    />
-                    <v-textarea
-                        v-model="form.description"
-                        :label="t('product-edit-page.label-description')"
-                        :rows="5"
-                    />
-                    <v-switch v-model="form.active" :label="t('product-edit-page.label-active')" />
-                    <FormImageUpload
-                        v-model="form.imageUpload"
-                        :current-image-url="currentProduct?.imageUrl"
-                        :error-messages="showFormErrors ? formErrors.imageUpload : []"
-                        :progress="uploadProgress"
-                        :disabled="isSubmitting"
-                    />
-
-                    <div class="flex flex-wrap gap-2">
-                        <v-btn type="submit" color="primary" :disabled="isSubmitting || loading">
-                            {{ t('product-edit-page.button-submit') }}
-                        </v-btn>
-                        <v-btn variant="tonal" @click="resetForm">
-                            {{ t('product-edit-page.reset-form') }}
-                        </v-btn>
-                    </div>
-                </form>
-            </CardDetail>
-
-            <template #aside>
-                <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" variant="primary">
-                        <template #icon><Package :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('product-target-page.label-id')"
-                        :value="id ?? EMPTY_VALUE"
-                        icon="#"
-                    />
-                    <ItemDetailField
-                        :label="t('product-target-page.label-created-at')"
-                        :value="formatDateTime(currentProduct?.createdAt)"
-                        icon="📅"
-                    />
-                    <ItemDetailField
-                        :label="t('product-target-page.label-updated-at')"
-                        :value="formatDateTime(currentProduct?.updatedAt)"
-                        icon="🕘"
-                    />
-                </CardDetail>
-            </template>
-
-            <template #actions>
-                <v-btn
-                    v-if="id"
-                    color="secondary"
-                    :to="routerLinkI18n({ name: 'ProductTarget', params: { id } })"
-                >
-                    {{ t('product-edit-page.button-go-to-details') }}
-                </v-btn>
-                <v-btn variant="tonal" :to="routerLinkI18n({ name: 'ProductsList' })">
-                    {{ t('product-edit-page.button-go-to-list') }}
-                </v-btn>
-            </template>
-        </ItemDetailLayout>
-    </LayoutDefault>
-</template>
-
 <script lang="ts">
 export default {
     name: 'ProductEditPage'
@@ -288,3 +170,121 @@ const submitForm = () =>
  */
 watchProduct(() => id);
 </script>
+
+<template>
+    <LayoutDefault id="product-edit-page" :title="t('product-edit-page.page-title')">
+        <ItemDetailLayout accent="primary">
+            <template #hero>
+                <ItemDetailHero :title="heroTitle" :description="heroDescription" :eyebrow="id">
+                    <template #icon><Pencil :size="32" /></template>
+                </ItemDetailHero>
+            </template>
+
+            <template #stats>
+                <CardMaterialStat
+                    :title="t('product-target-page.label-id')"
+                    :value="id ?? EMPTY_VALUE"
+                />
+                <CardMaterialStat
+                    :title="t('product-target-page.label-price')"
+                    :value="formatCurrency(currentProduct?.price)"
+                    accent="secondary"
+                />
+                <CardMaterialStat
+                    :title="t('product-target-page.label-active')"
+                    :value="
+                        formatFlag(
+                            currentProduct?.active,
+                            t('generic.enabled'),
+                            t('generic.disabled')
+                        )
+                    "
+                    accent="tertiary"
+                />
+            </template>
+
+            <CardDetail>
+                <div class="mb-5">
+                    <h3 class="text-lg font-semibold">{{ t('generic.details') }}</h3>
+                    <p class="mt-1 opacity-75">{{ t('product-edit-page.page-title') }}</p>
+                </div>
+
+                <form novalidate class="flex flex-col gap-2" @submit.prevent="submitForm">
+                    <v-text-field
+                        v-model="form.title"
+                        type="text"
+                        :label="t('product-edit-page.label-title')"
+                        :error-messages="showFormErrors ? formErrors.title : []"
+                    />
+                    <v-number-input
+                        v-model="form.price"
+                        :label="t('product-edit-page.label-price')"
+                        :min="0"
+                        :step="0.01"
+                        :precision="2"
+                        control-variant="stacked"
+                        :error-messages="showFormErrors ? formErrors.price : []"
+                    />
+                    <v-textarea
+                        v-model="form.description"
+                        :label="t('product-edit-page.label-description')"
+                        :rows="5"
+                    />
+                    <v-switch v-model="form.active" :label="t('product-edit-page.label-active')" />
+                    <FormImageUpload
+                        v-model="form.imageUpload"
+                        :current-image-url="currentProduct?.imageUrl"
+                        :error-messages="showFormErrors ? formErrors.imageUpload : []"
+                        :progress="uploadProgress"
+                        :disabled="isSubmitting"
+                    />
+
+                    <div class="flex flex-wrap gap-2">
+                        <v-btn type="submit" color="primary" :disabled="isSubmitting || loading">
+                            {{ t('product-edit-page.button-submit') }}
+                        </v-btn>
+                        <v-btn variant="tonal" @click="resetForm">
+                            {{ t('product-edit-page.reset-form') }}
+                        </v-btn>
+                    </div>
+                </form>
+            </CardDetail>
+
+            <template #aside>
+                <CardDetail as="aside" class="flex flex-col gap-4">
+                    <CardInfo :title="heroTitle" :description="heroDescription" variant="primary">
+                        <template #icon><Package :size="28" /></template>
+                    </CardInfo>
+                    <ItemDetailField
+                        :label="t('product-target-page.label-id')"
+                        :value="id ?? EMPTY_VALUE"
+                        icon="#"
+                    />
+                    <ItemDetailField
+                        :label="t('product-target-page.label-created-at')"
+                        :value="formatDateTime(currentProduct?.createdAt)"
+                        icon="📅"
+                    />
+                    <ItemDetailField
+                        :label="t('product-target-page.label-updated-at')"
+                        :value="formatDateTime(currentProduct?.updatedAt)"
+                        icon="🕘"
+                    />
+                </CardDetail>
+            </template>
+
+            <template #actions>
+                <v-btn
+                    v-if="id"
+                    color="secondary"
+                    :to="routerLinkI18n({ name: 'ProductTarget', params: { id } })"
+                >
+                    {{ t('product-edit-page.button-go-to-details') }}
+                </v-btn>
+                <v-btn variant="tonal" :to="routerLinkI18n({ name: 'ProductsList' })">
+                    {{ t('product-edit-page.button-go-to-list') }}
+                </v-btn>
+            </template>
+        </ItemDetailLayout>
+    </LayoutDefault>
+</template>

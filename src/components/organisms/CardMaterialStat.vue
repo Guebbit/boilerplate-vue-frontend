@@ -1,13 +1,3 @@
-<template>
-    <v-card class="min-w-44 border-t-4" :class="accentBorderClass">
-        <v-card-text>
-            <p class="text-xs font-medium uppercase tracking-widest opacity-80">{{ title }}</p>
-            <p class="mt-2 text-3xl font-semibold leading-tight">{{ value }}</p>
-            <p v-if="subtitle" class="mt-2 text-sm opacity-80">{{ subtitle }}</p>
-        </v-card-text>
-    </v-card>
-</template>
-
 <script setup lang="ts">
 import { computed } from 'vue';
 
@@ -33,3 +23,13 @@ const accentBorderClass = computed(
         })[props.accent ?? 'primary']
 );
 </script>
+
+<template>
+    <v-card class="min-w-44 border-t-4" :class="accentBorderClass">
+        <v-card-text>
+            <p class="text-xs font-medium uppercase tracking-widest opacity-80">{{ title }}</p>
+            <p class="mt-2 text-3xl font-semibold leading-tight">{{ value }}</p>
+            <p v-if="subtitle" class="mt-2 text-sm opacity-80">{{ subtitle }}</p>
+        </v-card-text>
+    </v-card>
+</template>

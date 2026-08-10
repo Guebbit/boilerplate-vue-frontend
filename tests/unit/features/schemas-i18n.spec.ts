@@ -5,7 +5,7 @@ import { useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { i18n, loadLocale } from '@/utils/i18n.ts';
 import { usersSchema, usersPasswordSchema } from '@/features/users/schemas.ts';
 import { productsSchema } from '@/features/products/schemas.ts';
-import { orderSchema } from '@/features/orders/schemas.ts';
+import { ordersSchema } from '@/features/orders/schemas.ts';
 import enMessages from '@/locales/en.json';
 import itMessages from '@/locales/it.json';
 
@@ -69,7 +69,7 @@ describe('feature schemas follow the active locale', () => {
 
     it('does the same for orders', () =>
         setLocale('it').then(() => {
-            expect(messagesOf(orderSchema, { email: 'nope', status: 'not-a-status' })).toEqual(
+            expect(messagesOf(ordersSchema, { email: 'nope', status: 'not-a-status' })).toEqual(
                 expect.arrayContaining([
                     itMessages['orders-form']['email-invalid'],
                     itMessages['orders-form']['status-invalid']

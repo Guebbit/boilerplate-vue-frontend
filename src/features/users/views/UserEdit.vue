@@ -1,107 +1,3 @@
-<template>
-    <LayoutDefault id="user-edit-page" :title="t('user-edit-page.page-title')">
-        <ItemDetailLayout accent="secondary">
-            <template #hero>
-                <ItemDetailHero :title="heroTitle" :description="heroDescription" :eyebrow="id">
-                    <template #icon><Pencil :size="32" /></template>
-                </ItemDetailHero>
-            </template>
-
-            <template #stats>
-                <CardMaterialStat
-                    :title="t('user-target-page.label-id')"
-                    :value="id ?? EMPTY_VALUE"
-                />
-                <CardMaterialStat
-                    :title="t('user-target-page.label-admin')"
-                    :value="userRole"
-                    accent="secondary"
-                />
-                <CardMaterialStat
-                    :title="t('user-target-page.label-active')"
-                    :value="userStatus"
-                    accent="tertiary"
-                />
-            </template>
-
-            <CardDetail>
-                <div class="mb-5">
-                    <h3 class="text-lg font-semibold">{{ t('generic.details') }}</h3>
-                    <p class="mt-1 opacity-75">{{ t('user-edit-page.page-title') }}</p>
-                </div>
-
-                <form novalidate class="flex flex-col gap-2" @submit.prevent="submitForm">
-                    <v-text-field
-                        v-model="form.email"
-                        type="email"
-                        :label="t('user-edit-page.label-email')"
-                        :error-messages="showFormErrors ? formErrors.email : []"
-                    />
-                    <v-text-field
-                        v-model="form.password"
-                        type="password"
-                        autocomplete="new-password"
-                        :label="t('user-edit-page.label-password')"
-                        :error-messages="showFormErrors ? formErrors.password : []"
-                    />
-                    <FormImageUpload
-                        v-model="form.imageUpload"
-                        :current-image-url="currentUser?.imageUrl"
-                        :error-messages="showFormErrors ? formErrors.imageUpload : []"
-                        :progress="uploadProgress"
-                        :disabled="isSubmitting"
-                    />
-
-                    <div class="flex flex-wrap gap-2">
-                        <v-btn type="submit" color="primary" :disabled="isSubmitting || loading">
-                            {{ t('user-edit-page.button-submit') }}
-                        </v-btn>
-                        <v-btn variant="tonal" @click="resetForm">
-                            {{ t('user-edit-page.reset-form') }}
-                        </v-btn>
-                    </div>
-                </form>
-            </CardDetail>
-
-            <template #aside>
-                <CardDetail as="aside" class="flex flex-col gap-4">
-                    <CardInfo :title="heroTitle" :description="heroDescription" variant="secondary">
-                        <template #icon><User :size="28" /></template>
-                    </CardInfo>
-                    <ItemDetailField
-                        :label="t('user-target-page.label-id')"
-                        :value="id ?? EMPTY_VALUE"
-                        icon="#"
-                    />
-                    <ItemDetailField
-                        :label="t('user-target-page.label-created-at')"
-                        :value="formatDateTime(currentUser?.createdAt)"
-                        icon="📅"
-                    />
-                    <ItemDetailField
-                        :label="t('user-target-page.label-updated-at')"
-                        :value="formatDateTime(currentUser?.updatedAt)"
-                        icon="🕘"
-                    />
-                </CardDetail>
-            </template>
-
-            <template #actions>
-                <v-btn
-                    v-if="id"
-                    color="secondary"
-                    :to="routerLinkI18n({ name: 'UserTarget', params: { id } })"
-                >
-                    {{ t('user-edit-page.button-go-to-details') }}
-                </v-btn>
-                <v-btn variant="tonal" :to="routerLinkI18n({ name: 'UsersList' })">
-                    {{ t('user-edit-page.button-go-to-list') }}
-                </v-btn>
-            </template>
-        </ItemDetailLayout>
-    </LayoutDefault>
-</template>
-
 <script lang="ts">
 export default {
     name: 'UserEditPage'
@@ -271,3 +167,107 @@ const submitForm = () =>
  */
 watchUser(() => id);
 </script>
+
+<template>
+    <LayoutDefault id="user-edit-page" :title="t('user-edit-page.page-title')">
+        <ItemDetailLayout accent="secondary">
+            <template #hero>
+                <ItemDetailHero :title="heroTitle" :description="heroDescription" :eyebrow="id">
+                    <template #icon><Pencil :size="32" /></template>
+                </ItemDetailHero>
+            </template>
+
+            <template #stats>
+                <CardMaterialStat
+                    :title="t('user-target-page.label-id')"
+                    :value="id ?? EMPTY_VALUE"
+                />
+                <CardMaterialStat
+                    :title="t('user-target-page.label-admin')"
+                    :value="userRole"
+                    accent="secondary"
+                />
+                <CardMaterialStat
+                    :title="t('user-target-page.label-active')"
+                    :value="userStatus"
+                    accent="tertiary"
+                />
+            </template>
+
+            <CardDetail>
+                <div class="mb-5">
+                    <h3 class="text-lg font-semibold">{{ t('generic.details') }}</h3>
+                    <p class="mt-1 opacity-75">{{ t('user-edit-page.page-title') }}</p>
+                </div>
+
+                <form novalidate class="flex flex-col gap-2" @submit.prevent="submitForm">
+                    <v-text-field
+                        v-model="form.email"
+                        type="email"
+                        :label="t('user-edit-page.label-email')"
+                        :error-messages="showFormErrors ? formErrors.email : []"
+                    />
+                    <v-text-field
+                        v-model="form.password"
+                        type="password"
+                        autocomplete="new-password"
+                        :label="t('user-edit-page.label-password')"
+                        :error-messages="showFormErrors ? formErrors.password : []"
+                    />
+                    <FormImageUpload
+                        v-model="form.imageUpload"
+                        :current-image-url="currentUser?.imageUrl"
+                        :error-messages="showFormErrors ? formErrors.imageUpload : []"
+                        :progress="uploadProgress"
+                        :disabled="isSubmitting"
+                    />
+
+                    <div class="flex flex-wrap gap-2">
+                        <v-btn type="submit" color="primary" :disabled="isSubmitting || loading">
+                            {{ t('user-edit-page.button-submit') }}
+                        </v-btn>
+                        <v-btn variant="tonal" @click="resetForm">
+                            {{ t('user-edit-page.reset-form') }}
+                        </v-btn>
+                    </div>
+                </form>
+            </CardDetail>
+
+            <template #aside>
+                <CardDetail as="aside" class="flex flex-col gap-4">
+                    <CardInfo :title="heroTitle" :description="heroDescription" variant="secondary">
+                        <template #icon><User :size="28" /></template>
+                    </CardInfo>
+                    <ItemDetailField
+                        :label="t('user-target-page.label-id')"
+                        :value="id ?? EMPTY_VALUE"
+                        icon="#"
+                    />
+                    <ItemDetailField
+                        :label="t('user-target-page.label-created-at')"
+                        :value="formatDateTime(currentUser?.createdAt)"
+                        icon="📅"
+                    />
+                    <ItemDetailField
+                        :label="t('user-target-page.label-updated-at')"
+                        :value="formatDateTime(currentUser?.updatedAt)"
+                        icon="🕘"
+                    />
+                </CardDetail>
+            </template>
+
+            <template #actions>
+                <v-btn
+                    v-if="id"
+                    color="secondary"
+                    :to="routerLinkI18n({ name: 'UserTarget', params: { id } })"
+                >
+                    {{ t('user-edit-page.button-go-to-details') }}
+                </v-btn>
+                <v-btn variant="tonal" :to="routerLinkI18n({ name: 'UsersList' })">
+                    {{ t('user-edit-page.button-go-to-list') }}
+                </v-btn>
+            </template>
+        </ItemDetailLayout>
+    </LayoutDefault>
+</template>

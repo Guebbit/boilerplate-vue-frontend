@@ -140,6 +140,9 @@ const createProduct = (body: Record<string, unknown>) =>
         body: JSON.stringify(body)
     }).then((response) => response.json() as Promise<{ data: Product }>);
 
+const deleteProduct = (path: string) =>
+    fetch(`${API}/products/${path}`, { method: 'DELETE' }).then((response) => response.status);
+
 const listUsers = (query = '') =>
     fetch(`${API}/users${query}`).then(
         (response) => response.json() as Promise<{ data: { items: User[] } }>
@@ -303,5 +306,74 @@ describe('user active filter', () => {
         const { data } = await listUsers();
 
         expect(idsOf(data.items).toSorted()).toEqual(['disabled', 'enabled']);
+    });
+});
+
+describe('product delete mirrors the backend soft/hard split', () => {
+    /*
+     * Backend counterpart: tests/unit/services/products.test.ts — `remove()` toggles `deletedAt`
+     * unless `hardDelete`, and `removeById` 404s on a missing id.
+     *
+     * The risk this covers is specific: the mock previously spliced the row on EVERY delete, so it
+     * agreed with the API only on the hard path. A spec that soft-deleted and then asserted an admin
+     * could still see the record would have passed against the real API and failed against the mock
+     * — or worse, the reverse.
+     */
+    beforeEach(() => {
+        mockDatabase.sampleProducts = [makeProduct({ id: 'p-live' })];
+        signIn(true);
+    });
+
+    it('soft-deletes by default, leaving the row present with deletedAt set', async () => {
+        expect(await deleteProduct('p-live')).toBe(200);
+
+        const [product] = mockDatabase.sampleProducts;
+        expect(product.id).toBe('p-live');
+        expect(product.deletedAt).toBeTruthy();
+    });
+
+    it('restores on a second soft delete, rather than deleting harder', async () => {
+        await deleteProduct('p-live');
+        await deleteProduct('p-live');
+
+        expect(mockDatabase.sampleProducts[0].deletedAt).toBeUndefined();
+    });
+
+    it('hard-deletes via the /hard path, removing the row outright', async () => {
+        expect(await deleteProduct('p-live/hard')).toBe(200);
+
+        expect(mockDatabase.sampleProducts).toHaveLength(0);
+    });
+
+    it('hard-deletes via the query flag, the same operation spelled differently', async () => {
+        expect(await deleteProduct('p-live?hardDelete=true')).toBe(200);
+
+        expect(mockDatabase.sampleProducts).toHaveLength(0);
+    });
+
+    it('treats ?hardDelete=false as a soft delete, not a truthy string', async () => {
+        // `!!'false'` is `true`; the BE's `parseFormBoolean` exists for exactly this, and a mock
+        // that used the loose check would destroy a record the API would have kept.
+        await deleteProduct('p-live?hardDelete=false');
+
+        expect(mockDatabase.sampleProducts).toHaveLength(1);
+        expect(mockDatabase.sampleProducts[0].deletedAt).toBeTruthy();
+    });
+
+    it('404s on an unknown id, on both the soft and the hard path', async () => {
+        expect(await deleteProduct('p-missing')).toBe(404);
+        expect(await deleteProduct('p-missing/hard')).toBe(404);
+    });
+
+    it('keeps a soft-deleted product visible to an admin and hidden from everyone else', async () => {
+        await deleteProduct('p-live');
+
+        signIn(true);
+        const asAdmin = await listProducts();
+        expect(idsOf(asAdmin.data.items)).toEqual(['p-live']);
+
+        signIn(false);
+        const asUser = await listProducts();
+        expect(idsOf(asUser.data.items)).toEqual([]);
     });
 });

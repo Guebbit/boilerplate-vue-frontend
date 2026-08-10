@@ -9,10 +9,13 @@ export interface ITranslationDictionaries {
 }
 
 /**
- * Minimal translate signature compatible with vue-i18n's `t`,
- * for modules (e.g. Zod schema factories) that only need key lookup
+ * Minimal translate signature compatible with vue-i18n's `t`, for modules outside a component
+ * scope (Zod schemas, upload validators) that need key lookup and nothing else from i18n.
+ *
+ * `named` carries interpolation values for a message with placeholders, e.g.
+ * `t('image-upload-form.size-exceeded', { size: '5 MB' })`.
  */
-export type TranslateFunction = (key: string) => string;
+export type TranslateFunction = (key: string, named?: Record<string, unknown>) => string;
 
 /**
  * [on build]
@@ -101,6 +104,32 @@ export const i18n = createI18n({
         customSnakeCase: (value) => (typeof value === 'string' ? value.split(' ').join('_') : value)
     }
 });
+
+/**
+ * Key lookup against the active locale, usable outside any component's setup.
+ *
+ * `i18n.global.t` rather than `useI18n()`: the callers are module constants, evaluated where the
+ * composable is unavailable.
+ *
+ * Its reason for existing is the Zod schemas in `features/<domain>/schemas.ts`. Every validation
+ * message there is a THUNK — `{ error: () => translate('…') }`, never `{ error: translate('…') }`.
+ * Zod v4 calls it at PARSE time, and this resolves against whatever locale is active at that
+ * moment, so one module-scope schema speaks every language. That is why those schemas are plain
+ * constants and not `createUsersSchema(t)` factories: `useStructureFormValidation` applies
+ * `toValue(schema)` inside `validate()` and nowhere else, so a getter would be re-evaluated at
+ * exactly the moment a thunk is — same behaviour, more machinery, and one way to get it wrong (passing
+ * `createUsersSchema(t)` instead of `() => createUsersSchema(t)` type-checks, runs, and silently
+ * freezes the language at setup).
+ *
+ * This does NOT re-translate an error already on screen — `formErrors` holds resolved strings by
+ * then. Pass `{ revalidateOn: locale }` to `useStructureFormValidation` for that.
+ *
+ * @param key - Dictionary key to resolve.
+ * @param named - Interpolation values, for a message that declares placeholders.
+ * @returns The translation in the active locale.
+ */
+export const translate: TranslateFunction = (key: string, named?: Record<string, unknown>) =>
+    named ? i18n.global.t(key, named) : i18n.global.t(key);
 
 /**
  * Loads a locale's vocabulary (from `src/locales/*.json`) and activates it.

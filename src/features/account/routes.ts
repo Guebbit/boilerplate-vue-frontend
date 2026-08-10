@@ -1,33 +1,34 @@
 import { useProfileStore } from '@/stores/profile.ts';
 import type { RouteRecordRaw } from 'vue-router';
-import { isAuth, isGuest } from '@/middlewares/authentications.ts';
 
 export default [
     {
         path: 'login',
         name: 'Login',
-        beforeEnter: [isGuest],
+        meta: { access: 'guest' },
         component: () => import('@/features/account/views/Login.vue')
     },
     {
         path: 'signup',
         name: 'Signup',
-        beforeEnter: [isGuest],
+        meta: { access: 'guest' },
         component: () => import('@/features/account/views/Signup.vue')
     },
     {
         path: 'password-reset',
         name: 'PasswordResetRequest',
-        beforeEnter: [isGuest],
+        meta: { access: 'guest' },
         component: () => import('@/features/account/views/PasswordResetRequest.vue')
     },
     {
         path: 'password-reset/confirm',
         name: 'PasswordResetConfirm',
-        beforeEnter: [isGuest],
+        meta: { access: 'guest' },
         component: () => import('@/features/account/views/PasswordResetConfirm.vue')
     },
     {
+        // Public deliberately: the confirmation link arrives by email, and the visitor following
+        // it is by definition not logged in — the token in the URL is the credential.
         path: 'account-delete/confirm',
         name: 'AccountDeleteConfirm',
         component: () => import('@/features/account/views/AccountDeleteConfirm.vue')
@@ -35,7 +36,7 @@ export default [
     {
         path: 'profile',
         name: 'Profile',
-        beforeEnter: [isAuth],
+        meta: { access: 'auth' },
         component: () => import('@/features/account/views/Profile.vue')
     },
     {

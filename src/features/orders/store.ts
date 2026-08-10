@@ -7,6 +7,7 @@ import {
     createOrder as apiCreateOrder,
     updateOrderById,
     deleteOrderById,
+    hardDeleteOrderById,
     checkout as apiCheckout,
     getOrderInvoice
 } from '@api';
@@ -186,6 +187,18 @@ export const useOrdersStore = defineStore('orders', () => {
      * @returns A promise resolving once the order is deleted.
      */
     const deleteOrder = (orderId: string) => deleteTarget(() => deleteOrderById(orderId), orderId);
+    /**
+     * Permanently deletes an order, bypassing the soft delete.
+     *
+     * `deleteOrder` leaves the record in place with `deletedAt` set, which an admin can still see
+     * and toggle back; this removes it outright and cannot be undone. Distinct methods rather than a
+     * flag, so the irreversible one is never reached by passing the wrong boolean.
+     *
+     * @param orderId - Identifier of the order to destroy.
+     * @returns A promise resolving once the order is gone.
+     */
+    const hardDeleteOrder = (orderId: string) =>
+        deleteTarget(() => hardDeleteOrderById(orderId), orderId);
 
     /**
      * Downloads an order's invoice.
@@ -217,6 +230,7 @@ export const useOrdersStore = defineStore('orders', () => {
         updateOrder,
         checkout,
         deleteOrder,
+        hardDeleteOrder,
         downloadInvoice
     };
 });

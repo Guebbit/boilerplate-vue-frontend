@@ -1,5 +1,4 @@
 import type { RouteRecordRaw } from 'vue-router';
-import { isAdmin } from '@/middlewares/authentications.ts';
 
 export default [
     {
@@ -14,7 +13,7 @@ export default [
         // should not have to know the ranking rules to be sure.
         path: 'products/create',
         name: 'ProductCreate',
-        beforeEnter: [isAdmin],
+        meta: { access: 'admin' },
         component: () => import('@/features/products/views/ProductCreate.vue')
     },
     {
@@ -26,7 +25,7 @@ export default [
     {
         path: 'products/:id/edit',
         name: 'ProductEdit',
-        beforeEnter: [isAdmin],
+        meta: { access: 'admin' },
         component: () => import('@/features/products/views/ProductEdit.vue'),
         props: true
     }

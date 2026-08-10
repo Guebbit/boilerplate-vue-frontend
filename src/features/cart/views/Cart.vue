@@ -1,3 +1,60 @@
+<script lang="ts">
+export default {
+    name: 'CartPage'
+};
+</script>
+
+<script setup lang="ts">
+import { onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
+import { Minus, Plus, ShoppingCart } from 'lucide-vue-next';
+import { routerLinkI18n } from '@/utils/i18n.ts';
+import { useCartStore } from '@/features/cart/store.ts';
+import { useOrdersStore } from '@/features/orders/store.ts';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { notifyErrorMessages } from '@/utils/errors.ts';
+import { formatCurrency } from '@/utils/formatters.ts';
+
+import LayoutDefault from '@/layouts/LayoutDefault.vue';
+
+/**
+ * Generics
+ */
+const { t } = useI18n();
+const router = useRouter();
+const { addMessage } = useNotificationsStore();
+/**
+ * Cart store
+ */
+const { fetchCart, updateCartItem, removeCartItem, clearCart } = useCartStore();
+const { cartItems, cartSummary } = storeToRefs(useCartStore());
+const { checkout: checkoutOrder } = useOrdersStore();
+
+/**
+ * Places an order from the current cart.
+ *
+ * @returns A promise resolving once the flow settles: a success toast, a cart
+ *  reload and a navigation to the orders list, or an error toast.
+ */
+const checkout = () =>
+    checkoutOrder()
+        .then(() => {
+            addMessage(t('cart-page.success-checkout'));
+            return fetchCart();
+        })
+        .then(() => {
+            router.push(routerLinkI18n({ name: 'OrdersList' }));
+        })
+        .catch((error) => notifyErrorMessages(addMessage, error));
+
+/**
+ * Load cart on mount
+ */
+onMounted(fetchCart);
+</script>
+
 <template>
     <LayoutDefault id="cart-page" :title="t('cart-page.page-title')">
         <v-empty-state v-if="cartItems.length === 0" :title="t('cart-page.empty-cart')">
@@ -99,60 +156,3 @@
         </div>
     </LayoutDefault>
 </template>
-
-<script lang="ts">
-export default {
-    name: 'CartPage'
-};
-</script>
-
-<script setup lang="ts">
-import { onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
-import { storeToRefs } from 'pinia';
-import { Minus, Plus, ShoppingCart } from 'lucide-vue-next';
-import { routerLinkI18n } from '@/utils/i18n.ts';
-import { useCartStore } from '@/features/cart/store.ts';
-import { useOrdersStore } from '@/features/orders/store.ts';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { notifyErrorMessages } from '@/utils/errors.ts';
-import { formatCurrency } from '@/utils/formatters.ts';
-
-import LayoutDefault from '@/layouts/LayoutDefault.vue';
-
-/**
- * Generics
- */
-const { t } = useI18n();
-const router = useRouter();
-const { addMessage } = useNotificationsStore();
-/**
- * Cart store
- */
-const { fetchCart, updateCartItem, removeCartItem, clearCart } = useCartStore();
-const { cartItems, cartSummary } = storeToRefs(useCartStore());
-const { checkout: checkoutOrder } = useOrdersStore();
-
-/**
- * Places an order from the current cart.
- *
- * @returns A promise resolving once the flow settles: a success toast, a cart
- *  reload and a navigation to the orders list, or an error toast.
- */
-const checkout = () =>
-    checkoutOrder()
-        .then(() => {
-            addMessage(t('cart-page.success-checkout'));
-            return fetchCart();
-        })
-        .then(() => {
-            router.push(routerLinkI18n({ name: 'OrdersList' }));
-        })
-        .catch((error) => notifyErrorMessages(addMessage, error));
-
-/**
- * Load cart on mount
- */
-onMounted(fetchCart);
-</script>

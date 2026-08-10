@@ -8,7 +8,8 @@ import {
     SearchProductsResponse,
     GetProductByIdResponse,
     UpdateProductByIdResponse,
-    DeleteProductByIdResponse
+    DeleteProductByIdResponse,
+    HardDeleteProductByIdResponse
 } from '@api/schemas';
 import {
     createErrorEnvelope,
@@ -23,6 +24,7 @@ import {
     readRequestParts,
     resolveMockImageUrl,
     slicePaginatedData,
+    readHardDeleteFlag,
     toNumberOrDefault,
     toPaginationMeta
 } from '../shared/mockShared.ts';
@@ -75,6 +77,42 @@ const replyProductsList = (
         { schema }
     );
 };
+
+/**
+ * Mirrors `BE src/services/products.ts` `remove()`: hard delete drops the row, soft delete toggles
+ * `deletedAt` — so calling it twice restores the product rather than deleting it harder.
+ *
+ * Soft delete is the DEFAULT, as it is on the real API. The mock used to splice unconditionally,
+ * which is behaviour drift of the worst kind: `isVisibleToCaller` hides a soft-deleted product from
+ * non-admins but keeps showing it to admins, and a mock that removed the row outright could never
+ * reproduce that.
+ *
+ * @returns false when there is no such product, which is the 404 every caller below shares.
+ */
+const removeProductById = (productId: string, hardDelete: boolean): boolean => {
+    const targetIndex = mockDatabase.sampleProducts.findIndex(({ id }) => id === productId);
+    if (targetIndex === -1) return false;
+
+    if (hardDelete) {
+        mockDatabase.sampleProducts.splice(targetIndex, 1);
+        return true;
+    }
+
+    const target = mockDatabase.sampleProducts[targetIndex];
+    mockDatabase.sampleProducts[targetIndex] = {
+        ...target,
+        // `undefined`, not an empty string: `isVisibleToCaller` tests for absence, matching the
+        // BE's `$exists: false`.
+        deletedAt: target.deletedAt ? undefined : getIsoDateNow()
+    };
+    return true;
+};
+
+const productNotFound = () =>
+    toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'Product not found'), {
+        status: 404,
+        schema: MockErrorResponse
+    });
 
 export const registerProductsMockHandlers = (): HttpHandler[] => [
     http.get(`${API_BASE}/products`, ({ request }) =>
@@ -241,17 +279,18 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
             }
         );
     }),
-    http.delete(`${API_BASE}/products/:productId`, ({ params }) => {
-        const productId = String(params.productId);
-        const targetIndex = mockDatabase.sampleProducts.findIndex(({ id }) => id === productId);
+    // Must come before /products/:productId, or `hard` is matched as a product id.
+    http.delete(`${API_BASE}/products/:productId/hard`, ({ params }) => {
+        if (!removeProductById(String(params.productId), true)) return productNotFound();
 
-        if (targetIndex === -1)
-            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'Product not found'), {
-                status: 404,
-                schema: MockErrorResponse
-            });
+        return toMockJsonResponse(createMessageResponse('Product deleted'), {
+            schema: HardDeleteProductByIdResponse
+        });
+    }),
+    http.delete(`${API_BASE}/products/:productId`, ({ request, params }) => {
+        if (!removeProductById(String(params.productId), readHardDeleteFlag(request.url)))
+            return productNotFound();
 
-        mockDatabase.sampleProducts.splice(targetIndex, 1);
         return toMockJsonResponse(createMessageResponse('Product deleted'), {
             schema: DeleteProductByIdResponse
         });

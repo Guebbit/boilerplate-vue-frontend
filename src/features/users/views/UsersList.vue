@@ -13,6 +13,7 @@ import { Search, UserPlus } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/features/users/store';
 import { notifyErrorMessages } from '@/utils/errors.ts';
+import { formatDate } from '@/utils/formatters.ts';
 import type { User } from '@types';
 
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
@@ -101,14 +102,6 @@ const handleDelete = (userId: string) => {
         .then(() => addMessage(t('users-list-page.success-delete')))
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
-
-/**
- * Formats a creation date for the table.
- *
- * @param date - ISO 8601 date string, possibly unset.
- * @returns The locale-formatted date, or a dash when missing.
- */
-const formatDate = (date?: string) => (date ? new Date(date).toLocaleDateString() : '-');
 </script>
 
 <template>

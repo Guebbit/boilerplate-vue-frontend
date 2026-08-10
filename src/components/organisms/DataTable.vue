@@ -1,40 +1,3 @@
-<template>
-    <v-data-table
-        :headers="vuetifyHeaders"
-        :items="items"
-        :item-value="itemValue"
-        :loading="loading"
-        :loading-text="loadingText"
-        :no-data-text="noDataText"
-        items-per-page="-1"
-        hide-default-footer
-        class="rounded-xl border"
-        :row-props="rowProps"
-        @click:row="handleRowClick"
-    >
-        <!-- Replaces Vuetify's unnamed internal bar — see `TableLoadingBar` for why. -->
-        <template #loader>
-            <TableLoadingBar />
-        </template>
-
-        <!-- forward every `item.*` slot to keep the existing view API -->
-        <template
-            v-for="header in headers"
-            #[`item.${header.key}`]="slotProps"
-            :key="'slot-' + header.key"
-        >
-            <slot
-                :name="`item.${header.key}`"
-                :item="slotProps.item"
-                :value="getValue(slotProps.item, header.key)"
-                :column="header"
-            >
-                {{ getValue(slotProps.item, header.key) ?? '-' }}
-            </slot>
-        </template>
-    </v-data-table>
-</template>
-
 <script setup lang="ts" generic="T extends object">
 import { computed } from 'vue';
 import TableLoadingBar from '@/components/molecules/TableLoadingBar.vue';
@@ -109,3 +72,40 @@ const handleRowClick = (_event: Event, { item }: { item: T }) => {
     modelValue.value = getValue(item, itemValue);
 };
 </script>
+
+<template>
+    <v-data-table
+        :headers="vuetifyHeaders"
+        :items="items"
+        :item-value="itemValue"
+        :loading="loading"
+        :loading-text="loadingText"
+        :no-data-text="noDataText"
+        items-per-page="-1"
+        hide-default-footer
+        class="rounded-xl border"
+        :row-props="rowProps"
+        @click:row="handleRowClick"
+    >
+        <!-- Replaces Vuetify's unnamed internal bar — see `TableLoadingBar` for why. -->
+        <template #loader>
+            <TableLoadingBar />
+        </template>
+
+        <!-- forward every `item.*` slot to keep the existing view API -->
+        <template
+            v-for="header in headers"
+            #[`item.${header.key}`]="slotProps"
+            :key="'slot-' + header.key"
+        >
+            <slot
+                :name="`item.${header.key}`"
+                :item="slotProps.item"
+                :value="getValue(slotProps.item, header.key)"
+                :column="header"
+            >
+                {{ getValue(slotProps.item, header.key) ?? '-' }}
+            </slot>
+        </template>
+    </v-data-table>
+</template>

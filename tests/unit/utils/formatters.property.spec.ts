@@ -39,7 +39,8 @@ import {
     formatCurrency,
     formatFlag,
     formatText,
-    formatDateTime
+    formatDateTime,
+    formatDate
 } from '@/utils/formatters';
 import {
     ACCEPTED_IMAGE_TYPES,
@@ -211,6 +212,34 @@ describe('formatDateTime', () => {
         fc.assert(
             fc.property(fc.oneof(nullish(), fc.constant('')), (value) => {
                 expect(formatDateTime(value)).toBe(EMPTY_VALUE);
+            }),
+            RUN
+        ));
+});
+
+describe('formatDate', () => {
+    it('never throws, whatever string it is handed', () =>
+        fc.assert(
+            fc.property(fc.option(fc.string(), { nil: undefined }), (value) => {
+                // Same contract as `formatDateTime`: off-the-wire input, never an exception mid-render.
+                expect(() => formatDate(value)).not.toThrow();
+            }),
+            RUN
+        ));
+
+    it('returns the fallback for every falsy input', () =>
+        fc.assert(
+            fc.property(fc.oneof(nullish(), fc.constant('')), (value) => {
+                expect(formatDate(value)).toBe(EMPTY_VALUE);
+            }),
+            RUN
+        ));
+
+    it('is never longer than the datetime it drops the time from', () =>
+        fc.assert(
+            fc.property(fc.date({ noInvalidDate: true }), (date) => {
+                const iso = date.toISOString();
+                expect(formatDate(iso).length).toBeLessThanOrEqual(formatDateTime(iso).length);
             }),
             RUN
         ));

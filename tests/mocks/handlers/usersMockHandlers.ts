@@ -8,7 +8,8 @@ import {
     SearchUsersResponse,
     GetUserByIdResponse,
     UpdateUserByIdResponse,
-    DeleteUserByIdResponse
+    DeleteUserByIdResponse,
+    HardDeleteUserByIdResponse
 } from '@api/schemas';
 import {
     createErrorEnvelope,
@@ -22,6 +23,7 @@ import {
     resolveMockImageUrl,
     slicePaginatedData,
     toBooleanOrUndefined,
+    readHardDeleteFlag,
     toNumberOrDefault,
     toPaginationMeta
 } from '../shared/mockShared.ts';
@@ -69,6 +71,39 @@ const replyUsersList = (
         { schema }
     );
 };
+
+/**
+ * Mirrors `BE src/services/users.ts` `remove()`: hard delete drops the row, soft delete toggles
+ * `deletedAt` — so calling it twice restores the user rather than deleting them harder.
+ *
+ * Soft delete is the DEFAULT, as it is on the real API. The mock used to splice unconditionally,
+ * which cannot reproduce an admin still seeing a soft-deleted account.
+ *
+ * @returns false when there is no such user, which is the 404 every caller below shares.
+ */
+const removeUserById = (userId: string, hardDelete: boolean): boolean => {
+    const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === userId);
+    if (targetIndex === -1) return false;
+
+    if (hardDelete) {
+        mockDatabase.sampleUsers.splice(targetIndex, 1);
+        return true;
+    }
+
+    const target = mockDatabase.sampleUsers[targetIndex];
+    mockDatabase.sampleUsers[targetIndex] = {
+        ...target,
+        // `undefined`, not an empty string: the BE tests for absence (`$exists: false`).
+        deletedAt: target.deletedAt ? undefined : getIsoDateNow()
+    };
+    return true;
+};
+
+const userNotFound = () =>
+    toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'User not found'), {
+        status: 404,
+        schema: MockErrorResponse
+    });
 
 export const registerUsersMockHandlers = (): HttpHandler[] => [
     http.get(`${API_BASE}/users`, ({ request }) => replyUsersList(request.url, ListUsersResponse)),
@@ -204,17 +239,18 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
             }
         );
     }),
-    http.delete(`${API_BASE}/users/:userId`, ({ params }) => {
-        const userId = String(params.userId);
-        const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === userId);
+    // Must come before /users/:userId, or `hard` is matched as a user id.
+    http.delete(`${API_BASE}/users/:userId/hard`, ({ params }) => {
+        if (!removeUserById(String(params.userId), true)) return userNotFound();
 
-        if (targetIndex === -1)
-            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'User not found'), {
-                status: 404,
-                schema: MockErrorResponse
-            });
+        return toMockJsonResponse(createMessageResponse('User deleted'), {
+            schema: HardDeleteUserByIdResponse
+        });
+    }),
+    http.delete(`${API_BASE}/users/:userId`, ({ request, params }) => {
+        if (!removeUserById(String(params.userId), readHardDeleteFlag(request.url)))
+            return userNotFound();
 
-        mockDatabase.sampleUsers.splice(targetIndex, 1);
         return toMockJsonResponse(createMessageResponse('User deleted'), {
             schema: DeleteUserByIdResponse
         });

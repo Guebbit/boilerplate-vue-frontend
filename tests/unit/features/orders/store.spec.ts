@@ -18,6 +18,7 @@ import {
     createOrder as apiCreateOrder,
     updateOrderById,
     deleteOrderById,
+    hardDeleteOrderById,
     checkout as apiCheckout,
     getOrderInvoice
 } from '@api';
@@ -49,6 +50,7 @@ vi.mock('@api', () => ({
     createOrder: vi.fn(() => Promise.resolve({ data: ORDER })),
     updateOrderById: vi.fn(() => Promise.resolve({ data: ORDER })),
     deleteOrderById: vi.fn(() => Promise.resolve({ data: undefined })),
+    hardDeleteOrderById: vi.fn(() => Promise.resolve({ data: undefined })),
     checkout: vi.fn(() => Promise.resolve({ data: { order: ORDER } })),
     getOrderInvoice: vi.fn(() => Promise.resolve(INVOICE))
 }));
@@ -144,6 +146,30 @@ describe('useOrdersStore', () => {
                 .deleteOrder('o1')
                 .then(() => {
                     expect(deleteOrderById).toHaveBeenCalledWith('o1');
+                }));
+    });
+
+    describe('hardDeleteOrder', () => {
+        /*
+         * A separate method rather than a flag on `deleteOrder`: the soft form sets `deletedAt` and
+         * an admin can toggle it back, this one is irreversible. Distinct names mean the destructive
+         * path cannot be reached by passing the wrong boolean, so the assertion worth making is that
+         * each reaches its OWN client function and not the other's.
+         */
+        it('calls the hard-delete client with the order id', () =>
+            useOrdersStore()
+                .hardDeleteOrder('o1')
+                .then(() => {
+                    expect(hardDeleteOrderById).toHaveBeenCalledWith('o1');
+                    expect(deleteOrderById).not.toHaveBeenCalled();
+                }));
+
+        it('leaves the soft delete reaching only the soft client', () =>
+            useOrdersStore()
+                .deleteOrder('o1')
+                .then(() => {
+                    expect(deleteOrderById).toHaveBeenCalledWith('o1');
+                    expect(hardDeleteOrderById).not.toHaveBeenCalled();
                 }));
     });
 

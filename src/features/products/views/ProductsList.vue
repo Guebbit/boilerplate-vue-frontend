@@ -1,3 +1,102 @@
+<script lang="ts">
+export default {
+    name: 'ProductsListPage'
+};
+</script>
+
+<script setup lang="ts">
+import { computed } from 'vue';
+import { routerLinkI18n } from '@/utils/i18n.ts';
+import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
+import { PackagePlus, Search } from 'lucide-vue-next';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useProductsStore } from '@/features/products/store';
+import { useProfileStore } from '@/stores/profile.ts';
+import { notifyErrorMessages } from '@/utils/errors.ts';
+import { formatDate } from '@/utils/formatters.ts';
+import type { Product } from '@types';
+
+import LayoutDefault from '@/layouts/LayoutDefault.vue';
+import ListPagination from '@/components/molecules/ListPagination.vue';
+import DataTable from '@/components/organisms/DataTable.vue';
+
+const { t } = useI18n();
+const { addMessage } = useNotificationsStore();
+
+const { watchSearchProducts, deleteProduct } = useProductsStore();
+const { filters, pageItemList, selectedProductId, pageCurrent, pageTotal, pageSize, loading } =
+    storeToRefs(useProductsStore());
+const { isAdmin } = storeToRefs(useProfileStore());
+
+/**
+ * Selectable page sizes for the products table.
+ */
+const pageSizeOptions = [
+    { value: 10, label: '10' },
+    { value: 25, label: '25' },
+    { value: 50, label: '50' }
+];
+
+/**
+ * Columns of the products table.
+ *
+ * @returns The localized headers, re-translated on locale change.
+ */
+const tableHeaders = computed(() => [
+    { title: t('products-list-page.column-id'), key: 'id' },
+    { title: t('products-list-page.column-title'), key: 'title' },
+    { title: t('products-list-page.column-price'), key: 'price' },
+    { title: t('products-list-page.column-active'), key: 'active' },
+    { title: t('products-list-page.column-created-at'), key: 'createdAt' },
+    { title: t('products-list-page.column-actions'), key: 'actions' }
+]);
+
+/**
+ * Rows of the current page.
+ *
+ * @returns The page's products, with the placeholder holes of the sparse
+ *  pagination list filtered out.
+ */
+const pageItems = computed(() => pageItemList.value.filter((item): item is Product => !!item));
+
+const { search } = watchSearchProducts((error) => notifyErrorMessages(addMessage, error));
+
+/**
+ * Applies the current filters, restarting from the first page.
+ *
+ * @returns The search promise, resolving once the page is loaded.
+ */
+const handleSearch = () => {
+    pageCurrent.value = 1;
+    return search();
+};
+
+/**
+ * Clears every filter and reloads the first page from the API.
+ *
+ * @returns The search promise, resolving once the page is loaded.
+ */
+const handleReset = () => {
+    filters.value = {};
+    pageCurrent.value = 1;
+    return search(true);
+};
+
+/**
+ * Deletes a product after an explicit confirmation.
+ *
+ * @param productId - Identifier of the product to delete.
+ * @returns Nothing; the outcome is reported as a toast.
+ */
+const handleDelete = (productId: string) => {
+    if (!confirm(t('products-list-page.confirm-delete'))) return;
+    deleteProduct(productId)
+        .then(() => addMessage(t('products-list-page.success-delete')))
+        .catch((error) => notifyErrorMessages(addMessage, error));
+};
+</script>
+
 <template>
     <LayoutDefault id="products-list-page" :title="t('products-list-page.page-title')">
         <v-card class="mb-6 p-5">
@@ -111,109 +210,3 @@
         <ListPagination v-model="pageCurrent" :length="pageTotal" />
     </LayoutDefault>
 </template>
-
-<script lang="ts">
-export default {
-    name: 'ProductsListPage'
-};
-</script>
-
-<script setup lang="ts">
-import { computed } from 'vue';
-import { routerLinkI18n } from '@/utils/i18n.ts';
-import { useI18n } from 'vue-i18n';
-import { storeToRefs } from 'pinia';
-import { PackagePlus, Search } from 'lucide-vue-next';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useProductsStore } from '@/features/products/store';
-import { useProfileStore } from '@/stores/profile.ts';
-import { notifyErrorMessages } from '@/utils/errors.ts';
-import type { Product } from '@types';
-
-import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import ListPagination from '@/components/molecules/ListPagination.vue';
-import DataTable from '@/components/organisms/DataTable.vue';
-
-const { t } = useI18n();
-const { addMessage } = useNotificationsStore();
-
-const { watchSearchProducts, deleteProduct } = useProductsStore();
-const { filters, pageItemList, selectedProductId, pageCurrent, pageTotal, pageSize, loading } =
-    storeToRefs(useProductsStore());
-const { isAdmin } = storeToRefs(useProfileStore());
-
-/**
- * Selectable page sizes for the products table.
- */
-const pageSizeOptions = [
-    { value: 10, label: '10' },
-    { value: 25, label: '25' },
-    { value: 50, label: '50' }
-];
-
-/**
- * Columns of the products table.
- *
- * @returns The localized headers, re-translated on locale change.
- */
-const tableHeaders = computed(() => [
-    { title: t('products-list-page.column-id'), key: 'id' },
-    { title: t('products-list-page.column-title'), key: 'title' },
-    { title: t('products-list-page.column-price'), key: 'price' },
-    { title: t('products-list-page.column-active'), key: 'active' },
-    { title: t('products-list-page.column-created-at'), key: 'createdAt' },
-    { title: t('products-list-page.column-actions'), key: 'actions' }
-]);
-
-/**
- * Rows of the current page.
- *
- * @returns The page's products, with the placeholder holes of the sparse
- *  pagination list filtered out.
- */
-const pageItems = computed(() => pageItemList.value.filter((item): item is Product => !!item));
-
-const { search } = watchSearchProducts((error) => notifyErrorMessages(addMessage, error));
-
-/**
- * Applies the current filters, restarting from the first page.
- *
- * @returns The search promise, resolving once the page is loaded.
- */
-const handleSearch = () => {
-    pageCurrent.value = 1;
-    return search();
-};
-
-/**
- * Clears every filter and reloads the first page from the API.
- *
- * @returns The search promise, resolving once the page is loaded.
- */
-const handleReset = () => {
-    filters.value = {};
-    pageCurrent.value = 1;
-    return search(true);
-};
-
-/**
- * Deletes a product after an explicit confirmation.
- *
- * @param productId - Identifier of the product to delete.
- * @returns Nothing; the outcome is reported as a toast.
- */
-const handleDelete = (productId: string) => {
-    if (!confirm(t('products-list-page.confirm-delete'))) return;
-    deleteProduct(productId)
-        .then(() => addMessage(t('products-list-page.success-delete')))
-        .catch((error) => notifyErrorMessages(addMessage, error));
-};
-
-/**
- * Formats a creation date for the table.
- *
- * @param date - ISO 8601 date string, possibly unset.
- * @returns The locale-formatted date, or a dash when missing.
- */
-const formatDate = (date?: string) => (date ? new Date(date).toLocaleDateString() : '-');
-</script>

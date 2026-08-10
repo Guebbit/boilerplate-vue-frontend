@@ -8,7 +8,8 @@ import {
     createUserWithMultipart,
     updateUserById,
     updateUserByIdWithMultipart,
-    deleteUserById
+    deleteUserById,
+    hardDeleteUserById
 } from '@api';
 import type { AxiosRequestConfig } from 'axios';
 import type {
@@ -194,6 +195,18 @@ export const useUsersStore = defineStore('users', () => {
      * @returns A promise resolving once the user is deleted.
      */
     const deleteUser = (userId: string) => deleteTarget(() => deleteUserById(userId), userId);
+    /**
+     * Permanently deletes an user, bypassing the soft delete.
+     *
+     * `deleteUser` leaves the record in place with `deletedAt` set, which an admin can still see
+     * and toggle back; this removes it outright and cannot be undone. Distinct methods rather than a
+     * flag, so the irreversible one is never reached by passing the wrong boolean.
+     *
+     * @param userId - Identifier of the user to destroy.
+     * @returns A promise resolving once the user is gone.
+     */
+    const hardDeleteUser = (userId: string) =>
+        deleteTarget(() => hardDeleteUserById(userId), userId);
 
     return {
         users,
@@ -215,6 +228,7 @@ export const useUsersStore = defineStore('users', () => {
         watchUser,
         createUser,
         updateUser,
-        deleteUser
+        deleteUser,
+        hardDeleteUser
     };
 });

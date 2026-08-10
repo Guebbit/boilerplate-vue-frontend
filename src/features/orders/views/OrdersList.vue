@@ -1,3 +1,125 @@
+<script lang="ts">
+export default {
+    name: 'OrdersListPage'
+};
+</script>
+
+<script setup lang="ts">
+import { computed } from 'vue';
+import { routerLinkI18n } from '@/utils/i18n.ts';
+import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
+import { Search } from 'lucide-vue-next';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useOrdersStore } from '@/features/orders/store.ts';
+import { useProfileStore } from '@/stores/profile.ts';
+import { notifyErrorMessages } from '@/utils/errors.ts';
+import { formatDate } from '@/utils/formatters.ts';
+import type { Order } from '@types';
+
+import LayoutDefault from '@/layouts/LayoutDefault.vue';
+import ListPagination from '@/components/molecules/ListPagination.vue';
+import DataTable from '@/components/organisms/DataTable.vue';
+
+const { t } = useI18n();
+const { addMessage } = useNotificationsStore();
+
+const { watchSearchOrders, deleteOrder } = useOrdersStore();
+const {
+    filters,
+    ordersList,
+    pageItemList,
+    selectedOrderId,
+    pageCurrent,
+    pageTotal,
+    pageSize,
+    loading
+} = storeToRefs(useOrdersStore());
+const { isAdmin } = storeToRefs(useProfileStore());
+
+/**
+ * Selectable page sizes for the orders table.
+ */
+const pageSizeOptions = [
+    { value: 10, label: '10' },
+    { value: 25, label: '25' },
+    { value: 50, label: '50' }
+];
+
+/**
+ * Columns of the orders table.
+ *
+ * @returns The localized headers, re-translated on locale change.
+ */
+const tableHeaders = computed(() => [
+    { title: t('orders-list-page.column-id'), key: 'id' },
+    { title: t('orders-list-page.column-status'), key: 'status' },
+    { title: t('orders-list-page.column-total'), key: 'total' },
+    { title: t('orders-list-page.column-date'), key: 'createdAt' },
+    { title: t('orders-list-page.column-actions'), key: 'actions' }
+]);
+
+/**
+ * Rows of the current page.
+ *
+ * @returns The page's orders, with the placeholder holes of the sparse
+ *  pagination list filtered out.
+ */
+const pageItems = computed(() => pageItemList.value.filter((item): item is Order => !!item));
+
+const { search } = watchSearchOrders((error) => notifyErrorMessages(addMessage, error));
+
+/**
+ * Maps an order status onto a semantic theme color.
+ *
+ * @param status - Order status, possibly unset.
+ * @returns The Vuetify color name, defaulting to `secondary`.
+ */
+const statusColor = (status?: string) =>
+    ({
+        pending: 'warning',
+        paid: 'info',
+        processing: 'info',
+        shipped: 'secondary',
+        delivered: 'success',
+        cancelled: 'error'
+    })[status ?? ''] ?? 'secondary';
+
+/**
+ * Applies the current filters, restarting from the first page.
+ *
+ * @returns The search promise, resolving once the page is loaded.
+ */
+const handleSearch = () => {
+    pageCurrent.value = 1;
+    return search();
+};
+
+/**
+ * Clears every filter and reloads the first page from the API.
+ *
+ * @returns The search promise, resolving once the page is loaded.
+ */
+const handleReset = () => {
+    filters.value = {};
+    pageCurrent.value = 1;
+    return search(true);
+};
+
+/**
+ * Deletes an order after an explicit confirmation.
+ *
+ * @param orderId - Identifier of the order to delete.
+ * @returns Nothing; the outcome is reported as a toast.
+ */
+const handleDelete = (orderId: string) => {
+    if (!confirm(t('orders-list-page.confirm-delete'))) return;
+    deleteOrder(orderId)
+        .then(() => addMessage(t('orders-list-page.success-delete')))
+        .catch((error) => notifyErrorMessages(addMessage, error));
+};
+</script>
+
 <template>
     <LayoutDefault id="orders-list-page" :title="t('orders-list-page.page-title')">
         <v-card class="mb-6 p-5">
@@ -106,132 +228,3 @@
         <ListPagination v-model="pageCurrent" :length="pageTotal" />
     </LayoutDefault>
 </template>
-
-<script lang="ts">
-export default {
-    name: 'OrdersListPage'
-};
-</script>
-
-<script setup lang="ts">
-import { computed } from 'vue';
-import { routerLinkI18n } from '@/utils/i18n.ts';
-import { useI18n } from 'vue-i18n';
-import { storeToRefs } from 'pinia';
-import { Search } from 'lucide-vue-next';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useOrdersStore } from '@/features/orders/store.ts';
-import { useProfileStore } from '@/stores/profile.ts';
-import { notifyErrorMessages } from '@/utils/errors.ts';
-import type { Order } from '@types';
-
-import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import ListPagination from '@/components/molecules/ListPagination.vue';
-import DataTable from '@/components/organisms/DataTable.vue';
-
-const { t } = useI18n();
-const { addMessage } = useNotificationsStore();
-
-const { watchSearchOrders, deleteOrder } = useOrdersStore();
-const {
-    filters,
-    ordersList,
-    pageItemList,
-    selectedOrderId,
-    pageCurrent,
-    pageTotal,
-    pageSize,
-    loading
-} = storeToRefs(useOrdersStore());
-const { isAdmin } = storeToRefs(useProfileStore());
-
-/**
- * Selectable page sizes for the orders table.
- */
-const pageSizeOptions = [
-    { value: 10, label: '10' },
-    { value: 25, label: '25' },
-    { value: 50, label: '50' }
-];
-
-/**
- * Columns of the orders table.
- *
- * @returns The localized headers, re-translated on locale change.
- */
-const tableHeaders = computed(() => [
-    { title: t('orders-list-page.column-id'), key: 'id' },
-    { title: t('orders-list-page.column-status'), key: 'status' },
-    { title: t('orders-list-page.column-total'), key: 'total' },
-    { title: t('orders-list-page.column-date'), key: 'createdAt' },
-    { title: t('orders-list-page.column-actions'), key: 'actions' }
-]);
-
-/**
- * Rows of the current page.
- *
- * @returns The page's orders, with the placeholder holes of the sparse
- *  pagination list filtered out.
- */
-const pageItems = computed(() => pageItemList.value.filter((item): item is Order => !!item));
-
-const { search } = watchSearchOrders((error) => notifyErrorMessages(addMessage, error));
-
-/**
- * Maps an order status onto a semantic theme color.
- *
- * @param status - Order status, possibly unset.
- * @returns The Vuetify color name, defaulting to `secondary`.
- */
-const statusColor = (status?: string) =>
-    ({
-        pending: 'warning',
-        paid: 'info',
-        processing: 'info',
-        shipped: 'secondary',
-        delivered: 'success',
-        cancelled: 'error'
-    })[status ?? ''] ?? 'secondary';
-
-/**
- * Applies the current filters, restarting from the first page.
- *
- * @returns The search promise, resolving once the page is loaded.
- */
-const handleSearch = () => {
-    pageCurrent.value = 1;
-    return search();
-};
-
-/**
- * Clears every filter and reloads the first page from the API.
- *
- * @returns The search promise, resolving once the page is loaded.
- */
-const handleReset = () => {
-    filters.value = {};
-    pageCurrent.value = 1;
-    return search(true);
-};
-
-/**
- * Deletes an order after an explicit confirmation.
- *
- * @param orderId - Identifier of the order to delete.
- * @returns Nothing; the outcome is reported as a toast.
- */
-const handleDelete = (orderId: string) => {
-    if (!confirm(t('orders-list-page.confirm-delete'))) return;
-    deleteOrder(orderId)
-        .then(() => addMessage(t('orders-list-page.success-delete')))
-        .catch((error) => notifyErrorMessages(addMessage, error));
-};
-
-/**
- * Formats an order date for the table.
- *
- * @param date - ISO 8601 date string, possibly unset.
- * @returns The locale-formatted date, or a dash when missing.
- */
-const formatDate = (date?: string) => (date ? new Date(date).toLocaleDateString() : '-');
-</script>

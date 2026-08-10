@@ -1,23 +1,3 @@
-<template>
-    <article
-        class="grid grid-cols-[3rem_minmax(0,1fr)] items-start gap-3.5 rounded-2xl border border-on-surface/10 bg-on-surface/3 p-4"
-        :class="props.fullWidth && 'col-span-full'"
-    >
-        <div
-            class="detail-field-icon grid h-12 w-12 place-items-center rounded-2xl text-xl"
-            aria-hidden="true"
-        >
-            {{ props.icon ?? '' }}
-        </div>
-        <div class="min-w-0">
-            <p class="text-xs uppercase tracking-[0.08em] opacity-65">{{ props.label }}</p>
-            <div class="mt-1.5 leading-relaxed [overflow-wrap:anywhere]">
-                <slot>{{ displayValue }}</slot>
-            </div>
-        </div>
-    </article>
-</template>
-
 <script setup lang="ts">
 import { computed } from 'vue';
 import { EMPTY_VALUE } from '@/utils/formatters.ts';
@@ -44,6 +24,26 @@ const displayValue = computed(() => {
     return String(props.value);
 });
 </script>
+
+<template>
+    <article
+        class="grid grid-cols-[3rem_minmax(0,1fr)] items-start gap-3.5 rounded-2xl border border-on-surface/10 bg-on-surface/3 p-4"
+        :class="props.fullWidth && 'col-span-full'"
+    >
+        <div
+            class="detail-field-icon grid h-12 w-12 place-items-center rounded-2xl text-xl"
+            aria-hidden="true"
+        >
+            {{ props.icon ?? '' }}
+        </div>
+        <div class="min-w-0">
+            <p class="text-xs uppercase tracking-[0.08em] opacity-65">{{ props.label }}</p>
+            <div class="mt-1.5 leading-relaxed [overflow-wrap:anywhere]">
+                <slot>{{ displayValue }}</slot>
+            </div>
+        </div>
+    </article>
+</template>
 
 <style scoped>
 .detail-field-icon {
