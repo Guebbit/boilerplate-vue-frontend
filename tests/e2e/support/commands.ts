@@ -143,19 +143,24 @@ Cypress.Commands.add('resetState', () =>
  * After every `cy.visit()`, wait until the app has fully bootstrapped: MSW running, Vue mounted,
  * and the initial router navigation resolved.
  *
- * ── Why a per-visit token, and not just `_appReady` ──────────────────────────────────────────
- * `_appReady` is set on `window` by the app once it has booted, and the outgoing `window` object
- * survives right up to the moment the new document commits. So on the SECOND visit inside a
- * test, the wait below can look at the OUTGOING page — which set the flag long ago — see `true`,
- * and resolve immediately, before the new page has started loading. Every command that follows
- * then runs against the *previous* screen.
+ * ── Why `_appReady` alone is not enough ───────────────────────────────────────────────────────
+ * `_appReady` is set on `window` by `src/main.ts` once the app has booted, and the outgoing
+ * `window` survives right up to the moment the new document commits. So on the SECOND visit
+ * inside a test, a wait for `_appReady` can look at the OUTGOING page — which set the flag long
+ * ago — see `true`, and resolve before the new page has started loading. Every command that
+ * follows then runs against the *previous* screen.
  *
- * Clearing `_appReady` in `onBeforeLoad` does not fix it, because that hook fires on the new
- * window and the wait can already have passed on the old one by then. The flag has to be
- * something the old window can never satisfy, so each visit mints a fresh token and requires it:
- * `_visitId` is stamped on the incoming window before any application script runs, and the wait
- * demands that exact value. The outgoing window carries the previous token, so it fails the
- * assertion and Cypress keeps retrying until the real page is up.
+ * ── Why the outgoing window is marked, rather than the incoming one stamped ───────────────────
+ * The distinction has to be made on a window we are certain to reach. Marking the INCOMING
+ * document means `onBeforeLoad`, which Cypress fires only for the page load it initiates itself:
+ * any document arriving another way carries no mark, and an assertion demanding one can then
+ * never pass — it burns the full timeout and fails with "expected undefined to equal <token>"
+ * even though the app is sitting there perfectly healthy.
+ *
+ * Marking the OUTGOING window has no such hole. `_supersededByVisit` is set on whatever is
+ * currently loaded, immediately before the visit is issued, and the wait then asks only that the
+ * window it sees is *not* that one and *is* ready. A fresh document has the property absent,
+ * whoever loaded it, so the guard recognises the new page instead of hanging on it.
  *
  * ── Why this is worth guarding so carefully ──────────────────────────────────────────────────
  * A stale window is close to invisible to an ordinary assertion, because `cy.get()` retries: the
@@ -165,28 +170,23 @@ Cypress.Commands.add('resetState', () =>
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 Cypress.Commands.overwrite('visit', (originalFunction: any, url: any, options: any) => {
-    const visitId = `${Date.now()}-${Math.random()}`;
-    const isOptionsObject = typeof url === 'object';
-    const callerOnBeforeLoad = isOptionsObject ? url.onBeforeLoad : options?.onBeforeLoad;
+    // Enqueued before the visit below, so it always runs against the page being navigated away
+    // from. `log: false` because one of these per visit would double the length of the command log.
+    cy.window({ log: false }).then((outgoingWindow) => {
+        (outgoingWindow as unknown as Record<string, unknown>)._supersededByVisit = true;
+    });
 
-    const onBeforeLoad = (contentWindow: Cypress.AUTWindow) => {
-        const stamped = contentWindow as unknown as Record<string, unknown>;
-        stamped._visitId = visitId;
-        stamped._appReady = false;
-        callerOnBeforeLoad?.(contentWindow);
-    };
-
-    originalFunction(
-        isOptionsObject ? { ...url, onBeforeLoad } : url,
-        isOptionsObject ? options : { ...options, onBeforeLoad }
-    );
+    // Options are passed through untouched — nothing here needs `onBeforeLoad` any more, so a
+    // caller's own hook reaches Cypress exactly as they wrote it.
+    originalFunction(url, options);
 
     cy.window({ timeout: APP_READY_TIMEOUT_MS }).should((contentWindow) => {
-        const stamped = contentWindow as unknown as Record<string, unknown>;
-        expect(stamped._visitId, 'the visited page is the current one, not the previous').to.equal(
-            visitId
-        );
-        expect(stamped._appReady, 'the app has finished bootstrapping').to.equal(true);
+        const marked = contentWindow as unknown as Record<string, unknown>;
+        expect(
+            marked._supersededByVisit,
+            'the visited page is the current one, not the previous'
+        ).to.not.equal(true);
+        expect(marked._appReady, 'the app has finished bootstrapping').to.equal(true);
     });
 });
 
