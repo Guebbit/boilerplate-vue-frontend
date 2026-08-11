@@ -7,6 +7,7 @@ import AppNavigation from '@/components/organisms/AppNavigation.vue';
 import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { getCookie } from '@guebbit/js-toolkit';
 import { useProfileStore } from '@/stores/profile.ts';
+import { logger } from '@/utils/logger.ts';
 
 defineOptions({ inheritAttrs: false });
 
@@ -75,9 +76,7 @@ const { fetchProfile } = useProfileStore();
  */
 if (getCookie('isAuth') && !profile.value)
     fetchProfile().catch((error) => {
-        if (import.meta.env.DEV)
-            // eslint-disable-next-line no-console
-            console.warn('Unable to preload profile from layout', error);
+        if (import.meta.env.DEV) logger.warn('Unable to preload profile from layout', error);
     });
 </script>
 

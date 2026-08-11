@@ -67,7 +67,9 @@ const tableHeaders = computed(() => [
  */
 const pageItems = computed(() => pageItemList.value.filter((item): item is Order => !!item));
 
-const { search } = watchSearchOrders((error) => notifyErrorMessages(addMessage, error));
+const { search } = watchSearchOrders({
+    onError: (error) => notifyErrorMessages(addMessage, error)
+});
 
 /**
  * Maps an order status onto a semantic theme color.

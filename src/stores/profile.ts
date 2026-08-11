@@ -85,8 +85,8 @@ const setCookie = (value: string) => {
 export const useProfileStore = defineStore('profile', () => {
     const { getLoading, setLoading } = useCoreStore();
     const {
-        itemDictionary,
         selectedIdentifier,
+        resetAll,
         selectedRecord: profile,
         loading,
         fetchAny,
@@ -284,6 +284,22 @@ export const useProfileStore = defineStore('profile', () => {
     };
 
     /**
+     * Drops every trace of the current session: cached records, query cache, token and cookie.
+     *
+     * `resetAll()` rather than emptying `itemDictionary` by hand, because the hand-written version
+     * left the TanStack entries behind — so a logout followed by a login could be served the
+     * previous user's cached response until it went stale.
+     *
+     * @returns Nothing; state is cleared as a side effect.
+     */
+    const clearSession = () => {
+        resetAll();
+        accessToken.value = undefined;
+        // The httpOnly jwt cookie can only be cleared server-side; isAuth is JS-accessible.
+        setCookie('isAuth=; path=/; max-age=0; SameSite=Lax');
+    };
+
+    /**
      * Logs out of every session and clears all cached user data.
      *
      * @returns A promise resolving once the API call succeeds and the local
@@ -296,10 +312,7 @@ export const useProfileStore = defineStore('profile', () => {
         obs.track(analyticsEvents.USER_LOGGED_OUT);
         obs.unidentifyUser();
         return apiLogoutAll().then(() => {
-            itemDictionary.value = {};
-            selectedIdentifier.value = undefined;
-            accessToken.value = undefined;
-            setCookie('isAuth=; path=/; max-age=0; SameSite=Lax');
+            clearSession();
         });
     };
 
@@ -324,10 +337,7 @@ export const useProfileStore = defineStore('profile', () => {
                 // Clear user identity from observability tools
                 const obs = useObservabilityStore();
                 obs.unidentifyUser();
-                itemDictionary.value = {};
-                selectedIdentifier.value = undefined;
-                accessToken.value = undefined;
-                setCookie('isAuth=; path=/; max-age=0; SameSite=Lax');
+                clearSession();
             })
         );
 

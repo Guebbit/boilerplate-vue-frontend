@@ -20,6 +20,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { Faro } from '@grafana/faro-web-sdk';
 import { analyticsEvents as sharedAnalyticsEvents } from '@/stores/analyticsEvents.ts';
+import { logger } from '@/utils/logger.ts';
 
 // ─── Umami global ──────────────────────────────────────────────────────────────
 // The Umami tracker script attaches a `umami` object to `window` once loaded.
@@ -137,17 +138,6 @@ function originToRegExp(origin: string): RegExp {
     return new RegExp(`^${escaped}`);
 }
 
-/**
- * Feature flags are not part of the local stack (Umami has none).
- * Kept for API compatibility.
- *
- * @param _flagKey - Flag name, ignored.
- * @returns Always `false`.
- */
-function isFeatureEnabled(_flagKey: string): boolean {
-    return false;
-}
-
 // ─── Store ───────────────────────────────────────────────────────────────────
 
 export const useObservabilityStore = defineStore('observability', () => {
@@ -183,8 +173,7 @@ export const useObservabilityStore = defineStore('observability', () => {
         const config = readFaroConfig();
 
         if (!config) {
-            // eslint-disable-next-line no-console
-            console.debug('[Faro] Disabled — no VITE_FARO_URL configured');
+            logger.debug('observability', 'Faro disabled — no VITE_FARO_URL configured');
             return Promise.resolve(false);
         }
 
@@ -211,8 +200,13 @@ export const useObservabilityStore = defineStore('observability', () => {
             });
 
             faroReady.value = true;
-            // eslint-disable-next-line no-console
-            console.debug('[Faro] Initialized', config.environment, '→', config.url);
+            logger.debug(
+                'observability',
+                '[Faro] Initialized',
+                config.environment,
+                '→',
+                config.url
+            );
 
             return true;
         });
@@ -279,8 +273,7 @@ export const useObservabilityStore = defineStore('observability', () => {
         const config = readUmamiConfig();
 
         if (!config) {
-            // eslint-disable-next-line no-console
-            console.debug('[Umami] Disabled — no VITE_UMAMI_WEBSITE_ID configured');
+            logger.debug('observability', '[Umami] Disabled — no VITE_UMAMI_WEBSITE_ID configured');
             return false;
         }
 
@@ -298,8 +291,7 @@ export const useObservabilityStore = defineStore('observability', () => {
         }
 
         umamiReady.value = true;
-        // eslint-disable-next-line no-console
-        console.debug('[Umami] Tracker injected →', config.src);
+        logger.debug('observability', '[Umami] Tracker injected →', config.src);
 
         return true;
     };
@@ -392,7 +384,6 @@ export const useObservabilityStore = defineStore('observability', () => {
         identifyUser,
         unidentifyUser,
         captureException,
-        isFeatureEnabled,
 
         // Convenience helpers
         trackProductView,

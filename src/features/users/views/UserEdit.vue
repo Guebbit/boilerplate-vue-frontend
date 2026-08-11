@@ -5,7 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -23,7 +23,7 @@ import CardInfo from '@/components/organisms/CardInfo.vue';
 import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
 import { EMPTY_VALUE, formatText, formatDateTime, formatFlag } from '@/utils/formatters.ts';
-import { notifyErrorMessages } from '@/utils/errors.ts';
+import { notifyErrorMessages, VUETIFY_INVALID_FIELD_SELECTOR } from '@/utils/errors.ts';
 import { imageUploadSchema, useUploadProgress } from '@/utils/uploads.ts';
 
 /**
@@ -69,6 +69,8 @@ const editSchema = usersSchema.pick({ email: true }).extend({
 /**
  * Toolkit form bindings.
  */
+const formElement = ref<HTMLFormElement>();
+
 const {
     form,
     formErrors,
@@ -76,8 +78,15 @@ const {
     isSubmitting,
     resetForm,
     handleSubmit,
-    activateAutoHydrate
-} = useStructureFormValidation<IUserEditForm>({}, editSchema, { revalidateOn: locale });
+    activateAutoHydrate,
+    applyServerErrors
+} = useStructureFormValidation<IUserEditForm>({}, editSchema, {
+    revalidateOn: locale,
+    // The toolkit reveals the errors, waits for the render and focuses the first invalid field.
+    formElement,
+    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+    onInvalid: () => addMessage(t('users-form.fix-errors'))
+});
 
 /**
  * Avatar upload progress, shown by `FormImageUpload` while a multipart save is in flight.
@@ -154,13 +163,10 @@ const submitForm = () =>
             // the next save.
             form.value.imageUpload = undefined;
             addMessage(t('user-edit-page.success-update'));
-            showFormErrors.value = false;
         });
-    })
-        .then((success) => {
-            if (!success) showFormErrors.value = true;
-        })
-        .catch((error) => notifyErrorMessages(addMessage, error));
+    }).catch((error) => {
+        if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
+    });
 
 /**
  * Selects and (re)fetches the user whenever the route id changes.
@@ -200,7 +206,12 @@ watchUser(() => id);
                     <p class="mt-1 opacity-75">{{ t('user-edit-page.page-title') }}</p>
                 </div>
 
-                <form novalidate class="flex flex-col gap-2" @submit.prevent="submitForm">
+                <form
+                    ref="formElement"
+                    novalidate
+                    class="flex flex-col gap-2"
+                    @submit.prevent="submitForm"
+                >
                     <v-text-field
                         v-model="form.email"
                         type="email"

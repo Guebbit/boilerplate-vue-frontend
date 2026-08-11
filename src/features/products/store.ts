@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia';
-import { useCoreStore, useStructureSearchApi } from '@guebbit/vue-toolkit';
+import { useCoreStore, useStructureCrudApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
-import { ref, type WatchSource } from 'vue';
 
 import {
     listProducts,
@@ -27,18 +26,13 @@ import type {
 type IProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
 
 /**
- * Products CRUD, paginated search and image upload, on top of the toolkit's
- * search-API structure.
+ * Products CRUD, paginated search and image upload.
+ *
+ * The endpoints are declared once, up front, and `useStructureCrudApi` derives the whole store
+ * from them — dictionary, filters, pagination, caching, optimistic updates and rollback included.
  */
 export const useProductsStore = defineStore('products', () => {
     const { getLoading, setLoading } = useCoreStore();
-
-    /**
-     * Current search filters. Owned by the store so `useStructureSearchApi`'s
-     * search-scoped `pageItemList` and `watchSearch` stay bound to the same
-     * source the list view mutates.
-     */
-    const filters = ref<IProductsFilters>({});
 
     const {
         itemDictionary: products,
@@ -47,138 +41,56 @@ export const useProductsStore = defineStore('products', () => {
         selectedIdentifier: selectedProductId,
         selectedRecord: currentProduct,
 
+        filters,
         loading,
         pageCurrent,
         pageSize,
         pageTotal,
         pageItemList,
-        watchSearch,
-        fetchAny,
-        fetchAll,
-        fetchTarget,
-        watchTarget,
-        createTarget,
-        updateTarget,
+
+        fetchList: fetchProducts,
+        fetchPage: fetchPaginationProducts,
+        watchList: watchSearchProducts,
+        fetchOne: fetchProduct,
+        watchOne: watchProduct,
+        createOne: createProduct,
+        updateOne: updateProduct,
+        deleteOne: deleteProduct,
         deleteTarget
-    } = useStructureSearchApi<Product, string, string | number, IProductsFilters>(
-        () => filters.value,
-        { getLoading, setLoading }
-    );
+    } = useStructureCrudApi<
+        Product,
+        string,
+        IProductsFilters,
+        CreateProductRequestMultipart,
+        UpdateProductByIdRequestMultipart,
+        AxiosRequestConfig
+    >(
+        {
+            list: () => listProducts().then((response) => response.data.items),
 
-    /**
-     * Fetches every product into the store dictionary.
-     *
-     * @param forced - Bypass the cache and always hit the API.
-     * @returns A promise resolving with the fetched products.
-     */
-    const fetchProducts = (forced = false) =>
-        fetchAll(() => listProducts().then((response) => response.data.items), {
-            forced
-        });
-
-    /**
-     * Fetches a single page of products, without touching the shared search
-     * state.
-     *
-     * @param page - 1-based page number. Defaults to `1`.
-     * @param pageSize - Items per page. Defaults to `10`.
-     * @param forced - Bypass the cache and always hit the API.
-     * @returns A promise resolving with that page's products.
-     */
-    const fetchPaginationProducts = (page = 1, pageSize = 10, forced = false) =>
-        fetchAny(() => listProducts({ page, pageSize }).then((response) => response.data.items), {
-            forced
-        });
-
-    /**
-     * Reactive filtered product search via GET /products, built on the toolkit's
-     * `watchSearch`: fetches the current page immediately and re-fetches whenever
-     * `pageCurrent`/`pageSize` change. Filters are read from the store's `filters`
-     * on each run — mutate `filters` then call the returned `search()` to apply them.
-     *
-     * @param onError - Notified on a failed search (immediate load, page
-     *  change, or an explicit `search()` call).
-     * @returns The toolkit search handle, whose `search()` re-runs the query
-     *  with the current {@link filters}.
-     */
-    const watchSearchProducts = (onError?: (error: unknown) => void) =>
-        watchSearch(
-            (currentFilters, page, pageSizeValue) =>
+            search: (filters, page, pageSize) =>
                 listProducts({
                     page,
-                    pageSize: pageSizeValue,
-                    text: currentFilters.text,
+                    pageSize,
+                    text: filters.text,
                     // `id`, not `productId`: the spec names it `id` on both the GET query and the
                     // POST /products/search body, and that is what the API reads.
-                    id: currentFilters.id,
-                    minPrice: currentFilters.minPrice,
-                    maxPrice: currentFilters.maxPrice
+                    id: filters.id,
+                    minPrice: filters.minPrice,
+                    maxPrice: filters.maxPrice
                 }).then((response) => response.data.items),
-            { onError: (error) => onError?.(error) }
-        );
 
-    /**
-     * Fetches a single product and selects it as the current one.
-     *
-     * @param productId - Identifier of the product to load.
-     * @param forced - Bypass the cache and always hit the API.
-     * @returns A promise resolving with the product.
-     */
-    const fetchProduct = (productId: string, forced = false) =>
-        fetchTarget(() => getProductById(productId).then((response) => response.data), productId, {
-            forced
-        });
+            get: (productId) => getProductById(productId).then((response) => response.data),
 
-    /**
-     * Reactive counterpart of `fetchProduct`: selects and (re)fetches the
-     * product whenever the id changes, including once immediately on setup.
-     *
-     * @param idSource - Watch source yielding the product id; nullish values
-     *  clear the selection.
-     * @returns The toolkit watch handle (stop function + state).
-     */
-    const watchProduct = (idSource: WatchSource<string | undefined | null>) =>
-        watchTarget(idSource, (productId) =>
-            getProductById(productId).then((response) => response.data)
-        );
+            // Multipart only when there is a file: a JSON body is cheaper and, more to the point,
+            // the multipart endpoints are the only ones that have to parse a stream.
+            create: ({ imageUpload, ...productData }, options) =>
+                (imageUpload
+                    ? createProductWithMultipart({ ...productData, imageUpload }, options)
+                    : apiCreateProduct(productData, options)
+                ).then((response) => response.data),
 
-    /**
-     * Creates a product, as multipart when an image is attached and as plain
-     * JSON otherwise.
-     *
-     * @param productData - Product fields, optionally including `imageUpload`.
-     * @param options - Per-call axios overrides, forwarded to `orvalMutator`.
-     *  `ProductCreate.vue` passes `onUploadProgress` through it to drive its
-     *  progress bar.
-     * @returns A promise resolving with the created product.
-     */
-    const createProduct = (
-        { imageUpload, ...productData }: CreateProductRequestMultipart,
-        options?: AxiosRequestConfig
-    ) =>
-        createTarget(() =>
-            (imageUpload
-                ? createProductWithMultipart({ ...productData, imageUpload }, options)
-                : apiCreateProduct(productData, options)
-            ).then((response) => response.data)
-        );
-
-    /**
-     * Updates a product, as multipart when a new image is attached and as plain
-     * JSON otherwise.
-     *
-     * @param productId - Identifier of the product to update.
-     * @param productData - Fields to change, optionally including `imageUpload`.
-     * @param options - Per-call axios overrides, forwarded to `orvalMutator`.
-     * @returns A promise resolving with the updated product.
-     */
-    const updateProduct = (
-        productId: string,
-        { imageUpload, ...productData }: UpdateProductByIdRequestMultipart,
-        options?: AxiosRequestConfig
-    ) =>
-        updateTarget(
-            () =>
+            update: (productId, { imageUpload, ...productData }, options) =>
                 (imageUpload
                     ? updateProductByIdWithMultipart(
                           productId,
@@ -187,27 +99,39 @@ export const useProductsStore = defineStore('products', () => {
                       )
                     : updateProductById(productId, productData, options)
                 ).then((response) => response.data),
-            // `imageUpload` is deliberately excluded: the new imageUrl comes back
-            // from the API, and parking a Blob in store state would be nonsense.
-            productData as Partial<Product>,
-            productId
-        );
 
-    /**
-     * Deletes a product and drops it from the store.
-     *
-     * @param productId - Identifier of the product to delete.
-     * @returns A promise resolving once the product is deleted.
-     */
-    const deleteProduct = (productId: string) =>
-        deleteTarget(() => deleteProductById(productId), productId);
+            remove: (productId) => deleteProductById(productId),
+
+            // The new imageUrl comes back from the API, so the local patch must not carry the
+            // Blob: parking one in store state would keep the preview on bytes already uploaded.
+            optimisticPatch: ({ imageUpload: _uploaded, ...productData }) =>
+                productData as Partial<Product>
+        },
+        {
+            getLoading,
+            setLoading,
+            /**
+             * Five minutes instead of the toolkit's one-hour default.
+             *
+             * Products are the one resource here that a visitor sees and an admin edits at the
+             * same time: a price change made in the admin has to reach the public list in
+             * something like minutes, not at the end of a session. Read-through is still instant
+             * — an expired entry keeps rendering while the refetch runs — so the cost of the
+             * shorter window is a background request, not a spinner.
+             */
+            TTL: 5 * 60 * 1000
+        }
+    );
 
     /**
      * Permanently deletes a product, bypassing the soft delete.
      *
-     * `deleteProduct` leaves the record in place with `deletedAt` set, which an admin can still see
+     * `deleteOne` leaves the record in place with `deletedAt` set, which an admin can still see
      * and toggle back; this removes it outright and cannot be undone. Distinct methods rather than a
      * flag, so the irreversible one is never reached by passing the wrong boolean.
+     *
+     * Written against `deleteTarget` rather than declared as an operation because a resource has
+     * one `remove`, and the reversible one is the right default for everything that is not this.
      *
      * @param productId - Identifier of the product to destroy.
      * @returns A promise resolving once the product is gone.
@@ -228,6 +152,7 @@ export const useProductsStore = defineStore('products', () => {
         pageSize,
         pageTotal,
         pageItemList,
+
         fetchProducts,
         fetchPaginationProducts,
         watchSearchProducts,

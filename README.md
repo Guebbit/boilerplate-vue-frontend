@@ -305,13 +305,13 @@ Reference: [`.env-example`](./.env-example).
 | `VITE_APP_FALLBACK_LOCALE`   | Locale used when a key is missing from the active one — `vue-i18n` `fallbackLocale` (default `en`)                                                             |
 | `VITE_APP_SUPPORTED_LOCALES` | Comma-separated supported locales (e.g. `en,it,es`)                                                                                                            |
 | `VITE_APP_EMPTY_VALUE`       | Placeholder for empty/unavailable display values (default `—`)                                                                                                 |
-| `VITE_APP_BASE_URL`          | Router history base URL (optional)                                                                                                                             |
+| `VITE_APP_BASE_URL`          | Sub-path the app is served from, e.g. `/app/`. Passed to `createWebHistory`; leave unset when serving from the domain root                                     |
 | `VITE_API_URL`               | Backend API base URL                                                                                                                                           |
 | `VITE_API_SSE`               | SSE URL used by realtime playground observability stream                                                                                                       |
 | `VITE_API_MOCK_ENABLED`      | Enable [MSW](https://mswjs.io/) mocking (`true`/`false`) — see [Mocking](#mocking-with-msw)                                                                    |
 | `VITE_AXIOS_TIMEOUT`         | [Axios](https://axios-http.com/) timeout (ms)                                                                                                                  |
-| `VITE_APP_DEBUG_ROUTER`      | Router debug logs in dev (`true`/`false`)                                                                                                                      |
-| `VITE_APP_DEBUG_HTTP`        | HTTP interceptor debug logs for server errors (`true`/`false`)                                                                                                 |
+| `VITE_APP_LOG_LEVEL`         | `error` \| `warn` \| `info` \| `debug`. Same ladder as the API's `NODE_LOG_LEVEL`; defaults to `debug` in dev, `warn` in production                            |
+| `VITE_APP_LOG_SCOPES`        | Areas that emit `debug`/`info`: comma-separated, or `*`. Empty means none. Known areas: `router`, `http`, `observability`, `demo`                              |
 | `VITE_FARO_URL`              | [Grafana Faro](https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/faro-web-sdk/) receiver URL — Alloy `/collect` (empty = off) |
 | `VITE_FARO_APP_NAME`         | App name reported to Faro (default `frontend`)                                                                                                                 |
 | `VITE_FARO_APP_VERSION`      | App version reported to Faro (default `1.0.0`)                                                                                                                 |

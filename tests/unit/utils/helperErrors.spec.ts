@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { notifyErrorMessages, focusFirstErrorField } from '@/utils/errors.ts';
+import { notifyErrorMessages, VUETIFY_INVALID_FIELD_SELECTOR } from '@/utils/errors.ts';
 import { loadLocale } from '@/utils/i18n.ts';
 import enMessages from '@/locales/en.json';
 
@@ -109,78 +109,69 @@ describe('notifyErrorMessages', () => {
     });
 });
 
-describe('focusFirstErrorField', () => {
-    it('focuses the first element matching the error selector', () => {
-        const form = document.createElement('form');
-        form.innerHTML = '<div class="v-input--error"><input /></div>';
-        document.body.append(form);
+/**
+ * Renders Vuetify-shaped markup and returns what the selector picks out of it.
+ */
+const firstMatch = (html: string) => {
+    const form = document.createElement('form');
+    form.innerHTML = html;
+    document.body.append(form);
+    const found = form.querySelector<HTMLElement>(VUETIFY_INVALID_FIELD_SELECTOR);
+    form.remove();
+    return found;
+};
 
-        focusFirstErrorField(form);
-
-        expect(document.activeElement).toBe(form.querySelector('input'));
-        form.remove();
+describe('VUETIFY_INVALID_FIELD_SELECTOR', () => {
+    /**
+     * The focusing itself is `useStructureFormValidation`'s, and tested there. What belongs to
+     * this repo is the selector: the toolkit's `[aria-invalid="true"]` default does not fit
+     * Vuetify, where only the wrapper carries the error state. So these assert what the selector
+     * finds in Vuetify-shaped markup, which is what breaks if Vuetify renames a class.
+     */
+    it('finds the input inside a field in error', () => {
+        expect(firstMatch('<div class="v-input--error"><input id="target" /></div>')?.id).toBe(
+            'target'
+        );
     });
 
-    it('focuses the FIRST invalid field when several are in error', () => {
+    it('finds the FIRST invalid field when several are in error', () => {
         // "first invalid field" is the accessibility contract; focusing the last would move the
         // user past the error they need to fix.
-        const form = document.createElement('form');
-        form.innerHTML =
-            '<div class="v-input--error"><input id="first" /></div>' +
-            '<div class="v-input--error"><input id="second" /></div>';
-        document.body.append(form);
-
-        focusFirstErrorField(form);
-
-        expect((document.activeElement as HTMLElement).id).toBe('first');
-        form.remove();
+        expect(
+            firstMatch(
+                '<div class="v-input--error"><input id="first" /></div>' +
+                    '<div class="v-input--error"><input id="second" /></div>'
+            )?.id
+        ).toBe('first');
     });
 
     it('ignores fields that are not in an error state', () => {
-        const form = document.createElement('form');
-        form.innerHTML =
-            '<div><input id="valid" /></div>' +
-            '<div class="v-input--error"><input id="invalid" /></div>';
-        document.body.append(form);
-
-        focusFirstErrorField(form);
-
-        expect((document.activeElement as HTMLElement).id).toBe('invalid');
-        form.remove();
+        expect(
+            firstMatch(
+                '<div><input id="valid" /></div>' +
+                    '<div class="v-input--error"><input id="invalid" /></div>'
+            )?.id
+        ).toBe('invalid');
     });
 
     it('falls back to [tabindex] for controls with no native input', () => {
         // v-select and friends expose no focusable input/textarea/select of their own; without
         // the trailing selector they would be silently unreachable.
-        const form = document.createElement('form');
-        form.innerHTML = '<div class="v-input--error"><div id="select" tabindex="0"></div></div>';
-        document.body.append(form);
-
-        focusFirstErrorField(form);
-
-        expect((document.activeElement as HTMLElement).id).toBe('select');
-        form.remove();
+        expect(
+            firstMatch('<div class="v-input--error"><div id="select" tabindex="0"></div></div>')?.id
+        ).toBe('select');
     });
 
-    it('honours a custom selector for non-Vuetify markup', () => {
-        const form = document.createElement('form');
-        form.innerHTML = '<input id="native" aria-invalid="true" />';
-        document.body.append(form);
-
-        focusFirstErrorField(form, '[aria-invalid="true"]');
-
-        expect((document.activeElement as HTMLElement).id).toBe('native');
-        form.remove();
+    it('covers textarea and select too', () => {
+        expect(
+            firstMatch('<div class="v-input--error"><textarea id="area"></textarea></div>')?.id
+        ).toBe('area');
+        expect(
+            firstMatch('<div class="v-input--error"><select id="pick"></select></div>')?.id
+        ).toBe('pick');
     });
 
-    it('does nothing when there is no matching field', () => {
-        const form = document.createElement('form');
-        expect(() => focusFirstErrorField(form)).not.toThrow();
-    });
-
-    it('is a no-op for an unmounted template ref', () => {
-        // Documented: callers pass a template ref directly, which is undefined before mount.
-        // eslint-disable-next-line unicorn/no-useless-undefined -- an unmounted ref IS undefined
-        expect(() => focusFirstErrorField(undefined)).not.toThrow();
+    it('matches nothing when no field is in error', () => {
+        expect(firstMatch('<div><input id="valid" /></div>')).toBeNull();
     });
 });

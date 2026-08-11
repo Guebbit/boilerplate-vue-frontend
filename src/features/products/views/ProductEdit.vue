@@ -5,7 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -29,7 +29,7 @@ import {
     formatCurrency,
     formatFlag
 } from '@/utils/formatters.ts';
-import { notifyErrorMessages } from '@/utils/errors.ts';
+import { notifyErrorMessages, VUETIFY_INVALID_FIELD_SELECTOR } from '@/utils/errors.ts';
 import { imageUploadSchema, useUploadProgress } from '@/utils/uploads.ts';
 
 /**
@@ -78,6 +78,8 @@ const editSchema = productsSchema.pick({ title: true, price: true }).extend({
 /**
  * Toolkit form state and submit handler.
  */
+const formElement = ref<HTMLFormElement>();
+
 const {
     form,
     formErrors,
@@ -85,8 +87,15 @@ const {
     isSubmitting,
     resetForm,
     handleSubmit,
-    activateAutoHydrate
-} = useStructureFormValidation<IProductEditForm>({}, editSchema, { revalidateOn: locale });
+    activateAutoHydrate,
+    applyServerErrors
+} = useStructureFormValidation<IProductEditForm>({}, editSchema, {
+    revalidateOn: locale,
+    // The toolkit reveals the errors, waits for the render and focuses the first invalid field.
+    formElement,
+    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+    onInvalid: () => addMessage(t('users-form.fix-errors'))
+});
 
 /**
  * Image upload progress, shown by `FormImageUpload` while a multipart save is in flight.
@@ -157,13 +166,10 @@ const submitForm = () =>
             // image and stops a second save re-uploading the same bytes.
             form.value.imageUpload = undefined;
             addMessage(t('product-edit-page.success-update'));
-            showFormErrors.value = false;
         });
-    })
-        .then((success) => {
-            if (!success) showFormErrors.value = true;
-        })
-        .catch((error) => notifyErrorMessages(addMessage, error));
+    }).catch((error) => {
+        if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
+    });
 
 /**
  * Selects and (re)fetches the product whenever the route id changes.
@@ -209,7 +215,12 @@ watchProduct(() => id);
                     <p class="mt-1 opacity-75">{{ t('product-edit-page.page-title') }}</p>
                 </div>
 
-                <form novalidate class="flex flex-col gap-2" @submit.prevent="submitForm">
+                <form
+                    ref="formElement"
+                    novalidate
+                    class="flex flex-col gap-2"
+                    @submit.prevent="submitForm"
+                >
                     <v-text-field
                         v-model="form.title"
                         type="text"

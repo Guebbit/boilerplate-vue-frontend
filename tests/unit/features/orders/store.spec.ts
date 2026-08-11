@@ -213,7 +213,7 @@ describe('useOrdersStore', () => {
 
             return store
                 .fetchOrder('o1')
-                .then(() => store.fetchOrder('o1', true))
+                .then(() => store.fetchOrder('o1', { forced: true }))
                 .then(() => {
                     expect(getOrderById).toHaveBeenCalledTimes(2);
                 });
@@ -270,11 +270,11 @@ describe('useOrdersStore', () => {
             const onError = vi.fn();
 
             return useOrdersStore()
-                .watchSearchOrders(onError)
+                .watchSearchOrders({ onError })
                 .search()
                 .catch(() => {})
                 .then(() => {
-                    expect(onError).toHaveBeenCalledWith(failure);
+                    expect(onError).toHaveBeenCalledWith(failure, expect.anything());
                 });
         });
     });

@@ -60,7 +60,9 @@ const tableHeaders = computed(() => [
  */
 const pageItems = computed(() => pageItemList.value.filter((item): item is Product => !!item));
 
-const { search } = watchSearchProducts((error) => notifyErrorMessages(addMessage, error));
+const { search } = watchSearchProducts({
+    onError: (error) => notifyErrorMessages(addMessage, error)
+});
 
 /**
  * Applies the current filters, restarting from the first page.

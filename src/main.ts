@@ -17,6 +17,7 @@ import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import '@/styles/main.css';
 import vuetify from '@/plugins/vuetify/index.ts';
+import { logger } from '@/utils/logger.ts';
 
 /**
  * Boots the Vue application: optional API mocking, plugin registration, mount,
@@ -75,6 +76,5 @@ const bootstrapApplication = () =>
         });
 
 void bootstrapApplication().catch((error) => {
-    // eslint-disable-next-line no-console
-    console.error('[Bootstrap] Fatal error during application initialization:', error);
+    logger.error('[Bootstrap] Fatal error during application initialization:', error);
 });

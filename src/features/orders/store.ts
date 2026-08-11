@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
-import { useCoreStore, useStructureSearchApi } from '@guebbit/vue-toolkit';
-import { ref, type WatchSource } from 'vue';
+import { useCoreStore, useStructureCrudApi } from '@guebbit/vue-toolkit';
 import {
     listOrders,
     getOrderById,
@@ -17,7 +16,6 @@ import type {
     CreateOrderRequest,
     UpdateOrderByIdRequest,
     CheckoutRequest,
-    CheckoutResponse,
     SearchOrdersRequest
 } from '@types';
 
@@ -28,18 +26,14 @@ import type {
 type IOrdersFilters = Omit<SearchOrdersRequest, 'page' | 'pageSize'>;
 
 /**
- * Orders CRUD, paginated search and checkout, on top of the toolkit's
- * search-API structure.
+ * Orders CRUD, paginated search, checkout and invoices.
+ *
+ * The CRUD half is declared; checkout and the invoice download are written against the toolkit
+ * primitives below, because neither is CRUD — checkout turns a cart into an order and answers with
+ * its own envelope, and an invoice is a Blob, not a record.
  */
 export const useOrdersStore = defineStore('orders', () => {
     const { getLoading, setLoading } = useCoreStore();
-
-    /**
-     * Current search filters. Owned by the store so `useStructureSearchApi`'s
-     * search-scoped `pageItemList` and `watchSearch` stay bound to the same
-     * source the list view mutates.
-     */
-    const filters = ref<IOrdersFilters>({});
 
     const {
         itemDictionary: orders,
@@ -48,118 +42,73 @@ export const useOrdersStore = defineStore('orders', () => {
         selectedIdentifier: selectedOrderId,
         selectedRecord: currentOrder,
 
+        filters,
         loading,
         pageCurrent,
         pageSize,
         pageTotal,
         pageItemList,
-        watchSearch,
-        fetchAll,
-        fetchTarget,
-        watchTarget,
-        fetchAny,
-        createTarget,
-        updateTarget,
-        deleteTarget
-    } = useStructureSearchApi<Order, string, string | number, IOrdersFilters>(() => filters.value, {
-        getLoading,
-        setLoading
-    });
 
-    /**
-     * Fetches every order of the authenticated user into the store dictionary.
-     *
-     * @param forced - Bypass the cache and always hit the API.
-     * @returns A promise resolving with the fetched orders.
-     */
-    const fetchOrders = (forced = false) =>
-        fetchAll(() => listOrders().then((response) => response.data.items), {
-            forced
-        });
+        fetchList: fetchOrders,
+        fetchPage: fetchPaginationOrders,
+        watchList: watchSearchOrders,
+        fetchOne: fetchOrder,
+        watchOne: watchOrder,
+        createOne: createOrder,
+        updateOne: updateOrder,
+        deleteOne: deleteOrder,
+        deleteTarget,
+        fetchAny
+    } = useStructureCrudApi<
+        Order,
+        string,
+        IOrdersFilters,
+        CreateOrderRequest,
+        UpdateOrderByIdRequest
+    >(
+        {
+            list: () => listOrders().then((response) => response.data.items),
 
-    /**
-     * Fetches a single page of orders, without touching the shared search state.
-     *
-     * @param page - 1-based page number. Defaults to `1`.
-     * @param pageSize - Items per page. Defaults to `10`.
-     * @param forced - Bypass the cache and always hit the API.
-     * @returns A promise resolving with that page's orders.
-     */
-    const fetchPaginationOrders = (page = 1, pageSize = 10, forced = false) =>
-        fetchAny(() => listOrders({ page, pageSize }).then((response) => response.data.items), {
-            forced
-        });
-
-    /**
-     * Reactive filtered order search via GET /orders, built on the toolkit's
-     * `watchSearch`: fetches the current page immediately and re-fetches whenever
-     * `pageCurrent`/`pageSize` change. Filters are read from the store's `filters`
-     * on each run — mutate `filters` then call the returned `search()` to apply them.
-     *
-     * @param onError - Notified on a failed search (immediate load, page
-     *  change, or an explicit `search()` call).
-     * @returns The toolkit search handle, whose `search()` re-runs the query
-     *  with the current {@link filters}.
-     */
-    const watchSearchOrders = (onError?: (error: unknown) => void) =>
-        watchSearch(
-            (currentFilters, page, pageSizeValue) =>
+            search: (filters, page, pageSize) =>
                 listOrders({
                     page,
-                    pageSize: pageSizeValue,
-                    id: currentFilters.id,
-                    userId: currentFilters.userId,
-                    productId: currentFilters.productId,
-                    email: currentFilters.email
+                    pageSize,
+                    id: filters.id,
+                    userId: filters.userId,
+                    productId: filters.productId,
+                    email: filters.email
                 }).then((response) => response.data.items),
-            { onError: (error) => onError?.(error) }
-        );
 
-    /**
-     * Fetches a single order and selects it as the current one.
-     *
-     * @param orderId - Identifier of the order to load.
-     * @param forced - Bypass the cache and always hit the API.
-     * @returns A promise resolving with the order.
-     */
-    const fetchOrder = (orderId: string, forced = false) =>
-        fetchTarget(() => getOrderById(orderId).then((response) => response.data), orderId, {
-            forced
-        });
+            get: (orderId) => getOrderById(orderId).then((response) => response.data),
 
-    /**
-     * Reactive counterpart of `fetchOrder`: selects and (re)fetches the order
-     * whenever the id changes, including once immediately on setup.
-     *
-     * @param idSource - Watch source yielding the order id; nullish values
-     *  clear the selection.
-     * @returns The toolkit watch handle (stop function + state).
-     */
-    const watchOrder = (idSource: WatchSource<string | undefined | null>) =>
-        watchTarget(idSource, (orderId) => getOrderById(orderId).then((response) => response.data));
+            create: (orderData) => apiCreateOrder(orderData).then((response) => response.data),
 
-    /**
-     * Creates an order directly, bypassing the cart (admin only).
-     *
-     * @param orderData - Full order payload.
-     * @returns A promise resolving with the created order.
-     */
-    const createOrder = (orderData: CreateOrderRequest) =>
-        createTarget(() => apiCreateOrder(orderData).then((response) => response.data));
+            update: (orderId, orderData) =>
+                updateOrderById(orderId, orderData).then((response) => response.data),
 
-    /**
-     * Updates an existing order.
-     *
-     * @param orderId - Identifier of the order to update.
-     * @param orderData - Fields to change.
-     * @returns A promise resolving with the updated order.
-     */
-    const updateOrder = (orderId: string, orderData: UpdateOrderByIdRequest) =>
-        updateTarget(
-            () => updateOrderById(orderId, orderData).then((response) => response.data),
-            orderData as Partial<Order>,
-            orderId
-        );
+            remove: (orderId) => deleteOrderById(orderId)
+        },
+        {
+            getLoading,
+            setLoading,
+            /**
+             * 5 000 instead of the toolkit's 100 000 default.
+             *
+             * Orders is the store that actually grows: an admin paging through the whole history
+             * accumulates every page visited, and each record carries its embedded line items, so
+             * an order is far heavier than a product or a user. 5 000 of them is already a
+             * generous session.
+             *
+             * A critical-mass backstop, not a cache policy — nothing is evicted for being old. On
+             * the way past the bound the WHOLE dictionary is dropped and immediately repopulated
+             * with the incoming batch, which is invisible here because every list is
+             * server-paginated (`pageItemList` renders the batch that just arrived). It would be
+             * visible on an infinite-scroll list, which is why this is set per store rather than
+             * globally.
+             */
+            maxRecords: 5000
+        }
+    );
 
     /**
      * Converts the authenticated user's current cart into a new order.
@@ -181,16 +130,9 @@ export const useOrdersStore = defineStore('orders', () => {
         );
 
     /**
-     * Deletes an order and drops it from the store.
-     *
-     * @param orderId - Identifier of the order to delete.
-     * @returns A promise resolving once the order is deleted.
-     */
-    const deleteOrder = (orderId: string) => deleteTarget(() => deleteOrderById(orderId), orderId);
-    /**
      * Permanently deletes an order, bypassing the soft delete.
      *
-     * `deleteOrder` leaves the record in place with `deletedAt` set, which an admin can still see
+     * `deleteOne` leaves the record in place with `deletedAt` set, which an admin can still see
      * and toggle back; this removes it outright and cannot be undone. Distinct methods rather than a
      * flag, so the irreversible one is never reached by passing the wrong boolean.
      *
@@ -221,6 +163,7 @@ export const useOrdersStore = defineStore('orders', () => {
         pageSize,
         pageTotal,
         pageItemList,
+
         fetchOrders,
         fetchPaginationOrders,
         watchSearchOrders,
@@ -228,9 +171,9 @@ export const useOrdersStore = defineStore('orders', () => {
         watchOrder,
         createOrder,
         updateOrder,
-        checkout,
         deleteOrder,
         hardDeleteOrder,
+        checkout,
         downloadInvoice
     };
 });

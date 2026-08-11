@@ -3,6 +3,7 @@ import { i18n } from '@/utils/i18n.ts';
 import { useCounterStore } from '@/stores/counter';
 
 import type { RouteLocationNormalized } from 'vue-router';
+import { logger } from '@/utils/logger.ts';
 
 /**
  * DUMMY guard showing what is (and isn't) reachable from a global route guard.
@@ -24,14 +25,16 @@ export const demoMiddleware = (to: RouteLocationNormalized) => {
      */
     const { count } = storeToRefs(useCounterStore());
     count.value++;
-    // eslint-disable-next-line no-console
-    console.log('count++: ' + count.value);
+    logger.debug('demo', 'count++: ' + count.value);
 
     /**
      * Can use translations, but it could happen before they are loaded correctly
      * (like in this case, where it is loaded in a route guard, before App.vue)
      */
     const { t, locale } = i18n.global;
-    // eslint-disable-next-line no-console
-    console.log('locale (will not work): ' + locale.value, t('generic.loading', { load: to.path }));
+    logger.debug(
+        'demo',
+        'locale (will not work): ' + locale.value,
+        t('generic.loading', { load: to.path })
+    );
 };

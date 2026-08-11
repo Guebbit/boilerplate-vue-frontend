@@ -74,7 +74,12 @@ export default defineConfigWithVueTs(
         },
 
         rules: {
-            'no-console': 'warn',
+            /**
+             * `src/utils/logger.ts` is the single console boundary, and holds the only exemptions.
+             * An error with one documented exception is a policy; a warning with a disable comment
+             * per call site is not.
+             */
+            'no-console': 'error',
             'no-debugger': 'warn',
             'vue/script-indent': 'off',
             'vue/multi-word-component-names': 'off',

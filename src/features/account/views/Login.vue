@@ -5,7 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { nextTick, ref } from 'vue';
+import { ref } from 'vue';
 import { RouterLink, useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
@@ -14,7 +14,7 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useProfileStore } from '@/stores/profile.ts';
 import { usersSchema } from '@/features/users/schemas.ts';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
-import { notifyErrorMessages, focusFirstErrorField } from '@/utils/errors.ts';
+import { notifyErrorMessages, VUETIFY_INVALID_FIELD_SELECTOR } from '@/utils/errors.ts';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import type { LoginRequest } from '@api';
 
@@ -38,7 +38,16 @@ const loginSchema = usersSchema.pick({ email: true }).extend({
     password: z.string().min(8, { error: () => t('users-form.password-required') })
 });
 
-const { form, formErrors, validate } = useStructureFormValidation<
+const showPassword = ref(false);
+const formElement = ref<HTMLFormElement>();
+
+const {
+    form,
+    formErrors,
+    showFormErrors: showErrors,
+    handleSubmit,
+    applyServerErrors
+} = useStructureFormValidation<
     LoginRequest & {
         remember?: boolean;
     }
@@ -49,12 +58,15 @@ const { form, formErrors, validate } = useStructureFormValidation<
         remember: false
     },
     loginSchema,
-    { revalidateOn: locale }
+    {
+        revalidateOn: locale,
+        // The toolkit reveals the errors, waits for the render and focuses the first invalid
+        // field; all this form supplies is where to look and what to say.
+        formElement,
+        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+        onInvalid: () => addMessage(t('users-form.fix-errors'))
+    }
 );
-
-const showErrors = ref(false);
-const showPassword = ref(false);
-const formElement = ref<HTMLFormElement>();
 
 /**
  * When the mock API is active, prefill the dummy user of the mock database
@@ -69,27 +81,26 @@ if (import.meta.env.VITE_API_MOCK_ENABLED === 'true')
  * Validates the form and authenticates the user.
  *
  * @returns A promise resolving once the navigation settles: to the
- *  `?continue=` target when present, to `Home` otherwise. On invalid input it
- *  resolves early, showing the errors and focusing the first invalid field; API
- *  failures are reported as toasts.
+ *  `?continue=` target when present, to `Home` otherwise. Invalid input is revealed, announced
+ *  and focused by the toolkit before the handler is ever reached; API failures are attached to
+ *  the field the server named, or reported as a toast when it named none.
  */
 const submitForm = () => {
     const { login } = useProfileStore();
-    if (!validate()) {
-        showErrors.value = true;
-        addMessage(t('users-form.fix-errors'));
-        // After nextTick so the messages `showErrors` just revealed are in the DOM —
-        // `focusFirstErrorField` looks for them.
-        return nextTick().then(() => focusFirstErrorField(formElement.value));
-    }
-    return login(form.value.email!, form.value.password!)
-        .then(() =>
-            // if query continue was set, redirect to that page, otherwise redirect to home
-            route.query.continue
-                ? router.push({ path: route.query.continue as string })
-                : router.push({ name: 'Home' })
-        )
-        .catch((error) => notifyErrorMessages(addMessage, error));
+    return handleSubmit(() =>
+        login(form.value.email!, form.value.password!)
+            .then(() =>
+                // if query continue was set, redirect to that page, otherwise redirect to home
+                route.query.continue
+                    ? router.push({ path: route.query.continue as string })
+                    : router.push({ name: 'Home' })
+            )
+            // Discard the NavigationFailure: handleSubmit's handler resolves with nothing
+            .then(() => {})
+    ).catch((error) => {
+        // A 401 names no field, so it stays a toast. A 422 that names `email` lands under it.
+        if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
+    });
 };
 </script>
 

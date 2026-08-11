@@ -67,7 +67,7 @@ const tableHeaders = computed(() => [
  */
 const pageItems = computed(() => pageItemList.value.filter((item): item is User => !!item));
 
-const { search } = watchSearchUsers((error) => notifyErrorMessages(addMessage, error));
+const { search } = watchSearchUsers({ onError: (error) => notifyErrorMessages(addMessage, error) });
 
 /**
  * Applies the current filters, restarting from the first page.

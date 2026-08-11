@@ -5,49 +5,52 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { nextTick, ref } from 'vue';
+import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { useProfileStore } from '@/stores/profile.ts';
 import { usersSchema } from '@/features/users/schemas.ts';
-import { notifyErrorMessages, focusFirstErrorField } from '@/utils/errors.ts';
+import { notifyErrorMessages, VUETIFY_INVALID_FIELD_SELECTOR } from '@/utils/errors.ts';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 
 const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 const { requestPasswordReset } = useProfileStore();
 
-const { form, formErrors, isSubmitting, handleSubmit } = useStructureFormValidation<{
-    email?: string;
-}>({ email: '' }, usersSchema.pick({ email: true }), { revalidateOn: locale });
-
-const showErrors = ref(false);
 const formElement = ref<HTMLFormElement>();
+
+const {
+    form,
+    formErrors,
+    showFormErrors: showErrors,
+    isSubmitting,
+    handleSubmit,
+    applyServerErrors
+} = useStructureFormValidation<{
+    email?: string;
+}>({ email: '' }, usersSchema.pick({ email: true }), {
+    revalidateOn: locale,
+    formElement,
+    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+    onInvalid: () => addMessage(t('users-form.fix-errors'))
+});
 
 /**
  * Validates the email and asks the backend for a reset token.
  *
  * @returns A promise resolving once the flow settles: on success a toast
- *  confirms the email was sent; on invalid input the errors are revealed and the
- *  field focused; API failures are reported as toasts.
+ *  confirms the email was sent. Invalid input is revealed, announced and focused by the toolkit
+ *  before the handler runs; API failures land on the field the server named, or as a toast.
  */
 const submitForm = () =>
     handleSubmit(() =>
         requestPasswordReset(form.value.email!).then(() => {
             addMessage(t('password-reset-request-page.success'));
-            showErrors.value = false;
         })
-    )
-        .then((success) => {
-            if (success) return;
-            showErrors.value = true;
-            addMessage(t('users-form.fix-errors'));
-            // After nextTick so the messages `showErrors` just revealed are in the DOM —
-            // `focusFirstErrorField` looks for them.
-            return nextTick().then(() => focusFirstErrorField(formElement.value));
-        })
-        .catch((error) => notifyErrorMessages(addMessage, error));
+    ).catch((error) => {
+        if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
+    });
 </script>
 
 <template>

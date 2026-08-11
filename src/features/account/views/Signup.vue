@@ -5,7 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { nextTick, ref } from 'vue';
+import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
@@ -14,7 +14,7 @@ import { useRouter, useRoute } from 'vue-router';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import FormImageUpload from '@/components/molecules/FormImageUpload.vue';
 import { usersSchema } from '@/features/users/schemas.ts';
-import { notifyErrorMessages, focusFirstErrorField } from '@/utils/errors.ts';
+import { notifyErrorMessages, VUETIFY_INVALID_FIELD_SELECTOR } from '@/utils/errors.ts';
 import { imageUploadSchema, useUploadProgress } from '@/utils/uploads.ts';
 
 /**
@@ -58,24 +58,31 @@ const signupSchema = usersSchema
         path: ['passwordConfirm']
     });
 
-const { form, formErrors, isSubmitting, handleSubmit } =
-    useStructureFormValidation<IUserSignupForm>(
-        {
-            email: '',
-            username: '',
-            password: '',
-            passwordConfirm: '',
-            conditions: false
-        },
-        signupSchema,
-        { revalidateOn: locale }
-    );
-
-/**
- * Whether to display validation errors in the UI
- */
-const showErrors = ref(false);
 const formElement = ref<HTMLFormElement>();
+
+const {
+    form,
+    formErrors,
+    showFormErrors: showErrors,
+    isSubmitting,
+    handleSubmit,
+    applyServerErrors
+} = useStructureFormValidation<IUserSignupForm>(
+    {
+        email: '',
+        username: '',
+        password: '',
+        passwordConfirm: '',
+        conditions: false
+    },
+    signupSchema,
+    {
+        revalidateOn: locale,
+        formElement,
+        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+        onInvalid: () => addMessage(t('users-form.fix-errors'))
+    }
+);
 
 /**
  * Profile image upload progress, shown by `FormImageUpload` while the multipart signup is in
@@ -91,9 +98,9 @@ const { signup } = useProfileStore();
  * Signup does not log the user in: the account still needs email confirmation,
  * so they are sent to the login page instead of getting a profile/session.
  *
- * @returns A promise resolving once the flow settles. `handleSubmit` resolves
- *  `false` on invalid input — errors are then shown and the first invalid field
- *  focused — and re-throws API errors, which are reported as toasts.
+ * @returns A promise resolving once the flow settles. Invalid input is revealed, announced and
+ *  focused by the toolkit before the handler runs; API failures land on the field the server
+ *  named (a taken email, most often) or as a toast when it named none.
  */
 const submitForm = () =>
     handleSubmit(() => {
@@ -112,16 +119,9 @@ const submitForm = () =>
         )
             .then(() => router.push({ name: 'Login', query: route.query }))
             .then(() => addMessage(t('signup-page.success-email-code-sent')));
-    })
-        .then((success) => {
-            if (success) return;
-            showErrors.value = true;
-            addMessage(t('users-form.fix-errors'));
-            // After nextTick so the error messages `showErrors` just revealed are in the DOM —
-            // `focusFirstErrorField` looks for them.
-            return nextTick().then(() => focusFirstErrorField(formElement.value));
-        })
-        .catch((error) => notifyErrorMessages(addMessage, error));
+    }).catch((error) => {
+        if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
+    });
 </script>
 
 <template>

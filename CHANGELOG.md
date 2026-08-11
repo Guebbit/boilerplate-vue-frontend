@@ -9,6 +9,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### ⚠ Breaking
 
+- **`VITE_APP_DEBUG_ROUTER` and `VITE_APP_DEBUG_HTTP` are replaced by `VITE_APP_LOG_LEVEL` and
+  `VITE_APP_LOG_SCOPES`.** A boolean per feature does not scale — each new noisy area cost a
+  variable, a README row and its own copy of `import.meta.env.DEV && … === 'true'` — and between
+  them the two flags governed 2 of the app's 22 `console` calls. To restore the old behaviour set
+  `VITE_APP_LOG_SCOPES=router` or `=http`.
+
+- **`no-console` is an error**, not a warning, with its only exemptions inside `src/utils/logger.ts`.
+  That removes 19 `eslint-disable` comments from 7 files.
+
 - **The three access guards `isAuth`, `isAdmin` and `isGuest` are gone.** A route declares
   `meta: { access: 'guest' | 'auth' | 'admin' }` (absent means public) and one global
   `enforceRouteAccess` applies it. `canAccess(access, visitor)` is the single expression of the rule,
@@ -21,6 +30,69 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   key lookup outside a component scope. `TranslateFunction` widened to match.
 
 ### Added
+
+- **Adopted `@guebbit/vue-toolkit@3.0.0` and `@guebbit/js-toolkit@2.1.0`**, both of which gained
+  what this repo had been re-deriving per feature.
+
+    - The three list stores are declared rather than wired: `useStructureCrudApi` takes the
+      endpoints once and derives dictionary, filters, pagination, caching, optimistic updates and
+      rollback. `products` 242 → 166 lines, `users` 220 → 142, `orders` 222 → 179 — most of what
+      remains is the endpoint declarations and the comments explaining the non-default cache
+      settings, rather than wiring. Each
+      destructures the composable and renames as it goes (`selectedRecord: currentProduct`,
+      `watchList: watchSearchProducts`), so a store exposes exactly one name per thing and the
+      views read as they always did.
+    - `products` sets `TTL: 5 * 60 * 1000` and `orders` sets `maxRecords: 5000`, the first
+      non-default cache configuration in this repo. Products are read by visitors while admins
+      edit them, so an hour of staleness is too long; orders are the store that actually grows,
+      and their records carry embedded line items.
+    - All eight forms share one submit flow. `useStructureFormValidation` now owns
+      `showFormErrors` and reveals errors, waits for the render and focuses the first invalid
+      field itself; `applyServerErrors` puts a rejection's errors under the field the server
+      named. `focusFirstErrorField` is gone, replaced by the single
+      `VUETIFY_INVALID_FIELD_SELECTOR` constant every form passes as `invalidFieldSelector`.
+    - `utils/formatters.ts` and `utils/uploads.ts` are now thin bindings over `js-toolkit`,
+      supplying this app's locale, empty glyph and upload limits and nothing else. Upload progress
+      is the toolkit's state machine plus one axios adapter line.
+
+    ⚠️ **Both toolkits are local `file:` dependencies while they are unpublished.** Before
+    releasing, swap them for real ranges:
+
+    ```json
+    "@guebbit/js-toolkit": "^2.1.0",
+    "@guebbit/vue-toolkit": "^3.0.0"
+    ```
+
+    While they stay local, a source change in either needs `npm run build` there and
+    `rm -rf node_modules/.vite` here — Vite keys its dependency cache off the lockfile, not
+    package contents. The `resolve.dedupe`, `optimizeDeps.exclude` and `tsconfig` `paths` entries
+    exist for the same reason and are documented where they sit.
+
+- **`src/composables/useAsyncAction.ts`** — loading/data/error state for a one-shot call, with a
+  last-call-wins guard so a slow response cannot overwrite a newer one. `useAdminObservability`
+  was writing that block once per endpoint; now it declares three.
+
+    Deliberately **not** in `@guebbit/vue-toolkit`: the toolkit's composables are about records —
+    identified, cached, mutated — and this is a call whose answer is just a payload. Same call as
+    the route-access guards and the i18n layer, both of which also stay here: a boilerplate is
+    meant to be copied, and generalizing them would cost more configuration than the code they
+    save.
+
+- **`src/utils/logger.ts`** — the only module allowed to touch `console`, governed by two axes that
+  mirror the API's model:
+
+    - `VITE_APP_LOG_LEVEL` — `error` | `warn` | `info` | `debug`, the same ladder and names as
+      `NODE_LOG_LEVEL`. Defaults to `debug` in development, `warn` in production.
+    - `VITE_APP_LOG_SCOPES` — which areas emit `debug`/`info`: comma-separated, or `*`. Empty
+      means none, so a per-navigation or per-request trace stays opt-in.
+
+    Severity and volume are different questions — a trace on every navigation is noisy without being
+    low-severity — which is why a level alone cannot replace the per-area switch. `warn` and `error`
+    are never scope-filtered.
+
+    `error` still reaches the console in production on purpose: Faro's `getWebInstrumentations()`
+    captures console errors and ships them, so the logger needs no dependency on the observability
+    store, and a failure during bootstrap still leaves a trace.
 
 - **`src/stores/analyticsEvents.ts`** — the analytics event names shared with the backend,
   byte-identical with its `src/core/observability/analytics-events.ts` and guarded by
@@ -42,6 +114,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - **`vue/block-order`** in `eslint.config.ts`, pinning `script` → `template` → `style`. The rule's
   default allows either order, which is how both spellings coexisted.
+
+### Removed
+
+- **`focusFirstErrorField` from `src/utils/errors.ts`.** The focusing is
+  `useStructureFormValidation`'s now, including the render wait it needs to find anything. What is
+  left here is `VUETIFY_INVALID_FIELD_SELECTOR`, the one constant every form passes as
+  `invalidFieldSelector` — Vuetify marks the wrapper rather than the control, so the toolkit's
+  standard `[aria-invalid="true"]` default does not fit.
+
+- **`isFeatureEnabled` from the observability store.** Marked "kept for API compatibility",
+  hardcoded to `return false`, and called from nowhere. Feature flags are not part of this stack;
+  when they are, they can arrive as something that works.
+
+- **`WithFileUpload<T, K>` from `src/types/api.ts`.** Marked "kept for any future extensions" and
+  referenced nowhere. The multipart request types are generated from the spec.
 
 ### Fixed
 

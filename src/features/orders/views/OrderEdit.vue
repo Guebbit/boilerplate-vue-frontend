@@ -5,7 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -23,7 +23,7 @@ import CardInfo from '@/components/organisms/CardInfo.vue';
 import ItemDetailHero from '@/components/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
 import { EMPTY_VALUE, formatText, formatDateTime, formatCurrency } from '@/utils/formatters.ts';
-import { notifyErrorMessages } from '@/utils/errors.ts';
+import { notifyErrorMessages, VUETIFY_INVALID_FIELD_SELECTOR } from '@/utils/errors.ts';
 
 /**
  * Generic utility hooks.
@@ -78,6 +78,8 @@ const editSchema = z.object({
 /**
  * Toolkit-managed form state.
  */
+const formElement = ref<HTMLFormElement>();
+
 const {
     form,
     formErrors,
@@ -85,8 +87,15 @@ const {
     isSubmitting,
     resetForm,
     handleSubmit,
-    activateAutoHydrate
-} = useStructureFormValidation<IOrderEditForm>({}, editSchema, { revalidateOn: locale });
+    activateAutoHydrate,
+    applyServerErrors
+} = useStructureFormValidation<IOrderEditForm>({}, editSchema, {
+    revalidateOn: locale,
+    // The toolkit reveals the errors, waits for the render and focuses the first invalid field.
+    formElement,
+    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+    onInvalid: () => addMessage(t('users-form.fix-errors'))
+});
 
 /**
  * Auto-hydrate the form from the fetched record once it resolves.
@@ -146,13 +155,10 @@ const submitForm = () =>
             email: form.value.email || undefined
         }).then(() => {
             addMessage(t('order-edit-page.success-update'));
-            showFormErrors.value = false;
         });
-    })
-        .then((success) => {
-            if (!success) showFormErrors.value = true;
-        })
-        .catch((error) => notifyErrorMessages(addMessage, error));
+    }).catch((error) => {
+        if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
+    });
 
 /**
  * Selects and (re)fetches the order whenever the route id changes.
@@ -192,7 +198,12 @@ watchOrder(() => id);
                     <p class="mt-1 opacity-75">{{ t('order-edit-page.page-title') }}</p>
                 </div>
 
-                <form novalidate class="flex flex-col gap-2" @submit.prevent="submitForm">
+                <form
+                    ref="formElement"
+                    novalidate
+                    class="flex flex-col gap-2"
+                    @submit.prevent="submitForm"
+                >
                     <v-select
                         v-model="form.status"
                         :label="t('order-edit-page.label-status')"

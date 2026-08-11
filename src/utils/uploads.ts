@@ -1,6 +1,7 @@
-import { ref } from 'vue';
 import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 import { z } from 'zod';
+import { useUploadProgress as useToolkitUploadProgress } from '@guebbit/vue-toolkit';
+import { formatFileSize, isAcceptedFileType, isWithinFileSize } from '@guebbit/js-toolkit';
 import { translate } from '@/utils/i18n.ts';
 
 /**
@@ -55,11 +56,14 @@ export const MAX_UPLOAD_BYTES = Number(import.meta.env.VITE_MAX_UPLOAD_BYTES) ||
 /**
  * Renders a byte count as a human-readable size, for the "file too large" message.
  *
+ * Pinned to MB rather than letting `formatFileSize` pick the fitting unit: the hint and the
+ * error quote a configured limit, and a limit that reads `512 KB` on one deployment and `5 MB`
+ * on the next is harder to compare against than one that always reads in the same unit.
+ *
  * @param bytes - Size in bytes.
  * @returns The size in MB with at most one decimal, e.g. `5 MB` or `1.5 MB`.
  */
-export const formatUploadSize = (bytes: number) =>
-    `${Number((bytes / (1024 * 1024)).toFixed(1))} MB`;
+export const formatUploadSize = (bytes: number) => formatFileSize(bytes, { unit: 'MB' });
 
 /**
  * {@link MAX_UPLOAD_BYTES} as display text, resolved once.
@@ -67,78 +71,63 @@ export const formatUploadSize = (bytes: number) =>
  * Both consumers — the field's hint and the size-exceeded message — need the same string, and
  * neither has anything to react to: both operands are module constants.
  */
-export const MAX_UPLOAD_SIZE_LABEL = formatUploadSize(MAX_UPLOAD_BYTES);
+export const MAX_UPLOAD_SIZE_LABEL = formatFileSize(MAX_UPLOAD_BYTES);
 
 /**
  * Whether a picked file is within both client-side limits.
  *
  * Split into two predicates rather than one so each failure gets its own message — "too big" and
- * "wrong type" are different things to fix.
+ * "wrong type" are different things to fix. Both are `@guebbit/js-toolkit` checks with this app's
+ * limits bound to them, so the rule and the numbers cannot drift apart.
  *
  * @param file - The picked file.
  * @returns `true` when the file's declared type is one the backend accepts.
  */
 export const isAcceptedImageType = (file: File) =>
-    (ACCEPTED_IMAGE_TYPES as readonly string[]).includes(file.type);
+    // `caseSensitive`, because the backend's fileFilter compares verbatim: a client-side check
+    // that lowercased first would accept files the server then rejects — a worse experience than
+    // rejecting early.
+    isAcceptedFileType(file, ACCEPTED_IMAGE_TYPES, { caseSensitive: true });
 
 /**
  * @param file - The picked file.
  * @returns `true` when the file is no larger than {@link MAX_UPLOAD_BYTES}.
  */
-export const isWithinUploadSizeLimit = (file: File) => file.size <= MAX_UPLOAD_BYTES;
+export const isWithinUploadSizeLimit = (file: File) => isWithinFileSize(file, MAX_UPLOAD_BYTES);
 
 /**
  * Progress state for one form's image upload, and the wrapper that drives it.
  *
- * This owns the whole sequence, not just the state. Every form that submits an optional image
- * needs the identical three decisions — attach `onUploadProgress` only when there is a file to
- * watch, surface the percentage while the request runs, return to idle however it ends — and
- * five views each re-deriving them is five places to edit when one of them changes. So the view
- * says what to send and this says how to watch it.
+ * The state machine is the toolkit's — bar appears with the request, returns to idle however it
+ * ends, nothing tracked when there is no file. All this adds is the axios binding, which is the
+ * only app-specific part and lives here once instead of in each of the five forms that upload.
  *
  * @returns `uploadProgress`, `undefined` while idle and 0–100 during a request, and
  *  {@link trackUpload} to wrap the call itself.
  */
 export const useUploadProgress = () => {
-    /**
-     * `undefined` means idle, which is NOT the same as `0` — a request that has started and sent
-     * nothing yet. `FormImageUpload` shows the bar for one and hides it for the other.
-     */
-    const uploadProgress = ref<number>();
+    const { progress, track } = useToolkitUploadProgress<AxiosRequestConfig>((onProgress) => ({
+        // `event.progress` is a 0–1 fraction, absent when the total size is unknown (a chunked
+        // or compressed request) — reporting 0 keeps the bar still rather than jumping about on
+        // a number that means nothing.
+        onUploadProgress: (event: AxiosProgressEvent) => onProgress(event.progress ?? 0)
+    }));
 
     /**
      * Runs an API call with upload progress attached, and returns to idle however it ends.
      *
-     * @param file - The picked file, or `undefined`. When absent no progress callback is
-     *  attached at all: on a plain field edit the bar would otherwise flash to 100% for a payload
-     *  measured in bytes.
+     * @param file - The picked file, or `undefined`. When absent nothing is tracked at all: on a
+     *  plain field edit the bar would otherwise flash to 100% for a payload measured in bytes.
      * @param send - Performs the call. Receives the axios overrides to forward to the store
      *  method's `options` parameter, which is `undefined` when there is no file.
-     * @returns Whatever `send` resolves with. Progress returns to idle on success, on failure and
-     *  on cancellation alike.
+     * @returns Whatever `send` resolves with, untouched.
      */
     const trackUpload = <T>(
         file: File | undefined,
         send: (options?: AxiosRequestConfig) => Promise<T>
-    ) =>
-        send(
-            file
-                ? {
-                      // `event.progress` is a 0–1 fraction, absent when the total size is
-                      // unknown (a chunked or compressed request) — the bar then stays at 0
-                      // rather than jumping about on a number that means nothing.
-                      onUploadProgress: (event: AxiosProgressEvent) => {
-                          uploadProgress.value = (event.progress ?? 0) * 100;
-                      }
-                  }
-                : undefined
-        ).finally(() => {
-            // `finally` rather than a `then`/`catch` pair: it forwards the resolved value and
-            // re-throws the rejection untouched, so the caller sees exactly what `send` produced.
-            uploadProgress.value = undefined;
-        });
+    ) => track(send, { enabled: !!file });
 
-    return { uploadProgress, trackUpload };
+    return { uploadProgress: progress, trackUpload };
 };
 
 /**

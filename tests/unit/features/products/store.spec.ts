@@ -349,13 +349,13 @@ describe('useProductsStore', () => {
                 const onError = vi.fn();
 
                 return useProductsStore()
-                    .watchSearchProducts(onError)
+                    .watchSearchProducts({ onError })
                     .search()
                     .catch(() => {})
                     .then(() => {
                         // The list view has no other way to learn the search failed — without
                         // this the page simply stops updating with no message.
-                        expect(onError).toHaveBeenCalledWith(failure);
+                        expect(onError).toHaveBeenCalledWith(failure, expect.anything());
                     });
             });
         });

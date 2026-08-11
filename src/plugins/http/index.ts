@@ -5,6 +5,7 @@ import type { IResponseReject, IResponseSuccess } from '@/types';
 import { useProfileStore } from '@/stores/profile.ts';
 import { storeToRefs } from 'pinia';
 import { resolveResponseSchema } from './responseSchemaMap.ts';
+import { logger } from '@/utils/logger.ts';
 
 /**
  * Custom request config for internal retry bookkeeping.
@@ -127,7 +128,6 @@ instance.defaults.baseURL = import.meta.env.VITE_API_URL ?? '';
 export const onRequest = (config: InternalAxiosRequestConfig<IAxiosRequestData>) => {
     const { accessToken } = storeToRefs(useProfileStore());
     if (accessToken.value) config.headers.Authorization = `Bearer ${accessToken.value}`;
-    // console.log('[request]', config);
     config.headers['Accept-Language'] = getCurrentLocale();
     return config;
 };
@@ -139,7 +139,6 @@ export const onRequest = (config: InternalAxiosRequestConfig<IAxiosRequestData>)
  * @returns A promise rejected with the same error.
  */
 export const onRequestReject = (error: AxiosError) => {
-    // console.log('[request error]', error);
     return Promise.reject(error);
 };
 
@@ -174,7 +173,6 @@ export const onRequestReject = (error: AxiosError) => {
 export const onResponseReject = (
     error: AxiosError<IAxiosResponseErrorData, IAxiosResponseErrorBody>
 ): Promise<IAxiosResponseErrorData> => {
-    // console.log('[response error]', error);
     const requestId = error.response?.headers?.['x-request-id'] as string | undefined;
     const traceId = error.response?.headers?.['x-trace-id'] as string | undefined;
 
@@ -193,12 +191,9 @@ export const onResponseReject = (
         error.message ||
         apiText('generic.error-unknown', 'api-errors.unknown');
     const message = getFallbackMessage(status, fallbackMessage);
-    const shouldLogServerError =
-        import.meta.env.DEV && import.meta.env.VITE_APP_DEBUG_HTTP === 'true' && status >= 500;
-
-    if (shouldLogServerError)
-        // eslint-disable-next-line no-console
-        console.error('------------- APP ERROR -------------', error);
+    // A 5xx is the server's problem, not this client's, so it is a trace rather than an error
+    // here — opt in with `VITE_APP_LOG_SCOPES=http`.
+    if (status >= 500) logger.debug('http', '------------- APP ERROR -------------', error);
 
     return Promise.reject({
         success: false,
@@ -296,8 +291,7 @@ const shouldValidateResponses = (): boolean => {
 const validateResponseAgainstContract = (config: AxiosRequestConfig, data: unknown): void => {
     const schema = resolveResponseSchema(config.method, config.url);
     if (!schema) {
-        // eslint-disable-next-line no-console
-        console.warn(
+        logger.warn(
             `[contract] no response schema mapped for ${(config.method ?? 'GET').toUpperCase()} ${config.url ?? '(no url)'} — skipping validation`
         );
         return;

@@ -183,7 +183,9 @@ describe('useUploadProgress', () => {
         const send = vi.fn().mockResolvedValue('done');
 
         return trackUpload(undefined, send).then(() => {
-            expect(send).toHaveBeenCalledWith(undefined);
+            // Called with no argument at all, which `send` reads as `options === undefined` just
+            // the same — the point is that no progress callback is handed to the transport.
+            expect(send).toHaveBeenCalledWith();
         });
     });
 

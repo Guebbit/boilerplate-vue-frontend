@@ -319,11 +319,11 @@ describe('useUsersStore', () => {
             const onError = vi.fn();
 
             return useUsersStore()
-                .watchSearchUsers(onError)
+                .watchSearchUsers({ onError })
                 .search()
                 .catch(() => {})
                 .then(() => {
-                    expect(onError).toHaveBeenCalledWith(failure);
+                    expect(onError).toHaveBeenCalledWith(failure, expect.anything());
                 });
         });
     });

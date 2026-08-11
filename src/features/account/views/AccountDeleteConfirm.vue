@@ -5,14 +5,14 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { nextTick, ref } from 'vue';
+import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/layouts/LayoutDefault.vue';
 import { useProfileStore } from '@/stores/profile.ts';
-import { notifyErrorMessages, focusFirstErrorField } from '@/utils/errors.ts';
+import { notifyErrorMessages, VUETIFY_INVALID_FIELD_SELECTOR } from '@/utils/errors.ts';
 import { routerLinkI18n } from '@/utils/i18n.ts';
 
 /**
@@ -28,35 +28,42 @@ const router = useRouter();
 const { addMessage } = useNotificationsStore();
 const { confirmAccountDelete } = useProfileStore();
 
-const { form, formErrors, isSubmitting, handleSubmit } =
-    useStructureFormValidation<IAccountDeleteConfirmForm>(
-        {
-            token: typeof route.query.token === 'string' ? route.query.token : ''
-        },
-        z.object({
-            token: z
-                .string()
-                .min(1, { error: () => t('account-delete-confirm-page.token-required') })
-        }),
-        { revalidateOn: locale }
-    );
-
-const showErrors = ref(false);
 const formElement = ref<HTMLFormElement>();
+
+const {
+    form,
+    formErrors,
+    showFormErrors: showErrors,
+    isSubmitting,
+    handleSubmit,
+    applyServerErrors
+} = useStructureFormValidation<IAccountDeleteConfirmForm>(
+    {
+        token: typeof route.query.token === 'string' ? route.query.token : ''
+    },
+    z.object({
+        token: z.string().min(1, { error: () => t('account-delete-confirm-page.token-required') })
+    }),
+    {
+        revalidateOn: locale,
+        formElement,
+        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+        onInvalid: () => addMessage(t('users-form.fix-errors'))
+    }
+);
 
 /**
  * Validates the token and deletes the account for good.
  *
  * @returns A promise resolving once the flow settles: on success a toast is
- *  shown and the user is sent `Home`; on invalid input the errors are revealed
- *  and the field focused; API failures are reported as toasts.
+ *  shown and the user is sent `Home`. Invalid input is revealed, announced and focused by the
+ *  toolkit before the handler runs; API failures land on the field the server named, or as a toast.
  */
 const submitForm = () =>
     handleSubmit(() =>
         confirmAccountDelete(form.value.token!)
             .then(() => {
                 addMessage(t('account-delete-confirm-page.success'));
-                showErrors.value = false;
                 return router.push(routerLinkI18n({ name: 'Home' }));
             })
             .then(() => {
@@ -65,16 +72,9 @@ const submitForm = () =>
                 // will not take, and a failed navigation is the router's own `onError` to
                 // report rather than this form's.
             })
-    )
-        .then((success) => {
-            if (success) return;
-            showErrors.value = true;
-            addMessage(t('users-form.fix-errors'));
-            // After nextTick so the messages `showErrors` just revealed are in the DOM —
-            // `focusFirstErrorField` looks for them.
-            return nextTick().then(() => focusFirstErrorField(formElement.value));
-        })
-        .catch((error) => notifyErrorMessages(addMessage, error));
+    ).catch((error) => {
+        if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
+    });
 </script>
 
 <template>

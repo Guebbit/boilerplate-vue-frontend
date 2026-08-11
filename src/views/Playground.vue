@@ -17,6 +17,7 @@ import FormCounterInput from '@/components/molecules/FormCounterInput.vue';
 import CardMaterialStat from '@/components/organisms/CardMaterialStat.vue';
 
 import type { IProvidedVariableMutationFunction, IProvidedVariableType } from '@/types';
+import { logger } from '@/utils/logger.ts';
 
 /**
  * Use translation
@@ -43,19 +44,15 @@ const { setLoading } = useCoreStore();
 /**
  * Loading examples
  */
-// eslint-disable-next-line no-console
-console.log('fake core loading START');
+logger.debug('demo', 'fake core loading START');
 setLoading('core', true);
 setTimeout(() => {
-    // eslint-disable-next-line no-console
-    console.log('fake core loading END');
+    logger.debug('demo', 'fake core loading END');
     setLoading('core', false);
-    // eslint-disable-next-line no-console
-    console.log('fake side (smaller) loading START');
+    logger.debug('demo', 'fake side (smaller) loading START');
     setLoading('usersList', true);
     setTimeout(() => {
-        // eslint-disable-next-line no-console
-        console.log('fake side (smaller) loading END');
+        logger.debug('demo', 'fake side (smaller) loading END');
         setLoading('usersList', false);
     }, 4000);
 }, 500);
@@ -90,19 +87,16 @@ const { providedVariable, setProvidedVariable } = inject<{
  */
 
 watch(providedVariable, (val) => {
-    // eslint-disable-next-line no-console
-    console.log('Provided ref changed', val);
+    logger.debug('demo', 'Provided ref changed', val);
 });
 
 /**
  * Created and mounted
  */
-// eslint-disable-next-line no-console
-console.log('PLAYGROUND was created');
+logger.debug('demo', 'PLAYGROUND was created');
 
 onMounted(() => {
-    // eslint-disable-next-line no-console
-    console.log('PLAYGROUND was mounted');
+    logger.debug('demo', 'PLAYGROUND was mounted');
 });
 </script>
 

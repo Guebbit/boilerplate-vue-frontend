@@ -14,6 +14,24 @@
 
         "baseUrl": ".",
         "paths": {
+            // The TypeScript half of vite.config.ts's `resolve.dedupe`, and needed for the same
+            // reason: while `@guebbit/*` is npm-linked, TS follows the symlink to a checkout that
+            // carries its own `vue`/`pinia`, and then resolves the toolkit's `Ref<T>` from a
+            // DIFFERENT copy of @vue/reactivity than the app's. The two are structurally
+            // identical and nominally distinct, so every `storeToRefs` result is "not assignable
+            // to" itself — hundreds of errors that say nothing about the code.
+            //
+            // Pinning them here makes the whole program agree on one copy. Harmless once the
+            // packages come from npm again.
+            "vue": ["./node_modules/vue"],
+            "pinia": ["./node_modules/pinia"],
+            "vue-router": ["./node_modules/vue-router"],
+            "vue-i18n": ["./node_modules/vue-i18n"],
+            // `@tanstack/query-core` is a required peer of @guebbit/vue-toolkit, and the stores
+            // now spread the toolkit's whole surface — `queryClient` included — so its type is
+            // part of their inferred type. Without this it resolves to the copy nested inside the
+            // linked checkout, and TS refuses to name a type from a path it considers unportable.
+            "@tanstack/query-core": ["./node_modules/@tanstack/query-core"],
             "@/*": ["./src/*"],
             "@types": ["./src/types"],
             "@api": ["./contracts/rest/index"],

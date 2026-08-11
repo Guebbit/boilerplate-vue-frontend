@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue';
+import { computed, type ComputedRef, type Ref } from 'vue';
 import {
     getObservabilityHealth,
     getObservabilityMetricsOverview,
@@ -6,12 +6,13 @@ import {
 } from '@api';
 import type { ObservabilityHealth, ObservabilityMetricsSummary, AuditEventItem } from '@types';
 import type { IAdminAuditFilters } from '@/features/admin/types.ts';
+import { useAsyncAction } from '@/composables/useAsyncAction.ts';
 
 export interface IUseAdminObservabilityReturn {
     health: Ref<ObservabilityHealth | undefined>;
     metrics: Ref<ObservabilityMetricsSummary | undefined>;
-    auditEvents: Ref<AuditEventItem[]>;
-    auditTotal: Ref<number>;
+    auditEvents: ComputedRef<AuditEventItem[]>;
+    auditTotal: ComputedRef<number>;
     loadingHealth: Ref<boolean>;
     loadingMetrics: Ref<boolean>;
     loadingAudit: Ref<boolean>;
@@ -31,103 +32,81 @@ export interface IUseAdminObservabilityReturn {
  * - GET /observability/health
  * - GET /observability/metrics/overview
  * - GET /observability/audit
- */
-/**
- * @returns Shared state (payloads, per-call loading flags and error messages)
- *  plus the four fetchers. Every fetcher resolves rather than rejects: failures
- *  land in the matching `error*` ref so a partially available stack still
- *  renders.
+ *
+ * Each is a {@link useAsyncAction}: the loading/data/error bookkeeping is written once there
+ * rather than three times here, and every fetcher resolves rather than rejects, so a partially
+ * available stack still renders the panels that answered.
+ *
+ * @returns Shared state (payloads, per-call loading flags and error messages) plus the four
+ *  fetchers.
  */
 export const useAdminObservability = (): IUseAdminObservabilityReturn => {
-    const health = ref<ObservabilityHealth | undefined>(undefined);
-    const metrics = ref<ObservabilityMetricsSummary | undefined>(undefined);
-    const auditEvents = ref<AuditEventItem[]>([]);
-    const auditTotal = ref(0);
+    const {
+        data: health,
+        error: errorHealth,
+        loading: loadingHealth,
+        run: runHealth
+    } = useAsyncAction(() => getObservabilityHealth().then((response) => response.data), {
+        fallbackErrorMessage: 'Failed to load health data'
+    });
 
-    const loadingHealth = ref(false);
-    const loadingMetrics = ref(false);
-    const loadingAudit = ref(false);
-
-    const errorHealth = ref<string | undefined>(undefined);
-    const errorMetrics = ref<string | undefined>(undefined);
-    const errorAudit = ref<string | undefined>(undefined);
+    const {
+        data: metrics,
+        error: errorMetrics,
+        loading: loadingMetrics,
+        run: runMetrics
+    } = useAsyncAction(() => getObservabilityMetricsOverview().then((response) => response.data), {
+        fallbackErrorMessage: 'Failed to load metrics data'
+    });
 
     /**
-     * Loads the stack health report.
+     * The audit call answers with items AND a total, so its payload is the envelope; the two are
+     * split back out below rather than tracked as separate state that could disagree.
+     */
+    const {
+        data: audit,
+        error: errorAudit,
+        loading: loadingAudit,
+        run: runAuditLogs
+    } = useAsyncAction(
+        (filters: IAdminAuditFilters = {}) =>
+            getObservabilityAuditLogs({
+                actor: filters.actor,
+                action: filters.action,
+                outcome: filters.outcome,
+                since: filters.since,
+                limit: filters.limit
+            }).then((response) => response.data),
+        { fallbackErrorMessage: 'Failed to load audit logs' }
+    );
+
+    const auditEvents = computed(() => audit.value?.items ?? []);
+    const auditTotal = computed(() => audit.value?.total ?? 0);
+
+    /**
+     * The three fetchers resolve with nothing: every consumer reads the state refs, and a
+     * `Promise<void>` is what `AdminAuditTab`'s `onSearch` prop is typed to take.
      *
      * @returns A promise resolving once `health` or `errorHealth` is set.
      */
-    const fetchHealth = () => {
-        loadingHealth.value = true;
-        errorHealth.value = undefined;
-        return getObservabilityHealth()
-            .then((response) => {
-                health.value = response.data;
-            })
-            .catch((error: unknown) => {
-                errorHealth.value =
-                    error instanceof Error ? error.message : 'Failed to load health data';
-            })
-            .finally(() => {
-                loadingHealth.value = false;
-            });
-    };
+    const fetchHealth = () => runHealth().then(() => {});
 
     /**
-     * Loads the aggregated metrics overview.
-     *
      * @returns A promise resolving once `metrics` or `errorMetrics` is set.
      */
-    const fetchMetrics = () => {
-        loadingMetrics.value = true;
-        errorMetrics.value = undefined;
-        return getObservabilityMetricsOverview()
-            .then((response) => {
-                metrics.value = response.data;
-            })
-            .catch((error: unknown) => {
-                errorMetrics.value =
-                    error instanceof Error ? error.message : 'Failed to load metrics data';
-            })
-            .finally(() => {
-                loadingMetrics.value = false;
-            });
-    };
+    const fetchMetrics = () => runMetrics().then(() => {});
 
     /**
      * Loads the audit log page matching the given filters.
      *
-     * @param filters - Actor/action/outcome/since/limit criteria; defaults to no
-     *  filtering at all.
-     * @returns A promise resolving once `auditEvents` + `auditTotal`, or
-     *  `errorAudit`, are set.
+     * @param filters - Actor/action/outcome/since/limit criteria; defaults to no filtering at all.
+     * @returns A promise resolving once `auditEvents` + `auditTotal`, or `errorAudit`, are set.
      */
-    const fetchAuditLogs = (filters: IAdminAuditFilters = {}) => {
-        loadingAudit.value = true;
-        errorAudit.value = undefined;
-        return getObservabilityAuditLogs({
-            actor: filters.actor,
-            action: filters.action,
-            outcome: filters.outcome,
-            since: filters.since,
-            limit: filters.limit
-        })
-            .then((response) => {
-                auditEvents.value = response.data.items;
-                auditTotal.value = response.data.total;
-            })
-            .catch((error: unknown) => {
-                errorAudit.value =
-                    error instanceof Error ? error.message : 'Failed to load audit logs';
-            })
-            .finally(() => {
-                loadingAudit.value = false;
-            });
-    };
+    const fetchAuditLogs = (filters: IAdminAuditFilters = {}) =>
+        runAuditLogs(filters).then(() => {});
 
     /**
-     * Loads health, metrics and audit logs in parallel, for the initial
-     * dashboard render.
+     * Loads health, metrics and audit logs in parallel, for the initial dashboard render.
      *
      * @returns A promise resolving once all three calls have settled.
      */

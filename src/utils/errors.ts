@@ -42,21 +42,15 @@ export const notifyErrorMessages = (
 };
 
 /**
- * Moves focus to the first invalid field of a form, for accessibility after a
+ * Where `useStructureFormValidation`'s `revealErrors()` looks for the field to focus after a
  * failed submit.
  *
- * Targets Vuetify's error state class rather than `:invalid`/`aria-invalid`,
- * since `v-input` wraps the native control and only the wrapper carries that
- * class. The trailing `[tabindex]` catches non-native inputs (e.g. `v-select`)
- * that expose no focusable input/textarea/select of their own.
+ * The toolkit defaults to `[aria-invalid="true"]`, which is the right general answer and the
+ * wrong one here: `v-input` wraps the native control, and only the *wrapper* carries Vuetify's
+ * error class — focus has to land on something focusable inside it. The trailing `[tabindex]`
+ * catches non-native inputs (`v-select`) that expose no input/textarea/select of their own.
  *
- * @param formElement - The form to search; nullish is a no-op so callers can
- *  pass an unmounted template ref directly.
- * @param firstFormErrorFieldSelector - Override for the CSS selector used to
- *  locate the field, for non-Vuetify markup.
- * @returns Nothing; focus is applied as a side effect when a field is found.
+ * One constant rather than eleven copies: every form passes it as `invalidFieldSelector`.
  */
-export const focusFirstErrorField = (
-    formElement?: HTMLFormElement,
-    firstFormErrorFieldSelector = '.v-input--error input, .v-input--error textarea, .v-input--error select, .v-input--error [tabindex]'
-) => formElement?.querySelector<HTMLElement>(firstFormErrorFieldSelector)?.focus();
+export const VUETIFY_INVALID_FIELD_SELECTOR =
+    '.v-input--error input, .v-input--error textarea, .v-input--error select, .v-input--error [tabindex]';

@@ -6,6 +6,7 @@ import { tryRestoreAuth, enforceRouteAccess } from '@/middlewares/authentication
 import { getDefaultLocale } from '@/utils/i18n.ts';
 import { loginContinueTo } from '@/router/navigation.ts';
 import { useObservabilityStore } from '@/stores/observability';
+import { logger } from '@/utils/logger.ts';
 
 import accountRoutes from '@/features/account/routes';
 import adminRoutes from '@/features/admin/routes';
@@ -14,12 +15,6 @@ import productsRoutes from '@/features/products/routes';
 import realtimeRoutes from '@/features/realtime/routes';
 import cartRoutes from '@/features/cart/routes';
 import ordersRoutes from '@/features/orders/routes';
-
-/**
- * Whether navigation logging is on: dev builds with `VITE_APP_DEBUG_ROUTER`.
- */
-const isRouterDebugEnabled =
-    import.meta.env.DEV && import.meta.env.VITE_APP_DEBUG_ROUTER === 'true';
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.VITE_APP_BASE_URL),
@@ -137,9 +132,7 @@ router.onError((error: Error, to: RouteLocationNormalized) => {
     // 401 is the one recoverable status: logging in fixes it, so keep where they were going.
     if (status === 401) return router.push(loginContinueTo(to.fullPath, locale));
 
-    if (isRouterDebugEnabled)
-        // eslint-disable-next-line no-console
-        console.error('page error', error);
+    logger.debug('router', 'page error', error);
 
     /*
      * Everything else is the error page, which needs only a status and a message key.
@@ -178,10 +171,7 @@ router.onError((error: Error, to: RouteLocationNormalized) => {
  * @returns A navigation verdict: `undefined` to proceed, or the location to redirect to.
  */
 router.beforeEach((to, from) => {
-    if (isRouterDebugEnabled) {
-        // eslint-disable-next-line no-console
-        console.log(`Navigating from ${from.path} to ${to.path}`);
-    }
+    logger.debug('router', `Navigating from ${from.path} to ${to.path}`);
     // Silently restore token + profile on every navigation so that public pages
     // (e.g. ProductsList) render the correct admin controls after a page reload.
     return tryRestoreAuth().then(() => enforceRouteAccess(to));

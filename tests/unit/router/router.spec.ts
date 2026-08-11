@@ -246,20 +246,21 @@ describe('onError redirects', () => {
 });
 
 /**
- * The `VITE_APP_DEBUG_ROUTER` logging path.
+ * Navigation tracing, which `utils/logger.ts` gates on the `router` scope.
  *
- * `isRouterDebugEnabled` is computed once at module scope, so the flag has to be stubbed BEFORE the
- * import — which is why these cases load the router themselves instead of reusing `loadRouter`.
+ * The logger resolves its level and scopes once at module scope, so the environment has to be
+ * stubbed BEFORE the import — which is why these cases load the router themselves rather than
+ * reusing `loadRouter`.
  *
- * It had no coverage at all, in either direction: nothing asserted that the logs appear when the
- * flag is on, and nothing asserted they stay quiet when it is off. A `no-console` lint exemption
- * guarding code no test executes is how a stray `console.log` reaches a production bundle.
+ * Both directions are asserted. A trace that never appears when asked for is as wrong as one that
+ * appears when it was not, and only the second is visible by accident.
  */
-/** Loads a fresh router with the debug flag stubbed BEFORE import, since it is read at module scope. */
+/** Loads a fresh router with the log scopes stubbed BEFORE import, since they are read once there. */
 const loadRouterWithDebug = (enabled: boolean) => {
     vi.resetModules();
     vi.stubEnv('DEV', true);
-    vi.stubEnv('VITE_APP_DEBUG_ROUTER', enabled ? 'true' : 'false');
+    vi.stubEnv('VITE_APP_LOG_LEVEL', 'debug');
+    vi.stubEnv('VITE_APP_LOG_SCOPES', enabled ? 'router' : '');
     return import('@/router').then(({ default: router }) =>
         router
             .push('/')
@@ -268,39 +269,41 @@ const loadRouterWithDebug = (enabled: boolean) => {
     );
 };
 
-describe('router debug logging', () => {
-    it('logs each navigation when the flag is on', () => {
-        const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+/** Every argument of every recorded call, flattened, so a prefixed message still matches. */
+const debugText = (spy: { mock: { calls: unknown[][] } }) =>
+    spy.mock.calls.map((call) => call.map(String).join(' ')).join('\n');
+
+describe('router navigation tracing', () => {
+    it('logs each navigation when the router scope is on', () => {
+        const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
 
         return loadRouterWithDebug(true)
             .then((router) => router.push('/en/products'))
             .then(() => {
-                expect(log).toHaveBeenCalled();
-                expect(log.mock.calls.some(([first]) => String(first).includes('Navigating'))).toBe(
-                    true
-                );
-                log.mockRestore();
+                // The logger prefixes its own scope, so the assertion is on the whole line rather
+                // than on the first argument.
+                expect(debugText(debugSpy)).toContain('[router]');
+                expect(debugText(debugSpy)).toContain('Navigating');
+                debugSpy.mockRestore();
             });
     });
 
-    it('stays silent when the flag is off', () => {
-        const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    it('stays silent when the router scope is off', () => {
+        const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
 
         return loadRouterWithDebug(false)
             .then((router) => router.push('/en/products'))
             .then(() => {
                 // Scoped to the navigation line rather than asserting console silence outright:
-                // other modules log on boot (the counter store), and a blanket assertion would fail
-                // for reasons that say nothing about the router.
-                expect(log.mock.calls.some(([first]) => String(first).includes('Navigating'))).toBe(
-                    false
-                );
-                log.mockRestore();
+                // other modules may log on boot, and a blanket assertion would fail for reasons
+                // that say nothing about the router.
+                expect(debugText(debugSpy)).not.toContain('Navigating');
+                debugSpy.mockRestore();
             });
     });
 
-    it('reports a navigation failure when the flag is on', () => {
-        const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+    it('reports a navigation failure when the router scope is on', () => {
+        const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
 
         return loadRouterWithDebug(true)
             .then((router) => {
@@ -311,15 +314,13 @@ describe('router debug logging', () => {
             })
             .then(() =>
                 vi.waitFor(() => {
-                    if (!errorLog.mock.calls.some(([first]) => String(first) === 'page error'))
-                        throw new Error('no page error log yet');
+                    if (!debugText(debugSpy).includes('page error'))
+                        throw new Error('no page error trace yet');
                 })
             )
             .then(() => {
-                expect(errorLog.mock.calls.some(([first]) => String(first) === 'page error')).toBe(
-                    true
-                );
-                errorLog.mockRestore();
+                expect(debugText(debugSpy)).toContain('page error');
+                debugSpy.mockRestore();
             });
     });
 });
