@@ -6,18 +6,20 @@ This page covers the three libraries that manage reactive state, navigation, and
 
 ### Why it is here
 
-Pinia is the official state management library for Vue 3. Stores hold reactive data and expose actions that call the generated API client. Views never call `contracts/rest/index.ts` directly — they always go through a store or feature composable.
+Pinia is the official state management library for Vue 3. Stores hold reactive data and expose actions that call the generated API client. Views never call `contracts/rest/index.ts` directly — they always go through a store or a module composable.
 
 ### Stores in this repo
 
 | Store | File | Owns |
 | ----- | ---- | ---- |
-| Profile | `src/stores/profile.ts` | auth state, access token, current user, login/logout/refresh |
-| Observability | `src/stores/observability.ts` | Faro init, Umami init, `track()`, `captureException()`, `identifyUser()` |
-| Realtime observability | `src/stores/realtimeObservability.ts` | SSE connection state, live metrics stream |
-| Counter (example) | `src/stores/counter.ts` | minimal Pinia example |
+| Session | `src/infrastructure/session.ts` | access token, `isAuth`/`isAdmin`, the `viewer` projection, refresh, logout-all |
+| Account | `src/modules/account/store.ts` | the visitor's own `User` record: login, signup, password resets, profile edits |
+| Observability | `src/infrastructure/observability.ts` | Faro init, Umami init, `track()`, `captureException()`, `identifyUser()` |
+| Realtime observability | `src/modules/realtime/realtimeObservability.ts` | SSE connection state, live metrics stream |
+| Counter (example) | `src/kernel/counter.ts` | minimal Pinia example |
 
-Feature-level stores live inside `src/features/<feature>/composables/` and follow the same pattern.
+Domain stores live inside `src/modules/<name>/store.ts` and follow the same pattern. They are
+reached through the module's barrel (`@/modules/<name>`), never by their file path.
 
 ### Usage pattern
 
@@ -41,7 +43,7 @@ const doSomething = () => {
 
 ### Why it is here
 
-Vue Router maps URL paths to view components in a SPA. All route definitions live in feature `routes.ts` files and are composed in `src/router/index.ts`.
+Vue Router maps URL paths to view components in a SPA. Each module declares its own `routes.ts` and contributes it through the registry; `src/kernel/router/index.ts` splices them in without naming a single domain.
 
 ### Locale prefix
 
@@ -103,12 +105,23 @@ Vue I18n externalises all user-facing strings into locale message files. Switchi
 
 ### Message files
 
+Shared copy lives centrally; every domain ships its own and they are deep-merged into the active
+locale at boot (decision D6 — merged at boot, not at build, so each dictionary stays a lazy chunk).
+
 ```
-src/locales/
-├── en.ts    ← default
-├── it.ts
-└── …
+src/locales/                      ← shared: generic, navigation shell, error and home pages
+├── en.json    ← default
+└── it.json
+
+src/modules/<name>/locales/       ← one domain's pages, forms and its own navigation.label-*
+├── en.json
+└── it.json
 ```
+
+A module declares its dictionaries in `module.ts` (`locales: { en: () => import(…) }`);
+`src/main.ts` hands them to `registerLocaleContributors` because `infrastructure/i18n.ts` may not import
+`@/modules`. Deleting a domain removes its copy with it, rather than leaving orphan keys in a file
+nobody dares prune.
 
 ### External references
 

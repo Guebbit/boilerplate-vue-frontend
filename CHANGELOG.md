@@ -7,7 +7,83 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-08-13
+
+The modular release, and the first one cut — the counterpart of the API repo's 2.0.0, released
+together. Everything below is a single arc told in waves — separated by `---`, newest first, each
+with its own preamble: a views-and-stores layout became self-registering modules over a tiered
+substrate (`infrastructure`, `ui`, `kernel`, `app`); the shared contract files
+became backend output verified byte-identical by the spec-identity gate; and the router, the
+navigation and the access rules read one registry instead of naming domains. A wave's "Known
+issues" records what was true when that wave closed; later waves above it document the fixes.
+
 ### ⚠ Breaking
+
+- **Modules may now carry a `domain/` folder: pure rules, lint-guaranteed framework-free.** Nothing
+  in `src/modules/*/domain/**` may import vue, pinia, axios, vue-router, vue-i18n, any tier alias, a
+  sibling module, or its own module's outer files. `cart/domain/quantity.ts` is the first and
+  currently only one: `canDecrement` and `steppedQuantity` were `:disabled="item.quantity <= 1"` and
+  two inline `quantity ± 1` expressions inside `views/Cart.vue` — one rule written three times in a
+  template, testable only by mounting a component. Behaviour is unchanged; the step is now clamped
+  rather than merely guarded, so a double click cannot send `quantity: 0`.
+
+    **On a frontend this layer is thin by design.** Prices, totals and eligibility are decided by the
+    API, and restating them here would be two implementations of one rule — the drift
+    `scripts/specIdentity.ts` exists to catch. See `docs/theory/domain-layer.md`, and
+    `DDD_EXPLORATION.md` for the full-tactical transformation of both repos, costed and not
+    implemented.
+
+- **Two tiers were renamed: `src/core` → `src/infrastructure`, `src/platform` → `src/kernel`**,
+  matching the API repo commit for commit. Imports follow: `@/core/*` → `@/infrastructure/*`,
+  `@/platform/*` → `@/kernel/*`. The dependency rule is unchanged — same tiers, same arrows, same
+  per-tier lint blocks — only the two names that carried the wrong meaning.
+
+    `core` is not an unusual name, it is an **overloaded** one: Nest and Angular use it for the DI
+    container, Spring and Backstage for the substrate. This repo used it for the substrate, and
+    `docs/theory/modules.md` had to carry a standing disclaimer saying so. A novel name makes a reader
+    look it up; an overloaded one makes them think they already know, and that failure is silent.
+    `platform` moved because in current usage the word means the base layer everything runs on — which
+    is this repo's `infrastructure` — so the two old names read as pointing at each other's contents.
+    `kernel` names what the folder is: a microkernel hosting plugins it has never heard of.
+
+- **`src/kernel` is now a single file, `registry.ts`.** The three that failed the tier's own test
+  moved with the rename: `FormCounterInput.vue` and `AppLanguageSwitcher.vue` to `ui/molecules/`,
+  and `counter.ts` to `app/` (it is Pinia demo scaffolding for the Playground, not shared state).
+  `docs/theory/modules.md` had listed all three as misplaced; this closes that note. Their specs
+  moved too: `tests/unit/platform/` is gone, `tests/unit/core/` is now `tests/unit/infrastructure/`.
+
+- **`src/` is organised into four tiers: `core`, `ui`, `platform`, `modules`.** What a file is
+  allowed to know is now a property of where it lives, and dependencies point one way.
+
+    | was                                                                                 | is                                     |
+    | ----------------------------------------------------------------------------------- | -------------------------------------- |
+    | `src/utils/*`                                                                       | `src/infrastructure/*`                 |
+    | `src/plugins/http/*`                                                                | `src/infrastructure/http/*`            |
+    | `src/composables/useAsyncAction.ts`                                                 | `src/infrastructure/useAsyncAction.ts` |
+    | `src/stores/{observability,analyticsEvents,profile}.ts`                             | `src/infrastructure/*`                 |
+    | `src/plugins/vuetify/*`                                                             | `src/ui/vuetify/*`                     |
+    | `src/components/{molecules,organisms}/*`                                            | `src/ui/{molecules,organisms}/*`       |
+    | `src/router/*`, `src/middlewares/*`, `src/layouts/*`, `src/views/*`                 | `src/kernel/*`                         |
+    | `AppNavigation`, `AppLanguageSwitcher`, `FormCounterInput`, `src/stores/counter.ts` | `src/kernel/`                          |
+    | `FeedbackMessageFeed`, `src/stores/realtimeObservability.ts`                        | `src/features/realtime/`               |
+
+    `src/plugins/vuetify` is the theme and the icon set, so it lands in `ui` rather than `core`
+    alongside the components that read its tokens: restyling the app is one folder. `profile.ts`
+    lands in `core` rather than `platform` because `core/http` reads the access token from it in
+    three places, and a tier that has to import upward on day one is not a tier. The session and the
+    user's data are the two halves of that store; splitting them is what puts the second half in a
+    module.
+
+    `eslint.config.ts` enforces the order with one `no-restricted-imports` block per tier, verified
+    against 18 probe imports. Two allowances are deliberate: `platform` may read `@/modules` (the
+    registry list) but never `@/modules/<name>`, and may splice `@/features/<name>/routes` — and
+    nothing else from a feature — until the last domain becomes a module.
+
+- **Products and cart are modules; `@/features/products` and `@/features/cart` are now
+  `@/modules/products` and `@/modules/cart`.** Each owns its routes, store, schemas and views, and
+  exposes one barrel — `index.ts`. Lint rejects an import of another module's internals. A module
+  declares itself in `module.ts` and is enabled by one line in `src/modules.ts`; the router
+  no longer imports either domain by name.
 
 - **`VITE_APP_DEBUG_ROUTER` and `VITE_APP_DEBUG_HTTP` are replaced by `VITE_APP_LOG_LEVEL` and
   `VITE_APP_LOG_SCOPES`.** A boolean per feature does not scale — each new noisy area cost a
@@ -15,7 +91,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   them the two flags governed 2 of the app's 22 `console` calls. To restore the old behaviour set
   `VITE_APP_LOG_SCOPES=router` or `=http`.
 
-- **`no-console` is an error**, not a warning, with its only exemptions inside `src/utils/logger.ts`.
+- **`no-console` is an error**, not a warning, with its only exemptions inside `src/infrastructure/logger.ts`.
   That removes 19 `eslint-disable` comments from 7 files.
 
 - **The three access guards `isAuth`, `isAdmin` and `isGuest` are gone.** A route declares
@@ -30,6 +106,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   key lookup outside a component scope. `TranslateFunction` widened to match.
 
 ### Added
+
+- **`src/kernel/registry.ts` — the module registry.** `src/modules.ts` lists the enabled modules;
+  the registry validates them while the router is assembled. A duplicate name, a dependency that is
+  not enabled, or a dependency cycle throws with the offending path named, instead of surfacing as
+  a blank page on whichever navigation first crosses the gap. Adding a domain is one folder plus one
+  line; removing one is `rm -rf` plus deleting that line.
+
+    Mirrors the backend registry on the idea and on the field names — `name`, `routes`, `dependsOn`
+    — while staying idiomatic: no `basePath`, because a vue-router record carries its own path, and
+    no event bus, because nothing here has the mutual dependency the backend's cart and catalogue
+    have.
+
+- **Module boundaries are linted per module,** from a list `eslint.config.ts` reads out of
+  `src/modules/` rather than one written by hand — so adding a domain does not edit the lint config
+  either.
 
 - **Adopted `@guebbit/vue-toolkit@3.0.0` and `@guebbit/js-toolkit@2.1.0`**, both of which gained
   what this repo had been re-deriving per feature.
@@ -95,7 +186,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     store, and a failure during bootstrap still leaves a trace.
 
 - **`src/stores/analyticsEvents.ts`** — the analytics event names shared with the backend,
-  byte-identical with its `src/core/observability/analytics-events.ts` and guarded by
+  byte-identical with its `src/infrastructure/observability/analytics-events.ts` and guarded by
   `check:spec-identity` (now eleven files). Events only this app can emit — `APP_STARTED`,
   `APP_READY`, `USER_LOGGED_OUT` — stay in a local `frontendOnlyAnalyticsEvents` spread on top, so
   "ours alone" is visible rather than implied by a comment.
@@ -207,7 +298,70 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     after it merges, or a manual `workflow_dispatch` against it. The rationale section is retitled
     "Why it is nightly rather than a merge gate", matching what the workflow's own header says.
 
+### ⚠ Breaking
+
+- **`checkout` moved from the orders store to the cart store.** `useOrdersStore().checkout()` is now
+  `useCartStore().checkout()`. It is `POST /cart/checkout`, the contract files it under `Cart`, and
+  this repo already mapped the URL in `src/modules/cart/responseSchemas.ts` — only the action was
+  in the wrong module, and `Cart.vue` was reaching across modules to reach it.
+
+    Two bugs came out with it. The action **never emitted `checkout_failed`**, so the funnel it
+    shares with the backend counted completions on both sides and rejections only on one, making
+    checkout refusals look like users changing their minds. And it **never cleared the local cart**
+    after a completed order, because the orders store had no access to it: the header kept showing
+    items the server had already turned into an order until something else refetched. The cart store
+    drops its copy on success — it does not invent one the API did not send — and reports both
+    outcomes, the failure carrying the API's error code via the new `apiErrorCode()` in
+    `src/infrastructure/errors.ts` (a code, never a translated message: a message groups one bucket per
+    language, which is a funnel nobody can read).
+
 ### Changed
+
+- **Six shared files are now BACKEND OUTPUT, not hand-maintained copies.**
+  `src/infrastructure/analyticsEvents.ts`, `tests/support/mocks/seed-identities.ts` and all three `.dev/`
+  API client collections joined `openapi.yaml` in being produced there and copied here whole. The
+  analytics names and the seed exports are the same names with the same values in a different
+  declaration order; nothing in this repo changed shape. `npm run check:spec-identity` proves the
+  copy is current.
+
+    **The three collections are new files, not reordered ones.** They are generated from the
+    backend's contract now, and the ones this repo carried were badly stale: Bruno and Mockoon each
+    covered 37 of the API's 56 operations, 30 of Insomnia's 39 requests pointed at URLs the API
+    stopped serving, and Mockoon's mock bodies predated the response envelope — it answered
+    `GET /account` with a bare user where the API returns `{ success, status, message, data }`.
+    Anyone who imported that Mockoon file into a local mock server was testing against shapes this
+    app cannot parse. All three now carry all 56 operations, with ids and credentials from the seed
+    dataset, so `cy.loginAs`-style flows work against them without editing.
+
+    Bruno and Insomnia additionally carry 14 **probes** — requests the contract cannot describe,
+    declared per module in the backend: a bogus token, a duplicate signup, a body that breaks two
+    constraints, `Accept-Language: it`, the soft-deleted product, checkout on an empty cart. The
+    Insomnia file also shed a real (expired) JWT in its cookie jar and a personal email address in
+    a request body, both of which had been committed here.
+
+    What changes is where to fix one. Editing a copy here is now a change the next
+    `npm run contracts:bundle` in the backend silently reverts, so `scripts/specIdentity.ts` says
+    so — in its failure message and in the list itself — and its spec asserts that the message names
+    the rebuild command rather than only "copy whichever side is right".
+
+- **Mutation testing reset onto the four-tier layout.** `stryker.config.json`'s `mutate` had been
+  written against `src/features/*`, which no longer exists, and it never named `src/app/`, where the
+  router and the middlewares now live — so the guard layer was outside the scope while a third of
+  the globs matched nothing. It is now `core` (minus `i18n.ts`), `app`, `platform` and every
+  module's own `.ts`, less each module's barrel, its `module.ts`, and its `mocks/` and `tests/`
+  directories: 44 files, with every glob verified to match something.
+
+    `mutation-baseline.json` is **deleted rather than rewritten**. Its keys were pre-migration paths,
+    and `check-mutation-baseline.ts` already seeds a fresh baseline when the file is absent, so
+    hand-editing it would have been inventing per-file scores for a scope nothing has measured.
+    `break` is `null` for the same reason: the old `50` was derived from a population that no longer
+    exists, and a threshold that was not measured is not a threshold. The first full run supplies
+    both, in that order — `npm run test:mutation`, then `npm run test:mutation:check`.
+
+    The config's notes lost ~70 lines of superseded run history and per-file score lists and now
+    carry only reasoning that still applies; `docs/tools/mutation-testing.md` was un-frozen and
+    matches. Stryker itself, the ratchet scripts, the nightly workflow and
+    `vitest.config.mutation.ts` are untouched.
 
 - **`scripts/preflight-live.ts` is gone**, along with its `pretest:e2e:live` hook. It checked
   three things before a live run: that a backend answered, that the backend checkout had a

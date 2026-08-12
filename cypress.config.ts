@@ -21,7 +21,7 @@ import { defineConfig } from 'cypress';
 import { loadEnv } from 'vite';
 import path from 'node:path';
 import { resolveBackendPath } from './scripts/backendPath';
-import { compareSnapshot } from './tests/e2e/support/visual-task';
+import { compareSnapshot } from './tests/support/e2e/visual-task';
 
 const viteEnvironment = loadEnv('', process.cwd(), '');
 
@@ -38,7 +38,7 @@ export default defineConfig({
         /**
          * Node-side hooks. `compareVisualSnapshot` is the image diff behind
          * `cy.compareSnapshot()` — it has to run here because the browser cannot read the
-         * committed baseline files. See `tests/e2e/support/visual-task.ts`.
+         * committed baseline files. See `tests/support/e2e/visual-task.ts`.
          */
         setupNodeEvents(on) {
             on('task', {
@@ -62,7 +62,7 @@ export default defineConfig({
          * npm script naming the set it wants, not by the config hiding one of them.
          */
         specPattern: 'tests/e2e/{specs,visual}/**/*.{cy,spec}.{js,jsx,ts,tsx}',
-        supportFile: 'tests/e2e/support/e2e.ts',
+        supportFile: 'tests/support/e2e/e2e.ts',
         // Everything else about these tests lives under tests/e2e; Cypress' default would put the
         // upload fixtures in a `cypress/` folder at the repo root, alone.
         fixturesFolder: 'tests/e2e/fixtures',

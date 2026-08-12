@@ -18,7 +18,7 @@
  *
  * OpenAPI spec version: 2.0.0
  */
-import { orvalMutator } from '../../src/plugins/http/index.js';
+import { orvalMutator } from '../../src/infrastructure/http/index.js';
 /**
  * 1-based page index
  * @minimum 1

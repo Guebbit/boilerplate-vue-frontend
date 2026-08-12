@@ -66,10 +66,10 @@ It is excluded **by selector**, not by disabling the rule. Suppressing the rule 
 
 ## Why a dedicated spec rather than a line in each existing one
 
-Reusing the nine feature specs would be cheaper — they already navigate everywhere. A dedicated spec was chosen anyway:
+Reusing the nine domain specs would be cheaper — they already navigate everywhere. A dedicated spec was chosen anyway:
 
 - coverage is a **list you can read**, not something you discover by grepping
-- a failure names the **route**, not the feature test it was hiding inside
+- a failure names the **route**, not the domain spec it was hiding inside
 - adding a route means adding a line
 
 The cost is one page load per route, which is the cheapest thing in this suite.
@@ -81,8 +81,8 @@ It runs under the mock profile like the rest of `ci.yml`, so it needs no backend
 | Path | Contents |
 | ---- | -------- |
 | `tests/e2e/specs/a11y.cy.ts` | The route lists — public, authenticated, admin — and one case per route |
-| `tests/e2e/support/commands.ts` | `cy.checkPageA11y()`: the single axe pass, the impact threshold, the devtools exclusion |
-| `tests/e2e/support/e2e.ts` | Imports `cypress-axe`, making `cy.injectAxe()` / `cy.checkA11y()` available |
+| `tests/support/e2e/commands.ts` | `cy.checkPageA11y()`: the single axe pass, the impact threshold, the devtools exclusion |
+| `tests/support/e2e/e2e.ts` | Imports `cypress-axe`, making `cy.injectAxe()` / `cy.checkA11y()` available |
 
 ## Commands
 

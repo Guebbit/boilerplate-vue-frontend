@@ -1,0 +1,12 @@
+{
+    "realtime-playground-page": {
+        "page-title": "Realtime playground",
+        "sse-observability": "SSE observability",
+        "button-connect": "Connect SSE",
+        "button-disconnect": "Disconnect SSE",
+        "empty-metrics": "No metrics events yet"
+    },
+    "navigation": {
+        "label-realtime": "realtime"
+    }
+}

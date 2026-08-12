@@ -15,13 +15,13 @@ connection, so everything client → server goes through the REST API instead.
 
 | Concern | File |
 | ------- | ---- |
-| SSE client factory | `src/features/realtime/createSseClient.ts` |
-| SSE composable | `src/features/realtime/useRealtimeObservability.ts` |
-| Observability SSE store + state | `src/stores/realtimeObservability.ts` |
+| SSE client factory | `src/infrastructure/createSseClient.ts` |
+| SSE composable | `src/modules/realtime/useRealtimeObservability.ts` |
+| Observability SSE store + state | `src/modules/realtime/realtimeObservability.ts` |
 | Generated realtime types | `src/types/realtime.generated.ts` (DO NOT edit) |
 | App-level type helpers | `src/types/realtime.ts` |
-| Route | `src/features/realtime/views/RealtimePlayground.vue` |
-| Route definition | `src/features/realtime/routes.ts` |
+| Route | `src/modules/realtime/views/RealtimePlayground.vue` |
+| Route definition | `src/modules/realtime/routes.ts` |
 
 ## SSE client lifecycle
 

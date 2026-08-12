@@ -39,13 +39,13 @@ const contentTypeOperationNames = (verb: GeneratorVerbOptions): GeneratorVerbOpt
  *              Import from @api/schemas to validate forms or parse API responses.
  *              Always in sync with the spec — never hand-write these.
  *
- * mocks:       MSW handler stubs + faker factories → tests/mocks/generated.ts
+ * mocks:       MSW handler stubs + faker factories → tests/support/mocks/generated.ts
  *              Use as a skeleton when adding a new endpoint.
- *              The rich in-memory-DB logic stays in tests/mocks/handlers/*.
+ *              The rich in-memory-DB logic stays in src/modules/<name>/mocks/*.
  *
- *              Its faker factories ARE imported: tests/mocks/shared/mockProfilesRandom.ts
+ *              Its faker factories ARE imported: tests/support/mocks/mockProfilesRandom.ts
  *              builds the random-data profile from getList{Products,Users,Orders}ResponseMock.
- *              Its MSW *stub handlers* are a different matter — tests/mocks/apiMock.ts builds
+ *              Its MSW *stub handlers* are a different matter — tests/support/mocks/apiMock.ts builds
  *              the worker exclusively from the hand-written handlers, and the stubs must not
  *              be registered as a fallback (see the comment in apiMock.ts for why).
  *
@@ -84,7 +84,7 @@ export default defineConfig({
                 // image uploads pass `onUploadProgress` through the generated client instead
                 // of calling orvalMutator directly.
                 mutator: {
-                    path: './src/plugins/http/index.ts',
+                    path: './src/infrastructure/http/index.ts',
                     name: 'orvalMutator'
                 },
                 // One function per request content type — see contentTypeOperationNames above.
@@ -131,7 +131,7 @@ export default defineConfig({
         input: './openapi.yaml',
         output: {
             mode: 'single',
-            target: './tests/mocks/generated.ts',
+            target: './tests/support/mocks/generated.ts',
             client: 'axios',
             mock: true,
             override: {

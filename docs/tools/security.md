@@ -51,11 +51,12 @@ flowchart TD
 
 | Concern | File |
 | ------- | ---- |
-| Token storage + profile state | `src/stores/profile.ts` |
-| Attaching Bearer token to requests | `src/plugins/http/index.ts` (request interceptor) |
-| Handling `401` responses | `src/plugins/http/index.ts` (response interceptor) |
-| Restoring auth on page reload | `src/middlewares/authentications.ts` → `tryRestoreAuth` |
-| Route guards | `src/middlewares/authentications.ts` → `isAuth`, `isAdmin`, `isGuest` |
+| Token storage + session state | `src/infrastructure/session.ts` — the token and a `{ id, email, admin }` projection, nothing more |
+| The visitor's own account record | `src/modules/account/store.ts` |
+| Attaching Bearer token to requests | `src/infrastructure/http/index.ts` (request interceptor) |
+| Handling `401` responses | `src/infrastructure/http/index.ts` (response interceptor) |
+| Restoring auth on page reload | `src/kernel/middlewares/authentications.ts` → `tryRestoreAuth` |
+| Route guards | `src/kernel/middlewares/authentications.ts` → `isAuth`, `isAdmin`, `isGuest` |
 
 ## Route guards
 

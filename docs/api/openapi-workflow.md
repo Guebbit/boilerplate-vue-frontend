@@ -84,7 +84,7 @@ contracts/rest/
 MSW stubs land separately:
 
 ```
-tests/mocks/
+tests/support/mocks/
 └── generated.ts      ← orval-generated MSW handler stubs + faker factories
 ```
 
@@ -121,7 +121,7 @@ Naming convention: schema name + property name, PascalCase. Example: `UpdateFeed
 | ----- | ------ | ------ |
 | `api` | `./contracts/rest/index.ts` | typed axios functions, routed through `orvalMutator` |
 | `zodSchemas` | `./contracts/rest/schemas.zod.ts` | Zod schema per request/response shape |
-| `mocks` | `./tests/mocks/generated.ts` | MSW stubs + faker factories |
+| `mocks` | `./tests/support/mocks/generated.ts` | MSW stubs + faker factories |
 
 Every target listed here must also appear in the `api-freshness` CI job's pathspec, or changes to it go unguarded.
 
@@ -141,7 +141,7 @@ the body straight to the mutator and generates no encoding at all.
 | `createProductWithMultipart(body)` | `multipart/form-data`, encoded by the generated client |
 
 The JSON function keeps the plain operation name, so JSON call sites are unaffected by the split.
-Pick the `WithMultipart` variant only when there is a file to send — see `features/products/store.ts`,
+Pick the `WithMultipart` variant only when there is a file to send — see `modules/products/store.ts`,
 which branches on `imageUpload` and is the reference for this pattern.
 
 Do not hand-roll `FormData` in a store. The generated encoder already omits unset optional fields
@@ -174,11 +174,11 @@ npm run genapi         # regenerate contracts/rest/ from openapi.yaml
 
 ## MSW stub workflow
 
-Orval generates a stub for every operation into `tests/mocks/generated.ts`. Each stub returns random faker data.
+Orval generates a stub for every operation into `tests/support/mocks/generated.ts`. Each stub returns random faker data.
 
-**Nothing imports that file.** The mocks that actually run are the hand-written handlers in `tests/mocks/handlers/`, assembled in `tests/mocks/apiMock.ts`. Treat `generated.ts` as a skeleton to copy from, and as the raw material for the planned random-data test profile — not as live code.
+**Nothing imports that file.** The mocks that actually run are the hand-written handlers in `src/modules/<name>/mocks/`, assembled in `tests/support/mocks/apiMock.ts`. Treat `generated.ts` as a skeleton to copy from, and as the raw material for the planned random-data test profile — not as live code.
 
-For stateful or auth-aware behavior, copy the stub to `tests/mocks/handlers/` and extend it. A handler must also mirror the filtering and role-scoping rules of the backend service behind the endpoint — see [Mocking (MSW)](../tools/mocking.md) for the parity invariants and the full handler workflow.
+For stateful or auth-aware behavior, copy the stub to `src/modules/<name>/mocks/` and extend it. A handler must also mirror the filtering and role-scoping rules of the backend service behind the endpoint — see [Mocking (MSW)](../tools/mocking.md) for the parity invariants and the full handler workflow.
 
 ## Useful links
 

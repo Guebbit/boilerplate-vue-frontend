@@ -38,7 +38,7 @@ Pure, total, and rich in invariants:
 
 | Target                   | Invariants worth stating                                                                                                              |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `core/totals.ts`         | order-independent, non-negative, zero for empty, additive over concatenation, never `NaN`                                             |
+| `infrastructure/totals.ts`         | order-independent, non-negative, zero for empty, additive over concatenation, never `NaN`                                             |
 | `models/serialize.ts`    | `_id` → `id` always, `__v` always gone, omitted keys always gone, never mutates its input, idempotent                                 |
 | `repositories/search.ts` | `escapeRegex` never produces an uncompilable pattern, always matches its own input literally, strips every metacharacter of its power |
 
@@ -80,7 +80,7 @@ That second one is worth internalising: a property that fails on your own assert
 
 | Path                                              | Contents                                                          |
 | ------------------------------------------------- | ----------------------------------------------------------------- |
-| `tests/unit/core/totals.property.test.ts`         | Arithmetic invariants, totality against hostile line items        |
+| `src/modules/orders/tests/unit/totals.property.test.ts`         | Arithmetic invariants, totality against hostile line items        |
 | `tests/unit/models/serialize.property.test.ts`    | Serializer guarantees over arbitrary document shapes              |
 | `tests/unit/repositories/search.property.test.ts` | `escapeRegex` as a denial-of-service control; pagination totality |
 | `tests/unit/repositories/search-regex.test.ts`    | The example-based half — timing, named metacharacters, negatives  |

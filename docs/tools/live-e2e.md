@@ -80,7 +80,7 @@ Run `npm run check:spec-identity` alongside it when the pair has moved — a for
 
 ## `BACKEND_PATH`
 
-`cy.resetState()` shells out to the backend checkout for `db:seed:reset:host` (see [Mocking](./mocking.md) and `tests/e2e/support/commands.ts`). Which checkout that is comes from `scripts/backendPath.ts`, which `cypress.config.ts` reads:
+`cy.resetState()` shells out to the backend checkout for `db:seed:reset:host` (see [Mocking](./mocking.md) and `tests/support/e2e/commands.ts`). Which checkout that is comes from `scripts/backendPath.ts`, which `cypress.config.ts` reads:
 
 ```sh
 # default: a sibling checkout
@@ -94,7 +94,7 @@ The resolved value is always an absolute path, so `npm --prefix` errors name a r
 
 ## Response validation
 
-`orvalMutator` (`src/plugins/http/index.ts`) normally just unwraps `response.data`. Behind `VITE_VALIDATE_RESPONSES`, it additionally parses every response through the Zod schema matching its route (`src/plugins/http/responseSchemaMap.ts`, hand-mapped from `contracts/rest/index.ts`) and throws on a mismatch — the live-backend mirror of `assertMockContract` on the mock side, and of the backend's own `toSatisfyApiSpec()` contract tests.
+`orvalMutator` (`src/infrastructure/http/index.ts`) normally just unwraps `response.data`. Behind `VITE_VALIDATE_RESPONSES`, it additionally parses every response through the Zod schema matching its route (`src/infrastructure/http/responseSchemaMap.ts`, hand-mapped from `contracts/rest/index.ts`) and throws on a mismatch — the live-backend mirror of `assertMockContract` on the mock side, and of the backend's own `toSatisfyApiSpec()` contract tests.
 
 - `test:e2e:live` sets it to `true` explicitly.
 - Otherwise it defaults to on for an actual `vite dev` server (`DEV` true) — so it also fires during ordinary local development against a live API — but off inside Vitest (`MODE === 'test'`), where plenty of unit tests exercise `orvalMutator` against deliberately partial fixtures.
@@ -104,7 +104,7 @@ This is the single highest-value piece of this profile: it converts all five pre
 
 ## Mock/seed parity
 
-`tests/e2e/specs/parity.cy.ts` runs only under this profile (`cy.skipUnlessLive()` — reported as *pending* under the mock profile, not silently omitted). After logging in via `cy.request`, it hits the live API directly as admin and as anonymous and asserts the returned dataset matches the hand-mirrored seed in `tests/mocks/shared/mockShared.ts`: same product ids and visibility split, same user ids, same order ids and totals.
+`tests/e2e/specs/parity.cy.ts` runs only under this profile (`cy.skipUnlessLive()` — reported as *pending* under the mock profile, not silently omitted). After logging in via `cy.request`, it hits the live API directly as admin and as anonymous and asserts the returned dataset matches the hand-mirrored seed in `tests/support/mocks/mockShared.ts`: same product ids and visibility split, same user ids, same order ids and totals.
 
 This mechanises the "DATA parity" and "BEHAVIOUR parity" invariants documented at the top of `mockShared.ts`, which were previously held by review only. If a future edit changes a seed id, count or total in one repo without the other, this is the test that fails — loudly, the first time this profile runs after the drift, rather than silently describing an API that no longer exists.
 
@@ -117,11 +117,11 @@ This mechanises the "DATA parity" and "BEHAVIOUR parity" invariants documented a
 | Path | Contents |
 | --- | --- |
 | `scripts/backendPath.ts` | `resolveBackendPath()`, read by `cypress.config.ts` |
-| `src/plugins/http/index.ts` | `orvalMutator`, `VITE_VALIDATE_RESPONSES` gate |
-| `src/plugins/http/responseSchemaMap.ts` | Route → Zod schema table `orvalMutator` validates against |
+| `src/infrastructure/http/index.ts` | `orvalMutator`, `VITE_VALIDATE_RESPONSES` gate |
+| `src/infrastructure/http/responseSchemaMap.ts` | Route → Zod schema table `orvalMutator` validates against |
 | `tests/e2e/specs/parity.cy.ts` | Mock/seed parity, live profile only |
 | `tests/e2e/specs/auth.cy.ts` | Live session-refresh case (alongside the mock-profile auth specs) |
-| `tests/e2e/support/commands.ts` | `cy.resetState()`'s live branch, `cy.skipUnlessLive()` |
+| `tests/support/e2e/commands.ts` | `cy.resetState()`'s live branch, `cy.skipUnlessLive()` |
 | `cypress.config.ts` | `env.backendPath`, `env.apiMockEnabled` |
 
 ## Related pages

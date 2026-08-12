@@ -95,7 +95,7 @@ flowchart LR
 | Layer | Responsibility |
 | ----- | -------------- |
 | View / template | Renders data, captures user events, delegates to composables |
-| Composable | Encapsulates form state, validation, and list logic for a specific feature |
+| Composable | Encapsulates form state, validation, and list logic for one domain |
 | Pinia store | Orchestrates API calls, holds reactive data, exposes actions |
 | Generated client (`contracts/rest/index.ts`) | Typed axios function per operation — regenerated from `openapi.yaml` |
 | `plugins/http/index.ts` | Single axios instance; request/response interceptors; shapes errors into `IResponseReject` |

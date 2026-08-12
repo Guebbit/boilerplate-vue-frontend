@@ -1,0 +1,69 @@
+{
+    "login-page": {
+        "page-title": "Login",
+        "label-email": "Email",
+        "label-password": "Password",
+        "label-remember": "Ricorda il mio accesso",
+        "link-password-reset": "Password dimenticata?",
+        "text-conditions": "Ho letto le condizioni della privacy",
+        "button-submit": "Login",
+        "label-toggle-password": "Mostra o nascondi la password"
+    },
+    "signup-page": {
+        "page-title": "Registrazione",
+        "label-email": "Email",
+        "label-password": "Password",
+        "label-remember": "Ricorda il mio accesso",
+        "text-conditions": "Ho letto le condizioni della privacy",
+        "button-submit": "Registrati",
+        "success-email-code-sent": "Registrazione completata. Ti abbiamo inviato un'email con un codice di verifica."
+    },
+    "profile-page": {
+        "page-title": "Il tuo profilo",
+        "label-username": "Username",
+        "label-email": "Email",
+        "label-phone": "Numero di telefono",
+        "label-website": "Website",
+        "label-password": "Password",
+        "label-passwordConfirm": "Conferma Password",
+        "button-submit": "Salva modifiche",
+        "reset-form": "Cancella modifiche",
+        "success-update": "Profilo aggiornato con successo",
+        "button-change-password": "Cambia password",
+        "button-delete-account": "Elimina account",
+        "confirm-delete-account": "Sei sicuro di voler eliminare il tuo account? Questa azione è irreversibile.",
+        "success-delete-request": "Ti abbiamo inviato un'email di conferma. Controlla la tua casella per completare l'eliminazione."
+    },
+    "password-reset-request-page": {
+        "page-title": "Reimposta password",
+        "label-email": "Email",
+        "button-submit": "Invia token di reset",
+        "button-go-to-login": "Torna al login",
+        "success": "Se l'account esiste, abbiamo inviato un token di reset alla tua email."
+    },
+    "password-reset-confirm-page": {
+        "page-title": "Conferma reset password",
+        "label-token": "Token di reset",
+        "label-password": "Nuova password",
+        "label-password-confirm": "Conferma nuova password",
+        "token-required": "Il token di reset è obbligatorio",
+        "button-submit": "Aggiorna password",
+        "button-go-to-login": "Torna al login",
+        "success": "Password aggiornata con successo. Ora puoi effettuare il login."
+    },
+    "account-delete-confirm-page": {
+        "page-title": "Conferma eliminazione account",
+        "warning-message": "Pensaci bene. L'eliminazione del tuo account è permanente e non può essere annullata. Tutti i tuoi dati andranno persi.",
+        "label-token": "Token di eliminazione",
+        "token-required": "Il token di eliminazione è obbligatorio",
+        "button-submit": "Elimina il mio account definitivamente",
+        "button-go-back": "Annulla, mantieni il mio account",
+        "success": "Il tuo account è stato eliminato. Ci dispiace vederti andare via."
+    },
+    "navigation": {
+        "label-profile": "Profilo",
+        "label-login": "Login",
+        "label-logout": "Logout",
+        "label-signup": "Registrati"
+    }
+}

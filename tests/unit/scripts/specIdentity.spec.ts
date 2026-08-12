@@ -118,7 +118,7 @@ describe('SHARED_FILES', () => {
         expect(frontendPaths).toContain(ASYNCAPI);
         expect(frontendPaths).toContain(SPECTRAL);
         // The two that went unguarded until the list could hold differing paths.
-        expect(frontendPaths).toContain('tests/mocks/shared/seed-identities.ts');
+        expect(frontendPaths).toContain('tests/support/mocks/seed-identities.ts');
         expect(frontendPaths).toContain('src/types/realtime.generated.ts');
     });
 
@@ -153,7 +153,7 @@ describe('compareSharedFiles', () => {
     });
 
     it('matches a cross-path pair across its two different names', () => {
-        // `db/seeds/seed-identities.ts` here, `tests/mocks/shared/seed-identities.ts` there.
+        // `db/seeds/seed-identities.ts` here, `tests/support/mocks/seed-identities.ts` there.
         const here = root(sharedFiles(HERE));
         const there = root(sharedFiles(THERE));
 
@@ -277,21 +277,46 @@ describe('formatSharedFileProblems', () => {
     it('tells the reader what to do about it', () => {
         const here = root(sharedFiles(HERE));
         const there = root(sharedFilesWith(THERE, OPENAPI, 'forked'));
+        const message = formatSharedFileProblems(compareSharedFiles(there, here, HERE), there);
 
-        expect(formatSharedFileProblems(compareSharedFiles(there, here, HERE), there)).toContain(
-            'npm run genapi'
-        );
+        expect(message).toContain('npm run genapi');
+        // Seven of the eleven are assembled from per-module fragments in the backend, so "copy
+        // whichever side is right" is the wrong instruction for them: the fix is to re-bundle
+        // there and copy the result here. A message that omitted that invites an edit to this
+        // repo's copy that the next `contracts:bundle` silently reverts.
+        expect(message).toContain('npm run contracts:bundle');
     });
 });
 
 /*
- * The live pair. Conditional, and loud about being conditional — see the file header.
+ * The live pair.
+ *
+ * Conditional on the sibling being checked out, because a clone with only this repo is a normal
+ * way to work — but NOT silently. A skipped suite reads as green, and the one guard that would
+ * have caught a forked contract is exactly the guard nobody notices going missing.
+ *
+ * So the absence is asserted rather than assumed: locally it says so out loud, and under `CI` it
+ * fails, because a pipeline that checks out one half of a pair and reports success on the shared
+ * contract is reporting something it did not check.
  */
 const siblingRoot = resolveBackendPath();
-const describeIfSibling = existsSync(siblingRoot) ? describe : describe.skip;
+const siblingPresent = existsSync(siblingRoot);
 
-describeIfSibling(`the paired backend at ${siblingRoot}`, () => {
+describe(`the paired backend at ${siblingRoot}`, () => {
+    it('is checked out, or this suite is knowingly incomplete', () => {
+        if (siblingPresent) return;
+
+        const message = `Shared-contract checks skipped: no sibling repo at ${siblingRoot}.`;
+        // eslint-disable-next-line no-console
+        if (!process.env.CI) console.warn(`⚠️  ${message}`);
+        expect(process.env.CI ? message : '').toBe('');
+    });
+
     it('carries byte-identical copies of every shared file', () => {
+        // Nothing to compare without the sibling. The test above is what makes that visible —
+        // and what fails in CI — so this one simply has no work to do.
+        if (!siblingPresent) return;
+
         const comparisons = compareSharedFiles(siblingRoot);
 
         expect(formatSharedFileProblems(comparisons, siblingRoot)).toBe('');

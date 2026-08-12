@@ -117,11 +117,11 @@ Every tool below has a one-line "why we use it" + a link to its official documen
 
 ### State, routing, i18n
 
-| Tool                                          | Why it's here                           | Docs                                                                      |
-| --------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------- |
-| **[Pinia](https://pinia.vuejs.org/)**         | Global state stores (`src/stores/`)     | [pinia.vuejs.org/introduction](https://pinia.vuejs.org/introduction.html) |
-| **[Vue Router](https://router.vuejs.org/)**   | SPA routing + per-feature route modules | [router.vuejs.org/guide](https://router.vuejs.org/guide/)                 |
-| **[Vue I18n](https://vue-i18n.intlify.dev/)** | Locale messages, locale-prefixed routes | [vue-i18n.intlify.dev/guide](https://vue-i18n.intlify.dev/guide/)         |
+| Tool                                          | Why it's here                                                         | Docs                                                                      |
+| --------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| **[Pinia](https://pinia.vuejs.org/)**         | Global state stores (`src/infrastructure/`, `src/modules/*/store.ts`) | [pinia.vuejs.org/introduction](https://pinia.vuejs.org/introduction.html) |
+| **[Vue Router](https://router.vuejs.org/)**   | SPA routing; each module contributes its own route records            | [router.vuejs.org/guide](https://router.vuejs.org/guide/)                 |
+| **[Vue I18n](https://vue-i18n.intlify.dev/)** | Locale messages, locale-prefixed routes                               | [vue-i18n.intlify.dev/guide](https://vue-i18n.intlify.dev/guide/)         |
 
 ### API & contract
 
@@ -146,14 +146,14 @@ Every tool below has a one-line "why we use it" + a link to its official documen
 
 ### Testing
 
-| Tool                                                                           | Why it's here                                      | Docs                                                                       |
-| ------------------------------------------------------------------------------ | -------------------------------------------------- | -------------------------------------------------------------------------- |
-| **[Vitest](https://vitest.dev/)**                                              | Unit tests (`tests/unit/`, `vitest.config.ts`)     | [vitest.dev/guide](https://vitest.dev/guide/)                              |
-| **[@vue/test-utils](https://test-utils.vuejs.org/)**                           | Component mounting/assertions                      | [test-utils.vuejs.org/guide](https://test-utils.vuejs.org/guide/)          |
-| **[jsdom](https://github.com/jsdom/jsdom)**                                    | DOM environment for unit tests                     | [jsdom readme](https://github.com/jsdom/jsdom#readme)                      |
-| **[Cypress](https://www.cypress.io/)**                                         | E2E tests (`tests/e2e/specs/`)                     | [docs.cypress.io](https://docs.cypress.io/)                                |
-| **[MSW](https://mswjs.io/)**                                                   | Request mocking for dev + Cypress (`tests/mocks/`) | [mswjs.io/docs](https://mswjs.io/docs/)                                    |
-| **[start-server-and-test](https://github.com/bahmutov/start-server-and-test)** | Boots Vite + waits before running Cypress          | [package readme](https://github.com/bahmutov/start-server-and-test#readme) |
+| Tool                                                                           | Why it's here                                                                      | Docs                                                                       |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **[Vitest](https://vitest.dev/)**                                              | Unit tests (`tests/unit/`, `vitest.config.ts`)                                     | [vitest.dev/guide](https://vitest.dev/guide/)                              |
+| **[@vue/test-utils](https://test-utils.vuejs.org/)**                           | Component mounting/assertions                                                      | [test-utils.vuejs.org/guide](https://test-utils.vuejs.org/guide/)          |
+| **[jsdom](https://github.com/jsdom/jsdom)**                                    | DOM environment for unit tests                                                     | [jsdom readme](https://github.com/jsdom/jsdom#readme)                      |
+| **[Cypress](https://www.cypress.io/)**                                         | E2E tests (`tests/e2e/specs/`)                                                     | [docs.cypress.io](https://docs.cypress.io/)                                |
+| **[MSW](https://mswjs.io/)**                                                   | Request mocking for dev + Cypress (`src/modules/*/mocks/`, `tests/support/mocks/`) | [mswjs.io/docs](https://mswjs.io/docs/)                                    |
+| **[start-server-and-test](https://github.com/bahmutov/start-server-and-test)** | Boots Vite + waits before running Cypress                                          | [package readme](https://github.com/bahmutov/start-server-and-test#readme) |
 
 ### Observability & UI libs
 
@@ -174,10 +174,10 @@ Every tool below has a one-line "why we use it" + a link to its official documen
 ```mermaid
 flowchart LR
     subgraph Browser["🌐 Browser SPA"]
-        V[Vue 3 components<br/>views & features]
-        P[Pinia stores<br/>src/stores]
-        R[Vue Router<br/>src/router]
-        I18N[Vue I18n<br/>src/locales]
+        V[Vue 3 components<br/>ui + module views]
+        P[Pinia stores<br/>src/infrastructure + src/modules]
+        R[Vue Router<br/>src/kernel/router]
+        I18N[Vue I18n<br/>src/locales + modules]
         OBS[Observability store<br/>Grafana Faro + Umami]
     end
 
@@ -210,53 +210,77 @@ flowchart LR
 
 Key principles:
 
+- **Domains are deletable.** Four tiers (`infrastructure` → `ui` → `kernel` → `modules`), and no shared file
+  names a domain except `src/modules.ts`. Removing a slice is `rm -rf` plus one line — see
+  [Modules](./docs/theory/modules.md).
 - **OpenAPI first.** `openapi.yaml` is the contract. Types and the axios client are generated from it.
 - **AsyncAPI for realtime.** `asyncapi.yaml` drives generated realtime/channel types in `src/types/realtime.generated.ts`; `src/types/realtime.ts` stays as thin app-only helpers.
 - **Stores own data.** Views call composables/stores; stores call the generated API.
 - **Interceptors own error shape.** Every HTTP error becomes an `IResponseReject` envelope.
 - **Mocks are toggled by env.** MSW activates only when `VITE_API_MOCK_ENABLED=true`.
-- **Single observability store.** Grafana Faro and Umami are consolidated in `src/stores/observability.ts`; never scatter vendor calls into components.
+- **Single observability store.** Grafana Faro and Umami are consolidated in `src/infrastructure/observability.ts`; never scatter vendor calls into components.
 
 ---
 
 ## Folder structure
 
+Four tiers and a registry. What a file is allowed to know is a property of where it lives, and
+`eslint.config.ts` enforces it — see [Modules](./docs/theory/modules.md) for the reasoning and
+[Layers](./docs/theory/layers.md) for the full map.
+
 ```text
 src/
-├── components/      reusable UI components (atoms/molecules/organisms)
-├── features/        feature modules (account, admin, cart, orders, products, realtime, users)
-│   └── <feature>/
-│       ├── components/
-│       ├── composables/
-│       ├── views/
-│       ├── routes.ts
-│       └── types.ts
-├── layouts/         page layout shells (LayoutDefault.vue)
-├── locales/         vue-i18n messages
-├── middlewares/     route navigation guards (authentications, localeChoice, demoMiddleware)
-├── router/          router instance + locale routing
-├── stores/          Pinia stores (counter, observability, profile, realtimeObservability)
-├── styles/          global SCSS (theme, main)
+├── core/            knows nothing about this app
+│   ├── http/            axios instance, interceptors, orval mutator, response-schema map
+│   ├── session.ts       access token + { id, email, admin } viewer projection
+│   ├── i18n.ts          i18n runtime; merges each module's dictionary at boot
+│   ├── observability.ts Grafana Faro + Umami, one store
+│   └── …                errors, formatters, uploads, logger, createSseClient, useAsyncAction
+├── ui/              the design system, zero domain knowledge
+│   ├── vuetify/         THE theme file: tokens, component defaults, lucide icon set
+│   └── molecules/ organisms/
+├── platform/        knows this KIND of app, but no domain
+│   ├── registry.ts      IAppModule, the collectModule* family
+│   ├── router/          router instance + locale routing; names NO domain
+│   ├── middlewares/     navigation guards (authentications, localeChoice, demoMiddleware)
+│   ├── layouts/ components/ views/
+│   └── counter.ts       demo store, paired with views/Playground.vue
+├── modules/         one domain each, top to bottom
+│   └── <name>/
+│       ├── module.ts          the manifest — routes, navigation, locales, mocks, schemas
+│       ├── index.ts           public barrel; the ONLY surface a sibling may import
+│       ├── routes.ts store.ts schemas.ts
+│       ├── views/ components/ composables/
+│       ├── locales/{en,it}.json
+│       ├── mocks/handlers.ts  MSW handlers, dropped from production builds
+│       └── tests/             this domain's specs, deleted with the folder
+├── modules.ts       THE registry: the only shared file that names a domain
+├── locales/         shared vue-i18n messages (the shell's own copy)
+├── styles/          global CSS (layer order, fonts)
 ├── types/           shared TS types (incl. re-exports from @api)
-├── utils/           http, api wiring, i18n, sse client, errors, navigation, formatters
-├── views/           top-level (non-feature) views (Home, Playground, Error)
 ├── App.vue
-└── main.ts          bootstrap (Pinia + Router + i18n + Grafana Faro + Umami + MSW)
+└── main.ts          bootstrap; hands the modules' schemas + dictionaries down into core
 
 contracts/
 └── rest/
     ├── index.ts         generated axios functions + TS types  (DO NOT edit by hand)
     └── schemas.zod.ts   generated Zod schemas                 (DO NOT edit by hand)
 tests/
-├── mocks/
-│   ├── generated.ts   orval-generated MSW stubs + faker factories (DO NOT edit)
-│   └── handlers/      hand-written MSW handlers with in-memory DB logic
-├── unit/              vitest unit tests
-└── e2e/               Cypress e2e specs, fixtures, support
+├── support/
+│   ├── mocks/         shared mock helpers + orval stubs (reached via the @mocks alias)
+│   ├── unit/          vitest setup, environment, wireModules
+│   └── e2e/           Cypress support files and commands
+├── cross-cutting/     specs that sweep EVERY domain, so they belong to none
+├── unit/              core / ui / platform / mock-layer specs
+└── e2e/               Cypress specs, fixtures, snapshots
 openapi.yaml         API contract (source of truth)
 asyncapi.yaml        Realtime contract (source of truth)
 spectral.yaml        OpenAPI lint rules
 ```
+
+**Adding a domain** is one folder under `src/modules/` plus one line in `src/modules.ts`.
+**Removing one** is `rm -rf` plus deleting that line — and whatever then fails is real coupling
+worth seeing.
 
 ---
 
@@ -373,7 +397,7 @@ flowchart LR
     L -- yes --> G[npm run genapi]
     G --> CLIENT[contracts/rest/index.ts<br/>typed axios functions]
     G --> ZOD[contracts/rest/schemas.zod.ts<br/>Zod schemas]
-    G --> MOCKS[tests/mocks/generated.ts<br/>MSW handler stubs]
+    G --> MOCKS[tests/support/mocks/generated.ts<br/>MSW handler stubs]
     CLIENT --> STORES[Pinia stores call<br/>generated functions]
     ZOD --> STORES
     STORES --> VIEWS[Views render data]
@@ -387,7 +411,7 @@ Steps:
 3. `npm run genapi` — regenerates `contracts/rest` (commit the diff).
 4. Update store/view usages if any operation signatures changed.
     - Import Zod schemas from `@api/schemas` instead of writing them by hand.
-    - Use `tests/mocks/generated.ts` as a skeleton if you need a new MSW handler stub.
+    - Use `tests/support/mocks/generated.ts` as a skeleton if you need a new MSW handler stub.
 5. Coordinate with the backend team — both repos consume `openapi.yaml` as the shared contract; keep paired branches in sync before merging.
 
 ---
@@ -400,8 +424,8 @@ Steps:
 flowchart LR
     A[asyncapi.yaml] --> G[npm run genasyncapi]
     G --> T[src/types/realtime.generated.ts]
-    T --> C[src/features/realtime/createSseClient.ts]
-    C --> S[src/stores/realtimeObservability]
+    T --> C[src/infrastructure/createSseClient.ts]
+    C --> S[src/modules/realtime/realtimeObservability]
     S --> V[RealtimePlayground view]
 ```
 
@@ -410,7 +434,7 @@ Current incremental rollout:
 1. **Contracts first**: update `asyncapi.yaml`.
 2. **Generate clients/types**: `npm run genapi` and `npm run genasyncapi`.
 3. **Playground-first integration**: route `/:locale/playground/realtime`.
-4. **Broader app integration**: wire feature flows after playground validation.
+4. **Broader app integration**: wire the domain flow after playground validation.
 
 Dev/test strategy for realtime:
 
@@ -422,7 +446,7 @@ Dev/test strategy for realtime:
 
 ## HTTP & error handling
 
-Single axios instance lives in `src/plugins/http/index.ts`, wired into the generated client via its `orvalMutator` export (registered as orval's mutator in `orval.config.ts`).
+Single axios instance lives in `src/infrastructure/http/index.ts`, wired into the generated client via its `orvalMutator` export (registered as orval's mutator in `orval.config.ts`).
 
 ```mermaid
 sequenceDiagram
@@ -459,7 +483,7 @@ Conventions:
 
 ## Routing, auth & i18n
 
-Routes are locale-prefixed (`/:locale/...`). Locale handling lives in `src/middlewares/localeChoice.ts` and `src/utils/i18n.ts`.
+Routes are locale-prefixed (`/:locale/...`). Locale handling lives in `src/kernel/middlewares/localeChoice.ts` and `src/infrastructure/i18n.ts`.
 
 ```mermaid
 flowchart TD
@@ -484,7 +508,7 @@ Tools used here:
 ### Talking to the API in the right language
 
 The axios interceptor sends `Accept-Language: <active locale>` on every request
-(`src/plugins/http/index.ts`), reading the locale fresh each time — so the moment
+(`src/infrastructure/http/index.ts`), reading the locale fresh each time — so the moment
 `changeLanguage('it')` resolves, every subsequent call is answered in Italian. The API is
 stateless about language: each request carries its own, and `Content-Language` on the response
 says what it actually used.
@@ -494,7 +518,7 @@ finished text and this app prints it.
 
 ### Validation messages: thunks, not factories
 
-Schemas in `src/features/*/schemas.ts` are module constants whose messages are **thunks**:
+Schemas in `src/modules/*/schemas.ts` are module constants whose messages are **thunks**:
 
 ```ts
 export const usersEmailSchema = z.email({ error: () => t('users-form.email-invalid') });
@@ -516,7 +540,7 @@ unchanged data on a language switch — and only while errors are showing, so a 
 not validated just because someone changed the language.
 
 Forgetting it is invisible until someone switches language mid-form, so
-`tests/unit/features/login-view-i18n.spec.ts` asserts it on a real view.
+`tests/unit/cross-cutting/login-view-i18n.spec.ts` asserts it on a real view.
 
 ### What is deliberately NOT translated
 
@@ -540,13 +564,13 @@ _choice_ of language, via `Accept-Language`.
 The API's dictionary is nonetheless _available_, at `GET /locales/:locale`, and this app merges it
 under a **reserved root namespace**: `api`. Never at the root — two independently-authored
 keyspaces would eventually collide silently, and the loser would be whichever loaded last. No key
-under `api` may be authored here; `tests/unit/utils/i18n.spec.ts` enforces that.
+under `api` may be authored here; `tests/unit/infrastructure/i18n.spec.ts` enforces that.
 
 | Piece                            | Where                                                                                                                               |
 | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | discover the API's languages     | `mergeApiLocales()` at boot (`src/main.ts`) — a **union** with the build-time list, so the app still works with the API unreachable |
-| fetch and merge the dictionary   | `fetchLanguageApi` (`src/middlewares/localeChoice.ts`), which returns UI copy at the root and API copy under `api.*`                |
-| read a key with a local stand-in | `apiText(apiKey, localKey)` (`src/utils/i18n.ts`)                                                                                   |
+| fetch and merge the dictionary   | `fetchLanguageApi` (`src/kernel/middlewares/localeChoice.ts`), which returns UI copy at the root and API copy under `api.*`         |
+| read a key with a local stand-in | `apiText(apiKey, localKey)` (`src/infrastructure/i18n.ts`)                                                                          |
 
 In normal operation none of this is used: the API resolves its own keys and puts finished text on
 the wire, so this app prints what arrives. `api.*` earns its place for the handful of messages the
@@ -573,12 +597,12 @@ flowchart LR
     Env{VITE_API_MOCK_ENABLED == 'true'?}
     Env -- no --> Real[Real HTTP → backend]
     Env -- yes --> Worker[MSW Service Worker<br/>public/mockServiceWorker.js]
-    Worker --> Handlers[tests/mocks/handlers/*]
+    Worker --> Handlers[src/modules/*/mocks/handlers.ts]
     Handlers --> DB[(in-memory mockDatabase)]
 ```
 
 - Worker file is committed in `public/mockServiceWorker.js` (generated by `msw init`).
-- Handlers live in `tests/mocks/handlers/*` and share an in-memory DB via `tests/mocks/shared/`.
+- Handlers live in `src/modules/<name>/mocks/handlers.ts`, declared by each module's manifest, and share an in-memory DB via `tests/support/mocks/`. Only `/locales` stays central — it belongs to `infrastructure`, not to a domain.
 - Cypress runs with `VITE_API_MOCK_ENABLED=true` so e2e is deterministic.
 
 Official: [mswjs.io/docs](https://mswjs.io/docs/) · [browser integration](https://mswjs.io/docs/integrations/browser).
@@ -632,7 +656,7 @@ Full detail, including the rate-limit trap that makes the suite fail halfway thr
 
 ## Observability (Grafana Faro, Umami, analytics)
 
-All observability code is consolidated in `src/stores/observability.ts` (a Pinia store). Never scatter vendor calls directly from components. Everything runs against a **self-hosted local stack** (Docker/Podman) — no external SaaS. Verify data in **Grafana** (`http://localhost:3001`) and the **Umami dashboard** (`http://localhost:3080`).
+All observability code is consolidated in `src/infrastructure/observability.ts` (a Pinia store). Never scatter vendor calls directly from components. Everything runs against a **self-hosted local stack** (Docker/Podman) — no external SaaS. Verify data in **Grafana** (`http://localhost:3001`) and the **Umami dashboard** (`http://localhost:3080`).
 
 ### What each tool does
 
@@ -646,7 +670,7 @@ Both are initialized in `src/main.ts` and are no-ops when their env vars are abs
 ### Tracking events
 
 ```ts
-import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
+import { useObservabilityStore, analyticsEvents } from '@/infrastructure/observability';
 
 const obs = useObservabilityStore();
 
@@ -691,7 +715,7 @@ Route: `/:locale/admin` — requires admin role (non-admins are redirected Home)
 
 ### Overview tab
 
-Fetches live backend health and metrics via the composable `src/features/admin/composables/useAdminObservability.ts` and displays KPI cards:
+Fetches live backend health and metrics via the composable `src/modules/admin/composables/useAdminObservability.ts` and displays KPI cards:
 
 ```text
 ┌─────────────┐ ┌──────────────┐ ┌──────────┐ ┌──────────────┐
@@ -717,12 +741,12 @@ Displays a colour-coded table with truncated request/trace IDs (hover for full v
 
 ### FE implementation
 
-| File                                                      | Role                                                     |
-| --------------------------------------------------------- | -------------------------------------------------------- |
-| `src/features/admin/views/Admin.vue`                      | Tab shell (Overview + Audit Log)                         |
-| `src/features/admin/composables/useAdminObservability.ts` | Fetches health + metrics + audit; exposes reactive state |
-| `src/features/admin/types.ts`                             | View-model types (`IAdminKpi`, `IAdminAuditFilters`)     |
-| `tests/mocks/handlers/adminMockHandlers.ts`               | MSW mock responses for dev/test                          |
+| File                                                     | Role                                                     |
+| -------------------------------------------------------- | -------------------------------------------------------- |
+| `src/modules/admin/views/Admin.vue`                      | Tab shell (Overview + Audit Log)                         |
+| `src/modules/admin/composables/useAdminObservability.ts` | Fetches health + metrics + audit; exposes reactive state |
+| `src/modules/admin/types.ts`                             | View-model types (`IAdminKpi`, `IAdminAuditFilters`)     |
+| `src/modules/admin/mocks/handlers.ts`                    | MSW mock responses for dev/test                          |
 
 ---
 

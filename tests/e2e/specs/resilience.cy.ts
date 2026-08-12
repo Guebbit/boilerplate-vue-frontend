@@ -5,7 +5,7 @@
  * The five existing specs assert exact counts, titles and prices — meaningful against the fixed
  * seed, meaningless against random data. This file does the opposite on purpose: no exact
  * values, only invariants that must hold for *any* contract-valid dataset the random profile can
- * produce (see tests/mocks/shared/mockProfiles.ts for what it guarantees) — every route renders,
+ * produce (see tests/support/mocks/mockProfiles.ts for what it guarantees) — every route renders,
  * nothing throws, no console error, empty states don't crash, long strings don't break layout.
  *
  * `npm run test:e2e:random` targets this file directly (`--spec`) rather than a Cypress tag
@@ -24,7 +24,7 @@ const MAX_HORIZONTAL_OVERFLOW_PX = 1;
  *   regardless of profile.
  * - `[intlify] Not found '<key>' key in '<locale>' locale messages.` — a vue-i18n
  *   lazy-loading-order warning already flagged as a known rough edge in
- *   `src/middlewares/demoMiddleware.ts` (see its "(will not work)" comment on the same key).
+ *   `src/app/middlewares/demoMiddleware.ts` (see its "(will not work)" comment on the same key).
  *   Fixing the underlying i18n load-order issue is out of scope here.
  */
 const isKnownConsoleNoise = (call: unknown[]) => {

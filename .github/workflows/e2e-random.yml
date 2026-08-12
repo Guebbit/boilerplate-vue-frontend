@@ -3,7 +3,7 @@ name: E2E (random profile)
 # Runs the resilience spec against faker-generated, contract-valid data instead of the fixed
 # seed, to catch assumptions the fixed seed hides. Nightly, not a merge gate.
 #
-# The random mock profile (VITE_MOCK_PROFILE=random, see tests/mocks/shared/mockProfiles.ts and
+# The random mock profile (VITE_MOCK_PROFILE=random, see tests/support/mocks/mockProfiles.ts and
 # docs/tools/mocking.md) drives the app off faker-generated, contract-valid data instead of the
 # fixed seed, and tests/e2e/specs/resilience.cy.ts asserts invariants that must hold for ANY such
 # dataset rather than exact values. That's exactly the kind of check that catches hardcoded

@@ -12,6 +12,32 @@ Human-facing docs: [README.md](../README.md) · [PAIRING.md](../PAIRING.md).
 - Treat this file as required repository policy and follow it during the whole task.
 - For every change, check whether documentation must be updated.
 
+## Architecture brain
+
+The one rule everything else serves: **deleting a domain is `rm -rf` of one folder plus removing
+one line from `src/modules.ts`.** See [docs/theory/modules.md](../docs/theory/modules.md).
+
+- Four tiers, dependencies pointing one way, enforced by `no-restricted-imports` per tier:
+  `infrastructure` (knows nothing about this app) → `ui` (design system) → `kernel` (this KIND of
+  app, no domain — the module registry, and nothing else) → `modules` (one domain each).
+- A module may carry `domain/`: pure rules, lint-guaranteed free of vue, pinia, axios, every tier
+  and its own module's outer files. Thin on a frontend by design — prices, totals and eligibility
+  come from the API. Most modules have none. See
+  [docs/theory/domain-layer.md](../docs/theory/domain-layer.md).
+- **No shared file may name a domain except `src/modules.ts`.** Navigation entries, response
+  schemas, locale dictionaries and MSW handlers are all declared on the module manifest
+  (`module.ts`) and collected by the registry — never listed centrally.
+- A module reaches a sibling through its **public barrel** (`@/modules/<name>`) and never its
+  internals. Add a barrel only when another module needs something; `account` has none.
+- `infrastructure` may not import `@/modules`. When it owns a mechanism whose data is domain knowledge —
+  the response-schema map, the i18n dictionaries — the composition root (`src/main.ts`) hands it
+  **down** via a `register*` call. Do not invert this by importing upward.
+- **Route names are strings.** Anything in `kernel` or `app` that addresses a module's route by name must
+  guard with `router.hasRoute()` and degrade, or a deleted module leaves a control that navigates
+  nowhere. Nothing type-checks this.
+- A spec outside a module may **iterate** the registry; it may never **name** a domain. Per-domain
+  assertions live in `src/modules/<name>/tests/`.
+
 ## Code brain
 
 - Keep code SOLID.
@@ -21,11 +47,11 @@ Human-facing docs: [README.md](../README.md) · [PAIRING.md](../PAIRING.md).
 - `openapi.yaml` first. Contract and all generated code starts there.
 - Use generated API functions from `@api` (`contracts/rest/index.ts`); avoid manual endpoint wrappers unless required.
 - Use generated Zod schemas from `@api/schemas` (`contracts/rest/schemas.zod.ts`) for form and response validation; never hand-write schemas that duplicate the spec.
-- When adding a new endpoint handler for MSW, start from the generated stub in `tests/mocks/generated.ts`, then move business logic to `tests/mocks/handlers/`.
+- When adding a new endpoint handler for MSW, start from the generated stub in `tests/support/mocks/generated.ts`, then move business logic to the owning module's `src/modules/<name>/mocks/handlers.ts`.
 - Keep comments short and practical.
 - Avoid `async` / `await` + `try/catch` unless necessary.
 - Comments short. ADHD friendly. Explain function/constant/block fast.
-- **All functions and important code blocks must have a JSDoc comment** in multi-line `/* \n * ... \n */` block format (not `/** */`). Include `@param` and `@returns` where useful. One line per tag.
+- **All functions and important code blocks must have a JSDoc comment** in multi-line `/** \n * ... \n */` block format. Use `/**`, never a plain `/*` block: TypeScript only attaches docs to a symbol from `/**`, so `/*` loses the editor tooltip, the hover signature and `@param` hints at call sites. Include `@param` and `@returns` where useful. One line per tag.
 - Do not dump long essays in code comments. Put detail in docs.
 
 ## Docs brain
@@ -45,7 +71,7 @@ Human-facing docs: [README.md](../README.md) · [PAIRING.md](../PAIRING.md).
 
 ## Observability brain
 
-All observability code lives in the Pinia store `src/stores/observability.ts`, accessed via `useObservabilityStore()` (or the `useObservability()` composable in components). Never import the Faro SDK or touch `window.umami` directly from features/components.
+All observability code lives in the Pinia store `src/infrastructure/observability.ts`, accessed via `useObservabilityStore()` (or the `useObservability()` composable in components). Never import the Faro SDK or touch `window.umami` directly from a module or a component.
 
 Two separate jobs — do not conflate them:
 
@@ -55,7 +81,7 @@ Two separate jobs — do not conflate them:
 ### How to track events
 
 ```ts
-import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
+import { useObservabilityStore, analyticsEvents } from '@/infrastructure/observability';
 
 const obs = useObservabilityStore();
 

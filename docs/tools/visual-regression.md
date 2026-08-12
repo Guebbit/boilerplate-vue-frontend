@@ -63,7 +63,7 @@ Adding a fifth is cheap. Adding a fiftieth is how the suite dies.
 
 ## The two tolerance numbers
 
-Both live in `tests/e2e/support/visual-task.ts`, deliberately spelled out rather than hidden in a plugin's options.
+Both live in `tests/support/e2e/visual-task.ts`, deliberately spelled out rather than hidden in a plugin's options.
 
 **`PIXEL_THRESHOLD` (0.15)** — per-pixel colour tolerance. How different two pixels must be before `pixelmatch` counts them as different *at all*. This absorbs antialiasing and sub-pixel font rendering, which differ between machines with nothing having changed.
 
@@ -90,7 +90,7 @@ A screenshot is only useful if an unchanged app produces identical pixels twice.
 
 ### The bug this suite found in the test harness
 
-`cy.visit()` is overridden in `tests/e2e/support/commands.ts` to wait for the app to finish bootstrapping. The original wait was:
+`cy.visit()` is overridden in `tests/support/e2e/commands.ts` to wait for the app to finish bootstrapping. The original wait was:
 
 ```ts
 cy.window().should('have.property', '_appReady', true);
@@ -197,8 +197,8 @@ Visual regression plugins wrap roughly this much code around `pixelmatch`. The p
 | Path | Contents |
 | ---- | -------- |
 | `tests/e2e/visual/visual.cy.ts` | The four screens, the readiness selectors, the determinism `beforeEach` |
-| `tests/e2e/support/visual-task.ts` | The comparison itself — thresholds, the three outcomes, diff output. Runs in **Node**, because the browser cannot read the committed baselines |
-| `tests/e2e/support/commands.ts` | `cy.freezeForVisual()`, `cy.compareSnapshot()`, and the `visit` override with its per-visit token |
+| `tests/support/e2e/visual-task.ts` | The comparison itself — thresholds, the three outcomes, diff output. Runs in **Node**, because the browser cannot read the committed baselines |
+| `tests/support/e2e/commands.ts` | `cy.freezeForVisual()`, `cy.compareSnapshot()`, and the `visit` override with its per-visit token |
 | `cypress.config.ts` | Registers the `compareSnapshot` task and pins the 1280×800 viewport |
 | `tests/e2e/snapshots/*.png` | The committed baselines — reviewed as images, in the PR diff |
 | `tests/e2e/snapshots/__diff__/` | Diff images written on failure. Not committed |

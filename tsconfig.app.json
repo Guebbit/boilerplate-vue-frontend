@@ -1,7 +1,16 @@
 {
     "extends": "@vue/tsconfig/tsconfig.dom.json",
-    "include": ["contracts/rest", "src/**/*", "src/**/*.vue", "tests/mocks/**/*", ".dev/**/*.ts"],
-    "exclude": ["src/**/__tests__/*"],
+    // `tests/support/mocks` only, not all of `tests/support`: the app genuinely imports the
+    // mock layer (lazily, behind VITE_API_MOCK_ENABLED), while `support/e2e` needs Cypress
+    // ambient types and `support/unit` needs Vitest's. Those belong to their own projects.
+    "include": [
+        "contracts/rest",
+        "src/**/*",
+        "src/**/*.vue",
+        "tests/support/mocks/**/*",
+        ".dev/**/*.ts"
+    ],
+    "exclude": ["src/**/__tests__/*", "src/modules/*/tests/**"],
     "compilerOptions": {
         "target": "ESNext",
         "lib": ["ESNext", "DOM"],
@@ -34,6 +43,11 @@
             "@tanstack/query-core": ["./node_modules/@tanstack/query-core"],
             "@/*": ["./src/*"],
             "@types": ["./src/types"],
+            // The mock layer's shared helpers. Aliased rather than reached by relative path
+            // because a module's handlers now live in `src/modules/<name>/mocks/`, and
+            // `../../../../tests/support/mocks/...` from there is both unreadable and brittle. One entry
+            // here is also what makes relocating the mock layer a one-line change.
+            "@mocks/*": ["./tests/support/mocks/*"],
             "@api": ["./contracts/rest/index"],
             "@api/schemas": ["./contracts/rest/schemas.zod"]
         }

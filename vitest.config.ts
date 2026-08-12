@@ -34,9 +34,26 @@ export default mergeConfig(
         test: {
             // Plain jsdom, with one class of parser noise filtered out.
             // See the file itself for why, and for how to go back to 'jsdom'.
-            environment: './tests/unit/jsdom-quiet-css.env.ts',
-            setupFiles: ['tests/unit/setup.ts'],
-            include: ['tests/unit/**/*.spec.ts'],
+            environment: './tests/support/unit/jsdom-quiet-css.env.ts',
+            setupFiles: ['tests/support/unit/setup.ts'],
+            env: {
+                // The manifests gate `mockHandlers` and `mockSeeds` behind this flag so a
+                // production build drops both (the fixtures would otherwise be emitted as a lazy
+                // chunk — `grep -rl seedProducts dist/` is the test). The handler-parity specs
+                // need them, so the flag is on here: `setup.ts` builds `mockDatabase` from the
+                // real module fold, which is also what makes those specs exercise the same
+                // assembly Cypress does rather than a hand-built stand-in.
+                VITE_API_MOCK_ENABLED: 'true'
+            },
+            // Two homes, deliberately (decision D4). A module's own specs live inside it, so
+            // `rm -rf src/modules/<name>` takes its tests with it; everything that belongs to no
+            // single domain — core, ui, platform, the mock layer, cross-cutting sweeps — stays
+            // central under `tests/unit/`.
+            include: [
+                'tests/unit/**/*.spec.ts',
+                'tests/cross-cutting/**/*.spec.ts',
+                'src/modules/*/tests/**/*.spec.ts'
+            ],
             exclude: [...configDefaults.exclude, 'e2e/**', 'src/**/__tests__/**'],
             server: {
                 deps: {
@@ -61,12 +78,20 @@ export default mergeConfig(
                     'src/**/*.d.ts',
                     'src/types/**', // type-only, no runtime lines
                     'src/main.ts', // app bootstrap, exercised by e2e only
-                    'src/plugins/vuetify/**' // vendor configuration
+                    'src/ui/vuetify/**', // vendor configuration
+                    // Each module's MSW handlers. They live under `src/` so that deleting a
+                    // domain takes its mock backend with it, but they are test doubles, not app
+                    // code — exercised through Cypress and `mockHandlerParity.spec.ts`, and
+                    // dead-code-eliminated from any production build.
+                    'src/modules/*/mocks/**',
+                    'src/modules/*/tests/**' // co-located specs are not the thing being measured
                 ],
                 thresholds: {
-                    // Floors for the logic Stryker also mutates — the same paths as
-                    // stryker.config.json's `mutate` array, on the principle that logic worth
-                    // mutating is logic worth guaranteeing is executed at all.
+                    // Floors for logic Stryker also mutates, on the principle that logic worth
+                    // mutating is logic worth guaranteeing is executed at all. Not an exact
+                    // mirror of `stryker.config.json`'s `mutate`: that list is the wider of the
+                    // two, because a file with no coverage is free to mutate and expensive to
+                    // floor.
                     //
                     // Same rule as the Stryker thresholds: raise these when the number rises,
                     // never lower one to make a run pass.
@@ -82,14 +107,17 @@ export default mergeConfig(
                     // the pooling is identical here.
                     //
                     // With `perFile`, each file is checked on its own and the error names it:
-                    //   ERROR: Coverage for statements (0%) does not meet "src/stores/**"
-                    //   threshold (70%) for src/stores/observability.ts
+                    //   ERROR: Coverage for statements (0%) does not meet "src/infrastructure/**"
+                    //   threshold (70%) for src/infrastructure/observability.ts
                     //
                     // It applies to every group below, so a new file under any of these paths
                     // arrives with a floor instead of arriving inside an average.
                     perFile: true,
 
-                    'src/features/*/store.ts': {
+                    // Every domain store, under one glob. A second location for stores would
+                    // need its own entry here, and a store that fell between two globs would lose
+                    // its floor without anything failing.
+                    'src/modules/*/store.ts': {
                         statements: 70,
                         branches: 70,
                         functions: 70,
@@ -100,41 +128,41 @@ export default mergeConfig(
                     // matching two glob keys lands in BOTH groups, so an exemption listed
                     // alongside the broad glob would still be failed by the broad glob. An
                     // exemption has to leave the glob to be one.
-                    'src/middlewares/!(authentications).ts': {
+                    'src/app/middlewares/!(authentications).ts': {
                         statements: 70,
                         branches: 70,
                         functions: 70,
                         lines: 70
                     },
                     // Measured 2026-08-08, and the first thing `perFile: true` exposed: the
-                    // pooled `src/middlewares/**` group passed 70 across the board while this
-                    // file sat at 50% branches and 55% functions, carried by demoMiddleware.ts
-                    // and localeChoice.ts at 100%.
+                    // pooled middlewares group passed 70 across the board while this file sat at
+                    // 50% branches and 55% functions, carried by demoMiddleware.ts and
+                    // localeChoice.ts at 100%.
                     //
                     // Floored at the measured value rounded down, NOT at an aspiration — this is
                     // a record of where it is, so a drop fails and an improvement can ratchet it
                     // up. It is the guard layer, so it is also the most valuable of the three to
                     // finish testing: the uncovered half is the failure paths of `tryRestoreAuth`
                     // and the admin branch of `isAdmin`.
-                    'src/middlewares/authentications.ts': {
+                    'src/app/middlewares/authentications.ts': {
                         statements: 75,
                         branches: 50,
                         functions: 55,
                         lines: 80
                     },
-                    'src/plugins/http/**': {
+                    'src/infrastructure/http/**': {
                         statements: 70,
                         branches: 70,
                         functions: 70,
                         lines: 70
                     },
-                    'src/utils/errors.ts': {
+                    'src/infrastructure/errors.ts': {
                         statements: 70,
                         branches: 70,
                         functions: 70,
                         lines: 70
                     },
-                    'src/utils/formatters.ts': {
+                    'src/infrastructure/formatters.ts': {
                         statements: 70,
                         branches: 70,
                         functions: 70,

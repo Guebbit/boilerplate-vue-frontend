@@ -4,7 +4,7 @@
  *
  * The contract (strict boundary):
  * - Vuetify owns components, colors, typography and the CSS reset.
- *   All design tokens live in src/plugins/vuetify/index.ts.
+ *   All design tokens live in src/ui/vuetify/index.ts.
  * - Tailwind provides layout/spacing/flex/grid utilities ONLY:
  *   • Preflight is NOT imported (it would fight Vuetify's reset).
  *   • Its default palette and fonts are wiped; the semantic colors below

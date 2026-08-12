@@ -131,7 +131,7 @@ describe('Authentication', () => {
         });
     });
 
-    // Live profile only. `withCredentials: true` (src/plugins/http/index.ts) sends the refresh
+    // Live profile only. `withCredentials: true` (src/infrastructure/http/index.ts) sends the refresh
     // cookie cross-origin from :8085 to :3000, and MSW — same-origin, in-page — never exercises
     // that boundary at all. A forced 401 is used instead of reaching into Pinia to clear the
     // in-memory access token: it drives the exact same interceptor path

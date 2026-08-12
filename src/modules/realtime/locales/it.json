@@ -1,0 +1,12 @@
+{
+    "realtime-playground-page": {
+        "page-title": "Playground realtime",
+        "sse-observability": "Osservabilità SSE",
+        "button-connect": "Connetti SSE",
+        "button-disconnect": "Disconnetti SSE",
+        "empty-metrics": "Nessun evento di metriche"
+    },
+    "navigation": {
+        "label-realtime": "tempo reale"
+    }
+}

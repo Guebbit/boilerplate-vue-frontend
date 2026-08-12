@@ -78,11 +78,11 @@ flowchart TD
 
 | Guard | File | Effect |
 | ----- | ---- | ------ |
-| `isAuth` | `src/middlewares/authentications.ts` | Must be logged in; redirects to Login on failure |
-| `isAdmin` | `src/middlewares/authentications.ts` | Must have admin role; redirects to Home on failure |
-| `isGuest` | `src/middlewares/authentications.ts` | Must NOT be logged in; redirects to Home if already authenticated |
-| `localeChoice` | `src/middlewares/localeChoice.ts` | Injects locale prefix when missing; validates supported locales |
-| `tryRestoreAuth` | `src/middlewares/authentications.ts` | Silently restores token + profile on every navigation from localStorage |
+| `isAuth` | `src/app/middlewares/authentications.ts` | Must be logged in; redirects to Login on failure |
+| `isAdmin` | `src/app/middlewares/authentications.ts` | Must have admin role; redirects to Home on failure |
+| `isGuest` | `src/app/middlewares/authentications.ts` | Must NOT be logged in; redirects to Home if already authenticated |
+| `localeChoice` | `src/app/middlewares/localeChoice.ts` | Injects locale prefix when missing; validates supported locales |
+| `tryRestoreAuth` | `src/app/middlewares/authentications.ts` | Silently restores token + profile on every navigation from localStorage |
 
 ## Auth persistence
 

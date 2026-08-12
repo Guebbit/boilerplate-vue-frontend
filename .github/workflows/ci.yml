@@ -248,16 +248,16 @@ jobs:
                   # orval emits 2-space indentation; this repo's prettier config uses 4, and
                   # the committed output is formatted. Without this normalisation step the
                   # diff below is thousands of lines of pure indentation on every run.
-                  npx prettier --write contracts/ tests/mocks/generated.ts
-                  if ! git diff --exit-code -- contracts/ tests/mocks/generated.ts; then
+                  npx prettier --write contracts/ tests/support/mocks/generated.ts
+                  if ! git diff --exit-code -- contracts/ tests/support/mocks/generated.ts; then
                       echo "Generated API client is stale. Run 'npm run genapi && npm run prettier:fix' and commit the changes."
                       exit 1
                   fi
                   # `git diff` only sees tracked files, so a brand-new generated output would
                   # slip through as untracked. Catch that too.
-                  if [ -n "$(git status --porcelain -- contracts/ tests/mocks/generated.ts)" ]; then
-                      echo "Codegen produced untracked files under contracts/ or tests/mocks/:"
-                      git status --porcelain -- contracts/ tests/mocks/generated.ts
+                  if [ -n "$(git status --porcelain -- contracts/ tests/support/mocks/generated.ts)" ]; then
+                      echo "Codegen produced untracked files under contracts/ or tests/support/mocks/:"
+                      git status --porcelain -- contracts/ tests/support/mocks/generated.ts
                       echo "Run 'npm run genapi' and commit the changes."
                       exit 1
                   fi

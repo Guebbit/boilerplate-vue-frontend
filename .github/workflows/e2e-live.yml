@@ -8,7 +8,7 @@ name: E2E (live backend)
 # `test:e2e` (in ci.yml) runs the same nine specs against MSW handlers, and `e2e-random.yml` runs
 # the resilience spec against faker-generated data. Both are fast, hermetic, and structurally
 # unable to notice one class of failure: the mock handlers agreeing with a backend that has moved.
-# `tests/mocks/shared/mockShared.ts` mirrors the backend's `db/seeds/index.ts` BY HAND, and
+# `tests/support/mocks/mockShared.ts` mirrors the backend's `db/seeds/index.ts` BY HAND, and
 # `parity.cy.ts` exists to catch that mirror going stale — which it can only do when something
 # actually stands the real backend up. Until this workflow, nothing did: `npm run test:e2e:live`
 # was invoked by no CI job at all, so the one guard against seed drift ran only when a person

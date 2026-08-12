@@ -1,0 +1,69 @@
+{
+    "login-page": {
+        "page-title": "Login",
+        "label-email": "Email",
+        "label-password": "Password",
+        "label-remember": "Remember me",
+        "link-password-reset": "Forgot password?",
+        "text-conditions": "I have read the privacy conditions",
+        "button-submit": "Login",
+        "label-toggle-password": "Show or hide password"
+    },
+    "signup-page": {
+        "page-title": "Sign up",
+        "label-email": "Email",
+        "label-password": "Password",
+        "label-remember": "Remember me",
+        "text-conditions": "I have read the privacy conditions",
+        "button-submit": "Register now",
+        "success-email-code-sent": "Registration successful. We sent an email with a verification code."
+    },
+    "profile-page": {
+        "page-title": "User Profile",
+        "label-username": "Username",
+        "label-email": "Email",
+        "label-phone": "Phone Number",
+        "label-website": "Website",
+        "label-password": "Password",
+        "label-passwordConfirm": "Confirm Password",
+        "button-submit": "Save changes",
+        "reset-form": "Reset changes",
+        "success-update": "Profile updated successfully",
+        "button-change-password": "Change password",
+        "button-delete-account": "Delete account",
+        "confirm-delete-account": "Are you sure you want to delete your account? This action cannot be undone.",
+        "success-delete-request": "We sent a confirmation email. Please check your inbox to complete the deletion."
+    },
+    "password-reset-request-page": {
+        "page-title": "Reset password",
+        "label-email": "Email",
+        "button-submit": "Send reset token",
+        "button-go-to-login": "Back to login",
+        "success": "If the account exists, we sent a password reset token to your email."
+    },
+    "password-reset-confirm-page": {
+        "page-title": "Confirm password reset",
+        "label-token": "Reset token",
+        "label-password": "New password",
+        "label-password-confirm": "Confirm new password",
+        "token-required": "Reset token is required",
+        "button-submit": "Update password",
+        "button-go-to-login": "Back to login",
+        "success": "Password updated successfully. You can now log in."
+    },
+    "account-delete-confirm-page": {
+        "page-title": "Confirm account deletion",
+        "warning-message": "Please think carefully. Deleting your account is permanent and cannot be undone. All your data will be lost.",
+        "label-token": "Deletion token",
+        "token-required": "Deletion token is required",
+        "button-submit": "Delete my account permanently",
+        "button-go-back": "Cancel, keep my account",
+        "success": "Your account has been deleted. We're sorry to see you go."
+    },
+    "navigation": {
+        "label-profile": "Profile",
+        "label-login": "Login",
+        "label-logout": "Logout",
+        "label-signup": "Sign up"
+    }
+}
