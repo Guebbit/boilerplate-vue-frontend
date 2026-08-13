@@ -21,5 +21,10 @@ export const cartResponseSchemas: IResponseSchemaRoute[] = [
     { method: 'GET', pattern: /^\/cart\/summary$/, schema: schemas.GetCartSummaryResponse },
     { method: 'POST', pattern: /^\/cart\/checkout$/, schema: schemas.CheckoutResponse },
     { method: 'PUT', pattern: /^\/cart\/[^/]+$/, schema: schemas.UpdateCartItemByIdResponse },
-    { method: 'DELETE', pattern: /^\/cart\/[^/]+$/, schema: schemas.RemoveCartItemResponse }
+    { method: 'DELETE', pattern: /^\/cart\/[^/]+$/, schema: schemas.RemoveCartItemResponse },
+    {
+        method: 'POST',
+        pattern: /^\/cart\/reorder\/[^/]+$/,
+        schema: schemas.ReorderResponse
+    }
 ];

@@ -3,4 +3,4 @@
  * See `docs/theory/domain-layer.md`.
  */
 
-export { MIN_LINE_QUANTITY, canDecrement, steppedQuantity } from './quantity';
+export { MIN_LINE_QUANTITY, steppedQuantity } from './quantity';

@@ -280,7 +280,7 @@ describe('formatSharedFileProblems', () => {
         const message = formatSharedFileProblems(compareSharedFiles(there, here, HERE), there);
 
         expect(message).toContain('npm run genapi');
-        // Seven of the eleven are assembled from per-module fragments in the backend, so "copy
+        // Four of the eight are assembled from per-module fragments in the backend, so "copy
         // whichever side is right" is the wrong instruction for them: the fix is to re-bundle
         // there and copy the result here. A message that omitted that invites an edit to this
         // repo's copy that the next `contracts:bundle` silently reverts.

@@ -9,7 +9,7 @@ For this boilerplate, the safest order is:
 flowchart LR
     Idea[Need a new endpoint\nor payload change] --> Spec[Edit openapi.yaml]
     Spec --> Lint[npm run lint:openapi]
-    Lint --> Generate[npm run genapi]
+    Lint --> Generate[npm run gen:api]
     Generate --> Update[Update stores / views\nif signatures changed]
     Update --> Test[npm run test]
 
@@ -36,8 +36,8 @@ The cost of that decision is that nothing detects cross-repo drift — and it ha
 ```bash
 cp ../boilerplate-node-api-mongodb-mongoose/openapi.yaml .
 cp ../boilerplate-node-api-mongodb-mongoose/asyncapi.yaml .
-npm run genapi
-npm run genasyncapi
+npm run gen:api
+npm run gen:asyncapi
 npm run prettier:fix   # orval emits 2-space indent; this repo commits 4
 ```
 
@@ -73,7 +73,7 @@ If you change this job, verify it can actually fail: edit `openapi.yaml` without
 
 ## Generated output (`contracts/rest/`)
 
-Running `npm run genapi` regenerates the entire `contracts/rest/` directory. **Never edit files inside `contracts/rest/` manually** — they are overwritten.
+Running `npm run gen:api` regenerates the entire `contracts/rest/` directory. **Never edit files inside `contracts/rest/` manually** — they are overwritten.
 
 ```
 contracts/rest/
@@ -169,7 +169,7 @@ that call inconsistent with the other two dozen.
 
 ```bash
 npm run lint:openapi   # lint openapi.yaml with Spectral
-npm run genapi         # regenerate contracts/rest/ from openapi.yaml
+npm run gen:api         # regenerate contracts/rest/ from openapi.yaml
 ```
 
 ## MSW stub workflow

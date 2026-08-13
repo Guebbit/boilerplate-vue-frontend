@@ -47,8 +47,8 @@ export default mergeConfig(
             },
             // Two homes, deliberately (decision D4). A module's own specs live inside it, so
             // `rm -rf src/modules/<name>` takes its tests with it; everything that belongs to no
-            // single domain — core, ui, platform, the mock layer, cross-cutting sweeps — stays
-            // central under `tests/unit/`.
+            // single domain — app, kernel, ui, infrastructure, the mock layer, cross-cutting
+            // sweeps — stays central under `tests/unit/` and `tests/cross-cutting/`.
             include: [
                 'tests/unit/**/*.spec.ts',
                 'tests/cross-cutting/**/*.spec.ts',

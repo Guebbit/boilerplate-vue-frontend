@@ -20,6 +20,14 @@ export const productsResponseSchemas: IResponseSchemaRoute[] = [
     { method: 'PUT', pattern: /^\/products$/, schema: schemas.UpdateProductResponse },
     { method: 'DELETE', pattern: /^\/products$/, schema: schemas.DeleteProductResponse },
     { method: 'POST', pattern: /^\/products\/search$/, schema: schemas.SearchProductsResponse },
+    /* Before the `[^/]+` by-id row: `find()` returns the first match, and `categories` is a
+     * static segment the wildcard would otherwise swallow — the same order rule the invoice row
+     * follows in orders. */
+    {
+        method: 'GET',
+        pattern: /^\/products\/categories$/,
+        schema: schemas.GetCatalogueFacetsResponse
+    },
     { method: 'GET', pattern: /^\/products\/[^/]+$/, schema: schemas.GetProductByIdResponse },
     { method: 'PUT', pattern: /^\/products\/[^/]+$/, schema: schemas.UpdateProductByIdResponse },
     {

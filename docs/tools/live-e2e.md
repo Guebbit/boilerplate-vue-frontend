@@ -27,7 +27,7 @@ What carries the weight in between:
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 65}}}%%
 flowchart TB
-    Boot["npm run podman:restart (or docker:restart)\nnpm run db:bootstrap:host\nNODE_RATE_LIMIT_MAX=1000 npm run dev:host\n(backend repo)"] --> Vite["vite dev :8085\nVITE_API_MOCK_ENABLED=false\nVITE_VALIDATE_RESPONSES=true"]
+    Boot["npm run compose:restart (or compose:restart)\nnpm run host -- db:bootstrap\nNODE_RATE_LIMIT_MAX=1000 npm run host -- dev\n(backend repo)"] --> Vite["vite dev :8085\nVITE_API_MOCK_ENABLED=false\nVITE_VALIDATE_RESPONSES=true"]
     Vite --> Cypress["cypress run --e2e\nCYPRESS_apiMockEnabled=false"]
     Cypress --> Real["real HTTP\n:8085 → :3000"]
     Real --> Backend[("live backend\nreal seeded MongoDB")]
@@ -51,8 +51,8 @@ flowchart TB
 ```sh
 # terminal 1 — backend
 cd boilerplate-node-api-mongodb-mongoose
-npm run podman:restart   # or: npm run docker:restart
-npm run db:bootstrap:host
+npm run compose:restart   # or: npm run compose:restart
+npm run host -- db:bootstrap
 
 # terminal 2 — frontend
 cd boilerplate-vue-frontend
@@ -67,12 +67,12 @@ Boot the backend with the same allowance its own test suites use (`tests/helpers
 
 ```sh
 # terminal 1 — backend, for a live E2E run
-NODE_RATE_LIMIT_MAX=1000 NODE_AUTH_RATE_LIMIT_MAX=1000 npm run dev:host
+NODE_RATE_LIMIT_MAX=1000 NODE_AUTH_RATE_LIMIT_MAX=1000 npm run host -- dev
 ```
 
 Both are needed and they are separate buckets: the global one covers browsing, the auth one covers `POST /account/login` and its neighbours. Do not raise them in a deployed environment — the small credential budget is what makes password guessing expensive, and the two are deliberately decoupled so that widening one never widens the other (see `src/middlewares/security.ts` in the backend).
 
-`db:bootstrap:host` runs migrations and seeds against the containerized Mongo/Redis exposed on the host (`27017`/`6379`), matching the ports `db:seed:reset:host` uses to reset state between specs. `test:e2e:live` itself starts Vite on `:8085` with `VITE_API_MOCK_ENABLED=false` and `VITE_VALIDATE_RESPONSES=true`, then runs Cypress against it with `CYPRESS_apiMockEnabled=false`.
+`host -- db:bootstrap` runs migrations and seeds against the containerized Mongo/Redis exposed on the host (`27017`/`6379`), matching the ports `host -- db:seed:reset` uses to reset state between specs. `test:e2e:live` itself starts Vite on `:8085` with `VITE_API_MOCK_ENABLED=false` and `VITE_VALIDATE_RESPONSES=true`, then runs Cypress against it with `CYPRESS_apiMockEnabled=false`.
 
 Boot the backend first. Nothing here waits for it: with no backend listening on `VITE_API_URL` (default `http://localhost:3000`), every spec fails on a network error rather than on anything it was written to check.
 
@@ -80,7 +80,7 @@ Run `npm run check:spec-identity` alongside it when the pair has moved — a for
 
 ## `BACKEND_PATH`
 
-`cy.resetState()` shells out to the backend checkout for `db:seed:reset:host` (see [Mocking](./mocking.md) and `tests/support/e2e/commands.ts`). Which checkout that is comes from `scripts/backendPath.ts`, which `cypress.config.ts` reads:
+`cy.resetState()` shells out to the backend checkout for `host -- db:seed:reset` (see [Mocking](./mocking.md) and `tests/support/e2e/commands.ts`). Which checkout that is comes from `scripts/backendPath.ts`, which `cypress.config.ts` reads:
 
 ```sh
 # default: a sibling checkout

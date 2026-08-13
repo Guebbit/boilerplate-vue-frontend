@@ -81,7 +81,7 @@ export default defineConfig({
             // relying on loadEnv to have picked up a process-level override.
             apiMockEnabled: true,
             // Only used by the live profile: `cy.resetState()` shells out to this checkout's
-            // `db:seed:reset:host` to restore the seed dataset between tests. `BACKEND_PATH` env
+            // `host -- db:seed:reset` to restore the seed dataset between tests. `BACKEND_PATH` env
             // override, or a sibling-checkout default, always resolved to an absolute path — see
             // scripts/backendPath.ts, shared with scripts/check-spec-identity.ts so the two can
             // never silently disagree about which backend they mean.

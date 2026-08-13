@@ -37,5 +37,36 @@ export const accountResponseSchemas: IResponseSchemaRoute[] = [
         method: 'DELETE',
         pattern: /^\/account\/tokens\/expired$/,
         schema: schemas.DeleteExpiredTokensResponse
+    },
+    { method: 'PUT', pattern: /^\/account$/, schema: schemas.UpdateAccountResponse },
+    { method: 'POST', pattern: /^\/account\/password$/, schema: schemas.ChangePasswordResponse },
+    { method: 'POST', pattern: /^\/account\/logout$/, schema: schemas.LogoutResponse },
+    { method: 'GET', pattern: /^\/account\/sessions$/, schema: schemas.GetSessionsResponse },
+    {
+        method: 'DELETE',
+        pattern: /^\/account\/sessions\/[^/]+$/,
+        schema: schemas.RevokeSessionResponse
+    },
+    {
+        method: 'POST',
+        pattern: /^\/account\/verify-request$/,
+        schema: schemas.RequestEmailVerificationResponse
+    },
+    {
+        method: 'POST',
+        pattern: /^\/account\/verify-confirm$/,
+        schema: schemas.ConfirmEmailVerificationResponse
+    },
+    { method: 'GET', pattern: /^\/account\/addresses$/, schema: schemas.GetAddressesResponse },
+    { method: 'POST', pattern: /^\/account\/addresses$/, schema: schemas.AddAddressResponse },
+    {
+        method: 'PUT',
+        pattern: /^\/account\/addresses\/[^/]+$/,
+        schema: schemas.UpdateAddressResponse
+    },
+    {
+        method: 'DELETE',
+        pattern: /^\/account\/addresses\/[^/]+$/,
+        schema: schemas.RemoveAddressResponse
     }
 ];

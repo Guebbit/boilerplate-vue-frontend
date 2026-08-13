@@ -161,9 +161,18 @@ export interface IAppModule {
     responseSchemas?: IResponseSchemaRoute[];
     locales?: Record<string, () => Promise<ITranslationDictionaries>>;
     mockHandlers?: () => Promise<HttpHandler[]>;
+    mockSeeds?: {
+        after?: string[];
+        build: (context: IMockSeedContext) => Promise<Partial<IMockSeedData>>;
+    };
     dependsOn?: string[];
 }
 ```
+
+`mockSeeds.after` is a **second graph**, deliberately not folded into `dependsOn`: that one is about
+code (`Cart.vue` calls `useOrdersStore`), this one about fixtures (an order embeds a product
+snapshot). A module can need another's data without importing a line of its code, and one field
+serving both would lie about one of them.
 
 Each optional field replaced a shared file that used to enumerate domains — the navigation list,
 the response-schema table, the mock-handler registry, the locale bundle. That is the whole point:
@@ -184,38 +193,18 @@ surfacing as a blank page on whichever navigation first crosses the gap.
   passing the loader as an argument makes the chunk reachable again and the mock layer ships.
 - `responseSchemas` is eager: the http client needs the table before the first request.
 
-## Adding a domain
+## Adding and deleting a domain
 
-One folder and one line. Measured, not asserted — a scaffold `events` module was added and removed
-to check:
+One folder and one line, in both directions. The procedure — the manifest fields, the mock-ternary
+trap, the commands — is [Adding & removing a module](./module-lifecycle.md). What belongs here is
+what the exercise taught.
 
-| | |
-| --- | --- |
-| files added | 5 (`module.ts`, `routes.ts`, one view, `locales/{en,it}.json`) |
-| lines changed elsewhere | 2, both in `src/modules.ts` (the import and the array entry) |
-| files needing an edit to accommodate it | **0** |
-| result | type-check, lint and 727 unit tests green; the view built into its own lazy chunk |
-
-Add an `index.ts` barrel only when another domain needs something from it. `account` has none: it
-is a consumer, not a provider, and an empty barrel is a promise nobody asked for.
-
-## Deleting a domain
-
-`rm -rf src/modules/<name>` and delete its line. **Whatever then fails is real coupling** — that is
-what the exercise is for, and it is worth running again after any significant change.
-
-Deleting `products`, `cart`, `orders` **and `account`** together — four folders, five lines, and
-`account` is the hard one because the app shell shows who is signed in — gives:
-
-| | |
-| --- | --- |
-| `src/` type-checks | **yes** |
-| lint | **clean** |
-| production build | **succeeds** |
-| app-shell breakage | **none** — no menu entry, no sign-in button, no dead link |
-| unit specs failing | 34, all in **one** file — the openapi parity table |
-
-### What that tells you
+Both halves are measured rather than asserted. A scaffold `events` module cost 5 files and 2 lines
+in `src/modules.ts`, with **zero** edits to any existing file. Deleting `products`, `cart`, `orders`
+**and `account`** together — four folders, five lines, and `account` is the hard one because the app
+shell shows who is signed in — left `src/` type-checking, lint clean, the production build
+succeeding and the app shell intact: no menu entry, no sign-in button, no dead link. The only
+failures were 34 unit specs, all in one file: the openapi parity table.
 
 **Everything that can be fixed inside this repo has been.** The one remaining failure is
 `responseSchemaMap.spec.ts` reporting `expected [ 'GET /products', …(25) ] to deeply equal []` —
@@ -223,10 +212,10 @@ Deleting `products`, `cart`, `orders` **and `account`** together — four folder
 
 That is the parity gate working exactly as intended. Deleting a domain from the frontend does not
 delete it from a contract shared byte-identically with the backend, so trimming it is a two-repo
-change (Phase 6), not a frontend chore. **A green suite here would mean the gate had stopped
-checking.**
+change driven from the backend, not a frontend chore. **A green suite here would mean the gate had
+stopped checking.**
 
-Getting there took fixing three genuinely different things, and the first is the one worth
+Getting there took fixing four genuinely different things, and the first is the one worth
 remembering:
 
 1. **A route name is a string.** Three places in the app shell addressed a module's route by name,
@@ -264,12 +253,18 @@ remembering:
 The goal test passes for `src/` and for the suite. It fails only where the answer is not this
 repo's to give: the shared contract still documents the deleted endpoints.
 
-That is worth stating precisely, because "green" would have been the wrong outcome. Run the
-exercise again after any significant change — every finding above was invisible to lint, to
-`vue-tsc` and to a full green suite.
+That is worth stating precisely, because "green" would have been the wrong outcome.
+
+::: tip Run a deletability test after any significant change
+Delete two or three domains on a throwaway copy and see what breaks. Nothing in the suite checks
+this, and every finding above was invisible to lint, to `vue-tsc` and to a fully green run — the
+dead links most of all. The procedure is
+[Re-running the deletability check](./module-lifecycle.md#re-running-the-deletability-check).
+:::
 
 ## Related pages
 
+- [Adding & removing a module](./module-lifecycle.md) — the procedure, with the commands
 - [Layers](./layers.md) — the folder map
 - [Architecture](./architecture.md)
 - [Unit testing](../tools/unit-testing.md) — where a spec lives, and why

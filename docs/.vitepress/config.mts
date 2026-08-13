@@ -24,6 +24,10 @@ export default withMermaid(
                             { text: 'Architecture', link: '/theory/architecture' },
                             { text: 'Layers', link: '/theory/layers' },
                             { text: 'Modules', link: '/theory/modules' },
+                            {
+                                text: 'Adding & Removing a Module',
+                                link: '/theory/module-lifecycle'
+                            },
                             { text: 'Domain Layer', link: '/theory/domain-layer' },
                             { text: 'Request Flow', link: '/theory/request-flow' },
                             { text: 'Sitemap & Access Control', link: '/theory/sitemap' }

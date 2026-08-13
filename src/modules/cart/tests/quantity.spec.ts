@@ -3,25 +3,14 @@
  *
  * No `mount`, no Pinia, no MSW. The rules take their inputs as arguments and hand back a verdict,
  * so these are statements about the rule rather than about a `disabled` attribute on `Cart.vue`.
+ *
+ * The floor is asserted through the clamp rather than through a predicate: `Cart.vue` compares
+ * against `MIN_LINE_QUANTITY` inline, and `steppedQuantity` is what has to hold when a double click
+ * outruns that guard.
  */
 
 import { describe, it, expect } from 'vitest';
-import { canDecrement, steppedQuantity, MIN_LINE_QUANTITY } from '@/modules/cart/domain';
-
-describe('canDecrement', () => {
-    it('refuses at the floor — removal is a different action', () => {
-        expect(canDecrement(MIN_LINE_QUANTITY)).toBe(false);
-    });
-
-    it('allows above the floor', () => {
-        expect(canDecrement(2)).toBe(true);
-    });
-
-    /* Defensive: a line should never be below the floor, but if one is, the answer is still no. */
-    it('refuses below the floor', () => {
-        expect(canDecrement(0)).toBe(false);
-    });
-});
+import { steppedQuantity, MIN_LINE_QUANTITY } from '@/modules/cart/domain';
 
 describe('steppedQuantity', () => {
     it('steps up', () => {
@@ -39,5 +28,10 @@ describe('steppedQuantity', () => {
 
     it('clamps however far the step overshoots', () => {
         expect(steppedQuantity(2, -50)).toBe(MIN_LINE_QUANTITY);
+    });
+
+    /* Defensive: a line should never be below the floor, but if one is, it comes back up to it. */
+    it('lifts a line that is already below the floor', () => {
+        expect(steppedQuantity(0, -1)).toBe(MIN_LINE_QUANTITY);
     });
 });

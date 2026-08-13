@@ -19,7 +19,7 @@ declare global {
              *
              * - mock profile: POSTs the test-only `/__mock/reset` endpoint, which repopulates
              *   MSW's in-memory database.
-             * - live profile: runs the backend's `db:seed:reset:host`, which drops the database,
+             * - live profile: runs the backend's `host -- db:seed:reset`, which drops the database,
              *   re-upserts the same fixtures and clears the Redis cache.
              *
              * Both land on the dataset in `db/seeds/index.ts`, which is why the same specs and
@@ -77,7 +77,7 @@ declare global {
 // `cy.exec` defaults to `failOnNonZeroExit: true`, so a failed seed already fails the test —
 // no extra assertion on the exit code is needed.
 const resetLiveDatabase = (backendPath: string) =>
-    cy.exec(`npm --prefix ${backendPath} run db:seed:reset:host`, {
+    cy.exec(`npm --prefix ${backendPath} run host -- db:seed:reset`, {
         timeout: LIVE_RESET_TIMEOUT_MS
     });
 

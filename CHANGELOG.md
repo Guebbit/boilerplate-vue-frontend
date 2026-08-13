@@ -7,6 +7,58 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **`docs/theory/module-lifecycle.md` — adding and removing a domain as a procedure, not a
+  measurement.** `modules.md` said what a domain costs and proved it; it never said what to type.
+  The new page is the ordered procedure in both directions, and it leads with the two things this
+  side gets wrong: the mock ternaries must stay written out inline or a production build ships MSW
+  and faker, and **a route name is a string** — the failure class that is invisible to `vue-tsc`, to
+  lint and to a green suite, and that `hasRoute()` is the only discipline against. It also states
+  why a red parity table after a deletion is the gate working rather than a bug. It stays a written
+  procedure rather than becoming a test on purpose, and the page says why: the failure classes worth
+  catching — a route addressed by name, a canary pinned to the module count, a mechanism spec using
+  a domain as sample data — are each invisible to a sweep. `modules.md` keeps the reasoning and the
+  four lessons, points here, and carries the standing reminder to run the exercise after any
+  significant change.
+
+### Changed
+
+- **`tests/unit/modules/cartQuantity.spec.ts` → `src/modules/cart/tests/quantity.spec.ts`,** which
+  is where every other module's specs already live and the only reason `rm -rf src/modules/cart`
+  takes its tests with it — it was the last spec left outside its module, and
+  `tests/unit/modules/` is gone with it. Its `canDecrement` block went too: that rule moved back
+  into `Cart.vue` as `:disabled="item.quantity <= MIN_LINE_QUANTITY"` and the spec had not caught
+  up. The floor is still asserted, through the clamp that has to hold when a double click outruns
+  the disabled guard.
+
+### Changed
+
+- **The contract grew from 56 to 74 operations, and this repo now validates every one of them.**
+  The backend's customer-surface release landed: account self-service (`PUT /account`, password
+  change, single-session logout, sessions, email verification with `verified` on the `User`), the
+  address book (`/account/addresses`, plus `Order.shippingAddress` and `addressId` on checkout),
+  the wishlist resource, order cancel and cart reorder, `stock` on the `Product` (with
+  `CART_INSUFFICIENT_STOCK` as a new checkout refusal), and the catalogue facets
+  (`GET /products/categories`). `openapi.yaml`, the seed identities (products now carry `stock`,
+  `categories` and `tags`; two users carry a seeded wishlist) and the analytics events are the
+  backend's fresh copies; orval regenerated the client, the Zod schemas and the MSW mocks; and
+  every new operation has its row in the response-schema map — the account, cart, orders and
+  products modules own theirs, while the four `/wishlist*` rows sit with the core `/feedback*`
+  rows until the module that claims them exists. The UI for all of this is the next step; this
+  entry is the contract landing first, which is the order the two repos always move in.
+
+### Removed
+
+- **The three `.dev/` API client collections, and their spec-identity entries — the gate is 8
+  files now, not 11.** Nothing in this repo ever read them: mocking is MSW, the API layer is
+  orval, and no script or doc named them. Their identity entries defended against hand-written
+  restatements of the contract forking — but the backend generates them from `openapi.yaml` now
+  and pins them to a fresh generation in its own suite, and `openapi.yaml` itself stays
+  identity-checked, so a copy here could never disagree without the spec disagreeing first. The
+  collections keep living where they are produced — at the backend's repo root, as
+  `contract.bruno.yml`, `contract.insomnia.json` and `contract.mockoon.json`.
+
 ## [2.0.0] - 2026-08-13
 
 The modular release, and the first one cut — the counterpart of the API repo's 2.0.0, released
@@ -22,10 +74,15 @@ issues" records what was true when that wave closed; later waves above it docume
 - **Modules may now carry a `domain/` folder: pure rules, lint-guaranteed framework-free.** Nothing
   in `src/modules/*/domain/**` may import vue, pinia, axios, vue-router, vue-i18n, any tier alias, a
   sibling module, or its own module's outer files. `cart/domain/quantity.ts` is the first and
-  currently only one: `canDecrement` and `steppedQuantity` were `:disabled="item.quantity <= 1"` and
-  two inline `quantity ± 1` expressions inside `views/Cart.vue` — one rule written three times in a
-  template, testable only by mounting a component. Behaviour is unchanged; the step is now clamped
-  rather than merely guarded, so a double click cannot send `quantity: 0`.
+  currently only one: `MIN_LINE_QUANTITY` and `steppedQuantity` replace two inline `quantity ± 1`
+  expressions inside `views/Cart.vue` — one rule written twice in a template, testable only by
+  mounting a component. Behaviour is unchanged; the step is now clamped rather than merely guarded,
+  so a double click cannot send `quantity: 0`.
+
+    The folder has a **floor**, so it does not collect one-liners: a rule earns a place only with
+    more than one caller or a non-obvious failure mode. `steppedQuantity` clears it on the second
+    count (the clamp catches the double click); `canDecrement` did not, and is back in the template
+    as `:disabled="item.quantity <= MIN_LINE_QUANTITY"`.
 
     **On a frontend this layer is thin by design.** Prices, totals and eligibility are decided by the
     API, and restating them here would be two implementations of one rule — the drift

@@ -13,7 +13,7 @@ import { Minus, Plus, ShoppingCart } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/infrastructure/i18n.ts';
 import { useCartStore } from '@/modules/cart/store.ts';
 // The stepper's floor is a rule, not a template detail — see `../domain/quantity.ts`.
-import { canDecrement, steppedQuantity } from '@/modules/cart/domain';
+import { MIN_LINE_QUANTITY, steppedQuantity } from '@/modules/cart/domain';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { notifyErrorMessages } from '@/infrastructure/errors.ts';
 import { formatCurrency } from '@/infrastructure/formatters.ts';
@@ -94,7 +94,7 @@ onMounted(fetchCart);
                             size="small"
                             variant="tonal"
                             data-test="cart-decrease"
-                            :disabled="!canDecrement(item.quantity)"
+                            :disabled="item.quantity <= MIN_LINE_QUANTITY"
                             :aria-label="t('cart-page.button-decrease')"
                             @click="
                                 updateCartItem(item.productId, steppedQuantity(item.quantity, -1))

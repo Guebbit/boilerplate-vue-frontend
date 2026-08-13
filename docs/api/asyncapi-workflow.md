@@ -25,7 +25,7 @@ The AMQP and Redis pub/sub servers exist in `asyncapi.yaml` for backend use; the
 Types are generated from `asyncapi.yaml` into `src/types/realtime.generated.ts`:
 
 ```bash
-npm run genasyncapi
+npm run gen:asyncapi
 ```
 
 Import from `src/types/realtime.ts` (the thin app helper that re-exports from `realtime.generated.ts`):
@@ -35,20 +35,20 @@ import type { ISseEventName, ISseEventPayload } from '@types';
 import { REALTIME_SSE_EVENT_NAMES } from '@types';
 ```
 
-**Never edit `realtime.generated.ts` by hand** — it is overwritten on every `genasyncapi` run.
+**Never edit `realtime.generated.ts` by hand** — it is overwritten on every `gen:asyncapi` run.
 
 ## Tooling used here
 
 | Tool | Job |
 | ---- | --- |
-| `@asyncapi/cli` | validates `asyncapi.yaml` (`npm run genasyncapi` internally) |
+| `@asyncapi/cli` | validates `asyncapi.yaml` (`npm run gen:asyncapi` internally) |
 | `@asyncapi/modelina` | generates TypeScript types from AsyncAPI schemas |
 | custom `scripts/gen-asyncapi-types.ts` | runs modelina + appends the channel constants and the SSE payload map |
 
 ## Commands
 
 ```bash
-npm run genasyncapi   # validate asyncapi.yaml + regenerate src/types/realtime.generated.ts
+npm run gen:asyncapi   # validate asyncapi.yaml + regenerate src/types/realtime.generated.ts
 ```
 
 ## Shared with the backend
@@ -73,7 +73,7 @@ repo does not use are tree-shaken out of the bundle.
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 65}}}%%
 flowchart LR
-    Spec[asyncapi.yaml] --> Gen[npm run genasyncapi]
+    Spec[asyncapi.yaml] --> Gen[npm run gen:asyncapi]
     Gen --> Types[src/types/realtime.generated.ts]
     Types --> Clients[createSseClient]
     Clients --> Stores[realtimeObservability store]
@@ -82,7 +82,7 @@ flowchart LR
 
 After editing `asyncapi.yaml`:
 
-1. `npm run genasyncapi` — regenerate types (commit the diff).
+1. `npm run gen:asyncapi` — regenerate types (commit the diff).
 2. Update realtime clients/stores if channel names or payload shapes changed.
 3. Validate in the `RealtimePlayground` view before broader integration.
 

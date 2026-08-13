@@ -16,9 +16,12 @@ added by compose so the published port is actually reachable.
 
 | Script | Job | Read more |
 | ------ | --- | --------- |
-| `podman:restart` / `docker:restart` | restart the compose stack | [Docker & Podman](./docker-and-podman.md) |
-| `podman:rebuild` / `docker:rebuild` | rebuild images and restart the stack | [Docker & Podman](./docker-and-podman.md) |
-| `podman:kill` / `docker:kill` | force-stop this project's compose containers | [Docker & Podman](./docker-and-podman.md) |
+| `compose:restart` | restart the compose stack | [Docker & Podman](./docker-and-podman.md) |
+| `compose:rebuild` | rebuild images and restart the stack | [Docker & Podman](./docker-and-podman.md) |
+| `compose:kill` | force-stop this project's compose containers | [Docker & Podman](./docker-and-podman.md) |
+| `compose` | any other compose subcommand, e.g. `npm run compose -- logs -f app` | [Docker & Podman](./docker-and-podman.md) |
+
+All four run through `scripts/compose.ts`, which picks the engine from `CONTAINER_ENGINE` (environment, then `.env`), falling back to whichever of docker/podman is installed and to docker when both are. They replaced six scripts — `podman:{restart,rebuild,kill}` and the docker three — that were identical but for the engine name. Keep the choice in step with the backend stack: the two are started side by side.
 
 ## Build & validation scripts
 
@@ -39,7 +42,6 @@ added by compose so the published port is actually reachable.
 | `test:e2e` | Start Vite (with MSW) + run Cypress headlessly | [Testing](./testing-and-docs.md) |
 | `test:e2e:dev` | Open Cypress UI for interactive e2e development | [Testing](./testing-and-docs.md) |
 | `test:e2e:random` | Start Vite with the faker-seeded random mock profile + run only `resilience.cy.ts` | [Mocking](./mocking.md) |
-| `pretest:e2e:live` | Preflight for the live profile — backend reachable, `db:seed:reset:host` present, specs in sync. Runs automatically before `test:e2e:live` | [Live E2E](./live-e2e.md) |
 | `test:e2e:live` | Start Vite (real API, response validation on) + run Cypress against the live backend, by hand | [Live E2E](./live-e2e.md) |
 | `test:mutation` | Stryker: break the source on purpose and report what the tests failed to notice. Slow — nightly or before a refactor, never in a PR | [Testing](./testing-and-docs.md) |
 | `test` | `test:unit` then `test:e2e` | [Testing](./testing-and-docs.md) |
@@ -48,8 +50,8 @@ added by compose so the published port is actually reachable.
 
 | Script | Job | Read more |
 | ------ | --- | --------- |
-| `genapi` | Regenerate `contracts/rest/` and `tests/support/mocks/generated.ts` from `openapi.yaml` via orval | [OpenAPI Workflow](../api/openapi-workflow.md) |
-| `genasyncapi` | Regenerate `src/types/realtime.generated.ts` from `asyncapi.yaml` | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
+| `gen:api` | Regenerate `contracts/rest/` and `tests/support/mocks/generated.ts` from `openapi.yaml` via orval | [OpenAPI Workflow](../api/openapi-workflow.md) |
+| `gen:asyncapi` | Regenerate `src/types/realtime.generated.ts` from `asyncapi.yaml` | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 | `lint:openapi` | Lint `openapi.yaml` with Spectral | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | `lint:asyncapi` | Validate `asyncapi.yaml` with the AsyncAPI CLI | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 

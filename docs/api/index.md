@@ -8,7 +8,7 @@ This section explains the API contracts and how the FE consumes them.
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 65}}}%%
 flowchart LR
     Spec[openapi.yaml] --> Lint[Spectral\nnpm run lint:openapi]
-    Spec --> Generate[Orval\nnpm run genapi]
+    Spec --> Generate[Orval\nnpm run gen:api]
     Generate --> Client[contracts/rest/index.ts\ntyped axios functions]
     Generate --> Schemas[contracts/rest/schemas.zod.ts\nZod schemas]
     Generate --> Mocks[tests/support/mocks/generated.ts\nMSW stubs]
@@ -30,7 +30,7 @@ flowchart LR
 
 - [`openapi.yaml`](./openapi-workflow.md) is the source of truth for REST — never hand-write what can be generated.
 - [`asyncapi.yaml`](./asyncapi-workflow.md) is the source of truth for SSE contracts.
-- The generated `contracts/rest/` folder is **read-only** — `npm run genapi` overwrites it entirely.
+- The generated `contracts/rest/` folder is **read-only** — `npm run gen:api` overwrites it entirely.
 - Coordinate contract changes with the backend team before merging.
 
 ## Read by task

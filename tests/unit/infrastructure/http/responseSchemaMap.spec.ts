@@ -78,6 +78,17 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['POST', '/account/reset', 'RequestPasswordResetResponse'],
     ['POST', '/account/reset-confirm', 'ConfirmPasswordResetResponse'],
     ['GET', '/account/refresh', 'RefreshTokenResponse'],
+    ['PUT', '/account', 'UpdateAccountResponse'],
+    ['POST', '/account/password', 'ChangePasswordResponse'],
+    ['POST', '/account/logout', 'LogoutResponse'],
+    ['GET', '/account/sessions', 'GetSessionsResponse'],
+    ['DELETE', `/account/sessions/${ID}`, 'RevokeSessionResponse'],
+    ['POST', '/account/verify-request', 'RequestEmailVerificationResponse'],
+    ['POST', '/account/verify-confirm', 'ConfirmEmailVerificationResponse'],
+    ['GET', '/account/addresses', 'GetAddressesResponse'],
+    ['POST', '/account/addresses', 'AddAddressResponse'],
+    ['PUT', `/account/addresses/${ID}`, 'UpdateAddressResponse'],
+    ['DELETE', `/account/addresses/${ID}`, 'RemoveAddressResponse'],
     ['POST', '/account/logout-all', 'LogoutAllResponse'],
     ['DELETE', '/account/tokens/expired', 'DeleteExpiredTokensResponse'],
     ['GET', '/users', 'ListUsersResponse'],
@@ -108,6 +119,11 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['POST', '/cart/checkout', 'CheckoutResponse'],
     ['PUT', `/cart/${ID}`, 'UpdateCartItemByIdResponse'],
     ['DELETE', `/cart/${ID}`, 'RemoveCartItemResponse'],
+    ['POST', `/cart/reorder/${ID}`, 'ReorderResponse'],
+    ['GET', '/wishlist', 'GetWishlistResponse'],
+    ['POST', '/wishlist', 'AddWishlistItemResponse'],
+    ['DELETE', `/wishlist/${ID}`, 'RemoveWishlistItemResponse'],
+    ['POST', `/wishlist/${ID}/move-to-cart`, 'MoveWishlistItemToCartResponse'],
     ['GET', '/orders', 'ListOrdersResponse'],
     ['POST', '/orders', 'CreateOrderResponse'],
     ['PUT', '/orders', 'UpdateOrderResponse'],
@@ -117,7 +133,9 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['GET', `/orders/${ID}`, 'GetOrderByIdResponse'],
     ['PUT', `/orders/${ID}`, 'UpdateOrderByIdResponse'],
     ['DELETE', `/orders/${ID}`, 'DeleteOrderByIdResponse'],
-    ['DELETE', `/orders/${ID}/hard`, 'HardDeleteOrderByIdResponse']
+    ['DELETE', `/orders/${ID}/hard`, 'HardDeleteOrderByIdResponse'],
+    ['POST', `/orders/${ID}/cancel`, 'CancelOrderByIdResponse'],
+    ['GET', '/products/categories', 'GetCatalogueFacetsResponse']
 ];
 
 /**

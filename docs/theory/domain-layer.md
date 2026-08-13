@@ -51,14 +51,24 @@ flowchart TD
 
 ```ts
 // modules/cart/domain/quantity.ts
-export const canDecrement = (quantity: number) => quantity > MIN_LINE_QUANTITY;
+export const MIN_LINE_QUANTITY = 1;
 export const steppedQuantity = (quantity: number, step: number) =>
     Math.max(MIN_LINE_QUANTITY, quantity + step);
 ```
 
 A line cannot reach zero by stepping — zero is not a quantity, it is a removal, which is a different
-call with a different confirmation. That is a rule, not a template detail, and it is now testable
+call with a different confirmation. That is a rule, not a template detail, and it is testable
 without mounting a component.
+
+The clamp is the reason this is a rule rather than a template detail. `:disabled` already stops a
+decrement at 1, so `Math.max` looks redundant — it is not: a double click fires twice before Vue
+re-renders `:disabled`, and the second one would send `quantity: 0` to an endpoint that reads it as
+"remove". Someone tidying the template would delete that guard as dead code and reopen the bug,
+which is exactly the kind of trap that earns a name.
+
+A companion that did **not** earn one: `canDecrement(q) => q > MIN_LINE_QUANTITY` used to sit here,
+and is now `:disabled="item.quantity <= MIN_LINE_QUANTITY"` in the template. One caller, no trap —
+see [the floor](#the-floor-testable-without-mounting-a-component-is-necessary-not-sufficient).
 
 ### The rule, enforced by lint
 
@@ -88,6 +98,82 @@ flowchart LR
 | `@/infrastructure/**`, `@/kernel/**`, `@/app/**`, `@/ui/**` | those are tiers; domain sits below them |
 | `@/modules/**` | a sibling's rules are its own |
 | `../*` — its own module's outer files | domain may not read `../store` or `../views` |
+
+### Is this standard?
+
+Yes — a framework-free innermost layer is one of the most agreed-on ideas in software
+architecture. Four traditions describe the same ring under four names:
+
+```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 30, 'rankSpacing': 35}}}%%
+flowchart TD
+    O["<b>outside</b><br/>the API · the browser · the router"]
+    A["<b>application</b><br/>views/ · store.ts · composables"]
+    D["<b>the rules</b><br/>domain/"]
+
+    O -->|"may import"| A
+    A -->|"may import"| D
+    D -.->|"❌ never"| A
+    D -.->|"❌ never"| O
+
+    classDef out fill:#fee2e2,stroke:#dc2626,color:#111827;
+    classDef app fill:#dbeafe,stroke:#2563eb,color:#111827;
+    classDef pure fill:#dcfce7,stroke:#16a34a,color:#111827;
+    class O out;
+    class A app;
+    class D pure;
+```
+
+| Tradition                        | Year | Author            | What it calls the innermost ring |
+| -------------------------------- | ---- | ----------------- | -------------------------------- |
+| **DDD**, layered architecture    | 2003 | Eric Evans        | the **domain layer**             |
+| **Hexagonal** (Ports & Adapters) | 2005 | Alistair Cockburn | the inside, behind ports         |
+| **Onion Architecture**           | 2008 | Jeffrey Palermo   | Domain Model + Domain Services   |
+| **Clean Architecture**           | 2012 | Robert C. Martin  | Entities, then Use Cases         |
+
+All four state the same rule: the rules do not import the delivery mechanism, and the dependency
+arrow points inward only. `domain/` is the DDD spelling, which is why the folder carries that name.
+
+**Lint is how the boundary is enforced, not why it exists.** The block in `eslint.config.ts` points
+at `src/modules/*/domain/**` because ESLint matches on paths — a folder is simply the only thing a
+linter can aim at. The folder's purpose is a rule you can test in milliseconds without mounting
+anything; the linter is what stops that from decaying the first time someone reaches for the store
+from inside a rule.
+
+**On a frontend, be honest about the size of the prize.** The API decides prices, totals and
+eligibility, so this layer is thin here by design and always will be — see
+[Why it is thin here](#why-it-is-thin-here-—-and-why-that-is-correct). The backend repo's
+`orders/domain/totals.ts` is property-tested over 3,900 generated baskets with no database; nothing
+on this side will ever be that dramatic. What it buys here is smaller and still real: a rule the
+template cannot silently delete, testable without mounting a component.
+
+**When you would not have one at all:** most modules here have none, and that is the expected
+state. See the floor below for the test a rule must pass before it earns a place.
+
+### The floor: "testable without mounting a component" is necessary, not sufficient
+
+The question above decides _where_ a rule goes. It does not decide _whether_ there is a rule. A
+one-line expression passes "testable without mounting a component" trivially, so the test alone
+would pull every ternary in the codebase into `domain/`.
+
+> **A rule earns `domain/` when it has more than one caller, _or_ a non-obvious failure mode a
+> reader would otherwise reintroduce. A one-line expression with one caller and no trap is
+> inlined, and its comment goes with it.**
+
+The comment is the part worth keeping. `:disabled="item.quantity <= MIN_LINE_QUANTITY"` says
+everything `canDecrement(item.quantity)` said, minus an import, a barrel line and a hop.
+
+Both halves are live:
+
+| Kept              | Why it clears the floor                                                             |
+| ----------------- | ------------------------------------------------------------------------------------ |
+| `steppedQuantity` | One caller, but a real trap: the clamp catches a double click outrunning `:disabled` |
+
+| Removed        | Why it did not                            |
+| -------------- | ------------------------------------------- |
+| `canDecrement` | `q > MIN_LINE_QUANTITY`, one template binding |
+
+The same floor is applied on the API side, where it removed `nextDeletionState` and `readScope`.
 
 ### The folder is optional
 

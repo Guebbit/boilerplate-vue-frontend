@@ -32,5 +32,10 @@ export const ordersResponseSchemas: IResponseSchemaRoute[] = [
         method: 'DELETE',
         pattern: /^\/orders\/[^/]+\/hard$/,
         schema: schemas.HardDeleteOrderByIdResponse
+    },
+    {
+        method: 'POST',
+        pattern: /^\/orders\/[^/]+\/cancel$/,
+        schema: schemas.CancelOrderByIdResponse
     }
 ];

@@ -182,10 +182,10 @@ jobs:
 
             - name: Check generated AsyncAPI types are fresh
               run: |
-                  npm run genasyncapi
+                  npm run gen:asyncapi
                   npx prettier --write src/types/realtime.generated.ts
                   if ! git diff --exit-code -- src/types/realtime.generated.ts; then
-                      echo "Generated src/types/realtime.generated.ts is stale. Run 'npm run genasyncapi && npm run prettier:fix' and commit the changes."
+                      echo "Generated src/types/realtime.generated.ts is stale. Run 'npm run gen:asyncapi && npm run prettier:fix' and commit the changes."
                       exit 1
                   fi
 
@@ -244,13 +244,13 @@ jobs:
               # it was written. If you add or retarget an output block in orval.config.ts,
               # update this list in the same commit.
               run: |
-                  npm run genapi
+                  npm run gen:api
                   # orval emits 2-space indentation; this repo's prettier config uses 4, and
                   # the committed output is formatted. Without this normalisation step the
                   # diff below is thousands of lines of pure indentation on every run.
                   npx prettier --write contracts/ tests/support/mocks/generated.ts
                   if ! git diff --exit-code -- contracts/ tests/support/mocks/generated.ts; then
-                      echo "Generated API client is stale. Run 'npm run genapi && npm run prettier:fix' and commit the changes."
+                      echo "Generated API client is stale. Run 'npm run gen:api && npm run prettier:fix' and commit the changes."
                       exit 1
                   fi
                   # `git diff` only sees tracked files, so a brand-new generated output would
@@ -258,7 +258,7 @@ jobs:
                   if [ -n "$(git status --porcelain -- contracts/ tests/support/mocks/generated.ts)" ]; then
                       echo "Codegen produced untracked files under contracts/ or tests/support/mocks/:"
                       git status --porcelain -- contracts/ tests/support/mocks/generated.ts
-                      echo "Run 'npm run genapi' and commit the changes."
+                      echo "Run 'npm run gen:api' and commit the changes."
                       exit 1
                   fi
 

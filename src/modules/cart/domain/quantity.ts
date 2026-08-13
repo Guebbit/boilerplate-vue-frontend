@@ -8,13 +8,6 @@
 export const MIN_LINE_QUANTITY = 1;
 
 /**
- * Drives the stepper's `disabled` state.
- * @param quantity - the line's current quantity
- * @returns whether a decrement is allowed
- */
-export const canDecrement = (quantity: number): boolean => quantity > MIN_LINE_QUANTITY;
-
-/**
  * The quantity a step lands on, clamped to the floor.
  * Clamped rather than trusted: a double click can outrun the disabled guard.
  * @param quantity - the line's current quantity

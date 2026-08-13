@@ -104,7 +104,7 @@ const server = setupServer(
 | --- | --- |
 | `npm run test:unit` | Full suite, CI mode |
 | `npm run test:unit:coverage` | Same, with v8 coverage |
-| `npm run test:unit:target` | One hardcoded file, for fast iteration while editing it |
+| `npx vitest run <path>` | One file, for fast iteration while editing it |
 
 ## Related pages
 

@@ -61,7 +61,7 @@ All three carry the same payload shape (timestamp, uptime, memory, HTTP counters
 Regenerate types after editing `asyncapi.yaml`:
 
 ```bash
-npm run genasyncapi
+npm run gen:asyncapi
 ```
 
 → [AsyncAPI Workflow](../api/asyncapi-workflow.md)

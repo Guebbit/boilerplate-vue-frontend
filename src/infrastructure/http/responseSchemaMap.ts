@@ -63,6 +63,23 @@ const coreRouteSchemas: IResponseSchemaRoute[] = [
         method: 'PUT',
         pattern: /^\/feedback\/[^/]+$/,
         schema: schemas.UpdateFeedbackRequestStatusResponse
+    },
+    /*
+     * `/wishlist*` sits here for the same reason `/feedback*` does: the contract declares it and
+     * no frontend domain claims it yet. Move these four rows into the wishlist module when it
+     * exists, exactly as the comment above prescribes for feedback.
+     */
+    { method: 'GET', pattern: /^\/wishlist$/, schema: schemas.GetWishlistResponse },
+    { method: 'POST', pattern: /^\/wishlist$/, schema: schemas.AddWishlistItemResponse },
+    {
+        method: 'DELETE',
+        pattern: /^\/wishlist\/[^/]+$/,
+        schema: schemas.RemoveWishlistItemResponse
+    },
+    {
+        method: 'POST',
+        pattern: /^\/wishlist\/[^/]+\/move-to-cart$/,
+        schema: schemas.MoveWishlistItemToCartResponse
     }
 ];
 

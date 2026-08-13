@@ -84,58 +84,6 @@ export interface MessageResponse {
 }
 
 /**
- * Which languages a deployment can answer in. Runtime state, not contract state: it is derived from the dictionaries actually deployed, so it cannot be an enum here.
- */
-export interface LocaleCapabilities {
-    /** Every supported language tag. */
-    locales: Locale[];
-    default: Locale;
-    fallback: Locale;
-}
-
-export interface LocaleCapabilitiesEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: LocaleCapabilities;
-}
-
-/**
- * Nested key/value dictionary, the same shape the API loads.
- */
-export type LocaleDictionaryMessages = { [key: string]: unknown };
-
-/**
- * The API's OWN message dictionary for one language — its API-response copy and nothing else. It is never a client's UI dictionary: the two are authored and deployed in separate repositories, and mixing them would put view copy in the API's keyspace. A client that wants these merges them under a namespace it reserves for the API, never at the root.
- */
-export interface LocaleDictionary {
-    locale: Locale;
-    /** Nested key/value dictionary, the same shape the API loads. */
-    messages: LocaleDictionaryMessages;
-}
-
-export interface LocaleDictionaryEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: LocaleDictionary;
-}
-
-/**
- * Liveness indicator. Always `ok` when the process is answering.
- */
-export type HealthPingStatus = (typeof HealthPingStatus)[keyof typeof HealthPingStatus];
-
-export const HealthPingStatus = {
-    ok: 'ok'
-} as const;
-
-export interface HealthPing {
-    /** Liveness indicator. Always `ok` when the process is answering. */
-    status: HealthPingStatus;
-}
-
-/**
  * Optional structured metadata for programmatic handling
  */
 export type ErrorItemDetails = { [key: string]: unknown };
@@ -173,51 +121,13 @@ export interface ValidationErrorResponse {
     errors: ErrorItem[];
 }
 
-export interface HealthPingEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: HealthPing;
-}
-
-export interface AuthTokens {
-    /** Access JWT */
-    token: string;
-    /** Refresh token if returned by backend */
-    refreshToken?: string;
-    /** Access token expiry in seconds */
-    expiresIn?: number;
-}
-
-export interface AuthTokensEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: AuthTokens;
-}
-
-export interface RefreshTokenResponse {
-    /** New access JWT */
-    token: string;
-    /** New refresh token if returned by backend */
-    refreshToken?: string;
-    /** New access token expiry in seconds */
-    expiresIn?: number;
-}
-
-export interface RefreshTokenEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: RefreshTokenResponse;
-}
-
 export interface User {
     id: Id;
     email: Email;
     username: string;
     admin?: boolean;
     active?: boolean;
+    verified?: boolean;
     imageUrl?: ImageUrl;
     locale?: Locale;
     createdAt?: string;
@@ -232,23 +142,13 @@ export interface UserEnvelope {
     data: User;
 }
 
-export interface UsersResponse {
-    items: User[];
-    meta: PaginationMeta;
-}
-
-export interface UsersResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: UsersResponse;
-}
-
 export interface Product {
     id: Id;
     title: string;
     /** @minimum 0 */
     price: number;
+    /** @minimum 0 */
+    stock?: number;
     description?: string;
     active?: boolean;
     imageUrl?: ImageUrl;
@@ -259,23 +159,19 @@ export interface Product {
     deletedAt?: string;
 }
 
-export interface ProductEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: Product;
+export interface CartItem {
+    productId: Id;
+    /** @minimum 1 */
+    quantity: number;
 }
 
-export interface ProductsResponse {
-    items: Product[];
-    meta: PaginationMeta;
-}
-
-export interface ProductsResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: ProductsResponse;
+export interface OrderAddress {
+    fullName: string;
+    street: string;
+    city: string;
+    zip: string;
+    country: string;
+    phone?: string;
 }
 
 export interface OrderItem {
@@ -317,128 +213,74 @@ export interface Order {
     totalPrice: number;
     /** Optional order notes */
     notes?: string;
+    shippingAddress?: OrderAddress;
     status: OrderStatus;
     createdAt?: string;
     updatedAt?: string;
     deletedAt?: string;
 }
 
-export interface OrderEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: Order;
+export interface HardDeleteRequest {
+    hardDelete?: boolean;
 }
 
-export interface OrdersResponse {
-    items: Order[];
-    meta: PaginationMeta;
-}
+/**
+ * Liveness indicator. Always `ok` when the process is answering.
+ */
+export type HealthPingStatus = (typeof HealthPingStatus)[keyof typeof HealthPingStatus];
 
-export interface OrdersResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: OrdersResponse;
-}
-
-export type FeedbackRequestStatus =
-    (typeof FeedbackRequestStatus)[keyof typeof FeedbackRequestStatus];
-
-export const FeedbackRequestStatus = {
-    new: 'new',
-    in_progress: 'in_progress',
-    resolved: 'resolved',
-    spam: 'spam'
+export const HealthPingStatus = {
+    ok: 'ok'
 } as const;
 
-export interface FeedbackRequest {
-    id: Id;
-    name?: string;
-    email: Email;
-    subject: string;
-    message: string;
-    status: FeedbackRequestStatus;
-    adminNotes?: string;
-    respondedAt?: string;
-    createdAt: string;
-    updatedAt?: string;
+export interface HealthPing {
+    /** Liveness indicator. Always `ok` when the process is answering. */
+    status: HealthPingStatus;
 }
 
-export interface FeedbackRequestEnvelope {
+export interface HealthPingEnvelope {
     success: true;
     status: number;
     message: string;
-    data: FeedbackRequest;
+    data: HealthPing;
 }
 
-export interface FeedbackRequestsResponse {
-    items: FeedbackRequest[];
-    meta: PaginationMeta;
+/**
+ * Which languages a deployment can answer in. Runtime state, not contract state: it is derived from the dictionaries actually deployed, so it cannot be an enum here.
+ */
+export interface LocaleCapabilities {
+    /** Every supported language tag. */
+    locales: Locale[];
+    default: Locale;
+    fallback: Locale;
 }
 
-export interface FeedbackRequestsResponseEnvelope {
+export interface LocaleCapabilitiesEnvelope {
     success: true;
     status: number;
     message: string;
-    data: FeedbackRequestsResponse;
+    data: LocaleCapabilities;
 }
 
-export interface CartItem {
-    productId: Id;
-    /** @minimum 1 */
-    quantity: number;
+/**
+ * Nested key/value dictionary, the same shape the API loads.
+ */
+export type LocaleDictionaryMessages = { [key: string]: unknown };
+
+/**
+ * The API's OWN message dictionary for one language — its API-response copy and nothing else. It is never a client's UI dictionary: the two are authored and deployed in separate repositories, and mixing them would put view copy in the API's keyspace. A client that wants these merges them under a namespace it reserves for the API, never at the root.
+ */
+export interface LocaleDictionary {
+    locale: Locale;
+    /** Nested key/value dictionary, the same shape the API loads. */
+    messages: LocaleDictionaryMessages;
 }
 
-export interface CartSummaryResponse {
-    /**
-     * Number of distinct cart lines/items
-     * @minimum 0
-     */
-    itemsCount: number;
-    /**
-     * Sum of quantities across all items
-     * @minimum 0
-     */
-    totalQuantity: number;
-    /**
-     * Sum of item prices * quantity (before tax/shipping/discounts)
-     * @minimum 0
-     */
-    total: number;
-    /** ISO-4217 currency code (e.g. USD) */
-    currency?: string;
-}
-
-export interface CartResponse {
-    items: CartItem[];
-    summary: CartSummaryResponse;
-}
-
-export interface CartResponseEnvelope {
+export interface LocaleDictionaryEnvelope {
     success: true;
     status: number;
     message: string;
-    data: CartResponse;
-}
-
-export interface CartSummaryResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: CartSummaryResponse;
-}
-
-export interface CheckoutResponse {
-    order: Order;
-    message?: string;
-}
-
-export interface CheckoutResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: CheckoutResponse;
+    data: LocaleDictionary;
 }
 
 export type ObservabilityHealthStatus =
@@ -628,6 +470,38 @@ export interface AuditLogsResponseEnvelope {
     data: AuditLogsPage;
 }
 
+export interface AuthTokens {
+    /** Access JWT */
+    token: string;
+    /** Refresh token if returned by backend */
+    refreshToken?: string;
+    /** Access token expiry in seconds */
+    expiresIn?: number;
+}
+
+export interface AuthTokensEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: AuthTokens;
+}
+
+export interface RefreshTokenResponse {
+    /** New access JWT */
+    token: string;
+    /** New refresh token if returned by backend */
+    refreshToken?: string;
+    /** New access token expiry in seconds */
+    expiresIn?: number;
+}
+
+export interface RefreshTokenEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: RefreshTokenResponse;
+}
+
 export interface LoginRequest {
     email: Email;
     password: Password;
@@ -666,6 +540,121 @@ export interface PasswordResetConfirmRequest {
 export interface AccountDeleteConfirmRequest {
     /** One-time account deletion token (NOT a JWT). */
     token: string;
+}
+
+export interface UpdateAccountRequest {
+    email?: Email;
+    /** @minLength 3 */
+    username?: string;
+    locale?: Locale;
+    imageUrl?: ImageUrl;
+}
+
+export interface UpdateAccountRequestMultipart {
+    email?: Email;
+    /** @minLength 3 */
+    username?: string;
+    locale?: Locale;
+    /** Optional user profile image */
+    imageUpload?: Blob;
+}
+
+export interface ChangePasswordRequest {
+    currentPassword: Password;
+    password: Password;
+    passwordConfirm: Password;
+}
+
+export interface VerifyEmailConfirmRequest {
+    /** One-time email verification token (NOT a JWT). */
+    token: string;
+}
+
+export interface Session {
+    id: Id;
+    /** Absent on a token issued without an expiry tier. */
+    expiration?: string;
+    /** Whether this session is the one making the request, matched through the refresh cookie. Always `false` for a caller authenticating by bearer token alone — an access token does not identify a session. */
+    current: boolean;
+}
+
+export interface SessionsResponse {
+    sessions: Session[];
+}
+
+export interface SessionsEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: SessionsResponse;
+}
+
+export interface Address {
+    id: Id;
+    /** The caller's own name for the entry — "home", "office". */
+    label?: string;
+    fullName: string;
+    street: string;
+    city: string;
+    zip: string;
+    country: string;
+    phone?: string;
+    default: boolean;
+}
+
+export interface AddressInput {
+    label?: string;
+    /** @minLength 1 */
+    fullName: string;
+    /** @minLength 1 */
+    street: string;
+    /** @minLength 1 */
+    city: string;
+    /** @minLength 1 */
+    zip: string;
+    /** @minLength 1 */
+    country: string;
+    phone?: string;
+    default?: boolean;
+}
+
+export interface UpdateAddressRequest {
+    label?: string;
+    /** @minLength 1 */
+    fullName?: string;
+    /** @minLength 1 */
+    street?: string;
+    /** @minLength 1 */
+    city?: string;
+    /** @minLength 1 */
+    zip?: string;
+    /** @minLength 1 */
+    country?: string;
+    phone?: string;
+    default?: boolean;
+}
+
+export interface AddressesResponse {
+    addresses: Address[];
+}
+
+export interface AddressesEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: AddressesResponse;
+}
+
+export interface UsersResponse {
+    items: User[];
+    meta: PaginationMeta;
+}
+
+export interface UsersResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: UsersResponse;
 }
 
 export interface SearchUsersRequest {
@@ -746,6 +735,125 @@ export interface DeleteUserRequest {
     hardDelete?: boolean;
 }
 
+export type FeedbackRequestStatus =
+    (typeof FeedbackRequestStatus)[keyof typeof FeedbackRequestStatus];
+
+export const FeedbackRequestStatus = {
+    new: 'new',
+    in_progress: 'in_progress',
+    resolved: 'resolved',
+    spam: 'spam'
+} as const;
+
+export interface FeedbackRequest {
+    id: Id;
+    name?: string;
+    email: Email;
+    subject: string;
+    message: string;
+    status: FeedbackRequestStatus;
+    adminNotes?: string;
+    respondedAt?: string;
+    createdAt: string;
+    updatedAt?: string;
+}
+
+export interface FeedbackRequestEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: FeedbackRequest;
+}
+
+export interface FeedbackRequestsResponse {
+    items: FeedbackRequest[];
+    meta: PaginationMeta;
+}
+
+export interface FeedbackRequestsResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: FeedbackRequestsResponse;
+}
+
+export interface CreateFeedbackRequest {
+    name?: string;
+    email: Email;
+    subject: string;
+    message: string;
+}
+
+export type SearchFeedbackRequestsRequestStatus =
+    (typeof SearchFeedbackRequestsRequestStatus)[keyof typeof SearchFeedbackRequestsRequestStatus];
+
+export const SearchFeedbackRequestsRequestStatus = {
+    new: 'new',
+    in_progress: 'in_progress',
+    resolved: 'resolved',
+    spam: 'spam'
+} as const;
+
+export interface SearchFeedbackRequestsRequest {
+    page?: Page;
+    pageSize?: PageSize;
+    text?: Text;
+    status?: SearchFeedbackRequestsRequestStatus;
+    email?: Email;
+}
+
+export type UpdateFeedbackRequestStatusRequestStatus =
+    (typeof UpdateFeedbackRequestStatusRequestStatus)[keyof typeof UpdateFeedbackRequestStatusRequestStatus];
+
+export const UpdateFeedbackRequestStatusRequestStatus = {
+    new: 'new',
+    in_progress: 'in_progress',
+    resolved: 'resolved',
+    spam: 'spam'
+} as const;
+
+export interface UpdateFeedbackRequestStatusRequest {
+    status?: UpdateFeedbackRequestStatusRequestStatus;
+    adminNotes?: string;
+}
+
+export interface ProductEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: Product;
+}
+
+export interface ProductsResponse {
+    items: Product[];
+    meta: PaginationMeta;
+}
+
+export interface ProductsResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: ProductsResponse;
+}
+
+export interface FacetCount {
+    name: string;
+    /** @minimum 1 */
+    count: number;
+}
+
+export interface CatalogueFacetsResponse {
+    categories: FacetCount[];
+    tags: FacetCount[];
+}
+
+export interface CatalogueFacetsEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: CatalogueFacetsResponse;
+}
+
 export interface SearchProductsRequest {
     page?: Page;
     pageSize?: PageSize;
@@ -763,6 +871,8 @@ export interface CreateProductRequest {
     title: string;
     /** @minimum 0 */
     price: number;
+    /** @minimum 0 */
+    stock?: number;
     description?: string;
     active?: boolean;
     imageUrl?: ImageUrl;
@@ -774,6 +884,8 @@ export interface CreateProductRequestMultipart {
     title: string;
     /** @minimum 0 */
     price: number;
+    /** @minimum 0 */
+    stock?: number;
     description?: string;
     active?: boolean;
     /** Optional product image */
@@ -788,6 +900,8 @@ export interface UpdateProductRequest {
     description?: string;
     /** @minimum 0 */
     price: number;
+    /** @minimum 0 */
+    stock?: number;
     active?: boolean;
     imageUrl?: ImageUrl;
     categories?: string[];
@@ -800,6 +914,8 @@ export interface UpdateProductRequestMultipart {
     description?: string;
     /** @minimum 0 */
     price: number;
+    /** @minimum 0 */
+    stock?: number;
     active?: boolean;
     /** Optional product image */
     imageUpload?: Blob;
@@ -812,6 +928,8 @@ export interface UpdateProductByIdRequest {
     description?: string;
     /** @minimum 0 */
     price: number;
+    /** @minimum 0 */
+    stock?: number;
     active?: boolean;
     imageUrl?: ImageUrl;
     categories?: string[];
@@ -823,6 +941,8 @@ export interface UpdateProductByIdRequestMultipart {
     description?: string;
     /** @minimum 0 */
     price: number;
+    /** @minimum 0 */
+    stock?: number;
     active?: boolean;
     /** Optional product image */
     imageUpload?: Blob;
@@ -830,13 +950,60 @@ export interface UpdateProductByIdRequestMultipart {
     tags?: string[];
 }
 
-export interface HardDeleteRequest {
-    hardDelete?: boolean;
-}
-
 export interface DeleteProductRequest {
     id: Id;
     hardDelete?: boolean;
+}
+
+export interface CartSummaryResponse {
+    /**
+     * Number of distinct cart lines/items
+     * @minimum 0
+     */
+    itemsCount: number;
+    /**
+     * Sum of quantities across all items
+     * @minimum 0
+     */
+    totalQuantity: number;
+    /**
+     * Sum of item prices * quantity (before tax/shipping/discounts)
+     * @minimum 0
+     */
+    total: number;
+    /** ISO-4217 currency code (e.g. USD) */
+    currency?: string;
+}
+
+export interface CartResponse {
+    items: CartItem[];
+    summary: CartSummaryResponse;
+}
+
+export interface CartResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: CartResponse;
+}
+
+export interface CartSummaryResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: CartSummaryResponse;
+}
+
+export interface CheckoutResponse {
+    order: Order;
+    message?: string;
+}
+
+export interface CheckoutResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: CheckoutResponse;
 }
 
 export interface UpsertCartItemRequest {
@@ -859,6 +1026,46 @@ export interface CheckoutRequest {
     email?: Email;
     /** Optional order notes */
     notes?: string;
+    /** Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. */
+    addressId?: Id;
+}
+
+export interface WishlistItem {
+    productId: Id;
+}
+
+export interface WishlistResponse {
+    items: WishlistItem[];
+}
+
+export interface WishlistResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: WishlistResponse;
+}
+
+export interface AddWishlistItemRequest {
+    productId: Id;
+}
+
+export interface OrderEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: Order;
+}
+
+export interface OrdersResponse {
+    items: Order[];
+    meta: PaginationMeta;
+}
+
+export interface OrdersResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: OrdersResponse;
 }
 
 export interface SearchOrdersRequest {
@@ -932,46 +1139,6 @@ export interface UpdateOrderByIdRequest {
 export interface DeleteOrderRequest {
     id: Id;
     hardDelete?: boolean;
-}
-
-export interface CreateFeedbackRequest {
-    name?: string;
-    email: Email;
-    subject: string;
-    message: string;
-}
-
-export type SearchFeedbackRequestsRequestStatus =
-    (typeof SearchFeedbackRequestsRequestStatus)[keyof typeof SearchFeedbackRequestsRequestStatus];
-
-export const SearchFeedbackRequestsRequestStatus = {
-    new: 'new',
-    in_progress: 'in_progress',
-    resolved: 'resolved',
-    spam: 'spam'
-} as const;
-
-export interface SearchFeedbackRequestsRequest {
-    page?: Page;
-    pageSize?: PageSize;
-    text?: Text;
-    status?: SearchFeedbackRequestsRequestStatus;
-    email?: Email;
-}
-
-export type UpdateFeedbackRequestStatusRequestStatus =
-    (typeof UpdateFeedbackRequestStatusRequestStatus)[keyof typeof UpdateFeedbackRequestStatusRequestStatus];
-
-export const UpdateFeedbackRequestStatusRequestStatus = {
-    new: 'new',
-    in_progress: 'in_progress',
-    resolved: 'resolved',
-    spam: 'spam'
-} as const;
-
-export interface UpdateFeedbackRequestStatusRequest {
-    status?: UpdateFeedbackRequestStatusRequestStatus;
-    adminNotes?: string;
 }
 
 /**
@@ -1288,6 +1455,42 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
     };
 
     /**
+     * Updates the authenticated user's own profile — email, username, locale, image. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email resets `verified` and sends a fresh verification email to the new address.
+     * @summary Update own profile
+     */
+    const updateAccount = (
+        updateAccountRequest: UpdateAccountRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<UserEnvelope>> => {
+        return axiosInstance.put(`/account`, updateAccountRequest, options);
+    };
+
+    /**
+     * Updates the authenticated user's own profile — email, username, locale, image. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email resets `verified` and sends a fresh verification email to the new address.
+     * @summary Update own profile
+     */
+    const updateAccountWithMultipart = (
+        updateAccountRequestMultipart: UpdateAccountRequestMultipart,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<UserEnvelope>> => {
+        const formData = new FormData();
+        if (updateAccountRequestMultipart.email !== undefined) {
+            formData.append(`email`, updateAccountRequestMultipart.email);
+        }
+        if (updateAccountRequestMultipart.username !== undefined) {
+            formData.append(`username`, updateAccountRequestMultipart.username);
+        }
+        if (updateAccountRequestMultipart.locale !== undefined) {
+            formData.append(`locale`, updateAccountRequestMultipart.locale);
+        }
+        if (updateAccountRequestMultipart.imageUpload !== undefined) {
+            formData.append(`imageUpload`, updateAccountRequestMultipart.imageUpload);
+        }
+
+        return axiosInstance.put(`/account`, formData, options);
+    };
+
+    /**
      * Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion.
      * @summary Request account deletion
      */
@@ -1295,6 +1498,111 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         options?: AxiosRequestConfig
     ): Promise<AxiosResponse<SuccessResponse>> => {
         return axiosInstance.delete(`/account`, options);
+    };
+
+    /**
+     * Changes the authenticated user's password. Unlike the reset flow this proves possession of the current password rather than of the mailbox, so it needs no email round-trip. Other sessions stay live — revoke them with `POST /account/logout-all` or per session via `DELETE /account/sessions/{sessionId}`.
+     * @summary Change password
+     */
+    const changePassword = (
+        changePasswordRequest: ChangePasswordRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.post(`/account/password`, changePasswordRequest, options);
+    };
+
+    /**
+     * Logs out the CURRENT session only — revokes the refresh token carried by the `jwt` cookie and clears the authentication cookies. Other devices stay signed in; `POST /account/logout-all` is the one that revokes everything. Answers 200 whether or not a live session was found, because the caller's goal — not being logged in here — is met either way.
+     * @summary Logout this session
+     */
+    const logout = (options?: AxiosRequestConfig): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.post(`/account/logout`, undefined, options);
+    };
+
+    /**
+     * Lists the authenticated user's live refresh tokens as sessions — issue-agnostic handles with an expiry and a `current` marker, never the token values themselves. The one carried by the caller's own refresh cookie is flagged `current`.
+     * @summary List active sessions
+     */
+    const getSessions = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SessionsEnvelope>> => {
+        return axiosInstance.get(`/account/sessions`, options);
+    };
+
+    /**
+     * Revokes a single refresh token by its session id — "log out that device". Revoking the current session is allowed and equivalent to `POST /account/logout`, except that the cookies of OTHER clients cannot be cleared from here; their next refresh simply fails.
+     * @summary Revoke one session
+     */
+    const revokeSession = (
+        sessionId: Id,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.delete(`/account/sessions/${sessionId}`, options);
+    };
+
+    /**
+     * The authenticated user's address book. Whenever it is non-empty, exactly one entry carries `default` — the one checkout ships to when no `addressId` is named.
+     * @summary List saved addresses
+     */
+    const getAddresses = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<AddressesEnvelope>> => {
+        return axiosInstance.get(`/account/addresses`, options);
+    };
+
+    /**
+     * Adds an entry to the authenticated user's address book. The first entry becomes the default automatically; a later entry claims the default slot only by sending `default true`, which demotes the previous holder.
+     * @summary Add an address
+     */
+    const addAddress = (
+        addressInput: AddressInput,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<AddressesEnvelope>> => {
+        return axiosInstance.post(`/account/addresses`, addressInput, options);
+    };
+
+    /**
+     * Updates one entry of the caller's own book. `default true` claims the default slot and demotes the previous holder; `default false` and an absent `default` both leave the assignment alone — demoting without naming a successor would leave the book with none.
+     * @summary Update an address
+     */
+    const updateAddress = (
+        addressId: Id,
+        updateAddressRequest: UpdateAddressRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<AddressesEnvelope>> => {
+        return axiosInstance.put(`/account/addresses/${addressId}`, updateAddressRequest, options);
+    };
+
+    /**
+     * Removes one entry of the caller's own book. Removing the default promotes the oldest remaining entry, so a non-empty book always has exactly one default.
+     * @summary Remove an address
+     */
+    const removeAddress = (
+        addressId: Id,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<AddressesEnvelope>> => {
+        return axiosInstance.delete(`/account/addresses/${addressId}`, options);
+    };
+
+    /**
+     * Sends a one-time verification token to the authenticated user's email address. The token must then be submitted to `/account/verify-confirm`. Signup already sends one automatically; this endpoint re-sends it for the mail that never arrived.
+     * @summary Request email verification
+     */
+    const requestEmailVerification = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.post(`/account/verify-request`, undefined, options);
+    };
+
+    /**
+     * Completes the email-verification flow. Validates the one-time token issued at signup or by `/account/verify-request` and, if valid, marks the account's email address as verified.
+     * @summary Confirm email verification
+     */
+    const confirmEmailVerification = (
+        verifyEmailConfirmRequest: VerifyEmailConfirmRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<SuccessResponse>> => {
+        return axiosInstance.post(`/account/verify-confirm`, verifyEmailConfirmRequest, options);
     };
 
     /**
@@ -1679,6 +1987,9 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         const formData = new FormData();
         formData.append(`title`, createProductRequestMultipart.title);
         formData.append(`price`, createProductRequestMultipart.price.toString());
+        if (createProductRequestMultipart.stock !== undefined) {
+            formData.append(`stock`, createProductRequestMultipart.stock.toString());
+        }
         if (createProductRequestMultipart.description !== undefined) {
             formData.append(`description`, createProductRequestMultipart.description);
         }
@@ -1726,6 +2037,9 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
             formData.append(`description`, updateProductRequestMultipart.description);
         }
         formData.append(`price`, updateProductRequestMultipart.price.toString());
+        if (updateProductRequestMultipart.stock !== undefined) {
+            formData.append(`stock`, updateProductRequestMultipart.stock.toString());
+        }
         if (updateProductRequestMultipart.active !== undefined) {
             formData.append(`active`, updateProductRequestMultipart.active.toString());
         }
@@ -1753,6 +2067,16 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         options?: AxiosRequestConfig
     ): Promise<AxiosResponse<SuccessResponse>> => {
         return axiosInstance.delete(`/products`, { data: deleteProductRequest, ...options });
+    };
+
+    /**
+     * Every category and tag the PUBLIC catalogue carries, each with how many visible products hold it — what a storefront renders as filter chips. Sorted by count descending, then name. Counts follow the same visibility rule the listing does, so a chip can never lead to an empty page.
+     * @summary Catalogue facets
+     */
+    const getCatalogueFacets = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<CatalogueFacetsEnvelope>> => {
+        return axiosInstance.get(`/products/categories`, options);
     };
 
     /**
@@ -1793,6 +2117,9 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
             formData.append(`description`, updateProductByIdRequestMultipart.description);
         }
         formData.append(`price`, updateProductByIdRequestMultipart.price.toString());
+        if (updateProductByIdRequestMultipart.stock !== undefined) {
+            formData.append(`stock`, updateProductByIdRequestMultipart.stock.toString());
+        }
         if (updateProductByIdRequestMultipart.active !== undefined) {
             formData.append(`active`, updateProductByIdRequestMultipart.active.toString());
         }
@@ -1929,6 +2256,60 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
     };
 
     /**
+     * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the returned cart view is the record of what actually landed. Admins are scoped to their own orders too — the cart being filled is the caller's.
+     * @summary Reorder (refill cart from a past order)
+     */
+    const reorder = (
+        orderId: Id,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<CartResponseEnvelope>> => {
+        return axiosInstance.post(`/cart/reorder/${orderId}`, undefined, options);
+    };
+
+    /**
+     * Returns the authenticated user's saved products — ids only, like the cart's lines; clients render them from their own product store. Absence and emptiness are the same state, so this never answers 404.
+     * @summary Get wishlist
+     */
+    const getWishlist = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<WishlistResponseEnvelope>> => {
+        return axiosInstance.get(`/wishlist`, options);
+    };
+
+    /**
+     * Adds a product to the authenticated user's wishlist. Idempotent — saving what is already saved answers the same 200, because a double-clicked heart icon is not an error. The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue.
+     * @summary Save a product
+     */
+    const addWishlistItem = (
+        addWishlistItemRequest: AddWishlistItemRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<WishlistResponseEnvelope>> => {
+        return axiosInstance.post(`/wishlist`, addWishlistItemRequest, options);
+    };
+
+    /**
+     * Removes the line for the product identified by `{productId}` from the authenticated user's wishlist. A line the caller does not hold is a 404 — the client's view is stale and it needs to know.
+     * @summary Remove a saved product
+     */
+    const removeWishlistItem = (
+        productId: string,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<WishlistResponseEnvelope>> => {
+        return axiosInstance.delete(`/wishlist/${productId}`, options);
+    };
+
+    /**
+     * The wishlist's exit — the saved line becomes one cart line (quantity 1, incremented if the cart already holds the product) and leaves the wishlist. The cart is written before the wishlist line is removed, so a failure part-way leaves the product SAVED rather than lost. Returns the updated wishlist; read the cart for its own new state.
+     * @summary Move a saved product into the cart
+     */
+    const moveWishlistItemToCart = (
+        productId: string,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<WishlistResponseEnvelope>> => {
+        return axiosInstance.post(`/wishlist/${productId}/move-to-cart`, undefined, options);
+    };
+
+    /**
      * Returns a paginated list of orders.
      * Non-admin users are automatically scoped to their own orders; the `userId` filter is ignored for non-admin callers.
      * @summary List orders (paginated)
@@ -2040,6 +2421,17 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
     };
 
     /**
+     * Cancels the order identified by `{id}` — the one order write a customer can make. Only a `pending` order can be cancelled this way; `paid`, `processing` and later statuses each need their own flow (refund, return), which an admin drives through `PUT /orders/{id}`. A non-admin can cancel only their own orders; an admin can cancel anyone's. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
+     * @summary Cancel order
+     */
+    const cancelOrderById = (
+        id: string,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<OrderEnvelope>> => {
+        return axiosInstance.post(`/orders/${id}/cancel`, undefined, options);
+    };
+
+    /**
      * Generates and returns the invoice for the order identified by `{id}` as a binary PDF file. The client should save or stream the response with an appropriate `Content-Disposition` header.
      * @summary Download order invoice (PDF)
      */
@@ -2063,7 +2455,19 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         getObservabilityMetricsOverview,
         getObservabilityAuditLogs,
         getAccount,
+        updateAccount,
+        updateAccountWithMultipart,
         requestAccountDelete,
+        changePassword,
+        logout,
+        getSessions,
+        revokeSession,
+        getAddresses,
+        addAddress,
+        updateAddress,
+        removeAddress,
+        requestEmailVerification,
+        confirmEmailVerification,
         confirmAccountDelete,
         login,
         signup,
@@ -2094,6 +2498,7 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         updateProduct,
         updateProductWithMultipart,
         deleteProduct,
+        getCatalogueFacets,
         getProductById,
         updateProductById,
         updateProductByIdWithMultipart,
@@ -2107,6 +2512,11 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         removeCartItem,
         getCartSummary,
         checkout,
+        reorder,
+        getWishlist,
+        addWishlistItem,
+        removeWishlistItem,
+        moveWishlistItemToCart,
         listOrders,
         createOrder,
         updateOrder,
@@ -2116,6 +2526,7 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         updateOrderById,
         deleteOrderById,
         hardDeleteOrderById,
+        cancelOrderById,
         getOrderInvoice
     };
 };
@@ -2129,7 +2540,19 @@ export type GetObservabilityMetricsOverviewResult =
     AxiosResponse<ObservabilityMetricsSummaryResponseEnvelope>;
 export type GetObservabilityAuditLogsResult = AxiosResponse<AuditLogsResponseEnvelope>;
 export type GetAccountResult = AxiosResponse<UserEnvelope>;
+export type UpdateAccountResult = AxiosResponse<UserEnvelope>;
+export type UpdateAccountWithMultipartResult = AxiosResponse<UserEnvelope>;
 export type RequestAccountDeleteResult = AxiosResponse<SuccessResponse>;
+export type ChangePasswordResult = AxiosResponse<SuccessResponse>;
+export type LogoutResult = AxiosResponse<SuccessResponse>;
+export type GetSessionsResult = AxiosResponse<SessionsEnvelope>;
+export type RevokeSessionResult = AxiosResponse<SuccessResponse>;
+export type GetAddressesResult = AxiosResponse<AddressesEnvelope>;
+export type AddAddressResult = AxiosResponse<AddressesEnvelope>;
+export type UpdateAddressResult = AxiosResponse<AddressesEnvelope>;
+export type RemoveAddressResult = AxiosResponse<AddressesEnvelope>;
+export type RequestEmailVerificationResult = AxiosResponse<SuccessResponse>;
+export type ConfirmEmailVerificationResult = AxiosResponse<SuccessResponse>;
 export type ConfirmAccountDeleteResult = AxiosResponse<SuccessResponse>;
 export type LoginResult = AxiosResponse<AuthTokensEnvelope>;
 export type SignupResult = AxiosResponse<UserEnvelope>;
@@ -2160,6 +2583,7 @@ export type CreateProductWithMultipartResult = AxiosResponse<ProductEnvelope>;
 export type UpdateProductResult = AxiosResponse<ProductEnvelope>;
 export type UpdateProductWithMultipartResult = AxiosResponse<ProductEnvelope>;
 export type DeleteProductResult = AxiosResponse<SuccessResponse>;
+export type GetCatalogueFacetsResult = AxiosResponse<CatalogueFacetsEnvelope>;
 export type GetProductByIdResult = AxiosResponse<ProductEnvelope>;
 export type UpdateProductByIdResult = AxiosResponse<ProductEnvelope>;
 export type UpdateProductByIdWithMultipartResult = AxiosResponse<ProductEnvelope>;
@@ -2173,6 +2597,11 @@ export type UpdateCartItemByIdResult = AxiosResponse<CartResponseEnvelope>;
 export type RemoveCartItemResult = AxiosResponse<CartResponseEnvelope>;
 export type GetCartSummaryResult = AxiosResponse<CartSummaryResponseEnvelope>;
 export type CheckoutResult = AxiosResponse<CheckoutResponseEnvelope>;
+export type ReorderResult = AxiosResponse<CartResponseEnvelope>;
+export type GetWishlistResult = AxiosResponse<WishlistResponseEnvelope>;
+export type AddWishlistItemResult = AxiosResponse<WishlistResponseEnvelope>;
+export type RemoveWishlistItemResult = AxiosResponse<WishlistResponseEnvelope>;
+export type MoveWishlistItemToCartResult = AxiosResponse<WishlistResponseEnvelope>;
 export type ListOrdersResult = AxiosResponse<OrdersResponseEnvelope>;
 export type CreateOrderResult = AxiosResponse<OrderEnvelope>;
 export type UpdateOrderResult = AxiosResponse<OrderEnvelope>;
@@ -2182,6 +2611,7 @@ export type GetOrderByIdResult = AxiosResponse<OrderEnvelope>;
 export type UpdateOrderByIdResult = AxiosResponse<OrderEnvelope>;
 export type DeleteOrderByIdResult = AxiosResponse<SuccessResponse>;
 export type HardDeleteOrderByIdResult = AxiosResponse<SuccessResponse>;
+export type CancelOrderByIdResult = AxiosResponse<OrderEnvelope>;
 export type GetOrderInvoiceResult = AxiosResponse<Blob>;
 
 export const getGetHealthResponseMock = (
@@ -2371,6 +2801,81 @@ export const getGetAccountResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        verified: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
+    },
+    ...overrideResponse
+});
+
+export const getUpdateAccountResponseMock = (
+    overrideResponse: Partial<Extract<UserEnvelope, object>> = {}
+): UserEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        email: faker.internet.email(),
+        username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        verified: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        imageUrl: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        locale: faker.helpers.arrayElement([
+            faker.helpers.fromRegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$'),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
+    },
+    ...overrideResponse
+});
+
+export const getUpdateAccountWithMultipartResponseMock = (
+    overrideResponse: Partial<Extract<UserEnvelope, object>> = {}
+): UserEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        email: faker.internet.email(),
+        username: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        verified: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         imageUrl: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -2396,6 +2901,197 @@ export const getGetAccountResponseMock = (
 });
 
 export const getRequestAccountDeleteResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getChangePasswordResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getLogoutResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getGetSessionsResponseMock = (
+    overrideResponse: Partial<Extract<SessionsEnvelope, object>> = {}
+): SessionsEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        sessions: Array.from(
+            { length: faker.number.int({ min: 1, max: 10 }) },
+            (_, i) => i + 1
+        ).map(() => ({
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            expiration: faker.helpers.arrayElement([
+                faker.date.past().toISOString().slice(0, 19) + 'Z',
+                undefined
+            ]),
+            current: faker.datatype.boolean()
+        }))
+    },
+    ...overrideResponse
+});
+
+export const getRevokeSessionResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getGetAddressesResponseMock = (
+    overrideResponse: Partial<Extract<AddressesEnvelope, object>> = {}
+): AddressesEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        addresses: Array.from(
+            { length: faker.number.int({ min: 1, max: 10 }) },
+            (_, i) => i + 1
+        ).map(() => ({
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            label: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            fullName: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            street: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            city: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            zip: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            country: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            phone: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            default: faker.datatype.boolean()
+        }))
+    },
+    ...overrideResponse
+});
+
+export const getAddAddressResponseMock = (
+    overrideResponse: Partial<Extract<AddressesEnvelope, object>> = {}
+): AddressesEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        addresses: Array.from(
+            { length: faker.number.int({ min: 1, max: 10 }) },
+            (_, i) => i + 1
+        ).map(() => ({
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            label: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            fullName: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            street: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            city: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            zip: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            country: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            phone: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            default: faker.datatype.boolean()
+        }))
+    },
+    ...overrideResponse
+});
+
+export const getUpdateAddressResponseMock = (
+    overrideResponse: Partial<Extract<AddressesEnvelope, object>> = {}
+): AddressesEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        addresses: Array.from(
+            { length: faker.number.int({ min: 1, max: 10 }) },
+            (_, i) => i + 1
+        ).map(() => ({
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            label: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            fullName: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            street: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            city: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            zip: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            country: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            phone: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            default: faker.datatype.boolean()
+        }))
+    },
+    ...overrideResponse
+});
+
+export const getRemoveAddressResponseMock = (
+    overrideResponse: Partial<Extract<AddressesEnvelope, object>> = {}
+): AddressesEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        addresses: Array.from(
+            { length: faker.number.int({ min: 1, max: 10 }) },
+            (_, i) => i + 1
+        ).map(() => ({
+            id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            label: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            fullName: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            street: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            city: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            zip: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            country: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            phone: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            default: faker.datatype.boolean()
+        }))
+    },
+    ...overrideResponse
+});
+
+export const getRequestEmailVerificationResponseMock = (
+    overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
+): SuccessResponse => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getConfirmEmailVerificationResponseMock = (
     overrideResponse: Partial<Extract<SuccessResponse, object>> = {}
 ): SuccessResponse => ({
     success: faker.helpers.arrayElement([true] as const),
@@ -2442,6 +3138,7 @@ export const getSignupResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        verified: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         imageUrl: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -2478,6 +3175,7 @@ export const getSignupWithMultipartResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        verified: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         imageUrl: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -2569,6 +3267,7 @@ export const getListUsersResponseMock = (
                 username: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
                 active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                verified: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
                 imageUrl: faker.helpers.arrayElement([
                     faker.string.alpha({ length: { min: 10, max: 20 } }),
                     undefined
@@ -2613,6 +3312,7 @@ export const getCreateUserResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        verified: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         imageUrl: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -2649,6 +3349,7 @@ export const getCreateUserWithMultipartResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        verified: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         imageUrl: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -2685,6 +3386,7 @@ export const getUpdateUserResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        verified: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         imageUrl: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -2721,6 +3423,7 @@ export const getUpdateUserWithMultipartResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        verified: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         imageUrl: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -2766,6 +3469,7 @@ export const getGetUserByIdResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        verified: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         imageUrl: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -2802,6 +3506,7 @@ export const getUpdateUserByIdResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        verified: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         imageUrl: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -2838,6 +3543,7 @@ export const getUpdateUserByIdWithMultipartResponseMock = (
         username: faker.string.alpha({ length: { min: 10, max: 20 } }),
         admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+        verified: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
         imageUrl: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -2894,6 +3600,7 @@ export const getSearchUsersResponseMock = (
                 username: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 admin: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
                 active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                verified: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
                 imageUrl: faker.helpers.arrayElement([
                     faker.string.alpha({ length: { min: 10, max: 20 } }),
                     undefined
@@ -3052,6 +3759,7 @@ export const getListProductsResponseMock = (
                 id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
                 description: faker.helpers.arrayElement([
                     faker.string.alpha({ length: { min: 10, max: 20 } }),
                     undefined
@@ -3109,6 +3817,7 @@ export const getCreateProductResponseMock = (
         id: faker.string.alpha({ length: { min: 10, max: 20 } }),
         title: faker.string.alpha({ length: { min: 10, max: 20 } }),
         price: faker.number.float({ min: 0, fractionDigits: 2 }),
+        stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
         description: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -3156,6 +3865,7 @@ export const getCreateProductWithMultipartResponseMock = (
         id: faker.string.alpha({ length: { min: 10, max: 20 } }),
         title: faker.string.alpha({ length: { min: 10, max: 20 } }),
         price: faker.number.float({ min: 0, fractionDigits: 2 }),
+        stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
         description: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -3203,6 +3913,7 @@ export const getUpdateProductResponseMock = (
         id: faker.string.alpha({ length: { min: 10, max: 20 } }),
         title: faker.string.alpha({ length: { min: 10, max: 20 } }),
         price: faker.number.float({ min: 0, fractionDigits: 2 }),
+        stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
         description: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -3250,6 +3961,7 @@ export const getUpdateProductWithMultipartResponseMock = (
         id: faker.string.alpha({ length: { min: 10, max: 20 } }),
         title: faker.string.alpha({ length: { min: 10, max: 20 } }),
         price: faker.number.float({ min: 0, fractionDigits: 2 }),
+        stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
         description: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -3296,6 +4008,30 @@ export const getDeleteProductResponseMock = (
     ...overrideResponse
 });
 
+export const getGetCatalogueFacetsResponseMock = (
+    overrideResponse: Partial<Extract<CatalogueFacetsEnvelope, object>> = {}
+): CatalogueFacetsEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        categories: Array.from(
+            { length: faker.number.int({ min: 1, max: 10 }) },
+            (_, i) => i + 1
+        ).map(() => ({
+            name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            count: faker.number.int({ min: 1 })
+        })),
+        tags: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
+                name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                count: faker.number.int({ min: 1 })
+            })
+        )
+    },
+    ...overrideResponse
+});
+
 export const getGetProductByIdResponseMock = (
     overrideResponse: Partial<Extract<ProductEnvelope, object>> = {}
 ): ProductEnvelope => ({
@@ -3306,6 +4042,7 @@ export const getGetProductByIdResponseMock = (
         id: faker.string.alpha({ length: { min: 10, max: 20 } }),
         title: faker.string.alpha({ length: { min: 10, max: 20 } }),
         price: faker.number.float({ min: 0, fractionDigits: 2 }),
+        stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
         description: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -3353,6 +4090,7 @@ export const getUpdateProductByIdResponseMock = (
         id: faker.string.alpha({ length: { min: 10, max: 20 } }),
         title: faker.string.alpha({ length: { min: 10, max: 20 } }),
         price: faker.number.float({ min: 0, fractionDigits: 2 }),
+        stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
         description: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -3400,6 +4138,7 @@ export const getUpdateProductByIdWithMultipartResponseMock = (
         id: faker.string.alpha({ length: { min: 10, max: 20 } }),
         title: faker.string.alpha({ length: { min: 10, max: 20 } }),
         price: faker.number.float({ min: 0, fractionDigits: 2 }),
+        stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
         description: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -3467,6 +4206,7 @@ export const getSearchProductsResponseMock = (
                 id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
                 description: faker.helpers.arrayElement([
                     faker.string.alpha({ length: { min: 10, max: 20 } }),
                     undefined
@@ -3681,6 +4421,7 @@ export const getCheckoutResponseMock = (
                     id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                    stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
                     description: faker.helpers.arrayElement([
                         faker.string.alpha({ length: { min: 10, max: 20 } }),
                         undefined
@@ -3726,6 +4467,20 @@ export const getCheckoutResponseMock = (
                 faker.string.alpha({ length: { min: 10, max: 20 } }),
                 undefined
             ]),
+            shippingAddress: faker.helpers.arrayElement([
+                {
+                    fullName: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    street: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    city: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    zip: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    country: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    phone: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ])
+                },
+                undefined
+            ]),
             status: faker.helpers.arrayElement([
                 'pending',
                 'paid',
@@ -3755,6 +4510,88 @@ export const getCheckoutResponseMock = (
     ...overrideResponse
 });
 
+export const getReorderResponseMock = (
+    overrideResponse: Partial<Extract<CartResponseEnvelope, object>> = {}
+): CartResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
+                productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                quantity: faker.number.int({ min: 1 })
+            })
+        ),
+        summary: {
+            itemsCount: faker.number.int({ min: 0 }),
+            totalQuantity: faker.number.int({ min: 0 }),
+            total: faker.number.float({ min: 0, fractionDigits: 2 }),
+            currency: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ])
+        }
+    },
+    ...overrideResponse
+});
+
+export const getGetWishlistResponseMock = (
+    overrideResponse: Partial<Extract<WishlistResponseEnvelope, object>> = {}
+): WishlistResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({ productId: faker.string.alpha({ length: { min: 10, max: 20 } }) })
+        )
+    },
+    ...overrideResponse
+});
+
+export const getAddWishlistItemResponseMock = (
+    overrideResponse: Partial<Extract<WishlistResponseEnvelope, object>> = {}
+): WishlistResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({ productId: faker.string.alpha({ length: { min: 10, max: 20 } }) })
+        )
+    },
+    ...overrideResponse
+});
+
+export const getRemoveWishlistItemResponseMock = (
+    overrideResponse: Partial<Extract<WishlistResponseEnvelope, object>> = {}
+): WishlistResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({ productId: faker.string.alpha({ length: { min: 10, max: 20 } }) })
+        )
+    },
+    ...overrideResponse
+});
+
+export const getMoveWishlistItemToCartResponseMock = (
+    overrideResponse: Partial<Extract<WishlistResponseEnvelope, object>> = {}
+): WishlistResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({ productId: faker.string.alpha({ length: { min: 10, max: 20 } }) })
+        )
+    },
+    ...overrideResponse
+});
+
 export const getListOrdersResponseMock = (
     overrideResponse: Partial<Extract<OrdersResponseEnvelope, object>> = {}
 ): OrdersResponseEnvelope => ({
@@ -3775,6 +4612,10 @@ export const getListOrdersResponseMock = (
                         id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                         title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                         price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                        stock: faker.helpers.arrayElement([
+                            faker.number.int({ min: 0 }),
+                            undefined
+                        ]),
                         description: faker.helpers.arrayElement([
                             faker.string.alpha({ length: { min: 10, max: 20 } }),
                             undefined
@@ -3818,6 +4659,20 @@ export const getListOrdersResponseMock = (
                 totalPrice: faker.number.float({ min: 0, fractionDigits: 2 }),
                 notes: faker.helpers.arrayElement([
                     faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                shippingAddress: faker.helpers.arrayElement([
+                    {
+                        fullName: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        street: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        city: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        zip: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        country: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        phone: faker.helpers.arrayElement([
+                            faker.string.alpha({ length: { min: 10, max: 20 } }),
+                            undefined
+                        ])
+                    },
                     undefined
                 ]),
                 status: faker.helpers.arrayElement([
@@ -3868,6 +4723,7 @@ export const getCreateOrderResponseMock = (
                     id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                    stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
                     description: faker.helpers.arrayElement([
                         faker.string.alpha({ length: { min: 10, max: 20 } }),
                         undefined
@@ -3912,6 +4768,20 @@ export const getCreateOrderResponseMock = (
         totalPrice: faker.number.float({ min: 0, fractionDigits: 2 }),
         notes: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        shippingAddress: faker.helpers.arrayElement([
+            {
+                fullName: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                street: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                city: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                zip: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                country: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                phone: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ])
+            },
             undefined
         ]),
         status: faker.helpers.arrayElement([
@@ -3954,6 +4824,7 @@ export const getUpdateOrderResponseMock = (
                     id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                    stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
                     description: faker.helpers.arrayElement([
                         faker.string.alpha({ length: { min: 10, max: 20 } }),
                         undefined
@@ -3998,6 +4869,20 @@ export const getUpdateOrderResponseMock = (
         totalPrice: faker.number.float({ min: 0, fractionDigits: 2 }),
         notes: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        shippingAddress: faker.helpers.arrayElement([
+            {
+                fullName: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                street: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                city: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                zip: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                country: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                phone: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ])
+            },
             undefined
         ]),
         status: faker.helpers.arrayElement([
@@ -4053,6 +4938,10 @@ export const getSearchOrdersResponseMock = (
                         id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                         title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                         price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                        stock: faker.helpers.arrayElement([
+                            faker.number.int({ min: 0 }),
+                            undefined
+                        ]),
                         description: faker.helpers.arrayElement([
                             faker.string.alpha({ length: { min: 10, max: 20 } }),
                             undefined
@@ -4096,6 +4985,20 @@ export const getSearchOrdersResponseMock = (
                 totalPrice: faker.number.float({ min: 0, fractionDigits: 2 }),
                 notes: faker.helpers.arrayElement([
                     faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                shippingAddress: faker.helpers.arrayElement([
+                    {
+                        fullName: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        street: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        city: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        zip: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        country: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        phone: faker.helpers.arrayElement([
+                            faker.string.alpha({ length: { min: 10, max: 20 } }),
+                            undefined
+                        ])
+                    },
                     undefined
                 ]),
                 status: faker.helpers.arrayElement([
@@ -4146,6 +5049,7 @@ export const getGetOrderByIdResponseMock = (
                     id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                    stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
                     description: faker.helpers.arrayElement([
                         faker.string.alpha({ length: { min: 10, max: 20 } }),
                         undefined
@@ -4190,6 +5094,20 @@ export const getGetOrderByIdResponseMock = (
         totalPrice: faker.number.float({ min: 0, fractionDigits: 2 }),
         notes: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        shippingAddress: faker.helpers.arrayElement([
+            {
+                fullName: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                street: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                city: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                zip: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                country: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                phone: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ])
+            },
             undefined
         ]),
         status: faker.helpers.arrayElement([
@@ -4232,6 +5150,7 @@ export const getUpdateOrderByIdResponseMock = (
                     id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                    stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
                     description: faker.helpers.arrayElement([
                         faker.string.alpha({ length: { min: 10, max: 20 } }),
                         undefined
@@ -4278,6 +5197,20 @@ export const getUpdateOrderByIdResponseMock = (
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
         ]),
+        shippingAddress: faker.helpers.arrayElement([
+            {
+                fullName: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                street: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                city: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                zip: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                country: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                phone: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ])
+            },
+            undefined
+        ]),
         status: faker.helpers.arrayElement([
             'pending',
             'paid',
@@ -4317,6 +5250,107 @@ export const getHardDeleteOrderByIdResponseMock = (
     success: faker.helpers.arrayElement([true] as const),
     status: faker.number.int(),
     message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    ...overrideResponse
+});
+
+export const getCancelOrderByIdResponseMock = (
+    overrideResponse: Partial<Extract<OrderEnvelope, object>> = {}
+): OrderEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        email: faker.internet.email(),
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
+                product: {
+                    id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                    stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                    description: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
+                    active: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                    imageUrl: faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        undefined
+                    ]),
+                    categories: faker.helpers.arrayElement([
+                        Array.from(
+                            { length: faker.number.int({ min: 1, max: 10 }) },
+                            (_, i) => i + 1
+                        ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                        undefined
+                    ]),
+                    tags: faker.helpers.arrayElement([
+                        Array.from(
+                            { length: faker.number.int({ min: 1, max: 10 }) },
+                            (_, i) => i + 1
+                        ).map(() => faker.string.alpha({ length: { min: 10, max: 20 } })),
+                        undefined
+                    ]),
+                    createdAt: faker.helpers.arrayElement([
+                        faker.date.past().toISOString().slice(0, 19) + 'Z',
+                        undefined
+                    ]),
+                    updatedAt: faker.helpers.arrayElement([
+                        faker.date.past().toISOString().slice(0, 19) + 'Z',
+                        undefined
+                    ]),
+                    deletedAt: faker.helpers.arrayElement([
+                        faker.date.past().toISOString().slice(0, 19) + 'Z',
+                        undefined
+                    ])
+                },
+                quantity: faker.number.int({ min: 1 })
+            })
+        ),
+        totalItems: faker.number.int({ min: 0 }),
+        totalQuantity: faker.number.int({ min: 0 }),
+        totalPrice: faker.number.float({ min: 0, fractionDigits: 2 }),
+        notes: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        shippingAddress: faker.helpers.arrayElement([
+            {
+                fullName: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                street: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                city: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                zip: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                country: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                phone: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ])
+            },
+            undefined
+        ]),
+        status: faker.helpers.arrayElement([
+            'pending',
+            'paid',
+            'processing',
+            'shipped',
+            'delivered',
+            'cancelled'
+        ] as const),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        deletedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
+    },
     ...overrideResponse
 });
 
@@ -4543,6 +5577,54 @@ export const getGetAccountMockHandler = (
     );
 };
 
+export const getUpdateAccountMockHandler = (
+    overrideResponse?:
+        | UserEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.put>[1]>[0]
+          ) => Promise<UserEnvelope> | UserEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.put(
+        '*/account',
+        async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getUpdateAccountResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getUpdateAccountWithMultipartMockHandler = (
+    overrideResponse?:
+        | UserEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.put>[1]>[0]
+          ) => Promise<UserEnvelope> | UserEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.put(
+        '*/account',
+        async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getUpdateAccountWithMultipartResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
 export const getRequestAccountDeleteMockHandler = (
     overrideResponse?:
         | SuccessResponse
@@ -4560,6 +5642,246 @@ export const getRequestAccountDeleteMockHandler = (
                         ? await overrideResponse(info)
                         : overrideResponse
                     : getRequestAccountDeleteResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getChangePasswordMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/account/password',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getChangePasswordResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getLogoutMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/account/logout',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getLogoutResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getGetSessionsMockHandler = (
+    overrideResponse?:
+        | SessionsEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<SessionsEnvelope> | SessionsEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/account/sessions',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetSessionsResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getRevokeSessionMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.delete>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.delete(
+        '*/account/sessions/:sessionId',
+        async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getRevokeSessionResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getGetAddressesMockHandler = (
+    overrideResponse?:
+        | AddressesEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<AddressesEnvelope> | AddressesEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/account/addresses',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetAddressesResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getAddAddressMockHandler = (
+    overrideResponse?:
+        | AddressesEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<AddressesEnvelope> | AddressesEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/account/addresses',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getAddAddressResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getUpdateAddressMockHandler = (
+    overrideResponse?:
+        | AddressesEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.put>[1]>[0]
+          ) => Promise<AddressesEnvelope> | AddressesEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.put(
+        '*/account/addresses/:addressId',
+        async (info: Parameters<Parameters<typeof http.put>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getUpdateAddressResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getRemoveAddressMockHandler = (
+    overrideResponse?:
+        | AddressesEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.delete>[1]>[0]
+          ) => Promise<AddressesEnvelope> | AddressesEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.delete(
+        '*/account/addresses/:addressId',
+        async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getRemoveAddressResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getRequestEmailVerificationMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/account/verify-request',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getRequestEmailVerificationResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getConfirmEmailVerificationMockHandler = (
+    overrideResponse?:
+        | SuccessResponse
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<SuccessResponse> | SuccessResponse),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/account/verify-confirm',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getConfirmEmailVerificationResponseMock(),
                 { status: 200 }
             );
         },
@@ -5287,6 +6609,30 @@ export const getDeleteProductMockHandler = (
     );
 };
 
+export const getGetCatalogueFacetsMockHandler = (
+    overrideResponse?:
+        | CatalogueFacetsEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<CatalogueFacetsEnvelope> | CatalogueFacetsEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/products/categories',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetCatalogueFacetsResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
 export const getGetProductByIdMockHandler = (
     overrideResponse?:
         | ProductEnvelope
@@ -5599,6 +6945,126 @@ export const getCheckoutMockHandler = (
     );
 };
 
+export const getReorderMockHandler = (
+    overrideResponse?:
+        | CartResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<CartResponseEnvelope> | CartResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/cart/reorder/:orderId',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getReorderResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getGetWishlistMockHandler = (
+    overrideResponse?:
+        | WishlistResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<WishlistResponseEnvelope> | WishlistResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/wishlist',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetWishlistResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getAddWishlistItemMockHandler = (
+    overrideResponse?:
+        | WishlistResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<WishlistResponseEnvelope> | WishlistResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/wishlist',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getAddWishlistItemResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getRemoveWishlistItemMockHandler = (
+    overrideResponse?:
+        | WishlistResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.delete>[1]>[0]
+          ) => Promise<WishlistResponseEnvelope> | WishlistResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.delete(
+        '*/wishlist/:productId',
+        async (info: Parameters<Parameters<typeof http.delete>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getRemoveWishlistItemResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getMoveWishlistItemToCartMockHandler = (
+    overrideResponse?:
+        | WishlistResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<WishlistResponseEnvelope> | WishlistResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/wishlist/:productId/move-to-cart',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getMoveWishlistItemToCartResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
 export const getListOrdersMockHandler = (
     overrideResponse?:
         | OrdersResponseEnvelope
@@ -5815,6 +7281,30 @@ export const getHardDeleteOrderByIdMockHandler = (
     );
 };
 
+export const getCancelOrderByIdMockHandler = (
+    overrideResponse?:
+        | OrderEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<OrderEnvelope> | OrderEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/orders/:id/cancel',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getCancelOrderByIdResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
 export const getGetOrderInvoiceMockHandler = (
     overrideResponse?:
         | ArrayBuffer
@@ -5850,7 +7340,19 @@ export const getEcommerceDemoAPIMock = () => [
     getGetObservabilityMetricsOverviewMockHandler(),
     getGetObservabilityAuditLogsMockHandler(),
     getGetAccountMockHandler(),
+    getUpdateAccountMockHandler(),
+    getUpdateAccountWithMultipartMockHandler(),
     getRequestAccountDeleteMockHandler(),
+    getChangePasswordMockHandler(),
+    getLogoutMockHandler(),
+    getGetSessionsMockHandler(),
+    getRevokeSessionMockHandler(),
+    getGetAddressesMockHandler(),
+    getAddAddressMockHandler(),
+    getUpdateAddressMockHandler(),
+    getRemoveAddressMockHandler(),
+    getRequestEmailVerificationMockHandler(),
+    getConfirmEmailVerificationMockHandler(),
     getConfirmAccountDeleteMockHandler(),
     getLoginMockHandler(),
     getSignupMockHandler(),
@@ -5881,6 +7383,7 @@ export const getEcommerceDemoAPIMock = () => [
     getUpdateProductMockHandler(),
     getUpdateProductWithMultipartMockHandler(),
     getDeleteProductMockHandler(),
+    getGetCatalogueFacetsMockHandler(),
     getGetProductByIdMockHandler(),
     getUpdateProductByIdMockHandler(),
     getUpdateProductByIdWithMultipartMockHandler(),
@@ -5894,6 +7397,11 @@ export const getEcommerceDemoAPIMock = () => [
     getRemoveCartItemMockHandler(),
     getGetCartSummaryMockHandler(),
     getCheckoutMockHandler(),
+    getReorderMockHandler(),
+    getGetWishlistMockHandler(),
+    getAddWishlistItemMockHandler(),
+    getRemoveWishlistItemMockHandler(),
+    getMoveWishlistItemToCartMockHandler(),
     getListOrdersMockHandler(),
     getCreateOrderMockHandler(),
     getUpdateOrderMockHandler(),
@@ -5903,5 +7411,6 @@ export const getEcommerceDemoAPIMock = () => [
     getUpdateOrderByIdMockHandler(),
     getDeleteOrderByIdMockHandler(),
     getHardDeleteOrderByIdMockHandler(),
+    getCancelOrderByIdMockHandler(),
     getGetOrderInvoiceMockHandler()
 ];

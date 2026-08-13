@@ -58,14 +58,14 @@ one line from `src/modules.ts`.** See [docs/theory/modules.md](../docs/theory/mo
 
 - Keep docs concise and visual.
 - Keep frontend-specific sections frontend-specific (Vite, Pinia, Router, Cypress, MSW).
-- Keep shared contract sections aligned with backend docs (`openapi.yaml`, `genapi`, contract sync).
+- Keep shared contract sections aligned with backend docs (`openapi.yaml`, `gen:api`, contract sync).
 - Link related sections instead of duplicating long explanations.
 
 ## Change brain
 
 - Boilerplate is example-focused: keep changes small but complete.
 - Do not break API contract without updating `openapi.yaml`.
-- After contract edits, regenerate `contracts/rest` with `npm run genapi`.
+- After contract edits, regenerate `contracts/rest` with `npm run gen:api`.
 - Keep auth, i18n, and error-handling flows consistent across stores/composables.
 - **Never** create backward-compatibility shims, legacy aliases, or transitional code unless explicitly requested. Fix forward; remove old code immediately.
 

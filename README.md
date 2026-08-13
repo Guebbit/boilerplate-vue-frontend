@@ -355,13 +355,13 @@ Reference: [`.env-example`](./.env-example).
 | `npm run lint`           | Run [ESLint](https://eslint.org/) (check)                                                                                                       |
 | `npm run lint:fix`       | Run ESLint with `--fix`                                                                                                                         |
 | `npm run lint:openapi`   | Lint `openapi.yaml` with [Spectral](https://stoplight.io/open-source/spectral)                                                                  |
-| `npm run prettier`       | [Prettier](https://prettier.io/) check (alias for `prettier:check`)                                                                             |
+| `npm run prettier:check` | [Prettier](https://prettier.io/) check                                                                                                          |
 | `npm run prettier:fix`   | Prettier write                                                                                                                                  |
 | `npm run test:unit`      | [Vitest](https://vitest.dev/) unit tests                                                                                                        |
 | `npm run test:e2e`       | Start Vite (with MSW) + run [Cypress](https://www.cypress.io/) e2e                                                                              |
 | `npm run test`           | `test:unit` then `test:e2e`                                                                                                                     |
-| `npm run genapi`         | Regenerate `contracts/rest` client from `openapi.yaml`                                                                                          |
-| `npm run genasyncapi`    | Regenerate `src/types/realtime.generated.ts` from `asyncapi.yaml` (shared generator — see [AsyncAPI workflow](./docs/api/asyncapi-workflow.md)) |
+| `npm run gen:api`        | Regenerate `contracts/rest` client from `openapi.yaml`                                                                                          |
+| `npm run gen:asyncapi`   | Regenerate `src/types/realtime.generated.ts` from `asyncapi.yaml` (shared generator — see [AsyncAPI workflow](./docs/api/asyncapi-workflow.md)) |
 | `npm run complete`       | build + lint:fix + lint:openapi + prettier:fix + tests (local hardening)                                                                        |
 | `npm run complete:check` | build + lint + lint:openapi + prettier:check + tests (CI gate)                                                                                  |
 
@@ -394,7 +394,7 @@ flowchart LR
     A[openapi.yaml] -->|npm run lint:openapi<br/>spectral.yaml| L{Lint OK?}
     L -- no --> X[Fix contract]
     X --> A
-    L -- yes --> G[npm run genapi]
+    L -- yes --> G[npm run gen:api]
     G --> CLIENT[contracts/rest/index.ts<br/>typed axios functions]
     G --> ZOD[contracts/rest/schemas.zod.ts<br/>Zod schemas]
     G --> MOCKS[tests/support/mocks/generated.ts<br/>MSW handler stubs]
@@ -408,7 +408,7 @@ Steps:
 
 1. Edit [`openapi.yaml`](./openapi.yaml).
 2. `npm run lint:openapi` — must be green.
-3. `npm run genapi` — regenerates `contracts/rest` (commit the diff).
+3. `npm run gen:api` — regenerates `contracts/rest` (commit the diff).
 4. Update store/view usages if any operation signatures changed.
     - Import Zod schemas from `@api/schemas` instead of writing them by hand.
     - Use `tests/support/mocks/generated.ts` as a skeleton if you need a new MSW handler stub.
@@ -422,7 +422,7 @@ Steps:
 
 ```mermaid
 flowchart LR
-    A[asyncapi.yaml] --> G[npm run genasyncapi]
+    A[asyncapi.yaml] --> G[npm run gen:asyncapi]
     G --> T[src/types/realtime.generated.ts]
     T --> C[src/infrastructure/createSseClient.ts]
     C --> S[src/modules/realtime/realtimeObservability]
@@ -432,7 +432,7 @@ flowchart LR
 Current incremental rollout:
 
 1. **Contracts first**: update `asyncapi.yaml`.
-2. **Generate clients/types**: `npm run genapi` and `npm run genasyncapi`.
+2. **Generate clients/types**: `npm run gen:api` and `npm run gen:asyncapi`.
 3. **Playground-first integration**: route `/:locale/playground/realtime`.
 4. **Broader app integration**: wire the domain flow after playground validation.
 
@@ -636,8 +636,8 @@ It needs a backend that is already up and seeded, so bring one up first in a sep
 
 ```bash
 cd ../boilerplate-node-api-mongodb-mongoose
-npm run podman:restart      # or: npm run docker:restart
-npm run db:bootstrap:host   # migrations + seeds, against the containers' host ports
+npm run compose:restart      # or: npm run compose:restart
+npm run host -- db:bootstrap   # migrations + seeds, against the containers' host ports
 ```
 
 then, back here:

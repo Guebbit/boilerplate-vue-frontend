@@ -87,7 +87,7 @@ Each section links to the dedicated page for configuration details and code poin
 
 **Problem it solves.** Maintaining a typed API client alongside the spec means they inevitably drift. Code generation makes the client an output of the spec.
 
-**In this repo.** `npm run genapi` regenerates `contracts/rest/index.ts` (axios functions), `contracts/rest/schemas.zod.ts` (Zod schemas), and `tests/support/mocks/generated.ts` (MSW stubs). Configured in `orval.config.ts`.
+**In this repo.** `npm run gen:api` regenerates `contracts/rest/index.ts` (axios functions), `contracts/rest/schemas.zod.ts` (Zod schemas), and `tests/support/mocks/generated.ts` (MSW stubs). Configured in `orval.config.ts`.
 
 → [OpenAPI Workflow](../api/openapi-workflow.md)
 
