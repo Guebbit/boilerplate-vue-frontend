@@ -34,10 +34,21 @@ describe('Feedback', () => {
         cy.get('.v-messages__message').should('exist');
     });
 
-    it('the inbox is admin-only: a plain user is turned away', () => {
+    it('the inbox is admin-only: a plain user is sent home with the forbidden notice', () => {
         cy.loginAs('user');
         cy.visit('/en/feedback');
+
+        // Not merely "the inbox is absent" — where they LANDED is the assertion, because a
+        // blank error page would also have no inbox and prove nothing.
+        cy.get('#home-page').should('exist');
         cy.get('#feedback-inbox-page').should('not.exist');
+    });
+
+    it('the inbox asks a guest to log in, keeping the target', () => {
+        cy.visit('/en/feedback');
+
+        cy.get('#login-page').should('exist');
+        cy.url().should('include', 'continue=');
     });
 });
 

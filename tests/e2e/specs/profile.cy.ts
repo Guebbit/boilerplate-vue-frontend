@@ -26,6 +26,28 @@ const fillAddress = (label: string, street: string) => {
     cy.get('[data-test=address-save]').click();
 };
 
+describe('Profile access', () => {
+    it('a guest asking for /profile lands on the login, target remembered', () => {
+        cy.visit('/en');
+        cy.resetState();
+        cy.visit('/en/profile');
+
+        cy.get('#login-page').should('exist');
+        cy.url().should('include', 'continue=');
+    });
+
+    it('a guest can spend a verification token — the route is public, the token is the credential', () => {
+        cy.visit('/en');
+        cy.resetState();
+        cy.visit('/en/verify-email/confirm?token=a-perfectly-good-token');
+
+        cy.get('[data-test=verify-token] input').should('have.value', 'a-perfectly-good-token');
+        cy.get('[data-test=verify-submit]').click();
+        cy.contains('Email address verified').should('exist');
+        cy.get('#home-page').should('exist');
+    });
+});
+
 describe('Profile self-service', () => {
     beforeEach(() => {
         cy.visit('/en');

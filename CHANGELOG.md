@@ -9,6 +9,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **A customer-journey e2e that earns the name.** `tests/e2e/specs/journey.cy.ts` walks the shop
+  in one session: a guest browses to a product through the nav and the facet chips and meets the
+  wall (add-to-cart disabled and explained, no wishlist heart), then signs in and repeats the
+  walk as a customer — add to cart, checkout, cancel the order from its own page, and find the
+  shelf back at the count the journey began with. Every step after login navigates through links
+  and buttons rather than `cy.visit`, because the mock database re-seeds on a full reload —
+  state surviving the walk is itself proof the flow shares one session. The role specs sharpen
+  with it: guests hitting `/profile` and `/feedback` are asserted onto the login page with a
+  `continue=` return address, a guest confirms an email link, and the non-admin visitor's
+  landing after the inbox redirect is asserted, not just the absence of the inbox.
+
 - **The profile is a real account page: password change, sessions, the address book and email
   verification.** The save finally goes through `PUT /account` — routing self-service through the
   admin `/users/{id}` write was the 403 every non-admin got — and two real bugs came out with the

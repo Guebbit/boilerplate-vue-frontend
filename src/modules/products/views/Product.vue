@@ -147,6 +147,7 @@ onMounted(() => {
                     :value="formatCurrency(currentProduct?.price)"
                 />
                 <CardMaterialStat
+                    data-test="product-stock"
                     :title="t('product-target-page.label-stock')"
                     :value="
                         outOfStock
