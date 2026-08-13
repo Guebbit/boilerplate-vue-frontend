@@ -6,11 +6,13 @@ export default {
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/modules/orders/store.ts';
+import { useCartStore } from '@/modules/cart';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { Download, ShoppingCart } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
@@ -44,8 +46,47 @@ const { id } = defineProps<{
 /**
  * Store API and reactive order references.
  */
-const { watchOrder, downloadInvoice: fetchInvoice } = useOrdersStore();
+const { watchOrder, downloadInvoice: fetchInvoice, cancelOrder } = useOrdersStore();
 const { currentOrder, loading } = storeToRefs(useOrdersStore());
+const { reorder } = useCartStore();
+const router = useRouter();
+
+/**
+ * Whether the customer cancel is still open — `pending` only, the same gate the API enforces.
+ * Later statuses are refund/return territory, which an admin drives through the edit page.
+ *
+ * @returns `true` while this order can still be cancelled.
+ */
+const cancellable = computed(() => currentOrder.value?.status === 'pending');
+
+/**
+ * Cancels this order after an explicit confirmation.
+ *
+ * @returns Nothing; the outcome is reported as a toast and the page re-renders the new status.
+ */
+const handleCancel = () => {
+    if (!currentOrder.value) return;
+    if (!globalThis.confirm(t('order-target-page.confirm-cancel'))) return;
+    cancelOrder(currentOrder.value.id)
+        .then(() => addMessage(t('order-target-page.success-cancel')))
+        .catch((error) => notifyErrorMessages(addMessage, error));
+};
+
+/**
+ * Copies this order's lines back into the cart and goes there — products that have since left
+ * the catalogue are skipped server-side, and the cart page shows what actually landed.
+ *
+ * @returns Nothing; the outcome is reported as a toast.
+ */
+const handleReorder = () => {
+    if (!currentOrder.value) return;
+    reorder(currentOrder.value.id)
+        .then(() => {
+            addMessage(t('order-target-page.success-reorder'));
+            return router.push(routerLinkI18n({ name: 'Cart' }));
+        })
+        .catch((error) => notifyErrorMessages(addMessage, error));
+};
 
 /**
  * Hero heading.
@@ -210,6 +251,27 @@ watchOrder(() => id);
             </template>
 
             <template #actions>
+                <v-btn
+                    v-if="currentOrder"
+                    color="primary"
+                    variant="tonal"
+                    data-test="order-reorder"
+                    :disabled="loading"
+                    @click="handleReorder"
+                >
+                    <ShoppingCart :size="16" class="mr-1" aria-hidden="true" />
+                    {{ t('order-target-page.button-reorder') }}
+                </v-btn>
+                <v-btn
+                    v-if="cancellable"
+                    color="error"
+                    variant="tonal"
+                    data-test="order-cancel"
+                    :disabled="loading"
+                    @click="handleCancel"
+                >
+                    {{ t('order-target-page.button-cancel') }}
+                </v-btn>
                 <v-btn
                     v-if="currentOrder"
                     color="secondary"

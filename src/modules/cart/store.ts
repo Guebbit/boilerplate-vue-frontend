@@ -7,7 +7,8 @@ import {
     updateCartItemById,
     removeCartItem,
     clearCart,
-    checkout as apiCheckout
+    checkout as apiCheckout,
+    reorder as apiReorder
 } from '@api';
 import type { CartItem, CartResponse, CartSummaryResponse, CheckoutRequest } from '@types';
 import { useObservabilityStore, analyticsEvents } from '@/infrastructure/observability';
@@ -164,6 +165,24 @@ export const useCartStore = defineStore('cart', () => {
             )
         );
 
+    /**
+     * Copies one of the caller's own orders back into the cart. The response is the updated
+     * cart — products that left the catalogue were skipped server-side, so replacing the local
+     * copy with it is also what makes the skip visible.
+     *
+     * @param orderId - One of the caller's own orders.
+     * @returns A promise resolving with the updated cart response.
+     */
+    const reorder = (orderId: string) =>
+        fetchAny(() =>
+            apiReorder(orderId).then((response) => {
+                const obs = useObservabilityStore();
+                obs.track(analyticsEvents.CART_REORDERED, { order_id: orderId });
+                cart.value = response.data;
+                return response.data;
+            })
+        );
+
     return {
         cart,
         cartItems,
@@ -173,6 +192,7 @@ export const useCartStore = defineStore('cart', () => {
         loading,
         fetchCart,
         checkout,
+        reorder,
         upsertCartItem: upsertCartItemAction,
         updateCartItem,
         removeCartItem: removeCartItemAction,

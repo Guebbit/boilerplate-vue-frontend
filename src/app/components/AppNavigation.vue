@@ -44,7 +44,9 @@ const drawer = ref(false);
  */
 const shellNavEntries: IAppNavigationEntry[] = [
     { name: 'Home', label: 'navigation.label-home', plural: 1, order: 10 },
-    { name: 'Playground', label: 'navigation.label-playground', plural: 1, order: 20 }
+    { name: 'Playground', label: 'navigation.label-playground', plural: 1, order: 20 },
+    // One entry reaches all four prose pages — they cross-link at the bottom.
+    { name: 'StaticAbout', label: 'navigation.label-about', plural: 1, order: 99 }
 ];
 
 /**

@@ -5,7 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -24,9 +24,17 @@ import DataTable from '@/ui/organisms/DataTable.vue';
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
-const { watchSearchProducts, deleteProduct } = useProductsStore();
-const { filters, pageItemList, selectedProductId, pageCurrent, pageTotal, pageSize, loading } =
-    storeToRefs(useProductsStore());
+const { watchSearchProducts, deleteProduct, fetchFacets } = useProductsStore();
+const {
+    filters,
+    pageItemList,
+    selectedProductId,
+    pageCurrent,
+    pageTotal,
+    pageSize,
+    loading,
+    facets
+} = storeToRefs(useProductsStore());
 const { isAdmin } = storeToRefs(useSessionStore());
 
 /**
@@ -91,6 +99,31 @@ const handleReset = () => {
  * @param productId - Identifier of the product to delete.
  * @returns Nothing; the outcome is reported as a toast.
  */
+/**
+ * Toggles one category chip: selecting it filters the list, selecting it again clears it.
+ * Chips restart from the first page like any other filter change.
+ *
+ * @param name - The facet value the chip carries.
+ * @returns The search promise.
+ */
+const handleCategoryChip = (name: string) => {
+    filters.value.category = filters.value.category === name ? undefined : name;
+    return handleSearch();
+};
+
+/**
+ * The tag twin of {@link handleCategoryChip}.
+ *
+ * @param name - The facet value the chip carries.
+ * @returns The search promise.
+ */
+const handleTagChip = (name: string) => {
+    filters.value.tag = filters.value.tag === name ? undefined : name;
+    return handleSearch();
+};
+
+onMounted(fetchFacets);
+
 const handleDelete = (productId: string) => {
     if (!confirm(t('products-list-page.confirm-delete'))) return;
     deleteProduct(productId)
@@ -101,6 +134,37 @@ const handleDelete = (productId: string) => {
 
 <template>
     <LayoutDefault id="products-list-page" :title="t('products-list-page.page-title')">
+        <div v-if="facets && facets.categories.length > 0" class="mb-4" data-test="facet-chips">
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="text-sm opacity-70">{{
+                    t('products-list-page.label-categories')
+                }}</span>
+                <v-chip
+                    v-for="facet in facets.categories"
+                    :key="'category-' + facet.name"
+                    size="small"
+                    data-test="category-chip"
+                    :color="filters.category === facet.name ? 'primary' : undefined"
+                    @click="handleCategoryChip(facet.name)"
+                >
+                    {{ facet.name }} ({{ facet.count }})
+                </v-chip>
+            </div>
+            <div v-if="facets.tags.length > 0" class="mt-2 flex flex-wrap items-center gap-2">
+                <span class="text-sm opacity-70">{{ t('products-list-page.label-tags') }}</span>
+                <v-chip
+                    v-for="facet in facets.tags"
+                    :key="'tag-' + facet.name"
+                    size="x-small"
+                    data-test="tag-chip"
+                    :color="filters.tag === facet.name ? 'primary' : undefined"
+                    @click="handleTagChip(facet.name)"
+                >
+                    {{ facet.name }} ({{ facet.count }})
+                </v-chip>
+            </div>
+        </div>
+
         <v-card class="mb-6 p-5">
             <form novalidate @submit.prevent="handleSearch">
                 <div class="grid gap-x-4 gap-y-2 sm:grid-cols-2 lg:grid-cols-5">

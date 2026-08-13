@@ -5,13 +5,15 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useAccountStore } from '@/modules/account/store.ts';
 import { usersSchema, usersPasswordSchema } from '@/modules/users';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
+import ProfileSessions from '@/modules/account/components/ProfileSessions.vue';
+import ProfileAddresses from '@/modules/account/components/ProfileAddresses.vue';
 import { z } from 'zod';
 import { notifyErrorMessages } from '@/infrastructure/errors.ts';
 
@@ -39,8 +41,27 @@ const handleDeleteAccount = () => {
 /**
  * Profile logic
  */
-const { updateProfile } = useAccountStore();
+const { updateProfile, changePassword, requestEmailVerification, fetchProfile } = useAccountStore();
 const { profile } = storeToRefs(useAccountStore());
+
+/*
+ * The record this page edits, loaded by this page. The session restore only fills the shell's
+ * viewer projection, so on a hard reload of /profile the store held no record at all: the form
+ * mounted empty, and the first save failed validation on fields the visitor never emptied. The
+ * cached read costs nothing when login already fetched it.
+ */
+onMounted(fetchProfile);
+
+/**
+ * Re-sends the verification email — the banner's one action.
+ *
+ * @returns Nothing; a toast reports the send (or the 409 for an already verified account).
+ */
+const handleResendVerification = () => {
+    requestEmailVerification()
+        .then(() => addMessage(t('profile-page.verify-email-sent')))
+        .catch((error) => notifyErrorMessages(addMessage, error));
+};
 
 /**
  * Extended profile form interface to accommodate extra UI fields (phone, website)
@@ -59,7 +80,7 @@ interface IProfileForm {
     website?: string;
 }
 
-const { form, formErrors, isDirty, resetForm, validate, setForm } =
+const { form, formErrors, isDirty, resetForm, validate, setInitialData } =
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     useStructureFormValidation<IProfileForm>({}, usersSchema as any, { revalidateOn: locale });
 
@@ -74,11 +95,15 @@ const {
     isValid: passwordIsValid
 } = useStructureFormValidation(
     {
+        currentPassword: '',
         password: '',
         passwordConfirm: ''
     },
     z
         .object({
+            currentPassword: z
+                .string()
+                .min(1, { error: () => t('profile-page.current-password-required') }),
             password: usersPasswordSchema,
             passwordConfirm: z
                 .string()
@@ -97,12 +122,20 @@ const {
 );
 
 /**
- * Profile information is the original
+ * Hydrate, never clobber.
+ *
+ * The record can arrive — or refresh — while the visitor is already typing, and a `setForm`
+ * that fires then overwrites keystrokes with server state: the e2e caught an email garbled
+ * mid-word by exactly that race. So a fresh record becomes the BASELINE (`setInitialData` +
+ * `resetForm`) only while the form is untouched; a dirty form is the visitor's, and the save
+ * flow re-baselines it after the server accepts.
  */
 watch(
     profile,
     (userProfile) => {
-        setForm(userProfile ?? {});
+        if (!userProfile || isDirty.value) return;
+        setInitialData(userProfile);
+        resetForm();
     },
     { immediate: true }
 );
@@ -116,19 +149,14 @@ watch(
 const showChangePassword = ref(false);
 
 /**
- * Whether the save button should be enabled.
- *
- * @returns `true` when the profile form has unsaved changes and no password
- *  change is in progress, or when the password change itself is valid.
+ * Whether the profile save button should be enabled — unsaved changes, nothing more. The
+ * password panel has its own submit now that changing it proves the current one.
  */
-const areFormsValid = computed(
-    () =>
-        (isDirty.value && !showChangePassword.value) ||
-        (showChangePassword.value && passwordIsValid.value)
-);
+const areFormsValid = computed(() => isDirty.value);
 
 /**
- * Validates and saves the profile changes.
+ * Validates and saves the profile changes — the fields a user owns. Role and account state
+ * belong to the admin endpoints, and the password to its own flow below.
  *
  * @returns A promise resolving once the update settles, reported as a toast; on
  *  invalid input it returns early and reveals the validation errors.
@@ -141,14 +169,37 @@ const submitForm = () => {
     return updateProfile({
         email: form.value.email,
         username: form.value.username,
-        imageUrl: form.value.imageUrl ?? undefined,
-        admin: form.value.admin ?? undefined,
-        active: form.value.active ?? undefined,
-        createdAt: form.value.createdAt ?? undefined,
-        updatedAt: form.value.updatedAt ?? undefined
+        imageUrl: form.value.imageUrl ?? undefined
     })
         .then(() => {
+            // Re-baseline on what the server now holds: the store refetched it, and a form
+            // left dirty against a stale baseline would refuse the next hydration forever.
+            setInitialData(profile.value ?? {});
+            resetForm();
             addMessage(t('profile-page.success-update'));
+        })
+        .catch((error) => notifyErrorMessages(addMessage, error));
+};
+
+/**
+ * Submits the password change — the current password is the proof, so a wrong one comes back
+ * as a validation error from the API rather than a silent success.
+ *
+ * @returns A promise resolving once the change settles, reported as a toast.
+ */
+const submitPasswordChange = () => {
+    if (!passwordIsValid.value) return;
+    return changePassword(
+        passwordForm.value.currentPassword ?? '',
+        passwordForm.value.password ?? '',
+        passwordForm.value.passwordConfirm ?? ''
+    )
+        .then(() => {
+            addMessage(t('profile-page.success-password-change'));
+            passwordForm.value.currentPassword = '';
+            passwordForm.value.password = '';
+            passwordForm.value.passwordConfirm = '';
+            showChangePassword.value = false;
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
@@ -156,6 +207,26 @@ const submitForm = () => {
 
 <template>
     <LayoutDefault id="profile-page" :title="t('profile-page.page-title')">
+        <v-alert
+            v-if="profile && profile.verified === false"
+            type="warning"
+            variant="tonal"
+            class="mx-auto mt-10 w-full max-w-xl"
+            data-test="verify-banner"
+        >
+            {{ t('profile-page.verify-banner') }}
+            <template #append>
+                <v-btn
+                    variant="text"
+                    size="small"
+                    data-test="verify-resend"
+                    @click="handleResendVerification"
+                >
+                    {{ t('profile-page.verify-resend') }}
+                </v-btn>
+            </template>
+        </v-alert>
+
         <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
             <form novalidate @submit.prevent="submitForm">
                 <!-- TODO language select + roles (user edit, if admin) -->
@@ -191,36 +262,6 @@ const submitForm = () => {
                     :error-messages="showErrors ? formErrors.website : []"
                 />
 
-                <v-btn
-                    variant="tonal"
-                    color="secondary"
-                    class="my-4"
-                    @click="showChangePassword = !showChangePassword"
-                >
-                    {{ t('profile-page.button-change-password') }}
-                </v-btn>
-
-                <v-expand-transition>
-                    <div v-show="showChangePassword">
-                        <v-text-field
-                            v-model="passwordForm.password"
-                            type="password"
-                            autocomplete="new-password"
-                            :label="t('profile-page.label-password')"
-                            :error-messages="passwordErrors.password ?? []"
-                            class="mb-2"
-                        />
-                        <v-text-field
-                            v-model="passwordForm.passwordConfirm"
-                            type="password"
-                            autocomplete="new-password"
-                            :label="t('profile-page.label-passwordConfirm')"
-                            :error-messages="passwordErrors.passwordConfirm ?? []"
-                        />
-                    </div>
-                </v-expand-transition>
-
-                <!-- If something has changed OR the password has changed (and it's valid) -->
                 <div class="mt-4 flex flex-wrap gap-2">
                     <v-btn type="submit" color="primary" :disabled="!areFormsValid">
                         {{ t('profile-page.button-submit') }}
@@ -229,13 +270,74 @@ const submitForm = () => {
                         {{ t('profile-page.reset-form') }}
                     </v-btn>
                 </div>
-
-                <v-divider class="my-6" />
-
-                <v-btn color="error" variant="tonal" block @click="handleDeleteAccount">
-                    {{ t('profile-page.button-delete-account') }}
-                </v-btn>
             </form>
+
+            <v-divider class="my-6" />
+
+            <v-btn
+                variant="tonal"
+                color="secondary"
+                data-test="toggle-change-password"
+                @click="showChangePassword = !showChangePassword"
+            >
+                {{ t('profile-page.button-change-password') }}
+            </v-btn>
+
+            <v-expand-transition>
+                <form
+                    v-show="showChangePassword"
+                    novalidate
+                    class="mt-4"
+                    @submit.prevent="submitPasswordChange"
+                >
+                    <v-text-field
+                        v-model="passwordForm.currentPassword"
+                        type="password"
+                        autocomplete="current-password"
+                        data-test="current-password"
+                        :label="t('profile-page.label-current-password')"
+                        :error-messages="passwordErrors.currentPassword ?? []"
+                        class="mb-2"
+                    />
+                    <v-text-field
+                        v-model="passwordForm.password"
+                        type="password"
+                        autocomplete="new-password"
+                        data-test="new-password"
+                        :label="t('profile-page.label-password')"
+                        :error-messages="passwordErrors.password ?? []"
+                        class="mb-2"
+                    />
+                    <v-text-field
+                        v-model="passwordForm.passwordConfirm"
+                        type="password"
+                        autocomplete="new-password"
+                        data-test="new-password-confirm"
+                        :label="t('profile-page.label-passwordConfirm')"
+                        :error-messages="passwordErrors.passwordConfirm ?? []"
+                    />
+                    <v-btn
+                        type="submit"
+                        color="primary"
+                        class="mt-2"
+                        data-test="submit-password-change"
+                        :disabled="!passwordIsValid"
+                    >
+                        {{ t('profile-page.button-submit-password') }}
+                    </v-btn>
+                </form>
+            </v-expand-transition>
+
+            <v-divider class="my-6" />
+
+            <v-btn color="error" variant="tonal" block @click="handleDeleteAccount">
+                {{ t('profile-page.button-delete-account') }}
+            </v-btn>
         </v-card>
+
+        <div class="mx-auto my-10 grid w-full max-w-xl gap-6">
+            <ProfileSessions />
+            <ProfileAddresses />
+        </div>
     </LayoutDefault>
 </template>

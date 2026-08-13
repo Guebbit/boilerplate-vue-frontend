@@ -7,6 +7,7 @@ import {
     updateOrderById,
     deleteOrderById,
     hardDeleteOrderById,
+    cancelOrderById,
     getOrderInvoice
 } from '@api';
 import { useObservabilityStore, analyticsEvents } from '@/infrastructure/observability';
@@ -125,6 +126,25 @@ export const useOrdersStore = defineStore('orders', () => {
         deleteTarget(() => hardDeleteOrderById(orderId), orderId);
 
     /**
+     * Cancels one order — the one order write a customer can make. `pending` only; the API's
+     * conditional write decides, so a cancel racing a status change comes back as the 409 this
+     * rethrows rather than a silent double write. The returned record replaces the cached one,
+     * because the fact worth rendering afterwards is the new status.
+     *
+     * @param orderId - Which order.
+     * @returns A promise resolving with the cancelled order.
+     */
+    const cancelOrder = (orderId: string) =>
+        fetchAny(() =>
+            cancelOrderById(orderId).then((response) => {
+                const obs = useObservabilityStore();
+                obs.track(analyticsEvents.ORDER_CANCELLED, { order_id: orderId });
+                if (response.data) addOrder(response.data);
+                return response.data;
+            })
+        );
+
+    /**
      * Downloads an order's invoice.
      *
      * @param orderId - Identifier of the order to invoice.
@@ -154,6 +174,7 @@ export const useOrdersStore = defineStore('orders', () => {
         createOrder,
         updateOrder,
         deleteOrder,
+        cancelOrder,
         hardDeleteOrder,
         downloadInvoice
     };

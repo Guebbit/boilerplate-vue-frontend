@@ -34,6 +34,12 @@ export default [
         component: () => import('@/modules/account/views/AccountDeleteConfirm.vue')
     },
     {
+        // Public for the same reason as the two confirms above: the token is the credential.
+        path: 'verify-email/confirm',
+        name: 'VerifyEmailConfirm',
+        component: () => import('@/modules/account/views/VerifyEmailConfirm.vue')
+    },
+    {
         path: 'profile',
         name: 'Profile',
         meta: { access: 'auth' },

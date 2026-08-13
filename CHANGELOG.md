@@ -9,6 +9,43 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **The profile is a real account page: password change, sessions, the address book and email
+  verification.** The save finally goes through `PUT /account` — routing self-service through the
+  admin `/users/{id}` write was the 403 every non-admin got — and two real bugs came out with the
+  rework: the page never fetched the profile on a hard reload (the form mounted empty and the
+  first save failed validation on fields the visitor never touched), and the record arriving
+  mid-typing CLOBBERED keystrokes — the form now hydrates only while pristine and re-baselines
+  after a save. Password change proves the current password (a wrong one is a 422 toast, not a
+  logout); the sessions panel lists every device with the current one flagged, revokes them one
+  by one, and keeps "log out everywhere" for the day a credential leaks — plain logout now ends
+  ONLY this session. The verification banner reads `verified` off the record, re-sends the link,
+  and `verify-email/confirm` spends it; an email change brings the banner back, because the old
+  confirmation vouched for the old address.
+
+- **The storefront sells now: add-to-cart, stock, facet chips, wishlist, cancel and buy-again.**
+  The product page gets the demo's first add-to-cart button (no view had one — the cart could
+  only be filled by seed), a shelf count with an out-of-stock state the seeded `stock: 0` product
+  exercises, and a heart backed by the new wishlist module — module number eight, one folder plus
+  one registry line, `products → wishlist → cart → orders` kept a line rather than a loop (which
+  meant dropping the cart's stale `dependsOn: ['orders']`, an import the checkout move had
+  already removed). The listing grows category/tag chips fed by `GET /products/categories`,
+  counts public-scope only. The order page gets the customer cancel (pending only, gate read off
+  the status) and buy-again via `POST /cart/reorder`. The MSW handlers mirror the API's
+  invariants — the stock gate refuses with `CART_INSUFFICIENT_STOCK`, cancel restores the shelf,
+  reorder skips vanished products — so the mock profile demos the same failures the live one
+  would.
+
+- **The contact form has a page, the inbox has an admin, and the shop has prose.** A ninth
+  module, `feedback`, finally claims the endpoints the BE has served all along: a public
+  `/contact` form and an admin `/feedback` inbox that moves tickets through their statuses. Its
+  mock inbox starts EMPTY on purpose — the BE seeds no tickets, so the form itself is the
+  fixture, and the e2e walks a message from submission to the inbox through the app's own
+  navigation. Four static pages (`/about`, `/faq`, `/terms`, `/privacy`) share one `StaticPage`
+  component whose copy lives entirely in the dictionaries — a project built on this boilerplate
+  rewrites locale files, not components — cross-linked so the single About nav entry reaches all
+  four. The parked response-schema rows moved into the modules that now own them, exactly as the
+  bottom-shelf comment always prescribed.
+
 - **`docs/theory/module-lifecycle.md` — adding and removing a domain as a procedure, not a
   measurement.** `modules.md` said what a domain costs and proved it; it never said what to type.
   The new page is the ordered procedure in both directions, and it leads with the two things this

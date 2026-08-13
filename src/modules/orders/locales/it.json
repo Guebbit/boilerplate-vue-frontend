@@ -46,7 +46,12 @@
         "button-go-to-list": "Vai alla lista ordini",
         "button-go-to-edit": "Modifica ordine",
         "button-download-invoice": "Scarica fattura",
-        "label-updated-at": "Aggiornato il"
+        "label-updated-at": "Aggiornato il",
+        "button-cancel": "Annulla ordine",
+        "confirm-cancel": "Annullare questo ordine? Le quantità tornano disponibili.",
+        "success-cancel": "Ordine annullato.",
+        "button-reorder": "Acquista di nuovo",
+        "success-reorder": "Ordine aggiunto al carrello."
     },
     "order-edit-page": {
         "page-title": "Modifica ordine",

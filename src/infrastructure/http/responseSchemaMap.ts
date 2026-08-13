@@ -32,10 +32,10 @@ export interface IResponseSchemaRoute {
  * probe, the runtime dictionary `infrastructure/localeApi.ts` fetches, and the whoami/refresh/logout-all that
  * `infrastructure/session.ts` needs — so they live at the bottom tier with the code that calls them.
  *
- * `/feedback*` is different: those endpoints exist in the contract and **no frontend domain calls
- * them at all** yet. They are kept so that the day someone adds a contact form the response is
- * validated from the first request rather than from whenever the omission is noticed. Move them
- * into the module that claims them.
+ * `/feedback*` and `/wishlist*` used to sit here under exactly that rule — contract endpoints no
+ * frontend domain called yet, parked so their responses would be validated from the first
+ * request. Both modules exist now and carry their own rows, which is the destiny this bottom
+ * shelf exists to hand out.
  */
 const coreRouteSchemas: IResponseSchemaRoute[] = [
     { method: 'GET', pattern: /^\/$/, schema: schemas.GetHealthResponse },
@@ -52,34 +52,6 @@ const coreRouteSchemas: IResponseSchemaRoute[] = [
         method: 'GET',
         pattern: /^\/locales\/[^/]+$/,
         schema: schemas.GetLocaleDictionaryResponse
-    },
-    {
-        method: 'POST',
-        pattern: /^\/feedback\/contact$/,
-        schema: schemas.CreateFeedbackRequestResponse
-    },
-    { method: 'GET', pattern: /^\/feedback$/, schema: schemas.ListFeedbackRequestsResponse },
-    {
-        method: 'PUT',
-        pattern: /^\/feedback\/[^/]+$/,
-        schema: schemas.UpdateFeedbackRequestStatusResponse
-    },
-    /*
-     * `/wishlist*` sits here for the same reason `/feedback*` does: the contract declares it and
-     * no frontend domain claims it yet. Move these four rows into the wishlist module when it
-     * exists, exactly as the comment above prescribes for feedback.
-     */
-    { method: 'GET', pattern: /^\/wishlist$/, schema: schemas.GetWishlistResponse },
-    { method: 'POST', pattern: /^\/wishlist$/, schema: schemas.AddWishlistItemResponse },
-    {
-        method: 'DELETE',
-        pattern: /^\/wishlist\/[^/]+$/,
-        schema: schemas.RemoveWishlistItemResponse
-    },
-    {
-        method: 'POST',
-        pattern: /^\/wishlist\/[^/]+\/move-to-cart$/,
-        schema: schemas.MoveWishlistItemToCartResponse
     }
 ];
 

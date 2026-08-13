@@ -6,7 +6,8 @@ import {
     ClearCartResponse,
     UpdateCartItemByIdResponse,
     RemoveCartItemResponse,
-    CheckoutResponse
+    CheckoutResponse,
+    ReorderResponse
 } from '@api/schemas';
 import {
     cartItemToOrderItem,
@@ -15,6 +16,9 @@ import {
     createSuccessEnvelope,
     getCartResponse,
     calculateCartSummary,
+    isCurrentMockUserAdmin,
+    isOrderVisibleToCaller,
+    isVisibleToCaller,
     mockDatabase,
     readRequestBody
 } from '@mocks/mockShared.ts';
@@ -127,6 +131,29 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
     }),
     http.post(`${API_BASE}/cart/checkout`, ({ request }) =>
         readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
+            /*
+             * The stock gate, mirroring the BE's conditional decrement: a line over the shelf
+             * refuses the whole checkout with the same code, and a completed one takes its
+             * units — the storefront's counts move under the demo exactly as they would live.
+             */
+            const overShelf = mockDatabase.sampleCartItems.some((item) => {
+                const product = mockDatabase.sampleProducts.find(({ id }) => id === item.productId);
+                return product?.stock !== undefined && item.quantity > product.stock;
+            });
+            if (overShelf)
+                return toMockJsonResponse(
+                    createErrorEnvelope(
+                        409,
+                        'CART_INSUFFICIENT_STOCK',
+                        'One or more products in your cart exceed the available stock.'
+                    ),
+                    { status: 409, schema: MockErrorResponse }
+                );
+            for (const item of mockDatabase.sampleCartItems) {
+                const product = mockDatabase.sampleProducts.find(({ id }) => id === item.productId);
+                if (product?.stock !== undefined) product.stock -= item.quantity;
+            }
+
             const email = String(
                 requestBody.email ??
                     mockDatabase.sampleUsers.find(
@@ -150,5 +177,40 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
                 { status: 201, schema: CheckoutResponse }
             );
         })
-    )
+    ),
+
+    // Reorder — one of the caller's own orders refills the cart. Products that have since left
+    // the public catalogue are skipped, exactly as the BE's `publicScope` re-resolution skips
+    // them; an order with nothing left answers the same 409.
+    http.post(`${API_BASE}/cart/reorder/:orderId`, ({ params }) => {
+        const order = mockDatabase.sampleOrders.find(({ id }) => id === String(params.orderId));
+        if (!order || !isOrderVisibleToCaller(order, isCurrentMockUserAdmin()))
+            return toMockJsonResponse(
+                createErrorEnvelope(404, 'NOT_FOUND', 'The requested order was not found'),
+                { status: 404, schema: MockErrorResponse }
+            );
+
+        const addable = order.items.filter(({ product }) => {
+            const current = mockDatabase.sampleProducts.find(({ id }) => id === product.id);
+            return current !== undefined && isVisibleToCaller(current, false);
+        });
+        if (addable.length === 0)
+            return toMockJsonResponse(
+                createErrorEnvelope(
+                    409,
+                    'REORDER_UNAVAILABLE',
+                    'None of the products on this order are still available.'
+                ),
+                { status: 409, schema: MockErrorResponse }
+            );
+
+        for (const { product, quantity } of addable) {
+            const line = mockDatabase.sampleCartItems.find((item) => item.productId === product.id);
+            if (line) line.quantity += quantity;
+            else mockDatabase.sampleCartItems.push({ productId: product.id, quantity });
+        }
+        return toMockJsonResponse(createSuccessEnvelope(getCartResponse()), {
+            schema: ReorderResponse
+        });
+    })
 ];

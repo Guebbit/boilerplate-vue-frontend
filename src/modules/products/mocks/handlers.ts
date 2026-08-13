@@ -9,7 +9,8 @@ import {
     GetProductByIdResponse,
     UpdateProductByIdResponse,
     DeleteProductByIdResponse,
-    HardDeleteProductByIdResponse
+    HardDeleteProductByIdResponse,
+    GetCatalogueFacetsResponse
 } from '@api/schemas';
 import {
     createErrorEnvelope,
@@ -47,6 +48,8 @@ const replyProductsList = (
     const id = (query.id ?? query.productId) ? String(query.id ?? query.productId) : undefined;
     const minPrice = query.minPrice === undefined ? undefined : Number(query.minPrice);
     const maxPrice = query.maxPrice === undefined ? undefined : Number(query.maxPrice);
+    const category = query.category ? String(query.category).toLowerCase() : undefined;
+    const tag = query.tag ? String(query.tag).toLowerCase() : undefined;
 
     // Role-scoped visibility, applied before any user-supplied filter — same order as the BE,
     // which folds `active`/`deletedAt` into the same `where` clause it builds the filters on.
@@ -59,6 +62,14 @@ const replyProductsList = (
         if (id && product.id !== id) return false;
         if (Number.isFinite(minPrice) && product.price < (minPrice as number)) return false;
         if (Number.isFinite(maxPrice) && product.price > (maxPrice as number)) return false;
+        // The BE's `arrayRegex` is a case-insensitive substring match over the array's values.
+        if (
+            category &&
+            !(product.categories ?? []).some((value) => value.toLowerCase().includes(category))
+        )
+            return false;
+        if (tag && !(product.tags ?? []).some((value) => value.toLowerCase().includes(tag)))
+            return false;
         if (
             text &&
             !product.id.toLowerCase().includes(text) &&
@@ -106,6 +117,22 @@ const removeProductById = (productId: string, hardDelete: boolean): boolean => {
         deletedAt: target.deletedAt ? undefined : getIsoDateNow()
     };
     return true;
+};
+
+/**
+ * One facet list with counts, over the PUBLIC catalogue only — exactly as `facets()` applies
+ * `publicScope` in the BE: a facet held only by hidden products would render a chip that finds
+ * nothing. Sorted by count descending, then name, matching the API's stable order.
+ */
+const countPublicFacets = (pick: (product: Product) => string[] | undefined) => {
+    const byName = new Map<string, number>();
+    for (const product of mockDatabase.sampleProducts) {
+        if (!isVisibleToCaller(product, false)) continue;
+        for (const name of pick(product) ?? []) byName.set(name, (byName.get(name) ?? 0) + 1);
+    }
+    return [...byName.entries()]
+        .map(([name, count]) => ({ name, count }))
+        .toSorted((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 };
 
 const productNotFound = () =>
@@ -211,6 +238,17 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
         readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
             return replyProductsList(request.url, SearchProductsResponse, requestBody);
         })
+    ),
+    // Before `:productId` — MSW matches in registration order, and `categories` is a static
+    // segment the wildcard would otherwise swallow. Same rule as the FE route table.
+    http.get(`${API_BASE}/products/categories`, () =>
+        toMockJsonResponse(
+            createSuccessEnvelope({
+                categories: countPublicFacets(({ categories }) => categories),
+                tags: countPublicFacets(({ tags }) => tags)
+            }),
+            { schema: GetCatalogueFacetsResponse }
+        )
     ),
     http.get(`${API_BASE}/products/:productId`, ({ params }) => {
         const productId = String(params.productId);

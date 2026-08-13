@@ -1,3 +1,4 @@
+import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
@@ -17,8 +18,18 @@ import {
     signupWithMultipart,
     requestPasswordReset as apiRequestPasswordReset,
     confirmPasswordReset as apiConfirmPasswordReset,
-    updateUserById as apiUpdateUserById
+    updateAccount as apiUpdateAccount,
+    changePassword as apiChangePassword,
+    getSessions as apiGetSessions,
+    revokeSession as apiRevokeSession,
+    requestEmailVerification as apiRequestEmailVerification,
+    confirmEmailVerification as apiConfirmEmailVerification,
+    getAddresses as apiGetAddresses,
+    addAddress as apiAddAddress,
+    updateAddress as apiUpdateAddress,
+    removeAddress as apiRemoveAddress
 } from '@api';
+import type { Address, AddressInput, Session, UpdateAddressRequest } from '@types';
 import { useObservabilityStore, analyticsEvents } from '@/infrastructure/observability';
 
 /**
@@ -196,26 +207,166 @@ export const useAccountStore = defineStore('account', () => {
     };
 
     /**
-     * Updates the current user's own profile.
+     * Updates the current user's own profile through `PUT /account`.
      *
-     * @param userData - Fields to change; only `email`, `username` and
-     *  `password` are sent to the API.
+     * Its own endpoint, not `PUT /users/{id}`: the users writes sit behind the admin guard, and
+     * routing self-service through them answered every non-admin a 403 — the bug this store
+     * shipped until the API grew the self-service route. The payload is deliberately what a user
+     * owns: no `password` (that is {@link changePassword}, which proves the current one) and no
+     * role or account state. Changing the email unverifies the account server-side; the fresh
+     * record in the response carries that, so the banner appears without a refetch.
+     *
+     * @param userData - Fields to change; `email`, `username`, `locale` and `imageUrl` are sent.
      * @returns A promise resolving with the updated profile, rejected with an
      *  `invalid user` error when no profile is selected.
      */
-    const updateProfile = (userData: Partial<User> & { password?: string } = {}) => {
+    const updateProfile = (userData: Partial<User> = {}) => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
         return updateTarget(
             () =>
-                apiUpdateUserById(selectedIdentifier.value!, {
+                apiUpdateAccount({
                     email: userData.email,
-                    password: userData.password,
-                    username: userData.username
+                    username: userData.username,
+                    locale: userData.locale,
+                    imageUrl: userData.imageUrl
+                }).then((data) => {
+                    const payload = getPayloadFromResponse<User>(data);
+                    // The projection must not lag the record — same rule as fetchProfile.
+                    if (payload) publishViewer(payload);
+                    return data;
                 }),
             userData,
             selectedIdentifier.value
+        ).then((result) =>
+            /*
+             * Refetch rather than trust the local patch: `updateTarget` merges what was SENT,
+             * and the server writes facts the patch never carried — an email change comes back
+             * `verified: false`, and the banner reads the record, not the response. One extra
+             * GET per profile save, for a store that never invents state.
+             */
+            fetchProfile(true).then(() => result)
         );
     };
+
+    /**
+     * Changes the password of the LIVE session by proving the current one — no email round-trip,
+     * unlike the reset flow. Other sessions stay signed in; the sessions panel is where they end.
+     *
+     * @param currentPassword - The credential being replaced.
+     * @param password - The new password.
+     * @param passwordConfirm - Its confirmation.
+     * @returns A promise resolving once the API accepts the change.
+     */
+    const changePassword = (currentPassword: string, password: string, passwordConfirm: string) =>
+        fetchAny(() => apiChangePassword({ currentPassword, password, passwordConfirm }));
+
+    /**
+     * The visitor's live sessions — one entry per refresh token, the current one flagged.
+     * A plain ref rather than the record structure: a session is not a domain record, it has no
+     * detail page, and the list is only ever read whole.
+     */
+    const sessions = ref<Session[]>([]);
+
+    /**
+     * Loads the sessions list.
+     *
+     * @returns A promise resolving with the sessions.
+     */
+    const fetchSessions = () =>
+        fetchAny(() =>
+            apiGetSessions().then((data) => {
+                const payload = getPayloadFromResponse<{ sessions: Session[] }>(data);
+                sessions.value = payload?.sessions ?? [];
+                return sessions.value;
+            })
+        );
+
+    /**
+     * Ends one session — "log out that device" — and reloads the list, because the answer worth
+     * rendering after a revocation is the list without it.
+     *
+     * @param sessionId - Handle from {@link fetchSessions}; never a token value.
+     * @returns A promise resolving with the refreshed sessions.
+     */
+    const revokeSession = (sessionId: string) =>
+        fetchAny(() => apiRevokeSession(sessionId).then(() => fetchSessions()));
+
+    /**
+     * Re-sends the email-verification link — for the mail that never arrived. Signup already
+     * sends the first one.
+     *
+     * @returns A promise resolving once the request is accepted (409 when already verified).
+     */
+    const requestEmailVerification = () => fetchAny(() => apiRequestEmailVerification());
+
+    /**
+     * Spends the emailed verification token. Public — the visitor following the link is not
+     * necessarily signed in — so the profile is refetched only when a session exists, to pull
+     * the freshly verified record into the store.
+     *
+     * @param token - One-time token from the email link.
+     * @returns A promise resolving once the address is verified.
+     */
+    const confirmEmailVerification = (token: string) =>
+        fetchAny(() =>
+            apiConfirmEmailVerification({ token }).then(() =>
+                session.isAuth ? fetchProfile(true).then(() => undefined) : undefined
+            )
+        );
+
+    /**
+     * The visitor's address book. Whole-list state like `sessions`, and for the same reason —
+     * the invariant worth rendering after any write is "exactly one default", which is a
+     * property of the list.
+     */
+    const addresses = ref<Address[]>([]);
+
+    /** Replace the local book with the payload every address endpoint answers with. */
+    const readAddressesResponse = (data: unknown) => {
+        const payload = getPayloadFromResponse<{ addresses: Address[] }>(
+            data as { data?: { addresses: Address[] } }
+        );
+        addresses.value = payload?.addresses ?? [];
+        return addresses.value;
+    };
+
+    /**
+     * Loads the address book.
+     *
+     * @returns A promise resolving with the addresses.
+     */
+    const fetchAddresses = () =>
+        fetchAny(() => apiGetAddresses().then((data) => readAddressesResponse(data)));
+
+    /**
+     * Adds an entry. The first one becomes the default server-side.
+     *
+     * @param address - The entry's fields; `default: true` claims the default slot.
+     * @returns A promise resolving with the updated book.
+     */
+    const addAddress = (address: AddressInput) =>
+        fetchAny(() => apiAddAddress(address).then((data) => readAddressesResponse(data)));
+
+    /**
+     * Updates one entry. `default: true` claims the slot; absent leaves it alone.
+     *
+     * @param addressId - Which entry.
+     * @param changes - The fields to change.
+     * @returns A promise resolving with the updated book.
+     */
+    const updateAddress = (addressId: string, changes: UpdateAddressRequest) =>
+        fetchAny(() =>
+            apiUpdateAddress(addressId, changes).then((data) => readAddressesResponse(data))
+        );
+
+    /**
+     * Removes one entry; removing the default promotes the oldest survivor server-side.
+     *
+     * @param addressId - Which entry.
+     * @returns A promise resolving with the updated book.
+     */
+    const removeAddress = (addressId: string) =>
+        fetchAny(() => apiRemoveAddress(addressId).then((data) => readAddressesResponse(data)));
 
     /**
      * Switches the user's language and persists the profile.
@@ -250,7 +401,8 @@ export const useAccountStore = defineStore('account', () => {
     };
 
     /**
-     * Logs out of every session and clears all cached user data.
+     * Logs out of THIS session and clears all cached user data. Other devices stay signed in —
+     * ending everything is {@link logoutEverywhere}, offered from the sessions panel.
      *
      * @returns A promise resolving once the API call succeeds and the local
      *  token, cached records and `isAuth` cookie have been cleared. The httpOnly
@@ -258,6 +410,20 @@ export const useAccountStore = defineStore('account', () => {
      */
     const logout = () => {
         // The httpOnly jwt cookie can only be cleared server-side; isAuth is JS-accessible.
+        const obs = useObservabilityStore();
+        obs.track(analyticsEvents.USER_LOGGED_OUT);
+        obs.unidentifyUser();
+        return session.logout().then(() => {
+            resetAll();
+        });
+    };
+
+    /**
+     * Ends EVERY session for this account — the compromised-credentials button.
+     *
+     * @returns A promise resolving once every refresh token is revoked and local state cleared.
+     */
+    const logoutEverywhere = () => {
         const obs = useObservabilityStore();
         obs.track(analyticsEvents.USER_LOGGED_OUT);
         obs.unidentifyUser();
@@ -295,6 +461,8 @@ export const useAccountStore = defineStore('account', () => {
         profileLanguage,
         profile,
         publishViewer,
+        sessions,
+        addresses,
 
         loading,
         login,
@@ -306,6 +474,16 @@ export const useAccountStore = defineStore('account', () => {
         fetchProfile,
         updateProfile,
         updateProfileLanguage,
-        logout
+        changePassword,
+        fetchSessions,
+        revokeSession,
+        requestEmailVerification,
+        confirmEmailVerification,
+        fetchAddresses,
+        addAddress,
+        updateAddress,
+        removeAddress,
+        logout,
+        logoutEverywhere
     };
 });

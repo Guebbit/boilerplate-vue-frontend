@@ -18,7 +18,8 @@
         "disabled": "Disabled",
         "administrator": "Administrator",
         "standard-user": "Standard user",
-        "no-data": "No data available"
+        "no-data": "No data available",
+        "cancel": "Cancel"
     },
     "navigation": {
         "label-home": "home",
@@ -29,7 +30,8 @@
         "label-menu": "Menu",
         "label-theme": "Toggle theme",
         "label-language": "Language",
-        "label-logo": "Guebbit home"
+        "label-logo": "Guebbit home",
+        "label-about": "About"
     },
     "home-page": {
         "page-title": "Home",
@@ -73,5 +75,54 @@
         "forbidden": "You do not have permission to do that.",
         "internal-server-error": "Something went wrong on our side. Please try again.",
         "unknown": "Something went wrong. Please try again."
+    },
+    "static-pages": {
+        "related": "Related pages",
+        "about": {
+            "title": "About this shop",
+            "paragraphs": [
+                "This storefront is a demo: every product, order and user in it exists to show what the boilerplate underneath can do. The catalogue is small on purpose — small enough that you can watch stock move when you buy, see a category chip filter the list, and cancel an order you placed a minute ago.",
+                "Under the hood it is a Vue 3 frontend paired with a Node/MongoDB API, sharing one OpenAPI contract. Everything you click here calls the same endpoints a real deployment would.",
+                "Poke at it. Sign up, save something to the wishlist, break the checkout by ordering more than the shelf holds — the error you get is the same one a real customer would."
+            ]
+        },
+        "faq": {
+            "title": "FAQ",
+            "paragraphs": ["The questions a demo shop gets asked."],
+            "entries": [
+                {
+                    "q": "Is anything here real?",
+                    "a": "No. Products, prices and orders are seeded demo data; no payment is ever taken and nothing ships."
+                },
+                {
+                    "q": "Why is one product always out of stock?",
+                    "a": "On purpose — a shop where nothing is ever scarce cannot demonstrate what happens at checkout when something is."
+                },
+                {
+                    "q": "Can I use this code for my own shop?",
+                    "a": "Yes: it is a boilerplate. Replace the seed data, the copy on these pages and the theme, and the rest is yours to keep or delete."
+                },
+                {
+                    "q": "Where do my contact messages go?",
+                    "a": "Into the admin inbox on this very site — log in as an admin and you can move them through their statuses."
+                }
+            ]
+        },
+        "terms": {
+            "title": "Terms of service",
+            "paragraphs": [
+                "This is a demonstration site. Nothing sold here exists, no order creates an obligation, and no payment is ever collected.",
+                "Accounts you create may be deleted at any time when the demo data resets. Do not store anything you care about in them — including your real, everyday password.",
+                "The software itself is distributed under the licence in the repository; these pages describe the demo deployment, not the code."
+            ]
+        },
+        "privacy": {
+            "title": "Privacy",
+            "paragraphs": [
+                "The demo stores the account data you type in — email, username, saved addresses — and nothing else. It is kept only to make the demo work and disappears when the dataset resets.",
+                "Anonymous usage analytics may be collected to see which parts of the demo get exercised. Nothing collected is sold, shared, or joined with any other dataset.",
+                "To remove your data immediately, delete your account from the profile page: the deletion flow is real even though the shop is not."
+            ]
+        }
     }
 }

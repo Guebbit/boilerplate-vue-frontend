@@ -13,17 +13,21 @@ import type { IAppModule } from '@/kernel/registry';
 import account from '@/modules/account/module';
 import admin from '@/modules/admin/module';
 import cart from '@/modules/cart/module';
+import feedback from '@/modules/feedback/module';
 import orders from '@/modules/orders/module';
 import products from '@/modules/products/module';
 import realtime from '@/modules/realtime/module';
 import users from '@/modules/users/module';
+import wishlist from '@/modules/wishlist/module';
 
 export const enabledModules: IAppModule[] = [
     account,
     admin,
     cart,
+    feedback,
     orders,
     products,
     realtime,
-    users
+    users,
+    wishlist
 ];

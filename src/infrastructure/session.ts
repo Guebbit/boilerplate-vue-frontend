@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import {
     getAccount as apiGetAccount,
     refreshToken as apiRefreshToken,
+    logout as apiLogout,
     logoutAll as apiLogoutAll
 } from '@api';
 
@@ -189,6 +190,15 @@ export const useSessionStore = defineStore('session', () => {
     };
 
     /**
+     * Ends THIS session only: the refresh cookie's token is revoked server-side and local state
+     * is cleared. Other devices keep their own tokens and stay signed in — `logoutAll` is the
+     * one that ends everything, and the profile page offers both.
+     *
+     * @returns A promise resolving once the API call succeeds and local state is cleared.
+     */
+    const logout = () => apiLogout().then(() => clearSession());
+
+    /**
      * Ends every session for this visitor, server-side and locally.
      *
      * @returns A promise resolving once the API call succeeds and local state is cleared.
@@ -205,6 +215,7 @@ export const useSessionStore = defineStore('session', () => {
         refreshToken,
         loadViewer,
         clearSession,
+        logout,
         logoutAll
     };
 });

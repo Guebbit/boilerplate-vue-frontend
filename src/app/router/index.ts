@@ -49,6 +49,16 @@ const router = createRouter({
                     name: 'Playground',
                     component: () => import('@/app/views/Playground.vue')
                 },
+                /*
+                 * The shop's prose pages — one component, four dictionaries. Declared by the
+                 * shell rather than a module because they are about the SHOP, not a domain.
+                 */
+                ...(['about', 'faq', 'terms', 'privacy'] as const).map((page) => ({
+                    path: page,
+                    name: 'Static' + page[0].toUpperCase() + page.slice(1),
+                    component: () => import('@/app/views/StaticPage.vue'),
+                    props: { page }
+                })),
                 {
                     path: 'error/:status/:message?',
                     name: 'Error',

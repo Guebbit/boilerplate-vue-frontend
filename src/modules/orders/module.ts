@@ -5,12 +5,14 @@ import { ordersResponseSchemas } from './responseSchemas';
 /**
  * Orders: a customer's own order history, and the admin screens that edit an order's status.
  *
- * Depends on nothing. The arrow runs the other way — the cart's checkout creates an order — which
- * is why `cart` declares `dependsOn: ['orders']` and this module names no one.
+ * `dependsOn: ['cart']` is the reorder button: `Order.vue` refills the visitor's cart through
+ * the cart barrel. The server-side arrow runs the other way (checkout creates an order), but a
+ * manifest declares IMPORTS, and the import here is order-page → cart store.
  */
 export default {
     name: 'orders',
     routes,
+    dependsOn: ['cart'],
     navigation: [{ name: 'OrdersList', label: 'navigation.label-orders', plural: 1, order: 90 }],
     responseSchemas: ordersResponseSchemas,
     // Written out rather than delegated to a helper on purpose: `import.meta.env` is replaced by

@@ -19,7 +19,9 @@
         "filter-text": "Search",
         "filter-id": "Product ID",
         "filter-min-price": "Min price",
-        "filter-max-price": "Max price"
+        "filter-max-price": "Max price",
+        "label-categories": "Categories:",
+        "label-tags": "Tags:"
     },
     "products-form": {
         "title-required": "Title is required",
@@ -35,7 +37,14 @@
         "label-description": "Description",
         "label-active": "Active",
         "label-created-at": "Created at",
-        "label-updated-at": "Updated at"
+        "label-updated-at": "Updated at",
+        "label-stock": "Stock",
+        "out-of-stock": "Out of stock",
+        "button-add-to-cart": "Add to cart",
+        "success-add-to-cart": "Product added to cart.",
+        "button-save-wishlist": "Save to wishlist",
+        "button-unsave-wishlist": "Saved",
+        "login-to-buy": "Sign in to buy or save this product."
     },
     "product-create-page": {
         "page-title": "Create product",

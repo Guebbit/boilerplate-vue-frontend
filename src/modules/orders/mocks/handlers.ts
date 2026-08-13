@@ -9,7 +9,8 @@ import {
     GetOrderByIdResponse,
     UpdateOrderByIdResponse,
     DeleteOrderByIdResponse,
-    HardDeleteOrderByIdResponse
+    HardDeleteOrderByIdResponse,
+    CancelOrderByIdResponse
 } from '@api/schemas';
 import {
     cartItemToOrderItem,
@@ -181,6 +182,34 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
         http.post(`${API_BASE}/orders/search`, ({ request }) => {
             return readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
                 return replyOrdersList(request.url, SearchOrdersResponse, requestBody);
+            });
+        }),
+        // The one order write a customer can make. `pending` only, owner-scoped, and the
+        // shelf gets its units back — the three facts the BE's conditional write carries.
+        http.post(`${API_BASE}/orders/:orderId/cancel`, ({ params }) => {
+            const order = mockDatabase.sampleOrders.find(({ id }) => id === String(params.orderId));
+            if (!order || !isOrderVisibleToCaller(order, isCurrentMockUserAdmin()))
+                return toMockJsonResponse(
+                    createErrorEnvelope(404, 'NOT_FOUND', 'The requested order was not found'),
+                    { status: 404, schema: MockErrorResponse }
+                );
+            if (order.status !== 'pending')
+                return toMockJsonResponse(
+                    createErrorEnvelope(
+                        409,
+                        'ORDER_NOT_CANCELLABLE',
+                        'This order can no longer be cancelled.'
+                    ),
+                    { status: 409, schema: MockErrorResponse }
+                );
+
+            order.status = 'cancelled';
+            for (const { product, quantity } of order.items) {
+                const shelf = mockDatabase.sampleProducts.find(({ id }) => id === product.id);
+                if (shelf?.stock !== undefined) shelf.stock += quantity;
+            }
+            return toMockJsonResponse(createSuccessEnvelope(order), {
+                schema: CancelOrderByIdResponse
             });
         }),
         http.get(`${API_BASE}/orders/:orderId`, ({ params }) => {

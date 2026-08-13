@@ -34,6 +34,10 @@ const createSeedUsers = (): User[] =>
         username: user.username,
         admin: user.admin,
         active: true,
+        /* Mirrors the BE seeder, not the shared file: a seed user exists to be logged into, so
+         * the backend writes `verified: true` on every fixture — and the mock must agree or the
+         * "verify your email" banner greets every demo login. */
+        verified: true,
         imageUrl: undefined,
         createdAt: getIsoDateNow(),
         updatedAt: getIsoDateNow()

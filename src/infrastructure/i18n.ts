@@ -5,7 +5,12 @@ import type { RouteLocationRaw, RouteLocationNamedRaw } from 'vue-router';
 // import en from "@/locales/en.json";
 
 export interface ITranslationDictionaries {
-    [key: string]: string | ITranslationDictionaries;
+    /*
+     * Arrays are legitimate vue-i18n messages — `tm()` + `rt()` render them — and the static
+     * pages use them for their paragraph and FAQ lists. Without the array arms, any dictionary
+     * carrying one stops overlapping this type and every cast of a locale JSON fails to build.
+     */
+    [key: string]: string | string[] | ITranslationDictionaries | ITranslationDictionaries[];
 }
 
 /**

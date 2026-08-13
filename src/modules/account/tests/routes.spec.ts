@@ -27,6 +27,7 @@ describe('account route access', () => {
         ['PasswordResetRequest', 'guest'],
         ['PasswordResetConfirm', 'guest'],
         ['AccountDeleteConfirm', undefined],
+        ['VerifyEmailConfirm', undefined],
         ['Profile', 'auth'],
         ['Logout', undefined]
     ])('%s declares access: %s', (name, access) => {
@@ -43,6 +44,7 @@ describe('account route access', () => {
                 'PasswordResetRequest',
                 'PasswordResetConfirm',
                 'AccountDeleteConfirm',
+                'VerifyEmailConfirm',
                 'Profile',
                 'Logout'
             ].toSorted()

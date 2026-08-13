@@ -18,7 +18,8 @@
         "disabled": "Disattivato",
         "administrator": "Amministratore",
         "standard-user": "Utente standard",
-        "no-data": "Nessun dato disponibile"
+        "no-data": "Nessun dato disponibile",
+        "cancel": "Annulla"
     },
     "navigation": {
         "label-home": "home",
@@ -29,7 +30,8 @@
         "label-menu": "Menu",
         "label-theme": "Cambia tema",
         "label-language": "Lingua",
-        "label-logo": "Home di Guebbit"
+        "label-logo": "Home di Guebbit",
+        "label-about": "Informazioni"
     },
     "home-page": {
         "page-title": "Home",
@@ -73,5 +75,54 @@
         "forbidden": "Non hai i permessi per farlo.",
         "internal-server-error": "Qualcosa è andato storto dalla nostra parte. Riprova.",
         "unknown": "Qualcosa è andato storto. Riprova."
+    },
+    "static-pages": {
+        "related": "Pagine correlate",
+        "about": {
+            "title": "Informazioni sul negozio",
+            "paragraphs": [
+                "Questo negozio è una demo: ogni prodotto, ordine e utente esiste per mostrare cosa sa fare il boilerplate sottostante. Il catalogo è piccolo di proposito — abbastanza piccolo da vedere la disponibilità muoversi quando acquisti, un filtro per categoria all'opera, e un ordine annullato un minuto dopo averlo creato.",
+                "Sotto il cofano c'è un frontend Vue 3 accoppiato a un'API Node/MongoDB, con un unico contratto OpenAPI condiviso. Ogni click qui chiama gli stessi endpoint di un vero deployment.",
+                "Sperimenta pure. Registrati, salva qualcosa nella lista dei desideri, prova a ordinare più di quanto c'è a scaffale — l'errore che ricevi è lo stesso che riceverebbe un cliente vero."
+            ]
+        },
+        "faq": {
+            "title": "Domande frequenti",
+            "paragraphs": ["Le domande che un negozio demo si sente fare."],
+            "entries": [
+                {
+                    "q": "C'è qualcosa di vero qui?",
+                    "a": "No. Prodotti, prezzi e ordini sono dati demo; nessun pagamento viene mai richiesto e niente viene spedito."
+                },
+                {
+                    "q": "Perché un prodotto è sempre esaurito?",
+                    "a": "È voluto: un negozio dove nulla scarseggia non può mostrare cosa succede al checkout quando qualcosa manca."
+                },
+                {
+                    "q": "Posso usare questo codice per il mio negozio?",
+                    "a": "Sì: è un boilerplate. Sostituisci i dati di esempio, i testi di queste pagine e il tema; il resto è tuo, da tenere o cancellare."
+                },
+                {
+                    "q": "Dove finiscono i messaggi del modulo contatti?",
+                    "a": "Nella casella admin di questo stesso sito — accedi come amministratore e puoi gestirne lo stato."
+                }
+            ]
+        },
+        "terms": {
+            "title": "Termini di servizio",
+            "paragraphs": [
+                "Questo è un sito dimostrativo. Nulla di ciò che è in vendita esiste, nessun ordine crea obblighi e nessun pagamento viene mai riscosso.",
+                "Gli account creati possono essere eliminati in qualsiasi momento quando i dati demo vengono ripristinati. Non conservarci nulla di importante — inclusa la tua vera password di tutti i giorni.",
+                "Il software è distribuito con la licenza presente nel repository; queste pagine descrivono la demo, non il codice."
+            ]
+        },
+        "privacy": {
+            "title": "Privacy",
+            "paragraphs": [
+                "La demo conserva i dati dell'account che digiti — email, nome utente, indirizzi salvati — e nient'altro. Servono solo a far funzionare la demo e spariscono al ripristino del dataset.",
+                "Possono essere raccolte statistiche d'uso anonime per capire quali parti della demo vengono esercitate. Nulla viene venduto, condiviso o incrociato con altri dataset.",
+                "Per rimuovere subito i tuoi dati, elimina l'account dalla pagina profilo: il flusso di eliminazione è reale anche se il negozio non lo è."
+            ]
+        }
     }
 }

@@ -1,0 +1,15 @@
+{
+    "wishlist-page": {
+        "page-title": "Wishlist",
+        "empty": "Nothing saved yet",
+        "button-go-to-products": "Browse products",
+        "label-product-id": "Product",
+        "button-move-to-cart": "Move to cart",
+        "button-remove": "Remove",
+        "success-moved": "Product moved to cart.",
+        "success-removed": "Product removed from wishlist."
+    },
+    "navigation": {
+        "label-wishlist": "Wishlist"
+    }
+}

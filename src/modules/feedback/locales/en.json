@@ -1,0 +1,29 @@
+{
+    "contact-page": {
+        "page-title": "Contact us",
+        "intro": "Questions, problems, compliments for the cats — this lands in the shop's inbox.",
+        "label-name": "Name (optional)",
+        "label-email": "Email",
+        "label-subject": "Subject",
+        "label-message": "Message",
+        "button-submit": "Send message",
+        "success": "Message sent, thank you!",
+        "email-invalid": "A valid email is required",
+        "subject-required": "A subject is required",
+        "message-min": "Tell us a little more — at least 10 characters"
+    },
+    "feedback-inbox-page": {
+        "page-title": "Feedback inbox",
+        "empty": "No messages yet",
+        "anonymous": "Anonymous",
+        "success-status": "Status updated.",
+        "status-new": "New",
+        "status-in_progress": "In progress",
+        "status-resolved": "Resolved",
+        "status-spam": "Spam"
+    },
+    "navigation": {
+        "label-contact": "Contact",
+        "label-feedback": "Inbox"
+    }
+}

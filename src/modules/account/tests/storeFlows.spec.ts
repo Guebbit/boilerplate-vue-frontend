@@ -57,8 +57,9 @@ beforeEach(() => {
         'POST /account/reset-confirm': { data: undefined },
         'DELETE /account': { data: undefined },
         'DELETE /account/delete-confirm': { data: undefined },
+        'POST /account/logout': { data: undefined },
         'POST /account/logout-all': { data: undefined },
-        'PUT /users/u1': { data: { ...USER, username: 'ada2' } }
+        'PUT /account': { data: { ...USER, username: 'ada2' } }
     };
 });
 
@@ -150,23 +151,34 @@ describe('updateProfile', () => {
             'invalid user'
         ));
 
-    it('sends only the three editable fields, to the selected user', () => {
+    it('sends only the fields a user owns, to the self-service endpoint', () => {
         const store = useAccountStore();
 
         return store
             .fetchProfile(true)
             .then(() => store.updateProfile({ username: 'ada2', admin: true }))
             .then(() => {
-                const last = vi.mocked(orvalMutator).mock.calls.at(-1)![0] as {
-                    url: string;
-                    data: Record<string, unknown>;
-                };
+                // The write, not the refetch that follows it — `updateProfile` re-reads the
+                // record afterwards, so the LAST call is a GET.
+                const last = vi
+                    .mocked(orvalMutator)
+                    .mock.calls.map(
+                        (call) =>
+                            call[0] as {
+                                url: string;
+                                method: string;
+                                data: Record<string, unknown>;
+                            }
+                    )
+                    .find(({ method }) => method?.toUpperCase() === 'PUT')!;
 
-                expect(last.url).toBe('/users/u1');
+                // PUT /account, never the admin write: routing self-service through
+                // `/users/{id}` is the 403 this store used to ship.
+                expect(last.url).toBe('/account');
                 // `admin` was passed in and must NOT reach the wire: a user editing their own
                 // record cannot promote themselves, and the store is the only thing enforcing it.
                 expect(Object.keys(last.data).toSorted()).toEqual(
-                    ['email', 'password', 'username'].toSorted()
+                    ['email', 'username', 'locale', 'imageUrl'].toSorted()
                 );
                 expect(last.data.username).toBe('ada2');
             });
@@ -182,13 +194,14 @@ describe('updateProfileLanguage', () => {
             .then(() => store.updateProfileLanguage('it'))
             .then(() => {
                 expect(store.profileLanguage).toBe('it');
-                expect(requestedUrls().at(-1)).toBe('/users/u1');
+                // The refetch lands last; the PUT that persisted the locale sits before it.
+                expect(requestedUrls().at(-1)).toBe('/account');
             });
     });
 });
 
 describe('logout', () => {
-    it('calls logout-all and clears the session the guards read', () => {
+    it('ends THIS session only and clears the state the guards read', () => {
         const store = useAccountStore();
 
         return store
@@ -197,7 +210,9 @@ describe('logout', () => {
             .then(() => {
                 const session = useSessionStore();
 
-                expect(requestedUrls().at(-1)).toBe('/account/logout-all');
+                // The single-session endpoint: other devices stay signed in, which is what a
+                // shared-machine logout should mean. `logoutEverywhere` is the wide one.
+                expect(requestedUrls().at(-1)).toBe('/account/logout');
                 // The whole point of the action: a stale `isAuth` would let the guards wave the
                 // next navigation through with no token to back it.
                 expect(session.accessToken).toBeUndefined();
@@ -268,6 +283,134 @@ describe('the account deletion flow', () => {
                 expect(session.accessToken).toBeUndefined();
                 expect(session.isAuth).toBe(false);
                 expect(store.profile).toBeUndefined();
+            });
+    });
+});
+
+describe('logoutEverywhere', () => {
+    it('calls logout-all — the compromised-credentials button', () => {
+        const store = useAccountStore();
+
+        return store
+            .login('ada@example.com', 'hunter2hunter2')
+            .then(() => store.logoutEverywhere())
+            .then(() => {
+                expect(requestedUrls().at(-1)).toBe('/account/logout-all');
+                expect(useSessionStore().isAuth).toBe(false);
+            });
+    });
+});
+
+describe('the self-service actions', () => {
+    beforeEach(() => {
+        responses['POST /account/password'] = { data: undefined };
+        responses['GET /account/sessions'] = {
+            data: { sessions: [{ id: 's1', current: true }] }
+        };
+        responses['DELETE /account/sessions/s1'] = { data: undefined };
+        responses['POST /account/verify-request'] = { data: undefined };
+        responses['POST /account/verify-confirm'] = { data: undefined };
+        responses['GET /account/addresses'] = {
+            data: {
+                addresses: [
+                    {
+                        id: 'a1',
+                        fullName: 'Ada',
+                        street: 'Via Roma 1',
+                        city: 'Modena',
+                        zip: '41121',
+                        country: 'IT',
+                        default: true
+                    }
+                ]
+            }
+        };
+        responses['POST /account/addresses'] = responses['GET /account/addresses'];
+        responses['PUT /account/addresses/a1'] = responses['GET /account/addresses'];
+        responses['DELETE /account/addresses/a1'] = { data: undefined };
+    });
+
+    it('changePassword sends all three fields to its own endpoint', () =>
+        useAccountStore()
+            .changePassword('old-secret', 'new-secret', 'new-secret')
+            .then(() => {
+                const last = vi.mocked(orvalMutator).mock.calls.at(-1)![0] as {
+                    url: string;
+                    data: Record<string, unknown>;
+                };
+                expect(last.url).toBe('/account/password');
+                expect(Object.keys(last.data).toSorted()).toEqual(
+                    ['currentPassword', 'password', 'passwordConfirm'].toSorted()
+                );
+            }));
+
+    it('revokeSession reloads the list it changed', () => {
+        const store = useAccountStore();
+        return store
+            .fetchSessions()
+            .then(() => store.revokeSession('s1'))
+            .then(() => {
+                expect(requestedUrls().slice(-3)).toEqual([
+                    '/account/sessions',
+                    '/account/sessions/s1',
+                    '/account/sessions'
+                ]);
+                expect(store.sessions.map(({ id }) => id)).toEqual(['s1']);
+            });
+    });
+
+    it('a sessions payload without the list reads as no sessions', () => {
+        responses['GET /account/sessions'] = { data: undefined };
+        const store = useAccountStore();
+        return store.fetchSessions().then(() => {
+            expect(store.sessions).toEqual([]);
+        });
+    });
+
+    it('confirmEmailVerification refetches the profile only for a live session', () => {
+        const store = useAccountStore();
+        // Guest first: spend a token with no session — no profile call may follow.
+        return store
+            .confirmEmailVerification('a-token')
+            .then(() => {
+                expect(requestedUrls()).toEqual(['/account/verify-confirm']);
+            })
+            .then(() => store.login('ada@example.com', 'hunter2hunter2'))
+            .then(() => store.confirmEmailVerification('a-token'))
+            .then(() => {
+                // Authenticated: the freshly verified record is pulled back in.
+                expect(requestedUrls().at(-1)).toBe('/account');
+            });
+    });
+
+    it('requestEmailVerification asks for the re-send', () =>
+        useAccountStore()
+            .requestEmailVerification()
+            .then(() => {
+                expect(requestedUrls().at(-1)).toBe('/account/verify-request');
+            }));
+
+    it('the address book replaces the whole list on every write', () => {
+        const store = useAccountStore();
+        return store
+            .fetchAddresses()
+            .then(() =>
+                store.addAddress({
+                    fullName: 'Ada',
+                    street: 'Via Roma 1',
+                    city: 'Modena',
+                    zip: '41121',
+                    country: 'IT'
+                })
+            )
+            .then(() => store.updateAddress('a1', { default: true }))
+            .then(() => {
+                expect(store.addresses.map(({ id }) => id)).toEqual(['a1']);
+            })
+            .then(() => store.removeAddress('a1'))
+            .then(() => {
+                // A payload-less answer is an empty book — the `?? []` arm.
+                expect(store.addresses).toEqual([]);
             });
     });
 });

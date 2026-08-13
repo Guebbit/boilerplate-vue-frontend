@@ -1,0 +1,29 @@
+{
+    "contact-page": {
+        "page-title": "Contattaci",
+        "intro": "Domande, problemi, complimenti per i gatti — tutto arriva nella casella del negozio.",
+        "label-name": "Nome (facoltativo)",
+        "label-email": "Email",
+        "label-subject": "Oggetto",
+        "label-message": "Messaggio",
+        "button-submit": "Invia messaggio",
+        "success": "Messaggio inviato, grazie!",
+        "email-invalid": "Serve un'email valida",
+        "subject-required": "Serve un oggetto",
+        "message-min": "Raccontaci qualcosa in più — almeno 10 caratteri"
+    },
+    "feedback-inbox-page": {
+        "page-title": "Casella feedback",
+        "empty": "Nessun messaggio",
+        "anonymous": "Anonimo",
+        "success-status": "Stato aggiornato.",
+        "status-new": "Nuovo",
+        "status-in_progress": "In lavorazione",
+        "status-resolved": "Risolto",
+        "status-spam": "Spam"
+    },
+    "navigation": {
+        "label-contact": "Contatti",
+        "label-feedback": "Casella"
+    }
+}

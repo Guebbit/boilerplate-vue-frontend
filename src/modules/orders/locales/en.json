@@ -46,7 +46,12 @@
         "button-go-to-list": "Go to orders list",
         "button-go-to-edit": "Edit order",
         "button-download-invoice": "Download invoice",
-        "label-updated-at": "Updated at"
+        "label-updated-at": "Updated at",
+        "button-cancel": "Cancel order",
+        "confirm-cancel": "Cancel this order? The stock goes back on the shelf.",
+        "success-cancel": "Order cancelled.",
+        "button-reorder": "Buy again",
+        "success-reorder": "Order added to cart."
     },
     "order-edit-page": {
         "page-title": "Edit order",

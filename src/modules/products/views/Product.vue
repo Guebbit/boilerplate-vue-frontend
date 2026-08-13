@@ -5,13 +5,18 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useProductsStore } from '@/modules/products/store';
+import { useCartStore } from '@/modules/cart';
+import { useWishlistStore } from '@/modules/wishlist';
+import { useSessionStore } from '@/infrastructure/session.ts';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { notifyErrorMessages } from '@/infrastructure/errors.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import { Package } from 'lucide-vue-next';
+import { Heart, Package, ShoppingCart } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
 import ItemDetailLayout from '@/ui/organisms/ItemDetailLayout.vue';
 import CardDetail from '@/ui/organisms/CardDetail.vue';
@@ -74,6 +79,53 @@ const productStatus = computed(() =>
  * Selects and (re)fetches the product whenever the route id changes.
  */
 watchProduct(() => id);
+
+/**
+ * Storefront actions — the two writes a visitor makes from this page.
+ */
+const { addMessage } = useNotificationsStore();
+const { isAuth } = storeToRefs(useSessionStore());
+const { upsertCartItem } = useCartStore();
+const { addToWishlist, removeFromWishlist, isSaved, fetchWishlist } = useWishlistStore();
+
+/**
+ * Whether the shelf still holds anything. An absent `stock` reads as unconstrained — rows that
+ * predate the column must not all render as sold out, mirroring the checkout rule.
+ *
+ * @returns `true` when the product cannot currently be bought.
+ */
+const outOfStock = computed(() => currentProduct.value?.stock === 0);
+
+/**
+ * Puts one unit in the cart.
+ *
+ * @returns Nothing; the outcome is reported as a toast.
+ */
+const handleAddToCart = () => {
+    if (!currentProduct.value) return;
+    upsertCartItem(currentProduct.value.id, 1)
+        .then(() => addMessage(t('product-target-page.success-add-to-cart')))
+        .catch((error) => notifyErrorMessages(addMessage, error));
+};
+
+/**
+ * Toggles the heart: saved products leave the wishlist, everything else joins it.
+ *
+ * @returns Nothing; the outcome is reported as a toast on failure only — the heart itself is
+ *  the success feedback.
+ */
+const handleToggleWishlist = () => {
+    if (!currentProduct.value) return;
+    const productId = currentProduct.value.id;
+    (isSaved(productId) ? removeFromWishlist(productId) : addToWishlist(productId)).catch((error) =>
+        notifyErrorMessages(addMessage, error)
+    );
+};
+
+// The heart needs to know what is already saved; guests have no wishlist to ask for.
+onMounted(() => {
+    if (isAuth.value) fetchWishlist();
+});
 </script>
 
 <template>
@@ -95,6 +147,15 @@ watchProduct(() => id);
                     :value="formatCurrency(currentProduct?.price)"
                 />
                 <CardMaterialStat
+                    :title="t('product-target-page.label-stock')"
+                    :value="
+                        outOfStock
+                            ? t('product-target-page.out-of-stock')
+                            : formatText(currentProduct?.stock?.toString())
+                    "
+                    accent="secondary"
+                />
+                <CardMaterialStat
                     :title="t('product-target-page.label-active')"
                     :value="
                         formatFlag(
@@ -111,6 +172,49 @@ watchProduct(() => id);
                     accent="tertiary"
                 />
             </template>
+
+            <v-card v-if="currentProduct" class="flex flex-wrap items-center gap-2 p-5">
+                <v-btn
+                    color="primary"
+                    data-test="add-to-cart"
+                    :disabled="!isAuth || outOfStock"
+                    @click="handleAddToCart"
+                >
+                    <ShoppingCart :size="18" class="mr-1" aria-hidden="true" />
+                    {{
+                        outOfStock
+                            ? t('product-target-page.out-of-stock')
+                            : t('product-target-page.button-add-to-cart')
+                    }}
+                </v-btn>
+                <v-btn
+                    v-if="isAuth"
+                    variant="tonal"
+                    :color="isSaved(currentProduct.id) ? 'secondary' : undefined"
+                    data-test="wishlist-toggle"
+                    :aria-label="
+                        isSaved(currentProduct.id)
+                            ? t('product-target-page.button-unsave-wishlist')
+                            : t('product-target-page.button-save-wishlist')
+                    "
+                    @click="handleToggleWishlist"
+                >
+                    <Heart
+                        :size="18"
+                        class="mr-1"
+                        :fill="isSaved(currentProduct.id) ? 'currentColor' : 'none'"
+                        aria-hidden="true"
+                    />
+                    {{
+                        isSaved(currentProduct.id)
+                            ? t('product-target-page.button-unsave-wishlist')
+                            : t('product-target-page.button-save-wishlist')
+                    }}
+                </v-btn>
+                <p v-if="!isAuth" class="text-sm opacity-70">
+                    {{ t('product-target-page.login-to-buy') }}
+                </p>
+            </v-card>
 
             <CardDetail>
                 <h3 class="mb-5 text-lg font-semibold">{{ t('generic.details') }}</h3>

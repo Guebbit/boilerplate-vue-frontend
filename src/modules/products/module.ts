@@ -10,6 +10,13 @@ import { productsResponseSchemas } from './responseSchemas';
 export default {
     name: 'products',
     routes,
+    /*
+     * Storefront arrows, both pointing away from the catalogue page the visitor is on: the
+     * product page WRITES a cart line ("add to cart") and a wishlist line (the heart), through
+     * each module's barrel. Neither of those modules reads the catalogue back through code —
+     * their fixtures name it in `mockSeeds.after`, which is a data statement, not this one.
+     */
+    dependsOn: ['cart', 'wishlist'],
     navigation: [
         { name: 'ProductsList', label: 'navigation.label-products-list', plural: 2, order: 60 }
     ],

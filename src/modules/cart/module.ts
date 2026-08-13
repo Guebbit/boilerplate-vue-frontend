@@ -5,17 +5,15 @@ import { cartResponseSchemas } from './responseSchemas';
 /**
  * The shopping cart, and the checkout that turns it into an order.
  *
- * `dependsOn: ['orders']` is the checkout: `Cart.vue` calls `useOrdersStore` through the orders
- * barrel, so a build that enables cart without orders is broken, and the registry now says so
- * while the router is assembled instead of on the navigation that first crosses the gap.
- *
- * Unlike the backend there is no reverse edge to break — the browser never cleans other users'
- * carts when a product disappears — so this stays a plain one-way dependency and needs no events.
+ * Depends on nothing — since checkout moved into this store, no cart code imports another
+ * module. The arrows now point AT this module: orders reaches the cart barrel for the reorder
+ * button, wishlist for its move-to-cart exit, products for "add to cart" — which is also why the
+ * old `dependsOn: ['orders']` had to go: it described an import `Cart.vue` no longer makes, and
+ * keeping it would have made every one of those real arrows a cycle.
  */
 export default {
     name: 'cart',
     routes,
-    dependsOn: ['orders'],
     navigation: [{ name: 'Cart', label: 'navigation.label-cart', plural: 1, order: 80 }],
     responseSchemas: cartResponseSchemas,
     // Written out rather than delegated to a helper on purpose: `import.meta.env` is replaced by

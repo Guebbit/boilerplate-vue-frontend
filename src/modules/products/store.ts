@@ -2,8 +2,10 @@ import { defineStore } from 'pinia';
 import { useCoreStore, useStructureCrudApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
 
+import { ref } from 'vue';
 import {
     listProducts,
+    getCatalogueFacets,
     getProductById,
     createProduct as apiCreateProduct,
     createProductWithMultipart,
@@ -56,7 +58,8 @@ export const useProductsStore = defineStore('products', () => {
         createOne: createProduct,
         updateOne: updateProduct,
         deleteOne: deleteProduct,
-        deleteTarget
+        deleteTarget,
+        fetchAny
     } = useStructureCrudApi<
         Product,
         string,
@@ -77,7 +80,9 @@ export const useProductsStore = defineStore('products', () => {
                     // POST /products/search body, and that is what the API reads.
                     id: filters.id,
                     minPrice: filters.minPrice,
-                    maxPrice: filters.maxPrice
+                    maxPrice: filters.maxPrice,
+                    category: filters.category,
+                    tag: filters.tag
                 }).then((response) => response.data.items),
 
             get: (productId) => getProductById(productId).then((response) => response.data),
@@ -139,7 +144,32 @@ export const useProductsStore = defineStore('products', () => {
     const hardDeleteProduct = (productId: string) =>
         deleteTarget(() => hardDeleteProductById(productId), productId);
 
+    /**
+     * The catalogue's filter chips: every public category and tag with its count. Fetched once
+     * per visit to the listing — the API caches it under the products tag, so the counts follow
+     * catalogue writes without this store having to know when they happen.
+     */
+    const facets = ref<{
+        categories: { name: string; count: number }[];
+        tags: { name: string; count: number }[];
+    }>();
+
+    /**
+     * Loads the facets.
+     *
+     * @returns A promise resolving with them.
+     */
+    const fetchFacets = () =>
+        fetchAny(() =>
+            getCatalogueFacets().then((response) => {
+                facets.value = response.data;
+                return response.data;
+            })
+        );
+
     return {
+        facets,
+        fetchFacets,
         products,
         productsList,
         addProduct,
