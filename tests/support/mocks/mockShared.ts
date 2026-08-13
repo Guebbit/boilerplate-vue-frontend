@@ -299,7 +299,7 @@ export const createMockInvoicePdf = () =>
 
 const MOCK_USER_ID_KEY = 'mock_currentUserId';
 
-const tryGetSessionStorage = (key: string): string | undefined => {
+export const tryGetSessionStorage = (key: string): string | undefined => {
     try {
         if (typeof sessionStorage === 'undefined') return undefined;
         return sessionStorage.getItem(key) ?? undefined;
@@ -391,6 +391,51 @@ const populateMockDatabase = async (): Promise<void> => {
 };
 
 /**
+ * An email the mock API "sent" — the outbox a test reads instead of an inbox.
+ *
+ * The real API enqueues emails a browser can never observe, so every flow that hinges on one (a
+ * verification link, a reset link, an order confirmation) would be untestable end to end without
+ * this: handlers record what they would have sent, `GET /__mock/emails` (account module) serves
+ * the list, and a spec follows the `token` exactly as a person follows the link in their inbox.
+ */
+export interface IMockSentEmail {
+    to: string;
+    subject: string;
+    /** The BE template this stands in for, so a record reads as the email it mirrors. */
+    template: string;
+    /** The link's payload, for the flows whose whole point is spending it. */
+    token?: string;
+    /** The bought lines, for the order confirmation. */
+    lines?: string[];
+}
+
+const MOCK_OUTBOX_KEY = 'mock_outbox';
+
+const readStoredOutbox = (): IMockSentEmail[] => {
+    const raw = tryGetSessionStorage(MOCK_OUTBOX_KEY);
+    if (!raw) return [];
+    try {
+        return JSON.parse(raw) as IMockSentEmail[];
+    } catch {
+        return [];
+    }
+};
+
+/**
+ * Newest first, like an inbox. Cleared by `resetMockDatabase` with everything else.
+ *
+ * Mirrored through sessionStorage like the session id, and for the same reason: the flows these
+ * emails carry deliberately CROSS full page loads — a confirm page is opened from the link in the
+ * email — and the in-memory outbox dies with the page that recorded it.
+ */
+export const mockOutbox: IMockSentEmail[] = readStoredOutbox();
+
+export const recordMockEmail = (email: IMockSentEmail): void => {
+    mockOutbox.unshift(email);
+    trySetSessionStorage(MOCK_OUTBOX_KEY, JSON.stringify(mockOutbox));
+};
+
+/**
  * Called by the /__mock/reset MSW endpoint, which `cy.resetState()` hits under the mock profile.
  * Always resets to no session (undefined) regardless of the dev-mode default, so each Cypress test
  * starts as an unauthenticated visitor.
@@ -399,6 +444,8 @@ export const resetMockDatabase = async (): Promise<void> => {
     trySetSessionStorage(MOCK_USER_ID_KEY, ''); // '' = "no session" sentinel
     await populateMockDatabase();
     mockDatabase.currentAuthenticatedUserId = undefined;
+    mockOutbox.length = 0;
+    trySetSessionStorage(MOCK_OUTBOX_KEY, '');
 };
 
 /**

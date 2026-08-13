@@ -56,6 +56,17 @@ describe('The customer journey', () => {
         cy.get('#orders-list-page').should('exist');
         cy.get('#orders-list-page tbody tr').should('have.length', 1);
 
+        // The confirmation email lists what was bought — read from the outbox the way a customer
+        // reads their inbox. Both cart lines are on it: the seeded one and the one added above.
+        // (Only the mock profile has a readable outbox; live, the email leaves for real.)
+        cy.env(['apiMockEnabled']).then(({ apiMockEnabled }) => {
+            if (apiMockEnabled === false) return;
+            cy.mockEmailTo('gino@pino.it').then((email) => {
+                expect(email.template).to.equal('orders.order-confirm.ejs');
+                expect(email.lines, 'the bought lines').to.have.length(2);
+            });
+        });
+
         // ── Cancel it, from the order's own page ────────────────────────────────────
         cy.get('[data-test=row-view]').first().click();
         cy.get('#order-target').should('exist');

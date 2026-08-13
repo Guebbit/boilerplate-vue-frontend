@@ -70,8 +70,34 @@ declare global {
              * skipped rather than faked green.
              */
             skipUnlessLive(): Chainable<void>;
+
+            /**
+             * Skips the current test unless running against the mock profile.
+             *
+             * The inverse of `skipUnlessLive`, for the flows that hinge on the mock outbox
+             * (`/__mock/emails`): against the live backend the emails leave through a real queue
+             * a browser cannot read, so there is nothing to assert.
+             */
+            skipUnlessMock(): Chainable<void>;
+
+            /**
+             * The newest email the mock API "sent" to an address, from the `/__mock/emails`
+             * outbox. Fails the test when there is none — an empty inbox is an answer too.
+             *
+             * @param address - the recipient to look for
+             */
+            mockEmailTo(address: string): Chainable<IMockOutboxEmail>;
         }
     }
+}
+
+/** Mirrors `IMockSentEmail` in `tests/support/mocks/mockShared.ts`, over the wire. */
+export interface IMockOutboxEmail {
+    to: string;
+    subject: string;
+    template: string;
+    token?: string;
+    lines?: string[];
 }
 
 // `cy.exec` defaults to `failOnNonZeroExit: true`, so a failed seed already fails the test —
@@ -198,6 +224,28 @@ Cypress.Commands.add('skipUnlessLive', function skipUnlessLive(this: Mocha.Conte
         if (apiMockEnabled !== false) this.skip();
     });
 });
+
+// Same shape as `skipUnlessLive`, inverted; same reason for the regular `function`.
+Cypress.Commands.add('skipUnlessMock', function skipUnlessMock(this: Mocha.Context) {
+    return cy.env(['apiMockEnabled']).then(({ apiMockEnabled }) => {
+        if (apiMockEnabled === false) this.skip();
+    });
+});
+
+// Through the page's own `fetch`, not `cy.request`: the outbox lives inside MSW's service
+// worker, which only sees requests the application window makes.
+Cypress.Commands.add('mockEmailTo', (address: string) =>
+    cy.window().then((windowObject) =>
+        windowObject
+            .fetch('/__mock/emails')
+            .then((response) => response.json())
+            .then((body: { data: { emails: IMockOutboxEmail[] } }) => {
+                const email = body.data.emails.find(({ to }) => to === address);
+                expect(email, `an email to ${address} in the mock outbox`).to.not.equal(undefined);
+                return email!;
+            })
+    )
+);
 
 Cypress.Commands.add('loginAs', (role = 'user') => {
     const credentials =

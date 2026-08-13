@@ -30,10 +30,13 @@ import {
     defaultRefreshTokenResponse,
     getIsoDateNow,
     mockDatabase,
+    mockOutbox,
     readRequestBody,
     readRequestParts,
+    recordMockEmail,
     resetMockDatabase,
     resolveMockImageUrl,
+    tryGetSessionStorage,
     trySetSessionStorage
 } from '@mocks/mockShared.ts';
 import { toMockJsonResponse } from '@mocks/mockTransport.ts';
@@ -69,9 +72,120 @@ let mockSessions: Session[] = buildMockSessions();
 /** Address books per user id. Starts empty like the BE's — nobody is born with addresses. */
 let mockAddressBooks = new Map<string, Address[]>();
 
+// ── Tokens and passwords — the honest halves of the email flows ──────────────
+//
+// A token is valid because THIS mock issued it into the outbox, not because it fails to match a
+// magic string: verify/reset handlers mint one, record the email that would have carried it, and
+// the confirm handlers spend exactly what was minted — so a spec that skips reading the "email"
+// cannot pass, the same way a person who never opens theirs cannot.
+//
+// Passwords work the same way: the map starts with the two demo accounts (the same pair
+// `cy.loginAs` types), signup and the change/reset flows write into it, and login checks it — so
+// "the old password stops working" is a provable claim. An email absent from the map accepts any
+// password, which keeps incidental seed users loggable without cataloguing credentials here.
+let mockTokenCounter = 0;
+let issuedTokens = new Map<string, { type: 'verify' | 'reset'; email: string }>();
+
+const buildKnownPasswords = () =>
+    new Map<string, string>([
+        ['gino@pino.it', 'password'],
+        ['root@root.it', 'rootroot']
+    ]);
+
+let knownPasswords = buildKnownPasswords();
+
+// ── The journal: this module's state, surviving the reloads its flows require ─
+//
+// The mock database is rebuilt from seeds on every full page load, which is fine for every flow
+// that lives inside one page — and fatal for exactly the flows this module owns, because a
+// confirm page is REACHED by a reload: the visitor arrives from the link in the email. So the
+// state those flows cross the reload with — tokens, passwords, the users signup created, the
+// fields the flows moved (an email change, a verified flag) — round-trips through sessionStorage
+// the same way the session id does, and is folded back over the fresh seeds on demand.
+//
+// `applyAccountJournal()` runs at the top of every handler that reads users, tokens or
+// passwords: rehydrating lazily per request rather than once at boot, because the seed rebuild
+// itself happens after module init. The fold is idempotent.
+const ACCOUNT_JOURNAL_KEY = 'mock_accountJournal';
+
+let extraUsers: User[] = [];
+let userPatches: Record<string, Partial<User>> = {};
+let journalRestored = false;
+
+const persistAccountJournal = () =>
+    trySetSessionStorage(
+        ACCOUNT_JOURNAL_KEY,
+        JSON.stringify({
+            tokens: [...issuedTokens],
+            passwords: [...knownPasswords],
+            extraUsers,
+            userPatches
+        })
+    );
+
+const applyAccountJournal = () => {
+    if (!journalRestored) {
+        journalRestored = true;
+        const raw = tryGetSessionStorage(ACCOUNT_JOURNAL_KEY);
+        if (raw)
+            try {
+                const journal = JSON.parse(raw) as {
+                    tokens: [string, { type: 'verify' | 'reset'; email: string }][];
+                    passwords: [string, string][];
+                    extraUsers: User[];
+                    userPatches: Record<string, Partial<User>>;
+                };
+                issuedTokens = new Map(journal.tokens);
+                knownPasswords = new Map(journal.passwords);
+                extraUsers = journal.extraUsers;
+                userPatches = journal.userPatches;
+            } catch {
+                // A malformed journal is a fresh start, not a crash.
+            }
+    }
+    for (const extra of extraUsers)
+        if (!mockDatabase.sampleUsers.some(({ id }) => id === extra.id))
+            mockDatabase.sampleUsers.unshift(extra);
+    for (const [id, patch] of Object.entries(userPatches)) {
+        const patchedUser = mockDatabase.sampleUsers.find((user) => user.id === id);
+        if (patchedUser) Object.assign(patchedUser, patch);
+    }
+};
+
+/** Merge a patch for one user into the journal and the live database both. */
+const patchUser = (id: string, patch: Partial<User>) => {
+    userPatches[id] = { ...userPatches[id], ...patch };
+    const patchedUser = mockDatabase.sampleUsers.find((user) => user.id === id);
+    if (patchedUser) Object.assign(patchedUser, patch);
+    persistAccountJournal();
+};
+
+const issueToken = (type: 'verify' | 'reset', email: string): string => {
+    mockTokenCounter += 1;
+    const token = `mock-${type}-token-${mockTokenCounter}`;
+    issuedTokens.set(token, { type, email });
+    persistAccountJournal();
+    return token;
+};
+
+/** The claim behind a token, consumed — a link is spent by following it, both ways. */
+const spendToken = (token: string | undefined, type: 'verify' | 'reset') => {
+    const claim = token === undefined ? undefined : issuedTokens.get(token);
+    if (!claim || claim.type !== type) return undefined;
+    issuedTokens.delete(String(token));
+    persistAccountJournal();
+    return claim;
+};
+
 const resetAccountSelfServiceState = () => {
     mockSessions = buildMockSessions();
     mockAddressBooks = new Map();
+    issuedTokens = new Map();
+    knownPasswords = buildKnownPasswords();
+    extraUsers = [];
+    userPatches = {};
+    journalRestored = true; // the post-reset state is authoritative; nothing older applies
+    trySetSessionStorage(ACCOUNT_JOURNAL_KEY, '');
 };
 
 /** The one-default invariant, exactly as the BE's repository keeps it. */
@@ -97,6 +211,13 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
             resetAccountSelfServiceState();
             return toMockJsonResponse(createMessageResponse('Mock state reset'));
         })
+    ),
+
+    // The outbox, read side: what the mock API "sent", newest first. Lives beside /__mock/reset
+    // because this module owns the session the flows hang off; the records themselves come from
+    // whichever handler sent them (signup, verify, reset — and the cart's order confirmation).
+    http.get('/__mock/emails', () =>
+        toMockJsonResponse(createSuccessEnvelope({ emails: mockOutbox }))
     ),
 
     // ── Token refresh ─────────────────────────────────────────────────────────
@@ -133,6 +254,7 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
     // handlers below and is mirrored in sessionStorage so that a cy.visit() page
     // reload still returns the right user rather than losing the session.
     http.get(`${API_BASE}/account`, ({ request }) => {
+        applyAccountJournal();
         if (!request.headers.get('Authorization'))
             return toMockJsonResponse(
                 createErrorEnvelope(401, 'UNAUTHORIZED', 'Not authenticated'),
@@ -159,7 +281,9 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
 
     // ── Login ─────────────────────────────────────────────────────────────────
     //
-    // Matches by email only — no password check needed in tests. On success:
+    // Matches by email; the password is checked against `knownPasswords` when the account has an
+    // entry there (the demo pair, anyone who signed up, anyone who reset), so a stale credential
+    // fails here exactly like it would live. On success:
     //   1. Sets currentAuthenticatedUserId so GET /account returns this user.
     //   2. Mirrors the value to sessionStorage so it survives a cy.visit() reload.
     //   3. Returns mock tokens; the real token value doesn't matter to the client,
@@ -167,11 +291,17 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
     // On failure returns 401 so the login-page error-handling flow can be tested.
     http.post(`${API_BASE}/account/login`, ({ request }) =>
         readRequestBody<LoginRequest>(request).then((requestBody) => {
+            applyAccountJournal();
             const matchedUser = mockDatabase.sampleUsers.find(
                 (user) => user.email.toLowerCase() === String(requestBody.email ?? '').toLowerCase()
             );
 
-            if (!matchedUser)
+            const expectedPassword =
+                matchedUser && knownPasswords.get(matchedUser.email.toLowerCase());
+            if (
+                !matchedUser ||
+                (expectedPassword !== undefined && expectedPassword !== requestBody.password)
+            )
                 return toMockJsonResponse(
                     createErrorEnvelope(401, 'UNAUTHORIZED', 'Invalid credentials'),
                     { status: 401, schema: MockErrorResponse }
@@ -214,7 +344,24 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
                     updatedAt: getIsoDateNow()
                 };
 
+                applyAccountJournal();
                 mockDatabase.sampleUsers.unshift(createdUser);
+                // Into the journal too: the visitor who just signed up expects to still exist
+                // after the reload the verification link brings them back through.
+                extraUsers.push(createdUser);
+                knownPasswords.set(
+                    createdUser.email.toLowerCase(),
+                    String(requestBody.password ?? '')
+                );
+                persistAccountJournal();
+                // The verification email the real signup fires: the token lands in the outbox,
+                // and the registration spec follows it exactly like a person following the link.
+                recordMockEmail({
+                    to: createdUser.email,
+                    subject: 'Verify your email address',
+                    template: 'account.verify-request.ejs',
+                    token: issueToken('verify', createdUser.email)
+                });
                 return toMockJsonResponse(createSuccessEnvelope(createdUser), {
                     status: 201,
                     schema: SignupResponse
@@ -225,21 +372,44 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
 
     // ── Password reset (two-step flow) ────────────────────────────────────────
     //
-    // Step 1 — POST /account/reset: user submits their email; real API sends a
-    // reset link. Mock just acknowledges success so the UI confirmation screen
-    // can be tested without sending actual email.
+    // Step 1 — POST /account/reset: a known email gets a token into the outbox; an unknown one
+    // gets the same 200 and no email, mirroring the BE's enumeration-safe silence.
     //
-    // Step 2 — POST /account/reset-confirm: user submits the new password
-    // together with the token from the email link. Mock always succeeds so the
-    // redirect-to-login flow can be tested.
-    http.post(`${API_BASE}/account/reset`, () =>
-        toMockJsonResponse(createMessageResponse('Password reset email sent'), {
-            schema: RequestPasswordResetResponse
+    // Step 2 — POST /account/reset-confirm: spends a token step 1 issued and actually moves the
+    // password, so "the old one stops working, the new one logs in" is a testable fact.
+    http.post(`${API_BASE}/account/reset`, ({ request }) =>
+        readRequestBody<{ email?: string }>(request).then((requestBody) => {
+            applyAccountJournal();
+            const email = String(requestBody.email ?? '').toLowerCase();
+            const matchedUser = mockDatabase.sampleUsers.find(
+                (user) => user.email.toLowerCase() === email
+            );
+            if (matchedUser)
+                recordMockEmail({
+                    to: matchedUser.email,
+                    subject: 'Reset your password',
+                    template: 'account.reset-request.ejs',
+                    token: issueToken('reset', matchedUser.email)
+                });
+            return toMockJsonResponse(createMessageResponse('Password reset email sent'), {
+                schema: RequestPasswordResetResponse
+            });
         })
     ),
-    http.post(`${API_BASE}/account/reset-confirm`, () =>
-        toMockJsonResponse(createMessageResponse('Password reset confirmed'), {
-            schema: ConfirmPasswordResetResponse
+    http.post(`${API_BASE}/account/reset-confirm`, ({ request }) =>
+        readRequestBody<{ token?: string; password?: string }>(request).then((requestBody) => {
+            applyAccountJournal();
+            const claim = spendToken(requestBody.token, 'reset');
+            if (!claim)
+                return toMockJsonResponse(
+                    createErrorEnvelope(422, 'VALIDATION_ERROR', 'Invalid or expired token'),
+                    { status: 422, schema: MockErrorResponse }
+                );
+            knownPasswords.set(claim.email.toLowerCase(), String(requestBody.password ?? ''));
+            persistAccountJournal();
+            return toMockJsonResponse(createMessageResponse('Password reset confirmed'), {
+                schema: ConfirmPasswordResetResponse
+            });
         })
     ),
 
@@ -271,6 +441,7 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
     // like the real API — the profile banner appears from the response alone.
     http.put(`${API_BASE}/account`, ({ request }) =>
         readRequestBody<UpdateAccountRequest>(request).then((requestBody) => {
+            applyAccountJournal();
             const currentUser = getCurrentMockUser();
             if (!currentUser)
                 return toMockJsonResponse(
@@ -278,13 +449,15 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
                     { status: 401, schema: MockErrorResponse }
                 );
 
-            if (requestBody.email !== undefined && requestBody.email !== currentUser.email) {
-                currentUser.email = requestBody.email;
-                currentUser.verified = false;
-            }
-            if (requestBody.username !== undefined) currentUser.username = requestBody.username;
-            if (requestBody.imageUrl !== undefined) currentUser.imageUrl = requestBody.imageUrl;
-            currentUser.updatedAt = getIsoDateNow();
+            // Through the journal, not direct mutation: the verify flow this edit can start
+            // (an email change unverifies) finishes on the other side of a reload.
+            if (requestBody.email !== undefined && requestBody.email !== currentUser.email)
+                patchUser(currentUser.id, { email: requestBody.email, verified: false });
+            if (requestBody.username !== undefined)
+                patchUser(currentUser.id, { username: requestBody.username });
+            if (requestBody.imageUrl !== undefined)
+                patchUser(currentUser.id, { imageUrl: requestBody.imageUrl });
+            patchUser(currentUser.id, { updatedAt: getIsoDateNow() });
 
             return toMockJsonResponse(createSuccessEnvelope(currentUser), {
                 schema: UpdateAccountResponse
@@ -292,22 +465,37 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
         })
     ),
 
-    // POST /account/password — `wrong-password` is the mock's agreed wrong current password, so
-    // the failure toast can be exercised end to end.
+    // POST /account/password — the current password is checked against what the account really
+    // has (see `knownPasswords`), and a successful change moves it, so the next login needs the
+    // new one. An account with no entry accepts any current password, like login does.
     http.post(`${API_BASE}/account/password`, ({ request }) =>
-        readRequestBody<{ currentPassword?: string }>(request).then((requestBody) =>
-            requestBody.currentPassword === 'wrong-password'
-                ? toMockJsonResponse(
-                      createErrorEnvelope(
-                          422,
-                          'VALIDATION_ERROR',
-                          'The current password is incorrect.'
-                      ),
-                      { status: 422, schema: MockErrorResponse }
-                  )
-                : toMockJsonResponse(createMessageResponse('Password changed'), {
-                      schema: ChangePasswordResponse
-                  })
+        readRequestBody<{ currentPassword?: string; password?: string }>(request).then(
+            (requestBody) => {
+                applyAccountJournal();
+                const currentUser = getCurrentMockUser();
+                const email = currentUser?.email.toLowerCase();
+                const expectedPassword =
+                    email === undefined ? undefined : knownPasswords.get(email);
+                if (
+                    expectedPassword !== undefined &&
+                    expectedPassword !== requestBody.currentPassword
+                )
+                    return toMockJsonResponse(
+                        createErrorEnvelope(
+                            422,
+                            'VALIDATION_ERROR',
+                            'The current password is incorrect.'
+                        ),
+                        { status: 422, schema: MockErrorResponse }
+                    );
+                if (email !== undefined) {
+                    knownPasswords.set(email, String(requestBody.password ?? ''));
+                    persistAccountJournal();
+                }
+                return toMockJsonResponse(createMessageResponse('Password changed'), {
+                    schema: ChangePasswordResponse
+                });
+            }
         )
     ),
 
@@ -343,27 +531,39 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
 
     // ── Email verification ───────────────────────────────────────────────────
     http.post(`${API_BASE}/account/verify-request`, () => {
+        applyAccountJournal();
         const currentUser = getCurrentMockUser();
         if (currentUser?.verified)
             return toMockJsonResponse(createErrorEnvelope(409, 'CONFLICT', 'Already verified'), {
                 status: 409,
                 schema: MockErrorResponse
             });
+        if (currentUser)
+            recordMockEmail({
+                to: currentUser.email,
+                subject: 'Verify your email address',
+                template: 'account.verify-request.ejs',
+                token: issueToken('verify', currentUser.email)
+            });
         return toMockJsonResponse(createMessageResponse('Verification email sent'), {
             schema: RequestEmailVerificationResponse
         });
     }),
-    // `invalid-token` is the agreed bad token; anything else verifies whoever is signed in —
-    // matching the real flow closely enough for the confirm page and the banner to be tested.
+    // Only a token this mock issued (signup or verify-request, via the outbox) verifies — and it
+    // verifies the account it was issued TO, session or no session, exactly like the real link.
     http.post(`${API_BASE}/account/verify-confirm`, ({ request }) =>
         readRequestBody<{ token?: string }>(request).then((requestBody) => {
-            if (!requestBody.token || requestBody.token === 'invalid-token')
+            applyAccountJournal();
+            const claim = spendToken(requestBody.token, 'verify');
+            if (!claim)
                 return toMockJsonResponse(
                     createErrorEnvelope(422, 'VALIDATION_ERROR', 'Invalid or expired token'),
                     { status: 422, schema: MockErrorResponse }
                 );
-            const currentUser = getCurrentMockUser();
-            if (currentUser) currentUser.verified = true;
+            const claimedUser = mockDatabase.sampleUsers.find(
+                (user) => user.email.toLowerCase() === claim.email.toLowerCase()
+            );
+            if (claimedUser) patchUser(claimedUser.id, { verified: true });
             return toMockJsonResponse(createMessageResponse('Email address verified'), {
                 schema: ConfirmEmailVerificationResponse
             });

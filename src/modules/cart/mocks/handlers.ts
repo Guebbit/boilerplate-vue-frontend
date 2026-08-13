@@ -20,7 +20,8 @@ import {
     isOrderVisibleToCaller,
     isVisibleToCaller,
     mockDatabase,
-    readRequestBody
+    readRequestBody,
+    recordMockEmail
 } from '@mocks/mockShared.ts';
 import { toMockJsonResponse } from '@mocks/mockTransport.ts';
 import { MockErrorResponse } from '@mocks/mockValidation.ts';
@@ -172,6 +173,16 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
 
             mockDatabase.sampleOrders.unshift(createdOrder);
             mockDatabase.sampleCartItems = [];
+            // The confirmation the BE checkout sends, bought lines and all — into the outbox,
+            // where the journey spec reads it the way a customer reads their inbox.
+            recordMockEmail({
+                to: email,
+                subject: 'Order confirmed',
+                template: 'orders.order-confirm.ejs',
+                lines: createdOrder.items.map(
+                    ({ product, quantity }) => `${product.title} — ${quantity} × ${product.price}`
+                )
+            });
             return toMockJsonResponse(
                 createSuccessEnvelope({ order: createdOrder, message: 'Checkout completed' }),
                 { status: 201, schema: CheckoutResponse }

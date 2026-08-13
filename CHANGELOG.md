@@ -9,6 +9,34 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **The mock API has an outbox, and the email flows finally have to read it.** The real API
+  enqueues emails a browser can never see, which made every flow that hinges on one — the
+  verification link, the reset link, the order confirmation the BE checkout now sends —
+  untestable end to end. Now the MSW handlers record what they would have sent, `GET
+/__mock/emails` serves the list, and `cy.mockEmailTo()` reads it the way a person reads their
+  inbox. With it came honesty the old handlers faked: a token is valid because the mock _issued_
+  it (nothing but the token from the email is accepted — the magic `invalid-token` sentinel is
+  gone), login and the password flows check real passwords (the demo pair, whatever signup
+  chose, whatever a reset wrote — so "the old password stops working" is provable), and because
+  the confirm pages are _reached by a reload_ while the mock database rebuilds on every page
+  load, the account handlers keep a sessionStorage journal — tokens, passwords, signed-up users,
+  patched fields — folded back over the fresh seeds on demand. The rework surfaced two spec
+  fictions: the password-change e2e passed a current password that was never gino's, and the
+  verify e2e "spent" a token on an account the reseed had already re-verified.
+
+- **Registration and forgot-password walk their whole arcs in e2e.** `registration.cy.ts`: sign
+  up, read the verification email from the outbox, spend the hash as a guest, then prove the
+  password gate (wrong one refused, the chosen one logs in, profile verified) — plus the
+  slow-reader variant that logs in unverified, wears the banner, and clears it with the signup
+  email. `password-reset.cy.ts`: request the link as the enumeration-safe copy promises, follow
+  the emailed token, and prove the swap at the login form in both directions; a token nobody was
+  sent changes nothing and the old password survives. The journey spec now ends its checkout by
+  opening the confirmation email and finding both bought lines on it; profile's resend button is
+  finally clicked (`POST /account/verify-request` had zero e2e coverage) and the invalid-token
+  422 path is exercised in the UI. Visual baselines re-cut: the nav grew Contact and About
+  entries two commits ago and the pixel suite (excluded from the gate) had been quietly failing
+  since.
+
 - **A customer-journey e2e that earns the name.** `tests/e2e/specs/journey.cy.ts` walks the shop
   in one session: a guest browses to a product through the nav and the facet chips and meets the
   wall (add-to-cart disabled and explained, no wishlist heart), then signs in and repeats the

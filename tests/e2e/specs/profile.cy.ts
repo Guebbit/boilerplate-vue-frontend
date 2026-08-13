@@ -36,15 +36,21 @@ describe('Profile access', () => {
         cy.url().should('include', 'continue=');
     });
 
-    it('a guest can spend a verification token — the route is public, the token is the credential', () => {
+    it('a token nobody was sent does not verify — the token is the credential', () => {
+        // The confirm route is public (the visitor from the email link is not necessarily
+        // signed in), so the token carries all the authority — and one the mock never issued
+        // into its outbox is refused. The happy guest path lives in registration.cy.ts, where
+        // the token comes from an actual signup email.
         cy.visit('/en');
         cy.resetState();
-        cy.visit('/en/verify-email/confirm?token=a-perfectly-good-token');
+        cy.visit('/en/verify-email/confirm?token=a-token-nobody-issued');
 
-        cy.get('[data-test=verify-token] input').should('have.value', 'a-perfectly-good-token');
+        cy.get('[data-test=verify-token] input').should('have.value', 'a-token-nobody-issued');
         cy.get('[data-test=verify-submit]').click();
-        cy.contains('Email address verified').should('exist');
-        cy.get('#home-page').should('exist');
+
+        // The 422 keeps the visitor on the page; neither the success toast nor the redirect come.
+        cy.get('#verify-email-confirm-page').should('exist');
+        cy.contains('Email address verified').should('not.exist');
     });
 });
 
@@ -60,7 +66,7 @@ describe('Profile self-service', () => {
     describe('password change', () => {
         it('changes the password through the current-password flow', () => {
             cy.get('[data-test=toggle-change-password]').click();
-            cy.get('[data-test=current-password] input').type('ginogino');
+            cy.get('[data-test=current-password] input').type('password'); // gino's real one
             cy.get('[data-test=new-password] input').type('brand-new-secret');
             cy.get('[data-test=new-password-confirm] input').type('brand-new-secret');
             cy.get('[data-test=submit-password-change]').click();
@@ -151,7 +157,11 @@ describe('Profile self-service', () => {
             cy.get('[data-test=verify-banner]').should('exist');
         });
 
-        it('the emailed token verifies the address and the banner goes', () => {
+        it('the emailed token verifies the address and the banner goes', function () {
+            // The outbox is the mock profile's; against the live backend the email is real
+            // and unreadable from a browser.
+            cy.skipUnlessMock();
+
             // Unverify first, through the same email change a real user would make.
             cy.get('#profile-page [type=email]').should('have.value', 'gino@pino.it');
             cy.get('#profile-page [type=email]').clear();
@@ -159,7 +169,14 @@ describe('Profile self-service', () => {
             cy.get('#profile-page form button[type=submit]').first().click();
             cy.get('[data-test=verify-banner]').should('exist');
 
-            cy.visit('/en/verify-email/confirm?token=a-perfectly-good-token');
+            // Ask for the link, then read it from the outbox — the token that arrived is the
+            // only one the API will accept, exactly like the link in a real inbox.
+            cy.get('[data-test=verify-resend]').click();
+            // The toast confirms the round trip landed, so the outbox read below cannot race it.
+            cy.contains('Verification email sent').should('exist');
+            cy.mockEmailTo('fresh-address@example.com').then(({ token }) => {
+                cy.visit(`/en/verify-email/confirm?token=${token}`);
+            });
             cy.get('[data-test=verify-submit]').click();
 
             cy.get('#home-page').should('exist');
