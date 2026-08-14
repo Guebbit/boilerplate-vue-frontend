@@ -9,6 +9,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Money, parcels and the ledger — the FE halves of payments, delivery and inventory.** Three
+  new modules mirror the BE's on the idea. `payments` is a panel, not a page: the order page
+  grows a card form (prefilled with the conventional `4242…` success card; the hint names the
+  one number that declines) that walks the real PSP sequence — intent, then confirm — and flips
+  to a status chip the instant the charge lands; a PAID order keeps its cancel button because
+  the refund path now exists, and the MSW handlers refuse the same magic card the BE's fake
+  provider does. `delivery` contributes the cart's shipping selector (flat rates, the
+  free-above-100 rule priced live against the basket) and the order page's parcel panel —
+  tracking code, delivered chip, and the admin-only "advance courier" button that stands in for
+  the cron this stack deliberately lacks; an admin moving an order to `shipped` through the
+  edit form mints the parcel and drops the tracking email into the outbox. `inventory` is a new
+  admin page: the stock ledger newest-first with the WHY of every movement (order, cancel,
+  adjustment, restock) and a restock form that answers with the new shelf count — the mock
+  checkout, cancel and admin stock writes all feed it, exactly like the BE's `STOCK_MOVED`
+  listeners. `commerce.cy.ts` walks both arcs end to end: decline → retry → paid → cancel as
+  the customer; ship → tracking email → courier click → delivered → restock → ledger as the
+  admin.
+
 - **The mock API has an outbox, and the email flows finally have to read it.** The real API
   enqueues emails a browser can never see, which made every flow that hinges on one — the
   verification link, the reset link, the order confirmation the BE checkout now sends —

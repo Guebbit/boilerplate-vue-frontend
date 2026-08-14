@@ -1,0 +1,16 @@
+{
+    "shipping-selector": {
+        "title": "Shipping",
+        "method-standard": "Standard",
+        "method-express": "Express",
+        "method-pickup": "Store pickup",
+        "free-earned": "free over threshold"
+    },
+    "shipment-panel": {
+        "title": "Shipping",
+        "status-shipped": "Shipped",
+        "status-delivered": "Delivered",
+        "button-advance": "Advance courier (demo)",
+        "advanced": "The courier advanced — parcels delivered."
+    }
+}

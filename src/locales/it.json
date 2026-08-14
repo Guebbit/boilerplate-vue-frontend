@@ -31,7 +31,8 @@
         "label-theme": "Cambia tema",
         "label-language": "Lingua",
         "label-logo": "Home di Guebbit",
-        "label-about": "Informazioni"
+        "label-about": "Informazioni",
+        "label-inventory": "Magazzino"
     },
     "home-page": {
         "page-title": "Home",

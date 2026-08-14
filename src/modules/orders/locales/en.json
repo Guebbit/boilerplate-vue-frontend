@@ -51,7 +51,8 @@
         "confirm-cancel": "Cancel this order? The stock goes back on the shelf.",
         "success-cancel": "Order cancelled.",
         "button-reorder": "Buy again",
-        "success-reorder": "Order added to cart."
+        "success-reorder": "Order added to cart.",
+        "label-shipping": "Shipping"
     },
     "order-edit-page": {
         "page-title": "Edit order",

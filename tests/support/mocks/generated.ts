@@ -207,12 +207,19 @@ export interface Order {
      */
     totalQuantity: number;
     /**
-     * Sum of `product.price × quantity` across every line item.
+     * Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
      * @minimum 0
      */
     totalPrice: number;
     /** Optional order notes */
     notes?: string;
+    /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
+    shippingMethod?: string;
+    /**
+     * What that method cost at checkout time — a later rate change cannot re-price history.
+     * @minimum 0
+     */
+    shippingCost?: number;
     shippingAddress?: OrderAddress;
     status: OrderStatus;
     createdAt?: string;
@@ -382,6 +389,8 @@ export type ObservabilityMetricsSummaryBusiness = {
     checkoutSuccess?: number;
     /** @minimum 0 */
     ordersCreated?: number;
+    /** @minimum 0 */
+    lowStockProducts?: number;
 };
 
 export type ObservabilityMetricsSummaryDatabase = {
@@ -1028,6 +1037,8 @@ export interface CheckoutRequest {
     notes?: string;
     /** Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. */
     addressId?: Id;
+    /** Which shipping method (see `GET /delivery/methods`) the order travels by. Its cost is priced against the lines being bought (free-above thresholds included) and frozen onto the order. Omitted, the order carries no shipping; an id that matches no method refuses the checkout with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`. */
+    shippingMethodId?: string;
 }
 
 export interface WishlistItem {
@@ -1139,6 +1150,191 @@ export interface UpdateOrderByIdRequest {
 export interface DeleteOrderRequest {
     id: Id;
     hardDelete?: boolean;
+}
+
+/**
+ * The provider-facing lifecycle. `declined` is retryable — the confirm endpoint accepts the same payment again; `refunded` is terminal.
+ */
+export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus];
+
+export const PaymentStatus = {
+    requires_confirmation: 'requires_confirmation',
+    succeeded: 'succeeded',
+    declined: 'declined',
+    refunded: 'refunded'
+} as const;
+
+export interface Payment {
+    id: Id;
+    orderId: Id;
+    userId: Id;
+    /**
+     * The order's total as the intent froze it.
+     * @minimum 0
+     */
+    amount: number;
+    /** ISO-4217 currency code (e.g. EUR) */
+    currency: string;
+    /** The provider-facing lifecycle. `declined` is retryable — the confirm endpoint accepts the same payment again; `refunded` is terminal. */
+    status: PaymentStatus;
+    /** Which provider implementation handled it (`fake` in the demo). */
+    provider: string;
+    /** The only card digits a payment system may remember. */
+    cardLast4?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface PaymentEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: Payment;
+}
+
+export interface CreatePaymentIntentRequest {
+    orderId: Id;
+}
+
+export interface ConfirmPaymentRequest {
+    /**
+     * The card number, digits and optional spaces. The fake provider declines `4000000000000002` and accepts everything else; `4242424242424242` is the conventional success card.
+     * @minLength 12
+     * @maxLength 23
+     * @pattern ^[\d ]+$
+     */
+    cardNumber: string;
+}
+
+export interface ShippingMethod {
+    /** Stable id, frozen onto orders at checkout (standard, express, pickup). */
+    id: string;
+    /**
+     * Flat rate, in the shop's currency.
+     * @minimum 0
+     */
+    price: number;
+    /**
+     * Items total at which this method becomes free. Absent — it never does.
+     * @minimum 0
+     */
+    freeAbove?: number;
+}
+
+export interface ShippingMethodsResponse {
+    methods: ShippingMethod[];
+}
+
+export interface ShippingMethodsResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: ShippingMethodsResponse;
+}
+
+/**
+ * The tail of the order's lifecycle, as the courier sees it.
+ */
+export type ShipmentStatus = (typeof ShipmentStatus)[keyof typeof ShipmentStatus];
+
+export const ShipmentStatus = {
+    shipped: 'shipped',
+    delivered: 'delivered'
+} as const;
+
+export interface Shipment {
+    id: Id;
+    orderId: Id;
+    /** The courier's handle on the parcel. */
+    trackingCode: string;
+    /** The tail of the order's lifecycle, as the courier sees it. */
+    status: ShipmentStatus;
+    deliveredAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface ShipmentEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: Shipment;
+}
+
+export interface CourierAdvanceResponse {
+    /**
+     * How many parcels arrived on this tick.
+     * @minimum 0
+     */
+    advanced: number;
+}
+
+export interface CourierAdvanceResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: CourierAdvanceResponse;
+}
+
+/**
+ * Why the units moved.
+ */
+export type StockMovementReason = (typeof StockMovementReason)[keyof typeof StockMovementReason];
+
+export const StockMovementReason = {
+    order: 'order',
+    'order-cancelled': 'order-cancelled',
+    adjustment: 'adjustment',
+    restock: 'restock'
+} as const;
+
+export interface StockMovement {
+    id: Id;
+    productId: Id;
+    /** Signed — a sale is negative, a return or restock positive. */
+    delta: number;
+    /** Why the units moved. */
+    reason: StockMovementReason;
+    /** What caused it, when something did — the order id, typically. */
+    reference?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface StockMovementsResponse {
+    items: StockMovement[];
+}
+
+export interface StockMovementsResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: StockMovementsResponse;
+}
+
+export interface RestockRequest {
+    productId: Id;
+    /**
+     * How many units arrived. Corrections downward are the admin product form's absolute stock write.
+     * @minimum 1
+     */
+    quantity: number;
+}
+
+export interface RestockResponse {
+    productId: Id;
+    /**
+     * The shelf count after the units landed.
+     * @minimum 0
+     */
+    stock: number;
+}
+
+export interface RestockResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: RestockResponse;
 }
 
 /**
@@ -1333,6 +1529,13 @@ export type ListOrdersParams = {
 
 export type DeleteOrderByIdParams = {
     hardDelete?: boolean;
+};
+
+export type ListStockMovementsParams = {
+    /**
+     * Narrow to one product's movements
+     */
+    productId?: Id;
 };
 
 export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
@@ -2421,7 +2624,7 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
     };
 
     /**
-     * Cancels the order identified by `{id}` — the one order write a customer can make. Only a `pending` order can be cancelled this way; `paid`, `processing` and later statuses each need their own flow (refund, return), which an admin drives through `PUT /orders/{id}`. A non-admin can cancel only their own orders; an admin can cancel anyone's. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
+     * Cancels the order identified by `{id}` — the one order write a customer can make. A `pending` or `paid` order can be cancelled this way; cancelling a paid one refunds its payment. `processing` and later statuses each need their own flow (return), which an admin drives through `PUT /orders/{id}`. A non-admin can cancel only their own orders; an admin can cancel anyone's. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
      * @summary Cancel order
      */
     const cancelOrderById = (
@@ -2443,6 +2646,96 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
             responseType: 'blob',
             ...options
         });
+    };
+
+    /**
+     * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact); an order whose money already moved answers 409. The intent is the thing the card dialog confirms.
+     * @summary Create a payment intent
+     */
+    const createPaymentIntent = (
+        createPaymentIntentRequest: CreatePaymentIntentRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<PaymentEnvelope>> => {
+        return axiosInstance.post(`/payments/intent`, createPaymentIntentRequest, options);
+    };
+
+    /**
+     * The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. Admins read anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments/intent`.
+     * @summary Get the payment behind an order
+     */
+    const getPaymentByOrder = (
+        orderId: Id,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<PaymentEnvelope>> => {
+        return axiosInstance.get(`/payments/order/${orderId}`, options);
+    };
+
+    /**
+     * The card dialog's submit. The provider charges first (that is how PSPs work — the money moves before your database hears about it), then the order is moved `pending → paid` by a conditional write; if the order slipped away in between, the charge is refunded on the spot. A decline answers 409 with `errors[].code` `PAYMENT_DECLINED` and is retryable — submit the same payment again with another card. The fake provider declines exactly one number, documented on `ConfirmPaymentRequest.cardNumber`.
+     * @summary Confirm a payment
+     */
+    const confirmPayment = (
+        id: string,
+        confirmPaymentRequest: ConfirmPaymentRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<PaymentEnvelope>> => {
+        return axiosInstance.post(`/payments/${id}/confirm`, confirmPaymentRequest, options);
+    };
+
+    /**
+     * The shipping methods this shop offers — flat rates and free-above thresholds. Public, because what shipping costs is pre-purchase information; the authoritative pricing still happens at checkout, against the lines actually bought, so a client showing these numbers cannot commit the shop to a stale rate.
+     * @summary List shipping methods
+     */
+    const listShippingMethods = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<ShippingMethodsResponseEnvelope>> => {
+        return axiosInstance.get(`/delivery/methods`, options);
+    };
+
+    /**
+     * The parcel for one of the caller's orders — tracking code and whether it has arrived. Ownership is the order's, read through the same scope every order read uses. No parcel yet (the order has not reached `shipped`) is a 404 — absence is the answer.
+     * @summary Get the shipment behind an order
+     */
+    const getShipmentByOrder = (
+        orderId: Id,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<ShipmentEnvelope>> => {
+        return axiosInstance.get(`/delivery/order/${orderId}`, options);
+    };
+
+    /**
+     * Every parcel currently `shipped` arrives — the order moves `shipped → delivered` through the same conditional write the rest of the status machine uses, then the shipment is stamped. Admin, and deliberately a button rather than a schedule — this repo has no cron, so an operator (or the demo) is the timer, exactly like the expired-token purge.
+     * @summary Advance the fake courier
+     */
+    const advanceCourier = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<CourierAdvanceResponseEnvelope>> => {
+        return axiosInstance.post(`/delivery/advance`, undefined, options);
+    };
+
+    /**
+     * The ledger, newest first — every signed change to a shelf count with the why attached (order, cancel, adjustment, restock). Optionally one product's story via `productId`. Admin — customers see stock as a number on the product page.
+     * @summary List stock movements
+     */
+    const listStockMovements = (
+        params?: ListStockMovementsParams,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<StockMovementsResponseEnvelope>> => {
+        return axiosInstance.get(`/inventory/movements`, {
+            ...options,
+            params: { ...params, ...options?.params }
+        });
+    };
+
+    /**
+     * Puts units on a shelf through the same conditional increment every other movement uses, and writes the ledger row through the same announcement — so a restock and a sale tell the same kind of story. Answers the shelf count after the units landed.
+     * @summary Restock a product
+     */
+    const restockProduct = (
+        restockRequest: RestockRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<RestockResponseEnvelope>> => {
+        return axiosInstance.post(`/inventory/restock`, restockRequest, options);
     };
 
     return {
@@ -2527,7 +2820,15 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         deleteOrderById,
         hardDeleteOrderById,
         cancelOrderById,
-        getOrderInvoice
+        getOrderInvoice,
+        createPaymentIntent,
+        getPaymentByOrder,
+        confirmPayment,
+        listShippingMethods,
+        getShipmentByOrder,
+        advanceCourier,
+        listStockMovements,
+        restockProduct
     };
 };
 export type GetHealthResult = AxiosResponse<HealthPingEnvelope>;
@@ -2613,6 +2914,14 @@ export type DeleteOrderByIdResult = AxiosResponse<SuccessResponse>;
 export type HardDeleteOrderByIdResult = AxiosResponse<SuccessResponse>;
 export type CancelOrderByIdResult = AxiosResponse<OrderEnvelope>;
 export type GetOrderInvoiceResult = AxiosResponse<Blob>;
+export type CreatePaymentIntentResult = AxiosResponse<PaymentEnvelope>;
+export type GetPaymentByOrderResult = AxiosResponse<PaymentEnvelope>;
+export type ConfirmPaymentResult = AxiosResponse<PaymentEnvelope>;
+export type ListShippingMethodsResult = AxiosResponse<ShippingMethodsResponseEnvelope>;
+export type GetShipmentByOrderResult = AxiosResponse<ShipmentEnvelope>;
+export type AdvanceCourierResult = AxiosResponse<CourierAdvanceResponseEnvelope>;
+export type ListStockMovementsResult = AxiosResponse<StockMovementsResponseEnvelope>;
+export type RestockProductResult = AxiosResponse<RestockResponseEnvelope>;
 
 export const getGetHealthResponseMock = (
     overrideResponse: Partial<Extract<HealthPingEnvelope, object>> = {}
@@ -2727,7 +3036,8 @@ export const getGetObservabilityMetricsOverviewResponseMock = (
         },
         business: {
             checkoutSuccess: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
-            ordersCreated: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined])
+            ordersCreated: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+            lowStockProducts: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined])
         },
         database: {
             queriesTotal: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
@@ -4467,6 +4777,14 @@ export const getCheckoutResponseMock = (
                 faker.string.alpha({ length: { min: 10, max: 20 } }),
                 undefined
             ]),
+            shippingMethod: faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                undefined
+            ]),
+            shippingCost: faker.helpers.arrayElement([
+                faker.number.float({ min: 0, fractionDigits: 2 }),
+                undefined
+            ]),
             shippingAddress: faker.helpers.arrayElement([
                 {
                     fullName: faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -4661,6 +4979,14 @@ export const getListOrdersResponseMock = (
                     faker.string.alpha({ length: { min: 10, max: 20 } }),
                     undefined
                 ]),
+                shippingMethod: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                shippingCost: faker.helpers.arrayElement([
+                    faker.number.float({ min: 0, fractionDigits: 2 }),
+                    undefined
+                ]),
                 shippingAddress: faker.helpers.arrayElement([
                     {
                         fullName: faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -4770,6 +5096,14 @@ export const getCreateOrderResponseMock = (
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
         ]),
+        shippingMethod: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        shippingCost: faker.helpers.arrayElement([
+            faker.number.float({ min: 0, fractionDigits: 2 }),
+            undefined
+        ]),
         shippingAddress: faker.helpers.arrayElement([
             {
                 fullName: faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -4869,6 +5203,14 @@ export const getUpdateOrderResponseMock = (
         totalPrice: faker.number.float({ min: 0, fractionDigits: 2 }),
         notes: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        shippingMethod: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        shippingCost: faker.helpers.arrayElement([
+            faker.number.float({ min: 0, fractionDigits: 2 }),
             undefined
         ]),
         shippingAddress: faker.helpers.arrayElement([
@@ -4987,6 +5329,14 @@ export const getSearchOrdersResponseMock = (
                     faker.string.alpha({ length: { min: 10, max: 20 } }),
                     undefined
                 ]),
+                shippingMethod: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                shippingCost: faker.helpers.arrayElement([
+                    faker.number.float({ min: 0, fractionDigits: 2 }),
+                    undefined
+                ]),
                 shippingAddress: faker.helpers.arrayElement([
                     {
                         fullName: faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -5096,6 +5446,14 @@ export const getGetOrderByIdResponseMock = (
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
         ]),
+        shippingMethod: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        shippingCost: faker.helpers.arrayElement([
+            faker.number.float({ min: 0, fractionDigits: 2 }),
+            undefined
+        ]),
         shippingAddress: faker.helpers.arrayElement([
             {
                 fullName: faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -5195,6 +5553,14 @@ export const getUpdateOrderByIdResponseMock = (
         totalPrice: faker.number.float({ min: 0, fractionDigits: 2 }),
         notes: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        shippingMethod: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        shippingCost: faker.helpers.arrayElement([
+            faker.number.float({ min: 0, fractionDigits: 2 }),
             undefined
         ]),
         shippingAddress: faker.helpers.arrayElement([
@@ -5316,6 +5682,14 @@ export const getCancelOrderByIdResponseMock = (
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
         ]),
+        shippingMethod: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        shippingCost: faker.helpers.arrayElement([
+            faker.number.float({ min: 0, fractionDigits: 2 }),
+            undefined
+        ]),
         shippingAddress: faker.helpers.arrayElement([
             {
                 fullName: faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -5356,6 +5730,218 @@ export const getCancelOrderByIdResponseMock = (
 
 export const getGetOrderInvoiceResponseMock = (): ArrayBuffer =>
     new ArrayBuffer(faker.number.int({ min: 1, max: 64 }));
+
+export const getCreatePaymentIntentResponseMock = (
+    overrideResponse: Partial<Extract<PaymentEnvelope, object>> = {}
+): PaymentEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        orderId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        amount: faker.number.float({ min: 0, fractionDigits: 2 }),
+        currency: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        status: faker.helpers.arrayElement([
+            'requires_confirmation',
+            'succeeded',
+            'declined',
+            'refunded'
+        ] as const),
+        provider: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        cardLast4: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
+    },
+    ...overrideResponse
+});
+
+export const getGetPaymentByOrderResponseMock = (
+    overrideResponse: Partial<Extract<PaymentEnvelope, object>> = {}
+): PaymentEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        orderId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        amount: faker.number.float({ min: 0, fractionDigits: 2 }),
+        currency: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        status: faker.helpers.arrayElement([
+            'requires_confirmation',
+            'succeeded',
+            'declined',
+            'refunded'
+        ] as const),
+        provider: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        cardLast4: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
+    },
+    ...overrideResponse
+});
+
+export const getConfirmPaymentResponseMock = (
+    overrideResponse: Partial<Extract<PaymentEnvelope, object>> = {}
+): PaymentEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        orderId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        userId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        amount: faker.number.float({ min: 0, fractionDigits: 2 }),
+        currency: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        status: faker.helpers.arrayElement([
+            'requires_confirmation',
+            'succeeded',
+            'declined',
+            'refunded'
+        ] as const),
+        provider: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        cardLast4: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
+    },
+    ...overrideResponse
+});
+
+export const getListShippingMethodsResponseMock = (
+    overrideResponse: Partial<Extract<ShippingMethodsResponseEnvelope, object>> = {}
+): ShippingMethodsResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        methods: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
+                id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                price: faker.number.float({ min: 0, fractionDigits: 2 }),
+                freeAbove: faker.helpers.arrayElement([
+                    faker.number.float({ min: 0, fractionDigits: 2 }),
+                    undefined
+                ])
+            })
+        )
+    },
+    ...overrideResponse
+});
+
+export const getGetShipmentByOrderResponseMock = (
+    overrideResponse: Partial<Extract<ShipmentEnvelope, object>> = {}
+): ShipmentEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        orderId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        trackingCode: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        status: faker.helpers.arrayElement(['shipped', 'delivered'] as const),
+        deliveredAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        createdAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ]),
+        updatedAt: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + 'Z',
+            undefined
+        ])
+    },
+    ...overrideResponse
+});
+
+export const getAdvanceCourierResponseMock = (
+    overrideResponse: Partial<Extract<CourierAdvanceResponseEnvelope, object>> = {}
+): CourierAdvanceResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: { advanced: faker.number.int({ min: 0 }) },
+    ...overrideResponse
+});
+
+export const getListStockMovementsResponseMock = (
+    overrideResponse: Partial<Extract<StockMovementsResponseEnvelope, object>> = {}
+): StockMovementsResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
+                id: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                delta: faker.number.float({ fractionDigits: 2 }),
+                reason: faker.helpers.arrayElement([
+                    'order',
+                    'order-cancelled',
+                    'adjustment',
+                    'restock'
+                ] as const),
+                reference: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                createdAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ]),
+                updatedAt: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + 'Z',
+                    undefined
+                ])
+            })
+        )
+    },
+    ...overrideResponse
+});
+
+export const getRestockProductResponseMock = (
+    overrideResponse: Partial<Extract<RestockResponseEnvelope, object>> = {}
+): RestockResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        stock: faker.number.int({ min: 0 })
+    },
+    ...overrideResponse
+});
 
 export const getGetHealthMockHandler = (
     overrideResponse?:
@@ -7330,6 +7916,198 @@ export const getGetOrderInvoiceMockHandler = (
         options
     );
 };
+
+export const getCreatePaymentIntentMockHandler = (
+    overrideResponse?:
+        | PaymentEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<PaymentEnvelope> | PaymentEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/payments/intent',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getCreatePaymentIntentResponseMock(),
+                { status: 201 }
+            );
+        },
+        options
+    );
+};
+
+export const getGetPaymentByOrderMockHandler = (
+    overrideResponse?:
+        | PaymentEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<PaymentEnvelope> | PaymentEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/payments/order/:orderId',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetPaymentByOrderResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getConfirmPaymentMockHandler = (
+    overrideResponse?:
+        | PaymentEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<PaymentEnvelope> | PaymentEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/payments/:id/confirm',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getConfirmPaymentResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getListShippingMethodsMockHandler = (
+    overrideResponse?:
+        | ShippingMethodsResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<ShippingMethodsResponseEnvelope> | ShippingMethodsResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/delivery/methods',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getListShippingMethodsResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getGetShipmentByOrderMockHandler = (
+    overrideResponse?:
+        | ShipmentEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<ShipmentEnvelope> | ShipmentEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/delivery/order/:orderId',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getGetShipmentByOrderResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getAdvanceCourierMockHandler = (
+    overrideResponse?:
+        | CourierAdvanceResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<CourierAdvanceResponseEnvelope> | CourierAdvanceResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/delivery/advance',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getAdvanceCourierResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getListStockMovementsMockHandler = (
+    overrideResponse?:
+        | StockMovementsResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<StockMovementsResponseEnvelope> | StockMovementsResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/inventory/movements',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getListStockMovementsResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getRestockProductMockHandler = (
+    overrideResponse?:
+        | RestockResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<RestockResponseEnvelope> | RestockResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/inventory/restock',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getRestockProductResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
 export const getEcommerceDemoAPIMock = () => [
     getGetHealthMockHandler(),
     getGetLocalesMockHandler(),
@@ -7412,5 +8190,13 @@ export const getEcommerceDemoAPIMock = () => [
     getDeleteOrderByIdMockHandler(),
     getHardDeleteOrderByIdMockHandler(),
     getCancelOrderByIdMockHandler(),
-    getGetOrderInvoiceMockHandler()
+    getGetOrderInvoiceMockHandler(),
+    getCreatePaymentIntentMockHandler(),
+    getGetPaymentByOrderMockHandler(),
+    getConfirmPaymentMockHandler(),
+    getListShippingMethodsMockHandler(),
+    getGetShipmentByOrderMockHandler(),
+    getAdvanceCourierMockHandler(),
+    getListStockMovementsMockHandler(),
+    getRestockProductMockHandler()
 ];

@@ -12,7 +12,7 @@ import { ordersResponseSchemas } from './responseSchemas';
 export default {
     name: 'orders',
     routes,
-    dependsOn: ['cart'],
+    dependsOn: ['cart', 'delivery', 'payments'],
     navigation: [{ name: 'OrdersList', label: 'navigation.label-orders', plural: 1, order: 90 }],
     responseSchemas: ordersResponseSchemas,
     // Written out rather than delegated to a helper on purpose: `import.meta.env` is replaced by

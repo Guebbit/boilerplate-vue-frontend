@@ -33,6 +33,13 @@ import {
 } from '@mocks/mockShared.ts';
 import { toMockArrayBufferResponse, toMockJsonResponse } from '@mocks/mockTransport.ts';
 import { MockErrorResponse } from '@mocks/mockValidation.ts';
+// The BE's event listeners, mock-side, from the support layer (see mockCommerce's docblock):
+// the cancel refunds and re-shelves, a status landing on `shipped` mints the parcel.
+import {
+    refundMockPaymentForOrder,
+    recordMockStockMovement,
+    shipMockOrder
+} from '@mocks/mockCommerce.ts';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
@@ -184,8 +191,9 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
                 return replyOrdersList(request.url, SearchOrdersResponse, requestBody);
             });
         }),
-        // The one order write a customer can make. `pending` only, owner-scoped, and the
-        // shelf gets its units back — the three facts the BE's conditional write carries.
+        // The one order write a customer can make. `pending` or `paid`, owner-scoped, the
+        // shelf gets its units back, and a paid order's money comes back too — the facts the
+        // BE's conditional write and its ORDER_CANCELLED listener carry.
         http.post(`${API_BASE}/orders/:orderId/cancel`, ({ params }) => {
             const order = mockDatabase.sampleOrders.find(({ id }) => id === String(params.orderId));
             if (!order || !isOrderVisibleToCaller(order, isCurrentMockUserAdmin()))
@@ -193,7 +201,7 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
                     createErrorEnvelope(404, 'NOT_FOUND', 'The requested order was not found'),
                     { status: 404, schema: MockErrorResponse }
                 );
-            if (order.status !== 'pending')
+            if (order.status !== 'pending' && order.status !== 'paid')
                 return toMockJsonResponse(
                     createErrorEnvelope(
                         409,
@@ -203,11 +211,19 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
                     { status: 409, schema: MockErrorResponse }
                 );
 
+            const wasPaid = order.status === 'paid';
             order.status = 'cancelled';
             for (const { product, quantity } of order.items) {
                 const shelf = mockDatabase.sampleProducts.find(({ id }) => id === product.id);
                 if (shelf?.stock !== undefined) shelf.stock += quantity;
+                recordMockStockMovement({
+                    productId: product.id,
+                    delta: quantity,
+                    reason: 'order-cancelled',
+                    reference: order.id
+                });
             }
+            if (wasPaid) refundMockPaymentForOrder(order.id);
             return toMockJsonResponse(createSuccessEnvelope(order), {
                 schema: CancelOrderByIdResponse
             });
@@ -251,6 +267,10 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
                 };
 
                 mockDatabase.sampleOrders[targetIndex] = updatedOrder;
+                // A status landing on `shipped` mints the parcel and its email, exactly as the
+                // BE's ORDER_STATUS_CHANGED listener does — idempotently, in shipMockOrder.
+                if (updatedOrder.status === 'shipped')
+                    shipMockOrder(updatedOrder.id, updatedOrder.email);
                 return toMockJsonResponse(createSuccessEnvelope(updatedOrder), {
                     schema: UpdateOrderByIdResponse
                 });

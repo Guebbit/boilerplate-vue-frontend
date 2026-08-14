@@ -5,7 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -19,6 +19,7 @@ import { notifyErrorMessages } from '@/infrastructure/errors.ts';
 import { formatCurrency } from '@/infrastructure/formatters.ts';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
+import { ShippingSelector } from '@/modules/delivery';
 
 /**
  * Generics
@@ -47,8 +48,15 @@ const { cartItems, cartSummary } = storeToRefs(useCartStore());
  * @returns A promise resolving once the flow settles: a success toast and a navigation to the
  *  orders list, or an error toast.
  */
+/** The chosen shipping method — optional, exactly as the API treats it. */
+const shippingMethodId = ref<string | undefined>();
+
 const checkout = () =>
-    placeOrder()
+    placeOrder(
+        shippingMethodId.value === undefined
+            ? undefined
+            : { shippingMethodId: shippingMethodId.value }
+    )
         .then(() => {
             addMessage(t('cart-page.success-checkout'));
             router.push(routerLinkI18n({ name: 'OrdersList' }));
@@ -135,6 +143,8 @@ onMounted(fetchCart);
                         <dt class="opacity-70">{{ t('cart-page.label-total-quantity') }}</dt>
                         <dd class="text-right font-medium">{{ cartSummary.totalQuantity }}</dd>
                     </dl>
+                    <v-divider class="my-3" />
+                    <ShippingSelector v-model="shippingMethodId" :items-total="cartSummary.total" />
                     <v-divider class="my-3" />
                     <div class="flex items-baseline justify-between">
                         <span class="opacity-70">{{ t('cart-page.label-total') }}</span>

@@ -29,6 +29,8 @@ import {
 } from '@/infrastructure/formatters.ts';
 import { notifyErrorMessages } from '@/infrastructure/errors.ts';
 import { downloadBlob } from '@guebbit/js-toolkit';
+import { PaymentPanel } from '@/modules/payments';
+import { ShipmentPanel } from '@/modules/delivery';
 
 /**
  * Generic translation and notification accessors.
@@ -46,18 +48,21 @@ const { id } = defineProps<{
 /**
  * Store API and reactive order references.
  */
-const { watchOrder, downloadInvoice: fetchInvoice, cancelOrder } = useOrdersStore();
+const { watchOrder, fetchOrder, downloadInvoice: fetchInvoice, cancelOrder } = useOrdersStore();
 const { currentOrder, loading } = storeToRefs(useOrdersStore());
 const { reorder } = useCartStore();
 const router = useRouter();
 
 /**
- * Whether the customer cancel is still open — `pending` only, the same gate the API enforces.
- * Later statuses are refund/return territory, which an admin drives through the edit page.
+ * Whether the customer cancel is still open — `pending` or `paid`, the same gate the API
+ * enforces: a paid order is cancellable because the refund path exists (payments answers the
+ * cancel). Later statuses are return territory, which an admin drives through the edit page.
  *
  * @returns `true` while this order can still be cancelled.
  */
-const cancellable = computed(() => currentOrder.value?.status === 'pending');
+const cancellable = computed(
+    () => currentOrder.value?.status === 'pending' || currentOrder.value?.status === 'paid'
+);
 
 /**
  * Cancels this order after an explicit confirmation.
@@ -208,10 +213,30 @@ watchOrder(() => id);
                     <CardInfo :title="heroTitle" :description="heroDescription" variant="tertiary">
                         <template #icon><ShoppingCart :size="28" /></template>
                     </CardInfo>
+                    <!-- The money and the parcel: each panel re-reads the order when its module
+                         moves the status, so this page never guesses at either. -->
+                    <PaymentPanel
+                        v-if="currentOrder"
+                        :order-id="currentOrder.id"
+                        :order-status="currentOrder.status"
+                        @paid="fetchOrder(currentOrder.id, { forced: true })"
+                    />
+                    <ShipmentPanel
+                        v-if="currentOrder"
+                        :order-id="currentOrder.id"
+                        @advanced="fetchOrder(currentOrder.id, { forced: true })"
+                    />
                     <ItemDetailField
                         :label="t('order-target-page.label-date')"
                         :value="formatDateTime(currentOrder?.createdAt)"
                         icon="📅"
+                    />
+                    <ItemDetailField
+                        v-if="currentOrder?.shippingMethod"
+                        :label="t('order-target-page.label-shipping')"
+                        :value="`${currentOrder.shippingMethod} — ${formatCurrency(currentOrder.shippingCost ?? 0)}`"
+                        icon="🚚"
+                        data-test="order-shipping"
                     />
                     <ItemDetailField
                         :label="t('order-target-page.label-updated-at')"

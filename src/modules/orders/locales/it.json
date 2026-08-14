@@ -51,7 +51,8 @@
         "confirm-cancel": "Annullare questo ordine? Le quantità tornano disponibili.",
         "success-cancel": "Ordine annullato.",
         "button-reorder": "Acquista di nuovo",
-        "success-reorder": "Ordine aggiunto al carrello."
+        "success-reorder": "Ordine aggiunto al carrello.",
+        "label-shipping": "Spedizione"
     },
     "order-edit-page": {
         "page-title": "Modifica ordine",

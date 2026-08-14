@@ -13,6 +13,7 @@ import { cartResponseSchemas } from './responseSchemas';
  */
 export default {
     name: 'cart',
+    dependsOn: ['delivery'],
     routes,
     navigation: [{ name: 'Cart', label: 'navigation.label-cart', plural: 1, order: 80 }],
     responseSchemas: cartResponseSchemas,

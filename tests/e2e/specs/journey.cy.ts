@@ -77,6 +77,12 @@ describe('The customer journey', () => {
         cy.get('[data-test=order-reorder]').should('exist');
 
         // ── The shelf recovered — same product, same count as the journey began with ─
+        // The walk's toasts stack over the table's action column until dismissed — close them
+        // the way a person does before clicking through the list again.
+        cy.get('.v-alert').each((alert) => {
+            cy.wrap(alert).find('.v-alert__close button').click();
+        });
+        cy.get('.v-alert').should('not.exist');
         cy.get('.v-app-bar')
             .contains('a', /products lists/i)
             .click();

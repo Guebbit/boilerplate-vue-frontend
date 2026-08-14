@@ -200,12 +200,19 @@ export interface Order {
      */
     totalQuantity: number;
     /**
-     * Sum of `product.price × quantity` across every line item.
+     * Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
      * @minimum 0
      */
     totalPrice: number;
     /** Optional order notes */
     notes?: string;
+    /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
+    shippingMethod?: string;
+    /**
+     * What that method cost at checkout time — a later rate change cannot re-price history.
+     * @minimum 0
+     */
+    shippingCost?: number;
     shippingAddress?: OrderAddress;
     status: OrderStatus;
     createdAt?: string;
@@ -375,6 +382,8 @@ export type ObservabilityMetricsSummaryBusiness = {
     checkoutSuccess?: number;
     /** @minimum 0 */
     ordersCreated?: number;
+    /** @minimum 0 */
+    lowStockProducts?: number;
 };
 
 export type ObservabilityMetricsSummaryDatabase = {
@@ -1021,6 +1030,8 @@ export interface CheckoutRequest {
     notes?: string;
     /** Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. */
     addressId?: Id;
+    /** Which shipping method (see `GET /delivery/methods`) the order travels by. Its cost is priced against the lines being bought (free-above thresholds included) and frozen onto the order. Omitted, the order carries no shipping; an id that matches no method refuses the checkout with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`. */
+    shippingMethodId?: string;
 }
 
 export interface WishlistItem {
@@ -1132,6 +1143,191 @@ export interface UpdateOrderByIdRequest {
 export interface DeleteOrderRequest {
     id: Id;
     hardDelete?: boolean;
+}
+
+/**
+ * The provider-facing lifecycle. `declined` is retryable — the confirm endpoint accepts the same payment again; `refunded` is terminal.
+ */
+export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus];
+
+export const PaymentStatus = {
+    requires_confirmation: 'requires_confirmation',
+    succeeded: 'succeeded',
+    declined: 'declined',
+    refunded: 'refunded'
+} as const;
+
+export interface Payment {
+    id: Id;
+    orderId: Id;
+    userId: Id;
+    /**
+     * The order's total as the intent froze it.
+     * @minimum 0
+     */
+    amount: number;
+    /** ISO-4217 currency code (e.g. EUR) */
+    currency: string;
+    /** The provider-facing lifecycle. `declined` is retryable — the confirm endpoint accepts the same payment again; `refunded` is terminal. */
+    status: PaymentStatus;
+    /** Which provider implementation handled it (`fake` in the demo). */
+    provider: string;
+    /** The only card digits a payment system may remember. */
+    cardLast4?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface PaymentEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: Payment;
+}
+
+export interface CreatePaymentIntentRequest {
+    orderId: Id;
+}
+
+export interface ConfirmPaymentRequest {
+    /**
+     * The card number, digits and optional spaces. The fake provider declines `4000000000000002` and accepts everything else; `4242424242424242` is the conventional success card.
+     * @minLength 12
+     * @maxLength 23
+     * @pattern ^[\d ]+$
+     */
+    cardNumber: string;
+}
+
+export interface ShippingMethod {
+    /** Stable id, frozen onto orders at checkout (standard, express, pickup). */
+    id: string;
+    /**
+     * Flat rate, in the shop's currency.
+     * @minimum 0
+     */
+    price: number;
+    /**
+     * Items total at which this method becomes free. Absent — it never does.
+     * @minimum 0
+     */
+    freeAbove?: number;
+}
+
+export interface ShippingMethodsResponse {
+    methods: ShippingMethod[];
+}
+
+export interface ShippingMethodsResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: ShippingMethodsResponse;
+}
+
+/**
+ * The tail of the order's lifecycle, as the courier sees it.
+ */
+export type ShipmentStatus = (typeof ShipmentStatus)[keyof typeof ShipmentStatus];
+
+export const ShipmentStatus = {
+    shipped: 'shipped',
+    delivered: 'delivered'
+} as const;
+
+export interface Shipment {
+    id: Id;
+    orderId: Id;
+    /** The courier's handle on the parcel. */
+    trackingCode: string;
+    /** The tail of the order's lifecycle, as the courier sees it. */
+    status: ShipmentStatus;
+    deliveredAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface ShipmentEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: Shipment;
+}
+
+export interface CourierAdvanceResponse {
+    /**
+     * How many parcels arrived on this tick.
+     * @minimum 0
+     */
+    advanced: number;
+}
+
+export interface CourierAdvanceResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: CourierAdvanceResponse;
+}
+
+/**
+ * Why the units moved.
+ */
+export type StockMovementReason = (typeof StockMovementReason)[keyof typeof StockMovementReason];
+
+export const StockMovementReason = {
+    order: 'order',
+    'order-cancelled': 'order-cancelled',
+    adjustment: 'adjustment',
+    restock: 'restock'
+} as const;
+
+export interface StockMovement {
+    id: Id;
+    productId: Id;
+    /** Signed — a sale is negative, a return or restock positive. */
+    delta: number;
+    /** Why the units moved. */
+    reason: StockMovementReason;
+    /** What caused it, when something did — the order id, typically. */
+    reference?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface StockMovementsResponse {
+    items: StockMovement[];
+}
+
+export interface StockMovementsResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: StockMovementsResponse;
+}
+
+export interface RestockRequest {
+    productId: Id;
+    /**
+     * How many units arrived. Corrections downward are the admin product form's absolute stock write.
+     * @minimum 1
+     */
+    quantity: number;
+}
+
+export interface RestockResponse {
+    productId: Id;
+    /**
+     * The shelf count after the units landed.
+     * @minimum 0
+     */
+    stock: number;
+}
+
+export interface RestockResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: RestockResponse;
 }
 
 /**
@@ -1326,6 +1522,13 @@ export type ListOrdersParams = {
 
 export type DeleteOrderByIdParams = {
     hardDelete?: boolean;
+};
+
+export type ListStockMovementsParams = {
+    /**
+     * Narrow to one product's movements
+     */
+    productId?: Id;
 };
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -2768,7 +2971,7 @@ export const hardDeleteOrderById = (
 };
 
 /**
- * Cancels the order identified by `{id}` — the one order write a customer can make. Only a `pending` order can be cancelled this way; `paid`, `processing` and later statuses each need their own flow (refund, return), which an admin drives through `PUT /orders/{id}`. A non-admin can cancel only their own orders; an admin can cancel anyone's. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
+ * Cancels the order identified by `{id}` — the one order write a customer can make. A `pending` or `paid` order can be cancelled this way; cancelling a paid one refunds its payment. `processing` and later statuses each need their own flow (return), which an admin drives through `PUT /orders/{id}`. A non-admin can cancel only their own orders; an admin can cancel anyone's. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
  * @summary Cancel order
  */
 export const cancelOrderById = (
@@ -2788,6 +2991,132 @@ export const getOrderInvoice = (
 ) => {
     return orvalMutator<Blob>(
         { url: `/orders/${id}/invoice`, method: 'GET', responseType: 'blob' },
+        options
+    );
+};
+
+/**
+ * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact); an order whose money already moved answers 409. The intent is the thing the card dialog confirms.
+ * @summary Create a payment intent
+ */
+export const createPaymentIntent = (
+    createPaymentIntentRequest: CreatePaymentIntentRequest,
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>(
+        {
+            url: `/payments/intent`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createPaymentIntentRequest
+        },
+        options
+    );
+};
+
+/**
+ * The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. Admins read anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments/intent`.
+ * @summary Get the payment behind an order
+ */
+export const getPaymentByOrder = (
+    orderId: Id,
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>(
+        { url: `/payments/order/${orderId}`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * The card dialog's submit. The provider charges first (that is how PSPs work — the money moves before your database hears about it), then the order is moved `pending → paid` by a conditional write; if the order slipped away in between, the charge is refunded on the spot. A decline answers 409 with `errors[].code` `PAYMENT_DECLINED` and is retryable — submit the same payment again with another card. The fake provider declines exactly one number, documented on `ConfirmPaymentRequest.cardNumber`.
+ * @summary Confirm a payment
+ */
+export const confirmPayment = (
+    id: string,
+    confirmPaymentRequest: ConfirmPaymentRequest,
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>(
+        {
+            url: `/payments/${id}/confirm`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: confirmPaymentRequest
+        },
+        options
+    );
+};
+
+/**
+ * The shipping methods this shop offers — flat rates and free-above thresholds. Public, because what shipping costs is pre-purchase information; the authoritative pricing still happens at checkout, against the lines actually bought, so a client showing these numbers cannot commit the shop to a stale rate.
+ * @summary List shipping methods
+ */
+export const listShippingMethods = (
+    options?: SecondParameter<typeof orvalMutator<ShippingMethodsResponseEnvelope>>
+) => {
+    return orvalMutator<ShippingMethodsResponseEnvelope>(
+        { url: `/delivery/methods`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * The parcel for one of the caller's orders — tracking code and whether it has arrived. Ownership is the order's, read through the same scope every order read uses. No parcel yet (the order has not reached `shipped`) is a 404 — absence is the answer.
+ * @summary Get the shipment behind an order
+ */
+export const getShipmentByOrder = (
+    orderId: Id,
+    options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
+) => {
+    return orvalMutator<ShipmentEnvelope>(
+        { url: `/delivery/order/${orderId}`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Every parcel currently `shipped` arrives — the order moves `shipped → delivered` through the same conditional write the rest of the status machine uses, then the shipment is stamped. Admin, and deliberately a button rather than a schedule — this repo has no cron, so an operator (or the demo) is the timer, exactly like the expired-token purge.
+ * @summary Advance the fake courier
+ */
+export const advanceCourier = (
+    options?: SecondParameter<typeof orvalMutator<CourierAdvanceResponseEnvelope>>
+) => {
+    return orvalMutator<CourierAdvanceResponseEnvelope>(
+        { url: `/delivery/advance`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * The ledger, newest first — every signed change to a shelf count with the why attached (order, cancel, adjustment, restock). Optionally one product's story via `productId`. Admin — customers see stock as a number on the product page.
+ * @summary List stock movements
+ */
+export const listStockMovements = (
+    params?: ListStockMovementsParams,
+    options?: SecondParameter<typeof orvalMutator<StockMovementsResponseEnvelope>>
+) => {
+    return orvalMutator<StockMovementsResponseEnvelope>(
+        { url: `/inventory/movements`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * Puts units on a shelf through the same conditional increment every other movement uses, and writes the ledger row through the same announcement — so a restock and a sale tell the same kind of story. Answers the shelf count after the units landed.
+ * @summary Restock a product
+ */
+export const restockProduct = (
+    restockRequest: RestockRequest,
+    options?: SecondParameter<typeof orvalMutator<RestockResponseEnvelope>>
+) => {
+    return orvalMutator<RestockResponseEnvelope>(
+        {
+            url: `/inventory/restock`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: restockRequest
+        },
         options
     );
 };
@@ -2928,3 +3257,15 @@ export type HardDeleteOrderByIdResult = NonNullable<
 >;
 export type CancelOrderByIdResult = NonNullable<Awaited<ReturnType<typeof cancelOrderById>>>;
 export type GetOrderInvoiceResult = NonNullable<Awaited<ReturnType<typeof getOrderInvoice>>>;
+export type CreatePaymentIntentResult = NonNullable<
+    Awaited<ReturnType<typeof createPaymentIntent>>
+>;
+export type GetPaymentByOrderResult = NonNullable<Awaited<ReturnType<typeof getPaymentByOrder>>>;
+export type ConfirmPaymentResult = NonNullable<Awaited<ReturnType<typeof confirmPayment>>>;
+export type ListShippingMethodsResult = NonNullable<
+    Awaited<ReturnType<typeof listShippingMethods>>
+>;
+export type GetShipmentByOrderResult = NonNullable<Awaited<ReturnType<typeof getShipmentByOrder>>>;
+export type AdvanceCourierResult = NonNullable<Awaited<ReturnType<typeof advanceCourier>>>;
+export type ListStockMovementsResult = NonNullable<Awaited<ReturnType<typeof listStockMovements>>>;
+export type RestockProductResult = NonNullable<Awaited<ReturnType<typeof restockProduct>>>;

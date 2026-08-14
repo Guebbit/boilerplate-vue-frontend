@@ -45,15 +45,24 @@ export const computeOrderTotals = (
  * never disagree about their shape.
  */
 export const createMockOrder = (
-    values: Pick<Order, 'userId' | 'email' | 'items'> & Pick<Partial<Order>, 'status' | 'notes'>
-): Order => ({
-    id: `order-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-    userId: values.userId,
-    email: values.email,
-    items: values.items,
-    ...computeOrderTotals(values.items),
-    status: values.status ?? 'pending',
-    notes: values.notes,
-    createdAt: getIsoDateNow(),
-    updatedAt: getIsoDateNow()
-});
+    values: Pick<Order, 'userId' | 'email' | 'items'> &
+        Pick<Partial<Order>, 'status' | 'notes' | 'shippingMethod' | 'shippingCost'>
+): Order => {
+    const totals = computeOrderTotals(values.items);
+    return {
+        id: `order-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        userId: values.userId,
+        email: values.email,
+        items: values.items,
+        ...totals,
+        // The BE's rule exactly: what the customer owes is the lines plus the frozen shipping.
+        totalPrice: Math.round((totals.totalPrice + (values.shippingCost ?? 0)) * 100) / 100,
+        status: values.status ?? 'pending',
+        notes: values.notes,
+        ...(values.shippingMethod === undefined
+            ? {}
+            : { shippingMethod: values.shippingMethod, shippingCost: values.shippingCost }),
+        createdAt: getIsoDateNow(),
+        updatedAt: getIsoDateNow()
+    };
+};

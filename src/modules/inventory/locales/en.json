@@ -1,0 +1,20 @@
+{
+    "inventory-page": {
+        "page-title": "Inventory",
+        "restock-title": "Restock",
+        "label-product": "Product",
+        "label-quantity": "Quantity",
+        "button-restock": "Restock",
+        "success-restock": "Stock updated — the shelf now holds {stock}.",
+        "empty": "No stock movements yet — sell something, cancel something, or restock.",
+        "column-when": "When",
+        "column-product": "Product",
+        "column-delta": "Change",
+        "column-reason": "Reason",
+        "column-reference": "Reference",
+        "reason-order": "Order",
+        "reason-order-cancelled": "Order cancelled",
+        "reason-adjustment": "Adjustment",
+        "reason-restock": "Restock"
+    }
+}

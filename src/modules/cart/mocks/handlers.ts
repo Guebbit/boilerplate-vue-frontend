@@ -25,6 +25,9 @@ import {
 } from '@mocks/mockShared.ts';
 import { toMockJsonResponse } from '@mocks/mockTransport.ts';
 import { MockErrorResponse } from '@mocks/mockValidation.ts';
+// The BE's event listeners, mock-side, from the support layer (see mockCommerce's docblock):
+// the checkout prices its shipping and tells the inventory ledger about the units it took.
+import { priceMockShipping, recordMockStockMovement } from '@mocks/mockCommerce.ts';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
@@ -133,6 +136,26 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
     http.post(`${API_BASE}/cart/checkout`, ({ request }) =>
         readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
             /*
+             * The shipping choice is validated BEFORE any stock moves, exactly like the BE: an
+             * unknown method refuses the whole checkout while nothing has been written yet.
+             */
+            const shippingMethodId = requestBody.shippingMethodId
+                ? String(requestBody.shippingMethodId)
+                : undefined;
+            if (
+                shippingMethodId !== undefined &&
+                priceMockShipping(shippingMethodId, 0) === undefined
+            )
+                return toMockJsonResponse(
+                    createErrorEnvelope(
+                        404,
+                        'CART_SHIPPING_METHOD_NOT_FOUND',
+                        'The chosen shipping method does not exist.'
+                    ),
+                    { status: 404, schema: MockErrorResponse }
+                );
+
+            /*
              * The stock gate, mirroring the BE's conditional decrement: a line over the shelf
              * refuses the whole checkout with the same code, and a completed one takes its
              * units — the storefront's counts move under the demo exactly as they would live.
@@ -163,15 +186,41 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
                     'mock@example.com'
             );
 
+            const orderItems = mockDatabase.sampleCartItems.map((item) =>
+                cartItemToOrderItem(item)
+            );
+            const itemsTotal = orderItems.reduce(
+                (sum, { product, quantity }) => sum + (product.price ?? 0) * quantity,
+                0
+            );
+
+            // The cost, priced against the lines being bought — the same free-above rule the
+            // BE freezes at checkout. Validity was checked before the stock moved.
+            const shippingCost =
+                shippingMethodId === undefined
+                    ? undefined
+                    : priceMockShipping(shippingMethodId, itemsTotal);
+
             const createdOrder = createMockOrder({
                 userId: mockDatabase.currentAuthenticatedUserId ?? 'anonymous',
                 email,
-                items: mockDatabase.sampleCartItems.map((item) => cartItemToOrderItem(item)),
+                items: orderItems,
                 notes: requestBody.notes ? String(requestBody.notes) : undefined,
-                status: 'pending'
+                status: 'pending',
+                ...(shippingMethodId === undefined
+                    ? {}
+                    : { shippingMethod: shippingMethodId, shippingCost })
             });
 
             mockDatabase.sampleOrders.unshift(createdOrder);
+            // The ledger hears the sale, one row per line — the BE's STOCK_MOVED, mock-side.
+            for (const item of mockDatabase.sampleCartItems)
+                recordMockStockMovement({
+                    productId: item.productId,
+                    delta: -item.quantity,
+                    reason: 'order',
+                    reference: createdOrder.id
+                });
             mockDatabase.sampleCartItems = [];
             // The confirmation the BE checkout sends, bought lines and all — into the outbox,
             // where the journey spec reads it the way a customer reads their inbox.
