@@ -2,7 +2,7 @@ import { getLocales, getLocaleDictionary } from '@api';
 import {
     API_NAMESPACE,
     supportedLanguages,
-    type ITranslationDictionaries
+    type TranslationDictionaries
 } from '@/infrastructure/i18n.ts';
 
 /**
@@ -45,9 +45,9 @@ export const fetchApiLocales = (): Promise<string[]> =>
  * @returns The API's messages, or an empty dictionary when the API has no such locale or cannot
  *  be reached. Never rejects.
  */
-export const fetchApiDictionary = (locale: string): Promise<ITranslationDictionaries> =>
+export const fetchApiDictionary = (locale: string): Promise<TranslationDictionaries> =>
     getLocaleDictionary(locale)
-        .then((response) => (response.data?.messages ?? {}) as ITranslationDictionaries)
+        .then((response) => (response.data?.messages ?? {}) as TranslationDictionaries)
         .catch(() => ({}));
 
 /**
@@ -83,8 +83,8 @@ export const mergeApiLocales = (): Promise<string[]> =>
  */
 export const withApiDictionary = (
     locale: string,
-    ownMessages: ITranslationDictionaries
-): Promise<ITranslationDictionaries> =>
+    ownMessages: TranslationDictionaries
+): Promise<TranslationDictionaries> =>
     fetchApiDictionary(locale).then((apiMessages) => ({
         ...ownMessages,
         [API_NAMESPACE]: apiMessages

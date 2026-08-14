@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import { canAccess, enforceRouteAccess } from '@/app/middlewares/authentications';
-import type { TRouteAccess } from '@/app/middlewares/authentications';
+import type { RouteAccess } from '@/app/middlewares/authentications';
 import type { RouteLocationNormalized } from 'vue-router';
 
 const addMessageMock = vi.fn();
@@ -31,7 +31,7 @@ vi.mock('@/infrastructure/i18n.ts', () => ({
 }));
 
 /** A route carrying just what `enforceRouteAccess` reads off it. */
-const route = (access?: TRouteAccess) =>
+const route = (access?: RouteAccess) =>
     ({
         fullPath: '/en/target',
         params: { locale: 'en' },

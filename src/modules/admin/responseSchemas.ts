@@ -1,5 +1,5 @@
 import * as schemas from '@api/schemas';
-import type { IResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMap';
+import type { ResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMap';
 
 /**
  * Response-envelope schemas for every admin endpoint this module calls.
@@ -14,7 +14,7 @@ import type { IResponseSchemaRoute } from '@/infrastructure/http/responseSchemaM
  * matching `<PascalCase-operationId>Response` export from `@api/schemas`, so the two can be diffed
  * by eye when an endpoint is added or removed.
  */
-export const adminResponseSchemas: IResponseSchemaRoute[] = [
+export const adminResponseSchemas: ResponseSchemaRoute[] = [
     {
         method: 'GET',
         pattern: /^\/observability\/events$/,

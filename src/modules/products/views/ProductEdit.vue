@@ -54,7 +54,7 @@ const { currentProduct, loading } = storeToRefs(useProductsStore());
 /**
  * Form model used by the update workflow.
  */
-interface IProductEditForm {
+interface ProductEditForm {
     title?: string;
     price?: number;
     description?: string;
@@ -89,7 +89,7 @@ const {
     handleSubmit,
     activateAutoHydrate,
     applyServerErrors
-} = useStructureFormValidation<IProductEditForm>({}, editSchema, {
+} = useStructureFormValidation<ProductEditForm>({}, editSchema, {
     revalidateOn: locale,
     // The toolkit reveals the errors, waits for the render and focuses the first invalid field.
     formElement,

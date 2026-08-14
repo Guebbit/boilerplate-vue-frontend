@@ -5,10 +5,10 @@ import {
     getObservabilityAuditLogs
 } from '@api';
 import type { ObservabilityHealth, ObservabilityMetricsSummary, AuditEventItem } from '@types';
-import type { IAdminAuditFilters } from '@/modules/admin/types.ts';
+import type { AdminAuditFilters } from '@/modules/admin/types.ts';
 import { useAsyncAction } from '@/infrastructure/useAsyncAction.ts';
 
-export interface IUseAdminObservabilityReturn {
+export interface UseAdminObservabilityReturn {
     health: Ref<ObservabilityHealth | undefined>;
     metrics: Ref<ObservabilityMetricsSummary | undefined>;
     auditEvents: ComputedRef<AuditEventItem[]>;
@@ -21,7 +21,7 @@ export interface IUseAdminObservabilityReturn {
     errorAudit: Ref<string | undefined>;
     fetchHealth: () => Promise<void>;
     fetchMetrics: () => Promise<void>;
-    fetchAuditLogs: (filters?: IAdminAuditFilters) => Promise<void>;
+    fetchAuditLogs: (filters?: AdminAuditFilters) => Promise<void>;
     fetchAll: () => Promise<void>;
 }
 
@@ -40,7 +40,7 @@ export interface IUseAdminObservabilityReturn {
  * @returns Shared state (payloads, per-call loading flags and error messages) plus the four
  *  fetchers.
  */
-export const useAdminObservability = (): IUseAdminObservabilityReturn => {
+export const useAdminObservability = (): UseAdminObservabilityReturn => {
     const {
         data: health,
         error: errorHealth,
@@ -69,7 +69,7 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
         loading: loadingAudit,
         run: runAuditLogs
     } = useAsyncAction(
-        (filters: IAdminAuditFilters = {}) =>
+        (filters: AdminAuditFilters = {}) =>
             getObservabilityAuditLogs({
                 actor: filters.actor,
                 action: filters.action,
@@ -102,7 +102,7 @@ export const useAdminObservability = (): IUseAdminObservabilityReturn => {
      * @param filters - Actor/action/outcome/since/limit criteria; defaults to no filtering at all.
      * @returns A promise resolving once `auditEvents` + `auditTotal`, or `errorAudit`, are set.
      */
-    const fetchAuditLogs = (filters: IAdminAuditFilters = {}) =>
+    const fetchAuditLogs = (filters: AdminAuditFilters = {}) =>
         runAuditLogs(filters).then(() => {});
 
     /**

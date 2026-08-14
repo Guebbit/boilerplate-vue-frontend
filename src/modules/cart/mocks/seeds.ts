@@ -5,11 +5,11 @@
  * backend's `src/modules/cart/seeds.ts`.
  */
 import type { CartItem } from '@types';
-import type { IMockSeedContext, IMockSeedData } from '@/kernel/registry';
+import type { MockSeedContext, MockSeedData } from '@/kernel/registry';
 import { seedUsers } from '@mocks/seed-identities.ts';
 
 declare module '@/kernel/registry' {
-    interface IMockSeedData {
+    interface MockSeedData {
         sampleCartItems: CartItem[];
     }
 }
@@ -38,7 +38,7 @@ const createSeedCartItems = (): CartItem[] =>
 export const buildCartMockSeeds = async ({
     profile,
     soFar
-}: IMockSeedContext): Promise<Partial<IMockSeedData>> =>
+}: MockSeedContext): Promise<Partial<MockSeedData>> =>
     profile === 'random'
         ? import('./seedsRandom.ts').then((random) => ({
               sampleCartItems: random.buildRandomCartItems(soFar.sampleProducts ?? [])

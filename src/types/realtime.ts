@@ -1,17 +1,17 @@
-import type { IObservabilityMetricsPayload } from './realtime.generated';
+import type { ObservabilityMetricsPayload } from './realtime.generated';
 
 /**
  * A single observability SSE event rendered as a feed entry.
  * `kind` maps to the three named metrics events so they can be styled/labelled distinctly.
  */
-export interface IRealtimeMetricsEntry {
+export interface RealtimeMetricsEntry {
     id: string;
     kind: 'snapshot' | 'update' | 'heartbeat';
     timestamp: string;
-    payload: IObservabilityMetricsPayload;
+    payload: ObservabilityMetricsPayload;
 }
 
-export type IRealtimeConnectionStatus =
+export type RealtimeConnectionStatus =
     | 'idle'
     | 'connecting'
     | 'open'

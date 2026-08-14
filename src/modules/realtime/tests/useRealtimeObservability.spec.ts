@@ -12,8 +12,8 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import type { ISseClientCallbacks } from '@/infrastructure/createSseClient';
-import type { IMetricsSnapshotEvent, ISseEventName } from '@types';
+import type { SseClientCallbacks } from '@/infrastructure/createSseClient';
+import type { MetricsSnapshotEvent, SseEventName } from '@types';
 
 const close = vi.fn();
 
@@ -23,7 +23,7 @@ const close = vi.fn();
  * event names, the callbacks — would be a type error rather than a check.
  */
 const createSseClient = vi.fn(
-    (_url?: string, _eventNames?: readonly ISseEventName[], _callbacks?: ISseClientCallbacks) => ({
+    (_url?: string, _eventNames?: readonly SseEventName[], _callbacks?: SseClientCallbacks) => ({
         close
     })
 );
@@ -34,7 +34,7 @@ vi.mock('@/infrastructure/createSseClient', () => ({
 }));
 
 /** Minimal payload accepted by every metrics event on the stream. */
-const makeEvent = (timestamp: string): IMetricsSnapshotEvent => ({
+const makeEvent = (timestamp: string): MetricsSnapshotEvent => ({
     timestamp,
     uptimeSeconds: 60,
     memory: { rss: 1, heapUsed: 1, heapTotal: 2, external: 0 },
@@ -57,7 +57,7 @@ const loadComposable = async () => {
 };
 
 /** The callbacks handed to the last `createSseClient` call. */
-const lastCallbacks = () => createSseClient.mock.calls.at(-1)?.[2] as ISseClientCallbacks;
+const lastCallbacks = () => createSseClient.mock.calls.at(-1)?.[2] as SseClientCallbacks;
 
 describe('useRealtimeObservability', () => {
     beforeEach(() => {

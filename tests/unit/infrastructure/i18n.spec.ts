@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createI18n } from 'vue-i18n';
-import type { ITranslationDictionaries } from '@/infrastructure/i18n.ts';
+import type { TranslationDictionaries } from '@/infrastructure/i18n.ts';
 import {
     API_NAMESPACE,
     apiText,
@@ -320,7 +320,7 @@ describe('apiText and the reserved api.* namespace', () => {
         // Re-register the bundled dictionary, dropping anything merged under `api.*`.
         // `_updateLocale` clones, so this cannot write back into the imported JSON — which is
         // exactly the property the clone exists for.
-        void _updateLocale(i18n, 'en', enMessages as ITranslationDictionaries);
+        void _updateLocale(i18n, 'en', enMessages as TranslationDictionaries);
     });
 
     it('uses this app’s own copy when the API dictionary is absent', () => {
@@ -463,13 +463,13 @@ describe('module-load configuration', () => {
 describe('the customSnakeCase modifier', () => {
     it('joins a linked message’s words with underscores', () => {
         return _updateLocale(i18n, 'en', {
-            ...(enMessages as ITranslationDictionaries),
+            ...(enMessages as TranslationDictionaries),
             ['modifier-probe']: "@.customSnakeCase:{'modifier-source'}",
             ['modifier-source']: 'two words'
         }).then(() => {
             i18n.global.locale.value = 'en';
             expect(i18n.global.t('modifier-probe')).toBe('two_words');
-            return _updateLocale(i18n, 'en', enMessages as ITranslationDictionaries);
+            return _updateLocale(i18n, 'en', enMessages as TranslationDictionaries);
         });
     });
 });

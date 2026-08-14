@@ -22,7 +22,7 @@ import type {
  * Search criteria for the users list, i.e. everything but pagination (which is
  * owned by the toolkit's search state).
  */
-type IUsersFilters = Omit<SearchUsersRequest, 'page' | 'pageSize'>;
+type UsersFilters = Omit<SearchUsersRequest, 'page' | 'pageSize'>;
 
 /**
  * Users CRUD, paginated search and avatar upload.
@@ -60,7 +60,7 @@ export const useUsersStore = defineStore('users', () => {
     } = useStructureCrudApi<
         User,
         string,
-        IUsersFilters,
+        UsersFilters,
         CreateUserRequestMultipart,
         UpdateUserByIdRequestMultipart,
         AxiosRequestConfig

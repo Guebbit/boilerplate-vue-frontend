@@ -13,7 +13,7 @@
  * `src/modules.ts` happens to enable.
  */
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import type { IAppModule, TMockProfile } from '@/kernel/registry';
+import type { AppModule, MockProfile } from '@/kernel/registry';
 
 /**
  * Builds the database the way the real composition roots do, through a fresh module instance.
@@ -21,7 +21,7 @@ import type { IAppModule, TMockProfile } from '@/kernel/registry';
  * `resetModules()` matters for the random profile: `resolveMockSeed()` memoises at module scope, so
  * two builds under different `RANDOM_DATA_SEED` values would otherwise share the first seed.
  */
-const buildDatabase = async (profile: TMockProfile): Promise<Record<string, unknown>> => {
+const buildDatabase = async (profile: MockProfile): Promise<Record<string, unknown>> => {
     vi.resetModules();
 
     const { collectModuleMockSeeds } = await import('@/kernel/registry');
@@ -50,7 +50,7 @@ const normalizeVolatileDates = (value: unknown): unknown =>
     ) as unknown;
 
 /** A stand-in module contributing one field named after itself, for the collector's own edge cases. */
-const makeStubModule = (name: string, after: string[] = []): IAppModule => ({
+const makeStubModule = (name: string, after: string[] = []): AppModule => ({
     name,
     routes: [],
     mockSeeds: { after, build: () => Promise.resolve({ [name]: [] } as never) }
@@ -106,7 +106,7 @@ describe('dependency ordering', () => {
                                 return appModule.mockSeeds!.build(context);
                             }
                         }
-                    }) satisfies IAppModule
+                    }) satisfies AppModule
             );
 
         await collectModuleMockSeeds(instrumented, 'seed');
@@ -142,7 +142,7 @@ describe('dependency ordering', () => {
         vi.resetModules();
         const { collectModuleMockSeeds } = await import('@/kernel/registry');
 
-        const silent: IAppModule = {
+        const silent: AppModule = {
             name: 'silent',
             routes: [],
             mockSeeds: { build: () => Promise.resolve({}) }

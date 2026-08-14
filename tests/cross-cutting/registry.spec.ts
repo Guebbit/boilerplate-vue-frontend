@@ -17,7 +17,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RouteRecordRaw } from 'vue-router';
 import { enabledModules } from '@/modules';
-import type { ITranslationDictionaries } from '@/infrastructure/i18n';
+import type { TranslationDictionaries } from '@/infrastructure/i18n';
 import { validateModules } from '@/kernel/registry';
 
 /** Every route name a record tree declares, at any depth. */
@@ -88,9 +88,9 @@ const localeCodes = [
 /** Every contributor's dictionary for one locale, the shared one included, labelled by owner. */
 const dictionariesFor = (
     locale: string
-): Promise<{ owner: string; dictionary: ITranslationDictionaries }[]> =>
+): Promise<{ owner: string; dictionary: TranslationDictionaries }[]> =>
     Promise.all([
-        (import(`@/locales/${locale}.json`) as Promise<{ default: ITranslationDictionaries }>).then(
+        (import(`@/locales/${locale}.json`) as Promise<{ default: TranslationDictionaries }>).then(
             ({ default: dictionary }) => ({ owner: '<shared>', dictionary })
         ),
         ...enabledModules
@@ -135,7 +135,7 @@ describe.each(localeCodes)('locale dictionaries — %s', (locale) => {
                 loaded.map(({ owner, dictionary }) => ({
                     owner,
                     keys: Object.keys(
-                        (dictionary[CO_OWNED_NAMESPACE] as ITranslationDictionaries | undefined) ??
+                        (dictionary[CO_OWNED_NAMESPACE] as TranslationDictionaries | undefined) ??
                             {}
                     )
                 }))

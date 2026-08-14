@@ -33,7 +33,7 @@ const { createUser } = useUsersStore();
 /**
  * Form definition
  */
-interface IUserCreateForm {
+interface UserCreateForm {
     email?: string;
     username?: string;
     password?: string;
@@ -52,8 +52,11 @@ const createSchema = usersSchema.pick({ email: true, username: true }).extend({
     imageUpload: imageUploadSchema
 });
 
-const { form, formErrors, isSubmitting, handleSubmit } =
-    useStructureFormValidation<IUserCreateForm>({}, createSchema, { revalidateOn: locale });
+const { form, formErrors, isSubmitting, handleSubmit } = useStructureFormValidation<UserCreateForm>(
+    {},
+    createSchema,
+    { revalidateOn: locale }
+);
 
 /**
  * Avatar upload progress, shown by `FormImageUpload` while the multipart create is in flight.

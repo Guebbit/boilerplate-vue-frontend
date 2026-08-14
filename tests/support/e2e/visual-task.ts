@@ -34,7 +34,7 @@ const PIXEL_THRESHOLD = 0.15;
 /** Fraction of the image allowed to differ before this counts as a regression. */
 const MAX_DIFFERING_RATIO = 0.002;
 
-export interface ICompareOptions {
+export interface CompareOptions {
     /** Snapshot name, used for the baseline and diff filenames. */
     name: string;
     /** Absolute path of the screenshot Cypress just wrote. */
@@ -47,7 +47,7 @@ export interface ICompareOptions {
     update: boolean;
 }
 
-export interface ICompareResult {
+export interface CompareResult {
     /** `true` when the snapshot matches, or when a baseline was just created. */
     passed: boolean;
     /** Human-readable outcome for the test's failure message. */
@@ -67,7 +67,7 @@ export interface ICompareResult {
  *      pixel is meaningless, and a size change is itself a layout regression.
  *   3. **Same size** → compare, and fail when more than `MAX_DIFFERING_RATIO` differs.
  */
-export const compareSnapshot = (options: ICompareOptions): ICompareResult => {
+export const compareSnapshot = (options: CompareOptions): CompareResult => {
     const { name, actualPath, baselineDirectory, diffDirectory, update } = options;
     const baselinePath = path.join(baselineDirectory, `${name}.png`);
 

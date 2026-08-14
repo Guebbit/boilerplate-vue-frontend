@@ -28,7 +28,7 @@ const route = useRoute();
 /**
  * Form logics
  */
-interface IUserSignupForm {
+interface UserSignupForm {
     email?: string;
     username?: string;
     password?: string;
@@ -67,7 +67,7 @@ const {
     isSubmitting,
     handleSubmit,
     applyServerErrors
-} = useStructureFormValidation<IUserSignupForm>(
+} = useStructureFormValidation<UserSignupForm>(
     {
         email: '',
         username: '',

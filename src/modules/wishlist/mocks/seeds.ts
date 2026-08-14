@@ -5,11 +5,11 @@
  * backend's `src/modules/wishlist/seeds.ts`.
  */
 import type { WishlistItem } from '@types';
-import type { IMockSeedContext, IMockSeedData } from '@/kernel/registry';
+import type { MockSeedContext, MockSeedData } from '@/kernel/registry';
 import { seedWishlists } from '@mocks/seed-identities.ts';
 
 declare module '@/kernel/registry' {
-    interface IMockSeedData {
+    interface MockSeedData {
         sampleWishlistItems: WishlistItem[];
     }
 }
@@ -34,7 +34,7 @@ const createSeedWishlistItems = (): WishlistItem[] =>
 export const buildWishlistMockSeeds = async ({
     profile,
     soFar
-}: IMockSeedContext): Promise<Partial<IMockSeedData>> =>
+}: MockSeedContext): Promise<Partial<MockSeedData>> =>
     profile === 'random'
         ? {
               sampleWishlistItems: (soFar.sampleProducts ?? [])

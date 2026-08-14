@@ -34,7 +34,7 @@ import {
     formatSharedFileProblems,
     hashFile,
     sharedFileProblems,
-    type TRepoRole
+    type RepoRole
 } from '../../../scripts/specIdentity';
 import { resolveBackendPath } from '../../../scripts/backendPath';
 
@@ -55,7 +55,7 @@ const makeRoot = (files: Record<string, string>): string => {
  * at different paths, so contents keyed by path would differ between the repos and every pair
  * would read as forked. What must match is the bytes, not the filename.
  */
-const sharedFiles = (role: TRepoRole, suffix = ''): Record<string, string> =>
+const sharedFiles = (role: RepoRole, suffix = ''): Record<string, string> =>
     Object.fromEntries(
         SHARED_FILES.map((shared, index) => [shared[role], `shared-${index} contents${suffix}`])
     );
@@ -74,20 +74,20 @@ const SPECTRAL = 'spectral.yaml';
 
 /** `sharedFiles(role)` with one entry replaced. */
 const sharedFilesWith = (
-    role: TRepoRole,
+    role: RepoRole,
     file: string,
     contents: string
 ): Record<string, string> => ({ ...sharedFiles(role), [file]: contents });
 
 /** `sharedFiles(role)` with one entry removed. */
-const withoutFile = (role: TRepoRole, file: string): Record<string, string> => {
+const withoutFile = (role: RepoRole, file: string): Record<string, string> => {
     const files = sharedFiles(role);
     delete files[file];
     return files;
 };
 
-const HERE: TRepoRole = 'frontend';
-const THERE: TRepoRole = 'backend';
+const HERE: RepoRole = 'frontend';
+const THERE: RepoRole = 'backend';
 
 /** A pair whose paths differ between the repos — the case a same-path check could not express. */
 const CROSS_PATH = SHARED_FILES.find(({ backend, frontend }) => backend !== frontend)!;

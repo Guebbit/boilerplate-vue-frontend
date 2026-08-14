@@ -11,7 +11,7 @@ import { loginContinueTo, SIGN_IN_ROUTE_NAME } from '@/app/router/navigation.ts'
 import { canAccess } from '@/app/middlewares/authentications.ts';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { collectModuleNavigation, sortNavigation } from '@/kernel/registry';
-import type { IAppNavigationEntry } from '@/kernel/registry';
+import type { AppNavigationEntry } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 
 const router = useRouter();
@@ -42,7 +42,7 @@ const drawer = ref(false);
  * `order` is shared across both sources and spaced by tens, so a shell entry and a module entry
  * can interleave.
  */
-const shellNavEntries: IAppNavigationEntry[] = [
+const shellNavEntries: AppNavigationEntry[] = [
     { name: 'Home', label: 'navigation.label-home', plural: 1, order: 10 },
     { name: 'Playground', label: 'navigation.label-playground', plural: 1, order: 20 },
     // One entry reaches all four prose pages — they cross-link at the bottom.

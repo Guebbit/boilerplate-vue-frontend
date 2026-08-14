@@ -4,13 +4,13 @@ import type { RouteLocationRaw, RouteLocationNamedRaw } from 'vue-router';
 // import it from "@/locales/it.json";
 // import en from "@/locales/en.json";
 
-export interface ITranslationDictionaries {
+export interface TranslationDictionaries {
     /*
      * Arrays are legitimate vue-i18n messages — `tm()` + `rt()` render them — and the static
      * pages use them for their paragraph and FAQ lists. Without the array arms, any dictionary
      * carrying one stops overlapping this type and every cast of a locale JSON fails to build.
      */
-    [key: string]: string | string[] | ITranslationDictionaries | ITranslationDictionaries[];
+    [key: string]: string | string[] | TranslationDictionaries | TranslationDictionaries[];
 }
 
 /**
@@ -96,7 +96,7 @@ export const loadedLanguages: string[] = [];
  * Populated by `registerLocaleContributors` from the composition root, for the same reason the
  * response-schema map is: `infrastructure` may not import `@/modules`, and this is the bottom tier.
  */
-let moduleLocaleLoaders: Record<string, (() => Promise<ITranslationDictionaries>)[]> = {};
+let moduleLocaleLoaders: Record<string, (() => Promise<TranslationDictionaries>)[]> = {};
 
 /**
  * Install the enabled modules' dictionary loaders, keyed by locale code.
@@ -112,7 +112,7 @@ let moduleLocaleLoaders: Record<string, (() => Promise<ITranslationDictionaries>
  * @param loadersByLocale - locale code → one loader per contributing module
  */
 export const registerLocaleContributors = (
-    loadersByLocale: Record<string, (() => Promise<ITranslationDictionaries>)[]>
+    loadersByLocale: Record<string, (() => Promise<TranslationDictionaries>)[]>
 ): void => {
     moduleLocaleLoaders = loadersByLocale;
 };
@@ -214,7 +214,7 @@ export function _loadLocale(i18n: I18n, locale: string): Promise<unknown> {
             // transform and every suite errors out instead of one mutant surviving.
             import(/* webpackChunkName: "locale-[request]" */ `@/locales/${locale}.json`)
                 // file found
-                .then((file: { default: ITranslationDictionaries }) =>
+                .then((file: { default: TranslationDictionaries }) =>
                     // shared dictionary in, module dictionaries merged on top by `_updateLocale`
                     _updateLocale(i18n, locale, file.default)
                         // then language changed
@@ -247,7 +247,7 @@ export function loadLocale(locale: string) {
  * @param messages - Nested translation dictionary for that locale.
  * @returns A promise (`nextTick`) resolving once Vue has flushed the update.
  */
-export function _updateLocale(i18n: I18n, locale: string, messages: ITranslationDictionaries) {
+export function _updateLocale(i18n: I18n, locale: string, messages: TranslationDictionaries) {
     // Could be already present and this is just an update
     if (!loadedLanguages.includes(locale)) loadedLanguages.push(locale);
     // Cloned, not registered by reference. `_loadLocale` passes the imported `en.json` module
@@ -286,7 +286,7 @@ export function _updateLocale(i18n: I18n, locale: string, messages: ITranslation
  * @param messages - Nested translation dictionary for that locale.
  * @returns A promise resolving once Vue has flushed the update.
  */
-export function updateLocale(locale: string, messages: ITranslationDictionaries) {
+export function updateLocale(locale: string, messages: TranslationDictionaries) {
     return _updateLocale(i18n, locale, messages);
 }
 
@@ -316,7 +316,7 @@ export function _ensureFallbackLoaded(i18n: I18n, locale: string): Promise<unkno
         // `import("")` that Vite cannot statically analyse, so the whole module fails to
         // transform and every suite errors out instead of one mutant surviving.
         import(/* webpackChunkName: "locale-[request]" */ `@/locales/${fallback}.json`)
-            .then((file: { default: ITranslationDictionaries }) =>
+            .then((file: { default: TranslationDictionaries }) =>
                 _updateLocale(i18n, fallback, file.default)
             )
             // A fallback with no local dictionary is a configuration choice, not an error.

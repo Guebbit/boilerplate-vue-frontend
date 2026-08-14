@@ -19,7 +19,7 @@
 /** Severity, most severe first. Position in this array IS the ordering. */
 const LEVELS = ['error', 'warn', 'info', 'debug'] as const;
 
-export type TLogLevel = (typeof LEVELS)[number];
+export type LogLevel = (typeof LEVELS)[number];
 
 /**
  * The area a message belongs to, matched against `VITE_APP_LOG_SCOPES`.
@@ -27,7 +27,7 @@ export type TLogLevel = (typeof LEVELS)[number];
  * A closed union rather than a free string, so a typo is a compile error instead of a message that
  * silently never appears. Add an area here when you add one.
  */
-export type TLogScope = 'router' | 'http' | 'observability' | 'demo';
+export type LogScope = 'router' | 'http' | 'observability' | 'demo';
 
 /**
  * The configured ceiling. Anything more verbose than this is dropped.
@@ -35,10 +35,10 @@ export type TLogScope = 'router' | 'http' | 'observability' | 'demo';
  * An unrecognised value falls back to the environment default rather than silencing everything: a
  * typo in an env var must not be the reason an error went unseen.
  */
-const resolveLevel = (): TLogLevel => {
+const resolveLevel = (): LogLevel => {
     const configured = (import.meta.env.VITE_APP_LOG_LEVEL as string | undefined)?.trim();
     if (configured && (LEVELS as readonly string[]).includes(configured))
-        return configured as TLogLevel;
+        return configured as LogLevel;
     return import.meta.env.DEV ? 'debug' : 'warn';
 };
 
@@ -62,11 +62,11 @@ const level = resolveLevel();
 const scopes = resolveScopes();
 
 /** Whether `candidate` is at or above the configured ceiling. */
-const meetsLevel = (candidate: TLogLevel): boolean =>
+const meetsLevel = (candidate: LogLevel): boolean =>
     LEVELS.indexOf(candidate) <= LEVELS.indexOf(level);
 
 /** Whether this area was opted into. `*` enables every area, present and future. */
-const inScope = (scope: TLogScope): boolean => scopes.has('*') || scopes.has(scope);
+const inScope = (scope: LogScope): boolean => scopes.has('*') || scopes.has(scope);
 
 /**
  * Area-scoped, lowest-severity output: request traces, navigation traces, lifecycle chatter.
@@ -74,7 +74,7 @@ const inScope = (scope: TLogScope): boolean => scopes.has('*') || scopes.has(sco
  * @param scope - Which area this belongs to; must be listed in `VITE_APP_LOG_SCOPES` to appear.
  * @param parts - Anything `console.debug` accepts.
  */
-export const debug = (scope: TLogScope, ...parts: unknown[]): void => {
+export const debug = (scope: LogScope, ...parts: unknown[]): void => {
     if (!meetsLevel('debug') || !inScope(scope)) return;
     // eslint-disable-next-line no-console -- this module is the single console boundary
     console.debug(`[${scope}]`, ...parts);
@@ -86,7 +86,7 @@ export const debug = (scope: TLogScope, ...parts: unknown[]): void => {
  * @param scope - Which area this belongs to; must be listed in `VITE_APP_LOG_SCOPES` to appear.
  * @param parts - Anything `console.info` accepts.
  */
-export const info = (scope: TLogScope, ...parts: unknown[]): void => {
+export const info = (scope: LogScope, ...parts: unknown[]): void => {
     if (!meetsLevel('info') || !inScope(scope)) return;
     // eslint-disable-next-line no-console -- this module is the single console boundary
     console.info(`[${scope}]`, ...parts);

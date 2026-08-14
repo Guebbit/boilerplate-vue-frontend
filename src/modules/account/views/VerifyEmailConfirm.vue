@@ -22,7 +22,7 @@ import { routerLinkI18n } from '@/infrastructure/i18n.ts';
  * button rather than an auto-fire on mount, so a mail scanner prefetching the URL cannot spend
  * the token before the human arrives.
  */
-interface IVerifyEmailConfirmForm {
+interface VerifyEmailConfirmForm {
     token?: string;
 }
 
@@ -33,7 +33,7 @@ const { addMessage } = useNotificationsStore();
 const { confirmEmailVerification } = useAccountStore();
 
 const { form, formErrors, showFormErrors, isSubmitting, handleSubmit } =
-    useStructureFormValidation<IVerifyEmailConfirmForm>(
+    useStructureFormValidation<VerifyEmailConfirmForm>(
         {
             token: typeof route.query.token === 'string' ? route.query.token : ''
         },

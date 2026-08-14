@@ -5,7 +5,7 @@ import {
     loadedLanguages,
     updateLocale,
     changeLanguage,
-    type ITranslationDictionaries
+    type TranslationDictionaries
 } from '@/infrastructure/i18n.ts';
 import { withApiDictionary } from '@/infrastructure/localeApi.ts';
 import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router';
@@ -69,12 +69,12 @@ const markLocaleDownloaded = (locale: string) => {
  * @param locale - locale code to load (e.g. `en`, `it`)
  * @returns tuple of `[locale, translationDictionary]`
  */
-export const fetchLanguageApi = (locale: string): Promise<[string, ITranslationDictionaries]> => {
+export const fetchLanguageApi = (locale: string): Promise<[string, TranslationDictionaries]> => {
     // Supported by neither side — `supportedLanguages` already includes anything the API
     // reported at boot. Nothing to import and nothing to fetch, so return before doing either.
     if (!supportedLanguages.includes(locale)) return Promise.resolve([locale, {}]);
 
-    return new Promise<ITranslationDictionaries>((resolve) => {
+    return new Promise<TranslationDictionaries>((resolve) => {
         // Simulated server latency, but only the first time a locale is ever
         // downloaded: afterwards it counts as locally cached and loads instantly
         const delayMs = getDownloadedLocales().includes(locale) ? 0 : 1000;
@@ -85,7 +85,7 @@ export const fetchLanguageApi = (locale: string): Promise<[string, ITranslationD
             import(`@/locales/${locale}.json`)
                 .then((module) => {
                     markLocaleDownloaded(locale);
-                    resolve(module.default as ITranslationDictionaries);
+                    resolve(module.default as TranslationDictionaries);
                 })
                 // A locale the API has and this app does not has no file to import: an empty UI
                 // dictionary is the correct result, not an error.
@@ -93,7 +93,7 @@ export const fetchLanguageApi = (locale: string): Promise<[string, ITranslationD
         }, delayMs);
     })
         .then((ownMessages) => withApiDictionary(locale, ownMessages))
-        .then((messages): [string, ITranslationDictionaries] => [locale, messages]);
+        .then((messages): [string, TranslationDictionaries] => [locale, messages]);
 };
 
 /**

@@ -24,7 +24,7 @@ import { ref } from 'vue';
 import { createPinia } from 'pinia';
 import AppNavigation from '@/app/components/AppNavigation.vue';
 import vuetify from '@/ui/vuetify';
-import type { TRouteAccess } from '@/app/middlewares/authentications';
+import type { RouteAccess } from '@/app/middlewares/authentications';
 
 const session = {
     isAuth: ref(false),
@@ -42,7 +42,7 @@ const session = {
 const registeredRoutes = ref<string[]>(['Login', 'Signup']);
 
 /** Access declared by the routes the invented modules link to, plus the shell's own two. */
-const routeAccess: Record<string, TRouteAccess | undefined> = {
+const routeAccess: Record<string, RouteAccess | undefined> = {
     Home: undefined,
     Playground: undefined,
     PublicThing: undefined,

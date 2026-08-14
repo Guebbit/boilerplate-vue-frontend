@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useRealtimeObservabilityStore } from '@/modules/realtime/realtimeObservability';
-import type { IMetricsSnapshotEvent } from '@types';
+import type { MetricsSnapshotEvent } from '@types';
 
 // Minimal valid metrics payload used across tests
-const makeSnapshot = (timestamp: string): IMetricsSnapshotEvent => ({
+const makeSnapshot = (timestamp: string): MetricsSnapshotEvent => ({
     timestamp,
     uptimeSeconds: 60,
     memory: { rss: 1, heapUsed: 1, heapTotal: 2, external: 0 },

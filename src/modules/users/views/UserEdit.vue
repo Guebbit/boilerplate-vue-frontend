@@ -53,7 +53,7 @@ const { currentUser, loading } = storeToRefs(useUsersStore());
 /**
  * Edit form data model.
  */
-interface IUserEditForm {
+interface UserEditForm {
     email?: string;
     password?: string;
     imageUpload?: File;
@@ -85,7 +85,7 @@ const {
     handleSubmit,
     activateAutoHydrate,
     applyServerErrors
-} = useStructureFormValidation<IUserEditForm>({}, editSchema, {
+} = useStructureFormValidation<UserEditForm>({}, editSchema, {
     revalidateOn: locale,
     // The toolkit reveals the errors, waits for the render and focuses the first invalid field.
     formElement,

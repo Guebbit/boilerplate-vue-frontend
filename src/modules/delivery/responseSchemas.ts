@@ -1,11 +1,11 @@
 import * as schemas from '@api/schemas';
-import type { IResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMap';
+import type { ResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMap';
 
 /**
  * Response-envelope schemas for every delivery endpoint this module calls. Registered through
  * the module manifest, exactly as the wishlist's are.
  */
-export const deliveryResponseSchemas: IResponseSchemaRoute[] = [
+export const deliveryResponseSchemas: ResponseSchemaRoute[] = [
     {
         method: 'GET',
         pattern: /^\/delivery\/methods$/,

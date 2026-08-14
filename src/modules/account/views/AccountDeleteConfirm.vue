@@ -18,7 +18,7 @@ import { routerLinkI18n } from '@/infrastructure/i18n.ts';
 /**
  * Form state: only the one-time token, prefilled from the email link.
  */
-interface IAccountDeleteConfirmForm {
+interface AccountDeleteConfirmForm {
     token?: string;
 }
 
@@ -37,7 +37,7 @@ const {
     isSubmitting,
     handleSubmit,
     applyServerErrors
-} = useStructureFormValidation<IAccountDeleteConfirmForm>(
+} = useStructureFormValidation<AccountDeleteConfirmForm>(
     {
         token: typeof route.query.token === 'string' ? route.query.token : ''
     },

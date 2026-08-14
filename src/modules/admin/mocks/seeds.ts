@@ -11,28 +11,28 @@
  * the only reader — see `src/modules/products/mocks/seeds.ts` for the general rule.
  */
 import type { AuditLogsPage, ObservabilityHealth, ObservabilityMetricsSummary } from '@types';
-import type { IMockSeedContext, IMockSeedData } from '@/kernel/registry';
+import type { MockSeedContext, MockSeedData } from '@/kernel/registry';
 
 /**
  * Stored as the INNER payloads (`ObservabilityHealthResponse['data']` and friends), not the
  * envelopes: the handlers build the envelope, exactly as they do for every other family.
  */
-export interface IMockObservability {
+export interface MockObservability {
     health: ObservabilityHealth;
     metrics: ObservabilityMetricsSummary;
     audit: AuditLogsPage;
 }
 
 declare module '@/kernel/registry' {
-    interface IMockSeedData {
-        observability: IMockObservability;
+    interface MockSeedData {
+        observability: MockObservability;
     }
 }
 
 const getIsoDateNow = () => new Date().toISOString();
 
 /* The fixed observability payloads the three `/observability/*` handlers serve under the seed profile. */
-const createSeedObservability = (): IMockObservability => ({
+const createSeedObservability = (): MockObservability => ({
     health: {
         status: 'ok',
         environment: 'development',
@@ -102,7 +102,7 @@ const createSeedObservability = (): IMockObservability => ({
 /** Operational telemetry derives from no domain's data, so this builder ignores `soFar`. */
 export const buildAdminMockSeeds = async ({
     profile
-}: IMockSeedContext): Promise<Partial<IMockSeedData>> =>
+}: MockSeedContext): Promise<Partial<MockSeedData>> =>
     profile === 'random'
         ? import('./seedsRandom.ts').then((random) => ({
               observability: random.buildRandomObservability()

@@ -10,7 +10,7 @@
 export type AdminTabKey = 'overview' | 'audit';
 
 /** A single KPI card shown in the admin overview. */
-export interface IAdminKpiCard {
+export interface AdminKpiCard {
     title: string;
     value: string | number;
     hint?: string;
@@ -18,7 +18,7 @@ export interface IAdminKpiCard {
 }
 
 /** Audit filter form state. */
-export interface IAdminAuditFilters {
+export interface AdminAuditFilters {
     actor?: string;
     action?: string;
     outcome?: 'success' | 'failure';

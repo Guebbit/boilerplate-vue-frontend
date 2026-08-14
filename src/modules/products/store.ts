@@ -25,7 +25,7 @@ import type {
  * Search criteria for the products list, i.e. everything but pagination (which
  * is owned by the toolkit's search state).
  */
-type IProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
+type ProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
 
 /**
  * Products CRUD, paginated search and image upload.
@@ -63,7 +63,7 @@ export const useProductsStore = defineStore('products', () => {
     } = useStructureCrudApi<
         Product,
         string,
-        IProductsFilters,
+        ProductsFilters,
         CreateProductRequestMultipart,
         UpdateProductByIdRequestMultipart,
         AxiosRequestConfig

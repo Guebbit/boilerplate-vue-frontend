@@ -13,7 +13,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import type { IAxiosResponseErrorData, IAxiosResponseErrorBody } from '@/infrastructure/http';
+import type { AxiosResponseErrorData, AxiosResponseErrorBody } from '@/infrastructure/http';
 
 const accessToken = ref<string | undefined>(undefined);
 
@@ -47,7 +47,7 @@ const make401 = (url: string) =>
         response: { status: 401, data: {}, headers: {} },
         isAxiosError: true,
         message: 'Request failed with status code 401'
-    }) as unknown as AxiosError<IAxiosResponseErrorData, IAxiosResponseErrorBody>;
+    }) as unknown as AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>;
 
 beforeEach(() => {
     accessToken.value = undefined;

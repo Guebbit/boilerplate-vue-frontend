@@ -15,7 +15,7 @@ import type { Payment, Shipment, ShippingMethod, StockMovement } from 'src/types
 import { getIsoDateNow, mockDatabase, recordMockEmail } from './mockShared.ts';
 
 declare module '@/kernel/registry' {
-    interface IMockSeedData {
+    interface MockSeedData {
         samplePayments: Payment[];
         sampleShipments: Shipment[];
         sampleStockMovements: StockMovement[];

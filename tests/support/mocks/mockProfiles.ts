@@ -12,15 +12,15 @@
  * together. This file names no domain, so adding or deleting one never touches it — which is the
  * whole reason the builders left. See `docs/theory/modules.md`.
  */
-import type { TMockProfile } from '@/kernel/registry';
+import type { MockProfile } from '@/kernel/registry';
 
-export type { TMockProfile } from '@/kernel/registry';
+export type { MockProfile } from '@/kernel/registry';
 
 /**
  * Which profile is active. Reads `VITE_MOCK_PROFILE`; anything other than the literal
  * `'random'` — including unset — is the default, fixed-seed profile.
  */
-export const resolveProfile = (): TMockProfile =>
+export const resolveProfile = (): MockProfile =>
     import.meta.env.VITE_MOCK_PROFILE === 'random' ? 'random' : 'seed';
 
 /**

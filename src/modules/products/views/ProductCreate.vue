@@ -33,7 +33,7 @@ const { createProduct } = useProductsStore();
 /**
  * Form definition
  */
-interface IProductCreateForm {
+interface ProductCreateForm {
     title?: string;
     price?: number;
     description?: string;
@@ -67,7 +67,7 @@ const createSchema = productsSchema.pick({ title: true, price: true }).extend({
  * starting value is already valid rather than an error waiting to be revealed.
  */
 const { form, formErrors, isSubmitting, handleSubmit } =
-    useStructureFormValidation<IProductCreateForm>(
+    useStructureFormValidation<ProductCreateForm>(
         { title: '', price: 0, description: '', active: true },
         createSchema,
         {

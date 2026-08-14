@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { RefreshCw } from 'lucide-vue-next';
 import type { ObservabilityHealth, ObservabilityMetricsSummary } from '@types';
-import type { IAdminKpiCard } from '@/modules/admin/types.ts';
+import type { AdminKpiCard } from '@/modules/admin/types.ts';
 import { EMPTY_VALUE } from '@/infrastructure/formatters.ts';
 
 const { t } = useI18n();
@@ -54,7 +54,7 @@ const formatErrorRate = (rate?: number): string => {
  * @returns `loading` while fetching, `error` on a failed call, `unknown` with no
  *  data, then `ok`/`warn` from the reported status.
  */
-const healthStatus = computed((): IAdminKpiCard['status'] => {
+const healthStatus = computed((): AdminKpiCard['status'] => {
     if (loading.value) return 'loading';
     if (props.healthError) return 'error';
     if (!props.health) return 'unknown';
@@ -67,7 +67,7 @@ const healthStatus = computed((): IAdminKpiCard['status'] => {
  * @returns `ok` when the database reports itself connected, `error` otherwise,
  *  `unknown` with no health data.
  */
-const databaseStatus = computed((): IAdminKpiCard['status'] => {
+const databaseStatus = computed((): AdminKpiCard['status'] => {
     if (!props.health) return 'unknown';
     return props.health.database.status === 'connected' ? 'ok' : 'error';
 });
@@ -78,7 +78,7 @@ const databaseStatus = computed((): IAdminKpiCard['status'] => {
  * @returns `error` above a 10% error rate, `warn` above 2%, `ok` below, and
  *  `unknown` with no metrics data.
  */
-const errorRateStatus = computed((): IAdminKpiCard['status'] => {
+const errorRateStatus = computed((): AdminKpiCard['status'] => {
     if (!props.metrics) return 'unknown';
     const rate = props.metrics.http.errorRate;
     if (rate > 0.1) return 'error';
@@ -92,7 +92,7 @@ const errorRateStatus = computed((): IAdminKpiCard['status'] => {
  * @returns One card per metric (status, database, uptime, requests, errors,
  *  error rate, p50/p95 latency), each with its value, hint and status.
  */
-const kpiCards = computed<IAdminKpiCard[]>(() => [
+const kpiCards = computed<AdminKpiCard[]>(() => [
     {
         title: t('admin-page.kpi-api-status'),
         value: props.health?.status ?? EMPTY_VALUE,
@@ -150,7 +150,7 @@ const kpiCards = computed<IAdminKpiCard[]>(() => [
  * @param status - Status of the card, possibly unset.
  * @returns The Vuetify color name, defaulting to `secondary`.
  */
-const kpiColor = (status: IAdminKpiCard['status']) =>
+const kpiColor = (status: AdminKpiCard['status']) =>
     ({
         ok: 'success',
         warn: 'warning',

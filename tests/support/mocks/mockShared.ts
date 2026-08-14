@@ -37,7 +37,7 @@ import {
     type RefreshTokenResponse,
     type User
 } from '@types';
-import type { IMockSeedData } from '@/kernel/registry';
+import type { MockSeedData } from '@/kernel/registry';
 import { getIsoDateNow, computeOrderTotals, createMockOrder } from './mockOrderMath.ts';
 
 // Re-exported so every existing `from '@mocks/mockShared.ts'` import in the handler files
@@ -334,9 +334,9 @@ export const trySetSessionStorage = (key: string, value?: string) => {
  * the composition root, the one place that already knows every module — supplies it at boot. Same
  * idiom as the backend's `registerAuditSink`, and for the same reason.
  */
-type TMockSeedBuilder = () => Promise<IMockSeedData>;
+type MockSeedBuilder = () => Promise<MockSeedData>;
 
-let buildMockSeedData: TMockSeedBuilder | undefined;
+let buildMockSeedData: MockSeedBuilder | undefined;
 
 /**
  * Supply the builder and populate the database with it. Called once, from `apiMock.ts`.
@@ -345,7 +345,7 @@ let buildMockSeedData: TMockSeedBuilder | undefined;
  * between them: a registered builder that has not run leaves every handler reading an empty
  * database, which is exactly the silent-empty failure this refactor removed.
  */
-export const installMockSeedBuilder = (build: TMockSeedBuilder): Promise<void> => {
+export const installMockSeedBuilder = (build: MockSeedBuilder): Promise<void> => {
     buildMockSeedData = build;
     return populateMockDatabase();
 };
@@ -364,7 +364,7 @@ const resolveInitialUserId = (): string | undefined => {
 /**
  * Single shared in-memory store mutated by all handlers.
  *
- * Typed as `IMockSeedData`, which is assembled by declaration merging from whatever the enabled
+ * Typed as `MockSeedData`, which is assembled by declaration merging from whatever the enabled
  * modules declare — so `mockDatabase.sampleProducts` is exactly `Product[]` here, and stops
  * existing at all when the products module is deleted. There is no field list in this file to
  * keep in step with `src/modules.ts`.
@@ -372,9 +372,9 @@ const resolveInitialUserId = (): string | undefined => {
  * Starts empty and is filled by `installMockSeedBuilder`. It cannot be built at module scope: the
  * slices come from the modules, and the modules import this file (see the port above).
  */
-export const mockDatabase: IMockSeedData & { currentAuthenticatedUserId: string | undefined } = {
+export const mockDatabase: MockSeedData & { currentAuthenticatedUserId: string | undefined } = {
     currentAuthenticatedUserId: resolveInitialUserId()
-} as IMockSeedData & { currentAuthenticatedUserId: string | undefined };
+} as MockSeedData & { currentAuthenticatedUserId: string | undefined };
 
 /** Replace every domain's collection with a freshly built one, leaving the session untouched. */
 const populateMockDatabase = async (): Promise<void> => {
@@ -398,7 +398,7 @@ const populateMockDatabase = async (): Promise<void> => {
  * this: handlers record what they would have sent, `GET /__mock/emails` (account module) serves
  * the list, and a spec follows the `token` exactly as a person follows the link in their inbox.
  */
-export interface IMockSentEmail {
+export interface MockSentEmail {
     to: string;
     subject: string;
     /** The BE template this stands in for, so a record reads as the email it mirrors. */
@@ -411,11 +411,11 @@ export interface IMockSentEmail {
 
 const MOCK_OUTBOX_KEY = 'mock_outbox';
 
-const readStoredOutbox = (): IMockSentEmail[] => {
+const readStoredOutbox = (): MockSentEmail[] => {
     const raw = tryGetSessionStorage(MOCK_OUTBOX_KEY);
     if (!raw) return [];
     try {
-        return JSON.parse(raw) as IMockSentEmail[];
+        return JSON.parse(raw) as MockSentEmail[];
     } catch {
         return [];
     }
@@ -428,9 +428,9 @@ const readStoredOutbox = (): IMockSentEmail[] => {
  * emails carry deliberately CROSS full page loads — a confirm page is opened from the link in the
  * email — and the in-memory outbox dies with the page that recorded it.
  */
-export const mockOutbox: IMockSentEmail[] = readStoredOutbox();
+export const mockOutbox: MockSentEmail[] = readStoredOutbox();
 
-export const recordMockEmail = (email: IMockSentEmail): void => {
+export const recordMockEmail = (email: MockSentEmail): void => {
     mockOutbox.unshift(email);
     trySetSessionStorage(MOCK_OUTBOX_KEY, JSON.stringify(mockOutbox));
 };

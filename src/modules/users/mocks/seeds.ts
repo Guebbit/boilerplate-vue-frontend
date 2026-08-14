@@ -5,12 +5,12 @@
  * `declare module` block buys. Mirrors the backend's `src/modules/users/seeds.ts`.
  */
 import type { User } from '@types';
-import type { IMockSeedContext, IMockSeedData } from '@/kernel/registry';
+import type { MockSeedContext, MockSeedData } from '@/kernel/registry';
 import { seedUsers } from '@mocks/seed-identities.ts';
 import { getIsoDateNow } from '@mocks/mockOrderMath.ts';
 
 declare module '@/kernel/registry' {
-    interface IMockSeedData {
+    interface MockSeedData {
         sampleUsers: User[];
     }
 }
@@ -49,7 +49,7 @@ const createSeedUsers = (): User[] =>
  */
 export const buildUsersMockSeeds = async ({
     profile
-}: IMockSeedContext): Promise<Partial<IMockSeedData>> =>
+}: MockSeedContext): Promise<Partial<MockSeedData>> =>
     profile === 'random'
         ? import('./seedsRandom.ts').then((random) => ({
               sampleUsers: random.buildRandomUsers()

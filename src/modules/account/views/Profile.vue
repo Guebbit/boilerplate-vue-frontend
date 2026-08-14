@@ -67,7 +67,7 @@ const handleResendVerification = () => {
  * Extended profile form interface to accommodate extra UI fields (phone, website)
  * that are not part of the core User schema but are displayed in the profile form.
  */
-interface IProfileForm {
+interface ProfileForm {
     id?: string | null;
     email?: string;
     username?: string;
@@ -82,7 +82,7 @@ interface IProfileForm {
 
 const { form, formErrors, isDirty, resetForm, validate, setInitialData } =
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    useStructureFormValidation<IProfileForm>({}, usersSchema as any, { revalidateOn: locale });
+    useStructureFormValidation<ProfileForm>({}, usersSchema as any, { revalidateOn: locale });
 
 const showErrors = ref(false);
 

@@ -34,7 +34,7 @@ import {
  */
 
 /** The least the app shell and the guards need to know about the signed-in visitor. */
-export interface ISessionViewer {
+export interface SessionViewer {
     id: string;
     email: string;
     admin: boolean;
@@ -106,7 +106,7 @@ export const useSessionStore = defineStore('session', () => {
     const accessToken = ref<string>();
 
     /** The signed-in visitor, as much of them as the shell and the guards are entitled to. */
-    const viewer = ref<ISessionViewer>();
+    const viewer = ref<SessionViewer>();
 
     /**
      * Both derive from token AND viewer, not either alone: a token with no viewer is a session
@@ -134,7 +134,7 @@ export const useSessionStore = defineStore('session', () => {
      *
      * @param nextViewer - The claims projection, or `undefined` to forget it.
      */
-    const setViewer = (nextViewer?: ISessionViewer) => {
+    const setViewer = (nextViewer?: SessionViewer) => {
         viewer.value = nextViewer;
     };
 

@@ -17,8 +17,8 @@
 
 import type { RouteRecordRaw } from 'vue-router';
 import type { HttpHandler } from 'msw';
-import type { IResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMap';
-import type { ITranslationDictionaries } from '@/infrastructure/i18n';
+import type { ResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMap';
+import type { TranslationDictionaries } from '@/infrastructure/i18n';
 
 /**
  * One entry a module contributes to the main navigation.
@@ -27,7 +27,7 @@ import type { ITranslationDictionaries } from '@/infrastructure/i18n';
  * route it points at (`meta.access`), and restating it here is exactly what once let the menu and
  * the router disagree. An entry's permissions come along with its route.
  */
-export interface IAppNavigationEntry {
+export interface AppNavigationEntry {
     /** Route name to link to. Its `meta.access` decides who sees the entry. */
     name: string;
 
@@ -54,7 +54,7 @@ export interface IAppNavigationEntry {
  * `resolveProfile()` in `@mocks/mockProfiles.ts`; named here because `mockSeeds` is
  * parameterised by it and the registry states that contract.
  */
-export type TMockProfile = 'seed' | 'random';
+export type MockProfile = 'seed' | 'random';
 
 /**
  * The mock database's shape: one field per domain that contributes fixtures.
@@ -65,7 +65,7 @@ export type TMockProfile = 'seed' | 'random';
  *
  * ```ts
  * declare module '@/kernel/registry' {
- *     interface IMockSeedData { sampleProducts: Product[]; }
+ *     interface MockSeedData { sampleProducts: Product[]; }
  * }
  * ```
  *
@@ -77,18 +77,18 @@ export type TMockProfile = 'seed' | 'random';
  * The kernel therefore names no domain while still typing every read site exactly.
  */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface IMockSeedData {}
+export interface MockSeedData {}
 
 /** What a module's slice builder is handed. */
-export interface IMockSeedContext {
+export interface MockSeedContext {
     /** The active profile. A module must answer for both. */
-    profile: TMockProfile;
+    profile: MockProfile;
 
     /**
      * The slices already built, in `after` order. This is how `orders` gets the `Product[]` whose
      * snapshots its fixtures embed, without importing the products module.
      */
-    soFar: Partial<IMockSeedData>;
+    soFar: Partial<MockSeedData>;
 }
 
 /**
@@ -97,7 +97,7 @@ export interface IMockSeedContext {
  * Keep this interface small. A field that only one module ever fills does not belong here — that
  * module should do the thing itself, behind its own barrel.
  */
-export interface IAppModule {
+export interface AppModule {
     /** Registry identity. Must match the folder name under `src/modules/`. */
     name: string;
 
@@ -108,14 +108,14 @@ export interface IAppModule {
      * Main-navigation entries this domain contributes. Optional: a module with no menu presence
      * (`account` contributes only Profile, `cart` only Cart) simply omits it.
      */
-    navigation?: IAppNavigationEntry[];
+    navigation?: AppNavigationEntry[];
 
     /**
      * Response-envelope schemas for the endpoints this domain calls, keyed by method + path
      * pattern. Contributed here rather than held in one shared table so that a domain's contract
      * validation arrives and leaves with its folder.
      */
-    responseSchemas?: IResponseSchemaRoute[];
+    responseSchemas?: ResponseSchemaRoute[];
 
     /**
      * This domain's translation dictionaries, one lazy loader per locale code.
@@ -123,7 +123,7 @@ export interface IAppModule {
      * Kept as loaders rather than imported objects so each dictionary stays its own chunk: a
      * visitor downloads one language, for the enabled domains only.
      */
-    locales?: Record<string, () => Promise<ITranslationDictionaries>>;
+    locales?: Record<string, () => Promise<TranslationDictionaries>>;
 
     /**
      * Loader for this domain's MSW request handlers, or `undefined` when the build has mocking
@@ -136,7 +136,7 @@ export interface IAppModule {
      * This domain's slice of the mock database — the data the handlers above answer *with*.
      *
      * `after` names the modules whose slices must exist before this one can build. It is a
-     * separate graph from {@link IAppModule.dependsOn} and deliberately so: `dependsOn` is about
+     * separate graph from {@link AppModule.dependsOn} and deliberately so: `dependsOn` is about
      * code (`Cart.vue` calls `useOrdersStore`), this is about fixtures (an order embeds a product
      * snapshot). A module can need another's data without importing a line of its code, and
      * folding the two would make both fields lie about one of their halves.
@@ -147,7 +147,7 @@ export interface IAppModule {
     mockSeeds?: {
         /** Modules whose slices must be built first. Must stay a DAG. */
         after?: string[];
-        build: (context: IMockSeedContext) => Promise<Partial<IMockSeedData>>;
+        build: (context: MockSeedContext) => Promise<Partial<MockSeedData>>;
     };
 
     /**
@@ -168,8 +168,8 @@ export interface IAppModule {
  *
  * @param appModules - the enabled module list, in registration order
  */
-export const validateModules = (appModules: IAppModule[]): void => {
-    const byName = new Map<string, IAppModule>();
+export const validateModules = (appModules: AppModule[]): void => {
+    const byName = new Map<string, AppModule>();
 
     // Pass 1 — index by name, rejecting a duplicate registration on the way.
     for (const appModule of appModules) {
@@ -217,7 +217,7 @@ export const validateModules = (appModules: IAppModule[]): void => {
  *
  * @param appModules - the enabled module list
  */
-export const collectModuleRoutes = (appModules: IAppModule[]): RouteRecordRaw[] => {
+export const collectModuleRoutes = (appModules: AppModule[]): RouteRecordRaw[] => {
     validateModules(appModules);
     return appModules.flatMap((appModule) => appModule.routes);
 };
@@ -234,7 +234,7 @@ export const collectModuleRoutes = (appModules: IAppModule[]): RouteRecordRaw[] 
  *
  * @param appModules - the enabled module list
  */
-export const collectModuleNavigation = (appModules: IAppModule[]): IAppNavigationEntry[] =>
+export const collectModuleNavigation = (appModules: AppModule[]): AppNavigationEntry[] =>
     appModules.flatMap((appModule) => appModule.navigation ?? []);
 
 /**
@@ -245,7 +245,7 @@ export const collectModuleNavigation = (appModules: IAppModule[]): IAppNavigatio
  *
  * @param entries - navigation entries from any contributor
  */
-export const sortNavigation = (entries: IAppNavigationEntry[]): IAppNavigationEntry[] =>
+export const sortNavigation = (entries: AppNavigationEntry[]): AppNavigationEntry[] =>
     // `toSorted` spares the caller's array; MAX_SAFE_INTEGER makes "absent sorts last" fall out.
     entries.toSorted(
         ({ order: a }, { order: b }) =>
@@ -260,7 +260,7 @@ export const sortNavigation = (entries: IAppNavigationEntry[]): IAppNavigationEn
  *
  * @param appModules - the enabled module list
  */
-export const collectModuleResponseSchemas = (appModules: IAppModule[]): IResponseSchemaRoute[] =>
+export const collectModuleResponseSchemas = (appModules: AppModule[]): ResponseSchemaRoute[] =>
     appModules.flatMap((appModule) => appModule.responseSchemas ?? []);
 
 /**
@@ -280,7 +280,7 @@ export const collectModuleResponseSchemas = (appModules: IAppModule[]): IRespons
  *
  * @param appModules - the enabled module list
  */
-export const collectModuleMockHandlers = (appModules: IAppModule[]): Promise<HttpHandler[]> =>
+export const collectModuleMockHandlers = (appModules: AppModule[]): Promise<HttpHandler[]> =>
     // Parallel, not sequential; a module with no mocks stands in with an empty array.
     Promise.all(
         appModules.map((appModule) => appModule.mockHandlers?.() ?? Promise.resolve([]))
@@ -301,9 +301,9 @@ export const collectModuleMockHandlers = (appModules: IAppModule[]): Promise<Htt
  * @param profile - which dataset to build; passed through to every slice builder
  */
 export const collectModuleMockSeeds = async (
-    appModules: IAppModule[],
-    profile: TMockProfile
-): Promise<IMockSeedData> => {
+    appModules: AppModule[],
+    profile: MockProfile
+): Promise<MockSeedData> => {
     const contributors = appModules.filter((appModule) => appModule.mockSeeds);
     const byName = new Map(contributors.map((appModule) => [appModule.name, appModule]));
 
@@ -316,11 +316,11 @@ export const collectModuleMockSeeds = async (
      * and with the catalogue gone there is simply nothing to wait for. A missing FIELD is what
      * should fail, and the compiler already reports that.
      */
-    const ordered: IAppModule[] = [];
+    const ordered: AppModule[] = [];
     const visited = new Set<string>();
     const visiting = new Set<string>();
 
-    const visit = (appModule: IAppModule): void => {
+    const visit = (appModule: AppModule): void => {
         if (visited.has(appModule.name)) return;
         if (visiting.has(appModule.name))
             throw new Error(
@@ -340,7 +340,7 @@ export const collectModuleMockSeeds = async (
 
     for (const appModule of contributors) visit(appModule);
 
-    let soFar: Partial<IMockSeedData> = {};
+    let soFar: Partial<MockSeedData> = {};
     for (const appModule of ordered) {
         const slice = await appModule.mockSeeds!.build({ profile, soFar });
 
@@ -349,7 +349,7 @@ export const collectModuleMockSeeds = async (
          * runtime there is no list of the fields a module PROMISED — the compiler knows them and
          * erases them. What is checkable is that a module which declares `mockSeeds` at all
          * contributed something, which catches the failure this leaves open (a module augments
-         * `IMockSeedData`, returns nothing, and every read of its field is `undefined` at the
+         * `MockSeedData`, returns nothing, and every read of its field is `undefined` at the
          * first handler rather than at boot).
          */
         if (Object.keys(slice).length === 0)
@@ -361,7 +361,7 @@ export const collectModuleMockSeeds = async (
     }
 
     // Sound by the check above plus the augmentations: every declared field has a contributor.
-    return soFar as IMockSeedData;
+    return soFar as MockSeedData;
 };
 
 /**
@@ -375,9 +375,9 @@ export const collectModuleMockSeeds = async (
  * @param appModules - the enabled module list
  */
 export const collectModuleLocales = (
-    appModules: IAppModule[]
-): Record<string, (() => Promise<ITranslationDictionaries>)[]> => {
-    const byLocale: Record<string, (() => Promise<ITranslationDictionaries>)[]> = {};
+    appModules: AppModule[]
+): Record<string, (() => Promise<TranslationDictionaries>)[]> => {
+    const byLocale: Record<string, (() => Promise<TranslationDictionaries>)[]> = {};
 
     // Invert the nesting: manifests are module-then-locale, i18n wants locale-then-module.
     for (const appModule of appModules)

@@ -24,18 +24,18 @@ import { logger } from '@/infrastructure/logger.ts';
 
 // ─── Umami global ──────────────────────────────────────────────────────────────
 // The Umami tracker script attaches a `umami` object to `window` once loaded.
-interface IUmamiTracker {
+interface UmamiTracker {
     track: (eventName: string, eventData?: Record<string, unknown>) => void;
     identify?: (data: Record<string, unknown>) => void;
 }
 
 declare global {
-    var umami: IUmamiTracker | undefined;
+    var umami: UmamiTracker | undefined;
 }
 
 // ─── Config types ────────────────────────────────────────────────────────────
 
-export interface IFaroConfig {
+export interface FaroConfig {
     /** Grafana Alloy Faro receiver endpoint (e.g. http://localhost:12347/collect). */
     url: string;
     appName: string;
@@ -45,7 +45,7 @@ export interface IFaroConfig {
     apiOrigin: string;
 }
 
-export interface IUmamiConfig {
+export interface UmamiConfig {
     /** Umami tracker script URL (e.g. http://localhost:3080/script.js). */
     src: string;
     websiteId: string;
@@ -83,7 +83,7 @@ export type AnalyticsEventName = (typeof analyticsEvents)[keyof typeof analytics
  *  which disables Faro entirely. Missing optional values fall back to sensible
  *  defaults (app name, version, current mode, local API origin).
  */
-function readFaroConfig(): IFaroConfig | undefined {
+function readFaroConfig(): FaroConfig | undefined {
     const url = (import.meta.env.VITE_FARO_URL as string | undefined)?.trim();
 
     if (!url) {
@@ -110,7 +110,7 @@ function readFaroConfig(): IFaroConfig | undefined {
  * @returns The config, or `undefined` when `VITE_UMAMI_WEBSITE_ID` is
  *  unset/blank, which disables analytics entirely.
  */
-function readUmamiConfig(): IUmamiConfig | undefined {
+function readUmamiConfig(): UmamiConfig | undefined {
     const websiteId = (import.meta.env.VITE_UMAMI_WEBSITE_ID as string | undefined)?.trim();
 
     // The website id is the whole switch: no id, no analytics, and the script is never injected.

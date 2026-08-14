@@ -22,7 +22,7 @@ import type {
  * Search criteria for the orders list, i.e. everything but pagination (which is
  * owned by the toolkit's search state).
  */
-type IOrdersFilters = Omit<SearchOrdersRequest, 'page' | 'pageSize'>;
+type OrdersFilters = Omit<SearchOrdersRequest, 'page' | 'pageSize'>;
 
 /**
  * Orders CRUD, paginated search and invoices.
@@ -64,7 +64,7 @@ export const useOrdersStore = defineStore('orders', () => {
     } = useStructureCrudApi<
         Order,
         string,
-        IOrdersFilters,
+        OrdersFilters,
         CreateOrderRequest,
         UpdateOrderByIdRequest
     >(

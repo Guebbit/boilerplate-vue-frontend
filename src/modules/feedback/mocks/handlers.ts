@@ -19,7 +19,7 @@ import { MockErrorResponse } from '@mocks/mockValidation.ts';
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
 declare module '@/kernel/registry' {
-    interface IMockSeedData {
+    interface MockSeedData {
         sampleFeedbackRequests: FeedbackRequest[];
     }
 }

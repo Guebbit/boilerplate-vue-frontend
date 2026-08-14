@@ -1,5 +1,5 @@
 import * as schemas from '@api/schemas';
-import type { IResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMap';
+import type { ResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMap';
 
 /**
  * Response-envelope schemas for every feedback endpoint this module calls. These three rows
@@ -7,7 +7,7 @@ import type { IResponseSchemaRoute } from '@/infrastructure/http/responseSchemaM
  * validated from the first request" — this module is that day, exactly as the core comment
  * prescribed.
  */
-export const feedbackResponseSchemas: IResponseSchemaRoute[] = [
+export const feedbackResponseSchemas: ResponseSchemaRoute[] = [
     {
         method: 'POST',
         pattern: /^\/feedback\/contact$/,

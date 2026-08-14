@@ -9,12 +9,12 @@
  * what `soFar` below delivers — note that no line here imports the products module, only its data.
  */
 import type { Order, Product } from '@types';
-import type { IMockSeedContext, IMockSeedData } from '@/kernel/registry';
+import type { MockSeedContext, MockSeedData } from '@/kernel/registry';
 import { seedOrders } from '@mocks/seed-identities.ts';
 import { createMockOrder } from '@mocks/mockOrderMath.ts';
 
 declare module '@/kernel/registry' {
-    interface IMockSeedData {
+    interface MockSeedData {
         sampleOrders: Order[];
     }
 }
@@ -52,7 +52,7 @@ const createSeedOrders = (products: Product[]): Order[] =>
 export const buildOrdersMockSeeds = async ({
     profile,
     soFar
-}: IMockSeedContext): Promise<Partial<IMockSeedData>> => {
+}: MockSeedContext): Promise<Partial<MockSeedData>> => {
     const products = soFar.sampleProducts ?? [];
     if (products.length === 0) return { sampleOrders: [] };
 

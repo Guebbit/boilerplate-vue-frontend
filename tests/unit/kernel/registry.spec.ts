@@ -6,7 +6,7 @@ import {
     sortNavigation,
     validateModules
 } from '@/kernel/registry';
-import type { IAppModule, IAppNavigationEntry } from '@/kernel/registry';
+import type { AppModule, AppNavigationEntry } from '@/kernel/registry';
 
 /**
  * The registry decides what "this build" means, so its failures have to be loud and specific. A
@@ -20,13 +20,13 @@ import type { IAppModule, IAppNavigationEntry } from '@/kernel/registry';
 const makeRoute = (name: string): RouteRecordRaw =>
     ({ path: name, name, component: { template: '<div />' } }) as RouteRecordRaw;
 
-const makeModule = (name: string, dependsOn: string[] = []): IAppModule => ({
+const makeModule = (name: string, dependsOn: string[] = []): AppModule => ({
     name,
     routes: [makeRoute(name)],
     dependsOn
 });
 
-const withNav = (name: string, navigation: IAppNavigationEntry[]): IAppModule => ({
+const withNav = (name: string, navigation: AppNavigationEntry[]): AppModule => ({
     name,
     routes: [makeRoute(name)],
     navigation
@@ -137,7 +137,7 @@ describe('sortNavigation', () => {
     });
 
     it('does not mutate its argument', () => {
-        const entries: IAppNavigationEntry[] = [
+        const entries: AppNavigationEntry[] = [
             { name: 'Cart', label: 'cart', order: 80 },
             { name: 'Home', label: 'home', order: 10 }
         ];

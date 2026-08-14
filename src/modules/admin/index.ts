@@ -8,4 +8,4 @@
  * domain is exactly the coupling the module layout exists to remove.
  */
 
-export type { AdminTabKey, IAdminKpiCard, IAdminAuditFilters } from './types';
+export type { AdminTabKey, AdminKpiCard, AdminAuditFilters } from './types';

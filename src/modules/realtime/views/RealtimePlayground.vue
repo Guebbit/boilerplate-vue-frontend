@@ -3,7 +3,7 @@ import { useI18n } from 'vue-i18n';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FeedbackMessageFeed from '@/modules/realtime/components/FeedbackMessageFeed.vue';
 import { useRealtimeObservability } from '@/modules/realtime/useRealtimeObservability';
-import type { IRealtimeMetricsEntry } from '@types';
+import type { RealtimeMetricsEntry } from '@types';
 
 const { t } = useI18n();
 
@@ -29,7 +29,7 @@ const formatMb = (bytes: number) => `${Math.round(bytes / 1024 / 1024)}MB`;
  * @returns A one-line summary prefixed with the kind, so snapshot / update /
  *  heartbeat entries stay distinguishable from each other.
  */
-const formatMetricsEntry = (entry: IRealtimeMetricsEntry) => {
+const formatMetricsEntry = (entry: RealtimeMetricsEntry) => {
     const time = new Date(entry.timestamp).toLocaleTimeString();
     const { uptimeSeconds, memory, http, realtime } = entry.payload;
 

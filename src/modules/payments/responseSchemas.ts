@@ -1,11 +1,11 @@
 import * as schemas from '@api/schemas';
-import type { IResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMap';
+import type { ResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMap';
 
 /**
  * Response-envelope schemas for every payments endpoint this module calls. Registered through
  * the module manifest, exactly as the wishlist's are.
  */
-export const paymentsResponseSchemas: IResponseSchemaRoute[] = [
+export const paymentsResponseSchemas: ResponseSchemaRoute[] = [
     {
         method: 'POST',
         pattern: /^\/payments\/intent$/,

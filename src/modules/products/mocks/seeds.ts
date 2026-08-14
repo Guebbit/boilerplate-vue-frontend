@@ -3,7 +3,7 @@
  *
  * Declared here rather than in a shared fixture file so that `rm -rf src/modules/products` takes
  * the demo catalogue with it. The `declare module` block below is what makes that safe: it adds
- * `sampleProducts` to `IMockSeedData`, so deleting this folder removes the field from the type and
+ * `sampleProducts` to `MockSeedData`, so deleting this folder removes the field from the type and
  * every leftover `mockDatabase.sampleProducts` becomes a compile error instead of a read that
  * silently returns `undefined`.
  *
@@ -11,12 +11,12 @@
  * `db/seeds/index.ts` through the same manifest field.
  */
 import type { Product } from '@types';
-import type { IMockSeedContext, IMockSeedData } from '@/kernel/registry';
+import type { MockSeedContext, MockSeedData } from '@/kernel/registry';
 import { seedProducts } from '@mocks/seed-identities.ts';
 import { getIsoDateNow } from '@mocks/mockOrderMath.ts';
 
 declare module '@/kernel/registry' {
-    interface IMockSeedData {
+    interface MockSeedData {
         sampleProducts: Product[];
     }
 }
@@ -62,7 +62,7 @@ const createSeedProducts = (): Product[] =>
  */
 export const buildProductsMockSeeds = async ({
     profile
-}: IMockSeedContext): Promise<Partial<IMockSeedData>> =>
+}: MockSeedContext): Promise<Partial<MockSeedData>> =>
     profile === 'random'
         ? import('./seedsRandom.ts').then((random) => ({
               sampleProducts: random.buildRandomProducts()

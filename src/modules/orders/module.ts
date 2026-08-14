@@ -1,4 +1,4 @@
-import type { IAppModule } from '@/kernel/registry';
+import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { ordersResponseSchemas } from './responseSchemas';
 
@@ -32,7 +32,7 @@ export default {
      * `after` names two modules while this manifest declares no `dependsOn` at all, and both are
      * correct: the orders CODE imports nothing (the arrow runs the other way, see above), while an
      * order's DATA embeds a product snapshot and carries its owner's id and email. Fixtures and
-     * imports are different graphs; see `IAppModule.mockSeeds`.
+     * imports are different graphs; see `AppModule.mockSeeds`.
      */
     mockSeeds:
         import.meta.env.VITE_API_MOCK_ENABLED === 'true'
@@ -48,4 +48,4 @@ export default {
         en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
         it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)
     }
-} satisfies IAppModule;
+} satisfies AppModule;

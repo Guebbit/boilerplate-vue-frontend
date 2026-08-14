@@ -20,7 +20,7 @@ import { routerLinkI18n } from '@/infrastructure/i18n.ts';
  * Form state: the one-time token (prefilled from the email link) plus the new
  * password and its confirmation.
  */
-interface IPasswordResetConfirmForm {
+interface PasswordResetConfirmForm {
     token?: string;
     password?: string;
     passwordConfirm?: string;
@@ -41,7 +41,7 @@ const {
     isSubmitting,
     handleSubmit,
     applyServerErrors
-} = useStructureFormValidation<IPasswordResetConfirmForm>(
+} = useStructureFormValidation<PasswordResetConfirmForm>(
     {
         token: typeof route.query.token === 'string' ? route.query.token : '',
         password: '',

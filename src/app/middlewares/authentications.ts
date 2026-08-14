@@ -14,7 +14,7 @@ import type { RouteLocationNormalized, RouteMeta } from 'vue-router';
  * - `auth` — any authenticated visitor.
  * - `admin` — authenticated *and* admin.
  */
-export type TRouteAccess = 'guest' | 'auth' | 'admin';
+export type RouteAccess = 'guest' | 'auth' | 'admin';
 
 /**
  * Declared on the route record, so `meta.access` is checked at compile time and a typo
@@ -23,9 +23,8 @@ export type TRouteAccess = 'guest' | 'auth' | 'admin';
 declare module 'vue-router' {
     // The name belongs to the library being augmented, not to this codebase: declaration
     // merging only works against the exact interface it declares.
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     interface RouteMeta {
-        access?: TRouteAccess;
+        access?: RouteAccess;
     }
 }
 

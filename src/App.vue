@@ -5,13 +5,13 @@ import { RouterView } from 'vue-router';
 /**
  * Types of value and it's mutation
  */
-import type { IProvidedVariableType, IProvidedVariableMutationFunction } from '@/types';
+import type { ProvidedVariableType, ProvidedVariableMutationFunction } from '@/types';
 
 /**
  * Provide data to all component descendants.
  * Since we are in App.vue: to all application
  */
-const providedVariable = ref<IProvidedVariableType>('From App.vue');
+const providedVariable = ref<ProvidedVariableType>('From App.vue');
 
 /**
  * Mutation paired with {@link providedVariable}, so descendants never write to
@@ -19,7 +19,7 @@ const providedVariable = ref<IProvidedVariableType>('From App.vue');
  *
  * @param value - New value; defaults to an empty string, which clears it.
  */
-const setProvidedVariable: IProvidedVariableMutationFunction = (value = '') => {
+const setProvidedVariable: ProvidedVariableMutationFunction = (value = '') => {
     providedVariable.value = value;
 };
 

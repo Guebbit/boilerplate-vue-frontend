@@ -19,7 +19,7 @@ import * as schemas from '@api/schemas';
  * A missing row is not fatal — `resolveResponseSchema` returns `undefined` and the caller warns in
  * dev, because an unmapped route is a maintenance gap, not proof the response is wrong.
  */
-export interface IResponseSchemaRoute {
+export interface ResponseSchemaRoute {
     method: string;
     pattern: RegExp;
     schema: zod.ZodTypeAny;
@@ -37,7 +37,7 @@ export interface IResponseSchemaRoute {
  * request. Both modules exist now and carry their own rows, which is the destiny this bottom
  * shelf exists to hand out.
  */
-const coreRouteSchemas: IResponseSchemaRoute[] = [
+const coreRouteSchemas: ResponseSchemaRoute[] = [
     { method: 'GET', pattern: /^\/$/, schema: schemas.GetHealthResponse },
     /*
      * The session's own three. `infrastructure/session.ts` calls them to restore or end a session before any
@@ -56,7 +56,7 @@ const coreRouteSchemas: IResponseSchemaRoute[] = [
 ];
 
 /** Core rows plus whatever the enabled modules last registered. */
-let routeSchemas: IResponseSchemaRoute[] = [...coreRouteSchemas];
+let routeSchemas: ResponseSchemaRoute[] = [...coreRouteSchemas];
 
 /**
  * Install the enabled modules' response schemas.
@@ -67,7 +67,7 @@ let routeSchemas: IResponseSchemaRoute[] = [...coreRouteSchemas];
  *
  * @param moduleRouteSchemas - every enabled module's rows, from `collectModuleResponseSchemas`
  */
-export const registerResponseSchemas = (moduleRouteSchemas: IResponseSchemaRoute[]): void => {
+export const registerResponseSchemas = (moduleRouteSchemas: ResponseSchemaRoute[]): void => {
     routeSchemas = [...coreRouteSchemas, ...moduleRouteSchemas];
 };
 

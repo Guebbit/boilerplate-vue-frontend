@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import TableLoadingBar from '@/ui/molecules/TableLoadingBar.vue';
 import { Search } from 'lucide-vue-next';
 import type { AuditEventItem } from '@types';
-import type { IAdminAuditFilters } from '@/modules/admin/types.ts';
+import type { AdminAuditFilters } from '@/modules/admin/types.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/formatters.ts';
 
 const { t } = useI18n();
@@ -14,13 +14,13 @@ const props = defineProps<{
     total: number;
     loading: boolean;
     error?: string;
-    onSearch: (filters?: IAdminAuditFilters) => Promise<void>;
+    onSearch: (filters?: AdminAuditFilters) => Promise<void>;
 }>();
 
 /**
  * Live audit filter form state, sent as-is to the parent's search callback.
  */
-const filters = reactive<IAdminAuditFilters>({
+const filters = reactive<AdminAuditFilters>({
     actor: undefined,
     action: undefined,
     outcome: undefined,

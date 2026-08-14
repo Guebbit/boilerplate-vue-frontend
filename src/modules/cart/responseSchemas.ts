@@ -1,5 +1,5 @@
 import * as schemas from '@api/schemas';
-import type { IResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMap';
+import type { ResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMap';
 
 /**
  * Response-envelope schemas for every cart endpoint this module calls.
@@ -14,7 +14,7 @@ import type { IResponseSchemaRoute } from '@/infrastructure/http/responseSchemaM
  * matching `<PascalCase-operationId>Response` export from `@api/schemas`, so the two can be diffed
  * by eye when an endpoint is added or removed.
  */
-export const cartResponseSchemas: IResponseSchemaRoute[] = [
+export const cartResponseSchemas: ResponseSchemaRoute[] = [
     { method: 'GET', pattern: /^\/cart$/, schema: schemas.GetCartResponse },
     { method: 'POST', pattern: /^\/cart$/, schema: schemas.UpsertCartItemResponse },
     { method: 'DELETE', pattern: /^\/cart$/, schema: schemas.ClearCartResponse },

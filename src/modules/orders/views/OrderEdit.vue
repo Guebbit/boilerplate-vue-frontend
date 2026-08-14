@@ -64,7 +64,7 @@ const statusOptions = computed(() =>
 /**
  * Order edit form model.
  */
-interface IOrderEditForm {
+interface OrderEditForm {
     status?: OrderStatus;
     email?: string;
 }
@@ -94,7 +94,7 @@ const {
     handleSubmit,
     activateAutoHydrate,
     applyServerErrors
-} = useStructureFormValidation<IOrderEditForm>({}, editSchema, {
+} = useStructureFormValidation<OrderEditForm>({}, editSchema, {
     revalidateOn: locale,
     // The toolkit reveals the errors, waits for the render and focuses the first invalid field.
     formElement,

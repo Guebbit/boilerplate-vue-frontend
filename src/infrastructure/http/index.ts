@@ -1,7 +1,7 @@
 import axiosClient from 'axios';
 import { apiText, getCurrentLocale } from '@/infrastructure/i18n.ts';
 import type { AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } from 'axios';
-import type { IResponseReject, IResponseSuccess } from '@/types';
+import type { ResponseReject, ResponseSuccess } from '@/types';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { storeToRefs } from 'pinia';
 import { resolveResponseSchema } from './responseSchemaMap.ts';
@@ -15,7 +15,7 @@ import { logger } from '@/infrastructure/logger.ts';
  * - refresh/retried requests can set it when needed
  * - keeping it optional avoids forcing unrelated call sites to provide it
  */
-type IAxiosRequestConfigWithRetry = AxiosRequestConfig & { _dontRetry?: boolean };
+type AxiosRequestConfigWithRetry = AxiosRequestConfig & { _dontRetry?: boolean };
 
 /**
  * Reads the current access token outside of a component scope.
@@ -31,17 +31,17 @@ export const getAccessToken = () => {
  * Request payload type: deliberately unconstrained, since the generated clients
  * send everything from JSON envelopes to `FormData`.
  */
-export type IAxiosRequestData = unknown;
+export type AxiosRequestData = unknown;
 
 /**
  * Shape every rejected request is normalized to (the backend reject envelope).
  */
-export type IAxiosResponseErrorData = IResponseReject;
+export type AxiosResponseErrorData = ResponseReject;
 
 /**
  * Raw error response body, before normalization.
  */
-export type IAxiosResponseErrorBody = unknown;
+export type AxiosResponseErrorBody = unknown;
 
 /**
  * Picks a user-facing message for a failed request.
@@ -124,7 +124,7 @@ instance.defaults.baseURL = import.meta.env.VITE_API_URL ?? '';
  * @param config - Outgoing request config.
  * @returns The same config with `Authorization` and `Accept-Language` set.
  */
-export const onRequest = (config: InternalAxiosRequestConfig<IAxiosRequestData>) => {
+export const onRequest = (config: InternalAxiosRequestConfig<AxiosRequestData>) => {
     const { accessToken } = storeToRefs(useSessionStore());
     if (accessToken.value) config.headers.Authorization = `Bearer ${accessToken.value}`;
     config.headers['Accept-Language'] = getCurrentLocale();
@@ -166,12 +166,12 @@ export const onRequestReject = (error: AxiosError) => {
  * - `x-trace-id`   → traceId
  *
  * @param error - Axios error, with or without a response.
- * @returns A promise always rejected with an {@link IAxiosResponseErrorData}
+ * @returns A promise always rejected with an {@link AxiosResponseErrorData}
  *  envelope, so every call site sees the same error shape.
  */
 export const onResponseReject = (
-    error: AxiosError<IAxiosResponseErrorData, IAxiosResponseErrorBody>
-): Promise<IAxiosResponseErrorData> => {
+    error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>
+): Promise<AxiosResponseErrorData> => {
     const requestId = error.response?.headers?.['x-request-id'] as string | undefined;
     const traceId = error.response?.headers?.['x-trace-id'] as string | undefined;
 
@@ -219,7 +219,7 @@ export const onResponseReject = (
  *  (see {@link shouldSkipRefresh}) never attempt a refresh.
  */
 export const onResponseRejectWithRefresh = (
-    error: AxiosError<IAxiosResponseErrorData, IAxiosResponseErrorBody>
+    error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>
 ) => {
     const { accessToken } = storeToRefs(useSessionStore());
     const originalRequest = error.config as
@@ -231,9 +231,9 @@ export const onResponseRejectWithRefresh = (
         !shouldSkipRefresh(originalRequest?.url)
     )
         return instance
-            .get<IResponseSuccess<{ token: string }>>('/account/refresh', {
+            .get<ResponseSuccess<{ token: string }>>('/account/refresh', {
                 _dontRetry: true
-            } as IAxiosRequestConfigWithRetry)
+            } as AxiosRequestConfigWithRetry)
             .then(({ data }) => {
                 if (!data?.data?.token || !originalRequest) return;
                 // Store first, then replay: the interceptor reads the token off the store.
@@ -241,7 +241,7 @@ export const onResponseRejectWithRefresh = (
                 return instance.request({
                     ...originalRequest,
                     _dontRetry: true
-                } as IAxiosRequestConfigWithRetry);
+                } as AxiosRequestConfigWithRetry);
             })
             .catch(() => onResponseReject(error));
     return onResponseReject(error);

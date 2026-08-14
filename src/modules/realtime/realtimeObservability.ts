@@ -1,21 +1,17 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import type {
-    IRealtimeConnectionStatus,
-    IMetricsSnapshotEvent,
-    IRealtimeMetricsEntry
-} from '@types';
+import type { RealtimeConnectionStatus, MetricsSnapshotEvent, RealtimeMetricsEntry } from '@types';
 
 /**
  * Holds the live state of the observability metrics stream (SSE): connection
  * status, latest payloads and a capped event feed.
  */
 export const useRealtimeObservabilityStore = defineStore('realtime-observability', () => {
-    const status = ref<IRealtimeConnectionStatus>('idle');
-    const latestSnapshot = ref<IMetricsSnapshotEvent | undefined>(undefined);
-    const latestUpdate = ref<IMetricsSnapshotEvent | undefined>(undefined);
+    const status = ref<RealtimeConnectionStatus>('idle');
+    const latestSnapshot = ref<MetricsSnapshotEvent | undefined>(undefined);
+    const latestUpdate = ref<MetricsSnapshotEvent | undefined>(undefined);
     const latestHeartbeatAt = ref<string | undefined>(undefined);
-    const entries = ref<IRealtimeMetricsEntry[]>([]);
+    const entries = ref<RealtimeMetricsEntry[]>([]);
     const lastError = ref<string | undefined>(undefined);
 
     /**
@@ -23,7 +19,7 @@ export const useRealtimeObservabilityStore = defineStore('realtime-observability
      *
      * @param nextStatus - New status, e.g. `idle`, `open`, `closed`.
      */
-    const setStatus = (nextStatus: IRealtimeConnectionStatus) => {
+    const setStatus = (nextStatus: RealtimeConnectionStatus) => {
         status.value = nextStatus;
     };
 
@@ -32,7 +28,7 @@ export const useRealtimeObservabilityStore = defineStore('realtime-observability
      *
      * @param snapshot - Snapshot event received from the server.
      */
-    const setSnapshot = (snapshot: IMetricsSnapshotEvent) => {
+    const setSnapshot = (snapshot: MetricsSnapshotEvent) => {
         latestSnapshot.value = snapshot;
     };
 
@@ -41,7 +37,7 @@ export const useRealtimeObservabilityStore = defineStore('realtime-observability
      *
      * @param update - Update event received from the server.
      */
-    const setUpdate = (update: IMetricsSnapshotEvent) => {
+    const setUpdate = (update: MetricsSnapshotEvent) => {
         latestUpdate.value = update;
     };
 
@@ -51,7 +47,7 @@ export const useRealtimeObservabilityStore = defineStore('realtime-observability
      *
      * @param heartbeat - Heartbeat event; only its `timestamp` is kept.
      */
-    const setHeartbeat = (heartbeat: IMetricsSnapshotEvent) => {
+    const setHeartbeat = (heartbeat: MetricsSnapshotEvent) => {
         latestHeartbeatAt.value = heartbeat.timestamp;
     };
 
@@ -61,7 +57,7 @@ export const useRealtimeObservabilityStore = defineStore('realtime-observability
      *
      * @param entry - Feed entry to append.
      */
-    const addEntry = (entry: IRealtimeMetricsEntry) => {
+    const addEntry = (entry: RealtimeMetricsEntry) => {
         entries.value = [...entries.value, entry].slice(-100);
     };
 

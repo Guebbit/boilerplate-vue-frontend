@@ -79,7 +79,7 @@ const UNSAFE_SPECIFIERS = [
     { kind: 'dynamic import template', pattern: /\bimport\s*\(\s*(?:\/\*[\S\s]*?\*\/\s*)*`/g }
 ] as const;
 
-interface ISpecifier {
+interface Specifier {
     file: string;
     line: number;
     kind: string;
@@ -97,7 +97,7 @@ const isGuarded = (lines: string[], line: number): boolean => {
     return false;
 };
 
-const findSpecifiers = (file: string): ISpecifier[] => {
+const findSpecifiers = (file: string): Specifier[] => {
     const source = readFileSync(path.join(PROJECT_ROOT, file), 'utf8');
     const lines = source.split('\n');
     const code = withoutLineComments(source);

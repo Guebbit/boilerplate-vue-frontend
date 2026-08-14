@@ -3,7 +3,7 @@ import { ref, shallowRef, type Ref } from 'vue';
 /**
  * Settings for {@link useAsyncAction}.
  */
-export interface IUseAsyncActionSettings<T> {
+export interface UseAsyncActionSettings<T> {
     // Value of `data` before the first successful run, and after `reset()`
     initialData?: T;
     /**
@@ -25,12 +25,12 @@ export interface IUseAsyncActionSettings<T> {
  * on a dashboard leaves the other panels rendered instead of blanking the page.
  *
  * @param action   - Performs the call.
- * @param settings - See {@link IUseAsyncActionSettings}.
+ * @param settings - See {@link UseAsyncActionSettings}.
  * @returns `data`, `error`, `loading`, plus `run` and `reset`.
  */
-export const useAsyncAction = <T, A extends unknown[] = []>(
-    action: (...parameters: A) => Promise<T>,
-    { initialData, fallbackErrorMessage = 'Request failed' }: IUseAsyncActionSettings<T> = {}
+export const useAsyncAction = <T, TArguments extends unknown[] = []>(
+    action: (...parameters: TArguments) => Promise<T>,
+    { initialData, fallbackErrorMessage = 'Request failed' }: UseAsyncActionSettings<T> = {}
 ) => {
     const data = shallowRef<T | undefined>(initialData) as Ref<T | undefined>;
     const error = ref<string>();
@@ -51,7 +51,7 @@ export const useAsyncAction = <T, A extends unknown[] = []>(
      * @param parameters - Forwarded to `action`.
      * @returns A promise resolving with the payload, or `undefined` when the call failed.
      */
-    const run = (...parameters: A): Promise<T | undefined> => {
+    const run = (...parameters: TArguments): Promise<T | undefined> => {
         const current = ++latest;
         loading.value = true;
         error.value = undefined;

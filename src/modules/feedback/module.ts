@@ -1,4 +1,4 @@
-import type { IAppModule } from '@/kernel/registry';
+import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { feedbackResponseSchemas } from './responseSchemas';
 
@@ -31,4 +31,4 @@ export default {
         en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
         it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)
     }
-} satisfies IAppModule;
+} satisfies AppModule;

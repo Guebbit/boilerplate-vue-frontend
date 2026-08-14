@@ -42,21 +42,21 @@ const isKnownConsoleNoise = (call: unknown[]) => {
 // failure); every other visit captures accurately.
 const CONSOLE_CAPTURE_KEY = '__resilienceConsoleCalls';
 
-interface IConsoleCall {
+interface ConsoleCall {
     type: 'error' | 'warn';
     args: unknown[];
 }
 
-type IWindowWithConsoleCapture = Cypress.AUTWindow & {
-    [CONSOLE_CAPTURE_KEY]?: IConsoleCall[];
+type WindowWithConsoleCapture = Cypress.AUTWindow & {
+    [CONSOLE_CAPTURE_KEY]?: ConsoleCall[];
 };
 
 /** Fails the test on any console.error/warn during the visit — see each call site for why. */
 const visitWithoutConsoleNoise = (path: string) => {
     cy.visit(path, {
         onBeforeLoad(win) {
-            const capturedCalls: IConsoleCall[] = [];
-            (win as IWindowWithConsoleCapture)[CONSOLE_CAPTURE_KEY] = capturedCalls;
+            const capturedCalls: ConsoleCall[] = [];
+            (win as WindowWithConsoleCapture)[CONSOLE_CAPTURE_KEY] = capturedCalls;
 
             const originalError = win.console.error.bind(win.console);
             win.console.error = (...args: unknown[]) => {
@@ -75,7 +75,7 @@ const visitWithoutConsoleNoise = (path: string) => {
 
 const assertNoConsoleNoise = () => {
     cy.window().should((win) => {
-        const calls = (win as IWindowWithConsoleCapture)[CONSOLE_CAPTURE_KEY] ?? [];
+        const calls = (win as WindowWithConsoleCapture)[CONSOLE_CAPTURE_KEY] ?? [];
         const unexpected = calls.filter((call) => !isKnownConsoleNoise(call.args));
         expect(
             unexpected,

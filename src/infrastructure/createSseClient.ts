@@ -1,7 +1,7 @@
-import type { ISseEventName, ISseEventPayload } from '@types';
+import type { SseEventName, SseEventPayload } from '@types';
 
 /** Callbacks registered on an SSE connection. */
-export interface ISseClientCallbacks {
+export interface SseClientCallbacks {
     /** Called when the connection is successfully established. */
     onOpen?: () => void;
     /** Called when the browser fires an error event on the EventSource. */
@@ -10,14 +10,14 @@ export interface ISseClientCallbacks {
      * Called for each typed server-sent event.
      * The generic parameter `TEventName` narrows `payload` to the correct contract type.
      */
-    onEvent?: <TEventName extends ISseEventName>(
+    onEvent?: <TEventName extends SseEventName>(
         eventName: TEventName,
-        payload: ISseEventPayload<TEventName>
+        payload: SseEventPayload<TEventName>
     ) => void;
 }
 
 /** Handle returned by {@link createSseClient} to allow callers to close the connection. */
-export interface ISseClient {
+export interface SseClient {
     close: () => void;
 }
 
@@ -46,14 +46,14 @@ const parseJsonData = (rawData: string) => {
  *  registered per name so the browser dispatches them individually.
  * @param callbacks - Open/error/event handlers. Frames that fail to parse are
  *  dropped without invoking `onEvent`.
- * @returns An {@link ISseClient} handle whose `close` method tears down the
+ * @returns An {@link SseClient} handle whose `close` method tears down the
  *  connection.
  */
 export const createSseClient = (
     url: string,
-    eventNames: readonly ISseEventName[],
-    callbacks: ISseClientCallbacks = {}
-): ISseClient => {
+    eventNames: readonly SseEventName[],
+    callbacks: SseClientCallbacks = {}
+): SseClient => {
     const eventSource = new EventSource(url, { withCredentials: true });
 
     eventSource.addEventListener('open', () => callbacks.onOpen?.());
@@ -65,7 +65,7 @@ export const createSseClient = (
             const payload = parseJsonData((event as MessageEvent<string>).data);
             if (!payload) return;
 
-            callbacks.onEvent?.(eventName, payload as ISseEventPayload<typeof eventName>);
+            callbacks.onEvent?.(eventName, payload as SseEventPayload<typeof eventName>);
         });
     }
 

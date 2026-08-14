@@ -12,7 +12,6 @@ declare global {
     namespace Cypress {
         // The name belongs to the library being augmented, not to this codebase: declaration
         // merging only works against the exact interface it declares.
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         interface Chainable {
             /**
              * Return the backing data to its known seed state, whichever profile is running.
@@ -86,13 +85,13 @@ declare global {
              *
              * @param address - the recipient to look for
              */
-            mockEmailTo(address: string): Chainable<IMockOutboxEmail>;
+            mockEmailTo(address: string): Chainable<MockOutboxEmail>;
         }
     }
 }
 
-/** Mirrors `IMockSentEmail` in `tests/support/mocks/mockShared.ts`, over the wire. */
-export interface IMockOutboxEmail {
+/** Mirrors `MockSentEmail` in `tests/support/mocks/mockShared.ts`, over the wire. */
+export interface MockOutboxEmail {
     to: string;
     subject: string;
     template: string;
@@ -239,7 +238,7 @@ Cypress.Commands.add('mockEmailTo', (address: string) =>
         windowObject
             .fetch('/__mock/emails')
             .then((response) => response.json())
-            .then((body: { data: { emails: IMockOutboxEmail[] } }) => {
+            .then((body: { data: { emails: MockOutboxEmail[] } }) => {
                 const email = body.data.emails.find(({ to }) => to === address);
                 expect(email, `an email to ${address} in the mock outbox`).to.not.equal(undefined);
                 return email!;

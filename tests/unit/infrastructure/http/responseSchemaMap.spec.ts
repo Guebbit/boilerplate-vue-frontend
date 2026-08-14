@@ -27,7 +27,7 @@ import {
     resolveResponseSchema,
     toPathname
 } from '@/infrastructure/http/responseSchemaMap';
-import type { IResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMap';
+import type { ResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMap';
 import { collectModuleResponseSchemas } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import * as schemas from '@api/schemas';
@@ -283,7 +283,7 @@ describe('toPathname', () => {
  * four methods sharing one path. The schema VALUES are arbitrary real ones — only their identity
  * is asserted, never their contents.
  */
-const widgetRows: IResponseSchemaRoute[] = [
+const widgetRows: ResponseSchemaRoute[] = [
     { method: 'GET', pattern: /^\/widgets$/, schema: schemas.GetHealthResponse },
     { method: 'POST', pattern: /^\/widgets$/, schema: schemas.GetLocalesResponse },
     { method: 'PUT', pattern: /^\/widgets$/, schema: schemas.ListFeedbackRequestsResponse },

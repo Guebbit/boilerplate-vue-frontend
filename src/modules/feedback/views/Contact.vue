@@ -16,7 +16,7 @@ import { notifyErrorMessages } from '@/infrastructure/errors.ts';
  * The public contact form. No login required — it exists for the visitor who cannot log in —
  * and the admin reads what lands here in the feedback inbox.
  */
-interface IContactForm {
+interface ContactForm {
     name?: string;
     email?: string;
     subject?: string;
@@ -28,7 +28,7 @@ const { addMessage } = useNotificationsStore();
 const { submitContact } = useFeedbackStore();
 
 const { form, formErrors, showFormErrors, isSubmitting, handleSubmit, resetForm } =
-    useStructureFormValidation<IContactForm>(
+    useStructureFormValidation<ContactForm>(
         { name: '', email: '', subject: '', message: '' },
         z.object({
             name: z.string().optional(),

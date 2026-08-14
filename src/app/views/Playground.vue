@@ -16,7 +16,7 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCounterInput from '@/ui/molecules/FormCounterInput.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 
-import type { IProvidedVariableMutationFunction, IProvidedVariableType } from '@/types';
+import type { ProvidedVariableMutationFunction, ProvidedVariableType } from '@/types';
 import { logger } from '@/infrastructure/logger.ts';
 
 /**
@@ -75,8 +75,8 @@ const { increment, incrementDelayed } = useCounterStore();
  * Same value as the one in Pinia, to show they are the same.
  */
 const { providedVariable, setProvidedVariable } = inject<{
-    providedVariable: Ref<IProvidedVariableType>;
-    setProvidedVariable: IProvidedVariableMutationFunction;
+    providedVariable: Ref<ProvidedVariableType>;
+    setProvidedVariable: ProvidedVariableMutationFunction;
 }>('providedVariable', {
     providedVariable: ref('Not provided'),
     setProvidedVariable: () => {}

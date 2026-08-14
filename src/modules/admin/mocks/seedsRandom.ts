@@ -17,9 +17,9 @@
  * profile that randomly hid the whole dashboard behind it would spend most runs asserting nothing.
  */
 import { faker } from '@mocks/mockRandom.ts';
-import type { IMockObservability } from './seeds.ts';
+import type { MockObservability } from './seeds.ts';
 
-export const buildRandomObservability = (): IMockObservability => {
+export const buildRandomObservability = (): MockObservability => {
     const totalRequests = faker.number.int({ min: 0, max: 9_999_999 });
     const totalErrors = faker.number.int({ min: 0, max: totalRequests });
     const uptimeSeconds = faker.number.int({ min: 0, max: 60 * 60 * 24 * 400 });
