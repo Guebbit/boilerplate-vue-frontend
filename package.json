@@ -1,9 +1,12 @@
 {
     "name": "boilerplate-vue-frontend",
-    "version": "1.0.0",
+    "version": "2.1.0",
     "private": true,
     "type": "module",
-    "license": "AGPLv3.0",
+    "license": "AGPL-3.0-only",
+    "engines": {
+        "node": ">=22"
+    },
     "scripts": {
         "dev": "vite",
         "build": "run-p type-check-only \"build-only {@}\" --",
