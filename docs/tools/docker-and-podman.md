@@ -63,7 +63,8 @@ To run the pair:
 3. Check `NODE_CORS_ORIGIN` in the backend's `.env` includes `http://localhost:8080`.
 
 Keeping the two host-port blocks disjoint (`8080–8099` here, `3000–3099` there) is what lets both
-be up at once — the full map lives in the repo README, under _Host port map_.
+be up at once — the full map lives in
+[Getting Started → Host port map](../getting-started.md#host-port-map).
 
 ## `.env` is required for the container too
 

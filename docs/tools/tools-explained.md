@@ -3,6 +3,72 @@
 This page answers three questions for every tool in the stack: **what it is**, **what problem it solves**, and **what it does in this repo**.
 Each section links to the dedicated page for configuration details and code pointers.
 
+## The whole stack on one page
+
+Colour is the job a tool does, not the layer it sits in.
+
+```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 30, 'rankSpacing': 45}}}%%
+flowchart TD
+    subgraph BUILD["Build & language"]
+        VITE["Vite"]
+        TS["TypeScript · vue-tsc"]
+        TW["Tailwind"]
+    end
+
+    subgraph APP["Runtime"]
+        VUE["Vue 3"]
+        PINIA["Pinia"]
+        ROUTER["Vue Router"]
+        I18N["Vue I18n"]
+        VUETIFY["Vuetify"]
+        AXIOS["axios"]
+        ZOD["Zod"]
+    end
+
+    subgraph CONTRACT["Contract"]
+        ORVAL["Orval"]
+        SPECTRAL["Spectral"]
+        MODELINA["Modelina"]
+    end
+
+    subgraph TEST["Testing"]
+        VITEST["Vitest"]
+        VTU["@vue/test-utils"]
+        CY["Cypress"]
+        MSW["MSW"]
+        AXE["axe-core"]
+        FC["fast-check"]
+        STRYKER["Stryker"]
+    end
+
+    subgraph OBS["Telemetry"]
+        FARO["Grafana Faro"]
+        UMAMI["Umami"]
+    end
+
+    CONTRACT --> APP
+    BUILD --> APP
+    APP --> OBS
+    TEST -.-> APP
+
+    classDef build fill:#fef3c7,stroke:#d97706,color:#111827;
+    classDef app fill:#dbeafe,stroke:#2563eb,color:#111827;
+    classDef contract fill:#dcfce7,stroke:#16a34a,color:#111827;
+    classDef test fill:#ede9fe,stroke:#7c3aed,color:#111827;
+    classDef obs fill:#fce7f3,stroke:#db2777,color:#111827;
+    class VITE,TS,TW build;
+    class VUE,PINIA,ROUTER,I18N,VUETIFY,AXIOS,ZOD app;
+    class ORVAL,SPECTRAL,MODELINA contract;
+    class VITEST,VTU,CY,MSW,AXE,FC,STRYKER test;
+    class FARO,UMAMI obs;
+```
+
+**Contract points into the app, never the other way round.** That single arrow is the rule the
+whole repository is arranged around: `openapi.yaml` and `asyncapi.yaml` come from the backend, and
+everything under `contracts/` is generated from them. Editing generated output is the one mistake
+this diagram exists to prevent.
+
 ---
 
 ## Core stack

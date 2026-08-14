@@ -16,7 +16,7 @@ const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
  *
  * The dictionaries are deliberately tiny. They are not the API's real copy and must never grow
  * into a second, drifting authority for it — they exist to prove the plumbing, and the API's
- * actual Spanish lives in `boilerplate-node-api-mongodb-mongoose/src/locales/es.json`.
+ * actual Spanish lives in `boilerplate-node-backend/src/locales/es.json`.
  */
 const API_DICTIONARIES: Record<string, Record<string, unknown>> = {
     en: {

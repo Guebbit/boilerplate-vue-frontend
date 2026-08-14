@@ -11,6 +11,7 @@ export default withMermaid(
             },
             nav: [
                 { text: 'Home', link: '/' },
+                { text: 'Getting Started', link: '/getting-started' },
                 { text: 'Theory', link: '/theory/' },
                 { text: 'Tools', link: '/tools/' },
                 { text: 'API', link: '/api/' }
@@ -30,7 +31,9 @@ export default withMermaid(
                             },
                             { text: 'Domain Layer', link: '/theory/domain-layer' },
                             { text: 'Request Flow', link: '/theory/request-flow' },
-                            { text: 'Sitemap & Access Control', link: '/theory/sitemap' }
+                            { text: 'Sitemap & Access Control', link: '/theory/sitemap' },
+                            { text: 'Known Gaps', link: '/theory/known-gaps' },
+                            { text: 'Roadmap', link: '/theory/roadmap' }
                         ]
                     }
                 ],
@@ -48,6 +51,7 @@ export default withMermaid(
                         items: [
                             { text: 'Package Dependencies', link: '/tools/package-dependencies' },
                             { text: 'Package Scripts', link: '/tools/package-scripts' },
+                            { text: 'Environment Variables', link: '/tools/environment' },
                             { text: 'Runtime', link: '/tools/runtime' },
                             { text: 'Docker & Podman', link: '/tools/docker-and-podman' },
                             { text: 'Security', link: '/tools/security' }
@@ -66,6 +70,7 @@ export default withMermaid(
                         collapsed: false,
                         items: [
                             { text: 'Observability', link: '/tools/observability' },
+                            { text: 'Admin Dashboard', link: '/tools/admin-dashboard' },
                             { text: 'Umami', link: '/tools/umami' }
                         ]
                     },

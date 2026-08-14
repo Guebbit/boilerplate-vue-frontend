@@ -94,6 +94,52 @@ describe('unknown routes', () => {
                 expect(router.currentRoute.value.params.locale).not.toBe('nonsense');
             })
         ));
+
+    /**
+     * A deep unknown path is caught by the LOCALE-scoped catch-all, not the top-level one.
+     *
+     * `/:locale` matches a single segment, so `/a/b/c` reads as locale `a` with `b/c` left for
+     * the children — where `:catchAll(.*)` takes it. Together with the case above, this is what
+     * makes the top-level `/:catchAll(.*)` route unreachable: every path is either `/`, or has a
+     * first segment that `/:locale` accepts.
+     *
+     * Recorded rather than deleted, because "unreachable" is a claim about the route table that
+     * only holds while `/:locale` stays a single-segment param — and this test is what would fail
+     * if that changed.
+     */
+    it('sends a deep unknown path to the locale-scoped 404', () =>
+        loadRouter().then((router) =>
+            router.push('/en/nope/nope/nope').then(() => {
+                expect(router.currentRoute.value.name).toBe('Error');
+                expect(router.currentRoute.value.params.status).toBe('404');
+                expect(router.currentRoute.value.params.message).toBe('error-page.not-found');
+                expect(router.currentRoute.value.params.locale).toBe('en');
+            })
+        ));
+});
+
+/**
+ * The shop's prose pages — one component, four route records generated from a list.
+ *
+ * Worth pinning because the NAME is computed (`'Static' + page[0].toUpperCase() + page.slice(1)`)
+ * and every navigation to these pages is by name. An off-by-one in that expression produces
+ * `StaticAbout` → `Staticbout`, which TypeScript cannot see and which fails only as a dead link.
+ */
+describe('static prose pages', () => {
+    it.each([
+        ['about', 'StaticAbout'],
+        ['faq', 'StaticFaq'],
+        ['terms', 'StaticTerms'],
+        ['privacy', 'StaticPrivacy']
+    ])('serves /%s as the route named %s', (page, name) =>
+        loadRouter().then((router) =>
+            router.push(`/en/${page}`).then(() => {
+                expect(router.currentRoute.value.name).toBe(name);
+                // The one prop that tells the shared component which dictionary to render.
+                expect(router.currentRoute.value.matched.at(-1)?.props.default).toEqual({ page });
+            })
+        )
+    );
 });
 
 describe('global auth restore', () => {

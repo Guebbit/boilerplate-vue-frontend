@@ -37,9 +37,38 @@ Two modules that each need the other are not a dependency pair: either they are 
 of them is holding state that belongs to the other. `dependsOn` is validated as a DAG while the
 router is assembled, and a cycle throws with the path named.
 
-The seven domains in this build are `account`, `admin`, `cart`, `orders`, `products`, `realtime`
-and `users`. Two declare an edge: `cart → orders` (checkout creates an order) and
-`account → users` (both validate against the same field rules). The rest are leaves.
+The twelve domains in this build are `account`, `admin`, `cart`, `delivery`, `feedback`,
+`inventory`, `orders`, `payments`, `products`, `realtime`, `users` and `wishlist`. Six declare an
+edge; the other six are leaves.
+
+```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 40, 'rankSpacing': 50}}}%%
+flowchart LR
+    orders --> cart
+    orders --> delivery
+    orders --> payments
+    cart --> delivery
+    products --> cart
+    products --> wishlist
+    wishlist --> cart
+    inventory --> products
+    account --> users
+
+    admin:::leaf
+    feedback:::leaf
+    realtime:::leaf
+
+    classDef leaf fill:#f1f5f9,stroke:#94a3b8,color:#111827;
+```
+
+Read an arrow as "imports from, through the target's barrel". `orders → payments` because
+checkout settles a payment; `products → wishlist` because the product page writes a wishlist line.
+Nothing points back, which is what keeps the graph a DAG.
+
+::: tip This list goes stale
+It is a snapshot of `src/modules.ts`, and that file is the only authority. `npm run test:unit`
+covers the registry's validation, not this paragraph — if the two disagree, the code is right.
+:::
 
 ### Adding a domain
 

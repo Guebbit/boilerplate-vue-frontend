@@ -1,0 +1,66 @@
+# Production stack for the frontend.
+#
+# `docker-compose.yml` is the DEVELOPMENT stack: it bind-mounts the working tree and runs the Vite
+# dev server. This one builds the static bundle and serves it with nginx.
+#
+#   docker compose -f docker-compose.production.yml up -d --build
+#   docker compose -f docker-compose.production.yml logs -f frontend
+#
+# ── AN IMAGE IS SPECIFIC TO ONE ENVIRONMENT ──────────────────────────────────────────────────────
+# Vite replaces every `import.meta.env.VITE_*` with a literal while bundling, so the values below
+# are BUILD arguments, not runtime environment. Changing one requires a rebuild — `up -d` alone
+# will happily restart a container with the old values compiled in. See the long note at the top of
+# `.docker/Dockerfile.production`.
+#
+# Set them in a `.env` file beside this one (compose interpolates it automatically) or export them
+# in the shell. `VITE_API_URL` is required and has no sensible default: a frontend pointed at the
+# wrong API is a frontend that looks fine and does nothing.
+
+services:
+    frontend:
+        build:
+            context: .
+            dockerfile: .docker/Dockerfile.production
+            args:
+                # Required. The `:?` form fails the build with this message rather than quietly
+                # baking an empty string into the bundle and shipping an app that calls itself.
+                VITE_API_URL: '${VITE_API_URL:?set VITE_API_URL — it is compiled into the bundle}'
+                VITE_API_SSE: '${VITE_API_SSE:-}'
+                VITE_APP_BASE_URL: '${VITE_APP_BASE_URL:-/}'
+                VITE_APP_SUPPORTED_LOCALES: '${VITE_APP_SUPPORTED_LOCALES:-en,it}'
+                VITE_APP_DEFAULT_LOCALE: '${VITE_APP_DEFAULT_LOCALE:-en}'
+                VITE_APP_FALLBACK_LOCALE: '${VITE_APP_FALLBACK_LOCALE:-en}'
+                # `warn` rather than the development default: the browser console is a user-facing
+                # surface in production, and request-level logging there is noise at best.
+                VITE_APP_LOG_LEVEL: '${VITE_APP_LOG_LEVEL:-warn}'
+                VITE_AXIOS_TIMEOUT: '${VITE_AXIOS_TIMEOUT:-30000}'
+                VITE_MAX_UPLOAD_BYTES: '${VITE_MAX_UPLOAD_BYTES:-5242880}'
+                # Zod-validating every response against the OpenAPI envelope costs CPU on the main
+                # thread for every request. It is a development and live-E2E instrument; off here.
+                VITE_VALIDATE_RESPONSES: '${VITE_VALIDATE_RESPONSES:-false}'
+                # Telemetry. All optional — an unset value disables the integration entirely rather
+                # than pointing it at nothing.
+                VITE_FARO_URL: '${VITE_FARO_URL:-}'
+                VITE_FARO_APP_NAME: '${VITE_FARO_APP_NAME:-frontend}'
+                VITE_FARO_APP_VERSION: '${VITE_FARO_APP_VERSION:-}'
+                VITE_FARO_ENVIRONMENT: '${VITE_FARO_ENVIRONMENT:-production}'
+                VITE_UMAMI_SRC: '${VITE_UMAMI_SRC:-}'
+                VITE_UMAMI_WEBSITE_ID: '${VITE_UMAMI_WEBSITE_ID:-}'
+
+        restart: unless-stopped
+
+        ports:
+            # Loopback only. Terminate TLS in a reverse proxy in front of this — the API sets
+            # authentication cookies, and those must not cross a plain-HTTP hop.
+            - '127.0.0.1:${FRONTEND_PORT:-8080}:80'
+# ── WHY THE API IS NOT A SERVICE HERE ────────────────────────────────────────────────────────────
+# The two repositories deploy independently: the frontend is a bundle on a CDN or an nginx
+# container, the API is a long-running process next to its databases. Declaring the API here would
+# make one repository's compose file the owner of the other's deployment, and the version skew
+# between them would stop being visible.
+#
+# What connects them is `VITE_API_URL` above and the OpenAPI contract the API publishes. To run
+# both locally as a deployment rehearsal, bring up the API's own
+# `docker-compose.production.yml` first, then build this with
+# `VITE_API_URL=http://localhost:3000` — the same two commands a real deploy runs, in the same
+# order, which is what makes the rehearsal worth anything.

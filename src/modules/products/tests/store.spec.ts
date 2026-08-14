@@ -77,6 +77,16 @@ describe('useProductsStore', () => {
                     expect(request.data).toMatchObject({ title: 'Gadget', price: 49.99 });
                 }));
 
+        it('resolves with the created product, not with the envelope', () =>
+            useProductsStore()
+                .createProduct({ title: 'Gadget', price: 49.99 })
+                .then((created) => {
+                    // `ProductCreate.vue` routes to `/products/${created.id}` on success, so a
+                    // wrapper that forgot to unwrap `response.data` would navigate to
+                    // `/products/undefined` rather than fail visibly here.
+                    expect(created).toEqual({ id: 'p1', title: 'T', price: 1 });
+                }));
+
         it('posts multipart to /products when an image is attached', () =>
             useProductsStore()
                 .createProduct({ title: 'Gadget', price: 49.99, imageUpload: new Blob(['x']) })
@@ -167,6 +177,50 @@ describe('useProductsStore', () => {
                     expect(lastRequest()).toMatchObject({ url: '/products/p1', method: 'PUT' });
                     expect(lastFormData().get('title')).toBe('Renamed');
                 }));
+
+        /**
+         * The other half of `optimisticPatch`, and the half the Blob test cannot see: an
+         * implementation that patched NOTHING would also leave no `imageUpload` behind. What
+         * makes the patch worth having is that the edited row shows the new title while the
+         * request is still in flight.
+         */
+        it('shows the edited fields before the response arrives', () => {
+            const store = useProductsStore();
+            store.addProduct(PRODUCT);
+
+            // `Once`, deliberately: the suite's `beforeEach` calls `vi.clearAllMocks()`, which
+            // clears recorded calls but NOT an implementation set with `mockReturnValue`. A
+            // persistent override here would hand every later test this same settled promise.
+            let release!: (value: unknown) => void;
+            const transportResponse = new Promise((resolve) => {
+                release = resolve;
+            });
+            vi.mocked(orvalMutator).mockImplementationOnce(() => transportResponse as never);
+
+            const pending = store.updateProduct('p1', {
+                title: 'Renamed',
+                price: 9.99,
+                imageUpload: new Blob(['x'])
+            });
+
+            // `waitFor` rather than a counted number of microtasks: the toolkit awaits
+            // `cancelQueries()` before writing the optimistic record, so how many ticks that
+            // takes is TanStack's business and not something this test should encode. The
+            // request is still unresolved throughout — `release` has not been called yet — so
+            // this can only pass if the store was patched ahead of the response.
+            return vi
+                .waitFor(() => {
+                    expect(store.products.p1.title).toBe('Renamed');
+                })
+                .then(() => {
+                    expect(store.products.p1).not.toHaveProperty('imageUpload');
+                    release({ data: { ...PRODUCT, title: 'Renamed' } });
+                    return pending;
+                })
+                .then(() => {
+                    expect(store.products.p1.title).toBe('Renamed');
+                });
+        });
 
         it('never parks the uploaded Blob in store state', () => {
             const store = useProductsStore();
@@ -359,5 +413,52 @@ describe('useProductsStore', () => {
                     });
             });
         });
+
+        describe('fetchFacets', () => {
+            const FACETS = {
+                categories: [{ name: 'tools', count: 3 }],
+                tags: [{ name: 'new', count: 1 }]
+            };
+
+            it('parks the facets on the store and resolves with them', () => {
+                vi.mocked(orvalMutator).mockResolvedValue({ data: FACETS } as never);
+                const store = useProductsStore();
+
+                return store.fetchFacets().then((result) => {
+                    expect(lastRequest()).toMatchObject({
+                        url: '/products/categories',
+                        method: 'GET'
+                    });
+                    // Both halves matter: the view reads `store.facets` to render the chips, and
+                    // the caller reads the return value. An implementation that only did one of
+                    // the two would leave either the chips empty or the caller with `undefined`.
+                    expect(store.facets).toEqual(FACETS);
+                    expect(result).toEqual(FACETS);
+                });
+            });
+        });
+    });
+
+    /*
+     * There is deliberately NO test for the five-minute `TTL`.
+     *
+     * It is one number handed to `useStructureCrudApi`, and the only way to observe it is to drive
+     * the toolkit's cache: fetch twice and count requests, or move the clock and count again. Both
+     * assert that TanStack Query's `staleTime` works, which is TanStack's suite's job and not this
+     * one's — the same rule stated at the top of this file for the CRUD wrappers.
+     *
+     * The consequence is on the record rather than worked around: Stryker's mutants on that
+     * expression (`5 * 60 / 1000`, `5 / 60`) and on the options object around it survive, and they
+     * should. A mutant in a value passed straight to a dependency is not this repo's to kill, and
+     * writing a toolkit test to move a score is how the score stops meaning anything.
+     */
+
+    /**
+     * Pinia identifies a store by the string passed to `defineStore`, and that string is also the
+     * key devtools and any persistence plugin use. Nothing else in the suite would notice it
+     * changing, because every test reaches the store through `useProductsStore()`.
+     */
+    it('is registered under the "products" id', () => {
+        expect(useProductsStore().$id).toBe('products');
     });
 });

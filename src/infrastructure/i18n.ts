@@ -46,7 +46,18 @@ const declaredLocales =
 /**
  * [on build]
  * Locales with a dictionary in the bundle, discovered from the folder.
+ *
+ * The glob pattern is exempt from mutation, and the reason is about the TOOL rather than the
+ * tests. Vite resolves `import.meta.glob` at transform time and requires its argument to be a
+ * STATIC string literal; Stryker's instrumenter rewrites every literal in scope into a ternary
+ * (`cond ? "" : "/src/locales/*.json"`). The two are incompatible by construction — Vite's glob
+ * parser hits the rewritten expression and the whole run dies in the dry run with
+ * `RollupError: Expected ',', got '<eof>'`, before a single mutant is tested.
+ *
+ * Scoped to this one line rather than excluding the file: the `.replace` chain below is ordinary
+ * runtime logic and its mutants are real findings.
  */
+// Stryker disable next-line StringLiteral: Vite requires a static literal here; see above.
 const bundledLocales = Object.keys(import.meta.glob('/src/locales/*.json')).map((file) =>
     file.replace('/src/locales/', '').replace('.json', '')
 );
@@ -198,6 +209,9 @@ export function _loadLocale(i18n: I18n, locale: string): Promise<unknown> {
         // dictionaries on top of it — see there for why that belongs at the install point and not
         // here.
         return (
+            // Stryker disable next-line StringLiteral: mutating this template to "" leaves an
+            // `import("")` that Vite cannot statically analyse, so the whole module fails to
+            // transform and every suite errors out instead of one mutant surviving.
             import(/* webpackChunkName: "locale-[request]" */ `@/locales/${locale}.json`)
                 // file found
                 .then((file: { default: ITranslationDictionaries }) =>
@@ -298,6 +312,9 @@ export function _ensureFallbackLoaded(i18n: I18n, locale: string): Promise<unkno
         return Promise.resolve();
 
     return (
+        // Stryker disable next-line StringLiteral: mutating this template to "" leaves an
+        // `import("")` that Vite cannot statically analyse, so the whole module fails to
+        // transform and every suite errors out instead of one mutant surviving.
         import(/* webpackChunkName: "locale-[request]" */ `@/locales/${fallback}.json`)
             .then((file: { default: ITranslationDictionaries }) =>
                 _updateLocale(i18n, fallback, file.default)

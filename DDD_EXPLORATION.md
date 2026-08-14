@@ -3,7 +3,7 @@
 **Status: exploration. Nothing here is implemented.**
 
 This document works out what it would take to move these two boilerplates —
-`boilerplate-node-api-mongodb-mongoose` and `boilerplate-vue-frontend` — from where they are today
+`boilerplate-node-backend` and `boilerplate-vue-frontend` — from where they are today
 to **full tactical DDD**, and what that would cost.
 
 It exists so the decision can be made with numbers instead of vibes, and so that a project that

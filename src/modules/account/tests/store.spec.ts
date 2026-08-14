@@ -121,11 +121,133 @@ describe('useAccountStore.signup', () => {
             });
     });
 
+    it('keeps the store id stable', () => {
+        // Pinia keys the store, devtools and any persistence plugin by this string, and every
+        // other test here reaches the store through `useAccountStore()` so none would notice.
+        expect(useAccountStore().$id).toBe('account');
+    });
+
     it('never parks the uploaded File in store state', () => {
         const store = useAccountStore();
 
         return store.signup({ ...CREDENTIALS, imageUpload: IMAGE() }).then(() => {
             expect(JSON.stringify(store.profile ?? {})).not.toContain('imageUpload');
+        });
+    });
+});
+
+/**
+ * The address book.
+ *
+ * All four endpoints answer with the WHOLE book rather than with the row that changed, because
+ * the invariant worth rendering after any write — exactly one default — is a property of the
+ * list. So the thing to pin for each is the same: the right request goes out, and the local list
+ * is replaced by the answer rather than patched locally.
+ *
+ * `removeAddress` is the one where that matters most: deleting the default promotes the oldest
+ * survivor server-side, so a store that removed the row locally would show a book with no
+ * default at all until the next reload.
+ */
+/** Makes the transport answer every address endpoint with this book. */
+const respondWithBook = (addresses: unknown[]) =>
+    vi.mocked(orvalMutator).mockResolvedValue({ data: { addresses } } as never);
+
+describe('useAccountStore addresses', () => {
+    const HOME = {
+        id: 'a1',
+        label: 'home',
+        fullName: 'Ada Lovelace',
+        street: '1 Main St',
+        city: 'Springfield',
+        zip: '11111',
+        country: 'US',
+        default: true
+    };
+    const WORK = {
+        id: 'a2',
+        label: 'office',
+        fullName: 'Ada Lovelace',
+        street: '2 Side St',
+        city: 'Shelbyville',
+        zip: '22222',
+        country: 'US',
+        default: false
+    };
+
+    beforeEach(() => {
+        setActivePinia(createPinia());
+        vi.clearAllMocks();
+    });
+
+    it('starts empty, before anything is fetched', () => {
+        expect(useAccountStore().addresses).toEqual([]);
+    });
+
+    it('fetches the book and stores it', () => {
+        respondWithBook([HOME, WORK]);
+        const store = useAccountStore();
+
+        return store.fetchAddresses().then((result) => {
+            expect(lastRequest()).toMatchObject({ url: '/account/addresses', method: 'GET' });
+            expect(store.addresses).toEqual([HOME, WORK]);
+            expect(result).toEqual([HOME, WORK]);
+        });
+    });
+
+    it('posts a new entry and replaces the book with the answer', () => {
+        respondWithBook([HOME, WORK]);
+        const store = useAccountStore();
+
+        const { id: _id, default: _default, ...input } = WORK;
+
+        return store.addAddress(input).then(() => {
+            expect(lastRequest()).toMatchObject({ url: '/account/addresses', method: 'POST' });
+            expect(store.addresses).toEqual([HOME, WORK]);
+        });
+    });
+
+    it('puts a change to one entry, addressed by id', () => {
+        respondWithBook([{ ...HOME, city: 'Ogdenville' }]);
+        const store = useAccountStore();
+
+        return store.updateAddress('a1', { city: 'Ogdenville' }).then(() => {
+            expect(lastRequest()).toMatchObject({
+                url: '/account/addresses/a1',
+                method: 'PUT'
+            });
+            expect(store.addresses).toEqual([{ ...HOME, city: 'Ogdenville' }]);
+        });
+    });
+
+    it('deletes an entry and takes the promoted default from the answer', () => {
+        const store = useAccountStore();
+        respondWithBook([HOME, WORK]);
+
+        return store
+            .fetchAddresses()
+            .then(() => {
+                // The server promotes WORK on deleting the default; the client must not guess it.
+                respondWithBook([{ ...WORK, default: true }]);
+                return store.removeAddress('a1');
+            })
+            .then(() => {
+                expect(lastRequest()).toMatchObject({
+                    url: '/account/addresses/a1',
+                    method: 'DELETE'
+                });
+                expect(store.addresses).toEqual([{ ...WORK, default: true }]);
+            });
+    });
+
+    it('reads a book-less payload as an empty book rather than as undefined', () => {
+        // The `?? []` in `readAddressesResponse`. Every consumer does `addresses.map(...)`, so
+        // an undefined here is a render crash rather than an empty state.
+        vi.mocked(orvalMutator).mockResolvedValue({ data: {} } as never);
+        const store = useAccountStore();
+
+        return store.fetchAddresses().then((result) => {
+            expect(result).toEqual([]);
+            expect(store.addresses).toEqual([]);
         });
     });
 });

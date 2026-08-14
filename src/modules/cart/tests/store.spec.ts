@@ -23,7 +23,8 @@ import {
     updateCartItemById,
     removeCartItem,
     clearCart,
-    checkout as apiCheckout
+    checkout as apiCheckout,
+    reorder as apiReorder
 } from '@api';
 import { analyticsEvents } from '@/infrastructure/observability';
 
@@ -35,6 +36,7 @@ vi.mock('@/infrastructure/observability', () => ({
         CART_ITEM_ADDED: 'cart_item_added',
         CART_ITEM_REMOVED: 'cart_item_removed',
         CART_CLEARED: 'cart_cleared',
+        CART_REORDERED: 'cart_reordered',
         CHECKOUT_COMPLETED: 'checkout_completed',
         CHECKOUT_FAILED: 'checkout_failed'
     }
@@ -55,7 +57,8 @@ vi.mock('@api', () => ({
     updateCartItemById: vi.fn(() => Promise.resolve({ data: CART })),
     removeCartItem: vi.fn(() => Promise.resolve({ data: EMPTY_CART })),
     clearCart: vi.fn(() => Promise.resolve({ data: EMPTY_CART })),
-    checkout: vi.fn(() => Promise.resolve({ data: { order: ORDER } }))
+    checkout: vi.fn(() => Promise.resolve({ data: { order: ORDER } })),
+    reorder: vi.fn(() => Promise.resolve({ data: CART }))
 }));
 
 describe('useCartStore', () => {
@@ -123,6 +126,21 @@ describe('useCartStore', () => {
                 .then(() => {
                     expect(track).not.toHaveBeenCalled();
                 }));
+
+        /**
+         * The endpoint recalculates the summary, so the response is the whole cart and not just
+         * the edited line. Without this, an implementation that fired the request and threw the
+         * answer away would pass both tests above while leaving the totals on screen stale.
+         */
+        it('replaces the local cart with the recalculated response', () => {
+            const store = useCartStore();
+
+            return store.updateCartItem('p1', 5).then((result) => {
+                expect(store.cart).toEqual(CART);
+                expect(store.cartCount).toBe(1);
+                expect(result).toEqual(CART);
+            });
+        });
     });
 
     describe('removeCartItem', () => {
@@ -233,5 +251,61 @@ describe('useCartStore', () => {
                     });
                 });
         });
+
+        /**
+         * The optional chaining on `response.data?.order?.id` earns its keep here and nowhere
+         * else. A 200 that carries no order is not a shape this client should crash on — the
+         * cart was still emptied server-side, and a `TypeError` thrown out of the analytics call
+         * would turn a successful checkout into a failed promise the view reports as an error.
+         *
+         * Without the `?.` this test throws instead of emitting undefined fields.
+         */
+        it('survives a success envelope with no order in it', () => {
+            vi.mocked(apiCheckout).mockResolvedValueOnce({ data: {} } as never);
+
+            return useCartStore()
+                .checkout()
+                .then(() => {
+                    expect(track).toHaveBeenCalledWith(analyticsEvents.CHECKOUT_COMPLETED, {
+                        order_id: undefined,
+                        total_price: undefined
+                    });
+                });
+        });
+    });
+
+    /**
+     * Reorder copies one of the caller's own orders back into the cart. The response is the
+     * updated cart rather than the order, because products that left the catalogue are skipped
+     * server-side — replacing the local copy with the answer is what makes that skip visible.
+     */
+    describe('reorder', () => {
+        it('sends the order id and replaces the local cart with the response', () => {
+            const store = useCartStore();
+
+            return store.reorder('o1').then((result) => {
+                expect(apiReorder).toHaveBeenCalledWith('o1');
+                expect(store.cart).toEqual(CART);
+                expect(store.cartCount).toBe(1);
+                expect(result).toEqual(CART);
+            });
+        });
+
+        it('tracks the reorder against the order it came from', () =>
+            useCartStore()
+                .reorder('o1')
+                .then(() => {
+                    expect(track).toHaveBeenCalledWith(analyticsEvents.CART_REORDERED, {
+                        order_id: 'o1'
+                    });
+                }));
+    });
+
+    /**
+     * Pinia identifies a store by the string given to `defineStore`. Nothing else in this suite
+     * would notice it changing, since every test reaches the store through `useCartStore()`.
+     */
+    it('is registered under the "cart" id', () => {
+        expect(useCartStore().$id).toBe('cart');
     });
 });
