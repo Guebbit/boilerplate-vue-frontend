@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FeedbackMessageFeed from '@/modules/realtime/components/FeedbackMessageFeed.vue';
@@ -13,6 +14,9 @@ const {
     connect: connectObservability,
     disconnect: disconnectObservability
 } = useRealtimeObservability();
+
+/** When on, the feed shows the full raw SSE frame instead of the one-line summary. */
+const showRawEvents = ref(false);
 
 /**
  * Rounds a byte count to whole megabytes for compact display.
@@ -40,6 +44,26 @@ const formatMetricsEntry = (entry: RealtimeMetricsEntry) => {
         `sse ${realtime.sseClients}`
     );
 };
+
+/**
+ * Renders one SSE event as its full raw frame: event name, arrival time and the
+ * complete JSON payload exactly as received, for observability of the wire format.
+ *
+ * @param entry - Feed entry holding the event kind, timestamp and payload.
+ * @returns A single-line `[kind] time {...payload}` string.
+ */
+const formatRawEntry = (entry: RealtimeMetricsEntry) => {
+    const time = new Date(entry.timestamp).toLocaleTimeString();
+
+    return `[${entry.kind}] ${time} ${JSON.stringify(entry.payload)}`;
+};
+
+/** Feed lines, switching between the summarised and raw rendering per `showRawEvents`. */
+const feedMessages = computed(() =>
+    observabilityEntries.value.map((entry) =>
+        showRawEvents.value ? formatRawEntry(entry) : formatMetricsEntry(entry)
+    )
+);
 </script>
 
 <template>
@@ -54,16 +78,23 @@ const formatMetricsEntry = (entry: RealtimeMetricsEntry) => {
                         {{ observabilityStatus }}
                     </v-chip>
                 </div>
-                <div class="flex flex-wrap gap-2">
+                <div class="flex flex-wrap items-center gap-2">
                     <v-btn color="primary" variant="tonal" @click="connectObservability">
                         {{ t('realtime-playground-page.button-connect') }}
                     </v-btn>
                     <v-btn variant="tonal" @click="disconnectObservability">
                         {{ t('realtime-playground-page.button-disconnect') }}
                     </v-btn>
+                    <v-switch
+                        v-model="showRawEvents"
+                        density="compact"
+                        hide-details
+                        class="flex-none"
+                        :label="t('realtime-playground-page.label-raw-events')"
+                    />
                 </div>
                 <FeedbackMessageFeed
-                    :messages="observabilityEntries.map(formatMetricsEntry)"
+                    :messages="feedMessages"
                     variant="alert"
                     max-height="220px"
                     :empty-text="t('realtime-playground-page.empty-metrics')"

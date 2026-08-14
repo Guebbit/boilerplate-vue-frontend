@@ -4,6 +4,7 @@
         "sse-observability": "Osservabilità SSE",
         "button-connect": "Connetti SSE",
         "button-disconnect": "Disconnetti SSE",
+        "label-raw-events": "Eventi grezzi",
         "empty-metrics": "Nessun evento di metriche"
     },
     "navigation": {
