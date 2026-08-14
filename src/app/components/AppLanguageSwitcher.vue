@@ -1,30 +1,38 @@
 <script setup lang="ts">
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
 import { Check, Languages } from 'lucide-vue-next';
+import { updateAccount as apiUpdateAccount } from '@api';
 import { changeLanguage, supportedLanguages } from '@/infrastructure/i18n.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 
 const router = useRouter();
 const route = useRoute();
 const { t, locale } = useI18n();
+const { isAuth } = storeToRefs(useSessionStore());
 
 /**
  * Switches the app language and re-enters the current route under the new locale.
  *
- * It does NOT write to the visitor's account, and the version that appeared to was not writing
- * either: `updateProfileLanguage` set the locale and then PUT the user's *unchanged* email and
- * username back — `updateProfile` never sent a language field at all. So the "persisted
- * preference" was one wasted request per language switch and nothing more. Removed with the
- * session/account split rather than carried through it.
+ * Two audiences, two lifetimes. For a GUEST the choice lives in the URL (`/:locale/...`), which
+ * the router's own guard reads — the browser-negotiated default fills in when no segment says
+ * otherwise. For a SIGNED-IN visitor the choice also lands on their account (`PUT /account
+ * { locale }`), because their record is the one place a preference outlives the tab: the next
+ * login reads it back and re-applies it. Best-effort and fire-and-forget — a failed write must
+ * not un-switch the page the visitor is looking at.
  *
- * The locale that actually survives a reload is the one in the URL (`/:locale/...`), which the
- * router's own guard reads.
+ * Written through the generated client rather than the account store: the shell deliberately
+ * addresses the account module by route NAME only (see `hasSignIn` in `AppNavigation`), so a
+ * build without that module keeps a working switcher whose PUT simply answers 404 into the
+ * `catch` below.
  *
  * @param newLocale - Locale code picked by the user, e.g. `it`.
  * @returns A promise resolving once the router settles: on the same route with
  *  the new locale, or on `/` (locale recalculated) if that navigation fails.
  */
 function switchLanguage(newLocale: string) {
+    if (isAuth.value) void apiUpdateAccount({ locale: newLocale }).catch(() => undefined);
     return Promise.resolve(
         // change language
         changeLanguage(newLocale)

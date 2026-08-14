@@ -455,6 +455,8 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
                 patchUser(currentUser.id, { email: requestBody.email, verified: false });
             if (requestBody.username !== undefined)
                 patchUser(currentUser.id, { username: requestBody.username });
+            if (requestBody.locale !== undefined)
+                patchUser(currentUser.id, { locale: requestBody.locale });
             if (requestBody.imageUrl !== undefined)
                 patchUser(currentUser.id, { imageUrl: requestBody.imageUrl });
             patchUser(currentUser.id, { updatedAt: getIsoDateNow() });

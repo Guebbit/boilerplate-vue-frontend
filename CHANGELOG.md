@@ -9,6 +9,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **A language choice that knows who made it.** A guest's language lives where it always did —
+  the URL's `/:locale/` segment, browser-negotiated when nothing says otherwise — but a
+  signed-in visitor's choice now also lands on their account: the switcher writes `PUT /account
+{ locale }` (fire-and-forget, through the generated client rather than the account store, so
+  the shell keeps its no-module-imports rule and a build without the account module keeps a
+  working switcher), and the login page reads the record's `user.locale` back and re-applies it
+  — sign in through an English form, land on your Italian home. A `?continue=` deep link keeps
+  its own locale: the page it names wins. The BE needed nothing — signup has stamped the
+  negotiated locale onto the record all along, and the contract already carried the field; what
+  fell out instead was the account store's vestigial `updateProfileLanguage`, which PUT an
+  unchanged profile and persisted nothing. The locale e2e grew four teeth: switching re-speaks
+  the page in place (URL following), a guest's switch provably writes to no account, the saved
+  preference provably survives a logout and next login, and picking Spanish — the locale only
+  the API has — is caught actually DOWNLOADING the dictionary at runtime, via the browser's own
+  resource timing, since MSW answers inside the page where `cy.intercept` cannot see.
+
 - **Money, parcels and the ledger — the FE halves of payments, delivery and inventory.** Three
   new modules mirror the BE's on the idea. `payments` is a panel, not a page: the order page
   grows a card form (prefilled with the conventional `4242…` success card; the hint names the

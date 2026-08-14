@@ -185,17 +185,25 @@ describe('updateProfile', () => {
     });
 });
 
-describe('updateProfileLanguage', () => {
-    it('switches the active locale and persists the record', () => {
+describe('locale preference', () => {
+    it('persists the chosen language through PUT /account', () => {
         const store = useAccountStore();
 
         return store
             .fetchProfile(true)
-            .then(() => store.updateProfileLanguage('it'))
+            .then(() => store.updateProfile({ locale: 'it' }))
             .then(() => {
-                expect(store.profileLanguage).toBe('it');
-                // The refetch lands last; the PUT that persisted the locale sits before it.
-                expect(requestedUrls().at(-1)).toBe('/account');
+                const put = vi
+                    .mocked(orvalMutator)
+                    .mock.calls.map(
+                        (call) =>
+                            call[0] as { method?: string; url: string; data?: { locale?: string } }
+                    )
+                    .find(
+                        (call) => call.method?.toUpperCase() === 'PUT' && call.url === '/account'
+                    );
+                // The record carries the language, so the next login can re-apply it.
+                expect(put?.data?.locale).toBe('it');
             });
     });
 });

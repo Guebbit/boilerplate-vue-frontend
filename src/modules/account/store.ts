@@ -2,7 +2,6 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
-import { i18n } from '@/infrastructure/i18n.ts';
 import {
     getPayloadFromResponse,
     getTokenFromResponse,
@@ -68,8 +67,6 @@ export const useAccountStore = defineStore('account', () => {
      * Warning: can't use useI18n because it wouldn't work in global guards
      * (It works correctly on changes and so on)
      */
-
-    const profileLanguage = i18n.global.locale;
 
     /**
      * Push what the shell and the guards are allowed to know into the session store.
@@ -369,21 +366,6 @@ export const useAccountStore = defineStore('account', () => {
         fetchAny(() => apiRemoveAddress(addressId).then((data) => readAddressesResponse(data)));
 
     /**
-     * Switches the user's language and persists the profile.
-     *
-     * @param language - Locale code to store, e.g. `it`. Defaults to an empty
-     *  string, which clears the preference.
-     * @returns A promise resolving with the updated profile.
-     */
-    const updateProfileLanguage = (language = '') => {
-        // TODO check
-        profileLanguage.value = language;
-        return updateProfile({
-            ...profile.value
-        });
-    };
-
-    /**
      * Drops every trace of the current session: cached records, query cache, token and cookie.
      *
      * `resetAll()` rather than emptying `itemDictionary` by hand, because the hand-written version
@@ -458,7 +440,6 @@ export const useAccountStore = defineStore('account', () => {
         );
 
     return {
-        profileLanguage,
         profile,
         publishViewer,
         sessions,
@@ -473,7 +454,6 @@ export const useAccountStore = defineStore('account', () => {
         confirmAccountDelete,
         fetchProfile,
         updateProfile,
-        updateProfileLanguage,
         changePassword,
         fetchSessions,
         revokeSession,

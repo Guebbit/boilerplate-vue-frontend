@@ -15,7 +15,7 @@ import { useAccountStore } from '@/modules/account/store.ts';
 import { usersSchema } from '@/modules/users';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { notifyErrorMessages, VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/errors.ts';
-import { routerLinkI18n } from '@/infrastructure/i18n.ts';
+import { changeLanguage, routerLinkI18n, supportedLanguages } from '@/infrastructure/i18n.ts';
 import type { LoginRequest } from '@api';
 
 /**
@@ -86,15 +86,33 @@ if (import.meta.env.VITE_API_MOCK_ENABLED === 'true')
  *  the field the server named, or reported as a toast when it named none.
  */
 const submitForm = () => {
-    const { login } = useAccountStore();
+    const accountStore = useAccountStore();
     return handleSubmit(() =>
-        login(form.value.email!, form.value.password!)
-            .then(() =>
-                // if query continue was set, redirect to that page, otherwise redirect to home
-                route.query.continue
-                    ? router.push({ path: route.query.continue as string })
-                    : router.push({ name: 'Home' })
-            )
+        accountStore
+            .login(form.value.email!, form.value.password!)
+            .then(() => {
+                /*
+                 * The record's language wins over the tab's: the saved preference is what this
+                 * visitor asked to read, and login is the moment their record joins the session.
+                 * A `?continue=` deep link keeps its own locale — the page it names wins — and a
+                 * record with no preference (or one this build does not speak) changes nothing.
+                 */
+                const saved = accountStore.profile?.locale;
+                const applyPreference =
+                    !route.query.continue &&
+                    typeof saved === 'string' &&
+                    saved !== locale.value &&
+                    supportedLanguages.includes(saved)
+                        ? changeLanguage(saved)
+                        : Promise.resolve();
+                return applyPreference.then(() =>
+                    // if query continue was set, redirect to that page, otherwise redirect to
+                    // home — under whichever locale is active by now
+                    route.query.continue
+                        ? router.push({ path: route.query.continue as string })
+                        : router.push(routerLinkI18n({ name: 'Home' }))
+                );
+            })
             // Discard the NavigationFailure: handleSubmit's handler resolves with nothing
             .then(() => {})
     ).catch((error) => {
