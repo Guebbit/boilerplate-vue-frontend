@@ -11,7 +11,7 @@ The mocks are **not** a convenience stub that returns "some plausible JSON". The
 1. **Data parity.** The seed records mirror the backend's — same ids, same credentials, same content. This is what lets `cy.loginAs('user')` (`gino@pino.it` / `password`) work identically against MSW and against the real API. It is no longer maintained by hand: both sides read `seed-identities.ts`, a dependency-free data file that is **byte-identical** in this repo (`tests/support/mocks/`) and in the backend (`db/seeds/`). The backend authors it — each of its domains owns its own records in a fragment, and `npm run contracts:bundle` there assembles them — so a change goes in over there and the rebuilt file is copied here. `npm run check:spec-identity` answers "have the seeds drifted?", and the `spec-identity` CI job fails the build on the commit that forks it:
 
     ```bash
-    diff boilerplate-node-api-mongodb-mongoose/db/seeds/seed-identities.ts \
+    diff boilerplate-node-backend/db/seeds/seed-identities.ts \
          boilerplate-vue-frontend/tests/support/mocks/seed-identities.ts
     ```
 

@@ -3,7 +3,7 @@ name: CI
 # The merge gate. Everything here runs on every PR and on every push to main, and the aggregate
 # `ci` job at the bottom is the single check branch protection requires.
 #
-# Deliberately many small jobs rather than one `npm run complete:check`: they run in parallel, and
+# Deliberately many small jobs rather than one `npm run complete`: they run in parallel, and
 # a red square names the thing that broke (formatting? contract? e2e?) without anyone opening a
 # log. The trade is repeated checkout/setup/install boilerplate in each.
 #
@@ -462,6 +462,66 @@ jobs:
                   retention-days: 14
                   if-no-files-found: ignore
 
+    test-e2e-random:
+        # The resilience spec against a freshly generated, contract-valid dataset rather than the
+        # fixed one — the half of the mock surface `test-e2e` above cannot reach, because a fixture
+        # a spec was written against is a shape the spec already handles.
+        #
+        # It is here rather than only in `e2e-random.yml` because `npm run complete` runs it, and a
+        # gate CI does not reproduce is not the gate. The seed is NOT pinned, deliberately and for
+        # the same reason `test-contract` in the backend does not pin its own: a fresh dataset each
+        # run is the entire point, and the seed is printed so a failure reproduces exactly with
+        # `RANDOM_DATA_SEED=<seed> npm run test:e2e:random`.
+        #
+        # `e2e-random.yml` still runs nightly. This job answers "does this PR survive one roll";
+        # the nightly answers "does main survive many".
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+
+            - name: Cache Cypress binary
+              uses: actions/cache@v4
+              with:
+                  path: ~/.cache/Cypress
+                  key: cypress-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+                  restore-keys: |
+                      cypress-${{ runner.os }}-
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Run the resilience spec against a random dataset
+              run: npm run test:e2e:random
+
+            - name: Upload Cypress screenshots
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: cypress-screenshots-random
+                  path: tests/e2e/screenshots
+                  retention-days: 14
+                  if-no-files-found: ignore
+
+            - name: Upload Cypress videos
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: cypress-videos-random
+                  path: tests/e2e/videos
+                  retention-days: 14
+                  if-no-files-found: ignore
+
     ci:
         # Single status check to require in branch protection, so adding/renaming
         # jobs above doesn't require updating the required-checks list every time.
@@ -483,6 +543,7 @@ jobs:
             - build
             - test-unit
             - test-e2e
+            - test-e2e-random
             - spec-identity
         runs-on: ubuntu-latest
         timeout-minutes: 5

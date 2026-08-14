@@ -6,7 +6,7 @@ delete one. [Layers](./layers.md) is the folder map; this is the reasoning behin
 ## The goal, stated as a test
 
 > Deleting a domain is `rm -rf` of one folder plus removing one line from a registry, and
-> `complete:check` stays green.
+> `complete` stays green.
 
 The driving scenario is a boilerplate that gets carved up: today an ecommerce demo; tomorrow an
 event portal that keeps users, replaces products with events and drops the cart; later a marketing

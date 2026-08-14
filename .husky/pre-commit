@@ -1,9 +1,17 @@
-# The full gate, and the only one: lint, openapi lint, format check, build, unit, Cypress e2e.
+# The full gate, and the only one: lint, openapi + asyncapi lint, format check, the cross-repo
+# contract check, build, Cypress e2e against the fixed mock dataset, and Cypress again against a
+# freshly generated one.
 #
-# About eight and a half minutes, and that is accepted deliberately: the alternative is a lighter
-# hook that lets a broken e2e run reach a push, and Cypress is the only layer here that exercises
-# the app as a user meets it. Run it, or run `git commit --no-verify` knowingly — not by default.
+# Around ten minutes, and that is accepted deliberately: the alternative is a lighter hook that
+# lets a broken e2e run reach a push, and Cypress is the only layer here that exercises the app as
+# a user meets it. Run it, or run `git commit --no-verify` knowingly — not by default.
+#
+# `check:spec-identity` SKIPS rather than fails when the paired backend is not on disk, so a
+# half-cloned pair can still commit. It stays fatal under CI, where a missing sibling means the
+# workflow is misconfigured rather than absent.
 #
 # Deliberately not here, and run by hand for the occasions that want them: `test:mutation`
-# (re-executes the unit suite once per mutant) and `test:e2e:live` (needs the paired backend up).
-npm run complete:check
+# (re-executes the unit suite once per mutant — nightly in CI), and `complete:manual`, which is
+# `test:e2e:visual` (pixel diffs that answer to the machine that took them) plus `test:e2e:live`
+# (needs the paired backend up).
+npm run complete

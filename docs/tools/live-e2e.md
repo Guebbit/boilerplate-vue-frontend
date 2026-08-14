@@ -50,7 +50,7 @@ flowchart TB
 
 ```sh
 # terminal 1 — backend
-cd boilerplate-node-api-mongodb-mongoose
+cd boilerplate-node-backend
 npm run compose:restart   # or: npm run compose:restart
 npm run host -- db:bootstrap
 
@@ -84,10 +84,10 @@ Run `npm run check:spec-identity` alongside it when the pair has moved — a for
 
 ```sh
 # default: a sibling checkout
-../boilerplate-node-api-mongodb-mongoose
+../boilerplate-node-backend
 
 # override for a different layout
-BACKEND_PATH=/path/to/boilerplate-node-api-mongodb-mongoose npm run test:e2e:live
+BACKEND_PATH=/path/to/boilerplate-node-backend npm run test:e2e:live
 ```
 
 The resolved value is always an absolute path, so `npm --prefix` errors name a real location instead of something relative to whatever `cwd` Cypress happened to have.

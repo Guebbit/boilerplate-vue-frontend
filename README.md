@@ -1,775 +1,115 @@
 # boilerplate-vue-frontend
 
-> Vue 3 + TypeScript SPA boilerplate, OpenAPI-first, paired with [`boilerplate-node-backend`](https://github.com/Guebbit/boilerplate-node-backend).
+> Vue 3 + TypeScript SPA. Contract-first, modular, and able to run with no backend at all.
+> Paired with [`boilerplate-node-backend`](https://github.com/Guebbit/boilerplate-node-backend).
+
+**📚 The documentation is the real reference — this file is only the door.**
+Run `npm run docs:dev`, or read `docs/`.
 
 ---
 
-## Table of contents
-
-- [Quick start](#quick-start)
-- [Tech stack & official docs](#tech-stack--official-docs)
-- [Architecture at a glance](#architecture-at-a-glance)
-- [Folder structure](#folder-structure)
-- [Sitemap & access control](#sitemap--access-control)
-- [Environment variables](#environment-variables)
-- [npm scripts](#npm-scripts)
-- [Validation gate](#validation-gate)
-- [OpenAPI contract flow](#openapi-contract-flow)
-- [AsyncAPI realtime flow](#asyncapi-realtime-flow)
-- [HTTP & error handling](#http--error-handling)
-- [Routing, auth & i18n](#routing-auth--i18n)
-- [Mocking with MSW](#mocking-with-msw)
-- [Testing](#testing)
-- [Observability (Grafana Faro, Umami, analytics)](#observability-grafana-faro-umami-analytics)
-- [Admin Dashboard](#admin-dashboard)
-- [TODO / roadmap](#todo--roadmap)
-
----
-
-## Quick start
+## Start here
 
 > Requires **[Node.js 22+](https://nodejs.org/)** and `npm`.
 
 ```bash
-npm ci                # install dependencies
-cp .env-example .env  # create local env file
-npm run dev           # start Vite dev server on :8080
+npm ci                    # install exactly the lockfile
+cp .env-example .env      # then set VITE_API_MOCK_ENABLED=true
+npm run dev               # http://localhost:8080
 ```
 
-Then open <http://localhost:8080>.
+That gives you a browsable storefront — products, cart, orders, a signed-in user — served entirely
+from the browser. MSW answers every request from a seeded in-memory database, so **no backend is
+required**.
 
-### In containers, and pairing with the backend
+To run against the real API instead: start the backend stack, set `VITE_API_MOCK_ENABLED=false`
+and `VITE_API_URL=http://localhost:3000`, and check the backend's `NODE_CORS_ORIGIN` allows
+`http://localhost:8080`.
 
-```bash
-cp .env-example .env       # required for compose too — see below
-podman compose up          # or: docker compose up
-```
-
-`cp .env-example .env` is **not optional for the container path**. The compose file bind-mounts
-the repo at `/app`, so Vite reads that same `.env` from inside the container; without it you get
-compose's built-in fallbacks and nothing else — no Faro, no Umami, no locale settings.
-
-The compose `environment:` block deliberately lists only the pairing-critical variables. Compose
-entries become `process.env`, and Vite applies `process.env` _after_ `.env`, so anything added
-there overrides `.env` and can no longer be changed by editing it. Leave the rest to `.env`.
-
-To run the pair:
-
-1. Start the **backend** stack first (it owns the API, Alloy and Umami the frontend points at).
-2. Start this one. `VITE_API_MOCK_ENABLED` defaults to `false`, so the app talks to the real API.
-3. Confirm `NODE_CORS_ORIGIN` in the backend `.env` contains `http://localhost:8080`.
-
-The two stacks stay **independent** — separate compose projects, separate networks, no shared
-network required. The only thing that crosses the boundary is your browser, which runs on the
-host: it is the browser, not the container, that resolves `VITE_API_URL` and `VITE_API_SSE`, so
-those must always be **host** ports (`http://localhost:3000`), never compose service names.
-
-Running this container alone is still fine, but it will have no API to call. Set
-`VITE_API_MOCK_ENABLED=true` in `.env` for standalone, mock-backed development.
-
-### Host port map
-
-This repo owns the **`8080–8099`** host-port block; the paired backend owns **`3000–3099`**.
-Keeping the two blocks disjoint is what lets both stacks be up at the same time — they
-previously collided on `4173`, which this repo claimed twice (docs container _and_ e2e vite
-server) and the backend claimed once for its own docs.
-
-| Service                  | Host port | Where it is set                                     |
-| ------------------------ | --------- | --------------------------------------------------- |
-| Vite dev server          | `8080`    | `VITE_APP_PORT` — host and compose alike            |
-| e2e vite server          | `8085`    | `test:e2e*` scripts + `cypress.config.ts` `baseUrl` |
-| Docs (VitePress + Nginx) | `8090`    | `VITE_DOCS_PORT`                                    |
-
-New services belong inside `8080–8099`.
-
-> `VITE_APP_PORT` is read in `vite.config.ts` via `loadEnv`, so the dev server and the compose
-> publish (`${VITE_APP_PORT}:${VITE_APP_PORT}`) always agree — moving the port is a one-line
-> change. `strictPort` is on: a busy port fails instead of quietly hopping to the next free one,
-> which in a container would leave the published port pointing at nothing.
-
-> The e2e scripts no longer free their port with `fuser -k` before starting. That command killed
-> _any_ process listening on it — including another project's container port forwarder.
-> `start-server-and-test` now simply fails loudly if `8085` is busy, which is the correct
-> behaviour.
+→ Full setup, both modes, port map and the pre-commit gate: **[Getting Started](./docs/getting-started.md)**
 
 ---
 
-## Tech stack & official docs
-
-Every tool below has a one-line "why we use it" + a link to its official documentation. Use it as a starting point if you are new to the codebase.
-
-### Runtime & language
-
-| Tool                                              | Why it's here                                | Docs                                                                   |
-| ------------------------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------- |
-| **[Vue 3](https://vuejs.org/)**                   | Reactive UI framework, Composition API, SFCs | [vuejs.org/guide](https://vuejs.org/guide/introduction.html)           |
-| **[TypeScript](https://www.typescriptlang.org/)** | Static typing for app + generated API client | [ts handbook](https://www.typescriptlang.org/docs/handbook/intro.html) |
-| **[Node.js 22+](https://nodejs.org/)**            | Required runtime for dev tooling             | [nodejs.org/docs](https://nodejs.org/docs/latest-v22.x/api/)           |
-
-### Build & bundling
-
-| Tool                                                                            | Why it's here                       | Docs                                                                |
-| ------------------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------- |
-| **[Vite](https://vite.dev/)**                                                   | Dev server + production bundler     | [vite.dev/guide](https://vite.dev/guide/)                           |
-| **[@vitejs/plugin-vue](https://github.com/vitejs/vite-plugin-vue)**             | `.vue` SFC support in Vite          | [package readme](https://github.com/vitejs/vite-plugin-vue#readme)  |
-| **[vue-tsc](https://github.com/vuejs/language-tools/tree/master/packages/tsc)** | Type-check `.vue` files in CI/build | [language-tools repo](https://github.com/vuejs/language-tools)      |
-| **[Sass / sass-embedded](https://sass-lang.com/)**                              | SCSS authoring for shared styles    | [sass-lang.com/documentation](https://sass-lang.com/documentation/) |
-
-### State, routing, i18n
-
-| Tool                                          | Why it's here                                                         | Docs                                                                      |
-| --------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| **[Pinia](https://pinia.vuejs.org/)**         | Global state stores (`src/infrastructure/`, `src/modules/*/store.ts`) | [pinia.vuejs.org/introduction](https://pinia.vuejs.org/introduction.html) |
-| **[Vue Router](https://router.vuejs.org/)**   | SPA routing; each module contributes its own route records            | [router.vuejs.org/guide](https://router.vuejs.org/guide/)                 |
-| **[Vue I18n](https://vue-i18n.intlify.dev/)** | Locale messages, locale-prefixed routes                               | [vue-i18n.intlify.dev/guide](https://vue-i18n.intlify.dev/guide/)         |
-
-### API & contract
-
-| Tool                                                            | Why it's here                                                                | Docs                                                                                              |
-| --------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| **[OpenAPI 3.x](https://www.openapis.org/)** (`openapi.yaml`)   | Single source of truth for FE ⇄ BE contract                                  | [OpenAPI specification](https://spec.openapis.org/oas/latest.html)                                |
-| **[AsyncAPI 2.x](https://www.asyncapi.com/)** (`asyncapi.yaml`) | Single source of truth for SSE realtime contracts                            | [AsyncAPI specification](https://www.asyncapi.com/docs/reference/specification/latest)            |
-| **[Orval](https://orval.dev/)**                                 | Generates typed axios client, Zod schemas, and MSW stubs from `openapi.yaml` | [orval.dev/overview](https://orval.dev/overview)                                                  |
-| **[@faker-js/faker](https://fakerjs.dev/)**                     | Fake data used by orval-generated MSW handler stubs                          | [fakerjs.dev/guide](https://fakerjs.dev/guide/)                                                   |
-| **[Axios](https://axios-http.com/)**                            | HTTP client used under the generated services                                | [axios-http.com/docs](https://axios-http.com/docs/intro)                                          |
-| **[Zod](https://zod.dev/)**                                     | Runtime schema validation (forms, parsing untrusted input)                   | [zod.dev](https://zod.dev/)                                                                       |
-| **[Spectral](https://stoplight.io/open-source/spectral)**       | Lints `openapi.yaml` (rules in `spectral.yaml`)                              | [meta.stoplight.io/docs/spectral](https://meta.stoplight.io/docs/spectral/674b27b261c3c-overview) |
-
-### Quality & tooling
-
-| Tool                                                   | Why it's here                                 | Docs                                                                                  |
-| ------------------------------------------------------ | --------------------------------------------- | ------------------------------------------------------------------------------------- |
-| **[ESLint](https://eslint.org/)**                      | Lint TS/Vue (`eslint.config.ts`, flat config) | [eslint.org/docs](https://eslint.org/docs/latest/)                                    |
-| **[eslint-plugin-vue](https://eslint.vuejs.org/)**     | Vue-specific lint rules                       | [eslint.vuejs.org/user-guide](https://eslint.vuejs.org/user-guide/)                   |
-| **[typescript-eslint](https://typescript-eslint.io/)** | TypeScript-aware lint rules                   | [typescript-eslint.io/getting-started](https://typescript-eslint.io/getting-started/) |
-| **[Prettier](https://prettier.io/)**                   | Code formatting (`.prettierrc`)               | [prettier.io/docs](https://prettier.io/docs/en/index.html)                            |
-
-### Testing
-
-| Tool                                                                           | Why it's here                                                                      | Docs                                                                       |
-| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| **[Vitest](https://vitest.dev/)**                                              | Unit tests (`tests/unit/`, `vitest.config.ts`)                                     | [vitest.dev/guide](https://vitest.dev/guide/)                              |
-| **[@vue/test-utils](https://test-utils.vuejs.org/)**                           | Component mounting/assertions                                                      | [test-utils.vuejs.org/guide](https://test-utils.vuejs.org/guide/)          |
-| **[jsdom](https://github.com/jsdom/jsdom)**                                    | DOM environment for unit tests                                                     | [jsdom readme](https://github.com/jsdom/jsdom#readme)                      |
-| **[Cypress](https://www.cypress.io/)**                                         | E2E tests (`tests/e2e/specs/`)                                                     | [docs.cypress.io](https://docs.cypress.io/)                                |
-| **[MSW](https://mswjs.io/)**                                                   | Request mocking for dev + Cypress (`src/modules/*/mocks/`, `tests/support/mocks/`) | [mswjs.io/docs](https://mswjs.io/docs/)                                    |
-| **[start-server-and-test](https://github.com/bahmutov/start-server-and-test)** | Boots Vite + waits before running Cypress                                          | [package readme](https://github.com/bahmutov/start-server-and-test#readme) |
-
-### Observability & UI libs
-
-| Tool                                                                                                                              | Why it's here                                                                                                         | Docs                                                                                                                                            |
-| --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| **[@grafana/faro-web-sdk](https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/faro-web-sdk/)**     | Error monitoring + frontend tracing + web-vitals to a self-hosted Grafana Alloy receiver (opt-in via `VITE_FARO_URL`) | [grafana.com · Faro Web SDK](https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/faro-web-sdk/)                  |
-| **[@grafana/faro-web-tracing](https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/faro-web-sdk/)** | Distributed tracing for fetch/XHR; propagates `traceparent` to the API so FE↔BE traces link                           | [grafana.com · Faro tracing](https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/faro-web-sdk/instrumentations/) |
-| **[Umami](https://umami.is/docs)**                                                                                                | Self-hosted product analytics — pageviews + custom events (opt-in via `VITE_UMAMI_WEBSITE_ID`)                        | [umami.is/docs](https://umami.is/docs)                                                                                                          |
-| **[@guebbit/css-toolkit](https://www.npmjs.com/package/@guebbit/css-toolkit)**                                                    | Shared SCSS utilities / tokens                                                                                        | [npm](https://www.npmjs.com/package/@guebbit/css-toolkit)                                                                                       |
-| **[@guebbit/vue-toolkit](https://www.npmjs.com/package/@guebbit/vue-toolkit)**                                                    | Shared Vue components / composables                                                                                   | [npm](https://www.npmjs.com/package/@guebbit/vue-toolkit)                                                                                       |
-
-> If you bump any of these, check the matching docs page first — most breaking changes are documented on the front page of each tool's site.
-
----
-
-## Architecture at a glance
+## What this is
 
 ```mermaid
 flowchart LR
-    subgraph Browser["🌐 Browser SPA"]
-        V[Vue 3 components<br/>ui + module views]
-        P[Pinia stores<br/>src/infrastructure + src/modules]
-        R[Vue Router<br/>src/kernel/router]
-        I18N[Vue I18n<br/>src/locales + modules]
-        OBS[Observability store<br/>Grafana Faro + Umami]
-    end
+    SPEC["openapi.yaml<br/>asyncapi.yaml"] --> GEN["generated client<br/>+ Zod schemas"]
+    GEN --> STORES["Pinia stores"]
+    STORES --> VIEWS["Views"]
+    VIEWS --> ROUTER["Vue Router<br/>locale-prefixed"]
+    MSW["MSW mock backend"] -.->|"dev / test only"| STORES
 
-    subgraph Generated["📦 Generated layer"]
-        API["contracts/rest OpenAPI client<br/>(axios + types)"]
-    end
-
-    subgraph Shared["🔧 Shared utils"]
-        HTTP[plugins/http/index.ts<br/>axios + interceptors]
-    end
-
-    subgraph Backend["🖥️ Backend"]
-        BE[boilerplate-node-backend]
-    end
-
-    subgraph DevOnly["🧪 Dev / Test only"]
-        MSW[MSW handlers<br/>tests/mocks]
-    end
-
-    V --> P
-    V --> R
-    V --> I18N
-    P --> API
-    API --> HTTP
-    HTTP -->|HTTP/JSON| BE
-    HTTP -.intercepted by.-> MSW
-    HTTP -->|errors| OBS
-    R -->|afterEach page_view| OBS
+    classDef spec fill:#dcfce7,stroke:#16a34a,color:#111827;
+    classDef gen fill:#fef3c7,stroke:#d97706,color:#111827;
+    classDef app fill:#dbeafe,stroke:#2563eb,color:#111827;
+    classDef mock fill:#ede9fe,stroke:#7c3aed,color:#111827;
+    class SPEC spec;
+    class GEN gen;
+    class STORES,VIEWS,ROUTER app;
+    class MSW mock;
 ```
 
-Key principles:
+Four ideas carry the whole repository:
 
-- **Domains are deletable.** Four tiers (`infrastructure` → `ui` → `kernel` → `modules`), and no shared file
-  names a domain except `src/modules.ts`. Removing a slice is `rm -rf` plus one line — see
-  [Modules](./docs/theory/modules.md).
-- **OpenAPI first.** `openapi.yaml` is the contract. Types and the axios client are generated from it.
-- **AsyncAPI for realtime.** `asyncapi.yaml` drives generated realtime/channel types in `src/types/realtime.generated.ts`; `src/types/realtime.ts` stays as thin app-only helpers.
-- **Stores own data.** Views call composables/stores; stores call the generated API.
-- **Interceptors own error shape.** Every HTTP error becomes an `IResponseReject` envelope.
-- **Mocks are toggled by env.** MSW activates only when `VITE_API_MOCK_ENABLED=true`.
-- **Single observability store.** Grafana Faro and Umami are consolidated in `src/infrastructure/observability.ts`; never scatter vendor calls into components.
-
----
-
-## Folder structure
-
-Four tiers and a registry. What a file is allowed to know is a property of where it lives, and
-`eslint.config.ts` enforces it — see [Modules](./docs/theory/modules.md) for the reasoning and
-[Layers](./docs/theory/layers.md) for the full map.
-
-```text
-src/
-├── core/            knows nothing about this app
-│   ├── http/            axios instance, interceptors, orval mutator, response-schema map
-│   ├── session.ts       access token + { id, email, admin } viewer projection
-│   ├── i18n.ts          i18n runtime; merges each module's dictionary at boot
-│   ├── observability.ts Grafana Faro + Umami, one store
-│   └── …                errors, formatters, uploads, logger, createSseClient, useAsyncAction
-├── ui/              the design system, zero domain knowledge
-│   ├── vuetify/         THE theme file: tokens, component defaults, lucide icon set
-│   └── molecules/ organisms/
-├── platform/        knows this KIND of app, but no domain
-│   ├── registry.ts      IAppModule, the collectModule* family
-│   ├── router/          router instance + locale routing; names NO domain
-│   ├── middlewares/     navigation guards (authentications, localeChoice, demoMiddleware)
-│   ├── layouts/ components/ views/
-│   └── counter.ts       demo store, paired with views/Playground.vue
-├── modules/         one domain each, top to bottom
-│   └── <name>/
-│       ├── module.ts          the manifest — routes, navigation, locales, mocks, schemas
-│       ├── index.ts           public barrel; the ONLY surface a sibling may import
-│       ├── routes.ts store.ts schemas.ts
-│       ├── views/ components/ composables/
-│       ├── locales/{en,it}.json
-│       ├── mocks/handlers.ts  MSW handlers, dropped from production builds
-│       └── tests/             this domain's specs, deleted with the folder
-├── modules.ts       THE registry: the only shared file that names a domain
-├── locales/         shared vue-i18n messages (the shell's own copy)
-├── styles/          global CSS (layer order, fonts)
-├── types/           shared TS types (incl. re-exports from @api)
-├── App.vue
-└── main.ts          bootstrap; hands the modules' schemas + dictionaries down into core
-
-contracts/
-└── rest/
-    ├── index.ts         generated axios functions + TS types  (DO NOT edit by hand)
-    └── schemas.zod.ts   generated Zod schemas                 (DO NOT edit by hand)
-tests/
-├── support/
-│   ├── mocks/         shared mock helpers + orval stubs (reached via the @mocks alias)
-│   ├── unit/          vitest setup, environment, wireModules
-│   └── e2e/           Cypress support files and commands
-├── cross-cutting/     specs that sweep EVERY domain, so they belong to none
-├── unit/              core / ui / platform / mock-layer specs
-└── e2e/               Cypress specs, fixtures, snapshots
-openapi.yaml         API contract (source of truth)
-asyncapi.yaml        Realtime contract (source of truth)
-spectral.yaml        OpenAPI lint rules
-```
-
-**Adding a domain** is one folder under `src/modules/` plus one line in `src/modules.ts`.
-**Removing one** is `rm -rf` plus deleting that line — and whatever then fails is real coupling
-worth seeing.
+1. **The contract is the source.** `openapi.yaml` and `asyncapi.yaml` come from the backend and
+   generate the axios client, the Zod schemas and the realtime types. None of that is hand-written.
+2. **A module is a value, not a convention.** Every domain declares what it needs — routes,
+   navigation, locales, response schemas, mock handlers, fixtures — in one typed object.
+   `src/modules.ts` lists them. Adding a domain is one folder plus one line; removing it is
+   `rm -rf` plus that line.
+3. **The app runs without its backend.** Mock mode is a first-class build, not a stub.
+4. **The tests are part of the boilerplate.** Unit, component, e2e, accessibility, visual
+   regression, property and mutation testing are all wired and all run.
 
 ---
 
-## Sitemap & access control
+## Where things live
 
-All routes are locale-prefixed (`/:locale/…`). Missing locale is injected automatically.
-
-| Route                              | Name                   | Access                     |
-| ---------------------------------- | ---------------------- | -------------------------- |
-| `/:locale/`                        | `Home`                 | public                     |
-| `/:locale/playground`              | `Playground`           | public                     |
-| `/:locale/playground/realtime`     | `RealtimePlayground`   | public                     |
-| `/:locale/error/:status/:message?` | `Error`                | public                     |
-| `/:locale/login`                   | `Login`                | guest only                 |
-| `/:locale/signup`                  | `Signup`               | guest only                 |
-| `/:locale/password-reset`          | `PasswordResetRequest` | guest only                 |
-| `/:locale/password-reset/confirm`  | `PasswordResetConfirm` | guest only                 |
-| `/:locale/account-delete/confirm`  | `AccountDeleteConfirm` | public                     |
-| `/:locale/profile`                 | `Profile`              | auth                       |
-| `/:locale/logout`                  | `Logout`               | public (redirects to Home) |
-| `/:locale/products`                | `ProductsList`         | public                     |
-| `/:locale/products/:id`            | `ProductTarget`        | public                     |
-| `/:locale/products/:id/edit`       | `ProductEdit`          | admin                      |
-| `/:locale/cart`                    | `Cart`                 | auth                       |
-| `/:locale/orders`                  | `OrdersList`           | auth                       |
-| `/:locale/orders/:id`              | `OrderTarget`          | auth                       |
-| `/:locale/orders/:id/edit`         | `OrderEdit`            | admin                      |
-| `/:locale/users`                   | `UsersList`            | admin                      |
-| `/:locale/users/create`            | `UserCreate`           | admin                      |
-| `/:locale/users/:id`               | `UserTarget`           | admin                      |
-| `/:locale/users/:id/edit`          | `UserEdit`             | admin                      |
-| `/:locale/admin`                   | `Admin`                | admin                      |
-| `/:locale/:catchAll(.*)`           | —                      | redirect → `Error 404`     |
-
-Access level legend: **public** = no guard · **guest only** = `isGuest` (logged-in users are redirected away) · **auth** = `isAuth` (must be logged in) · **admin** = `isAdmin` (must have admin role).
+|                      |                                             |
+| -------------------- | ------------------------------------------- |
+| `src/modules/*`      | the domains — each one deletable            |
+| `src/kernel`         | the module registry                         |
+| `src/infrastructure` | http, i18n, session, uploads, observability |
+| `src/app`            | shell, router, layouts, middlewares         |
+| `src/ui`             | shared presentational components            |
+| `contracts/`         | generated API client — never edited by hand |
 
 ---
 
-## Environment variables
+## The map
 
-Reference: [`.env-example`](./.env-example).
-
-| Variable                     | Purpose                                                                                                                                                        |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `VITE_APP_DEFAULT_LOCALE`    | Initial locale (e.g. `en`)                                                                                                                                     |
-| `VITE_APP_FALLBACK_LOCALE`   | Locale used when a key is missing from the active one — `vue-i18n` `fallbackLocale` (default `en`)                                                             |
-| `VITE_APP_SUPPORTED_LOCALES` | Comma-separated supported locales (e.g. `en,it,es`)                                                                                                            |
-| `VITE_APP_EMPTY_VALUE`       | Placeholder for empty/unavailable display values (default `—`)                                                                                                 |
-| `VITE_APP_BASE_URL`          | Sub-path the app is served from, e.g. `/app/`. Passed to `createWebHistory`; leave unset when serving from the domain root                                     |
-| `VITE_API_URL`               | Backend API base URL                                                                                                                                           |
-| `VITE_API_SSE`               | SSE URL used by realtime playground observability stream                                                                                                       |
-| `VITE_API_MOCK_ENABLED`      | Enable [MSW](https://mswjs.io/) mocking (`true`/`false`) — see [Mocking](#mocking-with-msw)                                                                    |
-| `VITE_AXIOS_TIMEOUT`         | [Axios](https://axios-http.com/) timeout (ms)                                                                                                                  |
-| `VITE_APP_LOG_LEVEL`         | `error` \| `warn` \| `info` \| `debug`. Same ladder as the API's `NODE_LOG_LEVEL`; defaults to `debug` in dev, `warn` in production                            |
-| `VITE_APP_LOG_SCOPES`        | Areas that emit `debug`/`info`: comma-separated, or `*`. Empty means none. Known areas: `router`, `http`, `observability`, `demo`                              |
-| `VITE_FARO_URL`              | [Grafana Faro](https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/faro-web-sdk/) receiver URL — Alloy `/collect` (empty = off) |
-| `VITE_FARO_APP_NAME`         | App name reported to Faro (default `frontend`)                                                                                                                 |
-| `VITE_FARO_APP_VERSION`      | App version reported to Faro (default `1.0.0`)                                                                                                                 |
-| `VITE_FARO_ENVIRONMENT`      | Faro environment tag (defaults to Vite `MODE`)                                                                                                                 |
-| `VITE_UMAMI_WEBSITE_ID`      | [Umami](https://umami.is/) website id (empty = off)                                                                                                            |
-| `VITE_UMAMI_SRC`             | Umami tracker script URL (default: `http://localhost:3080/script.js`)                                                                                          |
+| You want to             | Read                                                                                                                    |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Get it running          | [Getting Started](./docs/getting-started.md)                                                                            |
+| Understand the shape    | [Architecture](./docs/theory/architecture.md) · [Layers](./docs/theory/layers.md) · [Modules](./docs/theory/modules.md) |
+| Add or remove a domain  | [Adding & Removing a Module](./docs/theory/module-lifecycle.md)                                                         |
+| Change an endpoint      | [OpenAPI Workflow](./docs/api/openapi-workflow.md)                                                                      |
+| Configure something     | [Environment Variables](./docs/tools/environment.md)                                                                    |
+| Look up a script        | [Package Scripts](./docs/tools/package-scripts.md)                                                                      |
+| Understand a dependency | [Tools Explained](./docs/tools/tools-explained.md)                                                                      |
+| Test something          | [Testing overview](./docs/tools/testing-and-docs.md)                                                                    |
+| Know what is unfinished | [Known Gaps](./docs/theory/known-gaps.md) · [Roadmap](./docs/theory/roadmap.md)                                         |
+| Deploy it               | `.docker/Dockerfile.production` · `docker-compose.production.yml`                                                       |
 
 ---
 
-## npm scripts
-
-| Script                   | Purpose                                                                                                                                         |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm run dev`            | Start [Vite](https://vite.dev/) dev server on `:8080`                                                                                           |
-| `npm run build`          | `vue-tsc` type-check **+** production build                                                                                                     |
-| `npm run preview`        | Preview built app                                                                                                                               |
-| `npm run lint`           | Run [ESLint](https://eslint.org/) (check)                                                                                                       |
-| `npm run lint:fix`       | Run ESLint with `--fix`                                                                                                                         |
-| `npm run lint:openapi`   | Lint `openapi.yaml` with [Spectral](https://stoplight.io/open-source/spectral)                                                                  |
-| `npm run prettier:check` | [Prettier](https://prettier.io/) check                                                                                                          |
-| `npm run prettier:fix`   | Prettier write                                                                                                                                  |
-| `npm run test:unit`      | [Vitest](https://vitest.dev/) unit tests                                                                                                        |
-| `npm run test:e2e`       | Start Vite (with MSW) + run [Cypress](https://www.cypress.io/) e2e                                                                              |
-| `npm run test`           | `test:unit` then `test:e2e`                                                                                                                     |
-| `npm run gen:api`        | Regenerate `contracts/rest` client from `openapi.yaml`                                                                                          |
-| `npm run gen:asyncapi`   | Regenerate `src/types/realtime.generated.ts` from `asyncapi.yaml` (shared generator — see [AsyncAPI workflow](./docs/api/asyncapi-workflow.md)) |
-| `npm run complete`       | build + lint:fix + lint:openapi + prettier:fix + tests (local hardening)                                                                        |
-| `npm run complete:check` | build + lint + lint:openapi + prettier:check + tests (CI gate)                                                                                  |
-
----
-
-## Validation gate
-
-Run before opening or updating a PR:
+## Before you commit
 
 ```bash
-npm run lint
-npm run build
-npm run test:unit
+npm run complete    # lint + spec lint + contract identity + format + build + unit + e2e
 ```
 
-CI runs the strict gate:
+Exactly what the pre-commit hook runs. It takes **around ten minutes**, mostly Cypress — start it
+and go do something else. `npm run complete:fix` is the same gate with lint and formatting fixed
+rather than reported.
 
-```bash
-npm run complete:check
-```
+Two suites sit outside it, in `npm run complete:manual`: pixel diffing, which answers to the
+machine that took the snapshots, and the live-backend e2e run, which needs the paired API up.
+See [Test timings](./docs/tools/testing-and-docs.md#test-timings) for what each layer costs.
 
 ---
 
-## OpenAPI contract flow
+## License
 
-`openapi.yaml` is the contract; the `contracts/rest` folder is **generated**. Never hand-edit `contracts/rest`.
-
-```mermaid
-flowchart LR
-    A[openapi.yaml] -->|npm run lint:openapi<br/>spectral.yaml| L{Lint OK?}
-    L -- no --> X[Fix contract]
-    X --> A
-    L -- yes --> G[npm run gen:api]
-    G --> CLIENT[contracts/rest/index.ts<br/>typed axios functions]
-    G --> ZOD[contracts/rest/schemas.zod.ts<br/>Zod schemas]
-    G --> MOCKS[tests/support/mocks/generated.ts<br/>MSW handler stubs]
-    CLIENT --> STORES[Pinia stores call<br/>generated functions]
-    ZOD --> STORES
-    STORES --> VIEWS[Views render data]
-    A -.shared with.-> BE[boilerplate-node-backend]
-```
-
-Steps:
-
-1. Edit [`openapi.yaml`](./openapi.yaml).
-2. `npm run lint:openapi` — must be green.
-3. `npm run gen:api` — regenerates `contracts/rest` (commit the diff).
-4. Update store/view usages if any operation signatures changed.
-    - Import Zod schemas from `@api/schemas` instead of writing them by hand.
-    - Use `tests/support/mocks/generated.ts` as a skeleton if you need a new MSW handler stub.
-5. Coordinate with the backend team — both repos consume `openapi.yaml` as the shared contract; keep paired branches in sync before merging.
-
----
-
-## AsyncAPI realtime flow
-
-`asyncapi.yaml` is the source of truth for frontend realtime contracts. Generated types stay under `src/types/*` and are consumed by realtime clients/composables/stores.
-
-```mermaid
-flowchart LR
-    A[asyncapi.yaml] --> G[npm run gen:asyncapi]
-    G --> T[src/types/realtime.generated.ts]
-    T --> C[src/infrastructure/createSseClient.ts]
-    C --> S[src/modules/realtime/realtimeObservability]
-    S --> V[RealtimePlayground view]
-```
-
-Current incremental rollout:
-
-1. **Contracts first**: update `asyncapi.yaml`.
-2. **Generate clients/types**: `npm run gen:api` and `npm run gen:asyncapi`.
-3. **Playground-first integration**: route `/:locale/playground/realtime`.
-4. **Broader app integration**: wire the domain flow after playground validation.
-
-Dev/test strategy for realtime:
-
-- HTTP stays mocked by MSW (`VITE_API_MOCK_ENABLED=true`).
-- SSE can be tested with lightweight fake adapters in unit tests.
-- Keep realtime logic in clients/composables/stores; keep views thin.
-
----
-
-## HTTP & error handling
-
-Single axios instance lives in `src/infrastructure/http/index.ts`, wired into the generated client via its `orvalMutator` export (registered as orval's mutator in `orval.config.ts`).
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant V as View / Store
-    participant S as Generated function<br/>(contracts/rest/index.ts)
-    participant H as plugins/http/index.ts<br/>(axios + interceptors)
-    participant B as Backend (or MSW)
-    V->>S: login({...})
-    S->>H: HTTP request
-    H->>B: GET/POST ...
-    B-->>H: response (+ x-request-id, x-trace-id)
-    alt 2xx
-        H-->>S: data
-        S-->>V: typed result
-    else 401
-        H-->>V: IResponseReject → redirect to Login (preserve ?continue=)
-    else 403
-        H-->>V: IResponseReject → forbidden UI
-    else 5xx
-        H-->>V: IResponseReject → /error/500
-        H->>Faro: captureException
-    end
-```
-
-Conventions:
-
-- **`401`** = _not logged in_. Route-level failures redirect to Login with `?continue=` preserved; form/list actions show auth-focused messages instead of generic server errors.
-- **`403`** = _forbidden_. Shown as a clear authorization message (never as 500).
-- **`5xx`** = real server failure → `/error/500` flow.
-- Error objects carry correlation IDs (`x-request-id`, `x-trace-id`) useful when reporting issues to the backend team.
-
----
-
-## Routing, auth & i18n
-
-Routes are locale-prefixed (`/:locale/...`). Locale handling lives in `src/kernel/middlewares/localeChoice.ts` and `src/infrastructure/i18n.ts`.
-
-```mermaid
-flowchart TD
-    Start([Navigation]) --> Locale{Locale in URL?}
-    Locale -- no --> Inject[Inject default locale<br/>VITE_APP_DEFAULT_LOCALE]
-    Inject --> Guard
-    Locale -- yes --> Guard{Route guard<br/>middlewares/*}
-    Guard -->|isAdmin| AdminCheck{Admin role?}
-    AdminCheck -- no --> Home[Redirect / Home]
-    AdminCheck -- yes --> View[Render view]
-    Guard -->|isAuth| AuthCheck{Logged in?}
-    AuthCheck -- no --> Login[Redirect /login?continue=…]
-    AuthCheck -- yes --> View
-    Guard -->|public| View
-```
-
-Tools used here:
-
-- [Vue Router](https://router.vuejs.org/) for navigation + guards.
-- [Vue I18n](https://vue-i18n.intlify.dev/) for messages and locale switching.
-
-### Talking to the API in the right language
-
-The axios interceptor sends `Accept-Language: <active locale>` on every request
-(`src/infrastructure/http/index.ts`), reading the locale fresh each time — so the moment
-`changeLanguage('it')` resolves, every subsequent call is answered in Italian. The API is
-stateless about language: each request carries its own, and `Content-Language` on the response
-says what it actually used.
-
-That means API copy needs no client-side dictionary in normal operation: the server sends
-finished text and this app prints it.
-
-### Validation messages: thunks, not factories
-
-Schemas in `src/modules/*/schemas.ts` are module constants whose messages are **thunks**:
-
-```ts
-export const usersEmailSchema = z.email({ error: () => t('users-form.email-invalid') });
-```
-
-Zod calls the thunk at parse time, so one schema object speaks whatever language is active then.
-They used to be `createUsersSchema(t)` factories consumed through a getter; that bought nothing —
-`useStructureFormValidation` resolves `toValue(schema)` inside `validate()` and nowhere else, so a
-getter was evaluated at exactly the moment a thunk is — and it was a live trap, because
-`createUsersSchema(t)` instead of `() => createUsersSchema(t)` type-checks, runs, and silently
-freezes the language.
-
-### Errors already on screen
-
-A thunk decides what the **next** validation says, not what is currently displayed: `formErrors`
-holds resolved strings, and re-rendering just re-prints them. Every form therefore passes
-`{ revalidateOn: locale }` to `useStructureFormValidation`, which re-runs `validate()` over the
-unchanged data on a language switch — and only while errors are showing, so a pristine form is
-not validated just because someone changed the language.
-
-Forgetting it is invisible until someone switches language mid-form, so
-`tests/unit/cross-cutting/login-view-i18n.spec.ts` asserts it on a real view.
-
-### What is deliberately NOT translated
-
-These are technician-facing and stay English on purpose:
-
-- **console output** (`console.error`, debug logging)
-- **thrown `Error` messages**
-- **analytics event names and observability attributes**
-- **symbols and SI units** in templates (`×`, `MB`, `ms`) — identical in every language
-
-`vue/no-bare-strings-in-template` (see `eslint.config.ts`) enforces the rest: no literal text node
-and no static `alt` / `title` / `label` / `placeholder` / `aria-label` in any template.
-
-### `api.*` — the API's own dictionary
-
-**Each repository owns its own dictionary.** This app never gets its UI copy from the API, and the
-API never gets its response copy from here — either boilerplate has to work against a different
-counterpart, so neither may depend on the other for its own strings. What they synchronize is the
-_choice_ of language, via `Accept-Language`.
-
-The API's dictionary is nonetheless _available_, at `GET /locales/:locale`, and this app merges it
-under a **reserved root namespace**: `api`. Never at the root — two independently-authored
-keyspaces would eventually collide silently, and the loser would be whichever loaded last. No key
-under `api` may be authored here; `tests/unit/infrastructure/i18n.spec.ts` enforces that.
-
-| Piece                            | Where                                                                                                                               |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| discover the API's languages     | `mergeApiLocales()` at boot (`src/main.ts`) — a **union** with the build-time list, so the app still works with the API unreachable |
-| fetch and merge the dictionary   | `fetchLanguageApi` (`src/kernel/middlewares/localeChoice.ts`), which returns UI copy at the root and API copy under `api.*`         |
-| read a key with a local stand-in | `apiText(apiKey, localKey)` (`src/infrastructure/i18n.ts`)                                                                          |
-
-In normal operation none of this is used: the API resolves its own keys and puts finished text on
-the wire, so this app prints what arrives. `api.*` earns its place for the handful of messages the
-client has to produce _itself_ because no response came back at all — a 401 with an empty body, a
-network failure. Those call `apiText`, which prefers the API's own wording when `api.*` is loaded
-and otherwise uses this app's `api-errors.*` copy — necessarily, since the request that would have
-downloaded the dictionary may have failed for the same reason.
-
-**A language only one side has degrades per key, not all-or-nothing.** `es` is the worked example:
-`VITE_APP_SUPPORTED_LOCALES` lists it and there is no `src/locales/es.json`, so a user who picks
-Spanish gets Spanish API messages inside an otherwise-English UI, one key at a time via
-`fallbackLocale`. A language only this app has works unchanged; the API answers in its own
-fallback. Every fetch here resolves rather than rejects, so a dead API degrades the copy and never
-blocks a navigation.
-
----
-
-## Mocking with MSW
-
-[MSW](https://mswjs.io/) intercepts HTTP at the network layer so the SPA can run without a backend.
-
-```mermaid
-flowchart LR
-    Env{VITE_API_MOCK_ENABLED == 'true'?}
-    Env -- no --> Real[Real HTTP → backend]
-    Env -- yes --> Worker[MSW Service Worker<br/>public/mockServiceWorker.js]
-    Worker --> Handlers[src/modules/*/mocks/handlers.ts]
-    Handlers --> DB[(in-memory mockDatabase)]
-```
-
-- Worker file is committed in `public/mockServiceWorker.js` (generated by `msw init`).
-- Handlers live in `src/modules/<name>/mocks/handlers.ts`, declared by each module's manifest, and share an in-memory DB via `tests/support/mocks/`. Only `/locales` stays central — it belongs to `infrastructure`, not to a domain.
-- Cypress runs with `VITE_API_MOCK_ENABLED=true` so e2e is deterministic.
-
-Official: [mswjs.io/docs](https://mswjs.io/docs/) · [browser integration](https://mswjs.io/docs/integrations/browser).
-
----
-
-## Testing
-
-| Layer     | Tool                                                                                                                       | Where              |
-| --------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| Unit      | [Vitest](https://vitest.dev/) + [@vue/test-utils](https://test-utils.vuejs.org/) + [jsdom](https://github.com/jsdom/jsdom) | `tests/unit/`      |
-| E2E       | [Cypress](https://www.cypress.io/) + MSW                                                                                   | `tests/e2e/specs/` |
-| E2E, live | [Cypress](https://www.cypress.io/) against the real backend                                                                | `tests/e2e/specs/` |
-
-Commands:
-
-```bash
-npm run test:unit     # vitest run (CI mode)
-npm run test:e2e      # boots Vite (with MSW) + cypress run
-npm run test:e2e:dev  # opens Cypress UI
-npm run test:e2e:live # same specs, no mocks — against a real backend
-```
-
-> New tests should target behavior, not implementation. Prefer component contracts (props/emits/slots) over snapshots.
-
-### Live E2E: the two-repo run
-
-`test:e2e:live` runs the **same specs with MSW switched off**, so it is the only thing that exercises the real API, a real database and the two repos' contract at once — the mocked run cannot tell you that a migration was forgotten or that the seeds have forked.
-
-It needs a backend that is already up and seeded, so bring one up first in a separate terminal, with **docker or podman** (the backend ships a compose overlay and an npm script for each):
-
-```bash
-cd ../boilerplate-node-api-mongodb-mongoose
-npm run compose:restart      # or: npm run compose:restart
-npm run host -- db:bootstrap   # migrations + seeds, against the containers' host ports
-```
-
-then, back here:
-
-```bash
-npm run test:e2e:live
-```
-
-The frontend needs no build or linking step for this — Vite serves it with `VITE_API_MOCK_ENABLED=false` and it talks to `VITE_API_URL` (default `http://localhost:3000`) over HTTP like any other client. Point it somewhere else with `VITE_API_URL=http://localhost:<port> npm run test:e2e:live`.
-
-Nothing waits for the backend: with none listening, every spec fails on a network error rather than on what it was written to check. If the pair has moved, run `npm run check:spec-identity` too — a forked `seed-identities.ts` makes the run fail on _data_ rather than on behaviour.
-
-Full detail, including the rate-limit trap that makes the suite fail halfway through: **[Live E2E](docs/tools/live-e2e.md)**.
-
----
-
-## Observability (Grafana Faro, Umami, analytics)
-
-All observability code is consolidated in `src/infrastructure/observability.ts` (a Pinia store). Never scatter vendor calls directly from components. Everything runs against a **self-hosted local stack** (Docker/Podman) — no external SaaS. Verify data in **Grafana** (`http://localhost:3001`) and the **Umami dashboard** (`http://localhost:3080`).
-
-### What each tool does
-
-| Tool             | Role                                                                                                                                       |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Grafana Faro** | Error/crash monitoring, frontend tracing, Core Web Vitals. Ships to Grafana Alloy's Faro receiver. Disabled when `VITE_FARO_URL` is empty. |
-| **Umami**        | Product analytics — pageviews (automatic) + custom events. Disabled when `VITE_UMAMI_WEBSITE_ID` is empty.                                 |
-
-Both are initialized in `src/main.ts` and are no-ops when their env vars are absent, so local dev works without the stack running. The browser only ever talks to Grafana Alloy (`:12347`); Faro tracing propagates the W3C `traceparent` header to `VITE_API_URL` so FE and BE traces link in Tempo.
-
-### Tracking events
-
-```ts
-import { useObservabilityStore, analyticsEvents } from '@/infrastructure/observability';
-
-const obs = useObservabilityStore();
-
-// Generic event
-obs.track(analyticsEvents.PRODUCT_VIEWED, { product_id: '123' });
-
-// Convenience helpers
-obs.trackProductView('123', 'Widget');
-obs.trackItemAddedToCart('123', 2);
-obs.trackOrderPlaced('order-abc', 49.99, 3);
-obs.trackProductSearched('blue shoes');
-```
-
-Page views are tracked automatically by the Umami tracker (it hooks SPA history changes) — no manual call needed in views.
-
-### Event taxonomy
-
-Event names match the canonical names the backend emits, so FE and BE analytics line up.
-
-| Category            | Events                                                                                          |
-| ------------------- | ----------------------------------------------------------------------------------------------- |
-| Lifecycle (FE-only) | `app_started`, `app_ready`                                                                      |
-| Auth                | `user_signed_up`, `user_logged_in`, `user_logged_out`, `user_profile_viewed`, `account_deleted` |
-| Products            | `products_searched`, `product_viewed`                                                           |
-| Cart                | `cart_viewed`, `cart_item_added`, `cart_item_updated`, `cart_item_removed`, `cart_cleared`      |
-| Checkout / Orders   | `checkout_completed`, `checkout_failed`, `order_created`, `orders_viewed`                       |
-
-Pageviews are automatic (Umami) and are not in this table.
-
-### Rules
-
-- **No PII** in event properties — never send email, name, or personal data.
-- **Use constants** from `analyticsEvents` — never hardcode event name strings, and keep them matching the backend.
-- **Fire-and-forget** — never `await` a `track()` call.
-- **Faro for errors, Umami for product events** — two jobs, one store; there is no feature-flag provider (`isFeatureEnabled()` always returns `false`).
-
----
-
-## Admin Dashboard
-
-Route: `/:locale/admin` — requires admin role (non-admins are redirected Home).
-
-### Overview tab
-
-Fetches live backend health and metrics via the composable `src/modules/admin/composables/useAdminObservability.ts` and displays KPI cards:
-
-```text
-┌─────────────┐ ┌──────────────┐ ┌──────────┐ ┌──────────────┐
-│  API Status │ │   Database   │ │  Uptime  │ │  Requests    │
-│     ok      │ │  connected   │ │  1h 30m  │ │    1042      │
-└─────────────┘ └──────────────┘ └──────────┘ └──────────────┘
-┌─────────────┐ ┌──────────────┐ ┌──────────┐ ┌──────────────┐
-│   Errors    │ │  Error Rate  │ │ Lat. p50 │ │  Lat. p95    │
-│     12      │ │    1.2%      │ │  18ms    │ │    85ms      │
-└─────────────┘ └──────────────┘ └──────────┘ └──────────────┘
-```
-
-### Audit Log tab
-
-Fetches audit events with optional filters:
-
-- **Actor** — filter by user ID
-- **Action** — dot-notation action string
-- **Outcome** — success / failure
-- **Since** — ISO-8601 timestamp
-
-Displays a colour-coded table with truncated request/trace IDs (hover for full value).
-
-### FE implementation
-
-| File                                                     | Role                                                     |
-| -------------------------------------------------------- | -------------------------------------------------------- |
-| `src/modules/admin/views/Admin.vue`                      | Tab shell (Overview + Audit Log)                         |
-| `src/modules/admin/composables/useAdminObservability.ts` | Fetches health + metrics + audit; exposes reactive state |
-| `src/modules/admin/types.ts`                             | View-model types (`IAdminKpi`, `IAdminAuditFilters`)     |
-| `src/modules/admin/mocks/handlers.ts`                    | MSW mock responses for dev/test                          |
-
----
-
-## TODO / roadmap
-
-- Fix tests
-- Signup: create the registration confirmation page (email confirmation flow)
-- Create the reset password page and reset password confirm page
-- Add image upload in the various forms
-- Always call `useXYZStore()` inside functions, not at top level — avoids circular dependency issues (unless explicitly dependent)
-- Create a NUXT variant
-- Create a Vuetify variant
-- Create a Quasar variant
-- Do Vitest tests
-- Do Cypress tests
-- Create skeleton version
-- From skeleton: css-ui version
-    - remember to take old `_root.scss` and old `_cards.scss` (for simple-card) from older commits
-- From skeleton: vuetify version
-- From skeleton: quasar version
-
-### MAYBE?
-
-- Extend `useI18n` (or create a new one) to add custom helpers from `utils/i18n.ts`
-- From skeleton: bootstrap version
-- Do Lighthouse metrics tests
+AGPL-3.0. See [LICENSE](./LICENSE).

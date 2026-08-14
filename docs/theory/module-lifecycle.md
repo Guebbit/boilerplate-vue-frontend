@@ -170,7 +170,7 @@ A scaffold `events` module, measured:
 %%{init: {'flowchart': {'nodeSpacing': 40, 'rankSpacing': 45}}}%%
 flowchart LR
     A["1 · rm -rf<br/>src/modules/&lt;name&gt;/"] --> B["2 · delete its line<br/>from src/modules.ts"]
-    B --> C["3 · npm run complete:check"]
+    B --> C["3 · npm run complete"]
     C --> D["whatever fails is<br/><b>real coupling</b>"]
     classDef s fill:#fee2e2,stroke:#dc2626,color:#111827;
     class A,B,C,D s;
@@ -179,7 +179,7 @@ flowchart LR
 ```bash
 rm -rf src/modules/<name>
 # delete the import and the array entry in src/modules.ts
-npm run complete:check
+npm run complete
 ```
 
 Deleting a module named in another module's `dependsOn` throws while the router assembles, with the

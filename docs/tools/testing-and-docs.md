@@ -127,6 +127,47 @@ Worth being explicit, because the boundary has bitten this project before.
 
 The last row used to read "nothing yet". The mock-profile suite proves the frontend agrees with its own mocks; on its own it cannot prove the mocks agree with the backend — that gap is now closed structurally by the live profile rather than by review alone, though it still only runs when someone runs it by hand (see [Live E2E](./live-e2e.md) for why it isn't in CI). A mock handler must still name the backend service it mirrors — see the parity invariants in [Mocking](./mocking.md).
 
+## Test timings
+
+Measured 2026-08-14 on a 16-core / 30 GB machine. They are here so a number that doubles is visible
+as a regression rather than as "tests feel slow lately" — treat them as an order of magnitude, not a
+promise.
+
+| Command | Time | What it runs |
+| ------- | ---- | ------------ |
+| `npm run test:unit` | **~8s** | 70 files, 1043 tests, jsdom |
+| `npm run test:e2e` | **~3m30s** | 17 specs, 136 tests, sharded across `E2E_SHARDS` Cypress processes |
+| `npm run test:e2e:random` | ~1m30s | one spec against a freshly generated dataset |
+| `npm run complete` | **~5m** | the gate: lint + both spec lints + format + contract identity + build + all of the above |
+| `npm run test:mutation` | ~9m | 2182 mutants, incremental; nightly in CI |
+| `npm run test:e2e:visual` | ~1m | pixel diffs — `complete:manual`, not the gate |
+| `npm run test:e2e:live` | ~13m | the full suite against a real backend — `complete:manual`, sequential |
+
+**Cypress is the gate**, and the reason `test:e2e` is sharded. Sequentially those 17 specs take
+**12m54s** on one core; `scripts/e2e-shard.ts` splits them across processes sharing one dev server.
+`npm run test:e2e:serial` keeps the old behaviour for when an interleaved failure is hard to read.
+
+Measured on the 16-core / 30 GB machine, same 17 specs:
+
+| `E2E_SHARDS` | Wall-clock | Result |
+| ------------ | ---------- | ------ |
+| 1 (`test:e2e:serial`) | 774s | green |
+| **4** | **214s** | **green — the default** |
+| 6 | 158s | **2 shards failed** |
+
+**More shards is not simply better.** At six, six Chrome instances took the machine to 1.6 GB free
+and two shards failed on commands exceeding a 15-second timeout — a budget already four times
+Cypress's default, so that is starvation rather than a tight setting. Four leaves headroom and the
+box stays usable while it runs. Raise it only with the memory measured, not the core count.
+
+Two further limits:
+
+- **Wall-clock cannot go below the longest single spec** — `uploads.cy.ts` at ~86s. Even a perfect
+  split cannot beat it, which is what caps the return well before the core count does.
+- **The live profile is never sharded.** `cy.resetState()` re-seeds the paired backend's real
+  database there, which every shard would reset out from under the others. The script refuses rather
+  than trusting the caller to remember.
+
 ## Quality tools
 
 | Tool | Why it is here |

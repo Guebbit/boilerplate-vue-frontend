@@ -54,7 +54,7 @@ npm run gen:asyncapi   # validate asyncapi.yaml + regenerate src/types/realtime.
 ## Shared with the backend
 
 `scripts/gen-asyncapi-types.ts` is **byte-identical** to the one in
-`boilerplate-node-api-mongodb-mongoose`. Only the output path differs, and it comes from `--out`:
+`boilerplate-node-backend`. Only the output path differs, and it comes from `--out`:
 
 | Repo | Command |
 | --- | --- |

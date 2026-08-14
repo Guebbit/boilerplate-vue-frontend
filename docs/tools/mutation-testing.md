@@ -123,6 +123,54 @@ Stryker drives **Vitest only** (`vitest.config.mutation.ts`). The Cypress e2e su
 
 That is why `.vue` files are not in `mutate` yet either — see [Scope](#scope--what-is-mutated).
 
+## What to be wary of — per-file setup costs
+
+Mutation testing multiplies whatever the suite does on setup by the mutant count. A cost that is
+invisible at `npm run test:unit` becomes the whole run here.
+
+The paired backend measured this the hard way: a `beforeAll` that started an in-memory MongoDB ran
+once per test FILE, which is 33 servers per pass — fine for one run, and 33 × 6042 mutants under
+Stryker. The buffers accumulated until the worker was killed and restarted every 15–25 seconds, and
+the run stopped converging entirely.
+
+Nothing here starts a server, so this repo's exposure is smaller — but the rule is the same:
+**anything in a `beforeAll` is paid once per file per mutant.** Before adding a fixture build, a
+seeded database, or anything else there, ask what it costs multiplied by the mutant count, and
+prefer one shared instance with per-file isolation over one instance per file.
+
+**How to spot it:** run the suite outside Stryker first (`npm run test:unit`). If it is fast and
+light there but heavy under mutation, the difference is setup being repeated, not your tests being
+slow.
+
+## Why this repo does not hit the backend's OOM loop
+
+The paired backend has a failure mode where a mutation run never finishes — workers grow until Node
+kills them, restart having completed nothing, and the ETA climbs instead of falling. It is written
+up in full at
+[its `docs/tools/mutation-testing.md`](https://github.com/Guebbit/boilerplate-node-backend), and it
+is worth knowing here for one reason: **this repo is immune by construction, not by luck, and the
+property that makes it immune is easy to give away.**
+
+The backend transforms TypeScript with **ts-jest**, which does two jobs — translate, and type-check.
+Type-checking needs a TypeScript `LanguageService`, which caches a program in memory. Stryker calls
+the runner repeatedly inside one process, every mutant gives a file new contents, and the cache
+grows with each one.
+
+Vitest transforms with **esbuild**, which only translates. It type-checks nothing, so it caches
+nothing, and a mutant is just another file to strip types from. `vitest.config.ts` sets no
+`typecheck` option, so there is nothing to switch off. Types are checked once, by `vue-tsc` inside
+`npm run build`, which is where a type error is a build failure rather than a mutant.
+
+**What would give it away:** enabling vitest's `typecheck` option, or introducing a transform plugin
+that holds a cross-file program. If either ever lands, this page's claim stops being true, and the
+symptom to look for is the one the backend documents — read `ELAPSED` on the worker processes, and
+if the parent has been up for hours while its children are minutes old, they are being restarted.
+
+The other half of that story is disk: the backend's runner starts an in-memory MongoDB per suite, so
+a killed worker strands a data directory. Nothing here starts a server, so a killed run costs a
+sandbox and nothing else — which is why `.stryker-tmp/` is absent between runs here and was 88 GB
+there.
+
 ## Why it never gates a PR
 
 A run re-executes the unit suite once per mutant. `.github/workflows/mutation.yml` is a separate workflow from `ci.yml` — **nightly** (`cron: '0 3 * * *'`) plus manual dispatch. Kept structurally separate rather than folded into `ci.yml` behind a conditional: a separate file can't become a PR gate by accident.

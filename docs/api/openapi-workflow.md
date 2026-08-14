@@ -34,8 +34,8 @@ The cost of that decision is that nothing detects cross-repo drift — and it ha
 **Whenever the backend's spec changes**, copy both specs over and regenerate, by hand:
 
 ```bash
-cp ../boilerplate-node-api-mongodb-mongoose/openapi.yaml .
-cp ../boilerplate-node-api-mongodb-mongoose/asyncapi.yaml .
+cp ../boilerplate-node-backend/openapi.yaml .
+cp ../boilerplate-node-backend/asyncapi.yaml .
 npm run gen:api
 npm run gen:asyncapi
 npm run prettier:fix   # orval emits 2-space indent; this repo commits 4
@@ -43,7 +43,7 @@ npm run prettier:fix   # orval emits 2-space indent; this repo commits 4
 
 There is deliberately **no script** for this. Syncing is a judgement call, not a chore to automate: the copy is followed by reading the diff and deciding which stores and views have to change with it.
 
-Then review the diff — a spec change may require store or view updates. To confirm parity by hand, `diff openapi.yaml ../boilerplate-node-api-mongodb-mongoose/openapi.yaml` should print nothing.
+Then review the diff — a spec change may require store or view updates. To confirm parity by hand, `diff openapi.yaml ../boilerplate-node-backend/openapi.yaml` should print nothing.
 
 CI cannot catch a stale *copy*; it can only catch a spec edited **within this repo** without regenerating (see below). Cross-repo parity remains a human step.
 

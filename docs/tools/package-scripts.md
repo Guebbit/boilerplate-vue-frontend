@@ -30,16 +30,20 @@ All four run through `scripts/compose.ts`, which picks the engine from `CONTAINE
 | `build` | `vue-tsc` type-check + Vite production build | [Runtime](./runtime.md) |
 | `lint` / `lint:fix` | ESLint check or autofix | [Testing](./testing-and-docs.md) |
 | `lint:openapi` | Lint `openapi.yaml` with Spectral | [OpenAPI Workflow](../api/openapi-workflow.md) |
+| `lint:asyncapi` | Validate `asyncapi.yaml` with the AsyncAPI CLI | [Testing](./testing-and-docs.md) |
 | `prettier` / `prettier:fix` | Prettier check or rewrite | [Testing](./testing-and-docs.md) |
-| `complete` | build + lint:fix + lint:openapi + prettier:fix + tests (local hardening) | [Testing](./testing-and-docs.md) |
-| `complete:check` | build + lint + lint:openapi + prettier:check + tests (CI gate) | [Testing](./testing-and-docs.md) |
+| `check:spec-identity` | Compare the shared contract files against the paired backend; skips when it is not on disk, fatal under CI | [Testing](./testing-and-docs.md) |
+| `complete` | the gate: lint + both spec lints + prettier:check + spec identity + build + tests | [Testing](./testing-and-docs.md) |
+| `complete:fix` | the same gate, with lint and formatting fixed rather than reported | [Testing](./testing-and-docs.md) |
+| `complete:manual` | what the gate cannot run for you: `test:e2e:visual` + `test:e2e:live` | [Testing](./testing-and-docs.md) |
 
 ## Test scripts
 
 | Script | Job | Read more |
 | ------ | --- | --------- |
 | `test:unit` | Vitest unit suite (CI mode) | [Testing](./testing-and-docs.md) |
-| `test:e2e` | Start Vite (with MSW) + run Cypress headlessly | [Testing](./testing-and-docs.md) |
+| `test:e2e` | Start Vite (with MSW) + run Cypress headlessly, sharded across `E2E_SHARDS` processes | [Testing](./testing-and-docs.md#test-timings) |
+| `test:e2e:serial` | The same run in one Cypress process — for when interleaved output is hard to read | [Testing](./testing-and-docs.md#test-timings) |
 | `test:e2e:dev` | Open Cypress UI for interactive e2e development | [Testing](./testing-and-docs.md) |
 | `test:e2e:random` | Start Vite with the faker-seeded random mock profile + run only `resilience.cy.ts` | [Mocking](./mocking.md) |
 | `test:e2e:live` | Start Vite (real API, response validation on) + run Cypress against the live backend, by hand | [Live E2E](./live-e2e.md) |
