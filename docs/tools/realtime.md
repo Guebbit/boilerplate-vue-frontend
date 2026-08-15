@@ -2,6 +2,11 @@
 
 The boilerplate exposes one realtime transport — Server-Sent Events — driven by contracts in `asyncapi.yaml` and demonstrated in the `RealtimePlayground` view (`/:locale/playground/realtime`).
 
+Requires the admin role — non-admins are redirected Home by the route's `meta.access`, not by a
+check inside the component. See [Sitemap & Access Control](../theory/sitemap.md). The gate exists
+because the stream itself (`GET /observability/events`) is admin-only on the API side too — see
+[Admin Dashboard](admin-dashboard.md).
+
 ## Transport at a glance
 
 | Transport | URL env var | Direction | Use case |

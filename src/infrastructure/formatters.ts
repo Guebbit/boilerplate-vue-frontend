@@ -81,6 +81,19 @@ export const formatCurrency = (
 ) => formatCurrencyBase(value, { currency, format, locale: getLocale(), empty: EMPTY_VALUE });
 
 /**
+ * Formats a process uptime in a compact, human form.
+ *
+ * @param seconds - Uptime in seconds, possibly unknown.
+ * @returns `"2h 15m"`, `"15m"`, or {@link EMPTY_VALUE} when `seconds` is `undefined`.
+ */
+export const formatUptime = (seconds?: number): string => {
+    if (seconds === undefined) return EMPTY_VALUE;
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+};
+
+/**
  * Maps boolean values to localized labels with a null/undefined fallback.
  *
  * @param value - Flag to translate into a label.

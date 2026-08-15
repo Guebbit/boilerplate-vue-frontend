@@ -8,7 +8,7 @@ All routes are locale-prefixed (`/:locale/…`). A missing locale is injected au
 | ----- | ---------- | ------ |
 | `/:locale/` | `Home` | public |
 | `/:locale/playground` | `Playground` | public |
-| `/:locale/playground/realtime` | `RealtimePlayground` | public |
+| `/:locale/playground/realtime` | `RealtimePlayground` | admin |
 | `/:locale/error/:status/:message?` | `Error` | public |
 | `/:locale/login` | `Login` | guest only |
 | `/:locale/signup` | `Signup` | guest only |

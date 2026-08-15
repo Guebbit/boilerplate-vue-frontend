@@ -21,7 +21,7 @@ const byName = (name: string): RouteRecordRaw | undefined =>
     routes.find((route) => route.name === name);
 
 describe('realtime route access', () => {
-    it.each([['RealtimePlayground', undefined]])('%s declares access: %s', (name, access) => {
+    it.each([['RealtimePlayground', 'admin']])('%s declares access: %s', (name, access) => {
         expect(byName(name)).toBeDefined();
         expect(byName(name)?.meta?.access).toBe(access);
     });

@@ -13,7 +13,8 @@ import {
     formatDate,
     formatDateTime,
     formatCurrency,
-    formatFlag
+    formatFlag,
+    formatUptime
 } from '@/infrastructure/formatters';
 
 describe('formatText', () => {
@@ -116,6 +117,24 @@ describe('formatFlag', () => {
     it('falls back for undefined and null, which are not "false"', () => {
         expect(formatFlag(undefined, 'Active', 'Inactive')).toBe(EMPTY_VALUE);
         expect(formatFlag(null, 'Active', 'Inactive')).toBe(EMPTY_VALUE);
+    });
+});
+
+describe('formatUptime', () => {
+    it('falls back for undefined', () => {
+        expect(formatUptime()).toBe(EMPTY_VALUE);
+    });
+
+    it('renders minutes alone under an hour', () => {
+        expect(formatUptime(300)).toBe('5m');
+    });
+
+    it('renders zero minutes rather than treating it as missing', () => {
+        expect(formatUptime(0)).toBe('0m');
+    });
+
+    it('renders hours and minutes once past an hour', () => {
+        expect(formatUptime(7500)).toBe('2h 5m');
     });
 });
 

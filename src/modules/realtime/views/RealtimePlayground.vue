@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { Camera, RefreshCw, HeartPulse } from 'lucide-vue-next';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import FeedbackMessageFeed from '@/modules/realtime/components/FeedbackMessageFeed.vue';
+import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import { useRealtimeObservability } from '@/modules/realtime/useRealtimeObservability';
+import { formatUptime } from '@/infrastructure/formatters.ts';
 import type { RealtimeMetricsEntry } from '@types';
 
 const { t } = useI18n();
@@ -15,8 +17,24 @@ const {
     disconnect: disconnectObservability
 } = useRealtimeObservability();
 
-/** When on, the feed shows the full raw SSE frame instead of the one-line summary. */
+/** When on, each feed entry shows its full raw JSON payload instead of the metric grid. */
 const showRawEvents = ref(false);
+
+/** Icon, chip color and left-border accent for each SSE event kind. */
+const KIND_META: Record<
+    RealtimeMetricsEntry['kind'],
+    { icon: typeof Camera; color: string; border: string }
+> = {
+    snapshot: { icon: Camera, color: 'info', border: 'border-s-info' },
+    update: { icon: RefreshCw, color: 'primary', border: 'border-s-primary' },
+    heartbeat: { icon: HeartPulse, color: 'secondary', border: 'border-s-secondary' }
+};
+
+/** The most recently received event, driving the KPI tiles above the feed. */
+const latestEntry = computed(() => observabilityEntries.value.at(-1));
+
+/** The feed, newest event first — a live stream reads better without manual scrolling. */
+const feedEntries = computed(() => observabilityEntries.value.toReversed());
 
 /**
  * Rounds a byte count to whole megabytes for compact display.
@@ -25,45 +43,6 @@ const showRawEvents = ref(false);
  * @returns The size in whole megabytes, e.g. `42MB`.
  */
 const formatMb = (bytes: number) => `${Math.round(bytes / 1024 / 1024)}MB`;
-
-/**
- * Renders one metrics SSE event as a single feed line.
- *
- * @param entry - Feed entry holding the event kind, timestamp and payload.
- * @returns A one-line summary prefixed with the kind, so snapshot / update /
- *  heartbeat entries stay distinguishable from each other.
- */
-const formatMetricsEntry = (entry: RealtimeMetricsEntry) => {
-    const time = new Date(entry.timestamp).toLocaleTimeString();
-    const { uptimeSeconds, memory, http, realtime } = entry.payload;
-
-    return (
-        `[${entry.kind}] ${time} · up ${Math.round(uptimeSeconds)}s · ` +
-        `heap ${formatMb(memory.heapUsed)}/${formatMb(memory.heapTotal)} · ` +
-        `req ${http.totalRequests} (${http.totalErrors} err) · ` +
-        `sse ${realtime.sseClients}`
-    );
-};
-
-/**
- * Renders one SSE event as its full raw frame: event name, arrival time and the
- * complete JSON payload exactly as received, for observability of the wire format.
- *
- * @param entry - Feed entry holding the event kind, timestamp and payload.
- * @returns A single-line `[kind] time {...payload}` string.
- */
-const formatRawEntry = (entry: RealtimeMetricsEntry) => {
-    const time = new Date(entry.timestamp).toLocaleTimeString();
-
-    return `[${entry.kind}] ${time} ${JSON.stringify(entry.payload)}`;
-};
-
-/** Feed lines, switching between the summarised and raw rendering per `showRawEvents`. */
-const feedMessages = computed(() =>
-    observabilityEntries.value.map((entry) =>
-        showRawEvents.value ? formatRawEntry(entry) : formatMetricsEntry(entry)
-    )
-);
 </script>
 
 <template>
@@ -93,12 +72,118 @@ const feedMessages = computed(() =>
                         :label="t('realtime-playground-page.label-raw-events')"
                     />
                 </div>
-                <FeedbackMessageFeed
-                    :messages="feedMessages"
-                    variant="alert"
-                    max-height="220px"
-                    :empty-text="t('realtime-playground-page.empty-metrics')"
-                />
+
+                <div v-if="latestEntry" class="grid gap-3">
+                    <h4 class="text-sm font-semibold">
+                        {{ t('realtime-playground-page.section-current') }}
+                    </h4>
+                    <div class="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-4">
+                        <CardMaterialStat
+                            :title="t('realtime-playground-page.stat-uptime')"
+                            :value="formatUptime(latestEntry.payload.uptimeSeconds)"
+                            accent="primary"
+                        />
+                        <CardMaterialStat
+                            :title="t('realtime-playground-page.stat-heap')"
+                            :value="`${formatMb(latestEntry.payload.memory.heapUsed)} / ${formatMb(latestEntry.payload.memory.heapTotal)}`"
+                            accent="secondary"
+                        />
+                        <CardMaterialStat
+                            :title="t('realtime-playground-page.stat-requests')"
+                            :value="latestEntry.payload.http.totalRequests"
+                            :subtitle="`${latestEntry.payload.http.totalErrors} ${t('realtime-playground-page.stat-errors-suffix')}`"
+                            accent="tertiary"
+                        />
+                        <CardMaterialStat
+                            :title="t('realtime-playground-page.stat-sse-clients')"
+                            :value="latestEntry.payload.realtime.sseClients"
+                            accent="primary"
+                        />
+                    </div>
+                </div>
+
+                <div class="grid gap-3">
+                    <h4 class="text-sm font-semibold">
+                        {{ t('realtime-playground-page.section-feed') }}
+                    </h4>
+                    <div class="max-h-[320px] overflow-y-auto" aria-live="polite">
+                        <template v-if="feedEntries.length > 0">
+                            <v-card
+                                v-for="entry in feedEntries"
+                                :key="entry.id"
+                                variant="flat"
+                                border
+                                class="mb-2 border-s-4 px-4 py-3 last:mb-0"
+                                :class="KIND_META[entry.kind].border"
+                            >
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <v-chip
+                                        size="small"
+                                        variant="tonal"
+                                        :color="KIND_META[entry.kind].color"
+                                    >
+                                        <component
+                                            :is="KIND_META[entry.kind].icon"
+                                            :size="14"
+                                            class="mr-1"
+                                            aria-hidden="true"
+                                        />
+                                        {{ entry.kind }}
+                                    </v-chip>
+                                    <span class="text-xs opacity-70">
+                                        {{ new Date(entry.timestamp).toLocaleTimeString() }}
+                                    </span>
+                                </div>
+
+                                <pre
+                                    v-if="showRawEvents"
+                                    class="mt-2 overflow-x-auto font-mono text-xs"
+                                    >{{ JSON.stringify(entry.payload, null, 2) }}</pre>
+                                <dl
+                                    v-else
+                                    class="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-xs sm:grid-cols-4"
+                                >
+                                    <div class="flex justify-between gap-2">
+                                        <dt class="opacity-60">
+                                            {{ t('realtime-playground-page.stat-uptime') }}
+                                        </dt>
+                                        <dd>{{ formatUptime(entry.payload.uptimeSeconds) }}</dd>
+                                    </div>
+                                    <div class="flex justify-between gap-2">
+                                        <dt class="opacity-60">
+                                            {{ t('realtime-playground-page.stat-heap') }}
+                                        </dt>
+                                        <dd>
+                                            {{ formatMb(entry.payload.memory.heapUsed) }}/{{
+                                                formatMb(entry.payload.memory.heapTotal)
+                                            }}
+                                        </dd>
+                                    </div>
+                                    <div class="flex justify-between gap-2">
+                                        <dt class="opacity-60">
+                                            {{ t('realtime-playground-page.stat-requests') }}
+                                        </dt>
+                                        <dd>
+                                            {{ entry.payload.http.totalRequests }} ({{
+                                                entry.payload.http.totalErrors
+                                            }}
+                                            {{ t('realtime-playground-page.stat-errors-suffix') }})
+                                        </dd>
+                                    </div>
+                                    <div class="flex justify-between gap-2">
+                                        <dt class="opacity-60">
+                                            {{ t('realtime-playground-page.stat-sse-clients') }}
+                                        </dt>
+                                        <dd>{{ entry.payload.realtime.sseClients }}</dd>
+                                    </div>
+                                </dl>
+                            </v-card>
+                        </template>
+                        <p v-else class="m-0 p-4 text-center opacity-60">
+                            {{ t('realtime-playground-page.empty-metrics') }}
+                        </p>
+                    </div>
+                </div>
             </v-card>
         </section>
     </LayoutDefault>

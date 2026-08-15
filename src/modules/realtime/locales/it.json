@@ -5,6 +5,13 @@
         "button-connect": "Connetti SSE",
         "button-disconnect": "Disconnetti SSE",
         "label-raw-events": "Eventi grezzi",
+        "section-current": "Istantanea attuale",
+        "section-feed": "Feed eventi",
+        "stat-uptime": "Uptime",
+        "stat-heap": "Heap",
+        "stat-requests": "Richieste",
+        "stat-errors-suffix": "errori",
+        "stat-sse-clients": "Client SSE",
         "empty-metrics": "Nessun evento di metriche"
     },
     "navigation": {

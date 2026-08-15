@@ -5,6 +5,13 @@
         "button-connect": "Connect SSE",
         "button-disconnect": "Disconnect SSE",
         "label-raw-events": "Raw events",
+        "section-current": "Current snapshot",
+        "section-feed": "Event feed",
+        "stat-uptime": "Uptime",
+        "stat-heap": "Heap",
+        "stat-requests": "Requests",
+        "stat-errors-suffix": "errors",
+        "stat-sse-clients": "SSE clients",
         "empty-metrics": "No metrics events yet"
     },
     "navigation": {

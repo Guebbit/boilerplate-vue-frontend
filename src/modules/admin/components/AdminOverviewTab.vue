@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { RefreshCw } from 'lucide-vue-next';
 import type { ObservabilityHealth, ObservabilityMetricsSummary } from '@types';
 import type { AdminKpiCard } from '@/modules/admin/types.ts';
-import { EMPTY_VALUE } from '@/infrastructure/formatters.ts';
+import { EMPTY_VALUE, formatUptime } from '@/infrastructure/formatters.ts';
 
 const { t } = useI18n();
 
@@ -23,19 +23,6 @@ const props = defineProps<{
  * @returns `true` while the dashboard data is being fetched.
  */
 const loading = computed(() => props.loading);
-
-/**
- * Formats a process uptime in a compact, human form.
- *
- * @param seconds - Uptime in seconds, possibly unknown.
- * @returns `"2h 15m"`, `"15m"`, or a dash when `seconds` is `undefined`.
- */
-const formatUptime = (seconds?: number): string => {
-    if (seconds === undefined) return EMPTY_VALUE;
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    return h > 0 ? `${h}h ${m}m` : `${m}m`;
-};
 
 /**
  * Formats an error rate as a percentage.
@@ -144,20 +131,24 @@ const kpiCards = computed<AdminKpiCard[]>(() => [
 ]);
 
 /**
- * Maps a KPI status onto a theme color, used for the card's accent border and
- * value.
+ * Maps a KPI status onto the status dot's background class.
+ *
+ * Returns the full literal class name rather than interpolating `bg-${color}`: Tailwind's
+ * scanner only generates a utility for a class name it can see written out somewhere in the
+ * source, and a template-literal-built name is invisible to it — the dot would carry no
+ * background at all.
  *
  * @param status - Status of the card, possibly unset.
- * @returns The Vuetify color name, defaulting to `secondary`.
+ * @returns The Tailwind background class, defaulting to `bg-secondary`.
  */
-const kpiColor = (status: AdminKpiCard['status']) =>
+const kpiDotClass = (status: AdminKpiCard['status']) =>
     ({
-        ok: 'success',
-        warn: 'warning',
-        error: 'error',
-        loading: 'info',
-        unknown: 'secondary'
-    })[status ?? 'unknown'] ?? 'secondary';
+        ok: 'bg-success',
+        warn: 'bg-warning',
+        error: 'bg-error',
+        loading: 'bg-info',
+        unknown: 'bg-secondary'
+    })[status ?? 'unknown'] ?? 'bg-secondary';
 
 /**
  * Renders a boolean integration row as a glyph.
@@ -189,7 +180,7 @@ const flag = (value?: boolean) => (value ? '✓' : '✗');
                     </p>
                     <span
                         class="h-2 w-2 shrink-0 rounded-full"
-                        :class="`bg-${kpiColor(card.status)}`"
+                        :class="kpiDotClass(card.status)"
                         aria-hidden="true"
                     />
                 </div>
