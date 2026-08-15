@@ -11,6 +11,16 @@ import { feedbackResponseSchemas } from './responseSchemas';
  */
 export default {
     name: 'feedback',
+    /*
+     * A contact form and an inbox. Every application grows one, none of them differ, and this one
+     * references no other domain’s records.
+     */
+    subdomain: 'generic',
+    language: {
+        'Contact request':
+            'A message from anyone, account or not. Identified by the email on the form.',
+        Inbox: 'The admin side of the same collection. Triage, nothing more.'
+    },
     routes,
     navigation: [
         { name: 'Contact', label: 'navigation.label-contact', plural: 1, order: 95 },

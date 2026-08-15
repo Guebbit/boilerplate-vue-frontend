@@ -20,14 +20,28 @@ import type { AppModule, AppNavigationEntry } from '@/kernel/registry';
 const makeRoute = (name: string): RouteRecordRaw =>
     ({ path: name, name, component: { template: '<div />' } }) as RouteRecordRaw;
 
+/**
+ * Names alone here: the cases below are about the graph, and every one of them would read worse
+ * with a relationship kind and a sentence attached to an arrow between two modules called `a` and
+ * `b`. The kinds are asserted where they mean something, against the real manifests, in
+ * `tests/cross-cutting/contextMap.spec.ts`.
+ */
 const makeModule = (name: string, dependsOn: string[] = []): AppModule => ({
     name,
+    subdomain: 'supporting',
+    language: { [name]: `whatever ${name} means` },
     routes: [makeRoute(name)],
-    dependsOn
+    dependsOn: dependsOn.map((module) => ({
+        module,
+        as: 'conformist' as const,
+        because: `${name} reads ${module}`
+    }))
 });
 
 const withNav = (name: string, navigation: AppNavigationEntry[]): AppModule => ({
     name,
+    subdomain: 'supporting',
+    language: { [name]: `whatever ${name} means` },
     routes: [makeRoute(name)],
     navigation
 });
@@ -49,6 +63,14 @@ describe('validateModules', () => {
         // The event-portal case from the plan: products is deleted, cart is not.
         expect(() => validateModules([makeModule('cart', ['products'])])).toThrow(
             /"cart" depends on "products", which is not enabled/
+        );
+    });
+
+    it('rejects a module that depends on itself, by name rather than as a cycle', () => {
+        // Reported separately because it is a typo, not an architecture problem — and the cycle
+        // walk would otherwise describe it as `products → products`, which reads like a finding.
+        expect(() => validateModules([makeModule('products', ['products'])])).toThrow(
+            /"products" declares a dependency on itself/
         );
     });
 

@@ -11,6 +11,17 @@ import { usersResponseSchemas } from './responseSchemas';
  */
 export default {
     name: 'users',
+    /*
+     * An admin CRUD over a user record with an email and an admin flag — the same problem in every
+     * application that has ever had one.
+     */
+    subdomain: 'generic',
+    language: {
+        User: 'The person record, admin-facing. The same row `account` edits from the inside.',
+        Admin: 'A flag on the User, not a role table. Two levels of access is the whole model.',
+        'Field rules':
+            'The Zod schemas every user-shaped form validates against. This module’s one export, and the reason `account` depends on it.'
+    },
     routes,
     navigation: [{ name: 'UsersList', label: 'navigation.label-users-list', plural: 2, order: 50 }],
     responseSchemas: usersResponseSchemas,

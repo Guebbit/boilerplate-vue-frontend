@@ -134,6 +134,7 @@ point.
 | Read the folder-by-folder explanation | [Layers](./layers.md) |
 | Understand how domains stay separable | [Modules](./modules.md) |
 | Actually add or remove a domain | [Adding & Removing a Module](./module-lifecycle.md) |
+| Understand the domain-modelling stance | [Strategic DDD](./strategic-ddd.md) |
 | Follow one request end-to-end | [Request Flow](./request-flow.md) |
 | See all routes and access levels at a glance | [Sitemap & Access Control](./sitemap.md) |
 | Understand dependency choices | [Tools](../tools/) |

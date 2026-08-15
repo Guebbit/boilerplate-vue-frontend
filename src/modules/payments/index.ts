@@ -1,7 +1,8 @@
 /**
- * Payments — public barrel. The store for whoever needs the record, the panel for the order
- * page that mounts it.
+ * Payments — public barrel. One component: the panel the order page mounts.
+ *
+ * The store stays inside. Paying happens ON an order, through the panel, and a sibling reaching
+ * the store directly would be building a second pay flow next to the one that exists.
  */
 
-export { usePaymentsStore } from './store';
 export { default as PaymentPanel } from './components/PaymentPanel.vue';

@@ -12,8 +12,25 @@ import { wishlistResponseSchemas } from './responseSchemas';
  */
 export default {
     name: 'wishlist',
+    /*
+     * A saved list with one exit into the cart. Deleting it costs a convenience, not a capability.
+     */
+    subdomain: 'supporting',
+    language: {
+        Wishlist:
+            'The visitor’s saved products. Holds references and nothing else — no quantity, no price.',
+        'Move to cart':
+            'The list’s only exit: a saved line becomes a cart line and leaves the list.'
+    },
     routes,
-    dependsOn: ['cart'],
+    dependsOn: [
+        {
+            module: 'cart',
+            as: 'customer-supplier',
+            because:
+                'Move-to-cart asks the cart store to write a line, then refreshes it so the header badge cannot lag.'
+        }
+    ],
     navigation: [{ name: 'Wishlist', label: 'navigation.label-wishlist', plural: 1, order: 75 }],
     responseSchemas: wishlistResponseSchemas,
     // Written out rather than delegated to a helper on purpose: `import.meta.env` is replaced by

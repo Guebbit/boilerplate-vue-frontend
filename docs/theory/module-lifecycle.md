@@ -83,14 +83,24 @@ in one typed object:
 
 ```ts
 // src/modules/<name>/module.ts
-import type { IAppModule } from '@/kernel/registry';
+import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { widgetsResponseSchemas } from './responseSchemas';
 
 export default {
     name: 'widgets',
+    subdomain: 'supporting',
+    language: {
+        Widget: 'A thing this module lists and edits. Defined as THIS module means it.'
+    },
     routes,
-    dependsOn: ['products'],
+    dependsOn: [
+        {
+            module: 'products',
+            as: 'conformist',
+            because: 'Reads `useProductsStore` as it is, to name the product a widget belongs to.'
+        }
+    ],
     navigation: [
         { name: 'WidgetsList', label: 'navigation.label-widgets', plural: 2, order: 40 }
     ],
@@ -99,16 +109,26 @@ export default {
         en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
         it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)
     }
-} satisfies IAppModule;
+} satisfies AppModule;
 ```
 
-Three fields need care:
+Five fields need care:
 
-| Field            | Rule                                                                                     |
-| ---------------- | ---------------------------------------------------------------------------------------- |
-| `name`           | must match the folder name under `src/modules/`                                          |
-| `dependsOn`      | names **siblings** whose code this module imports; validated as a DAG when the router assembles |
-| `navigation[].name` | must be a route **this module declares** — swept by `registry.spec.ts`                |
+| Field               | Rule                                                                                                |
+| ------------------- | ---------------------------------------------------------------------------------------------------- |
+| `name`              | must match the folder name under `src/modules/`                                                     |
+| `subdomain`         | `core`, `supporting` or `generic`. A `generic` module may not carry a `domain/` folder               |
+| `language`          | the terms this module uses, as **it** means them — often not the server's word for the same thing    |
+| `dependsOn`         | names **siblings** whose code this module imports, each with its relationship kind and a reason      |
+| `navigation[].name` | must be a route **this module declares** — swept by `registry.spec.ts`                              |
+
+The last three are strategic rather than operational: nothing reads them at runtime, and
+`tests/cross-cutting/` reads all of them. An edge nothing imports, an import no edge declares, a
+placeholder glossary or a `domain/` folder in a generic module each fail a spec. See
+[Strategic DDD](./strategic-ddd.md).
+
+The temptation is to fill them in later. Do not — the questions are easiest to answer while you
+still remember why you drew the boundary.
 
 ::: danger Do not refactor the mock ternaries into a helper
 `mockHandlers` and `mockSeeds` are written inline behind
@@ -128,7 +148,7 @@ need another's data without importing a line of its code. Folding them would mak
 // src/modules.ts
 import widgets from '@/modules/widgets/module';
 
-export const enabledModules: IAppModule[] = [account, admin, cart /* … */, widgets];
+export const enabledModules: AppModule[] = [account, admin, cart /* … */, widgets];
 ```
 
 Keep the array alphabetical. Order only decides the sequence route records are spliced in, which

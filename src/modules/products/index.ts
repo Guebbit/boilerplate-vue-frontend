@@ -10,4 +10,3 @@
  */
 
 export { useProductsStore } from './store';
-export { productsSchema } from './schemas';

@@ -11,8 +11,37 @@ import { ordersResponseSchemas } from './responseSchemas';
  */
 export default {
     name: 'orders',
+    /*
+     * The customer’s history and the admin status screens. Where the shop’s outcome becomes
+     * visible — but the invariants that decide a status live behind the API, not here.
+     */
+    subdomain: 'core',
+    language: {
+        Order: 'What a customer bought, frozen. This client renders it and never edits its substance — only an admin moves its status.',
+        Status: 'Where an order is in its lifecycle. A closed set the server enforces; this module maps each value to a label and a colour.',
+        Reorder:
+            'Refilling the cart from a past order. The one write this module makes into another module’s state.'
+    },
     routes,
-    dependsOn: ['cart', 'delivery', 'payments'],
+    dependsOn: [
+        {
+            module: 'cart',
+            as: 'customer-supplier',
+            because: 'The reorder button asks the cart store to refill itself from a past order.'
+        },
+        {
+            module: 'delivery',
+            as: 'published-language',
+            because:
+                'Mounts `ShipmentPanel`; the parcel renders itself and this module never touches a shipment.'
+        },
+        {
+            module: 'payments',
+            as: 'published-language',
+            because:
+                'Mounts `PaymentPanel`; paying happens on the order page without this module knowing a provider exists.'
+        }
+    ],
     navigation: [{ name: 'OrdersList', label: 'navigation.label-orders', plural: 1, order: 90 }],
     responseSchemas: ordersResponseSchemas,
     // Written out rather than delegated to a helper on purpose: `import.meta.env` is replaced by

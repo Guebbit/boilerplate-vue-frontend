@@ -20,8 +20,27 @@ import { accountResponseSchemas } from './responseSchemas';
  */
 export default {
     name: 'account',
+    /*
+     * Login, signup, password reset. There is no version of this that is a competitive advantage,
+     * and the client half is thinner still — it renders forms over rules the server owns.
+     */
+    subdomain: 'generic',
+    language: {
+        Profile:
+            'The visitor’s own editable record. The same row `users` administers, seen from the inside.',
+        Session:
+            'Whether someone is signed in. Owned by `infrastructure/session`, not by this module — the router guards read it before any domain code runs.',
+        'Account deletion': 'A two-step exit: a request, then a confirm. Never one click.'
+    },
     routes,
-    dependsOn: ['users'],
+    dependsOn: [
+        {
+            module: 'users',
+            as: 'published-language',
+            because:
+                'Validates every form against `usersSchema`/`usersPasswordSchema` — shared field rules, not a shared store.'
+        }
+    ],
     navigation: [{ name: 'Profile', label: 'navigation.label-profile', plural: 2, order: 70 }],
     responseSchemas: accountResponseSchemas,
     // Written out rather than delegated to a helper on purpose: `import.meta.env` is replaced by

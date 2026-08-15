@@ -53,6 +53,8 @@ const normalizeVolatileDates = (value: unknown): unknown =>
 const makeStubModule = (name: string, after: string[] = []): AppModule => ({
     name,
     routes: [],
+    subdomain: 'supporting',
+    language: { [name]: `whatever ${name} means` },
     mockSeeds: { after, build: () => Promise.resolve({ [name]: [] } as never) }
 });
 
@@ -144,6 +146,8 @@ describe('dependency ordering', () => {
 
         const silent: AppModule = {
             name: 'silent',
+            subdomain: 'supporting',
+            language: { Silence: 'a module that declares fixtures and contributes none' },
             routes: [],
             mockSeeds: { build: () => Promise.resolve({}) }
         };

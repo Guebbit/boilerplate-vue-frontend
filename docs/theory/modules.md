@@ -96,7 +96,7 @@ of `ui` are domain-free too. A `kernel` file's *purpose* has to dissolve if modu
 
 | File          | Why it cannot be infrastructure                                            |
 | ------------- | -------------------------------------------------------------------------- |
-| `registry.ts` | it *is* the module system — `IAppModule`, the nav entries, the route splice |
+| `registry.ts` | it *is* the module system — `AppModule`, the nav entries, the route splice |
 
 That is literally the whole tier: **one file**. Three others used to sit beside it —
 `FormCounterInput.vue`, `AppLanguageSwitcher.vue` and `counter.ts` — and each failed the test, since
@@ -154,25 +154,33 @@ A module is a value, not a convention. Everything the application does *for* a d
 in one typed object:
 
 ```ts
-export interface IAppModule {
+export interface AppModule {
     name: string;
     routes: RouteRecordRaw[];
-    navigation?: IAppNavigationEntry[];
-    responseSchemas?: IResponseSchemaRoute[];
-    locales?: Record<string, () => Promise<ITranslationDictionaries>>;
+    navigation?: AppNavigationEntry[];
+    responseSchemas?: ResponseSchemaRoute[];
+    locales?: Record<string, () => Promise<TranslationDictionaries>>;
     mockHandlers?: () => Promise<HttpHandler[]>;
     mockSeeds?: {
         after?: string[];
-        build: (context: IMockSeedContext) => Promise<Partial<IMockSeedData>>;
+        build: (context: MockSeedContext) => Promise<Partial<MockSeedData>>;
     };
-    dependsOn?: string[];
+    subdomain: Subdomain;
+    language: Readonly<Record<string, string>>;
+    dependsOn?: readonly ContextEdge[];
 }
 ```
 
 `mockSeeds.after` is a **second graph**, deliberately not folded into `dependsOn`: that one is about
-code (`Cart.vue` calls `useOrdersStore`), this one about fixtures (an order embeds a product
-snapshot). A module can need another's data without importing a line of its code, and one field
-serving both would lie about one of them.
+code (`Order.vue` calls `useCartStore` to reorder), this one about fixtures (an order embeds a
+product snapshot). A module can need another's data without importing a line of its code, and one
+field serving both would lie about one of them.
+
+`subdomain`, `language` and the shape of `dependsOn` are the module's **strategic** declarations —
+what it is to the business, the words it uses, and what kind of relationship each arrow is. An edge
+is `{ module, as, because }` rather than a bare name, because "who touches products" and "what does
+changing products cost" are different questions and only the second one is useful. See
+[Strategic DDD](./strategic-ddd.md).
 
 Each optional field replaced a shared file that used to enumerate domains — the navigation list,
 the response-schema table, the mock-handler registry, the locale bundle. That is the whole point:

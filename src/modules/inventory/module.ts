@@ -12,8 +12,26 @@ import { inventoryResponseSchemas } from './responseSchemas';
  */
 export default {
     name: 'inventory',
+    /*
+     * A ledger that explains stock without owning it — specific to running a shop, not the reason
+     * anyone shops here.
+     */
+    subdomain: 'supporting',
+    language: {
+        'Stock movement':
+            'One row explaining a change in stock: how many, and why. Written by the server, listed here.',
+        Restock:
+            'The one movement this page originates. It still goes through the API like any other.'
+    },
     routes,
-    dependsOn: ['products'],
+    dependsOn: [
+        {
+            module: 'products',
+            as: 'conformist',
+            because:
+                'Reads `useProductsStore` as it is, to name products in the restock select and the ledger titles.'
+        }
+    ],
     navigation: [
         { name: 'InventoryLedger', label: 'navigation.label-inventory', plural: 1, order: 47 }
     ],

@@ -5,15 +5,38 @@ import { cartResponseSchemas } from './responseSchemas';
 /**
  * The shopping cart, and the checkout that turns it into an order.
  *
- * Depends on nothing — since checkout moved into this store, no cart code imports another
- * module. The arrows now point AT this module: orders reaches the cart barrel for the reorder
- * button, wishlist for its move-to-cart exit, products for "add to cart" — which is also why the
- * old `dependsOn: ['orders']` had to go: it described an import `Cart.vue` no longer makes, and
- * keeping it would have made every one of those real arrows a cycle.
+ * Nearly every arrow points AT this module: orders reaches the cart barrel for the reorder button,
+ * wishlist for its move-to-cart exit, products for "add to cart". All three are
+ * `customer-supplier` — they ask this store to write a line — which is why the cart publishes a
+ * store while the modules it depends on publish components and schemas.
+ *
+ * The one arrow going out is `delivery`, and it is `published-language`: the checkout mounts
+ * `ShippingSelector` and never learns what a shipping rate is.
  */
 export default {
     name: 'cart',
-    dependsOn: ['delivery'],
+    /*
+     * Checkout is the one screen where price, stock, address and shipping have to agree at once,
+     * and the only place this client holds a multi-step flow of its own. Every other module points
+     * at it.
+     */
+    subdomain: 'core',
+    language: {
+        Cart: 'A VIEW of the server’s cart, not a second copy of it. Every mutation is a request; the store holds the answer.',
+        'Cart line':
+            'A product and a quantity, as the API returns them. Prices come down with the response — this client never computes one.',
+        Checkout:
+            'The flow that turns the cart into an order: address, shipping, payment. The steps are this module’s; the rules are not.',
+        Badge: 'The header’s item count. The reason siblings refresh this store after writing to it.'
+    },
+    dependsOn: [
+        {
+            module: 'delivery',
+            as: 'published-language',
+            because:
+                'Mounts `ShippingSelector`, a self-contained component that renders shipping without this module learning what a rate is.'
+        }
+    ],
     routes,
     navigation: [{ name: 'Cart', label: 'navigation.label-cart', plural: 1, order: 80 }],
     responseSchemas: cartResponseSchemas,
@@ -31,8 +54,8 @@ export default {
      * The data those handlers answer with. Same inline-ternary rule as above, for the same reason:
      * the fixtures must not reach a production bundle.
      *
-     * `after: ['products']` is NOT the same statement as `dependsOn: ['orders']` above, and the two
-     * lists differ on purpose: `dependsOn` is about code (`Cart.vue` calls `useOrdersStore`), while
+     * `after: ['products']` is NOT the same statement as the `dependsOn` above, and the two lists
+     * differ on purpose: `dependsOn` is about code (this module mounts delivery's selector), while
      * `after` is about data — the random profile draws its cart items from the catalogue actually in
      * the database, so it cannot run before products has contributed one.
      */

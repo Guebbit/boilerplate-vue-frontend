@@ -11,6 +11,17 @@ import { deliveryResponseSchemas } from './responseSchemas';
  */
 export default {
     name: 'delivery',
+    /*
+     * Shipping is specific to how this shop operates but is not what anyone buys. Two components
+     * and a store — supporting, and deliberately page-less.
+     */
+    subdomain: 'supporting',
+    language: {
+        'Shipping method':
+            'A named way to ship, with a price the server quotes. Chosen in the cart, frozen on the order.',
+        Shipment:
+            'The parcel panel on an order that has shipped. Read-only here — the courier is faked server-side.'
+    },
     routes: [],
     responseSchemas: deliveryResponseSchemas,
     // Written out rather than delegated to a helper on purpose: `import.meta.env` is replaced by

@@ -9,6 +9,17 @@ import { productsResponseSchemas } from './responseSchemas';
  */
 export default {
     name: 'products',
+    /*
+     * What a shop sells is the shop, and the catalogue is the screen a visitor spends their time
+     * on. The client half owns the browsing experience; the server owns the prices.
+     */
+    subdomain: 'core',
+    language: {
+        Product: 'A sellable item as the API returns it. Identified by id; the name is not unique.',
+        Catalogue:
+            'The list view, with its filters and paging. The filters are query parameters — the server does the filtering.',
+        Stock: 'Units on the shelf, read from the response. This client displays availability and never decides it.'
+    },
     routes,
     /*
      * Storefront arrows, both pointing away from the catalogue page the visitor is on: the
@@ -16,7 +27,18 @@ export default {
      * each module's barrel. Neither of those modules reads the catalogue back through code —
      * their fixtures name it in `mockSeeds.after`, which is a data statement, not this one.
      */
-    dependsOn: ['cart', 'wishlist'],
+    dependsOn: [
+        {
+            module: 'cart',
+            as: 'customer-supplier',
+            because: 'Add-to-cart asks the cart store to write a line.'
+        },
+        {
+            module: 'wishlist',
+            as: 'customer-supplier',
+            because: 'The heart asks the wishlist store to save the product.'
+        }
+    ],
     navigation: [
         { name: 'ProductsList', label: 'navigation.label-products-list', plural: 2, order: 60 }
     ],

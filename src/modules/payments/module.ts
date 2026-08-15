@@ -12,6 +12,16 @@ import { paymentsResponseSchemas } from './responseSchemas';
  */
 export default {
     name: 'payments',
+    /*
+     * Taking money is not this shop’s differentiator, and the provider is mocked. What stays is a
+     * panel that belongs to an order.
+     */
+    subdomain: 'supporting',
+    language: {
+        Payment: 'The money behind one order. A panel on the order page, never a page of its own.',
+        Provider:
+            'The outside system that actually charges. Faked here, behind the same seam a real one would use.'
+    },
     routes: [],
     responseSchemas: paymentsResponseSchemas,
     // Written out rather than delegated to a helper on purpose: `import.meta.env` is replaced by

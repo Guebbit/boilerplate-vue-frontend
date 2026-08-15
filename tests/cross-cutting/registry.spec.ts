@@ -42,7 +42,7 @@ describe('the enabled registry', () => {
         const names = new Set(enabledModules.map(({ name }) => name));
 
         for (const { dependsOn = [] } of enabledModules)
-            for (const dependency of dependsOn) expect(names).toContain(dependency);
+            for (const edge of dependsOn) expect(names).toContain(edge.module);
     });
 });
 
