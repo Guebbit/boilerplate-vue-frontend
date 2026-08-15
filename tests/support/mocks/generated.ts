@@ -307,9 +307,18 @@ export const ObservabilityHealthDatabaseStatus = {
     disconnected: 'disconnected'
 } as const;
 
+export type ObservabilityHealthIntegrationsAnalytics =
+    (typeof ObservabilityHealthIntegrationsAnalytics)[keyof typeof ObservabilityHealthIntegrationsAnalytics];
+
+export const ObservabilityHealthIntegrationsAnalytics = {
+    umami: 'umami',
+    posthog: 'posthog',
+    none: 'none'
+} as const;
+
 export interface ObservabilityHealthIntegrations {
     loki?: boolean;
-    posthog?: boolean;
+    analytics?: ObservabilityHealthIntegrationsAnalytics;
     otelEnabled?: boolean;
     umami?: boolean;
     faro?: boolean;
@@ -2979,7 +2988,10 @@ export const getGetObservabilityHealthResponseMock = (
         integrations: faker.helpers.arrayElement([
             {
                 loki: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
-                posthog: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
+                analytics: faker.helpers.arrayElement([
+                    faker.helpers.arrayElement(['umami', 'posthog', 'none'] as const),
+                    undefined
+                ]),
                 otelEnabled: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
                 umami: faker.helpers.arrayElement([faker.datatype.boolean(), undefined]),
                 faro: faker.helpers.arrayElement([faker.datatype.boolean(), undefined])

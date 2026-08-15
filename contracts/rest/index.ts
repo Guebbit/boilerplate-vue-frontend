@@ -300,9 +300,18 @@ export const ObservabilityHealthDatabaseStatus = {
     disconnected: 'disconnected'
 } as const;
 
+export type ObservabilityHealthIntegrationsAnalytics =
+    (typeof ObservabilityHealthIntegrationsAnalytics)[keyof typeof ObservabilityHealthIntegrationsAnalytics];
+
+export const ObservabilityHealthIntegrationsAnalytics = {
+    umami: 'umami',
+    posthog: 'posthog',
+    none: 'none'
+} as const;
+
 export interface ObservabilityHealthIntegrations {
     loki?: boolean;
-    posthog?: boolean;
+    analytics?: ObservabilityHealthIntegrationsAnalytics;
     otelEnabled?: boolean;
     umami?: boolean;
     faro?: boolean;
