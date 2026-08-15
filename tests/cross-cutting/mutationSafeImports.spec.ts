@@ -1,6 +1,6 @@
 /**
- * The guard `docs/theory/known-gaps.md` §2 asks for: nothing catches the next unguarded import
- * specifier, and the next one costs a whole mutation run to find.
+ * The guard nothing else provides: without it, the next unguarded import specifier is caught
+ * only by a whole mutation run, and only as a dry-run failure naming a file that plainly exists.
  *
  * ── What breaks ──────────────────────────────────────────────────────────────────────────────────
  * Stryker's `StringLiteral` mutator has two halves, and only one of them knows about imports.

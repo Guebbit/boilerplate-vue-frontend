@@ -143,4 +143,4 @@ npm run test:mutation         # Stryker; nightly in CI, by hand when you want it
 | Understand routes, guards and access       | [Sitemap & Access Control](./theory/sitemap.md)                  |
 | Find out what a dependency is doing here   | [Tools Explained](./tools/tools-explained.md)                    |
 | Look up a script                           | [Package Scripts](./tools/package-scripts.md)                    |
-| Know what is deliberately unfinished       | [Known Gaps](./theory/known-gaps.md)                             |
+| Know what is planned but unbuilt           | [Roadmap](./theory/roadmap.md)                                   |

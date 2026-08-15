@@ -63,5 +63,5 @@ starting point for a distributed trace rather than a dead end.
 
 ::: warning `useAdminObservability` has no unit tests
 It is one of the three files carrying almost all of this repo's no-coverage mutants. See
-[Known Gaps §3](../theory/known-gaps.md).
+[Mutation testing](./mutation-testing.md#reading-a-0-and-why-it-is-kept).
 :::

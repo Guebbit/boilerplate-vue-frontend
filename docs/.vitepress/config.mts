@@ -34,7 +34,6 @@ export default withMermaid(
                             { text: 'Strategic DDD', link: '/theory/strategic-ddd' },
                             { text: 'Request Flow', link: '/theory/request-flow' },
                             { text: 'Sitemap & Access Control', link: '/theory/sitemap' },
-                            { text: 'Known Gaps', link: '/theory/known-gaps' },
                             { text: 'Roadmap', link: '/theory/roadmap' }
                         ]
                     }

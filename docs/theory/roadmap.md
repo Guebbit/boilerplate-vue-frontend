@@ -1,7 +1,6 @@
 # Roadmap
 
-What is planned but not built. Distinct from [Known Gaps](./known-gaps.md), which is about debt in
-what already exists.
+What is planned but not built.
 
 Reviewed 2026-08-14. Everything the old README roadmap listed as pending and which has since
 shipped — the registration-confirmation page, both password-reset pages, image upload in forms,
@@ -40,6 +39,26 @@ plan lives outside both repositories, at `BOILERPLATE_SPLIT_PLAN.md` in the work
 - **Vuetify variant** — from the skeleton. Note this repository already *is* the Vuetify one; the
   variant is what remains once the domains are gone.
 - **Quasar variant**, **Nuxt variant** — from the skeleton.
+
+## A home for teaching code
+
+Three things exist only to demonstrate the framework, and none is marked as safe to delete:
+
+| File                                  | What it is                                              | Mutation score |
+| ------------------------------------- | ------------------------------------------------------- | -------------- |
+| `src/app/counter.ts`                  | the Pinia counter from the Vue scaffold                 | **0%**         |
+| `src/app/middlewares/demoMiddleware.ts` | a guard that shows what a guard can and cannot reach   | 50%            |
+| `src/app/views/Playground.vue`        | the component sandbox                                   | —              |
+
+The counter's zero is correct rather than a gap: nothing tests it because nothing uses it in
+earnest.
+
+They are genuinely useful in a boilerplate and genuinely noise in an application, so the decision to
+make is **not "delete or keep"** — it is *where does teaching code live*. A `demo` module the
+registry can drop in one line would answer it, and would put these three under the same deletion
+rule as every other domain instead of leaving them permanent residents of `app/`.
+
+Related and cheap: one live `TODO`, at `src/modules/account/views/Profile.vue:232`.
 
 ## Conventions to enforce
 

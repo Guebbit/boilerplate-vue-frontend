@@ -4,7 +4,7 @@
  * This file exists because the telemetry surface was the single largest untested area in the
  * repo — `src/infrastructure/observability.ts` alone carried 123 mutants with NO COVERAGE, which
  * is the standing statement that nothing here was ever exercised. See
- * `docs/theory/known-gaps.md` §3.
+ * `docs/tools/mutation-testing.md`.
  *
  * ── What is covered, and what deliberately is not ────────────────────────────────────────────
  * The **Umami half** and the **unified API** are covered: config reading, one-shot script

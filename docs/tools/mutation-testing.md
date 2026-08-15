@@ -315,11 +315,21 @@ A counterintuitive but important consequence of the table above: **untested file
 
 That is why the list above is so short. The bar for excluding something is **"a mutant here could not mean anything to anyone"**, not "our tests would not kill it" — an unkilled mutant is a finding, while a file missing from the report is a blind spot, since an absent file reads exactly like a file with no survivors. Only a module's `index.ts` (a barrel, whose mutants ask whether a re-export changed) and its `mocks/` and `tests/` (test doubles and test code, not code under test) clear that bar.
 
+### Its relationship to the coverage floors
+
+`vitest.config.ts`'s coverage thresholds and this `mutate` list deliberately do not match, and the direction is the point: **`mutate` is the wider of the two**, because a file with no coverage is free to mutate and expensive to floor.
+
+The half that matters is enforced rather than described. `tests/cross-cutting/coverageAndMutateScope.spec.ts` fails if a file carrying a coverage floor falls outside the mutation scope — a floor says the file is executed, and without a mutant nothing then asks whether executing it proves anything. The reverse is deliberately **not** asserted: requiring a floor for everything mutated would turn every honest zero into a failing gate.
+
 **`.vue` files are deliberately still out**, and for a reason about the *tool* rather than about the tests. Stryker *can* mutate a single-file component — it maps the file to the HTML parser and mutates the `<script>` block — but it does **not** mutate template expressions. An SFC in scope would therefore report a score implying template coverage nobody has, and a misleading number is worse than an absent one. It is sequenced after component tests exist.
 
 ### Reading a 0%, and why it is kept
 
-Everything else stays in scope, including code no test currently reaches. The observability surface carries **187 of the 233 no-coverage mutants** — `infrastructure/observability.ts` alone accounts for 123, with `useRealtimeObservability` (37) and `useAdminObservability` (27) behind it. That zero is kept on purpose: it is the visible, standing statement that the telemetry surface has no unit tests, and it is what makes the 13-point gap between the run's 69.53% total and 82.42% covered a single legible finding rather than diffuse neglect.
+Everything else stays in scope, including code no test currently reaches. That is what made the telemetry surface a single legible finding rather than diffuse neglect: it once carried **187 of the 233 no-coverage mutants** — `infrastructure/observability.ts` alone accounting for 123, with `useRealtimeObservability` (37) and `useAdminObservability` (27) behind it — and the gap between the run's total and covered scores was the finding, not a rounding error.
+
+All three now have suites (`tests/unit/infrastructure/observability.spec.ts`, and one beside each composable), so those numbers are historical; read the next full run's instead. `initFaro` stays uncovered on purpose — it dynamically imports two Grafana SDKs and hands them a real browser, so a test would either load both into jsdom or mock them until it asserted only the shape of the mock.
+
+**Read the two scores together.** Far apart means "write tests that reach the code"; close together means "sharpen the tests that already run it".
 
 The three outcomes are different findings, and the columns keep them apart:
 
@@ -333,7 +343,7 @@ The three outcomes are different findings, and the columns keep them apart:
 
 Stryker's own thresholds are **global** — `high`, `low`, `break`, and nothing else. That is the same pooling failure that directory-shaped coverage thresholds have: a strong file carries a weak one, and the number that passes is an average nobody can act on. It gets worse as `mutate` widens, not better.
 
-So `mutation-baseline.json` records a score **per file**, and `scripts/check-mutation-baseline.ts` compares each run against it. The file is not in the repository right now: the scope was repointed at the current module layout and no run has measured it, so the first `npm run test:mutation:check` after a full run writes it from that report and every run after that compares against it:
+So `mutation-baseline.json` records a score **per file**, and `scripts/check-mutation-baseline.ts` compares each run against it. It currently holds **60 files**, recorded 2026-08-14:
 
 - a file that drops below its recorded score **fails**;
 - a file that improves has its baseline **rewritten upward**, locking the gain in;
@@ -357,11 +367,15 @@ flowchart LR
 
 A regression **cannot be laundered**: running with `--update` on a regressed file keeps the higher value _and_ still exits non-zero.
 
+**Do not re-record a lower floor.** The only honest reasons for a floor to fall are that the code was deleted or the scope changed, and then the commit should say which. Re-recording anything else is how the ratchet becomes decoration — and the ratchet is the only instrument here that catches a single file getting worse, because `break` pools everything into an average.
+
+A worked example of it doing its job: four files regressed while the mutation run was broken and nobody was measuring (`cart/store.ts`, `products/store.ts`, `account/store.ts`, `app/router/index.ts`). The ratchet kept the old floors, recorded the newly-seen files, and exited 1 rather than absorbing the drop. Tests were then written against the specific survivors, and all four now sit **above** their original floors.
+
 A one-point tolerance absorbs the timeout/survivor race (whether a hanging mutant is recorded as a timeout or a survivor depends on machine load), not genuine weakening.
 
 ## Thresholds — measured, not invented
 
-`high` and `low` only colour the report. `break` is the one that fails a run, and it comes from a real measurement or it is not set at all — which is why it is currently `null`: the scope was repointed at the current module layout and nothing has measured it yet. The first full run is what supplies the number, and it goes in below that run's score, so it answers "has something collapsed" rather than "did the number move".
+`high` and `low` only colour the report. `break` is the one that fails a run, and it comes from a real measurement or it is not set at all. It is **60**, set below the last full run's **69.25% total / 78.39% covered**, so it answers "has something collapsed" rather than "did the number move" — the per-file ratchet is the gate that does the real work.
 
 After that the rule is: raise `break` when a score **sustains** a higher band; never lower it to make a run pass. The single sanctioned exception is a change to `mutate` — which changes the population, so old and new numbers are not measurements of the same thing — re-recorded in the same commit with both numbers and the reason.
 
