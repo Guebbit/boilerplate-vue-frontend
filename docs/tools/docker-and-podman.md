@@ -6,8 +6,13 @@ nothing else. All the infrastructure — API, Mongo, Grafana, Alloy, Umami — l
 
 ```bash
 cp .env-example .env     # required, see below
-podman compose up        # or: docker compose up
+npm run compose -- up    # podman by default; CONTAINER_ENGINE=docker in your shell to switch
 ```
+
+`CONTAINER_ENGINE` is a **shell** variable, not a `.env` one. Compose reads `.env` — which is how
+every path and port below reaches it — but npm does not, so the one thing `.env` cannot decide is
+which binary npm invokes. Your engine is a property of your machine anyway, so it belongs in your
+shell profile rather than in a file the repo ships.
 
 ## Container map
 
@@ -109,6 +114,6 @@ and does not.
 
 ## Related pages
 
-- [Package Scripts](./package-scripts.md) — `podman:*` / `docker:*` helpers
+- [Package Scripts](./package-scripts.md) — the `compose:*` helpers
 - [Live E2E](./live-e2e.md) — running the real backend against this app's e2e suite
 - [Observability](./observability.md) — what Faro and Umami need from the backend stack

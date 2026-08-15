@@ -21,7 +21,7 @@ added by compose so the published port is actually reachable.
 | `compose:kill` | force-stop this project's compose containers | [Docker & Podman](./docker-and-podman.md) |
 | `compose` | any other compose subcommand, e.g. `npm run compose -- logs -f app` | [Docker & Podman](./docker-and-podman.md) |
 
-All four run through `scripts/compose.ts`, which picks the engine from `CONTAINER_ENGINE` (environment, then `.env`), falling back to whichever of docker/podman is installed and to docker when both are. They replaced six scripts — `podman:{restart,rebuild,kill}` and the docker three — that were identical but for the engine name. Keep the choice in step with the backend stack: the two are started side by side.
+All four expand to `${CONTAINER_ENGINE:-podman} compose`. Export `CONTAINER_ENGINE=docker` in your shell to use docker instead — a **shell** variable, not a `.env` entry, because npm does not read `.env` and never sees what is written there. Compose itself does read `.env`, which is why every other setting on this page can live in it and this one cannot. Keep the choice in step with the backend stack: the two are started side by side.
 
 ## Build & validation scripts
 

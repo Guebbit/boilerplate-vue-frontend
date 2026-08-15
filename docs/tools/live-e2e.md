@@ -27,7 +27,7 @@ What carries the weight in between:
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 65}}}%%
 flowchart TB
-    Boot["npm run compose:restart (or compose:restart)\nnpm run host -- db:bootstrap\nNODE_RATE_LIMIT_MAX=1000 npm run host -- dev\n(backend repo)"] --> Vite["vite dev :8085\nVITE_API_MOCK_ENABLED=false\nVITE_VALIDATE_RESPONSES=true"]
+    Boot["npm run compose:restart\nnpm run host -- db:bootstrap\nNODE_RATE_LIMIT_MAX=1000 npm run host -- dev\n(backend repo)"] --> Vite["vite dev :8085\nVITE_API_MOCK_ENABLED=false\nVITE_VALIDATE_RESPONSES=true"]
     Vite --> Cypress["cypress run --e2e\nCYPRESS_apiMockEnabled=false"]
     Cypress --> Real["real HTTP\n:8085 → :3000"]
     Real --> Backend[("live backend\nreal seeded MongoDB")]
@@ -51,7 +51,7 @@ flowchart TB
 ```sh
 # terminal 1 — backend
 cd boilerplate-node-backend
-npm run compose:restart   # or: npm run compose:restart
+npm run compose:restart
 npm run host -- db:bootstrap
 
 # terminal 2 — frontend
