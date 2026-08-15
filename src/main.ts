@@ -80,7 +80,9 @@ const bootstrapApplication = () =>
             // tracked automatically, custom events go through observability.track().
             observability.initUmami();
 
-            // Track application mount (after init so the event is not silently dropped).
+            // Track application mount. `initUmami()` above only injects the tag — the tracker
+            // itself arrives a round-trip later, so this event is buffered by the store and sent
+            // when the script lands rather than fired at a global that does not exist yet.
             observability.track(analyticsEvents.APP_STARTED);
 
             return router.isReady().then(() => {

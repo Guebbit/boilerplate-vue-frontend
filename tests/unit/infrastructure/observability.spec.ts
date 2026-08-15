@@ -34,6 +34,11 @@ const installUmamiTracker = () => {
     return tracker;
 };
 
+/** Fire the `load` event on the injected tag, as the browser does once the script runs. */
+const scriptLoads = () => {
+    document.querySelector('script[data-website-id="site-1"]')?.dispatchEvent(new Event('load'));
+};
+
 /** A store with analytics switched on, which is the precondition for every `track` call. */
 const readyStore = () => {
     vi.stubEnv('VITE_UMAMI_WEBSITE_ID', 'site-1');
@@ -127,11 +132,104 @@ describe('useObservabilityStore', () => {
 
         it('does not throw when the script has not attached its global yet', () => {
             // `umamiReady` says "we injected the tag", not "the script finished loading". The
-            // optional call is what keeps that window from throwing into a caller's promise.
+            // buffer is what keeps that window from throwing into a caller's promise.
             const store = readyStore();
             delete globalThis.umami;
 
             expect(() => store.track(analyticsEvents.APP_READY)).not.toThrow();
+        });
+    });
+
+    /**
+     * The window between injecting the tag and the tracker existing is one network round-trip
+     * long, and `main.ts` emits `app_started` inside it — every session, without exception. While
+     * those events were dropped, the two boot events in the catalogue could not appear in a
+     * dashboard at all: not rare, not lossy, simply never recorded.
+     *
+     * These cases pin the buffer to that scenario rather than to its implementation — what is
+     * asserted is that an event tracked before the script lands arrives after it does.
+     */
+    describe('events tracked before the tracker arrives', () => {
+        it('are delivered once the script loads, not dropped', () => {
+            const store = readyStore();
+
+            // The real boot order: the tag is in the document, the tracker is not there yet.
+            store.track(analyticsEvents.APP_STARTED);
+
+            const tracker = installUmamiTracker();
+            scriptLoads();
+
+            expect(tracker.track).toHaveBeenCalledWith('app_started', undefined);
+        });
+
+        it('keep their order and their properties', () => {
+            const store = readyStore();
+
+            store.track(analyticsEvents.APP_STARTED);
+            store.track(analyticsEvents.APP_READY, { boot_ms: 12 });
+
+            const tracker = installUmamiTracker();
+            scriptLoads();
+
+            expect(tracker.track.mock.calls).toEqual([
+                ['app_started', undefined],
+                ['app_ready', { boot_ms: 12 }]
+            ]);
+        });
+
+        it('are sent once, however many times the buffer is flushed', () => {
+            const store = readyStore();
+            store.track(analyticsEvents.APP_STARTED);
+
+            const tracker = installUmamiTracker();
+            scriptLoads();
+            scriptLoads();
+
+            expect(tracker.track).toHaveBeenCalledTimes(1);
+        });
+
+        it('go straight through once the tracker exists, without queueing', () => {
+            const tracker = installUmamiTracker();
+            const store = readyStore();
+
+            store.track(analyticsEvents.APP_READY);
+
+            // Already delivered before any load event: nothing was buffered.
+            expect(tracker.track).toHaveBeenCalledTimes(1);
+            scriptLoads();
+            expect(tracker.track).toHaveBeenCalledTimes(1);
+        });
+
+        it('stop accumulating when the script never arrives', () => {
+            // An ad blocker, or a Umami that is down. The buffer must not grow for the lifetime
+            // of the tab; the newest events are the ones worth keeping.
+            const store = readyStore();
+
+            for (let index = 0; index < 60; index += 1) {
+                store.track(analyticsEvents.PRODUCT_VIEWED, { index });
+            }
+
+            const tracker = installUmamiTracker();
+            scriptLoads();
+
+            expect(tracker.track).toHaveBeenCalledTimes(50);
+            // The oldest ten were evicted, so the first survivor is number 10.
+            expect(tracker.track.mock.calls[0]).toEqual([
+                analyticsEvents.PRODUCT_VIEWED,
+                { index: 10 }
+            ]);
+        });
+
+        it('are dropped, not buffered, while analytics is disabled', () => {
+            // No script is coming, so a buffer would only ever grow.
+            vi.stubEnv('VITE_UMAMI_WEBSITE_ID', '');
+            const store = useObservabilityStore();
+            store.track(analyticsEvents.APP_STARTED);
+
+            const tracker = installUmamiTracker();
+            scriptLoads();
+
+            expect(tracker.track).not.toHaveBeenCalled();
         });
     });
 

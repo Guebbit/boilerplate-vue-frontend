@@ -43,6 +43,13 @@ export interface FaroConfig {
     environment: string;
     /** API origin(s) to propagate the W3C `traceparent` header to (stitches FE↔BE traces). */
     apiOrigin: string;
+    /**
+     * URLs Faro must not instrument — the telemetry endpoints themselves.
+     *
+     * A string entry is compared for **exact equality** with the request URL, never as a prefix,
+     * so anything covering more than one path has to be a RegExp.
+     */
+    ignoreUrls: (string | RegExp)[];
 }
 
 export interface UmamiConfig {
@@ -100,8 +107,37 @@ function readFaroConfig(): FaroConfig | undefined {
             import.meta.env.MODE,
         // Reuse the API origin so browser fetch/XHR traces get stitched onto BE traces.
         apiOrigin:
-            (import.meta.env.VITE_API_URL as string | undefined)?.trim() || 'http://localhost:3000'
+            (import.meta.env.VITE_API_URL as string | undefined)?.trim() || 'http://localhost:3000',
+        // Telemetry transports must not be traced. Faro instruments every fetch/XHR, which
+        // includes its own POST to the collector and Umami's beacon to `/api/send` — each of
+        // those becomes a root trace in Tempo alongside the real ones, and a trace produced by
+        // reporting is a trace about nothing. Umami's beacon is the visible one: every tracked
+        // event turns into a `HTTP POST` trace, so the noise scales with how well analytics is
+        // instrumented. Faro's own endpoint is excluded for the same reason, and because
+        // reporting a span about sending spans is a loop worth not starting.
+        // The collector URL as a plain string is exact and correct — Faro posts to precisely
+        // that URL. Umami needs a pattern, because the beacon goes to `/api/send` under the
+        // configured origin and never to the script URL itself.
+        ignoreUrls: [url, ...umamiOriginPattern()]
     };
+}
+
+/**
+ * The Umami origin as a single-element array of anchored patterns, or an empty one when
+ * analytics is off or its `src` carries no recognisable origin.
+ *
+ * Shaped for spreading into {@link FaroConfig.ignoreUrls}: "nothing to exclude" and "exclude
+ * this" then read the same at the call site, with no conditional around it.
+ *
+ * Matched rather than parsed: `new URL()` throws on a malformed value, and a half-filled
+ * `VITE_UMAMI_SRC` — which already disables nothing but analytics — must not take Faro down with
+ * it on the way past. A pattern that simply fails to match says the same thing without an
+ * exception in the path.
+ */
+function umamiOriginPattern(): RegExp[] {
+    const origin = /^https?:\/\/[^/]+/.exec(readUmamiConfig()?.src ?? '')?.[0];
+
+    return origin ? [originToRegExp(origin)] : [];
 }
 
 /**
@@ -154,6 +190,42 @@ export const useObservabilityStore = defineStore('observability', () => {
     // In-flight initialization, so concurrent initFaro() calls share one setup.
     let faroInitPromise: Promise<boolean> | undefined;
 
+    /**
+     * Events tracked before the Umami script finished loading.
+     *
+     * Injecting the tag and having a working tracker are separated by a network round-trip, and
+     * the events that matter most for a funnel — the ones describing the boot itself — are all
+     * emitted inside that window. Dropping them does not lose "some early analytics", it loses
+     * `app_started` and `app_ready` every single time, so those two names could never appear in
+     * a dashboard at all.
+     *
+     * Buffering keeps `track()` synchronous and fire-and-forget for callers while making the
+     * window survivable. The cap is a safety valve for the case where the script never arrives
+     * (blocked by an ad blocker, Umami down): without it the array is an unbounded leak that
+     * grows for as long as the tab is open.
+     */
+    const pendingEvents: { event: AnalyticsEventName; properties?: Record<string, unknown> }[] = [];
+    const pendingEventsLimit = 50;
+
+    /**
+     * Hand any buffered events to the tracker, in the order they were recorded.
+     *
+     * A no-op until the script has attached its global, so it is safe to call speculatively.
+     */
+    const flushPendingEvents = (): void => {
+        const tracker = globalThis.umami;
+
+        if (!tracker) {
+            return;
+        }
+
+        // Drained rather than iterated: a second flush must not resend what the first already
+        // delivered, and `track()` appends to this same array.
+        for (const pending of pendingEvents.splice(0)) {
+            tracker.track(pending.event, pending.properties);
+        }
+    };
+
     // ── Faro (errors + tracing + web-vitals) ───────────────────────────────────
 
     /**
@@ -190,6 +262,9 @@ export const useObservabilityStore = defineStore('observability', () => {
                     version: config.appVersion,
                     environment: config.environment
                 },
+                // Applies to the fetch/XHR instrumentations and to tracing: these URLs produce
+                // neither spans nor request events. See `FaroConfig.ignoreUrls`.
+                ignoreUrls: config.ignoreUrls,
                 instrumentations: [
                     ...getWebInstrumentations(),
                     new TracingInstrumentation({
@@ -269,7 +344,8 @@ export const useObservabilityStore = defineStore('observability', () => {
      *
      * @returns `true` when the tracker was injected (or already present),
      *  `false` when analytics is disabled by configuration. Injection is
-     *  guarded against duplicates (e.g. HMR); the script itself loads async.
+     *  guarded against duplicates (e.g. HMR); the script itself loads async,
+     *  and events tracked before it lands are buffered and sent on load.
      */
     const initUmami = (): boolean => {
         const config = readUmamiConfig();
@@ -289,6 +365,9 @@ export const useObservabilityStore = defineStore('observability', () => {
             script.defer = true;
             script.src = config.src;
             script.dataset.websiteId = config.websiteId;
+            // `load` is the only signal that `globalThis.umami` exists; everything tracked between
+            // this line and that event is sitting in `pendingEvents` waiting for it.
+            script.addEventListener('load', flushPendingEvents);
             document.head.append(script);
         }
 
@@ -303,9 +382,13 @@ export const useObservabilityStore = defineStore('observability', () => {
     /**
      * Tracks a product analytics event in Umami.
      *
-     * The tracker script loads asynchronously, so `globalThis.umami` may not be
-     * ready on the very first calls; such early events are dropped, which is
-     * acceptable for analytics.
+     * The tracker script loads asynchronously, so `globalThis.umami` may not
+     * exist yet on the first calls of a session. Those events are buffered and
+     * sent when the script lands, rather than dropped — the boot events would
+     * otherwise never be recorded at all.
+     *
+     * Events tracked while analytics is disabled are dropped, not buffered:
+     * there is no script coming, so a buffer would only grow.
      *
      * @param event - Event name from the {@link analyticsEvents} catalog.
      * @param properties - Optional event payload.
@@ -315,7 +398,21 @@ export const useObservabilityStore = defineStore('observability', () => {
             return;
         }
 
-        globalThis.umami?.track(event, properties);
+        const tracker = globalThis.umami;
+
+        if (tracker) {
+            tracker.track(event, properties);
+            return;
+        }
+
+        // Past the cap the oldest events are the ones to lose: a session that has buffered 50
+        // events is one where the script is not coming, and the recent ones describe whatever
+        // the visitor is doing now.
+        if (pendingEvents.length >= pendingEventsLimit) {
+            pendingEvents.shift();
+        }
+
+        pendingEvents.push({ event, properties });
     };
 
     // ── Convenience helpers ──────────────────────────────────────────────────
