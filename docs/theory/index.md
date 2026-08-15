@@ -129,6 +129,7 @@ point.
 
 | Need | Go to |
 | ---- | ----- |
+| **Open the code for the first time** | **[Reading Path](./reading-path.md)** |
 | Understand the big blocks and boundaries | [Architecture](./architecture.md) |
 | Read the folder-by-folder explanation | [Layers](./layers.md) |
 | Understand how domains stay separable | [Modules](./modules.md) |
