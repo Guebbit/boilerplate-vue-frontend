@@ -16,7 +16,7 @@ Same base as the mock profile (Cypress + MSW), plus:
 
 | Tool | Role |
 | --- | --- |
-| A hand-rolled seeded PRNG bridge over `tests/mocks/generated.ts`'s faker factories | See "Why a dynamic import", below |
+| A hand-rolled seeded PRNG bridge over `tests/support/mocks/generated.ts`'s faker factories | See "Why a dynamic import", below |
 | `sessionStorage` | Persists the RNG seed across the full page reload every `cy.visit()` causes — the same trick `mockShared.ts` uses to persist the logged-in identity |
 | `assertMockContract` (the same one [Mocking](./mocking.md) uses) | Validates the *generator's own output*, not just hand-written responses — the generator is itself a thing that can drift |
 
@@ -28,7 +28,7 @@ flowchart TB
     Shared["mockShared.ts\ncreateInitialMockDatabase()"] -->|"resolveProfile() === 'random'"| Profiles["mockProfiles.ts\nbuildRandomDatabase() — async wrapper"]
     Shared -->|"'seed' (default)"| Seed["mockProfiles.ts\nbuildSeedDatabase() — sync, no heavy deps"]
     Profiles -->|"dynamic import()"| Random["mockProfilesRandom.ts\nthe ONLY file importing\n@faker-js/faker + generated.ts"]
-    Random --> Templates["tests/mocks/generated.ts\nget*ResponseMock() factories"]
+    Random --> Templates["tests/support/mocks/generated.ts\nget*ResponseMock() factories"]
     Random --> Patch["force-patch 4 product variants\n(inactive · soft-deleted · full · empty)"]
     Random --> Relink["relink cart items & orders\nto product ids that exist"]
     Random --> Validate{"assertMockContract\nvs @api/schemas"}
@@ -46,7 +46,7 @@ flowchart TB
 
 ### Why a dynamic import
 
-`mockProfilesRandom.ts` is the only module that imports `@faker-js/faker` and the 4 800-line `tests/mocks/generated.ts`. `mockProfiles.ts` reaches it only through `await import('./mockProfilesRandom.ts')`, gated on `resolveProfile() === 'random'`.
+`mockProfilesRandom.ts` is the only module that imports `@faker-js/faker` and the 4 800-line `tests/support/mocks/generated.ts`. `mockProfiles.ts` reaches it only through `await import('./mockProfilesRandom.ts')`, gated on `resolveProfile() === 'random'`.
 
 This split exists because of a real regression, not upfront design: `mockProfiles.ts` used to import faker and `generated.ts` unconditionally. That pulled both into the **seed profile's** module graph too — every `npm run test:e2e` run, not just `test:e2e:random` — and on a cold `vite dev` boot, Vite's one-time dependency pre-bundling step triggered a page reload mid-test, discovered while building this profile's own resilience spec (a `cy.spy(...).as(...)` registered before the reload silently vanished after it). The fix was structural: keep the seed profile's default path completely free of the random profile's dependencies, not just fast.
 
@@ -76,7 +76,7 @@ flowchart LR
 
 These aren't incidental — violating any one of them defeats the profile's purpose:
 
-1. **Vary the data, never the handlers.** Only `mockDatabase`'s contents change; every handler in `tests/mocks/handlers/*` runs identically regardless of profile.
+1. **Vary the data, never the handlers.** Only `mockDatabase`'s contents change; every handler in `src/modules/<name>/mocks/*` runs identically regardless of profile.
 2. **The generated factories are per-operation envelopes, not entity factories.** They return `{ success, status, message, data }` with garbage envelope fields (`status: faker.number.int()`). Only `.data` is used.
 3. **Auth identity stays fixed.** `cy.loginAs()` types `root@root.it` / `gino@pino.it` into a real form. Only cosmetic fields (`username`, `imageUrl`, timestamps) are randomised; `active` is pinned `true` for both so login never randomly fails.
 4. **Relations are relinked after generating.** Each factory call is independent, so a fresh call for cart items would reference product ids that don't exist. Products are generated first; cart items and orders are built from ids that are actually present. `cartItemToOrderItem` (`mockShared.ts`) throws on incoherent data — the canary that this relinking broke.
@@ -99,11 +99,11 @@ These aren't incidental — violating any one of them defeats the profile's purp
 
 | Path | Contents |
 | --- | --- |
-| `tests/mocks/shared/mockProfiles.ts` | `resolveProfile()`, `buildSeedDatabase()` (sync, no heavy deps), the async `buildRandomDatabase()`/`resolveMockSeed()` wrappers |
-| `tests/mocks/shared/seed-identities.ts` | The seed dataset's ids/emails/prices — byte-identical to `db/seeds/seed-identities.ts` in the BE. Fixed profile only; the random profile overwrites everything but the two login identities |
-| `tests/mocks/shared/mockProfilesRandom.ts` | The random profile's real implementation; the only importer of faker + `generated.ts` |
-| `tests/mocks/shared/mockOrderMath.ts` | `computeOrderTotals`/`createMockOrder` — shared by the seed profile, the random profile (totals only), and runtime checkout |
-| `tests/mocks/generated.ts` | Orval-generated faker factories, one per operation — raw material, not consumed directly by handlers |
+| `tests/support/mocks/mockProfiles.ts` | `resolveProfile()`, `buildSeedDatabase()` (sync, no heavy deps), the async `buildRandomDatabase()`/`resolveMockSeed()` wrappers |
+| `tests/support/mocks/seed-identities.ts` | The seed dataset's ids/emails/prices — byte-identical to `db/seeds/seed-identities.ts` in the BE. Fixed profile only; the random profile overwrites everything but the two login identities |
+| `tests/support/mocks/mockProfilesRandom.ts` | The random profile's real implementation; the only importer of faker + `generated.ts` |
+| `tests/support/mocks/mockOrderMath.ts` | `computeOrderTotals`/`createMockOrder` — shared by the seed profile, the random profile (totals only), and runtime checkout |
+| `tests/support/mocks/generated.ts` | Orval-generated faker factories, one per operation — raw material, not consumed directly by handlers |
 | `tests/e2e/specs/resilience.cy.ts` | The one spec this profile runs |
 | `tests/unit/mocks/mockProfiles.spec.ts` | Unit coverage of both builders without Cypress — see [Unit Testing](./unit-testing.md) |
 | `.github/workflows/e2e-random.yml` | Nightly schedule + `workflow_dispatch`, uploads Cypress screenshots/videos on failure |

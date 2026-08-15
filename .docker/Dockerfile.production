@@ -1,0 +1,120 @@
+# Production image for the frontend.
+#
+# `.docker/Dockerfile` is the DEVELOPMENT image: it installs everything and runs the Vite dev
+# server with hot reload. That server is not a web server for a deployment — it transpiles on
+# demand, ships source maps and an unminified module graph, and is documented by Vite as
+# development-only.
+#
+# This file is the other half: Vite produces a directory of static files, and nginx serves it.
+# Node is present only in the build stage and does not exist in the shipped image.
+#
+# Build:  docker build -f .docker/Dockerfile.production -t boilerplate-frontend:latest .
+# Run:    docker compose -f docker-compose.production.yml up -d
+#
+# ── THE ONE THING TO GET RIGHT: VITE_* IS BAKED IN AT BUILD TIME ─────────────────────────────────
+# `import.meta.env.VITE_API_URL` is not read at runtime. Vite REPLACES it with a string literal
+# while bundling, so the value is compiled into the JavaScript and an environment variable set on
+# the running container changes nothing at all. This is the single most common way a Vue
+# deployment goes wrong: the container is configured correctly, and the app still calls localhost.
+#
+# So the build args below are the frontend's configuration, and an image is specific to the
+# environment it was built for. Build one per environment:
+#
+#   docker build -f .docker/Dockerfile.production \
+#     --build-arg VITE_API_URL=https://api.example.com \
+#     --build-arg VITE_APP_BASE_URL=https://example.com \
+#     -t boilerplate-frontend:production .
+#
+# If one image really must serve several environments, the shape that works is a small runtime
+# config file — a `/config.json` that the app fetches before boot, mounted per environment — NOT
+# an env var. That is a code change, not a Dockerfile change, and it is not done here.
+
+# ────────────────────────────────────────────────────────────────────────────────────────────────
+# Stage 1 — build: type-check, then bundle.
+# ────────────────────────────────────────────────────────────────────────────────────────────────
+FROM docker.io/library/node:25-alpine AS build
+
+WORKDIR /app
+
+# Manifests first so the install layer survives every change that is not a dependency change.
+COPY package.json package-lock.json ./
+
+RUN npm ci
+
+COPY . .
+
+# Everything the bundle needs to know, declared here and passed to `npm run build` below.
+#
+# `VITE_API_MOCK_ENABLED` has no ARG and is never set, deliberately. It stays undefined so that
+# `import.meta.env.VITE_API_MOCK_ENABLED === 'true'` is a compile-time false and the bundler drops
+# MSW, every module's mock handlers and the whole seeded fixture database from the output — see
+# `collectModuleMockHandlers` in `src/kernel/registry.ts`. A production image that ships the mock
+# backend is one env var away from serving fake products to real users.
+ARG VITE_API_URL
+ARG VITE_API_SSE
+ARG VITE_APP_BASE_URL
+ARG VITE_APP_SUPPORTED_LOCALES
+ARG VITE_APP_DEFAULT_LOCALE
+ARG VITE_APP_FALLBACK_LOCALE
+ARG VITE_APP_LOG_LEVEL
+ARG VITE_AXIOS_TIMEOUT
+ARG VITE_MAX_UPLOAD_BYTES
+ARG VITE_VALIDATE_RESPONSES
+ARG VITE_FARO_URL
+ARG VITE_FARO_APP_NAME
+ARG VITE_FARO_APP_VERSION
+ARG VITE_FARO_ENVIRONMENT
+ARG VITE_UMAMI_SRC
+ARG VITE_UMAMI_WEBSITE_ID
+
+ENV VITE_API_URL=$VITE_API_URL \
+    VITE_API_SSE=$VITE_API_SSE \
+    VITE_APP_BASE_URL=$VITE_APP_BASE_URL \
+    VITE_APP_SUPPORTED_LOCALES=$VITE_APP_SUPPORTED_LOCALES \
+    VITE_APP_DEFAULT_LOCALE=$VITE_APP_DEFAULT_LOCALE \
+    VITE_APP_FALLBACK_LOCALE=$VITE_APP_FALLBACK_LOCALE \
+    VITE_APP_LOG_LEVEL=$VITE_APP_LOG_LEVEL \
+    VITE_AXIOS_TIMEOUT=$VITE_AXIOS_TIMEOUT \
+    VITE_MAX_UPLOAD_BYTES=$VITE_MAX_UPLOAD_BYTES \
+    VITE_VALIDATE_RESPONSES=$VITE_VALIDATE_RESPONSES \
+    VITE_FARO_URL=$VITE_FARO_URL \
+    VITE_FARO_APP_NAME=$VITE_FARO_APP_NAME \
+    VITE_FARO_APP_VERSION=$VITE_FARO_APP_VERSION \
+    VITE_FARO_ENVIRONMENT=$VITE_FARO_ENVIRONMENT \
+    VITE_UMAMI_SRC=$VITE_UMAMI_SRC \
+    VITE_UMAMI_WEBSITE_ID=$VITE_UMAMI_WEBSITE_ID
+
+# `npm run build` is `run-p type-check-only build-only`, so `vue-tsc` runs alongside the bundle and
+# a type error stops the image from being produced. That check is worth more here than anywhere
+# else: Vitest does not type-check (see the note in `vitest.config.ts`), so a green test run is not
+# evidence that this compiles.
+RUN npm run build
+
+# ────────────────────────────────────────────────────────────────────────────────────────────────
+# Stage 2 — serve: nginx and a directory of files. No Node, no npm, no source.
+# ────────────────────────────────────────────────────────────────────────────────────────────────
+FROM docker.io/library/nginx:1-alpine AS runtime
+
+# `nginx.conf` carries the SPA fallback, the cache policy and the security headers. Kept as a file
+# in the repo rather than a heredoc here so it is diffable and can be linted.
+COPY .docker/nginx.conf /etc/nginx/conf.d/default.conf
+
+# Only the build output. Nothing that produced it comes along.
+COPY --from=build /app/dist /usr/share/nginx/html
+
+# The nginx image ships an unprivileged `nginx` user, and the alpine variant is already set up to
+# run as it: the master process binds port 80 as root and drops privileges for the workers. Ports
+# below 1024 need that root bind, which is why this does NOT switch to `USER nginx` — doing so
+# fails to bind unless the listen port moves too. Publish it behind a proxy and the distinction
+# stops mattering; the containers here are not reachable from outside the network.
+EXPOSE 80
+
+# Serving static files has no application health to speak of, so the check asks the only question
+# that matters: is nginx answering, and is index.html where it should be.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD wget --quiet --tries=1 --spider http://127.0.0.1/ || exit 1
+
+# `daemon off;` keeps nginx in the foreground so the container lives as long as the server does and
+# Docker can see it exit. This is the base image's own default command, restated because a future
+# edit that adds an ENTRYPOINT would otherwise silently lose it.
+CMD ["nginx", "-g", "daemon off;"]

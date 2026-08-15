@@ -1,0 +1,15 @@
+{
+    "payments-panel": {
+        "title": "Payment",
+        "label-card": "Card number",
+        "hint-decline": "Demo cards: any number pays, 4000 0000 0000 0002 is declined.",
+        "button-pay": "Pay now",
+        "success": "Payment received — the order is paid.",
+        "status-requires_confirmation": "Awaiting confirmation",
+        "status-succeeded": "Paid",
+        "status-declined": "Declined",
+        "status-refunded": "Refunded",
+        "label-card-ending": "card ending {last4}",
+        "none": "No payment yet."
+    }
+}

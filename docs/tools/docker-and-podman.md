@@ -6,8 +6,13 @@ nothing else. All the infrastructure — API, Mongo, Grafana, Alloy, Umami — l
 
 ```bash
 cp .env-example .env     # required, see below
-podman compose up        # or: docker compose up
+npm run compose -- up    # podman by default; CONTAINER_ENGINE=docker in your shell to switch
 ```
+
+`CONTAINER_ENGINE` is a **shell** variable, not a `.env` one. Compose reads `.env` — which is how
+every path and port below reaches it — but npm does not, so the one thing `.env` cannot decide is
+which binary npm invokes. Your engine is a property of your machine anyway, so it belongs in your
+shell profile rather than in a file the repo ships.
 
 ## Container map
 
@@ -63,7 +68,8 @@ To run the pair:
 3. Check `NODE_CORS_ORIGIN` in the backend's `.env` includes `http://localhost:8080`.
 
 Keeping the two host-port blocks disjoint (`8080–8099` here, `3000–3099` there) is what lets both
-be up at once — the full map lives in the repo README, under _Host port map_.
+be up at once — the full map lives in
+[Getting Started → Host port map](../getting-started.md#host-port-map).
 
 ## `.env` is required for the container too
 
@@ -108,6 +114,6 @@ and does not.
 
 ## Related pages
 
-- [Package Scripts](./package-scripts.md) — `podman:*` / `docker:*` helpers
+- [Package Scripts](./package-scripts.md) — the `compose:*` helpers
 - [Live E2E](./live-e2e.md) — running the real backend against this app's e2e suite
 - [Observability](./observability.md) — what Faro and Umami need from the backend stack

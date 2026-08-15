@@ -17,6 +17,8 @@ hero:
 features:
     - title: This repo's specific shape
       details: Vue 3 + Pinia + Vue Router + Vue I18n + OpenAPI-generated axios client, shipped as one SPA package.
+    - title: Domains are deletable
+      details: Four tiers and a module registry. Adding a domain is one folder plus one line; removing it is rm -rf plus that line.
     - title: Layers stay visible
       details: Views, composables, stores, generated API client, and HTTP interceptors each keep a small, clear job.
     - title: Tooling is part of the boilerplate
@@ -88,12 +90,12 @@ Contract-first workflow: OpenAPI + AsyncAPI, codegen, generated client usage, an
 flowchart LR
     OpenSpec[openapi.yaml] --> Client[contracts/rest/index.ts\naxios client]
     OpenSpec --> Schemas[contracts/rest/schemas.zod.ts\nZod schemas]
-    OpenSpec --> Mocks[tests/mocks/generated.ts\nMSW stubs]
+    OpenSpec --> Mocks[tests/support/mocks/generated.ts\nMSW stubs]
     AsyncSpec[asyncapi.yaml] --> Realtime[src/types/realtime.generated.ts]
 
     Client --> Stores[Pinia stores]
     Schemas --> Stores
-    Stores --> Views[Views + features]
+    Stores --> Views[Views: platform shell + modules]
     Views --> Router[Vue Router]
     Views --> I18N[Vue I18n]
     Realtime --> RTClients[SSE + WS clients]

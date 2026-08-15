@@ -1,5 +1,23 @@
 name: CI
 
+# The merge gate. Everything here runs on every PR and on every push to main, and the aggregate
+# `ci` job at the bottom is the single check branch protection requires.
+#
+# Deliberately many small jobs rather than one `npm run complete`: they run in parallel, and
+# a red square names the thing that broke (formatting? contract? e2e?) without anyone opening a
+# log. The trade is repeated checkout/setup/install boilerplate in each.
+#
+# The jobs fall into four groups:
+#   - style           commitlint, lint, prettier
+#   - contract        lint-openapi, lint-asyncapi, api-freshness, asyncapi-types-freshness,
+#                     spec-identity — the spec is valid, its generated output is committed and
+#                     current, and the paired backend still agrees with it
+#   - correctness     typecheck, build, test-unit, test-e2e
+#   - supply chain    audit
+#
+# The slow and non-hermetic suites live elsewhere on a nightly schedule: e2e-live.yml (against a
+# real backend), e2e-random.yml (faker-generated data) and mutation.yml.
+
 on:
     # Run on every PR and on direct pushes to main.
     # This gives fast feedback for feature branches and protects main.
@@ -46,6 +64,7 @@ jobs:
               run: npx commitlint --from ${{ github.event.before }} --to ${{ github.event.after }} --verbose
 
     lint:
+        # ESLint over src, tests and scripts.
         runs-on: ubuntu-latest
         timeout-minutes: 10
         permissions:
@@ -68,6 +87,8 @@ jobs:
               run: npm run lint
 
     prettier:
+        # Formatting only — a separate job from `lint` so "you forgot to format" and "you wrote
+        # a lint error" are two different red squares.
         runs-on: ubuntu-latest
         timeout-minutes: 10
         permissions:
@@ -90,6 +111,8 @@ jobs:
               run: npm run prettier:check
 
     lint-openapi:
+        # Spectral lints openapi.yaml against spectral.yaml, the ruleset the paired backend lints
+        # its identical copy under.
         runs-on: ubuntu-latest
         timeout-minutes: 10
         permissions:
@@ -112,6 +135,7 @@ jobs:
               run: npm run lint:openapi
 
     lint-asyncapi:
+        # The same, for the realtime contract behind the SSE types.
         runs-on: ubuntu-latest
         timeout-minutes: 10
         permissions:
@@ -158,10 +182,10 @@ jobs:
 
             - name: Check generated AsyncAPI types are fresh
               run: |
-                  npm run genasyncapi
+                  npm run gen:asyncapi
                   npx prettier --write src/types/realtime.generated.ts
                   if ! git diff --exit-code -- src/types/realtime.generated.ts; then
-                      echo "Generated src/types/realtime.generated.ts is stale. Run 'npm run genasyncapi && npm run prettier:fix' and commit the changes."
+                      echo "Generated src/types/realtime.generated.ts is stale. Run 'npm run gen:asyncapi && npm run prettier:fix' and commit the changes."
                       exit 1
                   fi
 
@@ -220,25 +244,27 @@ jobs:
               # it was written. If you add or retarget an output block in orval.config.ts,
               # update this list in the same commit.
               run: |
-                  npm run genapi
+                  npm run gen:api
                   # orval emits 2-space indentation; this repo's prettier config uses 4, and
                   # the committed output is formatted. Without this normalisation step the
                   # diff below is thousands of lines of pure indentation on every run.
-                  npx prettier --write contracts/ tests/mocks/generated.ts
-                  if ! git diff --exit-code -- contracts/ tests/mocks/generated.ts; then
-                      echo "Generated API client is stale. Run 'npm run genapi && npm run prettier:fix' and commit the changes."
+                  npx prettier --write contracts/ tests/support/mocks/generated.ts
+                  if ! git diff --exit-code -- contracts/ tests/support/mocks/generated.ts; then
+                      echo "Generated API client is stale. Run 'npm run gen:api && npm run prettier:fix' and commit the changes."
                       exit 1
                   fi
                   # `git diff` only sees tracked files, so a brand-new generated output would
                   # slip through as untracked. Catch that too.
-                  if [ -n "$(git status --porcelain -- contracts/ tests/mocks/generated.ts)" ]; then
-                      echo "Codegen produced untracked files under contracts/ or tests/mocks/:"
-                      git status --porcelain -- contracts/ tests/mocks/generated.ts
-                      echo "Run 'npm run genapi' and commit the changes."
+                  if [ -n "$(git status --porcelain -- contracts/ tests/support/mocks/generated.ts)" ]; then
+                      echo "Codegen produced untracked files under contracts/ or tests/support/mocks/:"
+                      git status --porcelain -- contracts/ tests/support/mocks/generated.ts
+                      echo "Run 'npm run gen:api' and commit the changes."
                       exit 1
                   fi
 
     typecheck:
+        # `vue-tsc` — types across .ts and .vue alike. `build` below repeats it as part of its
+        # own script; this job exists so a type error is reported as one, not as a build failure.
         runs-on: ubuntu-latest
         timeout-minutes: 10
         permissions:
@@ -261,6 +287,7 @@ jobs:
               run: npm run type-check-only
 
     build:
+        # Proves the app still builds from a clean checkout.
         runs-on: ubuntu-latest
         timeout-minutes: 15
         permissions:
@@ -283,6 +310,7 @@ jobs:
               run: npm run build-only
 
     test-unit:
+        # Vitest: components, stores, composables and the http layer, in jsdom.
         runs-on: ubuntu-latest
         timeout-minutes: 15
         permissions:
@@ -319,10 +347,19 @@ jobs:
     spec-identity:
         # The cross-repo contract gate.
         #
-        # openapi.yaml, asyncapi.yaml and spectral.yaml exist in BOTH repos, byte-identical,
-        # maintained by hand — and until this job existed, checked by nothing. Every other spec job
-        # here lints THIS repo's copy and passes, because a forked spec is still a valid spec. What
-        # nobody could see was the fork itself.
+        # Ten files exist in BOTH repos, byte-identical, maintained by hand — the two specs and
+        # the spectral ruleset, the seed identities, the generated realtime types, the three API
+        # client collections, and two shared scripts. `scripts/specIdentity.ts` holds the list and
+        # says, per entry, what a fork of it would break.
+        #
+        # Until this job existed they were checked by nothing. Every other spec job here lints
+        # THIS repo's copy and passes, because a forked spec is still a valid spec. What nobody
+        # could see was the fork itself.
+        #
+        # Two of the ten sit at different paths in each repo (the seed identities are test
+        # scaffolding here and production seed data there; the realtime types are named for their
+        # consumer here and their generator there), which is why the list is path *pairs* rather
+        # than names — a same-path check could not express them, so they went unguarded longest.
         #
         # The sibling is checked out read-only, at its default branch: the question is whether this
         # PR agrees with what the backend has actually shipped, not with some pinned older copy.
@@ -375,6 +412,9 @@ jobs:
               run: npm run check:spec-identity
 
     test-e2e:
+        # Cypress against MSW, not a real API — hermetic and fast enough to gate a merge.
+        # `e2e-live.yml` runs these same specs against a real backend nightly, which is the
+        # thing that notices the mocks having drifted from it.
         runs-on: ubuntu-latest
         timeout-minutes: 20
         permissions:
@@ -422,6 +462,66 @@ jobs:
                   retention-days: 14
                   if-no-files-found: ignore
 
+    test-e2e-random:
+        # The resilience spec against a freshly generated, contract-valid dataset rather than the
+        # fixed one — the half of the mock surface `test-e2e` above cannot reach, because a fixture
+        # a spec was written against is a shape the spec already handles.
+        #
+        # It is here rather than only in `e2e-random.yml` because `npm run complete` runs it, and a
+        # gate CI does not reproduce is not the gate. The seed is NOT pinned, deliberately and for
+        # the same reason `test-contract` in the backend does not pin its own: a fresh dataset each
+        # run is the entire point, and the seed is printed so a failure reproduces exactly with
+        # `RANDOM_DATA_SEED=<seed> npm run test:e2e:random`.
+        #
+        # `e2e-random.yml` still runs nightly. This job answers "does this PR survive one roll";
+        # the nightly answers "does main survive many".
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ env.NODE_VERSION }}
+                  cache: npm
+                  cache-dependency-path: package-lock.json
+
+            - name: Cache Cypress binary
+              uses: actions/cache@v4
+              with:
+                  path: ~/.cache/Cypress
+                  key: cypress-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+                  restore-keys: |
+                      cypress-${{ runner.os }}-
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Run the resilience spec against a random dataset
+              run: npm run test:e2e:random
+
+            - name: Upload Cypress screenshots
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: cypress-screenshots-random
+                  path: tests/e2e/screenshots
+                  retention-days: 14
+                  if-no-files-found: ignore
+
+            - name: Upload Cypress videos
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: cypress-videos-random
+                  path: tests/e2e/videos
+                  retention-days: 14
+                  if-no-files-found: ignore
+
     ci:
         # Single status check to require in branch protection, so adding/renaming
         # jobs above doesn't require updating the required-checks list every time.
@@ -443,6 +543,7 @@ jobs:
             - build
             - test-unit
             - test-e2e
+            - test-e2e-random
             - spec-identity
         runs-on: ubuntu-latest
         timeout-minutes: 5

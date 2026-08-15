@@ -9,7 +9,7 @@ For this boilerplate, the safest order is:
 flowchart LR
     Idea[Need a new endpoint\nor payload change] --> Spec[Edit openapi.yaml]
     Spec --> Lint[npm run lint:openapi]
-    Lint --> Generate[npm run genapi]
+    Lint --> Generate[npm run gen:api]
     Generate --> Update[Update stores / views\nif signatures changed]
     Update --> Test[npm run test]
 
@@ -34,16 +34,16 @@ The cost of that decision is that nothing detects cross-repo drift — and it ha
 **Whenever the backend's spec changes**, copy both specs over and regenerate, by hand:
 
 ```bash
-cp ../boilerplate-node-api-mongodb-mongoose/openapi.yaml .
-cp ../boilerplate-node-api-mongodb-mongoose/asyncapi.yaml .
-npm run genapi
-npm run genasyncapi
+cp ../boilerplate-node-backend/openapi.yaml .
+cp ../boilerplate-node-backend/asyncapi.yaml .
+npm run gen:api
+npm run gen:asyncapi
 npm run prettier:fix   # orval emits 2-space indent; this repo commits 4
 ```
 
 There is deliberately **no script** for this. Syncing is a judgement call, not a chore to automate: the copy is followed by reading the diff and deciding which stores and views have to change with it.
 
-Then review the diff — a spec change may require store or view updates. To confirm parity by hand, `diff openapi.yaml ../boilerplate-node-api-mongodb-mongoose/openapi.yaml` should print nothing.
+Then review the diff — a spec change may require store or view updates. To confirm parity by hand, `diff openapi.yaml ../boilerplate-node-backend/openapi.yaml` should print nothing.
 
 CI cannot catch a stale *copy*; it can only catch a spec edited **within this repo** without regenerating (see below). Cross-repo parity remains a human step.
 
@@ -73,7 +73,7 @@ If you change this job, verify it can actually fail: edit `openapi.yaml` without
 
 ## Generated output (`contracts/rest/`)
 
-Running `npm run genapi` regenerates the entire `contracts/rest/` directory. **Never edit files inside `contracts/rest/` manually** — they are overwritten.
+Running `npm run gen:api` regenerates the entire `contracts/rest/` directory. **Never edit files inside `contracts/rest/` manually** — they are overwritten.
 
 ```
 contracts/rest/
@@ -84,7 +84,7 @@ contracts/rest/
 MSW stubs land separately:
 
 ```
-tests/mocks/
+tests/support/mocks/
 └── generated.ts      ← orval-generated MSW handler stubs + faker factories
 ```
 
@@ -121,7 +121,7 @@ Naming convention: schema name + property name, PascalCase. Example: `UpdateFeed
 | ----- | ------ | ------ |
 | `api` | `./contracts/rest/index.ts` | typed axios functions, routed through `orvalMutator` |
 | `zodSchemas` | `./contracts/rest/schemas.zod.ts` | Zod schema per request/response shape |
-| `mocks` | `./tests/mocks/generated.ts` | MSW stubs + faker factories |
+| `mocks` | `./tests/support/mocks/generated.ts` | MSW stubs + faker factories |
 
 Every target listed here must also appear in the `api-freshness` CI job's pathspec, or changes to it go unguarded.
 
@@ -141,7 +141,7 @@ the body straight to the mutator and generates no encoding at all.
 | `createProductWithMultipart(body)` | `multipart/form-data`, encoded by the generated client |
 
 The JSON function keeps the plain operation name, so JSON call sites are unaffected by the split.
-Pick the `WithMultipart` variant only when there is a file to send — see `features/products/store.ts`,
+Pick the `WithMultipart` variant only when there is a file to send — see `modules/products/store.ts`,
 which branches on `imageUpload` and is the reference for this pattern.
 
 Do not hand-roll `FormData` in a store. The generated encoder already omits unset optional fields
@@ -169,16 +169,16 @@ that call inconsistent with the other two dozen.
 
 ```bash
 npm run lint:openapi   # lint openapi.yaml with Spectral
-npm run genapi         # regenerate contracts/rest/ from openapi.yaml
+npm run gen:api         # regenerate contracts/rest/ from openapi.yaml
 ```
 
 ## MSW stub workflow
 
-Orval generates a stub for every operation into `tests/mocks/generated.ts`. Each stub returns random faker data.
+Orval generates a stub for every operation into `tests/support/mocks/generated.ts`. Each stub returns random faker data.
 
-**Nothing imports that file.** The mocks that actually run are the hand-written handlers in `tests/mocks/handlers/`, assembled in `tests/mocks/apiMock.ts`. Treat `generated.ts` as a skeleton to copy from, and as the raw material for the planned random-data test profile — not as live code.
+**Nothing imports that file.** The mocks that actually run are the hand-written handlers in `src/modules/<name>/mocks/`, assembled in `tests/support/mocks/apiMock.ts`. Treat `generated.ts` as a skeleton to copy from, and as the raw material for the planned random-data test profile — not as live code.
 
-For stateful or auth-aware behavior, copy the stub to `tests/mocks/handlers/` and extend it. A handler must also mirror the filtering and role-scoping rules of the backend service behind the endpoint — see [Mocking (MSW)](../tools/mocking.md) for the parity invariants and the full handler workflow.
+For stateful or auth-aware behavior, copy the stub to `src/modules/<name>/mocks/` and extend it. A handler must also mirror the filtering and role-scoping rules of the backend service behind the endpoint — see [Mocking (MSW)](../tools/mocking.md) for the parity invariants and the full handler workflow.
 
 ## Useful links
 

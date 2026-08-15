@@ -4,7 +4,7 @@
  *
  * The contract (strict boundary):
  * - Vuetify owns components, colors, typography and the CSS reset.
- *   All design tokens live in src/plugins/vuetify/index.ts.
+ *   All design tokens live in src/ui/vuetify/index.ts.
  * - Tailwind provides layout/spacing/flex/grid utilities ONLY:
  *   • Preflight is NOT imported (it would fight Vuetify's reset).
  *   • Its default palette and fonts are wiped; the semantic colors below
@@ -106,6 +106,51 @@
  */
 .v-application .v-label,
 .v-application .v-field-label {
+    opacity: 0.82;
+}
+
+/**
+ * Field hints and validation messages, at a contrast that passes WCAG AA.
+ *
+ * The same fix as the labels above, for the same reason and at the same value: Vuetify renders
+ * `.v-messages__message` at its medium-emphasis opacity, which resolves to about 4.0:1 on a white
+ * surface where AA requires 4.5:1. Every form carrying a hint or a validation error failed on it —
+ * `FormImageUpload` sets `persistent-hint`, so five screens showed it at all times.
+ *
+ * It had been passing the accessibility gate by accident. axe cannot compute a contrast ratio
+ * through a partly-transparent element, so auditing while Vuetify was still fading the message in
+ * returned "incomplete" rather than a violation; the gate only saw it once the audit waited for
+ * transitions to settle. Same lesson as the loading headers below: a result that depends on when
+ * you looked is not a result.
+ *
+ * 0.82 is the labels' value, which measures around 7:1 on white and holds up on the tinted field
+ * backgrounds, while still reading as secondary next to full-emphasis text.
+ *
+ * The opacity is set on `.v-messages`, the WRAPPER, because that is where Vuetify declares it.
+ * Setting it on `.v-messages__message` instead leaves the wrapper's 0.6 in place and the two
+ * multiply — 0.6 x 0.82 lands near 0.49, darker than the default it was meant to lighten. The
+ * message itself is pinned to full opacity so the two can never compound again.
+ */
+.v-application .v-messages {
+    opacity: 0.82;
+}
+
+.v-application .v-messages__message {
+    opacity: 1;
+}
+
+/**
+ * Muted text set with a Tailwind opacity utility.
+ *
+ * `opacity-70` on `on-surface` measures about 5.2:1 on pure white — fine — but the cart summary and
+ * the admin panels draw it on `surface-variant`, where it falls under the 4.5:1 threshold. Raising
+ * the utility itself keeps one value for "secondary text" instead of a per-screen judgement, and
+ * matches the 0.82 the Vuetify labels and messages already use.
+ *
+ * Outside `@layer` for the reason given above: Tailwind's layers rank below unlayered rules, so a
+ * layered override would lose to Tailwind's own utility.
+ */
+.v-application .opacity-70 {
     opacity: 0.82;
 }
 

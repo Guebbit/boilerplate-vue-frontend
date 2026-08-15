@@ -1,11 +1,14 @@
 name: E2E (live backend)
 
+# Runs this app's Cypress specs against a REAL backend — a checked-out sibling repo, a real
+# Mongo and Redis, a really seeded database — instead of against MSW. Nightly, not a merge gate.
+#
 # The third e2e profile, and the only one that is not talking to a mock.
 #
 # `test:e2e` (in ci.yml) runs the same nine specs against MSW handlers, and `e2e-random.yml` runs
 # the resilience spec against faker-generated data. Both are fast, hermetic, and structurally
 # unable to notice one class of failure: the mock handlers agreeing with a backend that has moved.
-# `tests/mocks/shared/mockShared.ts` mirrors the backend's `db/seeds/index.ts` BY HAND, and
+# `tests/support/mocks/mockShared.ts` mirrors the backend's `db/seeds/index.ts` BY HAND, and
 # `parity.cy.ts` exists to catch that mirror going stale — which it can only do when something
 # actually stands the real backend up. Until this workflow, nothing did: `npm run test:e2e:live`
 # was invoked by no CI job at all, so the one guard against seed drift ran only when a person
@@ -17,7 +20,8 @@ name: E2E (live backend)
 # still describing reality.
 #
 # On failure, read it in this order:
-#   1. the preflight line — it fails with one actionable sentence when the pair is misconfigured;
+#   1. the `check:spec-identity` step — a failure there means the two checkouts' shared files have
+#      forked, so nothing below it is trustworthy;
 #   2. `parity.cy.ts` — a failure there is seed drift, i.e. fix mockShared.ts, not the app;
 #   3. anything else — a real disagreement between this frontend and that backend.
 
@@ -44,6 +48,10 @@ jobs:
         permissions:
             contents: read
 
+        # The real datastores. This is the only workflow that needs them: every other suite uses
+        # mongodb-memory-server or MSW, so nothing else here talks to a database that persists
+        # between requests. Health checks gate the steps below — a container that is up but not
+        # yet accepting connections would fail the seed step in a way that reads as a bad seed.
         services:
             mongodb:
                 image: mongo:8
@@ -68,6 +76,8 @@ jobs:
             - name: Checkout frontend
               uses: actions/checkout@v4
 
+            # The other half of the pair, at its default branch: the question is whether this
+            # commit agrees with what the backend has actually shipped, not with a pinned copy.
             - name: Checkout backend
               uses: actions/checkout@v4
               with:
@@ -83,6 +93,7 @@ jobs:
                   cache-dependency-path: package-lock.json
 
             - name: Cache Cypress binary
+              # ~200 MB that `npm ci` would otherwise re-download every night.
               uses: actions/cache@v4
               with:
                   path: ~/.cache/Cypress
@@ -93,6 +104,7 @@ jobs:
             - name: Install frontend dependencies
               run: npm ci
 
+            # Separately from the frontend's: two lockfiles, two node_modules, one runner.
             - name: Install backend dependencies
               working-directory: ${{ env.BACKEND_PATH }}
               run: npm ci
@@ -109,6 +121,9 @@ jobs:
                   NODE_REDIS_HOST: localhost
               run: npm run db:bootstrap:host
 
+            # Backgrounded, with its PID kept so the teardown step can stop it. Its stdout goes
+            # to a file rather than the step log: the log is uploaded as an artifact below, and a
+            # backend that logs continuously would otherwise bury the Cypress output.
             - name: Start the backend
               working-directory: ${{ env.BACKEND_PATH }}
               env:
@@ -127,14 +142,24 @@ jobs:
                   npm start > "$GITHUB_WORKSPACE/backend.log" 2>&1 &
                   echo $! > "$GITHUB_WORKSPACE/backend.pid"
 
+            # Nothing downstream retries a connection, so without this the first spec would race
+            # the server's startup and fail on a network error rather than on an assertion.
             - name: Wait for the backend
               run: npx wait-on http://localhost:3000 --timeout 120000
 
-            # `pretest:e2e:live` runs the preflight automatically: backend reachable, seed script
-            # present, and all three shared contract files identical across the two checkouts.
+            # Before spending minutes on Cypress: are the two checkouts still the same pair? A
+            # forked `seed-identities.ts` makes the run fail on data rather than on behaviour,
+            # which reads as a broken app instead of a stale checkout.
+            - name: Check the shared files are identical across the two checkouts
+              run: npm run check:spec-identity
+
+            # The point of the whole workflow: the same specs as `test-e2e` in ci.yml, with MSW
+            # off, so they run against the real API and the real seeded database.
             - name: Run e2e tests against the live backend
               run: npm run test:e2e:live
 
+            # `always()` so a failed run does not leave the process holding the port for whatever
+            # the runner does next.
             - name: Stop the backend
               if: always()
               run: kill "$(cat "$GITHUB_WORKSPACE/backend.pid")" || true
@@ -149,6 +174,8 @@ jobs:
                   retention-days: 14
                   if-no-files-found: warn
 
+            # Failure only. Read these together with the backend log above: a spec that failed on
+            # a 500 is a backend problem, one that failed on a wrong value is usually seed drift.
             - name: Upload Cypress screenshots
               if: failure()
               uses: actions/upload-artifact@v4
@@ -159,6 +186,7 @@ jobs:
                   if-no-files-found: ignore
 
             - name: Upload Cypress videos
+              # Same, for the specs where the failure is a sequence rather than a single frame.
               if: failure()
               uses: actions/upload-artifact@v4
               with:

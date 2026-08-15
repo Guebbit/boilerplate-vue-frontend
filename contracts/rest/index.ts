@@ -18,7 +18,7 @@
  *
  * OpenAPI spec version: 2.0.0
  */
-import { orvalMutator } from '../../src/plugins/http/index.js';
+import { orvalMutator } from '../../src/infrastructure/http/index.js';
 /**
  * 1-based page index
  * @minimum 1
@@ -77,58 +77,6 @@ export interface MessageResponse {
 }
 
 /**
- * Which languages a deployment can answer in. Runtime state, not contract state: it is derived from the dictionaries actually deployed, so it cannot be an enum here.
- */
-export interface LocaleCapabilities {
-    /** Every supported language tag. */
-    locales: Locale[];
-    default: Locale;
-    fallback: Locale;
-}
-
-export interface LocaleCapabilitiesEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: LocaleCapabilities;
-}
-
-/**
- * Nested key/value dictionary, the same shape the API loads.
- */
-export type LocaleDictionaryMessages = { [key: string]: unknown };
-
-/**
- * The API's OWN message dictionary for one language — its API-response copy and nothing else. It is never a client's UI dictionary: the two are authored and deployed in separate repositories, and mixing them would put view copy in the API's keyspace. A client that wants these merges them under a namespace it reserves for the API, never at the root.
- */
-export interface LocaleDictionary {
-    locale: Locale;
-    /** Nested key/value dictionary, the same shape the API loads. */
-    messages: LocaleDictionaryMessages;
-}
-
-export interface LocaleDictionaryEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: LocaleDictionary;
-}
-
-/**
- * Liveness indicator. Always `ok` when the process is answering.
- */
-export type HealthPingStatus = (typeof HealthPingStatus)[keyof typeof HealthPingStatus];
-
-export const HealthPingStatus = {
-    ok: 'ok'
-} as const;
-
-export interface HealthPing {
-    /** Liveness indicator. Always `ok` when the process is answering. */
-    status: HealthPingStatus;
-}
-
-/**
  * Optional structured metadata for programmatic handling
  */
 export type ErrorItemDetails = { [key: string]: unknown };
@@ -166,51 +114,13 @@ export interface ValidationErrorResponse {
     errors: ErrorItem[];
 }
 
-export interface HealthPingEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: HealthPing;
-}
-
-export interface AuthTokens {
-    /** Access JWT */
-    token: string;
-    /** Refresh token if returned by backend */
-    refreshToken?: string;
-    /** Access token expiry in seconds */
-    expiresIn?: number;
-}
-
-export interface AuthTokensEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: AuthTokens;
-}
-
-export interface RefreshTokenResponse {
-    /** New access JWT */
-    token: string;
-    /** New refresh token if returned by backend */
-    refreshToken?: string;
-    /** New access token expiry in seconds */
-    expiresIn?: number;
-}
-
-export interface RefreshTokenEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: RefreshTokenResponse;
-}
-
 export interface User {
     id: Id;
     email: Email;
     username: string;
     admin?: boolean;
     active?: boolean;
+    verified?: boolean;
     imageUrl?: ImageUrl;
     locale?: Locale;
     createdAt?: string;
@@ -225,23 +135,13 @@ export interface UserEnvelope {
     data: User;
 }
 
-export interface UsersResponse {
-    items: User[];
-    meta: PaginationMeta;
-}
-
-export interface UsersResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: UsersResponse;
-}
-
 export interface Product {
     id: Id;
     title: string;
     /** @minimum 0 */
     price: number;
+    /** @minimum 0 */
+    stock?: number;
     description?: string;
     active?: boolean;
     imageUrl?: ImageUrl;
@@ -252,23 +152,19 @@ export interface Product {
     deletedAt?: string;
 }
 
-export interface ProductEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: Product;
+export interface CartItem {
+    productId: Id;
+    /** @minimum 1 */
+    quantity: number;
 }
 
-export interface ProductsResponse {
-    items: Product[];
-    meta: PaginationMeta;
-}
-
-export interface ProductsResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: ProductsResponse;
+export interface OrderAddress {
+    fullName: string;
+    street: string;
+    city: string;
+    zip: string;
+    country: string;
+    phone?: string;
 }
 
 export interface OrderItem {
@@ -304,133 +200,87 @@ export interface Order {
      */
     totalQuantity: number;
     /**
-     * Sum of `product.price × quantity` across every line item.
+     * Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.
      * @minimum 0
      */
     totalPrice: number;
     /** Optional order notes */
     notes?: string;
+    /** The shipping method's id as the checkout froze it (e.g. standard, express, pickup). */
+    shippingMethod?: string;
+    /**
+     * What that method cost at checkout time — a later rate change cannot re-price history.
+     * @minimum 0
+     */
+    shippingCost?: number;
+    shippingAddress?: OrderAddress;
     status: OrderStatus;
     createdAt?: string;
     updatedAt?: string;
+    deletedAt?: string;
 }
 
-export interface OrderEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: Order;
+export interface HardDeleteRequest {
+    hardDelete?: boolean;
 }
 
-export interface OrdersResponse {
-    items: Order[];
-    meta: PaginationMeta;
-}
+/**
+ * Liveness indicator. Always `ok` when the process is answering.
+ */
+export type HealthPingStatus = (typeof HealthPingStatus)[keyof typeof HealthPingStatus];
 
-export interface OrdersResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: OrdersResponse;
-}
-
-export type FeedbackRequestStatus =
-    (typeof FeedbackRequestStatus)[keyof typeof FeedbackRequestStatus];
-
-export const FeedbackRequestStatus = {
-    new: 'new',
-    in_progress: 'in_progress',
-    resolved: 'resolved',
-    spam: 'spam'
+export const HealthPingStatus = {
+    ok: 'ok'
 } as const;
 
-export interface FeedbackRequest {
-    id: Id;
-    name?: string;
-    email: Email;
-    subject: string;
-    message: string;
-    status: FeedbackRequestStatus;
-    adminNotes?: string;
-    respondedAt?: string;
-    createdAt: string;
-    updatedAt?: string;
+export interface HealthPing {
+    /** Liveness indicator. Always `ok` when the process is answering. */
+    status: HealthPingStatus;
 }
 
-export interface FeedbackRequestEnvelope {
+export interface HealthPingEnvelope {
     success: true;
     status: number;
     message: string;
-    data: FeedbackRequest;
+    data: HealthPing;
 }
 
-export interface FeedbackRequestsResponse {
-    items: FeedbackRequest[];
-    meta: PaginationMeta;
+/**
+ * Which languages a deployment can answer in. Runtime state, not contract state: it is derived from the dictionaries actually deployed, so it cannot be an enum here.
+ */
+export interface LocaleCapabilities {
+    /** Every supported language tag. */
+    locales: Locale[];
+    default: Locale;
+    fallback: Locale;
 }
 
-export interface FeedbackRequestsResponseEnvelope {
+export interface LocaleCapabilitiesEnvelope {
     success: true;
     status: number;
     message: string;
-    data: FeedbackRequestsResponse;
+    data: LocaleCapabilities;
 }
 
-export interface CartItem {
-    productId: Id;
-    /** @minimum 1 */
-    quantity: number;
+/**
+ * Nested key/value dictionary, the same shape the API loads.
+ */
+export type LocaleDictionaryMessages = { [key: string]: unknown };
+
+/**
+ * The API's OWN message dictionary for one language — its API-response copy and nothing else. It is never a client's UI dictionary: the two are authored and deployed in separate repositories, and mixing them would put view copy in the API's keyspace. A client that wants these merges them under a namespace it reserves for the API, never at the root.
+ */
+export interface LocaleDictionary {
+    locale: Locale;
+    /** Nested key/value dictionary, the same shape the API loads. */
+    messages: LocaleDictionaryMessages;
 }
 
-export interface CartSummaryResponse {
-    /**
-     * Number of distinct cart lines/items
-     * @minimum 0
-     */
-    itemsCount: number;
-    /**
-     * Sum of quantities across all items
-     * @minimum 0
-     */
-    totalQuantity: number;
-    /**
-     * Sum of item prices * quantity (before tax/shipping/discounts)
-     * @minimum 0
-     */
-    total: number;
-    /** ISO-4217 currency code (e.g. USD) */
-    currency?: string;
-}
-
-export interface CartResponse {
-    items: CartItem[];
-    summary: CartSummaryResponse;
-}
-
-export interface CartResponseEnvelope {
+export interface LocaleDictionaryEnvelope {
     success: true;
     status: number;
     message: string;
-    data: CartResponse;
-}
-
-export interface CartSummaryResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: CartSummaryResponse;
-}
-
-export interface CheckoutResponse {
-    order: Order;
-    message?: string;
-}
-
-export interface CheckoutResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: CheckoutResponse;
+    data: LocaleDictionary;
 }
 
 export type ObservabilityHealthStatus =
@@ -450,9 +300,18 @@ export const ObservabilityHealthDatabaseStatus = {
     disconnected: 'disconnected'
 } as const;
 
+export type ObservabilityHealthIntegrationsAnalytics =
+    (typeof ObservabilityHealthIntegrationsAnalytics)[keyof typeof ObservabilityHealthIntegrationsAnalytics];
+
+export const ObservabilityHealthIntegrationsAnalytics = {
+    umami: 'umami',
+    posthog: 'posthog',
+    none: 'none'
+} as const;
+
 export interface ObservabilityHealthIntegrations {
     loki?: boolean;
-    posthog?: boolean;
+    analytics?: ObservabilityHealthIntegrationsAnalytics;
     otelEnabled?: boolean;
     umami?: boolean;
     faro?: boolean;
@@ -532,6 +391,8 @@ export type ObservabilityMetricsSummaryBusiness = {
     checkoutSuccess?: number;
     /** @minimum 0 */
     ordersCreated?: number;
+    /** @minimum 0 */
+    lowStockProducts?: number;
 };
 
 export type ObservabilityMetricsSummaryDatabase = {
@@ -620,6 +481,38 @@ export interface AuditLogsResponseEnvelope {
     data: AuditLogsPage;
 }
 
+export interface AuthTokens {
+    /** Access JWT */
+    token: string;
+    /** Refresh token if returned by backend */
+    refreshToken?: string;
+    /** Access token expiry in seconds */
+    expiresIn?: number;
+}
+
+export interface AuthTokensEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: AuthTokens;
+}
+
+export interface RefreshTokenResponse {
+    /** New access JWT */
+    token: string;
+    /** New refresh token if returned by backend */
+    refreshToken?: string;
+    /** New access token expiry in seconds */
+    expiresIn?: number;
+}
+
+export interface RefreshTokenEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: RefreshTokenResponse;
+}
+
 export interface LoginRequest {
     email: Email;
     password: Password;
@@ -658,6 +551,121 @@ export interface PasswordResetConfirmRequest {
 export interface AccountDeleteConfirmRequest {
     /** One-time account deletion token (NOT a JWT). */
     token: string;
+}
+
+export interface UpdateAccountRequest {
+    email?: Email;
+    /** @minLength 3 */
+    username?: string;
+    locale?: Locale;
+    imageUrl?: ImageUrl;
+}
+
+export interface UpdateAccountRequestMultipart {
+    email?: Email;
+    /** @minLength 3 */
+    username?: string;
+    locale?: Locale;
+    /** Optional user profile image */
+    imageUpload?: Blob;
+}
+
+export interface ChangePasswordRequest {
+    currentPassword: Password;
+    password: Password;
+    passwordConfirm: Password;
+}
+
+export interface VerifyEmailConfirmRequest {
+    /** One-time email verification token (NOT a JWT). */
+    token: string;
+}
+
+export interface Session {
+    id: Id;
+    /** Absent on a token issued without an expiry tier. */
+    expiration?: string;
+    /** Whether this session is the one making the request, matched through the refresh cookie. Always `false` for a caller authenticating by bearer token alone — an access token does not identify a session. */
+    current: boolean;
+}
+
+export interface SessionsResponse {
+    sessions: Session[];
+}
+
+export interface SessionsEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: SessionsResponse;
+}
+
+export interface Address {
+    id: Id;
+    /** The caller's own name for the entry — "home", "office". */
+    label?: string;
+    fullName: string;
+    street: string;
+    city: string;
+    zip: string;
+    country: string;
+    phone?: string;
+    default: boolean;
+}
+
+export interface AddressInput {
+    label?: string;
+    /** @minLength 1 */
+    fullName: string;
+    /** @minLength 1 */
+    street: string;
+    /** @minLength 1 */
+    city: string;
+    /** @minLength 1 */
+    zip: string;
+    /** @minLength 1 */
+    country: string;
+    phone?: string;
+    default?: boolean;
+}
+
+export interface UpdateAddressRequest {
+    label?: string;
+    /** @minLength 1 */
+    fullName?: string;
+    /** @minLength 1 */
+    street?: string;
+    /** @minLength 1 */
+    city?: string;
+    /** @minLength 1 */
+    zip?: string;
+    /** @minLength 1 */
+    country?: string;
+    phone?: string;
+    default?: boolean;
+}
+
+export interface AddressesResponse {
+    addresses: Address[];
+}
+
+export interface AddressesEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: AddressesResponse;
+}
+
+export interface UsersResponse {
+    items: User[];
+    meta: PaginationMeta;
+}
+
+export interface UsersResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: UsersResponse;
 }
 
 export interface SearchUsersRequest {
@@ -738,6 +746,125 @@ export interface DeleteUserRequest {
     hardDelete?: boolean;
 }
 
+export type FeedbackRequestStatus =
+    (typeof FeedbackRequestStatus)[keyof typeof FeedbackRequestStatus];
+
+export const FeedbackRequestStatus = {
+    new: 'new',
+    in_progress: 'in_progress',
+    resolved: 'resolved',
+    spam: 'spam'
+} as const;
+
+export interface FeedbackRequest {
+    id: Id;
+    name?: string;
+    email: Email;
+    subject: string;
+    message: string;
+    status: FeedbackRequestStatus;
+    adminNotes?: string;
+    respondedAt?: string;
+    createdAt: string;
+    updatedAt?: string;
+}
+
+export interface FeedbackRequestEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: FeedbackRequest;
+}
+
+export interface FeedbackRequestsResponse {
+    items: FeedbackRequest[];
+    meta: PaginationMeta;
+}
+
+export interface FeedbackRequestsResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: FeedbackRequestsResponse;
+}
+
+export interface CreateFeedbackRequest {
+    name?: string;
+    email: Email;
+    subject: string;
+    message: string;
+}
+
+export type SearchFeedbackRequestsRequestStatus =
+    (typeof SearchFeedbackRequestsRequestStatus)[keyof typeof SearchFeedbackRequestsRequestStatus];
+
+export const SearchFeedbackRequestsRequestStatus = {
+    new: 'new',
+    in_progress: 'in_progress',
+    resolved: 'resolved',
+    spam: 'spam'
+} as const;
+
+export interface SearchFeedbackRequestsRequest {
+    page?: Page;
+    pageSize?: PageSize;
+    text?: Text;
+    status?: SearchFeedbackRequestsRequestStatus;
+    email?: Email;
+}
+
+export type UpdateFeedbackRequestStatusRequestStatus =
+    (typeof UpdateFeedbackRequestStatusRequestStatus)[keyof typeof UpdateFeedbackRequestStatusRequestStatus];
+
+export const UpdateFeedbackRequestStatusRequestStatus = {
+    new: 'new',
+    in_progress: 'in_progress',
+    resolved: 'resolved',
+    spam: 'spam'
+} as const;
+
+export interface UpdateFeedbackRequestStatusRequest {
+    status?: UpdateFeedbackRequestStatusRequestStatus;
+    adminNotes?: string;
+}
+
+export interface ProductEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: Product;
+}
+
+export interface ProductsResponse {
+    items: Product[];
+    meta: PaginationMeta;
+}
+
+export interface ProductsResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: ProductsResponse;
+}
+
+export interface FacetCount {
+    name: string;
+    /** @minimum 1 */
+    count: number;
+}
+
+export interface CatalogueFacetsResponse {
+    categories: FacetCount[];
+    tags: FacetCount[];
+}
+
+export interface CatalogueFacetsEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: CatalogueFacetsResponse;
+}
+
 export interface SearchProductsRequest {
     page?: Page;
     pageSize?: PageSize;
@@ -755,6 +882,8 @@ export interface CreateProductRequest {
     title: string;
     /** @minimum 0 */
     price: number;
+    /** @minimum 0 */
+    stock?: number;
     description?: string;
     active?: boolean;
     imageUrl?: ImageUrl;
@@ -766,6 +895,8 @@ export interface CreateProductRequestMultipart {
     title: string;
     /** @minimum 0 */
     price: number;
+    /** @minimum 0 */
+    stock?: number;
     description?: string;
     active?: boolean;
     /** Optional product image */
@@ -780,6 +911,8 @@ export interface UpdateProductRequest {
     description?: string;
     /** @minimum 0 */
     price: number;
+    /** @minimum 0 */
+    stock?: number;
     active?: boolean;
     imageUrl?: ImageUrl;
     categories?: string[];
@@ -792,6 +925,8 @@ export interface UpdateProductRequestMultipart {
     description?: string;
     /** @minimum 0 */
     price: number;
+    /** @minimum 0 */
+    stock?: number;
     active?: boolean;
     /** Optional product image */
     imageUpload?: Blob;
@@ -804,6 +939,8 @@ export interface UpdateProductByIdRequest {
     description?: string;
     /** @minimum 0 */
     price: number;
+    /** @minimum 0 */
+    stock?: number;
     active?: boolean;
     imageUrl?: ImageUrl;
     categories?: string[];
@@ -815,6 +952,8 @@ export interface UpdateProductByIdRequestMultipart {
     description?: string;
     /** @minimum 0 */
     price: number;
+    /** @minimum 0 */
+    stock?: number;
     active?: boolean;
     /** Optional product image */
     imageUpload?: Blob;
@@ -822,13 +961,60 @@ export interface UpdateProductByIdRequestMultipart {
     tags?: string[];
 }
 
-export interface HardDeleteRequest {
-    hardDelete?: boolean;
-}
-
 export interface DeleteProductRequest {
     id: Id;
     hardDelete?: boolean;
+}
+
+export interface CartSummaryResponse {
+    /**
+     * Number of distinct cart lines/items
+     * @minimum 0
+     */
+    itemsCount: number;
+    /**
+     * Sum of quantities across all items
+     * @minimum 0
+     */
+    totalQuantity: number;
+    /**
+     * Sum of item prices * quantity (before tax/shipping/discounts)
+     * @minimum 0
+     */
+    total: number;
+    /** ISO-4217 currency code (e.g. USD) */
+    currency?: string;
+}
+
+export interface CartResponse {
+    items: CartItem[];
+    summary: CartSummaryResponse;
+}
+
+export interface CartResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: CartResponse;
+}
+
+export interface CartSummaryResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: CartSummaryResponse;
+}
+
+export interface CheckoutResponse {
+    order: Order;
+    message?: string;
+}
+
+export interface CheckoutResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: CheckoutResponse;
 }
 
 export interface UpsertCartItemRequest {
@@ -851,6 +1037,48 @@ export interface CheckoutRequest {
     email?: Email;
     /** Optional order notes */
     notes?: string;
+    /** Which of the caller's saved addresses to ship to. Omitted, the default address is used when one exists; an id that matches none of the caller's addresses refuses the checkout with 404 rather than shipping nowhere. */
+    addressId?: Id;
+    /** Which shipping method (see `GET /delivery/methods`) the order travels by. Its cost is priced against the lines being bought (free-above thresholds included) and frozen onto the order. Omitted, the order carries no shipping; an id that matches no method refuses the checkout with 404, `errors[].code` `CART_SHIPPING_METHOD_NOT_FOUND`. */
+    shippingMethodId?: string;
+}
+
+export interface WishlistItem {
+    productId: Id;
+}
+
+export interface WishlistResponse {
+    items: WishlistItem[];
+}
+
+export interface WishlistResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: WishlistResponse;
+}
+
+export interface AddWishlistItemRequest {
+    productId: Id;
+}
+
+export interface OrderEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: Order;
+}
+
+export interface OrdersResponse {
+    items: Order[];
+    meta: PaginationMeta;
+}
+
+export interface OrdersResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: OrdersResponse;
 }
 
 export interface SearchOrdersRequest {
@@ -923,46 +1151,192 @@ export interface UpdateOrderByIdRequest {
 
 export interface DeleteOrderRequest {
     id: Id;
+    hardDelete?: boolean;
 }
 
-export interface CreateFeedbackRequest {
-    name?: string;
-    email: Email;
-    subject: string;
+/**
+ * The provider-facing lifecycle. `declined` is retryable — the confirm endpoint accepts the same payment again; `refunded` is terminal.
+ */
+export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus];
+
+export const PaymentStatus = {
+    requires_confirmation: 'requires_confirmation',
+    succeeded: 'succeeded',
+    declined: 'declined',
+    refunded: 'refunded'
+} as const;
+
+export interface Payment {
+    id: Id;
+    orderId: Id;
+    userId: Id;
+    /**
+     * The order's total as the intent froze it.
+     * @minimum 0
+     */
+    amount: number;
+    /** ISO-4217 currency code (e.g. EUR) */
+    currency: string;
+    /** The provider-facing lifecycle. `declined` is retryable — the confirm endpoint accepts the same payment again; `refunded` is terminal. */
+    status: PaymentStatus;
+    /** Which provider implementation handled it (`fake` in the demo). */
+    provider: string;
+    /** The only card digits a payment system may remember. */
+    cardLast4?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface PaymentEnvelope {
+    success: true;
+    status: number;
     message: string;
+    data: Payment;
 }
 
-export type SearchFeedbackRequestsRequestStatus =
-    (typeof SearchFeedbackRequestsRequestStatus)[keyof typeof SearchFeedbackRequestsRequestStatus];
-
-export const SearchFeedbackRequestsRequestStatus = {
-    new: 'new',
-    in_progress: 'in_progress',
-    resolved: 'resolved',
-    spam: 'spam'
-} as const;
-
-export interface SearchFeedbackRequestsRequest {
-    page?: Page;
-    pageSize?: PageSize;
-    text?: Text;
-    status?: SearchFeedbackRequestsRequestStatus;
-    email?: Email;
+export interface CreatePaymentIntentRequest {
+    orderId: Id;
 }
 
-export type UpdateFeedbackRequestStatusRequestStatus =
-    (typeof UpdateFeedbackRequestStatusRequestStatus)[keyof typeof UpdateFeedbackRequestStatusRequestStatus];
+export interface ConfirmPaymentRequest {
+    /**
+     * The card number, digits and optional spaces. The fake provider declines `4000000000000002` and accepts everything else; `4242424242424242` is the conventional success card.
+     * @minLength 12
+     * @maxLength 23
+     * @pattern ^[\d ]+$
+     */
+    cardNumber: string;
+}
 
-export const UpdateFeedbackRequestStatusRequestStatus = {
-    new: 'new',
-    in_progress: 'in_progress',
-    resolved: 'resolved',
-    spam: 'spam'
+export interface ShippingMethod {
+    /** Stable id, frozen onto orders at checkout (standard, express, pickup). */
+    id: string;
+    /**
+     * Flat rate, in the shop's currency.
+     * @minimum 0
+     */
+    price: number;
+    /**
+     * Items total at which this method becomes free. Absent — it never does.
+     * @minimum 0
+     */
+    freeAbove?: number;
+}
+
+export interface ShippingMethodsResponse {
+    methods: ShippingMethod[];
+}
+
+export interface ShippingMethodsResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: ShippingMethodsResponse;
+}
+
+/**
+ * The tail of the order's lifecycle, as the courier sees it.
+ */
+export type ShipmentStatus = (typeof ShipmentStatus)[keyof typeof ShipmentStatus];
+
+export const ShipmentStatus = {
+    shipped: 'shipped',
+    delivered: 'delivered'
 } as const;
 
-export interface UpdateFeedbackRequestStatusRequest {
-    status?: UpdateFeedbackRequestStatusRequestStatus;
-    adminNotes?: string;
+export interface Shipment {
+    id: Id;
+    orderId: Id;
+    /** The courier's handle on the parcel. */
+    trackingCode: string;
+    /** The tail of the order's lifecycle, as the courier sees it. */
+    status: ShipmentStatus;
+    deliveredAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface ShipmentEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: Shipment;
+}
+
+export interface CourierAdvanceResponse {
+    /**
+     * How many parcels arrived on this tick.
+     * @minimum 0
+     */
+    advanced: number;
+}
+
+export interface CourierAdvanceResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: CourierAdvanceResponse;
+}
+
+/**
+ * Why the units moved.
+ */
+export type StockMovementReason = (typeof StockMovementReason)[keyof typeof StockMovementReason];
+
+export const StockMovementReason = {
+    order: 'order',
+    'order-cancelled': 'order-cancelled',
+    adjustment: 'adjustment',
+    restock: 'restock'
+} as const;
+
+export interface StockMovement {
+    id: Id;
+    productId: Id;
+    /** Signed — a sale is negative, a return or restock positive. */
+    delta: number;
+    /** Why the units moved. */
+    reason: StockMovementReason;
+    /** What caused it, when something did — the order id, typically. */
+    reference?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface StockMovementsResponse {
+    items: StockMovement[];
+}
+
+export interface StockMovementsResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: StockMovementsResponse;
+}
+
+export interface RestockRequest {
+    productId: Id;
+    /**
+     * How many units arrived. Corrections downward are the admin product form's absolute stock write.
+     * @minimum 1
+     */
+    quantity: number;
+}
+
+export interface RestockResponse {
+    productId: Id;
+    /**
+     * The shelf count after the units landed.
+     * @minimum 0
+     */
+    stock: number;
+}
+
+export interface RestockResponseEnvelope {
+    success: true;
+    status: number;
+    message: string;
+    data: RestockResponse;
 }
 
 /**
@@ -1155,6 +1529,17 @@ export type ListOrdersParams = {
     email?: Email;
 };
 
+export type DeleteOrderByIdParams = {
+    hardDelete?: boolean;
+};
+
+export type ListStockMovementsParams = {
+    /**
+     * Narrow to one product's movements
+     */
+    productId?: Id;
+};
+
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
@@ -1273,6 +1658,58 @@ export const getAccount = (options?: SecondParameter<typeof orvalMutator<UserEnv
 };
 
 /**
+ * Updates the authenticated user's own profile — email, username, locale, image. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email resets `verified` and sends a fresh verification email to the new address.
+ * @summary Update own profile
+ */
+export const updateAccount = (
+    updateAccountRequest: UpdateAccountRequest,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/account`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateAccountRequest
+        },
+        options
+    );
+};
+
+/**
+ * Updates the authenticated user's own profile — email, username, locale, image. Role, account state and password are out of scope — the first two belong to the admin `/users` endpoints, the password to `POST /account/password`. Changing the email resets `verified` and sends a fresh verification email to the new address.
+ * @summary Update own profile
+ */
+export const updateAccountWithMultipart = (
+    updateAccountRequestMultipart: UpdateAccountRequestMultipart,
+    options?: SecondParameter<typeof orvalMutator<UserEnvelope>>
+) => {
+    const formData = new FormData();
+    if (updateAccountRequestMultipart.email !== undefined) {
+        formData.append(`email`, updateAccountRequestMultipart.email);
+    }
+    if (updateAccountRequestMultipart.username !== undefined) {
+        formData.append(`username`, updateAccountRequestMultipart.username);
+    }
+    if (updateAccountRequestMultipart.locale !== undefined) {
+        formData.append(`locale`, updateAccountRequestMultipart.locale);
+    }
+    if (updateAccountRequestMultipart.imageUpload !== undefined) {
+        formData.append(`imageUpload`, updateAccountRequestMultipart.imageUpload);
+    }
+
+    return orvalMutator<UserEnvelope>(
+        {
+            url: `/account`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'multipart/form-data' },
+            data: formData
+        },
+        options
+    );
+};
+
+/**
  * Initiates the account-deletion flow for the authenticated user. A one-time confirmation token is sent to the user's email address. The token must then be submitted to `/account/delete-confirm` to complete the deletion.
  * @summary Request account deletion
  */
@@ -1280,6 +1717,148 @@ export const requestAccountDelete = (
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>({ url: `/account`, method: 'DELETE' }, options);
+};
+
+/**
+ * Changes the authenticated user's password. Unlike the reset flow this proves possession of the current password rather than of the mailbox, so it needs no email round-trip. Other sessions stay live — revoke them with `POST /account/logout-all` or per session via `DELETE /account/sessions/{sessionId}`.
+ * @summary Change password
+ */
+export const changePassword = (
+    changePasswordRequest: ChangePasswordRequest,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/account/password`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: changePasswordRequest
+        },
+        options
+    );
+};
+
+/**
+ * Logs out the CURRENT session only — revokes the refresh token carried by the `jwt` cookie and clears the authentication cookies. Other devices stay signed in; `POST /account/logout-all` is the one that revokes everything. Answers 200 whether or not a live session was found, because the caller's goal — not being logged in here — is met either way.
+ * @summary Logout this session
+ */
+export const logout = (options?: SecondParameter<typeof orvalMutator<SuccessResponse>>) => {
+    return orvalMutator<SuccessResponse>({ url: `/account/logout`, method: 'POST' }, options);
+};
+
+/**
+ * Lists the authenticated user's live refresh tokens as sessions — issue-agnostic handles with an expiry and a `current` marker, never the token values themselves. The one carried by the caller's own refresh cookie is flagged `current`.
+ * @summary List active sessions
+ */
+export const getSessions = (options?: SecondParameter<typeof orvalMutator<SessionsEnvelope>>) => {
+    return orvalMutator<SessionsEnvelope>({ url: `/account/sessions`, method: 'GET' }, options);
+};
+
+/**
+ * Revokes a single refresh token by its session id — "log out that device". Revoking the current session is allowed and equivalent to `POST /account/logout`, except that the cookies of OTHER clients cannot be cleared from here; their next refresh simply fails.
+ * @summary Revoke one session
+ */
+export const revokeSession = (
+    sessionId: Id,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        { url: `/account/sessions/${sessionId}`, method: 'DELETE' },
+        options
+    );
+};
+
+/**
+ * The authenticated user's address book. Whenever it is non-empty, exactly one entry carries `default` — the one checkout ships to when no `addressId` is named.
+ * @summary List saved addresses
+ */
+export const getAddresses = (options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>) => {
+    return orvalMutator<AddressesEnvelope>({ url: `/account/addresses`, method: 'GET' }, options);
+};
+
+/**
+ * Adds an entry to the authenticated user's address book. The first entry becomes the default automatically; a later entry claims the default slot only by sending `default true`, which demotes the previous holder.
+ * @summary Add an address
+ */
+export const addAddress = (
+    addressInput: AddressInput,
+    options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>
+) => {
+    return orvalMutator<AddressesEnvelope>(
+        {
+            url: `/account/addresses`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: addressInput
+        },
+        options
+    );
+};
+
+/**
+ * Updates one entry of the caller's own book. `default true` claims the default slot and demotes the previous holder; `default false` and an absent `default` both leave the assignment alone — demoting without naming a successor would leave the book with none.
+ * @summary Update an address
+ */
+export const updateAddress = (
+    addressId: Id,
+    updateAddressRequest: UpdateAddressRequest,
+    options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>
+) => {
+    return orvalMutator<AddressesEnvelope>(
+        {
+            url: `/account/addresses/${addressId}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateAddressRequest
+        },
+        options
+    );
+};
+
+/**
+ * Removes one entry of the caller's own book. Removing the default promotes the oldest remaining entry, so a non-empty book always has exactly one default.
+ * @summary Remove an address
+ */
+export const removeAddress = (
+    addressId: Id,
+    options?: SecondParameter<typeof orvalMutator<AddressesEnvelope>>
+) => {
+    return orvalMutator<AddressesEnvelope>(
+        { url: `/account/addresses/${addressId}`, method: 'DELETE' },
+        options
+    );
+};
+
+/**
+ * Sends a one-time verification token to the authenticated user's email address. The token must then be submitted to `/account/verify-confirm`. Signup already sends one automatically; this endpoint re-sends it for the mail that never arrived.
+ * @summary Request email verification
+ */
+export const requestEmailVerification = (
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        { url: `/account/verify-request`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * Completes the email-verification flow. Validates the one-time token issued at signup or by `/account/verify-request` and, if valid, marks the account's email address as verified.
+ * @summary Confirm email verification
+ */
+export const confirmEmailVerification = (
+    verifyEmailConfirmRequest: VerifyEmailConfirmRequest,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/account/verify-confirm`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: verifyEmailConfirmRequest
+        },
+        options
+    );
 };
 
 /**
@@ -1807,6 +2386,9 @@ export const createProductWithMultipart = (
     const formData = new FormData();
     formData.append(`title`, createProductRequestMultipart.title);
     formData.append(`price`, createProductRequestMultipart.price.toString());
+    if (createProductRequestMultipart.stock !== undefined) {
+        formData.append(`stock`, createProductRequestMultipart.stock.toString());
+    }
     if (createProductRequestMultipart.description !== undefined) {
         formData.append(`description`, createProductRequestMultipart.description);
     }
@@ -1870,6 +2452,9 @@ export const updateProductWithMultipart = (
         formData.append(`description`, updateProductRequestMultipart.description);
     }
     formData.append(`price`, updateProductRequestMultipart.price.toString());
+    if (updateProductRequestMultipart.stock !== undefined) {
+        formData.append(`stock`, updateProductRequestMultipart.stock.toString());
+    }
     if (updateProductRequestMultipart.active !== undefined) {
         formData.append(`active`, updateProductRequestMultipart.active.toString());
     }
@@ -1911,6 +2496,19 @@ export const deleteProduct = (
             headers: { 'Content-Type': 'application/json' },
             data: deleteProductRequest
         },
+        options
+    );
+};
+
+/**
+ * Every category and tag the PUBLIC catalogue carries, each with how many visible products hold it — what a storefront renders as filter chips. Sorted by count descending, then name. Counts follow the same visibility rule the listing does, so a chip can never lead to an empty page.
+ * @summary Catalogue facets
+ */
+export const getCatalogueFacets = (
+    options?: SecondParameter<typeof orvalMutator<CatalogueFacetsEnvelope>>
+) => {
+    return orvalMutator<CatalogueFacetsEnvelope>(
+        { url: `/products/categories`, method: 'GET' },
         options
     );
 };
@@ -1961,6 +2559,9 @@ export const updateProductByIdWithMultipart = (
         formData.append(`description`, updateProductByIdRequestMultipart.description);
     }
     formData.append(`price`, updateProductByIdRequestMultipart.price.toString());
+    if (updateProductByIdRequestMultipart.stock !== undefined) {
+        formData.append(`stock`, updateProductByIdRequestMultipart.stock.toString());
+    }
     if (updateProductByIdRequestMultipart.active !== undefined) {
         formData.append(`active`, updateProductByIdRequestMultipart.active.toString());
     }
@@ -2155,6 +2756,77 @@ export const checkout = (
 };
 
 /**
+ * Copies the lines of one of the authenticated user's own orders back into their cart — quantities from the order, added on top of what the cart already holds. The order stores product snapshots, so each line is re-resolved against the catalogue as it is today; products that have since been removed, deactivated or hidden are skipped, and the returned cart view is the record of what actually landed. Admins are scoped to their own orders too — the cart being filled is the caller's.
+ * @summary Reorder (refill cart from a past order)
+ */
+export const reorder = (
+    orderId: Id,
+    options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
+) => {
+    return orvalMutator<CartResponseEnvelope>(
+        { url: `/cart/reorder/${orderId}`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * Returns the authenticated user's saved products — ids only, like the cart's lines; clients render them from their own product store. Absence and emptiness are the same state, so this never answers 404.
+ * @summary Get wishlist
+ */
+export const getWishlist = (
+    options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
+) => {
+    return orvalMutator<WishlistResponseEnvelope>({ url: `/wishlist`, method: 'GET' }, options);
+};
+
+/**
+ * Adds a product to the authenticated user's wishlist. Idempotent — saving what is already saved answers the same 200, because a double-clicked heart icon is not an error. The product must be publicly visible; a hidden or soft-deleted product answers 404 exactly as it would from the catalogue.
+ * @summary Save a product
+ */
+export const addWishlistItem = (
+    addWishlistItemRequest: AddWishlistItemRequest,
+    options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
+) => {
+    return orvalMutator<WishlistResponseEnvelope>(
+        {
+            url: `/wishlist`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: addWishlistItemRequest
+        },
+        options
+    );
+};
+
+/**
+ * Removes the line for the product identified by `{productId}` from the authenticated user's wishlist. A line the caller does not hold is a 404 — the client's view is stale and it needs to know.
+ * @summary Remove a saved product
+ */
+export const removeWishlistItem = (
+    productId: string,
+    options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
+) => {
+    return orvalMutator<WishlistResponseEnvelope>(
+        { url: `/wishlist/${productId}`, method: 'DELETE' },
+        options
+    );
+};
+
+/**
+ * The wishlist's exit — the saved line becomes one cart line (quantity 1, incremented if the cart already holds the product) and leaves the wishlist. The cart is written before the wishlist line is removed, so a failure part-way leaves the product SAVED rather than lost. Returns the updated wishlist; read the cart for its own new state.
+ * @summary Move a saved product into the cart
+ */
+export const moveWishlistItemToCart = (
+    productId: string,
+    options?: SecondParameter<typeof orvalMutator<WishlistResponseEnvelope>>
+) => {
+    return orvalMutator<WishlistResponseEnvelope>(
+        { url: `/wishlist/${productId}/move-to-cart`, method: 'POST' },
+        options
+    );
+};
+
+/**
  * Returns a paginated list of orders.
  * Non-admin users are automatically scoped to their own orders; the `userId` filter is ignored for non-admin callers.
  * @summary List orders (paginated)
@@ -2205,7 +2877,7 @@ export const updateOrder = (
 };
 
 /**
- * Permanently removes the order identified by id.
+ * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record
  * @summary Delete order
  */
 export const deleteOrder = (
@@ -2275,14 +2947,47 @@ export const updateOrderById = (
 };
 
 /**
- * Permanently removes the order identified by `id`.
+ * Deletes the order identified by `{id}` in the path. Pass the `hardDelete` query parameter as `true` to permanently remove the record. Functionally equivalent to `DELETE /orders`.
  * @summary Delete order
  */
 export const deleteOrderById = (
     id: string,
+    hardDeleteRequest?: HardDeleteRequest,
+    params?: DeleteOrderByIdParams,
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
-    return orvalMutator<SuccessResponse>({ url: `/orders/${id}`, method: 'DELETE' }, options);
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/orders/${id}`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: hardDeleteRequest,
+            params
+        },
+        options
+    );
+};
+
+/**
+ * Permanently removes the order identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /orders/{id}?hardDelete=true`.
+ * @summary Permanently delete order
+ */
+export const hardDeleteOrderById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>({ url: `/orders/${id}/hard`, method: 'DELETE' }, options);
+};
+
+/**
+ * Cancels the order identified by `{id}` — the one order write a customer can make. A `pending` or `paid` order can be cancelled this way; cancelling a paid one refunds its payment. `processing` and later statuses each need their own flow (return), which an admin drives through `PUT /orders/{id}`. A non-admin can cancel only their own orders; an admin can cancel anyone's. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
+ * @summary Cancel order
+ */
+export const cancelOrderById = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
+) => {
+    return orvalMutator<OrderEnvelope>({ url: `/orders/${id}/cancel`, method: 'POST' }, options);
 };
 
 /**
@@ -2295,6 +3000,132 @@ export const getOrderInvoice = (
 ) => {
     return orvalMutator<Blob>(
         { url: `/orders/${id}/invoice`, method: 'GET', responseType: 'blob' },
+        options
+    );
+};
+
+/**
+ * Freezes one of the caller's `pending` orders into a payment intent — the amount is taken from the order's own lines, so the intent cannot quote a different number than the order shows. Asking again refreshes the same intent (one payment per order is a database fact); an order whose money already moved answers 409. The intent is the thing the card dialog confirms.
+ * @summary Create a payment intent
+ */
+export const createPaymentIntent = (
+    createPaymentIntentRequest: CreatePaymentIntentRequest,
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>(
+        {
+            url: `/payments/intent`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createPaymentIntentRequest
+        },
+        options
+    );
+};
+
+/**
+ * The payment record for one of the caller's orders, so a reload mid-flow finds the intent and its status again. Admins read anyone's. No intent yet is a 404 — absence is an answer, the client starts the flow with `POST /payments/intent`.
+ * @summary Get the payment behind an order
+ */
+export const getPaymentByOrder = (
+    orderId: Id,
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>(
+        { url: `/payments/order/${orderId}`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * The card dialog's submit. The provider charges first (that is how PSPs work — the money moves before your database hears about it), then the order is moved `pending → paid` by a conditional write; if the order slipped away in between, the charge is refunded on the spot. A decline answers 409 with `errors[].code` `PAYMENT_DECLINED` and is retryable — submit the same payment again with another card. The fake provider declines exactly one number, documented on `ConfirmPaymentRequest.cardNumber`.
+ * @summary Confirm a payment
+ */
+export const confirmPayment = (
+    id: string,
+    confirmPaymentRequest: ConfirmPaymentRequest,
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>(
+        {
+            url: `/payments/${id}/confirm`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: confirmPaymentRequest
+        },
+        options
+    );
+};
+
+/**
+ * The shipping methods this shop offers — flat rates and free-above thresholds. Public, because what shipping costs is pre-purchase information; the authoritative pricing still happens at checkout, against the lines actually bought, so a client showing these numbers cannot commit the shop to a stale rate.
+ * @summary List shipping methods
+ */
+export const listShippingMethods = (
+    options?: SecondParameter<typeof orvalMutator<ShippingMethodsResponseEnvelope>>
+) => {
+    return orvalMutator<ShippingMethodsResponseEnvelope>(
+        { url: `/delivery/methods`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * The parcel for one of the caller's orders — tracking code and whether it has arrived. Ownership is the order's, read through the same scope every order read uses. No parcel yet (the order has not reached `shipped`) is a 404 — absence is the answer.
+ * @summary Get the shipment behind an order
+ */
+export const getShipmentByOrder = (
+    orderId: Id,
+    options?: SecondParameter<typeof orvalMutator<ShipmentEnvelope>>
+) => {
+    return orvalMutator<ShipmentEnvelope>(
+        { url: `/delivery/order/${orderId}`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Every parcel currently `shipped` arrives — the order moves `shipped → delivered` through the same conditional write the rest of the status machine uses, then the shipment is stamped. Admin, and deliberately a button rather than a schedule — this repo has no cron, so an operator (or the demo) is the timer, exactly like the expired-token purge.
+ * @summary Advance the fake courier
+ */
+export const advanceCourier = (
+    options?: SecondParameter<typeof orvalMutator<CourierAdvanceResponseEnvelope>>
+) => {
+    return orvalMutator<CourierAdvanceResponseEnvelope>(
+        { url: `/delivery/advance`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * The ledger, newest first — every signed change to a shelf count with the why attached (order, cancel, adjustment, restock). Optionally one product's story via `productId`. Admin — customers see stock as a number on the product page.
+ * @summary List stock movements
+ */
+export const listStockMovements = (
+    params?: ListStockMovementsParams,
+    options?: SecondParameter<typeof orvalMutator<StockMovementsResponseEnvelope>>
+) => {
+    return orvalMutator<StockMovementsResponseEnvelope>(
+        { url: `/inventory/movements`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * Puts units on a shelf through the same conditional increment every other movement uses, and writes the ledger row through the same announcement — so a restock and a sale tell the same kind of story. Answers the shelf count after the units landed.
+ * @summary Restock a product
+ */
+export const restockProduct = (
+    restockRequest: RestockRequest,
+    options?: SecondParameter<typeof orvalMutator<RestockResponseEnvelope>>
+) => {
+    return orvalMutator<RestockResponseEnvelope>(
+        {
+            url: `/inventory/restock`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: restockRequest
+        },
         options
     );
 };
@@ -2320,8 +3151,26 @@ export type GetObservabilityAuditLogsResult = NonNullable<
     Awaited<ReturnType<typeof getObservabilityAuditLogs>>
 >;
 export type GetAccountResult = NonNullable<Awaited<ReturnType<typeof getAccount>>>;
+export type UpdateAccountResult = NonNullable<Awaited<ReturnType<typeof updateAccount>>>;
+export type UpdateAccountWithMultipartResult = NonNullable<
+    Awaited<ReturnType<typeof updateAccountWithMultipart>>
+>;
 export type RequestAccountDeleteResult = NonNullable<
     Awaited<ReturnType<typeof requestAccountDelete>>
+>;
+export type ChangePasswordResult = NonNullable<Awaited<ReturnType<typeof changePassword>>>;
+export type LogoutResult = NonNullable<Awaited<ReturnType<typeof logout>>>;
+export type GetSessionsResult = NonNullable<Awaited<ReturnType<typeof getSessions>>>;
+export type RevokeSessionResult = NonNullable<Awaited<ReturnType<typeof revokeSession>>>;
+export type GetAddressesResult = NonNullable<Awaited<ReturnType<typeof getAddresses>>>;
+export type AddAddressResult = NonNullable<Awaited<ReturnType<typeof addAddress>>>;
+export type UpdateAddressResult = NonNullable<Awaited<ReturnType<typeof updateAddress>>>;
+export type RemoveAddressResult = NonNullable<Awaited<ReturnType<typeof removeAddress>>>;
+export type RequestEmailVerificationResult = NonNullable<
+    Awaited<ReturnType<typeof requestEmailVerification>>
+>;
+export type ConfirmEmailVerificationResult = NonNullable<
+    Awaited<ReturnType<typeof confirmEmailVerification>>
 >;
 export type ConfirmAccountDeleteResult = NonNullable<
     Awaited<ReturnType<typeof confirmAccountDelete>>
@@ -2379,6 +3228,7 @@ export type UpdateProductWithMultipartResult = NonNullable<
     Awaited<ReturnType<typeof updateProductWithMultipart>>
 >;
 export type DeleteProductResult = NonNullable<Awaited<ReturnType<typeof deleteProduct>>>;
+export type GetCatalogueFacetsResult = NonNullable<Awaited<ReturnType<typeof getCatalogueFacets>>>;
 export type GetProductByIdResult = NonNullable<Awaited<ReturnType<typeof getProductById>>>;
 export type UpdateProductByIdResult = NonNullable<Awaited<ReturnType<typeof updateProductById>>>;
 export type UpdateProductByIdWithMultipartResult = NonNullable<
@@ -2396,6 +3246,13 @@ export type UpdateCartItemByIdResult = NonNullable<Awaited<ReturnType<typeof upd
 export type RemoveCartItemResult = NonNullable<Awaited<ReturnType<typeof removeCartItem>>>;
 export type GetCartSummaryResult = NonNullable<Awaited<ReturnType<typeof getCartSummary>>>;
 export type CheckoutResult = NonNullable<Awaited<ReturnType<typeof checkout>>>;
+export type ReorderResult = NonNullable<Awaited<ReturnType<typeof reorder>>>;
+export type GetWishlistResult = NonNullable<Awaited<ReturnType<typeof getWishlist>>>;
+export type AddWishlistItemResult = NonNullable<Awaited<ReturnType<typeof addWishlistItem>>>;
+export type RemoveWishlistItemResult = NonNullable<Awaited<ReturnType<typeof removeWishlistItem>>>;
+export type MoveWishlistItemToCartResult = NonNullable<
+    Awaited<ReturnType<typeof moveWishlistItemToCart>>
+>;
 export type ListOrdersResult = NonNullable<Awaited<ReturnType<typeof listOrders>>>;
 export type CreateOrderResult = NonNullable<Awaited<ReturnType<typeof createOrder>>>;
 export type UpdateOrderResult = NonNullable<Awaited<ReturnType<typeof updateOrder>>>;
@@ -2404,4 +3261,20 @@ export type SearchOrdersResult = NonNullable<Awaited<ReturnType<typeof searchOrd
 export type GetOrderByIdResult = NonNullable<Awaited<ReturnType<typeof getOrderById>>>;
 export type UpdateOrderByIdResult = NonNullable<Awaited<ReturnType<typeof updateOrderById>>>;
 export type DeleteOrderByIdResult = NonNullable<Awaited<ReturnType<typeof deleteOrderById>>>;
+export type HardDeleteOrderByIdResult = NonNullable<
+    Awaited<ReturnType<typeof hardDeleteOrderById>>
+>;
+export type CancelOrderByIdResult = NonNullable<Awaited<ReturnType<typeof cancelOrderById>>>;
 export type GetOrderInvoiceResult = NonNullable<Awaited<ReturnType<typeof getOrderInvoice>>>;
+export type CreatePaymentIntentResult = NonNullable<
+    Awaited<ReturnType<typeof createPaymentIntent>>
+>;
+export type GetPaymentByOrderResult = NonNullable<Awaited<ReturnType<typeof getPaymentByOrder>>>;
+export type ConfirmPaymentResult = NonNullable<Awaited<ReturnType<typeof confirmPayment>>>;
+export type ListShippingMethodsResult = NonNullable<
+    Awaited<ReturnType<typeof listShippingMethods>>
+>;
+export type GetShipmentByOrderResult = NonNullable<Awaited<ReturnType<typeof getShipmentByOrder>>>;
+export type AdvanceCourierResult = NonNullable<Awaited<ReturnType<typeof advanceCourier>>>;
+export type ListStockMovementsResult = NonNullable<Awaited<ReturnType<typeof listStockMovements>>>;
+export type RestockProductResult = NonNullable<Awaited<ReturnType<typeof restockProduct>>>;

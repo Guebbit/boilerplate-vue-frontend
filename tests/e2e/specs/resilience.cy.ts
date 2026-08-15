@@ -5,7 +5,7 @@
  * The five existing specs assert exact counts, titles and prices — meaningful against the fixed
  * seed, meaningless against random data. This file does the opposite on purpose: no exact
  * values, only invariants that must hold for *any* contract-valid dataset the random profile can
- * produce (see tests/mocks/shared/mockProfiles.ts for what it guarantees) — every route renders,
+ * produce (see tests/support/mocks/mockProfiles.ts for what it guarantees) — every route renders,
  * nothing throws, no console error, empty states don't crash, long strings don't break layout.
  *
  * `npm run test:e2e:random` targets this file directly (`--spec`) rather than a Cypress tag
@@ -24,7 +24,7 @@ const MAX_HORIZONTAL_OVERFLOW_PX = 1;
  *   regardless of profile.
  * - `[intlify] Not found '<key>' key in '<locale>' locale messages.` — a vue-i18n
  *   lazy-loading-order warning already flagged as a known rough edge in
- *   `src/middlewares/demoMiddleware.ts` (see its "(will not work)" comment on the same key).
+ *   `src/app/middlewares/demoMiddleware.ts` (see its "(will not work)" comment on the same key).
  *   Fixing the underlying i18n load-order issue is out of scope here.
  */
 const isKnownConsoleNoise = (call: unknown[]) => {
@@ -42,21 +42,21 @@ const isKnownConsoleNoise = (call: unknown[]) => {
 // failure); every other visit captures accurately.
 const CONSOLE_CAPTURE_KEY = '__resilienceConsoleCalls';
 
-interface IConsoleCall {
+interface ConsoleCall {
     type: 'error' | 'warn';
     args: unknown[];
 }
 
-type IWindowWithConsoleCapture = Cypress.AUTWindow & {
-    [CONSOLE_CAPTURE_KEY]?: IConsoleCall[];
+type WindowWithConsoleCapture = Cypress.AUTWindow & {
+    [CONSOLE_CAPTURE_KEY]?: ConsoleCall[];
 };
 
 /** Fails the test on any console.error/warn during the visit — see each call site for why. */
 const visitWithoutConsoleNoise = (path: string) => {
     cy.visit(path, {
         onBeforeLoad(win) {
-            const capturedCalls: IConsoleCall[] = [];
-            (win as IWindowWithConsoleCapture)[CONSOLE_CAPTURE_KEY] = capturedCalls;
+            const capturedCalls: ConsoleCall[] = [];
+            (win as WindowWithConsoleCapture)[CONSOLE_CAPTURE_KEY] = capturedCalls;
 
             const originalError = win.console.error.bind(win.console);
             win.console.error = (...args: unknown[]) => {
@@ -75,7 +75,7 @@ const visitWithoutConsoleNoise = (path: string) => {
 
 const assertNoConsoleNoise = () => {
     cy.window().should((win) => {
-        const calls = (win as IWindowWithConsoleCapture)[CONSOLE_CAPTURE_KEY] ?? [];
+        const calls = (win as WindowWithConsoleCapture)[CONSOLE_CAPTURE_KEY] ?? [];
         const unexpected = calls.filter((call) => !isKnownConsoleNoise(call.args));
         expect(
             unexpected,

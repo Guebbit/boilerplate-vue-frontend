@@ -3,6 +3,72 @@
 This page answers three questions for every tool in the stack: **what it is**, **what problem it solves**, and **what it does in this repo**.
 Each section links to the dedicated page for configuration details and code pointers.
 
+## The whole stack on one page
+
+Colour is the job a tool does, not the layer it sits in.
+
+```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 30, 'rankSpacing': 45}}}%%
+flowchart TD
+    subgraph BUILD["Build & language"]
+        VITE["Vite"]
+        TS["TypeScript · vue-tsc"]
+        TW["Tailwind"]
+    end
+
+    subgraph APP["Runtime"]
+        VUE["Vue 3"]
+        PINIA["Pinia"]
+        ROUTER["Vue Router"]
+        I18N["Vue I18n"]
+        VUETIFY["Vuetify"]
+        AXIOS["axios"]
+        ZOD["Zod"]
+    end
+
+    subgraph CONTRACT["Contract"]
+        ORVAL["Orval"]
+        SPECTRAL["Spectral"]
+        MODELINA["Modelina"]
+    end
+
+    subgraph TEST["Testing"]
+        VITEST["Vitest"]
+        VTU["@vue/test-utils"]
+        CY["Cypress"]
+        MSW["MSW"]
+        AXE["axe-core"]
+        FC["fast-check"]
+        STRYKER["Stryker"]
+    end
+
+    subgraph OBS["Telemetry"]
+        FARO["Grafana Faro"]
+        UMAMI["Umami"]
+    end
+
+    CONTRACT --> APP
+    BUILD --> APP
+    APP --> OBS
+    TEST -.-> APP
+
+    classDef build fill:#fef3c7,stroke:#d97706,color:#111827;
+    classDef app fill:#dbeafe,stroke:#2563eb,color:#111827;
+    classDef contract fill:#dcfce7,stroke:#16a34a,color:#111827;
+    classDef test fill:#ede9fe,stroke:#7c3aed,color:#111827;
+    classDef obs fill:#fce7f3,stroke:#db2777,color:#111827;
+    class VITE,TS,TW build;
+    class VUE,PINIA,ROUTER,I18N,VUETIFY,AXIOS,ZOD app;
+    class ORVAL,SPECTRAL,MODELINA contract;
+    class VITEST,VTU,CY,MSW,AXE,FC,STRYKER test;
+    class FARO,UMAMI obs;
+```
+
+**Contract points into the app, never the other way round.** That single arrow is the rule the
+whole repository is arranged around: `openapi.yaml` and `asyncapi.yaml` come from the backend, and
+everything under `contracts/` is generated from them. Editing generated output is the one mistake
+this diagram exists to prevent.
+
 ---
 
 ## Core stack
@@ -49,7 +115,7 @@ Each section links to the dedicated page for configuration details and code poin
 
 **Problem it solves.** Without a shared state layer, data-fetching logic leaks into components and props need to be drilled across many levels. Pinia centralises reactive state and makes it accessible from any component without prop drilling.
 
-**In this repo.** All API calls happen inside Pinia stores (or feature composables that call stores). Views never call the generated API client directly.
+**In this repo.** All API calls happen inside Pinia stores (or module composables that call stores). Views never call the generated API client directly.
 
 → [State & Routing](./state-and-routing.md)
 
@@ -73,7 +139,7 @@ Each section links to the dedicated page for configuration details and code poin
 
 **Problem it solves.** Hard-coding text strings in components makes localisation painful — every string must be found and replaced. Vue I18n externalises strings into locale message files so switching language is a single store update.
 
-**In this repo.** Locale messages live in `src/locales/`. The active locale is part of the URL (`/:locale/`) and is validated against `VITE_APP_SUPPORTED_LOCALES` on every navigation.
+**In this repo.** Shared locale messages live in `src/locales/`; each domain ships its own in `src/modules/<name>/locales/`, merged into the active locale at boot. The active locale is part of the URL (`/:locale/`) and is validated against `VITE_APP_SUPPORTED_LOCALES` on every navigation.
 
 → [State & Routing](./state-and-routing.md)
 
@@ -87,7 +153,7 @@ Each section links to the dedicated page for configuration details and code poin
 
 **Problem it solves.** Maintaining a typed API client alongside the spec means they inevitably drift. Code generation makes the client an output of the spec.
 
-**In this repo.** `npm run genapi` regenerates `contracts/rest/index.ts` (axios functions), `contracts/rest/schemas.zod.ts` (Zod schemas), and `tests/mocks/generated.ts` (MSW stubs). Configured in `orval.config.ts`.
+**In this repo.** `npm run gen:api` regenerates `contracts/rest/index.ts` (axios functions), `contracts/rest/schemas.zod.ts` (Zod schemas), and `tests/support/mocks/generated.ts` (MSW stubs). Configured in `orval.config.ts`.
 
 → [OpenAPI Workflow](../api/openapi-workflow.md)
 
@@ -99,7 +165,7 @@ Each section links to the dedicated page for configuration details and code poin
 
 **Problem it solves.** `fetch` requires manual error checking, JSON parsing, and has no interceptor system. Axios makes it easy to attach auth headers on every request and intercept errors globally.
 
-**In this repo.** A single axios instance lives in `src/plugins/http/index.ts`. Request interceptors attach the Bearer token; response interceptors shape errors into `IResponseReject` and handle `401`/`403`/`5xx` redirects.
+**In this repo.** A single axios instance lives in `src/infrastructure/http/index.ts`. Request interceptors attach the Bearer token; response interceptors shape errors into `IResponseReject` and handle `401`/`403`/`5xx` redirects.
 
 → [Runtime](./runtime.md)
 
@@ -123,7 +189,7 @@ Each section links to the dedicated page for configuration details and code poin
 
 **Problem it solves.** MSW handlers need realistic fake data to return. Writing static fixture objects is tedious and brittle. Faker generates varied, plausible data automatically.
 
-**In this repo.** Used by orval-generated MSW stubs in `tests/mocks/generated.ts` to populate fake responses.
+**In this repo.** Used by orval-generated MSW stubs in `tests/support/mocks/generated.ts` to populate fake responses.
 
 → [Mocking (MSW)](./mocking.md)
 
@@ -135,7 +201,7 @@ Each section links to the dedicated page for configuration details and code poin
 
 **Problem it solves.** Running the SPA without a backend requires either a running server or hardcoded mocks in component code. MSW intercepts at the transport layer so the real axios client and stores run unchanged.
 
-**In this repo.** Activated when `VITE_API_MOCK_ENABLED=true`. Handlers in `tests/mocks/handlers/` share an in-memory DB. Cypress e2e tests run with mocking enabled for determinism.
+**In this repo.** Activated when `VITE_API_MOCK_ENABLED=true`. Handlers in `src/modules/<name>/mocks/` share an in-memory DB. Cypress e2e tests run with mocking enabled for determinism.
 
 → [Mocking (MSW)](./mocking.md)
 

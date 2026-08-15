@@ -5,8 +5,11 @@
         "src/**/*",
         "src/**/*.vue",
         "tests/unit/**/*.ts",
+        "src/modules/*/tests/**/*.ts",
         "tests/unit/**/*.tsx",
-        "tests/mocks/**/*",
+        "tests/support/**/*",
+        "tests/cross-cutting/**/*.ts",
+        "tests/support/**/*",
         ".dev/**/*.ts",
         // `scripts/**` is primarily tsconfig.node.json's, and it stays there — that is the
         // project vite.config.ts and the CLI entry points are checked under. It is listed here
@@ -14,7 +17,9 @@
         // imported by a project but not included in it is TS6307, not a resolution error.
         "scripts/**/*.ts"
     ],
-    "exclude": [],
+    // `tests/support/e2e/**` is Cypress's — it uses the Cypress ambient types, which this project
+    // does not load. It is compiled by tsconfig.cypress.json instead.
+    "exclude": ["tests/support/e2e/**"],
     "compilerOptions": {
         "composite": true,
         "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.vitest.tsbuildinfo",

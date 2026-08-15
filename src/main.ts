@@ -1,11 +1,11 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
-import { i18n } from '@/utils/i18n.ts';
-import { mergeApiLocales } from '@/utils/localeApi.ts';
-import { useObservabilityStore, analyticsEvents } from '@/stores/observability';
+import { i18n } from '@/infrastructure/i18n.ts';
+import { mergeApiLocales } from '@/infrastructure/localeApi.ts';
+import { useObservabilityStore, analyticsEvents } from '@/infrastructure/observability';
 
 import App from './App.vue';
-import router from './router';
+import router from '@/app/router';
 
 /**
  * Global CSS
@@ -16,7 +16,26 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import '@/styles/main.css';
-import vuetify from '@/plugins/vuetify/index.ts';
+import vuetify from '@/ui/vuetify/index.ts';
+import { logger } from '@/infrastructure/logger.ts';
+import { registerResponseSchemas } from '@/infrastructure/http/responseSchemaMap.ts';
+import { registerLocaleContributors } from '@/infrastructure/i18n.ts';
+import { collectModuleLocales, collectModuleResponseSchemas } from '@/kernel/registry.ts';
+import { enabledModules } from '@/modules.ts';
+
+/*
+ * Close the one loop the tier rule cannot express.
+ *
+ * `infrastructure` owns the http client and the i18n runtime; the response-schema rows and the dictionaries
+ * are domain knowledge. `infrastructure` may not import `@/modules` — it is the bottom tier — so the
+ * composition root hands the data down instead of letting the bottom reach up.
+ *
+ * At module scope, not inside `bootstrapApplication`: the first thing bootstrap does is fetch
+ * `/locales`, and the router's locale guard loads a dictionary on the very first navigation.
+ * Both would otherwise run before the wiring was installed.
+ */
+registerResponseSchemas(collectModuleResponseSchemas(enabledModules));
+registerLocaleContributors(collectModuleLocales(enabledModules));
 
 /**
  * Boots the Vue application: optional API mocking, plugin registration, mount,
@@ -29,7 +48,7 @@ const bootstrapApplication = () =>
     // Dynamic import so MSW and the mock handlers stay in a lazy chunk
     // that is never downloaded when mocking is disabled.
     (import.meta.env.VITE_API_MOCK_ENABLED === 'true'
-        ? import('../tests/mocks/apiMock.ts').then(({ initializeApiMocking }) =>
+        ? import('../tests/support/mocks/apiMock.ts').then(({ initializeApiMocking }) =>
               initializeApiMocking()
           )
         : Promise.resolve()
@@ -61,7 +80,9 @@ const bootstrapApplication = () =>
             // tracked automatically, custom events go through observability.track().
             observability.initUmami();
 
-            // Track application mount (after init so the event is not silently dropped).
+            // Track application mount. `initUmami()` above only injects the tag — the tracker
+            // itself arrives a round-trip later, so this event is buffered by the store and sent
+            // when the script lands rather than fired at a global that does not exist yet.
             observability.track(analyticsEvents.APP_STARTED);
 
             return router.isReady().then(() => {
@@ -75,6 +96,5 @@ const bootstrapApplication = () =>
         });
 
 void bootstrapApplication().catch((error) => {
-    // eslint-disable-next-line no-console
-    console.error('[Bootstrap] Fatal error during application initialization:', error);
+    logger.error('[Bootstrap] Fatal error during application initialization:', error);
 });

@@ -1,0 +1,74 @@
+{
+    "products-list-page": {
+        "page-title": "Lista prodotti",
+        "product": "@:generic.product [0]",
+        "modified-products-list": "@.customSnakeCase:{'generic.product'} @:{'generic.list'}",
+        "button-go-to-details": "Pagina prodotto",
+        "button-view": "Visualizza",
+        "button-edit": "Modifica",
+        "button-delete": "Elimina",
+        "button-create-product": "Crea prodotto",
+        "confirm-delete": "Sei sicuro di voler eliminare questo prodotto?",
+        "success-delete": "Prodotto eliminato con successo",
+        "column-id": "ID",
+        "column-title": "Titolo",
+        "column-price": "Prezzo",
+        "column-active": "Attivo",
+        "column-created-at": "Creato il",
+        "column-actions": "Azioni",
+        "filter-text": "Cerca",
+        "filter-id": "ID prodotto",
+        "filter-min-price": "Prezzo minimo",
+        "filter-max-price": "Prezzo massimo",
+        "label-categories": "Categorie:",
+        "label-tags": "Tag:"
+    },
+    "products-form": {
+        "title-required": "Il titolo è obbligatorio",
+        "price-min": "Il prezzo deve essere maggiore o uguale a 0"
+    },
+    "product-target-page": {
+        "page-title": "Prodotto selezionato",
+        "button-go-to-list": "Vai alla lista prodotti",
+        "button-go-to-edit": "Modifica prodotto",
+        "label-id": "ID",
+        "label-title": "Titolo",
+        "label-price": "Prezzo",
+        "label-description": "Descrizione",
+        "label-active": "Attivo",
+        "label-created-at": "Creato il",
+        "label-updated-at": "Aggiornato il",
+        "label-stock": "Disponibilità",
+        "out-of-stock": "Esaurito",
+        "button-add-to-cart": "Aggiungi al carrello",
+        "success-add-to-cart": "Prodotto aggiunto al carrello.",
+        "button-save-wishlist": "Salva nei desideri",
+        "button-unsave-wishlist": "Salvato",
+        "login-to-buy": "Accedi per acquistare o salvare questo prodotto."
+    },
+    "product-create-page": {
+        "page-title": "Crea prodotto",
+        "label-title": "Titolo",
+        "label-price": "Prezzo",
+        "label-description": "Descrizione",
+        "label-active": "Attivo",
+        "button-submit": "Crea prodotto",
+        "button-go-to-list": "Torna alla lista prodotti",
+        "success-create": "Prodotto creato con successo"
+    },
+    "product-edit-page": {
+        "page-title": "Modifica prodotto",
+        "label-title": "Titolo",
+        "label-price": "Prezzo",
+        "label-description": "Descrizione",
+        "label-active": "Attivo",
+        "button-submit": "Salva modifiche",
+        "reset-form": "Reimposta modifiche",
+        "button-go-to-details": "Torna ai dettagli prodotto",
+        "button-go-to-list": "Torna alla lista prodotti",
+        "success-update": "Prodotto aggiornato con successo"
+    },
+    "navigation": {
+        "label-products-list": "@:generic.list @:generic.product"
+    }
+}

@@ -11,6 +11,7 @@ export default withMermaid(
             },
             nav: [
                 { text: 'Home', link: '/' },
+                { text: 'Getting Started', link: '/getting-started' },
                 { text: 'Theory', link: '/theory/' },
                 { text: 'Tools', link: '/tools/' },
                 { text: 'API', link: '/api/' }
@@ -21,10 +22,19 @@ export default withMermaid(
                         text: 'Theory',
                         items: [
                             { text: 'Overview', link: '/theory/' },
+                            { text: 'Reading Path', link: '/theory/reading-path' },
                             { text: 'Architecture', link: '/theory/architecture' },
                             { text: 'Layers', link: '/theory/layers' },
+                            { text: 'Modules', link: '/theory/modules' },
+                            {
+                                text: 'Adding & Removing a Module',
+                                link: '/theory/module-lifecycle'
+                            },
+                            { text: 'Domain Layer', link: '/theory/domain-layer' },
+                            { text: 'Strategic DDD', link: '/theory/strategic-ddd' },
                             { text: 'Request Flow', link: '/theory/request-flow' },
-                            { text: 'Sitemap & Access Control', link: '/theory/sitemap' }
+                            { text: 'Sitemap & Access Control', link: '/theory/sitemap' },
+                            { text: 'Roadmap', link: '/theory/roadmap' }
                         ]
                     }
                 ],
@@ -42,6 +52,7 @@ export default withMermaid(
                         items: [
                             { text: 'Package Dependencies', link: '/tools/package-dependencies' },
                             { text: 'Package Scripts', link: '/tools/package-scripts' },
+                            { text: 'Environment Variables', link: '/tools/environment' },
                             { text: 'Runtime', link: '/tools/runtime' },
                             { text: 'Docker & Podman', link: '/tools/docker-and-podman' },
                             { text: 'Security', link: '/tools/security' }
@@ -60,6 +71,7 @@ export default withMermaid(
                         collapsed: false,
                         items: [
                             { text: 'Observability', link: '/tools/observability' },
+                            { text: 'Admin Dashboard', link: '/tools/admin-dashboard' },
                             { text: 'Umami', link: '/tools/umami' }
                         ]
                     },

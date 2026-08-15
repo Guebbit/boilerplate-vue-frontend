@@ -1,0 +1,16 @@
+{
+    "shipping-selector": {
+        "title": "Spedizione",
+        "method-standard": "Standard",
+        "method-express": "Espressa",
+        "method-pickup": "Ritiro in negozio",
+        "free-earned": "gratis oltre soglia"
+    },
+    "shipment-panel": {
+        "title": "Spedizione",
+        "status-shipped": "Spedito",
+        "status-delivered": "Consegnato",
+        "button-advance": "Avanza corriere (demo)",
+        "advanced": "Il corriere è avanzato — pacchi consegnati."
+    }
+}

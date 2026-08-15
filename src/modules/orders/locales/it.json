@@ -1,0 +1,70 @@
+{
+    "orders-list-page": {
+        "page-title": "I miei ordini",
+        "empty-orders": "Non hai ancora effettuato ordini",
+        "button-go-to-cart": "Vai al carrello",
+        "label-status": "Stato",
+        "label-total": "Totale",
+        "label-date": "Data",
+        "button-go-to-details": "Dettagli ordine",
+        "button-view": "Visualizza",
+        "button-edit": "Modifica",
+        "button-delete": "Elimina",
+        "confirm-delete": "Sei sicuro di voler eliminare questo ordine?",
+        "success-delete": "Ordine eliminato con successo",
+        "column-id": "ID",
+        "column-status": "Stato",
+        "column-total": "Totale",
+        "column-date": "Data",
+        "column-actions": "Azioni",
+        "filter-id": "ID ordine",
+        "filter-user-id": "ID utente",
+        "filter-product-id": "ID prodotto",
+        "filter-email": "Email"
+    },
+    "orders-form": {
+        "status-invalid": "Stato ordine non valido",
+        "email-invalid": "Deve essere un'email valida",
+        "status-pending": "In attesa",
+        "status-paid": "Pagato",
+        "status-processing": "In elaborazione",
+        "status-shipped": "Spedito",
+        "status-delivered": "Consegnato",
+        "status-cancelled": "Annullato"
+    },
+    "order-target-page": {
+        "page-title": "Dettagli ordine",
+        "label-order-id": "ID Ordine",
+        "label-status": "Stato",
+        "label-total": "Totale",
+        "label-notes": "Note",
+        "label-date": "Data",
+        "label-items": "Articoli",
+        "label-product-id": "Prodotto",
+        "label-quantity": "Quantità",
+        "loading": "Caricamento ordine...",
+        "button-go-to-list": "Vai alla lista ordini",
+        "button-go-to-edit": "Modifica ordine",
+        "button-download-invoice": "Scarica fattura",
+        "label-updated-at": "Aggiornato il",
+        "button-cancel": "Annulla ordine",
+        "confirm-cancel": "Annullare questo ordine? Le quantità tornano disponibili.",
+        "success-cancel": "Ordine annullato.",
+        "button-reorder": "Acquista di nuovo",
+        "success-reorder": "Ordine aggiunto al carrello.",
+        "label-shipping": "Spedizione"
+    },
+    "order-edit-page": {
+        "page-title": "Modifica ordine",
+        "label-status": "Stato",
+        "label-email": "Email",
+        "button-submit": "Salva modifiche",
+        "reset-form": "Reimposta modifiche",
+        "button-go-to-details": "Torna ai dettagli ordine",
+        "button-go-to-list": "Torna alla lista ordini",
+        "success-update": "Ordine aggiornato con successo"
+    },
+    "navigation": {
+        "label-orders": "Ordini"
+    }
+}

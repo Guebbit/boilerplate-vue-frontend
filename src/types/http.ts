@@ -1,16 +1,16 @@
-export interface IResponseNeutral {
+export interface ResponseNeutral {
     success: boolean;
     status: number;
     message: string;
 }
 
-export interface IResponseSuccess<T> extends IResponseNeutral {
+export interface ResponseSuccess<T> extends ResponseNeutral {
     // message: "ok"
     data?: T;
     errors: never;
 }
 
-export interface IResponseReject extends IResponseNeutral {
+export interface ResponseReject extends ResponseNeutral {
     // message: Technical error name or code
     data?: never;
     // UI friendly error message

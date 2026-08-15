@@ -5,5 +5,12 @@ types
 docs
 api
 public/mockServiceWorker.js
+
+# nginx configuration — prettier has no parser for it and errors out rather than skipping
+.docker/*.conf
 *.insomnia*
 Insomnia_*.json
+# Stryker output. `reports/stryker-incremental.json` is committed on purpose (CI can only reuse
+# what is in the repo), but Stryker writes it, not a person — so a local mutation run would fail
+# the format gate on a file nobody edited.
+reports

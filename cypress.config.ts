@@ -21,7 +21,7 @@ import { defineConfig } from 'cypress';
 import { loadEnv } from 'vite';
 import path from 'node:path';
 import { resolveBackendPath } from './scripts/backendPath';
-import { compareSnapshot } from './tests/e2e/support/visual-task';
+import { compareSnapshot } from './tests/support/e2e/visual-task';
 
 const viteEnvironment = loadEnv('', process.cwd(), '');
 
@@ -38,7 +38,7 @@ export default defineConfig({
         /**
          * Node-side hooks. `compareVisualSnapshot` is the image diff behind
          * `cy.compareSnapshot()` — it has to run here because the browser cannot read the
-         * committed baseline files. See `tests/e2e/support/visual-task.ts`.
+         * committed baseline files. See `tests/support/e2e/visual-task.ts`.
          */
         setupNodeEvents(on) {
             on('task', {
@@ -62,7 +62,7 @@ export default defineConfig({
          * npm script naming the set it wants, not by the config hiding one of them.
          */
         specPattern: 'tests/e2e/{specs,visual}/**/*.{cy,spec}.{js,jsx,ts,tsx}',
-        supportFile: 'tests/e2e/support/e2e.ts',
+        supportFile: 'tests/support/e2e/e2e.ts',
         // Everything else about these tests lives under tests/e2e; Cypress' default would put the
         // upload fixtures in a `cypress/` folder at the repo root, alone.
         fixturesFolder: 'tests/e2e/fixtures',
@@ -81,10 +81,10 @@ export default defineConfig({
             // relying on loadEnv to have picked up a process-level override.
             apiMockEnabled: true,
             // Only used by the live profile: `cy.resetState()` shells out to this checkout's
-            // `db:seed:reset:host` to restore the seed dataset between tests. `BACKEND_PATH` env
+            // `host -- db:seed:reset` to restore the seed dataset between tests. `BACKEND_PATH` env
             // override, or a sibling-checkout default, always resolved to an absolute path — see
-            // scripts/backendPath.ts, shared with scripts/preflight-live.ts so the two can never
-            // silently disagree about which backend they mean.
+            // scripts/backendPath.ts, shared with scripts/check-spec-identity.ts so the two can
+            // never silently disagree about which backend they mean.
             backendPath: resolveBackendPath(),
             // Where committed baselines live, and where a failing diff is written.
             visualBaselineDirectory: path.resolve('tests/e2e/snapshots'),

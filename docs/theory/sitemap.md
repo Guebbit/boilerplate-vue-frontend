@@ -15,12 +15,14 @@ All routes are locale-prefixed (`/:locale/…`). A missing locale is injected au
 | `/:locale/password-reset` | `PasswordResetRequest` | guest only |
 | `/:locale/password-reset/confirm` | `PasswordResetConfirm` | guest only |
 | `/:locale/account-delete/confirm` | `AccountDeleteConfirm` | public |
+| `/:locale/verify-email/confirm` | `VerifyEmailConfirm` | public |
 | `/:locale/profile` | `Profile` | auth |
 | `/:locale/logout` | `Logout` | public (redirects to Home) |
 | `/:locale/products` | `ProductsList` | public |
 | `/:locale/products/:id` | `ProductTarget` | public |
 | `/:locale/products/:id/edit` | `ProductEdit` | admin |
 | `/:locale/cart` | `Cart` | auth |
+| `/:locale/wishlist` | `Wishlist` | auth |
 | `/:locale/orders` | `OrdersList` | auth |
 | `/:locale/orders/:id` | `OrderTarget` | auth |
 | `/:locale/orders/:id/edit` | `OrderEdit` | admin |
@@ -29,6 +31,9 @@ All routes are locale-prefixed (`/:locale/…`). A missing locale is injected au
 | `/:locale/users/:id` | `UserTarget` | admin |
 | `/:locale/users/:id/edit` | `UserEdit` | admin |
 | `/:locale/admin` | `Admin` | admin |
+| `/:locale/contact` | `Contact` | public |
+| `/:locale/feedback` | `FeedbackInbox` | admin |
+| `/:locale/about` · `/faq` · `/terms` · `/privacy` | `StaticAbout` … | public |
 | `/:locale/:catchAll(.*)` | — | redirect → `Error 404` |
 
 **Access level legend:**
@@ -78,11 +83,11 @@ flowchart TD
 
 | Guard | File | Effect |
 | ----- | ---- | ------ |
-| `isAuth` | `src/middlewares/authentications.ts` | Must be logged in; redirects to Login on failure |
-| `isAdmin` | `src/middlewares/authentications.ts` | Must have admin role; redirects to Home on failure |
-| `isGuest` | `src/middlewares/authentications.ts` | Must NOT be logged in; redirects to Home if already authenticated |
-| `localeChoice` | `src/middlewares/localeChoice.ts` | Injects locale prefix when missing; validates supported locales |
-| `tryRestoreAuth` | `src/middlewares/authentications.ts` | Silently restores token + profile on every navigation from localStorage |
+| `isAuth` | `src/app/middlewares/authentications.ts` | Must be logged in; redirects to Login on failure |
+| `isAdmin` | `src/app/middlewares/authentications.ts` | Must have admin role; redirects to Home on failure |
+| `isGuest` | `src/app/middlewares/authentications.ts` | Must NOT be logged in; redirects to Home if already authenticated |
+| `localeChoice` | `src/app/middlewares/localeChoice.ts` | Injects locale prefix when missing; validates supported locales |
+| `tryRestoreAuth` | `src/app/middlewares/authentications.ts` | Silently restores token + profile on every navigation from localStorage |
 
 ## Auth persistence
 

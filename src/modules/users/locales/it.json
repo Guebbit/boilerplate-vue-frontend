@@ -1,0 +1,82 @@
+{
+    "users-list-page": {
+        "page-title": "Lista utenti",
+        "user": "@:generic.user [0]",
+        "modified-users-list": "@.customSnakeCase:{'generic.user'} @:{'generic.list'}",
+        "button-go-to-details": "Pagina utente",
+        "button-create-user": "Crea utente",
+        "button-view": "Visualizza",
+        "button-edit": "Modifica",
+        "button-delete": "Elimina",
+        "confirm-delete": "Sei sicuro di voler eliminare questo utente?",
+        "success-delete": "Utente eliminato con successo",
+        "column-id": "ID",
+        "column-username": "Nome utente",
+        "column-email": "Email",
+        "column-admin": "Admin",
+        "column-active": "Attivo",
+        "column-created-at": "Creato il",
+        "column-actions": "Azioni",
+        "filter-text": "Cerca",
+        "filter-id": "ID utente",
+        "filter-email": "Email",
+        "filter-username": "Nome utente",
+        "filter-active": "Stato",
+        "filter-active-all": "Tutti",
+        "filter-active-yes": "Attivo",
+        "filter-active-no": "Inattivo"
+    },
+    "users-form": {
+        "email-required": "L'email è obbligatoria",
+        "email-invalid": "Deve essere un'email valida",
+        "label-passwordConfirm": "Conferma Password",
+        "username-required": "Il nome utente è obbligatorio",
+        "username-min": "Il nome utente deve essere lungo almeno 3 caratteri",
+        "conditions-required": "Devi accettare le condizioni!",
+        "fix-errors": "Correggi gli errori evidenziati nel modulo.",
+        "password-required": "La password è obbligatoria",
+        "password-min": "La password deve essere lunga almeno 8 caratteri",
+        "password-minus-required": "La password deve contenere almeno una lettera minuscola",
+        "password-maius-required": "La password deve contenere almeno una lettera maiuscola",
+        "password-number-required": "La password deve contenere almeno un numero",
+        "password-special-required": "La password deve contenere almeno un carattere speciale",
+        "password-confirm-required": "Digita nuovamente la password",
+        "password-dont-match": "Le password non corrispondono"
+    },
+    "user-target-page": {
+        "page-title": "Utente selezionato",
+        "button-go-to-list": "Vai alla lista utenti",
+        "button-go-to-edit": "Modifica utente",
+        "label-id": "ID",
+        "label-username": "Nome utente",
+        "label-email": "Email",
+        "label-admin": "Admin",
+        "label-active": "Attivo",
+        "label-created-at": "Creato il",
+        "label-updated-at": "Aggiornato il"
+    },
+    "user-create-page": {
+        "page-title": "Crea utente",
+        "label-email": "Email",
+        "label-username": "Nome utente",
+        "label-password": "Password",
+        "label-admin": "Amministratore",
+        "label-active": "Attivo",
+        "button-submit": "Crea utente",
+        "button-go-to-list": "Torna alla lista utenti",
+        "success-create": "Utente creato con successo"
+    },
+    "user-edit-page": {
+        "page-title": "Modifica utente",
+        "label-email": "Email",
+        "label-password": "Nuova password (lascia vuoto per non modificarla)",
+        "button-submit": "Salva modifiche",
+        "reset-form": "Reimposta modifiche",
+        "button-go-to-details": "Torna ai dettagli utente",
+        "button-go-to-list": "Torna alla lista utenti",
+        "success-update": "Utente aggiornato con successo"
+    },
+    "navigation": {
+        "label-users-list": "@:generic.list @:generic.user"
+    }
+}

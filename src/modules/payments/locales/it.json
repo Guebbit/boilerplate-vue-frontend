@@ -1,0 +1,15 @@
+{
+    "payments-panel": {
+        "title": "Pagamento",
+        "label-card": "Numero carta",
+        "hint-decline": "Carte demo: qualsiasi numero paga, 4000 0000 0000 0002 viene rifiutata.",
+        "button-pay": "Paga ora",
+        "success": "Pagamento ricevuto — l'ordine è pagato.",
+        "status-requires_confirmation": "In attesa di conferma",
+        "status-succeeded": "Pagato",
+        "status-declined": "Rifiutato",
+        "status-refunded": "Rimborsato",
+        "label-card-ending": "carta che termina con {last4}",
+        "none": "Nessun pagamento."
+    }
+}

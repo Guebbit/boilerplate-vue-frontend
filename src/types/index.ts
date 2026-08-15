@@ -1,4 +1,3 @@
-export * from '@/features/admin/types';
 export * from './api';
 export * from './http';
 export * from './realtime.generated';

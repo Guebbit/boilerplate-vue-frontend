@@ -9,18 +9,18 @@ If you want the exact folder order, jump to [Layers](./layers.md).
 %%{init: {'flowchart': {'nodeSpacing': 65, 'rankSpacing': 85}}}%%
 flowchart TD
     Contract["Contracts\nopenapi.yaml + asyncapi.yaml"] --> Generated["Generated layer\napi/ + realtime types"]
-    Generated --> Stores["Pinia stores\nsrc/stores/"]
-    Stores --> Views["Views + features\nsrc/views/ + src/features/"]
-    Views --> Router["Vue Router\nsrc/router/"]
-    Views --> I18N["Vue I18n\nsrc/locales/"]
+    Generated --> Stores["Pinia stores\nsrc/infrastructure/ + src/modules/*/store.ts"]
+    Stores --> Views["Views\nsrc/app/views/ + src/modules/*/views/"]
+    Views --> Router["Vue Router\nsrc/app/router/"]
+    Views --> I18N["Vue I18n\nsrc/locales/ + src/modules/*/locales/"]
 
-    HTTP["HTTP layer\nsrc/plugins/http/index.ts\naxios + interceptors"] --> Stores
+    HTTP["HTTP layer\nsrc/infrastructure/http/index.ts\naxios + interceptors"] --> Stores
     Generated --> HTTP
 
-    Obs["Observability\nGrafana Faro + Umami\nsrc/stores/observability.ts"] --> Views
+    Obs["Observability\nGrafana Faro + Umami\nsrc/infrastructure/observability.ts"] --> Views
     Obs --> Router
 
-    MSW["MSW\ntests/mocks/\ndev + test only"] -.intercepted by.-> HTTP
+    MSW["MSW\nsrc/modules/*/mocks/ + tests/support/mocks/\ndev + test only"] -.intercepted by.-> HTTP
 
     classDef contract fill:#dcfce7,stroke:#16a34a,color:#111827;
     classDef generated fill:#fef3c7,stroke:#d97706,color:#111827;
@@ -45,7 +45,7 @@ flowchart TD
 | Generated layer | typed axios functions, Zod schemas, MSW stubs — all derived from `openapi.yaml` | hand-written duplicates |
 | HTTP layer | axios instance, request/response interceptors, error shaping into `IResponseReject` | business decisions |
 | Pinia stores | data fetching, caching, reactive state, API calls | direct DOM manipulation |
-| Views + features | template rendering, UI composition, user events | data fetching logic |
+| Views (platform + modules) | template rendering, UI composition, user events | data fetching logic |
 | Router + I18N | navigation, locale injection, route guards | deep business decisions |
 | Observability | error capture + tracing (Grafana Faro) and analytics (Umami) via a single store | scattered vendor calls |
 
