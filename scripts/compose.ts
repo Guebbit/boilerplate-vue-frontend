@@ -10,8 +10,9 @@
  * ## Choosing the engine
  *
  * In order: `CONTAINER_ENGINE` in the environment, then `CONTAINER_ENGINE` in `.env`, then
- * whichever of the two is actually installed, then docker. Zero configuration is the point — a
- * fresh clone on a podman-only machine runs `npm run compose:restart` and gets podman.
+ * whichever of the two actually works, then docker. Zero configuration is the point — a fresh
+ * clone on a podman-only machine runs `npm run compose:restart` and gets podman, and so does a
+ * machine where docker is installed but its daemon is down.
  *
  * Kept deliberately in step with `boilerplate-node-api-mongodb-mongoose/scripts/compose.ts`: the
  * two stacks are started side by side, and an engine that differed between them would put the two
@@ -41,9 +42,17 @@ const engineFromEnvironmentFile = (): string | undefined => {
         ?.replaceAll(/^["']|["']$/g, '');
 };
 
-/** Whether the binary answers at all — `--version` is the cheapest question both engines accept. */
-const installed = (engine: Engine): boolean =>
-    spawnSync(engine, ['--version'], { stdio: 'ignore' }).status === 0;
+/**
+ * Whether the engine can actually run the command this script is about to run.
+ *
+ * `--version` is not that question. A Docker CLI installed next to a stopped daemon answers it
+ * happily, and so does one with no compose plugin — both then fail on the real invocation, on a
+ * machine where podman was sitting right there and working. So ask the two things a compose run
+ * needs: that the engine speaks `compose` at all, and that it can reach its own daemon.
+ */
+const usable = (engine: Engine): boolean =>
+    spawnSync(engine, ['compose', 'version'], { stdio: 'ignore' }).status === 0 &&
+    spawnSync(engine, ['info'], { stdio: 'ignore' }).status === 0;
 
 const resolveEngine = (): Engine => {
     const requested = process.env.CONTAINER_ENGINE ?? engineFromEnvironmentFile();
@@ -56,8 +65,8 @@ const resolveEngine = (): Engine => {
     }
     if (requested !== undefined) return requested;
 
-    // Nothing asked for one: prefer whichever is present, and docker when both or neither are.
-    return !installed('docker') && installed('podman') ? 'podman' : 'docker';
+    // Nothing asked for one: prefer whichever works, and docker when both or neither do.
+    return !usable('docker') && usable('podman') ? 'podman' : 'docker';
 };
 
 const engine = resolveEngine();

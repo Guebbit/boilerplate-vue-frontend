@@ -26,6 +26,18 @@ services:
             VITE_API_MOCK_ENABLED: '${VITE_API_MOCK_ENABLED:-false}'
         volumes:
             - .:/app:Z
+            # Keep the container's own node_modules instead of the host's: the bind mount above
+            # would otherwise drop a tree built for the host platform on top of it.
+            #
+            # The cost is that this anonymous volume is populated from the image ONCE, when it is
+            # first created, and never again. Add a dependency, rebuild the image, and the volume
+            # still holds the install from the day it was made — so the container runs today's
+            # source against an old node_modules and Vite dies on a package that is right there in
+            # package.json (`Cannot find package 'x' imported from /app/vite.config.ts`).
+            #
+            # `npm run compose:rebuild` is the fix and the reason it passes `down -v`: without the
+            # `-v`, rebuilding the image changes nothing here. Any dependency change wants that
+            # script, not `compose:restart`.
             - /app/node_modules
         # `--host` is required: Vite binds 127.0.0.1 by default, which inside a container means
         # the published port forwards to a socket nobody is listening on. It is set here rather
