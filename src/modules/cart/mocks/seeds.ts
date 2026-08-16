@@ -6,7 +6,7 @@
  */
 import type { CartItem } from '@types';
 import type { MockSeedContext, MockSeedData } from '@/kernel/registry';
-import { seedUsers } from '@mocks/seed-identities.ts';
+import { buildSeedCartItems } from '@mocks/mockDataset.ts';
 
 declare module '@/kernel/registry' {
     interface MockSeedData {
@@ -15,19 +15,12 @@ declare module '@/kernel/registry' {
 }
 
 /*
- * The admin's cart, as the BE embeds it on the user document. Only the admin has one in the
- * fixtures; `mockDatabase.sampleCartItems` models a single active session's cart, so it takes
- * whichever seeded user actually has items rather than merging the two.
- *
- * Read from the shared `@mocks/seed-identities.ts` rather than from `soFar.sampleUsers`, because
- * the BE seeds a cart as part of its user documents — the fact lives with the identities, and the
- * users module's slice does not carry it. That is why `after` below names only the catalogue.
+ * The cart lines come from `@mocks/mockDataset.ts` rather than from `soFar.sampleUsers`, and the BE
+ * moved the same way: carts used to be embedded on the seeded user documents, so the fact lived
+ * with the identities and the users slice did not carry it. `carts` is its own collection in the
+ * published dataset now, owned by the module that owns the collection. That is why `after` below
+ * names only the catalogue.
  */
-const createSeedCartItems = (): CartItem[] =>
-    (seedUsers.find((user) => user.cart.length > 0)?.cart ?? []).map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity
-    }));
 
 /**
  * The random profile draws its items from the catalogue actually in the database, so that every
@@ -43,4 +36,4 @@ export const buildCartMockSeeds = async ({
         ? import('./seedsRandom.ts').then((random) => ({
               sampleCartItems: random.buildRandomCartItems(soFar.sampleProducts ?? [])
           }))
-        : { sampleCartItems: createSeedCartItems() };
+        : { sampleCartItems: buildSeedCartItems() };

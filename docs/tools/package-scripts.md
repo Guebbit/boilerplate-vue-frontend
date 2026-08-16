@@ -32,8 +32,9 @@ All four expand to `${CONTAINER_ENGINE:-podman} compose`. Export `CONTAINER_ENGI
 | `lint:openapi` | Lint `openapi.yaml` with Spectral | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | `lint:asyncapi` | Validate `asyncapi.yaml` with the AsyncAPI CLI | [Testing](./testing-and-docs.md) |
 | `prettier` / `prettier:fix` | Prettier check or rewrite | [Testing](./testing-and-docs.md) |
+| `check:asyncapi-types` | Fail if `src/types/realtime.generated.ts` is not what `asyncapi.yaml` generates; writes nothing | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 | `check:spec-identity` | Compare the shared contract files against the paired backend; skips when it is not on disk, fatal under CI | [Testing](./testing-and-docs.md) |
-| `complete` | the gate: lint + both spec lints + prettier:check + spec identity + build + tests | [Testing](./testing-and-docs.md) |
+| `complete` | the gate: lint + both spec lints + generated-types freshness + prettier:check + spec identity + build + tests | [Testing](./testing-and-docs.md) |
 | `complete:fix` | the same gate, with lint and formatting fixed rather than reported | [Testing](./testing-and-docs.md) |
 | `complete:manual` | what the gate cannot run for you: `test:e2e:visual` + `test:e2e:live` | [Testing](./testing-and-docs.md) |
 
@@ -56,6 +57,7 @@ All four expand to `${CONTAINER_ENGINE:-podman} compose`. Export `CONTAINER_ENGI
 | ------ | --- | --------- |
 | `gen:api` | Regenerate `contracts/rest/` and `tests/support/mocks/generated.ts` from `openapi.yaml` via orval | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | `gen:asyncapi` | Regenerate `src/types/realtime.generated.ts` from `asyncapi.yaml` | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
+| `check:asyncapi-types` | The same generation, compared instead of written — the freshness gate | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 | `lint:openapi` | Lint `openapi.yaml` with Spectral | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | `lint:asyncapi` | Validate `asyncapi.yaml` with the AsyncAPI CLI | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 

@@ -18,9 +18,9 @@ describe('the seed profile', () => {
     it('carries the shared identities through, ids intact', async () => {
         const products = await build('seed');
 
-        // The count and the ids come from `@mocks/seed-identities.ts`, which is byte-identical
-        // with the backend's copy — a spec asserting them here is asserting that this module's
-        // mapper does not drop or invent records, not choosing what they are.
+        // The count and the ids come from `@mocks/dataset.json`, which is byte-identical with
+        // the backend's copy — a spec asserting them here is asserting that this module's slice
+        // does not drop or invent records, not choosing what they are.
         expect(products).toHaveLength(5);
         expect(products.every((product) => Boolean(product.id))).toBe(true);
     });

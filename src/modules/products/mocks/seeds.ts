@@ -9,49 +9,21 @@
  *
  * Mirrors the backend's `src/modules/products/seeds.ts`, which contributes the same records to
  * `db/seeds/index.ts` through the same manifest field.
+ *
+ * There is no mapping left to do here. `@mocks/mockDataset.ts` reads the rows the backend's API
+ * actually produced and applies the two divergences this repo needs; this file only decides WHICH
+ * slice of the mock database they land in. The mapper that used to live here is gone along with the
+ * `active: true` it invented.
  */
 import type { Product } from '@types';
 import type { MockSeedContext, MockSeedData } from '@/kernel/registry';
-import { seedProducts } from '@mocks/seed-identities.ts';
-import { getIsoDateNow } from '@mocks/mockOrderMath.ts';
+import { buildSeedProducts } from '@mocks/mockDataset.ts';
 
 declare module '@/kernel/registry' {
     interface MockSeedData {
         sampleProducts: Product[];
     }
 }
-
-/*
- * The facts — ids, titles, prices, which product is inactive and which is soft-deleted — are not
- * written here. They come from `@mocks/seed-identities.ts`, which is byte-identical to
- * `db/seeds/seed-identities.ts` in the BE, so the same records answer against both MSW and the
- * real API and a `diff` between the two copies is the whole drift check.
- *
- * A factory, not a plain array: handlers mutate items in place (splice, unshift,
- * index-assignment), so a fresh call is needed on every reset, not a second reference to the same
- * mutated objects.
- *
- * `imageUrl` is dropped rather than carried over from the shared identities, and that is not an
- * oversight. Those paths (`/images/seed/*.jpg`) are served by the BE out of its own `public/`;
- * this repo ships no such files, so under MSW they would resolve to 404s and every seeded product
- * image would render broken. `test:e2e:live` gets the real URLs from the real API, which is the
- * only mode where they mean anything.
- */
-const createSeedProducts = (): Product[] =>
-    seedProducts.map((product) => ({
-        id: product.id,
-        title: product.title,
-        description: product.description,
-        price: product.price,
-        stock: product.stock,
-        categories: product.categories,
-        tags: product.tags,
-        active: product.active,
-        imageUrl: undefined,
-        ...(product.deletedAt ? { deletedAt: product.deletedAt } : {}),
-        createdAt: getIsoDateNow(),
-        updatedAt: getIsoDateNow()
-    }));
 
 /**
  * Nothing else in the database derives from the catalogue's own inputs, so this builder ignores
@@ -67,4 +39,4 @@ export const buildProductsMockSeeds = async ({
         ? import('./seedsRandom.ts').then((random) => ({
               sampleProducts: random.buildRandomProducts()
           }))
-        : { sampleProducts: createSeedProducts() };
+        : { sampleProducts: buildSeedProducts() };

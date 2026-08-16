@@ -10,7 +10,7 @@ import { assertMockContract } from '@mocks/mockValidation.ts';
 
 /*
  * Constraint 3 in `mockRandom.ts`: `cy.loginAs()` types these into a real login form, so identity
- * cannot be randomised. Hard-coded rather than read from `@mocks/seed-identities.ts` because that
+ * cannot be randomised. Hard-coded rather than read from `@mocks/dataset.json` because that
  * file describes the SEED profile's dataset; what this profile needs from it is only the two
  * credentials the E2E suite signs in with, and coupling the random profile to the whole shared
  * fixture would make a seed-data edit change what "random" means.

@@ -111,15 +111,25 @@ describe('SHARED_FILES', () => {
         expect(siblingRole(THIS_REPO)).toBe('backend');
     });
 
-    it('covers the contract, the seed fixtures and the generated realtime types', () => {
+    it('covers the contract, the demo dataset and the analytics names', () => {
         const frontendPaths = new Set(SHARED_FILES.map(({ frontend }) => frontend));
 
         expect(frontendPaths).toContain(OPENAPI);
         expect(frontendPaths).toContain(ASYNCAPI);
         expect(frontendPaths).toContain(SPECTRAL);
         // The two that went unguarded until the list could hold differing paths.
-        expect(frontendPaths).toContain('tests/support/mocks/seed-identities.ts');
-        expect(frontendPaths).toContain('src/types/realtime.generated.ts');
+        expect(frontendPaths).toContain('tests/support/mocks/dataset.json');
+        expect(frontendPaths).toContain('src/infrastructure/analyticsEvents.ts');
+    });
+
+    it('excludes anything this repo regenerates from a file already in the list', () => {
+        // A generated output carries no fact the list does not compare already: identical
+        // `asyncapi.yaml` through an identical generator cannot produce different types. Listing
+        // one buys nothing and costs a manual copy per contract change, so `check:asyncapi-types`
+        // guards it inside this repo instead.
+        const frontendPaths = new Set(SHARED_FILES.map(({ frontend }) => frontend));
+
+        expect(frontendPaths).not.toContain('src/types/realtime.generated.ts');
     });
 
     it('holds at least one pair whose paths differ between the repos', () => {
@@ -153,7 +163,7 @@ describe('compareSharedFiles', () => {
     });
 
     it('matches a cross-path pair across its two different names', () => {
-        // `db/seeds/seed-identities.ts` here, `tests/support/mocks/seed-identities.ts` there.
+        // `db/seeds/dataset.json` there, `tests/support/mocks/dataset.json` here.
         const here = root(sharedFiles(HERE));
         const there = root(sharedFiles(THERE));
 
@@ -263,7 +273,7 @@ describe('formatSharedFileProblems', () => {
     });
 
     it('names both paths when a cross-path pair forks', () => {
-        // "seed-identities.ts is forked" would send the reader to one of two files with no way to
+        // "dataset.json is forked" would send the reader to one of two files with no way to
         // tell which repo the other one is in.
         const here = root(sharedFiles(HERE));
         const there = root({ ...sharedFiles(THERE), [CROSS_PATH.backend]: 'forked' });
@@ -279,12 +289,16 @@ describe('formatSharedFileProblems', () => {
         const there = root(sharedFilesWith(THERE, OPENAPI, 'forked'));
         const message = formatSharedFileProblems(compareSharedFiles(there, here, HERE), there);
 
-        expect(message).toContain('npm run genapi');
-        // Four of the eight are assembled from per-module fragments in the backend, so "copy
+        expect(message).toContain('npm run gen:api');
+        // Four of the seven are assembled from per-module fragments in the backend, so "copy
         // whichever side is right" is the wrong instruction for them: the fix is to re-bundle
         // there and copy the result here. A message that omitted that invites an edit to this
         // repo's copy that the next `contracts:bundle` silently reverts.
         expect(message).toContain('npm run contracts:bundle');
+        // Both of this repo's own generators, because a fresh copy of either spec leaves the
+        // outputs built from it stale — and `realtime.generated.ts` is no longer carried over
+        // from the backend, so nothing else would mention regenerating it.
+        expect(message).toContain('npm run gen:asyncapi');
     });
 });
 

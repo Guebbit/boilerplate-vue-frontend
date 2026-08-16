@@ -48,7 +48,8 @@ import { REALTIME_SSE_EVENT_NAMES } from '@types';
 ## Commands
 
 ```bash
-npm run gen:asyncapi   # validate asyncapi.yaml + regenerate src/types/realtime.generated.ts
+npm run gen:asyncapi          # validate asyncapi.yaml + regenerate src/types/realtime.generated.ts
+npm run check:asyncapi-types  # fail if the committed types are not what asyncapi.yaml generates
 ```
 
 ## Shared with the backend
@@ -59,14 +60,22 @@ npm run gen:asyncapi   # validate asyncapi.yaml + regenerate src/types/realtime.
 | Repo | Command |
 | --- | --- |
 | Frontend | `tsx scripts/gen-asyncapi-types.ts --out src/types/realtime.generated.ts` |
-| Backend | `tsx scripts/gen-asyncapi-types.ts --out src/types/asyncapi.ts` |
+| Backend | `tsx scripts/gen-asyncapi-types.ts --out src/types/asyncapi.generated.ts` |
 
 Because `asyncapi.yaml` is identical too, the two generated files are identical — `diff` proves
 it. The script emits a superset: this repo uses `ISseEventPayloadMap` for per-event payload
 typing, the backend uses `OBSERVABILITY_CHANNELS` / `TObservabilityChannel`. The exports this
 repo does not use are tree-shaken out of the bundle.
 
-**If you change this script, copy it to the other repo.** Nothing enforces it automatically.
+Both the spec and this script are in `SHARED_FILES` (`scripts/specIdentity.ts`), so
+`check:spec-identity` fails on the commit that forks either. **The generated output is not**, and
+deliberately: identical input through an identical deterministic generator cannot produce different
+types, so a cross-repo comparison of the output would only re-ask a question the two entries above
+already answer, at the price of carrying a fourth file between the repos on every contract change.
+
+What that comparison *would* have added — "did this repo regenerate after the last spec edit" —
+`check:asyncapi-types` answers here, with no sibling checkout to find. The backend runs the same
+gate over its own copy.
 
 ## Realtime client workflow
 

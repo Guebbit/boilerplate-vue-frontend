@@ -6,7 +6,7 @@
  */
 import type { WishlistItem } from '@types';
 import type { MockSeedContext, MockSeedData } from '@/kernel/registry';
-import { seedWishlists } from '@mocks/seed-identities.ts';
+import { buildSeedWishlistItems } from '@mocks/mockDataset.ts';
 
 declare module '@/kernel/registry' {
     interface MockSeedData {
@@ -15,17 +15,12 @@ declare module '@/kernel/registry' {
 }
 
 /*
- * Like `sampleCartItems`, this models a single active session's list rather than one per user —
- * the mock has one browser and one session. The DEMO user's (ginopinoshow's) entry is the one
- * taken, because that is who `cy.loginAs('user')` signs in as, so the mock and a live run answer
- * the same two saved products to the same login.
+ * Like `sampleCartItems`, this models a single active session's list rather than one per user — the
+ * mock has one browser and one session. `@mocks/mockDataset.ts` picks the DEMO user's entry, since
+ * that is who `cy.loginAs('user')` signs in as, so the mock and a live run answer the same saved
+ * products to the same login. It finds them by the `admin` flag rather than by a hard-coded id,
+ * which is one fewer copy of a fact the dataset already states.
  */
-const DEMO_USER_ID = '65de646a44f861fd83c13f13';
-
-const createSeedWishlistItems = (): WishlistItem[] =>
-    (seedWishlists.find(({ userId }) => userId === DEMO_USER_ID)?.productIds ?? []).map(
-        (productId) => ({ productId })
-    );
 
 /**
  * The random profile draws saved products from the catalogue actually in the database, so every
@@ -42,4 +37,4 @@ export const buildWishlistMockSeeds = async ({
                   .slice(0, 5)
                   .map(({ id }) => ({ productId: id }))
           }
-        : { sampleWishlistItems: createSeedWishlistItems() };
+        : { sampleWishlistItems: buildSeedWishlistItems() };

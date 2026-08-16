@@ -14,3 +14,15 @@ Insomnia_*.json
 # what is in the repo), but Stryker writes it, not a person — so a local mutation run would fail
 # the format gate on a file nobody edited.
 reports
+
+# The REST contract, copied verbatim from the backend's `redocly bundle` output and hash-compared
+# against it by `check:spec-identity`. The bundler decides its layout — 2-space, its own key order —
+# so prettier and it disagree, and this repo authors nothing in the file to settle the argument
+# with. The backend ignores it for the same reason. `asyncapi.yaml` is not here because its
+# bundler and prettier already agree.
+openapi.yaml
+
+# The demo dataset, copied verbatim from the backend's `npm run seed:export` output and
+# hash-compared against it by `check:spec-identity`. Reformatting it here would read as a forked
+# dataset — this repo authors nothing in it.
+tests/support/mocks/dataset.json

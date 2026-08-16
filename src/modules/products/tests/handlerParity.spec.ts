@@ -3,7 +3,7 @@
  * pagination rules as the backend services they mirror.
  *
  * `docs/tools/mocking.md` states this alongside DATA parity, which is structural: both repos read
- * a byte-identical `seed-identities.ts`. Behaviour has no such mechanism. Without these cases the
+ * a byte-identical `dataset.json`. Behaviour has no such mechanism. Without these cases the
  * rules in this module's `mocks/handlers.ts` are asserted only indirectly, through Cypress, against
  * data chosen to make specs readable rather than to probe the rules — so a handler can drift from
  * the service it mirrors and every spec stays green.

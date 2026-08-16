@@ -41,9 +41,10 @@
         "compose:kill": "npm run compose -- kill",
         "gen:api": "orval",
         "gen:asyncapi": "tsx scripts/gen-asyncapi-types.ts --out src/types/realtime.generated.ts",
+        "check:asyncapi-types": "tsx scripts/gen-asyncapi-types.ts --check --out src/types/realtime.generated.ts",
         "update:all": "npm-check-updates -u",
-        "complete": "npm run lint && npm run lint:openapi && npm run lint:asyncapi && npm run prettier:check && npm run check:spec-identity && npm run build && npm run test",
-        "complete:fix": "npm run lint:fix && npm run lint:openapi && npm run lint:asyncapi && npm run prettier:fix && npm run check:spec-identity && npm run build && npm run test",
+        "complete": "npm run lint && npm run lint:openapi && npm run lint:asyncapi && npm run check:asyncapi-types && npm run prettier:check && npm run check:spec-identity && npm run build && npm run test",
+        "complete:fix": "npm run lint:fix && npm run lint:openapi && npm run lint:asyncapi && npm run check:asyncapi-types && npm run prettier:fix && npm run check:spec-identity && npm run build && npm run test",
         "complete:manual": "npm run test:e2e:visual && npm run test:e2e:live",
         "prepare": "husky"
     },

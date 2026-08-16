@@ -70,21 +70,52 @@ describe.each(['seed', 'random'] as const)('the %s profile', (profile) => {
 
 describe('the seed profile', () => {
     it('keeps the fixed ids the backend seeds, so a deep link resolves in both', async () => {
-        // `createMockOrder` mints a fresh `order-<timestamp>-<rand>` id; the mapper puts the
-        // seeded one back. Without that, a spec deep-linking to /orders/:id would hit a different
-        // URL under MSW than against the real API.
+        // The ids come straight out of `@mocks/dataset.json` now. They used to need putting back
+        // by hand: the orders were rebuilt through `createMockOrder`, which mints a fresh
+        // `order-<timestamp>-<rand>`, so a spec deep-linking to /orders/:id would otherwise have
+        // hit a different URL under MSW than against the real API.
         const { orders } = await buildWithDependencies('seed');
 
         expect(orders).toHaveLength(3);
         expect(orders.find((order) => order.deletedAt)?.id).toBe('66b3f0c14d2e8a91c7d4a015');
     });
-});
 
-describe('without a catalogue', () => {
-    it('contributes an empty history rather than orders whose lines point nowhere', async () => {
-        // The state after `rm -rf src/modules/products`: nothing to reference, so nothing is built.
+    it('carries the totals the API derived rather than recomputing them', async () => {
+        // `computeOrderTotals` is no longer on this path at all. The published row already holds
+        // what the backend's `applyOrderTransform` produced, so there is nothing here that could
+        // disagree with it.
+        const { orders } = await buildWithDependencies('seed');
+
+        for (const order of orders) {
+            const quantity = order.items.reduce((sum, item) => sum + item.quantity, 0);
+            expect(order.totalItems).toBe(order.items.length);
+            expect(order.totalQuantity).toBe(quantity);
+        }
+    });
+
+    it('survives the catalogue being deleted, because a line embeds its own snapshot', async () => {
+        // The state after `rm -rf src/modules/products`. This used to contribute an empty history:
+        // the shared fixture file gave a line only a `productId`, so with no catalogue to resolve
+        // it against there was nothing to build. A published order carries the product AS IT WAS —
+        // which is the whole point of a snapshot — so the history stands on its own.
         const { sampleOrders } = await buildOrdersMockSeeds({
             profile: 'seed',
+            soFar: { sampleProducts: [] as Product[] }
+        });
+
+        expect(sampleOrders).toHaveLength(3);
+        expect(sampleOrders?.every((order) => order.items.every((item) => item.product))).toBe(
+            true
+        );
+    });
+});
+
+describe('the random profile without a catalogue', () => {
+    it('contributes an empty history rather than orders whose lines point nowhere', async () => {
+        // Randomly-generated orders still DERIVE their lines from whatever catalogue is in the
+        // database, so this branch keeps degrading exactly as it did.
+        const { sampleOrders } = await buildOrdersMockSeeds({
+            profile: 'random',
             soFar: { sampleProducts: [] as Product[] }
         });
 

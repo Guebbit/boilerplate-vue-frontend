@@ -60,12 +60,13 @@ let movementIdCounter = 0;
  *
  * @param movement - the signed change and its reason
  */
-export const recordMockStockMovement = (movement: {
-    productId: string;
-    delta: number;
-    reason: StockMovement['reason'];
-    reference?: string;
-}): void => {
+export const recordMockStockMovement = (
+    /* The contract's own `StockMovement`, less the three fields this function is here to supply.
+     * Spelling the four remaining ones out again would be a second declaration of a shape
+     * `openapi.yaml` already owns — and it had already started to rot inwards, reaching into
+     * `StockMovement['reason']` for one field while restating the other three by hand. */
+    movement: Omit<StockMovement, 'id' | 'createdAt' | 'updatedAt'>
+): void => {
     movementIdCounter += 1;
     (mockDatabase.sampleStockMovements ??= []).unshift({
         id: `movement-${movementIdCounter}`,

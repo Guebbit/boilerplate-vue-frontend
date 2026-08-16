@@ -4,14 +4,25 @@
  * See `src/modules/products/mocks/seeds.ts` for why a module owns its own fixtures. Mirrors the
  * backend's `src/modules/orders/seeds.ts`.
  *
- * The deepest node in the fixture graph: an order embeds a full product snapshot, so it cannot be
- * built until the catalogue exists. That is what `mockSeeds.after` in `../module.ts` declares and
- * what `soFar` below delivers — note that no line here imports the products module, only its data.
+ * ## Why this no longer needs the catalogue
+ *
+ * It used to be the deepest node in the fixture graph: an order embeds a full product snapshot, and
+ * the old shared file gave it only a `productId`, so every line had to be resolved against
+ * `soFar.sampleProducts` and the totals recomputed by `createMockOrder`. The published dataset
+ * carries each order WHOLE — snapshots, `totalItems`, `totalQuantity` and `totalPrice`, all as the
+ * backend's `applyOrderTransform` produced them — so there is nothing left to look up and nothing
+ * left to recompute.
+ *
+ * That also removes the last place where this repo's arithmetic could quietly disagree with the
+ * API's. `computeOrderTotals` still exists in `@mocks/mockOrderMath.ts`, and still has to: an order
+ * a spec CREATES at runtime has no published row to read.
+ *
+ * `after: ['products']` stays in `../module.ts` regardless — the products slice must still be built
+ * before the handlers run, and this module has no business changing that ordering on its own.
  */
-import type { Order, Product } from '@types';
+import type { Order } from '@types';
 import type { MockSeedContext, MockSeedData } from '@/kernel/registry';
-import { seedOrders } from '@mocks/seed-identities.ts';
-import { createMockOrder } from '@mocks/mockOrderMath.ts';
+import { buildSeedOrders } from '@mocks/mockDataset.ts';
 
 declare module '@/kernel/registry' {
     interface MockSeedData {
@@ -19,46 +30,21 @@ declare module '@/kernel/registry' {
     }
 }
 
-/*
- * `createMockOrder` mints a fresh `order-<timestamp>-<rand>` id, which is right for orders a
- * spec creates at runtime and wrong for these: the BE seeds them with fixed `_id`s, so a spec
- * deep-linking to `/orders/:id` would hit a different URL under MSW than against the real API.
- * The id is put back afterwards, which is also why these go through the factory at all — it is
- * what computes `totals` from the items.
- */
-const createSeedOrders = (products: Product[]): Order[] =>
-    seedOrders.map((order) => ({
-        ...createMockOrder({
-            userId: order.userId,
-            email: order.email,
-            items: order.items.map((item) => ({
-                product: products.find((product) => product.id === item.productId)!,
-                quantity: item.quantity
-            })),
-            status: 'pending'
-        }),
-        id: order.id,
-        // Spread conditionally, like the product fixtures: an explicit `deletedAt: undefined` key
-        // is still a key, and `isOrderVisibleToCaller` tests for the field's absence.
-        ...(order.deletedAt ? { deletedAt: order.deletedAt } : {})
-    }));
-
 /**
- * With no catalogue in the database — the products module deleted — there is nothing for an order
- * line to reference, so this contributes an empty history rather than orders whose `productId`s
- * resolve to nothing. Both profiles degrade the same way, and `cartItemToOrderItem`'s
- * non-null-asserted lookup in `mockShared.ts` never sees a dangling id.
+ * The random profile still derives its orders from whatever catalogue is in the database, so it
+ * still degrades to an empty history when the products module has been deleted — `soFar` is read
+ * for that branch alone.
  */
 export const buildOrdersMockSeeds = async ({
     profile,
     soFar
 }: MockSeedContext): Promise<Partial<MockSeedData>> => {
+    if (profile !== 'random') return { sampleOrders: buildSeedOrders() };
+
     const products = soFar.sampleProducts ?? [];
     if (products.length === 0) return { sampleOrders: [] };
 
-    return profile === 'random'
-        ? import('./seedsRandom.ts').then((random) => ({
-              sampleOrders: random.buildRandomOrders(products, soFar.sampleUsers ?? [])
-          }))
-        : { sampleOrders: createSeedOrders(products) };
+    return import('./seedsRandom.ts').then((random) => ({
+        sampleOrders: random.buildRandomOrders(products, soFar.sampleUsers ?? [])
+    }));
 };
