@@ -70,8 +70,21 @@ src/modules/<name>/
     locales/{en,it}.json       its dictionaries
     mocks/handlers.ts          MSW handlers
     mocks/seeds.ts             the data those handlers answer with
-    tests/*.spec.ts            co-located, deleted with the module
+    tests/*.spec.ts            unit specs — co-located, deleted with the module
+    tests/e2e/*.cy.ts          Cypress specs for THIS domain only — likewise
 ```
+
+A domain's e2e specs live inside it for the same reason its unit specs do. A spec that walks one
+domain's screens is that domain's; left under `tests/e2e/specs/` it survives the `rm -rf` as an
+orphan addressing routes that no longer exist, and nothing in the build can see that it has. Specs
+that belong to no single domain — the shell, the locale layer, the a11y sweep, the arcs that cross
+four modules — stay central, where a failure after a deletion is correct signal rather than debris.
+
+Nothing needs rescoping to add one: `src/modules/<name>/tests/` is already outside
+`tsconfig.app.json`, the Vitest `include`, the coverage `include` and the Stryker `mutate` list.
+`tsconfig.cypress.json` claims the `e2e/` folder (so the specs get Cypress' ambient types rather
+than the app's), `tsconfig.vitest.json` excludes it, and both `cypress.config.ts` and
+`scripts/e2e-shard.ts` discover the two homes by glob rather than by list.
 
 `cart` is the reference — it has one of everything, including the `domain/` folder that nothing may
 import a framework into.
@@ -293,6 +306,11 @@ npm run lint
 npm run test:unit                                 # expect the parity table red, nothing else
 npm run test:e2e                                  # the app shell — what the build cannot see
 ```
+
+The e2e run is where a deletion used to leave debris. A domain's own specs now go with the folder,
+so what stays red is only the cross-cutting suite — and that is the point of running it: `journey`,
+`storefront` and `commerce` walk arcs that pass THROUGH the deleted domain, and their failure is
+the honest report that the arc is gone.
 
 Include `account` and at least one depended-upon domain. Deleting a leaf proves very little; the set
 above is interesting because `cart → orders`, `cart → products` are declared edges and `account` is

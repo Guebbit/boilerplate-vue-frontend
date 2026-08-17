@@ -591,7 +591,7 @@ export default defineConfigWithVueTs(
      * "Special" files names are better to be left untouched
      */
     {
-        files: ['tests/**/*', '**/*.spec.ts', '**/*.test.ts', '**/*.d.ts'],
+        files: ['tests/**/*', '**/*.spec.ts', '**/*.test.ts', '**/*.cy.ts', '**/*.d.ts'],
         rules: {
             'unicorn/filename-case': 'off',
             'unicorn/prevent-abbreviations': 'off'
@@ -627,8 +627,10 @@ export default defineConfigWithVueTs(
         ...pluginVitest.configs.recommended,
         files: ['src/**/__tests__/*', 'tests/**/*', '**/*.{spec,test}.{ts,tsx}'],
         // Cypress support files moved to `tests/support/e2e/` in Phase 5; they are Cypress's,
-        // not Vitest's, so both locations leave the vitest block.
-        ignores: ['tests/e2e/**/*', 'tests/support/e2e/**/*'],
+        // not Vitest's, so both locations leave the vitest block. A module's co-located e2e specs
+        // leave it for the same reason — `src/modules/*/tests/` holds both suites now, and only
+        // the `.spec.ts` half is Vitest's.
+        ignores: ['tests/e2e/**/*', 'tests/support/e2e/**/*', 'src/modules/*/tests/e2e/**/*'],
         languageOptions: {
             parserOptions: {
                 projectService: false,
@@ -640,6 +642,7 @@ export default defineConfigWithVueTs(
         ...pluginCypress.configs.recommended,
         files: [
             'tests/e2e/specs/**/*.{cy,spec}.{js,ts,jsx,tsx}',
+            'src/modules/*/tests/e2e/**/*.{cy,spec}.{js,ts,jsx,tsx}',
             'tests/support/e2e/**/*.{js,ts,jsx,tsx}'
         ],
         languageOptions: {

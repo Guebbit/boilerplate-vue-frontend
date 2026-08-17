@@ -17,9 +17,14 @@
         // imported by a project but not included in it is TS6307, not a resolution error.
         "scripts/**/*.ts"
     ],
-    // `tests/support/e2e/**` is Cypress's — it uses the Cypress ambient types, which this project
-    // does not load. It is compiled by tsconfig.cypress.json instead.
-    "exclude": ["tests/support/e2e/**"],
+    // Cypress's, not Vitest's — both use the Cypress ambient types, which this project does not
+    // load. They are compiled by tsconfig.cypress.json instead.
+    //
+    // The second entry is the reason this exclude is load-bearing rather than tidy: `include`
+    // above claims `src/modules/*/tests/**/*.ts` so a module's co-located unit specs are checked,
+    // and a module's co-located e2e specs sit in the same folder. Without this line every `cy.*`
+    // in them is an error in the main type-check.
+    "exclude": ["tests/support/e2e/**", "src/modules/*/tests/e2e/**"],
     "compilerOptions": {
         "composite": true,
         "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.vitest.tsbuildinfo",

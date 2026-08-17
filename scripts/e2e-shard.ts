@@ -30,11 +30,21 @@
  * matter how many shards are used.
  */
 import { spawn } from 'node:child_process';
-import { readdirSync } from 'node:fs';
+import { globSync } from 'node:fs';
 import path from 'node:path';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..');
-const SPEC_DIR = 'tests/e2e/specs';
+
+/**
+ * Where the e2e specs live — the two homes `cypress.config.ts`'s `specPattern` describes: the
+ * cross-cutting suite centrally, and each domain's own specs inside the domain so that deleting
+ * the folder takes them with it.
+ *
+ * Globbed rather than listed. A new module's suite is sharded the day it appears, and a deleted
+ * one stops being scheduled without anyone remembering this file — which is the whole reason the
+ * specs moved.
+ */
+const SPEC_GLOBS = ['tests/e2e/specs/*.cy.ts', 'src/modules/*/tests/e2e/*.cy.ts'];
 
 /**
  * Seconds per spec, from the run of 2026-08-14 (`npm run test:e2e`, total 12m54s).
@@ -81,9 +91,12 @@ if (process.env.CYPRESS_apiMockEnabled === 'false') {
 
 const shardCount = Math.max(1, Number(process.env.E2E_SHARDS?.trim() || 4));
 
-const specs = readdirSync(path.join(REPO_ROOT, SPEC_DIR))
-    .filter((entry) => entry.endsWith('.cy.ts'))
-    .map((entry) => ({ file: `${SPEC_DIR}/${entry}`, key: entry.replace('.cy.ts', '') }));
+const specs = globSync(SPEC_GLOBS, { cwd: REPO_ROOT })
+    // Cypress' `--spec` wants posix separators whatever the platform globbed with, and the sort
+    // keeps a run's shard assignment stable rather than at the mercy of directory order.
+    .map((entry) => entry.split(path.sep).join('/'))
+    .toSorted()
+    .map((file) => ({ file, key: path.basename(file, '.cy.ts') }));
 
 const total = (values: number[]): number => {
     let sum = 0;

@@ -47,8 +47,21 @@ export default defineConfig({
             });
         },
         /*
-         * Only `tests/e2e/specs/` is swept. The visual suite lives in `tests/e2e/visual/` and is
-         * run by its own script, deliberately outside this pattern.
+         * Two homes for the e2e specs, the same split the unit suite already makes (see
+         * `vitest.config.ts`). A spec that exercises ONE domain lives inside it, at
+         * `src/modules/<name>/tests/e2e/`, so `rm -rf src/modules/<name>` takes it along and no
+         * orphan is left addressing routes that no longer exist. A spec that belongs to no single
+         * domain — the shell, the locale layer, the accessibility sweep, the arcs that cross four
+         * modules — stays central under `tests/e2e/specs/`, where a failure after a deletion is
+         * correct signal rather than debris.
+         *
+         * A module's `tests/` folder is already outside `tsconfig.app.json`, the Vitest `include`,
+         * the coverage `include` and the Stryker `mutate` list, so co-locating these costs no
+         * scoping changes to any of the four. `tsconfig.cypress.json` is what claims them, which
+         * is how they get Cypress' ambient types instead of the app's.
+         *
+         * The visual suite lives in `tests/e2e/visual/` and is run by its own script, deliberately
+         * outside the sets the npm scripts name.
          *
          * Not because it is unimportant, but because it is the one suite whose failures are
          * sometimes environmental — font rendering differs between a developer's machine and a
@@ -56,12 +69,15 @@ export default defineConfig({
          * untrustworthy. Kept separate, a red visual run means "go and look at the picture",
          * which is exactly the response it should provoke.
          *
-         * Both directories are in `specPattern` because Cypress intersects `--spec` WITH it —
+         * Every directory is in `specPattern` because Cypress intersects `--spec` WITH it —
          * a spec outside the pattern cannot be run even when named explicitly, and
          * `excludeSpecPattern` is applied to explicit `--spec` too. So the split is made by each
          * npm script naming the set it wants, not by the config hiding one of them.
          */
-        specPattern: 'tests/e2e/{specs,visual}/**/*.{cy,spec}.{js,jsx,ts,tsx}',
+        specPattern: [
+            'tests/e2e/{specs,visual}/**/*.{cy,spec}.{js,jsx,ts,tsx}',
+            'src/modules/*/tests/e2e/**/*.{cy,spec}.{js,jsx,ts,tsx}'
+        ],
         supportFile: 'tests/support/e2e/e2e.ts',
         // Everything else about these tests lives under tests/e2e; Cypress' default would put the
         // upload fixtures in a `cypress/` folder at the repo root, alone.

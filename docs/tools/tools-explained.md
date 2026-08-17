@@ -265,7 +265,7 @@ this diagram exists to prevent.
 
 **Problem it solves.** Unit tests cover logic; e2e tests cover the full user journey — navigating, filling forms, checking what's rendered. Cypress catches integration failures that unit tests miss.
 
-**In this repo.** E2E specs live in `tests/e2e/specs/`. `npm run test:e2e` boots Vite (with MSW) and runs Cypress headlessly. `test:e2e:dev` opens the Cypress UI.
+**In this repo.** E2E specs live in two places: a domain's own under `src/modules/<name>/tests/e2e/`, the cross-cutting ones under `tests/e2e/specs/`. `npm run test:e2e` boots Vite (with MSW) and runs Cypress headlessly. `test:e2e:dev` opens the Cypress UI.
 
 → [Testing](./testing-and-docs.md)
 

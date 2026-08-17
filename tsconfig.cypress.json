@@ -1,6 +1,14 @@
 {
     "extends": "./tsconfig.app.json",
-    "include": ["tests/e2e/**/*.ts", "tests/support/e2e/**/*.ts", "cypress.config.ts"],
+    // A domain's own e2e specs live inside it (see `cypress.config.ts`'s `specPattern`), and
+    // `tsconfig.app.json` excludes `src/modules/*/tests/**` — so this project is the only one
+    // that claims them, and they get Cypress' ambient types rather than the app's.
+    "include": [
+        "tests/e2e/**/*.ts",
+        "tests/support/e2e/**/*.ts",
+        "src/modules/*/tests/e2e/**/*.ts",
+        "cypress.config.ts"
+    ],
     "exclude": [],
     "compilerOptions": {
         "composite": true,

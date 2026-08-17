@@ -93,6 +93,11 @@ export default mergeConfig(
             // `rm -rf src/modules/<name>` takes its tests with it; everything that belongs to no
             // single domain — app, kernel, ui, infrastructure, the mock layer, cross-cutting
             // sweeps — stays central under `tests/unit/` and `tests/cross-cutting/`.
+            //
+            // The e2e suite makes the same split for the same reason, so `src/modules/*/tests/`
+            // holds both kinds. Only the `.spec.ts` half is this project's: the `e2e/` subfolder
+            // is Cypress', claimed by `tsconfig.cypress.json` and excluded by
+            // `tsconfig.vitest.json`. The glob below already draws that line.
             include: [
                 'tests/unit/**/*.spec.ts',
                 'tests/cross-cutting/**/*.spec.ts',

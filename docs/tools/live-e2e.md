@@ -110,7 +110,7 @@ This mechanises the "DATA parity" and "BEHAVIOUR parity" invariants documented a
 
 ## Live session refresh
 
-`tests/e2e/specs/auth.cy.ts` has one live-only case: it forces a single `401` on an otherwise-valid authenticated request and asserts the session survives. MSW is same-origin, in-page, and never exercises `withCredentials: true` carrying the refresh cookie across `:8085 → :3000` — this does, over a real network round-trip, without needing a test-only hook into Pinia state.
+`src/modules/account/tests/e2e/auth.cy.ts` has one live-only case: it forces a single `401` on an otherwise-valid authenticated request and asserts the session survives. MSW is same-origin, in-page, and never exercises `withCredentials: true` carrying the refresh cookie across `:8085 → :3000` — this does, over a real network round-trip, without needing a test-only hook into Pinia state.
 
 ## File map
 
@@ -120,7 +120,7 @@ This mechanises the "DATA parity" and "BEHAVIOUR parity" invariants documented a
 | `src/infrastructure/http/index.ts` | `orvalMutator`, `VITE_VALIDATE_RESPONSES` gate |
 | `src/infrastructure/http/responseSchemaMap.ts` | Route → Zod schema table `orvalMutator` validates against |
 | `tests/e2e/specs/parity.cy.ts` | Mock/seed parity, live profile only |
-| `tests/e2e/specs/auth.cy.ts` | Live session-refresh case (alongside the mock-profile auth specs) |
+| `src/modules/account/tests/e2e/auth.cy.ts` | Live session-refresh case (alongside the mock-profile auth specs) |
 | `tests/support/e2e/commands.ts` | `cy.resetState()`'s live branch, `cy.skipUnlessLive()` |
 | `cypress.config.ts` | `env.backendPath`, `env.apiMockEnabled` |
 
