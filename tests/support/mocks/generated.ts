@@ -77,10 +77,16 @@ export interface PaginationMeta {
     totalPages: number;
 }
 
+export type EnvelopeSuccess = true;
+
+export type EnvelopeStatus = number;
+
+export type EnvelopeMessage = string;
+
 export interface MessageResponse {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
 }
 
 /**
@@ -136,9 +142,9 @@ export interface User {
 }
 
 export interface UserEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: User;
 }
 
@@ -147,8 +153,21 @@ export interface Product {
     title: string;
     /** @minimum 0 */
     price: number;
-    /** @minimum 0 */
-    stock?: number;
+    /**
+     * Units physically present, whether or not they are spoken for.
+     * @minimum 0
+     */
+    readonly onHand?: number;
+    /**
+     * Units held by an open order — present, but not for sale.
+     * @minimum 0
+     */
+    readonly reserved?: number;
+    /**
+     * What a customer may actually buy. Derived from the two counters above.
+     * @minimum 0
+     */
+    readonly available?: number;
     description?: string;
     active?: boolean;
     imageUrl?: ImageUrl;
@@ -246,9 +265,9 @@ export interface HealthPing {
 }
 
 export interface HealthPingEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: HealthPing;
 }
 
@@ -263,9 +282,9 @@ export interface LocaleCapabilities {
 }
 
 export interface LocaleCapabilitiesEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: LocaleCapabilities;
 }
 
@@ -284,28 +303,11 @@ export interface LocaleDictionary {
 }
 
 export interface LocaleDictionaryEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: LocaleDictionary;
 }
-
-export type ObservabilityHealthStatus =
-    (typeof ObservabilityHealthStatus)[keyof typeof ObservabilityHealthStatus];
-
-export const ObservabilityHealthStatus = {
-    ok: 'ok',
-    degraded: 'degraded'
-} as const;
-
-export type ObservabilityHealthDatabaseStatus =
-    (typeof ObservabilityHealthDatabaseStatus)[keyof typeof ObservabilityHealthDatabaseStatus];
-
-export const ObservabilityHealthDatabaseStatus = {
-    connected: 'connected',
-    connecting: 'connecting',
-    disconnected: 'disconnected'
-} as const;
 
 export type ObservabilityHealthIntegrationsAnalytics =
     (typeof ObservabilityHealthIntegrationsAnalytics)[keyof typeof ObservabilityHealthIntegrationsAnalytics];
@@ -336,6 +338,23 @@ export interface ObservabilityHealthSystem {
     loadAvg: number[];
 }
 
+export type ObservabilityHealthStatus =
+    (typeof ObservabilityHealthStatus)[keyof typeof ObservabilityHealthStatus];
+
+export const ObservabilityHealthStatus = {
+    ok: 'ok',
+    degraded: 'degraded'
+} as const;
+
+export type ObservabilityHealthDatabaseStatus =
+    (typeof ObservabilityHealthDatabaseStatus)[keyof typeof ObservabilityHealthDatabaseStatus];
+
+export const ObservabilityHealthDatabaseStatus = {
+    connected: 'connected',
+    connecting: 'connecting',
+    disconnected: 'disconnected'
+} as const;
+
 export type ObservabilityHealthDatabase = {
     status: ObservabilityHealthDatabaseStatus;
 };
@@ -355,9 +374,9 @@ export interface ObservabilityHealth {
 }
 
 export interface ObservabilityHealthResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: ObservabilityHealth;
 }
 
@@ -400,6 +419,8 @@ export type ObservabilityMetricsSummaryBusiness = {
     ordersCreated?: number;
     /** @minimum 0 */
     lowStockProducts?: number;
+    /** @minimum 0 */
+    reservedUnits?: number;
 };
 
 export type ObservabilityMetricsSummaryDatabase = {
@@ -426,9 +447,9 @@ export interface ObservabilityMetricsSummary {
 }
 
 export interface ObservabilityMetricsSummaryResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: ObservabilityMetricsSummary;
 }
 
@@ -449,14 +470,14 @@ export const AuditEventItemOutcome = {
     failure: 'failure'
 } as const;
 
+export type AuditEventItemMetadata = { [key: string]: unknown };
+
 export type AuditEventItemLevel = (typeof AuditEventItemLevel)[keyof typeof AuditEventItemLevel];
 
 export const AuditEventItemLevel = {
     info: 'info',
     warn: 'warn'
 } as const;
-
-export type AuditEventItemMetadata = { [key: string]: unknown };
 
 export interface AuditEventItem {
     actor_user_id: string;
@@ -482,82 +503,10 @@ export interface AuditLogsPage {
 }
 
 export interface AuditLogsResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: AuditLogsPage;
-}
-
-export interface AuthTokens {
-    /** Access JWT */
-    token: string;
-    /** Refresh token if returned by backend */
-    refreshToken?: string;
-    /** Access token expiry in seconds */
-    expiresIn?: number;
-}
-
-export interface AuthTokensEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: AuthTokens;
-}
-
-export interface RefreshTokenResponse {
-    /** New access JWT */
-    token: string;
-    /** New refresh token if returned by backend */
-    refreshToken?: string;
-    /** New access token expiry in seconds */
-    expiresIn?: number;
-}
-
-export interface RefreshTokenEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: RefreshTokenResponse;
-}
-
-export interface LoginRequest {
-    email: Email;
-    password: Password;
-}
-
-export interface SignupRequest {
-    email: Email;
-    /** @minLength 3 */
-    username: string;
-    password: Password;
-    passwordConfirm: Password;
-    imageUrl?: ImageUrl;
-}
-
-export interface SignupRequestMultipart {
-    email: Email;
-    /** @minLength 3 */
-    username: string;
-    password: Password;
-    passwordConfirm: Password;
-    /** Optional user profile image */
-    imageUpload?: Blob;
-}
-
-export interface PasswordResetRequest {
-    email: Email;
-}
-
-export interface PasswordResetConfirmRequest {
-    /** One-time password reset token (NOT a JWT). */
-    token: string;
-    password: Password;
-    passwordConfirm: Password;
-}
-
-export interface AccountDeleteConfirmRequest {
-    /** One-time account deletion token (NOT a JWT). */
-    token: string;
 }
 
 export interface UpdateAccountRequest {
@@ -583,11 +532,6 @@ export interface ChangePasswordRequest {
     passwordConfirm: Password;
 }
 
-export interface VerifyEmailConfirmRequest {
-    /** One-time email verification token (NOT a JWT). */
-    token: string;
-}
-
 export interface Session {
     id: Id;
     /** Absent on a token issued without an expiry tier. */
@@ -601,9 +545,9 @@ export interface SessionsResponse {
 }
 
 export interface SessionsEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: SessionsResponse;
 }
 
@@ -618,6 +562,17 @@ export interface Address {
     country: string;
     phone?: string;
     default: boolean;
+}
+
+export interface AddressesResponse {
+    addresses: Address[];
+}
+
+export interface AddressesEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AddressesResponse;
 }
 
 export interface AddressInput {
@@ -652,15 +607,81 @@ export interface UpdateAddressRequest {
     default?: boolean;
 }
 
-export interface AddressesResponse {
-    addresses: Address[];
+export interface VerifyEmailConfirmRequest {
+    /** One-time email verification token (NOT a JWT). */
+    token: string;
 }
 
-export interface AddressesEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: AddressesResponse;
+export interface AccountDeleteConfirmRequest {
+    /** One-time account deletion token (NOT a JWT). */
+    token: string;
+}
+
+export interface LoginRequest {
+    email: Email;
+    password: Password;
+}
+
+export interface AuthTokens {
+    /** Access JWT */
+    token: string;
+    /** Refresh token if returned by backend */
+    refreshToken?: string;
+    /** Access token expiry in seconds */
+    expiresIn?: number;
+}
+
+export interface AuthTokensEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AuthTokens;
+}
+
+export interface SignupRequest {
+    email: Email;
+    /** @minLength 3 */
+    username: string;
+    password: Password;
+    passwordConfirm: Password;
+    imageUrl?: ImageUrl;
+}
+
+export interface SignupRequestMultipart {
+    email: Email;
+    /** @minLength 3 */
+    username: string;
+    password: Password;
+    passwordConfirm: Password;
+    /** Optional user profile image */
+    imageUpload?: Blob;
+}
+
+export interface PasswordResetRequest {
+    email: Email;
+}
+
+export interface PasswordResetConfirmRequest {
+    /** One-time password reset token (NOT a JWT). */
+    token: string;
+    password: Password;
+    passwordConfirm: Password;
+}
+
+export interface RefreshTokenResponse {
+    /** New access JWT */
+    token: string;
+    /** New refresh token if returned by backend */
+    refreshToken?: string;
+    /** New access token expiry in seconds */
+    expiresIn?: number;
+}
+
+export interface RefreshTokenEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: RefreshTokenResponse;
 }
 
 export interface UsersResponse {
@@ -669,41 +690,10 @@ export interface UsersResponse {
 }
 
 export interface UsersResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: UsersResponse;
-}
-
-export interface SearchUsersRequest {
-    page?: Page;
-    pageSize?: PageSize;
-    text?: Text;
-    id?: Id;
-    email?: Email;
-    username?: string;
-    active?: boolean;
-}
-
-export interface CreateUserRequest {
-    email: Email;
-    username: string;
-    password: Password;
-    admin?: boolean;
-    active?: boolean;
-    imageUrl?: ImageUrl;
-    locale?: Locale;
-}
-
-export interface CreateUserRequestMultipart {
-    email: Email;
-    username: string;
-    password: Password;
-    admin?: boolean;
-    active?: boolean;
-    /** Optional user profile image */
-    imageUpload?: Blob;
-    locale?: Locale;
 }
 
 export interface UpdateUserRequest {
@@ -729,6 +719,32 @@ export interface UpdateUserRequestMultipart {
     locale?: Locale;
 }
 
+export interface CreateUserRequest {
+    email: Email;
+    username: string;
+    password: Password;
+    admin?: boolean;
+    active?: boolean;
+    imageUrl?: ImageUrl;
+    locale?: Locale;
+}
+
+export interface CreateUserRequestMultipart {
+    email: Email;
+    username: string;
+    password: Password;
+    admin?: boolean;
+    active?: boolean;
+    /** Optional user profile image */
+    imageUpload?: Blob;
+    locale?: Locale;
+}
+
+export interface DeleteUserRequest {
+    id: Id;
+    hardDelete?: boolean;
+}
+
 export interface UpdateUserByIdRequest {
     email?: Email;
     password?: Password;
@@ -748,9 +764,21 @@ export interface UpdateUserByIdRequestMultipart {
     imageUpload?: Blob;
 }
 
-export interface DeleteUserRequest {
-    id: Id;
-    hardDelete?: boolean;
+export interface SearchUsersRequest {
+    page?: Page;
+    pageSize?: PageSize;
+    text?: Text;
+    id?: Id;
+    email?: Email;
+    username?: string;
+    active?: boolean;
+}
+
+export interface CreateFeedbackRequest {
+    name?: string;
+    email: Email;
+    subject: string;
+    message: string;
 }
 
 export type FeedbackRequestStatus =
@@ -777,29 +805,10 @@ export interface FeedbackRequest {
 }
 
 export interface FeedbackRequestEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: FeedbackRequest;
-}
-
-export interface FeedbackRequestsResponse {
-    items: FeedbackRequest[];
-    meta: PaginationMeta;
-}
-
-export interface FeedbackRequestsResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: FeedbackRequestsResponse;
-}
-
-export interface CreateFeedbackRequest {
-    name?: string;
-    email: Email;
-    subject: string;
-    message: string;
 }
 
 export type SearchFeedbackRequestsRequestStatus =
@@ -820,6 +829,18 @@ export interface SearchFeedbackRequestsRequest {
     email?: Email;
 }
 
+export interface FeedbackRequestsResponse {
+    items: FeedbackRequest[];
+    meta: PaginationMeta;
+}
+
+export interface FeedbackRequestsResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: FeedbackRequestsResponse;
+}
+
 export type UpdateFeedbackRequestStatusRequestStatus =
     (typeof UpdateFeedbackRequestStatusRequestStatus)[keyof typeof UpdateFeedbackRequestStatusRequestStatus];
 
@@ -835,23 +856,80 @@ export interface UpdateFeedbackRequestStatusRequest {
     adminNotes?: string;
 }
 
-export interface ProductEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: Product;
-}
-
 export interface ProductsResponse {
     items: Product[];
     meta: PaginationMeta;
 }
 
 export interface ProductsResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: ProductsResponse;
+}
+
+export interface UpdateProductRequest {
+    id: Id;
+    title: string;
+    description?: string;
+    /** @minimum 0 */
+    price: number;
+    active?: boolean;
+    imageUrl?: ImageUrl;
+    categories?: string[];
+    tags?: string[];
+}
+
+export interface UpdateProductRequestMultipart {
+    id: Id;
+    title: string;
+    description?: string;
+    /** @minimum 0 */
+    price: number;
+    active?: boolean;
+    /** Optional product image */
+    imageUpload?: Blob;
+    categories?: string[];
+    tags?: string[];
+}
+
+export interface ProductEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Product;
+}
+
+export interface CreateProductRequest {
+    title: string;
+    /** @minimum 0 */
+    price: number;
+    /** @minimum 0 */
+    onHand?: number;
+    description?: string;
+    active?: boolean;
+    imageUrl?: ImageUrl;
+    categories?: string[];
+    tags?: string[];
+}
+
+export interface CreateProductRequestMultipart {
+    title: string;
+    /** @minimum 0 */
+    price: number;
+    /** @minimum 0 */
+    onHand?: number;
+    description?: string;
+    active?: boolean;
+    /** Optional product image */
+    imageUpload?: Blob;
+    categories?: string[];
+    tags?: string[];
+}
+
+export interface DeleteProductRequest {
+    id: Id;
+    hardDelete?: boolean;
 }
 
 export interface FacetCount {
@@ -866,10 +944,33 @@ export interface CatalogueFacetsResponse {
 }
 
 export interface CatalogueFacetsEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: CatalogueFacetsResponse;
+}
+
+export interface UpdateProductByIdRequest {
+    title: string;
+    description?: string;
+    /** @minimum 0 */
+    price: number;
+    active?: boolean;
+    imageUrl?: ImageUrl;
+    categories?: string[];
+    tags?: string[];
+}
+
+export interface UpdateProductByIdRequestMultipart {
+    title: string;
+    description?: string;
+    /** @minimum 0 */
+    price: number;
+    active?: boolean;
+    /** Optional product image */
+    imageUpload?: Blob;
+    categories?: string[];
+    tags?: string[];
 }
 
 export interface SearchProductsRequest {
@@ -883,94 +984,6 @@ export interface SearchProductsRequest {
     maxPrice?: number;
     category?: string;
     tag?: string;
-}
-
-export interface CreateProductRequest {
-    title: string;
-    /** @minimum 0 */
-    price: number;
-    /** @minimum 0 */
-    stock?: number;
-    description?: string;
-    active?: boolean;
-    imageUrl?: ImageUrl;
-    categories?: string[];
-    tags?: string[];
-}
-
-export interface CreateProductRequestMultipart {
-    title: string;
-    /** @minimum 0 */
-    price: number;
-    /** @minimum 0 */
-    stock?: number;
-    description?: string;
-    active?: boolean;
-    /** Optional product image */
-    imageUpload?: Blob;
-    categories?: string[];
-    tags?: string[];
-}
-
-export interface UpdateProductRequest {
-    id: Id;
-    title: string;
-    description?: string;
-    /** @minimum 0 */
-    price: number;
-    /** @minimum 0 */
-    stock?: number;
-    active?: boolean;
-    imageUrl?: ImageUrl;
-    categories?: string[];
-    tags?: string[];
-}
-
-export interface UpdateProductRequestMultipart {
-    id: Id;
-    title: string;
-    description?: string;
-    /** @minimum 0 */
-    price: number;
-    /** @minimum 0 */
-    stock?: number;
-    active?: boolean;
-    /** Optional product image */
-    imageUpload?: Blob;
-    categories?: string[];
-    tags?: string[];
-}
-
-export interface UpdateProductByIdRequest {
-    title: string;
-    description?: string;
-    /** @minimum 0 */
-    price: number;
-    /** @minimum 0 */
-    stock?: number;
-    active?: boolean;
-    imageUrl?: ImageUrl;
-    categories?: string[];
-    tags?: string[];
-}
-
-export interface UpdateProductByIdRequestMultipart {
-    title: string;
-    description?: string;
-    /** @minimum 0 */
-    price: number;
-    /** @minimum 0 */
-    stock?: number;
-    active?: boolean;
-    /** Optional product image */
-    imageUpload?: Blob;
-    categories?: string[];
-    tags?: string[];
-}
-
-export interface DeleteProductRequest {
-    id: Id;
-    hardDelete?: boolean;
 }
 
 export interface CartSummaryResponse {
@@ -999,29 +1012,10 @@ export interface CartResponse {
 }
 
 export interface CartResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: CartResponse;
-}
-
-export interface CartSummaryResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: CartSummaryResponse;
-}
-
-export interface CheckoutResponse {
-    order: Order;
-    message?: string;
-}
-
-export interface CheckoutResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: CheckoutResponse;
 }
 
 export interface UpsertCartItemRequest {
@@ -1030,14 +1024,21 @@ export interface UpsertCartItemRequest {
     quantity: number;
 }
 
+export interface RemoveCartItemRequest {
+    productId?: Id;
+}
+
 export interface UpdateCartItemByIdRequest {
     productId?: Id;
     /** @minimum 1 */
     quantity: number;
 }
 
-export interface RemoveCartItemRequest {
-    productId?: Id;
+export interface CartSummaryResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: CartSummaryResponse;
 }
 
 export interface CheckoutRequest {
@@ -1050,6 +1051,18 @@ export interface CheckoutRequest {
     shippingMethodId?: string;
 }
 
+export interface CheckoutResponse {
+    order: Order;
+    message?: string;
+}
+
+export interface CheckoutResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: CheckoutResponse;
+}
+
 export interface WishlistItem {
     productId: Id;
 }
@@ -1059,21 +1072,14 @@ export interface WishlistResponse {
 }
 
 export interface WishlistResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: WishlistResponse;
 }
 
 export interface AddWishlistItemRequest {
     productId: Id;
-}
-
-export interface OrderEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: Order;
 }
 
 export interface OrdersResponse {
@@ -1082,29 +1088,10 @@ export interface OrdersResponse {
 }
 
 export interface OrdersResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: OrdersResponse;
-}
-
-export interface SearchOrdersRequest {
-    page?: Page;
-    pageSize?: PageSize;
-    id?: Id;
-    userId?: Id;
-    productId?: Id;
-    email?: Email;
-}
-
-/**
- * Create a new order.
- */
-export interface CreateOrderRequest {
-    userId: Id;
-    email: Email;
-    /** @minItems 1 */
-    items: CartItem[];
 }
 
 /**
@@ -1132,6 +1119,37 @@ export interface UpdateOrderRequest {
     items?: CartItem[];
 }
 
+export interface OrderEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Order;
+}
+
+/**
+ * Create a new order.
+ */
+export interface CreateOrderRequest {
+    userId: Id;
+    email: Email;
+    /** @minItems 1 */
+    items: CartItem[];
+}
+
+export interface DeleteOrderRequest {
+    id: Id;
+    hardDelete?: boolean;
+}
+
+export interface SearchOrdersRequest {
+    page?: Page;
+    pageSize?: PageSize;
+    id?: Id;
+    userId?: Id;
+    productId?: Id;
+    email?: Email;
+}
+
 /**
  * Updated order status
  */
@@ -1156,9 +1174,8 @@ export interface UpdateOrderByIdRequest {
     items?: CartItem[];
 }
 
-export interface DeleteOrderRequest {
-    id: Id;
-    hardDelete?: boolean;
+export interface CreatePaymentIntentRequest {
+    orderId: Id;
 }
 
 /**
@@ -1195,14 +1212,10 @@ export interface Payment {
 }
 
 export interface PaymentEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: Payment;
-}
-
-export interface CreatePaymentIntentRequest {
-    orderId: Id;
 }
 
 export interface ConfirmPaymentRequest {
@@ -1235,9 +1248,9 @@ export interface ShippingMethodsResponse {
 }
 
 export interface ShippingMethodsResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: ShippingMethodsResponse;
 }
 
@@ -1264,9 +1277,9 @@ export interface Shipment {
 }
 
 export interface ShipmentEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: Shipment;
 }
 
@@ -1279,71 +1292,120 @@ export interface CourierAdvanceResponse {
 }
 
 export interface CourierAdvanceResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: CourierAdvanceResponse;
 }
 
+export interface InventoryLevel {
+    productId: Id;
+    /** Carried so the board reads as a list of products rather than of ids. */
+    title: string;
+    /** @minimum 0 */
+    onHand: number;
+    /** @minimum 0 */
+    reserved: number;
+    /** @minimum 0 */
+    available: number;
+}
+
+export interface InventoryLevelsResponse {
+    items: InventoryLevel[];
+    meta: PaginationMeta;
+}
+
+export interface InventoryLevelsResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: InventoryLevelsResponse;
+}
+
 /**
- * Why the units moved.
+ * * `reserve` — an order claimed units. `reserved` up, `onHand` unchanged.
+ * * `commit` — the order was paid for and the units left. Both down.
+ * * `release` — the hold was given up (the order was cancelled). `reserved` down.
+ * * `expire` — the hold timed out unpaid. Same counters as `release`, different story.
+ * * `receive` — a supplier delivery. `onHand` up.
+ * * `adjust` — a stocktake correction, signed. `onHand` moves either way.
  */
 export type StockMovementReason = (typeof StockMovementReason)[keyof typeof StockMovementReason];
 
 export const StockMovementReason = {
-    order: 'order',
-    'order-cancelled': 'order-cancelled',
-    adjustment: 'adjustment',
-    restock: 'restock'
+    reserve: 'reserve',
+    commit: 'commit',
+    release: 'release',
+    expire: 'expire',
+    receive: 'receive',
+    adjust: 'adjust'
 } as const;
 
 export interface StockMovement {
     id: Id;
     productId: Id;
-    /** Signed — a sale is negative, a return or restock positive. */
-    delta: number;
-    /** Why the units moved. */
     reason: StockMovementReason;
-    /** What caused it, when something did — the order id, typically. */
+    onHandDelta: number;
+    reservedDelta: number;
+    /** The order the movement belongs to, when one does. */
     reference?: string;
+    /** Why an adjustment was made — the operator's own words. */
+    note?: string;
     createdAt?: string;
     updatedAt?: string;
 }
 
 export interface StockMovementsResponse {
     items: StockMovement[];
+    meta: PaginationMeta;
 }
 
 export interface StockMovementsResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: StockMovementsResponse;
 }
 
-export interface RestockRequest {
+export interface ReceiptRequest {
     productId: Id;
     /**
-     * How many units arrived. Corrections downward are the admin product form's absolute stock write.
+     * How many units arrived. Strictly positive — a delivery that removes units is an adjustment.
      * @minimum 1
      */
     quantity: number;
+    /** Optional — the supplier, the delivery note number, whatever the operator wants on the row. */
+    note?: string;
 }
 
-export interface RestockResponse {
+export interface InventoryLevelEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: InventoryLevel;
+}
+
+export interface AdjustmentRequest {
     productId: Id;
+    /** Signed. Negative is shrinkage or damage; positive is a miscount found in your favour. */
+    delta: number;
+    /** Why. An unexplained correction is the thing an audit is looking for. */
+    note?: string;
+}
+
+export interface ReservationSweepResponse {
     /**
-     * The shelf count after the units landed.
+     * How many holds this run released.
      * @minimum 0
      */
-    stock: number;
+    expired: number;
 }
 
-export interface RestockResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: RestockResponse;
+export interface ReservationSweepEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ReservationSweepResponse;
 }
 
 /**
@@ -1540,11 +1602,44 @@ export type DeleteOrderByIdParams = {
     hardDelete?: boolean;
 };
 
+export type ListInventoryLevelsParams = {
+    /**
+     * 1-based page index
+     * @minimum 1
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Only products at or under the low-availability threshold (`NODE_LOW_STOCK_THRESHOLD`).
+     */
+    lowOnly?: boolean;
+};
+
 export type ListStockMovementsParams = {
+    /**
+     * 1-based page index
+     * @minimum 1
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
     /**
      * Narrow to one product's movements
      */
     productId?: Id;
+    /**
+     * Narrow to one kind of transition
+     */
+    reason?: StockMovementReason;
 };
 
 export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
@@ -2199,8 +2294,8 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         const formData = new FormData();
         formData.append(`title`, createProductRequestMultipart.title);
         formData.append(`price`, createProductRequestMultipart.price.toString());
-        if (createProductRequestMultipart.stock !== undefined) {
-            formData.append(`stock`, createProductRequestMultipart.stock.toString());
+        if (createProductRequestMultipart.onHand !== undefined) {
+            formData.append(`onHand`, createProductRequestMultipart.onHand.toString());
         }
         if (createProductRequestMultipart.description !== undefined) {
             formData.append(`description`, createProductRequestMultipart.description);
@@ -2249,9 +2344,6 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
             formData.append(`description`, updateProductRequestMultipart.description);
         }
         formData.append(`price`, updateProductRequestMultipart.price.toString());
-        if (updateProductRequestMultipart.stock !== undefined) {
-            formData.append(`stock`, updateProductRequestMultipart.stock.toString());
-        }
         if (updateProductRequestMultipart.active !== undefined) {
             formData.append(`active`, updateProductRequestMultipart.active.toString());
         }
@@ -2329,9 +2421,6 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
             formData.append(`description`, updateProductByIdRequestMultipart.description);
         }
         formData.append(`price`, updateProductByIdRequestMultipart.price.toString());
-        if (updateProductByIdRequestMultipart.stock !== undefined) {
-            formData.append(`stock`, updateProductByIdRequestMultipart.stock.toString());
-        }
         if (updateProductByIdRequestMultipart.active !== undefined) {
             formData.append(`active`, updateProductByIdRequestMultipart.active.toString());
         }
@@ -2723,7 +2812,21 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
     };
 
     /**
-     * The ledger, newest first — every signed change to a shelf count with the why attached (order, cancel, adjustment, restock). Optionally one product's story via `productId`. Admin — customers see stock as a number on the product page.
+     * The stock board — every product with its two counters and the availability derived from them. Admin; a customer sees `available` on the product itself. Answers the question a catalogue listing cannot, which is WHY something is unbuyable — nothing on the shelf, or everything on it already spoken for.
+     * @summary Stock levels
+     */
+    const listInventoryLevels = (
+        params?: ListInventoryLevelsParams,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<InventoryLevelsResponseEnvelope>> => {
+        return axiosInstance.get(`/inventory/levels`, {
+            ...options,
+            params: { ...params, ...options?.params }
+        });
+    };
+
+    /**
+     * A page of the ledger, newest first — one row per counter change, with both deltas and the reason attached. Every row was written by the same call that moved the counter, so the ledger cannot have gaps. Paged rather than capped, and `meta.totalItems` counts everything matching the filters — this is the record an audit works through, and a read that returned only the newest rows would misreport history as complete.
      * @summary List stock movements
      */
     const listStockMovements = (
@@ -2737,14 +2840,37 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
     };
 
     /**
-     * Puts units on a shelf through the same conditional increment every other movement uses, and writes the ledger row through the same announcement — so a restock and a sale tell the same kind of story. Answers the shelf count after the units landed.
-     * @summary Restock a product
+     * Units arrive from a supplier — `onHand` rises, `reserved` does not, so the delivery becomes available immediately. The only transition that can create units, and the reason a shop that has sold out can sell again.
+     * @summary Receive stock
      */
-    const restockProduct = (
-        restockRequest: RestockRequest,
+    const receiveStock = (
+        receiptRequest: ReceiptRequest,
         options?: AxiosRequestConfig
-    ): Promise<AxiosResponse<RestockResponseEnvelope>> => {
-        return axiosInstance.post(`/inventory/restock`, restockRequest, options);
+    ): Promise<AxiosResponse<InventoryLevelEnvelope>> => {
+        return axiosInstance.post(`/inventory/receipts`, receiptRequest, options);
+    };
+
+    /**
+     * A stocktake correction — signed, because shrinkage is the common case and it is negative. Refuses to take `onHand` below what is already reserved, because those units are promised to orders that exist — the fix for finding fewer units than were sold is to cancel orders, not to make availability negative.
+     * @summary Adjust stock
+     */
+    const adjustStock = (
+        adjustmentRequest: AdjustmentRequest,
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<InventoryLevelEnvelope>> => {
+        return axiosInstance.post(`/inventory/adjustments`, adjustmentRequest, options);
+    };
+
+    /**
+     * Releases every hold whose window has closed and announces each one, so the orders behind them get cancelled.
+     *
+     * A job behind an admin endpoint rather than an internal schedule. The application ships no scheduler, so the tick is driven from outside — a cron entry, the platform's scheduled job, or an operator — the same arrangement as `POST /delivery/advance`. Idempotent; running it twice releases nothing the first run already released.
+     * @summary Expire stale reservations
+     */
+    const sweepReservations = (
+        options?: AxiosRequestConfig
+    ): Promise<AxiosResponse<ReservationSweepEnvelope>> => {
+        return axiosInstance.post(`/inventory/reservations/sweep`, undefined, options);
     };
 
     return {
@@ -2836,8 +2962,11 @@ export const getEcommerceDemoAPI = (axiosInstance: AxiosInstance = axios) => {
         listShippingMethods,
         getShipmentByOrder,
         advanceCourier,
+        listInventoryLevels,
         listStockMovements,
-        restockProduct
+        receiveStock,
+        adjustStock,
+        sweepReservations
     };
 };
 export type GetHealthResult = AxiosResponse<HealthPingEnvelope>;
@@ -2929,8 +3058,11 @@ export type ConfirmPaymentResult = AxiosResponse<PaymentEnvelope>;
 export type ListShippingMethodsResult = AxiosResponse<ShippingMethodsResponseEnvelope>;
 export type GetShipmentByOrderResult = AxiosResponse<ShipmentEnvelope>;
 export type AdvanceCourierResult = AxiosResponse<CourierAdvanceResponseEnvelope>;
+export type ListInventoryLevelsResult = AxiosResponse<InventoryLevelsResponseEnvelope>;
 export type ListStockMovementsResult = AxiosResponse<StockMovementsResponseEnvelope>;
-export type RestockProductResult = AxiosResponse<RestockResponseEnvelope>;
+export type ReceiveStockResult = AxiosResponse<InventoryLevelEnvelope>;
+export type AdjustStockResult = AxiosResponse<InventoryLevelEnvelope>;
+export type SweepReservationsResult = AxiosResponse<ReservationSweepEnvelope>;
 
 export const getGetHealthResponseMock = (
     overrideResponse: Partial<Extract<HealthPingEnvelope, object>> = {}
@@ -3049,7 +3181,8 @@ export const getGetObservabilityMetricsOverviewResponseMock = (
         business: {
             checkoutSuccess: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
             ordersCreated: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
-            lowStockProducts: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined])
+            lowStockProducts: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+            reservedUnits: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined])
         },
         database: {
             queriesTotal: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
@@ -4081,7 +4214,9 @@ export const getListProductsResponseMock = (
                 id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 price: faker.number.float({ min: 0, fractionDigits: 2 }),
-                stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                onHand: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                reserved: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                available: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
                 description: faker.helpers.arrayElement([
                     faker.string.alpha({ length: { min: 10, max: 20 } }),
                     undefined
@@ -4139,7 +4274,9 @@ export const getCreateProductResponseMock = (
         id: faker.string.alpha({ length: { min: 10, max: 20 } }),
         title: faker.string.alpha({ length: { min: 10, max: 20 } }),
         price: faker.number.float({ min: 0, fractionDigits: 2 }),
-        stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        onHand: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        reserved: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        available: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
         description: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -4187,7 +4324,9 @@ export const getCreateProductWithMultipartResponseMock = (
         id: faker.string.alpha({ length: { min: 10, max: 20 } }),
         title: faker.string.alpha({ length: { min: 10, max: 20 } }),
         price: faker.number.float({ min: 0, fractionDigits: 2 }),
-        stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        onHand: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        reserved: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        available: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
         description: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -4235,7 +4374,9 @@ export const getUpdateProductResponseMock = (
         id: faker.string.alpha({ length: { min: 10, max: 20 } }),
         title: faker.string.alpha({ length: { min: 10, max: 20 } }),
         price: faker.number.float({ min: 0, fractionDigits: 2 }),
-        stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        onHand: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        reserved: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        available: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
         description: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -4283,7 +4424,9 @@ export const getUpdateProductWithMultipartResponseMock = (
         id: faker.string.alpha({ length: { min: 10, max: 20 } }),
         title: faker.string.alpha({ length: { min: 10, max: 20 } }),
         price: faker.number.float({ min: 0, fractionDigits: 2 }),
-        stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        onHand: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        reserved: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        available: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
         description: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -4364,7 +4507,9 @@ export const getGetProductByIdResponseMock = (
         id: faker.string.alpha({ length: { min: 10, max: 20 } }),
         title: faker.string.alpha({ length: { min: 10, max: 20 } }),
         price: faker.number.float({ min: 0, fractionDigits: 2 }),
-        stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        onHand: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        reserved: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        available: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
         description: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -4412,7 +4557,9 @@ export const getUpdateProductByIdResponseMock = (
         id: faker.string.alpha({ length: { min: 10, max: 20 } }),
         title: faker.string.alpha({ length: { min: 10, max: 20 } }),
         price: faker.number.float({ min: 0, fractionDigits: 2 }),
-        stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        onHand: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        reserved: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        available: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
         description: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -4460,7 +4607,9 @@ export const getUpdateProductByIdWithMultipartResponseMock = (
         id: faker.string.alpha({ length: { min: 10, max: 20 } }),
         title: faker.string.alpha({ length: { min: 10, max: 20 } }),
         price: faker.number.float({ min: 0, fractionDigits: 2 }),
-        stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        onHand: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        reserved: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+        available: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
         description: faker.helpers.arrayElement([
             faker.string.alpha({ length: { min: 10, max: 20 } }),
             undefined
@@ -4528,7 +4677,9 @@ export const getSearchProductsResponseMock = (
                 id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 price: faker.number.float({ min: 0, fractionDigits: 2 }),
-                stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                onHand: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                reserved: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                available: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
                 description: faker.helpers.arrayElement([
                     faker.string.alpha({ length: { min: 10, max: 20 } }),
                     undefined
@@ -4743,7 +4894,12 @@ export const getCheckoutResponseMock = (
                     id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     price: faker.number.float({ min: 0, fractionDigits: 2 }),
-                    stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                    onHand: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                    reserved: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                    available: faker.helpers.arrayElement([
+                        faker.number.int({ min: 0 }),
+                        undefined
+                    ]),
                     description: faker.helpers.arrayElement([
                         faker.string.alpha({ length: { min: 10, max: 20 } }),
                         undefined
@@ -4942,7 +5098,15 @@ export const getListOrdersResponseMock = (
                         id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                         title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                         price: faker.number.float({ min: 0, fractionDigits: 2 }),
-                        stock: faker.helpers.arrayElement([
+                        onHand: faker.helpers.arrayElement([
+                            faker.number.int({ min: 0 }),
+                            undefined
+                        ]),
+                        reserved: faker.helpers.arrayElement([
+                            faker.number.int({ min: 0 }),
+                            undefined
+                        ]),
+                        available: faker.helpers.arrayElement([
                             faker.number.int({ min: 0 }),
                             undefined
                         ]),
@@ -5061,7 +5225,12 @@ export const getCreateOrderResponseMock = (
                     id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     price: faker.number.float({ min: 0, fractionDigits: 2 }),
-                    stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                    onHand: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                    reserved: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                    available: faker.helpers.arrayElement([
+                        faker.number.int({ min: 0 }),
+                        undefined
+                    ]),
                     description: faker.helpers.arrayElement([
                         faker.string.alpha({ length: { min: 10, max: 20 } }),
                         undefined
@@ -5170,7 +5339,12 @@ export const getUpdateOrderResponseMock = (
                     id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     price: faker.number.float({ min: 0, fractionDigits: 2 }),
-                    stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                    onHand: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                    reserved: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                    available: faker.helpers.arrayElement([
+                        faker.number.int({ min: 0 }),
+                        undefined
+                    ]),
                     description: faker.helpers.arrayElement([
                         faker.string.alpha({ length: { min: 10, max: 20 } }),
                         undefined
@@ -5292,7 +5466,15 @@ export const getSearchOrdersResponseMock = (
                         id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                         title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                         price: faker.number.float({ min: 0, fractionDigits: 2 }),
-                        stock: faker.helpers.arrayElement([
+                        onHand: faker.helpers.arrayElement([
+                            faker.number.int({ min: 0 }),
+                            undefined
+                        ]),
+                        reserved: faker.helpers.arrayElement([
+                            faker.number.int({ min: 0 }),
+                            undefined
+                        ]),
+                        available: faker.helpers.arrayElement([
                             faker.number.int({ min: 0 }),
                             undefined
                         ]),
@@ -5411,7 +5593,12 @@ export const getGetOrderByIdResponseMock = (
                     id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     price: faker.number.float({ min: 0, fractionDigits: 2 }),
-                    stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                    onHand: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                    reserved: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                    available: faker.helpers.arrayElement([
+                        faker.number.int({ min: 0 }),
+                        undefined
+                    ]),
                     description: faker.helpers.arrayElement([
                         faker.string.alpha({ length: { min: 10, max: 20 } }),
                         undefined
@@ -5520,7 +5707,12 @@ export const getUpdateOrderByIdResponseMock = (
                     id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     price: faker.number.float({ min: 0, fractionDigits: 2 }),
-                    stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                    onHand: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                    reserved: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                    available: faker.helpers.arrayElement([
+                        faker.number.int({ min: 0 }),
+                        undefined
+                    ]),
                     description: faker.helpers.arrayElement([
                         faker.string.alpha({ length: { min: 10, max: 20 } }),
                         undefined
@@ -5647,7 +5839,12 @@ export const getCancelOrderByIdResponseMock = (
                     id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     title: faker.string.alpha({ length: { min: 10, max: 20 } }),
                     price: faker.number.float({ min: 0, fractionDigits: 2 }),
-                    stock: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                    onHand: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                    reserved: faker.helpers.arrayElement([faker.number.int({ min: 0 }), undefined]),
+                    available: faker.helpers.arrayElement([
+                        faker.number.int({ min: 0 }),
+                        undefined
+                    ]),
                     description: faker.helpers.arrayElement([
                         faker.string.alpha({ length: { min: 10, max: 20 } }),
                         undefined
@@ -5906,6 +6103,32 @@ export const getAdvanceCourierResponseMock = (
     ...overrideResponse
 });
 
+export const getListInventoryLevelsResponseMock = (
+    overrideResponse: Partial<Extract<InventoryLevelsResponseEnvelope, object>> = {}
+): InventoryLevelsResponseEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        items: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, (_, i) => i + 1).map(
+            () => ({
+                productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                onHand: faker.number.int({ min: 0 }),
+                reserved: faker.number.int({ min: 0 }),
+                available: faker.number.int({ min: 0 })
+            })
+        ),
+        meta: {
+            page: faker.number.int({ min: 1 }),
+            pageSize: faker.number.int({ min: 1, max: 100 }),
+            totalItems: faker.number.int({ min: 0 }),
+            totalPages: faker.number.int({ min: 0 })
+        }
+    },
+    ...overrideResponse
+});
+
 export const getListStockMovementsResponseMock = (
     overrideResponse: Partial<Extract<StockMovementsResponseEnvelope, object>> = {}
 ): StockMovementsResponseEnvelope => ({
@@ -5917,14 +6140,14 @@ export const getListStockMovementsResponseMock = (
             () => ({
                 id: faker.string.alpha({ length: { min: 10, max: 20 } }),
                 productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
-                delta: faker.number.float({ fractionDigits: 2 }),
-                reason: faker.helpers.arrayElement([
-                    'order',
-                    'order-cancelled',
-                    'adjustment',
-                    'restock'
-                ] as const),
+                reason: faker.helpers.arrayElement(Object.values(StockMovementReason)),
+                onHandDelta: faker.number.int(),
+                reservedDelta: faker.number.int(),
                 reference: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined
+                ]),
+                note: faker.helpers.arrayElement([
                     faker.string.alpha({ length: { min: 10, max: 20 } }),
                     undefined
                 ]),
@@ -5937,21 +6160,56 @@ export const getListStockMovementsResponseMock = (
                     undefined
                 ])
             })
-        )
+        ),
+        meta: {
+            page: faker.number.int({ min: 1 }),
+            pageSize: faker.number.int({ min: 1, max: 100 }),
+            totalItems: faker.number.int({ min: 0 }),
+            totalPages: faker.number.int({ min: 0 })
+        }
     },
     ...overrideResponse
 });
 
-export const getRestockProductResponseMock = (
-    overrideResponse: Partial<Extract<RestockResponseEnvelope, object>> = {}
-): RestockResponseEnvelope => ({
+export const getReceiveStockResponseMock = (
+    overrideResponse: Partial<Extract<InventoryLevelEnvelope, object>> = {}
+): InventoryLevelEnvelope => ({
     success: faker.helpers.arrayElement([true] as const),
     status: faker.number.int(),
     message: faker.string.alpha({ length: { min: 10, max: 20 } }),
     data: {
         productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
-        stock: faker.number.int({ min: 0 })
+        title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        onHand: faker.number.int({ min: 0 }),
+        reserved: faker.number.int({ min: 0 }),
+        available: faker.number.int({ min: 0 })
     },
+    ...overrideResponse
+});
+
+export const getAdjustStockResponseMock = (
+    overrideResponse: Partial<Extract<InventoryLevelEnvelope, object>> = {}
+): InventoryLevelEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: {
+        productId: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        title: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        onHand: faker.number.int({ min: 0 }),
+        reserved: faker.number.int({ min: 0 }),
+        available: faker.number.int({ min: 0 })
+    },
+    ...overrideResponse
+});
+
+export const getSweepReservationsResponseMock = (
+    overrideResponse: Partial<Extract<ReservationSweepEnvelope, object>> = {}
+): ReservationSweepEnvelope => ({
+    success: faker.helpers.arrayElement([true] as const),
+    status: faker.number.int(),
+    message: faker.string.alpha({ length: { min: 10, max: 20 } }),
+    data: { expired: faker.number.int({ min: 0 }) },
     ...overrideResponse
 });
 
@@ -8073,6 +8331,30 @@ export const getAdvanceCourierMockHandler = (
     );
 };
 
+export const getListInventoryLevelsMockHandler = (
+    overrideResponse?:
+        | InventoryLevelsResponseEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0]
+          ) => Promise<InventoryLevelsResponseEnvelope> | InventoryLevelsResponseEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.get(
+        '*/inventory/levels',
+        async (info: Parameters<Parameters<typeof http.get>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getListInventoryLevelsResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
 export const getListStockMovementsMockHandler = (
     overrideResponse?:
         | StockMovementsResponseEnvelope
@@ -8097,23 +8379,71 @@ export const getListStockMovementsMockHandler = (
     );
 };
 
-export const getRestockProductMockHandler = (
+export const getReceiveStockMockHandler = (
     overrideResponse?:
-        | RestockResponseEnvelope
+        | InventoryLevelEnvelope
         | ((
               info: Parameters<Parameters<typeof http.post>[1]>[0]
-          ) => Promise<RestockResponseEnvelope> | RestockResponseEnvelope),
+          ) => Promise<InventoryLevelEnvelope> | InventoryLevelEnvelope),
     options?: RequestHandlerOptions
 ) => {
     return http.post(
-        '*/inventory/restock',
+        '*/inventory/receipts',
         async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
             return HttpResponse.json(
                 overrideResponse !== undefined
                     ? typeof overrideResponse === 'function'
                         ? await overrideResponse(info)
                         : overrideResponse
-                    : getRestockProductResponseMock(),
+                    : getReceiveStockResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getAdjustStockMockHandler = (
+    overrideResponse?:
+        | InventoryLevelEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<InventoryLevelEnvelope> | InventoryLevelEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/inventory/adjustments',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getAdjustStockResponseMock(),
+                { status: 200 }
+            );
+        },
+        options
+    );
+};
+
+export const getSweepReservationsMockHandler = (
+    overrideResponse?:
+        | ReservationSweepEnvelope
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0]
+          ) => Promise<ReservationSweepEnvelope> | ReservationSweepEnvelope),
+    options?: RequestHandlerOptions
+) => {
+    return http.post(
+        '*/inventory/reservations/sweep',
+        async (info: Parameters<Parameters<typeof http.post>[1]>[0]) => {
+            return HttpResponse.json(
+                overrideResponse !== undefined
+                    ? typeof overrideResponse === 'function'
+                        ? await overrideResponse(info)
+                        : overrideResponse
+                    : getSweepReservationsResponseMock(),
                 { status: 200 }
             );
         },
@@ -8209,6 +8539,9 @@ export const getEcommerceDemoAPIMock = () => [
     getListShippingMethodsMockHandler(),
     getGetShipmentByOrderMockHandler(),
     getAdvanceCourierMockHandler(),
+    getListInventoryLevelsMockHandler(),
     getListStockMovementsMockHandler(),
-    getRestockProductMockHandler()
+    getReceiveStockMockHandler(),
+    getAdjustStockMockHandler(),
+    getSweepReservationsMockHandler()
 ];

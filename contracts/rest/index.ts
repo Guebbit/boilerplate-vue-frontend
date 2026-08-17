@@ -70,10 +70,16 @@ export interface PaginationMeta {
     totalPages: number;
 }
 
+export type EnvelopeSuccess = true;
+
+export type EnvelopeStatus = number;
+
+export type EnvelopeMessage = string;
+
 export interface MessageResponse {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
 }
 
 /**
@@ -129,9 +135,9 @@ export interface User {
 }
 
 export interface UserEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: User;
 }
 
@@ -140,8 +146,21 @@ export interface Product {
     title: string;
     /** @minimum 0 */
     price: number;
-    /** @minimum 0 */
-    stock?: number;
+    /**
+     * Units physically present, whether or not they are spoken for.
+     * @minimum 0
+     */
+    readonly onHand?: number;
+    /**
+     * Units held by an open order — present, but not for sale.
+     * @minimum 0
+     */
+    readonly reserved?: number;
+    /**
+     * What a customer may actually buy. Derived from the two counters above.
+     * @minimum 0
+     */
+    readonly available?: number;
     description?: string;
     active?: boolean;
     imageUrl?: ImageUrl;
@@ -239,9 +258,9 @@ export interface HealthPing {
 }
 
 export interface HealthPingEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: HealthPing;
 }
 
@@ -256,9 +275,9 @@ export interface LocaleCapabilities {
 }
 
 export interface LocaleCapabilitiesEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: LocaleCapabilities;
 }
 
@@ -277,28 +296,11 @@ export interface LocaleDictionary {
 }
 
 export interface LocaleDictionaryEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: LocaleDictionary;
 }
-
-export type ObservabilityHealthStatus =
-    (typeof ObservabilityHealthStatus)[keyof typeof ObservabilityHealthStatus];
-
-export const ObservabilityHealthStatus = {
-    ok: 'ok',
-    degraded: 'degraded'
-} as const;
-
-export type ObservabilityHealthDatabaseStatus =
-    (typeof ObservabilityHealthDatabaseStatus)[keyof typeof ObservabilityHealthDatabaseStatus];
-
-export const ObservabilityHealthDatabaseStatus = {
-    connected: 'connected',
-    connecting: 'connecting',
-    disconnected: 'disconnected'
-} as const;
 
 export type ObservabilityHealthIntegrationsAnalytics =
     (typeof ObservabilityHealthIntegrationsAnalytics)[keyof typeof ObservabilityHealthIntegrationsAnalytics];
@@ -329,6 +331,23 @@ export interface ObservabilityHealthSystem {
     loadAvg: number[];
 }
 
+export type ObservabilityHealthStatus =
+    (typeof ObservabilityHealthStatus)[keyof typeof ObservabilityHealthStatus];
+
+export const ObservabilityHealthStatus = {
+    ok: 'ok',
+    degraded: 'degraded'
+} as const;
+
+export type ObservabilityHealthDatabaseStatus =
+    (typeof ObservabilityHealthDatabaseStatus)[keyof typeof ObservabilityHealthDatabaseStatus];
+
+export const ObservabilityHealthDatabaseStatus = {
+    connected: 'connected',
+    connecting: 'connecting',
+    disconnected: 'disconnected'
+} as const;
+
 export type ObservabilityHealthDatabase = {
     status: ObservabilityHealthDatabaseStatus;
 };
@@ -348,9 +367,9 @@ export interface ObservabilityHealth {
 }
 
 export interface ObservabilityHealthResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: ObservabilityHealth;
 }
 
@@ -393,6 +412,8 @@ export type ObservabilityMetricsSummaryBusiness = {
     ordersCreated?: number;
     /** @minimum 0 */
     lowStockProducts?: number;
+    /** @minimum 0 */
+    reservedUnits?: number;
 };
 
 export type ObservabilityMetricsSummaryDatabase = {
@@ -419,9 +440,9 @@ export interface ObservabilityMetricsSummary {
 }
 
 export interface ObservabilityMetricsSummaryResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: ObservabilityMetricsSummary;
 }
 
@@ -442,14 +463,14 @@ export const AuditEventItemOutcome = {
     failure: 'failure'
 } as const;
 
+export type AuditEventItemMetadata = { [key: string]: unknown };
+
 export type AuditEventItemLevel = (typeof AuditEventItemLevel)[keyof typeof AuditEventItemLevel];
 
 export const AuditEventItemLevel = {
     info: 'info',
     warn: 'warn'
 } as const;
-
-export type AuditEventItemMetadata = { [key: string]: unknown };
 
 export interface AuditEventItem {
     actor_user_id: string;
@@ -475,82 +496,10 @@ export interface AuditLogsPage {
 }
 
 export interface AuditLogsResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: AuditLogsPage;
-}
-
-export interface AuthTokens {
-    /** Access JWT */
-    token: string;
-    /** Refresh token if returned by backend */
-    refreshToken?: string;
-    /** Access token expiry in seconds */
-    expiresIn?: number;
-}
-
-export interface AuthTokensEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: AuthTokens;
-}
-
-export interface RefreshTokenResponse {
-    /** New access JWT */
-    token: string;
-    /** New refresh token if returned by backend */
-    refreshToken?: string;
-    /** New access token expiry in seconds */
-    expiresIn?: number;
-}
-
-export interface RefreshTokenEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: RefreshTokenResponse;
-}
-
-export interface LoginRequest {
-    email: Email;
-    password: Password;
-}
-
-export interface SignupRequest {
-    email: Email;
-    /** @minLength 3 */
-    username: string;
-    password: Password;
-    passwordConfirm: Password;
-    imageUrl?: ImageUrl;
-}
-
-export interface SignupRequestMultipart {
-    email: Email;
-    /** @minLength 3 */
-    username: string;
-    password: Password;
-    passwordConfirm: Password;
-    /** Optional user profile image */
-    imageUpload?: Blob;
-}
-
-export interface PasswordResetRequest {
-    email: Email;
-}
-
-export interface PasswordResetConfirmRequest {
-    /** One-time password reset token (NOT a JWT). */
-    token: string;
-    password: Password;
-    passwordConfirm: Password;
-}
-
-export interface AccountDeleteConfirmRequest {
-    /** One-time account deletion token (NOT a JWT). */
-    token: string;
 }
 
 export interface UpdateAccountRequest {
@@ -576,11 +525,6 @@ export interface ChangePasswordRequest {
     passwordConfirm: Password;
 }
 
-export interface VerifyEmailConfirmRequest {
-    /** One-time email verification token (NOT a JWT). */
-    token: string;
-}
-
 export interface Session {
     id: Id;
     /** Absent on a token issued without an expiry tier. */
@@ -594,9 +538,9 @@ export interface SessionsResponse {
 }
 
 export interface SessionsEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: SessionsResponse;
 }
 
@@ -611,6 +555,17 @@ export interface Address {
     country: string;
     phone?: string;
     default: boolean;
+}
+
+export interface AddressesResponse {
+    addresses: Address[];
+}
+
+export interface AddressesEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AddressesResponse;
 }
 
 export interface AddressInput {
@@ -645,15 +600,81 @@ export interface UpdateAddressRequest {
     default?: boolean;
 }
 
-export interface AddressesResponse {
-    addresses: Address[];
+export interface VerifyEmailConfirmRequest {
+    /** One-time email verification token (NOT a JWT). */
+    token: string;
 }
 
-export interface AddressesEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: AddressesResponse;
+export interface AccountDeleteConfirmRequest {
+    /** One-time account deletion token (NOT a JWT). */
+    token: string;
+}
+
+export interface LoginRequest {
+    email: Email;
+    password: Password;
+}
+
+export interface AuthTokens {
+    /** Access JWT */
+    token: string;
+    /** Refresh token if returned by backend */
+    refreshToken?: string;
+    /** Access token expiry in seconds */
+    expiresIn?: number;
+}
+
+export interface AuthTokensEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AuthTokens;
+}
+
+export interface SignupRequest {
+    email: Email;
+    /** @minLength 3 */
+    username: string;
+    password: Password;
+    passwordConfirm: Password;
+    imageUrl?: ImageUrl;
+}
+
+export interface SignupRequestMultipart {
+    email: Email;
+    /** @minLength 3 */
+    username: string;
+    password: Password;
+    passwordConfirm: Password;
+    /** Optional user profile image */
+    imageUpload?: Blob;
+}
+
+export interface PasswordResetRequest {
+    email: Email;
+}
+
+export interface PasswordResetConfirmRequest {
+    /** One-time password reset token (NOT a JWT). */
+    token: string;
+    password: Password;
+    passwordConfirm: Password;
+}
+
+export interface RefreshTokenResponse {
+    /** New access JWT */
+    token: string;
+    /** New refresh token if returned by backend */
+    refreshToken?: string;
+    /** New access token expiry in seconds */
+    expiresIn?: number;
+}
+
+export interface RefreshTokenEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: RefreshTokenResponse;
 }
 
 export interface UsersResponse {
@@ -662,41 +683,10 @@ export interface UsersResponse {
 }
 
 export interface UsersResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: UsersResponse;
-}
-
-export interface SearchUsersRequest {
-    page?: Page;
-    pageSize?: PageSize;
-    text?: Text;
-    id?: Id;
-    email?: Email;
-    username?: string;
-    active?: boolean;
-}
-
-export interface CreateUserRequest {
-    email: Email;
-    username: string;
-    password: Password;
-    admin?: boolean;
-    active?: boolean;
-    imageUrl?: ImageUrl;
-    locale?: Locale;
-}
-
-export interface CreateUserRequestMultipart {
-    email: Email;
-    username: string;
-    password: Password;
-    admin?: boolean;
-    active?: boolean;
-    /** Optional user profile image */
-    imageUpload?: Blob;
-    locale?: Locale;
 }
 
 export interface UpdateUserRequest {
@@ -722,6 +712,32 @@ export interface UpdateUserRequestMultipart {
     locale?: Locale;
 }
 
+export interface CreateUserRequest {
+    email: Email;
+    username: string;
+    password: Password;
+    admin?: boolean;
+    active?: boolean;
+    imageUrl?: ImageUrl;
+    locale?: Locale;
+}
+
+export interface CreateUserRequestMultipart {
+    email: Email;
+    username: string;
+    password: Password;
+    admin?: boolean;
+    active?: boolean;
+    /** Optional user profile image */
+    imageUpload?: Blob;
+    locale?: Locale;
+}
+
+export interface DeleteUserRequest {
+    id: Id;
+    hardDelete?: boolean;
+}
+
 export interface UpdateUserByIdRequest {
     email?: Email;
     password?: Password;
@@ -741,9 +757,21 @@ export interface UpdateUserByIdRequestMultipart {
     imageUpload?: Blob;
 }
 
-export interface DeleteUserRequest {
-    id: Id;
-    hardDelete?: boolean;
+export interface SearchUsersRequest {
+    page?: Page;
+    pageSize?: PageSize;
+    text?: Text;
+    id?: Id;
+    email?: Email;
+    username?: string;
+    active?: boolean;
+}
+
+export interface CreateFeedbackRequest {
+    name?: string;
+    email: Email;
+    subject: string;
+    message: string;
 }
 
 export type FeedbackRequestStatus =
@@ -770,29 +798,10 @@ export interface FeedbackRequest {
 }
 
 export interface FeedbackRequestEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: FeedbackRequest;
-}
-
-export interface FeedbackRequestsResponse {
-    items: FeedbackRequest[];
-    meta: PaginationMeta;
-}
-
-export interface FeedbackRequestsResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: FeedbackRequestsResponse;
-}
-
-export interface CreateFeedbackRequest {
-    name?: string;
-    email: Email;
-    subject: string;
-    message: string;
 }
 
 export type SearchFeedbackRequestsRequestStatus =
@@ -813,6 +822,18 @@ export interface SearchFeedbackRequestsRequest {
     email?: Email;
 }
 
+export interface FeedbackRequestsResponse {
+    items: FeedbackRequest[];
+    meta: PaginationMeta;
+}
+
+export interface FeedbackRequestsResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: FeedbackRequestsResponse;
+}
+
 export type UpdateFeedbackRequestStatusRequestStatus =
     (typeof UpdateFeedbackRequestStatusRequestStatus)[keyof typeof UpdateFeedbackRequestStatusRequestStatus];
 
@@ -828,23 +849,80 @@ export interface UpdateFeedbackRequestStatusRequest {
     adminNotes?: string;
 }
 
-export interface ProductEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: Product;
-}
-
 export interface ProductsResponse {
     items: Product[];
     meta: PaginationMeta;
 }
 
 export interface ProductsResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: ProductsResponse;
+}
+
+export interface UpdateProductRequest {
+    id: Id;
+    title: string;
+    description?: string;
+    /** @minimum 0 */
+    price: number;
+    active?: boolean;
+    imageUrl?: ImageUrl;
+    categories?: string[];
+    tags?: string[];
+}
+
+export interface UpdateProductRequestMultipart {
+    id: Id;
+    title: string;
+    description?: string;
+    /** @minimum 0 */
+    price: number;
+    active?: boolean;
+    /** Optional product image */
+    imageUpload?: Blob;
+    categories?: string[];
+    tags?: string[];
+}
+
+export interface ProductEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Product;
+}
+
+export interface CreateProductRequest {
+    title: string;
+    /** @minimum 0 */
+    price: number;
+    /** @minimum 0 */
+    onHand?: number;
+    description?: string;
+    active?: boolean;
+    imageUrl?: ImageUrl;
+    categories?: string[];
+    tags?: string[];
+}
+
+export interface CreateProductRequestMultipart {
+    title: string;
+    /** @minimum 0 */
+    price: number;
+    /** @minimum 0 */
+    onHand?: number;
+    description?: string;
+    active?: boolean;
+    /** Optional product image */
+    imageUpload?: Blob;
+    categories?: string[];
+    tags?: string[];
+}
+
+export interface DeleteProductRequest {
+    id: Id;
+    hardDelete?: boolean;
 }
 
 export interface FacetCount {
@@ -859,10 +937,33 @@ export interface CatalogueFacetsResponse {
 }
 
 export interface CatalogueFacetsEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: CatalogueFacetsResponse;
+}
+
+export interface UpdateProductByIdRequest {
+    title: string;
+    description?: string;
+    /** @minimum 0 */
+    price: number;
+    active?: boolean;
+    imageUrl?: ImageUrl;
+    categories?: string[];
+    tags?: string[];
+}
+
+export interface UpdateProductByIdRequestMultipart {
+    title: string;
+    description?: string;
+    /** @minimum 0 */
+    price: number;
+    active?: boolean;
+    /** Optional product image */
+    imageUpload?: Blob;
+    categories?: string[];
+    tags?: string[];
 }
 
 export interface SearchProductsRequest {
@@ -876,94 +977,6 @@ export interface SearchProductsRequest {
     maxPrice?: number;
     category?: string;
     tag?: string;
-}
-
-export interface CreateProductRequest {
-    title: string;
-    /** @minimum 0 */
-    price: number;
-    /** @minimum 0 */
-    stock?: number;
-    description?: string;
-    active?: boolean;
-    imageUrl?: ImageUrl;
-    categories?: string[];
-    tags?: string[];
-}
-
-export interface CreateProductRequestMultipart {
-    title: string;
-    /** @minimum 0 */
-    price: number;
-    /** @minimum 0 */
-    stock?: number;
-    description?: string;
-    active?: boolean;
-    /** Optional product image */
-    imageUpload?: Blob;
-    categories?: string[];
-    tags?: string[];
-}
-
-export interface UpdateProductRequest {
-    id: Id;
-    title: string;
-    description?: string;
-    /** @minimum 0 */
-    price: number;
-    /** @minimum 0 */
-    stock?: number;
-    active?: boolean;
-    imageUrl?: ImageUrl;
-    categories?: string[];
-    tags?: string[];
-}
-
-export interface UpdateProductRequestMultipart {
-    id: Id;
-    title: string;
-    description?: string;
-    /** @minimum 0 */
-    price: number;
-    /** @minimum 0 */
-    stock?: number;
-    active?: boolean;
-    /** Optional product image */
-    imageUpload?: Blob;
-    categories?: string[];
-    tags?: string[];
-}
-
-export interface UpdateProductByIdRequest {
-    title: string;
-    description?: string;
-    /** @minimum 0 */
-    price: number;
-    /** @minimum 0 */
-    stock?: number;
-    active?: boolean;
-    imageUrl?: ImageUrl;
-    categories?: string[];
-    tags?: string[];
-}
-
-export interface UpdateProductByIdRequestMultipart {
-    title: string;
-    description?: string;
-    /** @minimum 0 */
-    price: number;
-    /** @minimum 0 */
-    stock?: number;
-    active?: boolean;
-    /** Optional product image */
-    imageUpload?: Blob;
-    categories?: string[];
-    tags?: string[];
-}
-
-export interface DeleteProductRequest {
-    id: Id;
-    hardDelete?: boolean;
 }
 
 export interface CartSummaryResponse {
@@ -992,29 +1005,10 @@ export interface CartResponse {
 }
 
 export interface CartResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: CartResponse;
-}
-
-export interface CartSummaryResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: CartSummaryResponse;
-}
-
-export interface CheckoutResponse {
-    order: Order;
-    message?: string;
-}
-
-export interface CheckoutResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: CheckoutResponse;
 }
 
 export interface UpsertCartItemRequest {
@@ -1023,14 +1017,21 @@ export interface UpsertCartItemRequest {
     quantity: number;
 }
 
+export interface RemoveCartItemRequest {
+    productId?: Id;
+}
+
 export interface UpdateCartItemByIdRequest {
     productId?: Id;
     /** @minimum 1 */
     quantity: number;
 }
 
-export interface RemoveCartItemRequest {
-    productId?: Id;
+export interface CartSummaryResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: CartSummaryResponse;
 }
 
 export interface CheckoutRequest {
@@ -1043,6 +1044,18 @@ export interface CheckoutRequest {
     shippingMethodId?: string;
 }
 
+export interface CheckoutResponse {
+    order: Order;
+    message?: string;
+}
+
+export interface CheckoutResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: CheckoutResponse;
+}
+
 export interface WishlistItem {
     productId: Id;
 }
@@ -1052,21 +1065,14 @@ export interface WishlistResponse {
 }
 
 export interface WishlistResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: WishlistResponse;
 }
 
 export interface AddWishlistItemRequest {
     productId: Id;
-}
-
-export interface OrderEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: Order;
 }
 
 export interface OrdersResponse {
@@ -1075,29 +1081,10 @@ export interface OrdersResponse {
 }
 
 export interface OrdersResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: OrdersResponse;
-}
-
-export interface SearchOrdersRequest {
-    page?: Page;
-    pageSize?: PageSize;
-    id?: Id;
-    userId?: Id;
-    productId?: Id;
-    email?: Email;
-}
-
-/**
- * Create a new order.
- */
-export interface CreateOrderRequest {
-    userId: Id;
-    email: Email;
-    /** @minItems 1 */
-    items: CartItem[];
 }
 
 /**
@@ -1125,6 +1112,37 @@ export interface UpdateOrderRequest {
     items?: CartItem[];
 }
 
+export interface OrderEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Order;
+}
+
+/**
+ * Create a new order.
+ */
+export interface CreateOrderRequest {
+    userId: Id;
+    email: Email;
+    /** @minItems 1 */
+    items: CartItem[];
+}
+
+export interface DeleteOrderRequest {
+    id: Id;
+    hardDelete?: boolean;
+}
+
+export interface SearchOrdersRequest {
+    page?: Page;
+    pageSize?: PageSize;
+    id?: Id;
+    userId?: Id;
+    productId?: Id;
+    email?: Email;
+}
+
 /**
  * Updated order status
  */
@@ -1149,9 +1167,8 @@ export interface UpdateOrderByIdRequest {
     items?: CartItem[];
 }
 
-export interface DeleteOrderRequest {
-    id: Id;
-    hardDelete?: boolean;
+export interface CreatePaymentIntentRequest {
+    orderId: Id;
 }
 
 /**
@@ -1188,14 +1205,10 @@ export interface Payment {
 }
 
 export interface PaymentEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: Payment;
-}
-
-export interface CreatePaymentIntentRequest {
-    orderId: Id;
 }
 
 export interface ConfirmPaymentRequest {
@@ -1228,9 +1241,9 @@ export interface ShippingMethodsResponse {
 }
 
 export interface ShippingMethodsResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: ShippingMethodsResponse;
 }
 
@@ -1257,9 +1270,9 @@ export interface Shipment {
 }
 
 export interface ShipmentEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: Shipment;
 }
 
@@ -1272,71 +1285,120 @@ export interface CourierAdvanceResponse {
 }
 
 export interface CourierAdvanceResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: CourierAdvanceResponse;
 }
 
+export interface InventoryLevel {
+    productId: Id;
+    /** Carried so the board reads as a list of products rather than of ids. */
+    title: string;
+    /** @minimum 0 */
+    onHand: number;
+    /** @minimum 0 */
+    reserved: number;
+    /** @minimum 0 */
+    available: number;
+}
+
+export interface InventoryLevelsResponse {
+    items: InventoryLevel[];
+    meta: PaginationMeta;
+}
+
+export interface InventoryLevelsResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: InventoryLevelsResponse;
+}
+
 /**
- * Why the units moved.
+ * * `reserve` — an order claimed units. `reserved` up, `onHand` unchanged.
+ * * `commit` — the order was paid for and the units left. Both down.
+ * * `release` — the hold was given up (the order was cancelled). `reserved` down.
+ * * `expire` — the hold timed out unpaid. Same counters as `release`, different story.
+ * * `receive` — a supplier delivery. `onHand` up.
+ * * `adjust` — a stocktake correction, signed. `onHand` moves either way.
  */
 export type StockMovementReason = (typeof StockMovementReason)[keyof typeof StockMovementReason];
 
 export const StockMovementReason = {
-    order: 'order',
-    'order-cancelled': 'order-cancelled',
-    adjustment: 'adjustment',
-    restock: 'restock'
+    reserve: 'reserve',
+    commit: 'commit',
+    release: 'release',
+    expire: 'expire',
+    receive: 'receive',
+    adjust: 'adjust'
 } as const;
 
 export interface StockMovement {
     id: Id;
     productId: Id;
-    /** Signed — a sale is negative, a return or restock positive. */
-    delta: number;
-    /** Why the units moved. */
     reason: StockMovementReason;
-    /** What caused it, when something did — the order id, typically. */
+    onHandDelta: number;
+    reservedDelta: number;
+    /** The order the movement belongs to, when one does. */
     reference?: string;
+    /** Why an adjustment was made — the operator's own words. */
+    note?: string;
     createdAt?: string;
     updatedAt?: string;
 }
 
 export interface StockMovementsResponse {
     items: StockMovement[];
+    meta: PaginationMeta;
 }
 
 export interface StockMovementsResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
     data: StockMovementsResponse;
 }
 
-export interface RestockRequest {
+export interface ReceiptRequest {
     productId: Id;
     /**
-     * How many units arrived. Corrections downward are the admin product form's absolute stock write.
+     * How many units arrived. Strictly positive — a delivery that removes units is an adjustment.
      * @minimum 1
      */
     quantity: number;
+    /** Optional — the supplier, the delivery note number, whatever the operator wants on the row. */
+    note?: string;
 }
 
-export interface RestockResponse {
+export interface InventoryLevelEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: InventoryLevel;
+}
+
+export interface AdjustmentRequest {
     productId: Id;
+    /** Signed. Negative is shrinkage or damage; positive is a miscount found in your favour. */
+    delta: number;
+    /** Why. An unexplained correction is the thing an audit is looking for. */
+    note?: string;
+}
+
+export interface ReservationSweepResponse {
     /**
-     * The shelf count after the units landed.
+     * How many holds this run released.
      * @minimum 0
      */
-    stock: number;
+    expired: number;
 }
 
-export interface RestockResponseEnvelope {
-    success: true;
-    status: number;
-    message: string;
-    data: RestockResponse;
+export interface ReservationSweepEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: ReservationSweepResponse;
 }
 
 /**
@@ -1533,11 +1595,44 @@ export type DeleteOrderByIdParams = {
     hardDelete?: boolean;
 };
 
+export type ListInventoryLevelsParams = {
+    /**
+     * 1-based page index
+     * @minimum 1
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Only products at or under the low-availability threshold (`NODE_LOW_STOCK_THRESHOLD`).
+     */
+    lowOnly?: boolean;
+};
+
 export type ListStockMovementsParams = {
+    /**
+     * 1-based page index
+     * @minimum 1
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
     /**
      * Narrow to one product's movements
      */
     productId?: Id;
+    /**
+     * Narrow to one kind of transition
+     */
+    reason?: StockMovementReason;
 };
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
@@ -2386,8 +2481,8 @@ export const createProductWithMultipart = (
     const formData = new FormData();
     formData.append(`title`, createProductRequestMultipart.title);
     formData.append(`price`, createProductRequestMultipart.price.toString());
-    if (createProductRequestMultipart.stock !== undefined) {
-        formData.append(`stock`, createProductRequestMultipart.stock.toString());
+    if (createProductRequestMultipart.onHand !== undefined) {
+        formData.append(`onHand`, createProductRequestMultipart.onHand.toString());
     }
     if (createProductRequestMultipart.description !== undefined) {
         formData.append(`description`, createProductRequestMultipart.description);
@@ -2452,9 +2547,6 @@ export const updateProductWithMultipart = (
         formData.append(`description`, updateProductRequestMultipart.description);
     }
     formData.append(`price`, updateProductRequestMultipart.price.toString());
-    if (updateProductRequestMultipart.stock !== undefined) {
-        formData.append(`stock`, updateProductRequestMultipart.stock.toString());
-    }
     if (updateProductRequestMultipart.active !== undefined) {
         formData.append(`active`, updateProductRequestMultipart.active.toString());
     }
@@ -2559,9 +2651,6 @@ export const updateProductByIdWithMultipart = (
         formData.append(`description`, updateProductByIdRequestMultipart.description);
     }
     formData.append(`price`, updateProductByIdRequestMultipart.price.toString());
-    if (updateProductByIdRequestMultipart.stock !== undefined) {
-        formData.append(`stock`, updateProductByIdRequestMultipart.stock.toString());
-    }
     if (updateProductByIdRequestMultipart.active !== undefined) {
         formData.append(`active`, updateProductByIdRequestMultipart.active.toString());
     }
@@ -3098,7 +3187,21 @@ export const advanceCourier = (
 };
 
 /**
- * The ledger, newest first — every signed change to a shelf count with the why attached (order, cancel, adjustment, restock). Optionally one product's story via `productId`. Admin — customers see stock as a number on the product page.
+ * The stock board — every product with its two counters and the availability derived from them. Admin; a customer sees `available` on the product itself. Answers the question a catalogue listing cannot, which is WHY something is unbuyable — nothing on the shelf, or everything on it already spoken for.
+ * @summary Stock levels
+ */
+export const listInventoryLevels = (
+    params?: ListInventoryLevelsParams,
+    options?: SecondParameter<typeof orvalMutator<InventoryLevelsResponseEnvelope>>
+) => {
+    return orvalMutator<InventoryLevelsResponseEnvelope>(
+        { url: `/inventory/levels`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * A page of the ledger, newest first — one row per counter change, with both deltas and the reason attached. Every row was written by the same call that moved the counter, so the ledger cannot have gaps. Paged rather than capped, and `meta.totalItems` counts everything matching the filters — this is the record an audit works through, and a read that returned only the newest rows would misreport history as complete.
  * @summary List stock movements
  */
 export const listStockMovements = (
@@ -3112,20 +3215,54 @@ export const listStockMovements = (
 };
 
 /**
- * Puts units on a shelf through the same conditional increment every other movement uses, and writes the ledger row through the same announcement — so a restock and a sale tell the same kind of story. Answers the shelf count after the units landed.
- * @summary Restock a product
+ * Units arrive from a supplier — `onHand` rises, `reserved` does not, so the delivery becomes available immediately. The only transition that can create units, and the reason a shop that has sold out can sell again.
+ * @summary Receive stock
  */
-export const restockProduct = (
-    restockRequest: RestockRequest,
-    options?: SecondParameter<typeof orvalMutator<RestockResponseEnvelope>>
+export const receiveStock = (
+    receiptRequest: ReceiptRequest,
+    options?: SecondParameter<typeof orvalMutator<InventoryLevelEnvelope>>
 ) => {
-    return orvalMutator<RestockResponseEnvelope>(
+    return orvalMutator<InventoryLevelEnvelope>(
         {
-            url: `/inventory/restock`,
+            url: `/inventory/receipts`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            data: restockRequest
+            data: receiptRequest
         },
+        options
+    );
+};
+
+/**
+ * A stocktake correction — signed, because shrinkage is the common case and it is negative. Refuses to take `onHand` below what is already reserved, because those units are promised to orders that exist — the fix for finding fewer units than were sold is to cancel orders, not to make availability negative.
+ * @summary Adjust stock
+ */
+export const adjustStock = (
+    adjustmentRequest: AdjustmentRequest,
+    options?: SecondParameter<typeof orvalMutator<InventoryLevelEnvelope>>
+) => {
+    return orvalMutator<InventoryLevelEnvelope>(
+        {
+            url: `/inventory/adjustments`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: adjustmentRequest
+        },
+        options
+    );
+};
+
+/**
+ * Releases every hold whose window has closed and announces each one, so the orders behind them get cancelled.
+ *
+ * A job behind an admin endpoint rather than an internal schedule. The application ships no scheduler, so the tick is driven from outside — a cron entry, the platform's scheduled job, or an operator — the same arrangement as `POST /delivery/advance`. Idempotent; running it twice releases nothing the first run already released.
+ * @summary Expire stale reservations
+ */
+export const sweepReservations = (
+    options?: SecondParameter<typeof orvalMutator<ReservationSweepEnvelope>>
+) => {
+    return orvalMutator<ReservationSweepEnvelope>(
+        { url: `/inventory/reservations/sweep`, method: 'POST' },
         options
     );
 };
@@ -3276,5 +3413,10 @@ export type ListShippingMethodsResult = NonNullable<
 >;
 export type GetShipmentByOrderResult = NonNullable<Awaited<ReturnType<typeof getShipmentByOrder>>>;
 export type AdvanceCourierResult = NonNullable<Awaited<ReturnType<typeof advanceCourier>>>;
+export type ListInventoryLevelsResult = NonNullable<
+    Awaited<ReturnType<typeof listInventoryLevels>>
+>;
 export type ListStockMovementsResult = NonNullable<Awaited<ReturnType<typeof listStockMovements>>>;
-export type RestockProductResult = NonNullable<Awaited<ReturnType<typeof restockProduct>>>;
+export type ReceiveStockResult = NonNullable<Awaited<ReturnType<typeof receiveStock>>>;
+export type AdjustStockResult = NonNullable<Awaited<ReturnType<typeof adjustStock>>>;
+export type SweepReservationsResult = NonNullable<Awaited<ReturnType<typeof sweepReservations>>>;

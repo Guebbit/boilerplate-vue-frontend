@@ -55,13 +55,16 @@ All four expand to `${CONTAINER_ENGINE:-podman} compose`. Export `CONTAINER_ENGI
 
 | Script | Job | Read more |
 | ------ | --- | --------- |
+| `regenerate` | **After every pull.** `gen:api`, then `gen:asyncapi`, then `prettier:fix` — the whole client rebuilt from the specs the backend handed over | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | `gen:api` | Regenerate `contracts/rest/` and `tests/support/mocks/generated.ts` from `openapi.yaml` via orval | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | `gen:asyncapi` | Regenerate `src/types/realtime.generated.ts` from `asyncapi.yaml` | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 | `check:asyncapi-types` | The same generation, compared instead of written — the freshness gate | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 | `lint:openapi` | Lint `openapi.yaml` with Spectral | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | `lint:asyncapi` | Validate `asyncapi.yaml` with the AsyncAPI CLI | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 
-Generated output is committed. CI regenerates and fails if the result differs, so always run `prettier:fix` after any codegen: orval emits 2-space indentation while this repo commits 4.
+Generated output is committed. CI regenerates and fails if the result differs, so any codegen has to be followed by `prettier:fix` — orval emits 2-space indentation while this repo commits 4. `regenerate` already ends with it, which is the reason to reach for that rather than `gen:api` alone.
+
+`openapi.yaml`, `asyncapi.yaml` and `tests/support/mocks/dataset.json` are **owned by the backend** and arrive here through its `npm run sync:frontend`. Nothing in this repo produces them; `check:spec-identity` fails if they drift. So the sequence across the pair is: backend `npm run regenerate` → commit → pull here → `npm run regenerate` here.
 
 ## Docs scripts
 
