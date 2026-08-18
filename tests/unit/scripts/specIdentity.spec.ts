@@ -118,7 +118,7 @@ describe('SHARED_FILES', () => {
         expect(frontendPaths).toContain(ASYNCAPI);
         expect(frontendPaths).toContain(SPECTRAL);
         // The two that went unguarded until the list could hold differing paths.
-        expect(frontendPaths).toContain('tests/support/mocks/dataset.json');
+        expect(frontendPaths).toContain('tests/support/mocks/demo-data.json');
         expect(frontendPaths).toContain('src/infrastructure/analyticsEvents.ts');
     });
 
@@ -163,7 +163,7 @@ describe('compareSharedFiles', () => {
     });
 
     it('matches a cross-path pair across its two different names', () => {
-        // `db/seeds/dataset.json` there, `tests/support/mocks/dataset.json` here.
+        // `db/demo/demo-data.json` there, `tests/support/mocks/demo-data.json` here.
         const here = root(sharedFiles(HERE));
         const there = root(sharedFiles(THERE));
 
@@ -273,7 +273,7 @@ describe('formatSharedFileProblems', () => {
     });
 
     it('names both paths when a cross-path pair forks', () => {
-        // "dataset.json is forked" would send the reader to one of two files with no way to
+        // "demo-data.json is forked" would send the reader to one of two files with no way to
         // tell which repo the other one is in.
         const here = root(sharedFiles(HERE));
         const there = root({ ...sharedFiles(THERE), [CROSS_PATH.backend]: 'forked' });

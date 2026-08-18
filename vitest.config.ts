@@ -185,7 +185,7 @@ export default mergeConfig(
                     },
                     // Measured 2026-08-08, and the first thing `perFile: true` exposed: the
                     // pooled middlewares group passed 70 across the board while this file sat at
-                    // 50% branches and 55% functions, carried by demoMiddleware.ts and
+                    // 50% branches and 55% functions, carried by exampleGuard.ts and
                     // localeChoice.ts at 100%.
                     //
                     // Floored at the measured value rounded down, NOT at an aspiration — this is

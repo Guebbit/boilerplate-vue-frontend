@@ -1,7 +1,7 @@
 /**
  * Live profile only. Mechanises the "DATA parity" and "BEHAVIOUR parity" invariants documented
- * at the top of `tests/support/mocks/mockShared.ts`: that file's seed data is hand-mirrored from
- * the backend's `db/seeds/index.ts`, and this is the only thing that catches the two diverging.
+ * at the top of `tests/support/mocks/mockDb.ts`: that file's seed data is hand-mirrored from
+ * the backend's `db/demo/index.ts`, and this is the only thing that catches the two diverging.
  * Under the mock profile the mirror IS the source of truth, so there is nothing to compare it
  * against — this spec only has meaning against the real, seeded database, which is why every
  * `it()` below opens with `cy.skipUnlessLive()`.
@@ -28,8 +28,8 @@
  * an id diff names the record that appeared or vanished, which is the difference between reading
  * a failure and investigating one.
  *
- * Seed values below are the intersection of `tests/support/mocks/mockShared.ts` and the
- * backend's `db/seeds/index.ts` — if a future edit to either changes an id, count, or total,
+ * Seed values below are the intersection of `tests/support/mocks/mockDb.ts` and the
+ * backend's `db/demo/index.ts` — if a future edit to either changes an id, count, or total,
  * this file must change too, by hand, on purpose. That manual friction is the point: it is what
  * makes a silent drift between the two impossible.
  */
@@ -60,7 +60,7 @@ const SEED_USER_IDS = [
 /*
  * Every seeded order, which is what an ADMIN sees: the two root placed, plus gino's — soft-deleted,
  * and therefore visible to admins and to nobody else, not even to gino (`visibleScope()`, mirrored
- * at the top of `mockShared.ts`). Order visibility crosses two independent rules, `userId` scoping
+ * at the top of `mockDb.ts`). Order visibility crosses two independent rules, `userId` scoping
  * and the soft-delete gate, and this is the list that spans both.
  */
 const SEED_ORDERS_ADMIN = [
@@ -188,7 +188,7 @@ describe('Mock/seed parity (live profile only)', () => {
             });
         });
 
-        it('admin sees the two seed users mockShared.ts assumes', () => {
+        it('admin sees the two seed users mockDb.ts assumes', () => {
             getAs('admin', '/users').then((response) => {
                 expect(response.status).to.equal(200);
                 expect(idsOf(response)).to.deep.equal(SEED_USER_IDS.toSorted());

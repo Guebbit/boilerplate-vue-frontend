@@ -1,5 +1,5 @@
 /**
- * Demo router guard — `src/app/middlewares/demoMiddleware.ts`.
+ * Demo router guard — `src/app/middlewares/exampleGuard.ts`.
  *
  * A teaching guard, but it is registered on every navigation, so two of its properties are real
  * production concerns rather than demo details:
@@ -36,7 +36,7 @@ vi.mock('@/infrastructure/i18n.ts', () => ({
     }
 }));
 
-const { demoMiddleware } = await import('@/app/middlewares/demoMiddleware');
+const { exampleGuard } = await import('@/app/middlewares/exampleGuard');
 const { useCounterStore } = await import('@/app/counter');
 
 const routeTo = (path = '/en/products') =>
@@ -56,18 +56,18 @@ afterEach(() => {
     consoleSpy.mockRestore();
 });
 
-describe('demoMiddleware', () => {
+describe('exampleGuard', () => {
     it('returns undefined so the navigation is allowed through', () => {
         // Not `toBeFalsy()`: `false` is falsy too, and returning `false` from a Vue Router guard
         // aborts the navigation — i.e. would break every route in the app.
-        expect(demoMiddleware(routeTo())).toBeUndefined();
+        expect(exampleGuard(routeTo())).toBeUndefined();
     });
 
     it('increments the counter store, proving stores are reachable from a guard', () => {
         const store = useCounterStore();
         expect(store.count).toBe(0);
 
-        demoMiddleware(routeTo());
+        exampleGuard(routeTo());
 
         expect(store.count).toBe(1);
     });
@@ -75,15 +75,15 @@ describe('demoMiddleware', () => {
     it('accumulates across navigations rather than resetting', () => {
         const store = useCounterStore();
 
-        demoMiddleware(routeTo('/en'));
-        demoMiddleware(routeTo('/en/products'));
-        demoMiddleware(routeTo('/en/cart'));
+        exampleGuard(routeTo('/en'));
+        exampleGuard(routeTo('/en/products'));
+        exampleGuard(routeTo('/en/cart'));
 
         expect(store.count).toBe(3);
     });
 
     it('feeds the target path into the translation call', () => {
-        demoMiddleware(routeTo('/en/orders/42'));
+        exampleGuard(routeTo('/en/orders/42'));
 
         expect(translateMock).toHaveBeenCalledWith('generic.loading', { load: '/en/orders/42' });
     });
@@ -93,6 +93,6 @@ describe('demoMiddleware', () => {
         // raw key. That must be harmless, not fatal.
         translateMock.mockImplementation((key: string) => key);
 
-        expect(() => demoMiddleware(routeTo())).not.toThrow();
+        expect(() => exampleGuard(routeTo())).not.toThrow();
     });
 });

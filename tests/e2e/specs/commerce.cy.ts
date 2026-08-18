@@ -106,16 +106,32 @@ describe('Commerce', () => {
         cy.get('[data-test=shipment-status]').should('contain.text', 'Delivered');
         cy.get('[data-test=courier-advance]').should('not.exist');
 
-        // ── The ledger: restock a product and read the story back ───────────────────
+        // ── The ledger: receive a delivery and read the story back ──────────────────
         cy.get('.v-app-bar')
             .contains('a', /inventory/i)
             .click();
         cy.get('#inventory-page').should('exist');
-        cy.get('[data-test=restock-product]').click();
+
+        // The board before, so the receipt can be read as a change rather than a number.
+        cy.get('[data-test=level-row]').should('have.length.at.least', 1);
+
+        cy.get('[data-test=receipt-product]').click();
         cy.get('.v-overlay__content .v-list-item').first().click();
-        cy.get('[data-test=restock-submit]').click();
-        cy.contains('Stock updated').should('exist');
+        cy.get('[data-test=receipt-submit]').click();
+        cy.contains('Delivery recorded').should('exist');
+
+        /*
+         * `receive` is the one transition that creates units: `onHand` rises and `reserved` does
+         * not, so the delivery is sellable immediately. Asserting BOTH columns is the point — a
+         * ledger that moved the wrong counter would still show a row, and still look right.
+         */
         cy.get('[data-test=movement-row]').should('have.length.at.least', 1);
-        cy.get('[data-test=movement-reason]').first().should('contain.text', 'Restock');
+        cy.get('[data-test=movement-reason]').first().should('contain.text', 'Received');
+        cy.get('[data-test=movement-row]')
+            .first()
+            .within(() => {
+                cy.get('td').eq(2).should('contain.text', '+');
+                cy.get('td').eq(3).should('have.text', '0');
+            });
     });
 });
