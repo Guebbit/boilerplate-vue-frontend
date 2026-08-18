@@ -15,6 +15,7 @@
  * enabling or disabling a domain is a one-line edit rather than a folder move.
  */
 
+import type { Ref } from 'vue';
 import type { RouteRecordRaw } from 'vue-router';
 import type { HttpHandler } from 'msw';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMap';
@@ -47,6 +48,16 @@ export interface AppNavigationEntry {
      * Absent sorts last, which is the right default for a domain that has not thought about it.
      */
     order?: number;
+
+    /**
+     * A live count the entry wears — the cart's item count is the canonical case.
+     *
+     * An accessor rather than a number because the count is reactive state the module owns: the
+     * shell calls this once inside its setup and renders whatever the ref holds, without ever
+     * learning whose store it is reading. `undefined` or `0` renders no badge. Reaching a store
+     * is fine here — the accessor runs inside component setup, after pinia is installed.
+     */
+    badge?: () => Ref<number | undefined>;
 }
 
 /**

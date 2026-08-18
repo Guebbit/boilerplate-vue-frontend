@@ -65,6 +65,16 @@ const hasSignUp = computed(() => router.hasRoute('Signup'));
 
 const navEntries = sortNavigation([...shellNavEntries, ...collectModuleNavigation(enabledModules)]);
 
+/*
+ * Live counts, one per entry that declared a `badge` accessor. Materialised ONCE here rather than
+ * inside the computed below: an accessor may start watchers and fetches (the cart's does), and a
+ * computed that re-ran it on every recompute would re-arm them each time. The shell still names
+ * no domain — whose store each ref reads is the module's business.
+ */
+const badgeCounts = new Map(
+    navEntries.filter((entry) => entry.badge).map((entry) => [entry.name, entry.badge!()] as const)
+);
+
 /**
  * Nav entries this visitor may see: rendered inline on desktop, as a drawer list on mobile.
  *
@@ -81,7 +91,9 @@ const visibleNavItems = computed(() => {
             // `plural` is optional on the manifest: a module that has not thought about it gets
             // the singular, which is what every entry wanted before the field existed.
             title: t(label, plural ?? 1),
-            to: routerLinkI18n({ name })
+            to: routerLinkI18n({ name }),
+            // Unwrapped here so the menu re-renders when a module's count moves.
+            badge: badgeCounts.get(name)?.value || undefined
         }));
 });
 
@@ -126,6 +138,13 @@ const toggleTheme = () => {
                 class="px-3 capitalize"
             >
                 {{ item.title }}
+                <v-badge
+                    v-if="item.badge"
+                    :content="item.badge"
+                    color="primary"
+                    inline
+                    data-test="nav-badge"
+                />
             </v-btn>
             <slot name="nav-left" />
         </nav>
@@ -196,7 +215,10 @@ const toggleTheme = () => {
                 color="primary"
                 class="capitalize"
             >
-                <v-list-item-title>{{ item.title }}</v-list-item-title>
+                <v-list-item-title>
+                    {{ item.title }}
+                    <v-badge v-if="item.badge" :content="item.badge" color="primary" inline />
+                </v-list-item-title>
             </v-list-item>
 
             <v-divider class="my-2" />

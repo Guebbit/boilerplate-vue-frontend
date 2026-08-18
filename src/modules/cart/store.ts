@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import {
     getCart,
+    getCartSummary,
     upsertCartItem,
     updateCartItemById,
     removeCartItem,
@@ -47,6 +48,37 @@ export const useCartStore = defineStore('cart', () => {
      * Number of distinct items in cart
      */
     const cartCount = computed(() => cartSummary.value?.itemsCount ?? 0);
+
+    /**
+     * The summary alone, as `GET /cart/summary` answers it — the lightweight read that exists so
+     * a header badge does not cost the whole cart on every page. Only a SEED: every cart mutation
+     * replaces `cart` wholesale, and the full response's summary is fresher from that moment on.
+     */
+    const summarySeed = ref<CartSummaryResponse | undefined>();
+
+    /**
+     * What the header badge wears: the loaded cart's count when one is loaded, the seed before.
+     */
+    const badgeQuantity = computed(() =>
+        cart.value ? cart.value.summary.itemsCount : summarySeed.value?.itemsCount
+    );
+
+    /**
+     * Fetches the lightweight summary. Resolves with nothing for a guest — a 401 here means "no
+     * cart", which is an ordinary state for a header, not an error worth a toast.
+     *
+     * @returns A promise resolving with the summary, or nothing.
+     */
+    const fetchSummary = () =>
+        getCartSummary()
+            .then((response) => {
+                summarySeed.value = response.data;
+                return response.data;
+            })
+            .catch(() => {
+                summarySeed.value = undefined;
+                return undefined;
+            });
 
     /**
      * Fetches the full cart (items + summary) and stores it.
@@ -189,6 +221,8 @@ export const useCartStore = defineStore('cart', () => {
         cartItems,
         cartSummary,
         cartCount,
+        badgeQuantity,
+        fetchSummary,
 
         loading,
         fetchCart,

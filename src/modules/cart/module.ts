@@ -1,6 +1,10 @@
+import { watch } from 'vue';
+import { storeToRefs } from 'pinia';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { cartResponseSchemas } from './responseSchemas';
+import { useCartStore } from './store';
+import { useSessionStore } from '@/infrastructure/stores/session.ts';
 
 /**
  * The shopping cart, and the checkout that turns it into an order.
@@ -38,7 +42,32 @@ export default {
         }
     ],
     routes,
-    navigation: [{ name: 'Cart', label: 'navigation.label-cart', plural: 1, order: 80 }],
+    navigation: [
+        {
+            name: 'Cart',
+            label: 'navigation.label-cart',
+            plural: 1,
+            order: 80,
+            /*
+             * The Badge of the glossary above, finally worn. Runs inside the shell's setup, so
+             * stores are reachable; seeds from the lightweight `GET /cart/summary` whenever a
+             * session appears, because the whole point of that endpoint is a count that does not
+             * cost the cart. Every later mutation keeps the count fresh through the store.
+             */
+            badge: () => {
+                const cartStore = useCartStore();
+                const { isAuth } = storeToRefs(useSessionStore());
+                watch(
+                    isAuth,
+                    (auth) => {
+                        if (auth) void cartStore.fetchSummary();
+                    },
+                    { immediate: true }
+                );
+                return storeToRefs(cartStore).badgeQuantity;
+            }
+        }
+    ],
     responseSchemas: cartResponseSchemas,
     // Written out rather than delegated to a helper on purpose: `import.meta.env` is replaced by
     // a literal at build time, so this ternary is what lets the bundler drop the mock chunk (and
