@@ -3,7 +3,7 @@
     "files": {
         "src/app/counter.ts": 0,
         "src/app/middlewares/authentications.ts": 100,
-        "src/app/middlewares/demoMiddleware.ts": 50,
+        "src/app/middlewares/exampleGuard.ts": 50,
         "src/app/middlewares/localeChoice.ts": 100,
         "src/app/router/index.ts": 63.64,
         "src/app/router/navigation.ts": 100,

@@ -47,7 +47,7 @@ Three things exist only to demonstrate the framework, and none is marked as safe
 | File                                  | What it is                                              | Mutation score |
 | ------------------------------------- | ------------------------------------------------------- | -------------- |
 | `src/app/counter.ts`                  | the Pinia counter from the Vue scaffold                 | **0%**         |
-| `src/app/middlewares/demoMiddleware.ts` | a guard that shows what a guard can and cannot reach   | 50%            |
+| `src/app/middlewares/exampleGuard.ts` | a guard that shows what a guard can and cannot reach   | 50%            |
 | `src/app/views/Playground.vue`        | the component sandbox                                   | —              |
 
 The counter's zero is correct rather than a gap: nothing tests it because nothing uses it in

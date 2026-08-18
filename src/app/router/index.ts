@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory, RouterView } from 'vue-router';
 import type { RouteLocationNormalized } from 'vue-router';
-import { demoMiddleware } from '@/app/middlewares/demoMiddleware';
+import { exampleGuard } from '@/app/middlewares/exampleGuard';
 import { localeChoice } from '@/app/middlewares/localeChoice';
 import { tryRestoreAuth, enforceRouteAccess } from '@/app/middlewares/authentications.ts';
 import { getDefaultLocale } from '@/infrastructure/i18n.ts';
@@ -37,7 +37,7 @@ const router = createRouter({
         {
             path: '/:locale',
             component: RouterView,
-            beforeEnter: [demoMiddleware],
+            beforeEnter: [exampleGuard],
             children: [
                 {
                     path: '',

@@ -71,7 +71,7 @@ everything a module can plug into.
 ### 4 · `src/app/router/index.ts` — URLs and guards
 
 Module routes are children of a `/:locale` parent, which is why every URL carries a language
-segment. Then four middlewares run in order: `demoMiddleware`, `localeChoice`, `tryRestoreAuth`,
+segment. Then four middlewares run in order: `exampleGuard`, `localeChoice`, `tryRestoreAuth`,
 `enforceRouteAccess`.
 
 **Take away:** access control is `meta: { access: 'admin' }` on a route, enforced centrally by

@@ -50,17 +50,10 @@ export interface AppNavigationEntry {
 }
 
 /**
- * Which dataset the mock backend is populated with. Resolved from `VITE_MOCK_PROFILE` by
- * `resolveProfile()` in `@mocks/mockProfiles.ts`; named here because `mockSeeds` is
- * parameterised by it and the registry states that contract.
- */
-export type MockProfile = 'seed' | 'random';
-
-/**
  * The mock database's shape: one field per domain that contributes fixtures.
  *
  * Intentionally empty here. This is the extension point — each module declares its own slice by
- * augmenting this interface from `src/modules/<name>/mocks/seeds.ts`, exactly as the backend's
+ * augmenting this interface from `src/modules/<name>/mocks/register.ts`, exactly as the backend's
  * modules augment `IAuditActionMap`:
  *
  * ```ts
@@ -81,12 +74,9 @@ export interface MockSeedData {}
 
 /** What a module's slice builder is handed. */
 export interface MockSeedContext {
-    /** The active profile. A module must answer for both. */
-    profile: MockProfile;
-
     /**
-     * The slices already built, in `after` order. This is how `orders` gets the `Product[]` whose
-     * snapshots its fixtures embed, without importing the products module.
+     * The slices already built, in `after` order. This is how a module that derives from another's
+     * fixtures reaches them without importing that module.
      */
     soFar: Partial<MockSeedData>;
 }
@@ -99,7 +89,7 @@ export interface MockSeedContext {
  * client actually has, and each maps to something visible in the import:
  *
  * - `conformist` — reads another module's store as it is, with no translation and no say in its
- *   shape. `inventory` reading `useProductsStore` to fill a restock select.
+ *   shape. `inventory` reading `useProductsStore` to fill a receipt select.
  * - `customer-supplier` — calls a sibling's store to make something happen, and that sibling's
  *   surface is shaped by the demand. Add-to-cart, move-to-cart and reorder are all this.
  * - `published-language` — receives vocabulary rather than state: a Zod schema, a pure function, or
@@ -381,12 +371,8 @@ export const collectModuleMockHandlers = (appModules: AppModule[]): Promise<Http
  * alphabetical on purpose, which would run `cart` before `products`.
  *
  * @param appModules - the enabled module list
- * @param profile - which dataset to build; passed through to every slice builder
  */
-export const collectModuleMockSeeds = async (
-    appModules: AppModule[],
-    profile: MockProfile
-): Promise<MockSeedData> => {
+export const collectModuleMockSeeds = async (appModules: AppModule[]): Promise<MockSeedData> => {
     const contributors = appModules.filter((appModule) => appModule.mockSeeds);
     const byName = new Map(contributors.map((appModule) => [appModule.name, appModule]));
 
@@ -425,7 +411,7 @@ export const collectModuleMockSeeds = async (
 
     let soFar: Partial<MockSeedData> = {};
     for (const appModule of ordered) {
-        const slice = await appModule.mockSeeds!.build({ profile, soFar });
+        const slice = await appModule.mockSeeds!.build({ soFar });
 
         /*
          * The one gap declaration merging cannot close: the augmentation is type-only, so at
@@ -437,7 +423,7 @@ export const collectModuleMockSeeds = async (
          */
         if (Object.keys(slice).length === 0)
             throw new Error(
-                `Module "${appModule.name}" declares mockSeeds but contributed no fields for the "${profile}" profile.`
+                `Module "${appModule.name}" declares mockSeeds but contributed no fields.`
             );
 
         soFar = { ...soFar, ...slice };

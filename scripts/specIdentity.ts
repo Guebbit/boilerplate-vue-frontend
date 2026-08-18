@@ -116,7 +116,7 @@ export const SHARED_FILES: readonly SharedFile[] = [
      * mirror backend schema defaults, and carried no `locale` at all. Comparing the output closes
      * that gap, because there is now only one mapper and it is the API's.
      */
-    { backend: 'db/seeds/dataset.json', frontend: 'tests/support/mocks/dataset.json' },
+    { backend: 'db/demo/demo-data.json', frontend: 'tests/support/mocks/demo-data.json' },
 
     /*
      * The three API client collections (`contract.<tool>.*` at the backend's root) are deliberately NOT here.
@@ -154,7 +154,14 @@ export const SHARED_FILES: readonly SharedFile[] = [
         backend: 'scripts/check-mutation-baseline.ts',
         frontend: 'scripts/check-mutation-baseline.ts'
     },
-    { backend: 'scripts/gen-asyncapi-types.ts', frontend: 'scripts/gen-asyncapi-types.ts' }
+    { backend: 'scripts/gen-asyncapi-types.ts', frontend: 'scripts/gen-asyncapi-types.ts' },
+    /*
+     * The per-module test report. Shared for a reason the others are not: it parses a runner's
+     * JSON, and Vitest's `json` reporter emits the same shape Jest's `--json` does — so one reader
+     * genuinely serves both, and two copies drifting would mean the two repos disagreeing about
+     * what their own test suites cost.
+     */
+    { backend: 'scripts/testReport.ts', frontend: 'scripts/testReport.ts' }
 ] as const;
 
 export type SpecComparisonStatus = 'match' | 'drift' | 'missing-here' | 'missing-there';
