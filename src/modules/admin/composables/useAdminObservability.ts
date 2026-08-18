@@ -1,8 +1,9 @@
-import { computed, type ComputedRef, type Ref } from 'vue';
+import { computed, ref, type ComputedRef, type Ref } from 'vue';
 import {
     getObservabilityHealth,
     getObservabilityMetricsOverview,
-    getObservabilityAuditLogs
+    getObservabilityAuditLogs,
+    deleteExpiredTokens
 } from '@api';
 import type { ObservabilityHealth, ObservabilityMetricsSummary, AuditEventItem } from '@types';
 import type { AdminAuditFilters } from '@/modules/admin/types.ts';
@@ -23,6 +24,8 @@ export interface UseAdminObservabilityReturn {
     fetchMetrics: () => Promise<void>;
     fetchAuditLogs: (filters?: AdminAuditFilters) => Promise<void>;
     fetchAll: () => Promise<void>;
+    clearingExpiredTokens: Ref<boolean>;
+    clearExpiredTokens: () => Promise<void>;
 }
 
 /**
@@ -113,6 +116,33 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
     const fetchAll = () =>
         Promise.all([fetchHealth(), fetchMetrics(), fetchAuditLogs()]).then(() => {});
 
+    const clearingExpiredTokens = ref(false);
+
+    /**
+     * Purges the expired refresh tokens.
+     *
+     * The odd one out here, and deliberately not a {@link useAsyncAction}: the other four are
+     * READS whose failure is a panel that renders an error, so swallowing the rejection into an
+     * `error` ref is exactly right. This is a WRITE whose outcome the visitor asked for and is
+     * owed either way, so it REJECTS and lets the view answer with the toast it already writes.
+     * Folding it into `useAsyncAction` would mean the view polling an error ref after the fact to
+     * decide which message to show.
+     *
+     * What it does own is the pending flag, because that is bookkeeping rather than copy — the
+     * view binds it to the button and never sets it.
+     *
+     * @returns A promise resolving on success and rejecting on failure. The pending flag is
+     *  cleared either way.
+     */
+    const clearExpiredTokens = (): Promise<void> => {
+        clearingExpiredTokens.value = true;
+        return deleteExpiredTokens()
+            .then(() => undefined)
+            .finally(() => {
+                clearingExpiredTokens.value = false;
+            });
+    };
+
     return {
         health,
         metrics,
@@ -127,6 +157,8 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
         fetchHealth,
         fetchMetrics,
         fetchAuditLogs,
-        fetchAll
+        fetchAll,
+        clearingExpiredTokens,
+        clearExpiredTokens
     };
 };

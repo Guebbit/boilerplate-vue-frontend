@@ -5,7 +5,6 @@ import { Trash2 } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAdminObservability } from '@/modules/admin/composables/useAdminObservability.ts';
 import type { AdminTabKey } from '@/modules/admin/types.ts';
-import { deleteExpiredTokens } from '@api';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import AdminOverviewTab from '@/modules/admin/components/AdminOverviewTab.vue';
@@ -15,7 +14,6 @@ const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 const activeTab = ref<AdminTabKey>('overview');
-const cleaningExpiredTokens = ref(false);
 
 const {
     health,
@@ -29,7 +27,9 @@ const {
     errorMetrics,
     errorAudit,
     fetchAll,
-    fetchAuditLogs
+    fetchAuditLogs,
+    clearingExpiredTokens,
+    clearExpiredTokens
 } = useAdminObservability();
 
 /**
@@ -44,21 +44,22 @@ onMounted(() => {
 });
 
 /**
- * Purges expired refresh tokens after an explicit confirmation.
+ * Asks first, then purges the expired refresh tokens and says how it went.
  *
- * @returns A promise resolving once the call has settled; the outcome is
- *  reported as a toast, and the button's pending flag is always cleared.
+ * What is left here is the two things that are this view's: the confirmation, and which words
+ * announce the outcome. The call itself and its pending flag belong to
+ * {@link useAdminObservability} — see `clearExpiredTokens` there for why that one rejects while
+ * the four reads do not.
+ *
+ * @returns A promise resolving once the toast has been raised, or nothing at all if the visitor
+ *  declined the confirmation.
  */
-const clearExpiredTokens = () => {
+const confirmClearExpiredTokens = () => {
     const shouldContinue = globalThis.confirm(t('admin-page.confirm-clear-expired-tokens'));
     if (!shouldContinue) return;
-    cleaningExpiredTokens.value = true;
-    return deleteExpiredTokens()
+    return clearExpiredTokens()
         .then(() => addMessage(t('admin-page.success-clear-expired-tokens')))
-        .catch(() => addMessage(t('admin-page.error-clear-expired-tokens')))
-        .finally(() => {
-            cleaningExpiredTokens.value = false;
-        });
+        .catch(() => addMessage(t('admin-page.error-clear-expired-tokens')));
 };
 </script>
 
@@ -73,8 +74,8 @@ const clearExpiredTokens = () => {
             <v-btn
                 variant="tonal"
                 color="error"
-                :loading="cleaningExpiredTokens"
-                @click="clearExpiredTokens"
+                :loading="clearingExpiredTokens"
+                @click="confirmClearExpiredTokens"
             >
                 <Trash2 :size="16" class="mr-1" aria-hidden="true" />
                 {{ t('admin-page.button-clear-expired-tokens') }}
