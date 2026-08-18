@@ -64,23 +64,30 @@ These specs run against `vite dev`, and `vite-plugin-vue-devtools` injects its o
 
 It is excluded **by selector**, not by disabling the rule. Suppressing the rule globally would also suppress it on our own markup, which is exactly the kind of violation worth catching. The distinction matters: exclude the element, never the rule.
 
-## Why a dedicated spec rather than a line in each existing one
+## Why a sweep per module, and not one central list
 
-Reusing the nine domain specs would be cheaper — they already navigate everywhere. A dedicated spec was chosen anyway:
+This was one central spec listing every route in the app, and that shape had real arguments behind it: the coverage was a list you could read, a failure named the route rather than the domain spec it was hiding inside, and adding a route was adding a line.
 
-- coverage is a **list you can read**, not something you discover by grepping
-- a failure names the **route**, not the domain spec it was hiding inside
-- adding a route means adding a line
+What it could not survive is a **deleted module**. `rm -rf src/modules/users` left the central list still naming `/en/users` and `/en/users/create`, so the a11y suite failed on routes the app no longer served — an orphan, and precisely the failure that moved the other e2e specs into their modules. Routes belong to modules; their accessibility coverage does too.
 
-The cost is one page load per route, which is the cheapest thing in this suite.
+The readable list was not discarded, it was **upgraded into an assertion**. `tests/cross-cutting/a11yCoverage.spec.ts` fails when a module declaring routes has no sweep, and fails the other way too when a sweep outlives the routes it audited. A list that is checked beats a list that is merely readable, because nothing obliges a reader to read it.
 
-It runs under the mock profile like the rest of `ci.yml`, so it needs no backend.
+Modules serving no page — `delivery`, `payments`, reached through the cart and the order flow — are exempt, and that exemption is the rule rather than a hole in it: there is nothing for axe to visit.
+
+**The cost is real**: ten extra Cypress spec startups, about +50s on the e2e gate. That is what co-location costs here, and it buys coverage that cannot rot into an orphan.
+
+### It found a bug immediately
+
+Splitting per module meant auditing routes the central list had never contained. `/en/playground/realtime` turned out to have a serious colour-contrast violation on its empty-state paragraph — `opacity-60` on a card background. Raised to `opacity-75`, the codebase's dominant muted level. A route nobody had listed was a route nobody had checked.
 
 ## File map
 
 | Path | Contents |
 | ---- | -------- |
-| `tests/e2e/specs/a11y.cy.ts` | The route lists — public, authenticated, admin — and one case per route |
+| `src/modules/<name>/tests/e2e/a11y.cy.ts` | One per routed module: the route list, and the auth level to read it at |
+| `tests/e2e/specs/a11y.cy.ts` | The shell's own routes — home, and the 404 page |
+| `tests/support/e2e/a11ySweep.ts` | `sweepA11y()`: the describe, the login, the wait-for-content, the axe call. Names no domain |
+| `tests/cross-cutting/a11yCoverage.spec.ts` | Fails when a routed module has no sweep, or a sweep outlives its routes |
 | `tests/support/e2e/commands.ts` | `cy.checkPageA11y()`: the single axe pass, the impact threshold, the devtools exclusion |
 | `tests/support/e2e/e2e.ts` | Imports `cypress-axe`, making `cy.injectAxe()` / `cy.checkA11y()` available |
 
@@ -88,8 +95,20 @@ It runs under the mock profile like the rest of `ci.yml`, so it needs no backend
 
 | Command | Effect |
 | ------- | ------ |
-| `npm run test:e2e` | Runs the a11y spec with the rest of the suite |
-| `npx cypress run --e2e --spec 'tests/e2e/specs/a11y.cy.ts'` | Just the a11y pass |
+| `npm run test:e2e` | Runs every module's sweep with the rest of the suite |
+| `E2E_SPEC='src/modules/*/tests/e2e/a11y.cy.ts' npm run test:e2e:spec` | Every sweep, and nothing else |
+| `E2E_SPEC=src/modules/users/tests/e2e/a11y.cy.ts npm run test:e2e:spec` | One module's |
+| `npx vitest run tests/cross-cutting/a11yCoverage.spec.ts` | Just the "is every module covered" check |
+
+## Adding a route
+
+Add a line to the owning module's sweep:
+
+```ts
+sweepA11y('products — admin', [['product edit', '/en/products/65dc8a99604c307b702b5ccc/edit']], 'admin');
+```
+
+A **new module** with pages needs its own `tests/e2e/a11y.cy.ts`. You will not forget: the coverage guard fails until it exists, and names the module.
 
 ## Extending it
 

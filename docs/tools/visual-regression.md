@@ -41,7 +41,7 @@ flowchart TB
     class D,Size,Budget dec;
 ```
 
-## Why only four screens
+## One screen per module, and why not more
 
 Visual testing is the classic flake generator, and its failure mode is **social** rather than technical:
 
@@ -50,14 +50,42 @@ Visual testing is the classic flake generator, and its failure mode is **social*
 3. that becomes the habit
 4. the suite now produces the paperwork of review without the review
 
-Four screens that are genuinely looked at beat forty that are rubber-stamped. The four are chosen to cover distinct layout families rather than distinct features:
+Twelve screens that are genuinely looked at beat forty that are rubber-stamped. The rule is **one per module — its main screen — plus the two the shell owns**, which keeps the count tied to the architecture rather than to somebody's enthusiasm. A module gaining a second baseline should be a decision, not a habit.
 
-| Screen | Route | Layout family it stands for |
+| Screen | Owner | Layout family it stands for |
 | ------ | ----- | --------------------------- |
-| `home` | `/en` | marketing content, cards, hero |
-| `products-list` | `/en/products` | data table, filter form, pagination |
-| `login` | `/en/login` | centred narrow form |
-| `not-found` | `/en/this-route-does-not-exist` | error state, empty state |
+| `home` | shell | marketing content, cards, hero |
+| `not-found` | shell | error state, empty state |
+| `products-list` | `products` | data table, filter form, pagination |
+| `login` | `account` | centred narrow form |
+| `cart` | `cart` | line items, totals panel |
+| `orders-list` | `orders` | data table, authenticated |
+| `wishlist` | `wishlist` | card grid, authenticated |
+| `users-list` | `users` | admin data table |
+| `admin-dashboard` | `admin` | KPI tiles, dense numbers |
+| `inventory-ledger` | `inventory` | admin table, board + ledger |
+| `contact` | `feedback` | public form |
+| `realtime-playground` | `realtime` | live-updating panels |
+
+## Where the baselines live
+
+Beside the spec that takes them:
+
+```
+src/modules/products/tests/e2e/
+  products.visual.cy.ts
+  __snapshots__/products-list.png
+```
+
+`cy.compareSnapshot()` resolves the directory from `Cypress.spec.relative`, so nothing is configured per module — a new module's first baseline lands in the right place by existing. **The point is deletion**: `rm -rf src/modules/products` takes its photographs with it, where a central folder would be left holding a picture of a screen the app no longer serves and nothing would ever notice.
+
+Diffs go the other way, to `reports/visual-diff/` — one gitignored folder, because a diff is throwaway output of a failed run and CI uploads it from one place.
+
+## Not in the gate — deliberately
+
+The visual specs sit inside `src/modules/*/tests/e2e/`, which is also the functional e2e glob, so `scripts/e2e-shard.ts` excludes them **by the `.visual.cy.ts` suffix**. Without that the merge gate would have silently acquired twelve pixel comparisons, and the first font update would have looked like an application regression.
+
+`npm run test:e2e:visual` is where they run.
 
 Adding a fifth is cheap. Adding a fiftieth is how the suite dies.
 
@@ -85,7 +113,7 @@ A screenshot is only useful if an unchanged app produces identical pixels twice.
 1. **Viewport** — pinned to 1280×800 in `cypress.config.ts`. Image size is part of the diff.
 2. **Clock** — frozen by `cy.freezeForVisual()`. Anything rendering a date or a relative time changes by the minute.
 3. **Animations** — killed by the same command, via an injected stylesheet that zeroes every `transition` and `animation`. A screenshot caught mid-transition differs from itself between runs.
-4. **Data** — the fixed MSW profile, never `VITE_MOCK_PROFILE=random`, whose entire purpose is to differ. `cy.resetState()` in the `beforeEach` guarantees identical data and a signed-out session; the navigation gains a whole column (Cart, Orders, the account email, Logout) when signed in, so auth state changes the layout, not just the content.
+4. **Data** — the MSW profile, which serves the same demo dataset on every run. `cy.resetState()` in the `beforeEach` guarantees identical data and a signed-out session; the navigation gains a whole column (Cart, Orders, the account email, Logout) when signed in, so auth state changes the layout, not just the content.
 5. **The page actually being the page.** See below — this one was a real bug.
 
 ### The bug this suite found in the test harness
@@ -137,7 +165,7 @@ Comparing images of different sizes pixel by pixel is meaningless, and a size ch
 
 ### Same size → compare
 
-Over budget writes a diff image to `tests/e2e/snapshots/__diff__/` — red pixels mark what moved — and the failure message names the file and the update command.
+Over budget writes a diff image to `src/modules/<name>/tests/e2e/__snapshots__/__diff__/` — red pixels mark what moved — and the failure message names the file and the update command.
 
 ## Updating a baseline
 
@@ -167,8 +195,8 @@ A quick sanity signal, when a baseline looks suspicious — a real screenshot of
 
 ```bash
 node -e "const {PNG}=require('pngjs'),fs=require('fs');
-for (const f of fs.readdirSync('tests/e2e/snapshots').filter(x=>x.endsWith('.png'))) {
-  const i=PNG.sync.read(fs.readFileSync('tests/e2e/snapshots/'+f)), c=new Set();
+for (const f of fs.readdirSync('src/modules/<name>/tests/e2e/__snapshots__').filter(x=>x.endsWith('.png'))) {
+  const i=PNG.sync.read(fs.readFileSync('src/modules/<name>/tests/e2e/__snapshots__/'+f)), c=new Set();
   for (let n=0;n<i.data.length;n+=4) c.add(i.data.readUInt32BE(n));
   console.log(f, c.size);
 }"
@@ -184,7 +212,7 @@ Moving it into CI means making the two environments the same, not loosening the 
 
 1. Record and compare inside the **same pinned container** — the official `cypress/included:<version>` image — so the font stack and browser build are identical everywhere.
 2. Regenerate the committed baselines once from that container, and never from a host machine again.
-3. Add a job that runs `npm run test:e2e:visual` in that image, and uploads `tests/e2e/snapshots/__diff__/` as an artefact so a reviewer can see the picture without reproducing the run.
+3. Add a job that runs `npm run test:e2e:visual` in that image, and uploads `src/modules/<name>/tests/e2e/__snapshots__/__diff__/` as an artefact so a reviewer can see the picture without reproducing the run.
 
 Until that is done, treat it as a local gate: run it before opening a pull request, and review the baseline images in the diff.
 
@@ -200,8 +228,8 @@ Visual regression plugins wrap roughly this much code around `pixelmatch`. The p
 | `tests/support/e2e/visual-task.ts` | The comparison itself — thresholds, the three outcomes, diff output. Runs in **Node**, because the browser cannot read the committed baselines |
 | `tests/support/e2e/commands.ts` | `cy.freezeForVisual()`, `cy.compareSnapshot()`, and the `visit` override with its per-visit token |
 | `cypress.config.ts` | Registers the `compareSnapshot` task and pins the 1280×800 viewport |
-| `tests/e2e/snapshots/*.png` | The committed baselines — reviewed as images, in the PR diff |
-| `tests/e2e/snapshots/__diff__/` | Diff images written on failure. Not committed |
+| `src/modules/<name>/tests/e2e/__snapshots__/*.png` | The committed baselines — reviewed as images, in the PR diff |
+| `src/modules/<name>/tests/e2e/__snapshots__/__diff__/` | Diff images written on failure. Not committed |
 
 Note the directory split: the visual spec lives under `tests/e2e/visual/` rather than `tests/e2e/specs/`, because the ordinary `npm run test:e2e` run must not record or compare screenshots. Each npm script scopes itself with `--spec`.
 

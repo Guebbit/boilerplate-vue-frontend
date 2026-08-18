@@ -39,8 +39,13 @@ export interface CompareOptions {
     name: string;
     /** Absolute path of the screenshot Cypress just wrote. */
     actualPath: string;
-    /** Directory holding the committed baselines. */
-    baselineDirectory: string;
+    /**
+     * Repo-relative path of the spec that took the screenshot.
+     *
+     * The baselines live in a `__snapshots__` folder beside it, so they belong to whatever owns
+     * the spec — a module, or the shell — and are deleted by deleting it.
+     */
+    specRelative: string;
     /** Directory for diff images produced on failure. */
     diffDirectory: string;
     /** When true, overwrite the baseline instead of comparing against it. */
@@ -68,7 +73,14 @@ export interface CompareResult {
  *   3. **Same size** → compare, and fail when more than `MAX_DIFFERING_RATIO` differs.
  */
 export const compareSnapshot = (options: CompareOptions): CompareResult => {
-    const { name, actualPath, baselineDirectory, diffDirectory, update } = options;
+    const { name, actualPath, specRelative, diffDirectory, update } = options;
+
+    /*
+     * `__snapshots__` beside the spec. Resolved here rather than in the browser because only Node
+     * can touch the filesystem, and `process.cwd()` is the repo root for anything `npm run` starts
+     * — the same assumption `scripts/testReport.ts` makes.
+     */
+    const baselineDirectory = path.join(process.cwd(), path.dirname(specRelative), '__snapshots__');
     const baselinePath = path.join(baselineDirectory, `${name}.png`);
 
     mkdirSync(baselineDirectory, { recursive: true });
