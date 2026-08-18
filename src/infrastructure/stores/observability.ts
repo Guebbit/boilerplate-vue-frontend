@@ -12,7 +12,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { Faro } from '@grafana/faro-web-sdk';
-import { analyticsEvents, type AnalyticsEventName } from '@/infrastructure/observability/events.ts';
+import type { AnalyticsEventName } from '@/infrastructure/observability/analyticsEvents.ts';
 import {
     readFaroConfig,
     readUmamiConfig,
@@ -227,7 +227,7 @@ export const useObservabilityStore = defineStore('observability', () => {
      * Events emitted before the tracker script lands are buffered (see {@link pendingEvents});
      * events emitted while analytics is disabled are dropped, since no script is coming.
      *
-     * @param event - Event name from the {@link analyticsEvents} catalog.
+     * @param event - Event name from the published catalogue.
      * @param properties - Optional event payload.
      */
     const track = (event: AnalyticsEventName, properties?: Record<string, unknown>): void => {
@@ -252,60 +252,6 @@ export const useObservabilityStore = defineStore('observability', () => {
         pendingEvents.push({ event, properties });
     };
 
-    // ── Convenience helpers ──────────────────────────────────────────────────
-
-    /**
-     * Tracks a product view event.
-     *
-     * @param productId - Identifier of the viewed product.
-     * @param productName - Human-readable name, for readability in dashboards.
-     */
-    const trackProductView = (productId: string, productName?: string): void => {
-        track(analyticsEvents.PRODUCT_VIEWED, {
-            product_id: productId,
-            product_name: productName
-        });
-    };
-
-    /**
-     * Tracks a cart addition event.
-     *
-     * @param productId - Identifier of the added product.
-     * @param quantity - Number of units added.
-     */
-    const trackItemAddedToCart = (productId: string, quantity: number): void => {
-        track(analyticsEvents.CART_ITEM_ADDED, {
-            product_id: productId,
-            quantity
-        });
-    };
-
-    /**
-     * Tracks an order creation event.
-     *
-     * @param orderId - Identifier of the created order.
-     * @param totalAmount - Order total, in the order's currency.
-     * @param itemCount - Number of line items in the order.
-     */
-    const trackOrderPlaced = (orderId: string, totalAmount: number, itemCount: number): void => {
-        track(analyticsEvents.ORDER_CREATED, {
-            order_id: orderId,
-            total_amount: totalAmount,
-            item_count: itemCount
-        });
-    };
-
-    /**
-     * Tracks a product search event.
-     *
-     * @param query - Raw search string submitted by the user.
-     */
-    const trackProductSearched = (query: string): void => {
-        track(analyticsEvents.PRODUCTS_SEARCHED, {
-            query
-        });
-    };
-
     return {
         // State
         faroReady,
@@ -319,13 +265,7 @@ export const useObservabilityStore = defineStore('observability', () => {
         track,
         identifyUser,
         unidentifyUser,
-        captureException,
-
-        // Convenience helpers
-        trackProductView,
-        trackItemAddedToCart,
-        trackOrderPlaced,
-        trackProductSearched
+        captureException
     };
 });
 

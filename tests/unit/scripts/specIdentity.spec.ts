@@ -123,7 +123,7 @@ describe('SHARED_FILES', () => {
         expect(frontendPaths).toContain(SPECTRAL);
         // The two that went unguarded until the list could hold differing paths.
         expect(frontendPaths).toContain('tests/support/mocks/demo-data.json');
-        expect(frontendPaths).toContain('src/infrastructure/analyticsEvents.ts');
+        expect(frontendPaths).toContain('src/infrastructure/observability/analyticsEvents.ts');
     });
 
     it('excludes anything this repo regenerates from a file already in the list', () => {

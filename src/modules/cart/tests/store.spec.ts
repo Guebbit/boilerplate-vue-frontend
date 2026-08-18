@@ -26,7 +26,7 @@ import {
     checkout as apiCheckout,
     reorder as apiReorder
 } from '@api';
-import { analyticsEvents } from '@/infrastructure/observability/events.ts';
+import { analyticsEvents } from '@/infrastructure/observability/analyticsEvents.ts';
 
 const track = vi.fn();
 
@@ -92,16 +92,6 @@ describe('useCartStore', () => {
                 expect(store.cartItems).toEqual(CART.items);
             });
         });
-
-        it('tracks the add event with the product and quantity', () =>
-            useCartStore()
-                .upsertCartItem('p1', 2)
-                .then(() => {
-                    expect(track).toHaveBeenCalledWith(analyticsEvents.CART_ITEM_ADDED, {
-                        product_id: 'p1',
-                        quantity: 2
-                    });
-                }));
     });
 
     describe('updateCartItem', () => {
@@ -136,7 +126,7 @@ describe('useCartStore', () => {
     });
 
     describe('removeCartItem', () => {
-        it('replaces the local cart with the emptied one and tracks the removal', () => {
+        it('replaces the local cart with the emptied one', () => {
             const store = useCartStore();
 
             return store
@@ -145,23 +135,21 @@ describe('useCartStore', () => {
                 .then(() => {
                     expect(removeCartItem).toHaveBeenCalledWith('p1');
                     expect(store.cartItems).toEqual([]);
-                    expect(track).toHaveBeenCalledWith(analyticsEvents.CART_ITEM_REMOVED, {
-                        product_id: 'p1'
-                    });
+                    expect(track).not.toHaveBeenCalled();
                 });
         });
     });
 
     describe('clearCart', () => {
-        it('sends no body and tracks `cart_cleared` when clearing everything', () =>
+        it('sends no body when clearing everything', () =>
             useCartStore()
                 .clearCart()
                 .then(() => {
                     expect(clearCart).toHaveBeenCalledWith(undefined);
-                    expect(track).toHaveBeenCalledWith(analyticsEvents.CART_CLEARED);
+                    expect(track).not.toHaveBeenCalled();
                 }));
 
-        it('sends a productId body and tracks nothing when removing one line', () =>
+        it('sends a productId body when removing one line', () =>
             useCartStore()
                 .clearCart('p1')
                 .then(() => {
@@ -186,18 +174,6 @@ describe('useCartStore', () => {
                     expect(result).toEqual({ order: ORDER });
                 }));
 
-        it('tracks the created order id and total, read from the nested envelope', () =>
-            // That path is optional all the way down, so a shape change would emit an event with
-            // undefined fields rather than fail.
-            useCartStore()
-                .checkout()
-                .then(() => {
-                    expect(track).toHaveBeenCalledWith(analyticsEvents.CHECKOUT_COMPLETED, {
-                        order_id: 'o1',
-                        total_price: 19.98
-                    });
-                }));
-
         it('empties the local cart, because the server emptied the real one', () => {
             const store = useCartStore();
 
@@ -214,54 +190,52 @@ describe('useCartStore', () => {
                 });
         });
 
-        it('tracks `checkout_failed` with the API error code, and still rejects', () => {
+        it('reports nothing when the API answered, and still rejects', () => {
+            // The backend emitted `checkout_failed` from the handler that made this decision and
+            // knows why. Reporting it here as well would write one refusal into Umami as two rows
+            // nothing can tell apart — the double count this split exists to prevent.
+            //
+            // The rejection still has to reach the caller: the view turns it into the toast the
+            // user sees, and a swallowed error is a failure reported to nobody.
             vi.mocked(apiCheckout).mockRejectedValueOnce({
                 status: 409,
                 errors: [{ code: 'CART_EMPTY' }]
             });
 
-            // The rejection has to reach the caller as well as the tracker: the view turns it into
-            // the toast the user sees, so an event emitted by a swallowed error would be a failure
-            // reported to analytics and to nobody else.
             return expect(useCartStore().checkout())
                 .rejects.toMatchObject({ status: 409 })
                 .then(() => {
-                    expect(track).toHaveBeenCalledWith(analyticsEvents.CHECKOUT_FAILED, {
-                        reason: 'CART_EMPTY'
-                    });
+                    expect(track).not.toHaveBeenCalled();
                 });
         });
 
-        it('falls back to the status when the failure carries no code', () => {
-            vi.mocked(apiCheckout).mockRejectedValueOnce({ status: 500, errors: [] });
+        it('reports a status-less rejection as a request that never arrived', () => {
+            // No status means no response: the connection dropped, or the request never left the
+            // browser. The server cannot know this happened, so it is the one checkout failure
+            // this side owns.
+            vi.mocked(apiCheckout).mockRejectedValueOnce(new Error('Network Error'));
 
             return expect(useCartStore().checkout())
-                .rejects.toMatchObject({ status: 500 })
+                .rejects.toThrow('Network Error')
                 .then(() => {
-                    expect(track).toHaveBeenCalledWith(analyticsEvents.CHECKOUT_FAILED, {
-                        reason: 'http_500'
-                    });
+                    expect(track).toHaveBeenCalledWith(analyticsEvents.CHECKOUT_REQUEST_FAILED);
                 });
         });
 
         /**
-         * The optional chaining on `response.data?.order?.id` earns its keep here and nowhere
-         * else. A 200 that carries no order is not a shape this client should crash on — the
-         * cart was still emptied server-side, and a `TypeError` thrown out of the analytics call
-         * would turn a successful checkout into a failed promise the view reports as an error.
-         *
-         * Without the `?.` this test throws instead of emitting undefined fields.
+         * A 200 carrying no order is not a shape this client should crash on: the cart was still
+         * emptied server-side, so the success path must run to the end and resolve.
          */
         it('survives a success envelope with no order in it', () => {
+            const store = useCartStore();
             vi.mocked(apiCheckout).mockResolvedValueOnce({ data: {} } as never);
 
-            return useCartStore()
-                .checkout()
-                .then(() => {
-                    expect(track).toHaveBeenCalledWith(analyticsEvents.CHECKOUT_COMPLETED, {
-                        order_id: undefined,
-                        total_price: undefined
-                    });
+            return store
+                .fetchCart()
+                .then(() => store.checkout())
+                .then((result) => {
+                    expect(result).toEqual({});
+                    expect(store.cart).toBeUndefined();
                 });
         });
     });
@@ -282,15 +256,6 @@ describe('useCartStore', () => {
                 expect(result).toEqual(CART);
             });
         });
-
-        it('tracks the reorder against the order it came from', () =>
-            useCartStore()
-                .reorder('o1')
-                .then(() => {
-                    expect(track).toHaveBeenCalledWith(analyticsEvents.CART_REORDERED, {
-                        order_id: 'o1'
-                    });
-                }));
     });
 
     /**

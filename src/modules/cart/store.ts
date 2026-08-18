@@ -13,8 +13,8 @@ import {
 } from '@api';
 import type { CartItem, CartResponse, CartSummaryResponse, CheckoutRequest } from '@types';
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
-import { analyticsEvents } from '@/infrastructure/observability/events.ts';
-import { apiErrorCode } from '@/infrastructure/utils/errors';
+import { analyticsEvents } from '@/infrastructure/observability/analyticsEvents.ts';
+import { isTransportFailure } from '@/infrastructure/utils/errors';
 
 /**
  * Owns the authenticated user's shopping cart: every action replaces the local
@@ -103,8 +103,6 @@ export const useCartStore = defineStore('cart', () => {
     const upsertCartItemAction = (productId: string, quantity: number) =>
         fetchAny(() =>
             upsertCartItem({ productId, quantity }).then((response) => {
-                const obs = useObservabilityStore();
-                obs.track(analyticsEvents.CART_ITEM_ADDED, { product_id: productId, quantity });
                 cart.value = response.data;
                 return response.data;
             })
@@ -134,8 +132,6 @@ export const useCartStore = defineStore('cart', () => {
     const removeCartItemAction = (productId: string) =>
         fetchAny(() =>
             removeCartItem(productId).then((response) => {
-                const obs = useObservabilityStore();
-                obs.track(analyticsEvents.CART_ITEM_REMOVED, { product_id: productId });
                 cart.value = response.data;
                 return response.data;
             })
@@ -148,17 +144,12 @@ export const useCartStore = defineStore('cart', () => {
      * Delegates to `DELETE /cart` with a `{ productId }` body for single-item
      * removal, and without a body to clear everything.
      *
-     * @param productId - When provided, only this product's line is removed and
-     *  no `cart_cleared` analytics event is emitted.
+     * @param productId - When provided, only this product's line is removed.
      * @returns A promise resolving with the updated cart response.
      */
     const clearCartAction = (productId?: string) =>
         fetchAny(() =>
             clearCart(productId ? { productId } : undefined).then((response) => {
-                if (!productId) {
-                    const obs = useObservabilityStore();
-                    obs.track(analyticsEvents.CART_CLEARED);
-                }
                 cart.value = response.data;
                 return response.data;
             })
@@ -167,10 +158,10 @@ export const useCartStore = defineStore('cart', () => {
     /**
      * Turns the authenticated user's cart into an order.
      *
-     * Reports BOTH outcomes. The backend emits `checkout_completed` and `checkout_failed` from the
-     * same handler, and a funnel built across the two repos only balances if this side reports the
-     * failures too — a drop-off that shows up on one side only reads as users abandoning checkout
-     * rather than as checkout rejecting them.
+     * Reports only the failures the API never saw. Both outcomes it DID see — the order it created
+     * and the checkout it refused — are emitted by the backend from the handler that decided them,
+     * so it knows the reason and cannot be blocked by an extension or lost with the tab. A request
+     * that never arrived is the one fact left for this side to report.
      *
      * @param checkoutData - Optional checkout payload (email, order notes).
      * @returns A promise resolving with the checkout response, the created order included.
@@ -179,11 +170,6 @@ export const useCartStore = defineStore('cart', () => {
         fetchAny(() =>
             apiCheckout(checkoutData).then(
                 (response) => {
-                    const obs = useObservabilityStore();
-                    obs.track(analyticsEvents.CHECKOUT_COMPLETED, {
-                        order_id: response.data?.order?.id,
-                        total_price: response.data?.order?.totalPrice
-                    });
                     /* The server empties the cart on success. The local copy is dropped rather
                      * than guessed at: this store never invents a payload the API did not send,
                      * and every getter already reads an unfetched cart as empty. */
@@ -191,8 +177,10 @@ export const useCartStore = defineStore('cart', () => {
                     return response.data;
                 },
                 (error: unknown) => {
-                    const obs = useObservabilityStore();
-                    obs.track(analyticsEvents.CHECKOUT_FAILED, { reason: apiErrorCode(error) });
+                    if (isTransportFailure(error)) {
+                        const obs = useObservabilityStore();
+                        obs.track(analyticsEvents.CHECKOUT_REQUEST_FAILED);
+                    }
                     throw error;
                 }
             )
@@ -209,8 +197,6 @@ export const useCartStore = defineStore('cart', () => {
     const reorder = (orderId: string) =>
         fetchAny(() =>
             apiReorder(orderId).then((response) => {
-                const obs = useObservabilityStore();
-                obs.track(analyticsEvents.CART_REORDERED, { order_id: orderId });
                 cart.value = response.data;
                 return response.data;
             })

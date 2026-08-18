@@ -10,8 +10,6 @@ import {
     cancelOrderById,
     getOrderInvoice
 } from '@api';
-import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
-import { analyticsEvents } from '@/infrastructure/observability/events.ts';
 import type {
     Order,
     CreateOrderRequest,
@@ -138,8 +136,6 @@ export const useOrdersStore = defineStore('orders', () => {
     const cancelOrder = (orderId: string) =>
         fetchAny(() =>
             cancelOrderById(orderId).then((response) => {
-                const obs = useObservabilityStore();
-                obs.track(analyticsEvents.ORDER_CANCELLED, { order_id: orderId });
                 if (response.data) addOrder(response.data);
                 return response.data;
             })

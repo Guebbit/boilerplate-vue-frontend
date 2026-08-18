@@ -27,7 +27,7 @@ import {
 } from '@api';
 import type { Address, AddressInput, Session, UpdateAddressRequest } from '@types';
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
-import { analyticsEvents } from '@/infrastructure/observability/events.ts';
+import { analyticsEvents } from '@/infrastructure/observability/analyticsEvents.ts';
 
 /**
  * The account domain: the visitor's own record, and every operation that changes it.
@@ -93,11 +93,7 @@ export const useAccountStore = defineStore('account', () => {
                 .then((data) => {
                     session.setAccessToken(getTokenFromResponse(data));
                 })
-                .then(() => {
-                    const obs = useObservabilityStore();
-                    obs.track(analyticsEvents.USER_LOGGED_IN, { method: 'email' });
-                    return fetchProfile(true);
-                })
+                .then(() => fetchProfile(true))
         );
 
     /**
@@ -144,10 +140,7 @@ export const useAccountStore = defineStore('account', () => {
                       options
                   )
                 : apiSignup({ email, username, password, passwordConfirm }, options)
-            ).then(() => {
-                const obs = useObservabilityStore();
-                obs.track(analyticsEvents.USER_SIGNED_UP, { method: 'email' });
-            })
+            ).then(() => undefined)
         );
 
     /**

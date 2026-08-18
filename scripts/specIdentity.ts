@@ -143,15 +143,20 @@ export const SHARED_FILES: readonly SharedFile[] = [
      */
 
     /*
-     * The analytics event names both sides emit. The backend sends them to PostHog and this app
-     * sends them to its own tracker, and funnels are built ACROSS the two — so a name that exists
-     * on one side only, or is spelled differently on each, silently produces two half-events that
-     * no dashboard adds up. Nothing else compares them: each repo's suite asserts its own copy and
-     * passes. Different paths because the two lint configs disagree on filename case.
+     * The analytics event names THIS app emits — its whole catalogue. Both repos write into one
+     * Umami website, so the names form one namespace, but each name has exactly one emitter:
+     * everything with an API call behind it is emitted by the backend, where it cannot be blocked
+     * by an extension, lost with the tab, or forged from a console, and this app keeps only the
+     * moments no request can carry. The backend's own names are never published — its controllers
+     * import them directly, so a copy here would name events this app must not fire.
+     *
+     * Authored as `shared/contracts/analytics.frontend.ts` over there, the analytics twin of the
+     * `asyncapi.yaml` subset above. Nothing else compares the two copies: each repo's suite asserts
+     * its own and passes. Different paths because the two lint configs disagree on filename case.
      */
     {
-        backend: 'src/infrastructure/observability/analytics-events.ts',
-        frontend: 'src/infrastructure/analyticsEvents.ts'
+        backend: 'src/infrastructure/observability/analytics-events.frontend.ts',
+        frontend: 'src/infrastructure/observability/analyticsEvents.ts'
     },
 
     /*

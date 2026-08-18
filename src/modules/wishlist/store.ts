@@ -4,8 +4,6 @@ import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { getWishlist, addWishlistItem, removeWishlistItem, moveWishlistItemToCart } from '@api';
 import type { WishlistItem } from '@types';
 import { useCartStore } from '@/modules/cart';
-import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
-import { analyticsEvents } from '@/infrastructure/observability/events.ts';
 
 /**
  * The visitor's saved products — ids only, like the cart's lines: the view joins them against
@@ -58,8 +56,6 @@ export const useWishlistStore = defineStore('wishlist', () => {
     const addToWishlist = (productId: string) =>
         fetchAny(() =>
             addWishlistItem({ productId }).then((response) => {
-                const obs = useObservabilityStore();
-                obs.track(analyticsEvents.WISHLIST_ITEM_ADDED, { product_id: productId });
                 items.value = response.data?.items ?? [];
                 return items.value;
             })
@@ -74,8 +70,6 @@ export const useWishlistStore = defineStore('wishlist', () => {
     const removeFromWishlist = (productId: string) =>
         fetchAny(() =>
             removeWishlistItem(productId).then((response) => {
-                const obs = useObservabilityStore();
-                obs.track(analyticsEvents.WISHLIST_ITEM_REMOVED, { product_id: productId });
                 items.value = response.data?.items ?? [];
                 return items.value;
             })
@@ -92,8 +86,6 @@ export const useWishlistStore = defineStore('wishlist', () => {
     const moveToCart = (productId: string) =>
         fetchAny(() =>
             moveWishlistItemToCart(productId).then((response) => {
-                const obs = useObservabilityStore();
-                obs.track(analyticsEvents.WISHLIST_MOVED_TO_CART, { product_id: productId });
                 items.value = response.data?.items ?? [];
                 return useCartStore()
                     .fetchCart()

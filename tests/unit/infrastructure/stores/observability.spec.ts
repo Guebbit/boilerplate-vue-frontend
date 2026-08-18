@@ -26,7 +26,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
-import { analyticsEvents } from '@/infrastructure/observability/events.ts';
+import { analyticsEvents } from '@/infrastructure/observability/analyticsEvents.ts';
 
 /** Stands in for the object the Umami script attaches to `window` once it loads. */
 const installUmamiTracker = () => {
@@ -62,14 +62,17 @@ describe('useObservabilityStore', () => {
     });
 
     describe('analyticsEvents', () => {
-        it('carries both the shared catalogue and the frontend-only additions', () => {
-            // The shared half is byte-identical with the backend and guarded by
-            // `check:spec-identity`; the frontend-only half has no backend counterpart because
-            // there is no "app started" on a server that is always started.
-            expect(analyticsEvents.APP_STARTED).toBe('app_started');
-            expect(analyticsEvents.USER_LOGGED_OUT).toBe('user_logged_out');
-            expect(analyticsEvents.PRODUCT_VIEWED).toBeTruthy();
-            expect(analyticsEvents.ORDER_CREATED).toBeTruthy();
+        it('carries only the moments no API request can carry', () => {
+            // Authored in the backend and byte-identical here, guarded by `check:spec-identity`.
+            // Every name with an API call behind it is emitted over there instead, so the two
+            // repos never write the same fact into one Umami website twice — asserted as an
+            // exact set, because an extra entry here IS that bug coming back.
+            expect(analyticsEvents).toEqual({
+                APP_STARTED: 'app_started',
+                APP_READY: 'app_ready',
+                USER_LOGGED_OUT: 'user_logged_out',
+                CHECKOUT_REQUEST_FAILED: 'checkout_request_failed'
+            });
         });
     });
 
@@ -207,7 +210,7 @@ describe('useObservabilityStore', () => {
             const store = readyStore();
 
             for (let index = 0; index < 60; index += 1) {
-                store.track(analyticsEvents.PRODUCT_VIEWED, { index });
+                store.track(analyticsEvents.APP_READY, { index });
             }
 
             const tracker = installUmamiTracker();
@@ -215,10 +218,7 @@ describe('useObservabilityStore', () => {
 
             expect(tracker.track).toHaveBeenCalledTimes(50);
             // The oldest ten were evicted, so the first survivor is number 10.
-            expect(tracker.track.mock.calls[0]).toEqual([
-                analyticsEvents.PRODUCT_VIEWED,
-                { index: 10 }
-            ]);
+            expect(tracker.track.mock.calls[0]).toEqual([analyticsEvents.APP_READY, { index: 10 }]);
         });
 
         it('are dropped, not buffered, while analytics is disabled', () => {
@@ -231,53 +231,6 @@ describe('useObservabilityStore', () => {
             scriptLoads();
 
             expect(tracker.track).not.toHaveBeenCalled();
-        });
-    });
-
-    /**
-     * The convenience helpers exist so that call sites cannot invent their own property names —
-     * a dashboard groups by `product_id`, and one caller sending `productId` is a silent hole in
-     * the funnel. So the payload keys are the thing worth pinning, not just the event name.
-     */
-    describe('convenience helpers', () => {
-        it('trackProductView sends the product id and name', () => {
-            const tracker = installUmamiTracker();
-            readyStore().trackProductView('p1', 'Gadget');
-
-            expect(tracker.track).toHaveBeenCalledWith(analyticsEvents.PRODUCT_VIEWED, {
-                product_id: 'p1',
-                product_name: 'Gadget'
-            });
-        });
-
-        it('trackItemAddedToCart sends the product id and quantity', () => {
-            const tracker = installUmamiTracker();
-            readyStore().trackItemAddedToCart('p1', 3);
-
-            expect(tracker.track).toHaveBeenCalledWith(analyticsEvents.CART_ITEM_ADDED, {
-                product_id: 'p1',
-                quantity: 3
-            });
-        });
-
-        it('trackOrderPlaced sends the order id, total and line count', () => {
-            const tracker = installUmamiTracker();
-            readyStore().trackOrderPlaced('o1', 19.98, 2);
-
-            expect(tracker.track).toHaveBeenCalledWith(analyticsEvents.ORDER_CREATED, {
-                order_id: 'o1',
-                total_amount: 19.98,
-                item_count: 2
-            });
-        });
-
-        it('trackProductSearched sends the raw query', () => {
-            const tracker = installUmamiTracker();
-            readyStore().trackProductSearched('gad');
-
-            expect(tracker.track).toHaveBeenCalledWith(analyticsEvents.PRODUCTS_SEARCHED, {
-                query: 'gad'
-            });
         });
     });
 

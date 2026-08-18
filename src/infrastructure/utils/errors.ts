@@ -26,32 +26,23 @@ const getErrorMessage = (error: unknown): string => {
 };
 
 /**
- * Extracts the MACHINE-readable code from a rejected API call.
+ * Whether a rejected API call never got an answer at all.
  *
- * The sibling of `getErrorMessage`, for the other audience: a message is for the user and is
- * translated, a code is for a dashboard and must never be. It reads the same reject envelope
- * `onResponseReject` guarantees — `errors[0].code` when the API answered with the standard shape,
- * the HTTP status when the failure never reached it (a transport error has no code of its own).
+ * The reject envelope `onResponseReject` builds carries the HTTP status whenever the API replied,
+ * whatever it replied with. Nothing to carry means nothing replied: the connection dropped, the
+ * request never left the browser, or the host is unreachable.
  *
- * It exists because an analytics event carrying a translated message groups into one bucket per
- * language, which is a funnel nobody can read.
+ * It exists because those are the only failures this app reports to analytics. Anything the server
+ * answered, the server already recorded — both repos write into one Umami website, so reporting it
+ * here too would store one refusal as two rows nothing can tell apart.
  *
  * @param error - Unknown rejected value, normally the envelope from `onResponseReject`.
- * @returns The error code, `http_<status>` when there is none, or `unknown`.
+ * @returns `true` when no response was received.
  */
-export const apiErrorCode = (error: unknown): string => {
-    if (!error || typeof error !== 'object') return 'unknown';
-
-    // Only the first issue: a code names one reason, and a form shows the rest field by field.
-    const { errors, status } = error as { errors?: unknown; status?: unknown };
-    const [first] = Array.isArray(errors) ? errors : [];
-
-    if (first && typeof first === 'object' && 'code' in first && typeof first.code === 'string')
-        return first.code;
-
-    // Nothing domain-specific to report, so fall back to the transport's own answer.
-    return typeof status === 'number' ? `http_${status}` : 'unknown';
-};
+export const isTransportFailure = (error: unknown): boolean =>
+    !error ||
+    typeof error !== 'object' ||
+    typeof (error as { status?: unknown }).status !== 'number';
 
 /**
  * Shows a best-effort message to the user and always reports the real

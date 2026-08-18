@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { i18n } from '@/infrastructure/i18n';
 import { mergeRemoteLocales } from '@/infrastructure/i18n/localeOverrides.ts';
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
-import { analyticsEvents } from '@/infrastructure/observability/events.ts';
+import { analyticsEvents } from '@/infrastructure/observability/analyticsEvents.ts';
 
 import App from './App.vue';
 import router from '@/app/router';
