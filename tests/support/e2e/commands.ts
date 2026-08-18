@@ -85,10 +85,10 @@ declare global {
              * Skips the current test unless running against the live backend
              * (`npm run test:e2e:live`).
              *
-             * Live-only specs (`parity.cy.ts`, the live refresh case in `auth.cy.ts`) open every
-             * `it()` with this: under the mock profile there is no live API to compare against or
-             * refresh a cookie against, so there is nothing to assert, and the test is reported as
-             * skipped rather than faked green.
+             * Live-only cases (the refresh case in `auth.cy.ts`, the multipart cases in
+             * `uploads.cy.ts`) open every `it()` with this: under the mock profile there is no
+             * live API to refresh a cookie against or to re-validate an upload, so there is
+             * nothing to assert, and the test is reported as skipped rather than faked green.
              */
             skipUnlessLive(): Chainable<void>;
 

@@ -21,9 +21,9 @@ name: E2E (live backend)
 # On failure, read it in this order:
 #   1. the `check:spec-identity` step — a failure there means the two checkouts' shared files have
 #      forked, so nothing below it is trustworthy;
-#   2. `parity.cy.ts` — a failure there is seed drift in the mock database, i.e. fix mockDb.ts, not
-#      the app;
-#   3. anything else — a real disagreement between this frontend and that backend.
+#   2. anything else — a real disagreement between this frontend and that backend. A spec whose
+#      expected rows no longer exist is seed drift, and the backend's
+#      `tests/unit/db/migration-demo-data.test.ts` says whether its migrations caused it.
 
 on:
     # Called by ci.yml as a required job — see that file's `test-e2e-live`.

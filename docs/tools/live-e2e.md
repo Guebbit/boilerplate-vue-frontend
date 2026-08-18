@@ -23,7 +23,7 @@ It costs what it costs: this profile needs both repos, a Mongo, a Redis and a se
 What carries the weight in between:
 
 - **response validation** (`VITE_VALIDATE_RESPONSES`), which turns any live contract violation into a hard failure instead of something that only surfaces if an unrelated assertion happens to trip on it
-- the **parity spec**, which turns a silent drift between the mock seed and the real seed into a failing test the first time this profile runs after the drift — not into a bug a user finds
+- the **specs themselves**, which run unchanged against the real API: a handler that has drifted from the service it mirrors fails here, on the PR that introduced it
 
 ## Architecture
 
@@ -36,7 +36,6 @@ flowchart TB
     Real --> Backend[("live backend\nreal seeded MongoDB")]
     Real --> Mutator["orvalMutator\nparses every response\nvs @api/schemas"]
     Mutator -->|mismatch| Fail["throws — live contract\nviolation caught"]
-    Cypress --> Parity["parity.cy.ts\nlive dataset vs mockDb.ts seed"]
     Cypress --> Refresh["auth.cy.ts live case\nforced 401 → refresh cookie\n:8085 → :3000"]
 
     classDef step fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -105,11 +104,11 @@ The resolved value is always an absolute path, so `npm --prefix` errors name a r
 
 This is the single highest-value piece of this profile: it converts all five pre-existing specs into live contract tests for free, closing the exact bug class that has previously shipped (an `_id`/`id` mismatch, a leaked password field) unnoticed by a green suite.
 
-## Mock/seed parity
+## Where seed drift is caught
 
-`tests/e2e/specs/parity.cy.ts` runs only under this profile (`cy.skipUnlessLive()` — reported as *pending* under the mock profile, not silently omitted). After logging in via `cy.request`, it hits the live API directly as admin and as anonymous and asserts the returned dataset matches the hand-mirrored seed in `tests/support/mocks/mockDb.ts`: same product ids and visibility split, same user ids, same order ids and totals.
+Not here. The demo dataset is published by the backend's `npm run seed:export` and copied to this repo by `npm run sync:frontend`, so both sides read one file and `npm run check:spec-identity` fails the build if the copies fork. Whether the *database a deployment actually builds* still matches that file is a property of the backend's migrations, and the backend asserts it directly in `tests/unit/db/migration-demo-data.test.ts` — seeding and migrating one database in both orders and comparing the result to the published artefact.
 
-This mechanises the "DATA parity" and "BEHAVIOUR parity" invariants documented at the top of `mockDb.ts`, which were previously held by review only. If a future edit changes a seed id, count or total in one repo without the other, this is the test that fails — loudly, the first time this profile runs after the drift, rather than silently describing an API that no longer exists.
+That check used to live here, as a Cypress spec pinning seeded ids by hand. It ran in the slowest harness available, in the repo that cannot fix a migration, and it went stale the first time the backend added a product.
 
 ## Live session refresh
 
@@ -122,7 +121,6 @@ This mechanises the "DATA parity" and "BEHAVIOUR parity" invariants documented a
 | `scripts/backendPath.ts` | `resolveBackendPath()`, read by `cypress.config.ts` |
 | `src/infrastructure/http/index.ts` | `orvalMutator`, `VITE_VALIDATE_RESPONSES` gate |
 | `src/infrastructure/http/responseSchemaMap.ts` | Route → Zod schema table `orvalMutator` validates against |
-| `tests/e2e/specs/parity.cy.ts` | Mock/seed parity, live profile only |
 | `src/modules/account/tests/e2e/auth.cy.ts` | Live session-refresh case (alongside the mock-profile auth specs) |
 | `tests/support/e2e/commands.ts` | `cy.resetState()`'s live branch, `cy.skipUnlessLive()` |
 | `cypress.config.ts` | `env.backendPath`, `env.apiMockEnabled` |

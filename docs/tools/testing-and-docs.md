@@ -136,7 +136,7 @@ Worth being explicit, because the boundary has bitten this project before.
 | Wrong response **shape** from a mock | `assertMockContract` in every handler, generated **strict** — see [Mocking](./mocking.md) |
 | Generated client out of step with `openapi.yaml` | the `api-freshness` CI job |
 | App breaks on unusual but valid data (a record with every optional field at its default, an unusual role split) | add the record to the demo dataset — [Mocking (MSW)](./mocking.md) |
-| Mock **behaviour** disagreeing with the real backend, or a live contract violation | [Live E2E](./live-e2e.md) — the `test-e2e-live` CI gate, response validation + `parity.cy.ts` |
+| Mock **behaviour** disagreeing with the real backend, or a live contract violation | [Live E2E](./live-e2e.md) — the `test-e2e-live` CI gate, plus response validation |
 
 The mock-profile suite proves the frontend agrees with its own mocks; on its own it cannot prove the mocks agree with the backend. That gap is closed by the live profile, which is a required CI job — so the answer to "does this frontend agree with that backend" is now given by running both, on every PR, rather than by a reviewer checking a handler against a service. See [Mocking](./mocking.md) for what MSW still promises.
 

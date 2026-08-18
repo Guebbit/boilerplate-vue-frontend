@@ -23,8 +23,8 @@
  *
  * ── BALANCING ────────────────────────────────────────────────────────────────────────────────────
  * Longest-first onto the least-loaded shard (LPT), weighted by MEASURED durations rather than by
- * file size. Size is actively misleading here: `parity.cy.ts` is the third-largest file and the
- * fastest spec (0.15s), because every case in it is skipped outside the live profile.
+ * file size. Size is actively misleading here: a spec whose cases are all `cy.skipUnlessLive()`
+ * costs a fraction of a second under the mock profile whatever its line count.
  *
  * Wall-clock cannot go below the longest single spec, so the floor is `uploads.cy.ts` at ~86s no
  * matter how many shards are used.
