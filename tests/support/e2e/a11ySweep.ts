@@ -50,6 +50,18 @@ export const sweepA11y = (
                 // Wait for real content rather than the shell, so axe does not audit a loading
                 // state and report an empty page as perfect.
                 cy.get('h1').should('exist');
+                /*
+                 * ...and then for the panels BELOW the heading, which fetch their own data after
+                 * it renders. A button awaiting a response has its label dimmed by Vuetify's own
+                 * loading state, and axe reports that dimming as a contrast failure — correctly,
+                 * and about copy nobody is being asked to read yet. `h1` is the shell; this is
+                 * the content.
+                 *
+                 * `.v-btn--loading` and nothing wider. A bare `.v-progress-circular` also matches
+                 * the app shell's own indicator, which is mounted permanently and hidden by CSS,
+                 * so waiting on it waits forever.
+                 */
+                cy.get('.v-btn--loading').should('not.exist');
                 cy.checkPageA11y(name);
             });
     });
