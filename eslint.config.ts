@@ -234,7 +234,7 @@ export default defineConfigWithVueTs(
          * generated output means editing a generator to satisfy a rule, or carrying a suppression
          * header that only one of the two repos can act on.
          */
-        'src/types/realtime.generated.ts'
+        'src/types/asyncapi.generated.ts'
     ]),
 
     /**

@@ -90,7 +90,7 @@ Contract-first workflow: OpenAPI + AsyncAPI, codegen, generated client usage, an
 flowchart LR
     OpenSpec[openapi.yaml] --> Client[contracts/rest/index.ts\naxios client]
     OpenSpec --> Schemas[contracts/rest/schemas.zod.ts\nZod schemas]
-    AsyncSpec[asyncapi.yaml] --> Realtime[src/types/realtime.generated.ts]
+    AsyncSpec[asyncapi.yaml] --> Realtime[src/types/asyncapi.generated.ts]
 
     Client --> Stores[Pinia stores]
     Schemas --> Stores

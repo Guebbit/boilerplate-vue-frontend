@@ -67,7 +67,9 @@ export const siblingRole = (role: RepoRole): RepoRole =>
  * gate that fails on that trains people to ignore it.
  *
  * FOUR OF THESE ARE PRODUCED IN THE BACKEND and copied here — the two specs, the demo dataset and
- * the analytics names. Every one of them covers every domain, so every one is produced there from
+ * the analytics names. The async contract is the one whose name differs in transit: it is
+ * `asyncapi.public.yaml` there and lands as `asyncapi.yaml` here, because the shared subset is the
+ * whole of the async contract as far as this repo is concerned. Every one of them covers every domain, so every one is produced there from
  * per-module sources: the specs and the analytics names by assembling fragments
  * (`npm run contracts:bundle`), the dataset by seeding a database and reading it back
  * (`npm run seed:export`). For those, "decide which side is right" has one answer: the backend's,
@@ -77,27 +79,38 @@ export const siblingRole = (role: RepoRole): RepoRole =>
  *
  * Nothing that either repo can REGENERATE from a file already in this list belongs here. Such a
  * copy carries no fact the list does not already compare, and every entry costs a manual step per
- * contract change. `src/types/realtime.generated.ts` and the backend's `contract.<tool>.*`
- * collections are both out for that reason; each is guarded instead by a freshness check inside
- * its own repo.
+ * contract change. The generated realtime types and the backend's `contract.<tool>.*` collections
+ * are both out for that reason; each is guarded instead by a freshness check inside its own repo.
  */
 export const SHARED_FILES: readonly SharedFile[] = [
     /* The contract itself, and the ruleset both sides lint it under. */
     { backend: 'openapi.yaml', frontend: 'openapi.yaml' },
-    { backend: 'asyncapi.yaml', frontend: 'asyncapi.yaml' },
+    /*
+     * The async contract, in its SHARED half only. The backend's `asyncapi.yaml` holds every channel
+     * that service has, RabbitMQ queues included; `asyncapi.public.yaml` is the same document minus
+     * the sections no API client can reach, and it is that subset this repo receives as its own
+     * `asyncapi.yaml`. Both are built there from one set of section documents, so the two bundles
+     * cannot describe a shared channel differently.
+     *
+     * A browser can neither publish to nor consume from a broker, so the queue payloads would be a
+     * contract this repo carries and cannot honour. It never sees them.
+     */
+    { backend: 'asyncapi.public.yaml', frontend: 'asyncapi.yaml' },
     { backend: 'spectral.yaml', frontend: 'spectral.yaml' },
 
     /*
-     * The generated realtime types (`src/types/realtime.generated.ts` here,
-     * `src/types/asyncapi.generated.ts` there) are deliberately NOT in this list, for the same
-     * reason as the API client collections below: they are an OUTPUT of `asyncapi.yaml`, which is
-     * compared above, through `scripts/gen-asyncapi-types.ts`, which is compared at the bottom.
-     * Identical spec plus identical deterministic generator means neither side can hold a
-     * different output without one of those two files forking first.
+     * The generated realtime types — `src/types/asyncapi.generated.ts` in BOTH repos, each built by
+     * `npm run gen:asyncapi` from that repo's own `asyncapi.yaml` — are deliberately NOT in this
+     * list, for the same reason as the API client collections below: they are an OUTPUT, and every
+     * input they have is compared already. The shared half of the spec is compared above, and
+     * `scripts/gen-asyncapi-types.ts` at the bottom.
      *
-     * What a cross-repo comparison would add is "did this repo regenerate after the last spec
-     * edit" — and `npm run check:asyncapi-types` answers that inside each repo, with no sibling
-     * checkout to find and no file to carry across.
+     * The two outputs are NOT identical, and are not meant to be: the backend generates from the
+     * full contract and carries the queue payloads, this repo from the shared subset and does not.
+     * Comparing them would demand a sameness the split exists to remove — while what a cross-repo
+     * comparison would actually add, "did this repo regenerate after the last spec edit", is
+     * answered by `npm run check:asyncapi-types` inside each repo, with no sibling checkout to find
+     * and no file to carry across.
      */
 
     /*
@@ -270,7 +283,7 @@ export const formatSharedFileProblems = (
         `Shared contract mismatch against ${siblingRoot}:\n${lines.join('\n')}\n\n` +
         `  Both repos must carry byte-identical copies of ${SHARED_FILES.length} files.\n` +
         `  Four of them are PRODUCED IN THE BACKEND from per-module sources:\n` +
-        `    cd <backend> && npm run contracts:bundle   # the two specs and the analytics names\n` +
+        `    cd <backend> && npm run contracts:bundle   # the shared specs and the analytics names\n` +
         `    cd <backend> && npm run seed:export        # the demo dataset\n` +
         `    cd <backend> && npm run sync:frontend      # copies all four over\n` +
         `  The rest are hand-maintained on both sides: decide which copy is right and copy it\n` +

@@ -61,12 +61,16 @@ const sharedFiles = (role: RepoRole, suffix = ''): Record<string, string> =>
     );
 
 /**
- * The three same-path contract files, as named constants.
+ * The three contract files, as named constants, spelled the way THIS repo spells them.
  *
  * Declared rather than written inline because a filename is not an identifier: `'openapi.yaml'` as
  * a literal object key trips the naming-convention lint rule in every fixture, while a computed
  * key built from a variable does not. `sharedFilesWith` and `withoutFile` exist for the same
  * reason — they are the only two shapes a fixture needs.
+ *
+ * Only two of them are same-path: the async contract is `asyncapi.yaml` here and
+ * `asyncapi.public.yaml` in the backend, so it can key a fixture on THIS side only. Fixtures that
+ * need to write the sibling's copy use `CROSS_PATH` instead.
  */
 const OPENAPI = 'openapi.yaml';
 const ASYNCAPI = 'asyncapi.yaml';
@@ -123,13 +127,15 @@ describe('SHARED_FILES', () => {
     });
 
     it('excludes anything this repo regenerates from a file already in the list', () => {
-        // A generated output carries no fact the list does not compare already: identical
-        // `asyncapi.yaml` through an identical generator cannot produce different types. Listing
-        // one buys nothing and costs a manual copy per contract change, so `check:asyncapi-types`
-        // guards it inside this repo instead.
+        // A generated output carries no fact the list does not compare already: the shared half of
+        // the spec is compared, and so is the generator that reads it. Listing an output buys
+        // nothing and costs a manual copy per contract change, so `check:asyncapi-types` guards it
+        // inside this repo instead — which is also the only workable answer now that the two
+        // outputs legitimately differ, the backend's carrying the queue payloads this one's does
+        // not.
         const frontendPaths = new Set(SHARED_FILES.map(({ frontend }) => frontend));
 
-        expect(frontendPaths).not.toContain('src/types/realtime.generated.ts');
+        expect(frontendPaths).not.toContain('src/types/asyncapi.generated.ts');
     });
 
     it('holds at least one pair whose paths differ between the repos', () => {
@@ -163,7 +169,8 @@ describe('compareSharedFiles', () => {
     });
 
     it('matches a cross-path pair across its two different names', () => {
-        // `db/demo/demo-data.json` there, `tests/support/mocks/demo-data.json` here.
+        // `asyncapi.public.yaml` there, `asyncapi.yaml` here; `db/demo/demo-data.json` there,
+        // `tests/support/mocks/demo-data.json` here.
         const here = root(sharedFiles(HERE));
         const there = root(sharedFiles(THERE));
 
@@ -176,8 +183,9 @@ describe('compareSharedFiles', () => {
     });
 
     it('reports a cross-path pair as forked when only one side changed', () => {
-        // The bug this pair exists to catch: seed fixtures edited in one repo only. Both suites
-        // stay green — each is consistent with its own copy — and only this notices.
+        // The bug these pairs exist to catch: a contract or a seed fixture edited in one repo
+        // only. Both suites stay green — each is consistent with its own copy — and only this
+        // notices.
         const here = root(sharedFiles(HERE));
         const there = root({
             ...sharedFiles(THERE),
@@ -260,16 +268,18 @@ describe('formatSharedFileProblems', () => {
     });
 
     it('names the forked file and both digests', () => {
+        // A same-path pair, so one constant names the file in both roots. The cross-path case has
+        // its own test below.
         const here = root(sharedFiles(HERE));
-        const there = root(sharedFilesWith(THERE, ASYNCAPI, 'forked'));
+        const there = root(sharedFilesWith(THERE, OPENAPI, 'forked'));
 
         const message = formatSharedFileProblems(compareSharedFiles(there, here, HERE), there);
 
-        expect(message).toContain(ASYNCAPI);
+        expect(message).toContain(OPENAPI);
         expect(message).toContain('FORKED');
         // Both digests, so the message can be pasted into an issue and mean something later.
-        expect(message).toContain(hashFile(path.join(here, ASYNCAPI)));
-        expect(message).toContain(hashFile(path.join(there, ASYNCAPI)));
+        expect(message).toContain(hashFile(path.join(here, OPENAPI)));
+        expect(message).toContain(hashFile(path.join(there, OPENAPI)));
     });
 
     it('names both paths when a cross-path pair forks', () => {
@@ -296,7 +306,7 @@ describe('formatSharedFileProblems', () => {
         // repo's copy that the next `contracts:bundle` silently reverts.
         expect(message).toContain('npm run contracts:bundle');
         // Both of this repo's own generators, because a fresh copy of either spec leaves the
-        // outputs built from it stale — and `realtime.generated.ts` is no longer carried over
+        // outputs built from it stale — and `asyncapi.generated.ts` is no longer carried over
         // from the backend, so nothing else would mention regenerating it.
         expect(message).toContain('npm run gen:asyncapi');
     });

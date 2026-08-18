@@ -2,6 +2,11 @@
 
 The boilerplate exposes one realtime transport — Server-Sent Events — driven by contracts in `asyncapi.yaml` and demonstrated in the `RealtimePlayground` view (`/:locale/playground/realtime`).
 
+`asyncapi.yaml` here is the SHARED half of the backend's async contract: its `asyncapi.public.yaml`,
+copied over verbatim. The backend's own document also declares RabbitMQ worker queues, and those
+never reach this repo — a browser cannot open a broker connection, so their payload types would be a
+contract this app carries and cannot honour. See [AsyncAPI Workflow](../api/asyncapi-workflow.md).
+
 Requires the admin role — non-admins are redirected Home by the route's `meta.access`, not by a
 check inside the component. See [Sitemap & Access Control](../theory/sitemap.md). The gate exists
 because the stream itself (`GET /observability/events`) is admin-only on the API side too — see
@@ -23,7 +28,7 @@ connection, so everything client → server goes through the REST API instead.
 | SSE client factory | `src/infrastructure/createSseClient.ts` |
 | SSE composable | `src/modules/realtime/useRealtimeObservability.ts` |
 | Observability SSE store + state | `src/modules/realtime/realtimeObservability.ts` |
-| Generated realtime types | `src/types/realtime.generated.ts` (DO NOT edit) |
+| Generated realtime types | `src/types/asyncapi.generated.ts` (DO NOT edit) |
 | App-level type helpers | `src/types/realtime.ts` |
 | Route | `src/modules/realtime/views/RealtimePlayground.vue` |
 | Route definition | `src/modules/realtime/routes.ts` |
@@ -49,7 +54,7 @@ sequenceDiagram
 
 ## Observability event contract
 
-Event names come from `REALTIME_SSE_EVENT_NAMES`, generated into `src/types/realtime.generated.ts` — never hardcode the strings. `createSseClient` registers one listener per name so the browser dispatches each event type individually, and `ISseEventPayload<TEventName>` narrows the payload to the matching contract type.
+Event names come from `REALTIME_SSE_EVENT_NAMES`, generated into `src/types/asyncapi.generated.ts` — never hardcode the strings. `createSseClient` registers one listener per name so the browser dispatches each event type individually, and `SseEventPayload<TEventName>` narrows the payload to the matching contract type.
 
 **Server → Client**
 

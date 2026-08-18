@@ -1,4 +1,4 @@
-import type { ObservabilityMetricsPayload } from './realtime.generated';
+import type { ObservabilityMetricsPayload } from './asyncapi.generated';
 
 /**
  * A single observability SSE event rendered as a feed entry.

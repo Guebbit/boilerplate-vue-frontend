@@ -25,31 +25,10 @@ export interface AnonymousSchema8 {
 export interface AnonymousSchema11 {
   'sseClients': number;
 }
-export interface EmailJobPayload {
-  'request': AnonymousSchema13;
-  'from'?: string;
-  'templateName': string;
-  'data': Record<string, unknown>;
-}
-export interface AnonymousSchema13 {
-  'to': string;
-  'subject'?: string;
-  'text'?: string;
-  'html'?: string;
-}
-export interface PdfJobPayload {
-  'templatePath': string;
-  'templateData': Record<string, unknown>;
-  'outputPath': string;
-}
 
 export type MetricsSnapshotEvent = ObservabilityMetricsPayload;
 export type MetricsUpdatedEvent = ObservabilityMetricsPayload;
 export type HeartbeatEvent = ObservabilityMetricsPayload;
-export type EmailJobMessage = EmailJobPayload;
-export type PdfJobMessage = PdfJobPayload;
-export type EmailJobConsumeMessage = EmailJobPayload;
-export type PdfJobConsumeMessage = PdfJobPayload;
 
 /* Channel name constants (canonical identifiers from asyncapi.yaml) */
 
@@ -62,15 +41,6 @@ export const OBSERVABILITY_CHANNELS = {
 
 /* Union of every "observability." channel name */
 export type ObservabilityChannel = (typeof OBSERVABILITY_CHANNELS)[keyof typeof OBSERVABILITY_CHANNELS];
-
-/* Channel names in the "worker." namespace */
-export const WORKER_CHANNELS = {
-    EMAIL_SEND: 'worker.email.send',
-    PDF_GENERATE: 'worker.pdf.generate',
-} as const;
-
-/* Union of every "worker." channel name */
-export type WorkerChannel = (typeof WORKER_CHANNELS)[keyof typeof WORKER_CHANNELS];
 
 export const REALTIME_SSE_EVENT_NAMES = [
     "observability.heartbeat",
