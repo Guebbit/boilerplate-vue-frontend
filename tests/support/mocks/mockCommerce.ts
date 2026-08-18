@@ -227,3 +227,32 @@ export const refundMockPaymentForOrder = (orderId: string): void => {
     payment.status = 'refunded';
     payment.updatedAt = getIsoDateNow();
 };
+
+/**
+ * The BE's reservation sweep, mock-side: release every stale hold and cancel the order behind it.
+ *
+ * The mock keeps no clock, so "stale" is every order still sitting unpaid — the one state whose
+ * holds a sweep can claim. Each released line writes an `expire` movement (same counters as
+ * `release`, different story), exactly as the transition table spells it, and the cancellation
+ * announces itself the same way a manual cancel does.
+ *
+ * @returns how many holds (order lines) this run released
+ */
+export const expireMockStaleHolds = (): number => {
+    const staleOrders = (mockDatabase.sampleOrders ?? []).filter(
+        (order) => order.status === 'pending' && !order.deletedAt
+    );
+    let expired = 0;
+    for (const order of staleOrders) {
+        for (const item of order.items) {
+            applyMockStockTransition('expire', item.product.id, item.quantity, {
+                reference: order.id
+            });
+            expired += 1;
+        }
+        order.status = 'cancelled';
+        order.updatedAt = getIsoDateNow();
+        refundMockPaymentForOrder(order.id);
+    }
+    return expired;
+};

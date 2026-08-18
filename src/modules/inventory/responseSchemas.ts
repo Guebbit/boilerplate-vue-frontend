@@ -18,11 +18,8 @@ export const inventoryResponseSchemas: ResponseSchemaRoute[] = [
     },
     { method: 'POST', pattern: /^\/inventory\/receipts$/, schema: schemas.ReceiveStockResponse },
     { method: 'POST', pattern: /^\/inventory\/adjustments$/, schema: schemas.AdjustStockResponse },
-    /*
-     * The sweep is a maintenance call this app never makes — a scheduler does. Registered anyway,
-     * because the module owns `/inventory/*` and a route the contract declares but nothing maps
-     * is a response that would ship unvalidated the day something starts calling it.
-     */
+    // The sweep button on the ledger page drives this — the operator being one of the "outside
+    // ticks" the contract designs for, alongside a production cron.
     {
         method: 'POST',
         pattern: /^\/inventory\/reservations\/sweep$/,

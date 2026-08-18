@@ -31,6 +31,7 @@ All routes are locale-prefixed (`/:locale/…`). A missing locale is injected au
 | `/:locale/users/:id` | `UserTarget` | admin |
 | `/:locale/users/:id/edit` | `UserEdit` | admin |
 | `/:locale/admin` | `Admin` | admin |
+| `/:locale/inventory` | `InventoryLedger` | admin |
 | `/:locale/locales` | `LocalesList` | admin |
 | `/:locale/locales/:tag` | `LocaleEntries` | admin |
 | `/:locale/contact` | `Contact` | public |

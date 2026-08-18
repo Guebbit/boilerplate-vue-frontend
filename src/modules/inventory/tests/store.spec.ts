@@ -62,12 +62,38 @@ describe('fetchMovements', () => {
 
     it('narrows to one product by passing the id through as a query param', () => {
         const store = useInventoryStore();
-        return store.fetchMovements('p1').then(() => {
+        return store.fetchMovements({ productId: 'p1' }).then(() => {
             const call = vi.mocked(orvalMutator).mock.calls[0]![0] as {
                 params?: { productId?: string };
             };
             expect(call.params).toEqual({ productId: 'p1' });
         });
+    });
+
+    it('keeps the audit honest: totalItems from meta, not the row count', () => {
+        responses['GET /inventory/movements'] = {
+            data: {
+                items: [MOVEMENT],
+                meta: { page: 1, pageSize: 10, totalItems: 41, totalPages: 5 }
+            }
+        };
+        const store = useInventoryStore();
+        return store.fetchMovements({ page: 1, pageSize: 10 }).then(() => {
+            expect(store.movementsTotal).toBe(41);
+        });
+    });
+
+    it('repeats the last query when called with none — the reload-after-write path', () => {
+        const store = useInventoryStore();
+        return store
+            .fetchMovements({ reason: 'adjust' })
+            .then(() => store.fetchMovements())
+            .then(() => {
+                const calls = vi
+                    .mocked(orvalMutator)
+                    .mock.calls.map((call) => (call[0] as { params?: unknown }).params);
+                expect(calls).toEqual([{ reason: 'adjust' }, { reason: 'adjust' }]);
+            });
     });
 });
 
@@ -110,11 +136,34 @@ describe('receive', () => {
         });
     });
 
+    it("carries the operator's note onto the row when one was written", () => {
+        const store = useInventoryStore();
+        return store.receive('p1', 20, 'pallet 7, DHL').then(() => {
+            const call = vi.mocked(orvalMutator).mock.calls[0]![0] as { data?: unknown };
+            expect(call.data).toEqual({ productId: 'p1', quantity: 20, note: 'pallet 7, DHL' });
+        });
+    });
+
     it('reads a bare payload as no counters, not a crash', () => {
         responses['POST /inventory/receipts'] = { data: undefined };
         const store = useInventoryStore();
         return store.receive('p1', 20).then((level) => {
             expect(level).toBeUndefined();
+        });
+    });
+});
+
+describe('sweep', () => {
+    it('answers how many holds were released and reloads both views', () => {
+        responses['POST /inventory/reservations/sweep'] = { data: { expired: 3 } };
+        const store = useInventoryStore();
+        return store.sweep().then((expired) => {
+            expect(expired).toBe(3);
+            expect(requestedUrls()).toEqual([
+                '/inventory/reservations/sweep',
+                '/inventory/movements',
+                '/inventory/levels'
+            ]);
         });
     });
 });

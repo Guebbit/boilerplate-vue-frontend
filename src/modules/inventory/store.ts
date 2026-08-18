@@ -1,23 +1,41 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
-import { adjustStock, listInventoryLevels, listStockMovements, receiveStock } from '@api';
-import type { InventoryLevel, StockMovement } from '@types';
+import {
+    adjustStock,
+    listInventoryLevels,
+    listStockMovements,
+    receiveStock,
+    sweepReservations
+} from '@api';
+import type {
+    InventoryLevel,
+    StockMovement,
+    ListInventoryLevelsParams,
+    ListStockMovementsParams
+} from '@types';
 
 /**
  * The stock board and the ledger behind it.
  *
- * Two reads and two writes, and the split between the writes is the domain's, not this store's:
+ * Two reads and three writes, and the split between the writes is the domain's, not this store's:
  *
  * - a RECEIPT is stock arriving. `onHand` rises, `reserved` does not, so the delivery is available
  *   immediately. Strictly positive — a delivery that removes units is not a delivery.
  * - an ADJUSTMENT is a stocktake correction, and it is SIGNED, because shrinkage is the common
  *   case and it is negative. The API refuses to take `onHand` below what is already reserved.
+ * - the SWEEP releases every hold whose window has closed. A job behind an admin endpoint — the
+ *   API ships no scheduler, so the tick is driven from outside, and this store is one of the
+ *   outsides. Idempotent; running it twice releases nothing the first run already released.
  *
- * Both answer with the counters as they now stand, and both reload the ledger they just extended:
+ * All three answer with (or change) the counters, and all three reload the views they touched:
  * the row worth rendering is the API's, never a local guess. That is also why nothing here does
  * arithmetic on a count — `available` is derived server-side from `onHand` and `reserved`, and a
  * second implementation of that subtraction is a second thing that can be wrong.
+ *
+ * Both reads keep their `meta.totalItems`, because both are paginated server-side and the ledger
+ * especially is the record an audit works through — a bare row count would misreport history as
+ * complete.
  */
 export const useInventoryStore = defineStore('inventory', () => {
     const { getLoading, setLoading } = useCoreStore();
@@ -29,48 +47,67 @@ export const useInventoryStore = defineStore('inventory', () => {
     /** The latest movements, as last fetched. */
     const movements = ref<StockMovement[]>([]);
 
-    /** The current shelf counts, one row per product. */
+    /** How many movements match the last filters, across every page. */
+    const movementsTotal = ref(0);
+
+    /** The last movements query, so a write can reload the page being looked at. */
+    let movementsQuery: ListStockMovementsParams = {};
+
+    /** The current shelf counts, one row per product on the current page. */
     const levels = ref<InventoryLevel[]>([]);
 
-    /**
-     * Loads the ledger.
-     *
-     * @param productId - Narrow to one product's story; omitted, the whole shop's.
-     * @returns A promise resolving with the movements.
-     */
-    const fetchMovements = (productId?: string) =>
-        fetchAny(() =>
-            listStockMovements(productId === undefined ? undefined : { productId }).then(
-                (response) => {
-                    movements.value = response.data?.items ?? [];
-                    return movements.value;
-                }
-            )
-        );
+    /** How many products the board holds, across every page. */
+    const levelsTotal = ref(0);
+
+    /** The last levels query, for the same reload-what-is-shown reason. */
+    let levelsQuery: ListInventoryLevelsParams = {};
 
     /**
-     * Loads the stock board.
+     * Loads a page of the ledger.
      *
+     * @param query - Page, size, and the two narrowings: one product's story, one kind of
+     *  transition. Omitted, the last query is repeated — which is what a reload after a write
+     *  wants, since the visitor is still looking at the same page.
+     * @returns A promise resolving with the movements.
+     */
+    const fetchMovements = (query?: ListStockMovementsParams) =>
+        fetchAny(() => {
+            if (query) movementsQuery = query;
+            return listStockMovements(movementsQuery).then((response) => {
+                movements.value = response.data?.items ?? [];
+                movementsTotal.value = response.data?.meta?.totalItems ?? 0;
+                return movements.value;
+            });
+        });
+
+    /**
+     * Loads a page of the stock board, most scarce first.
+     *
+     * @param query - Page, size, and `lowOnly` — only products at or under the server's
+     *  low-availability threshold. Omitted, the last query is repeated.
      * @returns A promise resolving with the levels.
      */
-    const fetchLevels = () =>
-        fetchAny(() =>
-            listInventoryLevels().then((response) => {
+    const fetchLevels = (query?: ListInventoryLevelsParams) =>
+        fetchAny(() => {
+            if (query) levelsQuery = query;
+            return listInventoryLevels(levelsQuery).then((response) => {
                 levels.value = response.data?.items ?? [];
+                levelsTotal.value = response.data?.meta?.totalItems ?? 0;
                 return levels.value;
-            })
-        );
+            });
+        });
 
     /**
      * Receives a delivery, then reloads what it changed.
      *
      * @param productId - The product the units arrived for.
      * @param quantity - How many arrived. Strictly positive.
+     * @param note - The supplier, the delivery note number — whatever belongs on the row.
      * @returns A promise resolving with the counters after the delivery.
      */
-    const receive = (productId: string, quantity: number) =>
+    const receive = (productId: string, quantity: number, note?: string) =>
         fetchAny(() =>
-            receiveStock({ productId, quantity }).then((response) =>
+            receiveStock({ productId, quantity, note }).then((response) =>
                 reloadAfterWrite(response.data)
             )
         );
@@ -80,15 +117,32 @@ export const useInventoryStore = defineStore('inventory', () => {
      *
      * @param productId - The product being corrected.
      * @param delta - Signed: negative for shrinkage, which is the common case.
+     * @param note - Why. An unexplained correction is the thing an audit is looking for.
      * @returns A promise resolving with the counters after the correction.
      */
-    const adjust = (productId: string, delta: number) =>
+    const adjust = (productId: string, delta: number, note?: string) =>
         fetchAny(() =>
-            adjustStock({ productId, delta }).then((response) => reloadAfterWrite(response.data))
+            adjustStock({ productId, delta, note }).then((response) =>
+                reloadAfterWrite(response.data)
+            )
         );
 
     /**
-     * Both writes change the same two things, so they refresh the same two things.
+     * Expires every stale reservation, then reloads both views — released holds moved `reserved`.
+     *
+     * @returns A promise resolving with how many holds this run released.
+     */
+    const sweep = () =>
+        fetchAny(() =>
+            sweepReservations().then((response) =>
+                fetchMovements()
+                    .then(() => fetchLevels())
+                    .then(() => response.data?.expired ?? 0)
+            )
+        );
+
+    /**
+     * Both counter writes change the same two things, so they refresh the same two things.
      *
      * Sequential rather than concurrent: the ledger explains the board, and a board that arrived
      * before the movement that justifies it reads as a number nobody wrote.
@@ -104,10 +158,13 @@ export const useInventoryStore = defineStore('inventory', () => {
     return {
         loading,
         movements,
+        movementsTotal,
         levels,
+        levelsTotal,
         fetchMovements,
         fetchLevels,
         receive,
-        adjust
+        adjust,
+        sweep
     };
 });

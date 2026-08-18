@@ -19,6 +19,24 @@
         "reason-release": "Liberate",
         "reason-expire": "Scadute",
         "reason-receive": "Caricate",
-        "reason-adjust": "Rettificate"
+        "reason-adjust": "Rettificate",
+        "label-note": "Nota (fornitore, rif. bolla…)",
+        "label-note-why": "Perché (finisce sulla riga)",
+        "adjust-title": "Rettifica giacenza",
+        "label-delta": "Delta",
+        "hint-delta": "Con segno: negativo è un ammanco",
+        "button-adjust": "Rettifica",
+        "success-adjust": "Rettifica registrata — ora {available} unità sono disponibili.",
+        "board-title": "Giacenze",
+        "ledger-title": "Registro",
+        "label-low-only": "Solo sotto scorta",
+        "filter-product-all": "Tutti i prodotti",
+        "filter-reason-all": "Tutti i motivi",
+        "column-note": "Nota",
+        "button-history": "Storico",
+        "total-items": "{total} totali",
+        "button-sweep": "Scadenza prenotazioni",
+        "confirm-sweep": "Liberare ogni prenotazione la cui finestra di pagamento è chiusa? Gli ordini dietro di esse verranno annullati.",
+        "success-sweep": "{expired} prenotazioni scadute liberate."
     }
 }

@@ -4,9 +4,13 @@ import * as schemas from '@api/schemas';
 import {
     createErrorEnvelope,
     createSuccessEnvelope,
+    getQueryParameters,
     isCurrentMockUserAdmin,
     mockDatabase,
     readRequestBody,
+    slicePaginatedData,
+    toBooleanOrUndefined,
+    toNumberOrDefault,
     toPaginationMeta
 } from '@mocks/mockDb.ts';
 import { toMockJsonResponse } from '@mocks/mockTransport.ts';
@@ -17,14 +21,20 @@ const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 /*
  * The contract's default page size, and a constant rather than `items.length` — `PageSize` is
  * `minimum: 1`, so an empty ledger (which is exactly what a freshly reset mock has) would answer
- * `pageSize: 0` and fail its own schema check. Neither of these endpoints paginates here; the
- * meta is present because the contract requires it, and it says the whole list is page one.
+ * `pageSize: 0` and fail its own schema check.
  */
 const PAGE_SIZE = 10;
 
+/** Stands in for `NODE_LOW_STOCK_THRESHOLD` — the server's number, mirrored, never the page's. */
+const LOW_STOCK_THRESHOLD = 5;
+
 // The collections and cross-module listeners live in @mocks/mockCommerce.ts — the support
 // layer, like `createMockOrder`, because module mock files must not import each other.
-import { applyMockStockTransition, mockInventoryLevels } from '@mocks/mockCommerce.ts';
+import {
+    applyMockStockTransition,
+    expireMockStaleHolds,
+    mockInventoryLevels
+} from '@mocks/mockCommerce.ts';
 
 /** Admin-only, like every route in this module. Returns the 403 envelope, or `undefined` to go on. */
 const forbiddenUnlessAdmin = () =>
@@ -36,13 +46,26 @@ const forbiddenUnlessAdmin = () =>
           });
 
 export const registerInventoryMockHandlers = (): HttpHandler[] => [
-    http.get(`${API_BASE}/inventory/levels`, () => {
+    http.get(`${API_BASE}/inventory/levels`, ({ request }) => {
         const denied = forbiddenUnlessAdmin();
         if (denied) return denied;
 
-        const items = mockInventoryLevels();
+        const query = getQueryParameters(request.url);
+        const page = toNumberOrDefault(query.page, 1);
+        const pageSize = toNumberOrDefault(query.pageSize, PAGE_SIZE);
+        // Most scarce first, exactly as the contract orders the board.
+        const matching = mockInventoryLevels()
+            .filter(
+                (level) =>
+                    toBooleanOrUndefined(query.lowOnly) !== true ||
+                    level.available <= LOW_STOCK_THRESHOLD
+            )
+            .toSorted((a, b) => a.available - b.available);
         return toMockJsonResponse(
-            createSuccessEnvelope({ items, meta: toPaginationMeta(items.length, 1, PAGE_SIZE) }),
+            createSuccessEnvelope({
+                items: slicePaginatedData(matching, page, pageSize),
+                meta: toPaginationMeta(matching.length, page, pageSize)
+            }),
             { schema: ListInventoryLevelsResponse }
         );
     }),
@@ -51,12 +74,19 @@ export const registerInventoryMockHandlers = (): HttpHandler[] => [
         const denied = forbiddenUnlessAdmin();
         if (denied) return denied;
 
-        const productId = new URL(request.url).searchParams.get('productId');
-        const items = (mockDatabase.sampleStockMovements ?? []).filter(
-            (movement) => !productId || movement.productId === productId
+        const query = getQueryParameters(request.url);
+        const page = toNumberOrDefault(query.page, 1);
+        const pageSize = toNumberOrDefault(query.pageSize, PAGE_SIZE);
+        const matching = (mockDatabase.sampleStockMovements ?? []).filter(
+            (movement) =>
+                (!query.productId || movement.productId === query.productId) &&
+                (!query.reason || movement.reason === query.reason)
         );
         return toMockJsonResponse(
-            createSuccessEnvelope({ items, meta: toPaginationMeta(items.length, 1, PAGE_SIZE) }),
+            createSuccessEnvelope({
+                items: slicePaginatedData(matching, page, pageSize),
+                meta: toPaginationMeta(matching.length, page, pageSize)
+            }),
             { schema: ListStockMovementsResponse }
         );
     }),
@@ -67,33 +97,36 @@ export const registerInventoryMockHandlers = (): HttpHandler[] => [
      * reason→deltas table the backend keeps in `src/modules/inventory/domain/transitions.ts`.
      */
     http.post(`${API_BASE}/inventory/receipts`, ({ request }) =>
-        readRequestBody<{ productId?: string; quantity?: number }>(request).then((requestBody) => {
-            const denied = forbiddenUnlessAdmin();
-            if (denied) return denied;
+        readRequestBody<{ productId?: string; quantity?: number; note?: string }>(request).then(
+            (requestBody) => {
+                const denied = forbiddenUnlessAdmin();
+                if (denied) return denied;
 
-            const product = mockDatabase.sampleProducts.find(
-                ({ id }) => id === String(requestBody.productId ?? '')
-            );
-            if (!product)
-                return toMockJsonResponse(
-                    createErrorEnvelope(
-                        404,
-                        'NOT_FOUND',
-                        'The product receiving stock was not found'
-                    ),
-                    { status: 404, schema: MockErrorResponse }
+                const product = mockDatabase.sampleProducts.find(
+                    ({ id }) => id === String(requestBody.productId ?? '')
+                );
+                if (!product)
+                    return toMockJsonResponse(
+                        createErrorEnvelope(
+                            404,
+                            'NOT_FOUND',
+                            'The product receiving stock was not found'
+                        ),
+                        { status: 404, schema: MockErrorResponse }
+                    );
+
+                const level = applyMockStockTransition(
+                    'receive',
+                    product.id,
+                    Number(requestBody.quantity ?? 0),
+                    { note: requestBody.note }
                 );
 
-            const level = applyMockStockTransition(
-                'receive',
-                product.id,
-                Number(requestBody.quantity ?? 0)
-            );
-
-            return toMockJsonResponse(createSuccessEnvelope(level), {
-                schema: schemas.ReceiveStockResponse
-            });
-        })
+                return toMockJsonResponse(createSuccessEnvelope(level), {
+                    schema: schemas.ReceiveStockResponse
+                });
+            }
+        )
     ),
 
     /*
@@ -102,40 +135,57 @@ export const registerInventoryMockHandlers = (): HttpHandler[] => [
      * reserved, because those units are promised to orders that exist.
      */
     http.post(`${API_BASE}/inventory/adjustments`, ({ request }) =>
-        readRequestBody<{ productId?: string; delta?: number }>(request).then((requestBody) => {
-            const denied = forbiddenUnlessAdmin();
-            if (denied) return denied;
+        readRequestBody<{ productId?: string; delta?: number; note?: string }>(request).then(
+            (requestBody) => {
+                const denied = forbiddenUnlessAdmin();
+                if (denied) return denied;
 
-            const product = mockDatabase.sampleProducts.find(
-                ({ id }) => id === String(requestBody.productId ?? '')
-            );
-            if (!product)
-                return toMockJsonResponse(
-                    createErrorEnvelope(
-                        404,
-                        'NOT_FOUND',
-                        'The product being adjusted was not found'
-                    ),
-                    { status: 404, schema: MockErrorResponse }
+                const product = mockDatabase.sampleProducts.find(
+                    ({ id }) => id === String(requestBody.productId ?? '')
                 );
+                if (!product)
+                    return toMockJsonResponse(
+                        createErrorEnvelope(
+                            404,
+                            'NOT_FOUND',
+                            'The product being adjusted was not found'
+                        ),
+                        { status: 404, schema: MockErrorResponse }
+                    );
 
-            const delta = Number(requestBody.delta ?? 0);
-            const onHand = (product.onHand ?? 0) + delta;
-            if (onHand < (product.reserved ?? 0))
-                return toMockJsonResponse(
-                    createErrorEnvelope(
-                        409,
-                        'CONFLICT',
-                        'The correction would leave fewer units than are already reserved'
-                    ),
-                    { status: 409, schema: MockErrorResponse }
-                );
+                const delta = Number(requestBody.delta ?? 0);
+                const onHand = (product.onHand ?? 0) + delta;
+                if (onHand < (product.reserved ?? 0))
+                    return toMockJsonResponse(
+                        createErrorEnvelope(
+                            409,
+                            'CONFLICT',
+                            'The correction would leave fewer units than are already reserved'
+                        ),
+                        { status: 409, schema: MockErrorResponse }
+                    );
 
-            const level = applyMockStockTransition('adjust', product.id, delta);
+                const level = applyMockStockTransition('adjust', product.id, delta, {
+                    note: requestBody.note
+                });
 
-            return toMockJsonResponse(createSuccessEnvelope(level), {
-                schema: schemas.AdjustStockResponse
-            });
-        })
-    )
+                return toMockJsonResponse(createSuccessEnvelope(level), {
+                    schema: schemas.AdjustStockResponse
+                });
+            }
+        )
+    ),
+
+    /*
+     * The sweep: a job behind an admin endpoint, driven from outside because the API ships no
+     * scheduler. Idempotent — the mock's "stale" is every order still unpaid, and once swept those
+     * are cancelled, so a second run finds nothing.
+     */
+    http.post(`${API_BASE}/inventory/reservations/sweep`, () => {
+        const denied = forbiddenUnlessAdmin();
+        if (denied) return denied;
+        return toMockJsonResponse(createSuccessEnvelope({ expired: expireMockStaleHolds() }), {
+            schema: schemas.SweepReservationsResponse
+        });
+    })
 ];

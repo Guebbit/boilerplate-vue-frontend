@@ -19,6 +19,24 @@
         "reason-release": "Released",
         "reason-expire": "Expired",
         "reason-receive": "Received",
-        "reason-adjust": "Adjusted"
+        "reason-adjust": "Adjusted",
+        "label-note": "Note (supplier, delivery ref…)",
+        "label-note-why": "Why (goes on the row)",
+        "adjust-title": "Adjust stock",
+        "label-delta": "Delta",
+        "hint-delta": "Signed: negative is shrinkage",
+        "button-adjust": "Adjust",
+        "success-adjust": "Correction recorded — {available} units are now available.",
+        "board-title": "Stock board",
+        "ledger-title": "Ledger",
+        "label-low-only": "Low stock only",
+        "filter-product-all": "All products",
+        "filter-reason-all": "All reasons",
+        "column-note": "Note",
+        "button-history": "History",
+        "total-items": "{total} total",
+        "button-sweep": "Expire stale holds",
+        "confirm-sweep": "Release every hold whose payment window has closed? The orders behind them will be cancelled.",
+        "success-sweep": "{expired} stale holds released."
     }
 }
