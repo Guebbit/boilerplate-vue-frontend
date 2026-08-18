@@ -42,11 +42,14 @@ All four expand to `${CONTAINER_ENGINE:-podman} compose`. Export `CONTAINER_ENGI
 
 | Script | Job | Read more |
 | ------ | --- | --------- |
+| `test:module` | One module's unit suites — `-- src/modules/<name>` | [Quick Start](./testing-quickstart.md) |
+| `test:unit:report` | The unit run again, writing `reports/test-report.json` for the reader below | [Quick Start](./testing-quickstart.md) |
+| `test:report` | Per-module rollup, slowest suites, failures named by module, and per-module coverage when `coverage/lcov.info` exists | [Quick Start](./testing-quickstart.md) |
+| `test:e2e:spec` | One Cypress spec — `E2E_SPEC=<path> npm run test:e2e:spec` | [Quick Start](./testing-quickstart.md) |
 | `test:unit` | Vitest unit suite (CI mode) | [Testing](./testing-and-docs.md) |
 | `test:e2e` | Start Vite (with MSW) + run Cypress headlessly, sharded across `E2E_SHARDS` processes | [Testing](./testing-and-docs.md#test-timings) |
 | `test:e2e:serial` | The same run in one Cypress process — for when interleaved output is hard to read | [Testing](./testing-and-docs.md#test-timings) |
 | `test:e2e:dev` | Open Cypress UI for interactive e2e development | [Testing](./testing-and-docs.md) |
-| `test:e2e:random` | Start Vite with the faker-seeded random mock profile + run only `resilience.cy.ts` | [Mocking](./mocking.md) |
 | `test:e2e:live` | Start Vite (real API, response validation on) + run Cypress against the live backend, by hand | [Live E2E](./live-e2e.md) |
 | `test:mutation` | Stryker: break the source on purpose and report what the tests failed to notice. Slow — nightly or before a refactor, never in a PR | [Testing](./testing-and-docs.md) |
 | `test` | `test:unit` then `test:e2e` | [Testing](./testing-and-docs.md) |
@@ -56,7 +59,7 @@ All four expand to `${CONTAINER_ENGINE:-podman} compose`. Export `CONTAINER_ENGI
 | Script | Job | Read more |
 | ------ | --- | --------- |
 | `regenerate` | **After every pull.** `gen:api`, then `gen:asyncapi`, then `prettier:fix` — the whole client rebuilt from the specs the backend handed over | [OpenAPI Workflow](../api/openapi-workflow.md) |
-| `gen:api` | Regenerate `contracts/rest/` and `tests/support/mocks/generated.ts` from `openapi.yaml` via orval | [OpenAPI Workflow](../api/openapi-workflow.md) |
+| `gen:api` | Regenerate `contracts/rest/` from `openapi.yaml` via orval | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | `gen:asyncapi` | Regenerate `src/types/realtime.generated.ts` from `asyncapi.yaml` | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 | `check:asyncapi-types` | The same generation, compared instead of written — the freshness gate | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 | `lint:openapi` | Lint `openapi.yaml` with Spectral | [OpenAPI Workflow](../api/openapi-workflow.md) |
@@ -64,7 +67,7 @@ All four expand to `${CONTAINER_ENGINE:-podman} compose`. Export `CONTAINER_ENGI
 
 Generated output is committed. CI regenerates and fails if the result differs, so any codegen has to be followed by `prettier:fix` — orval emits 2-space indentation while this repo commits 4. `regenerate` already ends with it, which is the reason to reach for that rather than `gen:api` alone.
 
-`openapi.yaml`, `asyncapi.yaml` and `tests/support/mocks/dataset.json` are **owned by the backend** and arrive here through its `npm run sync:frontend`. Nothing in this repo produces them; `check:spec-identity` fails if they drift. So the sequence across the pair is: backend `npm run regenerate` → commit → pull here → `npm run regenerate` here.
+`openapi.yaml`, `asyncapi.yaml` and `tests/support/mocks/demo-data.json` are **owned by the backend** and arrive here through its `npm run sync:frontend`. Nothing in this repo produces them; `check:spec-identity` fails if they drift. So the sequence across the pair is: backend `npm run regenerate` → commit → pull here → `npm run regenerate` here.
 
 ## Docs scripts
 

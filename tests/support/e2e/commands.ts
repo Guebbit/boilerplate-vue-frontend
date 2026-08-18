@@ -1,7 +1,29 @@
 /// <reference types="cypress" />
 
-const RESET_MOCK_MAX_ATTEMPTS = 10;
-const RESET_MOCK_RETRY_DELAY_MS = 200;
+/*
+ * The mock reset is a LIVENESS check, not a speed one, so its budget is expressed as two
+ * thresholds rather than one.
+ *
+ * `/__mock/reset` is served by MSW's own service worker, so a reset cannot succeed until that
+ * worker has registered and taken control. How long that takes is not a property of the app: a
+ * cold `vite dev` still transforming modules, four Cypress browsers sharing one dev server, a
+ * loaded CI box — all of them move it, and none of them is a bug.
+ *
+ * So: SLOW is reported and passes, TIMEOUT fails. A run that takes 3s is worth knowing about and
+ * is not worth failing a merge over; a worker that never starts is a real fault and still fails,
+ * loudly, with the same message it always had.
+ *
+ * A healthy reset measures ~260ms locally, so SLOW is ~8× that and TIMEOUT ~30×. The previous
+ * budget was 10 attempts × 200ms = 2s with no middle ground, which put the FAIL line at the same
+ * place this file now puts the WARN line — an ordinary slow start was indistinguishable from a
+ * dead worker, and failed the gate for the first one.
+ *
+ * TIMEOUT stays under `defaultCommandTimeout` (15s) on purpose: past that, Cypress kills the
+ * command with its own generic message and the useful one here is never printed.
+ */
+const RESET_MOCK_SLOW_MS = 2000;
+const RESET_MOCK_TIMEOUT_MS = 8000;
+const RESET_MOCK_RETRY_DELAY_MS = 250;
 const APP_READY_TIMEOUT_MS = 15_000;
 // A live reset drops and re-seeds the database; measured at ~0.6s locally, with headroom for a
 // cold tsx start and a slower CI disk.
@@ -21,7 +43,7 @@ declare global {
              * - live profile: runs the backend's `host -- db:seed:reset`, which drops the database,
              *   re-upserts the same fixtures and clears the Redis cache.
              *
-             * Both land on the dataset in `db/seeds/index.ts`, which is why the same specs and
+             * Both land on the dataset in `db/demo/index.ts`, which is why the same specs and
              * the same `cy.loginAs()` credentials work against either.
              */
             resetState(): Chainable<void>;
@@ -90,7 +112,7 @@ declare global {
     }
 }
 
-/** Mirrors `MockSentEmail` in `tests/support/mocks/mockShared.ts`, over the wire. */
+/** Mirrors `MockSentEmail` in `tests/support/mocks/mockDb.ts`, over the wire. */
 export interface MockOutboxEmail {
     to: string;
     subject: string;
@@ -117,44 +139,69 @@ const wait = (milliseconds: number) =>
  * Recursive rather than a loop: a bounded retry is the one shape a promise chain cannot express
  * as a flat sequence, since the number of links is not known up front.
  *
+ * Bounded by a DEADLINE rather than an attempt count, because the thing being waited on is time —
+ * "the worker took 3 seconds" is the fact worth reporting, and an attempt count only says it
+ * indirectly, and stops saying it at all the moment the retry delay is tuned.
+ *
  * The two-argument `.then(onFulfilled, onRejected)` is load-bearing. A trailing `.catch` would
- * also swallow the "gave up" rejection that `attempt` itself produces when `remaining` hits zero,
- * turning the bound into an infinite retry — the failure mode being guarded against here is a
- * worker that never starts, so that would hang the suite instead of failing it.
+ * also swallow the "gave up" rejection that `attempt` itself produces at the deadline, turning
+ * the bound into an infinite retry — the failure mode being guarded against here is a worker that
+ * never starts, so that would hang the suite instead of failing it.
  */
 const resetMswDatabase = () =>
-    cy.window().then((windowObject) => {
-        const attempt = (remaining: number, lastError?: unknown): Promise<void> => {
-            if (remaining === 0)
-                return Promise.reject(
-                    new Error(
-                        `Unable to reset mock state after ${RESET_MOCK_MAX_ATTEMPTS} attempts.${
-                            lastError ? ` Last error: ${String(lastError)}` : ''
-                        }`
+    cy
+        .window()
+        .then((windowObject) => {
+            const startedAt = Date.now();
+
+            const attempt = (lastError?: unknown): Promise<number> => {
+                const elapsed = Date.now() - startedAt;
+
+                if (elapsed >= RESET_MOCK_TIMEOUT_MS)
+                    return Promise.reject(
+                        new Error(
+                            `Unable to reset mock state after ${elapsed}ms (budget ${RESET_MOCK_TIMEOUT_MS}ms).${
+                                lastError ? ` Last error: ${String(lastError)}` : ''
+                            }`
+                        )
+                    );
+
+                return windowObject
+                    .fetch('/__mock/reset', { method: 'POST' })
+                    .then(
+                        (response) =>
+                            response.ok
+                                ? undefined
+                                : { retryAfter: `Mock reset returned HTTP ${response.status}` },
+                        // Ignore transient failures while MSW starts, then retry.
+                        (error: unknown) => ({ retryAfter: error })
                     )
-                );
+                    .then((outcome) =>
+                        outcome
+                            ? wait(RESET_MOCK_RETRY_DELAY_MS).then(() =>
+                                  attempt(outcome.retryAfter)
+                              )
+                            : Date.now() - startedAt
+                    );
+            };
 
-            return windowObject
-                .fetch('/__mock/reset', { method: 'POST' })
-                .then(
-                    (response) =>
-                        response.ok
-                            ? undefined
-                            : { retryAfter: `Mock reset returned HTTP ${response.status}` },
-                    // Ignore transient failures while MSW starts, then retry.
-                    (error: unknown) => ({ retryAfter: error })
-                )
-                .then((outcome) =>
-                    outcome
-                        ? wait(RESET_MOCK_RETRY_DELAY_MS).then(() =>
-                              attempt(remaining - 1, outcome.retryAfter)
-                          )
-                        : undefined
+            return attempt();
+        })
+        /*
+         * Slow but alive. Reported through `cy.task` rather than `cy.log`, because this has to
+         * reach the TERMINAL: `cy.log` writes to the Cypress command log, which nobody reads in a
+         * `cypress run`, and a warning nobody sees is not a warning.
+         *
+         * Deliberately not an assertion. The point of the two thresholds is that this case passes
+         * — see the constants above for why a slow worker is not a fault.
+         */
+        .then((elapsed) => {
+            if (elapsed >= RESET_MOCK_SLOW_MS)
+                cy.task(
+                    'warn',
+                    `mock reset took ${elapsed}ms (slow above ${RESET_MOCK_SLOW_MS}ms, fails above ${RESET_MOCK_TIMEOUT_MS}ms)`
                 );
-        };
-
-        return attempt(RESET_MOCK_MAX_ATTEMPTS);
-    });
+        });
 
 // `allowCypressEnv: false` in cypress.config.ts disables `Cypress.env()`, so the profile flag is
 // read through the stateful `cy.env()` API instead.
@@ -386,7 +433,7 @@ Cypress.Commands.add('checkPageA11y', (context?: string) => {
  *   1. **Fixed viewport** — pinned in `cypress.config.ts`, since image size is part of the diff.
  *   2. **Animations disabled** — a transition caught mid-frame differs every run.
  *   3. **Frozen clock** — anything rendering a date or a relative time changes by the minute.
- *   4. **The fixed mock profile** — never the random one, whose whole purpose is to differ.
+ *   4. **The mock profile** — the same demo dataset on every run.
  *
  * The first is config; this command does the other three.
  */
@@ -415,17 +462,32 @@ Cypress.Commands.add('freezeForVisual', (isoTime = '2026-01-01T12:00:00.000Z') =
 Cypress.Commands.add('compareSnapshot', (name: string) => {
     cy.screenshot(name, { overwrite: true, capture: 'viewport' });
 
-    cy.env(['visualBaselineDirectory', 'visualDiffDirectory', 'updateSnapshots']).then(
-        ({ visualBaselineDirectory, visualDiffDirectory, updateSnapshots }) => {
-            // Cypress writes screenshots as `<screenshotsFolder>/<spec>/<name>.png`.
-            const actualPath = `${Cypress.config('screenshotsFolder')}/${Cypress.spec.relative
-                .split('/')
-                .pop()}/${name}.png`;
+    cy.env(['visualDiffDirectory', 'updateSnapshots']).then(
+        ({ visualDiffDirectory, updateSnapshots }) => {
+            /*
+             * Cypress writes screenshots as `<screenshotsFolder>/<spec relative path>/<name>.png`
+             * — the WHOLE path, not the file name. Taking only the basename worked while every
+             * visual spec sat at the same depth and broke the moment they moved into the modules,
+             * with an ENOENT naming a directory Cypress had never written to.
+             */
+            const actualPath = `${Cypress.config('screenshotsFolder')}/${
+                Cypress.spec.relative
+            }/${name}.png`;
 
+            /*
+             * The baseline directory is derived from the SPEC, not configured centrally: a spec at
+             * `src/modules/products/tests/e2e/*.visual.cy.ts` keeps its baselines in a
+             * `__snapshots__` folder beside it. That is what makes `rm -rf src/modules/products`
+             * take its baselines with it — a central folder would be left holding PNGs of a screen
+             * that no longer exists, and nothing would ever notice.
+             *
+             * Diffs go the other way, to one central `reports/` folder: they are throwaway output
+             * of a failed run, they are gitignored, and CI uploads them from one place.
+             */
             cy.task('compareVisualSnapshot', {
                 name,
                 actualPath,
-                baselineDirectory: visualBaselineDirectory,
+                specRelative: Cypress.spec.relative,
                 diffDirectory: visualDiffDirectory,
                 update: updateSnapshots === true
             }).then((result) => {

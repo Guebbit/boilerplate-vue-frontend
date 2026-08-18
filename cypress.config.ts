@@ -1,12 +1,12 @@
 /**
  * Cypress configuration — every suite that needs a real browser.
  *
- * ── Three profiles over one set of specs ─────────────────────────────────────────────────────
+ * ── Two profiles over one set of specs ───────────────────────────────────────────────────────
  * The specs do not know which backend they are talking to. `cy.resetState()` branches on the
- * `apiMockEnabled` flag, so the same file runs against MSW's in-memory database (the default),
- * against a faker-seeded random dataset, or against the real API — see the `test:e2e*` scripts.
+ * `apiMockEnabled` flag, so the same file runs against MSW's in-memory database (the default) or
+ * against the real API — see the `test:e2e*` scripts.
  * A spec that only makes sense in one profile opens with `cy.skipUnlessLive()` rather than being
- * silently green in the others.
+ * silently green in the other.
  *
  * ── Why the viewport is pinned here ──────────────────────────────────────────────────────────
  * Image dimensions are part of a visual diff, so a baseline recorded at one size can never match
@@ -43,7 +43,25 @@ export default defineConfig({
         setupNodeEvents(on) {
             on('task', {
                 compareVisualSnapshot: (options: Parameters<typeof compareSnapshot>[0]) =>
-                    compareSnapshot(options)
+                    compareSnapshot(options),
+
+                /*
+                 * A line on the terminal from inside a spec, for the things that are worth
+                 * knowing and not worth failing over — a mock reset that was slow but did
+                 * finish, say.
+                 *
+                 * A task and not `cy.log` because the two go to different places: `cy.log`
+                 * writes to the Cypress command log, which is read in `cypress open` and by
+                 * nobody in `cypress run`. Warnings that only appear where nobody is looking
+                 * train people to ignore the ones that do.
+                 *
+                 * Returns null because a task must return something serialisable; undefined
+                 * makes Cypress fail the command.
+                 */
+                warn: (message: string) => {
+                    console.warn(`[e2e] ${message}`);
+                    return null;
+                }
             });
         },
         /*
@@ -102,9 +120,13 @@ export default defineConfig({
             // scripts/backendPath.ts, shared with scripts/check-spec-identity.ts so the two can
             // never silently disagree about which backend they mean.
             backendPath: resolveBackendPath(),
-            // Where committed baselines live, and where a failing diff is written.
-            visualBaselineDirectory: path.resolve('tests/e2e/snapshots'),
-            visualDiffDirectory: path.resolve('tests/e2e/snapshots/__diff__'),
+            /*
+             * Only the DIFF directory is configured. Baselines are resolved per spec, into a
+             * `__snapshots__` folder beside it, so a module owns its own — see the `compareSnapshot`
+             * command. Diffs stay central because they are throwaway output of a failed run:
+             * gitignored under `reports/`, and uploaded from one place by CI.
+             */
+            visualDiffDirectory: path.resolve('reports/visual-diff'),
             // Flipped by `npm run test:e2e:visual:update` to re-record rather than compare.
             updateSnapshots: false
         }
