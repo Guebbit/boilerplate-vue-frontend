@@ -39,6 +39,7 @@ node_modules
 .DS_Store
 css
 dist
+dist-e2e
 dist-ssr
 coverage
 *.local

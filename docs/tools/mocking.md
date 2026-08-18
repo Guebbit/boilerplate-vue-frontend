@@ -167,9 +167,12 @@ Recorded deliberately; none of these are accidents.
 
 `npm run test:e2e` runs `start-server-and-test`, which:
 
-1. Starts Vite on port **8085** with `VITE_API_MOCK_ENABLED=true`.
-2. Waits for `http://localhost:8085` to be ready.
-3. Runs `cypress run --e2e`.
+1. Builds the app once with `VITE_API_MOCK_ENABLED=true` into `dist-e2e/` (`npm run build:e2e`), so MSW and the handlers are in the bundle.
+2. Serves that build with `vite preview` on port **8085** — static files, so nothing compiles while Cypress is driving.
+3. Waits for `http://localhost:8085` to be ready.
+4. Runs `cypress run --e2e`.
+
+The build goes to `dist-e2e/` rather than `dist/` deliberately: `dist/` stays the production bundle, which carries no MSW.
 
 Specs exercise the full Vue app plus MSW handlers, with no real network calls. `cy.resetState()` (in every spec's `beforeEach`) POSTs to the test-only `/__mock/reset` endpoint under this profile, which calls `resetMockDatabase()`. The same command drives the live profile too — see [Live E2E](./live-e2e.md) for what it does there instead.
 

@@ -156,7 +156,7 @@ promise.
 | `npm run test:e2e:live` | ~13m | the full suite against a real backend — `complete:manual`, sequential |
 
 **Cypress is the gate**, and the reason `test:e2e` is sharded. Sequentially those 17 specs take
-**12m54s** on one core; `scripts/e2e-shard.ts` splits them across processes sharing one dev server.
+**12m54s** on one core; `scripts/e2e-shard.ts` splits them across processes sharing one preview server.
 `npm run test:e2e:serial` keeps the old behaviour for when an interleaved failure is hard to read.
 
 Measured on the 16-core / 30 GB machine, same 17 specs:

@@ -1,12 +1,19 @@
 #!/usr/bin/env tsx
 /**
- * Runs the Cypress e2e specs in parallel shards against ONE dev server — the worker behind
+ * Runs the Cypress e2e specs in parallel shards against ONE preview server — the worker behind
  * `npm run test:e2e`.
+ *
+ * A BUILT bundle, not a dev server. `vite dev` compiles a route the first time a browser asks for
+ * it, so with four browsers on one server the compile queue lands inside Cypress' timeouts and the
+ * suite fails on whichever spec reached its form first — reading as a random flake rather than as
+ * the contention it is. `vite preview` serves static files, so shard count stops affecting timing.
+ * Measured: 4/4 green in 153s against a build, where the same specs on a dev server took ~250s and
+ * failed two shards in two runs out of three.
  *
  * ── WHY ──────────────────────────────────────────────────────────────────────────────────────────
  * Cypress runs specs one after another, on one core. Measured 2026-08-14 that is 12m54s of a ~10
  * minute gate, on a machine with sixteen. Cypress's own parallelisation is a Cloud feature, but
- * nothing stops several `cypress run` processes sharing a dev server — the balancing is the only
+ * nothing stops several `cypress run` processes sharing one server — the balancing is the only
  * part Cloud actually adds, and seventeen specs with known durations do not need a service to
  * balance them.
  *

@@ -213,6 +213,8 @@ export default defineConfigWithVueTs(
      */
     globalIgnores([
         'dist',
+        // The e2e bundle `npm run test:e2e` builds and serves; generated output, same as `dist`.
+        'dist-e2e',
         'dist-ssr',
         'coverage',
         'docs',

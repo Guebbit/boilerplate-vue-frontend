@@ -22,15 +22,16 @@ export default defineConfig(({ mode }) => ({
         // Pre-transform the route entry points at server start instead of on first visit.
         //
         // `vite dev` compiles a route the first time a browser asks for it, so the first
-        // assertion of an e2e spec waits for a build rather than for the app. That fits inside
-        // Cypress' timeout on an idle machine and does not on a busy one — a full-suite run on
-        // a loaded box failed the first two assertions of auth.cy.ts while the same spec passed
-        // cold in isolation. Warming these moves the cost to server startup, which
-        // `start-server-and-test` already waits through.
+        // interaction with a route pays for a build rather than for the app. Warming these moves
+        // that cost to server startup, which `start-server-and-test` already waits through.
         //
-        // This is a mitigation, not the cure: the cure is running e2e against a production
-        // build. Route views only — warming every file would just relocate the whole compile
-        // into startup.
+        // The mock e2e suite no longer depends on this: `npm run test:e2e` builds once and serves
+        // the result with `vite preview`, so nothing compiles while Cypress is driving. What still
+        // reads from this server is the dev loop and `npm run test:e2e:live`, which runs one
+        // browser rather than four and against a real backend.
+        //
+        // Route views only — warming every file would just relocate the whole compile into
+        // startup.
         warmup: {
             clientFiles: [
                 './src/main.ts',
