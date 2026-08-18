@@ -14,14 +14,37 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 const getLocalesMock = vi.fn();
 const getLocaleDictionaryMock = vi.fn();
+const updateAccountMock = vi.fn();
 
 vi.mock('@api', () => ({
     getLocales: () => getLocalesMock(),
-    getLocaleDictionary: (locale: string) => getLocaleDictionaryMock(locale)
+    getLocaleDictionary: (locale: string) => getLocaleDictionaryMock(locale),
+    updateAccount: (body: { locale: string }) => updateAccountMock(body)
 }));
 
-const { fetchApiLocales, fetchApiDictionary, mergeApiLocales, withApiDictionary } =
-    await import('@/infrastructure/localeApi.ts');
+/**
+ * `persistLocalePreference` asks the session store whether there is an account to write to, so the
+ * store is stubbed down to the one field it reads. `isAuth` is a plain boolean rather than a ref
+ * because the function reads `.isAuth` off the store directly — `storeToRefs` is a component's
+ * concern, and this file is deliberately not one.
+ */
+const isAuthMock = vi.fn(() => false);
+
+vi.mock('@/infrastructure/session.ts', () => ({
+    useSessionStore: () => ({
+        get isAuth() {
+            return isAuthMock();
+        }
+    })
+}));
+
+const {
+    fetchApiLocales,
+    fetchApiDictionary,
+    mergeApiLocales,
+    withApiDictionary,
+    persistLocalePreference
+} = await import('@/infrastructure/localeApi.ts');
 const { API_NAMESPACE, supportedLanguages } = await import('@/infrastructure/i18n.ts');
 
 /** `supportedLanguages` is module state shared with the app-wide instance. */
@@ -30,17 +53,53 @@ let snapshot: string[] = [];
 beforeEach(() => {
     vi.clearAllMocks();
     snapshot = [...supportedLanguages];
-    getLocalesMock.mockResolvedValue({ data: { locales: ['en', 'it'] } });
+    getLocalesMock.mockResolvedValue({
+        data: { locales: [capability('en'), capability('it')] }
+    });
     getLocaleDictionaryMock.mockResolvedValue({ data: { messages: { greeting: 'Ciao' } } });
+    updateAccountMock.mockResolvedValue({ data: {} });
+    isAuthMock.mockReturnValue(false);
 });
 
 afterEach(() => {
     supportedLanguages.splice(0, Number.POSITIVE_INFINITY, ...snapshot);
 });
 
+/**
+ * A capability row as `GET /locales` publishes one.
+ *
+ * The endpoint answers CAPABILITIES, not bare tags: `scopes` says whether the API can answer in
+ * that language (`api`), whether a client dictionary can be downloaded for it (`app`), or both.
+ * `fetchApiLocales` filters on `api`, so a fixture that omits the scope is testing nothing.
+ *
+ * @param tag - the language tag
+ * @param scopes - what that language can do; `api` unless a case is about the distinction
+ * @returns the capability row
+ */
+const capability = (tag: string, scopes: ('api' | 'app')[] = ['api']) => ({
+    tag,
+    name: tag,
+    nativeName: tag,
+    direction: 'ltr',
+    scopes,
+    source: 'static'
+});
+
 describe('fetchApiLocales', () => {
     it('returns the languages the API reports', () => {
         return expect(fetchApiLocales()).resolves.toEqual(['en', 'it']);
+    });
+
+    /**
+     * The distinction the capability shape exists for. A language added through the admin routes
+     * is `app`-scoped until a dictionary file ships for it — the API cannot answer in it, so
+     * sending `Accept-Language: es` would silently get English back.
+     */
+    it('omits a language the API cannot answer in, even when it is listed', () => {
+        getLocalesMock.mockResolvedValue({
+            data: { locales: [capability('en'), capability('es', ['app'])] }
+        });
+        return expect(fetchApiLocales()).resolves.toEqual(['en']);
     });
 
     it('returns an empty list when the API is unreachable', () => {
@@ -85,7 +144,9 @@ describe('mergeApiLocales', () => {
      */
     it('adds a language only the API has', () => {
         supportedLanguages.splice(0, Number.POSITIVE_INFINITY, 'en');
-        getLocalesMock.mockResolvedValue({ data: { locales: ['en', 'it', 'es'] } });
+        getLocalesMock.mockResolvedValue({
+            data: { locales: [capability('en'), capability('it'), capability('es')] }
+        });
         return expect(mergeApiLocales())
             .resolves.toEqual(['it', 'es'])
             .then(() => {
@@ -95,7 +156,9 @@ describe('mergeApiLocales', () => {
 
     it('is a union, so a language only this app has survives', () => {
         supportedLanguages.splice(0, Number.POSITIVE_INFINITY, 'en', 'fr');
-        getLocalesMock.mockResolvedValue({ data: { locales: ['en', 'it'] } });
+        getLocalesMock.mockResolvedValue({
+            data: { locales: [capability('en'), capability('it')] }
+        });
         return mergeApiLocales().then(() => {
             expect(supportedLanguages).toContain('fr');
             expect(supportedLanguages).toContain('it');
@@ -155,5 +218,46 @@ describe('withApiDictionary', () => {
             expect(merged.greeting).toBe('Ciao dalla UI');
             expect(merged[API_NAMESPACE]).toEqual({});
         });
+    });
+});
+
+/**
+ * The one write in this file, and the reason `AppLanguageSwitcher` no longer knows what a session
+ * is. Every case below is the same claim from a different side: **choosing a language always
+ * succeeds, whatever the account endpoint does.**
+ */
+describe('persistLocalePreference', () => {
+    it('writes the choice onto a signed-in visitor’s account', () => {
+        isAuthMock.mockReturnValue(true);
+        return persistLocalePreference('it').then(() => {
+            expect(updateAccountMock).toHaveBeenCalledWith({ locale: 'it' });
+        });
+    });
+
+    /*
+     * The rule that used to live at the call site. A guest has no record to write to, so the call
+     * is not made at all — an anonymous `PUT /account` would answer 401 and teach nobody anything.
+     */
+    it('does not call the API for a guest', () => {
+        isAuthMock.mockReturnValue(false);
+        return persistLocalePreference('it').then(() => {
+            expect(updateAccountMock).not.toHaveBeenCalled();
+        });
+    });
+
+    it('resolves rather than rejecting when the write fails', () => {
+        isAuthMock.mockReturnValue(true);
+        updateAccountMock.mockRejectedValue(new Error('account service down'));
+        return expect(persistLocalePreference('it')).resolves.toBeUndefined();
+    });
+
+    /*
+     * Stated as its own case because it is the whole point of the seam: the switcher fires this
+     * without awaiting it, so a rejection that escaped would surface as an unhandled rejection in
+     * the console of a page that switched language perfectly well.
+     */
+    it('resolves with nothing on the happy path too, so the caller can ignore it', () => {
+        isAuthMock.mockReturnValue(true);
+        return expect(persistLocalePreference('en')).resolves.toBeUndefined();
     });
 });

@@ -1,9 +1,10 @@
-import { getLocales, getLocaleDictionary } from '@api';
+import { getLocales, getLocaleDictionary, updateAccount } from '@api';
 import {
     API_NAMESPACE,
     supportedLanguages,
     type TranslationDictionaries
 } from '@/infrastructure/i18n.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 
 /**
  * Runtime locale discovery: the API's language list and the API's own dictionary.
@@ -28,14 +29,25 @@ import {
  */
 
 /**
- * Language tags the API says it can answer in.
+ * Language tags the API says it can ANSWER IN.
+ *
+ * `GET /locales` publishes capabilities rather than bare tags, and the distinction is the whole
+ * reason it does: a language is `api`-scoped when the API's own dictionary is deployed for it, and
+ * `app`-scoped when a client dictionary can be downloaded from
+ * `GET /locales/{locale}/messages`. A language can have either, or both — one added through the
+ * admin routes is `app` only until a file ships for it. Sending `Accept-Language: es` to an API
+ * that cannot answer in Spanish gets English back, so only the `api` scope belongs here.
  *
  * @returns The API's list, or an empty list if it cannot be reached or does not implement the
  *  endpoint. Never rejects.
  */
 export const fetchApiLocales = (): Promise<string[]> =>
     getLocales()
-        .then((response) => response.data?.locales ?? [])
+        .then((response) =>
+            (response.data?.locales ?? [])
+                .filter((language) => language.scopes.includes('api'))
+                .map((language) => language.tag)
+        )
         .catch(() => []);
 
 /**
@@ -89,3 +101,40 @@ export const withApiDictionary = (
         ...ownMessages,
         [API_NAMESPACE]: apiMessages
     }));
+
+/**
+ * Remembers a signed-in visitor's language choice on their account.
+ *
+ * Two audiences, two lifetimes, and only one of them needs the API. For a GUEST the choice lives
+ * in the URL (`/:locale/...`) and dies with the tab, which is the right lifetime for someone with
+ * no record to write to. For a SIGNED-IN visitor their account record is the one place a
+ * preference outlives the tab, so the next login reads it back and re-applies it.
+ *
+ * ── Why the `isAuth` check is here and not at the call site ──────────────────────────────────
+ * Because it is a rule about the preference, not about the button. Every caller would otherwise
+ * repeat it, and a caller that forgot would send an anonymous `PUT /account` and get a 401 for
+ * its trouble. The switcher asks to remember the choice; whether there is anywhere to remember it
+ * is this function's business.
+ *
+ * That is also what keeps `AppLanguageSwitcher` out of the session store. A shell component that
+ * reads who is signed in has to be understood before it can be moved; one that calls this does
+ * not.
+ *
+ * ── Best-effort, like everything else in this file ───────────────────────────────────────────
+ * Resolves rather than rejects, and callers fire it without awaiting. A failed write must not
+ * un-switch the page the visitor is looking at, and a slow account endpoint must not hold the
+ * language up — the page is already in the new language by the time this settles.
+ *
+ * The cost of that choice, stated plainly: a write that fails is invisible, and the visitor's
+ * stored preference stays stale until they switch again. That is the accepted trade — the
+ * alternative is a toast about a preference nobody asked to be told about.
+ *
+ * @param locale - Language tag the visitor just chose.
+ * @returns Resolves once the write settles, or immediately for a guest. Never rejects.
+ */
+export const persistLocalePreference = (locale: string): Promise<void> =>
+    useSessionStore().isAuth
+        ? updateAccount({ locale })
+              .then(() => undefined)
+              .catch(() => undefined)
+        : Promise.resolve();

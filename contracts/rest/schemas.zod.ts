@@ -36,14 +36,25 @@ export const GetHealthResponse = zod.strictObject({
 });
 
 /**
- * Which languages this deployment can answer in, plus its default and fallback.
+ * Every language this deployment offers, from both tiers, each stating what it can
+ * actually do.
  *
- * Public, unauthenticated and cacheable: it is static copy that changes only on
- * deploy, and a client that has just failed to reach the API is exactly who needs
- * it.
+ * `scopes` is the field doing the real work. `api` means the API can answer requests
+ * in that language — its dictionary is deployed and i18next holds it. `app` means a
+ * client dictionary is downloadable from `GET /locales/{locale}/messages`. A language
+ * can have either, or both, and the two are not the same capability: a language added
+ * through the admin routes below is `app` only until a file is deployed for it.
+ *
+ * Public, unauthenticated and cacheable. A client that has just failed to reach the
+ * API is exactly who needs it.
  * @summary Supported languages
  */
-export const getLocalesResponseDataLocalesItemRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getLocalesResponseDataLocalesItemTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const getLocalesResponseDataLocalesItemEntryCountMin = 0;
+
+export const getLocalesResponseDataLocalesItemRevisionMin = 0;
+
 export const getLocalesResponseDataDefaultRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const getLocalesResponseDataFallbackRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
@@ -56,13 +67,47 @@ export const GetLocalesResponse = zod.strictObject({
             locales: zod
                 .array(
                     zod
-                        .string()
-                        .regex(getLocalesResponseDataLocalesItemRegExp)
+                        .strictObject({
+                            tag: zod
+                                .string()
+                                .regex(getLocalesResponseDataLocalesItemTagRegExp)
+                                .describe(
+                                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                                ),
+                            name: zod.string(),
+                            nativeName: zod.string(),
+                            direction: zod
+                                .enum(['ltr', 'rtl'])
+                                .describe(
+                                    'Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.'
+                                ),
+                            scopes: zod
+                                .array(
+                                    zod
+                                        .enum(['api', 'app'])
+                                        .describe(
+                                            'What a language can do here. `api` — the API can answer requests in it, because its dictionary is deployed. `app` — a client dictionary is downloadable for it. These are independent: neither implies the other.'
+                                        )
+                                )
+                                .min(1)
+                                .describe(
+                                    'What this language can do. Without it a client seeing `es` in the list cannot tell whether it may send `Accept-Language: es` and get Spanish error messages, or whether it may download a Spanish UI dictionary. Those are different questions.'
+                                ),
+                            source: zod
+                                .enum(['static', 'dynamic', 'both'])
+                                .describe(
+                                    'Which tier a language came from — deployed files, the database, or both.'
+                                ),
+                            entryCount: zod
+                                .number()
+                                .min(getLocalesResponseDataLocalesItemEntryCountMin),
+                            revision: zod.number().min(getLocalesResponseDataLocalesItemRevisionMin)
+                        })
                         .describe(
-                            'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                            'One language as the manifest describes it: a merge of whatever the two tiers each know about it. A tag present in both appears once, with both scopes.'
                         )
                 )
-                .describe('Every supported language tag.'),
+                .describe('Every language, ordered by tag so the response is stable.'),
             default: zod
                 .string()
                 .regex(getLocalesResponseDataDefaultRegExp)
@@ -77,16 +122,83 @@ export const GetLocalesResponse = zod.strictObject({
                 )
         })
         .describe(
-            'Which languages a deployment can answer in. Runtime state, not contract state: it is derived from the dictionaries actually deployed, so it cannot be an enum here.'
+            'Which languages a deployment offers, and what each of them can do. Runtime state, not contract state: it is derived from the dictionaries actually deployed and the rows actually stored, so it cannot be an enum here.'
         )
 });
 
 /**
- * This API's own dictionary for one language.
+ * Registers a language in the dynamic tier so entries can be translated into it.
  *
- * Normally unnecessary — the API resolves its keys itself and puts finished text on
+ * This does NOT teach the API to answer in the new language — that needs a dictionary
+ * file and a deploy. A language created here is `app`-scoped until one exists.
+ * @summary Add a language
+ */
+export const createLocaleBodyTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const createLocaleBodyActiveDefault = true;
+
+export const CreateLocaleBody = zod.strictObject({
+    tag: zod
+        .string()
+        .regex(createLocaleBodyTagRegExp)
+        .describe(
+            'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+        ),
+    name: zod.string().min(1),
+    nativeName: zod.string().min(1),
+    direction: zod
+        .enum(['ltr', 'rtl'])
+        .optional()
+        .describe(
+            'Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.'
+        ),
+    active: zod.boolean().default(createLocaleBodyActiveDefault)
+});
+
+export const createLocaleResponseDataTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const createLocaleResponseDataRevisionMin = 0;
+
+export const CreateLocaleResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod
+        .strictObject({
+            id: zod.string().describe('Resource identifier'),
+            tag: zod
+                .string()
+                .regex(createLocaleResponseDataTagRegExp)
+                .describe(
+                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                ),
+            name: zod.string().describe('English name, for an admin list.'),
+            nativeName: zod
+                .string()
+                .describe("The language's own name, for a client's language picker."),
+            direction: zod
+                .enum(['ltr', 'rtl'])
+                .describe(
+                    'Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.'
+                ),
+            active: zod.boolean(),
+            revision: zod.number().min(createLocaleResponseDataRevisionMin),
+            createdAt: zod.iso.datetime({ offset: true }).optional(),
+            updatedAt: zod.iso.datetime({ offset: true }).optional()
+        })
+        .describe(
+            'A language registered in the DYNAMIC tier. Its existence means entries can be translated into it and a client can download the result — never that the API can answer a request in it, which is decided by a deployed file and nothing else.'
+        )
+});
+
+/**
+ * This API's own dictionary for one language — tier 1, the deployed files.
+ *
+ * Normally unnecessary: the API resolves its keys itself and puts finished text on
  * the wire. It earns its place when no response arrives at all (a network failure, a
  * bare 502) and the client must produce the copy itself, in the active language.
+ *
+ * Not to be confused with `GET /locales/{locale}/messages`, which serves the client's
+ * own copy out of the database.
  * @summary API message dictionary
  */
 export const getLocaleDictionaryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
@@ -122,6 +234,482 @@ export const GetLocaleDictionaryResponse = zod.strictObject({
 });
 
 /**
+ * Updates a language's display names, writing direction or visibility. The tag itself
+ * is immutable — it is what every entry references, so changing it would be a rename
+ * of the whole dictionary rather than an edit of this record.
+ * @summary Edit a language
+ */
+export const updateLocalePathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const UpdateLocaleParams = zod.strictObject({
+    locale: zod
+        .string()
+        .regex(updateLocalePathLocaleRegExp)
+        .describe('A language tag from `GET \/locales`.')
+});
+
+export const UpdateLocaleBody = zod
+    .strictObject({
+        name: zod.string().min(1).optional(),
+        nativeName: zod.string().min(1).optional(),
+        direction: zod
+            .enum(['ltr', 'rtl'])
+            .optional()
+            .describe(
+                'Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.'
+            ),
+        active: zod.boolean().optional()
+    })
+    .describe(
+        'Every field optional: an omitted one means \"leave it alone\", never \"clear it\". The tag is absent by design — see the operation description.'
+    );
+
+export const updateLocaleResponseDataTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const updateLocaleResponseDataRevisionMin = 0;
+
+export const UpdateLocaleResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod
+        .strictObject({
+            id: zod.string().describe('Resource identifier'),
+            tag: zod
+                .string()
+                .regex(updateLocaleResponseDataTagRegExp)
+                .describe(
+                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                ),
+            name: zod.string().describe('English name, for an admin list.'),
+            nativeName: zod
+                .string()
+                .describe("The language's own name, for a client's language picker."),
+            direction: zod
+                .enum(['ltr', 'rtl'])
+                .describe(
+                    'Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.'
+                ),
+            active: zod.boolean(),
+            revision: zod.number().min(updateLocaleResponseDataRevisionMin),
+            createdAt: zod.iso.datetime({ offset: true }).optional(),
+            updatedAt: zod.iso.datetime({ offset: true }).optional()
+        })
+        .describe(
+            'A language registered in the DYNAMIC tier. Its existence means entries can be translated into it and a client can download the result — never that the API can answer a request in it, which is decided by a deployed file and nothing else.'
+        )
+});
+
+/**
+ * Removes the language AND every entry translated into it.
+ *
+ * Refuses with 409 while the language is still active. That two-step is deliberate:
+ * this destroys a day's translation work, and a mis-click should cost a toggle rather
+ * than the work. Deactivate first, then delete.
+ * @summary Remove a language
+ */
+export const deleteLocalePathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const DeleteLocaleParams = zod.strictObject({
+    locale: zod
+        .string()
+        .regex(deleteLocalePathLocaleRegExp)
+        .describe('A language tag from `GET \/locales`.')
+});
+
+export const DeleteLocaleResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
+});
+
+/**
+ * The dynamic dictionary for one language, built from its stored entries into the
+ * same nested shape `GET /locales/{locale}` serves — so a client has ONE merge path
+ * for both tiers rather than two.
+ *
+ * This is what a client fetches for a language it does not bundle. Its resolution
+ * order is: its own bundle first, this endpoint when the language was added after the
+ * client was deployed, its bundled fallback when neither answers.
+ *
+ * 404 for a language that does not exist in the dynamic tier, and equally for one
+ * that exists but is inactive — an inactive language is invisible to every public
+ * route, which is the whole point of the flag.
+ *
+ * Public and cacheable, like every other locale read.
+ * @summary Client message dictionary
+ */
+export const getLocaleMessagesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const GetLocaleMessagesParams = zod.strictObject({
+    locale: zod
+        .string()
+        .regex(getLocaleMessagesPathLocaleRegExp)
+        .describe('A language tag from `GET \/locales`.')
+});
+
+export const getLocaleMessagesResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getLocaleMessagesResponseDataRevisionMin = 0;
+
+export const GetLocaleMessagesResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod
+        .strictObject({
+            locale: zod
+                .string()
+                .regex(getLocaleMessagesResponseDataLocaleRegExp)
+                .describe(
+                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                ),
+            revision: zod.number().min(getLocaleMessagesResponseDataRevisionMin),
+            messages: zod
+                .record(zod.string(), zod.unknown())
+                .describe(
+                    'Flat dotted keys expanded into a tree: `products.list.title` becomes `products.list.title`, nested. Empty for a language with no entries yet, which is a legitimate state and not a 404.'
+                )
+        })
+        .describe(
+            "The CLIENT's dictionary for one language, built from the stored entries. Same nested shape as `LocaleDictionary` on purpose — a client merges both with one code path rather than two — and a completely separate keyspace, because the two are authored by different people for different surfaces."
+        )
+});
+
+/**
+ * The rows behind one language's dictionary, paginated and searchable — what a
+ * translation screen lists. Flat, because a row is what gets edited; the nested tree
+ * is `GET /locales/{locale}/messages`.
+ *
+ * `text` searches keys and values together.
+ * @summary List translation entries
+ */
+export const listLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const ListLocaleEntriesParams = zod.strictObject({
+    locale: zod
+        .string()
+        .regex(listLocaleEntriesPathLocaleRegExp)
+        .describe('A language tag from `GET \/locales`.')
+});
+
+export const listLocaleEntriesQueryPageDefault = 1;
+
+export const listLocaleEntriesQueryPageSizeDefault = 10;
+export const listLocaleEntriesQueryPageSizeMax = 100;
+
+export const ListLocaleEntriesQueryParams = zod.strictObject({
+    page: zod
+        .number()
+        .min(1)
+        .default(listLocaleEntriesQueryPageDefault)
+        .describe('1-based page index'),
+    pageSize: zod
+        .number()
+        .min(1)
+        .max(listLocaleEntriesQueryPageSizeMax)
+        .default(listLocaleEntriesQueryPageSizeDefault),
+    text: zod.string().min(1).optional()
+});
+
+export const listLocaleEntriesResponseDataItemsItemLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
+export const listLocaleEntriesResponseDataMetaPageDefault = 1;
+
+export const listLocaleEntriesResponseDataMetaPageSizeDefault = 10;
+export const listLocaleEntriesResponseDataMetaPageSizeMax = 100;
+
+export const listLocaleEntriesResponseDataMetaTotalItemsMin = 0;
+
+export const listLocaleEntriesResponseDataMetaTotalPagesMin = 0;
+
+export const ListLocaleEntriesResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        items: zod.array(
+            zod
+                .strictObject({
+                    id: zod.string().describe('Resource identifier'),
+                    locale: zod
+                        .string()
+                        .regex(listLocaleEntriesResponseDataItemsItemLocaleRegExp)
+                        .describe(
+                            'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                        ),
+                    key: zod
+                        .string()
+                        .describe(
+                            'Flat and dotted. Stored AS A STRING and never as a Mongo path — a document per language with `$set: { \"messages.products.list.title\": v }` would have Mongo read three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting.'
+                        ),
+                    value: zod.string(),
+                    createdAt: zod.iso.datetime({ offset: true }).optional(),
+                    updatedAt: zod.iso.datetime({ offset: true }).optional()
+                })
+                .describe(
+                    'One translated string: one row per (language, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.'
+                )
+        ),
+        meta: zod.strictObject({
+            page: zod
+                .number()
+                .min(1)
+                .default(listLocaleEntriesResponseDataMetaPageDefault)
+                .describe('1-based page index'),
+            pageSize: zod
+                .number()
+                .min(1)
+                .max(listLocaleEntriesResponseDataMetaPageSizeMax)
+                .default(listLocaleEntriesResponseDataMetaPageSizeDefault)
+                .describe('Optional override; server may clamp to a max'),
+            totalItems: zod.number().min(listLocaleEntriesResponseDataMetaTotalItemsMin),
+            totalPages: zod.number().min(listLocaleEntriesResponseDataMetaTotalPagesMin)
+        })
+    })
+});
+
+/**
+ * 409 if the key already exists in this language, and equally if it COLLIDES with one
+ * — see `LocaleEntryInput.key` for what a collision is and why it is refused here
+ * rather than discovered when the tree is built.
+ * @summary Add one translation entry
+ */
+export const createLocaleEntryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const CreateLocaleEntryParams = zod.strictObject({
+    locale: zod
+        .string()
+        .regex(createLocaleEntryPathLocaleRegExp)
+        .describe('A language tag from `GET \/locales`.')
+});
+
+export const CreateLocaleEntryBody = zod.strictObject({
+    key: zod.string().min(1),
+    value: zod.string()
+});
+
+export const createLocaleEntryResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const CreateLocaleEntryResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod
+        .strictObject({
+            id: zod.string().describe('Resource identifier'),
+            locale: zod
+                .string()
+                .regex(createLocaleEntryResponseDataLocaleRegExp)
+                .describe(
+                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                ),
+            key: zod
+                .string()
+                .describe(
+                    'Flat and dotted. Stored AS A STRING and never as a Mongo path — a document per language with `$set: { \"messages.products.list.title\": v }` would have Mongo read three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting.'
+                ),
+            value: zod.string(),
+            createdAt: zod.iso.datetime({ offset: true }).optional(),
+            updatedAt: zod.iso.datetime({ offset: true }).optional()
+        })
+        .describe(
+            'One translated string: one row per (language, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.'
+        )
+});
+
+/**
+ * Bulk import, REPLACING semantics: what is not sent is DELETED. The whole set of
+ * entries for this language becomes exactly what the body carries.
+ *
+ * Paired with `PATCH` on this same collection, which merges instead. "Does an import
+ * delete missing keys" is the question every translation tool gets wrong, so the two
+ * behaviours are spelled in the METHOD rather than in a flag — a client cannot pick
+ * one and get the other.
+ *
+ * Nobody adds five hundred keys through a form; without this the admin surface is a
+ * demo.
+ * @summary Replace every entry
+ */
+export const replaceLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const ReplaceLocaleEntriesParams = zod.strictObject({
+    locale: zod
+        .string()
+        .regex(replaceLocaleEntriesPathLocaleRegExp)
+        .describe('A language tag from `GET \/locales`.')
+});
+
+export const ReplaceLocaleEntriesBody = zod
+    .strictObject({
+        entries: zod.array(
+            zod
+                .strictObject({
+                    key: zod.string().min(1),
+                    value: zod.string()
+                })
+                .describe(
+                    'One key and its translation, as an import or a create sends it.\nA key is refused when it is a strict prefix of an existing key in the same language, or has one as a prefix — `products.list` alongside `products.list.title`. No tree can hold both: one is a string, the other needs to be an object at the same path. A naive builder silently drops one of them, and which one depends on insertion order, so this is caught at WRITE time with a 409 naming both keys rather than discovered at read time by whoever is missing a string.'
+                )
+        )
+    })
+    .describe(
+        'The COMPLETE set of entries for this language. Anything already stored and not named here is deleted.'
+    );
+
+export const replaceLocaleEntriesResponseDataCreatedMin = 0;
+
+export const replaceLocaleEntriesResponseDataUpdatedMin = 0;
+
+export const replaceLocaleEntriesResponseDataRemovedMin = 0;
+
+export const replaceLocaleEntriesResponseDataRevisionMin = 0;
+
+export const ReplaceLocaleEntriesResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod
+        .strictObject({
+            created: zod.number().min(replaceLocaleEntriesResponseDataCreatedMin),
+            updated: zod.number().min(replaceLocaleEntriesResponseDataUpdatedMin),
+            removed: zod.number().min(replaceLocaleEntriesResponseDataRemovedMin),
+            revision: zod.number().min(replaceLocaleEntriesResponseDataRevisionMin)
+        })
+        .describe(
+            'What an import actually did, counted rather than implied. `removed` is always 0 for a merge, which is the assertion a client can make to prove it called the operation it meant to.'
+        )
+});
+
+/**
+ * Bulk import, MERGING semantics: what is sent is upserted, everything else is left
+ * alone. Nothing is ever deleted by this operation.
+ *
+ * See `PUT` on this collection for the replacing counterpart, and for why the choice
+ * lives in the method.
+ * @summary Merge entries
+ */
+export const mergeLocaleEntriesPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const MergeLocaleEntriesParams = zod.strictObject({
+    locale: zod
+        .string()
+        .regex(mergeLocaleEntriesPathLocaleRegExp)
+        .describe('A language tag from `GET \/locales`.')
+});
+
+export const MergeLocaleEntriesBody = zod
+    .strictObject({
+        entries: zod
+            .array(
+                zod
+                    .strictObject({
+                        key: zod.string().min(1),
+                        value: zod.string()
+                    })
+                    .describe(
+                        'One key and its translation, as an import or a create sends it.\nA key is refused when it is a strict prefix of an existing key in the same language, or has one as a prefix — `products.list` alongside `products.list.title`. No tree can hold both: one is a string, the other needs to be an object at the same path. A naive builder silently drops one of them, and which one depends on insertion order, so this is caught at WRITE time with a 409 naming both keys rather than discovered at read time by whoever is missing a string.'
+                    )
+            )
+            .min(1)
+    })
+    .describe(
+        'Entries to upsert. Anything already stored and not named here is left exactly as it was.'
+    );
+
+export const mergeLocaleEntriesResponseDataCreatedMin = 0;
+
+export const mergeLocaleEntriesResponseDataUpdatedMin = 0;
+
+export const mergeLocaleEntriesResponseDataRemovedMin = 0;
+
+export const mergeLocaleEntriesResponseDataRevisionMin = 0;
+
+export const MergeLocaleEntriesResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod
+        .strictObject({
+            created: zod.number().min(mergeLocaleEntriesResponseDataCreatedMin),
+            updated: zod.number().min(mergeLocaleEntriesResponseDataUpdatedMin),
+            removed: zod.number().min(mergeLocaleEntriesResponseDataRemovedMin),
+            revision: zod.number().min(mergeLocaleEntriesResponseDataRevisionMin)
+        })
+        .describe(
+            'What an import actually did, counted rather than implied. `removed` is always 0 for a merge, which is the assertion a client can make to prove it called the operation it meant to.'
+        )
+});
+
+/**
+ * Updates the value of one entry. The key is not editable — a key is the identity a
+ * client looks the string up by, so changing it is a delete plus an add, and the two
+ * collision checks that go with them.
+ * @summary Edit one translation entry
+ */
+export const updateLocaleEntryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const UpdateLocaleEntryParams = zod.strictObject({
+    locale: zod
+        .string()
+        .regex(updateLocaleEntryPathLocaleRegExp)
+        .describe('A language tag from `GET \/locales`.'),
+    entryId: zod.string().describe('Identifier of one translation entry.')
+});
+
+export const UpdateLocaleEntryBody = zod.strictObject({
+    value: zod.string()
+});
+
+export const updateLocaleEntryResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const UpdateLocaleEntryResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod
+        .strictObject({
+            id: zod.string().describe('Resource identifier'),
+            locale: zod
+                .string()
+                .regex(updateLocaleEntryResponseDataLocaleRegExp)
+                .describe(
+                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                ),
+            key: zod
+                .string()
+                .describe(
+                    'Flat and dotted. Stored AS A STRING and never as a Mongo path — a document per language with `$set: { \"messages.products.list.title\": v }` would have Mongo read three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting.'
+                ),
+            value: zod.string(),
+            createdAt: zod.iso.datetime({ offset: true }).optional(),
+            updatedAt: zod.iso.datetime({ offset: true }).optional()
+        })
+        .describe(
+            'One translated string: one row per (language, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.'
+        )
+});
+
+/**
+ * Removes a single key from one language. The other languages keep theirs.
+ * @summary Remove one translation entry
+ */
+export const deleteLocaleEntryPathLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+
+export const DeleteLocaleEntryParams = zod.strictObject({
+    locale: zod
+        .string()
+        .regex(deleteLocaleEntryPathLocaleRegExp)
+        .describe('A language tag from `GET \/locales`.'),
+    entryId: zod.string().describe('Identifier of one translation entry.')
+});
+
+export const DeleteLocaleEntryResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
+});
+
+/**
  * Live Server-Sent Events stream for demo dashboards.
  * Sends `metrics.snapshot` on connect, followed by periodic `metrics.updated` and `heartbeat` events.
  * @summary Observability SSE stream
@@ -135,6 +723,14 @@ export const GetObservabilityEventsResponse = zod.unknown();
  * @summary Health snapshot
  */
 export const getObservabilityHealthResponseDataUptimeSecondsMin = 0;
+
+export const getObservabilityHealthResponseDataMemoryRssMin = 0;
+
+export const getObservabilityHealthResponseDataMemoryHeapUsedMin = 0;
+
+export const getObservabilityHealthResponseDataMemoryHeapTotalMin = 0;
+
+export const getObservabilityHealthResponseDataMemoryExternalMin = 0;
 
 export const GetObservabilityHealthResponse = zod.strictObject({
     success: zod.literal(true),
@@ -160,11 +756,15 @@ export const GetObservabilityHealthResponse = zod.strictObject({
             .optional(),
         memory: zod
             .strictObject({
-                heapUsedMb: zod.number(),
-                heapTotalMb: zod.number(),
-                rssMb: zod.number()
+                rss: zod.number().min(getObservabilityHealthResponseDataMemoryRssMin),
+                heapUsed: zod.number().min(getObservabilityHealthResponseDataMemoryHeapUsedMin),
+                heapTotal: zod.number().min(getObservabilityHealthResponseDataMemoryHeapTotalMin),
+                external: zod.number().min(getObservabilityHealthResponseDataMemoryExternalMin)
             })
-            .optional(),
+            .optional()
+            .describe(
+                "Process memory in BYTES, exactly as `process.memoryUsage()` reports it, published identically by every payload that describes this process.\nBytes rather than megabytes because the conversion is a presentation decision and a lossy one: a rounded megabyte cannot express the 400 KB move between two polls that a leak hunter is looking for. The same four fields, in the same units and the same order, are on the SSE payload in this module's `asyncapi.yaml`. The two documents cannot `$ref` each other, so `tests\/cross-cutting\/process-snapshot.test.ts` asserts they stay identical."
+            ),
         system: zod
             .strictObject({
                 platform: zod.string(),
@@ -219,7 +819,13 @@ export const getObservabilityMetricsOverviewResponseDataDatabaseErrorsTotalMin =
 
 export const getObservabilityMetricsOverviewResponseDataProcessUptimeSecondsMin = 0;
 
-export const getObservabilityMetricsOverviewResponseDataProcessHeapUsedMbMin = 0;
+export const getObservabilityMetricsOverviewResponseDataProcessMemoryRssMin = 0;
+
+export const getObservabilityMetricsOverviewResponseDataProcessMemoryHeapUsedMin = 0;
+
+export const getObservabilityMetricsOverviewResponseDataProcessMemoryHeapTotalMin = 0;
+
+export const getObservabilityMetricsOverviewResponseDataProcessMemoryExternalMin = 0;
 
 export const GetObservabilityMetricsOverviewResponse = zod.strictObject({
     success: zod.literal(true),
@@ -291,10 +897,25 @@ export const GetObservabilityMetricsOverviewResponse = zod.strictObject({
                 .number()
                 .min(getObservabilityMetricsOverviewResponseDataProcessUptimeSecondsMin)
                 .optional(),
-            heapUsedMb: zod
-                .number()
-                .min(getObservabilityMetricsOverviewResponseDataProcessHeapUsedMbMin)
+            memory: zod
+                .strictObject({
+                    rss: zod
+                        .number()
+                        .min(getObservabilityMetricsOverviewResponseDataProcessMemoryRssMin),
+                    heapUsed: zod
+                        .number()
+                        .min(getObservabilityMetricsOverviewResponseDataProcessMemoryHeapUsedMin),
+                    heapTotal: zod
+                        .number()
+                        .min(getObservabilityMetricsOverviewResponseDataProcessMemoryHeapTotalMin),
+                    external: zod
+                        .number()
+                        .min(getObservabilityMetricsOverviewResponseDataProcessMemoryExternalMin)
+                })
                 .optional()
+                .describe(
+                    "Process memory in BYTES, exactly as `process.memoryUsage()` reports it, published identically by every payload that describes this process.\nBytes rather than megabytes because the conversion is a presentation decision and a lossy one: a rounded megabyte cannot express the 400 KB move between two polls that a leak hunter is looking for. The same four fields, in the same units and the same order, are on the SSE payload in this module's `asyncapi.yaml`. The two documents cannot `$ref` each other, so `tests\/cross-cutting\/process-snapshot.test.ts` asserts they stay identical."
+                )
         }),
         timestamp: zod.iso.datetime({ offset: true })
     })

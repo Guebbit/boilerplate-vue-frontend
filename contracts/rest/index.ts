@@ -265,11 +265,62 @@ export interface HealthPingEnvelope {
 }
 
 /**
- * Which languages a deployment can answer in. Runtime state, not contract state: it is derived from the dictionaries actually deployed, so it cannot be an enum here.
+ * Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.
+ */
+export type LocaleDirection = (typeof LocaleDirection)[keyof typeof LocaleDirection];
+
+export const LocaleDirection = {
+    ltr: 'ltr',
+    rtl: 'rtl'
+} as const;
+
+/**
+ * What a language can do here. `api` — the API can answer requests in it, because its dictionary is deployed. `app` — a client dictionary is downloadable for it. These are independent: neither implies the other.
+ */
+export type LocaleScope = (typeof LocaleScope)[keyof typeof LocaleScope];
+
+export const LocaleScope = {
+    api: 'api',
+    app: 'app'
+} as const;
+
+/**
+ * Which tier a language came from — deployed files, the database, or both.
+ */
+export type LocaleSource = (typeof LocaleSource)[keyof typeof LocaleSource];
+
+export const LocaleSource = {
+    static: 'static',
+    dynamic: 'dynamic',
+    both: 'both'
+} as const;
+
+/**
+ * One language as the manifest describes it: a merge of whatever the two tiers each know about it. A tag present in both appears once, with both scopes.
+ */
+export interface LocaleCapability {
+    tag: Locale;
+    name: string;
+    nativeName: string;
+    direction: LocaleDirection;
+    /**
+     * What this language can do. Without it a client seeing `es` in the list cannot tell whether it may send `Accept-Language: es` and get Spanish error messages, or whether it may download a Spanish UI dictionary. Those are different questions.
+     * @minItems 1
+     */
+    scopes: LocaleScope[];
+    source: LocaleSource;
+    /** @minimum 0 */
+    entryCount: number;
+    /** @minimum 0 */
+    revision: number;
+}
+
+/**
+ * Which languages a deployment offers, and what each of them can do. Runtime state, not contract state: it is derived from the dictionaries actually deployed and the rows actually stored, so it cannot be an enum here.
  */
 export interface LocaleCapabilities {
-    /** Every supported language tag. */
-    locales: Locale[];
+    /** Every language, ordered by tag so the response is stable. */
+    locales: LocaleCapability[];
     default: Locale;
     fallback: Locale;
 }
@@ -279,6 +330,41 @@ export interface LocaleCapabilitiesEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: LocaleCapabilities;
+}
+
+export interface CreateLocaleRequest {
+    tag: Locale;
+    /** @minLength 1 */
+    name: string;
+    /** @minLength 1 */
+    nativeName: string;
+    direction?: LocaleDirection;
+    active?: boolean;
+}
+
+/**
+ * A language registered in the DYNAMIC tier. Its existence means entries can be translated into it and a client can download the result — never that the API can answer a request in it, which is decided by a deployed file and nothing else.
+ */
+export interface Language {
+    id: Id;
+    tag: Locale;
+    /** English name, for an admin list. */
+    name: string;
+    /** The language's own name, for a client's language picker. */
+    nativeName: string;
+    direction: LocaleDirection;
+    active: boolean;
+    /** @minimum 0 */
+    revision: number;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface LanguageEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: Language;
 }
 
 /**
@@ -302,6 +388,129 @@ export interface LocaleDictionaryEnvelope {
     data: LocaleDictionary;
 }
 
+/**
+ * Every field optional: an omitted one means "leave it alone", never "clear it". The tag is absent by design — see the operation description.
+ */
+export interface UpdateLocaleRequest {
+    /** @minLength 1 */
+    name?: string;
+    /** @minLength 1 */
+    nativeName?: string;
+    direction?: LocaleDirection;
+    active?: boolean;
+}
+
+/**
+ * Flat dotted keys expanded into a tree: `products.list.title` becomes `products.list.title`, nested. Empty for a language with no entries yet, which is a legitimate state and not a 404.
+ */
+export type LocaleMessagesMessages = { [key: string]: unknown };
+
+/**
+ * The CLIENT's dictionary for one language, built from the stored entries. Same nested shape as `LocaleDictionary` on purpose — a client merges both with one code path rather than two — and a completely separate keyspace, because the two are authored by different people for different surfaces.
+ */
+export interface LocaleMessages {
+    locale: Locale;
+    /** @minimum 0 */
+    revision: number;
+    /** Flat dotted keys expanded into a tree: `products.list.title` becomes `products.list.title`, nested. Empty for a language with no entries yet, which is a legitimate state and not a 404. */
+    messages: LocaleMessagesMessages;
+}
+
+export interface LocaleMessagesEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: LocaleMessages;
+}
+
+/**
+ * One translated string: one row per (language, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.
+ */
+export interface LocaleEntry {
+    id: Id;
+    locale: Locale;
+    /** Flat and dotted. Stored AS A STRING and never as a Mongo path — a document per language with `$set: { "messages.products.list.title": v }` would have Mongo read three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting. */
+    key: string;
+    value: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface LocaleEntriesResponse {
+    items: LocaleEntry[];
+    meta: PaginationMeta;
+}
+
+export interface LocaleEntriesResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: LocaleEntriesResponse;
+}
+
+/**
+ * One key and its translation, as an import or a create sends it.
+ * A key is refused when it is a strict prefix of an existing key in the same language, or has one as a prefix — `products.list` alongside `products.list.title`. No tree can hold both: one is a string, the other needs to be an object at the same path. A naive builder silently drops one of them, and which one depends on insertion order, so this is caught at WRITE time with a 409 naming both keys rather than discovered at read time by whoever is missing a string.
+ */
+export interface LocaleEntryInput {
+    /** @minLength 1 */
+    key: string;
+    value: string;
+}
+
+/**
+ * The COMPLETE set of entries for this language. Anything already stored and not named here is deleted.
+ */
+export interface ReplaceLocaleEntriesRequest {
+    entries: LocaleEntryInput[];
+}
+
+/**
+ * What an import actually did, counted rather than implied. `removed` is always 0 for a merge, which is the assertion a client can make to prove it called the operation it meant to.
+ */
+export interface LocaleImportResult {
+    /** @minimum 0 */
+    created: number;
+    /** @minimum 0 */
+    updated: number;
+    /** @minimum 0 */
+    removed: number;
+    /** @minimum 0 */
+    revision: number;
+}
+
+export interface LocaleImportResultEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: LocaleImportResult;
+}
+
+export interface CreateLocaleEntryRequest {
+    /** @minLength 1 */
+    key: string;
+    value: string;
+}
+
+export interface LocaleEntryEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: LocaleEntry;
+}
+
+/**
+ * Entries to upsert. Anything already stored and not named here is left exactly as it was.
+ */
+export interface MergeLocaleEntriesRequest {
+    /** @minItems 1 */
+    entries: LocaleEntryInput[];
+}
+
+export interface UpdateLocaleEntryRequest {
+    value: string;
+}
+
 export type ObservabilityHealthIntegrationsAnalytics =
     (typeof ObservabilityHealthIntegrationsAnalytics)[keyof typeof ObservabilityHealthIntegrationsAnalytics];
 
@@ -319,10 +528,19 @@ export interface ObservabilityHealthIntegrations {
     faro?: boolean;
 }
 
-export interface ObservabilityHealthMemory {
-    heapUsedMb: number;
-    heapTotalMb: number;
-    rssMb: number;
+/**
+ * Process memory in BYTES, exactly as `process.memoryUsage()` reports it, published identically by every payload that describes this process.
+ * Bytes rather than megabytes because the conversion is a presentation decision and a lossy one: a rounded megabyte cannot express the 400 KB move between two polls that a leak hunter is looking for. The same four fields, in the same units and the same order, are on the SSE payload in this module's `asyncapi.yaml`. The two documents cannot `$ref` each other, so `tests/cross-cutting/process-snapshot.test.ts` asserts they stay identical.
+ */
+export interface ProcessMemory {
+    /** @minimum 0 */
+    rss: number;
+    /** @minimum 0 */
+    heapUsed: number;
+    /** @minimum 0 */
+    heapTotal: number;
+    /** @minimum 0 */
+    external: number;
 }
 
 export interface ObservabilityHealthSystem {
@@ -361,7 +579,7 @@ export interface ObservabilityHealth {
     uptimeSeconds: number;
     database: ObservabilityHealthDatabase;
     integrations?: ObservabilityHealthIntegrations;
-    memory?: ObservabilityHealthMemory;
+    memory?: ProcessMemory;
     system?: ObservabilityHealthSystem;
     timestamp: string;
 }
@@ -426,8 +644,7 @@ export type ObservabilityMetricsSummaryDatabase = {
 export type ObservabilityMetricsSummaryProcess = {
     /** @minimum 0 */
     uptimeSeconds?: number;
-    /** @minimum 0 */
-    heapUsedMb?: number;
+    memory?: ProcessMemory;
 };
 
 export interface ObservabilityMetricsSummary {
@@ -1443,6 +1660,25 @@ export type UserIdParamParameter = Id;
 
 export type ProductIdParamParameter = Id;
 
+export type ListLocaleEntriesParams = {
+    /**
+     * 1-based page index
+     * @minimum 1
+     */
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
+    /**
+     * Free-text search string
+     * @minLength 1
+     */
+    text?: TextParamParameter;
+};
+
 export type GetObservabilityAuditLogsParams = {
     /**
      * Filter by actor user ID
@@ -1646,11 +1882,17 @@ export const getHealth = (options?: SecondParameter<typeof orvalMutator<HealthPi
 };
 
 /**
- * Which languages this deployment can answer in, plus its default and fallback.
+ * Every language this deployment offers, from both tiers, each stating what it can
+ * actually do.
  *
- * Public, unauthenticated and cacheable: it is static copy that changes only on
- * deploy, and a client that has just failed to reach the API is exactly who needs
- * it.
+ * `scopes` is the field doing the real work. `api` means the API can answer requests
+ * in that language — its dictionary is deployed and i18next holds it. `app` means a
+ * client dictionary is downloadable from `GET /locales/{locale}/messages`. A language
+ * can have either, or both, and the two are not the same capability: a language added
+ * through the admin routes below is `app` only until a file is deployed for it.
+ *
+ * Public, unauthenticated and cacheable. A client that has just failed to reach the
+ * API is exactly who needs it.
  * @summary Supported languages
  */
 export const getLocales = (
@@ -1660,11 +1902,36 @@ export const getLocales = (
 };
 
 /**
- * This API's own dictionary for one language.
+ * Registers a language in the dynamic tier so entries can be translated into it.
  *
- * Normally unnecessary — the API resolves its keys itself and puts finished text on
+ * This does NOT teach the API to answer in the new language — that needs a dictionary
+ * file and a deploy. A language created here is `app`-scoped until one exists.
+ * @summary Add a language
+ */
+export const createLocale = (
+    createLocaleRequest: CreateLocaleRequest,
+    options?: SecondParameter<typeof orvalMutator<LanguageEnvelope>>
+) => {
+    return orvalMutator<LanguageEnvelope>(
+        {
+            url: `/locales`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createLocaleRequest
+        },
+        options
+    );
+};
+
+/**
+ * This API's own dictionary for one language — tier 1, the deployed files.
+ *
+ * Normally unnecessary: the API resolves its keys itself and puts finished text on
  * the wire. It earns its place when no response arrives at all (a network failure, a
  * bare 502) and the client must produce the copy itself, in the active language.
+ *
+ * Not to be confused with `GET /locales/{locale}/messages`, which serves the client's
+ * own copy out of the database.
  * @summary API message dictionary
  */
 export const getLocaleDictionary = (
@@ -1673,6 +1940,201 @@ export const getLocaleDictionary = (
 ) => {
     return orvalMutator<LocaleDictionaryEnvelope>(
         { url: `/locales/${locale}`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Updates a language's display names, writing direction or visibility. The tag itself
+ * is immutable — it is what every entry references, so changing it would be a rename
+ * of the whole dictionary rather than an edit of this record.
+ * @summary Edit a language
+ */
+export const updateLocale = (
+    locale: string,
+    updateLocaleRequest: UpdateLocaleRequest,
+    options?: SecondParameter<typeof orvalMutator<LanguageEnvelope>>
+) => {
+    return orvalMutator<LanguageEnvelope>(
+        {
+            url: `/locales/${locale}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateLocaleRequest
+        },
+        options
+    );
+};
+
+/**
+ * Removes the language AND every entry translated into it.
+ *
+ * Refuses with 409 while the language is still active. That two-step is deliberate:
+ * this destroys a day's translation work, and a mis-click should cost a toggle rather
+ * than the work. Deactivate first, then delete.
+ * @summary Remove a language
+ */
+export const deleteLocale = (
+    locale: string,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>({ url: `/locales/${locale}`, method: 'DELETE' }, options);
+};
+
+/**
+ * The dynamic dictionary for one language, built from its stored entries into the
+ * same nested shape `GET /locales/{locale}` serves — so a client has ONE merge path
+ * for both tiers rather than two.
+ *
+ * This is what a client fetches for a language it does not bundle. Its resolution
+ * order is: its own bundle first, this endpoint when the language was added after the
+ * client was deployed, its bundled fallback when neither answers.
+ *
+ * 404 for a language that does not exist in the dynamic tier, and equally for one
+ * that exists but is inactive — an inactive language is invisible to every public
+ * route, which is the whole point of the flag.
+ *
+ * Public and cacheable, like every other locale read.
+ * @summary Client message dictionary
+ */
+export const getLocaleMessages = (
+    locale: string,
+    options?: SecondParameter<typeof orvalMutator<LocaleMessagesEnvelope>>
+) => {
+    return orvalMutator<LocaleMessagesEnvelope>(
+        { url: `/locales/${locale}/messages`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * The rows behind one language's dictionary, paginated and searchable — what a
+ * translation screen lists. Flat, because a row is what gets edited; the nested tree
+ * is `GET /locales/{locale}/messages`.
+ *
+ * `text` searches keys and values together.
+ * @summary List translation entries
+ */
+export const listLocaleEntries = (
+    locale: string,
+    params?: ListLocaleEntriesParams,
+    options?: SecondParameter<typeof orvalMutator<LocaleEntriesResponseEnvelope>>
+) => {
+    return orvalMutator<LocaleEntriesResponseEnvelope>(
+        { url: `/locales/${locale}/entries`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * 409 if the key already exists in this language, and equally if it COLLIDES with one
+ * — see `LocaleEntryInput.key` for what a collision is and why it is refused here
+ * rather than discovered when the tree is built.
+ * @summary Add one translation entry
+ */
+export const createLocaleEntry = (
+    locale: string,
+    createLocaleEntryRequest: CreateLocaleEntryRequest,
+    options?: SecondParameter<typeof orvalMutator<LocaleEntryEnvelope>>
+) => {
+    return orvalMutator<LocaleEntryEnvelope>(
+        {
+            url: `/locales/${locale}/entries`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: createLocaleEntryRequest
+        },
+        options
+    );
+};
+
+/**
+ * Bulk import, REPLACING semantics: what is not sent is DELETED. The whole set of
+ * entries for this language becomes exactly what the body carries.
+ *
+ * Paired with `PATCH` on this same collection, which merges instead. "Does an import
+ * delete missing keys" is the question every translation tool gets wrong, so the two
+ * behaviours are spelled in the METHOD rather than in a flag — a client cannot pick
+ * one and get the other.
+ *
+ * Nobody adds five hundred keys through a form; without this the admin surface is a
+ * demo.
+ * @summary Replace every entry
+ */
+export const replaceLocaleEntries = (
+    locale: string,
+    replaceLocaleEntriesRequest: ReplaceLocaleEntriesRequest,
+    options?: SecondParameter<typeof orvalMutator<LocaleImportResultEnvelope>>
+) => {
+    return orvalMutator<LocaleImportResultEnvelope>(
+        {
+            url: `/locales/${locale}/entries`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: replaceLocaleEntriesRequest
+        },
+        options
+    );
+};
+
+/**
+ * Bulk import, MERGING semantics: what is sent is upserted, everything else is left
+ * alone. Nothing is ever deleted by this operation.
+ *
+ * See `PUT` on this collection for the replacing counterpart, and for why the choice
+ * lives in the method.
+ * @summary Merge entries
+ */
+export const mergeLocaleEntries = (
+    locale: string,
+    mergeLocaleEntriesRequest: MergeLocaleEntriesRequest,
+    options?: SecondParameter<typeof orvalMutator<LocaleImportResultEnvelope>>
+) => {
+    return orvalMutator<LocaleImportResultEnvelope>(
+        {
+            url: `/locales/${locale}/entries`,
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            data: mergeLocaleEntriesRequest
+        },
+        options
+    );
+};
+
+/**
+ * Updates the value of one entry. The key is not editable — a key is the identity a
+ * client looks the string up by, so changing it is a delete plus an add, and the two
+ * collision checks that go with them.
+ * @summary Edit one translation entry
+ */
+export const updateLocaleEntry = (
+    locale: string,
+    entryId: string,
+    updateLocaleEntryRequest: UpdateLocaleEntryRequest,
+    options?: SecondParameter<typeof orvalMutator<LocaleEntryEnvelope>>
+) => {
+    return orvalMutator<LocaleEntryEnvelope>(
+        {
+            url: `/locales/${locale}/entries/${entryId}`,
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            data: updateLocaleEntryRequest
+        },
+        options
+    );
+};
+
+/**
+ * Removes a single key from one language. The other languages keep theirs.
+ * @summary Remove one translation entry
+ */
+export const deleteLocaleEntry = (
+    locale: string,
+    entryId: string,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        { url: `/locales/${locale}/entries/${entryId}`, method: 'DELETE' },
         options
     );
 };
@@ -3269,9 +3731,21 @@ export const sweepReservations = (
 
 export type GetHealthResult = NonNullable<Awaited<ReturnType<typeof getHealth>>>;
 export type GetLocalesResult = NonNullable<Awaited<ReturnType<typeof getLocales>>>;
+export type CreateLocaleResult = NonNullable<Awaited<ReturnType<typeof createLocale>>>;
 export type GetLocaleDictionaryResult = NonNullable<
     Awaited<ReturnType<typeof getLocaleDictionary>>
 >;
+export type UpdateLocaleResult = NonNullable<Awaited<ReturnType<typeof updateLocale>>>;
+export type DeleteLocaleResult = NonNullable<Awaited<ReturnType<typeof deleteLocale>>>;
+export type GetLocaleMessagesResult = NonNullable<Awaited<ReturnType<typeof getLocaleMessages>>>;
+export type ListLocaleEntriesResult = NonNullable<Awaited<ReturnType<typeof listLocaleEntries>>>;
+export type CreateLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof createLocaleEntry>>>;
+export type ReplaceLocaleEntriesResult = NonNullable<
+    Awaited<ReturnType<typeof replaceLocaleEntries>>
+>;
+export type MergeLocaleEntriesResult = NonNullable<Awaited<ReturnType<typeof mergeLocaleEntries>>>;
+export type UpdateLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof updateLocaleEntry>>>;
+export type DeleteLocaleEntryResult = NonNullable<Awaited<ReturnType<typeof deleteLocaleEntry>>>;
 export type GetObservabilityEventsResult = NonNullable<
     Awaited<ReturnType<typeof getObservabilityEvents>>
 >;

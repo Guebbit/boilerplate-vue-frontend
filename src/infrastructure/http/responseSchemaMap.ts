@@ -48,6 +48,55 @@ const coreRouteSchemas: ResponseSchemaRoute[] = [
     { method: 'GET', pattern: /^\/account\/refresh$/, schema: schemas.RefreshTokenResponse },
     { method: 'POST', pattern: /^\/account\/logout-all$/, schema: schemas.LogoutAllResponse },
     { method: 'GET', pattern: /^\/locales$/, schema: schemas.GetLocalesResponse },
+    { method: 'POST', pattern: /^\/locales$/, schema: schemas.CreateLocaleResponse },
+    /*
+     * The dynamic-locale admin surface. No frontend domain calls it yet — the language switcher
+     * reads `GET /locales` and the runtime dictionary, and nothing here writes one — so these sit
+     * on the bottom shelf under the same rule `/feedback*` and `/wishlist*` once did: parked so a
+     * response is validated from the first request, ready to move into a module that claims them.
+     *
+     * The `{locale}` segment is a language tag rather than an ObjectId, which changes nothing:
+     * every pattern matches a SEGMENT, not a name. What does matter is the `$` on the
+     * single-segment rows — without it `/locales/[^/]+` would swallow `/locales/es/entries` and
+     * validate an entries page against the dictionary schema.
+     */
+    { method: 'PUT', pattern: /^\/locales\/[^/]+$/, schema: schemas.UpdateLocaleResponse },
+    { method: 'DELETE', pattern: /^\/locales\/[^/]+$/, schema: schemas.DeleteLocaleResponse },
+    {
+        method: 'GET',
+        pattern: /^\/locales\/[^/]+\/messages$/,
+        schema: schemas.GetLocaleMessagesResponse
+    },
+    {
+        method: 'GET',
+        pattern: /^\/locales\/[^/]+\/entries$/,
+        schema: schemas.ListLocaleEntriesResponse
+    },
+    {
+        method: 'POST',
+        pattern: /^\/locales\/[^/]+\/entries$/,
+        schema: schemas.CreateLocaleEntryResponse
+    },
+    {
+        method: 'PUT',
+        pattern: /^\/locales\/[^/]+\/entries$/,
+        schema: schemas.ReplaceLocaleEntriesResponse
+    },
+    {
+        method: 'PATCH',
+        pattern: /^\/locales\/[^/]+\/entries$/,
+        schema: schemas.MergeLocaleEntriesResponse
+    },
+    {
+        method: 'PUT',
+        pattern: /^\/locales\/[^/]+\/entries\/[^/]+$/,
+        schema: schemas.UpdateLocaleEntryResponse
+    },
+    {
+        method: 'DELETE',
+        pattern: /^\/locales\/[^/]+\/entries\/[^/]+$/,
+        schema: schemas.DeleteLocaleEntryResponse
+    },
     {
         method: 'GET',
         pattern: /^\/locales\/[^/]+$/,
