@@ -14,6 +14,7 @@ import { setupWorker } from 'msw/browser';
 import { collectModuleMockHandlers, collectModuleMockSeeds } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import { registerLocalesMockHandlers } from './localesHandlers.ts';
+import { registerHealthMockHandlers } from './healthHandlers.ts';
 import { installMockSeedBuilder, mockDatabase } from './mockDb.ts';
 
 let workerStartPromise: Promise<void> | undefined;
@@ -37,7 +38,11 @@ export const initializeApiMocking = () => {
         // it is core's, not a domain's.
         .then(() => collectModuleMockHandlers(enabledModules))
         .then((moduleHandlers) =>
-            setupWorker(...moduleHandlers, ...registerLocalesMockHandlers()).start({
+            setupWorker(
+                ...moduleHandlers,
+                ...registerLocalesMockHandlers(),
+                ...registerHealthMockHandlers()
+            ).start({
                 onUnhandledRequest: (request, print) => {
                     // Only error on unhandled requests to the API — let Vite module fetches through.
                     if (new URL(request.url).origin === apiOrigin) {

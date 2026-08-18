@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useLocale } from 'vuetify';
 import AppNavigation from '@/app/components/AppNavigation.vue';
+import AppHealthBanner from '@/app/components/AppHealthBanner.vue';
 import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
 
 defineOptions({ inheritAttrs: false });
@@ -75,6 +76,7 @@ const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'er
 
 <template>
     <v-app>
+        <AppHealthBanner />
         <AppNavigation>
             <slot name="navigation" />
         </AppNavigation>

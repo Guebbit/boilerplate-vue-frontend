@@ -19,7 +19,8 @@
         "administrator": "Administrator",
         "standard-user": "Standard user",
         "no-data": "No data available",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "api-unreachable": "The server is unreachable — showing what works offline. Retrying quietly."
     },
     "navigation": {
         "label-home": "home",

@@ -19,7 +19,8 @@
         "administrator": "Amministratore",
         "standard-user": "Utente standard",
         "no-data": "Nessun dato disponibile",
-        "cancel": "Annulla"
+        "cancel": "Annulla",
+        "api-unreachable": "Il server non è raggiungibile — mostriamo ciò che funziona offline. Riproviamo in silenzio."
     },
     "navigation": {
         "label-home": "home",
