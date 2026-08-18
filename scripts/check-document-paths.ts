@@ -39,6 +39,17 @@ import { DEFAULT_BACKEND_PATH, resolveBackendPath } from './backendPath';
 const PATH_PATTERN = /`((?:src|tests|scripts|contracts|cypress|db)\/[\w./-]+\.[a-z]+)`/g;
 
 /**
+ * A line may opt out with `<!-- doc-paths:ignore -->`, and exactly one thing earns it: prose that
+ * names a path deliberately because it no longer exists — a "was here, is now there" table, or a
+ * paragraph explaining what an arrangement replaced. Those references are correct BECAUSE the file
+ * is missing, so a checker that resolved them would be asking the docs to lie.
+ *
+ * It is not an escape hatch for a path that merely fails. A reference that should resolve and does
+ * not is the bug this exists to find, and silencing it here hides exactly that.
+ */
+const IGNORE_MARKER = '<!-- doc-paths:ignore -->';
+
+/**
  * Paths carrying a glob or a `<placeholder>` name a SHAPE rather than a file — `tests/**` or
  * `src/modules/<name>/factory.ts`. There is nothing to resolve, and resolving the literal text
  * would report every one of them.
@@ -69,7 +80,8 @@ let checked = 0;
 let unverifiable = 0;
 
 for (const file of files)
-    for (const [index, text] of readFileSync(file, 'utf8').split('\n').entries())
+    for (const [index, text] of readFileSync(file, 'utf8').split('\n').entries()) {
+        if (text.includes(IGNORE_MARKER)) continue;
         for (const [, target] of text.matchAll(PATH_PATTERN)) {
             if (isTemplate(target)) continue;
             checked++;
@@ -84,6 +96,7 @@ for (const file of files)
             if (existsSync(path.join(backendRoot, target))) continue;
             broken.push({ file, line: index + 1, target });
         }
+    }
 
 if (broken.length === 0) {
     console.log(
@@ -100,6 +113,7 @@ console.error(
         broken.map(({ file, line, target }) => `  ${file}:${line}\n    ${target}`).join('\n') +
         `\n\n  Either the file moved and the doc did not follow, or the path names a shape rather\n` +
         `  than a file — in which case write it with a \`<placeholder>\` or a glob so it reads as\n` +
-        `  one, and this check will leave it alone.\n`
+        `  one, and this check will leave it alone. A path that is missing ON PURPOSE —\n` +
+        `  prose about what something used to be — takes ${IGNORE_MARKER} on its line.\n`
 );
 process.exit(1);
