@@ -104,20 +104,20 @@ app cannot fire it:
 | `user_logged_out` | A client-side token discard; the API has no request to attribute it to |
 | `checkout_request_failed` | A checkout that never reached the API — dropped connection, request that failed to leave the browser. NOT the twin of `checkout_failed`, which is the server *rejecting* a checkout it received |
 
-**What the backend emits.** Listed so you can read one Umami dashboard and know which side
-produced a row. These are **not** importable here — the backend's controllers hold their own
-names, and a copy in this repo would let this app fire events it has no business firing:
+**What the backend emits: everything else.** Reading one Umami dashboard, the rule tells you which
+side produced a row without anyone maintaining a list — **if an API call happens at that moment,
+the row is the backend's.** Signups, logins, every cart and wishlist mutation, checkout outcomes,
+orders and payments are all emitted there, where an extension cannot block them, a closing tab
+cannot lose them and a console cannot forge them.
 
-| Category | Events |
-| -------- | ------ |
-| Auth | `user_signed_up`, `user_logged_in`, `user_profile_viewed`, `account_deleted` |
-| Products | `products_searched`, `product_viewed` |
-| Cart | `cart_viewed`, `cart_item_added`, `cart_item_updated`, `cart_item_removed`, `cart_cleared`, `cart_reordered` |
-| Wishlist | `wishlist_item_added`, `wishlist_item_removed`, `wishlist_moved_to_cart` |
-| Checkout / Orders | `checkout_completed`, `checkout_failed`, `order_created`, `orders_viewed`, `order_cancelled` |
-| Payments | `payment_succeeded`, `payment_declined` |
+The names themselves live beside the controllers that fire them, in the backend's
+`src/modules/<name>/analytics.ts` — deliberately not restated here. A list in this repo is a copy
+of the other repo's data with nothing comparing the two, which is the same failure that had both
+sides emitting the same event until the catalogue was split; the last copy that lived here had
+already lost four names before anyone noticed. The rule above does not drift, and a name that
+needs looking up is one `grep` away in a repo that is already on disk.
 
-Pageviews are handled automatically by Umami and are in neither table.
+Pageviews are handled automatically by Umami and belong to neither side.
 
 ### Environment variables
 
