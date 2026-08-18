@@ -20,7 +20,7 @@ This keeps the refresh token out of JavaScript access (no `localStorage`, no `do
 flowchart TD
     A[POST /account/login] --> B[Access token\nin response body]
     A --> C[Refresh token\nHttpOnly cookie\nset by backend]
-    B --> D[Store in memory\nor localStorage]
+    B --> D[Held in memory only\nnever localStorage]
     D --> E[Protected API call\nAuthorization Bearer]
     E --> F{401?}
     F -- no --> G[Success]
@@ -56,17 +56,25 @@ flowchart TD
 | Attaching Bearer token to requests | `src/infrastructure/http/index.ts` (request interceptor) |
 | Handling `401` responses | `src/infrastructure/http/index.ts` (response interceptor) |
 | Restoring auth on page reload | `src/app/guards/authentications.ts` → `tryRestoreAuth` |
-| Route guards | `src/app/guards/authentications.ts` → `isAuth`, `isAdmin`, `isGuest` |
+| Route guards | `src/app/guards/authentications.ts` → `canAccess`, `enforceRouteAccess` |
 
 ## Route guards
 
-| Guard | Effect |
-| ----- | ------ |
-| `isAuth` | Must be logged in. Redirects to `/login?continue=<current-path>` on failure. |
-| `isAdmin` | Must have admin role. Redirects to Home on failure. |
-| `isGuest` | Must NOT be logged in. Redirects to Home if already authenticated. |
+A route declares its requirement once, as `meta.access`; `enforceRouteAccess` runs globally in
+`router.beforeEach` and applies `canAccess` to it. There is no `isAuth`/`isAdmin`/`isGuest` guard —
+one predicate covers all three, and `AppNavigation` calls the same one to decide whether to show a
+link, so a visible link can never bounce you.
 
-`tryRestoreAuth` runs on **every** navigation (`router.beforeEach`) and silently restores the token and profile from storage. This ensures public pages (e.g. `ProductsList`) render admin controls correctly after a hard reload.
+| `meta.access` | Effect |
+| ------------- | ------ |
+| absent | Public. Anyone may enter. |
+| `auth` | Must be logged in. Redirects to `/login?continue=<current-path>` on failure. |
+| `admin` | Must be logged in **and** admin. Redirects to Home on failure. |
+| `guest` | Must NOT be logged in. Redirects to Home if already authenticated. |
+
+Every refusal notifies the visitor — silently bouncing someone reads as a broken link.
+
+`tryRestoreAuth` runs first in the same `beforeEach` and silently restores the token (via the refresh endpoint, gated on the `isAuth` cookie) and then the viewer. This ensures public pages (e.g. `ProductsList`) render admin controls correctly after a hard reload.
 
 ## Interceptor error handling
 

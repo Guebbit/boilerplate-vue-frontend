@@ -22,7 +22,7 @@ flowchart LR
     subgraph Client ["Generated client"]
         direction TB
         Fn["contracts/rest/index.ts\ntyped axios function"]
-        HTTP["plugins/http/index.ts\ninterceptors"]
+        HTTP["src/infrastructure/http/index.ts\ninterceptors"]
         Fn --> HTTP
     end
 
@@ -98,9 +98,9 @@ flowchart LR
 | Composable | Encapsulates form state, validation, and list logic for one domain |
 | Pinia store | Orchestrates API calls, holds reactive data, exposes actions |
 | Generated client (`contracts/rest/index.ts`) | Typed axios function per operation — regenerated from `openapi.yaml` |
-| `plugins/http/index.ts` | Single axios instance; request/response interceptors; shapes errors into `IResponseReject` |
+| `src/infrastructure/http/index.ts` | Single axios instance; request/response interceptors; shapes errors into `IResponseReject` |
 | MSW (dev/test) | Intercepts HTTP before it leaves the browser; returns deterministic in-memory responses |
-| Router guards | `isAuth`, `isAdmin`, `isGuest` — run before the view is entered; redirect on failure |
+| Router guards | `tryRestoreAuth` then `enforceRouteAccess` (`beforeEach`), `localeChoice` (`beforeResolve`) — run before the view is entered; redirect on failure |
 
 ## Cross-cutting strategies
 
@@ -110,7 +110,7 @@ Route guards run on every navigation. A `401` during a guarded navigation redire
 
 ### Interceptors own error shape
 
-All HTTP errors flow through `plugins/http/index.ts` interceptors. Every failed request produces an `IResponseReject` envelope. Views and stores never parse raw axios errors.
+All HTTP errors flow through `src/infrastructure/http/index.ts` interceptors. Every failed request produces an `IResponseReject` envelope. Views and stores never parse raw axios errors.
 
 ### Opt-in mocking
 

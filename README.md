@@ -71,7 +71,7 @@ Four ideas carry the whole repository:
 | `src/modules/*`      | the domains — each one deletable            |
 | `src/kernel`         | the module registry                         |
 | `src/infrastructure` | http, i18n, session, uploads, observability |
-| `src/app`            | shell, router, layouts, middlewares         |
+| `src/app`            | shell, router, layouts, guards              |
 | `src/ui`             | shared presentational components            |
 | `contracts/`         | generated API client — never edited by hand |
 

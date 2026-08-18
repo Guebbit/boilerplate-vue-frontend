@@ -28,7 +28,7 @@ flowchart LR
     class Both c;
 ```
 
-This repo learned the value the expensive way, before adopting the technique. `plugins/http/responseSchemaMap.ts` is a 52-row lookup table that was tested by sampling a handful of rows. It scored 55% on mutation with 182 survivors in that one file. Replacing the sample with exhaustive generation took the file to ~96% and the whole suite from 55% to 81%.
+This repo learned the value the expensive way, before adopting the technique. `src/infrastructure/http/responseSchemaMap.ts` is a 52-row lookup table that was tested by sampling a handful of rows. It scored 55% on mutation with 182 survivors in that one file. Replacing the sample with exhaustive generation took the file to ~96% and the whole suite from 55% to 81%.
 
 **Sampling a space you could have generated is the failure mode to watch for.** Property testing is the general form of that fix.
 

@@ -18,7 +18,7 @@ Both are no-ops when their env vars are absent, so local dev works without the s
 flowchart LR
     Main["src/main.ts\ninitFaro() + initUmami()"]
     Store["src/infrastructure/stores/observability.ts\nuseObservabilityStore()"]
-    HTTP["plugins/http/index.ts\ncaptureException() on 5xx"]
+    HTTP["src/infrastructure/http/index.ts\ncaptureException() on 5xx"]
     Components["Stores + composables\ntrack() / identifyUser()"]
 
     Main --> Store
@@ -53,7 +53,7 @@ Registering `getWebInstrumentations()` automatically captures:
 
 The `TracingInstrumentation` opens a span for every `fetch`/XHR and **propagates the W3C `traceparent` header to the API origin** (`VITE_API_URL`). Because the header is propagated, a single trace spans _"button click in the browser → API handler → Mongoose query"_ inside Grafana/Tempo.
 
-Manual exceptions go through `captureException()` — called from `plugins/http/index.ts` on `5xx` responses and from `router.onError`. Faro pushes them via `faro.api.pushError()`.
+Manual exceptions go through `captureException()` — called from `src/infrastructure/http/index.ts` on `5xx` responses and from `router.onError`. Faro pushes them via `faro.api.pushError()`.
 
 > **Backend note:** for traces to link, the API must allow the `traceparent` request header in its CORS config.
 

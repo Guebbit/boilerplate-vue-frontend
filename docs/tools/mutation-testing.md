@@ -343,7 +343,7 @@ The three outcomes are different findings, and the columns keep them apart:
 
 Stryker's own thresholds are **global** — `high`, `low`, `break`, and nothing else. That is the same pooling failure that directory-shaped coverage thresholds have: a strong file carries a weak one, and the number that passes is an average nobody can act on. It gets worse as `mutate` widens, not better.
 
-So `mutation-baseline.json` records a score **per file**, and `scripts/check-mutation-baseline.ts` compares each run against it. It currently holds **60 files**, recorded 2026-08-14:
+So `mutation-baseline.json` records a score **per file**, and `scripts/check-mutation-baseline.ts` compares each run against it. It currently holds **69 files**, recorded 2026-08-18:
 
 - a file that drops below its recorded score **fails**;
 - a file that improves has its baseline **rewritten upward**, locking the gain in;

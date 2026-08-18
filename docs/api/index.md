@@ -80,6 +80,6 @@ export const useProductsStore = defineStore('products', () => {
 ## API style used in this repo
 
 - Resource-oriented URLs (`/products`, `/products/:id`, `/orders/search`).
-- Consistent envelope: `{ data: T }` for success; `IResponseReject` for errors (shaped by `plugins/http/index.ts`).
+- Consistent envelope: `{ data: T }` for success; `IResponseReject` for errors (shaped by `src/infrastructure/http/index.ts`).
 - Auth levels: `none` → `user` → `admin`.
 - Treat sample entities (`users`, `products`, `orders`, `cart`, `admin`) as pattern examples, not product law.

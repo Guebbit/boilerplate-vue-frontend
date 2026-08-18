@@ -14,7 +14,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     getObservabilityHealth,
     getObservabilityMetricsOverview,
-    getObservabilityAuditLogs
+    getObservabilityAuditLogs,
+    deleteExpiredTokens
 } from '@api';
 import { useAdminObservability } from '@/modules/admin/composables/useAdminObservability';
 
@@ -33,7 +34,8 @@ vi.mock('@api', () => ({
     getObservabilityMetricsOverview: vi.fn(() => Promise.resolve({ data: METRICS })),
     getObservabilityAuditLogs: vi.fn(() =>
         Promise.resolve({ data: { items: [AUDIT_ITEM], total: 1 } })
-    )
+    ),
+    deleteExpiredTokens: vi.fn(() => Promise.resolve({ data: undefined }))
 }));
 
 describe('useAdminObservability', () => {
@@ -52,6 +54,7 @@ describe('useAdminObservability', () => {
             expect(observability.loadingHealth.value).toBe(false);
             expect(observability.loadingMetrics.value).toBe(false);
             expect(observability.loadingAudit.value).toBe(false);
+            expect(observability.clearingExpiredTokens.value).toBe(false);
             expect(observability.errorHealth.value).toBeUndefined();
             expect(observability.errorMetrics.value).toBeUndefined();
             expect(observability.errorAudit.value).toBeUndefined();
@@ -236,6 +239,41 @@ describe('useAdminObservability', () => {
             expect(metrics.value).toBeUndefined();
             expect(health.value).toEqual(HEALTH);
             expect(auditEvents.value).toEqual([AUDIT_ITEM]);
+        });
+    });
+
+    /*
+     * The one WRITE on this composable, and the only one that rejects: the view owes the visitor
+     * an answer either way, so the rejection is passed through rather than swallowed into an
+     * `error` ref like the three reads. What the composable does own is the pending flag, which
+     * the view binds to the button and never sets — so both halves are asserted here.
+     */
+    describe('clearExpiredTokens', () => {
+        it('flags the purge as pending while the call is in flight', async () => {
+            const { clearingExpiredTokens, clearExpiredTokens } = useAdminObservability();
+
+            const pending = clearExpiredTokens();
+            expect(clearingExpiredTokens.value).toBe(true);
+
+            await pending;
+            expect(clearingExpiredTokens.value).toBe(false);
+        });
+
+        it('resolves with nothing, so the view answers with its own copy', async () => {
+            const { clearExpiredTokens } = useAdminObservability();
+
+            await expect(clearExpiredTokens()).resolves.toBeUndefined();
+            expect(deleteExpiredTokens).toHaveBeenCalledTimes(1);
+        });
+
+        it('rejects on failure rather than swallowing it into an error ref', async () => {
+            vi.mocked(deleteExpiredTokens).mockRejectedValueOnce('down');
+            const { clearingExpiredTokens, clearExpiredTokens } = useAdminObservability();
+
+            await expect(clearExpiredTokens()).rejects.toBe('down');
+
+            // `.finally`, not `.then` — a failed purge must not leave the button spinning.
+            expect(clearingExpiredTokens.value).toBe(false);
         });
     });
 });

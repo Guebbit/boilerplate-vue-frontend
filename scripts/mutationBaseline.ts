@@ -27,10 +27,10 @@
  * ── The tolerance ────────────────────────────────────────────────────────────
  * `SCORE_TOLERANCE` is not slack, it is a measurement error bar. Some mutants HANG rather than
  * fail, and whether Stryker records one as a timeout (counted as killed) or as a survivor depends
- * on how loaded the machine is — `stryker.config.json` documents this for `plugins/http/index.ts`
- * in the frontend. Without a tolerance the ratchet would fail on machine load, and a gate that
- * fails randomly gets switched off. It is deliberately small: a real regression moves a file by
- * far more than a rounding of the timeout race.
+ * on how loaded the machine is — `stryker.config.json` documents this for
+ * `src/infrastructure/http/index.ts` in the frontend. Without a tolerance the ratchet would fail on
+ * machine load, and a gate that fails randomly gets switched off. It is deliberately small: a real
+ * regression moves a file by far more than a rounding of the timeout race.
  *
  * ── Re-baselining ────────────────────────────────────────────────────────────
  * When `mutate` changes, the POPULATION changes, and old and new numbers are not measurements of
