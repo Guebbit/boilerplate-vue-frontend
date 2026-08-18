@@ -106,6 +106,22 @@ export default defineConfig({
         defaultCommandTimeout: 15_000,
         // 8085 sits in this repo's 8080-8099 host-port block.
         baseUrl: 'http://localhost:8085',
+        /*
+         * A real browser's user-agent, because Umami DISCARDS bot traffic and every browser
+         * Cypress drives announces itself as one — Electron by default, `HeadlessChrome` under
+         * `--browser chrome`. Umami answers 200 and records nothing, so the loss is silent.
+         *
+         * That takes both halves of the funnel down at once, not just the browser's: the API
+         * forwards the caller's user-agent so its own events attribute to the same visitor, which
+         * means a headless run makes the SERVER's events look like bot traffic too. Without this,
+         * `analytics.cy.ts` can prove nothing — and it is written to fail rather than pass when it
+         * cannot see the browser's own events, so this line is what keeps that check honest.
+         *
+         * Not settable per-spec: the user-agent is fixed when the browser launches, so it belongs
+         * here rather than beside the one spec that depends on it.
+         */
+        userAgent:
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         allowCypressEnv: false,
         env: {
             apiUrl: viteEnvironment.VITE_API_URL ?? 'http://localhost:3000',
@@ -120,6 +136,20 @@ export default defineConfig({
             // scripts/backendPath.ts, shared with scripts/check-spec-identity.ts so the two can
             // never silently disagree about which backend they mean.
             backendPath: resolveBackendPath(),
+            /*
+             * Where the live profile reads its analytics back from. Both repos write into ONE
+             * Umami website, and `analytics.cy.ts` is the only thing that can prove each event
+             * arrives once rather than twice — a claim no unit test on either side can make,
+             * because neither can see what the other wrote.
+             *
+             * Defaults match the backend's compose stack (`UMAMI_PORT`, `UMAMI_WEBSITE_ID`,
+             * `UMAMI_ADMIN_*` in its `.env-example`), so the spec needs no setup when the stack is
+             * up. Overridable for a Umami that was not started from that compose file.
+             */
+            umamiUrl: process.env.UMAMI_URL ?? 'http://localhost:3080',
+            umamiWebsiteId: process.env.UMAMI_WEBSITE_ID ?? '00000000-0000-4000-8000-000000000001',
+            umamiUser: process.env.UMAMI_ADMIN_USER ?? 'admin',
+            umamiPassword: process.env.UMAMI_ADMIN_PASSWORD ?? 'umami',
             /*
              * Only the DIFF directory is configured. Baselines are resolved per spec, into a
              * `__snapshots__` folder beside it, so a module owns its own — see the `compareSnapshot`
