@@ -42,7 +42,7 @@ import {
 } from '@api/schemas';
 import dataset from '@mocks/demo-data.json';
 
-const { credentials, collections } = dataset;
+const { _meta, credentials, collections } = dataset;
 
 /*
  * The `.required()` masks are where "a seeded record is a complete specimen" stops being a comment.
@@ -209,6 +209,48 @@ describe('the exported dataset conforms to the generated contract', () => {
                     expect(visible).toContain(item.productId);
                 }
             }
+        });
+    });
+
+    /**
+     * `_meta.shapes` — what a handler in this repo is allowed to do with each collection.
+     *
+     * This is the half of the mirror that matters most here: a mock author reads the artefact and
+     * nothing else of the backend, and `stored` is the label that stops a handler returning a row
+     * the API never serves that way. `addressBooks` is the worked example — `GET /account/addresses`
+     * answers `{ addresses: [...] }`, built from the book's `items`.
+     *
+     * The backend's export refuses to publish an unclassified collection; these cases hold the
+     * copy that landed here to the same rule, between syncs.
+     */
+    describe('the shapes map', () => {
+        it('names every published collection, and only those', () => {
+            expect(Object.keys(_meta.shapes).toSorted()).toStrictEqual(
+                Object.keys(collections).toSorted()
+            );
+        });
+
+        it('classifies each one as either servable or not', () => {
+            /* A JSON import widens the values to `string`, so nothing has checked the union the
+             * backend's manifest declares. A third value would be a handler reading a label it has
+             * no branch for. */
+            for (const shape of Object.values(_meta.shapes)) {
+                expect(['response', 'stored']).toContain(shape);
+            }
+        });
+
+        it('calls a collection servable exactly when this file parses it as a whole response', () => {
+            /* The tripwire on a mislabel, which is the failure the map introduces: a wrong label is
+             * worse than none, because the reader stops checking. Only these three parse against a
+             * whole `Get<X>ByIdResponse` payload above — the rest are checked through an element or
+             * a nested field, which is itself the evidence that no endpoint serves the row. */
+            const parsedAsWholeResponses = ['orders', 'products', 'users'];
+
+            const servable = Object.entries(_meta.shapes)
+                .filter(([, shape]) => shape === 'response')
+                .map(([name]) => name);
+
+            expect(servable.toSorted()).toStrictEqual(parsedAsWholeResponses);
         });
     });
 });
