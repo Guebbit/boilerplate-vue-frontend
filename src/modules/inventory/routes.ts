@@ -1,7 +1,7 @@
 import type { RouteRecordRaw } from 'vue-router';
 
 /**
- * Inventory routes: one admin page — the ledger with its restock form.
+ * Inventory routes: one admin page — the stock board, the ledger behind it, and the receipt form.
  */
 export default [
     {

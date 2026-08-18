@@ -1,21 +1,19 @@
 /**
- * This module's fixtures, in both profiles. See `src/modules/products/tests/seeds.spec.ts` for why
- * they are asserted here rather than centrally.
+ * This module's slice of the mock database. See `src/modules/products/tests/seeds.spec.ts` for why
+ * it is asserted here rather than centrally.
  */
 import { describe, expect, it } from 'vitest';
-import { buildUsersMockSeeds } from '@/modules/users/mocks/seeds';
+import { buildUsersMockSeeds } from '@/modules/users/mocks/register';
 
-const build = (profile: 'seed' | 'random') =>
-    buildUsersMockSeeds({ profile, soFar: {} }).then(({ sampleUsers }) => sampleUsers ?? []);
+const build = () => buildUsersMockSeeds().then(({ sampleUsers }) => sampleUsers ?? []);
 
 /*
- * The identity assertion is the same in both profiles, and that is the point: `cy.loginAs()` types
- * these credentials into a real login form, so randomising id/email/admin would break login itself.
- * The random profile varies only cosmetic fields.
+ * `cy.loginAs()` types these credentials into a real login form, so the two identities are pinned
+ * here: a slice that dropped or renamed one would break login itself, in every e2e spec at once.
  */
-describe.each(['seed', 'random'] as const)('the %s profile', (profile) => {
+describe('the demo directory', () => {
     it('keeps the two seeded identities fixed', async () => {
-        const users = await build(profile);
+        const users = await build();
 
         expect(users).toEqual([
             expect.objectContaining({
@@ -33,8 +31,8 @@ describe.each(['seed', 'random'] as const)('the %s profile', (profile) => {
         ]);
     });
 
-    it('pins active true, so login never randomly fails on an inactive account', async () => {
-        const users = await build(profile);
+    it('pins active true, so login never fails on an inactive account', async () => {
+        const users = await build();
 
         expect(users.every((user) => user.active)).toBe(true);
     });

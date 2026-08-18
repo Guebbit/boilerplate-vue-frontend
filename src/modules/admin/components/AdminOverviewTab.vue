@@ -157,6 +157,19 @@ const kpiDotClass = (status: AdminKpiCard['status']) =>
  * @returns `✓` when enabled, `✗` otherwise.
  */
 const flag = (value?: boolean) => (value ? '✓' : '✗');
+
+/**
+ * Bytes to whole megabytes, for display only.
+ *
+ * The API publishes memory in BYTES because the conversion is lossy and it is a presentation
+ * decision — a rounded megabyte cannot express the 400 KB move between two polls that a leak
+ * hunter is looking for. Rounding therefore happens here, at the point something is rendered,
+ * and nowhere else.
+ *
+ * @param bytes - the raw counter
+ * @returns whole megabytes
+ */
+const megabytes = (bytes: number) => Math.round(bytes / 1024 / 1024);
 </script>
 
 <template>
@@ -241,11 +254,15 @@ const flag = (value?: boolean) => (value ? '✓' : '✗');
                 <template v-if="props.health.memory">
                     <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
                         <dt class="opacity-70">{{ t('admin-page.label-heap-used') }}</dt>
-                        <dd class="font-medium">{{ props.health.memory.heapUsedMb }} MB</dd>
+                        <dd class="font-medium">
+                            {{ megabytes(props.health.memory.heapUsed) }} MB
+                        </dd>
                     </div>
                     <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
                         <dt class="opacity-70">{{ t('admin-page.label-heap-total') }}</dt>
-                        <dd class="font-medium">{{ props.health.memory.heapTotalMb }} MB</dd>
+                        <dd class="font-medium">
+                            {{ megabytes(props.health.memory.heapTotal) }} MB
+                        </dd>
                     </div>
                 </template>
                 <template v-if="props.health.system">

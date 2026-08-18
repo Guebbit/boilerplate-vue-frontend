@@ -1,14 +1,25 @@
 /**
- * The inventory store — transport-mocked like the wishlist's spec. Worth pinning: the ledger is
- * whole-list replacement (the page renders what the API answered), and the restock reloads the
- * ledger it just extended before answering the new shelf count.
+ * The inventory store — transport-mocked like the wishlist's spec.
+ *
+ * Worth pinning: both reads are whole-list replacement (the page renders what the API answered),
+ * and both writes reload what they changed BEFORE answering, so a caller never sees a counter the
+ * views have not caught up with. The order of those reloads is asserted rather than assumed — the
+ * ledger explains the board, and a board that arrived first reads as a number nobody wrote.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useInventoryStore } from '@/modules/inventory/store.ts';
 import { orvalMutator } from '@/infrastructure/http';
 
-const MOVEMENT = { id: 'movement-1', productId: 'p1', delta: -2, reason: 'order' };
+const MOVEMENT = {
+    id: 'movement-1',
+    productId: 'p1',
+    reason: 'reserve',
+    onHandDelta: 0,
+    reservedDelta: 2
+};
+
+const LEVEL = { productId: 'p1', title: 'Product one', onHand: 24, reserved: 2, available: 22 };
 
 let responses: Record<string, unknown>;
 
@@ -27,7 +38,9 @@ beforeEach(() => {
     vi.clearAllMocks();
     responses = {
         'GET /inventory/movements': { data: { items: [MOVEMENT] } },
-        'POST /inventory/restock': { data: { productId: 'p1', stock: 24 } }
+        'GET /inventory/levels': { data: { items: [LEVEL] } },
+        'POST /inventory/receipts': { data: LEVEL },
+        'POST /inventory/adjustments': { data: LEVEL }
     };
 });
 
@@ -58,21 +71,71 @@ describe('fetchMovements', () => {
     });
 });
 
-describe('restock', () => {
-    it('answers the new shelf count and reloads the ledger it extended', () => {
+describe('fetchLevels', () => {
+    it('replaces the board with what the API answered', () => {
         const store = useInventoryStore();
-        return store.restock('p1', 20).then((stock) => {
-            expect(stock).toBe(24);
-            // The reload is the point: the row worth rendering is the API's.
-            expect(requestedUrls()).toEqual(['/inventory/restock', '/inventory/movements']);
+        return store.fetchLevels().then(() => {
+            expect(store.levels).toEqual([LEVEL]);
         });
     });
 
-    it('reads a bare payload as a zero shelf, not a crash', () => {
-        responses['POST /inventory/restock'] = { data: undefined };
+    it('reads a payload with no items as an empty board, not a crash', () => {
+        responses['GET /inventory/levels'] = { data: undefined };
         const store = useInventoryStore();
-        return store.restock('p1', 20).then((stock) => {
-            expect(stock).toBe(0);
+        return store.fetchLevels().then(() => {
+            expect(store.levels).toEqual([]);
+        });
+    });
+});
+
+describe('receive', () => {
+    it('answers the counters the API reported and reloads both views it changed', () => {
+        const store = useInventoryStore();
+        return store.receive('p1', 20).then((level) => {
+            expect(level).toEqual(LEVEL);
+            // The reload is the point, and so is its order: the ledger explains the board.
+            expect(requestedUrls()).toEqual([
+                '/inventory/receipts',
+                '/inventory/movements',
+                '/inventory/levels'
+            ]);
+        });
+    });
+
+    it('sends the quantity as a receipt body rather than a query param', () => {
+        const store = useInventoryStore();
+        return store.receive('p1', 20).then(() => {
+            const call = vi.mocked(orvalMutator).mock.calls[0]![0] as { data?: unknown };
+            expect(call.data).toEqual({ productId: 'p1', quantity: 20 });
+        });
+    });
+
+    it('reads a bare payload as no counters, not a crash', () => {
+        responses['POST /inventory/receipts'] = { data: undefined };
+        const store = useInventoryStore();
+        return store.receive('p1', 20).then((level) => {
+            expect(level).toBeUndefined();
+        });
+    });
+});
+
+describe('adjust', () => {
+    it('passes the delta through signed, because shrinkage is the common case', () => {
+        const store = useInventoryStore();
+        return store.adjust('p1', -3).then(() => {
+            const call = vi.mocked(orvalMutator).mock.calls[0]![0] as { data?: unknown };
+            expect(call.data).toEqual({ productId: 'p1', delta: -3 });
+        });
+    });
+
+    it('reloads both views it changed, exactly as a receipt does', () => {
+        const store = useInventoryStore();
+        return store.adjust('p1', -3).then(() => {
+            expect(requestedUrls()).toEqual([
+                '/inventory/adjustments',
+                '/inventory/movements',
+                '/inventory/levels'
+            ]);
         });
     });
 });

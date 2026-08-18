@@ -179,7 +179,7 @@ const formatMb = (bytes: number) => `${Math.round(bytes / 1024 / 1024)}MB`;
                                 </dl>
                             </v-card>
                         </template>
-                        <p v-else class="m-0 p-4 text-center opacity-60">
+                        <p v-else class="m-0 p-4 text-center opacity-75">
                             {{ t('realtime-playground-page.empty-metrics') }}
                         </p>
                     </div>

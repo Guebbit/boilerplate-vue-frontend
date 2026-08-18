@@ -1,6 +1,6 @@
 import { http, type HttpHandler } from 'msw';
 import { GetLocalesResponse, GetLocaleDictionaryResponse } from '@api/schemas';
-import { createSuccessEnvelope, createErrorEnvelope } from './mockShared.ts';
+import { createSuccessEnvelope, createErrorEnvelope } from './mockDb.ts';
 import { toMockJsonResponse } from './mockTransport.ts';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';

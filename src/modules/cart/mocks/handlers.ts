@@ -22,12 +22,12 @@ import {
     mockDatabase,
     readRequestBody,
     recordMockEmail
-} from '@mocks/mockShared.ts';
+} from '@mocks/mockDb.ts';
 import { toMockJsonResponse } from '@mocks/mockTransport.ts';
 import { MockErrorResponse } from '@mocks/mockValidation.ts';
 // The BE's event listeners, mock-side, from the support layer (see mockCommerce's docblock):
 // the checkout prices its shipping and tells the inventory ledger about the units it took.
-import { priceMockShipping, recordMockStockMovement } from '@mocks/mockCommerce.ts';
+import { applyMockStockTransition, priceMockShipping } from '@mocks/mockCommerce.ts';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
@@ -162,7 +162,9 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
              */
             const overShelf = mockDatabase.sampleCartItems.some((item) => {
                 const product = mockDatabase.sampleProducts.find(({ id }) => id === item.productId);
-                return product?.stock !== undefined && item.quantity > product.stock;
+                // `available`, not `onHand`: units already promised to someone else's open order
+                // are present on the shelf and still cannot be sold twice.
+                return product?.available !== undefined && item.quantity > product.available;
             });
             if (overShelf)
                 return toMockJsonResponse(
@@ -173,11 +175,6 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
                     ),
                     { status: 409, schema: MockErrorResponse }
                 );
-            for (const item of mockDatabase.sampleCartItems) {
-                const product = mockDatabase.sampleProducts.find(({ id }) => id === item.productId);
-                if (product?.stock !== undefined) product.stock -= item.quantity;
-            }
-
             const email = String(
                 requestBody.email ??
                     mockDatabase.sampleUsers.find(
@@ -213,12 +210,14 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
             });
 
             mockDatabase.sampleOrders.unshift(createdOrder);
-            // The ledger hears the sale, one row per line — the BE's STOCK_MOVED, mock-side.
+            /*
+             * The ledger hears the sale, one row per line — the BE's STOCK_MOVED, mock-side.
+             * `reserve`, not a sale: checkout puts a HOLD on the units. `reserved` rises and
+             * `onHand` does not, so the shelf count is unchanged and availability drops. The
+             * units only leave on `commit`, when the order is paid for.
+             */
             for (const item of mockDatabase.sampleCartItems)
-                recordMockStockMovement({
-                    productId: item.productId,
-                    delta: -item.quantity,
-                    reason: 'order',
+                applyMockStockTransition('reserve', item.productId, item.quantity, {
                     reference: createdOrder.id
                 });
             mockDatabase.sampleCartItems = [];

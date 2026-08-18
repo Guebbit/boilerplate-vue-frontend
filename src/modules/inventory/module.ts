@@ -5,9 +5,9 @@ import { inventoryResponseSchemas } from './responseSchemas';
 /**
  * The stock ledger, admin-side.
  *
- * `dependsOn: ['products']` because the page names products (the restock select, the title
+ * `dependsOn: ['products']` because the page names products (the receipt select, the title
  * lookup) through the products barrel — the same one-way arrow the BE's inventory module has.
- * Deleting this module removes the ledger page and its nav entry; every shelf count stays
+ * Deleting this module removes the board and the ledger behind it; every shelf count stays
  * correct, every WHY goes unrecorded.
  */
 export default {
@@ -20,8 +20,12 @@ export default {
     language: {
         'Stock movement':
             'One row explaining a change in stock: how many, and why. Written by the server, listed here.',
-        Restock:
-            'The one movement this page originates. It still goes through the API like any other.'
+        'Inventory level':
+            'What is on the shelf for one product right now: on hand, reserved, and the difference a shopper can actually buy.',
+        Receipt:
+            'Stock arriving. Raises what is on hand and nothing else, so a delivery is sellable the moment it lands.',
+        Adjustment:
+            'A stocktake correction, signed — shrinkage is the common case and it is negative. Refused when it would leave fewer units than are already promised to orders.'
     },
     routes,
     dependsOn: [
@@ -29,7 +33,7 @@ export default {
             module: 'products',
             as: 'conformist',
             because:
-                'Reads `useProductsStore` as it is, to name products in the restock select and the ledger titles.'
+                'Reads `useProductsStore` as it is, to name products in the receipt select and the ledger titles.'
         }
     ],
     navigation: [

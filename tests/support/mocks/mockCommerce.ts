@@ -7,12 +7,12 @@
  * file rather than through each other, because a module's `mocks/handlers.ts` is internal and
  * the barrels must stay mock-free (a barrel export would drag MSW into the production chunk).
  *
- * Same residency rule as `createMockOrder` and `cartItemToOrderItem` in `mockShared`: the
+ * Same residency rule as `createMockOrder` and `cartItemToOrderItem` in `mockDb`: the
  * support layer is allowed to know several domains at once. Deleting one of the three modules
  * leaves its collection and listener here unread — harmless, and one grep away from removal.
  */
-import type { Payment, Shipment, ShippingMethod, StockMovement } from 'src/types';
-import { getIsoDateNow, mockDatabase, recordMockEmail } from './mockShared.ts';
+import type { InventoryLevel, Payment, Shipment, ShippingMethod, StockMovement } from 'src/types';
+import { getIsoDateNow, mockDatabase, recordMockEmail } from './mockDb.ts';
 
 declare module '@/kernel/registry' {
     interface MockSeedData {
@@ -56,9 +56,14 @@ let movementIdCounter = 0;
 
 /**
  * The BE's `STOCK_MOVED` listener, mock-side: whichever handler moves units calls this with the
- * why attached — the checkout, the cancel, the admin product write, the restock.
+ * why attached — the checkout, the cancel, the delivery, the stocktake correction.
  *
- * @param movement - the signed change and its reason
+ * The two deltas are separate because the counters are: a hold moves `reserved` and leaves
+ * `onHand` alone, a delivery does the opposite, and a completed sale moves both. The
+ * reason→deltas table the backend keeps in `src/modules/inventory/domain/transitions.ts` is what
+ * a caller should read before inventing a pair.
+ *
+ * @param movement - the signed changes and their reason
  */
 export const recordMockStockMovement = (
     /* The contract's own `StockMovement`, less the three fields this function is here to supply.
@@ -75,6 +80,107 @@ export const recordMockStockMovement = (
         updatedAt: getIsoDateNow()
     });
 };
+
+/**
+ * The reason→deltas table, mock-side.
+ *
+ * A deliberate mirror of the backend's `src/modules/inventory/domain/transitions.ts`, and the one
+ * piece of inventory logic worth restating here: `onHand` and `reserved` move independently, and
+ * which of them a transition touches IS the domain rule. Getting it wrong produces a ledger that
+ * balances against itself and against nothing else.
+ *
+ * @param reason - the transition
+ * @param quantity - how many units; already signed for `adjust`, positive otherwise
+ * @returns the pair of counter deltas that transition records
+ */
+export const mockCounterDeltaFor = (
+    reason: StockMovement['reason'],
+    quantity: number
+): { onHandDelta: number; reservedDelta: number } => {
+    switch (reason) {
+        // A hold. The units stay where they are and stop being sellable.
+        case 'reserve': {
+            return { onHandDelta: 0, reservedDelta: quantity };
+        }
+        // The sale completes: the units leave the building and stop being spoken for.
+        case 'commit': {
+            return { onHandDelta: -quantity, reservedDelta: -quantity };
+        }
+        // The hold is given up — cancelled, or timed out. The units become sellable again.
+        case 'release':
+        case 'expire': {
+            return { onHandDelta: 0, reservedDelta: -quantity };
+        }
+        // A delivery. The only transition that can create units.
+        case 'receive': {
+            return { onHandDelta: quantity, reservedDelta: 0 };
+        }
+        // The one case where `quantity` arrives already signed — `-3` is three units of shrinkage.
+        default: {
+            return { onHandDelta: quantity, reservedDelta: 0 };
+        }
+    }
+};
+
+/**
+ * Move one product's counters and write the row that explains the move.
+ *
+ * The counters are `readOnly` in the contract — the API derives them, so the generated `Product`
+ * makes them non-assignable and the row has to be REPLACED rather than mutated. That is the same
+ * shape `products/mocks/handlers.ts` uses for an update, and it is why this lives here instead of
+ * being repeated by each handler that shifts stock.
+ *
+ * @param reason - the transition
+ * @param productId - the product whose shelf moves
+ * @param quantity - how many units; already signed for `adjust`
+ * @param context - what to record on the row beyond the deltas
+ * @returns the product's counters after the move, or undefined when no such product exists
+ */
+export const applyMockStockTransition = (
+    reason: StockMovement['reason'],
+    productId: string,
+    quantity: number,
+    context: { reference?: string; note?: string } = {}
+): InventoryLevel | undefined => {
+    const index = mockDatabase.sampleProducts.findIndex(({ id }) => id === productId);
+    if (index === -1) return undefined;
+
+    const product = mockDatabase.sampleProducts[index];
+    const { onHandDelta, reservedDelta } = mockCounterDeltaFor(reason, quantity);
+
+    mockDatabase.sampleProducts[index] = {
+        ...product,
+        onHand: Math.max(0, (product.onHand ?? 0) + onHandDelta),
+        reserved: Math.max(0, (product.reserved ?? 0) + reservedDelta)
+    };
+
+    recordMockStockMovement({ productId, reason, onHandDelta, reservedDelta, ...context });
+
+    return mockInventoryLevels().find((level) => level.productId === productId);
+};
+
+/**
+ * The stock board, derived rather than stored.
+ *
+ * `available` is `onHand - reserved` and is computed here for the same reason the API computes it
+ * server-side: it is not a fact anybody writes, and a stored copy is a third number that can
+ * disagree with the two it comes from. A product with no counters reads as zeroes rather than
+ * being dropped, so the board lists the catalogue rather than a subset of it.
+ *
+ * @returns one row per product in the mock catalogue
+ */
+export const mockInventoryLevels = (): InventoryLevel[] =>
+    mockDatabase.sampleProducts.map((product) => {
+        const onHand = product.onHand ?? 0;
+        const reserved = product.reserved ?? 0;
+        return {
+            productId: product.id,
+            title: product.title,
+            onHand,
+            reserved,
+            available: Math.max(0, onHand - reserved)
+        };
+    });
 
 let shipmentIdCounter = 0;
 

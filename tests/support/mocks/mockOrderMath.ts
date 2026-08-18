@@ -1,8 +1,8 @@
 /**
- * Pure, `mockDatabase`-free helpers shared by `mockShared.ts` (every handler that builds an order
- * at runtime) and the modules' own fixture builders in `src/modules/<name>/mocks/seeds.ts`.
+ * Pure, `mockDatabase`-free helpers shared by `mockDb.ts` (every handler that builds an order
+ * at runtime) and the modules' own fixture builders in `src/modules/<name>/mocks/register.ts`.
  *
- * Split out from `mockShared.ts` so a module's seed builder can use them without importing the
+ * Split out from `mockDb.ts` so a module's seed builder can use them without importing the
  * shared store: those builders run BEFORE `mockDatabase` is populated, so anything they touch must
  * not depend on its contents. Nothing here reads `mockDatabase` or session state, which is what
  * makes it safe from either side.

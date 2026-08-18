@@ -13,7 +13,7 @@ import {
     GetObservabilityMetricsOverviewResponse,
     GetObservabilityAuditLogsResponse
 } from '@api/schemas';
-import { createSuccessEnvelope, getIsoDateNow, mockDatabase } from '@mocks/mockShared.ts';
+import { createSuccessEnvelope, getIsoDateNow, mockDatabase } from '@mocks/mockDb.ts';
 import { toMockJsonResponse } from '@mocks/mockTransport.ts';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
@@ -22,7 +22,7 @@ export const registerAdminMockHandlers = (): HttpHandler[] => [
     /*
      * `timestamp` is stamped at response time rather than served from the database on both health
      * and metrics: the dashboard renders it as "as of", and a value frozen at database-build time
-     * would age visibly across a spec run. The random profile varies everything else.
+     * would age visibly across a spec run.
      */
     http.get(`${API_BASE}/observability/health`, () =>
         toMockJsonResponse(

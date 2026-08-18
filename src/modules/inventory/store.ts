@@ -1,13 +1,23 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
-import { listStockMovements, restockProduct } from '@api';
-import type { StockMovement } from '@types';
+import { adjustStock, listInventoryLevels, listStockMovements, receiveStock } from '@api';
+import type { InventoryLevel, StockMovement } from '@types';
 
 /**
- * The stock ledger — read newest-first, written only by the API's own movements. The one write
- * this store can make is the restock, which reloads the ledger it just extended: the row worth
- * rendering is the API's, never a local guess.
+ * The stock board and the ledger behind it.
+ *
+ * Two reads and two writes, and the split between the writes is the domain's, not this store's:
+ *
+ * - a RECEIPT is stock arriving. `onHand` rises, `reserved` does not, so the delivery is available
+ *   immediately. Strictly positive — a delivery that removes units is not a delivery.
+ * - an ADJUSTMENT is a stocktake correction, and it is SIGNED, because shrinkage is the common
+ *   case and it is negative. The API refuses to take `onHand` below what is already reserved.
+ *
+ * Both answer with the counters as they now stand, and both reload the ledger they just extended:
+ * the row worth rendering is the API's, never a local guess. That is also why nothing here does
+ * arithmetic on a count — `available` is derived server-side from `onHand` and `reserved`, and a
+ * second implementation of that subtraction is a second thing that can be wrong.
  */
 export const useInventoryStore = defineStore('inventory', () => {
     const { getLoading, setLoading } = useCoreStore();
@@ -18,6 +28,9 @@ export const useInventoryStore = defineStore('inventory', () => {
 
     /** The latest movements, as last fetched. */
     const movements = ref<StockMovement[]>([]);
+
+    /** The current shelf counts, one row per product. */
+    const levels = ref<InventoryLevel[]>([]);
 
     /**
      * Loads the ledger.
@@ -36,23 +49,65 @@ export const useInventoryStore = defineStore('inventory', () => {
         );
 
     /**
-     * Puts units on a shelf, then reloads the ledger the restock just extended.
+     * Loads the stock board.
      *
-     * @param productId - The product.
-     * @param quantity - How many units arrived.
-     * @returns A promise resolving with the shelf count after the delivery.
+     * @returns A promise resolving with the levels.
      */
-    const restock = (productId: string, quantity: number) =>
+    const fetchLevels = () =>
         fetchAny(() =>
-            restockProduct({ productId, quantity }).then((response) =>
-                fetchMovements().then(() => response.data?.stock ?? 0)
+            listInventoryLevels().then((response) => {
+                levels.value = response.data?.items ?? [];
+                return levels.value;
+            })
+        );
+
+    /**
+     * Receives a delivery, then reloads what it changed.
+     *
+     * @param productId - The product the units arrived for.
+     * @param quantity - How many arrived. Strictly positive.
+     * @returns A promise resolving with the counters after the delivery.
+     */
+    const receive = (productId: string, quantity: number) =>
+        fetchAny(() =>
+            receiveStock({ productId, quantity }).then((response) =>
+                reloadAfterWrite(response.data)
             )
         );
+
+    /**
+     * Corrects the count after a stocktake, then reloads what it changed.
+     *
+     * @param productId - The product being corrected.
+     * @param delta - Signed: negative for shrinkage, which is the common case.
+     * @returns A promise resolving with the counters after the correction.
+     */
+    const adjust = (productId: string, delta: number) =>
+        fetchAny(() =>
+            adjustStock({ productId, delta }).then((response) => reloadAfterWrite(response.data))
+        );
+
+    /**
+     * Both writes change the same two things, so they refresh the same two things.
+     *
+     * Sequential rather than concurrent: the ledger explains the board, and a board that arrived
+     * before the movement that justifies it reads as a number nobody wrote.
+     *
+     * @param level - The counters the write answered with.
+     * @returns A promise resolving with those counters, once the views agree with them.
+     */
+    const reloadAfterWrite = (level: InventoryLevel | undefined) =>
+        fetchMovements()
+            .then(() => fetchLevels())
+            .then(() => level);
 
     return {
         loading,
         movements,
+        levels,
         fetchMovements,
-        restock
+        fetchLevels,
+        receive,
+        adjust
     };
 });

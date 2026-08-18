@@ -171,6 +171,7 @@ const handleDelete = (productId: string) => {
                     <v-text-field
                         v-model="filters.text"
                         :label="t('products-list-page.filter-text')"
+                        data-test="filter-text"
                         hide-details
                     />
                     <v-text-field

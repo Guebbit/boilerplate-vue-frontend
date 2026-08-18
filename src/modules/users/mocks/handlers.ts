@@ -26,7 +26,7 @@ import {
     readHardDeleteFlag,
     toNumberOrDefault,
     toPaginationMeta
-} from '@mocks/mockShared.ts';
+} from '@mocks/mockDb.ts';
 import { toMockJsonResponse } from '@mocks/mockTransport.ts';
 import { MockErrorResponse } from '@mocks/mockValidation.ts';
 

@@ -1,14 +1,14 @@
 /**
- * This module's fixtures, in both profiles. See `src/modules/products/tests/seeds.spec.ts` for why
- * they are asserted here rather than centrally.
+ * This module's slice of the mock database. See `src/modules/products/tests/seeds.spec.ts` for why
+ * it is asserted here rather than centrally.
  *
  * Orders are the one slice built FROM another's, so these cases carry a `soFar` the way the real
  * fold does — which is also what makes the "references resolve" assertions meaningful.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { Product } from '@types';
-import { buildOrdersMockSeeds } from '@/modules/orders/mocks/seeds';
-import { mockDatabase } from '@mocks/mockShared.ts';
+import { buildOrdersMockSeeds } from '@/modules/orders/mocks/register';
+import { mockDatabase } from '@mocks/mockDb.ts';
 import { mockDatabaseReady } from '../../../../tests/support/unit/mockDatabaseReady.ts';
 
 beforeAll(mockDatabaseReady);
@@ -21,21 +21,18 @@ beforeAll(mockDatabaseReady);
  * internals are not this module's to import, and the whole point of `soFar` is that orders needs
  * the other domains' DATA and never their code.
  */
-const buildWithDependencies = async (profile: 'seed' | 'random') => {
+const buildWithDependencies = async () => {
     const products = mockDatabase.sampleProducts;
-    const { sampleOrders } = await buildOrdersMockSeeds({
-        profile,
-        soFar: { sampleProducts: products, sampleUsers: mockDatabase.sampleUsers }
-    });
+    const { sampleOrders } = await buildOrdersMockSeeds();
 
     return { products, orders: sampleOrders ?? [] };
 };
 
-describe.each(['seed', 'random'] as const)('the %s profile', (profile) => {
+describe('the demo order history', () => {
     it('keeps every line item pointing at a product that actually exists', async () => {
-        // `cartItemToOrderItem` in mockShared.ts does a non-null-asserted find() on product id and
+        // `cartItemToOrderItem` in mockDb.ts does a non-null-asserted find() on product id and
         // throws on incoherent data; this is the assertion that catches it first.
-        const { products, orders } = await buildWithDependencies(profile);
+        const { products, orders } = await buildWithDependencies();
         const productIds = new Set(products.map((product) => product.id));
 
         for (const order of orders)
@@ -43,7 +40,7 @@ describe.each(['seed', 'random'] as const)('the %s profile', (profile) => {
     });
 
     it('derives totals from the line items rather than restating them', async () => {
-        const { orders } = await buildWithDependencies(profile);
+        const { orders } = await buildWithDependencies();
 
         for (const order of orders) {
             const expectedQuantity = order.items.reduce((sum, line) => sum + line.quantity, 0);
@@ -62,19 +59,19 @@ describe.each(['seed', 'random'] as const)('the %s profile', (profile) => {
     it('includes a soft-deleted order, so the admin-only visibility branch is reachable', async () => {
         // `isOrderVisibleToCaller` has an admin-only branch; fixtures that never produce a hidden
         // order never reach it.
-        const { orders } = await buildWithDependencies(profile);
+        const { orders } = await buildWithDependencies();
 
         expect(orders.filter((order) => order.deletedAt)).toHaveLength(1);
     });
 });
 
-describe('the seed profile', () => {
+describe('the published rows', () => {
     it('keeps the fixed ids the backend seeds, so a deep link resolves in both', async () => {
-        // The ids come straight out of `@mocks/dataset.json` now. They used to need putting back
+        // The ids come straight out of `@mocks/demo-data.json` now. They used to need putting back
         // by hand: the orders were rebuilt through `createMockOrder`, which mints a fresh
         // `order-<timestamp>-<rand>`, so a spec deep-linking to /orders/:id would otherwise have
         // hit a different URL under MSW than against the real API.
-        const { orders } = await buildWithDependencies('seed');
+        const { orders } = await buildWithDependencies();
 
         expect(orders).toHaveLength(3);
         expect(orders.find((order) => order.deletedAt)?.id).toBe('66b3f0c14d2e8a91c7d4a015');
@@ -84,7 +81,7 @@ describe('the seed profile', () => {
         // `computeOrderTotals` is no longer on this path at all. The published row already holds
         // what the backend's `applyOrderTransform` produced, so there is nothing here that could
         // disagree with it.
-        const { orders } = await buildWithDependencies('seed');
+        const { orders } = await buildWithDependencies();
 
         for (const order of orders) {
             const quantity = order.items.reduce((sum, item) => sum + item.quantity, 0);
@@ -98,27 +95,11 @@ describe('the seed profile', () => {
         // the shared fixture file gave a line only a `productId`, so with no catalogue to resolve
         // it against there was nothing to build. A published order carries the product AS IT WAS —
         // which is the whole point of a snapshot — so the history stands on its own.
-        const { sampleOrders } = await buildOrdersMockSeeds({
-            profile: 'seed',
-            soFar: { sampleProducts: [] as Product[] }
-        });
+        const { sampleOrders } = await buildOrdersMockSeeds();
 
         expect(sampleOrders).toHaveLength(3);
         expect(sampleOrders?.every((order) => order.items.every((item) => item.product))).toBe(
             true
         );
-    });
-});
-
-describe('the random profile without a catalogue', () => {
-    it('contributes an empty history rather than orders whose lines point nowhere', async () => {
-        // Randomly-generated orders still DERIVE their lines from whatever catalogue is in the
-        // database, so this branch keeps degrading exactly as it did.
-        const { sampleOrders } = await buildOrdersMockSeeds({
-            profile: 'random',
-            soFar: { sampleProducts: [] as Product[] }
-        });
-
-        expect(sampleOrders).toEqual([]);
     });
 });

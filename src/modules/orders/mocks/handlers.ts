@@ -30,14 +30,14 @@ import {
     slicePaginatedData,
     toNumberOrDefault,
     toPaginationMeta
-} from '@mocks/mockShared.ts';
+} from '@mocks/mockDb.ts';
 import { toMockArrayBufferResponse, toMockJsonResponse } from '@mocks/mockTransport.ts';
 import { MockErrorResponse } from '@mocks/mockValidation.ts';
 // The BE's event listeners, mock-side, from the support layer (see mockCommerce's docblock):
 // the cancel refunds and re-shelves, a status landing on `shipped` mints the parcel.
 import {
     refundMockPaymentForOrder,
-    recordMockStockMovement,
+    applyMockStockTransition,
     shipMockOrder
 } from '@mocks/mockCommerce.ts';
 
@@ -213,16 +213,12 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
 
             const wasPaid = order.status === 'paid';
             order.status = 'cancelled';
-            for (const { product, quantity } of order.items) {
-                const shelf = mockDatabase.sampleProducts.find(({ id }) => id === product.id);
-                if (shelf?.stock !== undefined) shelf.stock += quantity;
-                recordMockStockMovement({
-                    productId: product.id,
-                    delta: quantity,
-                    reason: 'order-cancelled',
-                    reference: order.id
-                });
-            }
+            /*
+             * `release`: the hold is given up, so `reserved` falls and `onHand` is untouched —
+             * the units were never taken off the shelf, they were only spoken for.
+             */
+            for (const { product, quantity } of order.items)
+                applyMockStockTransition('release', product.id, quantity, { reference: order.id });
             if (wasPaid) refundMockPaymentForOrder(order.id);
             return toMockJsonResponse(createSuccessEnvelope(order), {
                 schema: CancelOrderByIdResponse

@@ -46,15 +46,15 @@ export default {
     /*
      * Same inline-ternary rule as `mockHandlers`: the fixtures must not reach a production
      * bundle. `after: ['users', 'products']` is about data, not code — a saved line names a
-     * user and a product, so the random profile cannot draw one before both exist.
+     * user and a product, so neither can be resolved before both exist.
      */
     mockSeeds:
         import.meta.env.VITE_API_MOCK_ENABLED === 'true'
             ? {
                   after: ['users', 'products'],
-                  build: (context) =>
-                      import('./mocks/seeds').then(({ buildWishlistMockSeeds }) =>
-                          buildWishlistMockSeeds(context)
+                  build: () =>
+                      import('./mocks/register').then(({ buildWishlistMockSeeds }) =>
+                          buildWishlistMockSeeds()
                       )
               }
             : undefined,

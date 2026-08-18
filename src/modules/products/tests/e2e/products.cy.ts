@@ -16,12 +16,12 @@ describe('Products', () => {
         });
 
         // `cy.resetState()` clears the session, so these run as an anonymous visitor.
-        // Of the five seeded products one is soft-deleted and one is inactive, and the API
-        // hides both from non-admins — so the public list is 3, not 5. This assertion read
-        // `5` until the mock handler learned the BE's active/deletedAt filtering; it passed
-        // against mocks and would have failed against the real API.
+        // Of the six seeded products one is soft-deleted and one is inactive, and the API
+        // hides both from non-admins — so the public list is 4, not 6. This assertion read
+        // the mock's own number until the handler learned the BE's active/deletedAt filtering;
+        // it passed against mocks and would have failed against the real API.
         it('renders only publicly visible products for anonymous visitors', () => {
-            cy.get('[data-test=list-row]').should('have.length', 3);
+            cy.get('[data-test=list-row]').should('have.length', 4);
             cy.contains('[data-test=list-row]', 'Sallyno Carino').should('not.exist'); // soft-deleted
             cy.contains('[data-test=list-row]', 'Bundle micini').should('not.exist'); // inactive
         });
@@ -81,7 +81,7 @@ describe('Products', () => {
         it('shows inactive and soft-deleted products to admin users', () => {
             cy.loginAs('admin');
             cy.visit('/en/products');
-            cy.get('[data-test=list-row]').should('have.length', 5);
+            cy.get('[data-test=list-row]').should('have.length', 6);
             cy.contains('[data-test=list-row]', 'Sallyno Carino').should('exist');
             cy.contains('[data-test=list-row]', 'Bundle micini').should('exist');
         });

@@ -1,20 +1,24 @@
 {
     "inventory-page": {
         "page-title": "Magazzino",
-        "restock-title": "Rifornimento",
+        "receipt-title": "Carico merce",
         "label-product": "Prodotto",
         "label-quantity": "Quantità",
-        "button-restock": "Rifornisci",
-        "success-restock": "Scorte aggiornate — lo scaffale ora contiene {stock}.",
-        "empty": "Ancora nessun movimento — vendi qualcosa, annulla qualcosa o rifornisci.",
+        "button-receipt": "Carica",
+        "success-receipt": "Carico registrato — ora {available} unità sono disponibili.",
+        "empty": "Ancora nessun movimento — vendi qualcosa, annulla qualcosa o registra un carico.",
         "column-when": "Quando",
         "column-product": "Prodotto",
-        "column-delta": "Variazione",
+        "column-on-hand": "Giacenza",
+        "column-reserved": "Impegnate",
+        "column-available": "Disponibili",
         "column-reason": "Motivo",
         "column-reference": "Riferimento",
-        "reason-order": "Ordine",
-        "reason-order-cancelled": "Ordine annullato",
-        "reason-adjustment": "Rettifica",
-        "reason-restock": "Rifornimento"
+        "reason-reserve": "Impegnate",
+        "reason-commit": "Vendute",
+        "reason-release": "Liberate",
+        "reason-expire": "Scadute",
+        "reason-receive": "Caricate",
+        "reason-adjust": "Rettificate"
     }
 }

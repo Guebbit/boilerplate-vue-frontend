@@ -41,9 +41,9 @@ export default {
     mockSeeds:
         import.meta.env.VITE_API_MOCK_ENABLED === 'true'
             ? {
-                  build: (context) =>
-                      import('./mocks/seeds').then(({ buildUsersMockSeeds }) =>
-                          buildUsersMockSeeds(context)
+                  build: () =>
+                      import('./mocks/register').then(({ buildUsersMockSeeds }) =>
+                          buildUsersMockSeeds()
                       )
               }
             : undefined,

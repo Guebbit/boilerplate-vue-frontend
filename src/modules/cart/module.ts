@@ -56,16 +56,16 @@ export default {
      *
      * `after: ['products']` is NOT the same statement as the `dependsOn` above, and the two lists
      * differ on purpose: `dependsOn` is about code (this module mounts delivery's selector), while
-     * `after` is about data — the random profile draws its cart items from the catalogue actually in
+     * `after` is about data — a cart line points at a product, so the catalogue has to exist in
      * the database, so it cannot run before products has contributed one.
      */
     mockSeeds:
         import.meta.env.VITE_API_MOCK_ENABLED === 'true'
             ? {
                   after: ['products'],
-                  build: (context) =>
-                      import('./mocks/seeds').then(({ buildCartMockSeeds }) =>
-                          buildCartMockSeeds(context)
+                  build: () =>
+                      import('./mocks/register').then(({ buildCartMockSeeds }) =>
+                          buildCartMockSeeds()
                       )
               }
             : undefined,

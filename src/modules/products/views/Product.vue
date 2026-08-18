@@ -94,7 +94,7 @@ const { addToWishlist, removeFromWishlist, isSaved, fetchWishlist } = useWishlis
  *
  * @returns `true` when the product cannot currently be bought.
  */
-const outOfStock = computed(() => currentProduct.value?.stock === 0);
+const outOfStock = computed(() => currentProduct.value?.available === 0);
 
 /**
  * Puts one unit in the cart.
@@ -152,7 +152,7 @@ onMounted(() => {
                     :value="
                         outOfStock
                             ? t('product-target-page.out-of-stock')
-                            : formatText(currentProduct?.stock?.toString())
+                            : formatText(currentProduct?.available?.toString())
                     "
                     accent="secondary"
                 />

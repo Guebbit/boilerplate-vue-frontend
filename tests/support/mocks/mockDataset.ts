@@ -1,7 +1,7 @@
 /**
  * The demo dataset, as the backend's API actually answers it.
  *
- * `dataset.json` beside this file is byte-identical to `db/seeds/dataset.json` in the paired
+ * `demo-data.json` beside this file is byte-identical to `db/demo/demo-data.json` in the paired
  * backend, and `check:spec-identity` proves it. It is produced there by `npm run seed:export`,
  * which seeds a throwaway Mongo with the real seeders and reads every row back through the real
  * serializers — so what is in it is what `GET /products` and friends return, defaults and derived
@@ -16,7 +16,7 @@
  *
  * The old `seed-identities.ts` shared plain FACTS — ids, titles, prices — and each repo wrote its
  * own mapper from those facts into the shape it needed. Identical facts could not keep the two
- * MAPPERS honest, and they drifted exactly where you would expect: `mocks/seeds.ts` here carried a
+ * MAPPERS honest, and they drifted exactly where you would expect: `mocks/register.ts` here carried a
  * hand-written `active: true` and `verified: true`, copied from a reading of the backend's schema
  * defaults, and no `locale` at all because nobody remembered the column existed. Every spec on both
  * sides passed, each consistent with its own copy.
@@ -36,7 +36,7 @@
  */
 
 import type { CartItem, Order, OrderStatus, Product, User, WishlistItem } from '@types';
-import dataset from './dataset.json';
+import dataset from './demo-data.json';
 
 /** The credentials `cy.loginAs()` types into a real login form. */
 export const seedCredentials = dataset.credentials;
