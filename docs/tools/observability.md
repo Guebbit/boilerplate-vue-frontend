@@ -91,17 +91,33 @@ The trace-propagation origin is derived from `VITE_API_URL`.
 
 ### Event taxonomy
 
-Event names mirror the backend's canonical events so both sides line up in Umami.
+Two lists, because they are two different things and conflating them is what makes
+`analyticsEvents.PRODUCT_VIEWED` look importable when it is not.
+
+**What this app emits.** The complete contents of `analyticsEvents` — if a name is not here, this
+app cannot fire it:
+
+| Event | When |
+| ----- | ---- |
+| `app_started` | Boot, before the shell mounts |
+| `app_ready` | The shell has mounted and the first view is renderable |
+| `user_logged_out` | A client-side token discard; the API has no request to attribute it to |
+| `checkout_request_failed` | A checkout that never reached the API — dropped connection, request that failed to leave the browser. NOT the twin of `checkout_failed`, which is the server *rejecting* a checkout it received |
+
+**What the backend emits.** Listed so you can read one Umami dashboard and know which side
+produced a row. These are **not** importable here — the backend's controllers hold their own
+names, and a copy in this repo would let this app fire events it has no business firing:
 
 | Category | Events |
 | -------- | ------ |
-| Lifecycle (FE-only) | `app_started`, `app_ready` |
-| Auth | `user_signed_up`, `user_logged_in`, `user_logged_out` (FE-only), `user_profile_viewed`, `account_deleted` |
+| Auth | `user_signed_up`, `user_logged_in`, `user_profile_viewed`, `account_deleted` |
 | Products | `products_searched`, `product_viewed` |
-| Cart | `cart_viewed`, `cart_item_added`, `cart_item_updated`, `cart_item_removed`, `cart_cleared` |
-| Checkout / Orders | `checkout_completed`, `checkout_failed`, `order_created`, `orders_viewed` |
+| Cart | `cart_viewed`, `cart_item_added`, `cart_item_updated`, `cart_item_removed`, `cart_cleared`, `cart_reordered` |
+| Wishlist | `wishlist_item_added`, `wishlist_item_removed`, `wishlist_moved_to_cart` |
+| Checkout / Orders | `checkout_completed`, `checkout_failed`, `order_created`, `orders_viewed`, `order_cancelled` |
+| Payments | `payment_succeeded`, `payment_declined` |
 
-Pageviews are handled automatically by Umami and are **not** in this table.
+Pageviews are handled automatically by Umami and are in neither table.
 
 ### Environment variables
 
@@ -109,10 +125,6 @@ Pageviews are handled automatically by Umami and are **not** in this table.
 | -------- | ------- |
 | `VITE_UMAMI_WEBSITE_ID` | Umami website id (from the Umami dashboard) — empty disables Umami |
 | `VITE_UMAMI_SRC` | Tracker script URL (default `http://localhost:3080/script.js`) |
-
-### Feature flags
-
-The local stack has **no feature-flag provider**. `isFeatureEnabled()` is kept for API compatibility but always returns `false`.
 
 ### External references
 
@@ -127,20 +139,17 @@ All observability calls go through `useObservabilityStore()`. Never import the F
 
 ```ts
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
-import { analyticsEvents } from '@/infrastructure/observability/events.ts';
+import { analyticsEvents } from '@/infrastructure/observability/analyticsEvents.ts';
 
 const obs = useObservabilityStore();
 
-// Track a named event
-obs.track(analyticsEvents.PRODUCT_VIEWED, { product_id: '123' });
+// Track a named event — the constant must come from `analyticsEvents`, which is the
+// complete list of what this app is allowed to emit. There are no per-domain helpers.
+obs.track(analyticsEvents.CHECKOUT_REQUEST_FAILED, { order_id: 'order-abc' });
 
-// Convenience helpers
-obs.trackProductView('123', 'Widget');
-obs.trackItemAddedToCart('123', 2);
-obs.trackOrderPlaced('order-abc', 49.99, 3);
-
-// Identify user after login
+// Identify the visitor after login, and drop the association on logout
 obs.identifyUser(userId);
+obs.unidentifyUser();
 
 // Capture an exception manually (sent to Faro → Grafana)
 obs.captureException(error);

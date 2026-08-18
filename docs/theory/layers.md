@@ -203,7 +203,7 @@ flowchart LR
 For a product flow you typically move through:
 
 - `src/modules/products/views/ProductsList.vue`
-- `src/modules/products/composables/useProductsList.ts` (optional — products has none today;
+- `src/modules/<name>/composables/<useThing>.ts` (optional — products has none today;
   `src/modules/admin/composables/useAdminObservability.ts` is a real one)
 - `src/modules/products/store.ts`
 - `contracts/rest/index.ts` → `getProducts()`
