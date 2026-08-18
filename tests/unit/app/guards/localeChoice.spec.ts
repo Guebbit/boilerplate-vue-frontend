@@ -42,24 +42,24 @@ vi.mock('@/infrastructure/i18n', () => ({
     getCurrentLocale: () => i18nState.currentLocale,
     getDefaultLocale: () => i18nState.defaultLocale,
     changeLanguage: (locale: string) => changeLanguageMock(locale),
-    updateLocale: (locale: string, messages: unknown) => updateLocaleMock(locale, messages),
-    API_NAMESPACE: 'api'
+    updateLocale: (locale: string, messages: unknown) => updateLocaleMock(locale, messages)
 }));
 
 /**
- * The API's dictionary endpoints. Mocked at the network boundary rather than by stubbing
- * `withApiDictionary`, so the merge itself — this app's keys at the root, the API's under
- * `api.*` — is exercised by the assertions below instead of being replaced by them.
+ * The API's locale endpoints. Mocked at the network boundary rather than by stubbing
+ * `withLocaleOverrides`, so the merge itself — bundled dictionary first, edited overrides on top,
+ * per key — is exercised by the assertions below instead of being replaced by them.
  */
-const getLocalesMock = vi.fn(() => Promise.resolve({ data: { locales: ['en', 'it', 'es'] } }));
-const getLocaleDictionaryMock = vi.fn(
+const getLocalesMock = vi.fn(() => Promise.resolve({ data: { locales: [] } }));
+const getLocaleMessagesMock = vi.fn(
     (_locale: string): Promise<{ data?: { messages?: Record<string, unknown> } }> =>
-        Promise.resolve({ data: { messages: { greeting: 'from-the-api' } } })
+        Promise.resolve({ data: { messages: { greeting: 'from-the-database' } } })
 );
 
-vi.mock('@api', () => ({
+vi.mock('@api', async (importOriginal) => ({
+    ...(await importOriginal<Record<string, unknown>>()),
     getLocales: () => getLocalesMock(),
-    getLocaleDictionary: (locale: string) => getLocaleDictionaryMock(locale)
+    getLocaleMessages: (locale: string) => getLocaleMessagesMock(locale)
 }));
 
 const { fetchLanguageApi, localeChoice } = await import('@/app/guards/localeChoice');
@@ -88,194 +88,60 @@ afterEach(() => {
 
 describe('fetchLanguageApi', () => {
     it('resolves an empty dictionary for an unsupported locale, without waiting', () => {
-        vi.useFakeTimers();
-
-        // No timer is scheduled at all on this path, so the promise settles without any
-        // advancement — asserted by resolving it before touching the clock.
         return fetchLanguageApi('kl').then((result) => {
             expect(result).toEqual(['kl', {}]);
             // Supported by neither side, so nothing is imported AND nothing is fetched.
-            expect(getLocaleDictionaryMock).not.toHaveBeenCalled();
+            expect(getLocaleMessagesMock).not.toHaveBeenCalled();
         });
     });
 
     it('loads a supported locale and returns its dictionary', () => {
-        vi.useFakeTimers();
-        const promise = fetchLanguageApi('en');
-        return vi
-            .advanceTimersByTimeAsync(1000)
-            .then(() => {
-                return promise;
-            })
-            .then(([locale, dictionary]) => {
-                expect(locale).toBe('en');
-                // Real file, real import: asserting it is a non-empty object proves the dynamic import
-                // actually resolved rather than falling into the catch branch.
-                expect(Object.keys(dictionary).length).toBeGreaterThan(0);
-            });
-    });
-
-    it('delays the first download of a locale by the simulated latency', () => {
-        vi.useFakeTimers();
-        const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
-
-        void fetchLanguageApi('it');
-
-        // Asserted on the scheduled delay rather than on when the promise settles: the dynamic
-        // `import()` underneath resolves over an indeterminate number of microtasks, so a
-        // settle-order assertion would be timing-dependent rather than behavioural.
-        expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 1000);
-    });
-
-    it('skips the delay for a locale already downloaded in a previous session', () => {
-        localStorage.setItem('downloaded-locales', JSON.stringify(['it']));
-        vi.useFakeTimers();
-        const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
-
-        void fetchLanguageApi('it');
-
-        // The whole point of persisting the list: latency is simulated once per browser, not
-        // once per navigation.
-        expect(setTimeoutSpy).toHaveBeenCalledWith(expect.any(Function), 0);
-    });
-
-    it('records a locale as downloaded once it has been fetched', () => {
-        vi.useFakeTimers();
-        const promise = fetchLanguageApi('it');
-        return vi
-            .advanceTimersByTimeAsync(1000)
-            .then(() => {
-                return promise;
-            })
-            .then(() => {
-                expect(JSON.parse(localStorage.getItem('downloaded-locales') ?? '[]')).toContain(
-                    'it'
-                );
-            });
-    });
-
-    it('deduplicates the stored locale list', () => {
-        localStorage.setItem('downloaded-locales', JSON.stringify(['en']));
-        vi.useFakeTimers();
-        const promise = fetchLanguageApi('en');
-        return vi
-            .advanceTimersByTimeAsync(0)
-            .then(() => {
-                return promise;
-            })
-            .then(() => {
-                // Unbounded growth here would be a slow localStorage leak on a long-lived browser.
-                expect(JSON.parse(localStorage.getItem('downloaded-locales') ?? '[]')).toEqual([
-                    'en'
-                ]);
-            });
+        return fetchLanguageApi('en').then(([locale, dictionary]) => {
+            expect(locale).toBe('en');
+            // Real file, real import: asserting it is a non-empty object proves the dynamic import
+            // actually resolved rather than falling into the catch branch.
+            expect(Object.keys(dictionary).length).toBeGreaterThan(0);
+        });
     });
 
     /**
-     * The degradation design C is built around. `es` is supported and has no
-     * `src/locales/es.json`, so the UI import rejects — and that must resolve to an empty UI
-     * dictionary rather than reject, since callers have no `.catch`. The API's own copy is
-     * fetched regardless, so the result is Spanish API messages inside a UI that falls back per
-     * key: degrading key by key rather than all-or-nothing.
+     * The case the whole override tier exists for. `es` is supported and has no
+     * `src/locales/es.json`, so the bundled import rejects — and that must resolve to an empty
+     * dictionary rather than reject, since callers have no `.catch`. What comes back is the
+     * overrides alone, and every key they do not carry is left for `fallbackLocale`: degrading
+     * key by key rather than all-or-nothing.
      */
-    it('resolves API copy with an empty UI dictionary when the locale file does not exist', () => {
-        vi.useFakeTimers();
-        const promise = fetchLanguageApi('es');
-        return vi
-            .advanceTimersByTimeAsync(1000)
-            .then(() => {
-                return expect(promise).resolves.toEqual([
-                    'es',
-                    { api: { greeting: 'from-the-api' } }
-                ]);
-            })
-            .then(() => {
-                expect(getLocaleDictionaryMock).toHaveBeenCalledWith('es');
-            });
-    });
-
-    it('never rejects when the API dictionary cannot be fetched', () => {
-        getLocaleDictionaryMock.mockRejectedValueOnce(new Error('network down'));
-        vi.useFakeTimers();
-        const promise = fetchLanguageApi('it');
-        return vi
-            .advanceTimersByTimeAsync(1000)
-            .then(() => {
-                return promise;
-            })
-            .then(([locale, dictionary]) => {
-                // The UI half still loaded; only `api.*` is empty. A dead API must never strand a
-                // navigation or blank the interface.
-                expect(locale).toBe('it');
-                expect(dictionary.api).toEqual({});
-                expect(Object.keys(dictionary).length).toBeGreaterThan(1);
-            });
-    });
-
-    it('puts the API dictionary under api.* and never at the root', () => {
-        // `navigation` is deliberately a namespace the SHARED dictionary owns. The module
-        // dictionaries are not loaded here, so colliding on a module-owned namespace would prove
-        // nothing — the root key would be absent whether or not the reserved namespace worked.
-        getLocaleDictionaryMock.mockResolvedValueOnce({
-            data: { messages: { navigation: { ['error-already-logged']: 'API COPY' } } }
+    it('is the overrides alone when this build bundles no dictionary for the locale', () => {
+        return fetchLanguageApi('es').then((result) => {
+            expect(result).toEqual(['es', { greeting: 'from-the-database' }]);
+            expect(getLocaleMessagesMock).toHaveBeenCalledWith('es');
         });
-        vi.useFakeTimers();
-        const promise = fetchLanguageApi('it');
-        return vi
-            .advanceTimersByTimeAsync(1000)
-            .then(() => {
-                return promise;
-            })
-            .then(([, dictionary]) => {
-                // The API's `navigation` key is namespaced, so it cannot shadow this app's own —
-                // which is the collision the reserved namespace exists to prevent.
-                expect(dictionary.api).toEqual({
-                    navigation: { ['error-already-logged']: 'API COPY' }
-                });
-                expect(
-                    (dictionary.navigation as Record<string, string>)['error-already-logged']
-                ).not.toBe('API COPY');
-            });
     });
 
-    it('treats a corrupted downloaded-locales entry as empty rather than throwing', () => {
-        localStorage.setItem('downloaded-locales', 'not-json{');
-        vi.useFakeTimers();
-
-        const promise = fetchLanguageApi('en');
-        // Corrupted store ⇒ "not downloaded" ⇒ the full delay applies.
-        return vi
-            .advanceTimersByTimeAsync(1000)
-            .then(() => promise)
-            .then(([locale, dictionary]) => {
-                // The locale still loads for real...
-                expect(locale).toBe('en');
-                expect(Object.keys(dictionary).length).toBeGreaterThan(0);
-                // ...and the corrupted value is replaced by a well-formed list, so the browser
-                // self-heals instead of re-paying the latency on every navigation forever.
-                expect(JSON.parse(localStorage.getItem('downloaded-locales') ?? 'null')).toEqual([
-                    'en'
-                ]);
-            });
-    });
-
-    it('still resolves when localStorage writes are unavailable', () => {
-        // Private-mode / quota: the documented behaviour is to swallow and simply re-simulate
-        // the latency next time, never to fail the navigation.
-        const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-            throw new Error('QuotaExceededError');
+    it('never rejects when the overrides cannot be fetched', () => {
+        getLocaleMessagesMock.mockRejectedValueOnce(new Error('network down'));
+        return fetchLanguageApi('it').then(([locale, dictionary]) => {
+            // The bundled half still loaded. A dead API costs the edits and nothing else — it
+            // must never strand a navigation or blank the interface.
+            expect(locale).toBe('it');
+            expect(dictionary.navigation).toBeDefined();
+            expect(Object.keys(dictionary).length).toBeGreaterThan(1);
         });
-        vi.useFakeTimers();
-        const promise = fetchLanguageApi('en');
-        return vi
-            .advanceTimersByTimeAsync(1000)
-            .then(() => {
-                return promise;
-            })
-            .then(([, dictionary]) => {
-                expect(Object.keys(dictionary).length).toBeGreaterThan(0);
-                setItemSpy.mockRestore();
-            });
+    });
+
+    it('lets an override win over the bundled string, without dropping its siblings', () => {
+        // `navigation` is deliberately a namespace the SHARED dictionary owns and fills. Editing
+        // ONE of its keys must not cost the others, which is the difference between a deep merge
+        // and an assign — and the failure would surface on an unrelated screen.
+        getLocaleMessagesMock.mockResolvedValueOnce({
+            data: { messages: { navigation: { ['error-already-logged']: 'EDITED' } } }
+        });
+        return fetchLanguageApi('it').then(([, dictionary]) => {
+            const navigation = dictionary.navigation as Record<string, string>;
+
+            expect(navigation['error-already-logged']).toBe('EDITED');
+            expect(Object.keys(navigation).length).toBeGreaterThan(1);
+        });
     });
 });
 
@@ -305,20 +171,13 @@ describe('localeChoice', () => {
     it('fetches, registers and activates a supported but unloaded locale', () => {
         i18nState.loadedLanguages = [];
         i18nState.supportedLanguages = ['en', 'it'];
-        vi.useFakeTimers();
-        const promise = localeChoice(routeTo({ params: { locale: 'it' } }));
-        return vi
-            .advanceTimersByTimeAsync(1000)
-            .then(() => {
-                return promise;
-            })
-            .then((result) => {
-                expect(result).toBe(true);
-                // Order matters: messages must be registered before the language is switched, or the
-                // first render after the switch has no translations.
-                expect(updateLocaleMock).toHaveBeenCalledWith('it', expect.any(Object));
-                expect(changeLanguageMock).toHaveBeenCalledWith('it');
-            });
+        return localeChoice(routeTo({ params: { locale: 'it' } })).then((result) => {
+            expect(result).toBe(true);
+            // Order matters: messages must be registered before the language is switched, or the
+            // first render after the switch has no translations.
+            expect(updateLocaleMock).toHaveBeenCalledWith('it', expect.any(Object));
+            expect(changeLanguageMock).toHaveBeenCalledWith('it');
+        });
     });
 
     it('redirects an unsupported locale to the default, preserving route name and query', () => {

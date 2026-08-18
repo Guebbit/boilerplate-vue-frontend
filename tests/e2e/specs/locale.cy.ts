@@ -153,11 +153,11 @@ describe('the saved preference', () => {
 /**
  * A language the API has and this app does not.
  *
- * `es` is declared in `VITE_APP_SUPPORTED_LOCALES` with no `src/locales/es.json`, and the mock
- * API serves a Spanish dictionary. That is the whole of design C in one navigation: the app
- * offers the language, downloads the API's copy into `api.*`, and falls back per key for its own
- * UI strings — Spanish where the API supplies it, English everywhere else, rather than
- * all-or-nothing.
+ * `es` is in no `.env` list and has no `src/locales/es.json`. It reaches the switcher because the
+ * manifest announces it at boot, and it renders because the overrides stored against it are
+ * downloaded and merged. That is the whole tier in one navigation: a language nobody deployed a
+ * file for, translated by someone with no code editor, degrading per key to English for whatever
+ * they have not finished — rather than all-or-nothing.
  */
 describe('a locale only the API has', () => {
     beforeEach(() => {
@@ -177,14 +177,15 @@ describe('a locale only the API has', () => {
 
         cy.get('#products-list-page').should('exist');
         cy.get('html').should('have.attr', 'lang', 'es');
-        // No Spanish UI dictionary, so `fallbackLocale` supplies the English heading — the page
-        // renders rather than showing raw keys, which is what "degrades per key" means.
+        // The overrides carry a handful of keys and not this heading, so `fallbackLocale`
+        // supplies the English one — the page renders rather than showing raw keys, which is what
+        // "degrades per key" means.
         cy.get('h1').should('contain.text', 'Products list');
     });
 
     /**
      * The download itself, observed. Picking Spanish in the switcher makes the app FETCH the
-     * dictionary it does not bundle (`GET /locales/es`) and merge it under `api.*` at runtime.
+     * overrides it does not bundle (`GET /locales/es/messages`) and merge them at runtime.
      * MSW answers that fetch inside the page, where `cy.intercept` cannot see it — but the
      * browser's own resource timing records every fetch the page makes, service-worker-served
      * included, so the entry IS the proof the network round trip happened. The per-key fallback
@@ -199,7 +200,7 @@ describe('a locale only the API has', () => {
             windowObject.performance.setResourceTimingBufferSize(10_000);
             const downloads = windowObject.performance
                 .getEntriesByType('resource')
-                .filter((entry) => entry.name.includes('/locales/es'));
+                .filter((entry) => entry.name.includes('/locales/es/messages'));
             expect(downloads, 'no download before the choice').to.have.length(0);
         });
 
@@ -211,7 +212,7 @@ describe('a locale only the API has', () => {
         cy.window().should((windowObject) => {
             const downloads = windowObject.performance
                 .getEntriesByType('resource')
-                .filter((entry) => entry.name.includes('/locales/es'));
+                .filter((entry) => entry.name.includes('/locales/es/messages'));
             expect(downloads.length, 'the runtime download of the es dictionary').to.be.greaterThan(
                 0
             );

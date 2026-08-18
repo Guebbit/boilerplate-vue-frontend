@@ -115,7 +115,7 @@ flowchart TD
 | Views | `src/app/views/`, `src/modules/*/views/` | template rendering, user events, layout |
 | Module composables | `src/modules/*/composables/` | domain-scoped logic, form handling |
 | Infrastructure helpers | `src/infrastructure/utils/`, `src/infrastructure/composables/` | cross-domain helpers (formatters, errors, uploads, logger, `useAsyncAction`, `useUploadProgress`) |
-| i18n runtime | `src/infrastructure/i18n/` | the vue-i18n instance and locale loading (`index.ts`), the locale-prefixed router locations (`routerLink.ts`), the API's own dictionary (`apiDictionary.ts`) |
+| i18n runtime | `src/infrastructure/i18n/` | the vue-i18n instance and locale loading (`index.ts`), the locale-prefixed router locations (`routerLink.ts`), the language manifest and the API-stored overrides (`localeOverrides.ts`) |
 | Stores | `src/infrastructure/stores/session.ts`, `src/infrastructure/stores/observability.ts`, `src/modules/*/store.ts` | global reactive state, API orchestration |
 | Generated client | `contracts/rest/index.ts`, `contracts/rest/schemas.zod.ts` | typed axios functions + Zod schemas (DO NOT edit) |
 | HTTP layer | `src/infrastructure/http/` | axios instance (`client.ts`), interceptors and error shaping (`interceptors.ts`), the 401 replay (`refresh.ts`), contract validation (`validate.ts`), envelope readers (`envelope.ts`), the orval mutator and the barrel (`index.ts`), response-schema map |
@@ -259,18 +259,58 @@ session, and belongs to the module.
 
 ### Each repository owns its own dictionary
 
-The two repos synchronize the *choice* of language — that is what `Accept-Language` does — and the
-API's own dictionary is *available* on request, never merged into this app's keyspace. Two
-independently-authored keyspaces would eventually collide, silently, and the loser would be
-whichever loaded last. So the API's keys go under the reserved `api.*` namespace and nowhere else,
-and this app never authors a key there by hand.
+The two repos synchronize the *choice* of language — that is what `Accept-Language` does — and
+nothing else. Neither depends on the other for its own strings, which is what lets either
+boilerplate be recombined with a different counterpart.
 
-Neither side depends on the other for its own strings, which is what lets either boilerplate be
-recombined with a different counterpart. And in normal operation none of it is needed at all: the
-API resolves its own keys and puts finished text on the wire, so the client prints what arrives and
-looks nothing up. Every function in `src/infrastructure/i18n/apiDictionary.ts` therefore **resolves
-rather than rejects**, and the app is fully usable when all of them return nothing — a locale switch
-must never be blocked by an API that is slow, old, or absent.
+The API's own copy never reaches this app. It resolves its own keys and puts finished text on the
+wire, so a response arrives already translated and the client prints what it was sent. There used
+to be a reserved `api.*` namespace holding the API's dictionary for the one case that needed this
+app's own words — no response at all, a 401 with an empty body, a bare 502 — and it is gone: those
+messages are `api-errors.*` in this app's dictionary, and they are now translatable for every
+language, including the ones this build does not bundle.
+
+### Files are defaults, the database overrides them
+
+Both repos work the same way, and the shape is worth stating once:
+
+| | defaults | overrides |
+| --- | --- | --- |
+| this app's strings | `src/locales/*.json`, in the bundle | `app`-scoped rows, fetched from `GET /locales/{locale}/messages` |
+| the API's strings | its own `src/locales/*.json` | `api`-scoped rows, layered onto them inside the API |
+
+One collection, one row per `(language, scope, key)`, edited by people who never open a code
+editor. `scope` is what keeps the two apart, and it has to be part of the row's identity rather
+than a label on it: both dictionaries declare a top-level `generic`, so `generic.error-internal`
+names one string in each.
+
+Overrides are merged **per key and deep**. An edit names one leaf, and the twenty untouched keys of
+its group must survive — a shallow assign there deletes them silently, and the damage shows up on
+an unrelated screen.
+
+Nothing in this is load-bearing. Every function in `src/infrastructure/i18n/localeOverrides.ts`
+**resolves rather than rejects**, and the app is fully usable when all of them return nothing: the
+bundled files are the floor, and a locale switch must never be blocked by an API that is slow, old,
+or absent. What that costs when the API is unreachable is the edits, and only the edits.
+
+### Which languages exist
+
+Three sources, one job each, and no fourth:
+
+1. **`src/locales/*.json`** — what this build renders with no network. A build-time glob; the
+   offline floor.
+2. **`GET /locales`** — what the deployment offers right now, with `nativeName`, `direction` and
+   per-language `scopes`. `mergeRemoteLocales` unions it into `supportedLanguages` at boot, which
+   is how a language added by a translator appears in the switcher with no frontend deploy.
+3. **`GET /locales/{locale}/messages`** — what has been edited for one of them.
+
+There is deliberately no env list. Naming a language in `.env` claimed support without supplying
+anything able to render it.
+
+The two sides are NOT reconciled, and that is a decision rather than an oversight. This app can
+bundle `it.json` while the API has no Italian at all: the interface is Italian and the API's
+messages arrive in its fallback. Someone wanted the interface translated and did not care about the
+backend's half, and only a person can judge whether that is wrong.
 
 ## Related pages
 

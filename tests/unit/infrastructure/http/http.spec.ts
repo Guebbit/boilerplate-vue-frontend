@@ -10,7 +10,7 @@ vi.mock('pinia', () => ({
 }));
 
 /**
- * Only `getCurrentLocale` is stubbed. `apiText` is deliberately the REAL one, resolving against
+ * Only `getCurrentLocale` is stubbed. `translate` is deliberately the REAL one, resolving against
  * the real vue-i18n instance: these assertions are about what a user is shown when the API sent
  * no message of its own, and a stubbed translator would make every language look the same.
  */

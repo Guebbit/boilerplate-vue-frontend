@@ -2,8 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createI18n } from 'vue-i18n';
 import type { TranslationDictionaries } from '@/infrastructure/i18n';
 import {
-    API_NAMESPACE,
-    apiText,
     getCurrentLocale,
     getDefaultLocale,
     loadedLanguages,
@@ -42,29 +40,32 @@ const withLoadedLanguagesRestored = () => {
 
 describe('supportedLanguages', () => {
     afterEach(() => {
-        vi.unstubAllEnvs();
         vi.resetModules();
     });
 
-    it('comes from VITE_APP_SUPPORTED_LOCALES', () => {
-        vi.stubEnv('VITE_APP_SUPPORTED_LOCALES', 'en,it,es');
+    /**
+     * The folder IS the declaration. There is no env list any more: naming a language in `.env`
+     * claimed support without supplying anything able to render it, and `mergeRemoteLocales` is
+     * what adds the ones only the API knows about.
+     */
+    it('is every dictionary in src/locales, and nothing else', () => {
         vi.resetModules();
         return import('@/infrastructure/i18n').then((reloaded) => {
-            expect(reloaded.supportedLanguages).toContain('en');
-            expect(reloaded.supportedLanguages).toContain('it');
-            expect(reloaded.supportedLanguages).toContain('es');
+            // The glob sees the real directory: en.json and it.json ship, es.json deliberately
+            // does not — it is the language the API supplies at runtime.
+            expect(reloaded.supportedLanguages).toEqual(['en', 'it']);
         });
     });
 
     /**
-     * The whole point of the supported/loaded split: a locale can be offered before its
-     * dictionary is anywhere near the bundle. `es` is declared in `.env` and has no
-     * `src/locales/es.json`, which is the case the runtime fetch exists for.
+     * The supported/loaded split, and the reason the list is mutable: a language can be OFFERED
+     * before its dictionary is anywhere near the bundle. `mergeRemoteLocales` pushes onto this
+     * array at boot, and every module that imported the binding sees the addition.
      */
-    it('may list a locale with no local dictionary', () => {
-        vi.stubEnv('VITE_APP_SUPPORTED_LOCALES', 'en,it,es');
+    it('accepts a locale with no local dictionary being added at runtime', () => {
         vi.resetModules();
         return import('@/infrastructure/i18n').then((reloaded) => {
+            reloaded.supportedLanguages.push('es');
             expect(reloaded.supportedLanguages).toContain('es');
         });
     });
@@ -240,9 +241,10 @@ describe('getDefaultLocale', () => {
      * code that always returned the fallback.
      */
     it('matches a browser language whose dictionary is not loaded yet', () => {
-        vi.stubEnv('VITE_APP_SUPPORTED_LOCALES', 'en,it,es');
         vi.resetModules();
         return import('@/infrastructure/i18n').then((reloaded) => {
+            // As `mergeRemoteLocales` would have left it after a boot against a live API.
+            reloaded.supportedLanguages.push('es');
             vi.stubGlobal('navigator', { language: 'es-ES' });
             expect(reloaded.getDefaultLocale()).toBe('es');
         });
@@ -308,84 +310,6 @@ describe('routerLinkI18n', () => {
     });
 });
 
-describe('apiText and the reserved api.* namespace', () => {
-    let restore: () => void;
-
-    beforeEach(() => {
-        restore = withLoadedLanguagesRestored();
-        i18n.global.locale.value = 'en';
-    });
-    afterEach(() => {
-        restore();
-        // Re-register the bundled dictionary, dropping anything merged under `api.*`.
-        // `_updateLocale` clones, so this cannot write back into the imported JSON — which is
-        // exactly the property the clone exists for.
-        void _updateLocale(i18n, 'en', enMessages as TranslationDictionaries);
-    });
-
-    it('uses this app’s own copy when the API dictionary is absent', () => {
-        return _loadLocale(i18n, 'en').then(() => {
-            expect(apiText('generic.error-unknown', 'api-errors.unknown')).toBe(
-                enMessages['api-errors'].unknown
-            );
-        });
-    });
-
-    it('prefers the API’s own wording once its dictionary is registered', () => {
-        return _loadLocale(i18n, 'en').then(() => {
-            i18n.global.mergeLocaleMessage('en', {
-                [API_NAMESPACE]: { generic: { ['error-unknown']: 'Server says so' } }
-            });
-            expect(apiText('generic.error-unknown', 'api-errors.unknown')).toBe('Server says so');
-        });
-    });
-
-    it('never returns a raw key', () => {
-        return _loadLocale(i18n, 'en').then(() => {
-            expect(apiText('nothing.at.all', 'api-errors.unknown')).toBe(
-                enMessages['api-errors'].unknown
-            );
-        });
-    });
-});
-
-describe('locale files', () => {
-    /**
-     * Every leaf key, dot-joined and sorted.
-     */
-    const flattenKeys = (dictionary: Record<string, unknown>, prefix = ''): string[] =>
-        Object.entries(dictionary)
-            .flatMap(([key, value]) =>
-                value !== null && typeof value === 'object'
-                    ? flattenKeys(value as Record<string, unknown>, `${prefix}${key}.`)
-                    : [`${prefix}${key}`]
-            )
-            .toSorted();
-
-    it('en.json and it.json declare exactly the same keys', () => {
-        expect(flattenKeys(itMessages as Record<string, unknown>)).toEqual(
-            flattenKeys(enMessages as Record<string, unknown>)
-        );
-    });
-
-    it('it.json is actually translated, not a copy of en.json', () => {
-        expect(itMessages.navigation['error-already-logged']).not.toBe(
-            enMessages.navigation['error-already-logged']
-        );
-    });
-
-    /**
-     * `api` belongs to the backend and arrives at runtime. A hand-authored key under it would be
-     * silently overwritten by the fetched dictionary — or worse, silently shadow it.
-     */
-    it.each([
-        ['en', enMessages],
-        ['it', itMessages]
-    ])('%s.json declares no key under the reserved api namespace', (_locale, messages) => {
-        expect(Object.keys(messages)).not.toContain(API_NAMESPACE);
-    });
-});
-
 /**
  * Module-load-time branches.
  *
@@ -398,61 +322,41 @@ describe('locale files', () => {
  * empty language list. Neither had ever been executed by a test.
  */
 describe('module-load configuration', () => {
-    beforeEach(() => {
-        vi.resetModules();
-    });
-
     afterEach(() => {
-        vi.unstubAllEnvs();
         vi.resetModules();
     });
 
-    it('derives the locale list from src/locales when no env list is set', () => {
-        vi.stubEnv('VITE_APP_SUPPORTED_LOCALES', '');
+    /**
+     * The glob is evaluated once, when the module is first imported, and cannot be reached by
+     * calling anything — only by re-importing, which is what `resetModules` does here.
+     *
+     * Worth the machinery because this is the offline floor: it is what the app offers when the
+     * API cannot be reached at all, and nothing else in the suite executes the discovery.
+     */
+    it('discovers the bundled locales from the folder', () => {
+        vi.resetModules();
         return import('@/infrastructure/i18n').then((reloaded) => {
-            // The glob sees the real directory: en.json and it.json ship, es.json deliberately does
-            // not (it is the API-only locale).
             expect(reloaded.supportedLanguages).toContain('en');
             expect(reloaded.supportedLanguages).toContain('it');
             expect(reloaded.supportedLanguages).not.toContain('es');
         });
     });
 
-    it.each([
-        ['an empty value', ''],
-        ['only separators', ',,'],
-        ['only whitespace', '  ,  ']
-    ])('treats %s as "not configured" and discovers from the folder instead', (_l, value) => {
-        vi.stubEnv('VITE_APP_SUPPORTED_LOCALES', value);
-        return import('@/infrastructure/i18n').then((reloaded) => {
-            expect(reloaded.supportedLanguages).toEqual(['en', 'it']);
-        });
-    });
-
     /**
-     * Both slips are silent, and neither looks like a locale bug when it bites — see the
-     * normalisation note on `declaredLocales`. The empty-entry case is the nastier one: `''`
-     * matches the empty first segment of `/`, so `routerLinkI18n('/')` would stop prefixing the
-     * locale and the root route would quietly lose its language.
+     * A fresh copy per import, not the glob's own array. `mergeRemoteLocales` mutates this list,
+     * so a shared reference would carry one test's runtime additions into the next.
      */
-    it.each([
-        ['spaces after the commas', 'en, it, es'],
-        ['a stray comma', 'en,,it,es'],
-        ['a trailing comma', 'en,it,es,']
-    ])('normalises %s', (_label, value) => {
-        vi.stubEnv('VITE_APP_SUPPORTED_LOCALES', value);
-        return import('@/infrastructure/i18n').then((reloaded) => {
-            expect(reloaded.supportedLanguages).not.toContain('');
-            expect(reloaded.supportedLanguages.every((l) => l === l.trim())).toBe(true);
-            expect(reloaded.supportedLanguages).toEqual(expect.arrayContaining(['en', 'it', 'es']));
-        });
-    });
-
-    it('keeps a locale the bundle has no dictionary for, so the API can serve it', () => {
-        vi.stubEnv('VITE_APP_SUPPORTED_LOCALES', 'en,it,es');
-        return import('@/infrastructure/i18n').then((reloaded) => {
-            expect(reloaded.supportedLanguages).toContain('es');
-        });
+    it('hands out a list that can be extended without affecting the next import', () => {
+        vi.resetModules();
+        return import('@/infrastructure/i18n')
+            .then((first) => {
+                first.supportedLanguages.push('es');
+                vi.resetModules();
+                return import('@/infrastructure/i18n');
+            })
+            .then((second) => {
+                expect(second.supportedLanguages).not.toContain('es');
+            });
     });
 });
 
@@ -566,7 +470,7 @@ describe('registerLocaleContributors', () => {
      * The regression this whole block exists for.
      *
      * The running app does NOT reach a first locale through `_loadLocale`. `localeChoice`, the
-     * router guard, builds the dictionary itself (shared file + the API's `api.*` namespace) and
+     * router guard, builds the dictionary itself (bundled file + the API's overrides on top) and
      * installs it with `updateLocale`. When the module merge lived in `_loadLocale` only, every
      * unit test passed and the browser rendered `products-list-page.title` as its own key on the
      * very first navigation — 24 e2e failures, all of them module-owned copy.

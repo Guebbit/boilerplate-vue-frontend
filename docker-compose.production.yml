@@ -27,7 +27,6 @@ services:
                 VITE_API_URL: '${VITE_API_URL:?set VITE_API_URL — it is compiled into the bundle}'
                 VITE_API_SSE: '${VITE_API_SSE:-}'
                 VITE_APP_BASE_URL: '${VITE_APP_BASE_URL:-/}'
-                VITE_APP_SUPPORTED_LOCALES: '${VITE_APP_SUPPORTED_LOCALES:-en,it}'
                 VITE_APP_DEFAULT_LOCALE: '${VITE_APP_DEFAULT_LOCALE:-en}'
                 VITE_APP_FALLBACK_LOCALE: '${VITE_APP_FALLBACK_LOCALE:-en}'
                 # `warn` rather than the development default: the browser console is a user-facing

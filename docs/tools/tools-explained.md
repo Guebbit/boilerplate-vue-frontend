@@ -127,7 +127,7 @@ this diagram exists to prevent.
 
 **Problem it solves.** SPAs need to map URLs to views and handle browser back/forward without a full page reload. Vue Router does this natively, with typed route params and composable access (`useRoute`, `useRouter`).
 
-**In this repo.** All routes are locale-prefixed (`/:locale/…`). Route guards (`isAuth`, `isAdmin`, `isGuest`) protect views. Error and 404 handling happens at the router level.
+**In this repo.** All routes are locale-prefixed (`/:locale/…`). A route declares what it needs as `meta.access` (`guest` / `auth` / `admin`, absent meaning public) and one global guard, `enforceRouteAccess`, enforces it. Error and 404 handling happens at the router level.
 
 → [State & Routing](./state-and-routing.md) · [Sitemap & Access Control](../theory/sitemap.md)
 
@@ -139,7 +139,7 @@ this diagram exists to prevent.
 
 **Problem it solves.** Hard-coding text strings in components makes localisation painful — every string must be found and replaced. Vue I18n externalises strings into locale message files so switching language is a single store update.
 
-**In this repo.** Shared locale messages live in `src/locales/`; each domain ships its own in `src/modules/<name>/locales/`, merged into the active locale at boot. The active locale is part of the URL (`/:locale/`) and is validated against `VITE_APP_SUPPORTED_LOCALES` on every navigation.
+**In this repo.** Shared locale messages live in `src/locales/`; each domain ships its own in `src/modules/<name>/locales/`, merged into the active locale at boot. The active locale is part of the URL (`/:locale/`) and is validated against `supportedLanguages` on every navigation. Strings edited in the API's database are merged over the bundled ones, per key.
 
 → [State & Routing](./state-and-routing.md)
 

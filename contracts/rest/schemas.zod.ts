@@ -86,7 +86,7 @@ export const GetLocalesResponse = zod.strictObject({
                                     zod
                                         .enum(['api', 'app'])
                                         .describe(
-                                            'What a language can do here. `api` — the API can answer requests in it, because its dictionary is deployed. `app` — a client dictionary is downloadable for it. These are independent: neither implies the other.'
+                                            "Which of the two dictionaries something belongs to. `api` is the API's own — the\nbackend's words. `app` is the client's — the frontend's words. They are separate\nkeyspaces, authored by different people, and a key present in both means two\nunrelated strings.\n\nOn a LANGUAGE it reports capability, and the two are independent: `api` — the API\ncan answer requests in it, because a dictionary file is deployed; `app` — a client\ndictionary is downloadable for it.\n\nOn an ENTRY it says which dictionary that row OVERRIDES. `app` rows are what\n`GET \/locales\/{locale}\/messages` serves to a frontend; `api` rows are layered over\nthe API's own deployed files at resolution time.\n"
                                         )
                                 )
                                 .min(1)
@@ -156,6 +156,7 @@ export const CreateLocaleBody = zod.strictObject({
 });
 
 export const createLocaleResponseDataTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const createLocaleResponseDataBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
 export const createLocaleResponseDataRevisionMin = 0;
 
 export const CreateLocaleResponse = zod.strictObject({
@@ -170,6 +171,12 @@ export const CreateLocaleResponse = zod.strictObject({
                 .regex(createLocaleResponseDataTagRegExp)
                 .describe(
                     'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                ),
+            baseLanguage: zod
+                .string()
+                .regex(createLocaleResponseDataBaseLanguageRegExp)
+                .describe(
+                    'The ISO 639-1 code at the front of `tag` — the BCP 47 PRIMARY SUBTAG, with any region or script dropped. `pt-BR` and `pt-PT` are two languages here and both answer `pt`.\nDerived from `tag` and never sent by a client: two fields that can disagree about the same fact are a bug waiting for the first person who edits one of them. Stored rather than computed on read because it is what groups the variants of a language, and a stored column can be queried and indexed while a split cannot.'
                 ),
             name: zod.string().describe('English name, for an admin list.'),
             nativeName: zod
@@ -265,6 +272,7 @@ export const UpdateLocaleBody = zod
     );
 
 export const updateLocaleResponseDataTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const updateLocaleResponseDataBaseLanguageRegExp = new RegExp('^[a-z]{2}$');
 export const updateLocaleResponseDataRevisionMin = 0;
 
 export const UpdateLocaleResponse = zod.strictObject({
@@ -279,6 +287,12 @@ export const UpdateLocaleResponse = zod.strictObject({
                 .regex(updateLocaleResponseDataTagRegExp)
                 .describe(
                     'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                ),
+            baseLanguage: zod
+                .string()
+                .regex(updateLocaleResponseDataBaseLanguageRegExp)
+                .describe(
+                    'The ISO 639-1 code at the front of `tag` — the BCP 47 PRIMARY SUBTAG, with any region or script dropped. `pt-BR` and `pt-PT` are two languages here and both answer `pt`.\nDerived from `tag` and never sent by a client: two fields that can disagree about the same fact are a bug waiting for the first person who edits one of them. Stored rather than computed on read because it is what groups the variants of a language, and a stored column can be queried and indexed while a split cannot.'
                 ),
             name: zod.string().describe('English name, for an admin list.'),
             nativeName: zod
@@ -327,9 +341,16 @@ export const DeleteLocaleResponse = zod.strictObject({
  * same nested shape `GET /locales/{locale}` serves — so a client has ONE merge path
  * for both tiers rather than two.
  *
- * This is what a client fetches for a language it does not bundle. Its resolution
- * order is: its own bundle first, this endpoint when the language was added after the
- * client was deployed, its bundled fallback when neither answers.
+ * `app`-scoped rows ONLY — the client's own keyspace. The API's half of the
+ * collection (`api` rows) is layered over its deployed files internally and is never
+ * served here: a frontend that merged it would be adopting the backend's keys as its
+ * own.
+ *
+ * OVERRIDES, not a dictionary: a client merges these over what it bundles, key by
+ * key, so a key nobody has edited keeps its bundled value. A language the client does
+ * not bundle at all gets whatever has been translated and falls back per key for the
+ * rest — which is why a half-translated language is a usable state and not a broken
+ * one.
  *
  * 404 for a language that does not exist in the dynamic tier, and equally for one
  * that exists but is inactive — an inactive language is invisible to every public
@@ -407,7 +428,13 @@ export const ListLocaleEntriesQueryParams = zod.strictObject({
         .min(1)
         .max(listLocaleEntriesQueryPageSizeMax)
         .default(listLocaleEntriesQueryPageSizeDefault),
-    text: zod.string().min(1).optional()
+    text: zod.string().min(1).optional(),
+    scope: zod
+        .enum(['api', 'app'])
+        .optional()
+        .describe(
+            'Restrict the listing to one dictionary. Omitted lists both, which is what an admin screen wants before the operator has picked a side.'
+        )
 });
 
 export const listLocaleEntriesResponseDataItemsItemLocaleRegExp = new RegExp(
@@ -437,6 +464,11 @@ export const ListLocaleEntriesResponse = zod.strictObject({
                         .describe(
                             'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
                         ),
+                    scope: zod
+                        .enum(['api', 'app'])
+                        .describe(
+                            "Which of the two dictionaries something belongs to. `api` is the API's own — the\nbackend's words. `app` is the client's — the frontend's words. They are separate\nkeyspaces, authored by different people, and a key present in both means two\nunrelated strings.\n\nOn a LANGUAGE it reports capability, and the two are independent: `api` — the API\ncan answer requests in it, because a dictionary file is deployed; `app` — a client\ndictionary is downloadable for it.\n\nOn an ENTRY it says which dictionary that row OVERRIDES. `app` rows are what\n`GET \/locales\/{locale}\/messages` serves to a frontend; `api` rows are layered over\nthe API's own deployed files at resolution time.\n"
+                        ),
                     key: zod
                         .string()
                         .describe(
@@ -447,7 +479,7 @@ export const ListLocaleEntriesResponse = zod.strictObject({
                     updatedAt: zod.iso.datetime({ offset: true }).optional()
                 })
                 .describe(
-                    'One translated string: one row per (language, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.'
+                    "One translated string: one row per (language, scope, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.\n`scope` is part of the identity, not a label on it: the two dictionaries both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in the client's. Without it in the key, one would overwrite the other."
                 )
         ),
         meta: zod.strictObject({
@@ -484,6 +516,11 @@ export const CreateLocaleEntryParams = zod.strictObject({
 });
 
 export const CreateLocaleEntryBody = zod.strictObject({
+    scope: zod
+        .enum(['api', 'app'])
+        .describe(
+            "Which of the two dictionaries something belongs to. `api` is the API's own — the\nbackend's words. `app` is the client's — the frontend's words. They are separate\nkeyspaces, authored by different people, and a key present in both means two\nunrelated strings.\n\nOn a LANGUAGE it reports capability, and the two are independent: `api` — the API\ncan answer requests in it, because a dictionary file is deployed; `app` — a client\ndictionary is downloadable for it.\n\nOn an ENTRY it says which dictionary that row OVERRIDES. `app` rows are what\n`GET \/locales\/{locale}\/messages` serves to a frontend; `api` rows are layered over\nthe API's own deployed files at resolution time.\n"
+        ),
     key: zod.string().min(1),
     value: zod.string()
 });
@@ -503,6 +540,11 @@ export const CreateLocaleEntryResponse = zod.strictObject({
                 .describe(
                     'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
                 ),
+            scope: zod
+                .enum(['api', 'app'])
+                .describe(
+                    "Which of the two dictionaries something belongs to. `api` is the API's own — the\nbackend's words. `app` is the client's — the frontend's words. They are separate\nkeyspaces, authored by different people, and a key present in both means two\nunrelated strings.\n\nOn a LANGUAGE it reports capability, and the two are independent: `api` — the API\ncan answer requests in it, because a dictionary file is deployed; `app` — a client\ndictionary is downloadable for it.\n\nOn an ENTRY it says which dictionary that row OVERRIDES. `app` rows are what\n`GET \/locales\/{locale}\/messages` serves to a frontend; `api` rows are layered over\nthe API's own deployed files at resolution time.\n"
+                ),
             key: zod
                 .string()
                 .describe(
@@ -513,7 +555,7 @@ export const CreateLocaleEntryResponse = zod.strictObject({
             updatedAt: zod.iso.datetime({ offset: true }).optional()
         })
         .describe(
-            'One translated string: one row per (language, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.'
+            "One translated string: one row per (language, scope, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.\n`scope` is part of the identity, not a label on it: the two dictionaries both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in the client's. Without it in the key, one would overwrite the other."
         )
 });
 
@@ -541,6 +583,11 @@ export const ReplaceLocaleEntriesParams = zod.strictObject({
 
 export const ReplaceLocaleEntriesBody = zod
     .strictObject({
+        scope: zod
+            .enum(['api', 'app'])
+            .describe(
+                "Which of the two dictionaries something belongs to. `api` is the API's own — the\nbackend's words. `app` is the client's — the frontend's words. They are separate\nkeyspaces, authored by different people, and a key present in both means two\nunrelated strings.\n\nOn a LANGUAGE it reports capability, and the two are independent: `api` — the API\ncan answer requests in it, because a dictionary file is deployed; `app` — a client\ndictionary is downloadable for it.\n\nOn an ENTRY it says which dictionary that row OVERRIDES. `app` rows are what\n`GET \/locales\/{locale}\/messages` serves to a frontend; `api` rows are layered over\nthe API's own deployed files at resolution time.\n"
+            ),
         entries: zod.array(
             zod
                 .strictObject({
@@ -548,12 +595,12 @@ export const ReplaceLocaleEntriesBody = zod
                     value: zod.string()
                 })
                 .describe(
-                    'One key and its translation, as an import or a create sends it.\nA key is refused when it is a strict prefix of an existing key in the same language, or has one as a prefix — `products.list` alongside `products.list.title`. No tree can hold both: one is a string, the other needs to be an object at the same path. A naive builder silently drops one of them, and which one depends on insertion order, so this is caught at WRITE time with a 409 naming both keys rather than discovered at read time by whoever is missing a string.'
+                    'One key and its translation, as an import or a create sends it.\nA key is refused when it is a strict prefix of an existing key in the same language, or has one as a prefix — `products.list` alongside `products.list.title`. No tree can hold both: one is a string, the other needs to be an object at the same path. A naive builder silently drops one of them, and which one depends on insertion order, so this is caught at WRITE time with a 409 naming both keys rather than discovered at read time by whoever is missing a string.\nA key that no dictionary defines is ACCEPTED. Entries add keys as well as override them, and for `app` rows this API could not check anyway — that keyspace belongs to the client and lives in another repository. So a typo saves cleanly and then renders nowhere: harmless, invisible, and yours to notice.'
                 )
         )
     })
     .describe(
-        'The COMPLETE set of entries for this language. Anything already stored and not named here is deleted.'
+        'The COMPLETE set of entries for this language IN ONE SCOPE. Anything already stored under that scope and not named here is deleted; the other scope is untouched.\nScope is named once for the batch rather than per row, so a replace cannot half- apply across the two dictionaries — the operation that deletes what it was not sent has to know exactly what it is allowed to delete.'
     );
 
 export const replaceLocaleEntriesResponseDataCreatedMin = 0;
@@ -599,6 +646,11 @@ export const MergeLocaleEntriesParams = zod.strictObject({
 
 export const MergeLocaleEntriesBody = zod
     .strictObject({
+        scope: zod
+            .enum(['api', 'app'])
+            .describe(
+                "Which of the two dictionaries something belongs to. `api` is the API's own — the\nbackend's words. `app` is the client's — the frontend's words. They are separate\nkeyspaces, authored by different people, and a key present in both means two\nunrelated strings.\n\nOn a LANGUAGE it reports capability, and the two are independent: `api` — the API\ncan answer requests in it, because a dictionary file is deployed; `app` — a client\ndictionary is downloadable for it.\n\nOn an ENTRY it says which dictionary that row OVERRIDES. `app` rows are what\n`GET \/locales\/{locale}\/messages` serves to a frontend; `api` rows are layered over\nthe API's own deployed files at resolution time.\n"
+            ),
         entries: zod
             .array(
                 zod
@@ -607,13 +659,13 @@ export const MergeLocaleEntriesBody = zod
                         value: zod.string()
                     })
                     .describe(
-                        'One key and its translation, as an import or a create sends it.\nA key is refused when it is a strict prefix of an existing key in the same language, or has one as a prefix — `products.list` alongside `products.list.title`. No tree can hold both: one is a string, the other needs to be an object at the same path. A naive builder silently drops one of them, and which one depends on insertion order, so this is caught at WRITE time with a 409 naming both keys rather than discovered at read time by whoever is missing a string.'
+                        'One key and its translation, as an import or a create sends it.\nA key is refused when it is a strict prefix of an existing key in the same language, or has one as a prefix — `products.list` alongside `products.list.title`. No tree can hold both: one is a string, the other needs to be an object at the same path. A naive builder silently drops one of them, and which one depends on insertion order, so this is caught at WRITE time with a 409 naming both keys rather than discovered at read time by whoever is missing a string.\nA key that no dictionary defines is ACCEPTED. Entries add keys as well as override them, and for `app` rows this API could not check anyway — that keyspace belongs to the client and lives in another repository. So a typo saves cleanly and then renders nowhere: harmless, invisible, and yours to notice.'
                     )
             )
             .min(1)
     })
     .describe(
-        'Entries to upsert. Anything already stored and not named here is left exactly as it was.'
+        'Entries to upsert into ONE scope. Anything already stored is left exactly as it was.'
     );
 
 export const mergeLocaleEntriesResponseDataCreatedMin = 0;
@@ -675,6 +727,11 @@ export const UpdateLocaleEntryResponse = zod.strictObject({
                 .describe(
                     'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
                 ),
+            scope: zod
+                .enum(['api', 'app'])
+                .describe(
+                    "Which of the two dictionaries something belongs to. `api` is the API's own — the\nbackend's words. `app` is the client's — the frontend's words. They are separate\nkeyspaces, authored by different people, and a key present in both means two\nunrelated strings.\n\nOn a LANGUAGE it reports capability, and the two are independent: `api` — the API\ncan answer requests in it, because a dictionary file is deployed; `app` — a client\ndictionary is downloadable for it.\n\nOn an ENTRY it says which dictionary that row OVERRIDES. `app` rows are what\n`GET \/locales\/{locale}\/messages` serves to a frontend; `api` rows are layered over\nthe API's own deployed files at resolution time.\n"
+                ),
             key: zod
                 .string()
                 .describe(
@@ -685,7 +742,7 @@ export const UpdateLocaleEntryResponse = zod.strictObject({
             updatedAt: zod.iso.datetime({ offset: true }).optional()
         })
         .describe(
-            'One translated string: one row per (language, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.'
+            "One translated string: one row per (language, scope, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.\n`scope` is part of the identity, not a label on it: the two dictionaries both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in the client's. Without it in the key, one would overwrite the other."
         )
 });
 

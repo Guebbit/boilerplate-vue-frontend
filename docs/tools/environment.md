@@ -45,8 +45,9 @@ name like `http://app:3000`, even when both stacks run in containers.
 | Variable | Purpose |
 | -------- | ------- |
 | `VITE_APP_DEFAULT_LOCALE` | Initial locale (e.g. `en`) |
-| `VITE_APP_FALLBACK_LOCALE` | Locale used when a key is missing from the active one — `vue-i18n` `fallbackLocale` (default `en`) |
-| `VITE_APP_SUPPORTED_LOCALES` | Comma-separated supported locales (e.g. `en,it`). When it names anything usable it wins over the folder scan, which is how a locale served by the API but absent from the bundle gets offered at all |
+| `VITE_APP_FALLBACK_LOCALE` | Locale used when a key is missing from the active one — `vue-i18n` `fallbackLocale` (default `en`). Must name a locale this build BUNDLES, or the fallback cannot answer offline |
+
+Which languages the app offers is not configured here. `src/locales/*.json` is the offline floor, discovered by a glob at build time, and `GET /locales` adds whatever the API offers at boot — including languages translated in its database that this build ships no file for. See [Layers → files are defaults, the database overrides them](../theory/layers.md#files-are-defaults-the-database-overrides-them).
 
 ## API and realtime
 

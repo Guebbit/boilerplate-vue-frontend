@@ -275,7 +275,18 @@ export const LocaleDirection = {
 } as const;
 
 /**
- * What a language can do here. `api` — the API can answer requests in it, because its dictionary is deployed. `app` — a client dictionary is downloadable for it. These are independent: neither implies the other.
+ * Which of the two dictionaries something belongs to. `api` is the API's own — the
+ * backend's words. `app` is the client's — the frontend's words. They are separate
+ * keyspaces, authored by different people, and a key present in both means two
+ * unrelated strings.
+ *
+ * On a LANGUAGE it reports capability, and the two are independent: `api` — the API
+ * can answer requests in it, because a dictionary file is deployed; `app` — a client
+ * dictionary is downloadable for it.
+ *
+ * On an ENTRY it says which dictionary that row OVERRIDES. `app` rows are what
+ * `GET /locales/{locale}/messages` serves to a frontend; `api` rows are layered over
+ * the API's own deployed files at resolution time.
  */
 export type LocaleScope = (typeof LocaleScope)[keyof typeof LocaleScope];
 
@@ -348,6 +359,12 @@ export interface CreateLocaleRequest {
 export interface Language {
     id: Id;
     tag: Locale;
+    /**
+     * The ISO 639-1 code at the front of `tag` — the BCP 47 PRIMARY SUBTAG, with any region or script dropped. `pt-BR` and `pt-PT` are two languages here and both answer `pt`.
+     * Derived from `tag` and never sent by a client: two fields that can disagree about the same fact are a bug waiting for the first person who edits one of them. Stored rather than computed on read because it is what groups the variants of a language, and a stored column can be queried and indexed while a split cannot.
+     * @pattern ^[a-z]{2}$
+     */
+    baseLanguage: string;
     /** English name, for an admin list. */
     name: string;
     /** The language's own name, for a client's language picker. */
@@ -424,11 +441,13 @@ export interface LocaleMessagesEnvelope {
 }
 
 /**
- * One translated string: one row per (language, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.
+ * One translated string: one row per (language, scope, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.
+ * `scope` is part of the identity, not a label on it: the two dictionaries both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in the client's. Without it in the key, one would overwrite the other.
  */
 export interface LocaleEntry {
     id: Id;
     locale: Locale;
+    scope: LocaleScope;
     /** Flat and dotted. Stored AS A STRING and never as a Mongo path — a document per language with `$set: { "messages.products.list.title": v }` would have Mongo read three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting. */
     key: string;
     value: string;
@@ -451,6 +470,7 @@ export interface LocaleEntriesResponseEnvelope {
 /**
  * One key and its translation, as an import or a create sends it.
  * A key is refused when it is a strict prefix of an existing key in the same language, or has one as a prefix — `products.list` alongside `products.list.title`. No tree can hold both: one is a string, the other needs to be an object at the same path. A naive builder silently drops one of them, and which one depends on insertion order, so this is caught at WRITE time with a 409 naming both keys rather than discovered at read time by whoever is missing a string.
+ * A key that no dictionary defines is ACCEPTED. Entries add keys as well as override them, and for `app` rows this API could not check anyway — that keyspace belongs to the client and lives in another repository. So a typo saves cleanly and then renders nowhere: harmless, invisible, and yours to notice.
  */
 export interface LocaleEntryInput {
     /** @minLength 1 */
@@ -459,9 +479,11 @@ export interface LocaleEntryInput {
 }
 
 /**
- * The COMPLETE set of entries for this language. Anything already stored and not named here is deleted.
+ * The COMPLETE set of entries for this language IN ONE SCOPE. Anything already stored under that scope and not named here is deleted; the other scope is untouched.
+ * Scope is named once for the batch rather than per row, so a replace cannot half- apply across the two dictionaries — the operation that deletes what it was not sent has to know exactly what it is allowed to delete.
  */
 export interface ReplaceLocaleEntriesRequest {
+    scope: LocaleScope;
     entries: LocaleEntryInput[];
 }
 
@@ -487,6 +509,7 @@ export interface LocaleImportResultEnvelope {
 }
 
 export interface CreateLocaleEntryRequest {
+    scope: LocaleScope;
     /** @minLength 1 */
     key: string;
     value: string;
@@ -500,9 +523,10 @@ export interface LocaleEntryEnvelope {
 }
 
 /**
- * Entries to upsert. Anything already stored and not named here is left exactly as it was.
+ * Entries to upsert into ONE scope. Anything already stored is left exactly as it was.
  */
 export interface MergeLocaleEntriesRequest {
+    scope: LocaleScope;
     /** @minItems 1 */
     entries: LocaleEntryInput[];
 }
@@ -1660,6 +1684,8 @@ export type UserIdParamParameter = Id;
 
 export type ProductIdParamParameter = Id;
 
+export type EntryScopeQueryParamParameter = LocaleScope;
+
 export type ListLocaleEntriesParams = {
     /**
      * 1-based page index
@@ -1677,6 +1703,21 @@ export type ListLocaleEntriesParams = {
      * @minLength 1
      */
     text?: TextParamParameter;
+    /**
+     * Which of the two dictionaries something belongs to. `api` is the API's own — the
+     * backend's words. `app` is the client's — the frontend's words. They are separate
+     * keyspaces, authored by different people, and a key present in both means two
+     * unrelated strings.
+     *
+     * On a LANGUAGE it reports capability, and the two are independent: `api` — the API
+     * can answer requests in it, because a dictionary file is deployed; `app` — a client
+     * dictionary is downloadable for it.
+     *
+     * On an ENTRY it says which dictionary that row OVERRIDES. `app` rows are what
+     * `GET /locales/{locale}/messages` serves to a frontend; `api` rows are layered over
+     * the API's own deployed files at resolution time.
+     */
+    scope?: EntryScopeQueryParamParameter;
 };
 
 export type GetObservabilityAuditLogsParams = {
@@ -1986,9 +2027,16 @@ export const deleteLocale = (
  * same nested shape `GET /locales/{locale}` serves — so a client has ONE merge path
  * for both tiers rather than two.
  *
- * This is what a client fetches for a language it does not bundle. Its resolution
- * order is: its own bundle first, this endpoint when the language was added after the
- * client was deployed, its bundled fallback when neither answers.
+ * `app`-scoped rows ONLY — the client's own keyspace. The API's half of the
+ * collection (`api` rows) is layered over its deployed files internally and is never
+ * served here: a frontend that merged it would be adopting the backend's keys as its
+ * own.
+ *
+ * OVERRIDES, not a dictionary: a client merges these over what it bundles, key by
+ * key, so a key nobody has edited keeps its bundled value. A language the client does
+ * not bundle at all gets whatever has been translated and falls back per key for the
+ * rest — which is why a half-translated language is a usable state and not a broken
+ * one.
  *
  * 404 for a language that does not exist in the dynamic tier, and equally for one
  * that exists but is inactive — an inactive language is invisible to every public

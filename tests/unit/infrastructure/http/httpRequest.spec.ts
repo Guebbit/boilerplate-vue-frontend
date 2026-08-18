@@ -26,11 +26,11 @@ vi.mock('pinia', async (importOriginal) => ({
     storeToRefs: () => ({ accessToken })
 }));
 
-// `apiText` is not decoration here: `onResponseReject` calls it to build the 401 message, so a
+// `translate` is not decoration here: `onResponseReject` calls it to build the 401 message, so a
 // mock without it throws before the refresh logic is ever reached.
 vi.mock('@/infrastructure/i18n', () => ({
     getCurrentLocale: () => 'it',
-    apiText: (_apiKey: string, localKey: string) => localKey,
+    translate: (key: string) => key,
     i18n: { global: { t: (key: string) => key } }
 }));
 

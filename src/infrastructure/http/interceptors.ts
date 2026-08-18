@@ -1,5 +1,5 @@
 import { storeToRefs } from 'pinia';
-import { apiText, getCurrentLocale } from '@/infrastructure/i18n';
+import { translate, getCurrentLocale } from '@/infrastructure/i18n';
 import { useSessionStore } from '@/infrastructure/stores/session.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
@@ -22,17 +22,17 @@ export const getAccessToken = () => {
  * 502, a request that never reached anything. Everything else prints what the server sent.
  *
  * The keys live under `api-errors.*` in this app's own dictionary because they have to work
- * precisely when the BE is unreachable; `apiText` prefers the BE's wording under `api.*` when
- * that dictionary happens to be loaded.
+ * precisely when the BE is unreachable — including for a language this build does not bundle,
+ * whose copy arrived earlier as overrides while the API was still up.
  *
  * @param status - HTTP status code of the response.
  * @param fallback - Message to use when the status carries no specific wording.
  * @returns A canonical message for 401/403/5xx, the fallback otherwise.
  */
 const getFallbackMessage = (status: number, fallback: string) => {
-    if (status === 401) return apiText('generic.error-unauthorized', 'api-errors.unauthorized');
-    if (status === 403) return apiText('generic.error-forbidden', 'api-errors.forbidden');
-    if (status >= 500) return apiText('generic.error-internal', 'api-errors.internal-server-error');
+    if (status === 401) return translate('api-errors.unauthorized');
+    if (status === 403) return translate('api-errors.forbidden');
+    if (status >= 500) return translate('api-errors.internal-server-error');
     return fallback;
 };
 
@@ -92,9 +92,7 @@ export const onResponseReject = (
 
     const status = error.response?.status ?? 500;
     const fallbackMessage =
-        error.response?.statusText ||
-        error.message ||
-        apiText('generic.error-unknown', 'api-errors.unknown');
+        error.response?.statusText || error.message || translate('api-errors.unknown');
     const message = getFallbackMessage(status, fallbackMessage);
     // A 5xx is the server's problem, not this client's, so it is a trace rather than an error
     // here — opt in with `VITE_APP_LOG_SCOPES=http`.

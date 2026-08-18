@@ -1,7 +1,7 @@
 import { createApp } from 'vue';
-import { createPinia } from 'pinia';
+import { createPinia, setActivePinia } from 'pinia';
 import { i18n } from '@/infrastructure/i18n';
-import { mergeApiLocales } from '@/infrastructure/i18n/apiDictionary.ts';
+import { mergeRemoteLocales } from '@/infrastructure/i18n/localeOverrides.ts';
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
 import { analyticsEvents } from '@/infrastructure/observability/events.ts';
 
@@ -54,21 +54,40 @@ const bootstrapApplication = () =>
           )
         : Promise.resolve()
     )
-        // Ask the API which languages it can answer in and add any this build does not know
-        // about, so a language only the server has still appears in the switcher. Sequenced
-        // before the mount because the router's locale guard reads `supportedLanguages` on the
-        // very first navigation, and a language missing from that list is redirected away before
-        // it can be offered.
-        //
-        // `mergeApiLocales` never rejects: with the API unreachable this is a no-op and the
-        // build-time `VITE_APP_SUPPORTED_LOCALES` list stands on its own, which is what keeps the
-        // app usable offline.
-        .then(() => mergeApiLocales())
         .then(() => {
+            /*
+             * Pinia is created and ACTIVATED before the fetch below, and installed on the app
+             * further down — the same instance, so nothing is set up twice.
+             *
+             * `setActivePinia` rather than `app.use(pinia)` here because the app must not be
+             * created yet: everything from `createApp` to `mount` stays one synchronous block, so
+             * no test or user can catch the page half-built. What the activation buys is the
+             * request interceptor, which reads the session store for the access token — before
+             * it, the boot fetch throws `getActivePinia() was called but there was no active
+             * Pinia` into a `.catch` that reports it as "the API offered no languages". Silent,
+             * shipped, and indistinguishable from an unreachable backend.
+             */
+            const pinia = createPinia();
+            setActivePinia(pinia);
+
+            /*
+             * Ask the API which languages it offers and add any this build does not bundle, so a
+             * language that exists only in the API's database still appears in the switcher.
+             *
+             * Sequenced BEFORE the app exists, because mounting installs the router and starts
+             * the first navigation, and the locale guard reads `supportedLanguages` there — a
+             * language missing from that list is redirected away before it can be offered.
+             *
+             * Never rejects: with the API unreachable this is a no-op and the languages
+             * discovered from `src/locales/` stand on their own, which is what keeps the app
+             * usable offline.
+             */
+            return mergeRemoteLocales().then(() => pinia);
+        })
+        .then((pinia) => {
             const app = createApp(App);
 
-            // Pinia must be registered before any store is instantiated.
-            app.use(createPinia()).use(router).use(i18n).use(vuetify).mount('#app');
+            app.use(pinia).use(router).use(i18n).use(vuetify).mount('#app');
 
             // Obtain the observability store (Grafana Faro + Umami).
             const observability = useObservabilityStore();

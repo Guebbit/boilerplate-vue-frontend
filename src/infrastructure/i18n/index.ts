@@ -19,19 +19,6 @@ export interface TranslationDictionaries {
 export type TranslateFunction = (key: string, named?: Record<string, unknown>) => string;
 
 /**
- * [on build] Locales named by `VITE_APP_SUPPORTED_LOCALES`, normalised.
- *
- * Trimmed and empty-filtered because both slips are silent: `en, it` yields `' it'`, which
- * matches no route and no dictionary, and `en,,it` yields `''`, which matches the empty first
- * segment of `/` and stops `routerLinkI18n('/')` prefixing anything.
- */
-const declaredLocales =
-    (import.meta.env.VITE_APP_SUPPORTED_LOCALES as string | undefined)
-        ?.split(',')
-        .map((locale) => locale.trim())
-        .filter(Boolean) ?? [];
-
-/**
  * [on build] Locales with a dictionary in the bundle, discovered from the folder.
  *
  * The glob is exempt from mutation because Vite requires a STATIC string literal here and
@@ -44,12 +31,21 @@ const bundledLocales = Object.keys(import.meta.glob('/src/locales/*.json')).map(
 );
 
 /**
- * [on build] Languages this app offers, loaded or not.
+ * Languages this app offers, loaded or not.
  *
- * The env list wins when it names anything usable — that is how a locale with no local dictionary
- * (served by the API at runtime) gets offered at all. Otherwise the folder answers.
+ * Starts as the folder — what this build can render with no network at all, which is the floor
+ * every other tier sits on — and is EXTENDED AT BOOT by `mergeRemoteLocales`, which adds whatever
+ * the API says it offers. A language added by a translator therefore appears in the switcher
+ * without a frontend deploy.
+ *
+ * There is deliberately no env list any more. Naming a language in `.env` claimed it was supported
+ * without supplying anything able to render it — the folder knows what shipped and the API knows
+ * what has been translated since, and a third list could only disagree with both.
+ *
+ * Mutable, because `mergeRemoteLocales` pushes onto it: a dozen modules import this binding by
+ * value, and reassigning it would leave them all on the boot-time list.
  */
-export const supportedLanguages = declaredLocales.length > 0 ? declaredLocales : bundledLocales;
+export const supportedLanguages = [...bundledLocales];
 
 /** [on build] Languages already fetched. */
 export const loadedLanguages: string[] = [];
@@ -274,27 +270,14 @@ export function getDefaultLocale() {
  */
 export const getCurrentLocale = () => i18n.global.locale.value;
 
-/**
- * Reserved root namespace holding the API's OWN dictionary, fetched at runtime.
+/*
+ * There is no `api.*` namespace, and there was one until this app started downloading its OWN
+ * dictionary from the API.
  *
- * The two repos are independent, so the API's keys never merge at the root where two
- * independently-authored key spaces would collide silently. This app must never author `api.*`
- * by hand — `tests/unit/infrastructure/i18n.spec.ts` enforces it.
+ * The API resolves its own keys and puts finished text on the wire, so a response arrives already
+ * translated and nothing here looks it up. The one case that needed this app's own words — no
+ * response at all, a 401 with an empty body, a bare 502 — is answered by `api-errors.*` in the
+ * dictionaries, and those keys are now translatable for EVERY language, including the ones this
+ * build does not bundle, because `localeOverrides.ts` fetches them. Reserving a root for the
+ * backend's keyspace bought nothing after that, and cost a namespace nobody could author under.
  */
-export const API_NAMESPACE = 'api';
-
-/**
- * Copy that belongs to the API, with a local stand-in for when the API's dictionary is absent.
- *
- * For the handful of messages the client must produce ITSELF because no response came back — a
- * 401 with an empty body, a network failure, a bare 502. Which is why it cannot depend on the
- * fetched dictionary: the request that would have downloaded it may have failed the same way.
- *
- * @param apiKey - Key inside the API's dictionary, WITHOUT the `api.` prefix.
- * @param localKey - Key in this app's own dictionary, used whenever `api.*` cannot answer.
- * @returns The best available translation, in the active locale.
- */
-export const apiText = (apiKey: string, localKey: string): string => {
-    const namespacedKey = `${API_NAMESPACE}.${apiKey}`;
-    return i18n.global.te(namespacedKey) ? i18n.global.t(namespacedKey) : i18n.global.t(localKey);
-};

@@ -1,5 +1,5 @@
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
-import { apiText } from '@/infrastructure/i18n';
+import { translate } from '@/infrastructure/i18n';
 
 /**
  * Extracts a human-readable message from any thrown/rejected value.
@@ -22,7 +22,7 @@ const getErrorMessage = (error: unknown): string => {
         error.message
     )
         return error.message;
-    return apiText('generic.error-unknown', 'api-errors.unknown');
+    return translate('api-errors.unknown');
 };
 
 /**

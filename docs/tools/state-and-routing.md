@@ -62,14 +62,14 @@ If the locale segment is absent, the `localeChoice` guard injects the default lo
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 60}}}%%
 flowchart LR
-    Before["router.beforeEach\ntryRestoreAuth"] --> BeforeResolve["router.beforeResolve\nlocaleChoice"]
-    BeforeResolve --> RouteGuard["Route guard\nisAuth / isAdmin / isGuest"]
-    RouteGuard --> View["Render view"]
+    Before["router.beforeEach\ntryRestoreAuth"] --> Access["router.beforeEach\nenforceRouteAccess"]
+    Access --> BeforeResolve["router.beforeResolve\nlocaleChoice"]
+    BeforeResolve --> View["Render view"]
     View --> After["router.afterEach\ntrack(page_view)"]
 
     classDef hook fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef view fill:#ddd6fe,stroke:#7c3aed,color:#111827;
-    class Before,BeforeResolve,RouteGuard,After hook;
+    class Before,Access,BeforeResolve,After hook;
     class View view;
 ```
 
@@ -99,7 +99,7 @@ Vue I18n externalises all user-facing strings into locale message files. Switchi
 ### Locale flow
 
 1. URL contains `/:locale` segment (e.g. `/en/products`).
-2. The `localeChoice` guard validates the locale against `VITE_APP_SUPPORTED_LOCALES`.
+2. The `localeChoice` guard validates the locale against `supportedLanguages` — the bundled dictionaries, plus whatever `GET /locales` added at boot.
 3. If invalid or absent, the default locale from `VITE_APP_DEFAULT_LOCALE` is injected.
 4. Vue I18n's active locale is set to match; translations are loaded lazily.
 

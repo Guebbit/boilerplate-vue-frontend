@@ -1,70 +1,121 @@
 import { http, type HttpHandler } from 'msw';
-import { GetLocalesResponse, GetLocaleDictionaryResponse } from '@api/schemas';
+import { GetLocalesResponse, GetLocaleMessagesResponse } from '@api/schemas';
 import { createSuccessEnvelope, createErrorEnvelope } from './mockDb.ts';
 import { toMockJsonResponse } from './mockTransport.ts';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
 /**
- * Stands in for the API's locale discovery endpoints.
+ * Stands in for the API's language manifest and the overrides it serves.
  *
- * The interesting one is `es`: this app has no `src/locales/es.json`, so a user who picks Spanish
- * gets Spanish API copy inside an otherwise-English UI, degrading key by key through
- * `fallbackLocale`. That is the whole point of the API serving its own dictionary and this app
- * merging it under `api.*` — so the mock has to offer a locale this app does not, or the
- * behaviour cannot be exercised offline.
+ * Two behaviours have to be reachable with no backend running, because they are the whole point of
+ * the tier and neither can be seen from a bundled dictionary alone:
  *
- * The dictionaries are deliberately tiny. They are not the API's real copy and must never grow
- * into a second, drifting authority for it — they exist to prove the plumbing, and the API's
- * actual Spanish lives in `boilerplate-node-backend/src/locales/es.json`.
+ *   `es` — offered by the API and NOT bundled here. Its entire interface comes from the overrides
+ *          below, and every key they do not carry falls back to English, key by key. That is what
+ *          a language added by a translator looks like before it is finished.
+ *   `it` — bundled AND overridden. One key is edited to prove the merge is per key and deep: the
+ *          rest of `navigation` must survive an override that names one of its children.
+ *
+ * The overrides are deliberately tiny and they use REAL keys from `src/locales/en.json`. They are
+ * not a second copy of anyone's dictionary and must never grow into one — a full Spanish belongs
+ * in the database this stands in for, and a full Italian is already in `src/locales/it.json`.
  */
-const API_DICTIONARIES: Record<string, Record<string, unknown>> = {
-    en: {
-        generic: {
-            ['error-unknown']: 'Something went wrong with the request.',
-            ['error-unauthorized']: 'You are not signed in, or your session has expired.',
-            ['error-forbidden']: 'You do not have permission to do that.'
-        }
-    },
-    it: {
-        generic: {
-            ['error-unknown']: 'Qualcosa è andato storto con la richiesta.',
-            ['error-unauthorized']: 'Non hai effettuato l’accesso, oppure la sessione è scaduta.',
-            ['error-forbidden']: 'Non hai i permessi per farlo.'
-        }
-    },
+const LOCALE_OVERRIDES: Record<string, Record<string, unknown>> = {
+    /*
+     * A language this build does not ship. Enough keys to make the switch visible on the home
+     * page, and nowhere near enough to finish it — the gaps are the demonstration.
+     */
     es: {
+        navigation: {
+            ['label-home']: 'Inicio',
+            ['label-menu']: 'Menú',
+            ['label-language']: 'Idioma'
+        },
         generic: {
-            ['error-unknown']: 'Algo ha salido mal con la solicitud.',
-            ['error-unauthorized']: 'No has iniciado sesión, o tu sesión ha caducado.',
-            ['error-forbidden']: 'No tienes permiso para hacer eso.'
+            product: 'producto | productos',
+            search: 'Buscar',
+            cancel: 'Cancelar'
+        },
+        ['api-errors']: {
+            unauthorized: 'No has iniciado sesión, o tu sesión ha caducado.',
+            unknown: 'Algo ha salido mal. Inténtalo de nuevo.'
+        }
+    },
+    /*
+     * One key, on a language that HAS a bundled dictionary. `it.json` already translates every
+     * sibling under `navigation`, so if the merge were shallow this row would delete them all —
+     * which is precisely the regression this fixture exists to make visible in the running app.
+     */
+    it: {
+        navigation: {
+            ['label-home']: 'Pagina iniziale'
         }
     }
 };
+
+/** The manifest as the API composes it: both tiers merged, one row per language. */
+const LOCALE_CAPABILITIES = [
+    {
+        tag: 'en',
+        name: 'English',
+        nativeName: 'English',
+        direction: 'ltr',
+        // Deployed on the API, nothing edited: it can answer, there is nothing to download.
+        scopes: ['api'],
+        source: 'static',
+        entryCount: 0,
+        revision: 0
+    },
+    {
+        tag: 'it',
+        name: 'Italian',
+        nativeName: 'Italiano',
+        direction: 'ltr',
+        scopes: ['api', 'app'],
+        source: 'both',
+        entryCount: 1,
+        revision: 1
+    },
+    {
+        tag: 'es',
+        name: 'Spanish',
+        nativeName: 'Español',
+        direction: 'ltr',
+        scopes: ['api', 'app'],
+        source: 'both',
+        entryCount: 8,
+        revision: 1
+    }
+];
 
 export const registerLocalesMockHandlers = (): HttpHandler[] => [
     http.get(`${API_BASE}/locales`, () =>
         toMockJsonResponse(
             createSuccessEnvelope({
-                locales: Object.keys(API_DICTIONARIES),
+                locales: LOCALE_CAPABILITIES,
                 default: 'en',
                 fallback: 'en'
             }),
             { schema: GetLocalesResponse, delayMs: 0 }
         )
     ),
-    http.get(`${API_BASE}/locales/:locale`, ({ params }) => {
+    http.get(`${API_BASE}/locales/:locale/messages`, ({ params }) => {
         const locale = String(params.locale);
-        const messages = API_DICTIONARIES[locale];
+        const messages = LOCALE_OVERRIDES[locale];
 
+        /*
+         * 404 for a language with no row, matching the API: unknown and deactivated answer the
+         * same way, and the client treats both as "nothing has been edited here".
+         */
         if (!messages)
             return toMockJsonResponse(
                 createErrorEnvelope(404, 'NOT_FOUND', 'Error: invalid data provided.'),
                 { status: 404, delayMs: 0 }
             );
 
-        return toMockJsonResponse(createSuccessEnvelope({ locale, messages }), {
-            schema: GetLocaleDictionaryResponse,
+        return toMockJsonResponse(createSuccessEnvelope({ locale, revision: 1, messages }), {
+            schema: GetLocaleMessagesResponse,
             delayMs: 0
         });
     })

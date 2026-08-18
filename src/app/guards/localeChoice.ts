@@ -7,60 +7,17 @@ import {
     changeLanguage,
     type TranslationDictionaries
 } from '@/infrastructure/i18n';
-import { withApiDictionary } from '@/infrastructure/i18n/apiDictionary.ts';
+import { withLocaleOverrides } from '@/infrastructure/i18n/localeOverrides.ts';
 import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router';
 
 /**
- * localStorage key holding the list of locales already downloaded in a
- * previous session/reload, so the simulated server fetch is only paid
- * once per browser (not once per navigation).
- */
-const DOWNLOADED_LOCALES_KEY = 'downloaded-locales';
-
-/**
- * Reads the set of locales already downloaded on this browser.
+ * Assembles a locale's dictionary: what this build bundled, with the edited overrides on top.
  *
- * @returns The stored locale codes, or an empty list when storage is
- *  unavailable or the stored value is corrupted.
- */
-const getDownloadedLocales = (): string[] => {
-    try {
-        return JSON.parse(localStorage.getItem(DOWNLOADED_LOCALES_KEY) ?? '[]') as string[];
-    } catch {
-        return [];
-    }
-};
-
-/**
- * Persists that a locale has now been downloaded, deduplicating against
- * whatever is already stored.
- *
- * @param locale - Locale code to remember, e.g. `it`.
- * @returns Nothing; storage failures (private mode, quota) are swallowed and
- *  simply re-simulate the latency next time.
- */
-const markLocaleDownloaded = (locale: string) => {
-    try {
-        localStorage.setItem(
-            DOWNLOADED_LOCALES_KEY,
-            JSON.stringify([...new Set([...getDownloadedLocales(), locale])])
-        );
-    } catch {
-        // Storage unavailable (private mode, quota) — the delay is just re-simulated next time
-    }
-};
-
-/**
- * Assembles a locale's full dictionary: this app's UI copy plus the API's own copy under the
- * reserved `api.*` namespace.
- *
- * The UI half is a local import. It stays local on purpose — view copy belongs to this
- * repository, and serving it from the API would put it in the API's keyspace (see
- * `@/infrastructure/i18n/apiDictionary.ts`). The artificial latency on a first download exercises the loading UX.
- *
- * The `api.*` half is a real network fetch, and it is why a language the API has and this app
- * does not still works: the UI keys fall back per key to `fallbackLocale` while the API keys are
- * in the requested language.
+ * The bundled half is a local import and stays local on purpose — the FILES are the defaults, so
+ * a build with no network renders every language it shipped. The override half is a real network
+ * fetch (see `@/infrastructure/i18n/localeOverrides.ts`), merged per key, which is what makes a
+ * string editable by someone who never opens a code editor and what makes a language this app
+ * bundles nothing for work at all: it arrives as overrides alone and falls back per key.
  *
  * **Always resolves, never rejects** — callers have no `.catch`, and a failed dictionary must
  * never strand a navigation. An unsupported locale, a failed import and an unreachable API each
@@ -74,26 +31,18 @@ export const fetchLanguageApi = (locale: string): Promise<[string, TranslationDi
     // reported at boot. Nothing to import and nothing to fetch, so return before doing either.
     if (!supportedLanguages.includes(locale)) return Promise.resolve([locale, {}]);
 
-    return new Promise<TranslationDictionaries>((resolve) => {
-        // Simulated server latency, but only the first time a locale is ever
-        // downloaded: afterwards it counts as locally cached and loads instantly
-        const delayMs = getDownloadedLocales().includes(locale) ? 0 : 1000;
-        setTimeout(() => {
-            // Stryker disable next-line StringLiteral: mutating this template to "" leaves an
-            // `import("")` that Vite cannot statically analyse, so the whole module fails to
-            // transform and every suite errors out instead of one mutant surviving.
-            import(`@/locales/${locale}.json`)
-                .then((module) => {
-                    markLocaleDownloaded(locale);
-                    resolve(module.default as TranslationDictionaries);
-                })
-                // A locale the API has and this app does not has no file to import: an empty UI
-                // dictionary is the correct result, not an error.
-                .catch(() => resolve({}));
-        }, delayMs);
-    })
-        .then((ownMessages) => withApiDictionary(locale, ownMessages))
-        .then((messages): [string, TranslationDictionaries] => [locale, messages]);
+    return (
+        // Stryker disable next-line StringLiteral: mutating this template to "" leaves an
+        // `import("")` that Vite cannot statically analyse, so the whole module fails to
+        // transform and every suite errors out instead of one mutant surviving.
+        import(`@/locales/${locale}.json`)
+            .then((module) => module.default as TranslationDictionaries)
+            // A language this build bundles no file for has nothing to import: an empty base is
+            // the correct result, not an error. Its overrides become the whole dictionary.
+            .catch((): TranslationDictionaries => ({}))
+            .then((ownMessages) => withLocaleOverrides(locale, ownMessages))
+            .then((messages): [string, TranslationDictionaries] => [locale, messages])
+    );
 };
 
 /**
