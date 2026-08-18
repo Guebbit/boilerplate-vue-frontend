@@ -108,7 +108,7 @@ Add a line to the owning module's sweep:
 sweepA11y('products — admin', [['product edit', '/en/products/65dc8a99604c307b702b5ccc/edit']], 'admin');
 ```
 
-A **new module** with pages needs its own `tests/e2e/a11y.cy.ts`. You will not forget: the coverage guard fails until it exists, and names the module.
+A **new module** with pages needs its own `src/modules/<name>/tests/e2e/a11y.cy.ts`. You will not forget: the coverage guard fails until it exists, and names the module.
 
 ## Extending it
 

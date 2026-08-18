@@ -80,8 +80,8 @@ Four things across the two repos can hand you an entity, and each answers a ques
 | --- | --- | --- |
 | `db/demo/demo-data.json` | both (byte-identical) | **The demo dataset, as the API answers it.** Every seeded row, serialized — ids, emails, admin flags, titles, prices, who has what in their cart and their orders, and the schema defaults each record actually ended up with. The one dataset a human sees when they open either app. **Produced in the backend** by `npm run seed:export`, which seeds a throwaway database with the real seeders and reads it back through the real serializers, then copied here as `tests/support/mocks/demo-data.json`. `npm run check:spec-identity` compares the two copies and the `spec-identity` CI job gates on it |
 | `src/modules/<name>/demo.ts` | BE | **The records themselves**, per module, before the schema and serializer have had their say. The file you edit to change what the demo data IS |
-| `tests/helpers/factories/*.ts` | BE | **Arbitrary throwaway entities** — "give me *a* product, I do not care which, and let me override one field". The opposite need to a fixed demo dataset, and used by 25 test files there. This repo has no equivalent yet; see the note below |
-| `tests/helpers/contract-data.ts` | BE | **Payloads derived from the zod schemas**, valid and — uniquely — invalid, each violating exactly one declared constraint. The only source that can produce something the API is supposed to *reject* |
+| `src/modules/<name>/factory.ts` | BE | **Arbitrary throwaway entities** — "give me *a* product, I do not care which, and let me override one field". The opposite need to a fixed demo dataset, and one per module, beside the `demo.ts` that fixes the dataset. This repo has no equivalent yet; see the note below |
+| `tests/support/contract-data.ts` | BE | **Payloads derived from the zod schemas**, valid and — uniquely — invalid, each violating exactly one declared constraint. The only source that can produce something the API is supposed to *reject* |
 
 Reading it as a shape: **one** dataset, authored once and published as the API's own output, plus **two** generators that exist because "the demo data" and "some data" and "deliberately illegal data" are three different questions.
 
@@ -119,7 +119,7 @@ flowchart TB
 
 Merging any two would mean one of those questions stops being asked. The merge that *was* worth doing — the demo dataset, previously written out by hand on both sides — is the one already done.
 
-**The one gap:** this repo has no counterpart to the backend's `factories/`, so "give me a product" is hand-rolled wherever it is needed — `tests/unit/modules/products/store.spec.ts` carries its own literal. One literal is not yet a pattern; worth folding into a shared builder when a second call site appears.
+**The one gap:** this repo has no counterpart to the backend's per-module `factory.ts`, so "give me a product" is hand-rolled wherever it is needed — `src/modules/products/tests/store.spec.ts` carries its own literal. One literal is not yet a pattern; worth folding into a shared builder when a second call site appears.
 
 ## What each layer can and cannot catch
 

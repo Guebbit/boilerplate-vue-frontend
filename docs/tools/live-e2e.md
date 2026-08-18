@@ -65,14 +65,14 @@ npm run test:e2e:live
 
 The backend ships `NODE_RATE_LIMIT_MAX=100` per minute per IP — sized for a person browsing. This suite is not a person: 85 specs drive real page loads, real logins and real uploads from one address, and `uploads.cy.ts` alone clears 100 requests a minute on its own. Past the budget the API answers **429**, the app bounces to `/login`, and the failure reads as "login is broken" rather than "we ran out of allowance". That is a genuinely expensive hour of debugging, because every assertion downstream fails for a reason unrelated to what it was testing.
 
-Boot the backend with the same allowance its own test suites use (`tests/helpers/setup.ts` sets `1000`):
+Boot the backend with the same allowance its own test suites use (`tests/support/setup.ts` sets `1000`):
 
 ```sh
 # terminal 1 — backend, for a live E2E run
 NODE_RATE_LIMIT_MAX=1000 NODE_AUTH_RATE_LIMIT_MAX=1000 npm run host -- dev
 ```
 
-Both are needed and they are separate buckets: the global one covers browsing, the auth one covers `POST /account/login` and its neighbours. Do not raise them in a deployed environment — the small credential budget is what makes password guessing expensive, and the two are deliberately decoupled so that widening one never widens the other (see `src/middlewares/security.ts` in the backend).
+Both are needed and they are separate buckets: the global one covers browsing, the auth one covers `POST /account/login` and its neighbours. Do not raise them in a deployed environment — the small credential budget is what makes password guessing expensive, and the two are deliberately decoupled so that widening one never widens the other (see `src/infrastructure/http/middlewares/security.ts` in the backend).
 
 `host -- db:bootstrap` runs migrations and seeds against the containerized Mongo/Redis exposed on the host (`27017`/`6379`), matching the ports `host -- db:seed:reset` uses to reset state between specs. `test:e2e:live` itself starts Vite on `:8085` with `VITE_API_MOCK_ENABLED=false` and `VITE_VALIDATE_RESPONSES=true`, then runs Cypress against it with `CYPRESS_apiMockEnabled=false`.
 

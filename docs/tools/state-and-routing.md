@@ -43,7 +43,7 @@ const doSomething = () => {
 
 ### Why it is here
 
-Vue Router maps URL paths to view components in a SPA. Each module declares its own `routes.ts` and contributes it through the registry; `src/kernel/router/index.ts` splices them in without naming a single domain.
+Vue Router maps URL paths to view components in a SPA. Each module declares its own `routes.ts` and contributes it through the registry; `src/app/router/index.ts` splices them in without naming a single domain.
 
 ### Locale prefix
 

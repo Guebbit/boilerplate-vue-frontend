@@ -123,9 +123,9 @@ The demo dataset is what carries the awkward shapes a test needs and a shop woul
 
 | Rule | Backend source | Mock helper |
 | --- | --- | --- |
-| Non-admins see only `active`, non-soft-deleted products | `src/services/products.ts` `search()` | `isVisibleToCaller()` |
-| Same rule on single-product fetch, as a 404 (existence is not disclosed) | `src/services/products.ts` `getById()` | `isVisibleToCaller()` |
-| Non-admins are pinned to their own orders; their `userId` filter is discarded | `src/infrastructure/http/scopes.ts` `userScope()` | `getMockUserScope()` |
+| Non-admins see only `active`, non-soft-deleted products | `src/modules/products/service.ts` `search()` | `isVisibleToCaller()` |
+| Same rule on single-product fetch, as a 404 (existence is not disclosed) | `src/modules/products/service.ts` `getById()` | `isVisibleToCaller()` |
+| Non-admins are pinned to their own orders; their `userId` filter is discarded | `orderService.callerScope()`, applied in the orders controller | `getMockUserScope()` |
 | Admin flag comes from the authenticated user | `request.authContext?.admin` | `isCurrentMockUserAdmin()` |
 
 The demo data is built to exercise both branches: of the six seeded products one is soft-deleted and one is inactive, so **admins see 6 and everyone else sees 4**.
