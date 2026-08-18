@@ -1,34 +1,37 @@
 name: E2E (live backend)
 
 # Runs this app's Cypress specs against a REAL backend — a checked-out sibling repo, a real
-# Mongo and Redis, a really seeded database — instead of against MSW. Nightly, not a merge gate.
+# Mongo and Redis, a really seeded database — instead of against MSW.
 #
-# The third e2e profile, and the only one that is not talking to a mock.
+# THIS IS THE MERGE GATE. `ci.yml` calls it via `workflow_call`, so behaviour is proven against the
+# real API on every PR rather than against a mock that claims to resemble one.
 #
-# `test:e2e` (in ci.yml) runs the same nine specs against MSW handlers, and `e2e-random.yml` runs
-# the resilience spec against faker-generated data. Both are fast, hermetic, and structurally
-# unable to notice one class of failure: the mock handlers agreeing with a backend that has moved.
-# `tests/support/mocks/mockShared.ts` mirrors the backend's `db/seeds/index.ts` BY HAND, and
-# `parity.cy.ts` exists to catch that mirror going stale — which it can only do when something
-# actually stands the real backend up. Until this workflow, nothing did: `npm run test:e2e:live`
-# was invoked by no CI job at all, so the one guard against seed drift ran only when a person
-# remembered to run it.
+# That is a deliberate reversal. The mock suite used to be the gate, and MSW carried a promise it
+# could not keep on its own: that each handler applied the same filtering, scoping and visibility
+# rules as the backend service behind it. Nothing enforced that promise mechanically — two spec
+# files and the reviewer's memory did — and the failure it invites is the expensive one: a green
+# suite describing an API that does not exist. Rather than keep paying reviewers to hold a mirror
+# straight, the mirror stopped being load-bearing and the real thing became the gate.
 #
-# Nightly rather than per-PR, and that is a cost decision rather than a confidence one: this needs
-# both repos, a Mongo, a Redis and a seeded database, so it is minutes where the mock profile is
-# seconds. The mock suite stays the merge gate; this is the thing that tells you the mock suite is
-# still describing reality.
+# `test:e2e` (in ci.yml) still runs the same specs against MSW, and still runs first, because it is
+# seconds where this is minutes and it catches ordinary app regressions long before this finishes.
+# What it no longer does is CERTIFY anything about the backend. When the two disagree, this one is
+# right.
 #
 # On failure, read it in this order:
 #   1. the `check:spec-identity` step — a failure there means the two checkouts' shared files have
 #      forked, so nothing below it is trustworthy;
-#   2. `parity.cy.ts` — a failure there is seed drift, i.e. fix mockShared.ts, not the app;
+#   2. `parity.cy.ts` — a failure there is seed drift in the mock database, i.e. fix mockDb.ts, not
+#      the app;
 #   3. anything else — a real disagreement between this frontend and that backend.
 
 on:
+    # Called by ci.yml as a required job — see that file's `test-e2e-live`.
+    workflow_call:
     schedule:
-        # 03:15 UTC — between e2e-random.yml (03:00) and mutation.yml (03:30), so the three
-        # nightlies do not compete for runners.
+        # 03:15 UTC — before mutation.yml (03:30), so the two nightlies do not compete for
+        # runners. Kept alongside the PR gate: this answers "does main still agree with the
+        # backend's default branch", which no PR run can, because the backend moves on its own.
         - cron: '15 3 * * *'
     workflow_dispatch:
 
@@ -148,7 +151,7 @@ jobs:
               run: npx wait-on http://localhost:3000 --timeout 120000
 
             # Before spending minutes on Cypress: are the two checkouts still the same pair? A
-            # forked `seed-identities.ts` makes the run fail on data rather than on behaviour,
+            # forked `demo-data.json` makes the run fail on data rather than on behaviour,
             # which reads as a broken app instead of a stale checkout.
             - name: Check the shared files are identical across the two checkouts
               run: npm run check:spec-identity

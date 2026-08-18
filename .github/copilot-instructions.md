@@ -47,7 +47,7 @@ one line from `src/modules.ts`.** See [docs/theory/modules.md](../docs/theory/mo
 - `openapi.yaml` first. Contract and all generated code starts there.
 - Use generated API functions from `@api` (`contracts/rest/index.ts`); avoid manual endpoint wrappers unless required.
 - Use generated Zod schemas from `@api/schemas` (`contracts/rest/schemas.zod.ts`) for form and response validation; never hand-write schemas that duplicate the spec.
-- When adding a new endpoint handler for MSW, start from the generated stub in `tests/support/mocks/generated.ts`, then move business logic to the owning module's `src/modules/<name>/mocks/handlers.ts`.
+- When adding a new endpoint handler for MSW, start from the nearest existing handler in `src/modules/<name>/mocks/handlers.ts`, then move business logic to the owning module's `src/modules/<name>/mocks/handlers.ts`.
 - Keep comments short and practical.
 - Avoid `async` / `await` + `try/catch` unless necessary.
 - Comments short. ADHD friendly. Explain function/constant/block fast.

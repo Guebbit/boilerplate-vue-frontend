@@ -1,21 +1,24 @@
 # Live E2E (FE ↔ real backend)
 
-The fixed-seed mock profile ([Mocking](./mocking.md)) proves the frontend agrees with its own MSW handlers. It cannot prove those handlers agree with the real API — that gap is closed by running the same Cypress specs against a live, seeded backend instead. This page documents that profile: how to run it by hand, when CI runs it for you, and what guards it.
+The mock profile ([Mocking](./mocking.md)) proves the frontend agrees with its own MSW handlers. It cannot prove those handlers agree with the real API — that gap is closed by running the same Cypress specs against a live, seeded backend instead.
+
+**This is the authoritative profile.** MSW is a convenience and is allowed to be wrong; when the two disagree, this one is right. This page documents it: when CI runs it, how to run it by hand, and what guards it.
 
 ## Where it runs, and where it does not
 
-Two places, and the difference matters when you are deciding whether a change has been covered:
+Three places:
 
-- **Nightly in CI**, via `.github/workflows/e2e-live.yml` (03:15 UTC, plus `workflow_dispatch`). That job checks out both repos, starts Mongo and Redis as service containers, migrates and seeds, boots the backend and runs the whole suite against it.
-- **By hand**, with the boot sequence below — which is the only option while your work is on a branch.
+- **On every PR**, as the required `test-e2e-live` job in `.github/workflows/ci.yml`. That job delegates to `e2e-live.yml` through `workflow_call` rather than duplicating its setup — one definition of the datastores, the sibling checkout and the seeding, so the gate and the nightly cannot drift apart.
+- **Nightly**, via `e2e-live.yml`'s own `cron` (03:15 UTC, plus `workflow_dispatch`). This answers a question no PR run can: does `main` still agree with the *backend's* default branch? The backend moves on its own, so a frontend that was green yesterday can be wrong today without anyone touching it.
+- **By hand**, with the boot sequence below.
 
-**Scheduled workflows only ever run on the default branch.** A `cron` trigger fires against `main` and nothing else, so a feature branch is *not* covered by the nightly run no matter how long it sits there: the first live exercise of a change on a branch happens after it merges, or when someone dispatches the workflow manually against that branch from the Actions tab.
+**Scheduled workflows only ever run on the default branch.** A `cron` trigger fires against `main` and nothing else — but that no longer leaves a branch uncovered, because the PR gate runs the same job against the branch.
 
-That is the reason the live run is **mandatory before tagging either repo** rather than something to assume CI has handled.
+## Why it gates rather than merely reports
 
-## Why it is nightly rather than a merge gate
+Because the alternative does not work. The mock suite can only prove the frontend agrees with the frontend's idea of the backend, and holding that idea accurate by review is a promise nothing enforces — see [Mocking](./mocking.md), "Why this promise is deliberately weak", for the failure it produced.
 
-A cost decision, not a confidence one. This profile needs both repos, a Mongo, a Redis and a seeded database, so it is minutes where the mock profile is seconds. The mock suite stays the thing that blocks a merge; this is the thing that tells you the mock suite is still describing reality.
+It costs what it costs: this profile needs both repos, a Mongo, a Redis and a seeded database, so it is minutes where the mock profile is seconds. The mock suite still runs first and still fails fast on ordinary regressions; this is the one whose verdict counts.
 
 What carries the weight in between:
 
@@ -33,7 +36,7 @@ flowchart TB
     Real --> Backend[("live backend\nreal seeded MongoDB")]
     Real --> Mutator["orvalMutator\nparses every response\nvs @api/schemas"]
     Mutator -->|mismatch| Fail["throws — live contract\nviolation caught"]
-    Cypress --> Parity["parity.cy.ts\nlive dataset vs mockShared.ts seed"]
+    Cypress --> Parity["parity.cy.ts\nlive dataset vs mockDb.ts seed"]
     Cypress --> Refresh["auth.cy.ts live case\nforced 401 → refresh cookie\n:8085 → :3000"]
 
     classDef step fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -76,7 +79,7 @@ Both are needed and they are separate buckets: the global one covers browsing, t
 
 Boot the backend first. Nothing here waits for it: with no backend listening on `VITE_API_URL` (default `http://localhost:3000`), every spec fails on a network error rather than on anything it was written to check.
 
-Run `npm run check:spec-identity` alongside it when the pair has moved — a forked `seed-identities.ts` makes a live run fail on *data* rather than on behaviour, and that is a confusing hour if you are not expecting it.
+Run `npm run check:spec-identity` alongside it when the pair has moved — a forked `demo-data.json` makes a live run fail on *data* rather than on behaviour, and that is a confusing hour if you are not expecting it.
 
 ## `BACKEND_PATH`
 
@@ -104,9 +107,9 @@ This is the single highest-value piece of this profile: it converts all five pre
 
 ## Mock/seed parity
 
-`tests/e2e/specs/parity.cy.ts` runs only under this profile (`cy.skipUnlessLive()` — reported as *pending* under the mock profile, not silently omitted). After logging in via `cy.request`, it hits the live API directly as admin and as anonymous and asserts the returned dataset matches the hand-mirrored seed in `tests/support/mocks/mockShared.ts`: same product ids and visibility split, same user ids, same order ids and totals.
+`tests/e2e/specs/parity.cy.ts` runs only under this profile (`cy.skipUnlessLive()` — reported as *pending* under the mock profile, not silently omitted). After logging in via `cy.request`, it hits the live API directly as admin and as anonymous and asserts the returned dataset matches the hand-mirrored seed in `tests/support/mocks/mockDb.ts`: same product ids and visibility split, same user ids, same order ids and totals.
 
-This mechanises the "DATA parity" and "BEHAVIOUR parity" invariants documented at the top of `mockShared.ts`, which were previously held by review only. If a future edit changes a seed id, count or total in one repo without the other, this is the test that fails — loudly, the first time this profile runs after the drift, rather than silently describing an API that no longer exists.
+This mechanises the "DATA parity" and "BEHAVIOUR parity" invariants documented at the top of `mockDb.ts`, which were previously held by review only. If a future edit changes a seed id, count or total in one repo without the other, this is the test that fails — loudly, the first time this profile runs after the drift, rather than silently describing an API that no longer exists.
 
 ## Live session refresh
 
@@ -129,5 +132,4 @@ This mechanises the "DATA parity" and "BEHAVIOUR parity" invariants documented a
 - [Testing](./testing-and-docs.md) — suite overview
 - [Unit Testing](./unit-testing.md) — `httpValidateResponses.spec.ts` unit-tests the gate this page's response validation relies on
 - [Mocking (MSW)](./mocking.md) — the fixed-seed profile this one checks against
-- [E2E — Random Profile](./e2e-random-profile.md) — the third Cypress profile
 - [OpenAPI Workflow](../api/openapi-workflow.md)

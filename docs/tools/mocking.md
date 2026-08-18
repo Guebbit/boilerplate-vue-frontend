@@ -2,25 +2,33 @@
 
 [MSW (Mock Service Worker)](https://mswjs.io/) intercepts HTTP requests at the network layer — inside the browser's Service Worker, before they reach the network — so the SPA runs without a backend while using the real axios client and real stores.
 
-## Why the mocks look the way they do
+## What MSW does and does not promise
 
 This is the part that is easy to get wrong when editing them, so it comes first.
 
-The mocks are **not** a convenience stub that returns "some plausible JSON". They are a deliberate offline replica of the backend, and they carry two invariants:
+**MSW is a convenience, not a contract.** It exists so the app runs, and the fast suite runs, without a backend. It is *allowed* to be wrong about the API. What proves this frontend agrees with that backend is `test-e2e-live` — a required CI job that stands up a real backend checkout, a real Mongo and a really seeded database, and runs these same specs with MSW off.
 
-1. **Data parity.** The seed records mirror the backend's — same ids, same credentials, same content. This is what lets `cy.loginAs('user')` (`gino@pino.it` / `password`) work identically against MSW and against the real API. It is no longer maintained by hand: both sides read `seed-identities.ts`, a dependency-free data file that is **byte-identical** in this repo (`tests/support/mocks/`) and in the backend (`db/seeds/`). The backend authors it — each of its domains owns its own records in a fragment, and `npm run contracts:bundle` there assembles them — so a change goes in over there and the rebuilt file is copied here. `npm run check:spec-identity` answers "have the seeds drifted?", and the `spec-identity` CI job fails the build on the commit that forks it:
+Two things are still true of the mock layer, and the difference between them is the whole design:
+
+1. **Data is structurally correct.** The mock database holds the backend's own rows — same ids, same credentials, same content. This is what lets `cy.loginAs('user')` (`gino@pino.it` / `password`) work identically against MSW and against the real API. Nothing is maintained by hand: the backend's `npm run seed:export` seeds a throwaway database with the real seeders, reads every row back through the real serializers, and publishes the result as `db/demo/demo-data.json`. `npm run sync:frontend` copies that file here as `tests/support/mocks/demo-data.json`, **byte-identical**. `npm run check:spec-identity` answers "have the two forked?", and the `spec-identity` CI job fails the build on the commit that forks them:
 
     ```bash
-    diff boilerplate-node-backend/db/seeds/seed-identities.ts \
-         boilerplate-vue-frontend/tests/support/mocks/seed-identities.ts
+    diff boilerplate-node-backend/db/demo/demo-data.json \
+         boilerplate-vue-frontend/tests/support/mocks/demo-data.json
     ```
 
-    Each repo keeps its own mapper over that file, because the two sides need different *shapes* from the same facts — mongoose documents with `ObjectId`s and hashed-on-save passwords there, API response entities with string ids and no password here. What is shared is exactly what a drift would break: ids, emails, admin flags, titles, prices, active/deleted state, and which product sits in whose cart and whose order.
-2. **Behaviour parity.** A handler must apply the same filtering, scoping and visibility rules as the backend service behind that endpoint. Data parity without behaviour parity produces the worst possible outcome: a green suite that describes an API that does not exist.
+    There is no mapper on either side any more, which is the point: what is shared is the API's own OUTPUT, not a set of facts each repo then interprets. The two repos used to share plain facts and map them separately, and the mappers drifted silently — this one invented `active: true` to mirror a backend default nobody had checked, and carried no `locale` at all. `@mocks/mockDataset.ts` applies exactly two deliberate divergences (drop `imageUrl`, restamp dates) and nothing else.
+2. **Behaviour is best-effort.** A handler should apply the same filtering, scoping and visibility rules as the backend service behind that endpoint, and should name that service in a comment — that is genuinely useful to the next reader. But nothing here can *prove* the two agree: the mock filters an in-memory array in JavaScript where the API builds a Mongo query. Treat a green mock suite as evidence about the app, never as evidence about the backend.
 
-Invariant 2 was violated once already and is worth understanding as a cautionary example. The product-list handler returned every product in the in-memory DB, while `BE src/services/products.ts` hides inactive and soft-deleted products from non-admins. The mock returned 5 products, the real API returned 3, and `products.cy.ts` asserted `5` — so the spec passed, and would have failed the moment it met a real backend. The assertion was not merely untested against reality; it was **pinned to the wrong value**.
+### Why this promise is deliberately weak
 
-The rule that follows: **when a spec asserts a count, it is also asserting a role.** If you change what a handler returns, find the backend service it mirrors and check you are still describing it.
+A strong version is available — state behaviour parity as an invariant, and hold it up with per-module spec files that re-assert the backend's rules against the mock. It does not work. A hand-written mirror of the backend's rules fails in the same places the mock does, so it certifies the mock against a second guess rather than against the API, and the failure it invites is the expensive one: a green suite describing an API that does not exist.
+
+It happened. The product-list handler returned every product in the in-memory DB, while `BE src/services/products.ts` hides inactive and soft-deleted products from non-admins. The mock returned 5, the real API returned 3, and `products.cy.ts` asserted `5` — so the spec passed, and would have failed the moment it met a real backend. The assertion was not merely untested against reality; it was **pinned to the wrong value**.
+
+So the mirror is not load-bearing here: the real backend is the gate. What that costs is a fast signal about behaviour; what it buys is a signal that is actually true, on every PR, in CI.
+
+**The rule that still follows:** when a spec asserts a count, it is also asserting a role. Non-admins see 4 of the 6 seeded products. If you change what a handler returns and the live run goes red, the handler is wrong — not the backend.
 
 ## Contract enforcement — what is already guaranteed
 
@@ -34,7 +42,7 @@ return toMockJsonResponse(createSuccessEnvelope(product), { schema: GetProductBy
 
 Undeclared keys are rejected, not stripped. The schemas are generated with orval's `override.zod.strict` (see `orval.config.ts`), so they emit `zod.strictObject`: every object schema in the spec is `additionalProperties: false`, and a mock returning *more* than the contract allows is a mock describing an API that does not exist. Without strict, Zod's default is to silently drop the extra key — the guard would pass and delete the evidence in the same breath.
 
-So the mocks cannot silently drift from the contract's **shape**. What Zod cannot check is **behaviour** — the right shape containing the wrong rows is perfectly valid. That gap is what invariant 2 above is for, and what a live-backend test profile would close structurally.
+So the mocks cannot silently drift from the contract's **shape**. What Zod cannot check is **behaviour** — the right shape containing the wrong rows is perfectly valid. That gap is closed by running the real backend, not by anything in this repo: see [Live E2E](./live-e2e.md) and the `test-e2e-live` job in `ci.yml`.
 
 ## When mocking activates
 
@@ -55,7 +63,7 @@ An unhandled request to the API origin calls `print.error()` (`tests/support/moc
 flowchart LR
     App["App\naxios → contracts/rest/index.ts"] --> SW["MSW Service Worker\npublic/mockServiceWorker.js"]
     SW --> Handlers["src/modules/*/mocks/handlers.ts"]
-    Handlers --> DB[("tests/support/mocks/mockShared.ts\nin-memory mockDatabase")]
+    Handlers --> DB[("tests/support/mocks/mockDb.ts\nin-memory mockDatabase")]
     DB --> Handlers
     Handlers --> Validate{"assertMockContract\nvs @api/schemas"}
     Validate --> Response["Fake response\nback to axios"]
@@ -76,44 +84,40 @@ flowchart LR
 | File | Purpose |
 | ---- | ------- |
 | `public/mockServiceWorker.js` | MSW service worker (generated by `msw init` — do not edit) |
-| `tests/support/mocks/apiMock.ts` | Builds the worker from `collectModuleMockHandlers(enabledModules)` plus the core `/locales` handlers; names no domain. Logs the active profile (and seed, for random) at start |
-| `src/modules/<name>/mocks/handlers.ts` | Hand-written handlers with in-memory DB logic — **this is what actually runs**. Declared by the module manifest, so a domain brings its mock backend with it and takes it away when deleted |
+| `tests/support/mocks/apiMock.ts` | Builds the worker from `collectModuleMockHandlers(enabledModules)` plus the core `/locales` handlers; names no domain |
+| `src/modules/<name>/mocks/handlers.ts` | Hand-written handlers with in-memory DB logic — **this is what actually runs offline**. Declared by the module manifest, so a domain brings its mock backend with it and takes it away when deleted |
 | `tests/support/mocks/localesHandlers.ts` | The one handler file that stays central: `/locales` belongs to `infrastructure`, not to a domain |
-| `tests/support/mocks/mockShared.ts` | In-memory DB, session bridging, envelope helpers, role-scoping helpers |
-| `tests/support/mocks/mockProfiles.ts` | `resolveProfile()`, the fixed-seed builder, and the async entry points into the random profile |
-| `tests/support/mocks/mockProfilesRandom.ts` | The random profile's actual implementation — the only file that imports `@faker-js/faker` and `generated.ts`, reached only via a dynamic `import()` |
-| `tests/support/mocks/mockOrderMath.ts` | Pure order-total/id helpers shared by the seed and random builders, and by handlers that create orders at runtime |
+| `tests/support/mocks/mockDb.ts` | In-memory DB, session bridging, envelope helpers, role-scoping helpers |
+| `tests/support/mocks/mockDataset.ts` | Reads `demo-data.json` and applies the two divergences this repo needs; each module's `mocks/register.ts` routes a slice of it into the mock database |
+| `tests/support/mocks/mockOrderMath.ts` | Pure order-total/id helpers, for handlers that create orders at runtime |
 | `tests/support/mocks/mockTransport.ts` | Response builders that enforce the contract on the way out |
 | `tests/support/mocks/mockValidation.ts` | `assertMockContract` + the one hand-written error schema |
-| `tests/support/mocks/seed-identities.ts` | The seed dataset's facts — byte-identical to `db/seeds/seed-identities.ts` in the BE |
-| `tests/unit/mocks/mockHandlerParity.spec.ts` | Unit coverage of the handlers' filtering, scoping and pagination, shaped after the BE's own tests |
-| `tests/support/mocks/generated.ts` | Orval-generated stubs + faker factories (regenerated by `npm run gen:api` — do not edit) |
+| `tests/support/mocks/demo-data.json` | The demo dataset as the API answers it — byte-identical to `db/demo/demo-data.json` in the BE |
 | `src/main.ts` | Conditionally starts MSW before Vue mounts |
 
-## The role of `tests/support/mocks/generated.ts`
+## Where the orval MSW stubs went
 
-Orval generates one MSW stub and one faker factory per operation into this file. **Nothing imports the stubs.** They are not wired into the worker, and `apiMock.ts` builds exclusively from the modules' hand-written handlers. The faker factories, though, are consumed — by `mockProfilesRandom.ts`, as the raw material for the random profile below.
+Orval can emit one MSW stub and one faker factory per operation, and this repo does not ask it to — `orval.config.ts` declares `api` and `zodSchemas` and no `mocks` block.
 
-It is kept for two reasons:
+They were generated and committed once, as a 9,431-line file. Nothing imported the stubs: they are stateless — no cart persistence, no login, no filtering — so wiring them in as a fallback layer would have replaced working behaviour with random data and silenced the unhandled-request error that exists on purpose. Their only consumer was a faker-driven test profile that has since been deleted.
 
-- **A skeleton when adding an endpoint.** Copy the stub out, then replace the faker body with real in-memory-DB logic.
-- **The random-data test profile's raw material.** See "Test profiles" below.
-
-Do not wire its *handlers* into the worker as a fallback layer. They are stateless: no cart persistence, no login, no filtering. Using them would replace working behaviour with random data and silence the unhandled-request error that exists on purpose.
+If you want a skeleton when adding an endpoint, copy the nearest existing handler. It already has the envelope, the schema check and the role scoping, which a generated stub does not.
 
 ## Test profiles
 
 | Profile | Data source | Backend | Assertion style | Status |
 | --- | --- | --- | --- | --- |
-| **fixed** (default) | `mockProfiles.ts`'s `buildSeedDatabase()` | none (MSW) | exact — counts, titles, prices | in use — `npm run test:e2e` |
-| **random** | faker factories from `generated.ts`, via `mockProfilesRandom.ts` | none (MSW) | invariants only | in CI nightly (`e2e-random.yml`) + on demand — `npm run test:e2e:random`, see [E2E — Random Profile](./e2e-random-profile.md) |
-| **live** | backend's real seeded DB | real API | exact + parity | in use, run by hand — `npm run test:e2e:live`, see [Live E2E](./live-e2e.md) |
+| **mock** | `demo-data.json`, via each module's `mocks/register.ts` | none (MSW) | exact — counts, titles, prices | fast feedback, and the offline dev loop — `npm run test:e2e` |
+| **live** (authoritative) | backend's real seeded DB | real API | exact + parity | **required CI job**, and `npm run test:e2e:live` locally — see [Live E2E](./live-e2e.md) |
 
-They answer different questions and none replaces another:
+They answer different questions, and one of them outranks the other:
 
-- **fixed** — does the app behave correctly against known data? Deterministic, so it can assert exact values. The rest of this page is about this profile specifically.
-- **random** — does the app survive *any* contract-valid data? Catches hardcoded assumptions, missing empty states, layout breaking on long strings, null handling. Cannot assert counts — full architecture, the seed lifecycle and the design constraints that keep it honest are on its own page: [E2E — Random Profile](./e2e-random-profile.md).
-- **live** — does the frontend agree with the *actual* backend? The only profile that catches behaviour drift structurally rather than by review — see [Live E2E](./live-e2e.md) for the response-validation and parity-spec machinery that makes it catch bugs rather than merely exercise code.
+- **mock** — does the app behave correctly against known data? Deterministic and seconds long, so it runs first on every PR and catches ordinary regressions immediately. It certifies nothing about the backend. The rest of this page is about this profile specifically.
+- **live** — does the frontend agree with the *actual* backend? This is the one that decides. It is a required job in `ci.yml`, so a handler that has drifted from the service it mirrors fails the PR that introduced it rather than surviving until someone runs the live suite by hand.
+
+Running both is not redundancy — it is a fast wrong answer followed by a slow right one, and the fast one is worth having as long as nobody mistakes it for the other.
+
+The demo dataset is what carries the awkward shapes a test needs and a shop would not have: one soft-deleted product, one inactive one, one soft-deleted order, and one product whose optional fields are all at their schema defaults — empty description, no categories, no tags. Those records exist so the branches behind them are reachable; see the backend's `src/modules/products/demo.ts`.
 
 ## Role scoping — the rules the handlers mirror
 
@@ -124,7 +128,7 @@ They answer different questions and none replaces another:
 | Non-admins are pinned to their own orders; their `userId` filter is discarded | `src/infrastructure/http/scopes.ts` `userScope()` | `getMockUserScope()` |
 | Admin flag comes from the authenticated user | `request.authContext?.admin` | `isCurrentMockUserAdmin()` |
 
-The seed data is built to exercise both branches: of the five seeded products one is soft-deleted and one is inactive, so **admins see 5 and everyone else sees 3**.
+The demo data is built to exercise both branches: of the six seeded products one is soft-deleted and one is inactive, so **admins see 6 and everyone else sees 4**.
 
 ### `active` and soft-deletion are independent
 
@@ -134,15 +138,7 @@ Worth stating plainly, because the backend used to conflate them for users and t
 - What they share is an **effect**, not a value: a non-admin sees a record only when it is active **and** not soft-deleted. So from outside, a soft-deleted record behaves exactly like an inactive one — which is why one filter reading like the other went unnoticed for so long.
 - A record created without `active` is **active** — `openapi.yaml` declares `default: true` on the create bodies. It is declared precisely because leaving it undeclared is how the two repos came to disagree: the mock created products active, the real API created them inactive, and the same request produced a public product against one and a hidden one against the other with nothing failing.
 
-The fixed seed can only reach two of the four `active` × `deletedAt` combinations. The other two — deleted-but-active, and both-at-once — are covered by `tests/unit/mocks/mockHandlerParity.spec.ts`, below.
-
-### Behaviour parity is tested now, not just reviewed
-
-`tests/unit/mocks/mockHandlerParity.spec.ts` drives the handlers through `setupServer` (`msw/node`) and asserts they still answer the questions the backend's own tests ask, in the same way. Each case names its backend counterpart, so a divergence is visible when either side changes.
-
-It is deliberately **not** a second copy of the backend's suite — that suite already proves the API's behaviour thoroughly, and duplicating it would double the maintenance without adding signal. These cases sit only where the two implementations could plausibly disagree: this side filters a JavaScript array, the other builds a Mongo query, so the risk lives in combinations and arithmetic boundaries rather than on the happy path a spec already walks.
-
-No new runner or npm script — it runs under `npm run test:unit` with everything else.
+The demo dataset can only reach two of the four `active` × `deletedAt` combinations. The other two — deleted-but-active, and both-at-once — are not modelled here at all. They are reachable through the API, so a spec that needs one should create it against the live profile rather than expect the mock to have it.
 
 ### Session state
 
@@ -150,14 +146,12 @@ No new runner or npm script — it runs under `npm run test:unit` with everythin
 
 ## Adding a new handler
 
-1. Copy the stub for the operation out of `tests/support/mocks/generated.ts` as a starting point.
-2. Add it to the owning module's `src/modules/<name>/mocks/handlers.ts`, inside the exported `register*MockHandlers()` array.
-3. Replace the faker body with in-memory DB logic against `mockDatabase`.
-4. **Read the backend service behind the endpoint** and mirror any filtering, scoping or soft-delete rules. Leave a comment naming the file and function you mirrored.
+1. Copy the nearest existing handler in the owning module's `src/modules/<name>/mocks/handlers.ts` as a starting point.
+2. Add it to the exported `register*MockHandlers()` array in that file.
+3. Replace its body with in-memory DB logic against `mockDatabase`.
+4. **Read the backend service behind the endpoint** and mirror any filtering, scoping or soft-delete rules you reasonably can. Leave a comment naming the file and function you mirrored — for the next reader, not as a guarantee. The live run is what will tell you whether you got it right.
 5. Return through `toMockJsonResponse(..., { schema })` so the response is contract-checked.
 6. A new domain needs no edit to `apiMock.ts`: declare `mockHandlers` in its `module.ts` and the registry picks it up. Copy the `import.meta.env.VITE_API_MOCK_ENABLED` ternary from an existing module verbatim — that literal is what keeps MSW out of the production bundle.
-
-Do not edit `generated.ts` — `npm run gen:api` overwrites it.
 
 ## Known gaps
 
@@ -165,8 +159,8 @@ Recorded deliberately; none of these are accidents.
 
 - **The handlers do not model auth guards.** The backend guards every `/orders` route with `isAuth` and many write routes with `isAdmin`; the mocks apply role *scoping* but never return 401/403 for a missing or non-admin session. Specs therefore cannot test authorization failure through the mock profile.
 - **The handlers do not re-validate uploads.** The seven multipart operations send an `imageUpload` part; the handlers separate it from the scalar fields (`readRequestParts`) and synthesise an `imageUrl` in the backend's shape (`resolveMockImageUrl`), but they never look at the bytes. The real API gates twice — `fileFilter` on the declared `Content-Type`, then `identifyImageFile()` on the actual magic bytes, answering **422** when the two disagree. Only the live profile can exercise that; see `tests/e2e/specs/uploads.cy.ts`.
-- **`imageUrl` is deliberately dropped from the mocked seed.** `seed-identities.ts` carries the real `/images/seed/*.jpg` paths, but the backend serves those out of its own `public/` and this repo ships no such files — under MSW they would 404 and every seeded avatar and product image would render broken. The mappers in `mockProfiles.ts` set `imageUrl: undefined` instead. Only the live profile sees the real URLs.
-- **Behaviour parity is maintained by review day-to-day, spot-checked by a test.** `tests/e2e/specs/parity.cy.ts` (live profile only, see [Live E2E](./live-e2e.md)) asserts the seeded ids/counts/totals still match, but only when someone runs the live profile — nothing in CI runs it automatically, since the two repos are independently versioned and hand-paired (see that page for why).
+- **`imageUrl` is deliberately dropped from the mocked dataset.** `demo-data.json` carries the real `/images/seed/*.jpg` paths, but the backend serves those out of its own `public/` and this repo ships no such files — under MSW they would 404 and every seeded avatar and product image would render broken. `mockDataset.ts` sets `imageUrl: undefined` instead. Only the live profile sees the real URLs.
+- **Behaviour is not guaranteed, by design.** A handler can disagree with the service it mirrors and the fast suite will stay green. That is the accepted trade: `test-e2e-live` is a required CI job, so the disagreement surfaces on the PR that introduces it rather than in production. `tests/e2e/specs/parity.cy.ts` (live profile only) additionally asserts the seeded ids/counts/totals still match, which localises a failure to seed drift rather than to the app.
 
 ## Cypress integration
 
@@ -182,13 +176,11 @@ Specs exercise the full Vue app plus MSW handlers, with no real network calls. `
 
 - [MSW browser integration](https://mswjs.io/docs/integrations/browser)
 - [MSW handler API](https://mswjs.io/docs/api/http)
-- [faker.js guide](https://fakerjs.dev/guide/)
 
 ## Related pages
 
 - [Testing](./testing-and-docs.md)
 - [Unit Testing](./unit-testing.md)
-- [E2E — Random Profile](./e2e-random-profile.md)
 - [Live E2E (FE ↔ real backend)](./live-e2e.md)
 - [OpenAPI Workflow](../api/openapi-workflow.md)
 
@@ -205,7 +197,7 @@ That cost is bounded deliberately:
 - Each `module.ts` declares `mockHandlers` behind
   `import.meta.env.VITE_API_MOCK_ENABLED === 'true' ? () => import('./mocks/handlers')… :
   undefined`. Vite replaces the env read with a literal, so a production build drops the branch and
-  everything reachable only through it. **`dist/` contains no MSW, no faker and no handler code** —
+  everything reachable only through it. **`dist/` contains no MSW and no handler code** —
   verified by grepping the built assets, and worth re-checking if that ternary is ever refactored
   into a helper, because passing the loader as an argument would make the chunk reachable again.
 - `vitest.config.ts` excludes `src/modules/*/mocks/**` from coverage: these are test doubles, not

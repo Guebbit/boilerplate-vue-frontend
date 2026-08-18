@@ -23,7 +23,7 @@
 
 import { collectModuleMockSeeds } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
-import { installMockSeedBuilder } from '@mocks/mockShared.ts';
+import { installMockSeedBuilder } from '@mocks/mockDb.ts';
 
 export const mockDatabaseReady = (): Promise<void> =>
-    installMockSeedBuilder(() => collectModuleMockSeeds(enabledModules, 'seed'));
+    installMockSeedBuilder(() => collectModuleMockSeeds(enabledModules));

@@ -1,10 +1,13 @@
 # The full gate, and the only one: lint, openapi + asyncapi lint, format check, the cross-repo
-# contract check, build, Cypress e2e against the fixed mock dataset, and Cypress again against a
-# freshly generated one.
+# contract check, build, and Cypress e2e against the demo dataset.
 #
-# Around ten minutes, and that is accepted deliberately: the alternative is a lighter hook that
-# lets a broken e2e run reach a push, and Cypress is the only layer here that exercises the app as
-# a user meets it. Run it, or run `git commit --no-verify` knowingly — not by default.
+# Several minutes, and that is accepted deliberately: the alternative is a lighter hook that lets a
+# broken e2e run reach a push, and Cypress is the only layer here that exercises the app as a user
+# meets it. Run it, or run `git commit --no-verify` knowingly — not by default.
+#
+# `test:e2e:live` is NOT here, and it is the gate that actually proves behaviour — it needs the
+# paired backend, a Mongo and a Redis, so it runs in CI as a required job instead. A green commit
+# hook is not a claim that this frontend agrees with that backend; the PR is.
 #
 # `check:spec-identity` SKIPS rather than fails when the paired backend is not on disk, so a
 # half-cloned pair can still commit. It stays fatal under CI, where a missing sibling means the
@@ -14,4 +17,16 @@
 # (re-executes the unit suite once per mutant — nightly in CI), and `complete:manual`, which is
 # `test:e2e:visual` (pixel diffs that answer to the machine that took them) plus `test:e2e:live`
 # (needs the paired backend up).
+# Write the generated artefacts first, then verify them. Regenerating here rather than leaving it
+# to whoever remembers is what stops a commit failing the gate with "STALE" for a file no human
+# authors — `contracts/` and `src/types/realtime.generated.ts` are outputs of `openapi.yaml` and
+# `asyncapi.yaml`, so there is never a reason to want them out of date.
+#
+# `git add` is required: a file rewritten after staging is not in the commit, so the gate below
+# would pass against content that is not what gets committed. Note this widens a partial
+# `git add -p` to include the whole regenerated output — which is what you want for a generated
+# file, and a surprise exactly once.
+npm run regenerate
+git add contracts src/types/realtime.generated.ts
+
 npm run complete

@@ -11,7 +11,6 @@ flowchart LR
     Spec --> Generate[Orval\nnpm run gen:api]
     Generate --> Client[contracts/rest/index.ts\ntyped axios functions]
     Generate --> Schemas[contracts/rest/schemas.zod.ts\nZod schemas]
-    Generate --> Mocks[tests/support/mocks/generated.ts\nMSW stubs]
     Client --> Stores[Pinia stores\ncall generated functions]
     Schemas --> Stores
     Mocks --> Handlers[src/modules/<name>/mocks/*\nhand-written logic]

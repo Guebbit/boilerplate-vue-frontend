@@ -197,7 +197,7 @@ surfacing as a blank page on whichever navigation first crosses the gap.
 - `mockHandlers` — a thunk, **and** written in each `module.ts` behind
   `import.meta.env.VITE_API_MOCK_ENABLED === 'true' ? … : undefined`. Vite replaces that read with
   a literal, so a production build drops the branch and everything reachable through it. `dist/`
-  contains no MSW, no faker and no handler code. **Do not refactor that ternary into a helper** —
+  contains no MSW and no handler code. **Do not refactor that ternary into a helper** —
   passing the loader as an argument makes the chunk reachable again and the mock layer ships.
 - `responseSchemas` is eager: the http client needs the table before the first request.
 

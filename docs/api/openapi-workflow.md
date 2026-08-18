@@ -85,7 +85,6 @@ MSW stubs land separately:
 
 ```
 tests/support/mocks/
-└── generated.ts      ← orval-generated MSW handler stubs + faker factories
 ```
 
 ## Importing generated types and functions
@@ -121,7 +120,6 @@ Naming convention: schema name + property name, PascalCase. Example: `UpdateFeed
 | ----- | ------ | ------ |
 | `api` | `./contracts/rest/index.ts` | typed axios functions, routed through `orvalMutator` |
 | `zodSchemas` | `./contracts/rest/schemas.zod.ts` | Zod schema per request/response shape |
-| `mocks` | `./tests/support/mocks/generated.ts` | MSW stubs + faker factories |
 
 Every target listed here must also appear in the `api-freshness` CI job's pathspec, or changes to it go unguarded.
 
@@ -172,13 +170,11 @@ npm run lint:openapi   # lint openapi.yaml with Spectral
 npm run gen:api         # regenerate contracts/rest/ from openapi.yaml
 ```
 
-## MSW stub workflow
+## MSW handlers
 
-Orval generates a stub for every operation into `tests/support/mocks/generated.ts`. Each stub returns random faker data.
+Orval can emit an MSW stub per operation, and `orval.config.ts` deliberately declares no `mocks` block. The stubs are stateless — no cart persistence, no login, no filtering — so they cannot stand in for the mock backend, and nothing here imported them.
 
-**Nothing imports that file.** The mocks that actually run are the hand-written handlers in `src/modules/<name>/mocks/`, assembled in `tests/support/mocks/apiMock.ts`. Treat `generated.ts` as a skeleton to copy from, and as the raw material for the planned random-data test profile — not as live code.
-
-For stateful or auth-aware behavior, copy the stub to `src/modules/<name>/mocks/` and extend it. A handler must also mirror the filtering and role-scoping rules of the backend service behind the endpoint — see [Mocking (MSW)](../tools/mocking.md) for the parity invariants and the full handler workflow.
+The mocks that actually run are the hand-written handlers in `src/modules/<name>/mocks/handlers.ts`, assembled in `tests/support/mocks/apiMock.ts` and populated from the demo dataset the paired backend publishes. Start a new one by copying the nearest existing handler: it already has the envelope, the schema check and the role scoping. Mirror the filtering and role-scoping rules of the backend service behind the endpoint where you reasonably can, and name the file you mirrored — but the mock is not what proves them. See [Mocking (MSW)](../tools/mocking.md) for what MSW does and does not promise, and the full handler workflow.
 
 ## Useful links
 

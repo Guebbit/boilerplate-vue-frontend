@@ -122,6 +122,54 @@ flowchart TD
 | Types | `src/types/` | shared TS types, re-exports from `@api` |
 | MSW mocks | `src/modules/*/mocks/` (per domain), `tests/support/mocks/` (shared helpers) | dev + test HTTP interception |
 
+## Where a component's logic goes
+
+Two questions decide where a component lives and what it may hold, and they are **independent**.
+Reading them as one is the usual source of confusion.
+
+| | Question | Answered by |
+| --- | --- | --- |
+| **Tier** | what may this file *know*? | its folder — enforced by the boundary rules in `eslint.config.ts` |
+| **Purity** | how much may it *do*? | one rule, below — enforced for the API by `@typescript-eslint/no-restricted-imports` on `**/*.vue` |
+
+> **A component wires, it does not compute.** Its own logic is what it renders and what it hands to
+> a click. The call behind that click lives one step away.
+
+"One step away" has exactly three addresses, and the tier picks which:
+
+| Component | Its logic belongs in |
+| --- | --- |
+| `src/modules/<n>/**` | that module's `store.ts` or `composables/` |
+| `src/app/**` (shell, layouts, views) | `src/infrastructure/` — no domain owns it |
+| `src/ui/**` | nowhere: it takes a prop and emits a model. It may not *have* behaviour |
+
+The payoff is not tidiness. A call sitting one step out is testable without mounting anything,
+reusable by a second component, and mockable in one place — `persistLocalePreference` in
+`src/infrastructure/localeApi.ts` is the reference case, four unit tests and no component in sight.
+
+### The corollary that trips people up
+
+**A shell component can be every bit as logic-free as a `src/ui` atom.** It just imports
+app-specific things, so it lives in `src/app`. Location is about knowledge, not about purity — so
+"this should be an atom" is rarely the right fix. Pushing its logic down is.
+
+Which means: reach for `src/ui` only when a **second consumer actually exists**. Until then, a shell
+component with its logic pushed down is already as clean as the split would make it, at one file
+instead of two.
+
+### And when a container legitimately grows
+
+`AppNavigation.vue` is 228 lines and that is fine — all of it is shell assembly (collecting the
+registry, filtering by `canAccess`, the `hasRoute` guards, the theme toggle, drawer state). A
+container is *allowed* to know many things. When one gets genuinely unwieldy the release valve is a
+composable beside it — the shape `useAdminObservability` already has — never props and emits.
+
+`defineEmits`, in this codebase, is for something else entirely: a **domain component crossing a
+module boundary**. `PaymentPanel` and `ShipmentPanel` are the only two files that use it, and there
+the emit *is* the published language — the panel says "a payment happened" and the order page
+decides what that means, neither side learning the other's store. Every component in `src/ui` uses
+`defineProps`/`defineModel` instead.
+
 ## How to read a domain
 
 ```mermaid

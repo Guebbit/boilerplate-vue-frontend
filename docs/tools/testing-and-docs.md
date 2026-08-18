@@ -8,15 +8,13 @@ This page is the map. Each layer has its own detail page — code, tools, patter
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 60}}}%%
 flowchart TB
     Unit["Unit\nVitest + @vue/test-utils\ncomponents · stores · plugins"]
-    Mock["E2E — Mock Profile\nCypress + MSW, fixed seed\nexact values"]
-    Random["E2E — Random Profile\nCypress + MSW, faker-seeded\ninvariants only"]
-    Live["E2E — Live\nCypress + real backend\nrun by hand"]
+    Mock["E2E — Mock Profile\nCypress + MSW, the demo dataset\nexact values"]
+    Live["E2E — Live\nCypress + real backend\nrequired CI job"]
     A11y["Accessibility\ncypress-axe\nis it usable?"]
     Visual["Visual Regression\nCypress + pixelmatch\ndoes it still look right?"]
     Mutation["Mutation\nStryker\nchecks the checkers"]
 
     Unit --> Mock
-    Mock --> Random
     Mock --> Live
     Mock --> A11y
     Mock --> Visual
@@ -27,7 +25,7 @@ flowchart TB
     classDef live fill:#fef3c7,stroke:#d97706,color:#111827;
     classDef meta fill:#dcfce7,stroke:#16a34a,color:#111827;
     class Unit fast;
-    class Mock,Random e2e;
+    class Mock e2e;
     class A11y,Visual e2e;
     class Live live;
     class Mutation meta;
@@ -40,73 +38,88 @@ flowchart TB
 | Property | Does the rule hold for *every* input, not just the ones someone thought of? | fast-check | `npm run test:unit` (same suite) | [Property Testing](./property-testing.md) |
 | Accessibility | Are there mechanical a11y failures on the routes a user reaches? | cypress-axe | `npm run test:e2e` (same suite) | [Accessibility Testing](./accessibility-testing.md) |
 | Visual Regression | Does the page still **look** the way it did? | Cypress + pixelmatch | `npm run test:e2e:visual` | [Visual Regression](./visual-regression.md) |
-| E2E — Mock Profile | Does the app behave correctly against **known** data? | Cypress + MSW, fixed seed | `npm run test:e2e` | [Mocking (MSW)](./mocking.md) |
-| E2E — Random Profile | Does the app survive **any** contract-valid data? | Cypress + MSW, faker-seeded | `npm run test:e2e:random` | [E2E — Random Profile](./e2e-random-profile.md) |
-| E2E — Live | Does the frontend agree with the **actual** backend? | Cypress + real API, hand-run | `npm run test:e2e:live` | [Live E2E](./live-e2e.md) |
+| E2E — Mock Profile | Does the app behave correctly against **known** data? | Cypress + MSW, the demo dataset | `npm run test:e2e` | [Mocking (MSW)](./mocking.md) |
+| E2E — Live | Does the frontend agree with the **actual** backend? | Cypress + real API | `npm run test:e2e:live` (required in CI) | [Live E2E](./live-e2e.md) |
 | Mutation | Do the tests **notice** when the source is wrong? | Stryker + vitest-runner | `npm run test:mutation` | [Mutation Testing](./mutation-testing.md) |
 
 None of the four testing layers replaces another — each closes a gap the others structurally cannot:
 
 - **Unit** is fast and isolated, but a component that's individually correct can still be wired up wrong, or agree with a mock that's drifted from reality.
-- **Mock profile** proves the app agrees with its own MSW handlers — deterministic, so it can assert exact counts and values — but it cannot prove those handlers agree with the real API.
-- **Random profile** proves the app doesn't fall over on data the fixed seed can't produce by construction (an empty optional field, an unusual role split) — but by design it can't assert exact values, so it can't replace the mock profile either.
-- **Live** is the only layer that checks the mocks against reality, but it needs a hand-booted paired backend, so it can't run on every commit the way the others do.
+- **Mock profile** proves the app agrees with its own MSW handlers — deterministic, so it can assert exact counts and values — but it cannot prove those handlers agree with the real API, and it is not asked to. MSW is a convenience, not a contract; see [Mocking](./mocking.md). The awkward shapes it needs (a soft-deleted product, an inactive one, one whose optional fields are all at their schema defaults) are records in the demo dataset rather than generated: a named record can be asserted on, and it is a shape the real API actually answers with.
+- **Live** is the only layer that checks the mocks against reality, and it is the one whose verdict counts. It needs both repos plus a Mongo and a Redis, so it is minutes rather than seconds — it still gates every PR, after the fast layers have had their say.
 - **Mutation** doesn't test the app at all — it tests the *tests*, and only for the layer it's pointed at (unit).
+
+## Reading a run
+
+Every layer above answers "did it break". None of them answers **which module owns the break**, or **where the four minutes went** — the suites are organised by layer and the codebase is organised by module, so a raw log can never bridge the two.
+
+`npm run test:report` does. It reads the JSON a run writes (`npm run test:unit:report`) and rolls it up:
+
+```
+[test-report] 1094 tests in 72 suites — 1094 passed, 0 failed (8.6s of suite time)
+
+  module           suites  tests  failed     time
+  account               4     47       0     0.2s
+  products              4     34       0     0.1s
+  (infrastructure)     30    771       0     6.1s
+
+  slowest suites / slowest tests / line coverage per module / failures named by module
+```
+
+JSON rather than JUnit, and the choice is not incidental: Vitest emits both, Jest emits only JSON without a dependency, and JSON carries strictly more — per-assertion durations, ancestor titles, full failure messages. So the artefact is JSON and `scripts/testReport.ts` is the reader, **byte-identical in both repos** because Vitest's `json` reporter emits the shape Jest's `--json` does. `check:spec-identity` keeps the two copies honest.
+
+If PR-line annotations are ever wanted, that is the moment to add a JUnit reporter *alongside* this one, not to replace it.
+
+A failing e2e shard additionally writes its whole Cypress output to `reports/e2e/shard-<n>.log`. That exists because stderr is the one copy that can be lost — piped through `tail`, truncated by a log limit — and when it is lost the failure is undiagnosable. It has already earned its keep.
 
 ## Where test data comes from
 
-Seven things across the two repos can hand you an entity, and it is reasonable to wonder whether that is six too many. It is not: each answers a question the others cannot, and the one genuine duplicate — the demo dataset, which used to be written out by hand on both sides and kept in step by a comment — has been merged into a single shared file.
+Four things across the two repos can hand you an entity, and each answers a question the others cannot.
 
 | Source | Repo | What it is for |
 | --- | --- | --- |
-| `tests/support/mocks/seed-identities.ts` | both (byte-identical) | **The demo dataset's facts.** Ids, emails, admin flags, titles, prices, who has what in their cart and their orders. The one dataset a human sees when they open either app. **Authored in the backend**, where each domain owns its own records, and copied here whole; dependency-free so both toolchains can load it. `npm run check:spec-identity` compares the two copies and the `spec-identity` CI job gates on it |
-| `tests/support/mocks/mockProfiles.ts` | FE | **Maps those facts into API response entities** — string ids, no password, timestamps stamped at build time. Also holds the fixed observability payloads behind the admin dashboard |
-| `db/seeds/fixtures.ts` | BE | **Maps the same facts into mongoose documents** — `ObjectId`s, real `Date`s, the embedded cart, the denormalised product snapshot each order item carries. The mirror of `mockProfiles.ts`, and the reason the shared file holds facts rather than whole records: the two sides need different shapes from the same truth |
-| `tests/support/mocks/mockProfilesRandom.ts` | FE | **A whole random dataset**, faker-seeded and reproducible, for the question "does the app survive *any* contract-valid data". Pins the two login identities and force-patches the role-scoping branches, so randomisation cannot quietly stop testing them |
-| `tests/support/mocks/generated.ts` | FE | **Orval output** — one faker factory per operation, regenerated by `npm run gen:api`, never edited. Raw material for the random profile above, not consumed directly by handlers |
+| `db/demo/demo-data.json` | both (byte-identical) | **The demo dataset, as the API answers it.** Every seeded row, serialized — ids, emails, admin flags, titles, prices, who has what in their cart and their orders, and the schema defaults each record actually ended up with. The one dataset a human sees when they open either app. **Produced in the backend** by `npm run seed:export`, which seeds a throwaway database with the real seeders and reads it back through the real serializers, then copied here as `tests/support/mocks/demo-data.json`. `npm run check:spec-identity` compares the two copies and the `spec-identity` CI job gates on it |
+| `src/modules/<name>/demo.ts` | BE | **The records themselves**, per module, before the schema and serializer have had their say. The file you edit to change what the demo data IS |
 | `tests/helpers/factories/*.ts` | BE | **Arbitrary throwaway entities** — "give me *a* product, I do not care which, and let me override one field". The opposite need to a fixed demo dataset, and used by 25 test files there. This repo has no equivalent yet; see the note below |
 | `tests/helpers/contract-data.ts` | BE | **Payloads derived from the zod schemas**, valid and — uniquely — invalid, each violating exactly one declared constraint. The only source that can produce something the API is supposed to *reject* |
 
-Reading it as a shape: **one** hand-maintained dataset, **two** mappers over it (one per runtime), and **four** generators that exist because "the demo data" and "some data" and "deliberately illegal data" are three different questions.
+Reading it as a shape: **one** dataset, authored once and published as the API's own output, plus **two** generators that exist because "the demo data" and "some data" and "deliberately illegal data" are three different questions.
+
+There is no mapper on either side, and that is the property worth protecting. The two repos used to share a file of plain FACTS and map it separately, and the two mappers drifted silently: this one invented `active: true` to mirror a backend default nobody had checked, and carried no `locale` at all. Publishing the API's output instead of the inputs killed that class of bug — there is only one mapper now, and it is the API's.
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 55}}}%%
 flowchart TB
-    subgraph one["One dataset, two shapes"]
+    subgraph one["One dataset, published not mapped"]
         direction TB
-        Seed["seed-identities.ts<br/>assembled in the backend from<br/>per-module fragments, copied here"]
-        Seed --> FEMap["mockProfiles.ts<br/>→ API response entities"]
-        Seed --> BEMap["BE db/seeds/fixtures.ts<br/>→ mongoose documents"]
+        Records["BE src/modules/*/demo.ts<br/>the records, per module"]
+        Records --> Export["seed:export<br/>real seeders + real serializers"]
+        Export --> Dataset["demo-data.json<br/>byte-identical in both repos"]
     end
 
-    subgraph four["Four generators, four questions"]
+    subgraph two["Two generators, two questions"]
         direction TB
-        Random["mockProfilesRandom.ts<br/><i>give me a whole random world</i>"]
-        Generated["tests/support/mocks/generated.ts<br/><i>orval output, never edited</i>"]
         Factories["BE tests/helpers/factories/*<br/><i>give me A product</i>"]
         ContractData["BE tests/helpers/contract-data.ts<br/><i>give me an ILLEGAL one</i>"]
     end
 
-    Generated -.raw material.-> Random
-
     classDef source fill:#fef3c7,stroke:#d97706,color:#111827;
     classDef mapper fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef gen fill:#dcfce7,stroke:#16a34a,color:#111827;
-    class Seed source;
-    class FEMap,BEMap mapper;
-    class Random,Generated,Factories,ContractData gen;
+    class Records source;
+    class Export,Dataset mapper;
+    class Factories,ContractData gen;
 ```
 
-### The four questions, and why none absorbs another
+### The three questions, and why none absorbs another
 
-- **"Give me *the* demo data."** → `seed-identities.ts`, changed in the backend module that owns the records and copied back here. Fixed, shared, and the one a human sees on screen. `cy.loginAs('user')` types these credentials into a real form, so it cannot be randomised or generated.
-- **"Give me a whole world I have never seen."** → `mockProfilesRandom.ts`. Seeded and reproducible, for "does the app survive *any* contract-valid data" rather than "is this value right". See [E2E — Random Profile](./e2e-random-profile.md).
+- **"Give me *the* demo data."** → `demo-data.json`, changed through the `demo.ts` of the backend module that owns the records and republished with `npm run seed:export`. Fixed, shared, and the one a human sees on screen. `cy.loginAs('user')` types these credentials into a real form, so it cannot be randomised or generated. A shape the demo data cannot currently produce is a record to ADD, not a generator to introduce.
 - **"Give me *a* product, I do not care which."** → the backend's `factories/*`. The opposite need: fresh, isolated, overridable per test, and never the demo data — 25 test files there would interfere with each other if they shared rows.
 - **"Give me one the API must *reject*."** → the backend's `contract-data.ts`. Derived from the zod schemas so each payload violates exactly one declared constraint. Nothing else can produce something deliberately illegal, which is the difference between a contract test and a fixture.
 
 Merging any two would mean one of those questions stops being asked. The merge that *was* worth doing — the demo dataset, previously written out by hand on both sides — is the one already done.
 
-**The one gap:** this repo has no counterpart to the backend's `factories/`, so "give me a product" is hand-rolled wherever it is needed — `tests/unit/mocks/mockHandlerParity.spec.ts` and `tests/unit/modules/products/store.spec.ts` each carry their own literal. Two literals are not yet a pattern; worth folding into a shared builder when a third call site appears.
+**The one gap:** this repo has no counterpart to the backend's `factories/`, so "give me a product" is hand-rolled wherever it is needed — `tests/unit/modules/products/store.spec.ts` carries its own literal. One literal is not yet a pattern; worth folding into a shared builder when a second call site appears.
 
 ## What each layer can and cannot catch
 
@@ -122,10 +135,10 @@ Worth being explicit, because the boundary has bitten this project before.
 | A test that asserts nothing | [Mutation Testing](./mutation-testing.md) |
 | Wrong response **shape** from a mock | `assertMockContract` in every handler, generated **strict** — see [Mocking](./mocking.md) |
 | Generated client out of step with `openapi.yaml` | the `api-freshness` CI job |
-| App breaks on unusual but valid data (missing optional field, an unusual role split) | [E2E — Random Profile](./e2e-random-profile.md) |
-| Mock **behaviour** disagreeing with the real backend, or a live contract violation | [Live E2E](./live-e2e.md) — response validation + `parity.cy.ts` |
+| App breaks on unusual but valid data (a record with every optional field at its default, an unusual role split) | add the record to the demo dataset — [Mocking (MSW)](./mocking.md) |
+| Mock **behaviour** disagreeing with the real backend, or a live contract violation | [Live E2E](./live-e2e.md) — the `test-e2e-live` CI gate, response validation + `parity.cy.ts` |
 
-The last row used to read "nothing yet". The mock-profile suite proves the frontend agrees with its own mocks; on its own it cannot prove the mocks agree with the backend — that gap is now closed structurally by the live profile rather than by review alone, though it still only runs when someone runs it by hand (see [Live E2E](./live-e2e.md) for why it isn't in CI). A mock handler must still name the backend service it mirrors — see the parity invariants in [Mocking](./mocking.md).
+The mock-profile suite proves the frontend agrees with its own mocks; on its own it cannot prove the mocks agree with the backend. That gap is closed by the live profile, which is a required CI job — so the answer to "does this frontend agree with that backend" is now given by running both, on every PR, rather than by a reviewer checking a handler against a service. See [Mocking](./mocking.md) for what MSW still promises.
 
 ## Test timings
 
@@ -137,7 +150,6 @@ promise.
 | ------- | ---- | ------------ |
 | `npm run test:unit` | **~8s** | 70 files, 1043 tests, jsdom |
 | `npm run test:e2e` | **~3m30s** | 17 specs, 136 tests, sharded across `E2E_SHARDS` Cypress processes |
-| `npm run test:e2e:random` | ~1m30s | one spec against a freshly generated dataset |
 | `npm run complete` | **~5m** | the gate: lint + both spec lints + format + contract identity + build + all of the above |
 | `npm run test:mutation` | ~9m | 2182 mutants, incremental; nightly in CI |
 | `npm run test:e2e:visual` | ~1m | pixel diffs — `complete:manual`, not the gate |
@@ -177,7 +189,7 @@ Two further limits:
 | [jsdom](https://github.com/jsdom/jsdom) | DOM environment for unit tests |
 | [Cypress](https://www.cypress.io/) | Browser-based end-to-end tests, all three profiles |
 | [start-server-and-test](https://github.com/bahmutov/start-server-and-test) | Boots Vite + waits before running Cypress |
-| [MSW](https://mswjs.io/) | Intercepts HTTP in Cypress so the mock and random profiles are deterministic (see [Mocking](./mocking.md)) |
+| [MSW](https://mswjs.io/) | Intercepts HTTP in Cypress so the mock profile is deterministic (see [Mocking](./mocking.md)) |
 | [Stryker](https://stryker-mutator.io/) | Mutation testing — see [Mutation Testing](./mutation-testing.md) |
 | [ESLint](https://eslint.org/) + plugins | Code consistency and correctness checks |
 | [Prettier](https://prettier.io/) | Predictable formatting |
@@ -202,15 +214,15 @@ flowchart LR
     class Review finish;
 ```
 
-`npm run test` runs `test:unit` then `test:e2e` (the mock profile only) — the two layers fast and deterministic enough to gate a PR. The random and live profiles, and mutation testing, are run separately and by hand or on a schedule; see each one's own page for why.
+`npm run test` runs `test:unit` then `test:e2e` — the two layers fast and deterministic enough to gate a PR. The live profile and mutation testing are run separately, by hand or on a schedule; see each one's own page for why.
 
 ## Test conventions
 
 - Target **behavior**, not implementation — prefer component contracts (props/emits/slots) over snapshots.
 - Use **generated Zod schemas** from `@api/schemas` for mock response validation in unit tests.
 - By default, e2e tests run with `VITE_API_MOCK_ENABLED=true` and never hit a real backend. `npm run test:e2e:live` is the deliberate, hand-run exception — see [Live E2E](./live-e2e.md).
-- Specs start **logged out**: `cy.resetState()` clears the session (mock/random profiles) or reseeds the real database (live profile). Call `cy.loginAs('admin')` when a spec needs elevated visibility.
-- **An assertion on a count is an assertion about a role.** Non-admins see 3 of the 5 seeded products (one is soft-deleted, one inactive). If you change an expected count, confirm you are still describing what the backend would return — this only holds under the fixed seed; the random profile deliberately never asserts counts, see [E2E — Random Profile](./e2e-random-profile.md).
+- Specs start **logged out**: `cy.resetState()` clears the session (mock profile) or reseeds the real database (live profile). Call `cy.loginAs('admin')` when a spec needs elevated visibility.
+- **An assertion on a count is an assertion about a role.** Non-admins see 4 of the 6 seeded products (one is soft-deleted, one inactive). If you change an expected count, confirm you are still describing what the backend would return.
 
 ## Documentation rule of thumb
 
@@ -230,11 +242,15 @@ flowchart LR
 
 Worth naming explicitly, because it decides where a suite runs and how a failure is read.
 
-A **gate** answers a yes/no question fast enough to block a merge. Unit, component, property, the mock e2e profile and the a11y pass are gates: they run on every push, and a failure means "do not merge this".
+A **gate** answers a yes/no question definitively enough to block a merge. Unit, component, property, the mock e2e profile, the a11y pass and the **live e2e profile** are gates: a failure means "do not merge this".
 
-A **hunter** goes looking for problems nobody asked about. Mutation, the random e2e profile and the live e2e profile are hunters: slower, nightly, and a failure is usually a **finding to read** rather than a merge to stop. A hunter wired as a gate gets switched off the first week it is inconvenient — which is why each lives in its own workflow file, where it cannot become a PR gate by accident.
+A **hunter** goes looking for problems nobody asked about. Mutation testing is the hunter: slower, nightly, and a failure is usually a **finding to read** rather than a merge to stop. A hunter wired as a gate gets switched off the first week it is inconvenient — which is why it lives in its own workflow file, where it cannot become a PR gate by accident.
 
-The corollary: a green pull request is not a claim the hunters agree. That is what the nightlies are for.
+Note that "gate" is about the strength of the answer, not its speed. The live profile is minutes rather than seconds and gates anyway, because it is the only layer that can answer "does this frontend agree with that backend" — and a question that important, answered only nightly, is answered too late. It still runs *after* the fast gates, so an ordinary regression is caught in seconds and never reaches it.
+
+The live profile keeps a nightly schedule as well, and that run is a hunter: it asks whether `main` still agrees with the backend's default branch, which no PR run can, because the backend moves on its own.
+
+The corollary: a green pull request is a claim that this frontend and that backend agreed at that moment. It is not a claim that the mutation run is happy.
 
 ## Deliberately not done
 
@@ -288,7 +304,6 @@ revisiting if mutation ever moves from nightly onto pull requests.
 
 - [Unit Testing](./unit-testing.md)
 - [Mocking (MSW)](./mocking.md)
-- [E2E — Random Profile](./e2e-random-profile.md)
 - [Live E2E (FE ↔ real backend)](./live-e2e.md)
 - [Component Testing](./component-testing.md) — resources, boundaries, and why not to select on vendor classes
 - [Property Testing](./property-testing.md) — generation over enumeration

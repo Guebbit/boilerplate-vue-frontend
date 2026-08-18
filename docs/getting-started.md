@@ -20,7 +20,7 @@ flowchart TD
 
     M --> M1["No backend needed"]
     M --> M2["Data resets on reload"]
-    M --> M3["Fixtures come from each module's mocks/seeds.ts"]
+    M --> M3["Fixtures come from each module's mocks/register.ts"]
 
     R --> R1["Backend stack must be up"]
     R --> R2["Backend CORS must allow this origin"]

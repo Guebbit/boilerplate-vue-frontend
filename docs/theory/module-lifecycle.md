@@ -69,7 +69,7 @@ src/modules/<name>/
     responseSchemas.ts         the envelope schemas for the endpoints it calls
     locales/{en,it}.json       its dictionaries
     mocks/handlers.ts          MSW handlers
-    mocks/seeds.ts             the data those handlers answer with
+    mocks/register.ts             the data those handlers answer with
     tests/*.spec.ts            unit specs — co-located, deleted with the module
     tests/e2e/*.cy.ts          Cypress specs for THIS domain only — likewise
 ```
@@ -147,7 +147,7 @@ still remember why you drew the boundary.
 `mockHandlers` and `mockSeeds` are written inline behind
 `import.meta.env.VITE_API_MOCK_ENABLED === 'true' ? … : undefined`. Vite replaces that read with a
 literal, so a production build drops the branch and everything reachable through it — `dist/`
-contains no MSW, no faker and no handler code. Passing the loader to a helper makes the chunk
+contains no MSW and no handler code. Passing the loader to a helper makes the chunk
 reachable again and the entire mock layer ships to production.
 :::
 
