@@ -37,9 +37,9 @@ Two modules that each need the other are not a dependency pair: either they are 
 of them is holding state that belongs to the other. `dependsOn` is validated as a DAG while the
 router is assembled, and a cycle throws with the path named.
 
-The thirteen modules in this build are `account`, `admin`, `cart`, `delivery`, `demo`, `feedback`,
-`inventory`, `orders`, `payments`, `products`, `realtime`, `users` and `wishlist`. Six declare an
-edge; the other seven are leaves.
+The fourteen modules in this build are `account`, `admin`, `cart`, `delivery`, `demo`, `feedback`,
+`inventory`, `locales`, `orders`, `payments`, `products`, `realtime`, `users` and `wishlist`. Six
+declare an edge; the other eight are leaves.
 
 `demo` is the odd one: it serves no business at all. It holds the Playground page, the counter
 store and the teaching route guard — everything that exists to demonstrate the boilerplate rather
@@ -62,6 +62,7 @@ flowchart LR
 
     admin:::leaf
     feedback:::leaf
+    locales:::leaf
     realtime:::leaf
 
     classDef leaf fill:#f1f5f9,stroke:#94a3b8,color:#111827;
@@ -202,7 +203,8 @@ flowchart LR
 For a product flow you typically move through:
 
 - `src/modules/products/views/ProductsList.vue`
-- `src/modules/products/composables/useProductsList.ts` (if it exists)
+- `src/modules/products/composables/useProductsList.ts` (optional — products has none today;
+  `src/modules/admin/composables/useAdminObservability.ts` is a real one)
 - `src/modules/products/store.ts`
 - `contracts/rest/index.ts` → `getProducts()`
 - `src/infrastructure/http/index.ts`

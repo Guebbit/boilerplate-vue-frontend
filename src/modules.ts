@@ -17,6 +17,7 @@ import delivery from '@/modules/delivery/module';
 import demo from '@/modules/demo/module';
 import feedback from '@/modules/feedback/module';
 import inventory from '@/modules/inventory/module';
+import locales from '@/modules/locales/module';
 import orders from '@/modules/orders/module';
 import payments from '@/modules/payments/module';
 import products from '@/modules/products/module';
@@ -32,6 +33,7 @@ export const enabledModules: AppModule[] = [
     demo,
     feedback,
     inventory,
+    locales,
     orders,
     payments,
     products,

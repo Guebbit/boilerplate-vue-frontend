@@ -58,6 +58,7 @@ const LOCALE_OVERRIDES: Record<string, Record<string, unknown>> = {
 const LOCALE_CAPABILITIES = [
     {
         tag: 'en',
+        active: true,
         name: 'English',
         nativeName: 'English',
         direction: 'ltr',
@@ -69,6 +70,7 @@ const LOCALE_CAPABILITIES = [
     },
     {
         tag: 'it',
+        active: true,
         name: 'Italian',
         nativeName: 'Italiano',
         direction: 'ltr',
@@ -79,6 +81,7 @@ const LOCALE_CAPABILITIES = [
     },
     {
         tag: 'es',
+        active: true,
         name: 'Spanish',
         nativeName: 'Español',
         direction: 'ltr',
@@ -89,6 +92,12 @@ const LOCALE_CAPABILITIES = [
     }
 ];
 
+/*
+ * SHADOWED while the `locales` module is enabled: `apiMock.ts` registers module handlers first
+ * and MSW takes the first match, so `src/modules/locales/mocks/handlers.ts` — which serves the
+ * same fixture out of the writable database — answers both reads instead. These static handlers
+ * are the floor that keeps the language switcher working after `rm -rf src/modules/locales`.
+ */
 export const registerLocalesMockHandlers = (): HttpHandler[] => [
     http.get(`${API_BASE}/locales`, () =>
         toMockJsonResponse(
