@@ -10,18 +10,18 @@
 /** Fills the address dialog's six required inputs and saves. */
 const fillAddress = (label: string, street: string) => {
     cy.get('[data-test=address-dialog]').within(() => {
-        cy.get('input').eq(0).clear();
-        cy.get('input').eq(0).type(label);
-        cy.get('input').eq(1).clear();
-        cy.get('input').eq(1).type('Ada Lovelace');
-        cy.get('input').eq(2).clear();
-        cy.get('input').eq(2).type(street);
-        cy.get('input').eq(3).clear();
-        cy.get('input').eq(3).type('41121');
-        cy.get('input').eq(4).clear();
-        cy.get('input').eq(4).type('Modena');
-        cy.get('input').eq(5).clear();
-        cy.get('input').eq(5).type('IT');
+        cy.get('input').eq(0).should('not.be.disabled').clear();
+        cy.get('input').eq(0).should('not.be.disabled').type(label);
+        cy.get('input').eq(1).should('not.be.disabled').clear();
+        cy.get('input').eq(1).should('not.be.disabled').type('Ada Lovelace');
+        cy.get('input').eq(2).should('not.be.disabled').clear();
+        cy.get('input').eq(2).should('not.be.disabled').type(street);
+        cy.get('input').eq(3).should('not.be.disabled').clear();
+        cy.get('input').eq(3).should('not.be.disabled').type('41121');
+        cy.get('input').eq(4).should('not.be.disabled').clear();
+        cy.get('input').eq(4).should('not.be.disabled').type('Modena');
+        cy.get('input').eq(5).should('not.be.disabled').clear();
+        cy.get('input').eq(5).should('not.be.disabled').type('IT');
     });
     cy.get('[data-test=address-save]').click();
 };
@@ -66,9 +66,13 @@ describe('Profile self-service', () => {
     describe('password change', () => {
         it('changes the password through the current-password flow', () => {
             cy.get('[data-test=toggle-change-password]').click();
-            cy.get('[data-test=current-password] input').type('password'); // gino's real one
-            cy.get('[data-test=new-password] input').type('brand-new-secret');
-            cy.get('[data-test=new-password-confirm] input').type('brand-new-secret');
+            cy.get('[data-test=current-password] input').should('not.be.disabled').type('password'); // gino's real one
+            cy.get('[data-test=new-password] input')
+                .should('not.be.disabled')
+                .type('brand-new-secret');
+            cy.get('[data-test=new-password-confirm] input')
+                .should('not.be.disabled')
+                .type('brand-new-secret');
             cy.get('[data-test=submit-password-change]').click();
 
             cy.contains('Password changed').should('exist');
@@ -76,9 +80,15 @@ describe('Profile self-service', () => {
 
         it('surfaces a wrong current password as an error, not a logout', () => {
             cy.get('[data-test=toggle-change-password]').click();
-            cy.get('[data-test=current-password] input').type('wrong-password');
-            cy.get('[data-test=new-password] input').type('brand-new-secret');
-            cy.get('[data-test=new-password-confirm] input').type('brand-new-secret');
+            cy.get('[data-test=current-password] input')
+                .should('not.be.disabled')
+                .type('wrong-password');
+            cy.get('[data-test=new-password] input')
+                .should('not.be.disabled')
+                .type('brand-new-secret');
+            cy.get('[data-test=new-password-confirm] input')
+                .should('not.be.disabled')
+                .type('brand-new-secret');
             cy.get('[data-test=submit-password-change]').click();
 
             // The toast shows the envelope's status message (the app's convention for API
@@ -150,8 +160,10 @@ describe('Profile self-service', () => {
         it('an email change unverifies the account and the banner appears', () => {
             // Wait for hydration the way a person does: type only once the record shows.
             cy.get('#profile-page [type=email]').should('have.value', 'gino@pino.it');
-            cy.get('#profile-page [type=email]').clear();
-            cy.get('#profile-page [type=email]').type('fresh-address@example.com');
+            cy.get('#profile-page [type=email]').should('not.be.disabled').clear();
+            cy.get('#profile-page [type=email]')
+                .should('not.be.disabled')
+                .type('fresh-address@example.com');
             cy.get('#profile-page form button[type=submit]').first().click();
 
             cy.get('[data-test=verify-banner]').should('exist');
@@ -164,8 +176,10 @@ describe('Profile self-service', () => {
 
             // Unverify first, through the same email change a real user would make.
             cy.get('#profile-page [type=email]').should('have.value', 'gino@pino.it');
-            cy.get('#profile-page [type=email]').clear();
-            cy.get('#profile-page [type=email]').type('fresh-address@example.com');
+            cy.get('#profile-page [type=email]').should('not.be.disabled').clear();
+            cy.get('#profile-page [type=email]')
+                .should('not.be.disabled')
+                .type('fresh-address@example.com');
             cy.get('#profile-page form button[type=submit]').first().click();
             cy.get('[data-test=verify-banner]').should('exist');
 

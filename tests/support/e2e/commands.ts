@@ -264,6 +264,31 @@ Cypress.Commands.overwrite('visit', (originalFunction: any, url: any, options: a
     });
 });
 
+/*
+ * ── WHY EVERY `.type()` AND `.clear()` IN THE SPECS IS PRECEDED BY `.should('not.be.disabled')` ──
+ *
+ * `cy.get()` retries until an element EXISTS. `.type()` and `.clear()` do not retry: they run the
+ * moment the selector resolves, and both fail outright against a disabled field rather than waiting
+ * for it. A form rendered in its loading state is therefore a valid `cy.get()` target and an invalid
+ * one to type into — so the spec fails with "targeted a disabled element" on a slow machine and
+ * passes on a fast one.
+ *
+ * `.should()` DOES retry, so asserting the field is enabled converts that race into a wait. This is
+ * Cypress' documented "assert, then act": Playwright waits for actionability on its own, Cypress
+ * checks visibility and occlusion but treats `disabled` as an immediate error, so the wait has to be
+ * written down.
+ *
+ * `cy.visit` is overwritten below to wait for `_appReady`, which covers BOOTSTRAP — MSW running, Vue
+ * mounted, `router.isReady()` resolved (`src/main.ts`). It cannot cover a view's own async state, so
+ * a field can still be disabled after the app is ready. That gap is what these assertions close.
+ *
+ * Applied to every call rather than only where a failure was seen, so that no reader has to work out
+ * why one line is guarded and its neighbour is not — and so the next spec is written by copying one
+ * that already is. Overwriting `type` globally to do this is NOT an option: `cy.clear()` is
+ * implemented by invoking `type`, so a Cypress command called from inside that overwrite errors with
+ * "you returned a promise from a command while also invoking one or more cy commands".
+ */
+
 // A regular `function`, not an arrow, so `this` is Mocha's test context and `this.skip()` works.
 Cypress.Commands.add('skipUnlessLive', function skipUnlessLive(this: Mocha.Context) {
     return cy.env(['apiMockEnabled']).then(({ apiMockEnabled }) => {

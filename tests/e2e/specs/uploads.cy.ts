@@ -150,8 +150,11 @@ describe('Image upload', () => {
         });
 
         it('saves ordinary field edits without an image, as before', () => {
-            cy.get('#product-edit-page input[type=text]').first().clear();
-            cy.get('#product-edit-page input[type=text]').first().type('Renamed product');
+            cy.get('#product-edit-page input[type=text]').first().should('not.be.disabled').clear();
+            cy.get('#product-edit-page input[type=text]')
+                .first()
+                .should('not.be.disabled')
+                .type('Renamed product');
             cy.get('form').submit();
 
             cy.contains('Product updated successfully').should('exist');
@@ -179,7 +182,10 @@ describe('Image upload', () => {
         });
 
         it('creates a product with an image and opens its detail page', () => {
-            cy.get('#product-create-page input[type=text]').first().type('Uploaded product');
+            cy.get('#product-create-page input[type=text]')
+                .first()
+                .should('not.be.disabled')
+                .type('Uploaded product');
             selectSampleImage();
             cy.get('form').submit();
 
@@ -189,7 +195,10 @@ describe('Image upload', () => {
         });
 
         it('creates a product without an image, taking the JSON branch', () => {
-            cy.get('#product-create-page input[type=text]').first().type('Plain product');
+            cy.get('#product-create-page input[type=text]')
+                .first()
+                .should('not.be.disabled')
+                .type('Plain product');
             cy.get('form').submit();
 
             cy.contains('Product created successfully').should('exist');
@@ -214,9 +223,12 @@ describe('Image upload', () => {
             cy.loginAs('admin');
             cy.visit('/en/users/create');
 
-            cy.get('input[type=email]').type('uploader@example.com');
-            cy.get('#user-create-page input[type=text]').first().type('uploader');
-            cy.get('input[type=password]').type('Hunter2hunter2!');
+            cy.get('input[type=email]').should('not.be.disabled').type('uploader@example.com');
+            cy.get('#user-create-page input[type=text]')
+                .first()
+                .should('not.be.disabled')
+                .type('uploader');
+            cy.get('input[type=password]').should('not.be.disabled').type('Hunter2hunter2!');
             selectSampleImage();
             cy.get('form').submit();
 
@@ -233,9 +245,12 @@ describe('Image upload', () => {
         it('registers an account with a profile image', () => {
             cy.visit('/en/signup');
 
-            cy.get('input[type=email]').type('newcomer@example.com');
-            cy.get('input[type=password]').first().type('Hunter2hunter2!');
-            cy.get('input[type=password]').eq(1).type('Hunter2hunter2!');
+            cy.get('input[type=email]').should('not.be.disabled').type('newcomer@example.com');
+            cy.get('input[type=password]')
+                .first()
+                .should('not.be.disabled')
+                .type('Hunter2hunter2!');
+            cy.get('input[type=password]').eq(1).should('not.be.disabled').type('Hunter2hunter2!');
             selectSampleImage();
             cy.get('input[type=checkbox]').first().check({ force: true });
             cy.get('form').submit();

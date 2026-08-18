@@ -47,6 +47,10 @@ export const GetHealthResponse = zod.strictObject({
  *
  * Public, unauthenticated and cacheable. A client that has just failed to reach the
  * API is exactly who needs it.
+ *
+ * An ADMIN gets the same manifest plus the rows a visitor is not offered: inactive
+ * languages, each carrying `active: false`. The flag gates selection by visitors and
+ * nothing else — the same rule products and users follow.
  * @summary Supported languages
  */
 export const getLocalesResponseDataLocalesItemTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
@@ -81,6 +85,7 @@ export const GetLocalesResponse = zod.strictObject({
                                 .describe(
                                     'Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.'
                                 ),
+                            active: zod.boolean(),
                             scopes: zod
                                 .array(
                                     zod

@@ -41,15 +41,19 @@ describe('Commerce', () => {
 
         // ── Pay: the magic decline first, then a card that works ────────────────────
         cy.get('[data-test=payment-panel]').should('exist');
-        cy.get('[data-test=payment-card-input] input').clear();
-        cy.get('[data-test=payment-card-input] input').type('4000 0000 0000 0002');
+        cy.get('[data-test=payment-card-input] input').should('not.be.disabled').clear();
+        cy.get('[data-test=payment-card-input] input')
+            .should('not.be.disabled')
+            .type('4000 0000 0000 0002');
         cy.get('[data-test=payment-submit]').click();
         // Refused and retryable: the form is still there, the order still pending.
         cy.get('[data-test=payment-submit]').should('exist');
         cy.get('[data-test=order-cancel]').should('exist');
 
-        cy.get('[data-test=payment-card-input] input').clear();
-        cy.get('[data-test=payment-card-input] input').type('4242 4242 4242 4242');
+        cy.get('[data-test=payment-card-input] input').should('not.be.disabled').clear();
+        cy.get('[data-test=payment-card-input] input')
+            .should('not.be.disabled')
+            .type('4242 4242 4242 4242');
         cy.get('[data-test=payment-submit]').click();
         cy.contains('Payment received').should('exist');
         cy.get('[data-test=payment-status]').should('contain.text', 'Paid');

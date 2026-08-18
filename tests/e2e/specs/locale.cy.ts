@@ -42,8 +42,8 @@ describe('Italian locale', () => {
     it('renders validation messages in Italian', () => {
         cy.visit('/it/login');
 
-        cy.get('[type=email]').type('not-an-email');
-        cy.get('[type=password]').type('somepassword');
+        cy.get('[type=email]').should('not.be.disabled').type('not-an-email');
+        cy.get('[type=password]').should('not.be.disabled').type('somepassword');
         cy.get('form').submit();
 
         cy.get('.v-messages__message').should('contain.text', "Deve essere un'email valida");
@@ -62,8 +62,8 @@ describe('Italian locale', () => {
     it('re-translates a displayed validation error when the language changes', () => {
         cy.visit('/en/login');
 
-        cy.get('[type=email]').type('not-an-email');
-        cy.get('[type=password]').type('somepassword');
+        cy.get('[type=email]').should('not.be.disabled').type('not-an-email');
+        cy.get('[type=password]').should('not.be.disabled').type('somepassword');
         cy.get('form').submit();
         cy.get('.v-messages__message').should('contain.text', 'Must be a valid email');
 

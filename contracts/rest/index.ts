@@ -314,6 +314,7 @@ export interface LocaleCapability {
     name: string;
     nativeName: string;
     direction: LocaleDirection;
+    active: boolean;
     /**
      * What this language can do. Without it a client seeing `es` in the list cannot tell whether it may send `Accept-Language: es` and get Spanish error messages, or whether it may download a Spanish UI dictionary. Those are different questions.
      * @minItems 1
@@ -1934,6 +1935,10 @@ export const getHealth = (options?: SecondParameter<typeof orvalMutator<HealthPi
  *
  * Public, unauthenticated and cacheable. A client that has just failed to reach the
  * API is exactly who needs it.
+ *
+ * An ADMIN gets the same manifest plus the rows a visitor is not offered: inactive
+ * languages, each carrying `active: false`. The flag gates selection by visitors and
+ * nothing else — the same rule products and users follow.
  * @summary Supported languages
  */
 export const getLocales = (

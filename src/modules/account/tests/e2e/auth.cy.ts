@@ -17,24 +17,24 @@ describe('Authentication', () => {
         });
 
         it('shows a validation error for an invalid email', () => {
-            cy.get('[type=email]').type('not-an-email');
-            cy.get('[type=password]').type('somepassword');
+            cy.get('[type=email]').should('not.be.disabled').type('not-an-email');
+            cy.get('[type=password]').should('not.be.disabled').type('somepassword');
             cy.get('form').submit();
             cy.get('.v-messages__message').should('exist');
         });
 
         it('shows a validation error when the form is empty', () => {
-            cy.get('[type=email]').clear();
-            cy.get('[type=password]').clear();
+            cy.get('[type=email]').should('not.be.disabled').clear();
+            cy.get('[type=password]').should('not.be.disabled').clear();
             cy.get('form').submit();
             cy.get('.v-messages__message').should('exist');
         });
 
         it('logs in successfully and redirects to home', () => {
-            cy.get('[type=email]').clear();
-            cy.get('[type=email]').type('root@root.it');
-            cy.get('[type=password]').clear();
-            cy.get('[type=password]').type('rootroot');
+            cy.get('[type=email]').should('not.be.disabled').clear();
+            cy.get('[type=email]').should('not.be.disabled').type('root@root.it');
+            cy.get('[type=password]').should('not.be.disabled').clear();
+            cy.get('[type=password]').should('not.be.disabled').type('rootroot');
             cy.get('form').submit();
 
             cy.url().should('not.include', '/login');
@@ -53,18 +53,18 @@ describe('Authentication', () => {
         });
 
         it('shows an error when passwords do not match', () => {
-            cy.get('[type=email]').type('newuser@example.com');
-            cy.get('[type=password]').eq(0).type('rootroot');
-            cy.get('[type=password]').eq(1).type('DifferentPass_456!');
+            cy.get('[type=email]').should('not.be.disabled').type('newuser@example.com');
+            cy.get('[type=password]').eq(0).should('not.be.disabled').type('rootroot');
+            cy.get('[type=password]').eq(1).should('not.be.disabled').type('DifferentPass_456!');
             cy.get('[type=checkbox]').check();
             cy.get('#signup-page button[type="submit"]').click();
             cy.get('.v-messages__message').should('exist');
         });
 
         it('signs up successfully and redirects to login (no auto-login)', () => {
-            cy.get('[type=email]').type('newuser@example.com');
-            cy.get('[type=password]').eq(0).type('rootroot');
-            cy.get('[type=password]').eq(1).type('rootroot');
+            cy.get('[type=email]').should('not.be.disabled').type('newuser@example.com');
+            cy.get('[type=password]').eq(0).should('not.be.disabled').type('rootroot');
+            cy.get('[type=password]').eq(1).should('not.be.disabled').type('rootroot');
             cy.get('[type=checkbox]').check();
             cy.get('#signup-page button[type="submit"]').click();
 

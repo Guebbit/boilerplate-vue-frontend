@@ -18,7 +18,9 @@ describe('Password reset', () => {
 
         // ── Ask for the link ────────────────────────────────────────────────────────
         cy.visit('/en/password-reset');
-        cy.get('#password-reset-request-page [type=email]').type('gino@pino.it');
+        cy.get('#password-reset-request-page [type=email]')
+            .should('not.be.disabled')
+            .type('gino@pino.it');
         cy.get('#password-reset-request-page button[type=submit]').click();
         // The enumeration-safe acknowledgement, same words whether the account exists or not.
         cy.contains('If the account exists').should('exist');
@@ -28,22 +30,28 @@ describe('Password reset', () => {
             expect(email.template).to.equal('account.reset-request.ejs');
             cy.visit(`/en/password-reset/confirm?token=${email.token}`);
         });
-        cy.get('#password-reset-confirm-page [type=password]').eq(0).type('Rewritten_Pass1!');
-        cy.get('#password-reset-confirm-page [type=password]').eq(1).type('Rewritten_Pass1!');
+        cy.get('#password-reset-confirm-page [type=password]')
+            .eq(0)
+            .should('not.be.disabled')
+            .type('Rewritten_Pass1!');
+        cy.get('#password-reset-confirm-page [type=password]')
+            .eq(1)
+            .should('not.be.disabled')
+            .type('Rewritten_Pass1!');
         cy.get('#password-reset-confirm-page button[type=submit]').click();
         cy.get('#login-page').should('exist');
 
         // ── The proof, both directions ──────────────────────────────────────────────
-        cy.get('[type=email]').clear();
-        cy.get('[type=email]').type('gino@pino.it');
-        cy.get('[type=password]').clear();
-        cy.get('[type=password]').type('password'); // yesterday's password
+        cy.get('[type=email]').should('not.be.disabled').clear();
+        cy.get('[type=email]').should('not.be.disabled').type('gino@pino.it');
+        cy.get('[type=password]').should('not.be.disabled').clear();
+        cy.get('[type=password]').should('not.be.disabled').type('password'); // yesterday's password
         cy.get('form').submit();
         cy.get('#login-page').should('exist');
         cy.url().should('include', '/login');
 
-        cy.get('[type=password]').clear();
-        cy.get('[type=password]').type('Rewritten_Pass1!');
+        cy.get('[type=password]').should('not.be.disabled').clear();
+        cy.get('[type=password]').should('not.be.disabled').type('Rewritten_Pass1!');
         cy.get('form').submit();
         cy.url().should('not.include', '/login');
         cy.get('#home-page').should('exist');
@@ -53,8 +61,14 @@ describe('Password reset', () => {
         cy.skipUnlessMock();
 
         cy.visit('/en/password-reset/confirm?token=a-token-nobody-issued');
-        cy.get('#password-reset-confirm-page [type=password]').eq(0).type('Hopeful_Pass1!');
-        cy.get('#password-reset-confirm-page [type=password]').eq(1).type('Hopeful_Pass1!');
+        cy.get('#password-reset-confirm-page [type=password]')
+            .eq(0)
+            .should('not.be.disabled')
+            .type('Hopeful_Pass1!');
+        cy.get('#password-reset-confirm-page [type=password]')
+            .eq(1)
+            .should('not.be.disabled')
+            .type('Hopeful_Pass1!');
         cy.get('#password-reset-confirm-page button[type=submit]').click();
 
         // Refused: no redirect to login, and the success copy never shows.

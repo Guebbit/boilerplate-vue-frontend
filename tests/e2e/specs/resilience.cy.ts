@@ -219,7 +219,9 @@ describe('Resilience', () => {
             visitCapturingConsole('/en/products');
             cy.get('#products-list-page').should('exist');
 
-            cy.get('[data-test=filter-text]').type('zzzz-no-such-product-zzzz');
+            cy.get('[data-test=filter-text]')
+                .should('not.be.disabled')
+                .type('zzzz-no-such-product-zzzz');
             cy.get('#products-list-page form [type=submit]').click();
 
             cy.get('[data-test=list-row]').should('not.exist');

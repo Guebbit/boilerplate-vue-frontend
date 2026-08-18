@@ -50,7 +50,7 @@
         "test:unit:report": "vitest run --reporter=json --outputFile=reports/test-report.json",
         "test:report": "tsx scripts/testReport.ts",
         "test:module": "vitest run",
-        "test:e2e:spec": "start-server-and-test 'VITE_API_MOCK_ENABLED=true vite dev --port 8085' http://localhost:8085 'cypress run --e2e --spec \"${E2E_SPEC:-src/modules/*/tests/e2e/**/*.cy.ts}\"'"
+        "test:e2e:spec": "npm run build:e2e && start-server-and-test 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 'cypress run --e2e --spec \"${E2E_SPEC:-src/modules/*/tests/e2e/**/*.cy.ts}\"'"
     },
     "dependencies": {
         "@fontsource/roboto": "^5.3.0",

@@ -15,10 +15,15 @@ describe('Feedback', () => {
         // also the more honest test of the two pages being wired together.
         cy.loginAs('admin');
         cy.visit('/en/contact');
-        cy.get('[data-test=contact-email] input').type('curious@example.com');
-        cy.get('[data-test=contact-subject] input').type('A question about the cats');
+        cy.get('[data-test=contact-email] input')
+            .should('not.be.disabled')
+            .type('curious@example.com');
+        cy.get('[data-test=contact-subject] input')
+            .should('not.be.disabled')
+            .type('A question about the cats');
         cy.get('[data-test=contact-message] textarea')
             .first()
+            .should('not.be.disabled')
             .type('Are they really illegal in 400 countries?');
         cy.get('[data-test=contact-submit]').click();
         cy.contains('Message sent').should('exist');

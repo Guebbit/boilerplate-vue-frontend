@@ -20,10 +20,10 @@ describe('Registration', () => {
 
         // ── Sign up ─────────────────────────────────────────────────────────────────
         cy.visit('/en/signup');
-        cy.get('[type=email]').clear();
-        cy.get('[type=email]').type('new.customer@example.com');
-        cy.get('[type=password]').eq(0).type('BrandNew_Pass1!');
-        cy.get('[type=password]').eq(1).type('BrandNew_Pass1!');
+        cy.get('[type=email]').should('not.be.disabled').clear();
+        cy.get('[type=email]').should('not.be.disabled').type('new.customer@example.com');
+        cy.get('[type=password]').eq(0).should('not.be.disabled').type('BrandNew_Pass1!');
+        cy.get('[type=password]').eq(1).should('not.be.disabled').type('BrandNew_Pass1!');
         cy.get('[type=checkbox]').check();
         cy.get('#signup-page button[type="submit"]').click();
 
@@ -43,16 +43,16 @@ describe('Registration', () => {
 
         // ── The password gate is real: wrong one refused, right one in ──────────────
         cy.visit('/en/login');
-        cy.get('[type=email]').clear();
-        cy.get('[type=email]').type('new.customer@example.com');
-        cy.get('[type=password]').clear();
-        cy.get('[type=password]').type('not-what-was-chosen');
+        cy.get('[type=email]').should('not.be.disabled').clear();
+        cy.get('[type=email]').should('not.be.disabled').type('new.customer@example.com');
+        cy.get('[type=password]').should('not.be.disabled').clear();
+        cy.get('[type=password]').should('not.be.disabled').type('not-what-was-chosen');
         cy.get('form').submit();
         cy.get('#login-page').should('exist');
         cy.url().should('include', '/login');
 
-        cy.get('[type=password]').clear();
-        cy.get('[type=password]').type('BrandNew_Pass1!');
+        cy.get('[type=password]').should('not.be.disabled').clear();
+        cy.get('[type=password]').should('not.be.disabled').type('BrandNew_Pass1!');
         cy.get('form').submit();
         cy.url().should('not.include', '/login');
 
@@ -66,19 +66,19 @@ describe('Registration', () => {
         cy.skipUnlessMock();
 
         cy.visit('/en/signup');
-        cy.get('[type=email]').clear();
-        cy.get('[type=email]').type('slow.reader@example.com');
-        cy.get('[type=password]').eq(0).type('Another_Pass1!');
-        cy.get('[type=password]').eq(1).type('Another_Pass1!');
+        cy.get('[type=email]').should('not.be.disabled').clear();
+        cy.get('[type=email]').should('not.be.disabled').type('slow.reader@example.com');
+        cy.get('[type=password]').eq(0).should('not.be.disabled').type('Another_Pass1!');
+        cy.get('[type=password]').eq(1).should('not.be.disabled').type('Another_Pass1!');
         cy.get('[type=checkbox]').check();
         cy.get('#signup-page button[type="submit"]').click();
         cy.get('#login-page').should('exist');
 
         // Log in WITHOUT touching the email first: the account works, but wears the banner.
-        cy.get('[type=email]').clear();
-        cy.get('[type=email]').type('slow.reader@example.com');
-        cy.get('[type=password]').clear();
-        cy.get('[type=password]').type('Another_Pass1!');
+        cy.get('[type=email]').should('not.be.disabled').clear();
+        cy.get('[type=email]').should('not.be.disabled').type('slow.reader@example.com');
+        cy.get('[type=password]').should('not.be.disabled').clear();
+        cy.get('[type=password]').should('not.be.disabled').type('Another_Pass1!');
         cy.get('form').submit();
         cy.url().should('not.include', '/login');
         cy.visit('/en/profile');
