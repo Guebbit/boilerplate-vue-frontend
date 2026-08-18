@@ -8,13 +8,6 @@ import vueDevTools from 'vite-plugin-vue-devtools';
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
-    // `RANDOM_DATA_SEED` is the one env var this repo reads without a `VITE_` prefix, so that the
-    // paired backend can read a variable of exactly the same name for its own generator: a seed
-    // quoted in a failure report is then directly usable in either repo.
-    //
-    // Listing it here *replaces* the default prefix list, so 'VITE_' has to be restated or every
-    // other env var in the app silently disappears from import.meta.env.
-    envPrefix: ['VITE_', 'RANDOM_DATA_SEED'],
     server: {
         // The port lives here, not in the `dev` script, so the compose publish
         // (`${VITE_APP_PORT}:${VITE_APP_PORT}`) and the server it forwards to can never

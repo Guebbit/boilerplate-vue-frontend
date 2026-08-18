@@ -12,7 +12,7 @@ import type { GeneratorVerbOptions } from '@orval/core';
  * name for JSON — so every JSON call site is untouched by the split — and uses `WithMultipart`
  * for the other, matching how the spec and the `*RequestMultipart` types already talk.
  *
- * Applied to `api` and `mocks` so the two outputs never drift apart on naming.
+ * Applied to the `api` output.
  *
  * Operations with a single content type never receive a suffix, so they fall through unchanged.
  */
@@ -39,18 +39,12 @@ const contentTypeOperationNames = (verb: GeneratorVerbOptions): GeneratorVerbOpt
  *              Import from @api/schemas to validate forms or parse API responses.
  *              Always in sync with the spec — never hand-write these.
  *
- * mocks:       MSW handler stubs + faker factories → tests/support/mocks/generated.ts
- *              Use as a skeleton when adding a new endpoint.
- *              The rich in-memory-DB logic stays in src/modules/<name>/mocks/*.
- *
- *              Its faker factories ARE imported: tests/support/mocks/mockProfilesRandom.ts
- *              builds the random-data profile from getList{Products,Users,Orders}ResponseMock.
- *              Its MSW *stub handlers* are a different matter — tests/support/mocks/apiMock.ts builds
- *              the worker exclusively from the hand-written handlers, and the stubs must not
- *              be registered as a fallback (see the comment in apiMock.ts for why).
- *
- *              So this block has two consumers: the random profile above, and the skeleton
- *              affordance for adding a new endpoint. See docs/tools/mocking.md, "Test profiles".
+ * There is deliberately no `mocks` block. Orval can emit MSW stub handlers and faker factories,
+ * and this repo does not use them: the mock backend is the hand-written handlers in
+ * `src/modules/<name>/mocks/`, populated from the demo dataset the paired backend publishes. The
+ * generated stubs are stateless and answer with random data, so registering them as a fallback
+ * would replace working behaviour (cart persistence, auth, filtering) with noise and silence the
+ * `onUnhandledRequest` error that exists to make a missing handler fail loudly.
  *
  * NOTE: every target below must also appear in the `api-freshness` job's pathspec in
  * .github/workflows/ci.yml, or changes to it ship unguarded.
@@ -124,21 +118,6 @@ export default defineConfig({
                         header: true
                     }
                 }
-            }
-        }
-    },
-    mocks: {
-        input: './openapi.yaml',
-        output: {
-            mode: 'single',
-            target: './tests/support/mocks/generated.ts',
-            client: 'axios',
-            mock: true,
-            override: {
-                // Kept in step with the `api` block so handler and factory names never drift
-                // from the client's. See contentTypeOperationNames above.
-                splitByContentType: true,
-                transformer: contentTypeOperationNames
             }
         }
     }

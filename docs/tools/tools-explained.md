@@ -149,11 +149,11 @@ this diagram exists to prevent.
 
 ### Orval
 
-**What it is.** Orval is a code generator that reads `openapi.yaml` and outputs a typed axios client, Zod schemas, and MSW mock stubs. The generated `contracts/rest/` directory is a derived artifact — never edit it by hand.
+**What it is.** Orval is a code generator that reads `openapi.yaml` and outputs a typed axios client and Zod schemas. The generated `contracts/rest/` directory is a derived artifact — never edit it by hand.
 
 **Problem it solves.** Maintaining a typed API client alongside the spec means they inevitably drift. Code generation makes the client an output of the spec.
 
-**In this repo.** `npm run gen:api` regenerates `contracts/rest/index.ts` (axios functions), `contracts/rest/schemas.zod.ts` (Zod schemas), and `tests/support/mocks/generated.ts` (MSW stubs). Configured in `orval.config.ts`.
+**In this repo.** `npm run gen:api` regenerates `contracts/rest/index.ts` (axios functions) and `contracts/rest/schemas.zod.ts` (Zod schemas). Configured in `orval.config.ts`. Orval's MSW-stub output is deliberately not enabled — see [Mocking (MSW)](./mocking.md).
 
 → [OpenAPI Workflow](../api/openapi-workflow.md)
 
@@ -180,18 +180,6 @@ this diagram exists to prevent.
 **In this repo.** Zod schemas are generated from `openapi.yaml` by orval into `contracts/rest/schemas.zod.ts`. Import them from `@api/schemas` — never hand-write schemas that duplicate the spec.
 
 → [OpenAPI Workflow](../api/openapi-workflow.md)
-
----
-
-### @faker-js/faker
-
-**What it is.** Faker generates realistic fake data (names, emails, prices, UUIDs) programmatically.
-
-**Problem it solves.** MSW handlers need realistic fake data to return. Writing static fixture objects is tedious and brittle. Faker generates varied, plausible data automatically.
-
-**In this repo.** Used by orval-generated MSW stubs in `tests/support/mocks/generated.ts` to populate fake responses.
-
-→ [Mocking (MSW)](./mocking.md)
 
 ---
 

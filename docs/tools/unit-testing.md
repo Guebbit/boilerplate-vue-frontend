@@ -80,7 +80,7 @@ const server = setupServer(
 
 ### Response-validation and mock-transport tests
 
-`tests/unit/infrastructure/http/httpValidateResponses.spec.ts` and `tests/unit/mocks/mockTransport.spec.ts` unit-test two small but load-bearing pieces built for [Live E2E](./live-e2e.md) and [Mocking](./mocking.md) respectively: `orvalMutator`'s `VITE_VALIDATE_RESPONSES` contract check, and the response builders every mock handler returns through. `tests/unit/mocks/mockProfiles.spec.ts` covers the [random-data profile](./e2e-random-profile.md)'s two database builders directly, without going through Cypress at all — see that page for why isolating it here matters (reproducibility and coherence are properties of the *data*, testable without a browser).
+`tests/unit/infrastructure/http/httpValidateResponses.spec.ts` and `tests/unit/mocks/mockTransport.spec.ts` unit-test two small but load-bearing pieces built for [Live E2E](./live-e2e.md) and [Mocking](./mocking.md) respectively: `orvalMutator`'s `VITE_VALIDATE_RESPONSES` contract check, and the response builders every mock handler returns through. Each module's own slice of the mock database is asserted in `src/modules/<name>/tests/seeds.spec.ts`, and the properties belonging to no domain — that the fold runs, and runs in dependency order — in `tests/cross-cutting/mockSeedAssembly.spec.ts`.
 
 ## File map
 
