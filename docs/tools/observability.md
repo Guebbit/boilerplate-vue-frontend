@@ -1,6 +1,6 @@
 # Observability
 
-The FE observability layer covers two complementary concerns, both wired into a **single Pinia store** at `src/infrastructure/observability.ts`. Everything runs against a **self-hosted, local stack** (Docker/Podman) — there are no external SaaS accounts.
+The FE observability layer covers two complementary concerns, both wired into a **single Pinia store** at `src/infrastructure/stores/observability.ts`. Everything runs against a **self-hosted, local stack** (Docker/Podman) — there are no external SaaS accounts.
 
 | Tool | Role | Endpoint |
 | ---- | ---- | -------- |
@@ -17,7 +17,7 @@ Both are no-ops when their env vars are absent, so local dev works without the s
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 65}}}%%
 flowchart LR
     Main["src/main.ts\ninitFaro() + initUmami()"]
-    Store["src/infrastructure/observability.ts\nuseObservabilityStore()"]
+    Store["src/infrastructure/stores/observability.ts\nuseObservabilityStore()"]
     HTTP["plugins/http/index.ts\ncaptureException() on 5xx"]
     Components["Stores + composables\ntrack() / identifyUser()"]
 
@@ -86,7 +86,7 @@ The trace-propagation origin is derived from `VITE_API_URL`.
 
 - **No PII** — never send email, name, or personal data in event properties.
 - **Use constants** from `analyticsEvents` — never hardcode event name strings.
-- **Match the backend** — the event constants are the canonical names the backend emits, so FE and BE analytics line up. `src/infrastructure/analyticsEvents.ts` is a **copy of a backend-authored file**: it is assembled there from each module's own fragment and copied here byte-identically, so a new shared name is added in the backend module that emits it and the rebuilt file is copied over. `npm run check:spec-identity` fails the build when the two forks. Names only THIS app emits (the lifecycle events) are declared here and spread on top.
+- **Match the backend** — the event constants are the canonical names the backend emits, so FE and BE analytics line up. `src/infrastructure/analyticsEvents.ts` is a **copy of a backend-authored file**: it is assembled there from each module's own fragment and copied here byte-identically, so a new shared name is added in the backend module that emits it and the rebuilt file is copied over. `npm run check:spec-identity` fails the build when the two forks. Names only THIS app emits (the lifecycle events) are declared in `src/infrastructure/observability/events.ts` and spread on top.
 - **Fire-and-forget** — never `await` a `track()` call.
 
 ### Event taxonomy
@@ -126,7 +126,8 @@ The local stack has **no feature-flag provider**. `isFeatureEnabled()` is kept f
 All observability calls go through `useObservabilityStore()`. Never import the Faro SDK or touch `window.umami` directly in components.
 
 ```ts
-import { useObservabilityStore, analyticsEvents } from '@/infrastructure/observability';
+import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
+import { analyticsEvents } from '@/infrastructure/observability/events.ts';
 
 const obs = useObservabilityStore();
 

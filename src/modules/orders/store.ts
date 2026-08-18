@@ -10,7 +10,8 @@ import {
     cancelOrderById,
     getOrderInvoice
 } from '@api';
-import { useObservabilityStore, analyticsEvents } from '@/infrastructure/observability';
+import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
+import { analyticsEvents } from '@/infrastructure/observability/events.ts';
 import type {
     Order,
     CreateOrderRequest,

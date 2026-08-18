@@ -42,16 +42,15 @@ plan lives outside both repositories, at `BOILERPLATE_SPLIT_PLAN.md` in the work
 
 ## A home for teaching code
 
-Three things exist only to demonstrate the framework, and none is marked as safe to delete:
+Everything that exists only to demonstrate the framework now lives in one module, `src/modules/demo`:
+the counter store, the teaching route guard and the Playground sandbox. Deleting it is `rm -rf
+src/modules/demo` plus its line in `src/modules.ts`, and nothing else in the app refers to it.
 
-| File                                  | What it is                                              | Mutation score |
-| ------------------------------------- | ------------------------------------------------------- | -------------- |
-| `src/app/counter.ts`                  | the Pinia counter from the Vue scaffold                 | **0%**         |
-| `src/app/middlewares/exampleGuard.ts` | a guard that shows what a guard can and cannot reach   | 50%            |
-| `src/app/views/Playground.vue`        | the component sandbox                                   | —              |
-
-The counter's zero is correct rather than a gap: nothing tests it because nothing uses it in
-earnest.
+| File                                    | What it is                                            |
+| --------------------------------------- | ----------------------------------------------------- |
+| `src/modules/demo/store.ts`             | the Pinia counter from the Vue scaffold               |
+| `src/modules/demo/guards.ts`            | a guard that shows what a guard can and cannot reach   |
+| `src/modules/demo/views/Playground.vue` | the component sandbox                                  |
 
 They are genuinely useful in a boilerplate and genuinely noise in an application, so the decision to
 make is **not "delete or keep"** — it is *where does teaching code live*. A `demo` module the

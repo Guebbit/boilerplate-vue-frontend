@@ -17,7 +17,7 @@ import type { AxiosResponseErrorData, AxiosResponseErrorBody } from '@/infrastru
 
 const accessToken = ref<string | undefined>(undefined);
 
-vi.mock('@/infrastructure/session', () => ({
+vi.mock('@/infrastructure/stores/session', () => ({
     useSessionStore: () => ({})
 }));
 
@@ -28,7 +28,7 @@ vi.mock('pinia', async (importOriginal) => ({
 
 // `apiText` is not decoration here: `onResponseReject` calls it to build the 401 message, so a
 // mock without it throws before the refresh logic is ever reached.
-vi.mock('@/infrastructure/i18n.ts', () => ({
+vi.mock('@/infrastructure/i18n', () => ({
     getCurrentLocale: () => 'it',
     apiText: (_apiKey: string, localKey: string) => localKey,
     i18n: { global: { t: (key: string) => key } }

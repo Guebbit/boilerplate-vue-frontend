@@ -7,7 +7,7 @@ export default {
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { routerLinkI18n } from '@/infrastructure/i18n.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 
 /**

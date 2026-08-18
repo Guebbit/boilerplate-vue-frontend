@@ -11,8 +11,8 @@ import { useRoute, useRouter } from 'vue-router';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useAccountStore } from '@/modules/account/store.ts';
-import { notifyErrorMessages } from '@/infrastructure/errors.ts';
-import { routerLinkI18n } from '@/infrastructure/i18n.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
 
 /**
  * Spends the one-time email-verification token.

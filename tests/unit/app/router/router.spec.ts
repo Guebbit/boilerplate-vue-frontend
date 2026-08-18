@@ -1,7 +1,7 @@
 /**
  * Router wiring.
  *
- * `tests/unit/app/middlewares/authentications.spec.ts` proves `canAccess` decides correctly. This
+ * `tests/unit/app/guards/authentications.spec.ts` proves `canAccess` decides correctly. This
  * proves the enforcement is actually *attached*, and that every route declares the requirement it
  * should — a route that quietly loses its `meta.access` is indistinguishable from a public one.
  *
@@ -17,12 +17,12 @@ const tryRestoreAuth = vi.fn(() => Promise.resolve());
 // Returns nothing, i.e. "let the navigation through".
 const enforceRouteAccess = vi.fn();
 
-vi.mock('@/app/middlewares/authentications.ts', () => ({
+vi.mock('@/app/guards/authentications.ts', () => ({
     tryRestoreAuth: () => tryRestoreAuth(),
     enforceRouteAccess: (to: unknown) => enforceRouteAccess(to)
 }));
 
-vi.mock('@/infrastructure/observability', () => ({
+vi.mock('@/infrastructure/stores/observability.ts', () => ({
     useObservabilityStore: () => ({ captureException: vi.fn(), track: vi.fn() }),
     analyticsEvents: {}
 }));

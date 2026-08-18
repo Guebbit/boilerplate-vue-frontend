@@ -6,10 +6,10 @@ import { useTheme } from 'vuetify';
 import { storeToRefs } from 'pinia';
 import { Menu, Moon, Sun, UserRound } from 'lucide-vue-next';
 import AppLanguageSwitcher from '@/app/components/AppLanguageSwitcher.vue';
-import { routerLinkI18n } from '@/infrastructure/i18n.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
 import { loginContinueTo, SIGN_IN_ROUTE_NAME } from '@/app/router/navigation.ts';
-import { canAccess } from '@/app/middlewares/authentications.ts';
-import { useSessionStore } from '@/infrastructure/session.ts';
+import { canAccess } from '@/app/guards/authentications.ts';
+import { useSessionStore } from '@/infrastructure/stores/session.ts';
 import { collectModuleNavigation, sortNavigation } from '@/kernel/registry';
 import type { AppNavigationEntry } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
@@ -44,7 +44,6 @@ const drawer = ref(false);
  */
 const shellNavEntries: AppNavigationEntry[] = [
     { name: 'Home', label: 'navigation.label-home', plural: 1, order: 10 },
-    { name: 'Playground', label: 'navigation.label-playground', plural: 1, order: 20 },
     // One entry reaches all four prose pages — they cross-link at the bottom.
     { name: 'StaticAbout', label: 'navigation.label-about', plural: 1, order: 99 }
 ];

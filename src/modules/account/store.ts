@@ -2,11 +2,8 @@ import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
-import {
-    getPayloadFromResponse,
-    getTokenFromResponse,
-    useSessionStore
-} from '@/infrastructure/session.ts';
+import { useSessionStore } from '@/infrastructure/stores/session.ts';
+import { getPayloadFromResponse, getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
 import type { User } from '@types';
 import {
     getAccount as apiGetAccount,
@@ -29,13 +26,14 @@ import {
     removeAddress as apiRemoveAddress
 } from '@api';
 import type { Address, AddressInput, Session, UpdateAddressRequest } from '@types';
-import { useObservabilityStore, analyticsEvents } from '@/infrastructure/observability';
+import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
+import { analyticsEvents } from '@/infrastructure/observability/events.ts';
 
 /**
  * The account domain: the visitor's own record, and every operation that changes it.
  *
  * What is deliberately NOT here is the session — the access token and the `{ id, email, admin }`
- * projection the app shell and the router guards read. Those live in `@/infrastructure/session.ts`, because
+ * projection the app shell and the router guards read. Those live in `@/infrastructure/stores/session.ts`, because
  * `infrastructure/http` must attach a token before any domain exists and a guard must decide access before
  * any domain loads. This store *writes* into that projection whenever it learns something new
  * about the visitor, and reads nothing back from it that it did not put there.

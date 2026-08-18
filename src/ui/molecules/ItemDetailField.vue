@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { EMPTY_VALUE } from '@/infrastructure/formatters.ts';
+import { EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
 
 /**
  * Atomic read-only field used by detail pages to render one label/value pair.

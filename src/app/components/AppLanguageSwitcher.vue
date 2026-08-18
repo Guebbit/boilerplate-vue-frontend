@@ -2,8 +2,8 @@
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Check, Languages } from 'lucide-vue-next';
-import { changeLanguage, supportedLanguages } from '@/infrastructure/i18n.ts';
-import { persistLocalePreference } from '@/infrastructure/localeApi.ts';
+import { changeLanguage, supportedLanguages } from '@/infrastructure/i18n';
+import { useSessionStore } from '@/infrastructure/stores/session.ts';
 
 const router = useRouter();
 const route = useRoute();
@@ -13,20 +13,19 @@ const { t, locale } = useI18n();
  * Switches the app language and re-enters the current route under the new locale.
  *
  * Everything here is routing, which is the only part of a language switch that belongs to the app
- * shell. The i18n runtime owns loading the dictionary (`changeLanguage`) and the locale API owns
- * remembering the choice for whoever can have one remembered (`persistLocalePreference`) — this
- * component decides neither, and does not know whether anyone is signed in.
+ * shell. The i18n runtime owns loading the dictionary (`changeLanguage`) and the session store
+ * owns remembering the choice for whoever can have one remembered — this component decides
+ * neither, and does not know whether anyone is signed in.
  *
  * `persistLocalePreference` is deliberately NOT awaited: the page must be in the new language
- * before the account endpoint has answered, and a failed write must not un-switch it. See that
- * function for the trade-off that buys.
+ * before the account endpoint has answered, and a failed write must not un-switch it.
  *
  * @param newLocale - Locale code picked by the user, e.g. `it`.
  * @returns A promise resolving once the router settles: on the same route with
  *  the new locale, or on `/` (locale recalculated) if that navigation fails.
  */
 function switchLanguage(newLocale: string) {
-    void persistLocalePreference(newLocale);
+    void useSessionStore().persistLocalePreference(newLocale);
     return Promise.resolve(
         // change language
         changeLanguage(newLocale)

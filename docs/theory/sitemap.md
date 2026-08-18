@@ -1,13 +1,13 @@
 # Sitemap & Access Control
 
-All routes are locale-prefixed (`/:locale/…`). A missing locale is injected automatically by the `localeChoice` middleware using `VITE_APP_DEFAULT_LOCALE`.
+All routes are locale-prefixed (`/:locale/…`). A missing locale is injected automatically by the `localeChoice` guard using `VITE_APP_DEFAULT_LOCALE`.
 
 ## Route table
 
 | Route | Route name | Access |
 | ----- | ---------- | ------ |
 | `/:locale/` | `Home` | public |
-| `/:locale/playground` | `Playground` | public |
+| `/:locale/playground` | `Playground` | public (the `demo` module) |
 | `/:locale/playground/realtime` | `RealtimePlayground` | admin |
 | `/:locale/error/:status/:message?` | `Error` | public |
 | `/:locale/login` | `Login` | guest only |
@@ -83,11 +83,11 @@ flowchart TD
 
 | Guard | File | Effect |
 | ----- | ---- | ------ |
-| `isAuth` | `src/app/middlewares/authentications.ts` | Must be logged in; redirects to Login on failure |
-| `isAdmin` | `src/app/middlewares/authentications.ts` | Must have admin role; redirects to Home on failure |
-| `isGuest` | `src/app/middlewares/authentications.ts` | Must NOT be logged in; redirects to Home if already authenticated |
-| `localeChoice` | `src/app/middlewares/localeChoice.ts` | Injects locale prefix when missing; validates supported locales |
-| `tryRestoreAuth` | `src/app/middlewares/authentications.ts` | Silently restores token + profile on every navigation from localStorage |
+| `isAuth` | `src/app/guards/authentications.ts` | Must be logged in; redirects to Login on failure |
+| `isAdmin` | `src/app/guards/authentications.ts` | Must have admin role; redirects to Home on failure |
+| `isGuest` | `src/app/guards/authentications.ts` | Must NOT be logged in; redirects to Home if already authenticated |
+| `localeChoice` | `src/app/guards/localeChoice.ts` | Injects locale prefix when missing; validates supported locales |
+| `tryRestoreAuth` | `src/app/guards/authentications.ts` | Silently restores token + profile on every navigation from localStorage |
 
 ## Auth persistence
 

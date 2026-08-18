@@ -6,15 +6,15 @@ export default {
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { routerLinkI18n } from '@/infrastructure/i18n.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Search } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/modules/orders/store.ts';
-import { useSessionStore } from '@/infrastructure/session.ts';
-import { notifyErrorMessages } from '@/infrastructure/errors.ts';
-import { formatDate } from '@/infrastructure/formatters.ts';
+import { useSessionStore } from '@/infrastructure/stores/session.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { formatDate } from '@/infrastructure/utils/formatters.ts';
 import type { Order } from '@types';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';

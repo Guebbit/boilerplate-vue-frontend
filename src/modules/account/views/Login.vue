@@ -14,8 +14,12 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import { useAccountStore } from '@/modules/account/store.ts';
 import { usersSchema } from '@/modules/users';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import { notifyErrorMessages, VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/errors.ts';
-import { changeLanguage, routerLinkI18n, supportedLanguages } from '@/infrastructure/i18n.ts';
+import {
+    notifyErrorMessages,
+    VUETIFY_INVALID_FIELD_SELECTOR
+} from '@/infrastructure/utils/errors.ts';
+import { changeLanguage, supportedLanguages } from '@/infrastructure/i18n';
+import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
 import type { LoginRequest } from '@api';
 
 /**

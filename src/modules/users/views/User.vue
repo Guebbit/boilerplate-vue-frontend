@@ -6,7 +6,7 @@ export default {
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { routerLinkI18n } from '@/infrastructure/i18n.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useUsersStore } from '@/modules/users/store';
@@ -18,7 +18,7 @@ import CardDetail from '@/ui/organisms/CardDetail.vue';
 import CardInfo from '@/ui/organisms/CardInfo.vue';
 import ItemDetailHero from '@/ui/organisms/ItemDetailHero.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
-import { formatText, formatDateTime, formatFlag } from '@/infrastructure/formatters.ts';
+import { formatText, formatDateTime, formatFlag } from '@/infrastructure/utils/formatters.ts';
 
 /**
  * Translations helper.

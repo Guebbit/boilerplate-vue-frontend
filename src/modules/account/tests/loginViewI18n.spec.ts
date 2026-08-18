@@ -3,7 +3,7 @@ import { nextTick, ref } from 'vue';
 import { mount } from '@vue/test-utils';
 import { createPinia } from 'pinia';
 import Login from '@/modules/account/views/Login.vue';
-import { i18n, loadLocale } from '@/infrastructure/i18n.ts';
+import { i18n, loadLocale } from '@/infrastructure/i18n';
 import vuetify from '@/ui/vuetify';
 import { usersSchema } from '@/modules/users';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wireModules.ts';

@@ -15,7 +15,7 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ProfileSessions from '@/modules/account/components/ProfileSessions.vue';
 import ProfileAddresses from '@/modules/account/components/ProfileAddresses.vue';
 import { z } from 'zod';
-import { notifyErrorMessages } from '@/infrastructure/errors.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 
 const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();

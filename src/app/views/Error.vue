@@ -9,7 +9,7 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import { SearchX } from 'lucide-vue-next';
-import { routerLinkI18n } from '@/infrastructure/i18n.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
 
 const { message = '' } = defineProps<{
     status?: string;

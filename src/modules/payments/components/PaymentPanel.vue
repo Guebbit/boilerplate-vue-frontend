@@ -9,7 +9,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { notifyErrorMessages } from '@/infrastructure/errors.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { usePaymentsStore } from '../store.ts';
 
 /**

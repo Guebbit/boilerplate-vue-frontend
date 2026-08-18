@@ -1,0 +1,28 @@
+import type { AppModule } from '@/kernel/registry';
+import routes from './routes';
+
+/**
+ * The boilerplate's own showroom: one page exercising the store, the toolkit components, the
+ * notification toasts and the provide/inject demo, plus the teaching route guard.
+ *
+ * A module rather than part of the app shell, because that is what makes it DELETABLE — `rm -rf`
+ * this folder and one line of `src/modules.ts`, and the demo leaves with it. Nothing depends on
+ * it, and it depends on no domain.
+ */
+export default {
+    name: 'demo',
+    // A showroom is not the business. There is nothing to model here.
+    subdomain: 'generic',
+    language: {
+        Counter: 'A number with no meaning, incremented to prove a store survives a navigation.',
+        Playground: 'The page where the shared building blocks are shown, not used.'
+    },
+    routes,
+    navigation: [
+        { name: 'Playground', label: 'navigation.label-playground', plural: 1, order: 20 }
+    ],
+    locales: {
+        en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
+        it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)
+    }
+} satisfies AppModule;

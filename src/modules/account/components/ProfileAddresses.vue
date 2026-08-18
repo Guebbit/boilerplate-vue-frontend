@@ -11,7 +11,7 @@ import { storeToRefs } from 'pinia';
 import { MapPin, Plus, Star } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAccountStore } from '@/modules/account/store.ts';
-import { notifyErrorMessages } from '@/infrastructure/errors.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import type { Address, AddressInput } from '@types';
 
 /**

@@ -1,15 +1,9 @@
 /**
  * The route the app shell sends an unauthenticated visitor to.
  *
- * An app-shell constant naming a route a MODULE declares, which is the one place the shell still
- * reaches across the boundary. It is a string, so nothing type-checks it: with the account module
- * removed from `src/modules.ts` this resolves to nothing and a 401 would strand the visitor on a
- * dead navigation.
- *
- * Callers therefore check `router.hasRoute(SIGN_IN_ROUTE_NAME)` before using a location built here
- * and fall back to Home — see `signInLocation`. The alternative, a `signInRoute` field on the
- * manifest, was rejected: the registry's own rule is that a field only one module would ever fill
- * does not belong in the shared interface.
+ * A string naming a route a MODULE declares, so nothing type-checks it: with the account module
+ * removed from `src/modules.ts` it resolves to nothing. Callers therefore check
+ * `router.hasRoute(SIGN_IN_ROUTE_NAME)` first — see {@link signInLocation}.
  */
 export const SIGN_IN_ROUTE_NAME = 'Login';
 
@@ -44,9 +38,8 @@ export const loginContinueTo = (path: string, locale?: string) => {
 /**
  * {@link loginContinueTo}, degraded to Home when no sign-in route is registered.
  *
- * The shell must keep working in a build that ships no account module — an internal tool behind a
- * corporate proxy, say. Sending a 401 to a route that does not exist would abort the navigation
- * and leave the visitor wherever they were, with nothing on screen to explain it.
+ * A build shipping no account module must keep working: pushing to a route that does not exist
+ * aborts the navigation and leaves the visitor where they were with nothing to explain it.
  *
  * @param router - The active router, for the `hasRoute` check.
  * @param path - Full path the visitor was trying to reach.

@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import enMessages from '@/locales/en.json';
 
-vi.mock('@/infrastructure/session', () => ({
+vi.mock('@/infrastructure/stores/session', () => ({
     useSessionStore: vi.fn(() => ({ accessToken: { value: undefined } }))
 }));
 
@@ -14,12 +14,12 @@ vi.mock('pinia', () => ({
  * the real vue-i18n instance: these assertions are about what a user is shown when the API sent
  * no message of its own, and a stubbed translator would make every language look the same.
  */
-vi.mock('@/infrastructure/i18n.ts', async (importOriginal) => ({
-    ...(await importOriginal<typeof import('@/infrastructure/i18n.ts')>()),
+vi.mock('@/infrastructure/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/infrastructure/i18n')>()),
     getCurrentLocale: vi.fn(() => 'en')
 }));
 
-beforeAll(() => import('@/infrastructure/i18n.ts').then(({ loadLocale }) => loadLocale('en')));
+beforeAll(() => import('@/infrastructure/i18n').then(({ loadLocale }) => loadLocale('en')));
 
 const makeAxiosError = (status: number, data: unknown, headers: Record<string, string> = {}) => ({
     response: { status, statusText: 'Error', data, headers },

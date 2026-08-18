@@ -13,8 +13,11 @@ import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useAccountStore } from '@/modules/account/store.ts';
 import { usersPasswordSchema } from '@/modules/users';
-import { notifyErrorMessages, VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/errors.ts';
-import { routerLinkI18n } from '@/infrastructure/i18n.ts';
+import {
+    notifyErrorMessages,
+    VUETIFY_INVALID_FIELD_SELECTOR
+} from '@/infrastructure/utils/errors.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
 
 /**
  * Form state: the one-time token (prefilled from the email link) plus the new

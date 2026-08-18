@@ -1,12 +1,11 @@
 import { createRouter, createWebHistory, RouterView } from 'vue-router';
 import type { RouteLocationNormalized } from 'vue-router';
-import { exampleGuard } from '@/app/middlewares/exampleGuard';
-import { localeChoice } from '@/app/middlewares/localeChoice';
-import { tryRestoreAuth, enforceRouteAccess } from '@/app/middlewares/authentications.ts';
-import { getDefaultLocale } from '@/infrastructure/i18n.ts';
+import { localeChoice } from '@/app/guards/localeChoice';
+import { tryRestoreAuth, enforceRouteAccess } from '@/app/guards/authentications.ts';
+import { getDefaultLocale } from '@/infrastructure/i18n';
 import { signInLocation } from '@/app/router/navigation.ts';
-import { useObservabilityStore } from '@/infrastructure/observability';
-import { logger } from '@/infrastructure/logger.ts';
+import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
+import { logger } from '@/infrastructure/utils/logger.ts';
 
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
@@ -37,17 +36,11 @@ const router = createRouter({
         {
             path: '/:locale',
             component: RouterView,
-            beforeEnter: [exampleGuard],
             children: [
                 {
                     path: '',
                     name: 'Home',
                     component: () => import('@/app/views/Home.vue')
-                },
-                {
-                    path: 'playground',
-                    name: 'Playground',
-                    component: () => import('@/app/views/Playground.vue')
                 },
                 /*
                  * The shop's prose pages — one component, four dictionaries. Declared by the
@@ -105,17 +98,14 @@ const readLocaleParameter = ({ params }: RouteLocationNormalized): string | unde
     typeof params.locale === 'string' ? params.locale : undefined;
 
 /**
- * Global navigation error handler: reports the failure and redirects to a
- * meaningful page instead of leaving the user on a dead route.
+ * Global navigation error handler: reports the failure and redirects somewhere meaningful instead
+ * of leaving the visitor on a dead route.
  *
- * @param error - Error thrown by a guard, a lazy component import or a data
- *  fetch. A numeric `status` property, when present, drives the redirect:
- *  401 goes to login (keeping the target path), 403 and other <500 statuses go
- *  to the error page with that status, anything else becomes a 500.
- * @param to - Route the failed navigation was heading for. This, not
- *  `router.currentRoute`, is the target: the navigation aborted before being
- *  committed, so `currentRoute` still points at the page the user was leaving —
- *  which sent them back where they already were after logging in.
+ * @param error - Error thrown by a guard, a lazy component import or a data fetch. A numeric
+ *  `status`, when present, drives the redirect.
+ * @param to - Route the failed navigation was heading for. This, not `router.currentRoute`: the
+ *  navigation aborted before being committed, so `currentRoute` still points at the page being
+ *  left — which sent people back where they already were after logging in.
  * @returns The `router.push` promise for the chosen redirect.
  */
 router.onError((error: Error, to: RouteLocationNormalized) => {
@@ -144,14 +134,8 @@ router.onError((error: Error, to: RouteLocationNormalized) => {
 
     logger.debug('router', 'page error', error);
 
-    /*
-     * Everything else is the error page, which needs only a status and a message key.
-     *
-     * 403 gets its own copy because "you may not see this" is a different thing to tell someone
-     * than whatever `error.message` happens to hold; every other client status shows the error's
-     * own message, and an absent or >=500 status collapses to a plain 500 — a failure with no
-     * status is a server-side one as far as the visitor is concerned.
-     */
+    // 403 gets its own copy because "you may not see this" is a different thing to tell someone
+    // than whatever `error.message` holds. An absent or >=500 status collapses to a plain 500.
     const isClientError = status !== undefined && status < 500;
 
     return router.push({

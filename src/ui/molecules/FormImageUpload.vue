@@ -10,7 +10,7 @@ import { useI18n } from 'vue-i18n';
 import {
     ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE,
     MAX_UPLOAD_SIZE_LABEL
-} from '@/infrastructure/uploads.ts';
+} from '@/infrastructure/utils/uploads.ts';
 
 const { t } = useI18n();
 

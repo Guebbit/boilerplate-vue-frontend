@@ -13,8 +13,8 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useInventoryStore } from '@/modules/inventory/store.ts';
 import { useProductsStore } from '@/modules/products';
-import { notifyErrorMessages } from '@/infrastructure/errors.ts';
-import { formatDateTime } from '@/infrastructure/formatters.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 
 /**
  * The stock board and the ledger behind it, admin-side.

@@ -12,8 +12,8 @@ import { Inbox } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useFeedbackStore } from '@/modules/feedback/store.ts';
-import { notifyErrorMessages } from '@/infrastructure/errors.ts';
-import { formatDateTime } from '@/infrastructure/formatters.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { FeedbackRequestStatus } from '@types';
 import type { FeedbackRequestStatus as TFeedbackRequestStatus } from '@types';
 

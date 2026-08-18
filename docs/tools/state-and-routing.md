@@ -12,11 +12,11 @@ Pinia is the official state management library for Vue 3. Stores hold reactive d
 
 | Store | File | Owns |
 | ----- | ---- | ---- |
-| Session | `src/infrastructure/session.ts` | access token, `isAuth`/`isAdmin`, the `viewer` projection, refresh, logout-all |
+| Session | `src/infrastructure/stores/session.ts` | access token, `isAuth`/`isAdmin`, the `viewer` projection, refresh, logout-all |
 | Account | `src/modules/account/store.ts` | the visitor's own `User` record: login, signup, password resets, profile edits |
-| Observability | `src/infrastructure/observability.ts` | Faro init, Umami init, `track()`, `captureException()`, `identifyUser()` |
+| Observability | `src/infrastructure/stores/observability.ts` | Faro init, Umami init, `track()`, `captureException()`, `identifyUser()` |
 | Realtime observability | `src/modules/realtime/realtimeObservability.ts` | SSE connection state, live metrics stream |
-| Counter (example) | `src/kernel/counter.ts` | minimal Pinia example |
+| Counter (example) | `src/modules/demo/store.ts` | minimal Pinia example |
 
 Domain stores live inside `src/modules/<name>/store.ts` and follow the same pattern. They are
 reached through the module's barrel (`@/modules/<name>`), never by their file path.
@@ -55,7 +55,7 @@ Every route is nested under `/:locale`:
 /:locale/admin          → Admin (admin only)
 ```
 
-If the locale segment is absent, the `localeChoice` middleware injects the default locale (`VITE_APP_DEFAULT_LOCALE`) and redirects.
+If the locale segment is absent, the `localeChoice` guard injects the default locale (`VITE_APP_DEFAULT_LOCALE`) and redirects.
 
 ### Router lifecycle
 
@@ -99,7 +99,7 @@ Vue I18n externalises all user-facing strings into locale message files. Switchi
 ### Locale flow
 
 1. URL contains `/:locale` segment (e.g. `/en/products`).
-2. `localeChoice` middleware validates the locale against `VITE_APP_SUPPORTED_LOCALES`.
+2. The `localeChoice` guard validates the locale against `VITE_APP_SUPPORTED_LOCALES`.
 3. If invalid or absent, the default locale from `VITE_APP_DEFAULT_LOCALE` is injected.
 4. Vue I18n's active locale is set to match; translations are loaded lazily.
 
@@ -119,7 +119,7 @@ src/modules/<name>/locales/       ← one domain's pages, forms and its own navi
 ```
 
 A module declares its dictionaries in `module.ts` (`locales: { en: () => import(…) }`);
-`src/main.ts` hands them to `registerLocaleContributors` because `infrastructure/i18n.ts` may not import
+`src/main.ts` hands them to `registerLocaleContributors` because `infrastructure/i18n/index.ts` may not import
 `@/modules`. Deleting a domain removes its copy with it, rather than leaving orphan keys in a file
 nobody dares prune.
 

@@ -71,8 +71,8 @@ everything a module can plug into.
 ### 4 · `src/app/router/index.ts` — URLs and guards
 
 Module routes are children of a `/:locale` parent, which is why every URL carries a language
-segment. Then four middlewares run in order: `exampleGuard`, `localeChoice`, `tryRestoreAuth`,
-`enforceRouteAccess`.
+segment. Then three guards run in order: `localeChoice`, `tryRestoreAuth`, `enforceRouteAccess`.
+(A route may add its own, as the `demo` module's Playground does.)
 
 **Take away:** access control is `meta: { access: 'admin' }` on a route, enforced centrally by
 `enforceRouteAccess` — never inside a component. See [Sitemap & Access Control](./sitemap.md).
@@ -137,11 +137,12 @@ generated code inherits all of the above without knowing it exists.
 | Skip | Until |
 | --- | --- |
 | `src/ui/**` (molecules, organisms, vuetify) | You are building a screen. Presentational only, no domain knowledge. |
-| `src/infrastructure/i18n.ts` | You are adding a language. It is the densest file in the repo and explains nothing about the architecture. |
-| `src/infrastructure/observability.ts`, `analyticsEvents.ts` | You are adding tracking. See [Observability](../tools/observability.md). |
+| `src/infrastructure/i18n/index.ts` | You are adding a language. It is the densest file in the repo and explains nothing about the architecture. |
+| `src/infrastructure/stores/observability.ts`, `analyticsEvents.ts` | You are adding tracking. See [Observability](../tools/observability.md). |
 | `src/modules/*/mocks/**` | You are changing mock behaviour. See [Mocking (MSW)](../tools/mocking.md). |
 | `src/modules/account/**` | It is the biggest and least typical module (auth, sessions, addresses, password flows). Read `products` first. |
 | `src/modules/realtime/**`, `src/modules/admin/**` | They are demonstrations of a capability, not part of the core shape. |
+| `src/modules/demo/**` | It demonstrates the framework and nothing else. Delete it when you start a real project. |
 | `eslint.config.ts`, `stryker.config.json`, `cypress.config.ts` | You are changing the gate itself. |
 
 ---

@@ -19,7 +19,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 import { useAccountStore } from '@/modules/account/store.ts';
-import { useSessionStore } from '@/infrastructure/session.ts';
+import { useSessionStore } from '@/infrastructure/stores/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 
 const USER = { id: 'u1', username: 'ada', email: 'ada@example.com', admin: false };

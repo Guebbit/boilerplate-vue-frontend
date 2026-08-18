@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { RefreshCw } from 'lucide-vue-next';
 import type { ObservabilityHealth, ObservabilityMetricsSummary } from '@types';
 import type { AdminKpiCard } from '@/modules/admin/types.ts';
-import { EMPTY_VALUE, formatUptime } from '@/infrastructure/formatters.ts';
+import { EMPTY_VALUE, formatUptime } from '@/infrastructure/utils/formatters.ts';
 
 const { t } = useI18n();
 

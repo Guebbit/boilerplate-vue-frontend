@@ -172,28 +172,27 @@ export default mergeConfig(
                         functions: 70,
                         lines: 70
                     },
-                    // Everything under middlewares EXCEPT authentications.ts, which is written
-                    // down below. The extglob negation is required rather than cosmetic: a file
+                    // Everything under guards EXCEPT authentications.ts, which is written down
+                    // below. The extglob negation is required rather than cosmetic: a file
                     // matching two glob keys lands in BOTH groups, so an exemption listed
                     // alongside the broad glob would still be failed by the broad glob. An
                     // exemption has to leave the glob to be one.
-                    'src/app/middlewares/!(authentications).ts': {
+                    'src/app/guards/!(authentications).ts': {
                         statements: 70,
                         branches: 70,
                         functions: 70,
                         lines: 70
                     },
                     // Measured 2026-08-08, and the first thing `perFile: true` exposed: the
-                    // pooled middlewares group passed 70 across the board while this file sat at
-                    // 50% branches and 55% functions, carried by exampleGuard.ts and
-                    // localeChoice.ts at 100%.
+                    // pooled guards group passed 70 across the board while this file sat at 50%
+                    // branches and 55% functions, carried by its neighbours at 100%.
                     //
                     // Floored at the measured value rounded down, NOT at an aspiration — this is
                     // a record of where it is, so a drop fails and an improvement can ratchet it
                     // up. It is the guard layer, so it is also the most valuable of the three to
                     // finish testing: the uncovered half is the failure paths of `tryRestoreAuth`
                     // and the admin branch of `isAdmin`.
-                    'src/app/middlewares/authentications.ts': {
+                    'src/app/guards/authentications.ts': {
                         statements: 75,
                         branches: 50,
                         functions: 55,
@@ -205,13 +204,13 @@ export default mergeConfig(
                         functions: 70,
                         lines: 70
                     },
-                    'src/infrastructure/errors.ts': {
+                    'src/infrastructure/utils/errors.ts': {
                         statements: 70,
                         branches: 70,
                         functions: 70,
                         lines: 70
                     },
-                    'src/infrastructure/formatters.ts': {
+                    'src/infrastructure/utils/formatters.ts': {
                         statements: 70,
                         branches: 70,
                         functions: 70,

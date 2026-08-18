@@ -14,8 +14,12 @@ import { useRouter, useRoute } from 'vue-router';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import { usersSchema } from '@/modules/users';
-import { notifyErrorMessages, VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/errors.ts';
-import { imageUploadSchema, useUploadProgress } from '@/infrastructure/uploads.ts';
+import {
+    notifyErrorMessages,
+    VUETIFY_INVALID_FIELD_SELECTOR
+} from '@/infrastructure/utils/errors.ts';
+import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
+import { useUploadProgress } from '@/infrastructure/composables/useUploadProgress.ts';
 
 /**
  * UI logics

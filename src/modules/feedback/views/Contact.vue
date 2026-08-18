@@ -10,7 +10,7 @@ import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useFeedbackStore } from '@/modules/feedback/store.ts';
-import { notifyErrorMessages } from '@/infrastructure/errors.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 
 /**
  * The public contact form. No login required — it exists for the visitor who cannot log in —

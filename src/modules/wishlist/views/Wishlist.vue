@@ -9,10 +9,10 @@ import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Heart, ShoppingCart } from 'lucide-vue-next';
-import { routerLinkI18n } from '@/infrastructure/i18n.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
 import { useWishlistStore } from '@/modules/wishlist/store.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { notifyErrorMessages } from '@/infrastructure/errors.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 

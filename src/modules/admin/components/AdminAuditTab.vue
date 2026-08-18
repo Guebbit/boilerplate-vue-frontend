@@ -5,7 +5,7 @@ import TableLoadingBar from '@/ui/molecules/TableLoadingBar.vue';
 import { Search } from 'lucide-vue-next';
 import type { AuditEventItem } from '@types';
 import type { AdminAuditFilters } from '@/modules/admin/types.ts';
-import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/formatters.ts';
+import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 
 const { t } = useI18n();
 

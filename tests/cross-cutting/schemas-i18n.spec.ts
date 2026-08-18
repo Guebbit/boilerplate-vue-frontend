@@ -3,7 +3,7 @@ import { defineComponent, h, nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 import * as z from 'zod';
 import { useStructureFormValidation } from '@guebbit/vue-toolkit';
-import { i18n, loadLocale, registerLocaleContributors, translate } from '@/infrastructure/i18n.ts';
+import { i18n, loadLocale, registerLocaleContributors, translate } from '@/infrastructure/i18n';
 
 /**
  * That a Zod schema follows the active locale — the MECHANISM, with an invented schema.
@@ -12,7 +12,7 @@ import { i18n, loadLocale, registerLocaleContributors, translate } from '@/infra
  * in between. It works because every message is a THUNK — `{ error: () => translate('…') }`, never
  * `{ error: translate('…') }` — and Zod v4 calls it at PARSE time.
  *
- * Deliberately against the real vue-i18n instance from `@/infrastructure/i18n.ts` — no `vi.mock`. A mocked
+ * Deliberately against the real vue-i18n instance from `@/infrastructure/i18n` — no `vi.mock`. A mocked
  * `t` would assert only that a key was looked up, which is true even when the message is frozen in
  * the wrong language.
  *

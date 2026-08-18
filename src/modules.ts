@@ -14,6 +14,7 @@ import account from '@/modules/account/module';
 import admin from '@/modules/admin/module';
 import cart from '@/modules/cart/module';
 import delivery from '@/modules/delivery/module';
+import demo from '@/modules/demo/module';
 import feedback from '@/modules/feedback/module';
 import inventory from '@/modules/inventory/module';
 import orders from '@/modules/orders/module';
@@ -28,6 +29,7 @@ export const enabledModules: AppModule[] = [
     admin,
     cart,
     delivery,
+    demo,
     feedback,
     inventory,
     orders,

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { translate } from '@/infrastructure/i18n.ts';
+import { translate } from '@/infrastructure/i18n';
 import { createProductBodyPriceMin } from '@api/schemas';
 
 /**

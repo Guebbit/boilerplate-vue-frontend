@@ -26,20 +26,12 @@ import {
     checkout as apiCheckout,
     reorder as apiReorder
 } from '@api';
-import { analyticsEvents } from '@/infrastructure/observability';
+import { analyticsEvents } from '@/infrastructure/observability/events.ts';
 
 const track = vi.fn();
 
-vi.mock('@/infrastructure/observability', () => ({
-    useObservabilityStore: () => ({ track }),
-    analyticsEvents: {
-        CART_ITEM_ADDED: 'cart_item_added',
-        CART_ITEM_REMOVED: 'cart_item_removed',
-        CART_CLEARED: 'cart_cleared',
-        CART_REORDERED: 'cart_reordered',
-        CHECKOUT_COMPLETED: 'checkout_completed',
-        CHECKOUT_FAILED: 'checkout_failed'
-    }
+vi.mock('@/infrastructure/stores/observability.ts', () => ({
+    useObservabilityStore: () => ({ track })
 }));
 
 const CART = {

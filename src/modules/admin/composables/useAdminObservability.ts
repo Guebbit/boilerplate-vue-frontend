@@ -7,7 +7,7 @@ import {
 } from '@api';
 import type { ObservabilityHealth, ObservabilityMetricsSummary, AuditEventItem } from '@types';
 import type { AdminAuditFilters } from '@/modules/admin/types.ts';
-import { useAsyncAction } from '@/infrastructure/useAsyncAction.ts';
+import { useAsyncAction } from '@/infrastructure/composables/useAsyncAction.ts';
 
 export interface UseAdminObservabilityReturn {
     health: Ref<ObservabilityHealth | undefined>;

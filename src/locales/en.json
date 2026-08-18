@@ -23,7 +23,6 @@
     },
     "navigation": {
         "label-home": "home",
-        "label-playground": "playground",
         "error-already-logged": "You are already logged",
         "error-not-logged": "You must be logged to access this page",
         "error-forbidden": "You are not allowed to access this page",
@@ -46,16 +45,6 @@
         "featured-product-2-description": "Optimized building blocks focused on speed and smooth UX.",
         "featured-product-3-title": "Growth Toolkit",
         "featured-product-3-description": "Flexible modules to scale features as your app evolves."
-    },
-    "playground-page": {
-        "page-title": "Playground",
-        "label-count": "@.capitalize:generic.count",
-        "label-provided": "Variable provided by App.vue",
-        "label-provided-change-typing": "Change directly by typing",
-        "label-provided-change-mutation": "Change using mutation",
-        "label-increment": "@.capitalize:generic.increment",
-        "label-delayed-increment": "Async @:generic.increment",
-        "button-test-alert": "Add test alert"
     },
     "error-page": {
         "page-title": "Error",

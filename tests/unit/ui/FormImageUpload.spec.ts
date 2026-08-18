@@ -27,7 +27,7 @@ import { mount } from '@vue/test-utils';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import vuetify from '@/ui/vuetify';
 import { i18n } from '@/infrastructure/i18n';
-import { ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE } from '@/infrastructure/uploads';
+import { ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE } from '@/infrastructure/utils/uploads';
 
 /** Object-URL bookkeeping, so a missing revoke is observable. */
 const created: string[] = [];

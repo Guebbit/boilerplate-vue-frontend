@@ -7,7 +7,7 @@ export default {
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { routerLinkI18n } from '@/infrastructure/i18n.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -26,8 +26,8 @@ import {
     formatText,
     formatDateTime,
     formatCurrency
-} from '@/infrastructure/formatters.ts';
-import { notifyErrorMessages } from '@/infrastructure/errors.ts';
+} from '@/infrastructure/utils/formatters.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { downloadBlob } from '@guebbit/js-toolkit';
 import { PaymentPanel } from '@/modules/payments';
 import { ShipmentPanel } from '@/modules/delivery';

@@ -4,7 +4,8 @@ import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { getWishlist, addWishlistItem, removeWishlistItem, moveWishlistItemToCart } from '@api';
 import type { WishlistItem } from '@types';
 import { useCartStore } from '@/modules/cart';
-import { useObservabilityStore, analyticsEvents } from '@/infrastructure/observability';
+import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
+import { analyticsEvents } from '@/infrastructure/observability/events.ts';
 
 /**
  * The visitor's saved products — ids only, like the cart's lines: the view joins them against

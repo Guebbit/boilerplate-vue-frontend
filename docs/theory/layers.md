@@ -19,7 +19,7 @@ There are two axes, and confusing them is the usual source of "where does this g
 | Modules  | `src/modules/*`   | one domain each, top to bottom  | `index.ts` is a module's only public surface                                          |
 | Kernel   | `src/kernel`    | that modules exist — never which  | the module registry mechanism, and nothing else                                       |
 | UI       | `src/ui`          | the design system, no domain    | Vuetify theme tokens + icon set, and the components built on them                     |
-| Infrastructure | `src/infrastructure`  | nothing about this app          | http client, i18n runtime, errors, formatters, uploads, logger, session, observability |
+| Infrastructure | `src/infrastructure`  | nothing about this app          | `http/`, `i18n/`, `observability/` config, `stores/` (session, observability), `composables/`, `utils/` |
 
 Dependencies point one way — `infrastructure → ui → kernel → modules → app` — and `eslint.config.ts`
 enforces it with one `no-restricted-imports` block per tier.
@@ -37,9 +37,15 @@ Two modules that each need the other are not a dependency pair: either they are 
 of them is holding state that belongs to the other. `dependsOn` is validated as a DAG while the
 router is assembled, and a cycle throws with the path named.
 
-The twelve domains in this build are `account`, `admin`, `cart`, `delivery`, `feedback`,
+The thirteen modules in this build are `account`, `admin`, `cart`, `delivery`, `demo`, `feedback`,
 `inventory`, `orders`, `payments`, `products`, `realtime`, `users` and `wishlist`. Six declare an
-edge; the other six are leaves.
+edge; the other seven are leaves.
+
+`demo` is the odd one: it serves no business at all. It holds the Playground page, the counter
+store and the teaching route guard — everything that exists to demonstrate the boilerplate rather
+than to run a shop. A module rather than part of the app shell precisely because that makes it
+deletable in one `rm -rf` plus one line, which is the first thing anyone starting a real project
+from this repo should do.
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 40, 'rankSpacing': 50}}}%%
@@ -108,15 +114,16 @@ flowchart TD
 | ----- | --------- | -------- |
 | Views | `src/app/views/`, `src/modules/*/views/` | template rendering, user events, layout |
 | Module composables | `src/modules/*/composables/` | domain-scoped logic, form handling |
-| Infrastructure helpers | `src/infrastructure/` | cross-domain helpers (i18n, formatters, errors, uploads, logger, `useAsyncAction`, the session) |
-| Stores | `src/infrastructure/session.ts`, `src/infrastructure/observability.ts`, `src/modules/*/store.ts` | global reactive state, API orchestration |
+| Infrastructure helpers | `src/infrastructure/utils/`, `src/infrastructure/composables/` | cross-domain helpers (formatters, errors, uploads, logger, `useAsyncAction`, `useUploadProgress`) |
+| i18n runtime | `src/infrastructure/i18n/` | the vue-i18n instance and locale loading (`index.ts`), the locale-prefixed router locations (`routerLink.ts`), the API's own dictionary (`apiDictionary.ts`) |
+| Stores | `src/infrastructure/stores/session.ts`, `src/infrastructure/stores/observability.ts`, `src/modules/*/store.ts` | global reactive state, API orchestration |
 | Generated client | `contracts/rest/index.ts`, `contracts/rest/schemas.zod.ts` | typed axios functions + Zod schemas (DO NOT edit) |
-| HTTP layer | `src/infrastructure/http/` | axios instance, interceptors, error shaping, orval mutator, response-schema map |
+| HTTP layer | `src/infrastructure/http/` | axios instance (`client.ts`), interceptors and error shaping (`interceptors.ts`), the 401 replay (`refresh.ts`), contract validation (`validate.ts`), envelope readers (`envelope.ts`), the orval mutator and the barrel (`index.ts`), response-schema map |
 | Design system | `src/ui/vuetify/` | theme tokens, component defaults, lucide icon set |
 | Shared components | `src/ui/molecules/`, `src/ui/organisms/` | domain-agnostic components, placed here by consumer count |
 | Layouts | `src/app/layouts/` | page shell components |
 | App shell components | `src/app/components/` | navigation and the language switcher — they know this app's domains and locales, not a design system |
-| Router | `src/app/router/`, `src/app/middlewares/`, `src/modules/*/routes.ts`, `src/modules.ts` | navigation, locale prefix, guards |
+| Router | `src/app/router/`, `src/app/guards/`, `src/modules/*/routes.ts`, `src/modules.ts` | navigation, locale prefix, guards |
 | Locales | `src/locales/` (shared), `src/modules/*/locales/` (per domain) | vue-i18n message files, deep-merged per locale at boot |
 | Styles | `src/styles/` | global CSS (layer order, fonts) |
 | Types | `src/types/` | shared TS types, re-exports from `@api` |
@@ -144,8 +151,8 @@ Reading them as one is the usual source of confusion.
 | `src/ui/**` | nowhere: it takes a prop and emits a model. It may not *have* behaviour |
 
 The payoff is not tidiness. A call sitting one step out is testable without mounting anything,
-reusable by a second component, and mockable in one place — `persistLocalePreference` in
-`src/infrastructure/localeApi.ts` is the reference case, four unit tests and no component in sight.
+reusable by a second component, and mockable in one place — `persistLocalePreference` on the
+session store is the reference case, five unit tests and no component in sight.
 
 ### The corollary that trips people up
 
@@ -224,6 +231,46 @@ Two signals, wired through a single Pinia store:
 - **Product analytics** ([Umami](../tools/umami.md)) — tracks pageviews and user actions.
 
 Both are initialized in `src/main.ts` and accessed via `useObservabilityStore()`. Page views are tracked automatically by the Umami tracker.
+
+## Two decisions the source files no longer argue
+
+### The session store is not the account module
+
+`infrastructure/http` reads the access token on every request and the router guards read `isAuth` /
+`isAdmin` before any domain code runs — both are the bottom of the stack. The *user record* — the
+editable `User`, its email, its avatar, the endpoints that change it — is domain knowledge and
+lives in `src/modules/account`.
+
+One store for both would give `infrastructure` a `User` entity and make the app shell reach into a
+domain to render a name. So the session holds a deliberately minimal projection instead:
+
+```ts
+viewer = { id, email, admin }
+```
+
+The shell knows *someone is signed in, here is their display name, they are staff*. It does not
+know what a `User` is, and deleting the account module does not break it.
+
+Which `/account` calls belong to the session: the ones it needs to restore, remember or end
+**itself** — `GET /account` (who am I), `/account/refresh`, `/account/logout`, `/account/logout-all`,
+and the language preference write. Everything else under `/account` — signup, the password resets,
+the deletion flow, editing your own record — is an operation *on* an account rather than *on* the
+session, and belongs to the module.
+
+### Each repository owns its own dictionary
+
+The two repos synchronize the *choice* of language — that is what `Accept-Language` does — and the
+API's own dictionary is *available* on request, never merged into this app's keyspace. Two
+independently-authored keyspaces would eventually collide, silently, and the loser would be
+whichever loaded last. So the API's keys go under the reserved `api.*` namespace and nowhere else,
+and this app never authors a key there by hand.
+
+Neither side depends on the other for its own strings, which is what lets either boilerplate be
+recombined with a different counterpart. And in normal operation none of it is needed at all: the
+API resolves its own keys and puts finished text on the wire, so the client prints what arrives and
+looks nothing up. Every function in `src/infrastructure/i18n/apiDictionary.ts` therefore **resolves
+rather than rejects**, and the app is fully usable when all of them return nothing — a locale switch
+must never be blocked by an API that is slow, old, or absent.
 
 ## Related pages
 

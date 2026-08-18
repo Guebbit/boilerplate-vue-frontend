@@ -29,8 +29,8 @@ export interface ResponseSchemaRoute {
  * The rows no module claims.
  *
  * `GET /`, `/locales*` and the session's three `/account` calls are infrastructure — the health
- * probe, the runtime dictionary `infrastructure/localeApi.ts` fetches, and the whoami/refresh/logout-all that
- * `infrastructure/session.ts` needs — so they live at the bottom tier with the code that calls them.
+ * probe, the runtime dictionary `i18n/apiDictionary.ts` fetches, and the whoami/refresh/logout-all that
+ * `infrastructure/stores/session.ts` needs — so they live at the bottom tier with the code that calls them.
  *
  * `/feedback*` and `/wishlist*` used to sit here under exactly that rule — contract endpoints no
  * frontend domain called yet, parked so their responses would be validated from the first

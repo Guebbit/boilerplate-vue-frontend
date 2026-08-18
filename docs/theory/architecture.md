@@ -17,7 +17,7 @@ flowchart TD
     HTTP["HTTP layer\nsrc/infrastructure/http/index.ts\naxios + interceptors"] --> Stores
     Generated --> HTTP
 
-    Obs["Observability\nGrafana Faro + Umami\nsrc/infrastructure/observability.ts"] --> Views
+    Obs["Observability\nGrafana Faro + Umami\nsrc/infrastructure/stores/observability.ts"] --> Views
     Obs --> Router
 
     MSW["MSW\nsrc/modules/*/mocks/ + tests/support/mocks/\ndev + test only"] -.intercepted by.-> HTTP

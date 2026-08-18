@@ -6,15 +6,15 @@ export default {
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
-import { routerLinkI18n } from '@/infrastructure/i18n.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useProductsStore } from '@/modules/products/store';
 import { useCartStore } from '@/modules/cart';
 import { useWishlistStore } from '@/modules/wishlist';
-import { useSessionStore } from '@/infrastructure/session.ts';
+import { useSessionStore } from '@/infrastructure/stores/session.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { notifyErrorMessages } from '@/infrastructure/errors.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { Heart, Package, ShoppingCart } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
@@ -28,7 +28,7 @@ import {
     formatDateTime,
     formatCurrency,
     formatFlag
-} from '@/infrastructure/formatters.ts';
+} from '@/infrastructure/utils/formatters.ts';
 
 /**
  * Localized dictionary helper.

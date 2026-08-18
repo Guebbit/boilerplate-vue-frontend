@@ -6,7 +6,7 @@ export default {
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { routerLinkI18n } from '@/infrastructure/i18n.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
@@ -27,8 +27,11 @@ import {
     formatText,
     formatDateTime,
     formatCurrency
-} from '@/infrastructure/formatters.ts';
-import { notifyErrorMessages, VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/errors.ts';
+} from '@/infrastructure/utils/formatters.ts';
+import {
+    notifyErrorMessages,
+    VUETIFY_INVALID_FIELD_SELECTOR
+} from '@/infrastructure/utils/errors.ts';
 
 /**
  * Generic utility hooks.

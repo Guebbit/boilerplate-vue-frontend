@@ -7,7 +7,7 @@ export default {
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { routerLinkI18n } from '@/infrastructure/i18n.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/modules/products/store';
@@ -15,8 +15,9 @@ import { productsSchema } from '@/modules/products/schemas.ts';
 import { z } from 'zod';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
-import { notifyErrorMessages } from '@/infrastructure/errors.ts';
-import { imageUploadSchema, useUploadProgress } from '@/infrastructure/uploads.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
+import { useUploadProgress } from '@/infrastructure/composables/useUploadProgress.ts';
 
 /**
  * Generics

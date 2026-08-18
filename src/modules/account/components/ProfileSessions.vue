@@ -12,9 +12,9 @@ import { useRouter } from 'vue-router';
 import { MonitorSmartphone } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAccountStore } from '@/modules/account/store.ts';
-import { notifyErrorMessages } from '@/infrastructure/errors.ts';
-import { formatDateTime } from '@/infrastructure/formatters.ts';
-import { routerLinkI18n } from '@/infrastructure/i18n.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
 
 /**
  * The devices panel: every live refresh token as a session, the current one flagged, each

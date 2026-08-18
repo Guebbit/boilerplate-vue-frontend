@@ -36,8 +36,8 @@ flowchart TD
 
     OUT --> R1["fetching, loading flags → store.ts"]
     OUT --> R2["form validation + messages → schemas.ts"]
-    OUT --> R3["number/date formatting → infrastructure/formatters"]
-    OUT --> R4["route access → app/middlewares"]
+    OUT --> R3["number/date formatting → infrastructure/utils/formatters"]
+    OUT --> R4["route access → app/guards"]
 
     classDef ask fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef yes fill:#dcfce7,stroke:#16a34a,color:#111827;
@@ -179,7 +179,7 @@ The same floor is applied on the API side, where it removed `nextDeletionState` 
 
 Only `cart` has one. On a frontend most modules never will.
 
-Worth noting: `canAccess()` in `app/middlewares/authentications.ts` is already exactly this pattern
+Worth noting: `canAccess()` in `app/guards/authentications.ts` is already exactly this pattern
 — a pure function, requirement in, boolean out. It stays in `app/` because it is a rule about *this
 application's route tree*, not about one domain.
 

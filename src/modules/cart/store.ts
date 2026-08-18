@@ -11,8 +11,9 @@ import {
     reorder as apiReorder
 } from '@api';
 import type { CartItem, CartResponse, CartSummaryResponse, CheckoutRequest } from '@types';
-import { useObservabilityStore, analyticsEvents } from '@/infrastructure/observability';
-import { apiErrorCode } from '@/infrastructure/errors';
+import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
+import { analyticsEvents } from '@/infrastructure/observability/events.ts';
+import { apiErrorCode } from '@/infrastructure/utils/errors';
 
 /**
  * Owns the authenticated user's shopping cart: every action replaces the local

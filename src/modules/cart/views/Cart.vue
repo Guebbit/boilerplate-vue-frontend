@@ -10,13 +10,13 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Minus, Plus, ShoppingCart } from 'lucide-vue-next';
-import { routerLinkI18n } from '@/infrastructure/i18n.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
 import { useCartStore } from '@/modules/cart/store.ts';
 // The stepper's floor is a rule, not a template detail — see `../domain/quantity.ts`.
 import { MIN_LINE_QUANTITY, steppedQuantity } from '@/modules/cart/domain';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { notifyErrorMessages } from '@/infrastructure/errors.ts';
-import { formatCurrency } from '@/infrastructure/formatters.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { ShippingSelector } from '@/modules/delivery';

@@ -24,7 +24,7 @@ import { ref } from 'vue';
 import { createPinia } from 'pinia';
 import AppNavigation from '@/app/components/AppNavigation.vue';
 import vuetify from '@/ui/vuetify';
-import type { RouteAccess } from '@/app/middlewares/authentications';
+import type { RouteAccess } from '@/app/guards/authentications';
 
 const session = {
     isAuth: ref(false),
@@ -98,7 +98,7 @@ vi.mock('vue-router', () => ({
     })
 }));
 
-vi.mock('@/infrastructure/session.ts', () => ({
+vi.mock('@/infrastructure/stores/session.ts', () => ({
     useSessionStore: () => session
 }));
 
@@ -199,6 +199,6 @@ describe('Navigation', () => {
         const { text } = mountNav();
 
         expect(text).toContain('navigation.label-home');
-        expect(text).toContain('navigation.label-playground');
+        expect(text).toContain('navigation.label-about');
     });
 });
