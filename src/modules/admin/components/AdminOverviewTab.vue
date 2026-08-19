@@ -49,15 +49,21 @@ const healthStatus = computed((): AdminKpiCard['status'] => {
 });
 
 /**
- * Status color driver of the database card.
+ * Status colour for one backing service, in the vocabulary the API reports for all of them.
  *
- * @returns `ok` when the database reports itself connected, `error` otherwise,
- *  `unknown` with no health data.
+ * `disabled` is deliberately `ok` and not a warning: a deployment that runs without Redis or
+ * without RabbitMQ is a supported configuration, and colouring it amber would leave the card
+ * permanently yellow on exactly the deployments that chose it.
+ *
+ * @param state - the dependency's reported state
+ * @returns the KPI card status to paint it with
  */
-const databaseStatus = computed((): AdminKpiCard['status'] => {
-    if (!props.health) return 'unknown';
-    return props.health.database.status === 'connected' ? 'ok' : 'error';
-});
+const dependencyStatus = (state?: string): AdminKpiCard['status'] => {
+    if (!state) return 'unknown';
+    if (state === 'ready' || state === 'disabled') return 'ok';
+    if (state === 'connecting') return 'warn';
+    return 'error';
+};
 
 /**
  * Status color driver of the error cards.
@@ -88,8 +94,18 @@ const kpiCards = computed<AdminKpiCard[]>(() => [
     },
     {
         title: t('admin-page.kpi-database'),
-        value: props.health?.database.status ?? EMPTY_VALUE,
-        status: databaseStatus.value
+        value: props.health?.dependencies.database.status ?? EMPTY_VALUE,
+        status: dependencyStatus(props.health?.dependencies.database.status)
+    },
+    {
+        title: t('admin-page.kpi-cache'),
+        value: props.health?.dependencies.cache.status ?? EMPTY_VALUE,
+        status: dependencyStatus(props.health?.dependencies.cache.status)
+    },
+    {
+        title: t('admin-page.kpi-queue'),
+        value: props.health?.dependencies.queue.status ?? EMPTY_VALUE,
+        status: dependencyStatus(props.health?.dependencies.queue.status)
     },
     {
         title: t('admin-page.kpi-uptime'),
@@ -275,23 +291,28 @@ const megabytes = (bytes: number) => Math.round(bytes / 1024 / 1024);
                         <dd class="font-medium">{{ props.health.system.cpuCount }}</dd>
                     </div>
                 </template>
-                <template v-if="props.health.integrations">
+                <!--
+                    Telemetry sinks: which ones this deployment is WIRED TO, read off the API's
+                    environment rather than probed. They sit apart from the dependency cards above
+                    on purpose — losing one costs visibility, not capability.
+                -->
+                <template v-if="props.health.telemetry">
                     <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
                         <dt class="opacity-70">{{ t('admin-page.label-loki') }}</dt>
-                        <dd class="font-medium">{{ flag(props.health.integrations.loki) }}</dd>
+                        <dd class="font-medium">{{ flag(props.health.telemetry.loki) }}</dd>
                     </div>
                     <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
                         <dt class="opacity-70">{{ t('admin-page.label-faro') }}</dt>
-                        <dd class="font-medium">{{ flag(props.health.integrations.faro) }}</dd>
+                        <dd class="font-medium">{{ flag(props.health.telemetry.faro) }}</dd>
                     </div>
                     <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
                         <dt class="opacity-70">{{ t('admin-page.label-umami') }}</dt>
-                        <dd class="font-medium">{{ flag(props.health.integrations.umami) }}</dd>
+                        <dd class="font-medium">{{ flag(props.health.telemetry.umami) }}</dd>
                     </div>
                     <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
                         <dt class="opacity-70">{{ t('admin-page.label-otel') }}</dt>
                         <dd class="font-medium">
-                            {{ flag(props.health.integrations.otelEnabled) }}
+                            {{ flag(props.health.telemetry.otel) }}
                         </dd>
                     </div>
                 </template>

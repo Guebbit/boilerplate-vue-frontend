@@ -39,8 +39,14 @@ const createSeedObservability = (): MockObservability => ({
         service: 'boilerplate-node-backend',
         nodeVersion: 'v20.0.0',
         uptimeSeconds: 3600,
-        database: { status: 'connected' },
-        integrations: { loki: true, otelEnabled: true, umami: true, faro: true },
+        dependencies: {
+            database: { status: 'ready' },
+            cache: { status: 'ready' },
+            /* `disabled` on purpose: the mock should exercise the state that must NOT paint the
+             * card as a failure, since it is the one a deployment can legitimately sit in. */
+            queue: { status: 'disabled' }
+        },
+        telemetry: { loki: true, otel: true, umami: true, faro: true, analytics: 'umami' },
         memory: {
             rss: 83_886_080,
             heapUsed: 67_108_864,

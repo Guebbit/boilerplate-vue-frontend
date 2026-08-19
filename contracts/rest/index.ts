@@ -536,21 +536,51 @@ export interface UpdateLocaleEntryRequest {
     value: string;
 }
 
-export type ObservabilityHealthIntegrationsAnalytics =
-    (typeof ObservabilityHealthIntegrationsAnalytics)[keyof typeof ObservabilityHealthIntegrationsAnalytics];
+/**
+ * One backing service's state, in the four words this payload uses for all of them.
+ * `disabled` means "not configured in this deployment" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a 40-second start period, during which "not yet" and "broken" look identical on the wire and mean opposite things.
+ */
+export type DependencyStatus = (typeof DependencyStatus)[keyof typeof DependencyStatus];
 
-export const ObservabilityHealthIntegrationsAnalytics = {
+export const DependencyStatus = {
+    ready: 'ready',
+    connecting: 'connecting',
+    unavailable: 'unavailable',
+    disabled: 'disabled'
+} as const;
+
+export interface ObservabilityDependency {
+    status: DependencyStatus;
+}
+
+/**
+ * Every backing service this process needs, read from the connection state each adapter already maintains. No I/O: a health endpoint that opens sockets is polled every few seconds by every replica forever, and becomes an amplifier pointed at the infrastructure it reports on.
+ */
+export interface ObservabilityHealthDependencies {
+    database: ObservabilityDependency;
+    cache: ObservabilityDependency;
+    queue: ObservabilityDependency;
+}
+
+export type ObservabilityHealthTelemetryAnalytics =
+    (typeof ObservabilityHealthTelemetryAnalytics)[keyof typeof ObservabilityHealthTelemetryAnalytics];
+
+export const ObservabilityHealthTelemetryAnalytics = {
     umami: 'umami',
     posthog: 'posthog',
     none: 'none'
 } as const;
 
-export interface ObservabilityHealthIntegrations {
-    loki?: boolean;
-    analytics?: ObservabilityHealthIntegrationsAnalytics;
-    otelEnabled?: boolean;
-    umami?: boolean;
-    faro?: boolean;
+/**
+ * Which telemetry sinks this deployment is WIRED TO — read off the environment, never probed.
+ * Deliberately not part of `status`: these are destinations this service writes to, and losing one costs visibility rather than capability. An unreachable Loki does not make a checkout fail, so it must not colour the dot a dashboard shows for "can this instance serve traffic".
+ */
+export interface ObservabilityHealthTelemetry {
+    loki: boolean;
+    otel: boolean;
+    umami: boolean;
+    faro: boolean;
+    analytics: ObservabilityHealthTelemetryAnalytics;
 }
 
 /**
@@ -574,6 +604,10 @@ export interface ObservabilityHealthSystem {
     loadAvg: number[];
 }
 
+/**
+ * READINESS: `ok` when every dependency is `ready` or `disabled`, `degraded` otherwise. Which part is missing is `dependencies`' job to say.
+ * This is not liveness. `GET /` answers that, and is what the container HEALTHCHECK probes — an orchestrator restarts on liveness, and restarting this process would not bring a downed Redis back.
+ */
 export type ObservabilityHealthStatus =
     (typeof ObservabilityHealthStatus)[keyof typeof ObservabilityHealthStatus];
 
@@ -582,28 +616,19 @@ export const ObservabilityHealthStatus = {
     degraded: 'degraded'
 } as const;
 
-export type ObservabilityHealthDatabaseStatus =
-    (typeof ObservabilityHealthDatabaseStatus)[keyof typeof ObservabilityHealthDatabaseStatus];
-
-export const ObservabilityHealthDatabaseStatus = {
-    connected: 'connected',
-    connecting: 'connecting',
-    disconnected: 'disconnected'
-} as const;
-
-export type ObservabilityHealthDatabase = {
-    status: ObservabilityHealthDatabaseStatus;
-};
-
 export interface ObservabilityHealth {
+    /**
+     * READINESS: `ok` when every dependency is `ready` or `disabled`, `degraded` otherwise. Which part is missing is `dependencies`' job to say.
+     * This is not liveness. `GET /` answers that, and is what the container HEALTHCHECK probes — an orchestrator restarts on liveness, and restarting this process would not bring a downed Redis back.
+     */
     status: ObservabilityHealthStatus;
     environment: string;
     service: string;
     nodeVersion: string;
     /** @minimum 0 */
     uptimeSeconds: number;
-    database: ObservabilityHealthDatabase;
-    integrations?: ObservabilityHealthIntegrations;
+    dependencies: ObservabilityHealthDependencies;
+    telemetry?: ObservabilityHealthTelemetry;
     memory?: ProcessMemory;
     system?: ObservabilityHealthSystem;
     timestamp: string;
@@ -2202,8 +2227,14 @@ export const getObservabilityEvents = (options?: SecondParameter<typeof orvalMut
 };
 
 /**
- * Full JSON health snapshot for dashboard use.
- * Includes uptime, database status, memory, integrations, and system info.
+ * Readiness snapshot: whether this instance can serve what it promises, and which
+ * backing service is missing when it cannot. Also carries uptime, memory, system and
+ * telemetry-wiring detail for the dashboard card.
+ *
+ * This is NOT the liveness probe — `GET /` is, and it is what the container
+ * HEALTHCHECK calls. Nothing here performs I/O; every dependency is read from the
+ * connection state its adapter already maintains.
+ *
  * Requires admin role.
  * @summary Health snapshot
  */
