@@ -5,8 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { ref, inject, watch, onMounted } from 'vue';
-import type { Ref } from 'vue';
+import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 
@@ -15,8 +14,9 @@ import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCounterInput from '@/ui/molecules/FormCounterInput.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
+import ProvidedVariableCard from '@/modules/demo/components/ProvidedVariableCard.vue';
 
-import type { ProvidedVariableMutationFunction, ProvidedVariableType } from '@/types';
+import { provideVariable } from '@/modules/demo/provided.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 
 /**
@@ -72,23 +72,11 @@ const {
 const { increment, incrementDelayed } = useCounterStore();
 
 /**
- * Same value as the one in Pinia, to show they are the same.
+ * The providing half of the provide/inject demo; `ProvidedVariableCard` below is the injecting
+ * half. Reachable by every descendant of this page and by nothing above it, which is the scope
+ * the mechanism actually has.
  */
-const { providedVariable, setProvidedVariable } = inject<{
-    providedVariable: Ref<ProvidedVariableType>;
-    setProvidedVariable: ProvidedVariableMutationFunction;
-}>('providedVariable', {
-    providedVariable: ref('Not provided'),
-    setProvidedVariable: () => undefined
-});
-
-/**
- * Watcher
- */
-
-watch(providedVariable, (val) => {
-    logger.debug('demo', 'Provided ref changed', val);
-});
+provideVariable();
 
 /**
  * Created and mounted
@@ -128,35 +116,7 @@ onMounted(() => {
         </section>
 
         <section class="mb-10 flex flex-wrap items-start justify-center gap-6">
-            <v-card class="w-full max-w-md p-6">
-                <h3 class="text-lg font-semibold">
-                    <b>{{ providedVariable }}</b>
-                </h3>
-                <p class="mb-4 opacity-70">{{ t('playground-page.label-provided') }}</p>
-
-                <p class="mb-1 font-medium">
-                    {{ t('playground-page.label-provided-change-typing') }}
-                </p>
-                <v-text-field
-                    v-model="providedVariable"
-                    type="text"
-                    :aria-label="t('playground-page.label-provided-change-typing')"
-                    hide-details
-                    class="mb-4"
-                />
-                <p class="mb-1 font-medium">
-                    {{ t('playground-page.label-provided-change-mutation') }}
-                </p>
-                <v-text-field
-                    :model-value="providedVariable"
-                    type="text"
-                    :aria-label="t('playground-page.label-provided-change-mutation')"
-                    hide-details
-                    @update:model-value="
-                        (value) => setProvidedVariable(typeof value === 'string' ? value : '')
-                    "
-                />
-            </v-card>
+            <ProvidedVariableCard />
         </section>
 
         <section class="flex flex-wrap justify-center gap-4">

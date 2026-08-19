@@ -6,7 +6,7 @@
         "page-title": "Playground",
         "label-count": "@.capitalize:generic.count",
         "label-count-input": "Valore del contatore",
-        "label-provided": "Variabile provided da App.vue",
+        "label-provided": "Variabile provided dalla pagina Playground",
         "label-provided-change-typing": "Cambia direttamente scrivendo",
         "label-provided-change-mutation": "Cambia usando la sua mutazione",
         "label-increment": "@.capitalize:generic.increment",

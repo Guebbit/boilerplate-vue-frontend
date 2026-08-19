@@ -8,9 +8,10 @@
  *      instruction — returning `false` would block every route, and returning an object would
  *      redirect. The docblock calls this out explicitly ("Returns nothing ... to let the
  *      navigation through"), and it is the single thing most easily broken by an edit.
- *   2. It must not throw when translations are not yet loaded. It runs before `App.vue`, so
- *      `t()` is being called against an i18n instance that may have no messages — the guard
- *      exists partly to demonstrate that this is survivable.
+ *   2. It must not throw when translations are not yet loaded. A `beforeEnter` runs before
+ *      `localeChoice`, which loads the dictionary in `beforeResolve`, so `t()` is being called
+ *      against an i18n instance that has no messages — the guard exists partly to demonstrate
+ *      that this is survivable.
  *
  * Pinia is real here, not mocked: the point being demonstrated is that stores *do* work inside a
  * guard, and a mocked store would demonstrate nothing.
@@ -91,8 +92,8 @@ describe('exampleGuard', () => {
     });
 
     it('survives translations that are not loaded yet', () => {
-        // The documented lesson of the guard: it runs before App.vue, so `t()` may return the
-        // raw key. That must be harmless, not fatal.
+        // The documented lesson of the guard: it runs before the dictionary is loaded, so `t()`
+        // may return the raw key. That must be harmless, not fatal.
         translateMock.mockImplementation((key: string) => key);
 
         expect(() => exampleGuard(routeTo())).not.toThrow();

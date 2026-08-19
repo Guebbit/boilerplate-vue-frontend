@@ -21,7 +21,8 @@ export const exampleGuard = (to: RouteLocationNormalized) => {
     count.value++;
     logger.debug('demo', 'count++: ' + count.value);
 
-    // Loaded before App.vue, so this one prints the raw key rather than a translation.
+    // `localeChoice` loads the dictionary in `beforeResolve`, which runs AFTER every
+    // `beforeEnter` — so at this point there are no messages and `t()` returns the raw key.
     const { t, locale } = i18n.global;
     logger.debug(
         'demo',
