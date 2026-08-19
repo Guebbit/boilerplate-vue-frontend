@@ -31,7 +31,7 @@
  * This repo has not hit that loop — vitest transforms with esbuild, which type-checks nothing and
  * so caches nothing per mutant. The guard is here anyway because the property that keeps it true is
  * a configuration choice rather than a law: see
- * `docs/tools/mutation-testing.md#why-this-repo-does-not-hit-the-backends-oom-loop`.
+ * `docs/tools/mutation-testing.md#why-this-repo-does-not-hit-the-backend-s-oom-loop`.
  */
 import { spawn } from 'node:child_process';
 import { rm } from 'node:fs/promises';

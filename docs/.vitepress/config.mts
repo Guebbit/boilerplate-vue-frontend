@@ -14,7 +14,8 @@ export default withMermaid(
                 { text: 'Getting Started', link: '/getting-started' },
                 { text: 'Theory', link: '/theory/' },
                 { text: 'Tools', link: '/tools/' },
-                { text: 'API', link: '/api/' }
+                { text: 'API', link: '/api/' },
+                { text: 'Files', link: '/reference/' }
             ],
             sidebar: {
                 '/theory/': [
@@ -54,6 +55,7 @@ export default withMermaid(
                             { text: 'Package Scripts', link: '/tools/package-scripts' },
                             { text: 'Environment Variables', link: '/tools/environment' },
                             { text: 'Runtime', link: '/tools/runtime' },
+                            { text: 'Internationalisation', link: '/tools/i18n' },
                             { text: 'Docker & Podman', link: '/tools/docker-and-podman' },
                             { text: 'Security', link: '/tools/security' }
                         ]
@@ -89,6 +91,23 @@ export default withMermaid(
                             { text: 'Accessibility Testing', link: '/tools/accessibility-testing' },
                             { text: 'Visual Regression', link: '/tools/visual-regression' },
                             { text: 'Mutation Testing', link: '/tools/mutation-testing' }
+                        ]
+                    }
+                ],
+                '/reference/': [
+                    {
+                        text: 'File Glossary',
+                        items: [
+                            { text: 'Overview', link: '/reference/' },
+                            { text: 'Repository Root', link: '/reference/root' },
+                            { text: 'App, Kernel & Types', link: '/reference/src-app' },
+                            { text: 'Infrastructure', link: '/reference/src-infrastructure' },
+                            { text: 'Modules', link: '/reference/src-modules' },
+                            { text: 'UI Kit', link: '/reference/src-ui' },
+                            { text: 'Contracts', link: '/reference/contracts' },
+                            { text: 'Scripts & Hooks', link: '/reference/scripts' },
+                            { text: 'Tests', link: '/reference/tests' },
+                            { text: 'Ops & Assets', link: '/reference/ops' }
                         ]
                     }
                 ],

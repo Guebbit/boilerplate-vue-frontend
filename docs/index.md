@@ -68,7 +68,7 @@ flowchart TD
 - **Contracts**: [`openapi.yaml`](./api/openapi-workflow.md) + [`asyncapi.yaml`](./api/asyncapi-workflow.md).
 - **Shape**: layered code explained in [Theory](./theory/) and the dedicated [Layers](./theory/layers.md) page.
 
-## Three sections, three jobs
+## Four sections, four jobs
 
 ### [Theory](./theory/)
 
@@ -82,6 +82,11 @@ New to the stack? Start at [Tools Explained](./tools/tools-explained.md) for a p
 ### [API](./api/)
 
 Contract-first workflow: OpenAPI + AsyncAPI, codegen, generated client usage, and mocks.
+
+### [Files](./reference/)
+
+The lookup surface: every file in the repository, what it is, and which page above explains it.
+Start here when you have landed on a filename rather than on a question.
 
 ## Quick visual of the current repo
 
