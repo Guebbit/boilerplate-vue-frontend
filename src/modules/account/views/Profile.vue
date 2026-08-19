@@ -81,8 +81,7 @@ interface ProfileForm {
 }
 
 const { form, formErrors, isDirty, resetForm, validate, setInitialData } =
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    useStructureFormValidation<ProfileForm>({}, usersSchema as any, { revalidateOn: locale });
+    useStructureFormValidation<ProfileForm>({}, usersSchema, { revalidateOn: locale });
 
 const showErrors = ref(false);
 
@@ -113,7 +112,7 @@ const {
         .superRefine(({ passwordConfirm, password }, ctx) => {
             if (passwordConfirm !== password)
                 ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
+                    code: 'custom',
                     message: t('users-form.password-dont-match'),
                     path: ['passwordConfirm']
                 });
@@ -190,9 +189,9 @@ const submitForm = () => {
 const submitPasswordChange = () => {
     if (!passwordIsValid.value) return;
     return changePassword(
-        passwordForm.value.currentPassword ?? '',
-        passwordForm.value.password ?? '',
-        passwordForm.value.passwordConfirm ?? ''
+        passwordForm.value.currentPassword,
+        passwordForm.value.password,
+        passwordForm.value.passwordConfirm
     )
         .then(() => {
             addMessage(t('profile-page.success-password-change'));

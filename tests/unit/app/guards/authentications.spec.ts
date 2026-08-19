@@ -1,3 +1,4 @@
+import { asStub } from '../../../support/stub';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import { canAccess, enforceRouteAccess } from '@/app/guards/authentications';
@@ -32,11 +33,11 @@ vi.mock('@/infrastructure/i18n', () => ({
 
 /** A route carrying just what `enforceRouteAccess` reads off it. */
 const route = (access?: RouteAccess) =>
-    ({
+    asStub<RouteLocationNormalized>({
         fullPath: '/en/target',
         params: { locale: 'en' },
         meta: access ? { access } : {}
-    }) as unknown as RouteLocationNormalized;
+    });
 
 const guest = { isAuth: false, isAdmin: false };
 const user = { isAuth: true, isAdmin: false };

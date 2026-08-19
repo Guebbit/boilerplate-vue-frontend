@@ -12,7 +12,7 @@ import {
     i18n,
     registerLocaleContributors
 } from '@/infrastructure/i18n';
-import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import enMessages from '@/locales/en.json';
 import itMessages from '@/locales/it.json';
 
@@ -20,7 +20,7 @@ import itMessages from '@/locales/it.json';
  * The locale machinery itself, against a REAL vue-i18n instance.
  *
  * This layer had no test at all. The one locale spec that existed —
- * `tests/unit/app/guards/localeChoice.spec.ts` — mocks `@/infrastructure/i18n` wholesale, so it
+ * `tests/unit/app/guards/locale-choice.spec.ts` — mocks `@/infrastructure/i18n` wholesale, so it
  * asserts that `changeLanguage` *was called with* `'it'` and never that anything became Italian.
  * That is the right way to test a router guard, and it left everything underneath unverified.
  *
@@ -373,7 +373,7 @@ describe('the customSnakeCase modifier', () => {
         }).then(() => {
             i18n.global.locale.value = 'en';
             expect(i18n.global.t('modifier-probe')).toBe('two_words');
-            return _updateLocale(i18n, 'en', enMessages as TranslationDictionaries);
+            return _updateLocale(i18n, 'en', enMessages);
         });
     });
 });

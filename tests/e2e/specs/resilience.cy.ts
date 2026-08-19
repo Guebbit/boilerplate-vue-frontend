@@ -194,7 +194,7 @@ describe('Resilience', () => {
              */
             cy.get('[data-test=row-view]')
                 .then((viewButtons) =>
-                    [...viewButtons].map((button) => button.getAttribute('href') as string)
+                    [...viewButtons].map((button) => button.getAttribute('href')!)
                 )
                 .then((hrefs) => {
                     expect(hrefs.length, 'no product rows to open').to.be.greaterThan(0);

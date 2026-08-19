@@ -1,6 +1,6 @@
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { usersResponseSchemas } from './responseSchemas';
+import { usersResponseSchemas } from './response-schemas';
 
 /**
  * User administration: the admin-only list, detail, create and edit screens.

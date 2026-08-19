@@ -100,7 +100,7 @@ flowchart TD
 | ----- | ---- | ------------- | ------ |
 | `tryRestoreAuth` | `src/app/guards/authentications.ts` | `beforeEach` (first) | Silently restores the access token from the refresh endpoint, then loads the viewer, so `isAuth`/`isAdmin` are settled before anything reads them |
 | `enforceRouteAccess` | `src/app/guards/authentications.ts` | `beforeEach` (second) | Applies `canAccess` to `meta.access`; redirects and notifies the visitor when it refuses |
-| `localeChoice` | `src/app/guards/localeChoice.ts` | `beforeResolve` | Loads and activates the `:locale` dictionary; redirects with the default locale injected when the param is missing or unsupported |
+| `localeChoice` | `src/app/guards/locale-choice.ts` | `beforeResolve` | Loads and activates the `:locale` dictionary; redirects with the default locale injected when the param is missing or unsupported |
 | `exampleGuard` | `src/modules/demo/guards.ts` | `beforeEnter` on `Playground` | Teaching-only: shows what a guard can and cannot reach. Scoped to one route, never app-wide |
 
 `canAccess` in the same file is not a guard — it is the shared predicate both `enforceRouteAccess`

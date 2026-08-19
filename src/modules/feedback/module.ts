@@ -1,6 +1,6 @@
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { feedbackResponseSchemas } from './responseSchemas';
+import { feedbackResponseSchemas } from './response-schemas';
 
 /**
  * The contact form and its admin inbox.

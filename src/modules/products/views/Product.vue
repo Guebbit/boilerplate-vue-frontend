@@ -6,7 +6,7 @@ export default {
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useProductsStore } from '@/modules/products/store';
@@ -124,7 +124,8 @@ const handleToggleWishlist = () => {
 
 // The heart needs to know what is already saved; guests have no wishlist to ask for.
 onMounted(() => {
-    if (isAuth.value) fetchWishlist();
+    // Fire-and-forget: the wishlist state is decoration on this page, not a load dependency.
+    if (isAuth.value) void fetchWishlist();
 });
 </script>
 

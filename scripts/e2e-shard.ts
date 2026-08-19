@@ -133,7 +133,7 @@ const weighted = specs
 /** Longest-processing-time first: each spec joins whichever shard is currently lightest. */
 const shards = Array.from({ length: shardCount }, () => ({ files: [] as string[], load: 0 }));
 for (const { file, weight } of weighted) {
-    let lightest = shards[0]!;
+    let lightest = shards[0];
     for (const shard of shards) if (shard.load < lightest.load) lightest = shard;
     lightest.files.push(file);
     lightest.load += weight;
@@ -204,7 +204,7 @@ const main = async () => {
     const results = await Promise.all(active.map((shard, index) => runShard(shard.files, index)));
 
     for (const { index, code, output, seconds } of results) {
-        const specCount = active[index]!.files.length;
+        const specCount = active[index].files.length;
         if (code === 0) {
             console.log(`[e2e-shard] shard ${index + 1}: ${specCount} specs OK in ${seconds}s`);
             continue;

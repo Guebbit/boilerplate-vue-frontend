@@ -29,6 +29,7 @@ export interface SseClient {
  *  callers can skip bad frames.
  */
 const parseJsonData = (rawData: string) => {
+    // eslint-disable-next-line no-restricted-syntax -- JSON.parse has no non-throwing form; a malformed SSE frame is dropped, not a crash
     try {
         return JSON.parse(rawData) as unknown;
     } catch {

@@ -4,7 +4,7 @@
  * `createSseClient` is mocked rather than driven through a real `EventSource`: what this file owns
  * is the wiring — which url is opened, which store action each event name reaches, and that the
  * module-level singleton is torn down before a second connection replaces it. The transport itself
- * is `tests/unit/infrastructure/createSseClient.spec.ts`.
+ * is `tests/unit/infrastructure/create-sse-client.spec.ts`.
  *
  * Every case re-imports the module through `vi.resetModules()`, because `activeClient` lives at
  * module scope: without a fresh module a test would inherit the previous test's open connection and
@@ -12,7 +12,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import type { SseClientCallbacks } from '@/infrastructure/createSseClient';
+import type { SseClientCallbacks } from '@/infrastructure/create-sse-client';
 import type { MetricsSnapshotEvent, SseEventName } from '@types';
 
 const close = vi.fn();
@@ -28,7 +28,7 @@ const createSseClient = vi.fn(
     })
 );
 
-vi.mock('@/infrastructure/createSseClient', () => ({
+vi.mock('@/infrastructure/create-sse-client', () => ({
     createSseClient: (...parameters: unknown[]) =>
         createSseClient(...(parameters as Parameters<typeof createSseClient>))
 }));
@@ -50,14 +50,14 @@ const makeEvent = (timestamp: string): MetricsSnapshotEvent => ({
 const loadComposable = async () => {
     vi.resetModules();
     const [{ useRealtimeObservability }, { useRealtimeObservabilityStore }] = await Promise.all([
-        import('@/modules/realtime/useRealtimeObservability'),
-        import('@/modules/realtime/realtimeObservability')
+        import('@/modules/realtime/use-realtime-observability'),
+        import('@/modules/realtime/realtime-observability')
     ]);
     return { useRealtimeObservability, useRealtimeObservabilityStore };
 };
 
 /** The callbacks handed to the last `createSseClient` call. */
-const lastCallbacks = () => createSseClient.mock.calls.at(-1)?.[2] as SseClientCallbacks;
+const lastCallbacks = () => createSseClient.mock.calls.at(-1)![2]!;
 
 describe('useRealtimeObservability', () => {
     beforeEach(() => {

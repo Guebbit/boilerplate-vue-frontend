@@ -6,7 +6,7 @@ export default {
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
@@ -33,7 +33,7 @@ import {
     VUETIFY_INVALID_FIELD_SELECTOR
 } from '@/infrastructure/utils/errors.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
-import { useUploadProgress } from '@/infrastructure/composables/useUploadProgress.ts';
+import { useUploadProgress } from '@/infrastructure/composables/use-upload-progress.ts';
 
 /**
  * Generic i18n/notifications helpers.
@@ -109,7 +109,7 @@ activateAutoHydrate(
     computed(() =>
         currentUser.value
             ? {
-                  email: currentUser.value.email ?? '',
+                  email: currentUser.value.email,
                   password: ''
               }
             : undefined

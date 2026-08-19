@@ -86,7 +86,7 @@ The trace-propagation origin is derived from `VITE_API_URL`.
 
 - **No PII** — never send email, name, or personal data in event properties.
 - **Use constants** from `analyticsEvents` — never hardcode event name strings.
-- **Match the backend** — the event constants are the canonical names the backend emits, so FE and BE analytics line up. `src/infrastructure/observability/analyticsEvents.ts` is a **copy of a backend-authored file**: it is assembled there from each module's own fragment and copied here byte-identically, so a new shared name is added in the backend module that emits it and the rebuilt file is copied over. `npm run check:spec-identity` fails the build when the two forks. Names only THIS app emits (the lifecycle events) are declared in that same file.
+- **Match the backend** — the event constants are the canonical names the backend emits, so FE and BE analytics line up. `src/infrastructure/observability/analytics-events.ts` is a **copy of a backend-authored file**: it is assembled there from each module's own fragment and copied here byte-identically, so a new shared name is added in the backend module that emits it and the rebuilt file is copied over. `npm run check:spec-identity` fails the build when the two forks. Names only THIS app emits (the lifecycle events) are declared in that same file.
 - **Fire-and-forget** — never `await` a `track()` call.
 
 ### Event taxonomy
@@ -139,7 +139,7 @@ All observability calls go through `useObservabilityStore()`. Never import the F
 
 ```ts
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
-import { analyticsEvents } from '@/infrastructure/observability/analyticsEvents.ts';
+import { analyticsEvents } from '@/infrastructure/observability/analytics-events.ts';
 
 const obs = useObservabilityStore();
 

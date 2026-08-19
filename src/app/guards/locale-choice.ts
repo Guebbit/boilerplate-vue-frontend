@@ -7,7 +7,7 @@ import {
     changeLanguage,
     type TranslationDictionaries
 } from '@/infrastructure/i18n';
-import { withLocaleOverrides } from '@/infrastructure/i18n/localeOverrides.ts';
+import { withLocaleOverrides } from '@/infrastructure/i18n/locale-overrides.ts';
 import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router';
 
 /**
@@ -15,7 +15,7 @@ import type { RouteLocationNormalized, RouteLocationRaw } from 'vue-router';
  *
  * The bundled half is a local import and stays local on purpose — the FILES are the defaults, so
  * a build with no network renders every language it shipped. The override half is a real network
- * fetch (see `@/infrastructure/i18n/localeOverrides.ts`), merged per key, which is what makes a
+ * fetch (see `@/infrastructure/i18n/locale-overrides.ts`), merged per key, which is what makes a
  * string editable by someone who never opens a code editor and what makes a language this app
  * bundles nothing for work at all: it arrives as overrides alone and falls back per key.
  *

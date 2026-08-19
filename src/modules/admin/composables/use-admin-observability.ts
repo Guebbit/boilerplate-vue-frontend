@@ -7,7 +7,7 @@ import {
 } from '@api';
 import type { ObservabilityHealth, ObservabilityMetricsSummary, AuditEventItem } from '@types';
 import type { AdminAuditFilters } from '@/modules/admin/types.ts';
-import { useAsyncAction } from '@/infrastructure/composables/useAsyncAction.ts';
+import { useAsyncAction } from '@/infrastructure/composables/use-async-action.ts';
 
 export interface UseAdminObservabilityReturn {
     health: Ref<ObservabilityHealth | undefined>;
@@ -92,12 +92,12 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
      *
      * @returns A promise resolving once `health` or `errorHealth` is set.
      */
-    const fetchHealth = () => runHealth().then(() => {});
+    const fetchHealth = () => runHealth().then(() => undefined);
 
     /**
      * @returns A promise resolving once `metrics` or `errorMetrics` is set.
      */
-    const fetchMetrics = () => runMetrics().then(() => {});
+    const fetchMetrics = () => runMetrics().then(() => undefined);
 
     /**
      * Loads the audit log page matching the given filters.
@@ -106,7 +106,7 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
      * @returns A promise resolving once `auditEvents` + `auditTotal`, or `errorAudit`, are set.
      */
     const fetchAuditLogs = (filters: AdminAuditFilters = {}) =>
-        runAuditLogs(filters).then(() => {});
+        runAuditLogs(filters).then(() => undefined);
 
     /**
      * Loads health, metrics and audit logs in parallel, for the initial dashboard render.
@@ -114,7 +114,7 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
      * @returns A promise resolving once all three calls have settled.
      */
     const fetchAll = () =>
-        Promise.all([fetchHealth(), fetchMetrics(), fetchAuditLogs()]).then(() => {});
+        Promise.all([fetchHealth(), fetchMetrics(), fetchAuditLogs()]).then(() => undefined);
 
     const clearingExpiredTokens = ref(false);
 

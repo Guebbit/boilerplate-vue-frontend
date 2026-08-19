@@ -37,7 +37,8 @@ import {
     resetMockDatabase,
     resolveMockImageUrl,
     tryGetSessionStorage,
-    trySetSessionStorage
+    trySetSessionStorage,
+    asText
 } from '@mocks/mockDb.ts';
 import { toMockJsonResponse } from '@mocks/mockTransport.ts';
 import { MockErrorResponse } from '@mocks/mockValidation.ts';
@@ -128,6 +129,7 @@ const applyAccountJournal = () => {
         journalRestored = true;
         const raw = tryGetSessionStorage(ACCOUNT_JOURNAL_KEY);
         if (raw)
+            // eslint-disable-next-line no-restricted-syntax -- JSON.parse has no non-throwing form; a corrupt journal is discarded, not a crash
             try {
                 const journal = JSON.parse(raw) as {
                     tokens: [string, { type: 'verify' | 'reset'; email: string }][];
@@ -171,7 +173,7 @@ const issueToken = (type: 'verify' | 'reset', email: string): string => {
 /** The claim behind a token, consumed — a link is spent by following it, both ways. */
 const spendToken = (token: string | undefined, type: 'verify' | 'reset') => {
     const claim = token === undefined ? undefined : issuedTokens.get(token);
-    if (!claim || claim.type !== type) return undefined;
+    if (claim?.type !== type) return undefined;
     issuedTokens.delete(String(token));
     persistAccountJournal();
     return claim;
@@ -193,7 +195,7 @@ const normalizeDefaults = (book: Address[], claimantId?: string) => {
     if (book.length === 0) return;
     const claimant = claimantId && book.find(({ id }) => id === claimantId);
     if (claimant) for (const entry of book) entry.default = entry.id === claimantId;
-    else if (!book.some(({ default: isDefault }) => isDefault)) book[0]!.default = true;
+    else if (!book.some(({ default: isDefault }) => isDefault)) book[0].default = true;
 };
 
 let addressIdCounter = 0;
@@ -293,7 +295,7 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
         readRequestBody<LoginRequest>(request).then((requestBody) => {
             applyAccountJournal();
             const matchedUser = mockDatabase.sampleUsers.find(
-                (user) => user.email.toLowerCase() === String(requestBody.email ?? '').toLowerCase()
+                (user) => user.email.toLowerCase() === asText(requestBody.email).toLowerCase()
             );
 
             const expectedPassword =
@@ -332,8 +334,8 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
             ({ fields: requestBody, files }) => {
                 const createdUser: User = {
                     id: `user-${Date.now()}`,
-                    email: String(requestBody.email ?? 'new.user@example.com'),
-                    username: String(requestBody.username ?? 'new-user'),
+                    email: asText(requestBody.email, 'new.user@example.com'),
+                    username: asText(requestBody.username, 'new-user'),
                     admin: false,
                     active: true,
                     // Self-signup starts unverified, exactly like the real API — the banner and
@@ -349,10 +351,7 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
                 // Into the journal too: the visitor who just signed up expects to still exist
                 // after the reload the verification link brings them back through.
                 extraUsers.push(createdUser);
-                knownPasswords.set(
-                    createdUser.email.toLowerCase(),
-                    String(requestBody.password ?? '')
-                );
+                knownPasswords.set(createdUser.email.toLowerCase(), asText(requestBody.password));
                 persistAccountJournal();
                 // The verification email the real signup fires: the token lands in the outbox,
                 // and the registration spec follows it exactly like a person following the link.
@@ -380,7 +379,7 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
     http.post(`${API_BASE}/account/reset`, ({ request }) =>
         readRequestBody<{ email?: string }>(request).then((requestBody) => {
             applyAccountJournal();
-            const email = String(requestBody.email ?? '').toLowerCase();
+            const email = asText(requestBody.email).toLowerCase();
             const matchedUser = mockDatabase.sampleUsers.find(
                 (user) => user.email.toLowerCase() === email
             );
@@ -405,7 +404,7 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
                     createErrorEnvelope(422, 'VALIDATION_ERROR', 'Invalid or expired token'),
                     { status: 422, schema: MockErrorResponse }
                 );
-            knownPasswords.set(claim.email.toLowerCase(), String(requestBody.password ?? ''));
+            knownPasswords.set(claim.email.toLowerCase(), asText(requestBody.password));
             persistAccountJournal();
             return toMockJsonResponse(createMessageResponse('Password reset confirmed'), {
                 schema: ConfirmPasswordResetResponse
@@ -491,7 +490,7 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
                         { status: 422, schema: MockErrorResponse }
                     );
                 if (email !== undefined) {
-                    knownPasswords.set(email, String(requestBody.password ?? ''));
+                    knownPasswords.set(email, asText(requestBody.password));
                     persistAccountJournal();
                 }
                 return toMockJsonResponse(createMessageResponse('Password changed'), {
@@ -597,11 +596,11 @@ export const registerAccountMockHandlers = (): HttpHandler[] => [
             const entry: Address = {
                 id: `address-${addressIdCounter}`,
                 label: requestBody.label,
-                fullName: String(requestBody.fullName ?? ''),
-                street: String(requestBody.street ?? ''),
-                city: String(requestBody.city ?? ''),
-                zip: String(requestBody.zip ?? ''),
-                country: String(requestBody.country ?? ''),
+                fullName: asText(requestBody.fullName),
+                street: asText(requestBody.street),
+                city: asText(requestBody.city),
+                zip: asText(requestBody.zip),
+                country: asText(requestBody.country),
                 phone: requestBody.phone,
                 default: book.length === 0 || requestBody.default === true
             };

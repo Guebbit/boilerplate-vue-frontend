@@ -2,7 +2,7 @@ import { watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { cartResponseSchemas } from './responseSchemas';
+import { cartResponseSchemas } from './response-schemas';
 import { useCartStore } from './store';
 import { useSessionStore } from '@/infrastructure/stores/session.ts';
 

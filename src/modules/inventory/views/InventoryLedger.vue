@@ -12,7 +12,7 @@ import { BookOpen, Timer } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useInventoryStore } from '@/modules/inventory/store.ts';
 import { useProductsStore } from '@/modules/products';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';

@@ -71,7 +71,7 @@ describe('payForOrder', () => {
     });
 
     it('lets a decline propagate — the caller owns the toast', () => {
-        responses['POST /payments/payment-1/confirm'] = undefined as never;
+        responses['POST /payments/payment-1/confirm'] = undefined;
         const store = usePaymentsStore();
         return expect(store.payForOrder('order-1', '4000000000000002')).rejects.toThrow();
     });

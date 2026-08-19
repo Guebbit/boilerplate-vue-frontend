@@ -22,6 +22,7 @@
  * `undefined` hides it; and an array selection must be collapsed back into the model, because
  * every `imageUpload` field in the contract declares a single file.
  */
+import { asStub } from '../../support/stub';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mount } from '@vue/test-utils';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
@@ -223,7 +224,7 @@ describe('FormImageUpload — the field', () => {
         const wrapper = mountUpload();
         const file = makeFile();
 
-        await wrapper.setProps({ modelValue: [file] as unknown as File });
+        await wrapper.setProps({ modelValue: asStub<File>([file]) });
         await wrapper.vm.$nextTick();
 
         const emitted = wrapper.emitted('update:modelValue');

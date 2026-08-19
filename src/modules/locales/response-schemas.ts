@@ -1,5 +1,5 @@
 import * as schemas from '@api/schemas';
-import type { ResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMap';
+import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 
 /**
  * Response-envelope schemas for the locale ADMIN surface — the nine operations only this module
@@ -7,7 +7,7 @@ import type { ResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMa
  * that shelf's docblock promised.
  *
  * The two public reads (`GET /locales`, `GET /locales/{tag}/messages`) are NOT here: the boot
- * path in `infrastructure/i18n/localeOverrides.ts` calls them whether or not this module is
+ * path in `infrastructure/i18n/locale-overrides.ts` calls them whether or not this module is
  * enabled, so their rows stay in `coreRouteSchemas` with the code that needs them.
  *
  * Same regex discipline as the core rows: every single-segment pattern is `$`-anchored so

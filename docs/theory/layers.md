@@ -116,7 +116,7 @@ flowchart TD
 | Views | `src/app/views/`, `src/modules/*/views/` | template rendering, user events, layout |
 | Module composables | `src/modules/*/composables/` | domain-scoped logic, form handling |
 | Infrastructure helpers | `src/infrastructure/utils/`, `src/infrastructure/composables/` | cross-domain helpers (formatters, errors, uploads, logger, `useAsyncAction`, `useUploadProgress`) |
-| i18n runtime | `src/infrastructure/i18n/` | the vue-i18n instance and locale loading (`index.ts`), the locale-prefixed router locations (`routerLink.ts`), the language manifest and the API-stored overrides (`localeOverrides.ts`) |
+| i18n runtime | `src/infrastructure/i18n/` | the vue-i18n instance and locale loading (`index.ts`), the locale-prefixed router locations (`router-link.ts`), the language manifest and the API-stored overrides (`locale-overrides.ts`) |
 | Stores | `src/infrastructure/stores/session.ts`, `src/infrastructure/stores/observability.ts`, `src/modules/*/store.ts` | global reactive state, API orchestration |
 | Generated client | `contracts/rest/index.ts`, `contracts/rest/schemas.zod.ts` | typed axios functions + Zod schemas (DO NOT edit) |
 | HTTP layer | `src/infrastructure/http/` | axios instance (`client.ts`), interceptors and error shaping (`interceptors.ts`), the 401 replay (`refresh.ts`), contract validation (`validate.ts`), envelope readers (`envelope.ts`), the orval mutator and the barrel (`index.ts`), response-schema map |
@@ -204,7 +204,7 @@ For a product flow you typically move through:
 
 - `src/modules/products/views/ProductsList.vue`
 - `src/modules/<name>/composables/<useThing>.ts` (optional — products has none today;
-  `src/modules/admin/composables/useAdminObservability.ts` is a real one)
+  `src/modules/admin/composables/use-admin-observability.ts` is a real one)
 - `src/modules/products/store.ts`
 - `contracts/rest/index.ts` → `getProducts()`
 - `src/infrastructure/http/index.ts`
@@ -290,7 +290,7 @@ Overrides are merged **per key and deep**. An edit names one leaf, and the twent
 its group must survive — a shallow assign there deletes them silently, and the damage shows up on
 an unrelated screen.
 
-Nothing in this is load-bearing. Every function in `src/infrastructure/i18n/localeOverrides.ts`
+Nothing in this is load-bearing. Every function in `src/infrastructure/i18n/locale-overrides.ts`
 **resolves rather than rejects**, and the app is fully usable when all of them return nothing: the
 bundled files are the floor, and a locale switch must never be blocked by an API that is slow, old,
 or absent. What that costs when the API is unreachable is the edits, and only the edits.

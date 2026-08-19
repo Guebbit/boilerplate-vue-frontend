@@ -85,7 +85,7 @@ describe('ListPagination — the model', () => {
 
         // The second page button — index 0 is the "previous" arrow in Vuetify's markup.
         const pageButtons = wrapper.findAll('.v-pagination__item button');
-        await pageButtons[1]!.trigger('click');
+        await pageButtons[1].trigger('click');
 
         expect(wrapper.emitted('update:modelValue')?.at(-1)?.[0]).toBe(2);
     });

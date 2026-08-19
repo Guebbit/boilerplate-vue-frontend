@@ -14,7 +14,7 @@
  * that matters more than it does on the server: **most of this application's domain lives behind
  * the API**. `cart` has one because quantity clamping is a real client-side rule; `products` and
  * `orders` are core and have none, because prices and status transitions are the server's to
- * decide and a second implementation here would be the drift `scripts/specIdentity.ts` exists to
+ * decide and a second implementation here would be the drift `scripts/spec-identity.ts` exists to
  * catch. That is the correct state, not a gap — see `docs/theory/domain-layer.md`.
  */
 

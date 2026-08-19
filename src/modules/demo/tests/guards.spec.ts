@@ -16,6 +16,7 @@
  * guard, and a mocked store would demonstrate nothing.
  */
 
+import { asStub } from '../../../../tests/support/stub';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import type { RouteLocationNormalized } from 'vue-router';
@@ -40,7 +41,7 @@ const { exampleGuard } = await import('@/modules/demo/guards.ts');
 const { useCounterStore } = await import('@/modules/demo/store.ts');
 
 const routeTo = (path = '/en/products') =>
-    ({ path, name: 'products', params: {}, query: {} }) as unknown as RouteLocationNormalized;
+    asStub<RouteLocationNormalized>({ path, name: 'products', params: {}, query: {} });
 
 let consoleSpy: ReturnType<typeof vi.spyOn>;
 
@@ -60,6 +61,7 @@ describe('exampleGuard', () => {
     it('returns undefined so the navigation is allowed through', () => {
         // Not `toBeFalsy()`: `false` is falsy too, and returning `false` from a Vue Router guard
         // aborts the navigation — i.e. would break every route in the app.
+        // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- the assertion IS that the guard returns undefined (allows the navigation)
         expect(exampleGuard(routeTo())).toBeUndefined();
     });
 

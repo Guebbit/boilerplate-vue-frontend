@@ -14,7 +14,7 @@
  * own freshly imported instances. `tests/unit/infrastructure/http/httpValidateResponses.spec.ts` is the
  * example.
  */
-import { registerResponseSchemas } from '@/infrastructure/http/responseSchemaMap';
+import { registerResponseSchemas } from '@/infrastructure/http/response-schema-map';
 import { registerLocaleContributors } from '@/infrastructure/i18n';
 import { collectModuleLocales, collectModuleResponseSchemas } from '@/kernel/registry';
 import { enabledModules } from '@/modules';

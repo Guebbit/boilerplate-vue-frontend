@@ -212,7 +212,7 @@ export function _ensureFallbackLoaded(i18n: I18n, locale: string): Promise<unkno
                 _updateLocale(i18n, fallback, file.default)
             )
             // A fallback with no local dictionary is a configuration choice, not an error.
-            .catch(() => {})
+            .catch(() => undefined)
     );
 }
 
@@ -278,6 +278,6 @@ export const getCurrentLocale = () => i18n.global.locale.value;
  * translated and nothing here looks it up. The one case that needed this app's own words — no
  * response at all, a 401 with an empty body, a bare 502 — is answered by `api-errors.*` in the
  * dictionaries, and those keys are now translatable for EVERY language, including the ones this
- * build does not bundle, because `localeOverrides.ts` fetches them. Reserving a root for the
+ * build does not bundle, because `locale-overrides.ts` fetches them. Reserving a root for the
  * backend's keyspace bought nothing after that, and cost a namespace nobody could author under.
  */

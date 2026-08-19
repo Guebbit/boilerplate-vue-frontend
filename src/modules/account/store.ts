@@ -27,7 +27,7 @@ import {
 } from '@api';
 import type { Address, AddressInput, Session, UpdateAddressRequest } from '@types';
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
-import { analyticsEvents } from '@/infrastructure/observability/analyticsEvents.ts';
+import { analyticsEvents } from '@/infrastructure/observability/analytics-events.ts';
 
 /**
  * The account domain: the visitor's own record, and every operation that changes it.

@@ -7,7 +7,7 @@ export default {
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/modules/products/store';
@@ -17,7 +17,7 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
-import { useUploadProgress } from '@/infrastructure/composables/useUploadProgress.ts';
+import { useUploadProgress } from '@/infrastructure/composables/use-upload-progress.ts';
 
 /**
  * Generics
@@ -109,7 +109,10 @@ const submitForm = () =>
         ).then((newProduct) => {
             if (!newProduct) return;
             addMessage(t('product-create-page.success-create'));
-            router.push(routerLinkI18n({ name: 'ProductTarget', params: { id: newProduct.id } }));
+            // Fire-and-forget: a NavigationFailure must not convert a completed create into an error toast.
+            void router.push(
+                routerLinkI18n({ name: 'ProductTarget', params: { id: newProduct.id } })
+            );
         })
     )
         .then((success) => {

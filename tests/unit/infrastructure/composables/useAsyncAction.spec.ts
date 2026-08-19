@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { useAsyncAction } from '@/infrastructure/composables/useAsyncAction.ts';
+import { useAsyncAction } from '@/infrastructure/composables/use-async-action.ts';
 
 /**
  * A promise the test resolves or rejects by hand, so two calls can be interleaved deliberately.
@@ -64,6 +64,7 @@ describe('useAsyncAction', () => {
         });
 
         it('falls back to the supplied message for a non-Error rejection', async () => {
+            // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the non-Error rejection IS the case under test
             const { error, run } = useAsyncAction(() => Promise.reject('just a string'), {
                 fallbackErrorMessage: 'Failed to load health data'
             });

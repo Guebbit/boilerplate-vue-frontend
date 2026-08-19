@@ -1,5 +1,5 @@
 /**
- * Locale router guard — `src/app/guards/localeChoice.ts`.
+ * Locale router guard — `src/app/guards/locale-choice.ts`.
  *
  * This guard runs on every navigation and decides one of three things: proceed as-is, load a
  * language first, or redirect to inject a default locale. Getting the third case wrong is the
@@ -16,6 +16,7 @@
  * `.env` — the suite must not change meaning when that file does.
  */
 
+import { asStub } from '../../../support/stub';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import type { RouteLocationNormalized } from 'vue-router';
 
@@ -62,16 +63,16 @@ vi.mock('@api', async (importOriginal) => ({
     getLocaleMessages: (locale: string) => getLocaleMessagesMock(locale)
 }));
 
-const { fetchLanguageApi, localeChoice } = await import('@/app/guards/localeChoice');
+const { fetchLanguageApi, localeChoice } = await import('@/app/guards/locale-choice');
 
 /** Minimal route stub — the guard only reads name, params and query. */
 const routeTo = (overrides: Partial<RouteLocationNormalized> = {}) =>
-    ({
+    asStub<RouteLocationNormalized>({
         name: 'home',
         params: {},
         query: {},
         ...overrides
-    }) as unknown as RouteLocationNormalized;
+    });
 
 beforeEach(() => {
     vi.clearAllMocks();

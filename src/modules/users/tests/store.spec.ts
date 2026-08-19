@@ -12,6 +12,7 @@
  * rejects, so the assertions inside a `.then` are as binding as awaited ones. See
  * `docs/tools/unit-testing.md`.
  */
+import { asStub } from '../../../../tests/support/stub';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
@@ -40,11 +41,10 @@ const lastFormData = () => {
 
 /** Makes the transport answer with a paginated envelope for this test. */
 const respondWithItems = (items: unknown[]) =>
-    vi.mocked(orvalMutator).mockResolvedValue({ data: { items } } as never);
+    vi.mocked(orvalMutator).mockResolvedValue({ data: { items } });
 
 /** The query parameters of the most recent request. */
-const lastParameters = () =>
-    (lastRequest() as unknown as { params: Record<string, unknown> }).params;
+const lastParameters = () => asStub<{ params: Record<string, unknown> }>(lastRequest()).params;
 
 describe('useUsersStore', () => {
     beforeEach(() => {
@@ -261,7 +261,7 @@ describe('useUsersStore', () => {
         });
 
         it('fetchUser requests one user and unwraps a single-record envelope', () => {
-            vi.mocked(orvalMutator).mockResolvedValue({ data: USER } as never);
+            vi.mocked(orvalMutator).mockResolvedValue({ data: USER });
 
             return useUsersStore()
                 .fetchUser('u1')

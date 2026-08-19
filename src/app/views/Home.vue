@@ -13,7 +13,7 @@ import type { Component } from 'vue';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import CardInfo from '@/ui/organisms/CardInfo.vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
 const { t } = useI18n();
 const router = useRouter();

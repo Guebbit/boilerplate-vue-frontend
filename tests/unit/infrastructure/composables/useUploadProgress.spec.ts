@@ -1,16 +1,15 @@
 /**
  * The axios binding around the toolkit's upload-progress state machine —
- * `src/infrastructure/composables/useUploadProgress.ts`.
+ * `src/infrastructure/composables/use-upload-progress.ts`.
  *
  * The state machine itself is the toolkit's and tested there. What is this app's, and therefore
  * tested here, is the axios shape: the `onUploadProgress` callback handed to the call, the 0–1
  * fraction it reports, and the "no file, no tracking" rule.
  */
 import { describe, expect, it, afterEach, vi } from 'vitest';
-import { nextTick } from 'vue';
 import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 
-import { useUploadProgress } from '@/infrastructure/composables/useUploadProgress.ts';
+import { useUploadProgress } from '@/infrastructure/composables/use-upload-progress.ts';
 
 /**
  * Pulls the `onUploadProgress` callback out of the axios options `trackUpload` handed to `send`,

@@ -8,7 +8,7 @@
  * ── WHERE THE SIBLING PATH COMES FROM ────────────────────────────────────────────────────────────
  * `BACKEND_PATH`, read from the environment or from `.env` — `process.loadEnvFile()` is Node's own,
  * so a standalone script gets the same variable the app does without a dotenv dependency. Unset, it
- * falls back to the sibling-directory convention `backendPath.ts` documents.
+ * falls back to the sibling-directory convention `backend-path.ts` documents.
  *
  * ── EXIT CODES ARE THE INTERFACE ─────────────────────────────────────────────────────────────────
  *   0  the contracts are identical — or the sibling is absent and this is a developer's machine
@@ -30,13 +30,13 @@
  * one place where "no sibling" could hide a real fork is the one place it stays fatal.
  */
 import { existsSync } from 'node:fs';
-import { DEFAULT_BACKEND_PATH, resolveBackendPath } from './backendPath';
+import { DEFAULT_BACKEND_PATH, resolveBackendPath } from './backend-path';
 import {
     compareSharedFiles,
     formatSharedFileProblems,
     SHARED_FILES,
     THIS_REPO
-} from './specIdentity';
+} from './spec-identity';
 
 // Before `resolveBackendPath()` reads it. Absent or unreadable `.env` is not an error: the variable
 // may come from the real environment, as it does in CI.

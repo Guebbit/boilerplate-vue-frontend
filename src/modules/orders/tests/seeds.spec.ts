@@ -6,7 +6,6 @@
  * fold does — which is also what makes the "references resolve" assertions meaningful.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
-import type { Product } from '@types';
 import { buildOrdersMockSeeds } from '@/modules/orders/mocks/register';
 import { mockDatabase } from '@mocks/mockDb.ts';
 import { mockDatabaseReady } from '../../../../tests/support/unit/mockDatabaseReady.ts';

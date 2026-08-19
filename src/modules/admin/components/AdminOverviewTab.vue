@@ -109,7 +109,7 @@ const kpiCards = computed<AdminKpiCard[]>(() => [
     },
     {
         title: t('admin-page.kpi-uptime'),
-        value: formatUptime(props.health?.uptimeSeconds ?? props.metrics?.process?.uptimeSeconds),
+        value: formatUptime(props.health?.uptimeSeconds ?? props.metrics?.process.uptimeSeconds),
         status: 'ok'
     },
     {
@@ -164,7 +164,7 @@ const kpiDotClass = (status: AdminKpiCard['status']) =>
         error: 'bg-error',
         loading: 'bg-info',
         unknown: 'bg-secondary'
-    })[status ?? 'unknown'] ?? 'bg-secondary';
+    })[status ?? 'unknown'];
 
 /**
  * Renders a boolean integration row as a glyph.

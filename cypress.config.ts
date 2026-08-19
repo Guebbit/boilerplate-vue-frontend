@@ -20,7 +20,7 @@
 import { defineConfig } from 'cypress';
 import { loadEnv } from 'vite';
 import path from 'node:path';
-import { resolveBackendPath } from './scripts/backendPath';
+import { resolveBackendPath } from './scripts/backend-path';
 import { compareSnapshot } from './tests/support/e2e/visual-task';
 
 const viteEnvironment = loadEnv('', process.cwd(), '');
@@ -124,6 +124,7 @@ export default defineConfig({
             'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         allowCypressEnv: false,
         env: {
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the env type declares the variable required, but a bare checkout has no .env to satisfy it
             apiUrl: viteEnvironment.VITE_API_URL ?? 'http://localhost:3000',
             // Which profile the specs are running against. Defaults to the mock profile; the
             // `test:e2e:live` script overrides it with CYPRESS_apiMockEnabled=false. Cypress maps
@@ -133,7 +134,7 @@ export default defineConfig({
             // Only used by the live profile: `cy.resetState()` shells out to this checkout's
             // `host -- db:seed:reset` to restore the seed dataset between tests. `BACKEND_PATH` env
             // override, or a sibling-checkout default, always resolved to an absolute path — see
-            // scripts/backendPath.ts, shared with scripts/check-spec-identity.ts so the two can
+            // scripts/backend-path.ts, shared with scripts/check-spec-identity.ts so the two can
             // never silently disagree about which backend they mean.
             backendPath: resolveBackendPath(),
             /*

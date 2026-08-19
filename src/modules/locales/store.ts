@@ -99,8 +99,11 @@ export const useLocalesStore = defineStore('locales', () => {
     const fetchLanguages = () =>
         fetchAny(() =>
             getLocales().then((response) => {
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the generated envelope types promise `data`; the wire does not, and the store spec pins "a bare payload is empty, not a crash"
                 capabilities.value = response.data?.locales ?? [];
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the generated envelope types promise `data`; the wire does not, and the store spec pins "a bare payload is empty, not a crash"
                 defaultLocale.value = response.data?.default;
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the generated envelope types promise `data`; the wire does not, and the store spec pins "a bare payload is empty, not a crash"
                 fallbackLocale.value = response.data?.fallback;
                 return capabilities.value;
             })

@@ -150,7 +150,7 @@ describe('useAccountStore.signup', () => {
  */
 /** Makes the transport answer every address endpoint with this book. */
 const respondWithBook = (addresses: unknown[]) =>
-    vi.mocked(orvalMutator).mockResolvedValue({ data: { addresses } } as never);
+    vi.mocked(orvalMutator).mockResolvedValue({ data: { addresses } });
 
 describe('useAccountStore addresses', () => {
     const HOME = {
@@ -242,7 +242,7 @@ describe('useAccountStore addresses', () => {
     it('reads a book-less payload as an empty book rather than as undefined', () => {
         // The `?? []` in `readAddressesResponse`. Every consumer does `addresses.map(...)`, so
         // an undefined here is a render crash rather than an empty state.
-        vi.mocked(orvalMutator).mockResolvedValue({ data: {} } as never);
+        vi.mocked(orvalMutator).mockResolvedValue({ data: {} });
         const store = useAccountStore();
 
         return store.fetchAddresses().then((result) => {

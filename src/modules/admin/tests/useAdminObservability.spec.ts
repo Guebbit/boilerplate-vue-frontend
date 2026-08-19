@@ -7,7 +7,7 @@
  * endpoint degrades to an error message beside the panels that did answer.
  *
  * The loading/error bookkeeping itself belongs to `useAsyncAction` and is covered in
- * `tests/unit/infrastructure/useAsyncAction.spec.ts`; only the parts this composable configures —
+ * `tests/unit/infrastructure/use-async-action.spec.ts`; only the parts this composable configures —
  * the fallback messages and the filter payload — are asserted here.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -17,7 +17,7 @@ import {
     getObservabilityAuditLogs,
     deleteExpiredTokens
 } from '@api';
-import { useAdminObservability } from '@/modules/admin/composables/useAdminObservability';
+import { useAdminObservability } from '@/modules/admin/composables/use-admin-observability';
 
 const HEALTH = { status: 'ok', uptimeSeconds: 120 };
 const METRICS = { totalRequests: 42, totalErrors: 1 };

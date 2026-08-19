@@ -79,7 +79,7 @@ const { providedVariable, setProvidedVariable } = inject<{
     setProvidedVariable: ProvidedVariableMutationFunction;
 }>('providedVariable', {
     providedVariable: ref('Not provided'),
-    setProvidedVariable: () => {}
+    setProvidedVariable: () => undefined
 });
 
 /**

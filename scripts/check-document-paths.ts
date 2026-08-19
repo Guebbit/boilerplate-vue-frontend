@@ -29,7 +29,7 @@
  */
 import { existsSync, globSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { DEFAULT_BACKEND_PATH, resolveBackendPath } from './backendPath';
+import { DEFAULT_BACKEND_PATH, resolveBackendPath } from './backend-path';
 
 /**
  * Backtick spans that look like a repo path: a known top-level directory, then a filename with an

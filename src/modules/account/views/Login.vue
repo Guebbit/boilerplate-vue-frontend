@@ -19,7 +19,7 @@ import {
     VUETIFY_INVALID_FIELD_SELECTOR
 } from '@/infrastructure/utils/errors.ts';
 import { changeLanguage, supportedLanguages } from '@/infrastructure/i18n';
-import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import type { LoginRequest } from '@api';
 
 /**
@@ -93,7 +93,7 @@ const submitForm = () => {
     const accountStore = useAccountStore();
     return handleSubmit(() =>
         accountStore
-            .login(form.value.email!, form.value.password!)
+            .login(form.value.email, form.value.password)
             .then(() => {
                 /*
                  * The record's language wins over the tab's: the saved preference is what this
@@ -118,7 +118,7 @@ const submitForm = () => {
                 );
             })
             // Discard the NavigationFailure: handleSubmit's handler resolves with nothing
-            .then(() => {})
+            .then(() => undefined)
     ).catch((error) => {
         // A 401 names no field, so it stays a toast. A 422 that names `email` lands under it.
         if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);

@@ -19,7 +19,7 @@ a frontend has far less to put in this folder.
 
 Prices, totals, checkout eligibility and permissions are decided by the API. Restating them on the
 client gives you two implementations of one rule, drifting apart — the exact failure
-`scripts/specIdentity.ts` exists to catch across these two repos.
+`scripts/spec-identity.ts` exists to catch across these two repos.
 
 **A thin domain layer on the client means the boundary is right, not that something is missing.**
 

@@ -10,10 +10,10 @@
  * interceptor chain against MSW and asserts on the server's own request log.
  */
 
+import { asStub } from '../../../support/stub';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import type { AxiosResponseErrorData, AxiosResponseErrorBody } from '@/infrastructure/http';
 
 const accessToken = ref<string | undefined>(undefined);
 
@@ -34,20 +34,10 @@ vi.mock('@/infrastructure/i18n', () => ({
     i18n: { global: { t: (key: string) => key } }
 }));
 
-const { onRequest, onRequestReject, onResponseRejectWithRefresh, getAccessToken } =
-    await import('@/infrastructure/http');
+const { onRequest, onRequestReject, getAccessToken } = await import('@/infrastructure/http');
 
 /** Minimal outgoing config — `onRequest` only writes to `headers`. */
-const makeConfig = () => ({ headers: {} }) as unknown as InternalAxiosRequestConfig<unknown>;
-
-/** A 401 AxiosError for the given request url. */
-const make401 = (url: string) =>
-    ({
-        config: { url, headers: {} },
-        response: { status: 401, data: {}, headers: {} },
-        isAxiosError: true,
-        message: 'Request failed with status code 401'
-    }) as unknown as AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>;
+const makeConfig = () => asStub<InternalAxiosRequestConfig<unknown>>({ headers: {} });
 
 beforeEach(() => {
     accessToken.value = undefined;

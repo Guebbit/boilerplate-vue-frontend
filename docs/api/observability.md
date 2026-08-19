@@ -18,13 +18,13 @@ The SSE stream is consumed separately by `realtimeObservability` store in the `R
 ```
 src/modules/admin/
 ├── views/Admin.vue                         ← tab shell (Overview + Audit Log)
-├── composables/useAdminObservability.ts    ← fetches all three endpoints; exposes reactive state
+├── composables/use-admin-observability.ts    ← fetches all three endpoints; exposes reactive state
 └── types.ts                                ← view-model types (IAdminKpi, IAdminAuditFilters)
 
 src/modules/<name>/mocks/adminMockHandlers.ts   ← MSW mock responses for dev/test
 ```
 
-`useAdminObservability.ts` is the single composable for the admin page. It exposes reactive refs that the view binds to directly.
+`use-admin-observability.ts` is the single composable for the admin page. It exposes reactive refs that the view binds to directly.
 
 ## GET /observability/health — response shape
 

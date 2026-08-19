@@ -1,6 +1,6 @@
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { wishlistResponseSchemas } from './responseSchemas';
+import { wishlistResponseSchemas } from './response-schemas';
 
 /**
  * The visitor's saved products.

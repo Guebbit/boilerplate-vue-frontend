@@ -13,7 +13,7 @@ import {
 } from '@api';
 import type { CartItem, CartResponse, CartSummaryResponse, CheckoutRequest } from '@types';
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
-import { analyticsEvents } from '@/infrastructure/observability/analyticsEvents.ts';
+import { analyticsEvents } from '@/infrastructure/observability/analytics-events.ts';
 import { isTransportFailure } from '@/infrastructure/utils/errors';
 
 /**

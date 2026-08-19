@@ -17,7 +17,7 @@ const server = setupServer();
  * `src/main.ts` does at boot.
  *
  * The registration is not optional dressing. Every domain row — `/account` included — lives in
- * `src/modules/<name>/responseSchemas.ts` now, and `vi.resetModules()` gives each test a brand new
+ * `src/modules/<name>/response-schemas.ts` now, and `vi.resetModules()` gives each test a brand new
  * `responseSchemaMap` holding only the handful of core rows. Skip the wiring and
  * `resolveResponseSchema` returns `undefined`, validation quietly no-ops, and the two tests that
  * assert a *throw* fail — which is how this helper earned its existence.
@@ -27,7 +27,7 @@ const loadHttp = () => {
     vi.stubEnv('VITE_API_URL', API);
     return Promise.all([
         import('@/infrastructure/http'),
-        import('@/infrastructure/http/responseSchemaMap'),
+        import('@/infrastructure/http/response-schema-map'),
         import('@/kernel/registry'),
         import('@/modules')
     ]).then(

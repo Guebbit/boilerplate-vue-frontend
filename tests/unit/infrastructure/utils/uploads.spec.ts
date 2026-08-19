@@ -9,7 +9,7 @@
  * upload twice regardless of what happens here, and re-testing security in the browser would
  * suggest the browser is where it lives.
  */
-import { describe, expect, it, beforeAll, afterEach, vi } from 'vitest';
+import { describe, expect, it, beforeAll, afterEach } from 'vitest';
 import { nextTick } from 'vue';
 
 import { loadLocale } from '@/infrastructure/i18n';

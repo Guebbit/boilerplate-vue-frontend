@@ -19,7 +19,7 @@ import {
     VUETIFY_INVALID_FIELD_SELECTOR
 } from '@/infrastructure/utils/errors.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
-import { useUploadProgress } from '@/infrastructure/composables/useUploadProgress.ts';
+import { useUploadProgress } from '@/infrastructure/composables/use-upload-progress.ts';
 
 /**
  * UI logics

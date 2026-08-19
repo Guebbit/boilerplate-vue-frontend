@@ -100,7 +100,7 @@ export const useSessionStore = defineStore('session', () => {
                 id: string;
                 email: string;
                 admin?: boolean;
-            }>(data as { data?: { id: string; email: string; admin?: boolean } });
+            }>(data);
             setViewer(
                 payload && { id: payload.id, email: payload.email, admin: Boolean(payload.admin) }
             );

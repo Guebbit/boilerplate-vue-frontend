@@ -29,7 +29,7 @@ export const registerWishlistMockHandlers = (): HttpHandler[] => [
     // two rules the BE's `$addToSet` + `publicScope` lookup enforce.
     http.post(`${API_BASE}/wishlist`, ({ request }) =>
         readRequestBody<{ productId?: string }>(request).then((requestBody) => {
-            const productId = String(requestBody.productId ?? '');
+            const productId = requestBody.productId ?? '';
             const product = mockDatabase.sampleProducts.find(({ id }) => id === productId);
             if (!product || !isVisibleToCaller(product, false))
                 return toMockJsonResponse(

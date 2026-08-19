@@ -1,6 +1,6 @@
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { productsResponseSchemas } from './responseSchemas';
+import { productsResponseSchemas } from './response-schemas';
 
 /**
  * The product catalogue: a public list and detail, plus admin create and edit.

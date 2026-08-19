@@ -10,7 +10,7 @@ import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Minus, Plus, ShoppingCart } from 'lucide-vue-next';
-import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useCartStore } from '@/modules/cart/store.ts';
 // The stepper's floor is a rule, not a template detail — see `../domain/quantity.ts`.
 import { MIN_LINE_QUANTITY, steppedQuantity } from '@/modules/cart/domain';
@@ -59,7 +59,8 @@ const checkout = () =>
     )
         .then(() => {
             addMessage(t('cart-page.success-checkout'));
-            router.push(routerLinkI18n({ name: 'OrdersList' }));
+            // Fire-and-forget: a NavigationFailure here must not convert a completed checkout into an error toast.
+            void router.push(routerLinkI18n({ name: 'OrdersList' }));
         })
         .catch((error: unknown) => notifyErrorMessages(addMessage, error));
 

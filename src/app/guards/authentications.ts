@@ -65,7 +65,7 @@ export const canAccess = (
 const restoreTokenIfNeeded = () => {
     const store = useSessionStore();
     if (store.accessToken || !getCookie('isAuth')) return Promise.resolve();
-    return store.refreshToken().catch(() => {});
+    return store.refreshToken().catch(() => undefined);
 };
 
 /**
@@ -87,8 +87,8 @@ export const tryRestoreAuth = (): Promise<void> => {
                 if (store.accessToken) return store.loadViewer();
             })
             // Discard the payload so the guard resolves to void (NavigationGuardReturn)
-            .then(() => {})
-            .catch(() => {})
+            .then(() => undefined)
+            .catch(() => undefined)
     );
 };
 

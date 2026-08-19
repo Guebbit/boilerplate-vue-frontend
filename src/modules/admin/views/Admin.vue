@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Trash2 } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useAdminObservability } from '@/modules/admin/composables/useAdminObservability.ts';
+import { useAdminObservability } from '@/modules/admin/composables/use-admin-observability.ts';
 import type { AdminTabKey } from '@/modules/admin/types.ts';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 import { CloudOff } from 'lucide-vue-next';
-import { useApiHealth } from '@/infrastructure/composables/useApiHealth.ts';
+import { useApiHealth } from '@/infrastructure/composables/use-api-health.ts';
 
 /**
  * A thin banner that appears when the API cannot be reached, and only then.

@@ -61,6 +61,7 @@ const handleFile = (file: File | File[] | null) => {
 /** The parse outcome: rows when the JSON is a non-empty dictionary, the reason it is not otherwise. */
 const parsed = computed<{ entries?: LocaleEntryInput[]; error?: string }>(() => {
     if (rawJson.value.trim() === '') return {};
+    // eslint-disable-next-line no-restricted-syntax -- JSON.parse has no non-throwing form; the catch turns hand-typed JSON into a form error
     try {
         const dictionary: unknown = JSON.parse(rawJson.value);
         if (typeof dictionary !== 'object' || dictionary === null || Array.isArray(dictionary))

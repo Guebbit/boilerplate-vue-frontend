@@ -17,8 +17,8 @@ function openOverlay(container: HTMLElement): void {
     cloned.style.width = '';
     cloned.style.height = '';
 
-    overlay.appendChild(cloned);
-    document.body.appendChild(overlay);
+    overlay.append(cloned);
+    document.body.append(overlay);
     document.body.classList.add('mermaid-zoom-active');
 
     // Force a reflow so the CSS transition plays
@@ -44,17 +44,17 @@ function openOverlay(container: HTMLElement): void {
 }
 
 function attachToUnprocessed(): void {
-    document.querySelectorAll<HTMLElement>('.vp-doc .mermaid').forEach((el) => {
-        if (el.dataset.zoomAttached || !el.querySelector('svg')) return;
-        el.dataset.zoomAttached = '1';
-        el.addEventListener('click', () => openOverlay(el));
-    });
+    for (const element of document.querySelectorAll<HTMLElement>('.vp-doc .mermaid')) {
+        if (element.dataset.zoomAttached || !element.querySelector('svg')) continue;
+        element.dataset.zoomAttached = '1';
+        element.addEventListener('click', () => openOverlay(element));
+    }
 }
 
 export default {
     extends: DefaultTheme,
-    enhanceApp(_ctx: EnhanceAppContext): void {
-        if (typeof window === 'undefined') return;
+    enhanceApp(_context: EnhanceAppContext): void {
+        if (globalThis.window === undefined) return;
         const observer = new MutationObserver(attachToUnprocessed);
         observer.observe(document.documentElement, { childList: true, subtree: true });
     }

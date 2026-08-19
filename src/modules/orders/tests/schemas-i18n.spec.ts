@@ -18,7 +18,6 @@ import { nextTick } from 'vue';
 import { loadLocale } from '@/infrastructure/i18n';
 import { wireModulesIntoCore } from '../../../../tests/support/unit/wireModules.ts';
 import { ordersSchema } from '../schemas';
-import enMessages from '../locales/en.json';
 import itMessages from '../locales/it.json';
 
 const setLocale = (locale: string) => loadLocale(locale).then(() => nextTick());

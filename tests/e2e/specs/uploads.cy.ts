@@ -114,7 +114,7 @@ describe('Image upload', () => {
                 cy.get('img[alt="Image preview"]')
                     .should('have.attr', 'src')
                     .and((source) => {
-                        expect(String(source)).to.match(expectedPath);
+                        expect(source).to.match(expectedPath);
                     });
             });
         });
@@ -281,7 +281,7 @@ describe('Image upload', () => {
             cy.get('img[alt="Image preview"]')
                 .should('have.attr', 'src')
                 .then((source) => {
-                    const imagePath = String(source);
+                    const imagePath = source as string;
                     // A server-relative upload path, not a blob and not a filesystem path.
                     expect(imagePath).to.match(/^\/[\w./-]+\.(png|jpg|jpeg|webp)$/);
 

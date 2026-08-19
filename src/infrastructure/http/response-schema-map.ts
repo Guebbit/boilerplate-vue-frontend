@@ -6,7 +6,7 @@ import * as schemas from '@api/schemas';
  * a live contract violation is caught without the mutator knowing which operation it serves.
  *
  * A row names a URL, so it is domain knowledge: each module declares its own in
- * `src/modules/<name>/responseSchemas.ts` and contributes them through its manifest. This file owns
+ * `src/modules/<name>/response-schemas.ts` and contributes them through its manifest. This file owns
  * the mechanism and the few rows belonging to no domain — so drift is structural, not clerical.
  *
  * `infrastructure` cannot import `@/modules`, so rows arrive by registration: `src/main.ts` calls
@@ -22,14 +22,14 @@ import * as schemas from '@api/schemas';
 export interface ResponseSchemaRoute {
     method: string;
     pattern: RegExp;
-    schema: zod.ZodTypeAny;
+    schema: zod.ZodType;
 }
 
 /**
  * The rows no module claims.
  *
  * `GET /`, `/locales*` and the session's three `/account` calls are infrastructure — the health
- * probe, the language manifest and overrides `i18n/localeOverrides.ts` fetches, and the
+ * probe, the language manifest and overrides `i18n/locale-overrides.ts` fetches, and the
  * whoami/refresh/logout-all that `infrastructure/stores/session.ts` needs — so they live at the
  * bottom tier with the code that calls them.
  *
@@ -50,7 +50,7 @@ const coreRouteSchemas: ResponseSchemaRoute[] = [
     { method: 'POST', pattern: /^\/account\/logout-all$/, schema: schemas.LogoutAllResponse },
     /*
      * The locale reads the BOOT PATH makes: the manifest and the per-language overrides
-     * `i18n/localeOverrides.ts` fetches before any domain is involved, plus the API's own
+     * `i18n/locale-overrides.ts` fetches before any domain is involved, plus the API's own
      * dictionary — the offline-fallback read nothing calls yet. The admin surface that once sat
      * beside them here has moved into the `locales` module, exactly as this shelf promised it
      * would the day a module claimed it.
@@ -109,7 +109,7 @@ export const toPathname = (url: string | undefined): string => {
 export const resolveResponseSchema = (
     method: string | undefined,
     url: string | undefined
-): zod.ZodTypeAny | undefined => {
+): zod.ZodType | undefined => {
     const pathname = toPathname(url);
     const upperMethod = (method ?? 'GET').toUpperCase();
     return routeSchemas.find(

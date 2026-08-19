@@ -66,7 +66,7 @@ Every layer above answers "did it break". None of them answers **which module ow
   slowest suites / slowest tests / line coverage per module / failures named by module
 ```
 
-JSON rather than JUnit, and the choice is not incidental: Vitest emits both, Jest emits only JSON without a dependency, and JSON carries strictly more — per-assertion durations, ancestor titles, full failure messages. So the artefact is JSON and `scripts/testReport.ts` is the reader, **byte-identical in both repos** because Vitest's `json` reporter emits the shape Jest's `--json` does. `check:spec-identity` keeps the two copies honest.
+JSON rather than JUnit, and the choice is not incidental: Vitest emits both, Jest emits only JSON without a dependency, and JSON carries strictly more — per-assertion durations, ancestor titles, full failure messages. So the artefact is JSON and `scripts/test-report.ts` is the reader, **byte-identical in both repos** because Vitest's `json` reporter emits the shape Jest's `--json` does. `check:spec-identity` keeps the two copies honest.
 
 If PR-line annotations are ever wanted, that is the moment to add a JUnit reporter *alongside* this one, not to replace it.
 

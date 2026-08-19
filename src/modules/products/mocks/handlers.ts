@@ -27,7 +27,9 @@ import {
     slicePaginatedData,
     readHardDeleteFlag,
     toNumberOrDefault,
-    toPaginationMeta
+    toPaginationMeta,
+    asText,
+    asOptionalText
 } from '@mocks/mockDb.ts';
 import { toMockJsonResponse } from '@mocks/mockTransport.ts';
 import { MockErrorResponse } from '@mocks/mockValidation.ts';
@@ -42,14 +44,12 @@ const replyProductsList = (
     const query = getQueryParameters(url, parameters);
     const page = toNumberOrDefault(query.page, 1);
     const pageSize = toNumberOrDefault(query.pageSize, 10);
-    const text = String(query.text ?? '')
-        .trim()
-        .toLowerCase();
+    const text = asText(query.text).trim().toLowerCase();
     const id = (query.id ?? query.productId) ? String(query.id ?? query.productId) : undefined;
     const minPrice = query.minPrice === undefined ? undefined : Number(query.minPrice);
     const maxPrice = query.maxPrice === undefined ? undefined : Number(query.maxPrice);
-    const category = query.category ? String(query.category).toLowerCase() : undefined;
-    const tag = query.tag ? String(query.tag).toLowerCase() : undefined;
+    const category = asOptionalText(query.category)?.toLowerCase();
+    const tag = asOptionalText(query.tag)?.toLowerCase();
 
     // Role-scoped visibility, applied before any user-supplied filter — same order as the BE,
     // which folds `active`/`deletedAt` into the same `where` clause it builds the filters on.
@@ -60,8 +60,8 @@ const replyProductsList = (
     const filteredItems = mockDatabase.sampleProducts.filter((product) => {
         if (!isVisibleToCaller(product, admin)) return false;
         if (id && product.id !== id) return false;
-        if (Number.isFinite(minPrice) && product.price < (minPrice as number)) return false;
-        if (Number.isFinite(maxPrice) && product.price > (maxPrice as number)) return false;
+        if (Number.isFinite(minPrice) && product.price < minPrice!) return false;
+        if (Number.isFinite(maxPrice) && product.price > maxPrice!) return false;
         // The BE's `arrayRegex` is a case-insensitive substring match over the array's values.
         if (
             category &&
@@ -150,8 +150,8 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
             ({ fields: requestBody, files }) => {
                 const createdProduct: Product = {
                     id: `prod-${Date.now()}`,
-                    title: String(requestBody.title ?? 'New product'),
-                    description: requestBody.description ? String(requestBody.description) : '',
+                    title: asText(requestBody.title, 'New product'),
+                    description: asText(requestBody.description),
                     price: Number(requestBody.price ?? 0),
                     active: requestBody.active === undefined ? true : Boolean(requestBody.active),
                     imageUrl: resolveMockImageUrl(files),
@@ -169,7 +169,7 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
     http.put(`${API_BASE}/products`, ({ request }) =>
         readRequestParts<Record<string, unknown>>(request).then(
             ({ fields: requestBody, files }) => {
-                const targetId = String(requestBody.id ?? '');
+                const targetId = asText(requestBody.id);
                 const targetIndex = mockDatabase.sampleProducts.findIndex(
                     ({ id }) => id === targetId
                 );
@@ -185,13 +185,14 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
 
                 const updatedProduct: Product = {
                     ...mockDatabase.sampleProducts[targetIndex],
-                    title: requestBody.title
-                        ? String(requestBody.title)
-                        : mockDatabase.sampleProducts[targetIndex].title,
+                    title: asText(
+                        requestBody.title,
+                        mockDatabase.sampleProducts[targetIndex].title
+                    ),
                     description:
                         requestBody.description === undefined
                             ? mockDatabase.sampleProducts[targetIndex].description
-                            : String(requestBody.description),
+                            : asText(requestBody.description),
                     price:
                         requestBody.price === undefined
                             ? mockDatabase.sampleProducts[targetIndex].price
@@ -216,7 +217,7 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
     ),
     http.delete(`${API_BASE}/products`, ({ request }) =>
         readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
-            const targetId = String(requestBody.id ?? '');
+            const targetId = asText(requestBody.id);
             const targetIndex = mockDatabase.sampleProducts.findIndex(({ id }) => id === targetId);
 
             if (targetIndex === -1)
@@ -288,13 +289,14 @@ export const registerProductsMockHandlers = (): HttpHandler[] => [
             ({ fields: requestBody, files }) => {
                 const updatedProduct: Product = {
                     ...mockDatabase.sampleProducts[targetIndex],
-                    title: requestBody.title
-                        ? String(requestBody.title)
-                        : mockDatabase.sampleProducts[targetIndex].title,
+                    title: asText(
+                        requestBody.title,
+                        mockDatabase.sampleProducts[targetIndex].title
+                    ),
                     description:
                         requestBody.description === undefined
                             ? mockDatabase.sampleProducts[targetIndex].description
-                            : String(requestBody.description),
+                            : asText(requestBody.description),
                     price:
                         requestBody.price === undefined
                             ? mockDatabase.sampleProducts[targetIndex].price

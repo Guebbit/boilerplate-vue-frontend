@@ -25,7 +25,9 @@ import {
     toBooleanOrUndefined,
     readHardDeleteFlag,
     toNumberOrDefault,
-    toPaginationMeta
+    toPaginationMeta,
+    asText,
+    asOptionalText
 } from '@mocks/mockDb.ts';
 import { toMockJsonResponse } from '@mocks/mockTransport.ts';
 import { MockErrorResponse } from '@mocks/mockValidation.ts';
@@ -40,12 +42,10 @@ const replyUsersList = (
     const query = getQueryParameters(url, parameters);
     const page = toNumberOrDefault(query.page, 1);
     const pageSize = toNumberOrDefault(query.pageSize, 10);
-    const text = String(query.text ?? '')
-        .trim()
-        .toLowerCase();
-    const id = query.id ? String(query.id) : undefined;
-    const email = query.email ? String(query.email).toLowerCase() : undefined;
-    const username = query.username ? String(query.username).toLowerCase() : undefined;
+    const text = asText(query.text).trim().toLowerCase();
+    const id = asOptionalText(query.id);
+    const email = asOptionalText(query.email)?.toLowerCase();
+    const username = asOptionalText(query.username)?.toLowerCase();
     const active = toBooleanOrUndefined(query.active);
 
     const filteredItems = mockDatabase.sampleUsers.filter((user) => {
@@ -112,8 +112,8 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
             ({ fields: requestBody, files }) => {
                 const createdUser: User = {
                     id: `user-${Date.now()}`,
-                    email: String(requestBody.email ?? 'created.user@example.com'),
-                    username: String(requestBody.username ?? 'created-user'),
+                    email: asText(requestBody.email, 'created.user@example.com'),
+                    username: asText(requestBody.username, 'created-user'),
                     admin: Boolean(requestBody.admin),
                     active: requestBody.active === undefined ? true : Boolean(requestBody.active),
                     imageUrl: resolveMockImageUrl(files),
@@ -132,7 +132,7 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
     http.put(`${API_BASE}/users`, ({ request }) =>
         readRequestParts<Record<string, unknown>>(request).then(
             ({ fields: requestBody, files }) => {
-                const targetId = String(requestBody.id ?? mockDatabase.currentAuthenticatedUserId);
+                const targetId = asText(requestBody.id, mockDatabase.currentAuthenticatedUserId);
                 const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === targetId);
 
                 if (targetIndex === -1)
@@ -146,12 +146,11 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
 
                 const updatedUser: User = {
                     ...mockDatabase.sampleUsers[targetIndex],
-                    email: requestBody.email
-                        ? String(requestBody.email)
-                        : mockDatabase.sampleUsers[targetIndex].email,
-                    username: requestBody.username
-                        ? String(requestBody.username)
-                        : mockDatabase.sampleUsers[targetIndex].username,
+                    email: asText(requestBody.email, mockDatabase.sampleUsers[targetIndex].email),
+                    username: asText(
+                        requestBody.username,
+                        mockDatabase.sampleUsers[targetIndex].username
+                    ),
                     active:
                         requestBody.active === undefined
                             ? mockDatabase.sampleUsers[targetIndex].active
@@ -172,7 +171,7 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
     ),
     http.delete(`${API_BASE}/users`, ({ request }) =>
         readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
-            const targetId = String(requestBody.id ?? '');
+            const targetId = asText(requestBody.id);
             const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === targetId);
 
             if (targetIndex === -1)
@@ -219,12 +218,11 @@ export const registerUsersMockHandlers = (): HttpHandler[] => [
             ({ fields: requestBody, files }) => {
                 const updatedUser: User = {
                     ...mockDatabase.sampleUsers[targetIndex],
-                    email: requestBody.email
-                        ? String(requestBody.email)
-                        : mockDatabase.sampleUsers[targetIndex].email,
-                    username: requestBody.username
-                        ? String(requestBody.username)
-                        : mockDatabase.sampleUsers[targetIndex].username,
+                    email: asText(requestBody.email, mockDatabase.sampleUsers[targetIndex].email),
+                    username: asText(
+                        requestBody.username,
+                        mockDatabase.sampleUsers[targetIndex].username
+                    ),
                     imageUrl: resolveMockImageUrl(
                         files,
                         mockDatabase.sampleUsers[targetIndex].imageUrl

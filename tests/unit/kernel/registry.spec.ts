@@ -17,8 +17,11 @@ import type { AppModule, AppNavigationEntry } from '@/kernel/registry';
  * field names, different runtime.
  */
 
-const makeRoute = (name: string): RouteRecordRaw =>
-    ({ path: name, name, component: { template: '<div />' } }) as RouteRecordRaw;
+const makeRoute = (name: string): RouteRecordRaw => ({
+    path: name,
+    name,
+    component: { template: '<div />' }
+});
 
 /**
  * Names alone here: the cases below are about the graph, and every one of them would read worse

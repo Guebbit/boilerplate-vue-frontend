@@ -12,7 +12,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { Faro } from '@grafana/faro-web-sdk';
-import type { AnalyticsEventName } from '@/infrastructure/observability/analyticsEvents.ts';
+import type { AnalyticsEventName } from '@/infrastructure/observability/analytics-events.ts';
 import {
     readFaroConfig,
     readUmamiConfig,

@@ -1,4 +1,4 @@
-import { getLocales, getLocaleMessages, LocaleScope } from '@api';
+import { getLocales, getLocaleMessages } from '@api';
 import { supportedLanguages, type TranslationDictionaries } from './index.ts';
 
 /**
@@ -48,11 +48,11 @@ import { supportedLanguages, type TranslationDictionaries } from './index.ts';
 export const fetchRemoteLocales = (): Promise<string[]> =>
     getLocales()
         .then((response) =>
-            (response.data?.locales ?? [])
-                .filter((language) =>
-                    language.scopes.some(
-                        (scope) => scope === LocaleScope.app || scope === LocaleScope.api
-                    )
+            response.data.locales
+                .filter(
+                    (language) =>
+                        // Every scope is `app` or `api`, so "offers either dictionary" is "offers any".
+                        language.scopes.length > 0
                 )
                 .map((language) => language.tag)
         )
@@ -69,7 +69,7 @@ export const fetchRemoteLocales = (): Promise<string[]> =>
  */
 export const fetchLocaleOverrides = (locale: string): Promise<TranslationDictionaries> =>
     getLocaleMessages(locale)
-        .then((response) => (response.data?.messages ?? {}) as TranslationDictionaries)
+        .then((response) => response.data.messages as TranslationDictionaries)
         .catch(() => ({}));
 
 /**

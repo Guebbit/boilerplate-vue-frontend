@@ -41,7 +41,7 @@ concurrency:
 
 env:
     NODE_VERSION: 22
-    # Where the backend checkout lands, and what the frontend's scripts/backendPath.ts resolves.
+    # Where the backend checkout lands, and what the frontend's scripts/backend-path.ts resolves.
     BACKEND_PATH: .backend
 
 jobs:

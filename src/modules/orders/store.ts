@@ -136,6 +136,7 @@ export const useOrdersStore = defineStore('orders', () => {
     const cancelOrder = (orderId: string) =>
         fetchAny(() =>
             cancelOrderById(orderId).then((response) => {
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the generated envelope types promise `data`; the wire does not, and the spec pins "a payload-less answer caches nothing rather than a hole"
                 if (response.data) addOrder(response.data);
                 return response.data;
             })

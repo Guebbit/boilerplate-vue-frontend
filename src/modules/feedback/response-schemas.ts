@@ -1,5 +1,5 @@
 import * as schemas from '@api/schemas';
-import type { ResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMap';
+import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 
 /**
  * Response-envelope schemas for every feedback endpoint this module calls. These three rows

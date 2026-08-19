@@ -1,6 +1,6 @@
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { accountResponseSchemas } from './responseSchemas';
+import { accountResponseSchemas } from './response-schemas';
 
 /**
  * The visitor's own account: login, signup, profile, password reset and account deletion.

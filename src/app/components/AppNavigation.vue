@@ -6,7 +6,7 @@ import { useTheme } from 'vuetify';
 import { storeToRefs } from 'pinia';
 import { Menu, Moon, Sun, UserRound } from 'lucide-vue-next';
 import AppLanguageSwitcher from '@/app/components/AppLanguageSwitcher.vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { loginContinueTo, SIGN_IN_ROUTE_NAME } from '@/app/router/navigation.ts';
 import { canAccess } from '@/app/guards/authentications.ts';
 import { useSessionStore } from '@/infrastructure/stores/session.ts';
@@ -93,6 +93,7 @@ const visibleNavItems = computed(() => {
             title: t(label, plural ?? 1),
             to: routerLinkI18n({ name }),
             // Unwrapped here so the menu re-renders when a module's count moves.
+            // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- a ZERO badge must render as no badge; `??` would pin a `0` chip on the menu
             badge: badgeCounts.get(name)?.value || undefined
         }));
 });

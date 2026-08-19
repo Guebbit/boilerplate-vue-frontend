@@ -60,7 +60,8 @@ export const expandEntries = (
                 if (typeof node[segment] !== 'object') node[segment] = value;
                 continue;
             }
-            if (typeof node[segment] !== 'object' || node[segment] === null) node[segment] = {};
+            const child: unknown = node[segment];
+            if (typeof child !== 'object' || child === null) node[segment] = {};
             node = node[segment] as TranslationDictionaries;
         }
     }
@@ -88,5 +89,5 @@ const foldNumericNodes = (
         return keys
             .toSorted((a, b) => Number(a) - Number(b))
             .map((key) => folded[key]) as TranslationDictionaries[];
-    return folded as TranslationDictionaries;
+    return folded;
 };

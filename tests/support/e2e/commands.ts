@@ -30,7 +30,7 @@ const APP_READY_TIMEOUT_MS = 15_000;
 const LIVE_RESET_TIMEOUT_MS = 60_000;
 
 declare global {
-    // eslint-disable-next-line @typescript-eslint/no-namespace
+    // eslint-disable-next-line @typescript-eslint/no-namespace -- Cypress's own typing contract: custom commands merge into its global namespace
     namespace Cypress {
         // The name belongs to the library being augmented, not to this codebase: declaration
         // merging only works against the exact interface it declares.
@@ -161,7 +161,9 @@ const resetMswDatabase = () =>
                     return Promise.reject(
                         new Error(
                             `Unable to reset mock state after ${elapsed}ms (budget ${RESET_MOCK_TIMEOUT_MS}ms).${
-                                lastError ? ` Last error: ${String(lastError)}` : ''
+                                lastError instanceof Error
+                                    ? ` Last error: ${lastError.message}`
+                                    : ''
                             }`
                         )
                     );
@@ -242,12 +244,14 @@ Cypress.Commands.add('resetState', () =>
  * that reads the page ONCE — a screenshot, `cy.document()`, `location.href` — which is why the
  * visual and accessibility specs are the ones that depend on this being right.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Cypress.Commands.overwrite's own signature is any-typed; these forward verbatim
 Cypress.Commands.overwrite('visit', (originalFunction: any, url: any, options: any) => {
     // Enqueued before the visit below, so it always runs against the page being navigated away
     // from. `log: false` because one of these per visit would double the length of the command log.
     cy.window({ log: false }).then((outgoingWindow) => {
-        (outgoingWindow as unknown as Record<string, unknown>)._supersededByVisit = true;
+        (
+            outgoingWindow as Cypress.AUTWindow & { _supersededByVisit?: boolean }
+        )._supersededByVisit = true;
     });
 
     // Options are passed through untouched — nothing here needs `onBeforeLoad` any more, so a
@@ -255,7 +259,7 @@ Cypress.Commands.overwrite('visit', (originalFunction: any, url: any, options: a
     originalFunction(url, options);
 
     cy.window({ timeout: APP_READY_TIMEOUT_MS }).should((contentWindow) => {
-        const marked = contentWindow as unknown as Record<string, unknown>;
+        const marked = contentWindow as Cypress.AUTWindow & { _supersededByVisit?: boolean };
         expect(
             marked._supersededByVisit,
             'the visited page is the current one, not the previous'

@@ -7,7 +7,7 @@
  * `-0`, the string that is whitespace in a script you have never seen.
  *
  * Why this layer exists at all: it is the general form of a fix this repo already paid for the
- * expensive way. `responseSchemaMap.ts` was tested by sampling a handful of rows from a 52-row
+ * expensive way. `response-schema-map.ts` was tested by sampling a handful of rows from a 52-row
  * table and scored 55% mutation with 182 survivors in that one file; replacing the sample with
  * exhaustive generation took it to ~96% and the whole suite from 55% to 81%. Sampling a space
  * you could have covered is the failure mode, and generation is the answer to it.

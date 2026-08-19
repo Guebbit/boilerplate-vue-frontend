@@ -174,8 +174,8 @@ export const registerLocalesAdminMockHandlers = (): HttpHandler[] => [
                 id: `language-${body.tag}`,
                 tag: body.tag,
                 baseLanguage: body.tag.slice(0, 2),
-                name: String(body.name ?? ''),
-                nativeName: String(body.nativeName ?? ''),
+                name: body.name ?? '',
+                nativeName: body.nativeName ?? '',
                 direction: body.direction ?? 'ltr',
                 active: body.active ?? true,
                 revision: 0,
@@ -276,7 +276,7 @@ export const registerLocalesAdminMockHandlers = (): HttpHandler[] => [
                 locale: language.tag,
                 scope: body.scope,
                 key: body.key,
-                value: String(body.value ?? ''),
+                value: body.value ?? '',
                 createdAt: getIsoDateNow(),
                 updatedAt: getIsoDateNow()
             };
@@ -349,7 +349,7 @@ export const registerLocalesAdminMockHandlers = (): HttpHandler[] => [
                 ({ id, locale }) => id === String(params.entryId) && locale === language?.tag
             );
             if (!language || !entry) return notFound();
-            entry.value = String(body.value ?? '');
+            entry.value = body.value ?? '';
             entry.updatedAt = getIsoDateNow();
             language.revision += 1;
             return toMockJsonResponse(createSuccessEnvelope(entry), {

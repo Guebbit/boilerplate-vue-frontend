@@ -1,5 +1,5 @@
 import type { AppModule } from '@/kernel/registry';
-import { deliveryResponseSchemas } from './responseSchemas';
+import { deliveryResponseSchemas } from './response-schemas';
 
 /**
  * Shipping methods, shipments and the fake courier — components, not pages.

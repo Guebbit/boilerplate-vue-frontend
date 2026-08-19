@@ -36,6 +36,7 @@ export const useFeedbackStore = defineStore('feedback', () => {
     const fetchRequests = () =>
         fetchAny(() =>
             listFeedbackRequests().then((response) => {
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the generated envelope types promise `data`; the wire does not, and the store spec pins "a bare payload is empty, not a crash"
                 requests.value = response.data?.items ?? [];
                 return requests.value;
             })

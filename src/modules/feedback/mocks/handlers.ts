@@ -42,9 +42,9 @@ export const registerFeedbackMockHandlers = (): HttpHandler[] => [
             const created: FeedbackRequest = {
                 id: `feedback-${feedbackIdCounter}`,
                 name: requestBody.name,
-                email: String(requestBody.email ?? ''),
-                subject: String(requestBody.subject ?? ''),
-                message: String(requestBody.message ?? ''),
+                email: requestBody.email ?? '',
+                subject: requestBody.subject ?? '',
+                message: requestBody.message ?? '',
                 status: 'new',
                 createdAt: getIsoDateNow(),
                 updatedAt: getIsoDateNow()

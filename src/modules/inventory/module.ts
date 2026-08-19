@@ -1,6 +1,6 @@
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { inventoryResponseSchemas } from './responseSchemas';
+import { inventoryResponseSchemas } from './response-schemas';
 
 /**
  * The stock ledger, admin-side.

@@ -6,7 +6,7 @@ export default {
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { Search, UserPlus } from 'lucide-vue-next';
@@ -65,6 +65,7 @@ const tableHeaders = computed(() => [
  * @returns The page's users, with the placeholder holes of the sparse pagination
  *  list filtered out.
  */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the toolkit's page window is a SPARSE array; holes are undefined at runtime whatever the element type claims
 const pageItems = computed(() => pageItemList.value.filter((item): item is User => !!item));
 
 const { search } = watchSearchUsers({ onError: (error) => notifyErrorMessages(addMessage, error) });

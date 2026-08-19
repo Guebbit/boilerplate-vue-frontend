@@ -20,7 +20,7 @@ const {
     currentImageUrl,
     errorMessages = [],
     progress,
-    disabled = false
+    disabled
 } = defineProps<{
     /**
      * Field label. Defaults to the shared "Image" wording.

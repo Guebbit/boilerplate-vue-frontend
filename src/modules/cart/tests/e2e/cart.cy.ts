@@ -5,7 +5,7 @@ const readFirstItemQuantity = () =>
         .contains(/Quantity:\s*\d+/)
         .invoke('text')
         .then((quantityText) => {
-            const quantityMatch = quantityText.match(/\d+/);
+            const quantityMatch = /\d+/.exec(quantityText);
             if (!quantityMatch)
                 throw new Error(
                     `Unable to parse cart quantity from: "${quantityText}". Expected format: Quantity: N where N is a positive integer.`

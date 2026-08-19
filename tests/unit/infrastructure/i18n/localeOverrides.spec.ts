@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 /**
- * Runtime locale discovery and the override tier — `src/infrastructure/i18n/localeOverrides.ts`.
+ * Runtime locale discovery and the override tier — `src/infrastructure/i18n/locale-overrides.ts`.
  *
  * The property every test here defends is the same one: **none of this may ever be load-bearing**.
  * The bundled `src/locales/*.json` is the floor, and every function below must degrade to it — so
@@ -31,7 +31,7 @@ const {
     mergeRemoteLocales,
     mergeDictionaries,
     withLocaleOverrides
-} = await import('@/infrastructure/i18n/localeOverrides.ts');
+} = await import('@/infrastructure/i18n/locale-overrides.ts');
 const { supportedLanguages } = await import('@/infrastructure/i18n');
 
 /** `supportedLanguages` is module state shared with the app-wide instance. */

@@ -1,5 +1,4 @@
 import { http, type HttpHandler } from 'msw';
-import type { Shipment, ShippingMethod } from 'src/types';
 import {
     ListShippingMethodsResponse,
     GetShipmentByOrderResponse,
@@ -11,8 +10,7 @@ import {
     getCurrentMockUser,
     getIsoDateNow,
     isCurrentMockUserAdmin,
-    mockDatabase,
-    recordMockEmail
+    mockDatabase
 } from '@mocks/mockDb.ts';
 import { toMockJsonResponse } from '@mocks/mockTransport.ts';
 import { MockErrorResponse } from '@mocks/mockValidation.ts';
@@ -59,7 +57,7 @@ export const registerDeliveryMockHandlers = (): HttpHandler[] => [
         for (const shipment of mockDatabase.sampleShipments ?? []) {
             if (shipment.status !== 'shipped') continue;
             const order = mockDatabase.sampleOrders.find(({ id }) => id === shipment.orderId);
-            if (!order || order.status !== 'shipped') continue;
+            if (order?.status !== 'shipped') continue;
             order.status = 'delivered';
             order.updatedAt = getIsoDateNow();
             shipment.status = 'delivered';

@@ -47,10 +47,10 @@ describe('fetchMethods', () => {
 describe('effectivePrice', () => {
     it('applies the free-above rule at the threshold and not below it', () => {
         const store = useDeliveryStore();
-        expect(store.effectivePrice(METHODS[0]!, 99.99)).toBe(5);
-        expect(store.effectivePrice(METHODS[0]!, 100)).toBe(0);
+        expect(store.effectivePrice(METHODS[0], 99.99)).toBe(5);
+        expect(store.effectivePrice(METHODS[0], 100)).toBe(0);
         // No threshold — never free, whatever the basket.
-        expect(store.effectivePrice(METHODS[1]!, 1_000_000)).toBe(15);
+        expect(store.effectivePrice(METHODS[1], 1_000_000)).toBe(15);
     });
 });
 

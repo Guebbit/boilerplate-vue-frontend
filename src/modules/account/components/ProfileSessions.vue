@@ -14,7 +14,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAccountStore } from '@/modules/account/store.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
-import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
 /**
  * The devices panel: every live refresh token as a session, the current one flagged, each

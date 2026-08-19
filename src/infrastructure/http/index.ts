@@ -39,6 +39,7 @@ export const orvalMutator = <T>(
     const request: AxiosRequestConfig = {
         ...options,
         ...config,
+        // eslint-disable-next-line @typescript-eslint/no-misused-spread -- AxiosHeaders' own enumerable entries are exactly what an object spread copies; axios documents this merge
         headers: { ...options?.headers, ...config.headers }
     };
     return instance.request<T>(request).then((response) => {

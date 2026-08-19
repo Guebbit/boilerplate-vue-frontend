@@ -103,7 +103,7 @@ export const registerInventoryMockHandlers = (): HttpHandler[] => [
                 if (denied) return denied;
 
                 const product = mockDatabase.sampleProducts.find(
-                    ({ id }) => id === String(requestBody.productId ?? '')
+                    ({ id }) => id === (requestBody.productId ?? '')
                 );
                 if (!product)
                     return toMockJsonResponse(
@@ -118,7 +118,7 @@ export const registerInventoryMockHandlers = (): HttpHandler[] => [
                 const level = applyMockStockTransition(
                     'receive',
                     product.id,
-                    Number(requestBody.quantity ?? 0),
+                    requestBody.quantity ?? 0,
                     { note: requestBody.note }
                 );
 
@@ -141,7 +141,7 @@ export const registerInventoryMockHandlers = (): HttpHandler[] => [
                 if (denied) return denied;
 
                 const product = mockDatabase.sampleProducts.find(
-                    ({ id }) => id === String(requestBody.productId ?? '')
+                    ({ id }) => id === (requestBody.productId ?? '')
                 );
                 if (!product)
                     return toMockJsonResponse(
@@ -153,7 +153,7 @@ export const registerInventoryMockHandlers = (): HttpHandler[] => [
                         { status: 404, schema: MockErrorResponse }
                     );
 
-                const delta = Number(requestBody.delta ?? 0);
+                const delta = requestBody.delta ?? 0;
                 const onHand = (product.onHand ?? 0) + delta;
                 if (onHand < (product.reserved ?? 0))
                     return toMockJsonResponse(

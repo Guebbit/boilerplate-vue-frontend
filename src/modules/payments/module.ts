@@ -1,5 +1,5 @@
 import type { AppModule } from '@/kernel/registry';
-import { paymentsResponseSchemas } from './responseSchemas';
+import { paymentsResponseSchemas } from './response-schemas';
 
 /**
  * The payment behind an order — a panel, not a page.

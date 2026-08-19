@@ -27,10 +27,10 @@ const { orderId, orderStatus } = defineProps<{
     orderStatus?: string;
 }>();
 
-const emit = defineEmits<{
+const emit = defineEmits<
     /** The charge landed and the order's status moved — the parent should re-read it. */
-    (event: 'paid'): void;
-}>();
+    (event: 'paid') => void
+>();
 
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();

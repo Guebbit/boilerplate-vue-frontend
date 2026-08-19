@@ -1,5 +1,5 @@
 import { getCurrentLocale, supportedLanguages } from './index.ts';
-import type { RouteLocationRaw, RouteLocationNamedRaw } from 'vue-router';
+import type { RouteLocationRaw } from 'vue-router';
 
 /*
  * Imported from its own path rather than re-exported by `index.ts`: a barrel re-export would make
@@ -44,7 +44,7 @@ export function routerLinkI18n(to: RouteLocationRaw): RouteLocationRaw {
         ...to,
         params: {
             locale,
-            ...(to as RouteLocationNamedRaw).params
+            ...to.params
         }
     };
 }

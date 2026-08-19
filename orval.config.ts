@@ -17,9 +17,9 @@ import type { GeneratorVerbOptions } from '@orval/core';
  * Operations with a single content type never receive a suffix, so they fall through unchanged.
  */
 const contentTypeOperationNames = (verb: GeneratorVerbOptions): GeneratorVerbOptions => {
-    if (verb.body?.contentType === 'application/json')
+    if (verb.body.contentType === 'application/json')
         return { ...verb, operationName: verb.operationName.replace(/WithJson$/, '') };
-    if (verb.body?.contentType === 'multipart/form-data')
+    if (verb.body.contentType === 'multipart/form-data')
         return {
             ...verb,
             operationName: verb.operationName.replace(/WithFormData$/, 'WithMultipart')

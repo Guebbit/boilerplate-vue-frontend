@@ -60,7 +60,7 @@ export const onResponseRejectWithRefresh = (
                 _dontRetry: true
             } as AxiosRequestConfigWithRetry)
             .then(({ data }) => {
-                if (!data?.data?.token || !originalRequest) return;
+                if (!data.data?.token || !originalRequest) return;
                 // Store first, then replay: the interceptor reads the token off the store.
                 accessToken.value = data.data.token;
                 return instance.request({

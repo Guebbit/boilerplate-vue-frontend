@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory, RouterView } from 'vue-router';
 import type { RouteLocationNormalized } from 'vue-router';
-import { localeChoice } from '@/app/guards/localeChoice';
+import { localeChoice } from '@/app/guards/locale-choice';
 import { tryRestoreAuth, enforceRouteAccess } from '@/app/guards/authentications.ts';
 import { getDefaultLocale } from '@/infrastructure/i18n';
 import { signInLocation } from '@/app/router/navigation.ts';
@@ -111,6 +111,7 @@ const readLocaleParameter = ({ params }: RouteLocationNormalized): string | unde
 router.onError((error: Error, to: RouteLocationNormalized) => {
     // Report unhandled router errors to Grafana Faro (if initialised) so they
     // are visible in the error dashboard rather than silently swallowed.
+    // eslint-disable-next-line no-restricted-syntax -- an analytics/observability failure must never abort a navigation; the catch reports and lets the route proceed
     try {
         const obs = useObservabilityStore();
         obs.captureException(error);

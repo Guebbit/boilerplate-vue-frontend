@@ -1,5 +1,5 @@
 /**
- * Route → response-schema lookup — `src/infrastructure/http/responseSchemaMap.ts`.
+ * Route → response-schema lookup — `src/infrastructure/http/response-schema-map.ts`.
  *
  * This table is what lets `orvalMutator` validate a live response without being told which
  * operation it is serving. Two properties in it are load-bearing and easy to break silently:
@@ -18,6 +18,7 @@
  * lookup it depends on.
  */
 
+import { asStub } from '../../../support/stub';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { parse } from 'yaml';
@@ -26,8 +27,8 @@ import {
     registerResponseSchemas,
     resolveResponseSchema,
     toPathname
-} from '@/infrastructure/http/responseSchemaMap';
-import type { ResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMap';
+} from '@/infrastructure/http/response-schema-map';
+import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 import { collectModuleResponseSchemas } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 import * as schemas from '@api/schemas';
@@ -35,7 +36,7 @@ import * as schemas from '@api/schemas';
 /*
  * Wire the modules in exactly as `src/main.ts` does.
  *
- * Most rows now live in `src/modules/<name>/responseSchemas.ts` rather than in one central table,
+ * Most rows now live in `src/modules/<name>/response-schemas.ts` rather than in one central table,
  * so without this the lookup would answer `undefined` for every domain endpoint and this whole
  * file would pass by testing nothing. Assembling the real registry also means the openapi parity
  * check below now proves something stronger than it used to: that the enabled modules between them
@@ -48,7 +49,7 @@ beforeAll(() => registerResponseSchemas(collectModuleResponseSchemas(enabledModu
  * beyond tidiness: Zod schemas are deep recursive objects, and letting `it.each` serialise one
  * into a test title exhausts the worker's heap.
  */
-const schemaByName = (name: string) => (schemas as unknown as Record<string, unknown>)[name];
+const schemaByName = (name: string) => asStub<Record<string, unknown>>(schemas)[name];
 
 /** A representative ObjectId, for the parameterised routes. */
 const ID = '65dc8a99604c307b702b5ccc';

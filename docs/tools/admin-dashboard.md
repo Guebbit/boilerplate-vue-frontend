@@ -57,7 +57,7 @@ starting point for a distributed trace rather than a dead end.
 | File | Role |
 | ---- | ---- |
 | `src/modules/admin/views/Admin.vue` | Tab shell (Overview + Audit Log) |
-| `src/modules/admin/composables/useAdminObservability.ts` | Fetches health, metrics and audit; exposes reactive state |
+| `src/modules/admin/composables/use-admin-observability.ts` | Fetches health, metrics and audit; exposes reactive state |
 | `src/modules/admin/types.ts` | View-model types (`IAdminKpi`, `IAdminAuditFilters`) |
 | `src/modules/admin/mocks/handlers.ts` | MSW responses, so the dashboard works with no backend |
 

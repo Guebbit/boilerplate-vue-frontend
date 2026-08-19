@@ -1,5 +1,4 @@
 import { http, type HttpHandler } from 'msw';
-import type { Payment } from 'src/types';
 import {
     CreatePaymentIntentResponse,
     GetPaymentByOrderResponse,
@@ -41,7 +40,7 @@ export const registerPaymentsMockHandlers = (): HttpHandler[] => [
     // one payment per order, exactly the BE's unique-index fact.
     http.post(`${API_BASE}/payments/intent`, ({ request }) =>
         readRequestBody<{ orderId?: string }>(request).then((requestBody) => {
-            const order = findOwnOrder(String(requestBody.orderId ?? ''));
+            const order = findOwnOrder(requestBody.orderId ?? '');
             if (!order)
                 return toMockJsonResponse(
                     createErrorEnvelope(404, 'NOT_FOUND', 'Order not found'),
@@ -138,7 +137,7 @@ export const registerPaymentsMockHandlers = (): HttpHandler[] => [
                     { status: 409, schema: MockErrorResponse }
                 );
 
-            const cardNumber = String(requestBody.cardNumber ?? '').replaceAll(/\s/g, '');
+            const cardNumber = (requestBody.cardNumber ?? '').replaceAll(/\s/g, '');
             payment.cardLast4 = cardNumber.slice(-4);
             payment.updatedAt = getIsoDateNow();
 
@@ -155,7 +154,7 @@ export const registerPaymentsMockHandlers = (): HttpHandler[] => [
             }
 
             const order = mockDatabase.sampleOrders.find(({ id }) => id === payment.orderId);
-            if (!order || order.status !== 'pending')
+            if (order?.status !== 'pending')
                 return toMockJsonResponse(
                     createErrorEnvelope(
                         409,

@@ -53,9 +53,7 @@ export const usePaymentsStore = defineStore('payments', () => {
     const payForOrder = (orderId: string, cardNumber: string) =>
         fetchAny(() =>
             createPaymentIntent({ orderId })
-                .then((intentResponse) =>
-                    confirmPayment(String(intentResponse.data?.id), { cardNumber })
-                )
+                .then((intentResponse) => confirmPayment(intentResponse.data.id, { cardNumber }))
                 .then((response) => {
                     payment.value = response.data;
                     return payment.value;

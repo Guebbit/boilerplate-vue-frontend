@@ -1,9 +1,9 @@
 import { createApp } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { i18n } from '@/infrastructure/i18n';
-import { mergeRemoteLocales } from '@/infrastructure/i18n/localeOverrides.ts';
+import { mergeRemoteLocales } from '@/infrastructure/i18n/locale-overrides.ts';
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
-import { analyticsEvents } from '@/infrastructure/observability/analyticsEvents.ts';
+import { analyticsEvents } from '@/infrastructure/observability/analytics-events.ts';
 
 import App from './App.vue';
 import router from '@/app/router';
@@ -19,7 +19,7 @@ import '@fontsource/roboto/700.css';
 import '@/styles/main.css';
 import vuetify from '@/ui/vuetify/index.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
-import { registerResponseSchemas } from '@/infrastructure/http/responseSchemaMap.ts';
+import { registerResponseSchemas } from '@/infrastructure/http/response-schema-map.ts';
 import { registerLocaleContributors } from '@/infrastructure/i18n';
 import { collectModuleLocales, collectModuleResponseSchemas } from '@/kernel/registry.ts';
 import { enabledModules } from '@/modules.ts';

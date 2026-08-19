@@ -17,7 +17,7 @@ import {
     notifyErrorMessages,
     VUETIFY_INVALID_FIELD_SELECTOR
 } from '@/infrastructure/utils/errors.ts';
-import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
 /**
  * Form state: the one-time token (prefilled from the email link) plus the new

@@ -66,7 +66,7 @@ src/modules/<name>/
     store.ts                   Pinia state, if it has any
     index.ts                   ONLY if a sibling imports this module
     domain/                    pure business rules — lint-guaranteed framework-free
-    responseSchemas.ts         the envelope schemas for the endpoints it calls
+    response-schemas.ts         the envelope schemas for the endpoints it calls
     locales/{en,it}.json       its dictionaries
     mocks/handlers.ts          MSW handlers
     mocks/register.ts             the data those handlers answer with
@@ -98,7 +98,7 @@ in one typed object:
 // src/modules/<name>/module.ts
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { widgetsResponseSchemas } from './responseSchemas';
+import { widgetsResponseSchemas } from './response-schemas';
 
 export default {
     name: 'widgets',

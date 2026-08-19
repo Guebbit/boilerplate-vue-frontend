@@ -29,7 +29,9 @@ import {
     readRequestBody,
     slicePaginatedData,
     toNumberOrDefault,
-    toPaginationMeta
+    toPaginationMeta,
+    asText,
+    asOptionalText
 } from '@mocks/mockDb.ts';
 import { toMockArrayBufferResponse, toMockJsonResponse } from '@mocks/mockTransport.ts';
 import { MockErrorResponse } from '@mocks/mockValidation.ts';
@@ -51,14 +53,14 @@ const replyOrdersList = (
     const query = getQueryParameters(url, parameters);
     const page = toNumberOrDefault(query.page, 1);
     const pageSize = toNumberOrDefault(query.pageSize, 10);
-    const id = query.id ? String(query.id) : undefined;
+    const id = asOptionalText(query.id);
     // Non-admin callers are pinned to their own orders and their `userId` filter is
     // discarded, exactly as `getOrders` does with `userScope(request)` in the BE. Without
     // this the mock let any caller list every order by passing ?userId=…
     const scopedUserId = getMockUserScope();
-    const userId = scopedUserId ?? (query.userId ? String(query.userId) : undefined);
-    const productId = query.productId ? String(query.productId) : undefined;
-    const email = query.email ? String(query.email).toLowerCase() : undefined;
+    const userId = scopedUserId ?? asOptionalText(query.userId);
+    const productId = asOptionalText(query.productId);
+    const email = asOptionalText(query.email)?.toLowerCase();
 
     const admin = isCurrentMockUserAdmin();
 
@@ -126,12 +128,12 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
         http.post(`${API_BASE}/orders`, ({ request }) =>
             readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
                 const createdOrder = createMockOrder({
-                    userId: String(requestBody.userId ?? mockDatabase.currentAuthenticatedUserId),
-                    email: String(requestBody.email ?? 'order@example.com'),
+                    userId: asText(requestBody.userId, mockDatabase.currentAuthenticatedUserId),
+                    email: asText(requestBody.email, 'order@example.com'),
                     items: Array.isArray(requestBody.items)
                         ? (requestBody.items as CartItem[]).map((item) => cartItemToOrderItem(item))
                         : [],
-                    notes: requestBody.notes ? String(requestBody.notes) : undefined,
+                    notes: asOptionalText(requestBody.notes),
                     status: 'pending'
                 });
 
@@ -176,7 +178,7 @@ export const registerOrdersMockHandlers = (): HttpHandler[] => {
         }),
         http.delete(`${API_BASE}/orders`, ({ request }) => {
             return readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
-                const targetId = String(requestBody.id ?? '');
+                const targetId = asText(requestBody.id);
 
                 if (!removeOrderById(targetId, readHardDeleteFlag(request.url, requestBody)))
                     return orderNotFound();

@@ -17,7 +17,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const loadClient = (env: Record<string, string | undefined>) => {
     vi.resetModules();
     for (const [key, value] of Object.entries(env))
-        value === undefined ? vi.stubEnv(key, undefined) : vi.stubEnv(key, value);
+        if (value === undefined) vi.stubEnv(key, undefined);
+        else vi.stubEnv(key, value);
     return import('@/infrastructure/http/client.ts');
 };
 

@@ -20,6 +20,7 @@ const isObjectRecord = (value: unknown): value is Record<string, unknown> =>
  * @param response - Raw API response.
  * @returns `true` when the value carries a `data` property.
  */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- the type parameter names the caller's payload in the predicate; without it the narrowing is to `unknown`
 const isWrappedResponse = <T>(response: unknown): response is { data?: T } =>
     isObjectRecord(response) && 'data' in response;
 
@@ -32,7 +33,7 @@ const isWrappedResponse = <T>(response: unknown): response is { data?: T } =>
 export const getTokenFromResponse = (response?: unknown): string | undefined => {
     // Top level first: login answers with a bare `{ token }`, refresh wraps it in an envelope.
     if (isObjectRecord(response)) {
-        const maybeToken = (response as Record<string, unknown>).token;
+        const maybeToken = response.token;
         if (typeof maybeToken === 'string') return maybeToken;
     }
     if (isWrappedResponse<{ token?: string }>(response)) return response.data?.token;
@@ -47,4 +48,4 @@ export const getTokenFromResponse = (response?: unknown): string | undefined => 
  * @returns The unwrapped payload, or `undefined` when absent.
  */
 export const getPayloadFromResponse = <T>(response?: { data?: T } | T): T | undefined =>
-    isWrappedResponse<T>(response) ? response.data : (response as T | undefined);
+    isWrappedResponse<T>(response) ? response.data : response;

@@ -96,8 +96,7 @@ export const useUsersStore = defineStore('users', () => {
             remove: (userId) => deleteUserById(userId),
 
             // The new imageUrl comes back from the API; a Blob has no business in store state.
-            optimisticPatch: ({ imageUpload: _uploaded, ...userData } = {}) =>
-                userData as Partial<User>
+            optimisticPatch: ({ imageUpload: _uploaded, ...userData } = {}) => userData
         },
         { getLoading, setLoading }
     );

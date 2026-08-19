@@ -89,10 +89,10 @@ interface Specifier {
 /** Whether a `Stryker disable` directive leads the code at `line` (1-based). */
 const isGuarded = (lines: string[], line: number): boolean => {
     for (let above = line - 2; above >= 0; above--) {
-        const text = lines[above]!.trim();
+        const text = lines[above].trim();
         // The block ends at the first line that is not a comment
         if (!text.startsWith('//') && !text.startsWith('*') && !text.startsWith('/*')) return false;
-        if (/Stryker disable/.test(text)) return true;
+        if (text.includes('Stryker disable')) return true;
     }
     return false;
 };

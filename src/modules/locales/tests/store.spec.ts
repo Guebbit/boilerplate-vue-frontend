@@ -114,7 +114,7 @@ describe('language writes', () => {
     it('edits without ever sending the tag in the body — it is not editable', () => {
         const store = useLocalesStore();
         return store.editLanguage('es', { name: 'Castilian' }).then(() => {
-            const call = vi.mocked(orvalMutator).mock.calls[0]![0] as { data?: unknown };
+            const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
             expect(call.data).toEqual({ name: 'Castilian' });
             expect(requestedUrls()).toEqual(['PUT /locales/es', 'GET /locales']);
         });
@@ -142,7 +142,7 @@ describe('entry writes', () => {
     it('edits only the value — the key is identity and stays out of the body', () => {
         const store = useLocalesStore();
         return store.editEntry('es', 'locale-entry-1', 'Cercar').then((entry) => {
-            const call = vi.mocked(orvalMutator).mock.calls[0]![0] as { data?: unknown };
+            const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
             expect(call.data).toEqual({ value: 'Cercar' });
             expect(entry?.value).toBe('Cercar');
         });
@@ -171,7 +171,7 @@ describe('entry writes', () => {
     it('names the scope once for the whole batch, exactly as the contract shapes it', () => {
         const store = useLocalesStore();
         return store.importEntries('es', 'merge', 'api', [{ key: 'a', value: 'b' }]).then(() => {
-            const call = vi.mocked(orvalMutator).mock.calls[0]![0] as { data?: unknown };
+            const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
             expect(call.data).toEqual({ scope: 'api', entries: [{ key: 'a', value: 'b' }] });
         });
     });

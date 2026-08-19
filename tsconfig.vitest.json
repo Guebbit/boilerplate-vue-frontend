@@ -13,7 +13,7 @@
         ".dev/**/*.ts",
         // `scripts/**` is primarily tsconfig.node.json's, and it stays there — that is the
         // project vite.config.ts and the CLI entry points are checked under. It is listed here
-        // too because tests/unit/scripts/specIdentity.spec.ts imports from it, and a file
+        // too because tests/unit/scripts/spec-identity.spec.ts imports from it, and a file
         // imported by a project but not included in it is TS6307, not a resolution error.
         "scripts/**/*.ts"
     ],

@@ -360,7 +360,7 @@ jobs:
         #
         # Ten files exist in BOTH repos, byte-identical, maintained by hand — the two specs and
         # the spectral ruleset, the seed identities, the generated realtime types, the three API
-        # client collections, and two shared scripts. `scripts/specIdentity.ts` holds the list and
+        # client collections, and two shared scripts. `scripts/spec-identity.ts` holds the list and
         # says, per entry, what a fork of it would break.
         #
         # Until this job existed they were checked by nothing. Every other spec job here lints

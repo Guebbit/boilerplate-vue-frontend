@@ -159,7 +159,7 @@ describe('the app-shaped bindings', () => {
     });
 
     it('falls back to an em dash when VITE_APP_EMPTY_VALUE is unset', async () => {
-        vi.stubEnv('VITE_APP_EMPTY_VALUE', undefined as unknown as string);
+        vi.stubEnv('VITE_APP_EMPTY_VALUE', undefined);
 
         const { EMPTY_VALUE: fallback } = await import('@/infrastructure/utils/formatters');
 

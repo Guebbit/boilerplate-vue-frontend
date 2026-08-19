@@ -18,7 +18,7 @@
 import type { Ref } from 'vue';
 import type { RouteRecordRaw } from 'vue-router';
 import type { HttpHandler } from 'msw';
-import type { ResponseSchemaRoute } from '@/infrastructure/http/responseSchemaMap';
+import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 import type { TranslationDictionaries } from '@/infrastructure/i18n';
 
 /**
@@ -80,7 +80,7 @@ export interface AppNavigationEntry {
  *
  * The kernel therefore names no domain while still typing every read site exactly.
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- a declaration-merging seam: each module augments this map with its own seeds
 export interface MockSeedData {}
 
 /** What a module's slice builder is handed. */

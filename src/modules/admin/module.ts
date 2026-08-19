@@ -1,6 +1,6 @@
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { adminResponseSchemas } from './responseSchemas';
+import { adminResponseSchemas } from './response-schemas';
 
 /**
  * The admin observability console: service health, KPIs and the audit log.

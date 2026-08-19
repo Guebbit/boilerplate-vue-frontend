@@ -21,7 +21,9 @@ import {
     isVisibleToCaller,
     mockDatabase,
     readRequestBody,
-    recordMockEmail
+    recordMockEmail,
+    asText,
+    asOptionalText
 } from '@mocks/mockDb.ts';
 import { toMockJsonResponse } from '@mocks/mockTransport.ts';
 import { MockErrorResponse } from '@mocks/mockValidation.ts';
@@ -42,7 +44,7 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
     ),
     http.post(`${API_BASE}/cart`, ({ request }) =>
         readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
-            const productId = String(requestBody.productId ?? '');
+            const productId = asText(requestBody.productId);
             const quantity = Math.max(0, Number(requestBody.quantity ?? 0));
 
             if (!mockDatabase.sampleProducts.some((product) => product.id === productId))
@@ -74,7 +76,7 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
     ),
     http.delete(`${API_BASE}/cart`, ({ request }) =>
         readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
-            const productId = requestBody.productId ? String(requestBody.productId) : undefined;
+            const productId = asOptionalText(requestBody.productId);
 
             if (!productId) {
                 mockDatabase.sampleCartItems = [];
@@ -139,9 +141,7 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
              * The shipping choice is validated BEFORE any stock moves, exactly like the BE: an
              * unknown method refuses the whole checkout while nothing has been written yet.
              */
-            const shippingMethodId = requestBody.shippingMethodId
-                ? String(requestBody.shippingMethodId)
-                : undefined;
+            const shippingMethodId = asOptionalText(requestBody.shippingMethodId);
             if (
                 shippingMethodId !== undefined &&
                 priceMockShipping(shippingMethodId, 0) === undefined
@@ -175,7 +175,7 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
                     ),
                     { status: 409, schema: MockErrorResponse }
                 );
-            const email = String(
+            const email = asText(
                 requestBody.email ??
                     mockDatabase.sampleUsers.find(
                         (user) => user.id === mockDatabase.currentAuthenticatedUserId
@@ -202,7 +202,7 @@ export const registerCartMockHandlers = (): HttpHandler[] => [
                 userId: mockDatabase.currentAuthenticatedUserId ?? 'anonymous',
                 email,
                 items: orderItems,
-                notes: requestBody.notes ? String(requestBody.notes) : undefined,
+                notes: asOptionalText(requestBody.notes),
                 status: 'pending',
                 ...(shippingMethodId === undefined
                     ? {}

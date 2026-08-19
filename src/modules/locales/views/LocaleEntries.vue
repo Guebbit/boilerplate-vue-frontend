@@ -13,9 +13,9 @@ import { ArrowLeft, Download, Plus, Search, Upload } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { updateLocale as applyDictionary } from '@/infrastructure/i18n';
-import { fetchLocaleOverrides } from '@/infrastructure/i18n/localeOverrides.ts';
+import { fetchLocaleOverrides } from '@/infrastructure/i18n/locale-overrides.ts';
 import { useLocalesStore } from '@/modules/locales/store.ts';
 import { expandEntries } from '@/modules/locales/dictionaries.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
@@ -44,7 +44,7 @@ const { capabilities, filters, pageItemList, pageCurrent, pageTotal, loading } =
     storeToRefs(localesStore);
 
 /** The language whose rows this page shows, from `/locales/:tag`. */
-const tag = computed(() => String(route.params.tag ?? ''));
+const tag = computed(() => String(route.params.tag));
 
 /** This language's manifest row, for the header. Absent until the manifest loads. */
 const capability = computed(() =>
@@ -118,7 +118,7 @@ const handleAdd = (fields: { scope: TLocaleScope; key: string; value: string }) 
  * @returns Nothing; the outcome is reported as a toast.
  */
 const handleValueBlur = (entry: LocaleEntry) => {
-    const draft = drafts.value[entry.id];
+    const draft = drafts.value[entry.id] as string | undefined;
     if (draft === undefined || draft === entry.value) return;
     return localesStore
         .editEntry(tag.value, entry.id, draft)

@@ -1,5 +1,5 @@
 import { logger } from '@/infrastructure/utils/logger.ts';
-import { resolveResponseSchema } from './responseSchemaMap.ts';
+import { resolveResponseSchema } from './response-schema-map.ts';
 import type { AxiosRequestConfig } from 'axios';
 
 /**
@@ -17,7 +17,7 @@ export const shouldValidateResponses = (): boolean => {
     const flag = import.meta.env.VITE_VALIDATE_RESPONSES;
     if (flag === 'true') return true;
     if (flag === 'false') return false;
-    return Boolean(import.meta.env.DEV) && import.meta.env.MODE !== 'test';
+    return import.meta.env.DEV && import.meta.env.MODE !== 'test';
 };
 
 /**

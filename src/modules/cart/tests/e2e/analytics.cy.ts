@@ -144,7 +144,7 @@ const waitForEvent = (
          * drives — Umami writes when it writes, there is no request to alias and no element to
          * assert on — and it is bounded by `deadline` rather than trusted to be long enough.
          */
-        // eslint-disable-next-line cypress/no-unnecessary-waiting
+        // eslint-disable-next-line cypress/no-unnecessary-waiting -- the debounce under test only flushes after real time passes; see the note above
         return cy
             .wait(POLL_INTERVAL_MS, { log: false })
             .then(() => waitForEvent(session, since, name, expected, deadline));

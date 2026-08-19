@@ -11,6 +11,7 @@
  * dependency order. Same shape as the backend's `tests/cross-cutting/audit-actions.test.ts` —
  * properties asserted structurally, over whatever `src/modules.ts` happens to enable.
  */
+import { asStub } from '../support/stub';
 import { describe, expect, it, vi, afterEach } from 'vitest';
 import type { AppModule } from '@/kernel/registry';
 
@@ -23,7 +24,7 @@ const buildDatabase = async (): Promise<Record<string, unknown>> => {
 
     // Read structurally on purpose: this spec asserts properties of the ASSEMBLY, so it must not
     // name a field any single module declares.
-    return (await collectModuleMockSeeds(enabledModules)) as unknown as Record<string, unknown>;
+    return asStub<Record<string, unknown>>(await collectModuleMockSeeds(enabledModules));
 };
 
 /** A stand-in module contributing one field named after itself, for the collector's own edge cases. */

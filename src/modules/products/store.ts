@@ -109,8 +109,7 @@ export const useProductsStore = defineStore('products', () => {
 
             // The new imageUrl comes back from the API, so the local patch must not carry the
             // Blob: parking one in store state would keep the preview on bytes already uploaded.
-            optimisticPatch: ({ imageUpload: _uploaded, ...productData }) =>
-                productData as Partial<Product>
+            optimisticPatch: ({ imageUpload: _uploaded, ...productData }) => productData
         },
         {
             getLoading,

@@ -26,7 +26,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
-import { analyticsEvents } from '@/infrastructure/observability/analyticsEvents.ts';
+import { analyticsEvents } from '@/infrastructure/observability/analytics-events.ts';
 
 /** Stands in for the object the Umami script attaches to `window` once it loads. */
 const installUmamiTracker = () => {

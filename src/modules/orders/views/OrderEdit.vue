@@ -6,7 +6,7 @@ export default {
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { routerLinkI18n } from '@/infrastructure/i18n/routerLink.ts';
+import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
@@ -113,7 +113,7 @@ activateAutoHydrate(
         currentOrder.value
             ? {
                   status: currentOrder.value.status,
-                  email: currentOrder.value.email ?? ''
+                  email: currentOrder.value.email
               }
             : undefined
     )

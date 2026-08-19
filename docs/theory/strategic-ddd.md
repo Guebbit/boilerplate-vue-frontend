@@ -75,7 +75,7 @@ record and the admin editing someone else's. Neither module writes anything; the
 share is **vocabulary**, and vocabulary is the cheap kind of sharing.
 
 `contextMap.spec.ts` asserts no fourth kind appears. If one ever does, the client has started owning
-state the server owns, which is the drift `scripts/specIdentity.ts` exists to catch elsewhere.
+state the server owns, which is the drift `scripts/spec-identity.ts` exists to catch elsewhere.
 
 ### What else the map is held to
 

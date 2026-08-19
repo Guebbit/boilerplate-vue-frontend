@@ -5,16 +5,17 @@ import TableLoadingBar from '@/ui/molecules/TableLoadingBar.vue';
 /**
  * Minimal column definition: a visible title and the item key it reads.
  */
-type CoreDataTableHeader = {
+// Exported: the props type references it, and an SFC's generated export may not name a private type.
+export interface CoreDataTableHeader {
     title: string;
     key: string;
-};
+}
 
 const {
     headers,
     items,
     itemValue = 'id',
-    loading = false,
+    loading,
     loadingText = 'Loading...',
     noDataText = 'No data available'
 } = defineProps<{

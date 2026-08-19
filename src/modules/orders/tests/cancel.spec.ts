@@ -6,7 +6,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useOrdersStore } from '@/modules/orders/store.ts';
-import { orvalMutator } from '@/infrastructure/http';
 
 const ORDER = {
     id: 'o1',

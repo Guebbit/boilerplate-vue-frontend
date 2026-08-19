@@ -1,6 +1,6 @@
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
-import { ordersResponseSchemas } from './responseSchemas';
+import { ordersResponseSchemas } from './response-schemas';
 
 /**
  * Orders: a customer's own order history, and the admin screens that edit an order's status.

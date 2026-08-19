@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { Camera, RefreshCw, HeartPulse } from 'lucide-vue-next';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
-import { useRealtimeObservability } from '@/modules/realtime/useRealtimeObservability';
+import { useRealtimeObservability } from '@/modules/realtime/use-realtime-observability';
 import { formatUptime } from '@/infrastructure/utils/formatters.ts';
 import type { RealtimeMetricsEntry } from '@types';
 

@@ -208,7 +208,7 @@ flowchart TB
     end
     subgraph Static["STATIC mutant — runs at import"]
         direction LR
-        S1["mutate\nmodules/*/responseSchemas.ts"] --> S2["reload everything,\nrun the WHOLE suite"] --> S3["seconds each"]
+        S1["mutate\nmodules/*/response-schemas.ts"] --> S2["reload everything,\nrun the WHOLE suite"] --> S3["seconds each"]
     end
     Normal --> Cost["~5% of mutants are static\nbut cause ~90% of the work"]
     Static --> Cost
@@ -385,7 +385,7 @@ After that the rule is: raise `break` when a score **sustains** a higher band; n
 | ------------------------------------ | ------------------------------------------------------------------------------ |
 | `stryker.config.json`                | Scope (`mutate`), the Vitest runner config, thresholds, concurrency, reporters |
 | `mutation-baseline.json`             | Per-file scores. Committed. The ratchet's memory. Absent until the first run.  |
-| `scripts/mutationBaseline.ts`        | Ratchet logic — scoring, comparison, the "never lower" rule                    |
+| `scripts/mutation-baseline.ts`        | Ratchet logic — scoring, comparison, the "never lower" rule                    |
 | `scripts/check-mutation-baseline.ts` | CLI for the two commands below                                                 |
 | `.github/workflows/mutation.yml`     | Nightly schedule + dispatch, uploads the report even on failure                |
 | `reports/mutation/index.html`        | Human-readable report (generated per run)                                      |

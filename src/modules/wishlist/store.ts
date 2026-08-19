@@ -42,6 +42,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
     const fetchWishlist = () =>
         fetchAny(() =>
             getWishlist().then((response) => {
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the generated envelope types promise `data`; the wire does not, and the store spec pins "a bare payload is empty, not a crash"
                 items.value = response.data?.items ?? [];
                 return items.value;
             })
@@ -56,6 +57,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
     const addToWishlist = (productId: string) =>
         fetchAny(() =>
             addWishlistItem({ productId }).then((response) => {
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the generated envelope types promise `data`; the wire does not, and the store spec pins "a bare payload is empty, not a crash"
                 items.value = response.data?.items ?? [];
                 return items.value;
             })
@@ -70,6 +72,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
     const removeFromWishlist = (productId: string) =>
         fetchAny(() =>
             removeWishlistItem(productId).then((response) => {
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the generated envelope types promise `data`; the wire does not, and the store spec pins "a bare payload is empty, not a crash"
                 items.value = response.data?.items ?? [];
                 return items.value;
             })
@@ -86,6 +89,7 @@ export const useWishlistStore = defineStore('wishlist', () => {
     const moveToCart = (productId: string) =>
         fetchAny(() =>
             moveWishlistItemToCart(productId).then((response) => {
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the generated envelope types promise `data`; the wire does not, and the store spec pins "a bare payload is empty, not a crash"
                 items.value = response.data?.items ?? [];
                 return useCartStore()
                     .fetchCart()

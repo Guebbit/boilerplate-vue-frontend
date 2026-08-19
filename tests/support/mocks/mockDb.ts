@@ -44,7 +44,7 @@ import {
     type User
 } from '@types';
 import type { MockSeedData } from '@/kernel/registry';
-import { getIsoDateNow, computeOrderTotals, createMockOrder } from './mockOrderMath.ts';
+import { computeOrderTotals } from './mockOrderMath.ts';
 
 // Re-exported so every existing `from '@mocks/mockDb.ts'` import in the handler files
 // keeps working unchanged — see mockOrderMath.ts's docstring for why these live there instead.
@@ -99,7 +99,9 @@ export const createErrorEnvelope = (status: number, code: string, message: strin
     errors: [{ code, message }]
 });
 
-const parseValue = (value: FormDataEntryValue | unknown) => {
+// `unknown` subsumes FormDataEntryValue; the name survives here for the reader: multipart
+// fields arrive as FormDataEntryValue, JSON fields as whatever the body carried.
+const parseValue = (value: unknown) => {
     if (value === 'true') return true;
     if (value === 'false') return false;
     if (typeof value === 'string' && value.trim() !== '' && !Number.isNaN(Number(value)))
@@ -116,12 +118,12 @@ const parseValue = (value: FormDataEntryValue | unknown) => {
  * and `toMockJsonResponse`'s strict validation would reject the response envelope — failing in a
  * place that says nothing about the cause.
  */
-export type MockRequestParts<T> = {
+export interface MockRequestParts<T> {
     /** Scalar form fields, coerced by {@link parseValue}. Never contains a File or Blob. */
     fields: Partial<T>;
     /** Uploaded parts, keyed by form field name — `imageUpload` for every current operation. */
     files: Record<string, File>;
-};
+}
 
 const isUploadedFile = (value: unknown): value is File =>
     (typeof File !== 'undefined' && value instanceof File) ||
@@ -132,7 +134,7 @@ export const parseRequestBody = <T>(data: unknown): MockRequestParts<T> => {
     if (typeof FormData !== 'undefined' && data instanceof FormData) {
         const parsedData: Record<string, unknown> = {};
         const parsedFiles: Record<string, File> = {};
-        // eslint-disable-next-line unicorn/no-array-for-each
+        // eslint-disable-next-line unicorn/no-array-for-each -- FormData has no entries()-based for-of in this lib target; forEach IS its iteration API
         data.forEach((value, key) => {
             if (isUploadedFile(value)) parsedFiles[key] = value;
             else parsedData[key] = parseValue(value);
@@ -146,7 +148,7 @@ export const parseRequestBody = <T>(data: unknown): MockRequestParts<T> => {
             return { fields: {}, files: {} };
         }
     }
-    if (typeof data === 'object') return { fields: data as Partial<T>, files: {} };
+    if (typeof data === 'object') return { fields: data, files: {} };
     return { fields: {}, files: {} };
 };
 
@@ -236,14 +238,14 @@ const getPathSegments = (url: string | undefined) =>
 
 export const getLastPathSegment = (url: string | undefined) => {
     const pathSegments = getPathSegments(url);
-    // eslint-disable-next-line unicorn/prefer-at
+    // eslint-disable-next-line unicorn/prefer-at -- .at(-1) types the result as possibly-undefined, and every caller here owns a non-empty path
     return pathSegments[pathSegments.length - 1];
 };
 
 export const getQueryParameters = (url: string | undefined, parameters?: unknown) => {
     const parsedUrl = new URL(url ?? '', 'http://localhost');
     const queryFromUrl: Record<string, string> = {};
-    // eslint-disable-next-line unicorn/no-array-for-each
+    // eslint-disable-next-line unicorn/no-array-for-each -- URLSearchParams' forEach IS its iteration API in this lib target
     parsedUrl.searchParams.forEach((value, key) => {
         queryFromUrl[key] = value;
     });
@@ -580,3 +582,15 @@ export const defaultRefreshTokenResponse: RefreshTokenResponse = {
     refreshToken: 'mock-refresh-token',
     expiresIn: 3600
 };
+
+/**
+ * A body/query field as text. Handler bodies read as `Record<string, unknown>` carry no type for
+ * their fields, and `String(value)` on an unknown invites `[object Object]` into the dataset —
+ * a non-string here is a malformed request, and the fallback is the honest answer to one.
+ */
+export const asText = (value: unknown, fallback = ''): string =>
+    typeof value === 'string' ? value : fallback;
+
+/** As {@link asText}, but empty/missing/non-string collapse to `undefined` — "not filtered". */
+export const asOptionalText = (value: unknown): string | undefined =>
+    typeof value === 'string' && value !== '' ? value : undefined;

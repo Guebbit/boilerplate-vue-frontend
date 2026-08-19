@@ -78,11 +78,12 @@ export const onRequestReject = (error: AxiosError) => {
 export const onResponseReject = (
     error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>
 ): Promise<AxiosResponseErrorData> => {
-    const requestId = error.response?.headers?.['x-request-id'] as string | undefined;
-    const traceId = error.response?.headers?.['x-trace-id'] as string | undefined;
+    const requestId = error.response?.headers['x-request-id'] as string | undefined;
+    const traceId = error.response?.headers['x-trace-id'] as string | undefined;
 
     if (error.response?.data && Object.hasOwnProperty.call(error.response.data, 'errors')) {
         const envelope = error.response.data;
+        // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract; every catch downstream destructures it
         return Promise.reject({
             ...envelope,
             ...(requestId && { requestId }),
@@ -98,6 +99,7 @@ export const onResponseReject = (
     // here — opt in with `VITE_APP_LOG_SCOPES=http`.
     if (status >= 500) logger.debug('http', '------------- APP ERROR -------------', error);
 
+    // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract; every catch downstream destructures it
     return Promise.reject({
         success: false,
         status,

@@ -22,10 +22,10 @@ const { orderId } = defineProps<{
     orderId: string;
 }>();
 
-const emit = defineEmits<{
+const emit = defineEmits<
     /** The courier advanced and the order's status moved — the parent should re-read it. */
-    (event: 'advanced'): void;
-}>();
+    (event: 'advanced') => void
+>();
 
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();

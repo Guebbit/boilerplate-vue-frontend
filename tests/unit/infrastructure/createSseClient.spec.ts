@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Reusable EventSource mock that captures all registered listeners
 class EventSourceMock {
-    listeners: Record<string, Array<(event: Event) => void>> = {};
+    listeners: Record<string, ((event: Event) => void)[]> = {};
 
     addEventListener(eventName: string, callback: (event: Event) => void) {
         this.listeners[eventName] ??= [];
@@ -24,6 +24,7 @@ beforeEach(() => {
     vi.stubGlobal(
         'EventSource',
         vi.fn(
+            // eslint-disable-next-line @typescript-eslint/no-extraneous-class -- the class body IS the mock: EventSource is constructed, never called
             class {
                 constructor() {
                     return source;
@@ -37,7 +38,7 @@ beforeEach(() => {
 
 describe('createSseClient', () => {
     it('routes named AsyncAPI SSE events to callbacks', () =>
-        import('@/infrastructure/createSseClient').then(({ createSseClient }) => {
+        import('@/infrastructure/create-sse-client').then(({ createSseClient }) => {
             const onEvent = vi.fn();
 
             createSseClient(
@@ -60,7 +61,7 @@ describe('createSseClient', () => {
         }));
 
     it('fires onOpen when the EventSource connection opens', () =>
-        import('@/infrastructure/createSseClient').then(({ createSseClient }) => {
+        import('@/infrastructure/create-sse-client').then(({ createSseClient }) => {
             const onOpen = vi.fn();
 
             createSseClient('http://localhost:3000/observability/events', [], { onOpen });
@@ -71,7 +72,7 @@ describe('createSseClient', () => {
         }));
 
     it('fires onError when the EventSource emits an error', () =>
-        import('@/infrastructure/createSseClient').then(({ createSseClient }) => {
+        import('@/infrastructure/create-sse-client').then(({ createSseClient }) => {
             const onError = vi.fn();
 
             createSseClient('http://localhost:3000/observability/events', [], { onError });
@@ -83,7 +84,7 @@ describe('createSseClient', () => {
         }));
 
     it('closes the underlying EventSource via the returned handle', () =>
-        import('@/infrastructure/createSseClient').then(({ createSseClient }) => {
+        import('@/infrastructure/create-sse-client').then(({ createSseClient }) => {
             const client = createSseClient('http://localhost:3000/observability/events', []);
             client.close();
 
@@ -91,7 +92,7 @@ describe('createSseClient', () => {
         }));
 
     it('silently ignores frames with invalid JSON', () =>
-        import('@/infrastructure/createSseClient').then(({ createSseClient }) => {
+        import('@/infrastructure/create-sse-client').then(({ createSseClient }) => {
             const onEvent = vi.fn();
 
             createSseClient(
@@ -108,7 +109,7 @@ describe('createSseClient', () => {
         }));
 
     it('dispatches all three observability event types independently', () =>
-        import('@/infrastructure/createSseClient').then(({ createSseClient }) => {
+        import('@/infrastructure/create-sse-client').then(({ createSseClient }) => {
             const onEvent = vi.fn();
 
             createSseClient(

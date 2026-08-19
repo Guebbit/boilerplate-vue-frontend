@@ -63,7 +63,7 @@ describe('fetchMovements', () => {
     it('narrows to one product by passing the id through as a query param', () => {
         const store = useInventoryStore();
         return store.fetchMovements({ productId: 'p1' }).then(() => {
-            const call = vi.mocked(orvalMutator).mock.calls[0]![0] as {
+            const call = vi.mocked(orvalMutator).mock.calls[0][0] as {
                 params?: { productId?: string };
             };
             expect(call.params).toEqual({ productId: 'p1' });
@@ -131,7 +131,7 @@ describe('receive', () => {
     it('sends the quantity as a receipt body rather than a query param', () => {
         const store = useInventoryStore();
         return store.receive('p1', 20).then(() => {
-            const call = vi.mocked(orvalMutator).mock.calls[0]![0] as { data?: unknown };
+            const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
             expect(call.data).toEqual({ productId: 'p1', quantity: 20 });
         });
     });
@@ -139,7 +139,7 @@ describe('receive', () => {
     it("carries the operator's note onto the row when one was written", () => {
         const store = useInventoryStore();
         return store.receive('p1', 20, 'pallet 7, DHL').then(() => {
-            const call = vi.mocked(orvalMutator).mock.calls[0]![0] as { data?: unknown };
+            const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
             expect(call.data).toEqual({ productId: 'p1', quantity: 20, note: 'pallet 7, DHL' });
         });
     });
@@ -172,7 +172,7 @@ describe('adjust', () => {
     it('passes the delta through signed, because shrinkage is the common case', () => {
         const store = useInventoryStore();
         return store.adjust('p1', -3).then(() => {
-            const call = vi.mocked(orvalMutator).mock.calls[0]![0] as { data?: unknown };
+            const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
             expect(call.data).toEqual({ productId: 'p1', delta: -3 });
         });
     });

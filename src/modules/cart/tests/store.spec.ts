@@ -26,7 +26,7 @@ import {
     checkout as apiCheckout,
     reorder as apiReorder
 } from '@api';
-import { analyticsEvents } from '@/infrastructure/observability/analyticsEvents.ts';
+import { analyticsEvents } from '@/infrastructure/observability/analytics-events.ts';
 
 const track = vi.fn();
 
