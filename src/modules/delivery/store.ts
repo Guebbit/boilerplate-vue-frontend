@@ -32,8 +32,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
     const fetchMethods = () =>
         fetchAny(() =>
             listShippingMethods().then((response) => {
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the generated envelope types promise `data`; the wire does not, and the store spec pins "a bare payload is empty, not a crash"
-                methods.value = response.data?.methods ?? [];
+                methods.value = response.data.methods;
                 return methods.value;
             })
         );
@@ -74,12 +73,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
      * @returns A promise resolving with how many did.
      */
     const advance = () =>
-        fetchAny(() =>
-            advanceCourier().then(
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the generated envelope types promise `data`; the wire does not, and the store spec pins "a bare payload is empty, not a crash"
-                (response) => response.data?.advanced ?? 0
-            )
-        );
+        fetchAny(() => advanceCourier().then((response) => response.data.advanced));
 
     return {
         loading,

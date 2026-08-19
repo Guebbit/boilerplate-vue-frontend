@@ -73,27 +73,3 @@ describe('moveToCart', () => {
             });
     });
 });
-
-describe('empty payloads', () => {
-    // The `?? []` arms: a payload with no items is an empty list, never a crash — and the same
-    // rule holds on every action, because each one replaces the list with what the API said.
-    it('fetch, add, remove and move all read a bare payload as empty', () => {
-        responses = {
-            'GET /wishlist': { data: undefined },
-            'POST /wishlist': { data: undefined },
-            'DELETE /wishlist/p1': { data: undefined },
-            'POST /wishlist/p1/move-to-cart': { data: undefined },
-            'GET /cart': { data: undefined }
-        };
-        const store = useWishlistStore();
-        return store
-            .fetchWishlist()
-            .then(() => store.addToWishlist('p1'))
-            .then(() => store.removeFromWishlist('p1'))
-            .then(() => store.moveToCart('p1'))
-            .then(() => {
-                expect(store.items).toEqual([]);
-                expect(store.isSaved('p1')).toBe(false);
-            });
-    });
-});

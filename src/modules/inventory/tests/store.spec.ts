@@ -37,8 +37,8 @@ beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     responses = {
-        'GET /inventory/movements': { data: { items: [MOVEMENT] } },
-        'GET /inventory/levels': { data: { items: [LEVEL] } },
+        'GET /inventory/movements': { data: { items: [MOVEMENT], meta: { totalItems: 1 } } },
+        'GET /inventory/levels': { data: { items: [LEVEL], meta: { totalItems: 1 } } },
         'POST /inventory/receipts': { data: LEVEL },
         'POST /inventory/adjustments': { data: LEVEL }
     };
@@ -49,14 +49,6 @@ describe('fetchMovements', () => {
         const store = useInventoryStore();
         return store.fetchMovements().then(() => {
             expect(store.movements.map(({ id }) => id)).toEqual(['movement-1']);
-        });
-    });
-
-    it('reads a payload with no items as an empty ledger, not a crash', () => {
-        responses['GET /inventory/movements'] = { data: undefined };
-        const store = useInventoryStore();
-        return store.fetchMovements().then(() => {
-            expect(store.movements).toEqual([]);
         });
     });
 
@@ -104,14 +96,6 @@ describe('fetchLevels', () => {
             expect(store.levels).toEqual([LEVEL]);
         });
     });
-
-    it('reads a payload with no items as an empty board, not a crash', () => {
-        responses['GET /inventory/levels'] = { data: undefined };
-        const store = useInventoryStore();
-        return store.fetchLevels().then(() => {
-            expect(store.levels).toEqual([]);
-        });
-    });
 });
 
 describe('receive', () => {
@@ -141,14 +125,6 @@ describe('receive', () => {
         return store.receive('p1', 20, 'pallet 7, DHL').then(() => {
             const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
             expect(call.data).toEqual({ productId: 'p1', quantity: 20, note: 'pallet 7, DHL' });
-        });
-    });
-
-    it('reads a bare payload as no counters, not a crash', () => {
-        responses['POST /inventory/receipts'] = { data: undefined };
-        const store = useInventoryStore();
-        return store.receive('p1', 20).then((level) => {
-            expect(level).toBeUndefined();
         });
     });
 });

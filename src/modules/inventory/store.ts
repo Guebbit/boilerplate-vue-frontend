@@ -74,10 +74,8 @@ export const useInventoryStore = defineStore('inventory', () => {
         fetchAny(() => {
             if (query) movementsQuery = query;
             return listStockMovements(movementsQuery).then((response) => {
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the generated envelope types promise `data`; the wire does not, and the store spec pins "a bare payload is empty, not a crash"
-                movements.value = response.data?.items ?? [];
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the generated envelope types promise `data`; the wire does not, and the store spec pins "a bare payload is empty, not a crash"
-                movementsTotal.value = response.data?.meta?.totalItems ?? 0;
+                movements.value = response.data.items;
+                movementsTotal.value = response.data.meta.totalItems;
                 return movements.value;
             });
         });
@@ -93,10 +91,8 @@ export const useInventoryStore = defineStore('inventory', () => {
         fetchAny(() => {
             if (query) levelsQuery = query;
             return listInventoryLevels(levelsQuery).then((response) => {
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the generated envelope types promise `data`; the wire does not, and the store spec pins "a bare payload is empty, not a crash"
-                levels.value = response.data?.items ?? [];
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the generated envelope types promise `data`; the wire does not, and the store spec pins "a bare payload is empty, not a crash"
-                levelsTotal.value = response.data?.meta?.totalItems ?? 0;
+                levels.value = response.data.items;
+                levelsTotal.value = response.data.meta.totalItems;
                 return levels.value;
             });
         });
@@ -141,10 +137,7 @@ export const useInventoryStore = defineStore('inventory', () => {
             sweepReservations().then((response) =>
                 fetchMovements()
                     .then(() => fetchLevels())
-                    .then(
-                        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the generated envelope types promise `data`; the wire does not, and the store spec pins "a bare payload is empty, not a crash"
-                        () => response.data?.expired ?? 0
-                    )
+                    .then(() => response.data.expired)
             )
         );
 

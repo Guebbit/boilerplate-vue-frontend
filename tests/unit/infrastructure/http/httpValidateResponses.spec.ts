@@ -68,6 +68,20 @@ describe('orvalMutator contract validation', () => {
         );
     });
 
+    it('is ON by default outside Vitest — a production build validates too (MODE decides)', () => {
+        // Same violating response as above; with MODE stubbed away from 'test' and no flag set,
+        // the default must validate — this is what lets the stores trust `response.data`.
+        server.use(
+            http.get(`${API}/account`, () =>
+                HttpResponse.json({ success: true, status: 200, message: 'ok', data: { id: '1' } })
+            )
+        );
+        vi.stubEnv('MODE', 'production');
+        return loadHttp().then(({ orvalMutator }) =>
+            expect(orvalMutator({ url: '/account', method: 'GET' })).rejects.toThrow(/\[contract]/)
+        );
+    });
+
     it('resolves normally when VITE_VALIDATE_RESPONSES=true and the response satisfies its schema', () => {
         server.use(
             http.get(`${API}/account`, () =>

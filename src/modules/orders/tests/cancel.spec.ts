@@ -1,7 +1,9 @@
 /**
  * `cancelOrder` — the orders store's one customer write. Transport-mocked like the other store
  * flow specs; what is pinned is that the cancelled record REPLACES the cached one (the fact
- * worth rendering is the new status) and that a payload-less answer changes nothing.
+ * worth rendering is the new status. A payload-less 200 no longer reaches this store:
+ * `orvalMutator` validates every response against its contract schema in every mode but
+ * vitest — see httpValidateResponses.spec.ts, which owns that behaviour.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
@@ -40,14 +42,6 @@ describe('cancelOrder', () => {
         const store = useOrdersStore();
         return store.cancelOrder('o1').then(() => {
             expect(store.orders.o1?.status).toBe('cancelled');
-        });
-    });
-
-    it('a payload-less answer caches nothing rather than a hole', () => {
-        responses['POST /orders/o1/cancel'] = { data: undefined };
-        const store = useOrdersStore();
-        return store.cancelOrder('o1').then(() => {
-            expect(store.orders.o1).toBeUndefined();
         });
     });
 });

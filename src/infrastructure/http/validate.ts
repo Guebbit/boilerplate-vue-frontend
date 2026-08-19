@@ -4,8 +4,14 @@ import type { AxiosRequestConfig } from 'axios';
 
 /**
  * Whether `orvalMutator` should parse every response through its contract schema before
- * resolving. `VITE_VALIDATE_RESPONSES` ('true'/'false') decides; unset defaults to on for an
- * actual `vite dev` server, so it fires during ordinary local development too.
+ * resolving. `VITE_VALIDATE_RESPONSES` ('true'/'false') decides; unset defaults to ON — in
+ * production too, not just `vite dev`.
+ *
+ * Production is the point: the generated envelope types promise `data` on every 2xx, and the
+ * stores trust that promise instead of guarding every read. This gate is what makes the promise
+ * true — a malformed 200 becomes a visible rejection at the one unwrap point, not a silently
+ * empty page. The schemas cost no extra bundle: `response-schema-map` was always a static import
+ * of this module.
  *
  * The `MODE !== 'test'` half is load-bearing: Vitest also sets `DEV: true`, and plenty of unit
  * tests exercise `orvalMutator` against deliberately partial fixtures.
@@ -17,7 +23,7 @@ export const shouldValidateResponses = (): boolean => {
     const flag = import.meta.env.VITE_VALIDATE_RESPONSES;
     if (flag === 'true') return true;
     if (flag === 'false') return false;
-    return import.meta.env.DEV && import.meta.env.MODE !== 'test';
+    return import.meta.env.MODE !== 'test';
 };
 
 /**

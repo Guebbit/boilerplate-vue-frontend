@@ -90,14 +90,6 @@ describe('fetchLanguages', () => {
             expect(store.fallbackLocale).toBe('en');
         });
     });
-
-    it('reads a bare payload as an empty manifest, not a crash', () => {
-        responses['GET /locales'] = { data: undefined };
-        const store = useLocalesStore();
-        return store.fetchLanguages().then(() => {
-            expect(store.capabilities).toEqual([]);
-        });
-    });
 });
 
 describe('language writes', () => {
@@ -199,6 +191,39 @@ describe('fetchAllEntries', () => {
         const store = useLocalesStore();
         return store.fetchAllEntries('es').then((entries) => {
             expect(entries?.map(({ key }) => key)).toEqual(['generic.search', 'generic.cancel']);
+        });
+    });
+});
+
+describe('entry search and removal', () => {
+    it('searches the language the filters name, through the toolkit search cache', () => {
+        const store = useLocalesStore();
+        responses['GET /locales/es/entries'] = { data: { items: [ENTRY] } };
+        store.filters = { tag: 'es', text: 'bus', scope: 'app' };
+        return store
+            .watchSearchEntries()
+            .search()
+            .then(() => {
+                expect(requestedUrls()).toContain('GET /locales/es/entries');
+            });
+    });
+
+    it("searches with an empty tag when the filters name none — the `?? ''` arm", () => {
+        const store = useLocalesStore();
+        responses['GET /locales//entries'] = { data: { items: [] } };
+        store.filters = { text: 'bus' };
+        return store
+            .watchSearchEntries()
+            .search()
+            .then(() => {
+                expect(requestedUrls()).toContain('GET /locales//entries');
+            });
+    });
+
+    it('removes an entry against the row named in the call', () => {
+        const store = useLocalesStore();
+        return store.removeEntry('es', ENTRY.id).then(() => {
+            expect(requestedUrls()).toContain('DELETE /locales/es/entries/locale-entry-1');
         });
     });
 });

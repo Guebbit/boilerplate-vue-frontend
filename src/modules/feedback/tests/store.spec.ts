@@ -59,14 +59,6 @@ describe('fetchRequests', () => {
             expect(store.requests.map(({ id }) => id)).toEqual(['f1']);
         });
     });
-
-    it('reads a payload with no items as an empty inbox, not a crash', () => {
-        responses['GET /feedback'] = { data: undefined };
-        const store = useFeedbackStore();
-        return store.fetchRequests().then(() => {
-            expect(store.requests).toEqual([]);
-        });
-    });
 });
 
 describe('updateStatus', () => {
