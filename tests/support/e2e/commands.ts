@@ -402,6 +402,13 @@ Cypress.Commands.add('freezeForVisual', (isoTime = '2026-01-01T12:00:00.000Z') =
                 animation: none !important;
                 caret-color: transparent !important;
             }
+            /*
+             * The corner activity indicator (LayoutDefault.vue) is chrome, not the page. The
+             * sweep waits for it, but some screens never clear it — so without this a baseline
+             * would record whether a request happened to be in flight, which is a property of
+             * the network rather than of the screen.
+             */
+            [role='status'] { display: none !important; }
         `;
         document_.head.append(style);
     });

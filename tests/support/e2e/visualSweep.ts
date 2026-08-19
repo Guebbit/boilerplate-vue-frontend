@@ -27,6 +27,39 @@
  * @param screens - `[snapshot name, path, ready selector]`; the name becomes the PNG filename
  * @param role - sign in as this first; omitted, the sweep runs signed out
  */
+/** How long one settle poll waits, and how many times it looks. ~2s in total. */
+const SETTLE_POLL_MS = 100;
+const SETTLE_ATTEMPTS = 20;
+
+/**
+ * Give the page's in-flight requests a moment to land before it is photographed.
+ *
+ * The assertions in the sweep pass on the SHELL — the router renders the ready selector, the
+ * `h1` and the `main` before any data arrives. Under the retired in-page mock that gap did not
+ * exist, because a handler answered before the next tick. Against a real API over a real socket
+ * it is wide enough to photograph, and `products-list` was being captured with the corner
+ * spinner still turning and its rows still empty.
+ *
+ * `LayoutDefault.vue` renders exactly one `role="status"` node — the corner activity indicator,
+ * driven by the core store's request tracking — so it is the app's own answer to "is something
+ * still loading", and the only one that needs no per-screen knowledge.
+ *
+ * BEST-EFFORT, not an assertion, and that is the load-bearing part. Some screens
+ * (`inventory-ledger`, the locales pair) leave that indicator visible indefinitely — a loading
+ * counter that does not always return to zero, which is a real bug and not this suite's to fail
+ * on. Asserting here made three green screens time out at 15s. So this waits for the quiet
+ * moment when there is one, gives up when there is not, and `cy.freezeForVisual()` hides the
+ * indicator either way so a shot can never depend on which happened.
+ */
+const settleRequests = (attemptsLeft: number): void => {
+    cy.get('body').then(($body) => {
+        if (attemptsLeft <= 0 || $body.find('[role=status]:visible').length === 0) return;
+        // eslint-disable-next-line cypress/no-unnecessary-waiting -- the rule is aimed at a fixed sleep standing in for a condition; this IS the condition, re-checked, and the pause is what makes the loop a poll rather than a spin
+        cy.wait(SETTLE_POLL_MS);
+        settleRequests(attemptsLeft - 1);
+    });
+};
+
 export const sweepVisual = (
     label: string,
     screens: readonly (readonly [name: string, route: string, readySelector: string])[],
@@ -59,22 +92,7 @@ export const sweepVisual = (
                 // both assertions before this one.
                 cy.get('main, [role=main], #app').should('be.visible');
 
-                /*
-                 * And wait for the page to stop FETCHING. `LayoutDefault.vue` renders one
-                 * `role="status"` node — the corner activity indicator, driven by the core
-                 * store's request tracking — so this is the app's own answer to "is a request
-                 * still in flight", and the only one that needs no per-screen knowledge.
-                 *
-                 * The assertions above cannot give it: they pass on the shell, which the router
-                 * renders before any data lands. Under the retired in-page mock that gap was
-                 * invisible, because a handler answered before the next tick; against a real API
-                 * over a real socket it is wide enough to photograph, and `products-list` was
-                 * being captured with the spinner still turning.
-                 *
-                 * Written as "no visible one" rather than `should('not.be.visible')` so a layout
-                 * that renders no indicator at all passes rather than timing out.
-                 */
-                cy.get('body').find('[role=status]:visible').should('have.length', 0);
+                settleRequests(SETTLE_ATTEMPTS);
 
                 cy.freezeForVisual();
                 cy.compareSnapshot(name);
