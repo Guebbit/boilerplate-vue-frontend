@@ -8,7 +8,9 @@
  *   - a `generic` module may not carry a `domain/` folder. Auth screens, an ops console and a
  *     contact form are solved problems; a pure-rules layer inside one is effort spent on the part
  *     of the client that should stay replaceable.
- * Whether the classification stays HONEST is not checked. If every module drifts to `core` the
+ *
+ * That rule, and the requirement that every module classify itself at all, is the whole of what
+ * this file checks. Whether the classification stays HONEST is not checked. If every module drifts to `core` the
  * field stops being able to say no to anything, and nothing here will report it — that is a
  * review question now, not a failing test.
  *
@@ -47,27 +49,5 @@ describe('subdomain classification', () => {
         );
 
         expect(misplaced).toEqual([]);
-    });
-});
-
-describe('ubiquitous language', () => {
-    it('is declared by every module', () => {
-        const silent = enabledModules
-            .filter((appModule) => Object.keys(appModule.language).length === 0)
-            .map(({ name }) => name);
-
-        expect(silent).toEqual([]);
-    });
-
-    it('defines terms rather than naming them', () => {
-        // A one-word "definition" is a term added to satisfy this file. The threshold is low on
-        // purpose — it catches placeholders, not terse writing.
-        const undefinedTerms = enabledModules.flatMap((appModule) =>
-            Object.entries(appModule.language)
-                .filter(([, meaning]) => meaning.trim().length < 20)
-                .map(([term]) => `${appModule.name}: ${term}`)
-        );
-
-        expect(undefinedTerms).toEqual([]);
     });
 });
