@@ -165,7 +165,6 @@ export interface AppModule {
         build: (context: MockSeedContext) => Promise<Partial<MockSeedData>>;
     };
     subdomain: Subdomain;
-    language: Readonly<Record<string, string>>;
     dependsOn?: readonly ContextEdge[];
 }
 ```
@@ -175,8 +174,8 @@ code (`Order.vue` calls `useCartStore` to reorder), this one about fixtures (an 
 product snapshot). A module can need another's data without importing a line of its code, and one
 field serving both would lie about one of them.
 
-`subdomain`, `language` and the shape of `dependsOn` are the module's **strategic** declarations —
-what it is to the business, the words it uses, and what kind of relationship each arrow is. An edge
+`subdomain` and the shape of `dependsOn` are the module's **strategic** declarations — what it is
+to the business, and what kind of relationship each arrow is. An edge
 is `{ module, as, because }` rather than a bare name, because "who touches products" and "what does
 changing products cost" are different questions and only the second one is useful. See
 [Strategic DDD](./strategic-ddd.md).

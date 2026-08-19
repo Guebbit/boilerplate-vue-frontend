@@ -25,13 +25,6 @@ export default {
      * and the client half is thinner still — it renders forms over rules the server owns.
      */
     subdomain: 'generic',
-    language: {
-        Profile:
-            'The visitor’s own editable record. The same row `users` administers, seen from the inside.',
-        Session:
-            'Whether someone is signed in. Owned by `infrastructure/session`, not by this module — the router guards read it before any domain code runs.',
-        'Account deletion': 'A two-step exit: a request, then a confirm. Never one click.'
-    },
     routes,
     dependsOn: [
         {

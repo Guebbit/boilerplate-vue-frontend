@@ -21,14 +21,6 @@ export default {
      * of them differ. The modelling effort lives server-side, where the rows are.
      */
     subdomain: 'generic',
-    language: {
-        Language:
-            'A tag registered in the dynamic tier. Its existence means entries can be translated into it — never that the API can answer in it, which needs a deployed file.',
-        Entry: 'One translated string, identified by (language, scope, key). Flat and dotted; the nested tree is built by the server.',
-        Scope: 'Which of the two dictionaries a row overrides. `app` is this frontend’s words, `api` is the backend’s. Separate keyspaces — the same key in both is two unrelated strings.',
-        Revision:
-            'A language’s version counter, bumped by every write. What a client caches against.'
-    },
     routes,
     navigation: [{ name: 'LocalesList', label: 'navigation.label-locales', plural: 2, order: 43 }],
     responseSchemas: localesResponseSchemas,

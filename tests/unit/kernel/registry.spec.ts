@@ -32,7 +32,6 @@ const makeRoute = (name: string): RouteRecordRaw => ({
 const makeModule = (name: string, dependsOn: string[] = []): AppModule => ({
     name,
     subdomain: 'supporting',
-    language: { [name]: `whatever ${name} means` },
     routes: [makeRoute(name)],
     dependsOn: dependsOn.map((module) => ({
         module,
@@ -44,7 +43,6 @@ const makeModule = (name: string, dependsOn: string[] = []): AppModule => ({
 const withNav = (name: string, navigation: AppNavigationEntry[]): AppModule => ({
     name,
     subdomain: 'supporting',
-    language: { [name]: `whatever ${name} means` },
     routes: [makeRoute(name)],
     navigation
 });

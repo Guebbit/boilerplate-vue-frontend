@@ -16,12 +16,6 @@ export default {
      * off-the-shelf dashboard, and the first thing a downstream project without ops deletes.
      */
     subdomain: 'generic',
-    language: {
-        KPI: 'One headline number on the console. Read from the observability endpoints, never computed here.',
-        'Audit log':
-            'The server’s record of who did what. This module renders it and owns none of it.',
-        Health: 'Whether the API can serve. A liveness answer, not a correctness one.'
-    },
     routes,
     navigation: [{ name: 'Admin', label: 'navigation.label-admin', plural: 1, order: 40 }],
     responseSchemas: adminResponseSchemas,

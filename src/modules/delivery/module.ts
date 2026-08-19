@@ -16,12 +16,6 @@ export default {
      * and a store — supporting, and deliberately page-less.
      */
     subdomain: 'supporting',
-    language: {
-        'Shipping method':
-            'A named way to ship, with a price the server quotes. Chosen in the cart, frozen on the order.',
-        Shipment:
-            'The parcel panel on an order that has shipped. Read-only here — the courier is faked server-side.'
-    },
     routes: [],
     responseSchemas: deliveryResponseSchemas,
     locales: {

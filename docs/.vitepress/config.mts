@@ -33,6 +33,7 @@ export default withMermaid(
                             },
                             { text: 'Domain Layer', link: '/theory/domain-layer' },
                             { text: 'Strategic DDD', link: '/theory/strategic-ddd' },
+                            { text: 'Glossary', link: '/theory/glossary' },
                             { text: 'Request Flow', link: '/theory/request-flow' },
                             { text: 'Sitemap & Access Control', link: '/theory/sitemap' },
                             { text: 'Roadmap', link: '/theory/roadmap' }

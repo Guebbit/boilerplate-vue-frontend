@@ -17,11 +17,6 @@ export default {
      * panel that belongs to an order.
      */
     subdomain: 'supporting',
-    language: {
-        Payment: 'The money behind one order. A panel on the order page, never a page of its own.',
-        Provider:
-            'The outside system that actually charges. Faked here, behind the same seam a real one would use.'
-    },
     routes: [],
     responseSchemas: paymentsResponseSchemas,
     locales: {

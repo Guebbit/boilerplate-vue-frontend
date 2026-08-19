@@ -25,14 +25,6 @@ export default {
      * at it.
      */
     subdomain: 'core',
-    language: {
-        Cart: 'A VIEW of the server’s cart, not a second copy of it. Every mutation is a request; the store holds the answer.',
-        'Cart line':
-            'A product and a quantity, as the API returns them. Prices come down with the response — this client never computes one.',
-        Checkout:
-            'The flow that turns the cart into an order: address, shipping, payment. The steps are this module’s; the rules are not.',
-        Badge: 'The header’s item count. The reason siblings refresh this store after writing to it.'
-    },
     dependsOn: [
         {
             module: 'delivery',

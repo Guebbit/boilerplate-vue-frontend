@@ -16,12 +16,6 @@ export default {
      * visible — but the invariants that decide a status live behind the API, not here.
      */
     subdomain: 'core',
-    language: {
-        Order: 'What a customer bought, frozen. This client renders it and never edits its substance — only an admin moves its status.',
-        Status: 'Where an order is in its lifecycle. A closed set the server enforces; this module maps each value to a label and a colour.',
-        Reorder:
-            'Refilling the cart from a past order. The one write this module makes into another module’s state.'
-    },
     routes,
     dependsOn: [
         {

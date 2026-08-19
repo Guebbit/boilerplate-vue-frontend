@@ -15,10 +15,6 @@ export default {
      * itself infrastructure — there is no domain here to model.
      */
     subdomain: 'generic',
-    language: {
-        Stream: 'The live SSE feed of observability metrics. Opened by this module, transported by `infrastructure`.',
-        Frame: 'One message off the stream, shown raw so the shape is visible rather than described.'
-    },
     routes,
     navigation: [
         { name: 'RealtimePlayground', label: 'navigation.label-realtime', plural: 1, order: 30 }

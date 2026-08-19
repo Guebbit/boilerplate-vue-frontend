@@ -101,9 +101,6 @@ import { widgetsResponseSchemas } from './response-schemas';
 export default {
     name: 'widgets',
     subdomain: 'supporting',
-    language: {
-        Widget: 'A thing this module lists and edits. Defined as THIS module means it.'
-    },
     routes,
     dependsOn: [
         {
@@ -129,7 +126,6 @@ Five fields need care:
 | ------------------- | ---------------------------------------------------------------------------------------------------- |
 | `name`              | must match the folder name under `src/modules/`                                                     |
 | `subdomain`         | `core`, `supporting` or `generic`. A `generic` module may not carry a `domain/` folder               |
-| `language`          | the terms this module uses, as **it** means them — often not the server's word for the same thing    |
 | `dependsOn`         | names **siblings** whose code this module imports, each with its relationship kind and a reason      |
 | `navigation[].name` | must be a route **this module declares** — swept by `registry.spec.ts`                              |
 

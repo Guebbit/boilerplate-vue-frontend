@@ -13,10 +13,6 @@ export default {
     name: 'demo',
     // A showroom is not the business. There is nothing to model here.
     subdomain: 'generic',
-    language: {
-        Counter: 'A number with no meaning, incremented to prove a store survives a navigation.',
-        Playground: 'The page where the shared building blocks are shown, not used.'
-    },
     routes,
     navigation: [
         { name: 'Playground', label: 'navigation.label-playground', plural: 1, order: 20 }

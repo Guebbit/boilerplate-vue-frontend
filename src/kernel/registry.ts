@@ -120,10 +120,10 @@ export type Subdomain = 'core' | 'supporting' | 'generic';
  * Keep this interface small. A field that only one module ever fills does not belong here — that
  * module should do the thing itself, behind its own barrel.
  *
- * `subdomain` and `language` are read by nothing at runtime, which looks like it breaks that rule.
- * It does not: the manifest is where a module says what it *is* to the rest of the application, and
- * its place in the business and the words it uses are statements of exactly that kind. Kept
- * anywhere else they would be a second description, free to drift from the first.
+ * `subdomain` is read by nothing at runtime, which looks like it breaks that rule. It does not: a
+ * test acts on it — a `generic` module may carry no `domain/` folder. A field nothing reads and
+ * nothing checks is a comment with extra syntax; the module's vocabulary was one, and now lives in
+ * `docs/theory/glossary.md`.
  */
 export interface AppModule {
     /** Registry identity. Must match the folder name under `src/modules/`. */
@@ -135,16 +135,6 @@ export interface AppModule {
      * omitted collects only the flattering half of the truth.
      */
     subdomain: Subdomain;
-
-    /**
-     * This module's ubiquitous language: the terms it uses, defined as it means them.
-     *
-     * Kept here rather than in a shared glossary because the same word legitimately means different
-     * things in two contexts — that divergence *is* the bounded-context pattern, and a single list
-     * flattens it. Worth writing on a client precisely because the words often differ from the
-     * server's: a `Cart` here is a view of a cart, and saying so is the point.
-     */
-    language: Readonly<Record<string, string>>;
 
     /** The domain's route records, spliced into the localised route tree. */
     routes: RouteRecordRaw[];

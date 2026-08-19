@@ -17,16 +17,6 @@ export default {
      * anyone shops here.
      */
     subdomain: 'supporting',
-    language: {
-        'Stock movement':
-            'One row explaining a change in stock: how many, and why. Written by the server, listed here.',
-        'Inventory level':
-            'What is on the shelf for one product right now: on hand, reserved, and the difference a shopper can actually buy.',
-        Receipt:
-            'Stock arriving. Raises what is on hand and nothing else, so a delivery is sellable the moment it lands.',
-        Adjustment:
-            'A stocktake correction, signed — shrinkage is the common case and it is negative. Refused when it would leave fewer units than are already promised to orders.'
-    },
     routes,
     dependsOn: [
         {

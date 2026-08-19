@@ -14,12 +14,6 @@ export default {
      * on. The client half owns the browsing experience; the server owns the prices.
      */
     subdomain: 'core',
-    language: {
-        Product: 'A sellable item as the API returns it. Identified by id; the name is not unique.',
-        Catalogue:
-            'The list view, with its filters and paging. The filters are query parameters — the server does the filtering.',
-        Stock: 'Units on the shelf, read from the response. This client displays availability and never decides it.'
-    },
     routes,
     /*
      * Storefront arrows, both pointing away from the catalogue page the visitor is on: the

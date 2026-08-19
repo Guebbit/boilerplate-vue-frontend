@@ -89,19 +89,24 @@ component. A sweep that read only TypeScript would miss most of the real graph.
 
 ## 3. Ubiquitous language — per context, not per app
 
-Each module declares the terms it uses, defined **as it means them**. On a client this is worth more
-than it first looks, because the client's word is frequently not the server's:
+**The language lives in the identifiers.** That is Evans' actual requirement: the model and the
+language co-evolve, and the code is the primary expression of both.
 
-```ts
-language: {
-    Cart: 'A VIEW of the server’s cart, not a second copy of it. Every mutation is a request; the store holds the answer.';
-}
-```
+What an identifier cannot carry is the meaning behind it, and that lives in
+**[Glossary](./glossary.md)** — one section per module. On a client it is worth more than it first
+looks, because this repo's word is frequently not the server's: a `Cart` here is *a view of the
+server's cart, not a second copy of it*, while the backend's `Cart` is *one open basket per user,
+priced against the live catalogue*. Both are right in their own context, and a single shared
+glossary would have to pick one and be wrong in the other place.
 
-The backend's `Cart` is "one open basket per user, priced against the live catalogue". Both are
-right, in their own context, and a single shared glossary would have to pick one and be wrong in the
-other place. Writing the client's definition down is also the cheapest guard there is against
-someone deciding the store should compute a total.
+Writing the client's definition down is also the cheapest guard there is against someone deciding
+the store should compute a total.
+
+::: tip It used to be a manifest field
+Each module declared a `language: {}` map. It was removed: nothing read it, nothing checked it was
+true, and it sat in `module.ts` rather than beside the store or component each entry described. The
+prose moved to the glossary page.
+:::
 
 ## 4. Subdomain distillation — where to spend effort
 
