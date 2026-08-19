@@ -59,6 +59,23 @@ export const sweepVisual = (
                 // both assertions before this one.
                 cy.get('main, [role=main], #app').should('be.visible');
 
+                /*
+                 * And wait for the page to stop FETCHING. `LayoutDefault.vue` renders one
+                 * `role="status"` node — the corner activity indicator, driven by the core
+                 * store's request tracking — so this is the app's own answer to "is a request
+                 * still in flight", and the only one that needs no per-screen knowledge.
+                 *
+                 * The assertions above cannot give it: they pass on the shell, which the router
+                 * renders before any data lands. Under the retired in-page mock that gap was
+                 * invisible, because a handler answered before the next tick; against a real API
+                 * over a real socket it is wide enough to photograph, and `products-list` was
+                 * being captured with the spinner still turning.
+                 *
+                 * Written as "no visible one" rather than `should('not.be.visible')` so a layout
+                 * that renders no indicator at all passes rather than timing out.
+                 */
+                cy.get('body').find('[role=status]:visible').should('have.length', 0);
+
                 cy.freezeForVisual();
                 cy.compareSnapshot(name);
             });
