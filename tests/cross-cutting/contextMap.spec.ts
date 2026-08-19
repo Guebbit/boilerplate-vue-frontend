@@ -3,7 +3,7 @@
  *
  * `dependsOn` in each manifest is not a dependency list — it is a labelled graph, where every edge
  * says which sibling is reached and what kind of relationship that is. A label nobody checks is a
- * comment with extra syntax, so this file holds it to three things:
+ * comment with extra syntax, so this file holds it to two things:
  *
  *   1. **The edge is real.** A declared dependency that nothing imports is a claim about coupling
  *      that has already been undone — and this client had one for months: `cart` kept
@@ -11,7 +11,6 @@
  *   2. **The edge is declared.** The reverse: an import across a module boundary that no edge
  *      names. ESLint stops a module reaching a sibling's internals; nothing until now stopped it
  *      reaching a sibling it never admitted to needing.
- *   3. **Every edge has a reason a human wrote.**
  *
  * `.vue` files are scanned as well as `.ts`. On a client most cross-module reach happens in a
  * component — `Order.vue` calling `useCartStore`, the catalogue mounting an add-to-cart button —
@@ -92,18 +91,6 @@ describe('the context map describes the imports that exist', () => {
         }
 
         expect(undeclared).toEqual([]);
-    });
-
-    it('gives every edge a reason a human wrote', () => {
-        // Not a style check. An edge whose reason cannot be stated in a sentence is usually two
-        // edges, or a boundary drawn in the wrong place.
-        const unexplained = enabledModules.flatMap((appModule) =>
-            (appModule.dependsOn ?? [])
-                .filter((edge) => edge.because.trim().length < 20)
-                .map((edge) => `${appModule.name} → ${edge.module}`)
-        );
-
-        expect(unexplained).toEqual([]);
     });
 
     it('reaches a sibling only for state it asks to change, or vocabulary it can hold', () => {

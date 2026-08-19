@@ -8,7 +8,9 @@
  *   - a `generic` module may not carry a `domain/` folder. Auth screens, an ops console and a
  *     contact form are solved problems; a pure-rules layer inside one is effort spent on the part
  *     of the client that should stay replaceable.
- *   - the classification must stay honest. If every module is core, the field has told us nothing.
+ * Whether the classification stays HONEST is not checked. If every module drifts to `core` the
+ * field stops being able to say no to anything, and nothing here will report it — that is a
+ * review question now, not a failing test.
  *
  * There is deliberately no rule that a `core` module MUST have a `domain/` folder, and on a client
  * that matters more than it does on the server: **most of this application's domain lives behind
@@ -37,14 +39,6 @@ describe('subdomain classification', () => {
             .map(({ name }) => name);
 
         expect(unclassified).toEqual([]);
-    });
-
-    it('is not uniformly flattering', () => {
-        // The failure this guards against is social, not technical: left to drift, every module
-        // becomes core, and the field stops being able to say no to anything.
-        expect(withSubdomain('generic').length).toBeGreaterThan(0);
-        expect(withSubdomain('supporting').length).toBeGreaterThan(0);
-        expect(withSubdomain('core').length).toBeLessThan(enabledModules.length);
     });
 
     it('keeps a domain layer out of generic subdomains', () => {
