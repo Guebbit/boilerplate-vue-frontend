@@ -183,8 +183,13 @@ const bootDemoBackends = async (count: number): Promise<(() => void)[]> => {
     const backendPath = resolveBackendPath();
     const children = Array.from({ length: count }, (_, index) => {
         const port = DEMO_PORT_BASE + index;
+        // `detached` puts each backend in its own process GROUP, so the kill below can signal
+        // the whole npm → tsx → node → mongod chain. Killing only the npm wrapper orphans the
+        // grandchildren, and an orphan holding its port makes the NEXT run's shard talk to a
+        // backend full of last run's state — a flake that reads as anything but what it is.
         const child = spawn('npm', ['--prefix', backendPath, 'run', 'demo'], {
             stdio: ['ignore', 'pipe', 'pipe'],
+            detached: true,
             env: { ...process.env, NODE_PORT: String(port), NODE_DEMO: 'true' }
         });
         let output = '';
@@ -194,7 +199,13 @@ const bootDemoBackends = async (count: number): Promise<(() => void)[]> => {
     });
 
     const kill = () => {
-        for (const { child } of children) child.kill('SIGTERM');
+        for (const { child } of children)
+            try {
+                // Negative pid = the child's whole process group — see `detached` above.
+                if (child.pid !== undefined) process.kill(-child.pid, 'SIGTERM');
+            } catch {
+                /* already gone */
+            }
     };
     process.on('exit', kill);
     process.on('SIGINT', () => {

@@ -55,7 +55,6 @@ Which languages the app offers is not configured here. `src/locales/*.json` is t
 | -------- | ------- |
 | `VITE_API_URL` | Backend API base URL |
 | `VITE_API_SSE` | SSE URL for the realtime observability stream |
-| `VITE_API_MOCK_ENABLED` | `true` turns on [MSW](./mocking.md) and the app needs no backend. Also the flag the bundler uses to drop MSW, every module's handlers and the whole fixture database from a production build |
 | `VITE_AXIOS_TIMEOUT` | Axios timeout in ms |
 | `VITE_MAX_UPLOAD_BYTES` | Client-side upload ceiling. A UX affordance only — the server re-checks |
 | `VITE_VALIDATE_RESPONSES` | Validate every response against its Zod envelope schema. Costs main-thread CPU per request; a development and live-E2E instrument, off in production |

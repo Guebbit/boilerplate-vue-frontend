@@ -39,12 +39,13 @@ const contentTypeOperationNames = (verb: GeneratorVerbOptions): GeneratorVerbOpt
  *              Import from @api/schemas to validate forms or parse API responses.
  *              Always in sync with the spec — never hand-write these.
  *
- * There is deliberately no `mocks` block. Orval can emit MSW stub handlers and faker factories,
- * and this repo does not use them: the mock backend is the hand-written handlers in
- * `src/modules/<name>/mocks/`, populated from the demo dataset the paired backend publishes. The
- * generated stubs are stateless and answer with random data, so registering them as a fallback
- * would replace working behaviour (cart persistence, auth, filtering) with noise and silence the
- * `onUnhandledRequest` error that exists to make a missing handler fail loudly.
+ * There is deliberately no `mocks` block. Orval can emit MSW stub handlers with faker data, and
+ * this repo does not use them: dev and e2e run against the paired backend's demo profile — the
+ * real API, in-memory and seeded — so a generated imitation would cover nothing the real thing
+ * does not. If a backend-less, render-only mode is ever wanted (spec ahead of implementation, or
+ * a checkout with no sibling repo), the clean wiring is `mode: 'split'` + `mock: true` here,
+ * which emits the handlers into a separate `index.msw.ts` that only a flag-guarded dynamic
+ * import would ever pull into a bundle.
  *
  * NOTE: every target below must also appear in the `api-freshness` job's pathspec in
  * .github/workflows/ci.yml, or changes to it ship unguarded.

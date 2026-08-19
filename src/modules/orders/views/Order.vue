@@ -5,7 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
@@ -54,15 +54,16 @@ const { reorder } = useCartStore();
 const router = useRouter();
 
 /**
- * Whether the customer cancel is still open — `pending` or `paid`, the same gate the API
- * enforces: a paid order is cancellable because the refund path exists (payments answers the
- * cancel). Later statuses are return territory, which an admin drives through the edit page.
+ * Whether the cancel is still open, as the SERVER answers it for this caller.
  *
- * @returns `true` while this order can still be cancelled.
+ * Read rather than re-derived: which statuses allow a cancel depends on the caller's role and on
+ * rules that live in the API's order lifecycle. A copy of them here would be a second opinion in a
+ * separately deployed codebase, and the first edge that changed would leave this button offering
+ * something the API refuses.
+ *
+ * @returns `true` while this order can still be cancelled by whoever is looking at it.
  */
-const cancellable = computed(
-    () => currentOrder.value?.status === 'pending' || currentOrder.value?.status === 'paid'
-);
+const cancellable = computed(() => currentOrder.value?.actions?.cancel === true);
 
 /**
  * Cancels this order after an explicit confirmation.
@@ -140,8 +141,32 @@ const downloadInvoice = () => {
 
 /**
  * Selects and (re)fetches the order whenever the route id changes.
+ *
+ * The forced fetch below is not a duplicate of it. The list seeds the cache with SUMMARY rows,
+ * and `watchOrder` is cache-first — arriving from the orders list, it would settle for that row
+ * and never ask the API. But the DETAIL representation is the one carrying `actions` — which
+ * buttons this caller may press, answered by the server's own lifecycle rules — and only
+ * `GET /orders/:id` serves it. (The retired MSW mock served `actions` on every representation,
+ * which is how this page shipped without the fetch and nobody saw a missing button.)
  */
 watchOrder(() => id);
+
+/*
+ * Refreshed once, and only when the record arrived without `actions` — the list-cache path. A
+ * cold visit lets `watchOrder`'s own fetch answer with the full detail, and forcing a second
+ * fetch beside it would race the toolkit's loading lock (a cancel clicked during that window
+ * was silently swallowed — the e2e suite caught it).
+ */
+let refreshedForActions = false;
+watch(
+    currentOrder,
+    (order) => {
+        if (refreshedForActions || !order || order.id !== id || order.actions !== undefined) return;
+        refreshedForActions = true;
+        void fetchOrder(order.id, { forced: true });
+    },
+    { immediate: true }
+);
 </script>
 
 <template>
@@ -218,7 +243,7 @@ watchOrder(() => id);
                     <PaymentPanel
                         v-if="currentOrder"
                         :order-id="currentOrder.id"
-                        :order-status="currentOrder.status"
+                        :order-payable="currentOrder.actions?.pay"
                         @paid="fetchOrder(currentOrder.id, { forced: true })"
                     />
                     <ShipmentPanel

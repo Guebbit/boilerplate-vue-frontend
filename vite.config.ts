@@ -25,10 +25,10 @@ export default defineConfig(({ mode }) => ({
         // interaction with a route pays for a build rather than for the app. Warming these moves
         // that cost to server startup, which `start-server-and-test` already waits through.
         //
-        // The mock e2e suite no longer depends on this: `npm run test:e2e` builds once and serves
-        // the result with `vite preview`, so nothing compiles while Cypress is driving. What still
-        // reads from this server is the dev loop and `npm run test:e2e:live`, which runs one
-        // browser rather than four and against a real backend.
+        // No headless e2e script reads this server any more: every one of them builds once and
+        // serves the result with `vite preview`, so nothing compiles while Cypress is driving.
+        // What is left is the dev loop — `npm run dev` and `npm run test:e2e:dev`, where a human
+        // is driving and HMR is the point.
         //
         // Route views only — warming every file would just relocate the whole compile into
         // startup.
@@ -93,9 +93,6 @@ export default defineConfig(({ mode }) => ({
         alias: {
             '@': fileURLToPath(new URL('src', import.meta.url)),
             '@types': fileURLToPath(new URL('src/types', import.meta.url)),
-            // Shared mock helpers. A module's MSW handlers live beside the module and import
-            // these; the alias keeps that import readable and relocatable. Everything behind it
-            // is dev/test-only and is dead-code-eliminated from a production build — see the
             // '@api/schemas' must be declared before '@api': Vite matches a string alias
             // against both the exact key and `key + '/'` as a prefix, in declaration order,
             // so the shorter '@api' would otherwise shadow every '@api/schemas' import.

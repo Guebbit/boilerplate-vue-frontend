@@ -294,19 +294,6 @@ Cypress.Commands.add('loginAs', (role = 'user') => {
 const BLOCKING_IMPACTS = new Set(['serious', 'critical']);
 
 /**
- * Markup that is on the page but is not the app's.
- *
- * These specs run against `vite dev` (see `test:e2e`), and `vite-plugin-vue-devtools` injects its
- * own floating anchor button into every page. axe audits it like anything else and reports
- * `aria-prohibited-attr` on it — a real finding about the devtools plugin, on all 13 routes, and
- * nothing this codebase can fix or should be blocked by.
- *
- * Excluded rather than allow-listed by rule id: suppressing `aria-prohibited-attr` globally would
- * also suppress it on OUR markup, which is exactly the kind of violation worth catching.
- */
-const NOT_OUR_MARKUP = ['#vue-devtools-anchor', '.vue-devtools__anchor-btn'];
-
-/**
  * Blocks until no CSS transition is still running.
  *
  * `color-contrast` is measured from computed colour, so it is only meaningful once colours have
@@ -346,7 +333,7 @@ Cypress.Commands.add('checkPageA11y', (context?: string) => {
     waitForTransitions();
     cy.injectAxe();
     cy.checkA11y(
-        { exclude: NOT_OUR_MARKUP.map((selector) => [selector]) },
+        undefined,
         undefined,
         (violations) => {
             for (const { id, impact, nodes, help } of violations)
@@ -415,8 +402,6 @@ Cypress.Commands.add('freezeForVisual', (isoTime = '2026-01-01T12:00:00.000Z') =
                 animation: none !important;
                 caret-color: transparent !important;
             }
-            /* The dev-server overlay is not part of the app being photographed. */
-            #vue-devtools-anchor, .vue-devtools__anchor-btn { display: none !important; }
         `;
         document_.head.append(style);
     });

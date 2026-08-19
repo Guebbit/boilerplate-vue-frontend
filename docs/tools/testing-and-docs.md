@@ -44,9 +44,9 @@ flowchart TB
 
 None of the four testing layers replaces another — each closes a gap the others structurally cannot:
 
-- **Unit** is fast and isolated, but a component that's individually correct can still be wired up wrong, or agree with a mock that's drifted from reality.
-- **Mock profile** proves the app agrees with its own MSW handlers — deterministic, so it can assert exact counts and values — but it cannot prove those handlers agree with the real API, and it is not asked to. MSW is a convenience, not a contract; see [Mocking](./mocking.md). The awkward shapes it needs (a soft-deleted product, an inactive one, one whose optional fields are all at their schema defaults) are records in the demo dataset rather than generated: a named record can be asserted on, and it is a shape the real API actually answers with.
-- **Live** is the only layer that checks the mocks against reality, and it is the one whose verdict counts. It needs both repos plus a Mongo and a Redis, so it is minutes rather than seconds — it still gates every PR, after the fast layers have had their say.
+- **Unit** is fast and isolated, but a component that's individually correct can still be wired up wrong, or agree with a fixture that's drifted from reality.
+- **Demo profile** runs the whole app against the real API — the paired backend's [demo profile](./mocking.md), one in-memory instance per shard — deterministic because the seeds are, so it can assert exact counts and values. The awkward shapes it needs (a soft-deleted product, an inactive one, one whose optional fields are all at their schema defaults) are records in the backend's demo dataset rather than generated: a named record can be asserted on, and it is a shape the real API actually answers with, because the real API is answering.
+- **Live** runs the same specs against the fully-composed stack — the real cache, the real broker, a cookie over a real network — everything the demo profile deliberately disables. It needs both repos plus a Mongo and a Redis, so it is minutes rather than seconds; it still gates every PR, after the fast layers have had their say.
 - **Mutation** doesn't test the app at all — it tests the *tests*, and only for the layer it's pointed at (unit).
 
 ## Reading a run
@@ -138,7 +138,7 @@ Worth being explicit, because the boundary has bitten this project before.
 | App breaks on unusual but valid data (a record with every optional field at its default, an unusual role split) | add the record to the demo dataset — [Mocking (MSW)](./mocking.md) |
 | Mock **behaviour** disagreeing with the real backend, or a live contract violation | [Live E2E](./live-e2e.md) — the `test-e2e-live` CI gate, plus response validation |
 
-The mock-profile suite proves the frontend agrees with its own mocks; on its own it cannot prove the mocks agree with the backend. That gap is closed by the live profile, which is a required CI job — so the answer to "does this frontend agree with that backend" is now given by running both, on every PR, rather than by a reviewer checking a handler against a service. See [Mocking](./mocking.md) for what MSW still promises.
+Both e2e profiles run the real backend, so "does this frontend agree with that backend" is answered by construction rather than by a reviewer checking a handler against a service. What the two profiles split between them is infrastructure: the demo profile answers fast with the cache and queue disabled, the live profile answers on every PR with everything attached. See [The demo profile](./mocking.md) and [Live E2E](./live-e2e.md).
 
 ## Test timings
 
@@ -187,9 +187,9 @@ Two further limits:
 | [Vitest](https://vitest.dev/) | Unit test runner built on Vite — same config, fast |
 | [@vue/test-utils](https://test-utils.vuejs.org/) | Vue-specific component mounting and assertion helpers |
 | [jsdom](https://github.com/jsdom/jsdom) | DOM environment for unit tests |
-| [Cypress](https://www.cypress.io/) | Browser-based end-to-end tests, all three profiles |
+| [Cypress](https://www.cypress.io/) | Browser-based end-to-end tests, both profiles plus the visual suite |
 | [start-server-and-test](https://github.com/bahmutov/start-server-and-test) | Boots Vite + waits before running Cypress |
-| [MSW](https://mswjs.io/) | Intercepts HTTP in Cypress so the mock profile is deterministic (see [Mocking](./mocking.md)) |
+| [MSW](https://mswjs.io/) | Node adapter standing in for a server in the transport-layer unit specs only |
 | [Stryker](https://stryker-mutator.io/) | Mutation testing — see [Mutation Testing](./mutation-testing.md) |
 | [ESLint](https://eslint.org/) + plugins | Code consistency and correctness checks |
 | [Prettier](https://prettier.io/) | Predictable formatting |
@@ -221,7 +221,7 @@ flowchart LR
 - Target **behavior**, not implementation — prefer component contracts (props/emits/slots) over snapshots.
 - Use **generated Zod schemas** from `@api/schemas` for mock response validation in unit tests.
 - By default, e2e tests run against per-shard demo backends — the real API, in-memory. `npm run test:e2e:live` runs the same specs against the fully-composed stack — see [Live E2E](./live-e2e.md).
-- Specs start **logged out**: `cy.resetState()` clears the session (mock profile) or reseeds the real database (live profile). Call `cy.loginAs('admin')` when a spec needs elevated visibility.
+- Specs start **logged out**: `cy.resetState()` reseeds the shard's own demo backend (demo profile) or the real database (live profile). Call `cy.loginAs('admin')` when a spec needs elevated visibility.
 - **An assertion on a count is an assertion about a role.** Non-admins see 4 of the 6 seeded products (one is soft-deleted, one inactive). If you change an expected count, confirm you are still describing what the backend would return.
 
 ## Documentation rule of thumb
@@ -303,7 +303,7 @@ revisiting if mutation ever moves from nightly onto pull requests.
 ## Related pages
 
 - [Unit Testing](./unit-testing.md)
-- [Mocking (MSW)](./mocking.md)
+- [The demo profile](./mocking.md)
 - [Live E2E (FE ↔ real backend)](./live-e2e.md)
 - [Component Testing](./component-testing.md) — resources, boundaries, and why not to select on vendor classes
 - [Property Testing](./property-testing.md) — generation over enumeration

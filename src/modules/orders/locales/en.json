@@ -62,7 +62,15 @@
         "reset-form": "Reset changes",
         "button-go-to-details": "Back to order details",
         "button-go-to-list": "Back to orders list",
-        "success-update": "Order updated successfully"
+        "success-update": "Order updated successfully",
+        "actions-title": "Cancellation and refund",
+        "actions-hint": "Each control is enabled only while the API would accept it.",
+        "button-cancel-only": "Cancel order",
+        "button-refund-only": "Refund payment",
+        "button-cancel-and-refund": "Cancel and refund",
+        "cancel-done": "Order cancelled. The payment was left as it stands.",
+        "cancel-refund-done": "Order cancelled and the payment refunded.",
+        "refund-done": "Payment refunded. The order status is unchanged."
     },
     "navigation": {
         "label-orders": "Orders"

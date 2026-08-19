@@ -11,6 +11,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/modules/orders/store.ts';
+import { useOrderRefund } from '@/modules/payments';
 import { ordersStatusSchema } from '@/modules/orders/schemas.ts';
 import { z } from 'zod';
 import { OrderStatus } from '@types';
@@ -49,20 +50,69 @@ const { id } = defineProps<{
 /**
  * Orders store APIs and references.
  */
-const { watchOrder, updateOrder } = useOrdersStore();
+const { watchOrder, updateOrder, cancelOrder } = useOrdersStore();
 const { currentOrder, loading } = storeToRefs(useOrdersStore());
 
+/** The money half of the operator's actions — `payments` answers for it, this page only asks. */
+const { canRefund, refund } = useOrderRefund(computed(() => id));
+
 /**
- * Options of the status select.
+ * Options of the status select — the moves the SERVER says this operator may make, plus the status
+ * the order is already in so the select can show what it is.
  *
- * @returns One entry per `OrderStatus`, with a localized label.
+ * Read from `actions.transitions` rather than listed from the enum: which value may follow which
+ * depends on where the order is, and offering all six meant most picks came back as a 409. The
+ * rules live in the API's order lifecycle and are not copied here, because a copy in a separately
+ * deployed client is how the two come to disagree.
+ *
+ * @returns One entry per reachable status, with a localized label.
  */
-const statusOptions = computed(() =>
-    Object.values(OrderStatus).map((value) => ({
+const statusOptions = computed(() => {
+    const current = currentOrder.value?.status;
+    const reachable = currentOrder.value?.actions?.transitions ?? [];
+
+    return [...(current ? [current] : []), ...reachable].map((value) => ({
         value,
         label: t(`orders-form.status-${value}`)
-    }))
-);
+    }));
+});
+
+/**
+ * The operator's money actions, and whether each is still open.
+ *
+ * Both halves are the server's answer: the order says whether it can be cancelled, the payment
+ * whether money can come back. "Cancel and refund" is the two calls, which is why it needs both —
+ * and why all three grey out on their own terms rather than on a rule spelled out here.
+ */
+const canCancel = computed(() => currentOrder.value?.actions?.cancel === true);
+const canCancelAndRefund = computed(() => canCancel.value && canRefund.value);
+
+/**
+ * Cancels the order, with or without returning the money.
+ *
+ * @param refund - Whether the money goes back with the cancellation.
+ * @returns A promise resolving once the order and its payment are re-read.
+ */
+const runCancel = (withRefund: boolean) => {
+    if (!id) return Promise.resolve();
+    return cancelOrder(id, withRefund)
+        .then(() =>
+            addMessage(
+                t(withRefund ? 'order-edit-page.cancel-refund-done' : 'order-edit-page.cancel-done')
+            )
+        )
+        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+};
+
+/**
+ * Returns the money without touching the order's status.
+ *
+ * @returns A promise resolving once the payment is re-read, which is what greys the control out.
+ */
+const runRefund = () =>
+    refund()
+        .then(() => addMessage(t('order-edit-page.refund-done')))
+        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
 
 /**
  * Order edit form model.
@@ -169,7 +219,9 @@ const submitForm = () =>
     });
 
 /**
- * Selects and (re)fetches the order whenever the route id changes.
+ * Selects and (re)fetches the order whenever the route id changes. `useOrderRefund` reads the
+ * payment on the same id, because the refund controls are a fact about money the order record does
+ * not carry.
  */
 watchOrder(() => id);
 </script>
@@ -236,6 +288,44 @@ watchOrder(() => id);
                         </v-btn>
                     </div>
                 </form>
+
+                <!--
+                    The operator's three money actions. Each is disabled on the server's own
+                    answer — the order's `actions.cancel` and the payment's `actions.refund` —
+                    rather than on a rule spelled out here, so a control is never offered for a
+                    call the API would refuse.
+                -->
+                <div class="mt-6 border-t pt-5">
+                    <h3 class="text-lg font-semibold">{{ t('order-edit-page.actions-title') }}</h3>
+                    <p class="mt-1 mb-3 opacity-75">{{ t('order-edit-page.actions-hint') }}</p>
+
+                    <div class="flex flex-wrap gap-2">
+                        <v-btn
+                            variant="tonal"
+                            color="warning"
+                            :disabled="!canCancel || loading"
+                            @click="runCancel(false)"
+                        >
+                            {{ t('order-edit-page.button-cancel-only') }}
+                        </v-btn>
+                        <v-btn
+                            variant="tonal"
+                            color="warning"
+                            :disabled="!canRefund || loading"
+                            @click="runRefund"
+                        >
+                            {{ t('order-edit-page.button-refund-only') }}
+                        </v-btn>
+                        <v-btn
+                            variant="flat"
+                            color="error"
+                            :disabled="!canCancelAndRefund || loading"
+                            @click="runCancel(true)"
+                        >
+                            {{ t('order-edit-page.button-cancel-and-refund') }}
+                        </v-btn>
+                    </div>
+                </div>
             </CardDetail>
 
             <template #aside>

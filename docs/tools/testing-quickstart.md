@@ -23,7 +23,7 @@ know *which domain*, the third line is the one.
 | `test:unit` | Did I break a unit anywhere? | ~9s | ✅ |
 | `test:unit:coverage` | …and what is still unexercised? | ~25s | ✅ |
 | `test:unit:report` + `test:report` | Which module owns the failure, and where did the time go? | +1s | ✅ (prints in CI) |
-| `test:e2e` | Does the app work against MSW? | ~4m | ✅ |
+| `test:e2e` | Does the app work against the real API? | ~2m | ✅ |
 | `test:e2e:spec` | …just this one spec? | ~30s | — |
 | `test:e2e:live` | Does the app agree with the **real backend**? | ~6m | ✅ (CI job) |
 | `test:e2e:visual` | Does it still *look* right? | ~1m | ❌ by design |
@@ -90,12 +90,12 @@ before anything else; the terminal copy can be truncated, the file cannot.
 
 | Profile | Backend | Command | What it proves |
 | --- | --- | --- | --- |
-| **mock** | none (MSW) | `test:e2e` | The app works against known data. Fast. Certifies nothing about the backend |
-| **live** | the real API | `test:e2e:live` | This frontend agrees with that backend. **The one that decides** |
-| **visual** | none (MSW) | `test:e2e:visual` | The pages still look right. Answers to the machine that recorded them |
+| **demo** | the real API, in-memory (one per shard) | `test:e2e` | The app works, flows included, against known seeds. Fast |
+| **live** | the real API, fully composed | `test:e2e:live` | Everything the demo profile disables: real cache, real broker, real network |
+| **visual** | the real API, in-memory | `test:e2e:visual` | The pages still look right. Answers to the machine that recorded them |
 
-MSW is a convenience, not a contract — see [Mocking](./mocking.md). When mock and live disagree,
-live is right.
+Both functional profiles run the real backend — see [The demo profile](./mocking.md) — so there
+is no imitation left to disagree with it.
 
 ## Per-module suites
 
@@ -137,7 +137,7 @@ reviewed.
 ## Related
 
 - [Testing](./testing-and-docs.md) — the layers and why each exists
-- [Mocking (MSW)](./mocking.md) — what the mock backend does and does not promise
+- [The demo profile](./mocking.md) — the backend dev and e2e run against
 - [Live E2E](./live-e2e.md) — the authoritative profile
 - [Visual Regression](./visual-regression.md)
 - [Accessibility Testing](./accessibility-testing.md)

@@ -17,6 +17,14 @@ export const paymentsResponseSchemas: ResponseSchemaRoute[] = [
         schema: schemas.GetPaymentByOrderResponse
     },
     {
+        // Before the confirm row would match: `/payments/order/x/refund` has the same shape as
+        // `/payments/{id}/confirm` only in segment count, but the literal tail differs, so the
+        // two cannot collide. Kept adjacent to make that readable rather than incidental.
+        method: 'POST',
+        pattern: /^\/payments\/order\/[^/]+\/refund$/,
+        schema: schemas.RefundPaymentByOrderResponse
+    },
+    {
         method: 'POST',
         pattern: /^\/payments\/[^/]+\/confirm$/,
         schema: schemas.ConfirmPaymentResponse

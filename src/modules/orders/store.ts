@@ -125,20 +125,25 @@ export const useOrdersStore = defineStore('orders', () => {
         deleteTarget(() => hardDeleteOrderById(orderId), orderId);
 
     /**
-     * Cancels one order — the one order write a customer can make. `pending` only; the API's
+     * Cancels one order. Which statuses allow it is the server's `actions.cancel`, and its
      * conditional write decides, so a cancel racing a status change comes back as the 409 this
      * rethrows rather than a silent double write. The returned record replaces the cached one,
      * because the fact worth rendering afterwards is the new status.
      *
+     * `refund` is an operator's choice and is ignored for a customer, who is always refunded.
+     *
      * @param orderId - Which order.
+     * @param refund - Whether the money goes back with the cancellation. Defaults to the API's.
      * @returns A promise resolving with the cancelled order.
      */
-    const cancelOrder = (orderId: string) =>
+    const cancelOrder = (orderId: string, refund?: boolean) =>
         fetchAny(() =>
-            cancelOrderById(orderId).then((response) => {
-                addOrder(response.data);
-                return response.data;
-            })
+            cancelOrderById(orderId, refund === undefined ? undefined : { refund }).then(
+                (response) => {
+                    addOrder(response.data);
+                    return response.data;
+                }
+            )
         );
 
     /**

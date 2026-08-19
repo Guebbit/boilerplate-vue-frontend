@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
-import { createPaymentIntent, confirmPayment, getPaymentByOrder } from '@api';
+import { createPaymentIntent, confirmPayment, getPaymentByOrder, refundPaymentByOrder } from '@api';
 import type { Payment } from '@types';
 
 /**
@@ -60,10 +60,29 @@ export const usePaymentsStore = defineStore('payments', () => {
                 })
         );
 
+    /**
+     * Returns an order's money without touching its status — the operator's standalone refund.
+     * Admin-only at the API; a caller without the role gets the 403 this rethrows.
+     *
+     * The refreshed payment replaces the cached one, which is what withdraws `actions.refund` and
+     * greys the control out afterwards.
+     *
+     * @param orderId - The order whose payment is being returned.
+     * @returns A promise resolving with the refunded payment.
+     */
+    const refundForOrder = (orderId: string) =>
+        fetchAny(() =>
+            refundPaymentByOrder(orderId).then((response) => {
+                payment.value = response.data;
+                return payment.value;
+            })
+        );
+
     return {
         loading,
         payment,
         fetchPaymentForOrder,
-        payForOrder
+        payForOrder,
+        refundForOrder
     };
 });

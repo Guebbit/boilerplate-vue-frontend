@@ -137,6 +137,7 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['POST', `/wishlist/${ID}/move-to-cart`, 'MoveWishlistItemToCartResponse'],
     ['POST', '/payments/intent', 'CreatePaymentIntentResponse'],
     ['GET', `/payments/order/${ID}`, 'GetPaymentByOrderResponse'],
+    ['POST', `/payments/order/${ID}/refund`, 'RefundPaymentByOrderResponse'],
     ['POST', `/payments/${ID}/confirm`, 'ConfirmPaymentResponse'],
     ['GET', '/delivery/methods', 'ListShippingMethodsResponse'],
     ['GET', `/delivery/order/${ID}`, 'GetShipmentByOrderResponse'],

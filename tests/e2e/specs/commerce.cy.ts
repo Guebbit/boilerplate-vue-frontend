@@ -9,6 +9,24 @@
  * Two sessions on purpose: the mock database re-seeds on every full page load, so each `it`
  * builds its own state and never reloads mid-arc — the same discipline as journey.cy.ts.
  */
+/**
+ * Moves the order on the edit page one step along its lifecycle.
+ *
+ * One step at a time because the select offers only what the API would accept from where the order
+ * currently is: `paid → processing → shipped` is three statuses and two moves, and a jump straight
+ * to `shipped` is not on the menu because it is not a move anyone may make.
+ *
+ * @param label - the option to pick, as it reads in the list
+ * @param text - what the select should show once it is picked
+ */
+const moveOrderTo = (label: RegExp, text: string) => {
+    cy.get('#order-edit-page .v-select').click();
+    cy.get('.v-overlay__content .v-list-item').contains(label).click();
+    cy.get('#order-edit-page .v-select').should('contain.text', text);
+    cy.get('#order-edit-page button[type=submit]').click();
+    cy.contains('Order updated successfully').should('exist');
+};
+
 describe('Commerce', () => {
     beforeEach(() => {
         cy.visit('/en');
@@ -66,23 +84,51 @@ describe('Commerce', () => {
     });
 
     it('the admin ships, the courier delivers, and the ledger remembers why', () => {
-        cy.loginAs('admin');
-
-        // ── Ship a seeded pending order through the admin edit form ─────────────────
+        /*
+         * Ship an order that has EARNED shipping. The state machine allows a pending order only
+         * one move — cancelled — because shipping an unpaid order would be giving stock away;
+         * `paid` is reached exclusively through the payment flow. (The retired MSW mock let the
+         * old version of this spec ship a pending order directly, which is exactly the class of
+         * fiction that layer was retired for.) So the customer buys and pays first, for real.
+         */
+        cy.loginAs('user');
         cy.get('.v-app-bar')
-            .contains('a', /orders/i)
+            .contains('a', /products lists/i)
             .click();
-        cy.get('[data-test=row-edit]').first().click();
+        cy.get('[data-test=category-chip]').contains('food (1)').click();
+        cy.get('[data-test=row-view]').should('have.length', 1);
+        cy.get('[data-test=row-view]').first().click();
+        cy.get('[data-test=add-to-cart]').click();
+        cy.contains('Product added to cart').should('exist');
+        cy.get('.v-app-bar').contains('a', /cart/i).click();
+        cy.get('[data-test=cart-checkout]').click();
+        cy.get('#orders-list-page tbody tr').should('have.length', 1);
+        cy.get('[data-test=row-view]').first().click();
+        cy.get('[data-test=payment-card-input] input').should('not.be.disabled').clear();
+        cy.get('[data-test=payment-card-input] input')
+            .should('not.be.disabled')
+            .type('4242 4242 4242 4242');
+        cy.get('[data-test=payment-submit]').click();
+        cy.get('[data-test=payment-status]').should('contain.text', 'Paid');
+
+        // The paid order's own edit page, reached by its id so the admin ships exactly it.
+        // Log out first — an authenticated visit to /login redirects away, so `loginAs`
+        // would never find its form.
+        cy.location('pathname').then((pathname) => {
+            const orderId = pathname.split('/').at(-1);
+
+            cy.get('.v-app-bar')
+                .contains(/logout/i)
+                .click();
+            cy.contains('gino@pino.it').should('not.exist');
+            cy.loginAs('admin');
+            cy.visit(`/en/orders/${orderId}/edit`);
+        });
         cy.get('#order-edit-page').should('exist');
         // Interact only once the form has hydrated — the email field carries the record.
         cy.get('#order-edit-page [type=email]').should('not.have.value', '');
-        cy.get('#order-edit-page .v-select').click();
-        cy.get('.v-overlay__content .v-list-item')
-            .contains(/shipped/i)
-            .click();
-        cy.get('#order-edit-page .v-select').should('contain.text', 'Shipped');
-        cy.get('#order-edit-page button[type=submit]').click();
-        cy.contains('Order updated successfully').should('exist');
+        moveOrderTo(/processing/i, 'Processing');
+        moveOrderTo(/shipped/i, 'Shipped');
 
         // ── The parcel exists: tracking on the order page, the email in the outbox ──
         cy.contains('a', 'Back to order details').click();

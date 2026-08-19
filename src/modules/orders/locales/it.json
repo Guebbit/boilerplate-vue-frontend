@@ -62,7 +62,15 @@
         "reset-form": "Reimposta modifiche",
         "button-go-to-details": "Torna ai dettagli ordine",
         "button-go-to-list": "Torna alla lista ordini",
-        "success-update": "Ordine aggiornato con successo"
+        "success-update": "Ordine aggiornato con successo",
+        "actions-title": "Annullamento e rimborso",
+        "actions-hint": "Ogni comando è attivo solo finché l'API lo accetterebbe.",
+        "button-cancel-only": "Annulla ordine",
+        "button-refund-only": "Rimborsa pagamento",
+        "button-cancel-and-refund": "Annulla e rimborsa",
+        "cancel-done": "Ordine annullato. Il pagamento è rimasto invariato.",
+        "cancel-refund-done": "Ordine annullato e pagamento rimborsato.",
+        "refund-done": "Pagamento rimborsato. Lo stato dell'ordine non è cambiato."
     },
     "navigation": {
         "label-orders": "Ordini"

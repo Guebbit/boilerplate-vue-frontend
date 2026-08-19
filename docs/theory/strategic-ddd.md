@@ -124,6 +124,38 @@ history and the admin status screens are load-bearing, not because an invariant 
 in this table is an argument for building an aggregate.
 :::
 
+### How a client asks instead of deciding
+
+"The server's to decide" is easy to write and easy to quietly break. The pressure is real: a screen
+has to know whether to show a cancel button, which statuses to offer, whether to render a card form
+— and the shortest path to each answer is a comparison written here.
+
+Three of them existed. A status dropdown listed every value of the enum, a cancel button tested for
+`pending` or `paid`, a pay form tested for `pending`. All three agreed with the API on the day they
+were written, and nothing could have told us when they stopped.
+
+They are gone, and what replaced them is not a better comparison — it is no comparison. Every read
+of an order or a payment carries an `actions` block the server computed for that caller:
+
+```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 30, 'rankSpacing': 40}}}%%
+flowchart LR
+    API["API decides<br/><i>per caller, per record</i>"] --> A["actions: { transitions,<br/>cancel, pay, refund }"]
+    A --> D["v-select :items"]
+    A --> B["v-btn :disabled"]
+    A --> F["card form v-if"]
+
+    classDef src fill:#dcfce7,stroke:#16a34a,color:#111827,stroke-width:2px;
+    class API src;
+```
+
+A control is enabled when the server says so and disabled otherwise. The rules can change on the
+API — a new status, a different role boundary, a cancel window that closes earlier — and this
+application follows without being edited, because it never held an opinion to update.
+
+The test for whether a new screen is doing this right: **if you can delete the API and still say
+what the button would do, the rule is in the wrong repository.**
+
 ## 5. Published language — the barrel, held to a size
 
 **A module publishes exactly what a sibling imports. No sibling, no barrel.**

@@ -58,11 +58,13 @@ The last one also made the suite **timing-dependent**: audit before the rows arr
 
 Two of these were only reachable at all after a bug in the shared `cy.visit()` override was fixed — until then most cases were quietly auditing the *previous* route. That story is in [Visual Regression](./visual-regression.md#the-bug-this-suite-found-in-the-test-harness), which is where it surfaced.
 
-## Excluding what is not ours
+## Everything on the page is ours
 
-These specs run against `vite dev`, and `vite-plugin-vue-devtools` injects its own floating anchor into every page. `axe` audits it like anything else and reports a violation on all routes — a real finding about the plugin, and nothing this codebase can fix.
+The sweep audits the whole document, with no exclusions and no suppressed rules.
 
-It is excluded **by selector**, not by disabling the rule. Suppressing the rule globally would also suppress it on our own markup, which is exactly the kind of violation worth catching. The distinction matters: exclude the element, never the rule.
+That is a property of the server, not of the audit. Every headless e2e script serves a BUILT bundle through `vite preview`, and `vite-plugin-vue-devtools` is `apply: 'serve'` — so its floating anchor, which axe used to report `aria-prohibited-attr` on across all 13 routes, is not in the page at all. Auditing a dev server meant carrying a selector exclusion for markup the visitor never receives, and an exclusion list is a place for real findings to hide.
+
+If an exclusion ever becomes necessary again, exclude the ELEMENT and never the rule: suppressing a rule globally suppresses it on our own markup too.
 
 ## Why a sweep per module, and not one central list
 

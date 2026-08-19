@@ -192,6 +192,9 @@ export interface OrderItem {
     quantity: number;
 }
 
+/**
+ * Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's `domain/lifecycle.ts`, answered per caller by `OrderActions`.
+ */
 export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
 
 export const OrderStatus = {
@@ -202,6 +205,18 @@ export const OrderStatus = {
     delivered: 'delivered',
     cancelled: 'cancelled'
 } as const;
+
+/**
+ * What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree.
+ */
+export interface OrderActions {
+    /** The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status. */
+    transitions: OrderStatus[];
+    /** Whether `POST /orders/{id}/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further. */
+    cancel: boolean;
+    /** Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST /payments/intent` and the provider's yes does the rest. */
+    pay: boolean;
+}
 
 export interface Order {
     id: Id;
@@ -234,6 +249,7 @@ export interface Order {
     shippingCost?: number;
     shippingAddress?: OrderAddress;
     status: OrderStatus;
+    actions?: OrderActions;
     createdAt?: string;
     updatedAt?: string;
     deletedAt?: string;
@@ -1434,8 +1450,26 @@ export interface UpdateOrderByIdRequest {
     items?: CartItem[];
 }
 
+/**
+ * The operator's choice of whether the money goes back with the cancellation. Ignored for a customer, who is always refunded. Omit the body entirely for the default.
+ */
+export interface CancelOrderRequest {
+    /** `false` cancels and releases the stock without returning the money — a replacement going out, a correction, or a refund handled separately through `POST /payments/order/{orderId}/refund`. */
+    refund?: boolean;
+}
+
 export interface CreatePaymentIntentRequest {
     orderId: Id;
+}
+
+/**
+ * What the requesting caller may do to this payment. Money is this module's to answer for; the order's own moves are on `Order.actions`, and a client that needs both composes them rather than deciding either for itself.
+ */
+export interface PaymentActions {
+    /** Whether `POST /payments/{id}/confirm` would be accepted — the payment is awaiting confirmation or retryable after a decline, AND the order can still reach `paid`. */
+    pay: boolean;
+    /** Whether `POST /payments/order/{orderId}/refund` would be accepted. False once refunded, which is what greys the control out rather than letting the operator discover it by clicking. */
+    refund: boolean;
 }
 
 /**
@@ -1467,6 +1501,7 @@ export interface Payment {
     provider: string;
     /** The only card digits a payment system may remember. */
     cardLast4?: string;
+    actions?: PaymentActions;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -3615,14 +3650,23 @@ export const hardDeleteOrderById = (
 };
 
 /**
- * Cancels the order identified by `{id}` — the one order write a customer can make. A `pending` or `paid` order can be cancelled this way; cancelling a paid one refunds its payment. `processing` and later statuses each need their own flow (return), which an admin drives through `PUT /orders/{id}`. A non-admin can cancel only their own orders; an admin can cancel anyone's. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
+ * Cancels the order identified by `{id}` — the one order write a customer can make. Which statuses allow it is the caller's `Order.actions.cancel`; a customer may cancel while `pending` or `paid`, an operator one step further. Cancelling releases the order's held stock in every case. Whether the MONEY goes back is `refund`: a customer is always refunded and cannot waive it, an operator chooses. Later statuses need their own flow (a return), driven through `PUT /orders/{id}`. A non-admin can cancel only their own orders; an admin can cancel anyone's. The check and the write are one atomic statement, so a cancel racing a status change resolves to exactly one winner.
  * @summary Cancel order
  */
 export const cancelOrderById = (
     id: string,
+    cancelOrderRequest?: CancelOrderRequest,
     options?: SecondParameter<typeof orvalMutator<OrderEnvelope>>
 ) => {
-    return orvalMutator<OrderEnvelope>({ url: `/orders/${id}/cancel`, method: 'POST' }, options);
+    return orvalMutator<OrderEnvelope>(
+        {
+            url: `/orders/${id}/cancel`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: cancelOrderRequest
+        },
+        options
+    );
 };
 
 /**
@@ -3668,6 +3712,20 @@ export const getPaymentByOrder = (
 ) => {
     return orvalMutator<PaymentEnvelope>(
         { url: `/payments/order/${orderId}`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Returns the money without touching the order's status — the operator action for a goodwill refund, and the second half of "cancel and refund" when a client sends both. Admin only. The write is conditional on the payment still being `succeeded`, so a double submit refunds once and answers 409 the second time.
+ * @summary Refund an order's payment
+ */
+export const refundPaymentByOrder = (
+    orderId: Id,
+    options?: SecondParameter<typeof orvalMutator<PaymentEnvelope>>
+) => {
+    return orvalMutator<PaymentEnvelope>(
+        { url: `/payments/order/${orderId}/refund`, method: 'POST' },
         options
     );
 };
@@ -3965,6 +4023,9 @@ export type CreatePaymentIntentResult = NonNullable<
     Awaited<ReturnType<typeof createPaymentIntent>>
 >;
 export type GetPaymentByOrderResult = NonNullable<Awaited<ReturnType<typeof getPaymentByOrder>>>;
+export type RefundPaymentByOrderResult = NonNullable<
+    Awaited<ReturnType<typeof refundPaymentByOrder>>
+>;
 export type ConfirmPaymentResult = NonNullable<Awaited<ReturnType<typeof confirmPayment>>>;
 export type ListShippingMethodsResult = NonNullable<
     Awaited<ReturnType<typeof listShippingMethods>>

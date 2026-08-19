@@ -20,11 +20,11 @@ import { usePaymentsStore } from '../store.ts';
  * The card field is prefilled with the conventional success number — this is a demo, and the
  * decline is deliberately one documented number away (the hint below the field says which).
  */
-const { orderId, orderStatus } = defineProps<{
+const { orderId, orderPayable } = defineProps<{
     /** The order this panel pays. */
     orderId: string;
-    /** Its current status — the form only shows while `pending`. */
-    orderStatus?: string;
+    /** The order's own `actions.pay` — whether it is still awaiting payment. */
+    orderPayable?: boolean;
 }>();
 
 const emit = defineEmits<
@@ -40,11 +40,16 @@ const { payment, loading } = storeToRefs(paymentsStore);
 const cardNumber = ref('4242 4242 4242 4242');
 
 /**
- * The form shows only while paying is possible; afterwards the record speaks. The payment's own
- * status participates so the panel flips the instant the charge lands, even while the parent's
- * re-read of the order is still in flight.
+ * The form shows only while paying is possible, and both halves of that are the server's answer.
+ *
+ * Once a payment record exists its own `actions.pay` decides, because the API already folded the
+ * order's status into it — which is what flips the panel the instant a charge lands, before the
+ * parent's re-read of the order comes back. Before any intent exists there is no payment to ask,
+ * so the order's `actions.pay` stands in.
  */
-const payable = computed(() => orderStatus === 'pending' && payment.value?.status !== 'succeeded');
+const payable = computed(() =>
+    payment.value ? payment.value.actions?.pay === true : orderPayable
+);
 
 const submitPayment = () =>
     paymentsStore
