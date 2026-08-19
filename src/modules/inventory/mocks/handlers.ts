@@ -8,7 +8,7 @@ import {
     isCurrentMockUserAdmin,
     mockDatabase,
     readRequestBody,
-    toBooleanOrUndefined,
+    toBooleanOrUndefined
 } from '@mocks/mockDb.ts';
 import { toMockJsonResponse } from '@mocks/mockTransport.ts';
 import { paginatedListResponse } from '@mocks/rest-resource.ts';
