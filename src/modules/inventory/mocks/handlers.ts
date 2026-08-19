@@ -8,12 +8,10 @@ import {
     isCurrentMockUserAdmin,
     mockDatabase,
     readRequestBody,
-    slicePaginatedData,
     toBooleanOrUndefined,
-    toNumberOrDefault,
-    toPaginationMeta
 } from '@mocks/mockDb.ts';
 import { toMockJsonResponse } from '@mocks/mockTransport.ts';
+import { paginatedListResponse } from '@mocks/rest-resource.ts';
 import { MockErrorResponse } from '@mocks/mockValidation.ts';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
@@ -23,7 +21,6 @@ const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
  * `minimum: 1`, so an empty ledger (which is exactly what a freshly reset mock has) would answer
  * `pageSize: 0` and fail its own schema check.
  */
-const PAGE_SIZE = 10;
 
 /** Stands in for `NODE_LOW_STOCK_THRESHOLD` — the server's number, mirrored, never the page's. */
 const LOW_STOCK_THRESHOLD = 5;
@@ -51,8 +48,6 @@ export const registerInventoryMockHandlers = (): HttpHandler[] => [
         if (denied) return denied;
 
         const query = getQueryParameters(request.url);
-        const page = toNumberOrDefault(query.page, 1);
-        const pageSize = toNumberOrDefault(query.pageSize, PAGE_SIZE);
         // Most scarce first, exactly as the contract orders the board.
         const matching = mockInventoryLevels()
             .filter(
@@ -61,13 +56,7 @@ export const registerInventoryMockHandlers = (): HttpHandler[] => [
                     level.available <= LOW_STOCK_THRESHOLD
             )
             .toSorted((a, b) => a.available - b.available);
-        return toMockJsonResponse(
-            createSuccessEnvelope({
-                items: slicePaginatedData(matching, page, pageSize),
-                meta: toPaginationMeta(matching.length, page, pageSize)
-            }),
-            { schema: ListInventoryLevelsResponse }
-        );
+        return paginatedListResponse(matching, query, ListInventoryLevelsResponse);
     }),
 
     http.get(`${API_BASE}/inventory/movements`, ({ request }) => {
@@ -75,20 +64,12 @@ export const registerInventoryMockHandlers = (): HttpHandler[] => [
         if (denied) return denied;
 
         const query = getQueryParameters(request.url);
-        const page = toNumberOrDefault(query.page, 1);
-        const pageSize = toNumberOrDefault(query.pageSize, PAGE_SIZE);
         const matching = (mockDatabase.sampleStockMovements ?? []).filter(
             (movement) =>
                 (!query.productId || movement.productId === query.productId) &&
                 (!query.reason || movement.reason === query.reason)
         );
-        return toMockJsonResponse(
-            createSuccessEnvelope({
-                items: slicePaginatedData(matching, page, pageSize),
-                meta: toPaginationMeta(matching.length, page, pageSize)
-            }),
-            { schema: ListStockMovementsResponse }
-        );
+        return paginatedListResponse(matching, query, ListStockMovementsResponse);
     }),
 
     /*

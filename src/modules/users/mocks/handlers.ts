@@ -1,5 +1,5 @@
-import { http, type HttpHandler } from 'msw';
-import type { User, UsersResponse } from 'src/types';
+import type { HttpHandler } from 'msw';
+import type { User } from 'src/types';
 import {
     ListUsersResponse,
     CreateUserResponse,
@@ -12,245 +12,80 @@ import {
     HardDeleteUserByIdResponse
 } from '@api/schemas';
 import {
-    createErrorEnvelope,
-    createMessageResponse,
-    createSuccessEnvelope,
     getIsoDateNow,
-    getQueryParameters,
     mockDatabase,
-    readRequestBody,
-    readRequestParts,
     resolveMockImageUrl,
-    slicePaginatedData,
     toBooleanOrUndefined,
-    readHardDeleteFlag,
-    toNumberOrDefault,
-    toPaginationMeta,
     asText,
     asOptionalText
 } from '@mocks/mockDb.ts';
-import { toMockJsonResponse } from '@mocks/mockTransport.ts';
-import { MockErrorResponse } from '@mocks/mockValidation.ts';
+import { defineRestResource, type MockQuery } from '@mocks/rest-resource.ts';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
-
-const replyUsersList = (
-    url: string | undefined,
-    schema: typeof ListUsersResponse | typeof SearchUsersResponse,
-    parameters?: unknown
-) => {
-    const query = getQueryParameters(url, parameters);
-    const page = toNumberOrDefault(query.page, 1);
-    const pageSize = toNumberOrDefault(query.pageSize, 10);
+/** The user list's filters, mirroring the BE's `buildWhere`: exact id, substring everything else. */
+const matchesUserFilters = (user: User, query: MockQuery): boolean => {
     const text = asText(query.text).trim().toLowerCase();
     const id = asOptionalText(query.id);
     const email = asOptionalText(query.email)?.toLowerCase();
     const username = asOptionalText(query.username)?.toLowerCase();
     const active = toBooleanOrUndefined(query.active);
 
-    const filteredItems = mockDatabase.sampleUsers.filter((user) => {
-        if (id && user.id !== id) return false;
-        if (email && !user.email.toLowerCase().includes(email)) return false;
-        if (username && !user.username.toLowerCase().includes(username)) return false;
-        if (typeof active === 'boolean' && user.active !== active) return false;
-        if (
-            text &&
-            !user.email.toLowerCase().includes(text) &&
-            !user.username.toLowerCase().includes(text) &&
-            !user.id.toLowerCase().includes(text)
-        )
-            return false;
-        return true;
-    });
-
-    return toMockJsonResponse(
-        createSuccessEnvelope<UsersResponse>({
-            items: slicePaginatedData(filteredItems, page, pageSize),
-            meta: toPaginationMeta(filteredItems.length, page, pageSize)
-        }),
-        { schema }
-    );
-};
-
-/**
- * Mirrors `BE src/services/users.ts` `remove()`: hard delete drops the row, soft delete toggles
- * `deletedAt` — so calling it twice restores the user rather than deleting them harder.
- *
- * Soft delete is the DEFAULT, as it is on the real API. Splicing the row unconditionally would be
- * behaviour drift, and cannot reproduce an admin still seeing a soft-deleted account.
- *
- * @returns false when there is no such user, which is the 404 every caller below shares.
- */
-const removeUserById = (userId: string, hardDelete: boolean): boolean => {
-    const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === userId);
-    if (targetIndex === -1) return false;
-
-    if (hardDelete) {
-        mockDatabase.sampleUsers.splice(targetIndex, 1);
-        return true;
-    }
-
-    const target = mockDatabase.sampleUsers[targetIndex];
-    mockDatabase.sampleUsers[targetIndex] = {
-        ...target,
-        // `undefined`, not an empty string: the BE tests for absence (`$exists: false`).
-        deletedAt: target.deletedAt ? undefined : getIsoDateNow()
-    };
+    if (id && user.id !== id) return false;
+    if (email && !user.email.toLowerCase().includes(email)) return false;
+    if (username && !user.username.toLowerCase().includes(username)) return false;
+    if (typeof active === 'boolean' && user.active !== active) return false;
+    if (
+        text &&
+        !user.email.toLowerCase().includes(text) &&
+        !user.username.toLowerCase().includes(text) &&
+        !user.id.toLowerCase().includes(text)
+    )
+        return false;
     return true;
 };
 
-const userNotFound = () =>
-    toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'User not found'), {
-        status: 404,
-        schema: MockErrorResponse
+export const registerUsersMockHandlers = (): HttpHandler[] =>
+    defineRestResource<User>({
+        base: 'users',
+        label: 'User',
+        collection: () => mockDatabase.sampleUsers,
+        schemas: {
+            list: ListUsersResponse,
+            search: SearchUsersResponse,
+            create: CreateUserResponse,
+            update: UpdateUserResponse,
+            delete: DeleteUserResponse,
+            get: GetUserByIdResponse,
+            updateById: UpdateUserByIdResponse,
+            deleteById: DeleteUserByIdResponse,
+            hardDeleteById: HardDeleteUserByIdResponse
+        },
+        matches: matchesUserFilters,
+        create: (fields, files) => ({
+            id: `user-${Date.now()}`,
+            email: asText(fields.email, 'created.user@example.com'),
+            username: asText(fields.username, 'created-user'),
+            admin: Boolean(fields.admin),
+            active: fields.active === undefined ? true : Boolean(fields.active),
+            imageUrl: resolveMockImageUrl(files),
+            createdAt: getIsoDateNow(),
+            updatedAt: getIsoDateNow()
+        }),
+        update: (existing, fields, files, byId) => ({
+            ...existing,
+            email: asText(fields.email, existing.email),
+            username: asText(fields.username, existing.username),
+            // The by-id route leaves `active` alone — only the root PUT (the admin's bulk-shaped
+            // edit) may toggle it, exactly as the BE splits the two.
+            active: byId || fields.active === undefined ? existing.active : Boolean(fields.active),
+            imageUrl: resolveMockImageUrl(files, existing.imageUrl),
+            updatedAt: getIsoDateNow()
+        }),
+        // PUT /users with no id in the body edits the session's own account.
+        defaultUpdateTargetId: () => mockDatabase.currentAuthenticatedUserId,
+        // `undefined`, not an empty string: the BE tests for absence (`$exists: false`) — so
+        // deleting twice restores the account.
+        softDelete: (user) => ({
+            ...user,
+            deletedAt: user.deletedAt ? undefined : getIsoDateNow()
+        })
     });
-
-export const registerUsersMockHandlers = (): HttpHandler[] => [
-    http.get(`${API_BASE}/users`, ({ request }) => replyUsersList(request.url, ListUsersResponse)),
-    http.post(`${API_BASE}/users`, ({ request }) =>
-        readRequestParts<Record<string, unknown>>(request).then(
-            ({ fields: requestBody, files }) => {
-                const createdUser: User = {
-                    id: `user-${Date.now()}`,
-                    email: asText(requestBody.email, 'created.user@example.com'),
-                    username: asText(requestBody.username, 'created-user'),
-                    admin: Boolean(requestBody.admin),
-                    active: requestBody.active === undefined ? true : Boolean(requestBody.active),
-                    imageUrl: resolveMockImageUrl(files),
-                    createdAt: getIsoDateNow(),
-                    updatedAt: getIsoDateNow()
-                };
-
-                mockDatabase.sampleUsers.unshift(createdUser);
-                return toMockJsonResponse(createSuccessEnvelope(createdUser), {
-                    status: 201,
-                    schema: CreateUserResponse
-                });
-            }
-        )
-    ),
-    http.put(`${API_BASE}/users`, ({ request }) =>
-        readRequestParts<Record<string, unknown>>(request).then(
-            ({ fields: requestBody, files }) => {
-                const targetId = asText(requestBody.id, mockDatabase.currentAuthenticatedUserId);
-                const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === targetId);
-
-                if (targetIndex === -1)
-                    return toMockJsonResponse(
-                        createErrorEnvelope(404, 'NOT_FOUND', 'User not found'),
-                        {
-                            status: 404,
-                            schema: MockErrorResponse
-                        }
-                    );
-
-                const updatedUser: User = {
-                    ...mockDatabase.sampleUsers[targetIndex],
-                    email: asText(requestBody.email, mockDatabase.sampleUsers[targetIndex].email),
-                    username: asText(
-                        requestBody.username,
-                        mockDatabase.sampleUsers[targetIndex].username
-                    ),
-                    active:
-                        requestBody.active === undefined
-                            ? mockDatabase.sampleUsers[targetIndex].active
-                            : Boolean(requestBody.active),
-                    imageUrl: resolveMockImageUrl(
-                        files,
-                        mockDatabase.sampleUsers[targetIndex].imageUrl
-                    ),
-                    updatedAt: getIsoDateNow()
-                };
-
-                mockDatabase.sampleUsers[targetIndex] = updatedUser;
-                return toMockJsonResponse(createSuccessEnvelope(updatedUser), {
-                    schema: UpdateUserResponse
-                });
-            }
-        )
-    ),
-    http.delete(`${API_BASE}/users`, ({ request }) =>
-        readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
-            const targetId = asText(requestBody.id);
-            const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === targetId);
-
-            if (targetIndex === -1)
-                return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'User not found'), {
-                    status: 404,
-                    schema: MockErrorResponse
-                });
-
-            mockDatabase.sampleUsers.splice(targetIndex, 1);
-            return toMockJsonResponse(createMessageResponse('User deleted'), {
-                schema: DeleteUserResponse
-            });
-        })
-    ),
-    http.post(`${API_BASE}/users/search`, ({ request }) =>
-        readRequestBody<Record<string, unknown>>(request).then((requestBody) => {
-            return replyUsersList(request.url, SearchUsersResponse, requestBody);
-        })
-    ),
-    http.get(`${API_BASE}/users/:userId`, ({ params }) => {
-        const userId = String(params.userId);
-        const targetUser = mockDatabase.sampleUsers.find((user) => user.id === userId);
-
-        if (!targetUser)
-            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'User not found'), {
-                status: 404,
-                schema: MockErrorResponse
-            });
-
-        return toMockJsonResponse(createSuccessEnvelope(targetUser), {
-            schema: GetUserByIdResponse
-        });
-    }),
-    http.put(`${API_BASE}/users/:userId`, ({ request, params }) => {
-        const userId = String(params.userId);
-        const targetIndex = mockDatabase.sampleUsers.findIndex(({ id }) => id === userId);
-
-        if (targetIndex === -1)
-            return toMockJsonResponse(createErrorEnvelope(404, 'NOT_FOUND', 'User not found'), {
-                status: 404,
-                schema: MockErrorResponse
-            });
-        return readRequestParts<Record<string, unknown>>(request).then(
-            ({ fields: requestBody, files }) => {
-                const updatedUser: User = {
-                    ...mockDatabase.sampleUsers[targetIndex],
-                    email: asText(requestBody.email, mockDatabase.sampleUsers[targetIndex].email),
-                    username: asText(
-                        requestBody.username,
-                        mockDatabase.sampleUsers[targetIndex].username
-                    ),
-                    imageUrl: resolveMockImageUrl(
-                        files,
-                        mockDatabase.sampleUsers[targetIndex].imageUrl
-                    ),
-                    updatedAt: getIsoDateNow()
-                };
-
-                mockDatabase.sampleUsers[targetIndex] = updatedUser;
-                return toMockJsonResponse(createSuccessEnvelope(updatedUser), {
-                    schema: UpdateUserByIdResponse
-                });
-            }
-        );
-    }),
-    // Must come before /users/:userId, or `hard` is matched as a user id.
-    http.delete(`${API_BASE}/users/:userId/hard`, ({ params }) => {
-        if (!removeUserById(String(params.userId), true)) return userNotFound();
-
-        return toMockJsonResponse(createMessageResponse('User deleted'), {
-            schema: HardDeleteUserByIdResponse
-        });
-    }),
-    http.delete(`${API_BASE}/users/:userId`, ({ request, params }) => {
-        if (!removeUserById(String(params.userId), readHardDeleteFlag(request.url)))
-            return userNotFound();
-
-        return toMockJsonResponse(createMessageResponse('User deleted'), {
-            schema: DeleteUserByIdResponse
-        });
-    })
-];
