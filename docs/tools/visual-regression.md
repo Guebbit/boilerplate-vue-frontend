@@ -165,7 +165,7 @@ Comparing images of different sizes pixel by pixel is meaningless, and a size ch
 
 ### Same size → compare
 
-Over budget writes a diff image to `src/modules/<name>/tests/e2e/__snapshots__/__diff__/` — red pixels mark what moved — and the failure message names the file and the update command.
+Over budget writes a diff image to `reports/visual-diff/` — red pixels mark what moved — and the failure message names the file and the update command.
 
 ## Updating a baseline
 
@@ -212,7 +212,7 @@ Moving it into CI means making the two environments the same, not loosening the 
 
 1. Record and compare inside the **same pinned container** — the official `cypress/included:<version>` image — so the font stack and browser build are identical everywhere.
 2. Regenerate the committed baselines once from that container, and never from a host machine again.
-3. Add a job that runs `npm run test:e2e:visual` in that image, and uploads `src/modules/<name>/tests/e2e/__snapshots__/__diff__/` as an artefact so a reviewer can see the picture without reproducing the run.
+3. Add a job that runs `npm run test:e2e:visual` in that image, and uploads `reports/visual-diff/` as an artefact so a reviewer can see the picture without reproducing the run.
 
 Until that is done, treat it as a local gate: run it before opening a pull request, and review the baseline images in the diff.
 
@@ -229,7 +229,7 @@ Visual regression plugins wrap roughly this much code around `pixelmatch`. The p
 | `tests/support/e2e/commands.ts` | `cy.freezeForVisual()`, `cy.compareSnapshot()`, and the `visit` override with its per-visit token |
 | `cypress.config.ts` | Registers the `compareSnapshot` task and pins the 1280×800 viewport |
 | `src/modules/<name>/tests/e2e/__snapshots__/*.png` | The committed baselines — reviewed as images, in the PR diff |
-| `src/modules/<name>/tests/e2e/__snapshots__/__diff__/` | Diff images written on failure. Not committed |
+| `reports/visual-diff/` | Diff images written on failure. Not committed |
 
 Note the directory split: the visual spec lives under `tests/e2e/visual/` rather than `tests/e2e/specs/`, because the ordinary `npm run test:e2e` run must not record or compare screenshots. Each npm script scopes itself with `--spec`.
 
