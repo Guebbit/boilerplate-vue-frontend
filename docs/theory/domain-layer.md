@@ -319,7 +319,8 @@ For an API-backed storefront or admin — which is what this boilerplate produce
 left branch. Going right means maintaining a client model *and* keeping it reconciled with the
 server's.
 
-`DDD_EXPLORATION.md` (repo root) works the right branch out in full, for both repos.
+`TACTICAL_DDD_PLAN.md` (workspace root, beside this repo) prices the right branch in full for the
+backend, and says why this repo stays out of its scope.
 
 ## Related pages
 
