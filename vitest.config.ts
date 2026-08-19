@@ -94,7 +94,7 @@ export default mergeConfig(
                 'tests/cross-cutting/**/*.spec.ts',
                 'src/modules/*/tests/**/*.spec.ts'
             ],
-            exclude: [...configDefaults.exclude, 'e2e/**', 'src/**/__tests__/**'],
+            exclude: configDefaults.exclude,
             server: {
                 deps: {
                     // vuetify ships raw .css imports in its ESM build

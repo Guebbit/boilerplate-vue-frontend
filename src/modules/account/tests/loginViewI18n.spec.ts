@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { nextTick, ref } from 'vue';
+import { nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 import { createPinia } from 'pinia';
 import Login from '@/modules/account/views/Login.vue';
@@ -50,15 +50,6 @@ vi.mock('vue-router', () => ({
     RouterLink: { template: '<a><slot /></a>' },
     useRoute: () => ({ fullPath: '/', params: {}, query: {} }),
     useRouter: () => ({ push: vi.fn(), replace: vi.fn() })
-}));
-
-vi.mock('@/infrastructure/profile.ts', () => ({
-    useProfileStore: () => ({
-        login: vi.fn(),
-        isAuth: ref(false),
-        isAdmin: ref(false),
-        profile: ref(undefined)
-    })
 }));
 
 const mountLogin = () =>

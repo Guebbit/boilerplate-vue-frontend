@@ -6,9 +6,7 @@
         "orval.config.*",
         "scripts/**/*.ts",
         "cypress.config.*",
-        "tests/support/e2e/visual-task.ts",
-        "nightwatch.conf.*",
-        "playwright.config.*"
+        "tests/support/e2e/visual-task.ts"
     ],
     "compilerOptions": {
         "composite": true,

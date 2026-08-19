@@ -44,13 +44,13 @@
         "regenerate": "npm run gen:api && npm run gen:asyncapi && npm run prettier:fix",
         "check:asyncapi-types": "tsx scripts/gen-asyncapi-types.ts --check --out src/types/asyncapi.generated.ts",
         "update:all": "npm-check-updates -u",
-        "complete": "npm run lint && npm run lint:openapi && npm run lint:asyncapi && npm run check:asyncapi-types && npm run prettier:check && npm run check:spec-identity && npm run build && npm run test",
-        "complete:fix": "npm run lint:fix && npm run lint && npm run lint:openapi && npm run lint:asyncapi && npm run check:asyncapi-types && npm run prettier:fix && npm run check:spec-identity && npm run build && npm run test",
+        "complete:gates": "npm run lint:openapi && npm run lint:asyncapi && npm run check:asyncapi-types && npm run check:spec-identity && npm run build && npm run test",
+        "complete": "npm run lint && npm run prettier:check && npm run complete:gates",
+        "complete:fix": "npm run lint:fix && npm run lint && npm run prettier:fix && npm run complete:gates",
         "complete:manual": "npm run test:e2e:visual && npm run test:e2e:live",
         "prepare": "husky",
         "test:unit:report": "vitest run --reporter=json --outputFile=reports/test-report.json",
         "test:report": "tsx scripts/test-report.ts",
-        "test:module": "vitest run",
         "test:e2e:spec": "npm run build:e2e && start-server-and-test 'npm run backend:demo' http-get://localhost:3000 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 'cypress run --e2e --spec \"${E2E_SPEC:-src/modules/*/tests/e2e/**/*.cy.ts}\"'"
     },
     "dependencies": {
