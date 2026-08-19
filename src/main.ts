@@ -99,8 +99,8 @@ const bootstrapApplication = () =>
             observability.track(analyticsEvents.APP_STARTED);
 
             return router.isReady().then(() => {
-                // Signal to Cypress (or any test runner) that the app is fully ready:
-                // MSW is running, Vue is mounted, and the initial navigation has resolved.
+                // Signal to Cypress (or any test runner) that the app is fully ready: Vue is
+                // mounted and the initial navigation has resolved.
                 (globalThis as typeof globalThis & { _appReady?: boolean })._appReady = true;
 
                 // Track application fully ready

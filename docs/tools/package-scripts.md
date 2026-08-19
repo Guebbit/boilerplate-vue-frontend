@@ -47,7 +47,7 @@ All four expand to `${CONTAINER_ENGINE:-podman} compose`. Export `CONTAINER_ENGI
 | `test:report` | Per-module rollup, slowest suites, failures named by module, and per-module coverage when `coverage/lcov.info` exists | [Quick Start](./testing-quickstart.md) |
 | `test:e2e:spec` | One Cypress spec — `E2E_SPEC=<path> npm run test:e2e:spec` | [Quick Start](./testing-quickstart.md) |
 | `test:unit` | Vitest unit suite (CI mode) | [Testing](./testing-and-docs.md) |
-| `test:e2e` | Start Vite (with MSW) + run Cypress headlessly, sharded across `E2E_SHARDS` processes | [Testing](./testing-and-docs.md#test-timings) |
+| `test:e2e` | Build, serve with `vite preview`, boot one demo backend per shard + run Cypress headlessly, sharded across `E2E_SHARDS` processes | [Testing](./testing-and-docs.md#test-timings) |
 | `test:e2e:serial` | The same run in one Cypress process — for when interleaved output is hard to read | [Testing](./testing-and-docs.md#test-timings) |
 | `test:e2e:dev` | Open Cypress UI for interactive e2e development | [Testing](./testing-and-docs.md) |
 | `test:e2e:live` | Start Vite (real API, response validation on) + run Cypress against the live backend, by hand | [Live E2E](./live-e2e.md) |

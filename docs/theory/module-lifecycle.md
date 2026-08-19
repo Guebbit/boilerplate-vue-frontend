@@ -23,7 +23,7 @@ flowchart LR
     REG --> N["AppNavigation<br/><i>renders entries</i>"]
     REG --> S["responseSchemaMap<br/><i>validates responses</i>"]
     REG --> I["i18n<br/><i>merges dictionaries</i>"]
-    REG --> M["MSW<br/><i>handlers + seeds</i>"]
+    REG --> M["analytics<br/><i>event names</i>"]
     classDef reg fill:#fef3c7,stroke:#d97706,color:#111827;
     classDef out fill:#dbeafe,stroke:#2563eb,color:#111827;
     class REG reg;
@@ -332,4 +332,4 @@ naming a domain. That is not a substitute for actually deleting a folder.
 - [Modules](./modules.md) — why the shape is what it is
 - [Layers](./layers.md) — the folder map
 - [Unit testing](../tools/unit-testing.md) — where a spec lives, and why
-- [Mocking](../tools/mocking.md) — why the handlers live under `src/`
+- [The demo profile](../tools/demo-profile.md) — why the handlers live under `src/`

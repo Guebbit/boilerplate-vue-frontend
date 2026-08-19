@@ -25,8 +25,8 @@ one line from `src/modules.ts`.** See [docs/theory/modules.md](../docs/theory/mo
   come from the API. Most modules have none. See
   [docs/theory/domain-layer.md](../docs/theory/domain-layer.md).
 - **No shared file may name a domain except `src/modules.ts`.** Navigation entries, response
-  schemas, locale dictionaries and MSW handlers are all declared on the module manifest
-  (`module.ts`) and collected by the registry — never listed centrally.
+  schemas and locale dictionaries are all declared on the module manifest (`module.ts`) and
+  collected by the registry — never listed centrally.
 - A module reaches a sibling through its **public barrel** (`@/modules/<name>`) and never its
   internals. Add a barrel only when another module needs something; `account` has none.
 - `infrastructure` may not import `@/modules`. When it owns a mechanism whose data is domain knowledge —
@@ -47,7 +47,7 @@ one line from `src/modules.ts`.** See [docs/theory/modules.md](../docs/theory/mo
 - `openapi.yaml` first. Contract and all generated code starts there.
 - Use generated API functions from `@api` (`contracts/rest/index.ts`); avoid manual endpoint wrappers unless required.
 - Use generated Zod schemas from `@api/schemas` (`contracts/rest/schemas.zod.ts`) for form and response validation; never hand-write schemas that duplicate the spec.
-- When adding a new endpoint handler for MSW, start from the nearest existing handler in `src/modules/<name>/mocks/handlers.ts`, then move business logic to the owning module's `src/modules/<name>/mocks/handlers.ts`.
+- There is no mock API. Dev and every e2e profile run against the paired backend's demo profile (`npm run backend:demo`); a new endpoint is implemented there, not imitated here.
 - Keep comments short and practical.
 - Avoid `async` / `await` + `try/catch` unless necessary.
 - Comments short. ADHD friendly. Explain function/constant/block fast.
@@ -57,7 +57,7 @@ one line from `src/modules.ts`.** See [docs/theory/modules.md](../docs/theory/mo
 ## Docs brain
 
 - Keep docs concise and visual.
-- Keep frontend-specific sections frontend-specific (Vite, Pinia, Router, Cypress, MSW).
+- Keep frontend-specific sections frontend-specific (Vite, Pinia, Router, Cypress).
 - Keep shared contract sections aligned with backend docs (`openapi.yaml`, `gen:api`, contract sync).
 - Link related sections instead of duplicating long explanations.
 

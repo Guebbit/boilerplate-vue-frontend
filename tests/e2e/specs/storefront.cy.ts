@@ -1,8 +1,8 @@
 /**
  * The storefront surface the customer release added: facet chips on the listing, stock and
  * add-to-cart on the product page, the wishlist and its move-to-cart exit, and the order page's
- * cancel and buy-again. The MSW handlers keep the API's invariants (public-scope facets, the
- * stock gate, the one order write), so these pin the pages honouring them.
+ * cancel and buy-again. The API enforces its own invariants (public-scope facets, the stock
+ * gate, the one order write), so these pin the pages honouring them.
  */
 describe('Storefront', () => {
     beforeEach(() => {

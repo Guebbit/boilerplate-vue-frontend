@@ -80,19 +80,10 @@ export default mergeConfig(
             // See the file itself for why, and for how to go back to 'jsdom'.
             environment: './tests/support/unit/jsdom-quiet-css.env.ts',
             setupFiles: ['tests/support/unit/setup.ts'],
-            env: {
-                // The manifests gate `mockHandlers` and `mockSeeds` behind this flag so a
-                // production build drops both (the fixtures would otherwise be emitted as a lazy
-                // chunk — `grep -rl seedProducts dist/` is the test). The handler-parity specs
-                // need them, so the flag is on here: `setup.ts` builds `mockDatabase` from the
-                // real module fold, which is also what makes those specs exercise the same
-                // assembly Cypress does rather than a hand-built stand-in.
-                VITE_API_MOCK_ENABLED: 'true'
-            },
             // Two homes, deliberately (decision D4). A module's own specs live inside it, so
             // `rm -rf src/modules/<name>` takes its tests with it; everything that belongs to no
-            // single domain — app, kernel, ui, infrastructure, the mock layer, cross-cutting
-            // sweeps — stays central under `tests/unit/` and `tests/cross-cutting/`.
+            // single domain — app, kernel, ui, infrastructure, cross-cutting sweeps — stays
+            // central under `tests/unit/` and `tests/cross-cutting/`.
             //
             // The e2e suite makes the same split for the same reason, so `src/modules/*/tests/`
             // holds both kinds. Only the `.spec.ts` half is this project's: the `e2e/` subfolder
@@ -128,11 +119,9 @@ export default mergeConfig(
                     'src/types/**', // type-only, no runtime lines
                     'src/main.ts', // app bootstrap, exercised by e2e only
                     'src/ui/vuetify/**', // vendor configuration
-                    // Each module's MSW handlers. They live under `src/` so that deleting a
-                    // domain takes its mock backend with it, but they are test doubles, not app
-                    // code — exercised through Cypress and `mockHandlerParity.spec.ts`, and
-                    // dead-code-eliminated from any production build.
-                    'src/modules/*/tests/**' // co-located specs are not the thing being measured
+                    // A module's own specs live under `src/` so that deleting a domain takes
+                    // its tests with it — but a test is not the thing being measured.
+                    'src/modules/*/tests/**'
                 ],
                 thresholds: {
                     // Floors for logic Stryker also mutates, on the principle that logic worth

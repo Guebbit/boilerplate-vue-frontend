@@ -782,11 +782,11 @@ export default defineConfigWithVueTs(
         }
     },
     {
-        // Scripts and the mock harness both print deliberately — a build script's output IS its
-        // interface, and `apiMock.ts` announces which profile and seed a run is using so a failing
-        // screenshot can be reproduced. Same policy as `src/infrastructure/logger.ts`: exempt the boundary
+        // Scripts and the Cypress config print deliberately — a build script's output IS its
+        // interface, and the shard runner reports which backend a run is talking to so a failure
+        // can be reproduced. Same policy as `src/infrastructure/logger.ts`: exempt the boundary
         // that owns the output, rather than disabling the rule at each call.
-        files: ['scripts/**/*.ts', 'tests/support/mocks/**/*.ts', 'cypress.config.ts'],
+        files: ['scripts/**/*.ts', 'cypress.config.ts'],
         rules: {
             'no-console': 'off'
         }

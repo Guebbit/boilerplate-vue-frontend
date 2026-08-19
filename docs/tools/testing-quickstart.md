@@ -94,7 +94,7 @@ before anything else; the terminal copy can be truncated, the file cannot.
 | **live** | the real API, fully composed | `test:e2e:live` | Everything the demo profile disables: real cache, real broker, real network |
 | **visual** | the real API, in-memory | `test:e2e:visual` | The pages still look right. Answers to the machine that recorded them |
 
-Both functional profiles run the real backend — see [The demo profile](./mocking.md) — so there
+Both functional profiles run the real backend — see [The demo profile](./demo-profile.md) — so there
 is no imitation left to disagree with it.
 
 ## Per-module suites
@@ -137,7 +137,7 @@ reviewed.
 ## Related
 
 - [Testing](./testing-and-docs.md) — the layers and why each exists
-- [The demo profile](./mocking.md) — the backend dev and e2e run against
+- [The demo profile](./demo-profile.md) — the backend dev and e2e run against
 - [Live E2E](./live-e2e.md) — the authoritative profile
 - [Visual Regression](./visual-regression.md)
 - [Accessibility Testing](./accessibility-testing.md)

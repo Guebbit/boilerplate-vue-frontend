@@ -19,7 +19,7 @@ flowchart LR
         Orval[Orval codegen\nopenapi.yaml → contracts/rest/]
         Axios[Axios\nHTTP client]
         Zod[Zod\nvalidation]
-        MSW[MSW\ndev + test mocking]
+        Validate[Response validation\nZod, every profile but Vitest]
     end
 
     subgraph Obs["Observability"]
@@ -39,7 +39,7 @@ flowchart LR
     classDef obs fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef test fill:#fce7f3,stroke:#db2777,color:#111827;
     class Runtime,Security,StateRouting core;
-    class Orval,Axios,Zod,MSW api;
+    class Orval,Axios,Zod,Validate api;
     class Faro,Umami obs;
     class Vitest,Cypress,Realtime,VitePress test;
 ```
@@ -59,5 +59,5 @@ flowchart LR
 | Observability | **[Observability](./observability.md)** | Grafana Faro (errors + tracing + web-vitals) and Umami (product analytics) wired into one Pinia store. |
 | Observability | **[Umami](./umami.md)** | Product analytics events and the event taxonomy used in this repo. |
 | Testing | **[Testing](./testing-and-docs.md)** | Vitest, @vue/test-utils, Cypress, and VitePress: how the repo tests itself and builds this docs site. |
-| Testing | **[Mocking (MSW)](./mocking.md)** | MSW handler architecture, in-memory DB, how to add a handler, and Cypress integration. |
+| Testing | **[The demo profile](./demo-profile.md)** | The paired backend booted self-contained, how dev and the e2e suites reach it, and the `/__demo` control surface. |
 | API | **[API](../api/)** | Orval, Spectral, generated client, and contract-first workflow. |

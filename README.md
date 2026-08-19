@@ -12,21 +12,19 @@ Run `npm run docs:dev`, or read `docs/`.
 
 > Requires **[Node.js 22+](https://nodejs.org/)** and `npm`.
 
+The dev server talks to the paired backend at `http://localhost:3000` — there is no
+backend-less mode. The lightest way to have one is its demo profile: the real API against an
+in-memory, seeded database, no Docker.
+
 ```bash
 npm ci                    # install exactly the lockfile
 cp .env-example .env
-npm run dev               # http://localhost:8080
+npm --prefix ../boilerplate-node-backend run demo   # terminal 1
+npm run dev                                         # terminal 2 — http://localhost:8080
 ```
 
-That gives you a browsable storefront — products, cart, orders, a signed-in user — served entirely
-from the browser. MSW answers every request from a seeded in-memory database, so **no backend is
-required**.
-
-The dev server expects the paired backend at `http://localhost:3000`. The lightest way to have one is its demo profile — the real API against an in-memory, seeded database, no Docker:
-
-```sh
-npm --prefix ../boilerplate-node-backend run demo
-```
+That gives you a browsable storefront — products, cart, orders, a signed-in user — every screen of
+it answered by the real API.
 
 Or start the full stack (`compose`) for real Redis/queue behaviour.
 

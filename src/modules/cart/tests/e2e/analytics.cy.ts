@@ -20,8 +20,9 @@
  * arriving exactly once, the row can only be the backend's — the frontend has no constant for that
  * name to fire.
  *
- * ── WHY IT SKIPS UNDER THE MOCK PROFILE ──────────────────────────────────────────────────────
- * `npm run test:e2e` runs against MSW with no backend and no Umami, so there is nothing to count.
+ * ── WHY IT SKIPS UNDER THE DEMO PROFILE ──────────────────────────────────────────────────────
+ * `npm run test:e2e` runs a real backend, but the demo profile wires no Umami — so the event is
+ * emitted into nothing and there is no row to count.
  * `cy.skipUnlessLive()` is the repo's existing answer for that, and using it rather than a local
  * check is what keeps the reason in one place: this spec is live-only for the same reason
  * `cy.resetState()` is, and it should stop running for the same reason too.

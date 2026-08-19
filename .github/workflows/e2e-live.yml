@@ -1,22 +1,17 @@
 name: E2E (live backend)
 
-# Runs this app's Cypress specs against a REAL backend — a checked-out sibling repo, a real
-# Mongo and Redis, a really seeded database — instead of against MSW.
+# Runs this app's Cypress specs against the FULLY COMPOSED backend — a checked-out sibling repo, a
+# real Mongo and Redis, a really seeded database that persists between requests.
 #
-# THIS IS THE MERGE GATE. `ci.yml` calls it via `workflow_call`, so behaviour is proven against the
-# real API on every PR rather than against a mock that claims to resemble one.
+# THIS IS THE MERGE GATE. `ci.yml` calls it via `workflow_call`, so behaviour is proven against a
+# complete stack on every PR.
 #
-# That is a deliberate reversal. The mock suite used to be the gate, and MSW carried a promise it
-# could not keep on its own: that each handler applied the same filtering, scoping and visibility
-# rules as the backend service behind it. Nothing enforced that promise mechanically — two spec
-# files and the reviewer's memory did — and the failure it invites is the expensive one: a green
-# suite describing an API that does not exist. Rather than keep paying reviewers to hold a mirror
-# straight, the mirror stopped being load-bearing and the real thing became the gate.
-#
-# `test:e2e` (in ci.yml) still runs the same specs against MSW, and still runs first, because it is
-# seconds where this is minutes and it catches ordinary app regressions long before this finishes.
-# What it no longer does is CERTIFY anything about the backend. When the two disagree, this one is
-# right.
+# `test:e2e` (in ci.yml) runs the same specs against the same real API in its DEMO profile —
+# in-memory Mongo, cache and queue disabled — and runs first, because it is seconds where this is
+# minutes and it catches ordinary app regressions long before this finishes. What the demo profile
+# cannot answer is anything that depends on the infrastructure it switches off: a cached read
+# served stale, a queued job, a cookie over a real network. That is what this workflow adds, and
+# when the two disagree, this one is right.
 #
 # On failure, read it in this order:
 #   1. the `check:spec-identity` step — a failure there means the two checkouts' shared files have
@@ -51,10 +46,11 @@ jobs:
         permissions:
             contents: read
 
-        # The real datastores. This is the only workflow that needs them: every other suite uses
-        # mongodb-memory-server or MSW, so nothing else here talks to a database that persists
-        # between requests. Health checks gate the steps below — a container that is up but not
-        # yet accepting connections would fail the seed step in a way that reads as a bad seed.
+        # The real datastores. This is the only workflow that needs them: every other suite runs
+        # on mongodb-memory-server with no cache and no broker, so nothing else here talks to a
+        # database that persists between requests. Health checks gate the steps below — a container
+        # that is up but not yet accepting connections would fail the seed step in a way that reads
+        # as a bad seed.
         services:
             mongodb:
                 image: mongo:8
@@ -151,13 +147,13 @@ jobs:
               run: npx wait-on http://localhost:3000 --timeout 120000
 
             # Before spending minutes on Cypress: are the two checkouts still the same pair? A
-            # forked `demo-data.json` makes the run fail on data rather than on behaviour,
-            # which reads as a broken app instead of a stale checkout.
+            # forked `openapi.yaml` makes the run fail on shapes rather than on behaviour, which
+            # reads as a broken app instead of a stale checkout.
             - name: Check the shared files are identical across the two checkouts
               run: npm run check:spec-identity
 
-            # The point of the whole workflow: the same specs as `test-e2e` in ci.yml, with MSW
-            # off, so they run against the real API and the real seeded database.
+            # The point of the whole workflow: the same specs as `test-e2e` in ci.yml, against
+            # the composed stack rather than the demo profile's in-memory database.
             - name: Run e2e tests against the live backend
               run: npm run test:e2e:live
 

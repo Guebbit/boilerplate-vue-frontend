@@ -82,7 +82,7 @@ export default withMermaid(
                             { text: 'Testing (overview)', link: '/tools/testing-and-docs' },
                             { text: 'Unit Testing', link: '/tools/unit-testing' },
                             { text: 'Testing — Quick Start', link: '/tools/testing-quickstart' },
-                            { text: 'The demo profile', link: '/tools/mocking' },
+                            { text: 'The demo profile', link: '/tools/demo-profile' },
                             { text: 'Live E2E (FE ↔ real backend)', link: '/tools/live-e2e' },
                             { text: 'Component Testing', link: '/tools/component-testing' },
                             { text: 'Property Testing', link: '/tools/property-testing' },

@@ -7,7 +7,7 @@ The repository is ~11,500 lines of source across 12 modules. You do not need to 
 files carry the shape of the whole thing, and every module is a variation on one of them.
 
 ::: tip Before the code
-If you want the tool inventory first — what Pinia, Vuetify, MSW, Orval, Faro and the rest are doing
+If you want the tool inventory first — what Pinia, Vuetify, Cypress, Orval, Faro and the rest are doing
 here and why each earns its place — read **[Tools Explained](../tools/tools-explained.md)**. It has
 the whole stack on one diagram. This page is about the code.
 :::
@@ -45,8 +45,8 @@ flowchart TD
 
 ### 1 · `src/main.ts` — how the app starts
 
-~45 lines. Read `bootstrapApplication` at the bottom: MSW mocks (if enabled) → merge the API's
-locale dictionaries → create the app → mount → start observability.
+~45 lines. Read `bootstrapApplication` at the bottom: merge the API's locale dictionaries →
+create the app → mount → start observability.
 
 **Take away:** two registry calls happen **before** the app is created —
 `registerResponseSchemas(collectModuleResponseSchemas(...))` and
@@ -124,7 +124,7 @@ generated code inherits all of the above without knowing it exists.
 | Follow a request from click to render | [Request Flow](./request-flow.md) |
 | Understand what may import what | [Layers](./layers.md) |
 | Add or delete a domain | [Adding & Removing a Module](./module-lifecycle.md) |
-| Work without a backend | [Mocking (MSW)](../tools/mocking.md) |
+| Work without a backend | [The demo profile](../tools/demo-profile.md) |
 | Change an endpoint's contract | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | Know which tool does what, and why it is here | [Tools Explained](../tools/tools-explained.md) |
 | Know what is planned but unbuilt | [Roadmap](./roadmap.md) |
@@ -138,7 +138,7 @@ generated code inherits all of the above without knowing it exists.
 | `src/ui/**` (molecules, organisms, vuetify) | You are building a screen. Presentational only, no domain knowledge. |
 | `src/infrastructure/i18n/index.ts` | You are adding a language. It is the densest file in the repo and explains nothing about the architecture. |
 | `src/infrastructure/stores/observability.ts`, `analytics-events.ts` | You are adding tracking. See [Observability](../tools/observability.md). |
-| `src/modules/*/mocks/**` | You are changing mock behaviour. See [Mocking (MSW)](../tools/mocking.md). |
+| `src/modules/*/mocks/**` | You are changing mock behaviour. See [The demo profile](../tools/demo-profile.md). |
 | `src/modules/account/**` | It is the biggest and least typical module (auth, sessions, addresses, password flows). Read `products` first. |
 | `src/modules/realtime/**`, `src/modules/admin/**` | They are demonstrations of a capability, not part of the core shape. |
 | `src/modules/demo/**` | It demonstrates the framework and nothing else. Delete it when you start a real project. |

@@ -16,8 +16,9 @@ import type { AxiosRequestConfig } from 'axios';
  * The `MODE !== 'test'` half is load-bearing: Vitest also sets `DEV: true`, and plenty of unit
  * tests exercise `orvalMutator` against deliberately partial fixtures.
  *
- * FE-side mirror of the BE's `toSatisfyApiSpec()` contract tests — MSW responses are checked by
- * `assertMockContract` where they are built, this covers a live backend's.
+ * FE-side mirror of the BE's `toSatisfyApiSpec()` contract tests: that suite asserts the API's
+ * answers against `openapi.yaml` from the inside, this asserts them against the generated schemas
+ * from the outside, over a real network and in every profile a person or a spec actually drives.
  */
 export const shouldValidateResponses = (): boolean => {
     const flag = import.meta.env.VITE_VALIDATE_RESPONSES;

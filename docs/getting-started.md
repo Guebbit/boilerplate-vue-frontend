@@ -137,7 +137,7 @@ npm run test:mutation         # Stryker; nightly in CI, by hand when you want it
 | Understand the folder layout               | [Modules](./theory/modules.md), [Layers](./theory/layers.md)     |
 | Add or remove a domain                     | [Adding & Removing a Module](./theory/module-lifecycle.md)       |
 | Change an endpoint or a payload            | [OpenAPI Workflow](./api/openapi-workflow.md)                    |
-| Know what dev and e2e run against          | [The demo profile](./tools/mocking.md)                           |
+| Know what dev and e2e run against          | [The demo profile](./tools/demo-profile.md)                           |
 | Understand routes, guards and access       | [Sitemap & Access Control](./theory/sitemap.md)                  |
 | Find out what a dependency is doing here   | [Tools Explained](./tools/tools-explained.md)                    |
 | Look up a script                           | [Package Scripts](./tools/package-scripts.md)                    |

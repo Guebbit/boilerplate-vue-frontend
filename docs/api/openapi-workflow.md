@@ -69,7 +69,7 @@ If you change this job, verify it can actually fail: edit `openapi.yaml` without
 | ---- | --- |
 | [`openapi.yaml`](https://spec.openapis.org/oas/latest.html) | single contract file (OpenAPI 3.x) |
 | [Spectral](https://stoplight.io/open-source/spectral) | lint the spec against `spectral.yaml` rules |
-| [orval](https://orval.dev) | generate `contracts/rest/` — axios client, Zod schemas, MSW stubs |
+| [orval](https://orval.dev) | generate `contracts/rest/` — axios client, Zod schemas |
 
 ## Generated output (`contracts/rest/`)
 
@@ -79,12 +79,6 @@ Running `npm run gen:api` regenerates the entire `contracts/rest/` directory. **
 contracts/rest/
 ├── index.ts          ← typed axios functions (one per operation)
 └── schemas.zod.ts    ← Zod schemas for every request/response shape
-```
-
-MSW stubs land separately:
-
-```
-tests/support/mocks/
 ```
 
 ## Importing generated types and functions
@@ -170,11 +164,11 @@ npm run lint:openapi   # lint openapi.yaml with Spectral
 npm run gen:api         # regenerate contracts/rest/ from openapi.yaml
 ```
 
-## MSW handlers
+## Mocks
 
-Orval can emit an MSW stub per operation, and `orval.config.ts` deliberately declares no `mocks` block. The stubs are stateless — no cart persistence, no login, no filtering — so they cannot stand in for the mock backend, and nothing here imported them.
+Orval can emit an MSW stub per operation, and `orval.config.ts` deliberately declares no `mocks` block: the stubs are stateless — no cart persistence, no login, no filtering — so they could never answer a journey spec.
 
-There is no hand-written mock of the new endpoint to update: dev and e2e run against the paired backend's **demo profile** (`npm --prefix ../boilerplate-node-backend run demo`) — the real API against an in-memory, seeded database — so the new endpoint exists the moment the backend implements it. See [The demo profile](../tools/mocking.md).
+There is no hand-written mock of the new endpoint to update: dev and e2e run against the paired backend's **demo profile** (`npm --prefix ../boilerplate-node-backend run demo`) — the real API against an in-memory, seeded database — so the new endpoint exists the moment the backend implements it. See [The demo profile](../tools/demo-profile.md).
 
 ## Useful links
 
@@ -186,6 +180,6 @@ There is no hand-written mock of the new endpoint to update: dev and e2e run aga
 ## Related pages
 
 - [AsyncAPI Workflow](./asyncapi-workflow.md)
-- [Mocking (MSW)](../tools/mocking.md)
+- [The demo profile](../tools/demo-profile.md)
 - [Layers](../theory/layers.md)
 - [API overview](./index.md)

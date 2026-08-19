@@ -252,7 +252,7 @@ jobs:
                   # `git diff` only sees tracked files, so a brand-new generated output would
                   # slip through as untracked. Catch that too.
                   if [ -n "$(git status --porcelain -- contracts/)" ]; then
-                      echo "Codegen produced untracked files under contracts/ or tests/support/mocks/:"
+                      echo "Codegen produced untracked files under contracts/:"
                       git status --porcelain -- contracts/
                       echo "Run 'npm run gen:api' and commit the changes."
                       exit 1
@@ -358,19 +358,21 @@ jobs:
     spec-identity:
         # The cross-repo contract gate.
         #
-        # Ten files exist in BOTH repos, byte-identical, maintained by hand — the two specs and
-        # the spectral ruleset, the seed identities, the generated realtime types, the three API
-        # client collections, and two shared scripts. `scripts/spec-identity.ts` holds the list and
-        # says, per entry, what a fork of it would break.
+        # Seven files exist in BOTH repos, byte-identical — the REST contract, the shared half of
+        # the async contract, the spectral ruleset both sides lint under, the frontend's analytics
+        # event names, and three shared scripts. `scripts/spec-identity.ts` holds the list and
+        # says, per entry, what a fork of it would break — and, for what is deliberately absent,
+        # why comparing an OUTPUT of a compared input would add nothing.
         #
         # Until this job existed they were checked by nothing. Every other spec job here lints
         # THIS repo's copy and passes, because a forked spec is still a valid spec. What nobody
         # could see was the fork itself.
         #
-        # Two of the ten sit at different paths in each repo (the seed identities are test
-        # scaffolding here and production seed data there; the realtime types are named for their
-        # consumer here and their generator there), which is why the list is path *pairs* rather
-        # than names — a same-path check could not express them, so they went unguarded longest.
+        # Two of the seven sit at different paths in each repo (the async contract is published
+        # there as `asyncapi.public.yaml` and received here as `asyncapi.yaml`; the analytics names
+        # are authored there under a `.frontend` suffix the two lint configs disagree about), which
+        # is why the list is path *pairs* rather than names — a same-path check could not express
+        # them, so they went unguarded longest.
         #
         # The sibling is checked out read-only, at its default branch: the question is whether this
         # PR agrees with what the backend has actually shipped, not with some pinned older copy.
@@ -423,17 +425,46 @@ jobs:
               run: npm run check:spec-identity
 
     test-e2e:
-        # Cypress against MSW, not a real API. Fast and hermetic, so it runs on every PR and
-        # catches ordinary app regressions in seconds — but it certifies nothing about the
-        # backend. `test-e2e-live` below is the job that does, and when the two disagree it wins.
-        # See docs/tools/mocking.md, "What MSW does and does not promise".
+        # Cypress against the paired backend's DEMO profile: the real API on an in-memory Mongo,
+        # one instance per shard, cache and queue disabled. Fast because nothing persists and
+        # nothing is composed — `test-e2e-live` below is the job that attaches the real datastores,
+        # and when the two disagree it wins. See docs/tools/demo-profile.md.
+        #
+        # The sibling checkout is what `scripts/e2e-shard.ts` boots, so this job needs it as much
+        # as `spec-identity` above does — with its dependencies installed, since the demo profile
+        # runs through tsx.
         runs-on: ubuntu-latest
-        timeout-minutes: 20
+        timeout-minutes: 30
         permissions:
             contents: read
+        env:
+            # Where the backend checkout lands, and what scripts/backend-path.ts resolves. Same
+            # name and same value as e2e-live.yml, so the two e2e jobs describe one layout.
+            BACKEND_PATH: .backend
         steps:
             - name: Checkout
               uses: actions/checkout@v4
+
+            - name: Checkout paired backend
+              id: sibling
+              continue-on-error: true
+              uses: actions/checkout@v4
+              with:
+                  # Override with a repository variable when the pair lives elsewhere.
+                  repository: ${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}
+                  path: .backend
+                  # Only needed when the sibling is private; falls back to this repo's token.
+                  token: ${{ secrets.SPEC_SIBLING_TOKEN || github.token }}
+
+            - name: Report an unreachable sibling
+              if: steps.sibling.outcome == 'failure'
+              run: |
+                  echo "::error::Could not check out the paired backend "\
+                  "(${{ vars.SPEC_SIBLING_REPO || 'Guebbit/boilerplate-node-backend' }}). "\
+                  "The e2e suite boots its demo profile, so there is no backend-less mode: set "\
+                  "the SPEC_SIBLING_REPO variable, or add a SPEC_SIBLING_TOKEN secret if it is "\
+                  "private."
+                  exit 1
 
             - name: Setup Node
               uses: actions/setup-node@v4
@@ -451,6 +482,13 @@ jobs:
                       cypress-${{ runner.os }}-
 
             - name: Install dependencies
+              run: npm ci
+
+            # The shard runner spawns `npm --prefix .backend run demo`, which is tsx against the
+            # backend's own dependency tree — an uninstalled checkout would fail at require time,
+            # after the 120s readiness poll rather than at the point of the mistake.
+            - name: Install backend dependencies
+              working-directory: ${{ env.BACKEND_PATH }}
               run: npm ci
 
             - name: Run e2e tests
@@ -487,8 +525,9 @@ jobs:
                   if-no-files-found: ignore
 
     test-e2e-live:
-        # The behaviour gate: the same specs as `test-e2e` above, with MSW off, against a real
-        # backend checkout, a real Mongo and a really seeded database.
+        # The behaviour gate: the same specs as `test-e2e` above, against the fully composed stack
+        # — a real backend checkout, a real Mongo and a real Redis — rather than against the demo
+        # profile's in-memory database with the cache and queue disabled.
         #
         # Delegated rather than duplicated — `e2e-live.yml` owns the datastore services, the
         # sibling checkout and the seeding, and is also scheduled nightly on its own. Two copies of

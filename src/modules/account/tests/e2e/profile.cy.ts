@@ -3,9 +3,10 @@
  * verification — everything the profile page grew when the API stopped being admin-only about
  * the visitor's own record.
  *
- * Runs against the mock profile. The MSW handlers keep the same invariants the API does (one
- * default address, sessions with a `current` flag, an email change unverifying the account), so
- * what these specs pin is the page honouring those invariants — not the arithmetic behind them.
+ * Runs against the real API in its demo profile, so the invariants behind these assertions (one
+ * default address, sessions with a `current` flag, an email change unverifying the account) are
+ * the service's own. What these specs pin is the page honouring them, not the rules themselves —
+ * those are the backend's to test.
  */
 /** Fills the address dialog's six required inputs and saves. */
 const fillAddress = (label: string, street: string) => {

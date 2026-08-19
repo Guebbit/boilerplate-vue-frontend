@@ -131,9 +131,9 @@ describe('Authentication', () => {
         });
     });
 
-    // Live profile only. `withCredentials: true` (src/infrastructure/http/index.ts) sends the refresh
-    // cookie cross-origin from :8085 to :3000, and MSW — same-origin, in-page — never exercises
-    // that boundary at all. A forced 401 is used instead of reaching into Pinia to clear the
+    // Live profile only: this is the composed stack's cookie path, `withCredentials: true`
+    // (src/infrastructure/http/index.ts) sending the refresh cookie from :8085 to :3000 with the
+    // real session store behind it. A forced 401 is used instead of reaching into Pinia to clear the
     // in-memory access token: it drives the exact same interceptor path
     // (onResponseRejectWithRefresh -> GET /account/refresh -> retry) through a real network
     // round-trip, without needing a test-only hook into application state.

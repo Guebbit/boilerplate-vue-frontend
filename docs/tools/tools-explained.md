@@ -153,7 +153,7 @@ this diagram exists to prevent.
 
 **Problem it solves.** Maintaining a typed API client alongside the spec means they inevitably drift. Code generation makes the client an output of the spec.
 
-**In this repo.** `npm run gen:api` regenerates `contracts/rest/index.ts` (axios functions) and `contracts/rest/schemas.zod.ts` (Zod schemas). Configured in `orval.config.ts`. Orval's MSW-stub output is deliberately not enabled — see [Mocking (MSW)](./mocking.md).
+**In this repo.** `npm run gen:api` regenerates `contracts/rest/index.ts` (axios functions) and `contracts/rest/schemas.zod.ts` (Zod schemas). Configured in `orval.config.ts`. Orval's MSW-stub output is deliberately not enabled — see [The demo profile](./demo-profile.md).
 
 → [OpenAPI Workflow](../api/openapi-workflow.md)
 
@@ -187,11 +187,11 @@ this diagram exists to prevent.
 
 **What it is.** MSW intercepts HTTP requests at the Service Worker level in the browser (or via `node-fetch` interceptors in Node). Handlers return custom responses without touching the network.
 
-**Problem it solves.** Running the SPA without a backend requires either a running server or hardcoded mocks in component code. MSW intercepts at the transport layer so the real axios client and stores run unchanged.
+**Problem it solves.** Some behaviour lives inside axios' interceptor chain — a 401 refreshing and replaying its request — and a stub at the module boundary never exercises it, because there is nothing left to intercept. MSW answers real HTTP, so the real client runs unchanged.
 
-**In this repo.** Used only in the transport-layer unit specs (`msw/node` stands in for a server). Dev and e2e run against the paired backend's demo profile instead — see [The demo profile](./mocking.md).
+**In this repo.** Used only in the transport-layer unit specs (`msw/node` stands in for a server). Dev and e2e run against the paired backend's demo profile instead — see [The demo profile](./demo-profile.md).
 
-→ [Mocking (MSW)](./mocking.md)
+→ [The demo profile](./demo-profile.md)
 
 ---
 
@@ -253,7 +253,7 @@ this diagram exists to prevent.
 
 **Problem it solves.** Unit tests cover logic; e2e tests cover the full user journey — navigating, filling forms, checking what's rendered. Cypress catches integration failures that unit tests miss.
 
-**In this repo.** E2E specs live in two places: a domain's own under `src/modules/<name>/tests/e2e/`, the cross-cutting ones under `tests/e2e/specs/`. `npm run test:e2e` boots Vite (with MSW) and runs Cypress headlessly. `test:e2e:dev` opens the Cypress UI.
+**In this repo.** E2E specs live in two places: a domain's own under `src/modules/<name>/tests/e2e/`, the cross-cutting ones under `tests/e2e/specs/`. `npm run test:e2e` builds the bundle, serves it with `vite preview`, boots one demo backend per shard and runs Cypress headlessly. `test:e2e:dev` opens the Cypress UI.
 
 → [Testing](./testing-and-docs.md)
 

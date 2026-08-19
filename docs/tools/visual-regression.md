@@ -251,5 +251,5 @@ It also does not replace accessibility testing. A screenshot cannot tell you tha
 
 - [Accessibility Testing](./accessibility-testing.md) — the other layer that looks at the rendered result, and the one that judges it
 - [Component Testing](./component-testing.md) — appearance of a single component, before it reaches a page
-- [The demo profile](./mocking.md) — the fixed dataset these screenshots depend on
+- [The demo profile](./demo-profile.md) — the fixed dataset these screenshots depend on
 - [Testing (overview)](./testing-and-docs.md) — the map of every layer

@@ -2,15 +2,10 @@
  * Image upload, end to end.
  *
  * ── How "the request was multipart" is asserted ──────────────────────────────
- * Not with `cy.intercept`. Under the mock profile MSW answers inside the service worker, so a
- * handled request never reaches Cypress' proxy and there is nothing to intercept. What IS
- * observable is the consequence: the handlers synthesise an `imageUrl` only when a `File` part
- * actually arrived (`resolveMockImageUrl`), so a preview whose `src` becomes a server path is
- * proof that the body was multipart and that the file survived the trip. An assertion on the
- * outcome also keeps working if the transport is ever swapped.
- *
- * The live half of this file is the only place the backend's magic-byte gate is exercised — the
- * mocks deliberately do not reproduce it (docs/tools/mocking.md, "Known gaps").
+ * Not with `cy.intercept`, but on the consequence: the API stores a file and answers a server
+ * path for it only when a `File` part actually arrived, so a preview whose `src` becomes that
+ * path is proof that the body was multipart and that the file survived the trip. An assertion on
+ * the outcome keeps working whatever the transport does.
  */
 
 /**
@@ -23,11 +18,9 @@ const UPLOAD_PATH = /^\/images\/[\da-f]{32}\.(png|jpg|jpeg|webp)$/;
 /**
  * Asserts no locally-picked file is still sitting in the preview.
  *
- * Written as "nothing is a blob URL" rather than "there is no image", because the two profiles
- * seed differently and both are correct: MSW's products carry no `imageUrl` — this repo ships
- * none of the backend's seed images, see docs/tools/mocking.md — while the real API returns one.
- * So an edit form legitimately shows an existing image under the live profile and nothing under
- * the mock, and only the blob URL means "a file is picked but not yet uploaded".
+ * Written as "nothing is a blob URL" rather than "there is no image": a seeded product
+ * legitimately arrives with an `imageUrl` already set, so an edit form showing an image says
+ * nothing either way. Only the blob URL means "a file is picked but not yet uploaded".
  */
 const expectNoPendingLocalPreview = () =>
     cy.get('body').then(($body) => {

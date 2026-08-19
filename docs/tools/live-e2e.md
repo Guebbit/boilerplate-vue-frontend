@@ -1,6 +1,6 @@
 # Live E2E (FE ↔ real backend)
 
-The demo profile ([The demo profile](./mocking.md)) runs the same API this one does, minus the infrastructure: in-memory Mongo, cache and queue disabled. What it cannot prove is full-stack behaviour — a real Redis, a real broker, a session cookie crossing a real network — and that gap is closed by running the same Cypress specs against the fully-composed backend instead.
+The demo profile ([The demo profile](./demo-profile.md)) runs the same API this one does, minus the infrastructure: in-memory Mongo, cache and queue disabled. What it cannot prove is full-stack behaviour — a real Redis, a real broker, a session cookie crossing a real network — and that gap is closed by running the same Cypress specs against the fully-composed backend instead.
 
 **This is the full-stack profile.** Both profiles run the real application; this one runs it with everything attached. This page documents it: when CI runs it, how to run it by hand, and what guards it.
 
@@ -74,7 +74,7 @@ NODE_RATE_LIMIT_MAX=1000 NODE_AUTH_RATE_LIMIT_MAX=1000 npm run host -- dev
 
 Both are needed and they are separate buckets: the global one covers browsing, the auth one covers `POST /account/login` and its neighbours. Do not raise them in a deployed environment — the small credential budget is what makes password guessing expensive, and the two are deliberately decoupled so that widening one never widens the other (see `src/infrastructure/http/middlewares/security.ts` in the backend).
 
-`host -- db:bootstrap` runs migrations and seeds against the containerized Mongo/Redis exposed on the host (`27017`/`6379`), matching the ports `host -- db:seed:reset` uses to reset state between specs. `test:e2e:live` itself starts Vite on `:8085` with `VITE_API_MOCK_ENABLED=false` and `VITE_VALIDATE_RESPONSES=true`, then runs Cypress against it with `CYPRESS_apiMockEnabled=false`.
+`host -- db:bootstrap` runs migrations and seeds against the containerized Mongo/Redis exposed on the host (`27017`/`6379`), matching the ports `host -- db:seed:reset` uses to reset state between specs. `test:e2e:live` itself builds the bundle with `VITE_VALIDATE_RESPONSES=true`, serves it on `:8085` with `vite preview`, then runs Cypress against it with `CYPRESS_liveProfile=true`.
 
 Boot the backend first. Nothing here waits for it: with no backend listening on `VITE_API_URL` (default `http://localhost:3000`), every spec fails on a network error rather than on anything it was written to check.
 
@@ -123,11 +123,11 @@ That check used to live here, as a Cypress spec pinning seeded ids by hand. It r
 | `src/infrastructure/http/response-schema-map.ts` | Route → Zod schema table `orvalMutator` validates against |
 | `src/modules/account/tests/e2e/auth.cy.ts` | Live session-refresh case (alongside the demo-profile auth specs) |
 | `tests/support/e2e/commands.ts` | `cy.resetState()`'s live branch, `cy.skipUnlessLive()` |
-| `cypress.config.ts` | `env.backendPath`, `env.apiMockEnabled` |
+| `cypress.config.ts` | `env.backendPath`, `env.liveProfile`, `env.apiUrl` |
 
 ## Related pages
 
 - [Testing](./testing-and-docs.md) — suite overview
 - [Unit Testing](./unit-testing.md) — `httpValidateResponses.spec.ts` unit-tests the gate this page's response validation relies on
-- [The demo profile](./mocking.md) — the fast profile this one complements
+- [The demo profile](./demo-profile.md) — the fast profile this one complements
 - [OpenAPI Workflow](../api/openapi-workflow.md)

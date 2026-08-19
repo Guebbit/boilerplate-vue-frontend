@@ -270,4 +270,4 @@ dead links most of all. The procedure is
 - [Layers](./layers.md) — the folder map
 - [Architecture](./architecture.md)
 - [Unit testing](../tools/unit-testing.md) — where a spec lives, and why
-- [Mocking](../tools/mocking.md) — why the handlers live under `src/`
+- [The demo profile](../tools/demo-profile.md) — why the handlers live under `src/`

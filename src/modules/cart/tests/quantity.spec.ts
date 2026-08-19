@@ -1,7 +1,7 @@
 /**
  * Cart quantity rules — `src/modules/cart/domain/quantity.ts`.
  *
- * No `mount`, no Pinia, no MSW. The rules take their inputs as arguments and hand back a verdict,
+ * No `mount`, no Pinia, no HTTP. The rules take their inputs as arguments and hand back a verdict,
  * so these are statements about the rule rather than about a `disabled` attribute on `Cart.vue`.
  *
  * The floor is asserted through the clamp rather than through a predicate: `Cart.vue` compares

@@ -184,10 +184,11 @@ describe('a locale only the API has', () => {
     /**
      * The download itself, observed. Picking Spanish in the switcher makes the app FETCH the
      * overrides it does not bundle (`GET /locales/es/messages`) and merge them at runtime.
-     * MSW answers that fetch inside the page, where `cy.intercept` cannot see it — but the
-     * browser's own resource timing records every fetch the page makes, service-worker-served
-     * included, so the entry IS the proof the network round trip happened. The per-key fallback
-     * rendering above is the proof the merge landed without displacing the bundled languages.
+     * Asserted from the browser's own resource timing rather than from `cy.intercept`: the
+     * entry is written by the page that made the request, so it stays true however the request
+     * is routed, and it cannot pass on an interception the app never actually performed. The
+     * per-key fallback rendering above is the proof the merge landed without displacing the
+     * bundled languages.
      */
     it('the switcher triggers the runtime download of the missing dictionary', () => {
         cy.visit('/en');

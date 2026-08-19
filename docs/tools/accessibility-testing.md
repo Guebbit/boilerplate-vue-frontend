@@ -121,6 +121,6 @@ If you want to tighten the threshold, change `BLOCKING_IMPACTS` in the command �
 ## Related pages
 
 - [Visual Regression](./visual-regression.md) — the other layer that looks at the rendered page; it records appearance, this one judges it
-- [The demo profile](./mocking.md) — the backend these run against
+- [The demo profile](./demo-profile.md) — the backend these run against
 - [Component Testing](./component-testing.md) — the layer below, where markup is asserted directly
 - [Testing & Docs](./testing-and-docs.md) — the map

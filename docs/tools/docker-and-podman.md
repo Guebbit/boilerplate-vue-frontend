@@ -64,7 +64,7 @@ inside the backend's own network.
 To run the pair:
 
 1. Start the **backend** stack first — it owns the API, Alloy and Umami this app points at.
-2. Start this one. `VITE_API_MOCK_ENABLED` defaults to `false`, so the app talks to the real API.
+2. Start this one. It talks to the real API at `VITE_API_URL`; there is no other mode.
 3. Check `NODE_CORS_ORIGIN` in the backend's `.env` includes `http://localhost:8080`.
 
 Keeping the two host-port blocks disjoint (`8080–8099` here, `3000–3099` there) is what lets both
@@ -78,7 +78,7 @@ Vite reads that same `.env` from inside the container. Without it you get compos
 fallbacks and nothing else: no Faro, no Umami, no locale configuration.
 
 The compose `environment:` block therefore lists **only** the pairing-critical variables
-(`VITE_APP_PORT`, `VITE_API_URL`, `VITE_API_SSE`, `VITE_API_MOCK_ENABLED`). Everything else is
+(`VITE_APP_PORT`, `VITE_API_URL`, `VITE_API_SSE`). Everything else is
 meant to arrive through the mounted `.env`.
 
 > **Do not "helpfully" add more variables to that block.** Compose `environment:` entries become
@@ -105,10 +105,11 @@ run on `8085`.
 
 ## Running this container alone
 
-Supported, but it has no API to call. Set `VITE_API_MOCK_ENABLED=true` in `.env` and MSW serves
-every request from its in-memory database — see [Mocking (MSW)](./mocking.md).
+Not usefully: it has no API to call, and there is no mode in which it answers its own requests.
+Point `VITE_API_URL` at a backend — the lightest one being its
+[demo profile](./demo-profile.md), which needs no containers at all.
 
-That is the deliberate trade in the default: a lone container is loudly broken rather than quietly
+That is deliberate: a lone container is loudly broken rather than quietly
 mocked, because a frontend that silently mocks the backend you just started looks like it works
 and does not.
 

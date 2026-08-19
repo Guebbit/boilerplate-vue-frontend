@@ -1,6 +1,6 @@
 # Unit Testing
 
-The layer that answers: **does this one piece of logic — a component, a store, a plugin — behave correctly in isolation?** Fast (whole suite runs in a few seconds), deterministic, and the only layer that mocks the network by hand rather than through MSW.
+The layer that answers: **does this one piece of logic — a component, a store, a plugin — behave correctly in isolation?** Fast (whole suite runs in a few seconds), deterministic, and the only layer that stubs the network at all — every layer above it runs against the real API.
 
 ## Tools
 
@@ -34,7 +34,7 @@ flowchart TB
     class Coverage,Mutation out;
 ```
 
-Everything below this layer (components, Pinia stores, `src/infrastructure/http`, `src/infrastructure`) is exercised **without** a browser and **without** MSW's Service Worker — that combination starts one layer up, in [E2E — Mock Profile](./mocking.md).
+Everything below this layer (components, Pinia stores, `src/infrastructure/http`, `src/infrastructure`) is exercised **without** a browser and **without** an API — a real browser talking to a real backend starts one layer up, in [The demo profile](./demo-profile.md).
 
 ## Patterns
 
@@ -67,7 +67,7 @@ vi.mock('@api', () => ({
 
 ### The one exception — a real HTTP server for the refresh flow
 
-`tests/unit/infrastructure/http/httpRefresh.spec.ts` is deliberately **not** stubbed at the module boundary. The 401 → refresh → replay flow lives entirely inside axios's interceptor chain (`src/infrastructure/http/index.ts`), so a hand-rolled stub would never actually exercise it — there'd be nothing to intercept. It uses `msw/node` (the same MSW package the browser mock profile uses, in its Node integration) to run a real server and assert on the request sequence:
+`tests/unit/infrastructure/http/httpRefresh.spec.ts` is deliberately **not** stubbed at the module boundary. The 401 → refresh → replay flow lives entirely inside axios's interceptor chain (`src/infrastructure/http/index.ts`), so a hand-rolled stub would never actually exercise it — there'd be nothing to intercept. It uses `msw/node` to run a real server and assert on the request sequence:
 
 ```ts
 const server = setupServer(
@@ -109,7 +109,7 @@ const server = setupServer(
 ## Related pages
 
 - [Testing](./testing-and-docs.md) — suite overview
-- [Mocking (MSW)](./mocking.md) — where mocking stops being module-level and becomes a real Service Worker
+- [The demo profile](./demo-profile.md) — where the stubs stop and the real API starts
 - [Live E2E](./live-e2e.md) — `VITE_VALIDATE_RESPONSES`, unit-tested here, does its real work there
 - [Mutation Testing](./mutation-testing.md) — mutates this layer's source and checks these tests notice
 
