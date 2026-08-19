@@ -67,7 +67,7 @@ All four expand to `${CONTAINER_ENGINE:-podman} compose`. Export `CONTAINER_ENGI
 
 Generated output is committed. CI regenerates and fails if the result differs, so any codegen has to be followed by `prettier:fix` — orval emits 2-space indentation while this repo commits 4. `regenerate` already ends with it, which is the reason to reach for that rather than `gen:api` alone.
 
-`openapi.yaml`, `asyncapi.yaml` and `tests/support/mocks/demo-data.json` are **owned by the backend** and arrive here through its `npm run sync:frontend`. Nothing in this repo produces them; `check:spec-identity` fails if they drift. So the sequence across the pair is: backend `npm run regenerate` → commit → pull here → `npm run regenerate` here.
+`openapi.yaml`, `asyncapi.yaml` and `db/demo/demo-data.json` (backend) are **owned by the backend** and arrive here through its `npm run sync:frontend`. Nothing in this repo produces them; `check:spec-identity` fails if they drift. So the sequence across the pair is: backend `npm run regenerate` → commit → pull here → `npm run regenerate` here.
 
 ## Docs scripts
 

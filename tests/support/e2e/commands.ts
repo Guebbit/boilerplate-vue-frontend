@@ -1,29 +1,11 @@
 /// <reference types="cypress" />
 
 /*
- * The mock reset is a LIVENESS check, not a speed one, so its budget is expressed as two
- * thresholds rather than one.
- *
- * `/__mock/reset` is served by MSW's own service worker, so a reset cannot succeed until that
- * worker has registered and taken control. How long that takes is not a property of the app: a
- * cold `vite dev` still transforming modules, four Cypress browsers sharing one dev server, a
- * loaded CI box — all of them move it, and none of them is a bug.
- *
- * So: SLOW is reported and passes, TIMEOUT fails. A run that takes 3s is worth knowing about and
- * is not worth failing a merge over; a worker that never starts is a real fault and still fails,
- * loudly, with the same message it always had.
- *
- * A healthy reset measures ~260ms locally, so SLOW is ~8× that and TIMEOUT ~30×. The previous
- * budget was 10 attempts × 200ms = 2s with no middle ground, which put the FAIL line at the same
- * place this file now puts the WARN line — an ordinary slow start was indistinguishable from a
- * dead worker, and failed the gate for the first one.
- *
- * TIMEOUT stays under `defaultCommandTimeout` (15s) on purpose: past that, Cypress kills the
- * command with its own generic message and the useful one here is never printed.
+ * A demo reset drops the in-memory database and reseeds it inside the backend process
+ * (`POST /__demo/reset`, see the backend's `src/app/demo.ts`) — measured in tens of
+ * milliseconds, budgeted generously for a CI box under load.
  */
-const RESET_MOCK_SLOW_MS = 2000;
-const RESET_MOCK_TIMEOUT_MS = 8000;
-const RESET_MOCK_RETRY_DELAY_MS = 250;
+const DEMO_RESET_TIMEOUT_MS = 30_000;
 const APP_READY_TIMEOUT_MS = 15_000;
 // A live reset drops and re-seeds the database; measured at ~0.6s locally, with headroom for a
 // cold tsx start and a slower CI disk.
@@ -38,18 +20,18 @@ declare global {
             /**
              * Return the backing data to its known seed state, whichever profile is running.
              *
-             * - mock profile: POSTs the test-only `/__mock/reset` endpoint, which repopulates
-             *   MSW's in-memory database.
-             * - live profile: runs the backend's `host -- db:seed:reset`, which drops the database,
-             *   re-upserts the same fixtures and clears the Redis cache.
+             * - demo profile (default): POSTs the backend's `/__demo/reset`, which drops the
+             *   in-memory database and reseeds it from the modules' demo fixtures, in-process.
+             * - live profile: runs the backend's `host -- db:seed:reset`, which drops the real
+             *   database, re-upserts the same fixtures and clears the Redis cache.
              *
-             * Both land on the dataset in `db/demo/index.ts`, which is why the same specs and
-             * the same `cy.loginAs()` credentials work against either.
+             * Both land on the dataset in the backend's `db/demo/index.ts`, which is why the same
+             * specs and the same `cy.loginAs()` credentials work against either.
              */
             resetState(): Chainable<void>;
 
             /**
-             * Logs in through the real UI flow using MSW-backed endpoints.
+             * Logs in through the real UI flow against the profile's backend.
              *
              * @param role - 'user' (default) or 'admin'
              */
@@ -85,35 +67,34 @@ declare global {
              * Skips the current test unless running against the live backend
              * (`npm run test:e2e:live`).
              *
-             * Live-only cases (the refresh case in `auth.cy.ts`, the multipart cases in
-             * `uploads.cy.ts`) open every `it()` with this: under the mock profile there is no
-             * live API to refresh a cookie against or to re-validate an upload, so there is
-             * nothing to assert, and the test is reported as skipped rather than faked green.
+             * Live-only cases open every `it()` with this: the full stack (real Redis, real
+             * broker) is the live profile's whole point, and against the demo profile there is
+             * nothing to assert, so the test is reported as skipped rather than faked green.
              */
             skipUnlessLive(): Chainable<void>;
 
             /**
-             * Skips the current test unless running against the mock profile.
+             * Skips the current test unless running against the demo profile.
              *
-             * The inverse of `skipUnlessLive`, for the flows that hinge on the mock outbox
-             * (`/__mock/emails`): against the live backend the emails leave through a real queue
+             * The inverse of `skipUnlessLive`, for the flows that hinge on the demo outbox
+             * (`/__demo/emails`): against the live backend the emails leave through a real queue
              * a browser cannot read, so there is nothing to assert.
              */
-            skipUnlessMock(): Chainable<void>;
+            skipUnlessDemo(): Chainable<void>;
 
             /**
-             * The newest email the mock API "sent" to an address, from the `/__mock/emails`
+             * The newest email the demo backend "sent" to an address, from the `/__demo/emails`
              * outbox. Fails the test when there is none — an empty inbox is an answer too.
              *
              * @param address - the recipient to look for
              */
-            mockEmailTo(address: string): Chainable<MockOutboxEmail>;
+            demoEmailTo(address: string): Chainable<DemoOutboxEmail>;
         }
     }
 }
 
-/** Mirrors `MockSentEmail` in `tests/support/mocks/mockDb.ts`, over the wire. */
-export interface MockOutboxEmail {
+/** Mirrors `DemoOutboxEmail` in the backend's `src/infrastructure/adapters/demo-outbox.ts`. */
+export interface DemoOutboxEmail {
     to: string;
     subject: string;
     template: string;
@@ -128,96 +109,50 @@ const resetLiveDatabase = (backendPath: string) =>
         timeout: LIVE_RESET_TIMEOUT_MS
     });
 
-const wait = (milliseconds: number) =>
-    new Promise((resolve) => {
-        setTimeout(resolve, milliseconds);
-    });
-
-/**
- * Retries the mock reset until MSW is up, then gives up with the last failure attached.
+/*
+ * `__E2E_API_URL` is how one built bundle serves many backends: each shard owns its own demo API
+ * (see scripts/e2e-shard.ts), and the app's axios client reads this override before falling back
+ * to the baked VITE_API_URL. Injected from `window:before:load` rather than a `cy.visit`
+ * overwrite, because the hook fires for EVERY page load — `cy.reload()` and app-initiated
+ * navigations included — while an overwrite covers only the visits Cypress itself issues. The
+ * sessions specs found that hole: their `cy.reload()` booted the app pointed at a backend a
+ * different shard owned.
  *
- * Recursive rather than a loop: a bounded retry is the one shape a promise chain cannot express
- * as a flat sequence, since the number of links is not known up front.
- *
- * Bounded by a DEADLINE rather than an attempt count, because the thing being waited on is time —
- * "the worker took 3 seconds" is the fact worth reporting, and an attempt count only says it
- * indirectly, and stops saying it at all the moment the retry delay is tuned.
- *
- * The two-argument `.then(onFulfilled, onRejected)` is load-bearing. A trailing `.catch` would
- * also swallow the "gave up" rejection that `attempt` itself produces at the deadline, turning
- * the bound into an infinite retry — the failure mode being guarded against here is a worker that
- * never starts, so that would hang the suite instead of failing it.
+ * The value is captured in a `before` hook because `allowCypressEnv: false` makes the env
+ * readable only through the stateful `cy.env()` command, which cannot run inside an event
+ * handler.
  */
-const resetMswDatabase = () =>
-    cy
-        .window()
-        .then((windowObject) => {
-            const startedAt = Date.now();
-
-            const attempt = (lastError?: unknown): Promise<number> => {
-                const elapsed = Date.now() - startedAt;
-
-                if (elapsed >= RESET_MOCK_TIMEOUT_MS)
-                    return Promise.reject(
-                        new Error(
-                            `Unable to reset mock state after ${elapsed}ms (budget ${RESET_MOCK_TIMEOUT_MS}ms).${
-                                lastError instanceof Error
-                                    ? ` Last error: ${lastError.message}`
-                                    : ''
-                            }`
-                        )
-                    );
-
-                return windowObject
-                    .fetch('/__mock/reset', { method: 'POST' })
-                    .then(
-                        (response) =>
-                            response.ok
-                                ? undefined
-                                : { retryAfter: `Mock reset returned HTTP ${response.status}` },
-                        // Ignore transient failures while MSW starts, then retry.
-                        (error: unknown) => ({ retryAfter: error })
-                    )
-                    .then((outcome) =>
-                        outcome
-                            ? wait(RESET_MOCK_RETRY_DELAY_MS).then(() =>
-                                  attempt(outcome.retryAfter)
-                              )
-                            : Date.now() - startedAt
-                    );
-            };
-
-            return attempt();
-        })
-        /*
-         * Slow but alive. Reported through `cy.task` rather than `cy.log`, because this has to
-         * reach the TERMINAL: `cy.log` writes to the Cypress command log, which nobody reads in a
-         * `cypress run`, and a warning nobody sees is not a warning.
-         *
-         * Deliberately not an assertion. The point of the two thresholds is that this case passes
-         * — see the constants above for why a slow worker is not a fault.
-         */
-        .then((elapsed) => {
-            if (elapsed >= RESET_MOCK_SLOW_MS)
-                cy.task(
-                    'warn',
-                    `mock reset took ${elapsed}ms (slow above ${RESET_MOCK_SLOW_MS}ms, fails above ${RESET_MOCK_TIMEOUT_MS}ms)`
-                );
-        });
+let injectedApiUrl: string | undefined;
+before(() => {
+    cy.env(['apiUrl']).then(({ apiUrl }) => {
+        injectedApiUrl = String(apiUrl);
+    });
+});
+Cypress.on('window:before:load', (contentWindow) => {
+    if (injectedApiUrl !== undefined)
+        (contentWindow as Cypress.AUTWindow & { __E2E_API_URL?: string }).__E2E_API_URL =
+            injectedApiUrl;
+});
 
 // `allowCypressEnv: false` in cypress.config.ts disables `Cypress.env()`, so the profile flag is
 // read through the stateful `cy.env()` API instead.
 Cypress.Commands.add('resetState', () =>
-    cy
-        .env(['apiMockEnabled', 'backendPath'])
-        .then(({ apiMockEnabled, backendPath }) =>
-            apiMockEnabled === false ? resetLiveDatabase(String(backendPath)) : resetMswDatabase()
-        )
+    cy.env(['liveProfile', 'backendPath', 'apiUrl']).then(({ liveProfile, backendPath, apiUrl }) =>
+        liveProfile === true
+            ? resetLiveDatabase(String(backendPath))
+            : // The demo backend resets itself in-process; a plain request is all it takes,
+              // and a non-2xx already fails the test.
+              cy.request({
+                  method: 'POST',
+                  url: `${String(apiUrl)}/__demo/reset`,
+                  timeout: DEMO_RESET_TIMEOUT_MS
+              })
+    )
 );
 
 /**
- * After every `cy.visit()`, wait until the app has fully bootstrapped: MSW running, Vue mounted,
- * and the initial router navigation resolved.
+ * After every `cy.visit()`, wait until the app has fully bootstrapped: Vue mounted and the
+ * initial router navigation resolved.
  *
  * ── Why `_appReady` alone is not enough ───────────────────────────────────────────────────────
  * `_appReady` is set on `window` by `src/main.ts` once the app has booted, and the outgoing
@@ -254,8 +189,9 @@ Cypress.Commands.overwrite('visit', (originalFunction: any, url: any, options: a
         )._supersededByVisit = true;
     });
 
-    // Options are passed through untouched — nothing here needs `onBeforeLoad` any more, so a
-    // caller's own hook reaches Cypress exactly as they wrote it.
+    // Options are passed through untouched — the `__E2E_API_URL` injection lives in the
+    // `window:before:load` hook below, so a caller's own `onBeforeLoad` reaches Cypress
+    // exactly as they wrote it.
     originalFunction(url, options);
 
     cy.window({ timeout: APP_READY_TIMEOUT_MS }).should((contentWindow) => {
@@ -282,8 +218,8 @@ Cypress.Commands.overwrite('visit', (originalFunction: any, url: any, options: a
  * checks visibility and occlusion but treats `disabled` as an immediate error, so the wait has to be
  * written down.
  *
- * `cy.visit` is overwritten below to wait for `_appReady`, which covers BOOTSTRAP — MSW running, Vue
- * mounted, `router.isReady()` resolved (`src/main.ts`). It cannot cover a view's own async state, so
+ * `cy.visit` is overwritten below to wait for `_appReady`, which covers BOOTSTRAP — Vue mounted,
+ * `router.isReady()` resolved (`src/main.ts`). It cannot cover a view's own async state, so
  * a field can still be disabled after the app is ready. That gap is what these assertions close.
  *
  * Applied to every call rather than only where a failure was seen, so that no reader has to work out
@@ -295,31 +231,29 @@ Cypress.Commands.overwrite('visit', (originalFunction: any, url: any, options: a
 
 // A regular `function`, not an arrow, so `this` is Mocha's test context and `this.skip()` works.
 Cypress.Commands.add('skipUnlessLive', function skipUnlessLive(this: Mocha.Context) {
-    return cy.env(['apiMockEnabled']).then(({ apiMockEnabled }) => {
-        if (apiMockEnabled !== false) this.skip();
+    return cy.env(['liveProfile']).then(({ liveProfile }) => {
+        if (liveProfile !== true) this.skip();
     });
 });
 
 // Same shape as `skipUnlessLive`, inverted; same reason for the regular `function`.
-Cypress.Commands.add('skipUnlessMock', function skipUnlessMock(this: Mocha.Context) {
-    return cy.env(['apiMockEnabled']).then(({ apiMockEnabled }) => {
-        if (apiMockEnabled === false) this.skip();
+Cypress.Commands.add('skipUnlessDemo', function skipUnlessDemo(this: Mocha.Context) {
+    return cy.env(['liveProfile']).then(({ liveProfile }) => {
+        if (liveProfile === true) this.skip();
     });
 });
 
-// Through the page's own `fetch`, not `cy.request`: the outbox lives inside MSW's service
-// worker, which only sees requests the application window makes.
-Cypress.Commands.add('mockEmailTo', (address: string) =>
-    cy.window().then((windowObject) =>
-        windowObject
-            .fetch('/__mock/emails')
-            .then((response) => response.json())
-            .then((body: { data: { emails: MockOutboxEmail[] } }) => {
-                const email = body.data.emails.find(({ to }) => to === address);
-                expect(email, `an email to ${address} in the mock outbox`).to.not.equal(undefined);
-                return email!;
-            })
-    )
+// A plain request: the outbox lives in the demo backend's process, not in the page.
+Cypress.Commands.add('demoEmailTo', (address: string) =>
+    cy
+        .env(['apiUrl'])
+        .then(({ apiUrl }) => cy.request(`${String(apiUrl)}/__demo/emails`))
+        .then((response) => {
+            const { emails } = response.body as { emails: DemoOutboxEmail[] };
+            const email = emails.find(({ to }) => to === address);
+            expect(email, `an email to ${address} in the demo outbox`).to.not.equal(undefined);
+            return email!;
+        })
 );
 
 Cypress.Commands.add('loginAs', (role = 'user') => {
@@ -462,7 +396,7 @@ Cypress.Commands.add('checkPageA11y', (context?: string) => {
  *   1. **Fixed viewport** — pinned in `cypress.config.ts`, since image size is part of the diff.
  *   2. **Animations disabled** — a transition caught mid-frame differs every run.
  *   3. **Frozen clock** — anything rendering a date or a relative time changes by the minute.
- *   4. **The mock profile** — the same demo dataset on every run.
+ *   4. **The demo profile** — the same seeded dataset on every run.
  *
  * The first is config; this command does the other three.
  */

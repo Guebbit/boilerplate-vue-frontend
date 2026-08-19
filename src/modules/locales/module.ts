@@ -32,27 +32,6 @@ export default {
     routes,
     navigation: [{ name: 'LocalesList', label: 'navigation.label-locales', plural: 2, order: 43 }],
     responseSchemas: localesResponseSchemas,
-    // Written out rather than delegated to a helper on purpose: `import.meta.env` is replaced by
-    // a literal at build time, so this ternary is what lets the bundler drop the mock chunk (and
-    // MSW with it) from a production build. See `collectModuleMockHandlers`.
-    mockHandlers:
-        import.meta.env.VITE_API_MOCK_ENABLED === 'true'
-            ? () =>
-                  import('./mocks/handlers').then(({ registerLocalesAdminMockHandlers }) =>
-                      registerLocalesAdminMockHandlers()
-                  )
-            : undefined,
-    // The seed slice those handlers edit — the dynamic-tier rows and their entries. Same
-    // inline-ternary rule as above: the fixtures must not reach a production bundle.
-    mockSeeds:
-        import.meta.env.VITE_API_MOCK_ENABLED === 'true'
-            ? {
-                  build: () =>
-                      import('./mocks/register').then(({ buildLocalesMockSeeds }) =>
-                          buildLocalesMockSeeds()
-                      )
-              }
-            : undefined,
     locales: {
         en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
         it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)

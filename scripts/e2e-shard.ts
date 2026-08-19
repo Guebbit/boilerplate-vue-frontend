@@ -18,15 +18,16 @@
  * balance them.
  *
  * ── WHY THIS IS SAFE HERE, AND NOT SAFE FOR THE LIVE PROFILE ─────────────────────────────────────
- * `cy.resetState()` branches on the profile (`tests/support/e2e/commands.ts`):
+ * Each shard gets its OWN demo backend (the paired repo's `npm run demo`: the real API against an
+ * in-memory Mongo, seeded, booted below on ports 3101+). `cy.resetState()` reseeds only that
+ * shard's database, so shards cannot see each other — the isolation MSW's in-page state used to
+ * provide, now with the real application behind it. The built bundle is shared; each shard's
+ * Cypress carries `CYPRESS_apiUrl`, which `cy.visit` injects into the page as the runtime
+ * `__E2E_API_URL` override (see `src/infrastructure/http/client.ts`).
  *
- *     apiMockEnabled === false ? resetLiveDatabase(backendPath) : resetMswDatabase()
- *
- * Under the mock profile the "database" is MSW state inside the browser, so every Cypress instance
- * owns its own and shards cannot see each other. Under the LIVE profile the same call re-seeds the
- * paired backend's real Mongo — one shared database that every shard would reset out from under the
- * others, mid-test. So this refuses to run when the live profile is active rather than trusting the
- * caller to remember; `test:e2e:live` stays sequential on purpose.
+ * Under the LIVE profile there is ONE real Mongo that every shard would reset out from under the
+ * others, mid-test. So this refuses to run when the live profile is active rather than trusting
+ * the caller to remember; `test:e2e:live` stays sequential on purpose.
  *
  * ── BALANCING ────────────────────────────────────────────────────────────────────────────────────
  * Longest-first onto the least-loaded shard (LPT), weighted by MEASURED durations rather than by
@@ -40,6 +41,7 @@ import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { globSync } from 'node:fs';
 import path from 'node:path';
+import { resolveBackendPath } from './backend-path';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..');
 
@@ -98,12 +100,13 @@ try {
     /* no .env in this checkout — CI is the normal case */
 }
 
-if (process.env.CYPRESS_apiMockEnabled === 'false') {
+if (process.env.CYPRESS_liveProfile === 'true') {
     console.error(
         '\n[e2e-shard] Refusing to shard the LIVE profile.\n\n' +
-            '  cy.resetState() re-seeds the paired backend’s real database, which every shard\n' +
-            '  would reset out from under the others. Run `npm run test:e2e:live`, which is\n' +
-            '  sequential for exactly this reason.\n'
+            '  cy.resetState() re-seeds the paired backend’s ONE real database, which every\n' +
+            '  shard would reset out from under the others. Run `npm run test:e2e:live`, which\n' +
+            '  is sequential for exactly this reason. (The demo profile shards safely: each\n' +
+            '  shard boots its own in-memory backend below.)\n'
     );
     process.exit(2);
 }
@@ -167,6 +170,62 @@ const SHARD_STAGGER_MS = 4000;
 /** Where a failing shard's full output is kept, for CI to upload and a human to read later. */
 const LOG_DIR = path.join(REPO_ROOT, 'reports', 'e2e');
 
+/** First port of the per-shard demo backends: shard N listens on DEMO_PORT_BASE + N. */
+const DEMO_PORT_BASE = 3101;
+
+/**
+ * One demo backend per shard — the paired repo's `npm run demo`, each owning its own in-memory
+ * Mongo. Booted in parallel (the mongod binary is cached after the first ever run), readiness is
+ * a 200 from `GET /`, and every child is killed however the run ends: an orphaned backend would
+ * hold its port and fail the NEXT run with EADDRINUSE, which reads as a mystery.
+ */
+const bootDemoBackends = async (count: number): Promise<(() => void)[]> => {
+    const backendPath = resolveBackendPath();
+    const children = Array.from({ length: count }, (_, index) => {
+        const port = DEMO_PORT_BASE + index;
+        const child = spawn('npm', ['--prefix', backendPath, 'run', 'demo'], {
+            stdio: ['ignore', 'pipe', 'pipe'],
+            env: { ...process.env, NODE_PORT: String(port), NODE_DEMO: 'true' }
+        });
+        let output = '';
+        child.stdout.on('data', (chunk: Buffer) => (output += chunk.toString()));
+        child.stderr.on('data', (chunk: Buffer) => (output += chunk.toString()));
+        return { child, port, log: () => output };
+    });
+
+    const kill = () => {
+        for (const { child } of children) child.kill('SIGTERM');
+    };
+    process.on('exit', kill);
+    process.on('SIGINT', () => {
+        kill();
+        process.exit(130);
+    });
+
+    const ready = async ({ port, log }: (typeof children)[number]) => {
+        const startedAt = Date.now();
+        for (;;) {
+            try {
+                const response = await fetch(`http://localhost:${port}/`);
+                if (response.ok) return;
+            } catch {
+                /* not listening yet */
+            }
+            if (Date.now() - startedAt > 120_000)
+                throw new Error(
+                    `[e2e-shard] demo backend on :${port} never became ready.\n${log()}`
+                );
+            await new Promise((resolve) => setTimeout(resolve, 250));
+        }
+    };
+
+    await Promise.all(children.map((backend) => ready(backend)));
+    console.log(
+        `[e2e-shard] ${count} demo backend(s) ready on :${DEMO_PORT_BASE}–:${DEMO_PORT_BASE + count - 1}`
+    );
+    return [kill];
+};
+
 /**
  * One Cypress process for one shard.
  *
@@ -183,7 +242,13 @@ const runShard = (files: string[], index: number) =>
         setTimeout(() => {
             const cypress = spawn('npx', ['cypress', 'run', '--e2e', '--spec', files.join(',')], {
                 cwd: REPO_ROOT,
-                stdio: ['ignore', 'pipe', 'pipe']
+                stdio: ['ignore', 'pipe', 'pipe'],
+                env: {
+                    ...process.env,
+                    // This shard's own backend — see `bootDemoBackends` below.
+                    // eslint-disable-next-line @typescript-eslint/naming-convention -- the CYPRESS_ prefix is Cypress' env-mapping contract, and the suffix names Cypress.env('apiUrl')
+                    CYPRESS_apiUrl: `http://localhost:${DEMO_PORT_BASE + index}`
+                }
             });
 
             cypress.stdout.on('data', (chunk: Buffer) => (output += chunk.toString()));
@@ -201,7 +266,9 @@ const runShard = (files: string[], index: number) =>
 
 const main = async () => {
     const startedAt = Date.now();
+    const [killBackends] = await bootDemoBackends(active.length);
     const results = await Promise.all(active.map((shard, index) => runShard(shard.files, index)));
+    killBackends();
 
     for (const { index, code, output, seconds } of results) {
         const specCount = active[index].files.length;

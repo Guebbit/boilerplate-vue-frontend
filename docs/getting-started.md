@@ -1,30 +1,30 @@
 # Getting Started
 
-From a fresh clone to a running storefront. Three commands, no backend required.
+From a fresh clone to a running storefront: two repos, three commands, no Docker.
 
-The frontend can run **entirely on its own**: MSW intercepts every request the app makes and
-answers it from a seeded in-browser database, so the catalogue, the cart and the order history all
-work with nothing else running. That is the fast path, and it is the one below.
+The app talks to the paired backend. The lightest way to have one is its **demo profile** — the
+real API booted against an in-memory, seeded database — so the catalogue, the cart and the order
+history all work with nothing installed beyond Node.
 
 ## Which mode am I in?
 
 This is the first thing to understand, because almost every "it does not work" is really "the app
-is in the other mode".
+is pointed at the wrong backend".
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 55}}}%%
 flowchart TD
-    Q{"VITE_API_MOCK_ENABLED"}
-    Q -->|true| M["Mock mode<br/>MSW answers every call"]
-    Q -->|false| R["Live mode<br/>axios calls VITE_API_URL"]
+    Q{"What answers VITE_API_URL?"}
+    Q -->|npm run demo| M["Demo backend<br/>in-memory Mongo, seeded"]
+    Q -->|compose stack| R["Full backend<br/>real Mongo, Redis, broker"]
 
-    M --> M1["No backend needed"]
-    M --> M2["Data resets on reload"]
-    M --> M3["Fixtures come from each module's mocks/register.ts"]
+    M --> M1["Boots in seconds, no Docker"]
+    M --> M2["Data resets when the process does"]
+    M --> M3["Cache/queue run 'disabled' — a supported shape"]
 
-    R --> R1["Backend stack must be up"]
-    R --> R2["Backend CORS must allow this origin"]
-    R --> R3["Data is the real seeded database"]
+    R --> R1["Full observability stack"]
+    R --> R2["Real cache and queue behaviour"]
+    R --> R3["Data persists in the container volume"]
 
     classDef q fill:#fef3c7,stroke:#d97706,color:#111827;
     classDef mock fill:#dcfce7,stroke:#16a34a,color:#111827;
@@ -34,19 +34,21 @@ flowchart TD
     class R,R1,R2,R3 live;
 ```
 
-## First run — standalone, with mocks
+## First run — with the demo backend
 
-> Requires **[Node.js 22+](https://nodejs.org/)** and `npm`.
+> Requires **[Node.js 22+](https://nodejs.org/)** and `npm`, and the paired
+> `boilerplate-node-backend` checkout beside this one.
 
 ```bash
-npm ci                                  # install exactly the lockfile
-cp .env-example .env                    # create the local env file
-# in .env: set VITE_API_MOCK_ENABLED=true
-npm run dev                             # Vite dev server on :8080
+npm ci                                             # install exactly the lockfile
+cp .env-example .env                               # create the local env file
+npm --prefix ../boilerplate-node-backend run demo  # the real API, in-memory, seeded — :3000
+npm run dev                                        # Vite dev server on :8080
 ```
 
 Open `http://localhost:8080`. You get a browsable storefront with demo products, a working cart
-and a signed-in user, backed by nothing but the browser.
+and a working login (`gino@pino.it` / `password`), served by the real API against a database that
+lives and dies with the demo process.
 
 ::: tip `cp .env-example .env` is not optional
 It is required for the container path too. The compose file bind-mounts the repo at `/app`, so
@@ -54,15 +56,11 @@ Vite reads that same `.env` from inside the container. Without it you get compos
 fallbacks and nothing else — no Faro, no Umami, no locale settings.
 :::
 
-## Running against the real API
+## Running against the full stack
 
 ```bash
-# 1. start the backend stack first — it owns the API, Alloy and Umami
+# start the backend stack instead — it owns the API, Alloy and Umami
 cd ../boilerplate-node-backend && npm run compose:restart
-
-# 2. point this app at it and turn mocking off, in .env:
-#      VITE_API_MOCK_ENABLED=false
-#      VITE_API_URL=http://localhost:3000
 npm run dev
 ```
 
@@ -139,7 +137,7 @@ npm run test:mutation         # Stryker; nightly in CI, by hand when you want it
 | Understand the folder layout               | [Modules](./theory/modules.md), [Layers](./theory/layers.md)     |
 | Add or remove a domain                     | [Adding & Removing a Module](./theory/module-lifecycle.md)       |
 | Change an endpoint or a payload            | [OpenAPI Workflow](./api/openapi-workflow.md)                    |
-| Know how the mock backend is built         | [Mocking with MSW](./tools/mocking.md)                           |
+| Know what dev and e2e run against          | [The demo profile](./tools/mocking.md)                           |
 | Understand routes, guards and access       | [Sitemap & Access Control](./theory/sitemap.md)                  |
 | Find out what a dependency is doing here   | [Tools Explained](./tools/tools-explained.md)                    |
 | Look up a script                           | [Package Scripts](./tools/package-scripts.md)                    |

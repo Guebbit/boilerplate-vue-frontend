@@ -78,7 +78,7 @@ Four things across the two repos can hand you an entity, and each answers a ques
 
 | Source | Repo | What it is for |
 | --- | --- | --- |
-| `db/demo/demo-data.json` | both (byte-identical) | **The demo dataset, as the API answers it.** Every seeded row, serialized — ids, emails, admin flags, titles, prices, who has what in their cart and their orders, and the schema defaults each record actually ended up with. The one dataset a human sees when they open either app. **Produced in the backend** by `npm run seed:export`, which seeds a throwaway database with the real seeders and reads it back through the real serializers, then copied here as `tests/support/mocks/demo-data.json`. `npm run check:spec-identity` compares the two copies and the `spec-identity` CI job gates on it |
+| `db/demo/demo-data.json` | both (byte-identical) | **The demo dataset, as the API answers it.** Every seeded row, serialized — ids, emails, admin flags, titles, prices, who has what in their cart and their orders, and the schema defaults each record actually ended up with. The one dataset a human sees when they open either app. **Produced and kept in the backend** by `npm run seed:export`, which seeds a throwaway database with the real seeders and reads it back through the real serializers. This repo holds no copy any more: the demo profile the suites run against seeds from the backend's own fixtures directly |
 | `src/modules/<name>/demo.ts` | BE | **The records themselves**, per module, before the schema and serializer have had their say. The file you edit to change what the demo data IS |
 | `src/modules/<name>/factory.ts` | BE | **Arbitrary throwaway entities** — "give me *a* product, I do not care which, and let me override one field". The opposite need to a fixed demo dataset, and one per module, beside the `demo.ts` that fixes the dataset. This repo has no equivalent yet; see the note below |
 | `tests/support/contract-data.ts` | BE | **Payloads derived from the zod schemas**, valid and — uniquely — invalid, each violating exactly one declared constraint. The only source that can produce something the API is supposed to *reject* |
@@ -94,7 +94,7 @@ flowchart TB
         direction TB
         Records["BE src/modules/*/demo.ts<br/>the records, per module"]
         Records --> Export["seed:export<br/>real seeders + real serializers"]
-        Export --> Dataset["demo-data.json<br/>byte-identical in both repos"]
+        Export --> Dataset["demo-data.json<br/>the backend's gated snapshot"]
     end
 
     subgraph two["Two generators, two questions"]
@@ -220,7 +220,7 @@ flowchart LR
 
 - Target **behavior**, not implementation — prefer component contracts (props/emits/slots) over snapshots.
 - Use **generated Zod schemas** from `@api/schemas` for mock response validation in unit tests.
-- By default, e2e tests run with `VITE_API_MOCK_ENABLED=true` and never hit a real backend. `npm run test:e2e:live` is the deliberate, hand-run exception — see [Live E2E](./live-e2e.md).
+- By default, e2e tests run against per-shard demo backends — the real API, in-memory. `npm run test:e2e:live` runs the same specs against the fully-composed stack — see [Live E2E](./live-e2e.md).
 - Specs start **logged out**: `cy.resetState()` clears the session (mock profile) or reseeds the real database (live profile). Call `cy.loginAs('admin')` when a spec needs elevated visibility.
 - **An assertion on a count is an assertion about a role.** Non-admins see 4 of the 6 seeded products (one is soft-deleted, one inactive). If you change an expected count, confirm you are still describing what the backend would return.
 

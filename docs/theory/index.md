@@ -121,7 +121,7 @@ point.
 - **Contract first**: the [API section](../api/) starts from [`openapi.yaml`](../api/openapi-workflow.md). Types, the axios client, Zod schemas, and MSW stubs are all generated from it — never hand-written.
 - **Stores own data**: views call composables or stores; stores call the generated API. Views stay thin.
 - **Single observability store**: [Grafana Faro and Umami](../tools/observability.md) are wired together in `src/infrastructure/stores/observability.ts`; no vendor calls leak into components.
-- **Opt-in mocking**: [MSW](../tools/mocking.md) intercepts HTTP at the network layer when `VITE_API_MOCK_ENABLED=true`; the rest of the app is unchanged.
+- **The demo backend**: [the paired repo's demo profile](../tools/mocking.md) serves dev and e2e — the real API against an in-memory, seeded database.
 - **Promise-oriented style**: prefer promise chaining over large `async`/`await` + `try/catch` blocks.
 - **Boilerplate over product detail**: examples are intentionally generic so the same shape can be reused in other variants.
 

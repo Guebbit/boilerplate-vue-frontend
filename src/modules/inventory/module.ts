@@ -40,16 +40,6 @@ export default {
         { name: 'InventoryLedger', label: 'navigation.label-inventory', plural: 1, order: 47 }
     ],
     responseSchemas: inventoryResponseSchemas,
-    // Written out rather than delegated to a helper on purpose: `import.meta.env` is replaced by
-    // a literal at build time, so this ternary is what lets the bundler drop the mock chunk (and
-    // MSW with it) from a production build. See `collectModuleMockHandlers`.
-    mockHandlers:
-        import.meta.env.VITE_API_MOCK_ENABLED === 'true'
-            ? () =>
-                  import('./mocks/handlers').then(({ registerInventoryMockHandlers }) =>
-                      registerInventoryMockHandlers()
-                  )
-            : undefined,
     locales: {
         en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
         it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)

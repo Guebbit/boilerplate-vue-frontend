@@ -78,7 +78,7 @@ npm run gen:asyncapi
 
 ## Dev strategy
 
-- HTTP stays mocked by MSW (`VITE_API_MOCK_ENABLED=true`).
+- HTTP goes to the same demo backend as everything else.
 - SSE connects to a real URL (`VITE_API_SSE`) — a running backend is required to test it, or a lightweight fake `EventSource` in unit tests.
 - Keep realtime logic in stores; keep the `RealtimePlayground` view thin.
 

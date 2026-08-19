@@ -19,7 +19,7 @@ question, not a surgery question.**
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 55}}}%%
 flowchart TD
     A["<b>src/app</b><br/>this application<br/><i>router · layouts · guards · views · AppNavigation</i>"]
-    M["<b>src/modules/*</b><br/>one domain each<br/><i>routes · store · schemas · views · mocks · locales</i>"]
+    M["<b>src/modules/*</b><br/>one domain each<br/><i>routes · store · schemas · views · locales</i>"]
     P["<b>src/kernel</b><br/>the module system itself<br/><i>registry</i>"]
     U["<b>src/ui</b><br/>the design system, no domain<br/><i>tokens · icons · shared components</i>"]
     C["<b>src/infrastructure</b><br/>substrate — never knows modules exist<br/><i>http · i18n · errors · session · uploads</i>"]
@@ -160,7 +160,6 @@ export interface AppModule {
     navigation?: AppNavigationEntry[];
     responseSchemas?: ResponseSchemaRoute[];
     locales?: Record<string, () => Promise<TranslationDictionaries>>;
-    mockHandlers?: () => Promise<HttpHandler[]>;
     mockSeeds?: {
         after?: string[];
         build: (context: MockSeedContext) => Promise<Partial<MockSeedData>>;
@@ -194,11 +193,6 @@ surfacing as a blank page on whichever navigation first crosses the gap.
 
 - `locales` — one chunk per locale per domain; a visitor downloads one language for the domains
   this build enables.
-- `mockHandlers` — a thunk, **and** written in each `module.ts` behind
-  `import.meta.env.VITE_API_MOCK_ENABLED === 'true' ? … : undefined`. Vite replaces that read with
-  a literal, so a production build drops the branch and everything reachable through it. `dist/`
-  contains no MSW and no handler code. **Do not refactor that ternary into a helper** —
-  passing the loader as an argument makes the chunk reachable again and the mock layer ships.
 - `responseSchemas` is eager: the http client needs the table before the first request.
 
 ## Adding and deleting a domain

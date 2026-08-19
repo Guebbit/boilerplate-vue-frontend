@@ -725,20 +725,6 @@ export default defineConfigWithVueTs(
     },
 
     /**
-     * The mock harness: the mock database is populated by whichever modules are enabled and is
-     * reset and journal-replayed mid-run, so its module-augmented types state intent, not
-     * runtime truth — `sampleShipments` is typed required by the module that owns it and still
-     * absent until that module's seeds land. `no-unnecessary-condition` would strip exactly the
-     * guards that keep a half-seeded database from crashing a spec.
-     */
-    {
-        files: ['src/**/mocks/**/*.ts', 'tests/support/mocks/**/*.ts'],
-        rules: {
-            '@typescript-eslint/no-unnecessary-condition': 'off'
-        }
-    },
-
-    /**
      * The linter's own config and the VitePress config: TypeScript, but outside the project
      * the type-aware program resolves against, so that program is switched off for them —
      * everything syntax-level still applies.

@@ -131,8 +131,8 @@ const assertRouteIsHealthy = (path: string, pageAnchor: string) => {
 
 describe('Resilience', () => {
     beforeEach(() => {
-        // Visit first: `cy.resetState()` posts to the mock backend's `/__mock/reset`, which needs
-        // the app (and therefore the service worker) to be running.
+        // Visit first so every case starts from a rendered app; the reset itself is a plain
+        // request to the demo backend and needs no page.
         cy.visit('/en');
         cy.resetState();
     });

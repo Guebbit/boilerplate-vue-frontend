@@ -13,7 +13,7 @@ the whole stack on one diagram. This page is about the code.
 :::
 
 ::: warning Run it in mock mode while you read
-`VITE_API_MOCK_ENABLED=true` and `npm run dev` gives you the whole storefront with no backend. Every
+`npm --prefix ../boilerplate-node-backend run demo` and `npm run dev` gives you the whole storefront in seconds. Every
 file below is easier to read with the app open beside it.
 :::
 
@@ -62,7 +62,7 @@ Twelve domains, one array. Identical in spirit to the backend's file of the same
 ### 3 · `src/kernel/registry.ts` — what a module *is*
 
 The thesis of the repository. A module is a **typed object** declaring: `routes`, `navigation`,
-`dependsOn`, `responseSchemas`, `locales`, and (dev only) `mockHandlers` + `mockSeeds`. The
+`dependsOn`, `responseSchemas` and `locales`. The
 `collect*` functions are how each of those reaches the system that consumes it.
 
 **Take away:** read the `collect*` exports before the validation logic. They are the map of
@@ -81,9 +81,8 @@ segment. Then three guards run in order: `localeChoice`, `tryRestoreAuth`, `enfo
 
 ~30 lines. **`products` is the reference module** — when you add a domain, copy this one.
 
-**Take away:** `mockHandlers` and `mockSeeds` are behind an
-`import.meta.env.VITE_API_MOCK_ENABLED === 'true'` check and dynamically imported, so mock code is
-absent from a production build.
+**Take away:** everything a module contributes is either lazy (routes, locales) or eager because
+the first request needs it (response schemas) — the manifest is the whole surface.
 
 ### 6 · `src/modules/products/routes.ts` — this domain's pages
 

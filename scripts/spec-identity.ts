@@ -66,7 +66,7 @@ export const siblingRole = (role: RepoRole): RepoRole =>
  * by requirement — either repo may legitimately change its own icon or formatting width, and a
  * gate that fails on that trains people to ignore it.
  *
- * FOUR OF THESE ARE PRODUCED IN THE BACKEND and copied here — the two specs, the demo dataset and
+ * THREE OF THESE ARE PRODUCED IN THE BACKEND and copied here — the two specs, the demo dataset and
  * the analytics names. The async contract is the one whose name differs in transit: it is
  * `asyncapi.public.yaml` there and lands as `asyncapi.yaml` here, because the shared subset is the
  * whole of the async contract as far as this repo is concerned. Every one of them covers every domain, so every one is produced there from
@@ -112,24 +112,6 @@ export const SHARED_FILES: readonly SharedFile[] = [
      * answered by `npm run check:asyncapi-types` inside each repo, with no sibling checkout to find
      * and no file to carry across.
      */
-
-    /*
-     * The demo dataset, as the API actually serves it. `npm run seed:export` in the backend seeds a
-     * throwaway database with the real seeders and records every row through the real serializers;
-     * this repo's MSW mocks load the result instead of rebuilding it.
-     *
-     * A fork here is the worst kind: both suites stay green, because each is consistent with its
-     * own copy, and the disagreement surfaces only when the real app meets the real API. Different
-     * paths on each side (published seed data vs test scaffolding), which is why a same-path check
-     * could never have covered it.
-     *
-     * This used to compare `db/seeds/seed-identities.ts` — a shared file of plain FACTS that each
-     * repo then mapped into its own shape. Identical facts could not stop the two MAPPERS from
-     * disagreeing, and they did: this repo's mock hand-wrote `active: true` and `verified: true` to
-     * mirror backend schema defaults, and carried no `locale` at all. Comparing the output closes
-     * that gap, because there is now only one mapper and it is the API's.
-     */
-    { backend: 'db/demo/demo-data.json', frontend: 'tests/support/mocks/demo-data.json' },
 
     /*
      * The four API client collections (`contract.<tool>.*` at the backend's root) are deliberately NOT here.

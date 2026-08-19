@@ -286,6 +286,9 @@ const handleExport = () =>
                     <td>
                         <v-text-field
                             :model-value="drafts[entry.id] ?? entry.value"
+                            :aria-label="
+                                t('locale-entries-page.value-field-label', { key: entry.key })
+                            "
                             density="compact"
                             hide-details
                             data-test="entry-value-field"

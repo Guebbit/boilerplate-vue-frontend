@@ -115,14 +115,15 @@ describe('SHARED_FILES', () => {
         expect(siblingRole(THIS_REPO)).toBe('backend');
     });
 
-    it('covers the contract, the demo dataset and the analytics names', () => {
+    it('covers the contract and the analytics names', () => {
         const frontendPaths = new Set(SHARED_FILES.map(({ frontend }) => frontend));
 
         expect(frontendPaths).toContain(OPENAPI);
         expect(frontendPaths).toContain(ASYNCAPI);
         expect(frontendPaths).toContain(SPECTRAL);
-        // The two that went unguarded until the list could hold differing paths.
-        expect(frontendPaths).toContain('tests/support/mocks/demo-data.json');
+        // The one that went unguarded until the list could hold differing paths. (The demo
+        // dataset left the list with the MSW mocks: the demo profile seeds from the backend's
+        // own fixtures, so there is no frontend copy left to compare.)
         expect(frontendPaths).toContain('src/infrastructure/observability/analytics-events.ts');
     });
 

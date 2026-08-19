@@ -3,7 +3,7 @@
  * (mock) email, the confirm actually moves the password, and both halves of the outcome are
  * proven at the login form — the old password stops working AND the new one starts.
  *
- * `cy.mockEmailTo` reads the `/__mock/emails` outbox, so these specs only mean something against
+ * `cy.demoEmailTo` reads the demo backend's `/__demo/emails` outbox, so these specs only mean something against
  * the mock profile; live, the email leaves through a real queue a browser cannot read.
  */
 describe('Password reset', () => {
@@ -14,7 +14,7 @@ describe('Password reset', () => {
     });
 
     it('the emailed link replaces the forgotten password', function () {
-        cy.skipUnlessMock();
+        cy.skipUnlessDemo();
 
         // ── Ask for the link ────────────────────────────────────────────────────────
         cy.visit('/en/password-reset');
@@ -26,7 +26,7 @@ describe('Password reset', () => {
         cy.contains('If the account exists').should('exist');
 
         // ── Open the email, follow the link ─────────────────────────────────────────
-        cy.mockEmailTo('gino@pino.it').then((email) => {
+        cy.demoEmailTo('gino@pino.it').then((email) => {
             expect(email.template).to.equal('account.reset-request.ejs');
             cy.visit(`/en/password-reset/confirm?token=${email.token}`);
         });
@@ -58,7 +58,7 @@ describe('Password reset', () => {
     });
 
     it('a token nobody was sent changes nothing', function () {
-        cy.skipUnlessMock();
+        cy.skipUnlessDemo();
 
         cy.visit('/en/password-reset/confirm?token=a-token-nobody-issued');
         cy.get('#password-reset-confirm-page [type=password]')

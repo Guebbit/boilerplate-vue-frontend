@@ -45,11 +45,6 @@ COPY . .
 
 # Everything the bundle needs to know, declared here and passed to `npm run build` below.
 #
-# `VITE_API_MOCK_ENABLED` has no ARG and is never set, deliberately. It stays undefined so that
-# `import.meta.env.VITE_API_MOCK_ENABLED === 'true'` is a compile-time false and the bundler drops
-# MSW, every module's mock handlers and the whole seeded fixture database from the output — see
-# `collectModuleMockHandlers` in `src/kernel/registry.ts`. A production image that ships the mock
-# backend is one env var away from serving fake products to real users.
 ARG VITE_API_URL
 ARG VITE_API_SSE
 ARG VITE_APP_BASE_URL

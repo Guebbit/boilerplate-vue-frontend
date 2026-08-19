@@ -4,7 +4,7 @@
  * is the one typed at the start — with the wrong one refused first, to prove the check is real.
  *
  * The arc deliberately crosses page reloads the way the real flow does: the verification link is
- * "opened from the inbox" (`cy.mockEmailTo` reads `/__mock/emails`), which is a fresh page load —
+ * "opened from the inbox" (`cy.demoEmailTo` reads the demo backend's `/__demo/emails`), which is a fresh page load —
  * the account journal in the account mock handlers is what carries the new user across it, the
  * same way the real database would.
  */
@@ -16,7 +16,7 @@ describe('Registration', () => {
     });
 
     it('a visitor signs up, spends the emailed token as a guest, and logs in verified', function () {
-        cy.skipUnlessMock();
+        cy.skipUnlessDemo();
 
         // ── Sign up ─────────────────────────────────────────────────────────────────
         cy.visit('/en/signup');
@@ -31,7 +31,7 @@ describe('Registration', () => {
         cy.get('#login-page').should('exist');
 
         // ── The verification email ──────────────────────────────────────────────────
-        cy.mockEmailTo('new.customer@example.com').then((email) => {
+        cy.demoEmailTo('new.customer@example.com').then((email) => {
             expect(email.template).to.equal('account.verify-request.ejs');
             expect(email.token, 'the emailed verification token').to.be.a('string');
             // Following the link is a fresh page load, as a guest — the token is the credential.
@@ -63,7 +63,7 @@ describe('Registration', () => {
     });
 
     it('an unverified account shows the banner until the emailed token is spent', function () {
-        cy.skipUnlessMock();
+        cy.skipUnlessDemo();
 
         cy.visit('/en/signup');
         cy.get('[type=email]').should('not.be.disabled').clear();
@@ -85,7 +85,7 @@ describe('Registration', () => {
         cy.get('[data-test=verify-banner]').should('exist');
 
         // Now open the signup email and spend its token; the banner goes.
-        cy.mockEmailTo('slow.reader@example.com').then(({ token }) => {
+        cy.demoEmailTo('slow.reader@example.com').then(({ token }) => {
             cy.visit(`/en/verify-email/confirm?token=${token}`);
         });
         cy.get('[data-test=verify-submit]').click();

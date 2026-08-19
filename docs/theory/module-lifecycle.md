@@ -68,8 +68,6 @@ src/modules/<name>/
     domain/                    pure business rules — lint-guaranteed framework-free
     response-schemas.ts         the envelope schemas for the endpoints it calls
     locales/{en,it}.json       its dictionaries
-    mocks/handlers.ts          MSW handlers
-    mocks/register.ts             the data those handlers answer with
     tests/*.spec.ts            unit specs — co-located, deleted with the module
     tests/e2e/*.cy.ts          Cypress specs for THIS domain only — likewise
 ```
@@ -142,18 +140,6 @@ placeholder glossary or a `domain/` folder in a generic module each fail a spec.
 
 The temptation is to fill them in later. Do not — the questions are easiest to answer while you
 still remember why you drew the boundary.
-
-::: danger Do not refactor the mock ternaries into a helper
-`mockHandlers` and `mockSeeds` are written inline behind
-`import.meta.env.VITE_API_MOCK_ENABLED === 'true' ? … : undefined`. Vite replaces that read with a
-literal, so a production build drops the branch and everything reachable through it — `dist/`
-contains no MSW and no handler code. Passing the loader to a helper makes the chunk
-reachable again and the entire mock layer ships to production.
-:::
-
-`mockSeeds.after` is a **separate graph** from `dependsOn`: the first is about fixtures (an order
-embeds a product snapshot), the second about code (`Cart.vue` calls `useOrdersStore`). A module can
-need another's data without importing a line of its code. Folding them would make both fields lie.
 
 ### 3 · The line
 

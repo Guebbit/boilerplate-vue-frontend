@@ -22,7 +22,7 @@ features:
     - title: Layers stay visible
       details: Views, composables, stores, generated API client, and HTTP interceptors each keep a small, clear job.
     - title: Tooling is part of the boilerplate
-      details: Grafana Faro, Umami, MSW mocking, Vitest, Cypress, and VitePress are all wired in as examples.
+      details: Grafana Faro, Umami, Vitest, Cypress, and VitePress are all wired in as examples.
     - title: Contract-first workflow
       details: openapi.yaml drives the generated axios client and Zod schemas. asyncapi.yaml drives the realtime types.
 ---
@@ -64,7 +64,7 @@ flowchart TD
 - **Realtime**: [SSE clients](./tools/realtime.md) driven by [`asyncapi.yaml`](./api/asyncapi-workflow.md).
 - **State**: [Pinia stores](./tools/state-and-routing.md) own data; views stay thin.
 - **Observability**: [Grafana Faro + Umami](./tools/observability.md) wired into a single store.
-- **Dev mocking**: [MSW](./tools/mocking.md) lets the app run without a backend.
+- **Dev backend**: [the demo profile](./tools/mocking.md) — the real API, in-memory and seeded, one command.
 - **Contracts**: [`openapi.yaml`](./api/openapi-workflow.md) + [`asyncapi.yaml`](./api/asyncapi-workflow.md).
 - **Shape**: layered code explained in [Theory](./theory/) and the dedicated [Layers](./theory/layers.md) page.
 

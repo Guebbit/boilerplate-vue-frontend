@@ -77,7 +77,8 @@
         "success-edit": "Saved.",
         "success-delete": "Entry removed.",
         "success-import": "Import done: {created} created, {updated} updated, {removed} removed. Now at revision {revision}.",
-        "error-merge-removed": "The merge reported deleted rows, which a merge must never do. Check the server."
+        "error-merge-removed": "The merge reported deleted rows, which a merge must never do. Check the server.",
+        "value-field-label": "Translation for {key}"
     },
     "entry-form": {
         "title": "Add an entry",

@@ -54,6 +54,22 @@ describe('Profile access', () => {
     });
 });
 
+/**
+ * "Another device" is a second real login, made server-side so the page's own refresh cookie —
+ * and which session counts as current — stays untouched (see cypress.config.ts).
+ */
+const loginFromAnotherDevice = () =>
+    cy
+        .env(['apiUrl'])
+        .then(({ apiUrl }) =>
+            cy.task('createSession', {
+                apiUrl: String(apiUrl),
+                email: 'gino@pino.it',
+                password: 'password'
+            })
+        )
+        .then((created) => expect(created, 'the second session').to.equal(true));
+
 describe('Profile self-service', () => {
     beforeEach(() => {
         cy.visit('/en');
@@ -100,11 +116,17 @@ describe('Profile self-service', () => {
 
     describe('sessions', () => {
         it('lists the live sessions with the current one flagged', () => {
+            loginFromAnotherDevice();
+            cy.reload();
+
             cy.get('[data-test=sessions-list] [data-test=session-item]').should('have.length', 2);
             cy.get('[data-test=session-current]').should('have.length', 1);
         });
 
         it('revokes another device and the list agrees', () => {
+            loginFromAnotherDevice();
+            cy.reload();
+
             cy.get('[data-test=session-item]')
                 .not(':has([data-test=session-current])')
                 .find('[data-test=session-revoke]')
@@ -116,23 +138,24 @@ describe('Profile self-service', () => {
     });
 
     describe('address book', () => {
-        it('starts empty and the first entry becomes the default', () => {
-            cy.get('[data-test=addresses-empty]').should('exist');
+        it('shows the seeded default and a new entry joins it without stealing the slot', () => {
+            // The dataset seeds ONE saved address — checkout picks it without asking — so the
+            // book never starts empty for the demo user.
+            cy.get('[data-test=address-item]').should('have.length', 1);
+            cy.get('[data-test=address-default]').should('have.length', 1);
 
             cy.get('[data-test=address-add]').click();
             fillAddress('home', 'Via Roma 1');
 
-            cy.get('[data-test=address-item]').should('have.length', 1);
+            cy.get('[data-test=address-item]').should('have.length', 2);
             cy.get('[data-test=address-default]').should('have.length', 1);
         });
 
         it('keeps exactly one default across promote and remove', () => {
             cy.get('[data-test=address-add]').click();
-            fillAddress('home', 'Via Roma 1');
-            cy.get('[data-test=address-add]').click();
             fillAddress('office', 'Via Milano 2');
 
-            // Two entries, still one default — the first one.
+            // The seeded entry plus the new one, still one default — the seeded one.
             cy.get('[data-test=address-item]').should('have.length', 2);
             cy.get('[data-test=address-default]').should('have.length', 1);
 
@@ -172,7 +195,7 @@ describe('Profile self-service', () => {
         it('the emailed token verifies the address and the banner goes', function () {
             // The outbox is the mock profile's; against the live backend the email is real
             // and unreadable from a browser.
-            cy.skipUnlessMock();
+            cy.skipUnlessDemo();
 
             // Unverify first, through the same email change a real user would make.
             cy.get('#profile-page [type=email]').should('have.value', 'gino@pino.it');
@@ -188,7 +211,7 @@ describe('Profile self-service', () => {
             cy.get('[data-test=verify-resend]').click();
             // The toast confirms the round trip landed, so the outbox read below cannot race it.
             cy.contains('Verification email sent').should('exist');
-            cy.mockEmailTo('fresh-address@example.com').then(({ token }) => {
+            cy.demoEmailTo('fresh-address@example.com').then(({ token }) => {
                 cy.visit(`/en/verify-email/confirm?token=${token}`);
             });
             cy.get('[data-test=verify-submit]').click();

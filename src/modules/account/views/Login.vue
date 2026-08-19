@@ -73,15 +73,6 @@ const {
 );
 
 /**
- * When the mock API is active, prefill the dummy user of the mock database
- */
-if (import.meta.env.VITE_API_MOCK_ENABLED === 'true')
-    form.value = {
-        email: 'root@root.it',
-        password: 'rootroot'
-    };
-
-/**
  * Validates the form and authenticates the user.
  *
  * @returns A promise resolving once the navigation settles: to the

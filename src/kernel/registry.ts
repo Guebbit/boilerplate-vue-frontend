@@ -17,7 +17,6 @@
 
 import type { Ref } from 'vue';
 import type { RouteRecordRaw } from 'vue-router';
-import type { HttpHandler } from 'msw';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 import type { TranslationDictionaries } from '@/infrastructure/i18n';
 
@@ -58,38 +57,6 @@ export interface AppNavigationEntry {
      * is fine here — the accessor runs inside component setup, after pinia is installed.
      */
     badge?: () => Ref<number | undefined>;
-}
-
-/**
- * The mock database's shape: one field per domain that contributes fixtures.
- *
- * Intentionally empty here. This is the extension point — each module declares its own slice by
- * augmenting this interface from `src/modules/<name>/mocks/register.ts`, exactly as the backend's
- * modules augment `IAuditActionMap`:
- *
- * ```ts
- * declare module '@/kernel/registry' {
- *     interface MockSeedData { sampleProducts: Product[]; }
- * }
- * ```
- *
- * Interface declaration merging ADDS members, so this type ends up holding precisely the fields
- * the enabled modules declare — and delete a module and its field leaves the type with it, which
- * turns every leftover `mockDatabase.sampleProducts` into a compile error rather than a silent
- * survivor. `npm run type-check-only` is the deletion test; there is no list to keep in step.
- *
- * The kernel therefore names no domain while still typing every read site exactly.
- */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- a declaration-merging seam: each module augments this map with its own seeds
-export interface MockSeedData {}
-
-/** What a module's slice builder is handed. */
-export interface MockSeedContext {
-    /**
-     * The slices already built, in `after` order. This is how a module that derives from another's
-     * fixtures reaches them without importing that module.
-     */
-    soFar: Partial<MockSeedData>;
 }
 
 /**
@@ -202,31 +169,6 @@ export interface AppModule {
      * visitor downloads one language, for the enabled domains only.
      */
     locales?: Record<string, () => Promise<TranslationDictionaries>>;
-
-    /**
-     * Loader for this domain's MSW request handlers, or `undefined` when the build has mocking
-     * off. See {@link collectModuleMockHandlers} for why it is a thunk and why each module
-     * declares it behind an `import.meta.env.VITE_API_MOCK_ENABLED` check rather than a helper.
-     */
-    mockHandlers?: () => Promise<HttpHandler[]>;
-
-    /**
-     * This domain's slice of the mock database — the data the handlers above answer *with*.
-     *
-     * `after` names the modules whose slices must exist before this one can build. It is a
-     * separate graph from {@link AppModule.dependsOn} and deliberately so: `dependsOn` is about
-     * code (`Order.vue` calls `useCartStore` to reorder), this is about fixtures (an order embeds a
-     * product snapshot). A module can need another's data without importing a line of its code, and
-     * folding the two would make both fields lie about one of their halves.
-     *
-     * Same thunk-plus-inline-env-ternary shape as `mockHandlers`, for the same bundling reason —
-     * see {@link collectModuleMockSeeds}.
-     */
-    mockSeeds?: {
-        /** Modules whose slices must be built first. Must stay a DAG. */
-        after?: string[];
-        build: (context: MockSeedContext) => Promise<Partial<MockSeedData>>;
-    };
 
     /**
      * Modules this one imports from, each with the shape of the relationship. Declared rather than
@@ -346,103 +288,6 @@ export const sortNavigation = (entries: AppNavigationEntry[]): AppNavigationEntr
  */
 export const collectModuleResponseSchemas = (appModules: AppModule[]): ResponseSchemaRoute[] =>
     appModules.flatMap((appModule) => appModule.responseSchemas ?? []);
-
-/**
- * Load the MSW handlers of every enabled module that has any.
- *
- * ── Why a thunk, and why the env check lives in each `module.ts` ──────────────────────────────
- * A manifest is imported on every page load, so a plain `mockHandlers: [...]` array would drag
- * MSW, the handler code and the whole seeded mock database into the main bundle of a production
- * build. Today none of that ships: `src/main.ts` guards its `import('@mocks/apiMock.ts')` with
- * `import.meta.env.VITE_API_MOCK_ENABLED === 'true'`, which Vite replaces with a literal so the
- * branch — and everything reachable only through it — is eliminated.
- *
- * Keeping that property is why the field is a `() => Promise<HttpHandler[]>` **and** why each
- * module writes the env ternary out in full instead of calling a shared helper. Passing the
- * loader to a helper would make the dynamic import reachable through the argument, and the
- * bundler would emit the chunk again. The repetition is load-bearing; `dist/` is the test.
- *
- * @param appModules - the enabled module list
- */
-export const collectModuleMockHandlers = (appModules: AppModule[]): Promise<HttpHandler[]> =>
-    // Parallel, not sequential; a module with no mocks stands in with an empty array.
-    Promise.all(
-        appModules.map((appModule) => appModule.mockHandlers?.() ?? Promise.resolve([]))
-    ).then((perModule) => perModule.flat());
-
-/**
- * Build the mock database by folding every contributing module's slice together.
- *
- * Sequential where `collectModuleMockHandlers` is parallel, and that is the whole point: a slice
- * may be DERIVED from an earlier one (an order embeds a product snapshot; a cart references a
- * product id), so each builder is handed everything built before it. `Promise.all` here would
- * hand `orders` an empty `soFar` and produce a dataset whose cross-references point nowhere.
- *
- * The order comes from each module's `mockSeeds.after`, not from `src/modules.ts` — that list is
- * alphabetical on purpose, which would run `cart` before `products`.
- *
- * @param appModules - the enabled module list
- */
-export const collectModuleMockSeeds = async (appModules: AppModule[]): Promise<MockSeedData> => {
-    const contributors = appModules.filter((appModule) => appModule.mockSeeds);
-    const byName = new Map(contributors.map((appModule) => [appModule.name, appModule]));
-
-    /*
-     * Depth-first topological walk, same shape as `validateModules`' cycle check: `visiting`
-     * catches a cycle and reports the pair, `visited` keeps each module to one build.
-     *
-     * An `after` naming a module that is absent is skipped rather than thrown on, because that is
-     * the normal state after deleting a domain — `orders` still says it comes after `products`,
-     * and with the catalogue gone there is simply nothing to wait for. A missing FIELD is what
-     * should fail, and the compiler already reports that.
-     */
-    const ordered: AppModule[] = [];
-    const visited = new Set<string>();
-    const visiting = new Set<string>();
-
-    const visit = (appModule: AppModule): void => {
-        if (visited.has(appModule.name)) return;
-        if (visiting.has(appModule.name))
-            throw new Error(
-                `Cycle in mockSeeds.after involving "${appModule.name}" — a fixture graph must be a DAG.`
-            );
-
-        visiting.add(appModule.name);
-        for (const dependency of appModule.mockSeeds?.after ?? []) {
-            const earlier = byName.get(dependency);
-            if (earlier) visit(earlier);
-        }
-        visiting.delete(appModule.name);
-
-        visited.add(appModule.name);
-        ordered.push(appModule);
-    };
-
-    for (const appModule of contributors) visit(appModule);
-
-    let soFar: Partial<MockSeedData> = {};
-    for (const appModule of ordered) {
-        const slice = await appModule.mockSeeds!.build({ soFar });
-
-        /*
-         * The one gap declaration merging cannot close: the augmentation is type-only, so at
-         * runtime there is no list of the fields a module PROMISED — the compiler knows them and
-         * erases them. What is checkable is that a module which declares `mockSeeds` at all
-         * contributed something, which catches the failure this leaves open (a module augments
-         * `MockSeedData`, returns nothing, and every read of its field is `undefined` at the
-         * first handler rather than at boot).
-         */
-        if (Object.keys(slice).length === 0)
-            throw new Error(
-                `Module "${appModule.name}" declares mockSeeds but contributed no fields.`
-            );
-
-        soFar = { ...soFar, ...slice };
-    }
-
-    // Sound by the check above plus the augmentations: every declared field has a contributor.
-    return soFar as MockSeedData;
-};
 
 /**
  * Group every enabled module's dictionary loaders by locale code, for

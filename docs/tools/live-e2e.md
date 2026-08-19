@@ -1,8 +1,8 @@
 # Live E2E (FE ↔ real backend)
 
-The mock profile ([Mocking](./mocking.md)) proves the frontend agrees with its own MSW handlers. It cannot prove those handlers agree with the real API — that gap is closed by running the same Cypress specs against a live, seeded backend instead.
+The demo profile ([The demo profile](./mocking.md)) runs the same API this one does, minus the infrastructure: in-memory Mongo, cache and queue disabled. What it cannot prove is full-stack behaviour — a real Redis, a real broker, a session cookie crossing a real network — and that gap is closed by running the same Cypress specs against the fully-composed backend instead.
 
-**This is the authoritative profile.** MSW is a convenience and is allowed to be wrong; when the two disagree, this one is right. This page documents it: when CI runs it, how to run it by hand, and what guards it.
+**This is the full-stack profile.** Both profiles run the real application; this one runs it with everything attached. This page documents it: when CI runs it, how to run it by hand, and what guards it.
 
 ## Where it runs, and where it does not
 
@@ -16,9 +16,9 @@ Three places:
 
 ## Why it gates rather than merely reports
 
-Because the alternative does not work. The mock suite can only prove the frontend agrees with the frontend's idea of the backend, and holding that idea accurate by review is a promise nothing enforces — see [Mocking](./mocking.md), "Why this promise is deliberately weak", for the failure it produced.
+Because cache- and queue-enabled behaviour is real behaviour: an invalidation bug or a queue-path regression is invisible to a profile that runs both `disabled`. The demo suite fails fast on ordinary regressions; this one is where the full stack answers.
 
-It costs what it costs: this profile needs both repos, a Mongo, a Redis and a seeded database, so it is minutes where the mock profile is seconds. The mock suite still runs first and still fails fast on ordinary regressions; this is the one whose verdict counts.
+It costs what it costs: this profile needs both repos, a Mongo, a Redis and a seeded database, so it is minutes where the demo profile is seconds-per-boot. The demo suite still runs first and still fails fast on ordinary regressions; this is the one that also exercises the infrastructure.
 
 What carries the weight in between:
 
@@ -82,7 +82,7 @@ Run `npm run check:spec-identity` alongside it when the pair has moved — a for
 
 ## `BACKEND_PATH`
 
-`cy.resetState()` shells out to the backend checkout for `host -- db:seed:reset` (see [Mocking](./mocking.md) and `tests/support/e2e/commands.ts`). Which checkout that is comes from `scripts/backend-path.ts`, which `cypress.config.ts` reads:
+`cy.resetState()` shells out to the backend checkout for `host -- db:seed:reset` (under the demo profile it POSTs the backend's in-process `/__demo/reset` instead — see `tests/support/e2e/commands.ts`). Which checkout that is comes from `scripts/backend-path.ts`, which `cypress.config.ts` reads:
 
 ```sh
 # default: a sibling checkout
@@ -96,7 +96,7 @@ The resolved value is always an absolute path, so `npm --prefix` errors name a r
 
 ## Response validation
 
-`orvalMutator` (`src/infrastructure/http/index.ts`) normally just unwraps `response.data`. Behind `VITE_VALIDATE_RESPONSES`, it additionally parses every response through the Zod schema matching its route (`src/infrastructure/http/response-schema-map.ts`, hand-mapped from `contracts/rest/index.ts`) and throws on a mismatch — the live-backend mirror of `assertMockContract` on the mock side, and of the backend's own `toSatisfyApiSpec()` contract tests.
+`orvalMutator` (`src/infrastructure/http/index.ts`) normally just unwraps `response.data`. Behind `VITE_VALIDATE_RESPONSES`, it additionally parses every response through the Zod schema matching its route (`src/infrastructure/http/response-schema-map.ts`, hand-mapped from `contracts/rest/index.ts`) and throws on a mismatch — the client-side mirror of the backend's own `toSatisfyApiSpec()` contract tests.
 
 - `test:e2e:live` sets it to `true` explicitly.
 - Otherwise it defaults to on for an actual `vite dev` server (`DEV` true) — so it also fires during ordinary local development against a live API — but off inside Vitest (`MODE === 'test'`), where plenty of unit tests exercise `orvalMutator` against deliberately partial fixtures.
@@ -112,7 +112,7 @@ That check used to live here, as a Cypress spec pinning seeded ids by hand. It r
 
 ## Live session refresh
 
-`src/modules/account/tests/e2e/auth.cy.ts` has one live-only case: it forces a single `401` on an otherwise-valid authenticated request and asserts the session survives. MSW is same-origin, in-page, and never exercises `withCredentials: true` carrying the refresh cookie across `:8085 → :3000` — this does, over a real network round-trip, without needing a test-only hook into Pinia state.
+`src/modules/account/tests/e2e/auth.cy.ts` has one live-only case: it forces a single `401` on an otherwise-valid authenticated request and asserts the session survives. It runs here rather than in the demo suite for history's sake more than necessity — both profiles now cross `:8085 → :3000` over a real network — and stays live-only so the case also covers the fully-composed stack.
 
 ## File map
 
@@ -121,7 +121,7 @@ That check used to live here, as a Cypress spec pinning seeded ids by hand. It r
 | `scripts/backend-path.ts` | `resolveBackendPath()`, read by `cypress.config.ts` |
 | `src/infrastructure/http/index.ts` | `orvalMutator`, `VITE_VALIDATE_RESPONSES` gate |
 | `src/infrastructure/http/response-schema-map.ts` | Route → Zod schema table `orvalMutator` validates against |
-| `src/modules/account/tests/e2e/auth.cy.ts` | Live session-refresh case (alongside the mock-profile auth specs) |
+| `src/modules/account/tests/e2e/auth.cy.ts` | Live session-refresh case (alongside the demo-profile auth specs) |
 | `tests/support/e2e/commands.ts` | `cy.resetState()`'s live branch, `cy.skipUnlessLive()` |
 | `cypress.config.ts` | `env.backendPath`, `env.apiMockEnabled` |
 
@@ -129,5 +129,5 @@ That check used to live here, as a Cypress spec pinning seeded ids by hand. It r
 
 - [Testing](./testing-and-docs.md) — suite overview
 - [Unit Testing](./unit-testing.md) — `httpValidateResponses.spec.ts` unit-tests the gate this page's response validation relies on
-- [Mocking (MSW)](./mocking.md) — the fixed-seed profile this one checks against
+- [The demo profile](./mocking.md) — the fast profile this one complements
 - [OpenAPI Workflow](../api/openapi-workflow.md)

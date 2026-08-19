@@ -189,7 +189,7 @@ this diagram exists to prevent.
 
 **Problem it solves.** Running the SPA without a backend requires either a running server or hardcoded mocks in component code. MSW intercepts at the transport layer so the real axios client and stores run unchanged.
 
-**In this repo.** Activated when `VITE_API_MOCK_ENABLED=true`. Handlers in `src/modules/<name>/mocks/` share an in-memory DB. Cypress e2e tests run with mocking enabled for determinism.
+**In this repo.** Used only in the transport-layer unit specs (`msw/node` stands in for a server). Dev and e2e run against the paired backend's demo profile instead — see [The demo profile](./mocking.md).
 
 → [Mocking (MSW)](./mocking.md)
 

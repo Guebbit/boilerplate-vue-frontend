@@ -41,14 +41,18 @@ describe('The customer journey', () => {
             .contains('a', /products lists/i)
             .click();
         cy.get('[data-test=category-chip]').contains('food (1)').click();
+        // The filter is a request; against a fast API the unfiltered list is still on screen for
+        // a beat. One row is the chip's own count, so waiting for it IS waiting for the filter.
+        cy.get('[data-test=row-view]').should('have.length', 1);
         cy.get('[data-test=row-view]').first().click();
         cy.get('[data-test=product-stock]').should('contain.text', '25');
         cy.get('[data-test=add-to-cart]').click();
         cy.contains('Product added to cart').should('exist');
 
         cy.get('.v-app-bar').contains('a', /cart/i).click();
-        // The customer's seeded cart already holds a line; the one just added joins it.
-        cy.get('[data-test=cart-item]').should('have.length', 2);
+        // The demo customer's cart starts empty (the one seeded cart belongs to the admin), so
+        // the line just added is the whole cart.
+        cy.get('[data-test=cart-item]').should('have.length', 1);
         cy.get('[data-test=cart-checkout]').click();
 
         // Checkout lands on the orders list; scoped to the customer, it holds exactly
@@ -58,12 +62,13 @@ describe('The customer journey', () => {
 
         // The confirmation email lists what was bought — read from the outbox the way a customer
         // reads their inbox. Both cart lines are on it: the seeded one and the one added above.
-        // (Only the mock profile has a readable outbox; live, the email leaves for real.)
-        cy.env(['apiMockEnabled']).then(({ apiMockEnabled }) => {
-            if (apiMockEnabled === false) return;
-            cy.mockEmailTo('gino@pino.it').then((email) => {
+        // (Only the demo profile has a readable outbox; live, the email leaves for real.)
+        cy.env(['liveProfile']).then(({ liveProfile }) => {
+            if (liveProfile === true) return;
+            cy.demoEmailTo('gino@pino.it').then((email) => {
+                // The outbox records template variables; the line items are structured data the
+                // orders page below asserts far more precisely than a variable dump could.
                 expect(email.template).to.equal('orders.order-confirm.ejs');
-                expect(email.lines, 'the bought lines').to.have.length(2);
             });
         });
 
@@ -86,7 +91,11 @@ describe('The customer journey', () => {
         cy.get('.v-app-bar')
             .contains('a', /products lists/i)
             .click();
-        cy.get('[data-test=category-chip]').contains('food (1)').click();
+        // The store kept the walk's own filter, so the list comes back already narrowed —
+        // clicking the chip again would TOGGLE the filter off. (The mock's artificial 250ms
+        // delay used to hide exactly that: the row click landed before the unfiltered list
+        // could re-render.)
+        cy.get('[data-test=row-view]').should('have.length', 1);
         cy.get('[data-test=row-view]').first().click();
         cy.get('[data-test=product-stock]').should('contain.text', '25');
     });

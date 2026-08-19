@@ -132,7 +132,6 @@ export default mergeConfig(
                     // domain takes its mock backend with it, but they are test doubles, not app
                     // code — exercised through Cypress and `mockHandlerParity.spec.ts`, and
                     // dead-code-eliminated from any production build.
-                    'src/modules/*/mocks/**',
                     'src/modules/*/tests/**' // co-located specs are not the thing being measured
                 ],
                 thresholds: {

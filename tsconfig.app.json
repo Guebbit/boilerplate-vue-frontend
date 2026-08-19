@@ -47,7 +47,6 @@
             // because a module's handlers now live in `src/modules/<name>/mocks/`, and
             // `../../../../tests/support/mocks/...` from there is both unreadable and brittle. One entry
             // here is also what makes relocating the mock layer a one-line change.
-            "@mocks/*": ["./tests/support/mocks/*"],
             "@api": ["./contracts/rest/index"],
             "@api/schemas": ["./contracts/rest/schemas.zod"]
         }

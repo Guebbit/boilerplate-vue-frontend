@@ -77,7 +77,8 @@
         "success-edit": "Salvato.",
         "success-delete": "Voce rimossa.",
         "success-import": "Import completato: {created} create, {updated} aggiornate, {removed} rimosse. Ora alla revisione {revision}.",
-        "error-merge-removed": "Il merge riporta righe eliminate, cosa che un merge non deve mai fare. Controlla il server."
+        "error-merge-removed": "Il merge riporta righe eliminate, cosa che un merge non deve mai fare. Controlla il server.",
+        "value-field-label": "Traduzione per {key}"
     },
     "entry-form": {
         "title": "Aggiungi una voce",

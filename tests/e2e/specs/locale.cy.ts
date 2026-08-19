@@ -102,9 +102,8 @@ describe('switching the language in place', () => {
 
 /**
  * Where a language choice LIVES, by audience: a guest's in the tab and its URL, a registered
- * visitor's on their account — written on the switch, read back and re-applied at the next
- * login. The mock PUT patches the user through the account journal, so the re-login below is
- * served the saved preference exactly as the live API would serve `user.locale`.
+ * visitor's on their account — written on the switch (`PUT /account`), read back from the
+ * whoami and re-applied at the next login.
  */
 describe('the saved preference', () => {
     beforeEach(() => {
@@ -114,21 +113,20 @@ describe('the saved preference', () => {
     });
 
     it("a guest's switch writes nothing to any account", function () {
-        cy.skipUnlessMock();
+        cy.skipUnlessDemo();
 
         cy.get('[aria-label="Language"]').first().click();
         cy.contains('.v-list-item-title', 'italian').click();
         cy.get('html').should('have.attr', 'lang', 'it');
 
-        // The account journal is where the mock records profile writes; a guest leaves none.
-        cy.window().then((windowObject) => {
-            const journal = windowObject.sessionStorage.getItem('mock_accountJournal') ?? '';
-            expect(journal).to.not.contain('"locale"');
-        });
+        // The proof a guest's switch wrote nothing: the account's saved preference still rules
+        // the next login. A guest write would have made the seed user Italian.
+        cy.loginAs('user');
+        cy.get('html').should('have.attr', 'lang', 'en');
     });
 
     it("a registered visitor's choice follows them to the next login", function () {
-        cy.skipUnlessMock();
+        cy.skipUnlessDemo();
 
         cy.loginAs('user');
         cy.get('[aria-label="Language"]').first().click();

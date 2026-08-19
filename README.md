@@ -14,7 +14,7 @@ Run `npm run docs:dev`, or read `docs/`.
 
 ```bash
 npm ci                    # install exactly the lockfile
-cp .env-example .env      # then set VITE_API_MOCK_ENABLED=true
+cp .env-example .env
 npm run dev               # http://localhost:8080
 ```
 
@@ -22,9 +22,13 @@ That gives you a browsable storefront — products, cart, orders, a signed-in us
 from the browser. MSW answers every request from a seeded in-memory database, so **no backend is
 required**.
 
-To run against the real API instead: start the backend stack, set `VITE_API_MOCK_ENABLED=false`
-and `VITE_API_URL=http://localhost:3000`, and check the backend's `NODE_CORS_ORIGIN` allows
-`http://localhost:8080`.
+The dev server expects the paired backend at `http://localhost:3000`. The lightest way to have one is its demo profile — the real API against an in-memory, seeded database, no Docker:
+
+```sh
+npm --prefix ../boilerplate-node-backend run demo
+```
+
+Or start the full stack (`compose`) for real Redis/queue behaviour.
 
 → Full setup, both modes, port map and the pre-commit gate: **[Getting Started](./docs/getting-started.md)**
 
@@ -38,7 +42,7 @@ flowchart LR
     GEN --> STORES["Pinia stores"]
     STORES --> VIEWS["Views"]
     VIEWS --> ROUTER["Vue Router<br/>locale-prefixed"]
-    MSW["MSW mock backend"] -.->|"dev / test only"| STORES
+    DEMO["Backend demo profile<br/>in-memory, seeded"] -.->|"dev / e2e"| STORES
 
     classDef spec fill:#dcfce7,stroke:#16a34a,color:#111827;
     classDef gen fill:#fef3c7,stroke:#d97706,color:#111827;
@@ -47,7 +51,7 @@ flowchart LR
     class SPEC spec;
     class GEN gen;
     class STORES,VIEWS,ROUTER app;
-    class MSW mock;
+    class DEMO mock;
 ```
 
 Four ideas carry the whole repository:
@@ -55,7 +59,7 @@ Four ideas carry the whole repository:
 1. **The contract is the source.** `openapi.yaml` and `asyncapi.yaml` come from the backend and
    generate the axios client, the Zod schemas and the realtime types. None of that is hand-written.
 2. **A module is a value, not a convention.** Every domain declares what it needs — routes,
-   navigation, locales, response schemas, mock handlers, fixtures — in one typed object.
+   navigation, locales, response schemas — in one typed object.
    `src/modules.ts` lists them. Adding a domain is one folder plus one line; removing it is
    `rm -rf` plus that line.
 3. **The app runs without its backend.** Mock mode is a first-class build, not a stub.

@@ -39,21 +39,14 @@ registerResponseSchemas(collectModuleResponseSchemas(enabledModules));
 registerLocaleContributors(collectModuleLocales(enabledModules));
 
 /**
- * Boots the Vue application: optional API mocking, plugin registration, mount,
+ * Boots the Vue application: plugin registration, mount,
  * then observability init and readiness signalling.
  *
  * @returns A promise resolving once the app is mounted, the initial navigation
  *  has resolved and `globalThis._appReady` has been set for test runners.
  */
 const bootstrapApplication = () =>
-    // Dynamic import so MSW and the mock handlers stay in a lazy chunk
-    // that is never downloaded when mocking is disabled.
-    (import.meta.env.VITE_API_MOCK_ENABLED === 'true'
-        ? import('../tests/support/mocks/apiMock.ts').then(({ initializeApiMocking }) =>
-              initializeApiMocking()
-          )
-        : Promise.resolve()
-    )
+    Promise.resolve()
         .then(() => {
             /*
              * Pinia is created and ACTIVATED before the fetch below, and installed on the app

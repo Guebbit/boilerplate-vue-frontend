@@ -20,7 +20,6 @@ flowchart TD
     Obs["Observability\nGrafana Faro + Umami\nsrc/infrastructure/stores/observability.ts"] --> Views
     Obs --> Router
 
-    MSW["MSW\nsrc/modules/*/mocks/ + tests/support/mocks/\ndev + test only"] -.intercepted by.-> HTTP
 
     classDef contract fill:#dcfce7,stroke:#16a34a,color:#111827;
     classDef generated fill:#fef3c7,stroke:#d97706,color:#111827;
@@ -34,7 +33,6 @@ flowchart TD
     class Stores,Views app;
     class Router,I18N nav;
     class Obs obs;
-    class MSW mock;
 ```
 
 ## What each block owns
@@ -42,7 +40,7 @@ flowchart TD
 | Block | Owns | Avoids |
 | ----- | ---- | ------ |
 | Contract layer | public request/event shapes — see [OpenAPI Workflow](../api/openapi-workflow.md) | hidden drift from implementation |
-| Generated layer | typed axios functions, Zod schemas, MSW stubs — all derived from `openapi.yaml` | hand-written duplicates |
+| Generated layer | typed axios functions, Zod schemas — all derived from `openapi.yaml` | hand-written duplicates |
 | HTTP layer | axios instance, request/response interceptors, error shaping into `IResponseReject` | business decisions |
 | Pinia stores | data fetching, caching, reactive state, API calls | direct DOM manipulation |
 | Views (platform + modules) | template rendering, UI composition, user events | data fetching logic |

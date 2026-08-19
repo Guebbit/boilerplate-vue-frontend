@@ -96,8 +96,6 @@ export default defineConfig(({ mode }) => ({
             // Shared mock helpers. A module's MSW handlers live beside the module and import
             // these; the alias keeps that import readable and relocatable. Everything behind it
             // is dev/test-only and is dead-code-eliminated from a production build — see the
-            // `VITE_API_MOCK_ENABLED` ternaries in `src/main.ts` and each `module.ts`.
-            '@mocks': fileURLToPath(new URL('tests/support/mocks', import.meta.url)),
             // '@api/schemas' must be declared before '@api': Vite matches a string alias
             // against both the exact key and `key + '/'` as a prefix, in declaration order,
             // so the shorter '@api' would otherwise shadow every '@api/schemas' import.

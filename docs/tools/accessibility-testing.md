@@ -54,7 +54,7 @@ Worth recording, because all five are **boilerplate** defects rather than demo-a
 | `color-contrast` ~2:1 | the "Forgot password?" link | It used `text-primary`. Brand `primary` is designed as a *background* with `on-primary` text over it; used as text on white it fails badly. A dedicated `link` colour now exists in both themes |
 | `color-contrast` 1.74:1 | table column headers, while loading | Vuetify dims the header row to `opacity: 0.38` for as long as `loading` is set. Undimmed — the loading bar is already the cue, and it is announced as well as drawn |
 
-The last one also made the suite **timing-dependent**: audit before the rows arrived and it failed, audit after and it passed, with nothing about the code having changed. A gate whose result depends on how fast a mock replied is not a gate, so this was a correctness fix as much as an accessibility one.
+The last one also made the suite **timing-dependent**: audit before the rows arrived and it failed, audit after and it passed, with nothing about the code having changed. A gate whose result depends on how fast the API replied is not a gate, so this was a correctness fix as much as an accessibility one.
 
 Two of these were only reachable at all after a bug in the shared `cy.visit()` override was fixed — until then most cases were quietly auditing the *previous* route. That story is in [Visual Regression](./visual-regression.md#the-bug-this-suite-found-in-the-test-harness), which is where it surfaced.
 
@@ -119,6 +119,6 @@ If you want to tighten the threshold, change `BLOCKING_IMPACTS` in the command �
 ## Related pages
 
 - [Visual Regression](./visual-regression.md) — the other layer that looks at the rendered page; it records appearance, this one judges it
-- [Mocking (MSW)](./mocking.md) — the profile these run against
+- [The demo profile](./mocking.md) — the backend these run against
 - [Component Testing](./component-testing.md) — the layer below, where markup is asserted directly
 - [Testing & Docs](./testing-and-docs.md) — the map

@@ -69,35 +69,6 @@ export default {
         }
     ],
     responseSchemas: cartResponseSchemas,
-    // Written out rather than delegated to a helper on purpose: `import.meta.env` is replaced by
-    // a literal at build time, so this ternary is what lets the bundler drop the mock chunk (and
-    // MSW with it) from a production build. See `collectModuleMockHandlers`.
-    mockHandlers:
-        import.meta.env.VITE_API_MOCK_ENABLED === 'true'
-            ? () =>
-                  import('./mocks/handlers').then(({ registerCartMockHandlers }) =>
-                      registerCartMockHandlers()
-                  )
-            : undefined,
-    /*
-     * The data those handlers answer with. Same inline-ternary rule as above, for the same reason:
-     * the fixtures must not reach a production bundle.
-     *
-     * `after: ['products']` is NOT the same statement as the `dependsOn` above, and the two lists
-     * differ on purpose: `dependsOn` is about code (this module mounts delivery's selector), while
-     * `after` is about data — a cart line points at a product, so the catalogue has to exist in
-     * the database, so it cannot run before products has contributed one.
-     */
-    mockSeeds:
-        import.meta.env.VITE_API_MOCK_ENABLED === 'true'
-            ? {
-                  after: ['products'],
-                  build: () =>
-                      import('./mocks/register').then(({ buildCartMockSeeds }) =>
-                          buildCartMockSeeds()
-                      )
-              }
-            : undefined,
     locales: {
         en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
         it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)

@@ -26,7 +26,7 @@ flowchart LR
         Fn --> HTTP
     end
 
-    Backend[("Backend\nor MSW")]
+    Backend[("Backend\n(demo or full stack)")]
     Resp(["Reactive\nstate update"])
 
     User --> Template
@@ -99,7 +99,6 @@ flowchart LR
 | Pinia store | Orchestrates API calls, holds reactive data, exposes actions |
 | Generated client (`contracts/rest/index.ts`) | Typed axios function per operation — regenerated from `openapi.yaml` |
 | `src/infrastructure/http/index.ts` | Single axios instance; request/response interceptors; shapes errors into `IResponseReject` |
-| MSW (dev/test) | Intercepts HTTP before it leaves the browser; returns deterministic in-memory responses |
 | Router guards | `tryRestoreAuth` then `enforceRouteAccess` (`beforeEach`), `localeChoice` (`beforeResolve`) — run before the view is entered; redirect on failure |
 
 ## Cross-cutting strategies
@@ -111,10 +110,6 @@ Route guards run on every navigation. A `401` during a guarded navigation redire
 ### Interceptors own error shape
 
 All HTTP errors flow through `src/infrastructure/http/index.ts` interceptors. Every failed request produces an `IResponseReject` envelope. Views and stores never parse raw axios errors.
-
-### Opt-in mocking
-
-When `VITE_API_MOCK_ENABLED=true`, MSW intercepts all HTTP before it reaches the network. The same store and view code runs unchanged — only the transport differs.
 
 ### Analytics always async
 

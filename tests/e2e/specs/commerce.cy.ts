@@ -91,17 +91,19 @@ describe('Commerce', () => {
         cy.get('[data-test=shipment-status]').should('contain.text', 'Shipped');
         // By template, not recipient: whichever seeded customer's order the admin shipped,
         // the tracking email carries the code the panel shows.
-        cy.window().then((windowObject) =>
-            windowObject
-                .fetch('/__mock/emails')
-                .then((response) => response.json())
-                .then((body: { data: { emails: { template: string; lines?: string[] }[] } }) => {
-                    const shipped = body.data.emails.find(
-                        ({ template }) => template === 'delivery.shipment-shipped.ejs'
-                    );
-                    expect(shipped, 'the shipped email in the outbox').to.not.equal(undefined);
-                    expect(shipped!.lines?.[0]).to.contain('TRK-');
-                })
+        cy.env(['apiUrl']).then(({ apiUrl }) =>
+            cy.request(`${String(apiUrl)}/__demo/emails`).then((response) => {
+                const { emails } = response.body as {
+                    emails: { template: string; lines?: string[] }[];
+                };
+                const shipped = emails.find(
+                    ({ template }) => template === 'delivery.shipment-shipped.ejs'
+                );
+                expect(shipped, 'the shipped email in the outbox').to.not.equal(undefined);
+                // Order-independent on purpose: the outbox records template variables, not rendered
+                // body lines, and their order is the template's business.
+                expect(shipped!.lines?.some((line) => line.includes('TRK-'))).to.equal(true);
+            })
         );
 
         // ── The courier is a button, and it works exactly once ──────────────────────

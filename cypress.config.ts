@@ -3,7 +3,7 @@
  *
  * ── Two profiles over one set of specs ───────────────────────────────────────────────────────
  * The specs do not know which backend they are talking to. `cy.resetState()` branches on the
- * `apiMockEnabled` flag, so the same file runs against MSW's in-memory database (the default) or
+ * `liveProfile` flag, so the same file runs against the demo backend (the default) or
  * against the real API — see the `test:e2e*` scripts.
  * A spec that only makes sense in one profile opens with `cy.skipUnlessLive()` rather than being
  * silently green in the other.
@@ -42,6 +42,18 @@ export default defineConfig({
          */
         setupNodeEvents(on) {
             on('task', {
+                /**
+                 * Opens a second session for the demo user, server-side: a plain Node fetch
+                 * carries no browser cookie jar, so the page's own refresh cookie — and with it
+                 * which session counts as "current" — is left untouched. The sessions specs use
+                 * it to make "another device" exist without pretending.
+                 */
+                createSession: ({ apiUrl, email, password }: Record<string, string>) =>
+                    fetch(`${apiUrl}/account/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    }).then((response) => response.ok),
                 compareVisualSnapshot: (options: Parameters<typeof compareSnapshot>[0]) =>
                     compareSnapshot(options),
 
@@ -126,11 +138,12 @@ export default defineConfig({
         env: {
             // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the env type declares the variable required, but a bare checkout has no .env to satisfy it
             apiUrl: viteEnvironment.VITE_API_URL ?? 'http://localhost:3000',
-            // Which profile the specs are running against. Defaults to the mock profile; the
-            // `test:e2e:live` script overrides it with CYPRESS_apiMockEnabled=false. Cypress maps
-            // any CYPRESS_* variable onto Cypress.env(), which is more predictable here than
-            // relying on loadEnv to have picked up a process-level override.
-            apiMockEnabled: true,
+            // Which profile the specs are running against. Defaults to the demo profile (a
+            // per-shard in-memory backend); `test:e2e:live` overrides it with
+            // CYPRESS_liveProfile=true. Cypress maps any CYPRESS_* variable onto Cypress.env(),
+            // which is more predictable here than relying on loadEnv to have picked up a
+            // process-level override.
+            liveProfile: false,
             // Only used by the live profile: `cy.resetState()` shells out to this checkout's
             // `host -- db:seed:reset` to restore the seed dataset between tests. `BACKEND_PATH` env
             // override, or a sibling-checkout default, always resolved to an absolute path — see

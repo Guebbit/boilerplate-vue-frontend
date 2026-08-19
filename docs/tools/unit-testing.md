@@ -80,7 +80,7 @@ const server = setupServer(
 
 ### Response-validation and mock-transport tests
 
-`tests/unit/infrastructure/http/httpValidateResponses.spec.ts` and `tests/unit/mocks/mockTransport.spec.ts` unit-test two small but load-bearing pieces built for [Live E2E](./live-e2e.md) and [Mocking](./mocking.md) respectively: `orvalMutator`'s `VITE_VALIDATE_RESPONSES` contract check, and the response builders every mock handler returns through. Each module's own slice of the mock database is asserted in `src/modules/<name>/tests/seeds.spec.ts`, and the properties belonging to no domain — that the fold runs, and runs in dependency order — in `tests/cross-cutting/mockSeedAssembly.spec.ts`.
+`tests/unit/infrastructure/http/httpValidateResponses.spec.ts` unit-tests the load-bearing piece behind both e2e profiles: `orvalMutator`'s contract check, which parses every response through its OpenAPI-derived Zod schema and rejects a 2xx that violates it.
 
 ## File map
 

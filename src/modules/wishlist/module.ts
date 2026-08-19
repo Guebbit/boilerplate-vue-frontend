@@ -33,31 +33,6 @@ export default {
     ],
     navigation: [{ name: 'Wishlist', label: 'navigation.label-wishlist', plural: 1, order: 75 }],
     responseSchemas: wishlistResponseSchemas,
-    // Written out rather than delegated to a helper on purpose: `import.meta.env` is replaced by
-    // a literal at build time, so this ternary is what lets the bundler drop the mock chunk (and
-    // MSW with it) from a production build. See `collectModuleMockHandlers`.
-    mockHandlers:
-        import.meta.env.VITE_API_MOCK_ENABLED === 'true'
-            ? () =>
-                  import('./mocks/handlers').then(({ registerWishlistMockHandlers }) =>
-                      registerWishlistMockHandlers()
-                  )
-            : undefined,
-    /*
-     * Same inline-ternary rule as `mockHandlers`: the fixtures must not reach a production
-     * bundle. `after: ['users', 'products']` is about data, not code — a saved line names a
-     * user and a product, so neither can be resolved before both exist.
-     */
-    mockSeeds:
-        import.meta.env.VITE_API_MOCK_ENABLED === 'true'
-            ? {
-                  after: ['users', 'products'],
-                  build: () =>
-                      import('./mocks/register').then(({ buildWishlistMockSeeds }) =>
-                          buildWishlistMockSeeds()
-                      )
-              }
-            : undefined,
     locales: {
         en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
         it: () => import('./locales/it.json').then(({ default: dictionary }) => dictionary)

@@ -97,7 +97,7 @@ flowchart TD
     B --> C["src/infrastructure/ (session, observability)\nsrc/modules/*/store.ts\nPinia stores"]
     C --> D["contracts/rest/index.ts\nGenerated axios client"]
     D --> E["src/infrastructure/http/index.ts\nAxios + interceptors"]
-    E --> F[("Backend\nor MSW")]
+    E --> F[("Backend\n(demo or full stack)")]
 
     classDef view fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef comp fill:#ddd6fe,stroke:#7c3aed,color:#111827;
@@ -128,7 +128,6 @@ flowchart TD
 | Locales | `src/locales/` (shared), `src/modules/*/locales/` (per domain) | vue-i18n message files, deep-merged per locale at boot |
 | Styles | `src/styles/` | global CSS (layer order, fonts) |
 | Types | `src/types/` | shared TS types, re-exports from `@api` |
-| MSW mocks | `src/modules/*/mocks/` (per domain), `tests/support/mocks/` (shared helpers) | dev + test HTTP interception |
 
 ## Where a component's logic goes
 

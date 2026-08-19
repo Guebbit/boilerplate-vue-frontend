@@ -13,24 +13,12 @@
  * mocks deliberately do not reproduce it (docs/tools/mocking.md, "Known gaps").
  */
 
-/** The path MSW hands back for an uploaded file. Mirrors `toMockUploadUrl`. */
-const MOCK_UPLOAD_PATH = /^\/images\/mock\/[\da-f]{32}\.(png|jpg|webp)$/;
-
 /**
- * The path the real API hands back — no `/mock/` segment, since nothing is pretending.
- *
- * Both shapes are needed because this file runs under BOTH profiles, and it stays that way rather
- * than being mock-only: the live half is what exercises the real multipart write, where a field
- * arriving as a string is a 422 no other suite can see.
+ * The path the API hands back for an uploaded file. One shape for both profiles now: the demo
+ * profile IS the real API, so the write is a real multipart write everywhere — a field arriving
+ * as a string is a 422 in every run of this suite, not only the live one.
  */
-const LIVE_UPLOAD_PATH = /^\/images\/[\da-f]{32}\.(png|jpg|jpeg|webp)$/;
-
-const uploadedImagePath = () =>
-    cy
-        .env(['apiMockEnabled'])
-        .then(({ apiMockEnabled }) =>
-            apiMockEnabled === false ? LIVE_UPLOAD_PATH : MOCK_UPLOAD_PATH
-        );
+const UPLOAD_PATH = /^\/images\/[\da-f]{32}\.(png|jpg|jpeg|webp)$/;
 
 /**
  * Asserts no locally-picked file is still sitting in the preview.
@@ -110,7 +98,7 @@ describe('Image upload', () => {
             cy.get('form').submit();
 
             cy.contains('Product updated successfully').should('exist');
-            uploadedImagePath().then((expectedPath) => {
+            cy.wrap(UPLOAD_PATH).then((expectedPath) => {
                 cy.get('img[alt="Image preview"]')
                     .should('have.attr', 'src')
                     .and((source) => {

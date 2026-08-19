@@ -4,9 +4,8 @@
  * Deliberately imports NOTHING from `@/modules` or `@/kernel`. A setup file is evaluated before
  * the spec module, so anything it imports is resolved and bound before a spec's hoisted
  * `vi.mock(...)` can register — which is exactly how the app's module graph, pulled in here to
- * build the mock database, made `vi.mock('@/infrastructure/http')` a no-op for the generated API
- * client. Specs that need a populated `mockDatabase` call `mockDatabaseReady()` themselves; see
- * `tests/support/unit/mockDatabaseReady.ts` for the full account.
+ * build the (since retired) mock database, once made `vi.mock('@/infrastructure/http')` a no-op
+ * for the generated API client.
  */
 
 // ResizeObserver — used by v-app-bar, v-number-input & friends

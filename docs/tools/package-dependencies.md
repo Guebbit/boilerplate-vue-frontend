@@ -23,7 +23,7 @@ Groups are organised by concern, with same-namespace tools together where that h
 | API codegen | `orval` | generate `contracts/rest/` from `openapi.yaml` | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | AsyncAPI codegen | `@asyncapi/cli`, `@asyncapi/modelina` | validate `asyncapi.yaml`; generate `src/types/asyncapi.generated.ts` | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 | OpenAPI linting | `@stoplight/spectral-cli`, `@stoplight/spectral-rulesets` | lint `openapi.yaml` against `spectral.yaml` | [OpenAPI Workflow](../api/openapi-workflow.md) |
-| Mocking | `msw` | MSW service worker + Node adapter for dev and tests | [Mocking (MSW)](./mocking.md) |
+| HTTP interception (unit tests) | `msw` | Node adapter standing in for a server in the transport-layer unit specs | [Unit testing](./unit-testing.md) |
 | Unit testing | `vitest`, `@vue/test-utils`, `jsdom` | unit test runner + Vue component mounting + DOM environment | [Testing](./testing-and-docs.md) |
 | E2E testing | `cypress`, `start-server-and-test` | browser e2e tests; boots Vite before running Cypress | [Testing](./testing-and-docs.md) |
 | Linting | `eslint`, `eslint-plugin-vue`, `typescript-eslint`, `eslint-plugin-unicorn`, `eslint-plugin-prettier`, `eslint-config-prettier`, `globals` | lint rules, Vue-aware + TS-aware parsing | [Testing](./testing-and-docs.md) |

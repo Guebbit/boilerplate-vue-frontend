@@ -174,7 +174,7 @@ npm run gen:api         # regenerate contracts/rest/ from openapi.yaml
 
 Orval can emit an MSW stub per operation, and `orval.config.ts` deliberately declares no `mocks` block. The stubs are stateless — no cart persistence, no login, no filtering — so they cannot stand in for the mock backend, and nothing here imported them.
 
-The mocks that actually run are the hand-written handlers in `src/modules/<name>/mocks/handlers.ts`, assembled in `tests/support/mocks/apiMock.ts` and populated from the demo dataset the paired backend publishes. Start a new one by copying the nearest existing handler: it already has the envelope, the schema check and the role scoping. Mirror the filtering and role-scoping rules of the backend service behind the endpoint where you reasonably can, and name the file you mirrored — but the mock is not what proves them. See [Mocking (MSW)](../tools/mocking.md) for what MSW does and does not promise, and the full handler workflow.
+There is no hand-written mock of the new endpoint to update: dev and e2e run against the paired backend's **demo profile** (`npm --prefix ../boilerplate-node-backend run demo`) — the real API against an in-memory, seeded database — so the new endpoint exists the moment the backend implements it. See [The demo profile](../tools/mocking.md).
 
 ## Useful links
 
