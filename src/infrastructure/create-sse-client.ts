@@ -64,7 +64,9 @@ export const createSseClient = (
     for (const eventName of eventNames) {
         eventSource.addEventListener(eventName, (event) => {
             const payload = parseJsonData((event as MessageEvent<string>).data);
-            if (!payload) return;
+            // `undefined` is `parseJsonData`'s failure signal; `null`, `0`, `false` and `""` are
+            // legitimate payloads.
+            if (payload === undefined) return;
 
             callbacks.onEvent?.(eventName, payload as SseEventPayload<typeof eventName>);
         });

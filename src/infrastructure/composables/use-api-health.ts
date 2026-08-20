@@ -18,8 +18,18 @@ export const useApiHealth = () => {
 
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
 
-    const probe = (): Promise<void> =>
-        getHealth()
+    /**
+     * Cancels the pending retry, if any. Called before every scheduling and on unmount, so there
+     * is exactly one retry chain however many `online` events arrive while the API is down.
+     */
+    const cancelRetry = () => {
+        if (retryTimer) clearTimeout(retryTimer);
+        retryTimer = undefined;
+    };
+
+    const probe = (): Promise<void> => {
+        cancelRetry();
+        return getHealth()
             .then(() => {
                 down.value = false;
             })
@@ -28,6 +38,7 @@ export const useApiHealth = () => {
                 // Retry only while down, and slowly — this is a banner, not a monitor.
                 retryTimer = setTimeout(() => void probe(), 30_000);
             });
+    };
 
     const handleOnline = () => void probe();
 
@@ -38,7 +49,7 @@ export const useApiHealth = () => {
 
     onUnmounted(() => {
         globalThis.removeEventListener('online', handleOnline);
-        if (retryTimer) clearTimeout(retryTimer);
+        cancelRetry();
     });
 
     return { down };
