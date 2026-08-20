@@ -11,6 +11,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { ArrowLeft, Download, Plus, Search, Upload } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { downloadBlob } from '@guebbit/js-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
@@ -174,15 +175,12 @@ const handleExport = () =>
         .fetchAllEntries(tag.value)
         .then((allEntries) => {
             const dictionary = expandEntries(allEntries ?? []);
-            const blob = new Blob([JSON.stringify(dictionary, undefined, 4)], {
-                type: 'application/json'
-            });
-            const url = URL.createObjectURL(blob);
-            const anchor = document.createElement('a');
-            anchor.href = url;
-            anchor.download = `${tag.value}.json`;
-            anchor.click();
-            URL.revokeObjectURL(url);
+            downloadBlob(
+                new Blob([JSON.stringify(dictionary, undefined, 4)], {
+                    type: 'application/json'
+                }),
+                `${tag.value}.json`
+            );
         })
         .catch((error: unknown) => notifyErrorMessages(addMessage, error));
 </script>
