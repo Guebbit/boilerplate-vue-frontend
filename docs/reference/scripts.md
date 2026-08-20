@@ -22,6 +22,19 @@ copy and not the other is how the two repos drift.
 | `scripts/check-spec-identity.ts` | Its CLI — `npm run check:spec-identity`. Degrades to a warning when the sibling is not on disk, because a half-cloned pair should still be able to commit, and is fatal under `CI` where a missing sibling means a misconfigured workflow. | [Contracts](./contracts.md) |
 | `scripts/gen-asyncapi-types.ts` | Generates `src/types/asyncapi.generated.ts` from `asyncapi.yaml`. **Byte-identical with the backend's copy** — change it in one repo and copy it to the other, or the outputs drift. What differs is the input, not the script. | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 
+## Module documentation
+
+| File | What it is | Read next |
+|---|---|---|
+| `scripts/gen-module-documentation.ts` | The CLI — `npm run docs:modules`, or `--check` in the gate. Boots a Vite dev server so the manifests load the way the app loads them, and resolves `pinia` through node so the stores it instantiates share one active instance. | [Modules](../modules/) |
+| `scripts/module-docs/facts.ts` | Reads every manifest, route record, store and response-schema row into the facts a page states. Nothing here is transcribed by hand. | [Modules](../modules/) |
+| `scripts/module-docs/blocks.ts` | Renders the eight generated blocks of one module page. Mirrors the backend's copy on the idea: **State** is a store instead of a collection, **Screens** are routes instead of endpoints. | [Modules](../modules/) |
+| `scripts/module-docs/overview.ts` | Renders the whole-map blocks — the context map, the legend, the matrix, the pairing table — plus the route table on [Sitemap](../theory/sitemap.md). | [Modules](../modules/) |
+| `scripts/module-docs/shapes.ts` | The catalogue of file shapes a module folder may contain. A file matching none of them fails `check:module-docs` by name, which is what stops a new shape being invisible. | [File Glossary — Modules](./src-modules.md) |
+| `scripts/module-docs/pairing.ts` | Which **backend** module each domain here answers, or a sentence saying why none does. The only file in this repo that names a domain on the other side. | [Modules](../modules/index.md#the-two-repositories) |
+| `scripts/module-docs/subpages.ts` | The sub-pages a module has earned. Declared rather than discovered, so a declared page that was never written is a failure rather than a gap. | [Modules](../modules/) |
+| `scripts/module-docs/index.ts` | Assembles the pages, runs them through prettier so the generator is the file's only writer, and holds the result to five coverage rules. | [Adding & removing a module](../theory/module-lifecycle.md) |
+
 ## Running the real backend
 
 | File | What it is | Read next |

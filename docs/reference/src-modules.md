@@ -11,6 +11,16 @@ paired backend uses, so a domain is added or removed on both sides the same way.
 
 ---
 
+::: tip This page explains shapes. For a domain, read its page.
+Everything below describes a **file shape** — what a `store.ts` is, wherever you find one. What each
+domain does with those shapes, which of them it carries, and what it owns is on its own page under
+[Modules](../modules/).
+
+The shapes below are also enforced. `scripts/module-docs/shapes.ts` holds the same catalogue in code,
+and `npm run check:module-docs` fails on a file in a module folder that matches none of them — so a
+new shape costs one line here and one there, and stops being invisible.
+:::
+
 ## The shape of one module
 
 ```mermaid
@@ -75,29 +85,11 @@ Every module also carries `src/modules/*/tests/` — its own unit, component and
 catalogued on [Tests](./tests.md), with the rest of the suite.
 :::
 
-## The fourteen modules
+## Which module carries which
 
-**Extras** lists the optional shapes above that each module carries. Nothing asserts it, so it is
-the row most likely to go quietly wrong — a module that gains a `guards.ts` and does not gain the
-word here simply reads as not having one. Re-derive it rather than trusting it:
+Per-module answers live on the [Modules](../modules/) pages, one per domain, and the whole set is
+[the matrix on its overview](../modules/index.md#every-module).
 
-```bash
-ls src/modules/<name>
-```
-
-| Module | What it owns | Extras |
-|---|---|---|
-| `src/modules/account/module.ts` | Sign-up, sign-in, the session's own screens and the profile the visitor edits. | components |
-| `src/modules/admin/module.ts` | The admin shell: the dashboard, and the screens that are about operating the shop rather than shopping in it. Owns no store — each domain's own store backs its admin screens. | components · composables · types |
-| `src/modules/cart/module.ts` | The cart: its contents, its totals, and the checkout entry point. | index · domain |
-| `src/modules/delivery/module.ts` | Shipping methods and their prices, as the checkout presents them. Declares no routes — it contributes to another domain's screens. | index · components |
-| `src/modules/demo/module.ts` | The playground: a route that demonstrates the boilerplate's own mechanisms rather than a shop feature. | components · guards |
-| `src/modules/feedback/module.ts` | The contact form, open to visitors with no account. | — |
-| `src/modules/inventory/module.ts` | Stock levels as the catalogue and the admin screens display them. | — |
-| `src/modules/locales/module.ts` | Which languages this deployment offers, and the admin screens that edit the dictionaries at runtime. | components · dictionaries |
-| `src/modules/orders/module.ts` | Placed orders: the visitor's own history, and the admin's view of everyone's. | schemas |
-| `src/modules/payments/module.ts` | The payment step of a checkout. Declares no routes — it renders inside the cart's flow. | index · components · composables |
-| `src/modules/products/module.ts` | The catalogue: listing, detail, search, and the admin's write screens. | index · schemas |
-| `src/modules/realtime/module.ts` | The live observability feed, and the typed SSE subscription behind it. | — |
-| `src/modules/users/module.ts` | The admin's user management screens. | index · schemas |
-| `src/modules/wishlist/module.ts` | The saved-items list and its entry points from the catalogue. | index |
+Both are generated from the manifests rather than transcribed, which is the reason they are there and
+not here: a module that gains a screen or a store gains the row on the next `npm run docs:modules`,
+and `npm run check:module-docs` fails while it has not.

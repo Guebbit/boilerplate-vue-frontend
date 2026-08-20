@@ -1,5 +1,9 @@
 # The demo profile
 
+::: tip Mechanism here, domain on its module page
+The seeded backend, the profile and the commands are here. The `demo` **module** — the client-side showroom, and the only module in either repository with no backend counterpart — is on [its module page](../modules/demo.md).
+:::
+
 Development and the fast e2e suite run against the paired backend's **demo profile** — the real API, booted self-contained and disposable:
 
 ```sh

@@ -46,6 +46,7 @@ flowchart TD
     A --> F[nuxt-spa\nNuxt variant]
 
     B --> T[Theory]
+    B --> M[Modules]
     B --> U[Tools]
     B --> V[API]
 
@@ -54,7 +55,7 @@ flowchart TD
     classDef docs fill:#dbeafe,stroke:#2563eb,color:#111827;
     class A,C,D,E,F family;
     class B current;
-    class T,U,V docs;
+    class T,M,U,V docs;
 ```
 
 ## Read this repo as
@@ -68,11 +69,17 @@ flowchart TD
 - **Contracts**: [`openapi.yaml`](./api/openapi-workflow.md) + [`asyncapi.yaml`](./api/asyncapi-workflow.md).
 - **Shape**: layered code explained in [Theory](./theory/) and the dedicated [Layers](./theory/layers.md) page.
 
-## Four sections, four jobs
+## Five sections, five jobs
 
 ### [Theory](./theory/)
 
 Big picture: architecture, layers, request flow, and sitemap.
+
+### [Modules](./modules/)
+
+One page per domain, top to bottom: what it owns, who depends on it, its store surface, its screens,
+and every endpoint it calls.
+Start at [the whole map](./modules/) — fourteen domains grouped by subdomain, every node clickable.
 
 ### [Tools](./tools/)
 
@@ -120,6 +127,7 @@ flowchart LR
 ## Good starting points
 
 - Want the app shape? Start at [Theory Overview](./theory/) and [Layers](./theory/layers.md).
+- Want to know what one domain does, end to end? [Modules](./modules/) — one page each, same nine blocks every time.
 - Want a specific dependency? Start at [Tools](./tools/) and jump to the tool page you need.
 - Want the `package.json` map? Read [Package Dependencies](./tools/package-dependencies.md) and [Package Scripts](./tools/package-scripts.md).
 - Want to understand the sitemap and route guards? Read [Sitemap & Access Control](./theory/sitemap.md).

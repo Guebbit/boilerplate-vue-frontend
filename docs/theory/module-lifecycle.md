@@ -13,7 +13,7 @@ That claim is measured, not asserted — a scaffold module was added under it an
 deleted under it. What each one actually cost is recorded below, including the parts that are not
 one line.
 
-## One registry, and only one
+## Two registries — one for the code, one for the docs
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 40, 'rankSpacing': 45}}}%%
@@ -31,13 +31,20 @@ flowchart LR
 ```
 
 Every one of those five reads the registry and never names an entry, so none of them appears in
-either checklist. **`src/modules.ts` is the whole registry story on this side** — unlike the backend,
-which also owns the contract fragments and their section lists. Here the contract is *consumed*:
+either checklist. **`src/modules.ts` is the whole runtime registry on this side** — unlike the
+backend, which also owns the contract fragments and their section lists. Here the contract is
+*consumed*:
 `openapi.yaml` arrives from the paired backend, and `contracts/rest/schemas.zod.ts` and `api/` are
 generated from it.
 
 That asymmetry is the single most important thing to know before deleting anything — see
 [the contract is not ours alone](#the-contract-is-not-ours-alone).
+
+The second registry is documentation, not runtime: `scripts/module-docs/pairing.ts` names the
+**backend** module each domain here answers, or a sentence saying why none does.
+`npm run check:module-docs` fails on a missing entry, which is what stops the FE/BE gap from
+widening unnoticed — and it is the only file in this repository that names a domain on the other
+side.
 
 ---
 
@@ -47,10 +54,13 @@ That asymmetry is the single most important thing to know before deleting anythi
 %%{init: {'flowchart': {'nodeSpacing': 40, 'rankSpacing': 45}}}%%
 flowchart LR
     A["1 · mkdir src/modules/&lt;name&gt;/<br/>write module.ts"] --> B["2 · one line in<br/>src/modules.ts"]
-    B --> C["3 · npm run build<br/>npm run test:unit"]
-    C --> D["✅ routed · navigated · translated<br/>· validated · mocked"]
+    B --> P["3 · npm run docs:modules<br/>then write two sections"]
+    P --> C["4 · npm run build<br/>npm run test:unit"]
+    C --> D["✅ routed · navigated · translated<br/>· validated · documented"]
     classDef s fill:#dcfce7,stroke:#16a34a,color:#111827;
+    classDef d fill:#ede9fe,stroke:#7c3aed,color:#111827;
     class A,B,C,D s;
+    class P d;
 ```
 
 ### 1 · The folder
@@ -149,7 +159,27 @@ export const enabledModules: AppModule[] = [account, admin, cart /* … */, widg
 Keep the array alphabetical. Order only decides the sequence route records are spliced in, which
 vue-router's own ranking makes irrelevant for distinct paths.
 
-### 4 · Check
+### 4 · The page
+
+```bash
+npm run docs:modules
+```
+
+The generator creates `docs/modules/<name>.md` from the template and fills its eight generated
+blocks from the manifest, the route records, the store and the response-schema rows. Two sections
+are left for you:
+
+- the **At a glance** box — what it owns, what it depends on, what breaks if you change it
+- **The story** — why the domain exists, the decisions that are not obvious from the code, the traps
+
+Then add the entry to `BACKEND_PAIRING` in `scripts/module-docs/pairing.ts`, and the page to the
+`/modules/` sidebar in `docs/.vitepress/config.mts`. `npm run check:module-docs` fails until the
+pairing entry exists.
+
+If the domain carries a file shape no other module has, add one line to
+`scripts/module-docs/shapes.ts` describing it — the same check fails on a shape nothing documents.
+
+### 5 · Check
 
 ```bash
 npm run build          # vue-tsc + vite build
@@ -174,6 +204,7 @@ A scaffold `events` module, measured:
 | ------------------------------------------------ | ------------------------------------------------------------- |
 | files added                                      | 5 (`module.ts`, `routes.ts`, one view, `locales/{en,it}.json`) |
 | lines changed elsewhere                          | 2, both in `src/modules.ts` (the import and the array entry)  |
+| documentation written by hand                    | two sections of one page — the other eight blocks are generated |
 | existing files needing an edit to accommodate it | **0**                                                         |
 | result                                           | type-check, lint and the unit suite green; the view built into its own lazy chunk |
 
@@ -185,17 +216,26 @@ A scaffold `events` module, measured:
 %%{init: {'flowchart': {'nodeSpacing': 40, 'rankSpacing': 45}}}%%
 flowchart LR
     A["1 · rm -rf<br/>src/modules/&lt;name&gt;/"] --> B["2 · delete its line<br/>from src/modules.ts"]
-    B --> C["3 · npm run complete"]
+    B --> P["3 · delete its page<br/>and its two registry entries"]
+    P --> C["4 · npm run complete"]
     C --> D["whatever fails is<br/><b>real coupling</b>"]
     classDef s fill:#fee2e2,stroke:#dc2626,color:#111827;
+    classDef d fill:#ede9fe,stroke:#7c3aed,color:#111827;
     class A,B,C,D s;
+    class P d;
 ```
 
 ```bash
 rm -rf src/modules/<name>
 # delete the import and the array entry in src/modules.ts
+rm docs/modules/<name>.md
+# and any sub-pages declared for it in scripts/module-docs/subpages.ts
 npm run complete
 ```
+
+Then drop its entry from `BACKEND_PAIRING`, its sub-pages from `SUB_PAGES`, and its sidebar entries
+from `docs/.vitepress/config.mts`. `npm run check:module-docs` reports each of those independently,
+by name, so there is no order to get right — run it and work the list.
 
 Deleting a module named in another module's `dependsOn` throws while the router assembles, with the
 offending name in the sentence — not a blank page on whichever navigation first crosses the gap.
@@ -324,6 +364,8 @@ a DAG with no unknown or duplicate name, every module ships the same set of loca
 naming a domain. That is not a substitute for actually deleting a folder.
 
 ## Related pages
+
+- [Modules overview](../modules/) — the fourteen pages this procedure adds to and removes from
 
 - [Modules](./modules.md) — why the shape is what it is
 - [Layers](./layers.md) — the folder map

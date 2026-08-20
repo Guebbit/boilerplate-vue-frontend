@@ -1,5 +1,9 @@
 # Admin Dashboard
 
+::: tip Mechanism here, domain on its module page
+The panels, the refresh behaviour and the metric definitions are here. What the `admin` **module** is — its five reads, the shapes it assembles, and why it is built to be deleted — is on [its module page](../modules/admin.md) and [The dashboard](../modules/admin-dashboard.md).
+:::
+
 Route: `/:locale/admin`. Requires the admin role — non-admins are redirected Home by the route's
 `meta.access`, not by a check inside the component. See
 [Sitemap & Access Control](../theory/sitemap.md).

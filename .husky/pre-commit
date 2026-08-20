@@ -26,7 +26,12 @@
 # would pass against content that is not what gets committed. Note this widens a partial
 # `git add -p` to include the whole regenerated output — which is what you want for a generated
 # file, and a surprise exactly once.
+#
+# `docs/modules/` and `docs/theory/sitemap.md` are on the list for the same reason `contracts/` is:
+# `regenerate` ends with `docs:modules`, which rewrites the generated blocks of every module page
+# and the app-wide route table from the manifests. Leave them off and `check:module-docs` verifies a
+# working tree that is fresher than the commit — green gate, stale pages.
 npm run regenerate
-git add contracts src/types/asyncapi.generated.ts
+git add contracts src/types/asyncapi.generated.ts docs/modules docs/theory/sitemap.md
 
 npm run complete

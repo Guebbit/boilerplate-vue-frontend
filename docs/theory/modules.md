@@ -148,6 +148,13 @@ This is the single most surprising thing in the codebase, and the thing most lik
 that exercises either subsystem without doing the same wiring silently measures an app with no
 domain vocabulary and no contract validation. `tests/support/unit/wire-modules.ts` exists for that.
 
+::: tip The live version of this map
+The diagrams on this page explain the **rules**. The context map as it stands — every edge, labelled
+with its relationship and its reason, generated from the manifests — is
+[the map on the Modules overview](../modules/index.md#the-whole-map), and every node there links to
+the domain's own page.
+:::
+
 ## The manifest
 
 A module is a value, not a convention. Everything the application does *for* a domain is declared
@@ -264,6 +271,8 @@ dead links most of all. The procedure is
 :::
 
 ## Related pages
+
+- [Modules overview](../modules/) — the fourteen domains, one page each
 
 - [Adding & removing a module](./module-lifecycle.md) — the procedure, with the commands
 - [Layers](./layers.md) — the folder map

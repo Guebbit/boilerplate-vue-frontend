@@ -34,6 +34,7 @@ All four expand to `${CONTAINER_ENGINE:-podman} compose`. Export `CONTAINER_ENGI
 | `prettier` / `prettier:fix` | Prettier check or rewrite | [Testing](./testing-and-docs.md) |
 | `check:asyncapi-types` | Fail if `src/types/asyncapi.generated.ts` is not what `asyncapi.yaml` generates; writes nothing | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 | `check:spec-identity` | Compare the shared contract files against the paired backend; skips when it is not on disk, fatal under CI | [Testing](./testing-and-docs.md) |
+| `check:module-docs` | Fail on a stale module page, an undocumented file shape, a module with no page, a page with no module, or a missing cross-repo pairing entry | [Modules](../modules/) |
 | `complete` | the gate: lint + both spec lints + generated-types freshness + prettier:check + spec identity + build + tests | [Testing](./testing-and-docs.md) |
 | `complete:fix` | the same gate, with lint and formatting fixed rather than reported | [Testing](./testing-and-docs.md) |
 | `complete:manual` | what the gate cannot run for you: `test:e2e:visual` + `test:e2e:live` | [Testing](./testing-and-docs.md) |
@@ -58,7 +59,7 @@ All four expand to `${CONTAINER_ENGINE:-podman} compose`. Export `CONTAINER_ENGI
 
 | Script | Job | Read more |
 | ------ | --- | --------- |
-| `regenerate` | **After every pull.** `gen:api`, then `gen:asyncapi`, then `prettier:fix` — the whole client rebuilt from the specs the backend handed over | [OpenAPI Workflow](../api/openapi-workflow.md) |
+| `regenerate` | **After every pull.** `gen:api`, `gen:asyncapi`, `docs:modules`, then `prettier:fix` — the whole client and the module pages rebuilt from the specs the backend handed over | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | `gen:api` | Regenerate `contracts/rest/` from `openapi.yaml` via orval | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | `gen:asyncapi` | Regenerate `src/types/asyncapi.generated.ts` from `asyncapi.yaml` | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
 | `check:asyncapi-types` | The same generation, compared instead of written — the freshness gate | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
@@ -76,6 +77,7 @@ Generated output is committed. CI regenerates and fails if the result differs, s
 | `docs:dev` | Local VitePress authoring server | [Testing](./testing-and-docs.md) |
 | `docs:build` | Build the docs site for production | [Testing](./testing-and-docs.md) |
 | `docs:preview` | Preview the built docs site | [Testing](./testing-and-docs.md) |
+| `docs:modules` | Rewrite the generated blocks of every module page from the manifests, route records and stores | [Modules](../modules/) |
 
 ## Related pages
 

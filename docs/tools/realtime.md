@@ -1,5 +1,9 @@
 # Realtime (SSE)
 
+::: tip Mechanism here, domain on its module page
+The SSE client, its reconnection behaviour and the generated event types are here. What the `realtime` **module** is — one screen, one store, and why the transport is not part of it — is on [its module page](../modules/realtime.md).
+:::
+
 The boilerplate exposes one realtime transport — Server-Sent Events — driven by contracts in `asyncapi.yaml` and demonstrated in the `RealtimePlayground` view (`/:locale/playground/realtime`).
 
 `asyncapi.yaml` here is the SHARED half of the backend's async contract: its `asyncapi.public.yaml`,
