@@ -8,6 +8,14 @@
 export const SIGN_IN_ROUTE_NAME = 'Login';
 
 /**
+ * The route the app shell offers a visitor who has no account yet.
+ *
+ * Same rule as {@link SIGN_IN_ROUTE_NAME}: the account module declares it, so callers ask
+ * `router.hasRoute(SIGN_UP_ROUTE_NAME)` before offering it.
+ */
+export const SIGN_UP_ROUTE_NAME = 'Signup';
+
+/**
  * Builds a location pointing at the login page, remembering where the user was
  * headed so they can be sent back after authenticating.
  *

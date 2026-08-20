@@ -7,7 +7,11 @@ import { storeToRefs } from 'pinia';
 import { Menu, Moon, Sun, UserRound } from 'lucide-vue-next';
 import AppLanguageSwitcher from '@/app/components/AppLanguageSwitcher.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
-import { loginContinueTo, SIGN_IN_ROUTE_NAME } from '@/app/router/navigation.ts';
+import {
+    loginContinueTo,
+    SIGN_IN_ROUTE_NAME,
+    SIGN_UP_ROUTE_NAME
+} from '@/app/router/navigation.ts';
 import { canAccess } from '@/app/guards/authentications.ts';
 import { useSessionStore } from '@/infrastructure/stores/session.ts';
 import { collectModuleNavigation, sortNavigation } from '@/kernel/registry';
@@ -61,7 +65,7 @@ const shellNavEntries: AppNavigationEntry[] = [
  * assuming. A build with no account module simply shows no auth buttons.
  */
 const hasSignIn = computed(() => router.hasRoute(SIGN_IN_ROUTE_NAME));
-const hasSignUp = computed(() => router.hasRoute('Signup'));
+const hasSignUp = computed(() => router.hasRoute(SIGN_UP_ROUTE_NAME));
 
 const navEntries = sortNavigation([...shellNavEntries, ...collectModuleNavigation(enabledModules)]);
 
@@ -168,7 +172,7 @@ const toggleTheme = () => {
 
                 <v-btn
                     v-if="hasSignIn"
-                    v-show="!isAuth && !route.fullPath.includes('login')"
+                    v-show="!isAuth && route.name !== SIGN_IN_ROUTE_NAME"
                     variant="text"
                     @click="router.push(routerLinkI18n(loginContinueTo(route.fullPath)))"
                 >
@@ -176,10 +180,10 @@ const toggleTheme = () => {
                 </v-btn>
                 <v-btn
                     v-if="hasSignUp"
-                    v-show="!isAuth && !route.fullPath.includes('signup')"
+                    v-show="!isAuth && route.name !== SIGN_UP_ROUTE_NAME"
                     color="primary"
                     class="hidden sm:inline-flex"
-                    @click="router.push(routerLinkI18n({ name: 'Signup' }))"
+                    @click="router.push(routerLinkI18n({ name: SIGN_UP_ROUTE_NAME }))"
                 >
                     {{ t('navigation.label-signup') }}
                 </v-btn>
@@ -234,7 +238,7 @@ const toggleTheme = () => {
             <v-list-item
                 v-if="!isAuth && hasSignUp"
                 color="primary"
-                @click="router.push(routerLinkI18n({ name: 'Signup' }))"
+                @click="router.push(routerLinkI18n({ name: SIGN_UP_ROUTE_NAME }))"
             >
                 <v-list-item-title>{{ t('navigation.label-signup') }}</v-list-item-title>
             </v-list-item>

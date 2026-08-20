@@ -41,6 +41,9 @@ const session = {
  */
 const registeredRoutes = ref<string[]>(['Login', 'Signup']);
 
+/** The route the visitor is currently on, as `useRoute()` reports it. */
+const currentRoute = ref<{ name?: string; fullPath: string }>({ fullPath: '/' });
+
 /** Access declared by the routes the invented modules link to, plus the shell's own two. */
 const routeAccess: Record<string, RouteAccess | undefined> = {
     Home: undefined,
@@ -89,7 +92,7 @@ vi.mock('vue-router', () => ({
     RouterLink: {
         template: '<a><slot /></a>'
     },
-    useRoute: () => ({ fullPath: '/', params: {}, query: {} }),
+    useRoute: () => ({ ...currentRoute.value, params: {}, query: {} }),
     useRouter: () => ({
         push: vi.fn(),
         replace: vi.fn(),
@@ -120,12 +123,27 @@ const mountNav = () => {
     return { wrapper, text: wrapper.text() };
 };
 
+/**
+ * Whether the app-bar button carrying `label` is `v-show`-hidden.
+ *
+ * `v-show` keeps the node in the DOM and sets `display: none`, so `wrapper.text()` cannot tell
+ * the two states apart — the style is the only observable difference.
+ */
+const isHidden = (wrapper: ReturnType<typeof mountNav>['wrapper'], label: string) => {
+    const button = wrapper
+        .findAll('header button')
+        .find((candidate) => candidate.text().includes(label));
+    expect(button, `no app-bar button carrying ${label}`).toBeDefined();
+    return (button!.element as HTMLElement).style.display === 'none';
+};
+
 describe('Navigation', () => {
     beforeEach(() => {
         session.isAuth.value = false;
         session.isAdmin.value = false;
         session.viewer.value = undefined;
         registeredRoutes.value = ['Login', 'Signup'];
+        currentRoute.value = { fullPath: '/' };
     });
 
     it('renders properly', () => {
@@ -181,6 +199,28 @@ describe('Navigation', () => {
 
         expect(text).toContain('navigation.label-login');
         expect(text).toContain('navigation.label-signup');
+    });
+
+    /**
+     * Hidden by ROUTE NAME, not by a substring of the path: a substring match also fires on
+     * `/en/products/login-adapter` and on any `?continue=/en/login`.
+     */
+    it.each([
+        ['Login', 'navigation.label-login'],
+        ['Signup', 'navigation.label-signup']
+    ])('hides the %s button while the visitor is already on that page', (name, label) => {
+        currentRoute.value = { name, fullPath: `/en/${name.toLowerCase()}` };
+
+        expect(isHidden(mountNav().wrapper, label)).toBe(true);
+    });
+
+    it('keeps both buttons on a route that merely CONTAINS the word login', () => {
+        currentRoute.value = { name: 'ProductTarget', fullPath: '/en/products/login-adapter' };
+
+        const { wrapper } = mountNav();
+
+        expect(isHidden(wrapper, 'navigation.label-login')).toBe(false);
+        expect(isHidden(wrapper, 'navigation.label-signup')).toBe(false);
     });
 
     it('offers neither when this build ships no sign-in route', () => {
