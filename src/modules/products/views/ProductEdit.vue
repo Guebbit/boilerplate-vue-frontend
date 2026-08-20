@@ -9,7 +9,8 @@ import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
 import { useProductsStore } from '@/modules/products/store';
 import { productsSchema } from '@/modules/products/schemas.ts';
 import { z } from 'zod';
@@ -29,17 +30,14 @@ import {
     formatCurrency,
     formatFlag
 } from '@/infrastructure/utils/formatters.ts';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useUploadProgress } from '@/infrastructure/composables/use-upload-progress.ts';
 
 /**
  * Generic i18n and notification helpers.
  */
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
@@ -93,13 +91,7 @@ const {
     handleSubmit,
     activateAutoHydrate,
     applyServerErrors
-} = useStructureFormValidation<ProductEditForm>({}, editSchema, {
-    revalidateOn: locale,
-    // The toolkit reveals the errors, waits for the render and focuses the first invalid field.
-    formElement,
-    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
-    onInvalid: () => addMessage(t('generic.fix-errors'))
-});
+} = useAppForm<ProductEditForm>({}, editSchema, { formElement });
 
 /**
  * Image upload progress, shown by `FormImageUpload` while a multipart save is in flight.

@@ -9,7 +9,8 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
 import { useUsersStore } from '@/modules/users/store';
 import { usersSchema, usersPasswordSchema } from '@/modules/users/schemas.ts';
 import { z } from 'zod';
@@ -22,7 +23,7 @@ import { useUploadProgress } from '@/infrastructure/composables/use-upload-progr
 /**
  * Generics
  */
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 const router = useRouter();
 
@@ -53,21 +54,20 @@ const createSchema = usersSchema.pick({ email: true, username: true }).extend({
     imageUpload: imageUploadSchema
 });
 
-const { form, formErrors, isSubmitting, handleSubmit } = useStructureFormValidation<UserCreateForm>(
-    {},
-    createSchema,
-    { revalidateOn: locale }
-);
+const formElement = ref<HTMLFormElement>();
+
+const {
+    form,
+    formErrors,
+    showFormErrors: showErrors,
+    isSubmitting,
+    handleSubmit
+} = useAppForm<UserCreateForm>({}, createSchema, { formElement });
 
 /**
  * Avatar upload progress, shown by `FormImageUpload` while the multipart create is in flight.
  */
 const { uploadProgress, trackUpload } = useUploadProgress();
-
-/**
- * Whether to display validation errors in the UI
- */
-const showErrors = ref(false);
 
 /**
  * Validates the form and creates the user.
@@ -96,17 +96,13 @@ const submitForm = () =>
             // Fire-and-forget: a NavigationFailure must not convert a completed create into an error toast.
             void router.push(routerLinkI18n({ name: 'UserTarget', params: { id: newUser.id } }));
         })
-    )
-        .then((success) => {
-            if (!success) showErrors.value = true;
-        })
-        .catch((error) => notifyErrorMessages(addMessage, error));
+    ).catch((error) => notifyErrorMessages(addMessage, error));
 </script>
 
 <template>
     <LayoutDefault id="user-create-page" :title="t('user-create-page.page-title')">
         <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
-            <form novalidate @submit.prevent="submitForm">
+            <form ref="formElement" novalidate @submit.prevent="submitForm">
                 <v-text-field
                     v-model="form.email"
                     type="email"

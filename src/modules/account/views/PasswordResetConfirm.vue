@@ -9,14 +9,12 @@ import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useAccountStore } from '@/modules/account/store.ts';
 import { usersPasswordSchema } from '@/modules/users';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
 /**
@@ -29,7 +27,7 @@ interface PasswordResetConfirmForm {
     passwordConfirm?: string;
 }
 
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const { addMessage } = useNotificationsStore();
@@ -44,7 +42,7 @@ const {
     isSubmitting,
     handleSubmit,
     applyServerErrors
-} = useStructureFormValidation<PasswordResetConfirmForm>(
+} = useAppForm<PasswordResetConfirmForm>(
     {
         token: typeof route.query.token === 'string' ? route.query.token : '',
         password: '',
@@ -64,12 +62,7 @@ const {
             error: () => t('users-form.password-dont-match'),
             path: ['passwordConfirm']
         }),
-    {
-        revalidateOn: locale,
-        formElement,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
-        onInvalid: () => addMessage(t('generic.fix-errors'))
-    }
+    { formElement }
 );
 
 /**

@@ -5,10 +5,11 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
 import { useAccountStore } from '@/modules/account/store.ts';
 import { usersSchema, usersPasswordSchema } from '@/modules/users';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
@@ -17,7 +18,7 @@ import ProfileAddresses from '@/modules/account/components/ProfileAddresses.vue'
 import { z } from 'zod';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
@@ -80,10 +81,18 @@ interface ProfileForm {
     website?: string;
 }
 
-const { form, formErrors, isDirty, resetForm, validate, setInitialData } =
-    useStructureFormValidation<ProfileForm>({}, usersSchema, { revalidateOn: locale });
+const formElement = ref<HTMLFormElement>();
 
-const showErrors = ref(false);
+const {
+    form,
+    formErrors,
+    showFormErrors: showErrors,
+    isDirty,
+    resetForm,
+    validate,
+    revealErrors,
+    setInitialData
+} = useAppForm<ProfileForm>({}, usersSchema, { formElement });
 
 /**
  * Another instance of form only for the password
@@ -92,7 +101,7 @@ const {
     form: passwordForm,
     formErrors: passwordErrors,
     isValid: passwordIsValid
-} = useStructureFormValidation(
+} = useAppForm(
     {
         currentPassword: '',
         password: '',
@@ -116,8 +125,7 @@ const {
                     message: t('users-form.password-dont-match'),
                     path: ['passwordConfirm']
                 });
-        }),
-    { revalidateOn: locale }
+        })
 );
 
 /**
@@ -148,12 +156,6 @@ watch(
 const showChangePassword = ref(false);
 
 /**
- * Whether the profile save button should be enabled — unsaved changes, nothing more. The
- * password panel has its own submit now that changing it proves the current one.
- */
-const areFormsValid = computed(() => isDirty.value);
-
-/**
  * Validates and saves the profile changes — the fields a user owns. Role and account state
  * belong to the admin endpoints, and the password to its own flow below.
  *
@@ -161,10 +163,11 @@ const areFormsValid = computed(() => isDirty.value);
  *  invalid input it returns early and reveals the validation errors.
  */
 const submitForm = () => {
-    if (!validate() || !areFormsValid.value) {
-        showErrors.value = true;
-        return;
-    }
+    // `revealErrors` is the whole of it: show the messages, focus the first bad field, say so.
+    if (!validate()) return revealErrors();
+    // Valid but unchanged. There is nothing to save and nothing to complain about — the button
+    // is disabled in this state, so only a keyboard submit reaches here.
+    if (!isDirty.value) return;
     return updateProfile({
         email: form.value.email,
         username: form.value.username,
@@ -227,7 +230,7 @@ const submitPasswordChange = () => {
         </v-alert>
 
         <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
-            <form novalidate @submit.prevent="submitForm">
+            <form ref="formElement" novalidate @submit.prevent="submitForm">
                 <!-- TODO language select + roles (user edit, if admin) -->
                 <v-text-field
                     v-model="form.username"
@@ -262,7 +265,7 @@ const submitPasswordChange = () => {
                 />
 
                 <div class="mt-4 flex flex-wrap gap-2">
-                    <v-btn type="submit" color="primary" :disabled="!areFormsValid">
+                    <v-btn type="submit" color="primary" :disabled="!isDirty">
                         {{ t('profile-page.button-submit') }}
                     </v-btn>
                     <v-btn variant="tonal" @click="resetForm">

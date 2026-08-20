@@ -9,7 +9,8 @@ import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
 import { useOrdersStore } from '@/modules/orders/store.ts';
 import { useOrderRefund } from '@/modules/payments';
 import { ordersStatusSchema } from '@/modules/orders/schemas.ts';
@@ -29,15 +30,12 @@ import {
     formatDateTime,
     formatCurrency
 } from '@/infrastructure/utils/formatters.ts';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 
 /**
  * Generic utility hooks.
  */
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
@@ -147,13 +145,7 @@ const {
     handleSubmit,
     activateAutoHydrate,
     applyServerErrors
-} = useStructureFormValidation<OrderEditForm>({}, editSchema, {
-    revalidateOn: locale,
-    // The toolkit reveals the errors, waits for the render and focuses the first invalid field.
-    formElement,
-    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
-    onInvalid: () => addMessage(t('generic.fix-errors'))
-});
+} = useAppForm<OrderEditForm>({}, editSchema, { formElement });
 
 /**
  * Auto-hydrate the form from the fetched record once it resolves.

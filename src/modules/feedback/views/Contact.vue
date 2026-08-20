@@ -5,9 +5,11 @@ export default {
 </script>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useFeedbackStore } from '@/modules/feedback/store.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
@@ -23,12 +25,14 @@ interface ContactForm {
     message?: string;
 }
 
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 const { submitContact } = useFeedbackStore();
 
+const formElement = ref<HTMLFormElement>();
+
 const { form, formErrors, showFormErrors, isSubmitting, handleSubmit, resetForm } =
-    useStructureFormValidation<ContactForm>(
+    useAppForm<ContactForm>(
         { name: '', email: '', subject: '', message: '' },
         z.object({
             name: z.string().optional(),
@@ -36,7 +40,7 @@ const { form, formErrors, showFormErrors, isSubmitting, handleSubmit, resetForm 
             subject: z.string().min(1, { error: () => t('contact-page.subject-required') }),
             message: z.string().min(10, { error: () => t('contact-page.message-min') })
         }),
-        { revalidateOn: locale }
+        { formElement }
     );
 
 /**
@@ -62,7 +66,7 @@ const submitForm = () =>
     <LayoutDefault id="contact-page" :title="t('contact-page.page-title')">
         <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
             <p class="mb-4 opacity-80">{{ t('contact-page.intro') }}</p>
-            <form novalidate @submit.prevent="submitForm">
+            <form ref="formElement" novalidate @submit.prevent="submitForm">
                 <v-text-field
                     v-model="form.name"
                     type="text"

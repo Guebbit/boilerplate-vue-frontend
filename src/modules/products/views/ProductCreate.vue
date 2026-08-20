@@ -9,7 +9,8 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
 import { useProductsStore } from '@/modules/products/store';
 import { productsSchema } from '@/modules/products/schemas.ts';
 import { z } from 'zod';
@@ -22,7 +23,7 @@ import { useUploadProgress } from '@/infrastructure/composables/use-upload-progr
 /**
  * Generics
  */
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 const router = useRouter();
 
@@ -67,19 +68,19 @@ const createSchema = productsSchema.pick({ title: true, price: true }).extend({
  * `price` starts at 0 for the same reason plus one more: the contract's minimum is 0, so the
  * starting value is already valid rather than an error waiting to be revealed.
  */
-const { form, formErrors, isSubmitting, handleSubmit } =
-    useStructureFormValidation<ProductCreateForm>(
-        { title: '', price: 0, description: '', active: true },
-        createSchema,
-        {
-            revalidateOn: locale
-        }
-    );
+const formElement = ref<HTMLFormElement>();
 
-/**
- * Whether to display validation errors in the UI
- */
-const showErrors = ref(false);
+const {
+    form,
+    formErrors,
+    showFormErrors: showErrors,
+    isSubmitting,
+    handleSubmit
+} = useAppForm<ProductCreateForm>(
+    { title: '', price: 0, description: '', active: true },
+    createSchema,
+    { formElement }
+);
 
 /**
  * Image upload progress, shown by `FormImageUpload` while the multipart create is in flight.
@@ -114,17 +115,13 @@ const submitForm = () =>
                 routerLinkI18n({ name: 'ProductTarget', params: { id: newProduct.id } })
             );
         })
-    )
-        .then((success) => {
-            if (!success) showErrors.value = true;
-        })
-        .catch((error) => notifyErrorMessages(addMessage, error));
+    ).catch((error) => notifyErrorMessages(addMessage, error));
 </script>
 
 <template>
     <LayoutDefault id="product-create-page" :title="t('product-create-page.page-title')">
         <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
-            <form novalidate @submit.prevent="submitForm">
+            <form ref="formElement" novalidate @submit.prevent="submitForm">
                 <v-text-field
                     v-model="form.title"
                     type="text"

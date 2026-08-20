@@ -5,10 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useAccountStore } from '@/modules/account/store.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
@@ -26,21 +28,23 @@ interface VerifyEmailConfirmForm {
     token?: string;
 }
 
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const { addMessage } = useNotificationsStore();
 const { confirmEmailVerification } = useAccountStore();
 
+const formElement = ref<HTMLFormElement>();
+
 const { form, formErrors, showFormErrors, isSubmitting, handleSubmit } =
-    useStructureFormValidation<VerifyEmailConfirmForm>(
+    useAppForm<VerifyEmailConfirmForm>(
         {
             token: typeof route.query.token === 'string' ? route.query.token : ''
         },
         z.object({
             token: z.string().min(1, { error: () => t('verify-email-confirm-page.token-required') })
         }),
-        { revalidateOn: locale }
+        { formElement }
     );
 
 /**
@@ -70,7 +74,7 @@ const submitForm = () =>
     >
         <v-card class="mx-auto mt-10 w-full max-w-md p-8">
             <p class="mb-4 opacity-80">{{ t('verify-email-confirm-page.intro') }}</p>
-            <form novalidate @submit.prevent="submitForm">
+            <form ref="formElement" novalidate @submit.prevent="submitForm">
                 <v-text-field
                     v-model="form.token"
                     type="text"

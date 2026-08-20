@@ -7,17 +7,15 @@ export default {
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useAccountStore } from '@/modules/account/store.ts';
 import { usersSchema } from '@/modules/users';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 const { requestPasswordReset } = useAccountStore();
 
@@ -30,14 +28,9 @@ const {
     isSubmitting,
     handleSubmit,
     applyServerErrors
-} = useStructureFormValidation<{
+} = useAppForm<{
     email?: string;
-}>({ email: '' }, usersSchema.pick({ email: true }), {
-    revalidateOn: locale,
-    formElement,
-    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
-    onInvalid: () => addMessage(t('generic.fix-errors'))
-});
+}>({ email: '' }, usersSchema.pick({ email: true }), { formElement });
 
 /**
  * Validates the email and asks the backend for a reset token.

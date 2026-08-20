@@ -10,14 +10,12 @@ import { RouterLink, useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
 import { Eye, EyeOff } from 'lucide-vue-next';
-import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
 import { useAccountStore } from '@/modules/account/store.ts';
 import { usersSchema } from '@/modules/users';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import {
-    notifyErrorMessages,
-    VUETIFY_INVALID_FIELD_SELECTOR
-} from '@/infrastructure/utils/errors.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { changeLanguage, supportedLanguages } from '@/infrastructure/i18n';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import type { LoginRequest } from '@api';
@@ -51,7 +49,7 @@ const {
     showFormErrors: showErrors,
     handleSubmit,
     applyServerErrors
-} = useStructureFormValidation<
+} = useAppForm<
     LoginRequest & {
         remember?: boolean;
     }
@@ -62,14 +60,7 @@ const {
         remember: false
     },
     loginSchema,
-    {
-        revalidateOn: locale,
-        // The toolkit reveals the errors, waits for the render and focuses the first invalid
-        // field; all this form supplies is where to look and what to say.
-        formElement,
-        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
-        onInvalid: () => addMessage(t('generic.fix-errors'))
-    }
+    { formElement }
 );
 
 /**
