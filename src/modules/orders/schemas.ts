@@ -23,7 +23,7 @@ export const ordersSchema = z.object({
     userId: z.string().nullish(),
     email: z.email({ error: () => translate('orders-form.email-invalid') }).nullish(),
     status: ordersStatusSchema.nullish(),
-    total: z.number().nullish(),
+    totalPrice: z.number().nullish(),
     notes: z.string().nullish(),
     createdAt: z.string().nullish(),
     updatedAt: z.string().nullish()

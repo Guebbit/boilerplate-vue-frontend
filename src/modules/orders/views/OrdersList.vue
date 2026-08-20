@@ -14,7 +14,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/modules/orders/store.ts';
 import { useSessionStore } from '@/infrastructure/stores/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
-import { formatDate } from '@/infrastructure/utils/formatters.ts';
+import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
 import type { Order } from '@types';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
@@ -54,7 +54,7 @@ const pageSizeOptions = [
 const tableHeaders = computed(() => [
     { title: t('orders-list-page.column-id'), key: 'id' },
     { title: t('orders-list-page.column-status'), key: 'status' },
-    { title: t('orders-list-page.column-total'), key: 'total' },
+    { title: t('orders-list-page.column-total'), key: 'totalPrice' },
     { title: t('orders-list-page.column-date'), key: 'createdAt' },
     { title: t('orders-list-page.column-actions'), key: 'actions' }
 ]);
@@ -187,6 +187,10 @@ const handleDelete = (orderId: string) => {
                 <v-chip size="small" variant="tonal" :color="statusColor(item.status)">
                     {{ t(`orders-form.status-${item.status}`) }}
                 </v-chip>
+            </template>
+
+            <template v-slot:[`item.totalPrice`]="{ item }">
+                {{ formatCurrency(item.totalPrice) }}
             </template>
 
             <template v-slot:[`item.createdAt`]="{ item }">

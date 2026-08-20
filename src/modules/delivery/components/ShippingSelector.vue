@@ -8,6 +8,7 @@ export default {
 import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
+import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { useDeliveryStore } from '../store.ts';
 
 /**
@@ -45,7 +46,7 @@ onMounted(() => {
                     <span class="flex items-baseline gap-2">
                         {{ t(`shipping-selector.method-${method.id}`) }}
                         <strong data-test="shipping-price">
-                            {{ deliveryStore.effectivePrice(method, itemsTotal) }}
+                            {{ formatCurrency(deliveryStore.effectivePrice(method, itemsTotal)) }}
                         </strong>
                         <span
                             v-if="

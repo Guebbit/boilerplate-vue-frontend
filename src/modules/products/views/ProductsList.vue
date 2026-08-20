@@ -14,7 +14,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/modules/products/store';
 import { useSessionStore } from '@/infrastructure/stores/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
-import { formatDate } from '@/infrastructure/utils/formatters.ts';
+import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
 import type { Product } from '@types';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
@@ -230,6 +230,10 @@ const handleDelete = (productId: string) => {
             :loading="loading"
             :loading-text="t('generic.loading')"
         >
+            <template v-slot:[`item.price`]="{ item }">
+                {{ formatCurrency(item.price) }}
+            </template>
+
             <template v-slot:[`item.active`]="{ item }">
                 <v-chip size="small" variant="tonal" :color="item.active ? 'success' : 'error'">
                     {{ item.active ? t('generic.enabled') : t('generic.disabled') }}

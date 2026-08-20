@@ -10,6 +10,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 import { usePaymentsStore } from '../store.ts';
 
 /**
@@ -95,7 +96,9 @@ onMounted(() => {
                 <span v-if="payment.cardLast4" class="text-sm opacity-75">
                     {{ t('payments-panel.label-card-ending', { last4: payment.cardLast4 }) }}
                 </span>
-                <span class="text-sm">{{ payment.amount }} {{ payment.currency }}</span>
+                <span class="text-sm">
+                    {{ formatCurrency(payment.amount, payment.currency) }}
+                </span>
             </div>
         </template>
 
