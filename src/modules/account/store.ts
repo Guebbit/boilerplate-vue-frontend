@@ -25,7 +25,14 @@ import {
     updateAddress as apiUpdateAddress,
     removeAddress as apiRemoveAddress
 } from '@api';
-import type { Address, AddressInput, Session, UpdateAddressRequest } from '@types';
+import type {
+    Address,
+    AddressesEnvelope,
+    AddressesResponse,
+    AddressInput,
+    Session,
+    UpdateAddressRequest
+} from '@types';
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
 import { analyticsEvents } from '@/infrastructure/observability/analytics-events.ts';
 
@@ -309,11 +316,15 @@ export const useAccountStore = defineStore('account', () => {
      */
     const addresses = ref<Address[]>([]);
 
-    /** Replace the local book with the payload every address endpoint answers with. */
-    const readAddressesResponse = (data: unknown) => {
-        const payload = getPayloadFromResponse<{ addresses: Address[] }>(
-            data as { data?: { addresses: Address[] } }
-        );
+    /**
+     * Replace the local book with the payload every address endpoint answers with.
+     *
+     * Typed as the generated envelope rather than `unknown`, so the four call sites are checked
+     * against the contract instead of being waved through a cast: the day an endpoint stops
+     * answering with the address book, this stops compiling.
+     */
+    const readAddressesResponse = (data: AddressesEnvelope) => {
+        const payload = getPayloadFromResponse<AddressesResponse>(data);
         addresses.value = payload?.addresses ?? [];
         return addresses.value;
     };

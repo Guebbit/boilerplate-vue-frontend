@@ -1,6 +1,15 @@
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 
+/** What makes `logger.debug('demo', …)` type-check. Deleting this folder takes the scope with it. */
+declare module '@/infrastructure/utils/logger.ts' {
+    // The name belongs to the module being augmented, not to this one: declaration merging only
+    // works against the exact interface it declares.
+    interface LogScopes {
+        demo: true;
+    }
+}
+
 /**
  * The boilerplate's own showroom: one page exercising the store, the toolkit components, the
  * notification toasts and the provide/inject demo, plus the teaching route guard.

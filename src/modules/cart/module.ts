@@ -10,9 +10,10 @@ import { useSessionStore } from '@/infrastructure/stores/session.ts';
  * The shopping cart, and the checkout that turns it into an order.
  *
  * Nearly every arrow points AT this module: orders reaches the cart barrel for the reorder button,
- * wishlist for its move-to-cart exit, products for "add to cart". All three are
- * `customer-supplier` — they ask this store to write a line — which is why the cart publishes a
- * store while the modules it depends on publish components and schemas.
+ * products for "add to cart", wishlist for its move-to-cart exit. The first two are
+ * `customer-supplier` — they ask this store to write a line — and `wishlist` is `conformist`: the
+ * move itself is a wishlist endpoint, and this store is only asked to refetch. Either way the cart
+ * is the one publishing a store, while the modules it depends on publish components and schemas.
  *
  * The one arrow going out is `delivery`, and it is `published-language`: the checkout mounts
  * `ShippingSelector` and never learns what a shipping rate is.

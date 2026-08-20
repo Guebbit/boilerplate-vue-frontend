@@ -38,5 +38,8 @@
         "button-sweep": "Scadenza prenotazioni",
         "confirm-sweep": "Liberare ogni prenotazione la cui finestra di pagamento è chiusa? Gli ordini dietro di esse verranno annullati.",
         "success-sweep": "{expired} prenotazioni scadute liberate."
+    },
+    "navigation": {
+        "label-inventory": "Magazzino"
     }
 }

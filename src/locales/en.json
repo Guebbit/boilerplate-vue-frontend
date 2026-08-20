@@ -20,6 +20,7 @@
         "standard-user": "Standard user",
         "no-data": "No data available",
         "cancel": "Cancel",
+        "fix-errors": "Please fix the highlighted form errors.",
         "api-unreachable": "The server is unreachable — showing what works offline. Retrying quietly."
     },
     "navigation": {
@@ -31,8 +32,7 @@
         "label-theme": "Toggle theme",
         "label-language": "Language",
         "label-logo": "Guebbit home",
-        "label-about": "About",
-        "label-inventory": "Inventory"
+        "label-about": "About"
     },
     "home-page": {
         "page-title": "Home",

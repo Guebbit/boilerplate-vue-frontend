@@ -33,7 +33,6 @@
         "username-required": "Username is required",
         "username-min": "Username must be at least 3 characters long",
         "conditions-required": "Must accept privacy conditions!",
-        "fix-errors": "Please fix the highlighted form errors.",
         "password-required": "Password is required",
         "password-min": "Password must be at least 8 characters long",
         "password-minus-required": "Password must contain at least one lowercase letter",

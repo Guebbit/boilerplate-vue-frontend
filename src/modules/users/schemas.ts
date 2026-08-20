@@ -10,12 +10,12 @@ import { signupBodyUsernameMin, createUserBodyPasswordMin } from '@api/schemas';
 /**
  * Validation schema for an email address.
  */
-export const usersEmailSchema = z.email({ error: () => translate('users-form.email-invalid') });
+const usersEmailSchema = z.email({ error: () => translate('users-form.email-invalid') });
 
 /**
  * Validation schema for a username, enforcing the minimum length declared by the API contract.
  */
-export const usersUsernameSchema = z
+const usersUsernameSchema = z
     .string()
     .min(signupBodyUsernameMin, { error: () => translate('users-form.username-min') });
 

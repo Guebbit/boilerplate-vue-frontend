@@ -68,7 +68,7 @@ const {
         revalidateOn: locale,
         formElement,
         invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
-        onInvalid: () => addMessage(t('users-form.fix-errors'))
+        onInvalid: () => addMessage(t('generic.fix-errors'))
     }
 );
 

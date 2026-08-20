@@ -38,5 +38,8 @@
         "button-sweep": "Expire stale holds",
         "confirm-sweep": "Release every hold whose payment window has closed? The orders behind them will be cancelled.",
         "success-sweep": "{expired} stale holds released."
+    },
+    "navigation": {
+        "label-inventory": "Inventory"
     }
 }

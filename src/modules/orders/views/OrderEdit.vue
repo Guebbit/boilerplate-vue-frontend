@@ -152,7 +152,7 @@ const {
     // The toolkit reveals the errors, waits for the render and focuses the first invalid field.
     formElement,
     invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
-    onInvalid: () => addMessage(t('users-form.fix-errors'))
+    onInvalid: () => addMessage(t('generic.fix-errors'))
 });
 
 /**

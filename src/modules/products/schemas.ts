@@ -10,14 +10,14 @@ import { createProductBodyPriceMin } from '@api/schemas';
 /**
  * Validation schema for a product title, rejecting empty titles.
  */
-export const productsTitleSchema = z
+const productsTitleSchema = z
     .string()
     .min(1, { error: () => translate('products-form.title-required') });
 
 /**
  * Validation schema for a product price, enforcing the minimum declared by the API contract.
  */
-export const productsPriceSchema = z
+const productsPriceSchema = z
     .number()
     .min(createProductBodyPriceMin, { error: () => translate('products-form.price-min') });
 

@@ -20,6 +20,7 @@
         "standard-user": "Utente standard",
         "no-data": "Nessun dato disponibile",
         "cancel": "Annulla",
+        "fix-errors": "Correggi gli errori evidenziati nel modulo.",
         "api-unreachable": "Il server non è raggiungibile — mostriamo ciò che funziona offline. Riproviamo in silenzio."
     },
     "navigation": {
@@ -31,8 +32,7 @@
         "label-theme": "Cambia tema",
         "label-language": "Lingua",
         "label-logo": "Home di Guebbit",
-        "label-about": "Informazioni",
-        "label-inventory": "Magazzino"
+        "label-about": "Informazioni"
     },
     "home-page": {
         "page-title": "Home",

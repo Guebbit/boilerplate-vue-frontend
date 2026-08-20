@@ -5,8 +5,8 @@ import { wishlistResponseSchemas } from './response-schemas';
 /**
  * The visitor's saved products.
  *
- * `dependsOn: ['cart']` is the move-to-cart exit: the store refreshes the cart it just wrote
- * into through the cart barrel, so the header's badge cannot lag a write this module initiated.
+ * The one edge is the move-to-cart exit: the move is a WISHLIST endpoint, and the cart store is
+ * then asked to refetch itself so the header's badge cannot lag a write this module initiated.
  * The reverse arrow does not exist — the cart never reads the wishlist — which is what keeps
  * `products → wishlist → cart → orders` a line rather than a loop.
  */
@@ -20,9 +20,9 @@ export default {
     dependsOn: [
         {
             module: 'cart',
-            as: 'customer-supplier',
+            as: 'conformist',
             because:
-                'Move-to-cart asks the cart store to write a line, then refreshes it so the header badge cannot lag.'
+                'Move-to-cart calls a wishlist endpoint and then asks the cart store to refetch itself; the cart is never asked to write.'
         }
     ],
     navigation: [{ name: 'Wishlist', label: 'navigation.label-wishlist', plural: 1, order: 75 }],

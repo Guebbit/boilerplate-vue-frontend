@@ -22,12 +22,31 @@ const LEVELS = ['error', 'warn', 'info', 'debug'] as const;
 export type LogLevel = (typeof LEVELS)[number];
 
 /**
- * The area a message belongs to, matched against `VITE_APP_LOG_SCOPES`.
+ * The areas a message may belong to, matched against `VITE_APP_LOG_SCOPES`.
  *
- * A closed union rather than a free string, so a typo is a compile error instead of a message that
- * silently never appears. Add an area here when you add one.
+ * Infrastructure names only its own. A module adds one from its own folder by declaration merging:
+ *
+ * ```ts
+ * declare module '@/infrastructure/utils/logger.ts' {
+ *     interface LogScopes {
+ *         inventory: true;
+ *     }
+ * }
+ * ```
  */
-export type LogScope = 'router' | 'http' | 'observability' | 'demo';
+export interface LogScopes {
+    router: true;
+    http: true;
+    observability: true;
+}
+
+/**
+ * The area a message belongs to.
+ *
+ * A closed set rather than a free string, so a typo is a compile error instead of a message that
+ * silently never appears.
+ */
+export type LogScope = keyof LogScopes;
 
 /**
  * The configured ceiling. Anything more verbose than this is dropped.
