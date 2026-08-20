@@ -76,6 +76,32 @@ export const formatCurrency = (
 ) => formatCurrencyBase(value, { currency, format, locale: getLocale(), empty: EMPTY_VALUE });
 
 /**
+ * The time of day, in the active locale — the time-only counterpart of {@link formatDateTime}.
+ *
+ * @param value - ISO 8601 date/datetime string, possibly nullish.
+ * @returns The localized time, or {@link EMPTY_VALUE}.
+ */
+export const formatTime = (value?: string | null) =>
+    formatDateTimeBase(value, {
+        locale: getLocale(),
+        empty: EMPTY_VALUE,
+        format: { hour: 'numeric', minute: 'numeric', second: 'numeric' }
+    });
+
+/**
+ * Bytes as whole megabytes, for display only.
+ *
+ * The API publishes memory in BYTES because the conversion is lossy — a rounded megabyte cannot
+ * express the 400 KB move between two polls that a leak hunter is looking for. Rounding is a
+ * presentation decision, so it happens here.
+ *
+ * @param bytes - The raw counter, possibly unknown.
+ * @returns e.g. `42 MB`, or {@link EMPTY_VALUE} when `bytes` is not a number.
+ */
+export const formatMegabytes = (bytes?: number | null) =>
+    typeof bytes === 'number' ? `${Math.round(bytes / 1024 / 1024)} MB` : EMPTY_VALUE;
+
+/**
  * Formats a process uptime in a compact, human form.
  *
  * @param seconds - Uptime in seconds, possibly unknown.

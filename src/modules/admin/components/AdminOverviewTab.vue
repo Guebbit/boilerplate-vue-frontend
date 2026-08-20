@@ -4,7 +4,13 @@ import { useI18n } from 'vue-i18n';
 import { RefreshCw } from 'lucide-vue-next';
 import type { ObservabilityHealth, ObservabilityMetricsSummary } from '@types';
 import type { AdminKpiCard } from '@/modules/admin/types.ts';
-import { EMPTY_VALUE, formatUptime } from '@/infrastructure/utils/formatters.ts';
+import {
+    EMPTY_VALUE,
+    formatMegabytes,
+    formatTime,
+    formatUptime
+} from '@/infrastructure/utils/formatters.ts';
+import DefinitionRow from '@/ui/molecules/DefinitionRow.vue';
 
 const { t } = useI18n();
 
@@ -173,19 +179,6 @@ const kpiDotClass = (status: AdminKpiCard['status']) =>
  * @returns `✓` when enabled, `✗` otherwise.
  */
 const flag = (value?: boolean) => (value ? '✓' : '✗');
-
-/**
- * Bytes to whole megabytes, for display only.
- *
- * The API publishes memory in BYTES because the conversion is lossy and it is a presentation
- * decision — a rounded megabyte cannot express the 400 KB move between two polls that a leak
- * hunter is looking for. Rounding therefore happens here, at the point something is rendered,
- * and nowhere else.
- *
- * @param bytes - the raw counter
- * @returns whole megabytes
- */
-const megabytes = (bytes: number) => Math.round(bytes / 1024 / 1024);
 </script>
 
 <template>
@@ -197,7 +190,7 @@ const megabytes = (bytes: number) => Math.round(bytes / 1024 / 1024);
             </v-btn>
             <span v-if="props.health?.timestamp" class="text-sm opacity-70">
                 {{ t('admin-page.label-last-updated') }}:
-                {{ new Date(props.health.timestamp).toLocaleTimeString() }}
+                {{ formatTime(props.health.timestamp) }}
             </span>
         </div>
 
@@ -221,75 +214,59 @@ const megabytes = (bytes: number) => Math.round(bytes / 1024 / 1024);
         <v-card v-if="props.metrics?.auth" class="p-5" variant="flat" border>
             <h3 class="mb-3 text-lg font-semibold">{{ t('admin-page.section-auth') }}</h3>
             <dl class="grid gap-x-8 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
-                <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
-                    <dt class="opacity-70">{{ t('admin-page.label-login-success') }}</dt>
-                    <dd class="font-medium">{{ props.metrics.auth.loginSuccess ?? 0 }}</dd>
-                </div>
-                <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
-                    <dt class="opacity-70">{{ t('admin-page.label-login-failure') }}</dt>
-                    <dd class="font-medium text-warning">
-                        {{ props.metrics.auth.loginFailure ?? 0 }}
-                    </dd>
-                </div>
-                <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
-                    <dt class="opacity-70">{{ t('admin-page.label-signup-success') }}</dt>
-                    <dd class="font-medium">{{ props.metrics.auth.signupSuccess ?? 0 }}</dd>
-                </div>
+                <DefinitionRow :label="t('admin-page.label-login-success')">{{
+                    props.metrics.auth.loginSuccess ?? 0
+                }}</DefinitionRow>
+                <DefinitionRow :label="t('admin-page.label-login-failure')"
+                    ><span class="text-warning">{{
+                        props.metrics.auth.loginFailure ?? 0
+                    }}</span></DefinitionRow
+                >
+                <DefinitionRow :label="t('admin-page.label-signup-success')">{{
+                    props.metrics.auth.signupSuccess ?? 0
+                }}</DefinitionRow>
             </dl>
         </v-card>
 
         <v-card v-if="props.metrics?.business" class="p-5" variant="flat" border>
             <h3 class="mb-3 text-lg font-semibold">{{ t('admin-page.section-business') }}</h3>
             <dl class="grid gap-x-8 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
-                <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
-                    <dt class="opacity-70">{{ t('admin-page.label-orders-created') }}</dt>
-                    <dd class="font-medium">{{ props.metrics.business.ordersCreated ?? 0 }}</dd>
-                </div>
-                <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
-                    <dt class="opacity-70">{{ t('admin-page.label-checkout-success') }}</dt>
-                    <dd class="font-medium">{{ props.metrics.business.checkoutSuccess ?? 0 }}</dd>
-                </div>
+                <DefinitionRow :label="t('admin-page.label-orders-created')">{{
+                    props.metrics.business.ordersCreated ?? 0
+                }}</DefinitionRow>
+                <DefinitionRow :label="t('admin-page.label-checkout-success')">{{
+                    props.metrics.business.checkoutSuccess ?? 0
+                }}</DefinitionRow>
             </dl>
         </v-card>
 
         <v-card v-if="props.health" class="p-5" variant="flat" border>
             <h3 class="mb-3 text-lg font-semibold">{{ t('admin-page.section-system') }}</h3>
             <dl class="grid gap-x-8 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
-                <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
-                    <dt class="opacity-70">{{ t('admin-page.label-environment') }}</dt>
-                    <dd class="font-medium">{{ props.health.environment }}</dd>
-                </div>
-                <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
-                    <dt class="opacity-70">{{ t('admin-page.label-service') }}</dt>
-                    <dd class="font-medium">{{ props.health.service }}</dd>
-                </div>
-                <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
-                    <dt class="opacity-70">{{ t('admin-page.label-node-version') }}</dt>
-                    <dd class="font-medium">{{ props.health.nodeVersion }}</dd>
-                </div>
+                <DefinitionRow :label="t('admin-page.label-environment')">{{
+                    props.health.environment
+                }}</DefinitionRow>
+                <DefinitionRow :label="t('admin-page.label-service')">{{
+                    props.health.service
+                }}</DefinitionRow>
+                <DefinitionRow :label="t('admin-page.label-node-version')">{{
+                    props.health.nodeVersion
+                }}</DefinitionRow>
                 <template v-if="props.health.memory">
-                    <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
-                        <dt class="opacity-70">{{ t('admin-page.label-heap-used') }}</dt>
-                        <dd class="font-medium">
-                            {{ megabytes(props.health.memory.heapUsed) }} MB
-                        </dd>
-                    </div>
-                    <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
-                        <dt class="opacity-70">{{ t('admin-page.label-heap-total') }}</dt>
-                        <dd class="font-medium">
-                            {{ megabytes(props.health.memory.heapTotal) }} MB
-                        </dd>
-                    </div>
+                    <DefinitionRow :label="t('admin-page.label-heap-used')">{{
+                        formatMegabytes(props.health.memory.heapUsed)
+                    }}</DefinitionRow>
+                    <DefinitionRow :label="t('admin-page.label-heap-total')">{{
+                        formatMegabytes(props.health.memory.heapTotal)
+                    }}</DefinitionRow>
                 </template>
                 <template v-if="props.health.system">
-                    <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
-                        <dt class="opacity-70">{{ t('admin-page.label-platform') }}</dt>
-                        <dd class="font-medium">{{ props.health.system.platform }}</dd>
-                    </div>
-                    <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
-                        <dt class="opacity-70">{{ t('admin-page.label-cpu-count') }}</dt>
-                        <dd class="font-medium">{{ props.health.system.cpuCount }}</dd>
-                    </div>
+                    <DefinitionRow :label="t('admin-page.label-platform')">{{
+                        props.health.system.platform
+                    }}</DefinitionRow>
+                    <DefinitionRow :label="t('admin-page.label-cpu-count')">{{
+                        props.health.system.cpuCount
+                    }}</DefinitionRow>
                 </template>
                 <!--
                     Telemetry sinks: which ones this deployment is WIRED TO, read off the API's
@@ -297,24 +274,18 @@ const megabytes = (bytes: number) => Math.round(bytes / 1024 / 1024);
                     on purpose — losing one costs visibility, not capability.
                 -->
                 <template v-if="props.health.telemetry">
-                    <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
-                        <dt class="opacity-70">{{ t('admin-page.label-loki') }}</dt>
-                        <dd class="font-medium">{{ flag(props.health.telemetry.loki) }}</dd>
-                    </div>
-                    <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
-                        <dt class="opacity-70">{{ t('admin-page.label-faro') }}</dt>
-                        <dd class="font-medium">{{ flag(props.health.telemetry.faro) }}</dd>
-                    </div>
-                    <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
-                        <dt class="opacity-70">{{ t('admin-page.label-umami') }}</dt>
-                        <dd class="font-medium">{{ flag(props.health.telemetry.umami) }}</dd>
-                    </div>
-                    <div class="flex justify-between gap-4 border-b border-on-surface/10 py-1">
-                        <dt class="opacity-70">{{ t('admin-page.label-otel') }}</dt>
-                        <dd class="font-medium">
-                            {{ flag(props.health.telemetry.otel) }}
-                        </dd>
-                    </div>
+                    <DefinitionRow :label="t('admin-page.label-loki')">{{
+                        flag(props.health.telemetry.loki)
+                    }}</DefinitionRow>
+                    <DefinitionRow :label="t('admin-page.label-faro')">{{
+                        flag(props.health.telemetry.faro)
+                    }}</DefinitionRow>
+                    <DefinitionRow :label="t('admin-page.label-umami')">{{
+                        flag(props.health.telemetry.umami)
+                    }}</DefinitionRow>
+                    <DefinitionRow :label="t('admin-page.label-otel')">{{
+                        flag(props.health.telemetry.otel)
+                    }}</DefinitionRow>
                 </template>
             </dl>
         </v-card>

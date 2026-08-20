@@ -14,6 +14,8 @@ import {
     formatDateTime,
     formatCurrency,
     formatFlag,
+    formatMegabytes,
+    formatTime,
     formatUptime
 } from '@/infrastructure/utils/formatters';
 
@@ -102,6 +104,41 @@ describe('formatCurrency', () => {
 
     it('formats zero rather than treating it as missing', () => {
         expect(formatCurrency(0)).not.toBe(EMPTY_VALUE);
+    });
+});
+
+describe('formatTime', () => {
+    it('renders a time of day rather than a whole timestamp', () => {
+        const formatted = formatTime('2026-02-03T14:05:09.000Z');
+
+        // The date must not appear — this is the column where a timestamp is noise.
+        expect(formatted).not.toContain('2026');
+        expect(formatted).toMatch(/\d{1,2}[.:]\d{2}/);
+    });
+
+    it('falls back for undefined and null', () => {
+        expect(formatTime()).toBe(EMPTY_VALUE);
+        expect(formatTime(null)).toBe(EMPTY_VALUE);
+    });
+});
+
+describe('formatMegabytes', () => {
+    it('rounds bytes to whole megabytes and names the unit', () => {
+        expect(formatMegabytes(44 * 1024 * 1024)).toBe('44 MB');
+    });
+
+    it('rounds rather than truncating', () => {
+        // 1.7 MB is nearer 2 than 1; truncation would report a leak as flat.
+        expect(formatMegabytes(Math.round(1.7 * 1024 * 1024))).toBe('2 MB');
+    });
+
+    it('renders zero rather than treating it as missing', () => {
+        expect(formatMegabytes(0)).toBe('0 MB');
+    });
+
+    it('falls back for undefined and null', () => {
+        expect(formatMegabytes()).toBe(EMPTY_VALUE);
+        expect(formatMegabytes(null)).toBe(EMPTY_VALUE);
     });
 });
 

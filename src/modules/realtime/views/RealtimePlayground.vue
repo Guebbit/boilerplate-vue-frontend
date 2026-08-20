@@ -5,7 +5,7 @@ import { Camera, RefreshCw, HeartPulse } from 'lucide-vue-next';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import CardMaterialStat from '@/ui/organisms/CardMaterialStat.vue';
 import { useRealtimeObservability } from '@/modules/realtime/use-realtime-observability';
-import { formatUptime } from '@/infrastructure/utils/formatters.ts';
+import { formatMegabytes, formatTime, formatUptime } from '@/infrastructure/utils/formatters.ts';
 import type { RealtimeMetricsEntry } from '@types';
 
 const { t } = useI18n();
@@ -35,14 +35,6 @@ const latestEntry = computed(() => observabilityEntries.value.at(-1));
 
 /** The feed, newest event first — a live stream reads better without manual scrolling. */
 const feedEntries = computed(() => observabilityEntries.value.toReversed());
-
-/**
- * Rounds a byte count to whole megabytes for compact display.
- *
- * @param bytes - Raw byte count.
- * @returns The size in whole megabytes, e.g. `42MB`.
- */
-const formatMb = (bytes: number) => `${Math.round(bytes / 1024 / 1024)}MB`;
 </script>
 
 <template>
@@ -85,7 +77,7 @@ const formatMb = (bytes: number) => `${Math.round(bytes / 1024 / 1024)}MB`;
                         />
                         <CardMaterialStat
                             :title="t('realtime-playground-page.stat-heap')"
-                            :value="`${formatMb(latestEntry.payload.memory.heapUsed)} / ${formatMb(latestEntry.payload.memory.heapTotal)}`"
+                            :value="`${formatMegabytes(latestEntry.payload.memory.heapUsed)} / ${formatMegabytes(latestEntry.payload.memory.heapTotal)}`"
                             accent="secondary"
                         />
                         <CardMaterialStat
@@ -131,7 +123,7 @@ const formatMb = (bytes: number) => `${Math.round(bytes / 1024 / 1024)}MB`;
                                         {{ entry.kind }}
                                     </v-chip>
                                     <span class="text-xs opacity-70">
-                                        {{ new Date(entry.timestamp).toLocaleTimeString() }}
+                                        {{ formatTime(entry.timestamp) }}
                                     </span>
                                 </div>
 
@@ -154,9 +146,8 @@ const formatMb = (bytes: number) => `${Math.round(bytes / 1024 / 1024)}MB`;
                                             {{ t('realtime-playground-page.stat-heap') }}
                                         </dt>
                                         <dd>
-                                            {{ formatMb(entry.payload.memory.heapUsed) }}/{{
-                                                formatMb(entry.payload.memory.heapTotal)
-                                            }}
+                                            {{ formatMegabytes(entry.payload.memory.heapUsed) }} /
+                                            {{ formatMegabytes(entry.payload.memory.heapTotal) }}
                                         </dd>
                                     </div>
                                     <div class="flex justify-between gap-2">
