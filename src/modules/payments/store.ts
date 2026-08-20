@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { createPaymentIntent, confirmPayment, getPaymentByOrder, refundPaymentByOrder } from '@api';
 import type { Payment } from '@types';
+import { absentIs } from '@/infrastructure/utils/errors';
 
 /**
  * The payment behind an order — one record, mirrored from whatever the API last said.
@@ -35,7 +36,10 @@ export const usePaymentsStore = defineStore('payments', () => {
                     payment.value = response.data;
                     return payment.value;
                 })
-                .catch(() => {
+                .catch((error: unknown) => {
+                    // 404 only: anything else is a real failure, and swallowing it would render
+                    // the pay form for an order that already has a payment.
+                    if (!absentIs(error, 404)) throw error;
                     payment.value = undefined;
                     return undefined;
                 })

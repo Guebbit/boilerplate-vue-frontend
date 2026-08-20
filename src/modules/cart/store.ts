@@ -14,7 +14,7 @@ import {
 import type { CartItem, CartResponse, CartSummaryResponse, CheckoutRequest } from '@types';
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
 import { analyticsEvents } from '@/infrastructure/observability/analytics-events.ts';
-import { isTransportFailure } from '@/infrastructure/utils/errors';
+import { absentIs, isTransportFailure } from '@/infrastructure/utils/errors';
 
 /**
  * Owns the authenticated user's shopping cart: every action replaces the local
@@ -75,7 +75,10 @@ export const useCartStore = defineStore('cart', () => {
                 summarySeed.value = response.data;
                 return response.data;
             })
-            .catch(() => {
+            .catch((error: unknown) => {
+                // 401 only — a guest has no cart. Anything else is a real failure, and swallowing
+                // it would empty the header badge for someone whose cart is full.
+                if (!absentIs(error, 401)) throw error;
                 summarySeed.value = undefined;
                 return undefined;
             });

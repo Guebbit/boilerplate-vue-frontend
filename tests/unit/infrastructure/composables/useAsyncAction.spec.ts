@@ -63,13 +63,36 @@ describe('useAsyncAction', () => {
             expect(error.value).toBe('boom');
         });
 
-        it('falls back to the supplied message for a non-Error rejection', async () => {
+        /**
+         * The shape every real API failure arrives in: `onResponseReject` rejects with a plain
+         * object literal, never an `Error`. The API's own message has to survive it, or the user
+         * is told "could not load" while the API is saying exactly what went wrong.
+         */
+        it("reads the message off the http layer's plain reject envelope", async () => {
+            const { error, run } = useAsyncAction(
+                () =>
+                    // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the plain-object rejection IS the case under test
+                    Promise.reject({ success: false, status: 503, message: 'Service unavailable' }),
+                { fallbackErrorMessage: 'Health data could not be loaded' }
+            );
+            await run();
+            expect(error.value).toBe('Service unavailable');
+        });
+
+        it('uses a bare string rejection as the message', async () => {
             // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the non-Error rejection IS the case under test
-            const { error, run } = useAsyncAction(() => Promise.reject('just a string'), {
-                fallbackErrorMessage: 'Failed to load health data'
+            const { error, run } = useAsyncAction(() => Promise.reject('just a string'));
+            await run();
+            expect(error.value).toBe('just a string');
+        });
+
+        it('falls back to the supplied message when the rejection carries nothing readable', async () => {
+            // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- a rejection with no message at all is the case under test
+            const { error, run } = useAsyncAction(() => Promise.reject({ status: 500 }), {
+                fallbackErrorMessage: 'Health data could not be loaded'
             });
             await run();
-            expect(error.value).toBe('Failed to load health data');
+            expect(error.value).toBe('Health data could not be loaded');
         });
 
         it('clears a previous error when a later run succeeds', async () => {

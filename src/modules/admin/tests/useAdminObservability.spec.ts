@@ -38,6 +38,18 @@ vi.mock('@api', () => ({
     deleteExpiredTokens: vi.fn(() => Promise.resolve({ data: undefined }))
 }));
 
+/**
+ * The reject envelope every real API failure arrives in — `onResponseReject` builds it, and it is
+ * a plain object, never an `Error`. Rejecting with anything else here would let a composable that
+ * reads its message off `instanceof Error` pass while showing its fallback to every user.
+ */
+const apiFailure = (status: number, message: string) => ({
+    success: false,
+    status,
+    message,
+    errors: [message]
+});
+
 describe('useAdminObservability', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -82,13 +94,17 @@ describe('useAdminObservability', () => {
         });
 
         it('reports its own failure without rejecting or touching the other panels', async () => {
-            vi.mocked(getObservabilityHealth).mockRejectedValueOnce('down');
+            vi.mocked(getObservabilityHealth).mockRejectedValueOnce(
+                apiFailure(503, 'Health probe timed out')
+            );
             const { health, errorHealth, errorMetrics, errorAudit, fetchHealth } =
                 useAdminObservability();
 
             await expect(fetchHealth()).resolves.toBeUndefined();
 
-            expect(errorHealth.value).toBe('Failed to load health data');
+            // The API's own words, not the fallback: the panel is more useful for saying which
+            // probe failed than for saying that something did.
+            expect(errorHealth.value).toBe('Health probe timed out');
             expect(health.value).toBeUndefined();
             expect(errorMetrics.value).toBeUndefined();
             expect(errorAudit.value).toBeUndefined();
@@ -105,13 +121,15 @@ describe('useAdminObservability', () => {
             expect(metrics.value).toEqual(METRICS);
         });
 
-        it('carries its own fallback message', async () => {
-            vi.mocked(getObservabilityMetricsOverview).mockRejectedValueOnce('down');
+        it('carries its own fallback message when the rejection says nothing', async () => {
+            // A rejection with no readable message at all — a transport failure that never got a
+            // body — is the only case the per-panel fallback is for.
+            vi.mocked(getObservabilityMetricsOverview).mockRejectedValueOnce({ status: 0 });
             const { errorMetrics, fetchMetrics } = useAdminObservability();
 
             await fetchMetrics();
 
-            expect(errorMetrics.value).toBe('Failed to load metrics data');
+            expect(errorMetrics.value).toBe('admin-page.error-load-metrics');
         });
     });
 
@@ -172,7 +190,9 @@ describe('useAdminObservability', () => {
         });
 
         it('falls back to an empty page when the call fails', async () => {
-            vi.mocked(getObservabilityAuditLogs).mockRejectedValueOnce('down');
+            vi.mocked(getObservabilityAuditLogs).mockRejectedValueOnce(
+                apiFailure(500, 'Audit store unavailable')
+            );
             const { auditEvents, auditTotal, errorAudit, fetchAuditLogs } = useAdminObservability();
 
             await fetchAuditLogs();
@@ -180,7 +200,7 @@ describe('useAdminObservability', () => {
             // The panel renders "no events" rather than throwing on an undefined envelope
             expect(auditEvents.value).toEqual([]);
             expect(auditTotal.value).toBe(0);
-            expect(errorAudit.value).toBe('Failed to load audit logs');
+            expect(errorAudit.value).toBe('Audit store unavailable');
         });
 
         it('replaces the previous page rather than appending to it', async () => {
@@ -229,13 +249,15 @@ describe('useAdminObservability', () => {
         });
 
         it('renders the panels that answered when one endpoint is down', async () => {
-            vi.mocked(getObservabilityMetricsOverview).mockRejectedValueOnce('down');
+            vi.mocked(getObservabilityMetricsOverview).mockRejectedValueOnce(
+                apiFailure(502, 'Metrics upstream refused')
+            );
             const { health, metrics, errorMetrics, auditEvents, fetchAll } =
                 useAdminObservability();
 
             await expect(fetchAll()).resolves.toBeUndefined();
 
-            expect(errorMetrics.value).toBe('Failed to load metrics data');
+            expect(errorMetrics.value).toBe('Metrics upstream refused');
             expect(metrics.value).toBeUndefined();
             expect(health.value).toEqual(HEALTH);
             expect(auditEvents.value).toEqual([AUDIT_ITEM]);

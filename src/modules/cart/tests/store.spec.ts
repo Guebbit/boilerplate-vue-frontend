@@ -19,6 +19,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useCartStore } from '@/modules/cart/store';
 import {
     getCart,
+    getCartSummary,
     upsertCartItem,
     updateCartItemById,
     removeCartItem,
@@ -43,8 +44,14 @@ const EMPTY_CART = { items: [], summary: { itemsCount: 0, totalQuantity: 0, tota
 
 const ORDER = { id: 'o1', totalPrice: 19.98 };
 
+/** The reject envelope `onResponseReject` builds — never an `Error`, which is the whole point. */
+const apiFailure = (status: number) =>
+    // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
+    Promise.reject({ success: false, status, message: 'nope', errors: ['nope'] }) as never;
+
 vi.mock('@api', () => ({
     getCart: vi.fn(() => Promise.resolve({ data: CART })),
+    getCartSummary: vi.fn(() => Promise.resolve({ data: CART.summary })),
     upsertCartItem: vi.fn(() => Promise.resolve({ data: CART })),
     updateCartItemById: vi.fn(() => Promise.resolve({ data: CART })),
     removeCartItem: vi.fn(() => Promise.resolve({ data: EMPTY_CART })),
@@ -57,6 +64,37 @@ describe('useCartStore', () => {
     beforeEach(() => {
         setActivePinia(createPinia());
         vi.clearAllMocks();
+    });
+
+    /**
+     * The header's badge, and the one read where a failure is an ordinary state: a guest has no
+     * cart, so 401 empties it. Only 401 — a 500 emptied here shows a full cart as empty.
+     */
+    describe('fetchSummary', () => {
+        it('seeds the badge from the summary endpoint', () => {
+            const store = useCartStore();
+
+            return store.fetchSummary().then(() => {
+                expect(store.badgeQuantity).toBe(1);
+            });
+        });
+
+        it('reads a 401 as "no cart", leaving the badge empty', () => {
+            vi.mocked(getCartSummary).mockReturnValueOnce(apiFailure(401));
+            const store = useCartStore();
+
+            return store.fetchSummary().then((summary) => {
+                expect(summary).toBeUndefined();
+                expect(store.badgeQuantity).toBeUndefined();
+            });
+        });
+
+        it('lets any other failure through instead of calling it "no cart"', () => {
+            vi.mocked(getCartSummary).mockReturnValueOnce(apiFailure(500));
+            const store = useCartStore();
+
+            return expect(store.fetchSummary()).rejects.toMatchObject({ status: 500 });
+        });
     });
 
     describe('before anything is fetched', () => {

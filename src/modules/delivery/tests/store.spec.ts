@@ -1,7 +1,11 @@
 /**
  * The delivery store — transport-mocked like the wishlist's spec. Worth pinning: the methods
  * list mirrors the API, `effectivePrice` applies the free-above rule for DISPLAY exactly as the
- * BE prices it for real, and a 404 on the shipment read is "nothing shipped yet".
+ * BE prices it for real, and a 404 on the shipment read is "nothing shipped yet" while any other
+ * failure still rejects.
+ *
+ * The stub rejects with the envelope `onResponseReject` builds. The store tells "nothing shipped
+ * yet" from a real failure by reading `status` off it, so nothing else would tell the two apart.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
@@ -14,11 +18,17 @@ const METHODS = [
 
 let responses: Record<string, unknown>;
 
+/** The reject envelope `onResponseReject` builds, which is the only shape a store ever catches. */
+const rejectWith = (status: number, message: string) =>
+    // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
+    Promise.reject({ success: false, status, message, errors: [message] });
+
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) => {
         const key = `${config.method?.toUpperCase()} ${config.url}`;
         const answer = responses[key];
-        if (answer === undefined) return Promise.reject(new Error(`404 ${key}`));
+        if (answer === undefined) return rejectWith(404, `Not found: ${key}`);
+        if (answer instanceof Error) return rejectWith(500, answer.message);
         return Promise.resolve(answer);
     })
 }));
@@ -68,6 +78,19 @@ describe('fetchShipmentForOrder', () => {
                 expect(shipment).toBeUndefined();
                 expect(store.shipment).toBeUndefined();
             });
+    });
+
+    /**
+     * Only 404 means "nothing shipped yet". A 500 swallowed here tells the customer their order
+     * has not shipped while the parcel is in transit, which is the one wrong answer this panel
+     * can give.
+     */
+    it('lets any other failure through instead of calling it "nothing shipped yet"', () => {
+        responses = { 'GET /delivery/order/order-1': new Error('Internal Server Error') };
+        const store = useDeliveryStore();
+        return expect(store.fetchShipmentForOrder('order-1')).rejects.toMatchObject({
+            status: 500
+        });
     });
 });
 

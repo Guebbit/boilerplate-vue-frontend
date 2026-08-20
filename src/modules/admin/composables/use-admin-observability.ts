@@ -8,6 +8,7 @@ import {
 import type { ObservabilityHealth, ObservabilityMetricsSummary, AuditEventItem } from '@types';
 import type { AdminAuditFilters } from '@/modules/admin/types.ts';
 import { useAsyncAction } from '@/infrastructure/composables/use-async-action.ts';
+import { translate } from '@/infrastructure/i18n';
 
 export interface UseAdminObservabilityReturn {
     health: Ref<ObservabilityHealth | undefined>;
@@ -50,7 +51,7 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
         loading: loadingHealth,
         run: runHealth
     } = useAsyncAction(() => getObservabilityHealth().then((response) => response.data), {
-        fallbackErrorMessage: 'Failed to load health data'
+        fallbackErrorMessage: translate('admin-page.error-load-health')
     });
 
     const {
@@ -59,7 +60,7 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
         loading: loadingMetrics,
         run: runMetrics
     } = useAsyncAction(() => getObservabilityMetricsOverview().then((response) => response.data), {
-        fallbackErrorMessage: 'Failed to load metrics data'
+        fallbackErrorMessage: translate('admin-page.error-load-metrics')
     });
 
     /**
@@ -80,7 +81,7 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
                 since: filters.since,
                 limit: filters.limit
             }).then((response) => response.data),
-        { fallbackErrorMessage: 'Failed to load audit logs' }
+        { fallbackErrorMessage: translate('admin-page.error-load-audit') }
     );
 
     const auditEvents = computed(() => audit.value?.items ?? []);

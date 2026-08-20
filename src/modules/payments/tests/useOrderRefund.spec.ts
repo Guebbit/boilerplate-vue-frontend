@@ -28,7 +28,16 @@ let responses: Record<string, unknown>;
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) => {
         const key = `${config.method?.toUpperCase()} ${config.url}`;
-        if (!(key in responses)) return Promise.reject(new Error(`no stub for ${key}`));
+        // A missing stub answers 404 in the envelope shape `onResponseReject` builds — the store
+        // reads `status` off it to tell "no payment yet" from a real failure.
+        if (!(key in responses))
+            // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
+            return Promise.reject({
+                success: false,
+                status: 404,
+                message: `no stub for ${key}`,
+                errors: [`no stub for ${key}`]
+            });
         return Promise.resolve(responses[key]);
     })
 }));

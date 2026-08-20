@@ -1,4 +1,5 @@
 import { ref, shallowRef, type Ref } from 'vue';
+import { getErrorMessage } from '@/infrastructure/utils/errors.ts';
 
 /**
  * Settings for {@link useAsyncAction}.
@@ -7,8 +8,9 @@ export interface UseAsyncActionSettings<T> {
     // Value of `data` before the first successful run, and after `reset()`
     initialData?: T;
     /**
-     * Message stored in `error` when the call fails and the rejection carries nothing readable.
-     * Already translated by the caller — this composable does no i18n of its own.
+     * Message stored in `error` when the rejection carries nothing readable at all. Already
+     * translated by the caller — this composable does no i18n of its own. Omit it and the generic
+     * translated "something went wrong" is used.
      */
     fallbackErrorMessage?: string;
 }
@@ -30,7 +32,7 @@ export interface UseAsyncActionSettings<T> {
  */
 export const useAsyncAction = <T, TArguments extends unknown[] = []>(
     action: (...parameters: TArguments) => Promise<T>,
-    { initialData, fallbackErrorMessage = 'Request failed' }: UseAsyncActionSettings<T> = {}
+    { initialData, fallbackErrorMessage }: UseAsyncActionSettings<T> = {}
 ) => {
     const data = shallowRef<T | undefined>(initialData) as Ref<T | undefined>;
     const error = ref<string>();
@@ -64,7 +66,7 @@ export const useAsyncAction = <T, TArguments extends unknown[] = []>(
             })
             .catch((error_: unknown): undefined => {
                 if (current !== latest) return undefined;
-                error.value = error_ instanceof Error ? error_.message : fallbackErrorMessage;
+                error.value = getErrorMessage(error_, fallbackErrorMessage);
                 return undefined;
             })
             .finally(() => {

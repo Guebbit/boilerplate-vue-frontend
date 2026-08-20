@@ -4,12 +4,17 @@ import { translate } from '@/infrastructure/i18n';
 /**
  * Extracts a human-readable message from any thrown/rejected value.
  *
+ * Exported because it is the app's one rule: `interceptors.ts` rejects with a plain object, not an
+ * `Error`, so this is the only thing that can reach the API's own message.
+ *
  * @param error - Unknown value caught in a `catch` block or promise rejection:
  *  a string, an `Error`, or any object exposing a non-empty `message`.
- * @returns The best message found, or a translated "something went wrong" when nothing usable
- *  is available — typically a network failure that produced no response body at all.
+ * @param fallback - Message to use when the rejection carries nothing readable. Already
+ *  translated by the caller; omit it for the generic translated "something went wrong".
+ * @returns The best message found, otherwise `fallback` — typically a network failure that
+ *  produced no response body at all.
  */
-const getErrorMessage = (error: unknown): string => {
+export const getErrorMessage = (error: unknown, fallback?: string): string => {
     if (typeof error === 'string' && error) return error;
     if (error instanceof Error && error.message) return error.message;
     // Covers non-Error rejects with a message field, e.g. parsed API error bodies
@@ -22,7 +27,7 @@ const getErrorMessage = (error: unknown): string => {
         error.message
     )
         return error.message;
-    return translate('api-errors.unknown');
+    return fallback ?? translate('api-errors.unknown');
 };
 
 /**
@@ -43,6 +48,19 @@ export const isTransportFailure = (error: unknown): boolean =>
     !error ||
     typeof error !== 'object' ||
     typeof (error as { status?: unknown }).status !== 'number';
+
+/**
+ * Whether a rejected API call failed with one of the statuses the caller treats as an ANSWER.
+ *
+ * `GET /payments/by-order/:id` answering 404 means "no intent yet"; `GET /cart/summary` answering
+ * 401 means "no cart". Every other status is a failure the caller must not render as absence.
+ *
+ * @param error - Unknown rejected value, normally the envelope from `onResponseReject`.
+ * @param statuses - The statuses that mean "nothing there", e.g. `404`.
+ * @returns `true` when the API answered with one of them.
+ */
+export const absentIs = (error: unknown, ...statuses: number[]): boolean =>
+    !isTransportFailure(error) && statuses.includes((error as { status: number }).status);
 
 /**
  * Shows a best-effort message to the user and always reports the real
