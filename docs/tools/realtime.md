@@ -27,7 +27,7 @@ connection, so everything client → server goes through the REST API instead.
 | ------- | ---- |
 | SSE client factory | `src/infrastructure/create-sse-client.ts` |
 | SSE composable | `src/modules/realtime/use-realtime-observability.ts` |
-| Observability SSE store + state | `src/modules/realtime/realtime-observability.ts` |
+| Observability SSE store + state | `src/modules/realtime/store.ts` |
 | Generated realtime types | `src/types/asyncapi.generated.ts` (DO NOT edit) |
 | App-level type helpers | `src/types/realtime.ts` |
 | Route | `src/modules/realtime/views/RealtimePlayground.vue` |

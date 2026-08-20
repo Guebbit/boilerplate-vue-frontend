@@ -67,7 +67,7 @@ Shapes that exist in exactly one module. Each is a piece of a domain no other do
 | File | What it is | Read next |
 |---|---|---|
 | `src/modules/demo/provided.ts` | `demo` only. The typed `InjectionKey` and the provide/inject pair behind it, replacing a magic string that had been spelled in two files. The consumer throws rather than falling back to a placeholder, so a missing provider fails loudly. | [State & Routing](../tools/state-and-routing.md) |
-| `src/modules/realtime/realtime-observability.ts` | `realtime` only. The SSE subscription this domain owns, on top of the shared typed client. | [Realtime](../tools/realtime.md) |
+| `src/modules/realtime/store.ts` | `realtime` only. The SSE subscription this domain owns, on top of the shared typed client. | [Realtime](../tools/realtime.md) |
 | `src/modules/realtime/use-realtime-observability.ts` | `realtime` only. The composable a view binds to that subscription with. | [Realtime](../tools/realtime.md) |
 
 ::: tip Where the tests are
@@ -98,6 +98,6 @@ ls src/modules/<name>
 | `src/modules/orders/module.ts` | Placed orders: the visitor's own history, and the admin's view of everyone's. | schemas |
 | `src/modules/payments/module.ts` | The payment step of a checkout. Declares no routes — it renders inside the cart's flow. | index · components · composables |
 | `src/modules/products/module.ts` | The catalogue: listing, detail, search, and the admin's write screens. | index · schemas |
-| `src/modules/realtime/module.ts` | The live observability feed, and the typed SSE subscription behind it. Owns no store — the stream is the state. | — |
+| `src/modules/realtime/module.ts` | The live observability feed, and the typed SSE subscription behind it. | — |
 | `src/modules/users/module.ts` | The admin's user management screens. | index · schemas |
 | `src/modules/wishlist/module.ts` | The saved-items list and its entry points from the catalogue. | index |

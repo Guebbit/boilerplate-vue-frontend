@@ -51,7 +51,7 @@ const loadComposable = async () => {
     vi.resetModules();
     const [{ useRealtimeObservability }, { useRealtimeObservabilityStore }] = await Promise.all([
         import('@/modules/realtime/use-realtime-observability'),
-        import('@/modules/realtime/realtime-observability')
+        import('@/modules/realtime/store')
     ]);
     return { useRealtimeObservability, useRealtimeObservabilityStore };
 };

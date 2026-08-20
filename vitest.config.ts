@@ -93,7 +93,7 @@ export default mergeConfig(
         test: {
             // Plain jsdom, with one class of parser noise filtered out.
             // See the file itself for why, and for how to go back to 'jsdom'.
-            environment: './tests/support/unit/jsdom-quiet-css.env.ts',
+            environment: './tests/support/unit/jsdom-quiet-css.environment.ts',
             setupFiles: ['tests/support/unit/setup.ts'],
             // Two homes, deliberately (decision D4). A module's own specs live inside it, so
             // `rm -rf src/modules/<name>` takes its tests with it; everything that belongs to no
@@ -166,10 +166,15 @@ export default mergeConfig(
                     // arrives with a floor instead of arriving inside an average.
                     perFile: true,
 
-                    // Every domain store, under one glob. A second location for stores would
-                    // need its own entry here, and a store that fell between two globs would lose
-                    // its floor without anything failing.
+                    // Every domain store. Two shapes: `store.ts` for the one store a module
+                    // normally has, `stores/*.ts` for a module that genuinely has several — the
+                    // arrangement `src/infrastructure/stores/` already uses.
+                    //
+                    // A store outside both globs would lose its floor without anything failing,
+                    // which is why `tests/cross-cutting/store-location.spec.ts` asserts every
+                    // `defineStore` under `src/modules/` sits in one of exactly these two.
                     'src/modules/*/store.ts': COVERAGE_FLOOR,
+                    'src/modules/*/stores/*.ts': COVERAGE_FLOOR,
                     // Everything under guards EXCEPT authentications.ts, which is written down
                     // below. The extglob negation is required rather than cosmetic: a file
                     // matching two glob keys lands in BOTH groups, so an exemption listed

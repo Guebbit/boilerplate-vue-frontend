@@ -1,5 +1,5 @@
 import { storeToRefs } from 'pinia';
-import { useRealtimeObservabilityStore } from '@/modules/realtime/realtime-observability';
+import { useRealtimeObservabilityStore } from '@/modules/realtime/store';
 import { createSseClient } from '@/infrastructure/create-sse-client';
 import { REALTIME_SSE_EVENT_NAMES } from '@types';
 
