@@ -1,4 +1,5 @@
 import {
+    formatDuration,
     formatText as formatTextBase,
     formatDateTime as formatDateTimeBase,
     formatCurrency as formatCurrencyBase,
@@ -104,15 +105,15 @@ export const formatMegabytes = (bytes?: number | null) =>
 /**
  * Formats a process uptime in a compact, human form.
  *
+ * The toolkit's `formatDuration` renders `0m` for an unknown duration, because a package cannot
+ * know what this app shows when a value is missing. Binding {@link EMPTY_VALUE} here is the same
+ * move every other formatter in this file makes.
+ *
  * @param seconds - Uptime in seconds, possibly unknown.
  * @returns `"2h 15m"`, `"15m"`, or {@link EMPTY_VALUE} when `seconds` is `undefined`.
  */
-export const formatUptime = (seconds?: number): string => {
-    if (seconds === undefined) return EMPTY_VALUE;
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    return h > 0 ? `${h}h ${m}m` : `${m}m`;
-};
+export const formatUptime = (seconds?: number): string =>
+    seconds === undefined ? EMPTY_VALUE : formatDuration(seconds);
 
 /**
  * Maps boolean values to localized labels with a null/undefined fallback.

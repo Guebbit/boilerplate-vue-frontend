@@ -115,7 +115,7 @@ flowchart TD
 | ----- | --------- | -------- |
 | Views | `src/app/views/`, `src/modules/*/views/` | template rendering, user events, layout |
 | Module composables | `src/modules/*/composables/` | domain-scoped logic, form handling |
-| Infrastructure helpers | `src/infrastructure/utils/`, `src/infrastructure/composables/` | cross-domain helpers (formatters, errors, uploads, logger, `useAsyncAction`, `useUploadProgress`) |
+| Infrastructure helpers | `src/infrastructure/utils/`, `src/infrastructure/composables/` | cross-domain helpers (formatters, errors, uploads, logger, `useAppForm`, `useUploadProgress`) |
 | i18n runtime | `src/infrastructure/i18n/` | the vue-i18n instance and locale loading (`index.ts`), the locale-prefixed router locations (`router-link.ts`), the language manifest and the API-stored overrides (`locale-overrides.ts`) |
 | Stores | `src/infrastructure/stores/session.ts`, `src/infrastructure/stores/observability.ts`, `src/modules/*/store.ts` | global reactive state, API orchestration |
 | Generated client | `contracts/rest/index.ts`, `contracts/rest/schemas.zod.ts` | typed axios functions + Zod schemas (DO NOT edit) |

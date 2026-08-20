@@ -79,8 +79,6 @@ covered the day it is added.
 | `tests/unit/infrastructure/stores/session.spec.ts` | The session store: what is held, what is cleared, and when. | [Security](../tools/security.md) |
 | `tests/unit/infrastructure/stores/observability.spec.ts` | Faro and Umami are wired behind one surface, and a disabled back end is a no-op rather than a crash. | [Observability](../tools/observability.md) |
 | `tests/unit/infrastructure/create-sse-client.spec.ts` | The typed SSE wrapper: decoding, reconnection, and cleanup on unmount. | [Realtime](../tools/realtime.md) |
-| `tests/unit/infrastructure/composables/use-async-action.spec.ts` | Pending, error and result state for an API call driven from a component. | [State & Routing](../tools/state-and-routing.md) |
-| `tests/unit/infrastructure/composables/use-api-health.spec.ts` | The liveness probe polls only while down, and only ever on one retry chain. | [Observability](../tools/observability.md) |
 | `tests/unit/infrastructure/composables/use-upload-progress.spec.ts` | Upload progress state, including the failure path. | [UI Kit](./src-ui.md) |
 | `tests/unit/infrastructure/utils/errors.spec.ts` | A human-readable message out of any thrown value, so a `catch` never renders `[object Object]`. | [Endpoints](../api/endpoints.md) |
 | `tests/unit/infrastructure/utils/formatters.spec.ts` | Date, money and fallback rendering. | [UI Kit](./src-ui.md) |

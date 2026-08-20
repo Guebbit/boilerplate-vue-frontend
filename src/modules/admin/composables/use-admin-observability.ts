@@ -1,4 +1,5 @@
 import { computed, ref, type ComputedRef, type Ref } from 'vue';
+import { useAsyncAction } from '@guebbit/vue-toolkit';
 import {
     getObservabilityHealth,
     getObservabilityMetricsOverview,
@@ -7,7 +8,6 @@ import {
 } from '@api';
 import type { ObservabilityHealth, ObservabilityMetricsSummary, AuditEventItem } from '@types';
 import type { AdminAuditFilters } from '@/modules/admin/types.ts';
-import { useAsyncAction } from '@/infrastructure/composables/use-async-action.ts';
 import { translate } from '@/infrastructure/i18n';
 
 export interface UseAdminObservabilityReturn {

@@ -27,6 +27,7 @@
             // Pinning them here makes the whole program agree on one copy. Harmless once the
             // packages come from npm again.
             "vue": ["./node_modules/vue"],
+            "@vue/shared": ["./node_modules/@vue/shared"],
             "pinia": ["./node_modules/pinia"],
             "vue-router": ["./node_modules/vue-router"],
             "vue-i18n": ["./node_modules/vue-i18n"],

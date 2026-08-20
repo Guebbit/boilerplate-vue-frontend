@@ -64,8 +64,8 @@ Pinia stores that belong to no domain. A domain's store lives in its module.
 
 | File | What it is | Read next |
 |---|---|---|
-| `src/infrastructure/composables/use-async-action.ts` | The shape every "call the API from a component" follows: pending, error and result state, so a view does not re-implement it per button. | [State & Routing](../tools/state-and-routing.md) |
-| `src/infrastructure/composables/use-api-health.ts` | Watches whether the API answers its public liveness ping — what the health banner reads. | [Observability](../tools/observability.md) |
+| `src/infrastructure/composables/use-api-health.ts` | Which endpoint is the liveness ping. The probing itself is the toolkit's `useLivenessProbe`; this names `GET /` and keeps the banner free of an API import. | [Observability](../tools/observability.md) |
+| `src/infrastructure/composables/use-app-form.ts` | This app's three answers to `useStructureFormValidation`'s open questions — the locale to re-validate on, the selector to focus, and what to say when a submit is refused. | [UI Kit](./src-ui.md) |
 | `src/infrastructure/composables/use-upload-progress.ts` | Progress state for one form's image upload, and the wrapper that drives it. | [UI Kit](./src-ui.md) |
 
 ## `observability/` and the SSE client

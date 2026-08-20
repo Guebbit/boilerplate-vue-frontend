@@ -1,34 +1,21 @@
+import { extractErrorMessage } from '@guebbit/js-toolkit';
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
 import { translate } from '@/infrastructure/i18n';
 
 /**
- * Extracts a human-readable message from any thrown/rejected value.
+ * The app's fallback wording, bound onto the toolkit's `extractErrorMessage`.
  *
- * Exported because it is the app's one rule: `interceptors.ts` rejects with a plain object, not an
- * `Error`, so this is the only thing that can reach the API's own message.
+ * The toolkit deliberately returns an empty string when a rejection carries nothing readable —
+ * what to say in that case is a decision about tone and language, so it belongs here rather than
+ * in a package that does not know which languages this app speaks.
  *
- * @param error - Unknown value caught in a `catch` block or promise rejection:
- *  a string, an `Error`, or any object exposing a non-empty `message`.
+ * @param error - Unknown value caught in a `catch` block or promise rejection.
  * @param fallback - Message to use when the rejection carries nothing readable. Already
  *  translated by the caller; omit it for the generic translated "something went wrong".
- * @returns The best message found, otherwise `fallback` — typically a network failure that
- *  produced no response body at all.
+ * @returns The best message found, otherwise `fallback`.
  */
-export const getErrorMessage = (error: unknown, fallback?: string): string => {
-    if (typeof error === 'string' && error) return error;
-    if (error instanceof Error && error.message) return error.message;
-    // Covers non-Error rejects with a message field, e.g. parsed API error bodies
-    // or values thrown across a serialization boundary (workers, JSON RPC).
-    if (
-        error &&
-        typeof error === 'object' &&
-        'message' in error &&
-        typeof error.message === 'string' &&
-        error.message
-    )
-        return error.message;
-    return fallback ?? translate('api-errors.unknown');
-};
+export const getErrorMessage = (error: unknown, fallback?: string): string =>
+    extractErrorMessage(error, fallback ?? translate('api-errors.unknown'));
 
 /**
  * Whether a rejected API call never got an answer at all.
