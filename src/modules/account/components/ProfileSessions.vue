@@ -5,7 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
@@ -27,7 +27,17 @@ const { t } = useI18n();
 const router = useRouter();
 const { addMessage } = useNotificationsStore();
 const { fetchSessions, revokeSession, logoutEverywhere } = useAccountStore();
-const { sessions, loading } = storeToRefs(useAccountStore());
+const { sessions } = storeToRefs(useAccountStore());
+
+/**
+ * The session currently being revoked, if any.
+ *
+ * Per row rather than the store's page-wide `loading`: that flag rises for every account request
+ * this page makes, so binding it here put EVERY revoke button into Vuetify's loading state
+ * whenever anything on the profile fetched — spinners on controls nobody had touched, and their
+ * labels dimmed below the contrast threshold while they said it.
+ */
+const revokingId = ref<string>();
 
 /**
  * Revokes one session; leaving through the front door when it was this one.
@@ -37,12 +47,16 @@ const { sessions, loading } = storeToRefs(useAccountStore());
  * @returns Nothing; the outcome is reported as a toast.
  */
 const handleRevoke = (sessionId: string, current: boolean) => {
-    revokeSession(sessionId)
+    revokingId.value = sessionId;
+    return revokeSession(sessionId)
         .then(() => {
             addMessage(t('profile-page.sessions-revoked'));
             if (current) return router.push(routerLinkI18n({ name: 'Logout' }));
         })
-        .catch((error) => notifyErrorMessages(addMessage, error));
+        .catch((error) => notifyErrorMessages(addMessage, error))
+        .finally(() => {
+            revokingId.value = undefined;
+        });
 };
 
 /**
@@ -96,7 +110,7 @@ onMounted(fetchSessions);
                         color="error"
                         size="small"
                         data-test="session-revoke"
-                        :loading="loading"
+                        :loading="revokingId === session.id"
                         @click="handleRevoke(session.id, session.current)"
                     >
                         {{ t('profile-page.sessions-revoke') }}
