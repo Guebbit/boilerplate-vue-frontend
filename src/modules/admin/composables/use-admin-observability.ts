@@ -88,8 +88,8 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
     const auditTotal = computed(() => audit.value?.total ?? 0);
 
     /**
-     * The three fetchers resolve with nothing: every consumer reads the state refs, and a
-     * `Promise<void>` is what `AdminAuditTab`'s `onSearch` prop is typed to take.
+     * The three fetchers resolve with nothing: every consumer reads the state refs, and the
+     * rejection is already swallowed into `error` by {@link useAsyncAction}.
      *
      * @returns A promise resolving once `health` or `errorHealth` is set.
      */

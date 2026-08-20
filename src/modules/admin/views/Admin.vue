@@ -90,7 +90,7 @@ const confirmClearExpiredTokens = () => {
                     :loading="overviewLoading"
                     :health-error="errorHealth"
                     :metrics-error="errorMetrics"
-                    :on-refresh="fetchAll"
+                    @refresh="fetchAll"
                 />
             </v-tabs-window-item>
             <v-tabs-window-item value="audit">
@@ -99,7 +99,7 @@ const confirmClearExpiredTokens = () => {
                     :total="auditTotal"
                     :loading="loadingAudit"
                     :error="errorAudit"
-                    :on-search="fetchAuditLogs"
+                    @search="fetchAuditLogs"
                 />
             </v-tabs-window-item>
         </v-tabs-window>

@@ -20,7 +20,11 @@ const props = defineProps<{
     loading: boolean;
     healthError?: string;
     metricsError?: string;
-    onRefresh: () => Promise<void>;
+}>();
+
+const emit = defineEmits<{
+    /** The visitor asked for fresh numbers. The parent owns the fetching. */
+    refresh: [];
 }>();
 
 /**
@@ -184,7 +188,7 @@ const flag = (value?: boolean) => (value ? '✓' : '✗');
 <template>
     <div class="grid gap-6">
         <div class="flex flex-wrap items-center gap-3">
-            <v-btn color="primary" variant="tonal" :disabled="loading" @click="props.onRefresh">
+            <v-btn color="primary" variant="tonal" :disabled="loading" @click="emit('refresh')">
                 <RefreshCw :size="16" class="mr-1" aria-hidden="true" />
                 {{ loading ? t('generic.loading-state') : t('admin-page.button-refresh') }}
             </v-btn>

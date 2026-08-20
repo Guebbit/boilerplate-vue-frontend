@@ -14,7 +14,14 @@ const props = defineProps<{
     total: number;
     loading: boolean;
     error?: string;
-    onSearch: (filters?: AdminAuditFilters) => Promise<void>;
+}>();
+
+const emit = defineEmits<{
+    /**
+     * The visitor asked for a filtered page. The parent owns the fetching — and owns the
+     * rejection with it, which a callback prop invoked here could only swallow.
+     */
+    search: [filters: AdminAuditFilters];
 }>();
 
 /**
@@ -64,7 +71,7 @@ const tableHeaders = computed(() => [
  * Runs the search with the current filters.
  */
 const handleSearch = () => {
-    void props.onSearch(filters);
+    emit('search', { ...filters });
 };
 
 /**
@@ -76,7 +83,7 @@ const handleReset = () => {
     filters.outcome = undefined;
     filters.since = undefined;
     filters.limit = 50;
-    void props.onSearch(filters);
+    emit('search', { ...filters });
 };
 
 /**
