@@ -3,8 +3,7 @@ import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-
 
 /**
  * Response-envelope schemas for every wishlist endpoint this module calls. Registered through
- * the module manifest, exactly as the account module's are — these four rows lived with the
- * core `/feedback*` rows until this module existed to claim them.
+ * the module manifest; the rules every row obeys are on {@link ResponseSchemaRoute}.
  */
 export const wishlistResponseSchemas: ResponseSchemaRoute[] = [
     { method: 'GET', pattern: /^\/wishlist$/, schema: schemas.GetWishlistResponse },

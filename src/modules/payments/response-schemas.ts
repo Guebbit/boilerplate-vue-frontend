@@ -3,7 +3,7 @@ import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-
 
 /**
  * Response-envelope schemas for every payments endpoint this module calls. Registered through
- * the module manifest, exactly as the wishlist's are.
+ * the module manifest; the rules every row obeys are on {@link ResponseSchemaRoute}.
  */
 export const paymentsResponseSchemas: ResponseSchemaRoute[] = [
     {

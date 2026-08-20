@@ -1,5 +1,6 @@
 import * as zod from 'zod';
 import * as schemas from '@api/schemas';
+import { toPathname } from './url.ts';
 
 /**
  * Maps every `orvalMutator` call site (method + URL) to the Zod schema validating its response, so
@@ -18,6 +19,19 @@ import * as schemas from '@api/schemas';
  *
  * A missing row is not fatal — `resolveResponseSchema` returns `undefined` and the caller warns in
  * dev, because an unmapped route is a maintenance gap, not proof the response is wrong.
+ *
+ * ── The two rules every row obeys, wherever it lives ─────────────────────────────────────────
+ *
+ * 1. **Anchor both ends.** `^…$` is what stops a `[^/]+` segment absorbing an adjacent literal
+ *    one: `^/orders/[^/]+$` must not match `/orders/abc/invoice`, or an invoice response is
+ *    validated against the ORDER schema and fails on a perfectly valid body. Anchoring is also
+ *    why the order rows are registered in does not matter.
+ * 2. **Mirror one call site.** Each row corresponds to one `orvalMutator<…>(…)` in
+ *    `contracts/rest/index.ts`, and `schema` is that operation's
+ *    `<PascalCase-operationId>Response` export from `@api/schemas` — so the table and the client
+ *    can be diffed by eye when an endpoint is added or removed.
+ *
+ * Both are checked by `tests/unit/infrastructure/http/responseSchemaMap.spec.ts`.
  */
 export interface ResponseSchemaRoute {
     method: string;
@@ -33,10 +47,9 @@ export interface ResponseSchemaRoute {
  * whoami/refresh/logout-all that `infrastructure/stores/session.ts` needs — so they live at the
  * bottom tier with the code that calls them.
  *
- * `/feedback*` and `/wishlist*` used to sit here under exactly that rule — contract endpoints no
- * frontend domain called yet, parked so their responses would be validated from the first
- * request. Both modules exist now and carry their own rows, which is the destiny this bottom
- * shelf exists to hand out.
+ * It is also the shelf for a contract endpoint no frontend domain has claimed yet, so its
+ * responses are validated from the first request rather than from the day a module appears. A row
+ * parked here belongs to whichever module eventually claims the endpoint, and moves out with it.
  */
 const coreRouteSchemas: ResponseSchemaRoute[] = [
     { method: 'GET', pattern: /^\/$/, schema: schemas.GetHealthResponse },
@@ -87,19 +100,6 @@ let routeSchemas: ResponseSchemaRoute[] = [...coreRouteSchemas];
  */
 export const registerResponseSchemas = (moduleRouteSchemas: ResponseSchemaRoute[]): void => {
     routeSchemas = [...coreRouteSchemas, ...moduleRouteSchemas];
-};
-
-/**
- * Extracts the pathname `orvalMutator` should match against: relative URLs are used as-is,
- * absolute ones (rare — every generated call passes a relative `url`) are parsed for their
- * pathname, and any query string is dropped either way.
- */
-export const toPathname = (url: string | undefined): string => {
-    if (!url) return '/';
-    const pathname =
-        url.startsWith('http://') || url.startsWith('https://') ? new URL(url).pathname : url;
-    const [withoutQuery] = pathname.split('?');
-    return withoutQuery.startsWith('/') ? withoutQuery : `/${withoutQuery}`;
 };
 
 /**

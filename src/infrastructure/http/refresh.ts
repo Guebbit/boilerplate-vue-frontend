@@ -1,7 +1,8 @@
-import { storeToRefs } from 'pinia';
 import { useSessionStore } from '@/infrastructure/stores/session.ts';
 import { instance } from './client.ts';
+import { getTokenFromResponse } from './envelope.ts';
 import { onResponseReject } from './interceptors.ts';
+import { toPathname } from './url.ts';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import type { ResponseSuccess } from '@/types';
 import type {
@@ -30,9 +31,7 @@ const refreshExcludedPaths = new Set([
  */
 const shouldSkipRefresh = (url?: string) => {
     if (!url) return false;
-    const pathname =
-        url.startsWith('http://') || url.startsWith('https://') ? new URL(url).pathname : url;
-    return refreshExcludedPaths.has(pathname);
+    return refreshExcludedPaths.has(toPathname(url));
 };
 
 /**
@@ -46,7 +45,7 @@ const shouldSkipRefresh = (url?: string) => {
 export const onResponseRejectWithRefresh = (
     error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>
 ) => {
-    const { accessToken } = storeToRefs(useSessionStore());
+    const { setAccessToken } = useSessionStore();
     const originalRequest = error.config as
         (InternalAxiosRequestConfig & { _dontRetry?: boolean }) | undefined;
     // `_dontRetry` is the loop guard: a 401 on the refresh call itself must not trigger a refresh.
@@ -60,9 +59,11 @@ export const onResponseRejectWithRefresh = (
                 _dontRetry: true
             } as AxiosRequestConfigWithRetry)
             .then(({ data }) => {
-                if (!data.data?.token || !originalRequest) return;
+                const token = getTokenFromResponse(data);
+                // A 200 carrying no token is a failed refresh.
+                if (!token || !originalRequest) return onResponseReject(error);
                 // Store first, then replay: the interceptor reads the token off the store.
-                accessToken.value = data.data.token;
+                setAccessToken(token);
                 return instance.request({
                     ...originalRequest,
                     _dontRetry: true

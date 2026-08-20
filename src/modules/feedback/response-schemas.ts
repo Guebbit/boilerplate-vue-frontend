@@ -2,10 +2,8 @@ import * as schemas from '@api/schemas';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 
 /**
- * Response-envelope schemas for every feedback endpoint this module calls. These three rows
- * lived with the core rows "so that the day someone adds a contact form the response is
- * validated from the first request" — this module is that day, exactly as the core comment
- * prescribed.
+ * Response-envelope schemas for every feedback endpoint this module calls. Registered through
+ * the module manifest; the rules every row obeys are on {@link ResponseSchemaRoute}.
  */
 export const feedbackResponseSchemas: ResponseSchemaRoute[] = [
     {

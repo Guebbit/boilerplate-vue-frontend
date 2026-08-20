@@ -3,8 +3,8 @@ import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-
 
 /**
  * Response-envelope schemas for the locale ADMIN surface — the nine operations only this module
- * calls. Moved here from the core map's bottom shelf the day the module claimed them, exactly as
- * that shelf's docblock promised.
+ * calls. Registered through the module manifest; the rules every row obeys are on
+ * {@link ResponseSchemaRoute}.
  *
  * The two public reads (`GET /locales`, `GET /locales/{tag}/messages`) are NOT here: the boot
  * path in `infrastructure/i18n/locale-overrides.ts` calls them whether or not this module is

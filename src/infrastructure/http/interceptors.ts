@@ -73,11 +73,12 @@ export const onRequestReject = (error: AxiosError) => {
  * else — transport failure, bare proxy error — is mapped onto the same shape.
  *
  * @param error - Axios error, with or without a response.
- * @returns A promise always rejected with an {@link AxiosResponseErrorData} envelope.
+ * @returns A promise that never resolves; it always rejects with an
+ *  {@link AxiosResponseErrorData} envelope.
  */
 export const onResponseReject = (
     error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>
-): Promise<AxiosResponseErrorData> => {
+): Promise<never> => {
     const requestId = error.response?.headers['x-request-id'] as string | undefined;
     const traceId = error.response?.headers['x-trace-id'] as string | undefined;
 

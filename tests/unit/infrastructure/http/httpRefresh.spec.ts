@@ -25,6 +25,9 @@ let requestLog: { route: string; authorization?: string }[] = [];
 /** Number of times /account/refresh may still succeed; anything beyond answers 401. */
 let refreshBudget = 1;
 
+/** Whether /account/refresh answers 200 with an envelope carrying no token. */
+let refreshOmitsToken = false;
+
 /** Whether the protected route accepts the token it is given. */
 let protectedAccepts = false;
 
@@ -55,6 +58,7 @@ const server = setupServer(
                 { status: 401 }
             );
         refreshBudget -= 1;
+        if (refreshOmitsToken) return HttpResponse.json({ success: true, status: 200, data: {} });
         return HttpResponse.json({ success: true, status: 200, data: { token: 'fresh-token' } });
     }),
 
@@ -105,11 +109,20 @@ beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
+/** Clears the `isAuth` cookie through the prototype setter, the way `stores/session.ts` writes it. */
+const clearAuthCookie = () =>
+    Object.getOwnPropertyDescriptor(Document.prototype, 'cookie')?.set?.call(
+        document,
+        'isAuth=; path=/; max-age=0'
+    );
+
 beforeEach(() => {
     setActivePinia(createPinia());
     requestLog = [];
     refreshBudget = 1;
+    refreshOmitsToken = false;
     protectedAccepts = false;
+    clearAuthCookie();
     vi.unstubAllEnvs();
 });
 
@@ -140,6 +153,41 @@ describe('401 refresh flow', () => {
                 expect(getAccessToken()).toBe('fresh-token');
             })
         );
+    });
+
+    /**
+     * A 200 whose envelope carries no token is a failed refresh wearing a success status. The
+     * caller is owed either a body or a rejection; anything else surfaces as a `TypeError` in
+     * whichever store dereferenced it.
+     */
+    it('rejects with the original error when the refresh answers 200 without a token', () => {
+        refreshOmitsToken = true;
+
+        return loadHttp()
+            .then(({ orvalMutator }) =>
+                expect(orvalMutator({ url: '/orders', method: 'GET' })).rejects.toMatchObject({
+                    success: false,
+                    status: 401
+                })
+            )
+            .then(() => {
+                // The original request was never replayed — there was no token to replay it with.
+                expect(requestLog.filter(({ route }) => route === 'GET /orders')).toHaveLength(1);
+            });
+    });
+
+    /**
+     * `setAccessToken` is the only writer of the JS-readable `isAuth` cookie, and `tryRestoreAuth`
+     * reads it on the next boot: without it a signed-in visitor looks like a guest after a reload.
+     */
+    it('restores the isAuth cookie, not just the in-memory token', () => {
+        protectedAccepts = true;
+
+        return loadHttp()
+            .then(({ orvalMutator }) => orvalMutator({ url: '/orders', method: 'GET' }))
+            .then(() => {
+                expect(document.cookie).toContain('isAuth=true');
+            });
     });
 
     it('does not retry a second time when the replay also fails', () =>
@@ -183,22 +231,26 @@ describe('401 refresh flow', () => {
      * server's own request log — the only place a refresh attempt is observable without
      * mocking the very code under test.
      */
-    it.each([...EXCLUDED_PATHS, ABSOLUTE_EXCLUDED_URL])(
-        'never attempts a refresh for a 401 from %s',
-        (url) =>
-            loadHttp()
-                .then(({ orvalMutator }) =>
-                    expect(orvalMutator({ url, method: 'POST', data: {} })).rejects.toMatchObject({
-                        status: 401
-                    })
-                )
-                .then(() => {
-                    // The endpoint itself was reached...
-                    expect(requestLog.some(({ route }) => route.startsWith('POST '))).toBe(true);
-                    // ...and no refresh was attempted off the back of its 401.
-                    expect(requestLog.some(({ route }) => route === 'GET /account/refresh')).toBe(
-                        false
-                    );
+    it.each([
+        ...EXCLUDED_PATHS,
+        ABSOLUTE_EXCLUDED_URL,
+        // With a query string: the exclusion matches a pathname, and `?next=` is the shape a
+        // sign-in redirect actually arrives in.
+        '/account/login?next=/cart'
+    ])('never attempts a refresh for a 401 from %s', (url) =>
+        loadHttp()
+            .then(({ orvalMutator }) =>
+                expect(orvalMutator({ url, method: 'POST', data: {} })).rejects.toMatchObject({
+                    status: 401
                 })
+            )
+            .then(() => {
+                // The endpoint itself was reached...
+                expect(requestLog.some(({ route }) => route.startsWith('POST '))).toBe(true);
+                // ...and no refresh was attempted off the back of its 401.
+                expect(requestLog.some(({ route }) => route === 'GET /account/refresh')).toBe(
+                    false
+                );
+            })
     );
 });
