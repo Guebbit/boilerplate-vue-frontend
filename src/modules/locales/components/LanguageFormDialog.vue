@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
+import { localesLanguageEditSchema, localesLanguageSchema } from '@/modules/locales/schemas.ts';
 import type { LocaleCapability, LocaleDirection } from '@types';
 
 /**
@@ -11,13 +13,11 @@ import type { LocaleCapability, LocaleDirection } from '@types';
  * immutable and this dialog says so rather than hiding it.
  */
 const props = defineProps<{
-    modelValue: boolean;
     /** The language being edited; absent means the dialog creates one. */
     language?: LocaleCapability;
 }>();
 
 const emit = defineEmits<{
-    'update:modelValue': [open: boolean];
     /** The saved fields; `tag` is only meaningful on create. */
     save: [
         fields: {
@@ -30,71 +30,54 @@ const emit = defineEmits<{
     ];
 }>();
 
+/** Two-way `v-model`, so the dialog neither declares the prop nor re-emits the event by hand. */
+const isOpen = defineModel<boolean>({ required: true });
+
 const { t } = useI18n();
 
-const tag = ref('');
-const name = ref('');
-const nativeName = ref('');
-const direction = ref<LocaleDirection>('ltr');
-const active = ref(true);
-
 const isEdit = computed(() => props.language !== undefined);
+
+/*
+ * Two schemas rather than one with a conditional tag rule: editing shows the tag disabled — it is
+ * what every entry references, so the API keeps it immutable — and a field that is sometimes
+ * required is a field nobody can read the rule of.
+ */
+const { form, formErrors, showFormErrors, isValid, handleSubmit, setForm } = useAppForm<{
+    tag: string;
+    name: string;
+    nativeName: string;
+    direction: LocaleDirection;
+    active: boolean;
+}>(
+    { tag: '', name: '', nativeName: '', direction: 'ltr', active: true },
+    computed(() => (isEdit.value ? localesLanguageEditSchema : localesLanguageSchema))
+);
 
 /*
  * Refill on every open rather than on mount: the dialog is a single instance the page reuses, so
  * yesterday's values must not leak into today's create.
  */
-watch(
-    () => props.modelValue,
-    (open) => {
-        if (!open) return;
-        tag.value = props.language?.tag ?? '';
-        name.value = props.language?.name ?? '';
-        nativeName.value = props.language?.nativeName ?? '';
-        direction.value = props.language?.direction ?? 'ltr';
-        active.value = props.language?.active ?? true;
-    }
-);
+watch(isOpen, (open) => {
+    if (!open) return;
+    setForm({
+        tag: props.language?.tag ?? '',
+        name: props.language?.name ?? '',
+        nativeName: props.language?.nativeName ?? '',
+        direction: props.language?.direction ?? 'ltr',
+        active: props.language?.active ?? true
+    });
+});
 
 const directionOptions = computed(() => [
     { value: 'ltr', title: t('locales-list-page.direction-ltr') },
     { value: 'rtl', title: t('locales-list-page.direction-rtl') }
 ]);
 
-/** BCP 47 as the contract accepts it: primary subtag, optional region. */
-const TAG_PATTERN = /^[a-z]{2}(-[A-Z]{2})?$/;
-
-const tagError = computed(() => {
-    if (isEdit.value) return undefined;
-    if (tag.value === '') return t('locale-form.tag-required');
-    if (!TAG_PATTERN.test(tag.value)) return t('locale-form.tag-invalid');
-    return undefined;
-});
-const nameError = computed(() => (name.value === '' ? t('locale-form.name-required') : undefined));
-const nativeNameError = computed(() =>
-    nativeName.value === '' ? t('locale-form.native-name-required') : undefined
-);
-
-const isValid = computed(() => !tagError.value && !nameError.value && !nativeNameError.value);
-
-const handleSave = () => {
-    if (!isValid.value) return;
-    emit('save', {
-        tag: tag.value,
-        name: name.value,
-        nativeName: nativeName.value,
-        direction: direction.value,
-        active: active.value
-    });
-};
+const handleSave = () => handleSubmit((fields) => emit('save', fields));
 </script>
 
 <template>
-    <v-dialog
-        :model-value="modelValue"
-        max-width="480"
-        @update:model-value="(open) => emit('update:modelValue', open)"
-    >
+    <v-dialog v-model="isOpen" max-width="480">
         <v-card class="p-5" data-test="language-form">
             <h3 class="mb-1 text-lg font-semibold">
                 {{ isEdit ? t('locale-form.title-edit') : t('locale-form.title-create') }}
@@ -105,34 +88,34 @@ const handleSave = () => {
 
             <form novalidate class="flex flex-col gap-3" @submit.prevent="handleSave">
                 <v-text-field
-                    v-model="tag"
+                    v-model="form.tag"
                     :label="t('locale-form.label-tag')"
                     :hint="t('locale-form.hint-tag')"
                     :disabled="isEdit"
-                    :error-messages="tagError"
+                    :error-messages="showFormErrors ? (formErrors.tag ?? []) : []"
                     persistent-hint
                     data-test="language-tag"
                 />
                 <v-text-field
-                    v-model="name"
+                    v-model="form.name"
                     :label="t('locale-form.label-name')"
-                    :error-messages="nameError"
+                    :error-messages="showFormErrors ? (formErrors.name ?? []) : []"
                     data-test="language-name"
                 />
                 <v-text-field
-                    v-model="nativeName"
+                    v-model="form.nativeName"
                     :label="t('locale-form.label-native-name')"
-                    :error-messages="nativeNameError"
+                    :error-messages="showFormErrors ? (formErrors.nativeName ?? []) : []"
                     data-test="language-native-name"
                 />
                 <v-select
-                    v-model="direction"
+                    v-model="form.direction"
                     :items="directionOptions"
                     :label="t('locale-form.label-direction')"
                     hide-details
                 />
                 <v-switch
-                    v-model="active"
+                    v-model="form.active"
                     :label="t('locale-form.label-active')"
                     :hint="t('locale-form.hint-active')"
                     persistent-hint
@@ -140,7 +123,7 @@ const handleSave = () => {
                     data-test="language-active"
                 />
                 <div class="mt-2 flex justify-end gap-2">
-                    <v-btn variant="tonal" @click="emit('update:modelValue', false)">
+                    <v-btn variant="tonal" @click="isOpen = false">
                         {{ t('locale-form.button-cancel') }}
                     </v-btn>
                     <v-btn

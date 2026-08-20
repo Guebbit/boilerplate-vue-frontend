@@ -16,33 +16,38 @@ import { flattenDictionary } from '../dictionaries';
  * confirmed once more before a replace fires.
  */
 const props = defineProps<{
-    modelValue: boolean;
     /** The scope preselected on open. */
     initialScope?: TLocaleScope;
 }>();
 
 const emit = defineEmits<{
-    'update:modelValue': [open: boolean];
     import: [
         payload: { mode: 'merge' | 'replace'; scope: TLocaleScope; entries: LocaleEntryInput[] }
     ];
 }>();
 
+/** Two-way `v-model`, so the dialog neither declares the prop nor re-emits the event by hand. */
+const isOpen = defineModel<boolean>({ required: true });
+
 const { t } = useI18n();
+
+/*
+ * Deliberately NOT on `useAppForm`, unlike the two form dialogs beside it. What this validates is
+ * a JSON document, and the useful result is the ROWS it parsed to — data the preview below
+ * renders — not a per-field error. A schema would have to carry the parse through a transform to
+ * hand back the same thing `parsed` already does.
+ */
 
 const scope = ref<TLocaleScope>(LocaleScope.app);
 const mode = ref<'merge' | 'replace'>('merge');
 const rawJson = ref('');
 
-watch(
-    () => props.modelValue,
-    (open) => {
-        if (!open) return;
-        scope.value = props.initialScope ?? LocaleScope.app;
-        mode.value = 'merge';
-        rawJson.value = '';
-    }
-);
+watch(isOpen, (open) => {
+    if (!open) return;
+    scope.value = props.initialScope ?? LocaleScope.app;
+    mode.value = 'merge';
+    rawJson.value = '';
+});
 
 /**
  * Reads a picked file into the paste area, so both inputs land in the same place and the preview
@@ -98,11 +103,7 @@ const handleImport = () => {
 </script>
 
 <template>
-    <v-dialog
-        :model-value="modelValue"
-        max-width="640"
-        @update:model-value="(open) => emit('update:modelValue', open)"
-    >
+    <v-dialog v-model="isOpen" max-width="640">
         <v-card class="p-5" data-test="entries-import">
             <h3 class="mb-1 text-lg font-semibold">{{ t('entries-import.title') }}</h3>
             <p class="mb-4 text-sm opacity-70">{{ t('entries-import.intro') }}</p>
@@ -157,7 +158,7 @@ const handleImport = () => {
                 </p>
 
                 <div class="mt-2 flex justify-end gap-2">
-                    <v-btn variant="tonal" @click="emit('update:modelValue', false)">
+                    <v-btn variant="tonal" @click="isOpen = false">
                         {{ t('entries-import.button-cancel') }}
                     </v-btn>
                     <v-btn

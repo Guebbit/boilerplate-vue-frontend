@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
+import { localesEntrySchema } from '@/modules/locales/schemas.ts';
 import { LocaleScope } from '@types';
 import type { LocaleScope as TLocaleScope } from '@types';
 
@@ -9,31 +11,32 @@ import type { LocaleScope as TLocaleScope } from '@types';
  * inline in the table, so a row never comes back through here.
  */
 const props = defineProps<{
-    modelValue: boolean;
     /** The scope preselected on open — whatever the page's scope filter is on. */
     initialScope?: TLocaleScope;
 }>();
 
 const emit = defineEmits<{
-    'update:modelValue': [open: boolean];
     save: [fields: { scope: TLocaleScope; key: string; value: string }];
 }>();
 
+/** Two-way `v-model`, so the dialog neither declares the prop nor re-emits the event by hand. */
+const isOpen = defineModel<boolean>({ required: true });
+
 const { t } = useI18n();
 
-const scope = ref<TLocaleScope>(LocaleScope.app);
-const key = ref('');
-const value = ref('');
-
-watch(
-    () => props.modelValue,
-    (open) => {
-        if (!open) return;
-        scope.value = props.initialScope ?? LocaleScope.app;
-        key.value = '';
-        value.value = '';
-    }
+const { form, formErrors, showFormErrors, isValid, handleSubmit, setForm } = useAppForm(
+    { scope: LocaleScope.app, key: '', value: '' },
+    localesEntrySchema
 );
+
+/*
+ * Refill on every open rather than on mount: the dialog is a single instance the page reuses, so
+ * yesterday's values must not leak into today's add.
+ */
+watch(isOpen, (open) => {
+    if (!open) return;
+    setForm({ scope: props.initialScope ?? LocaleScope.app, key: '', value: '' });
+});
 
 const scopeOptions = computed(() =>
     Object.values(LocaleScope).map((option) => ({
@@ -42,53 +45,43 @@ const scopeOptions = computed(() =>
     }))
 );
 
-const keyError = computed(() => (key.value === '' ? t('entry-form.key-required') : undefined));
-const valueError = computed(() =>
-    value.value === '' ? t('entry-form.value-required') : undefined
-);
-const isValid = computed(() => !keyError.value && !valueError.value);
-
-const handleSave = () => {
-    if (!isValid.value) return;
-    emit('save', { scope: scope.value, key: key.value, value: value.value });
-};
+const handleSave = () =>
+    handleSubmit(({ scope, key, value }) => {
+        emit('save', { scope, key, value });
+    });
 </script>
 
 <template>
-    <v-dialog
-        :model-value="modelValue"
-        max-width="560"
-        @update:model-value="(open) => emit('update:modelValue', open)"
-    >
+    <v-dialog v-model="isOpen" max-width="560">
         <v-card class="p-5" data-test="entry-form">
             <h3 class="mb-4 text-lg font-semibold">{{ t('entry-form.title') }}</h3>
             <form novalidate class="flex flex-col gap-3" @submit.prevent="handleSave">
                 <v-select
-                    v-model="scope"
+                    v-model="form.scope"
                     :items="scopeOptions"
                     :label="t('entry-form.label-scope')"
                     hide-details
                     data-test="entry-scope"
                 />
                 <v-text-field
-                    v-model="key"
+                    v-model="form.key"
                     :label="t('entry-form.label-key')"
                     :hint="t('entry-form.hint-key')"
-                    :error-messages="keyError"
+                    :error-messages="showFormErrors ? (formErrors.key ?? []) : []"
                     persistent-hint
                     class="font-mono"
                     data-test="entry-key"
                 />
                 <v-textarea
-                    v-model="value"
+                    v-model="form.value"
                     :label="t('entry-form.label-value')"
-                    :error-messages="valueError"
+                    :error-messages="showFormErrors ? (formErrors.value ?? []) : []"
                     rows="2"
                     auto-grow
                     data-test="entry-value"
                 />
                 <div class="mt-2 flex justify-end gap-2">
-                    <v-btn variant="tonal" @click="emit('update:modelValue', false)">
+                    <v-btn variant="tonal" @click="isOpen = false">
                         {{ t('entry-form.button-cancel') }}
                     </v-btn>
                     <v-btn
