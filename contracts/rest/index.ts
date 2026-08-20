@@ -578,14 +578,20 @@ export interface ObservabilityHealthDependencies {
     queue: ObservabilityDependency;
 }
 
-export type ObservabilityHealthTelemetryAnalytics =
-    (typeof ObservabilityHealthTelemetryAnalytics)[keyof typeof ObservabilityHealthTelemetryAnalytics];
+export type ObservabilityHealthTelemetryAnalyticsProvider =
+    (typeof ObservabilityHealthTelemetryAnalyticsProvider)[keyof typeof ObservabilityHealthTelemetryAnalyticsProvider];
 
-export const ObservabilityHealthTelemetryAnalytics = {
+export const ObservabilityHealthTelemetryAnalyticsProvider = {
     umami: 'umami',
     posthog: 'posthog',
     none: 'none'
 } as const;
+
+export type ObservabilityHealthTelemetryAnalytics = {
+    provider: ObservabilityHealthTelemetryAnalyticsProvider;
+    /** Whether the selected provider has the credentials it needs. `none` is always true: collecting nothing is its configuration. */
+    configured: boolean;
+};
 
 /**
  * Which telemetry sinks this deployment is WIRED TO — read off the environment, never probed.
@@ -2624,6 +2630,7 @@ export const signupWithMultipart = (
 
 /**
  * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
+ * @summary Request password reset
  */
 export const requestPasswordReset = (
     passwordResetRequest: PasswordResetRequest,
@@ -2642,6 +2649,7 @@ export const requestPasswordReset = (
 
 /**
  * Completes the password-reset flow. Validates the one-time reset token issued by `/account/reset` and, if valid, updates the user's password to the supplied value.
+ * @summary Confirm password reset
  */
 export const confirmPasswordReset = (
     passwordResetConfirmRequest: PasswordResetConfirmRequest,

@@ -847,7 +847,14 @@ export const GetObservabilityHealthResponse = zod.strictObject({
                 otel: zod.boolean(),
                 umami: zod.boolean(),
                 faro: zod.boolean(),
-                analytics: zod.enum(['umami', 'posthog', 'none'])
+                analytics: zod.strictObject({
+                    provider: zod.enum(['umami', 'posthog', 'none']),
+                    configured: zod
+                        .boolean()
+                        .describe(
+                            'Whether the selected provider has the credentials it needs. `none` is always true: collecting nothing is its configuration.'
+                        )
+                })
             })
             .optional()
             .describe(
@@ -1513,6 +1520,7 @@ export const SignupResponse = zod.strictObject({
 
 /**
  * Initiates the password-reset flow by sending a one-time reset token to the provided email address. The token should then be submitted to `/account/reset-confirm`.
+ * @summary Request password reset
  */
 export const RequestPasswordResetBody = zod.strictObject({
     email: zod.email()
@@ -1526,6 +1534,7 @@ export const RequestPasswordResetResponse = zod.strictObject({
 
 /**
  * Completes the password-reset flow. Validates the one-time reset token issued by `/account/reset` and, if valid, updates the user's password to the supplied value.
+ * @summary Confirm password reset
  */
 export const confirmPasswordResetBodyPasswordMin = 8;
 
