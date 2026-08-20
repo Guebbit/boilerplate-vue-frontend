@@ -29,6 +29,21 @@ import viteConfig from './vite.config';
 const resolvedViteConfig = viteConfig({ command: 'serve', mode: 'test' });
 
 /**
+ * The floor every glob below shares, written once.
+ *
+ * The number is a policy, not a measurement, so raising it must raise it everywhere — five
+ * separate copies is five chances to raise four of them. `src/app/guards/authentications.ts` is
+ * deliberately NOT this object: its numbers are a record of where that file actually is, and
+ * being different is the point.
+ */
+const COVERAGE_FLOOR = {
+    statements: 70,
+    branches: 70,
+    functions: 70,
+    lines: 70
+};
+
+/**
  * Drop the Vue DevTools plugins from every test run.
  *
  * `vite.config.ts` adds `vueDevTools()`, which is not one plugin but four —
@@ -154,23 +169,13 @@ export default mergeConfig(
                     // Every domain store, under one glob. A second location for stores would
                     // need its own entry here, and a store that fell between two globs would lose
                     // its floor without anything failing.
-                    'src/modules/*/store.ts': {
-                        statements: 70,
-                        branches: 70,
-                        functions: 70,
-                        lines: 70
-                    },
+                    'src/modules/*/store.ts': COVERAGE_FLOOR,
                     // Everything under guards EXCEPT authentications.ts, which is written down
                     // below. The extglob negation is required rather than cosmetic: a file
                     // matching two glob keys lands in BOTH groups, so an exemption listed
                     // alongside the broad glob would still be failed by the broad glob. An
                     // exemption has to leave the glob to be one.
-                    'src/app/guards/!(authentications).ts': {
-                        statements: 70,
-                        branches: 70,
-                        functions: 70,
-                        lines: 70
-                    },
+                    'src/app/guards/!(authentications).ts': COVERAGE_FLOOR,
                     // Measured 2026-08-08, and the first thing `perFile: true` exposed: the
                     // pooled guards group passed 70 across the board while this file sat at 50%
                     // branches and 55% functions, carried by its neighbours at 100%.
@@ -186,24 +191,9 @@ export default mergeConfig(
                         functions: 55,
                         lines: 80
                     },
-                    'src/infrastructure/http/**': {
-                        statements: 70,
-                        branches: 70,
-                        functions: 70,
-                        lines: 70
-                    },
-                    'src/infrastructure/utils/errors.ts': {
-                        statements: 70,
-                        branches: 70,
-                        functions: 70,
-                        lines: 70
-                    },
-                    'src/infrastructure/utils/formatters.ts': {
-                        statements: 70,
-                        branches: 70,
-                        functions: 70,
-                        lines: 70
-                    }
+                    'src/infrastructure/http/**': COVERAGE_FLOOR,
+                    'src/infrastructure/utils/errors.ts': COVERAGE_FLOOR,
+                    'src/infrastructure/utils/formatters.ts': COVERAGE_FLOOR
                 }
             }
         }

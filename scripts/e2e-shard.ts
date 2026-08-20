@@ -20,8 +20,7 @@
  * ── WHY THIS IS SAFE HERE, AND NOT SAFE FOR THE LIVE PROFILE ─────────────────────────────────────
  * Each shard gets its OWN demo backend (the paired repo's `npm run demo`: the real API against an
  * in-memory Mongo, seeded, booted below on ports 3101+). `cy.resetState()` reseeds only that
- * shard's database, so shards cannot see each other — the isolation MSW's in-page state used to
- * provide, now with the real application behind it. The built bundle is shared; each shard's
+ * shard's database, so shards cannot see each other. The built bundle is shared; each shard's
  * Cypress carries `CYPRESS_apiUrl`, which `cy.visit` injects into the page as the runtime
  * `__E2E_API_URL` override (see `src/infrastructure/http/client.ts`).
  *
@@ -32,7 +31,7 @@
  * ── BALANCING ────────────────────────────────────────────────────────────────────────────────────
  * Longest-first onto the least-loaded shard (LPT), weighted by MEASURED durations rather than by
  * file size. Size is actively misleading here: a spec whose cases are all `cy.skipUnlessLive()`
- * costs a fraction of a second under the mock profile whatever its line count.
+ * costs a fraction of a second under the demo profile whatever its line count.
  *
  * Wall-clock cannot go below the longest single spec, so the floor is `uploads.cy.ts` at ~86s no
  * matter how many shards are used.
@@ -54,7 +53,7 @@ const REPO_ROOT = path.resolve(import.meta.dirname, '..');
  * one stops being scheduled without anyone remembering this file — which is the whole reason the
  * specs moved.
  */
-const SPEC_GLOBS = ['tests/e2e/specs/*.cy.ts', 'src/modules/*/tests/e2e/*.cy.ts'];
+const SPEC_GLOBS = ['tests/e2e/specs/**/*.cy.ts', 'src/modules/*/tests/e2e/**/*.cy.ts'];
 
 /*
  * Visual specs live beside the functional ones — `src/modules/<name>/tests/e2e/<name>.visual.cy.ts`
