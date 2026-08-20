@@ -20,6 +20,7 @@ import type { Order } from '@types';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
+import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
@@ -51,12 +52,13 @@ const pageSizeOptions = [
  *
  * @returns The localized headers, re-translated on locale change.
  */
-const tableHeaders = computed(() => [
+const tableHeaders = computed<CoreDataTableHeader<Order>[]>(() => [
     { title: t('orders-list-page.column-id'), key: 'id' },
     { title: t('orders-list-page.column-status'), key: 'status' },
     { title: t('orders-list-page.column-total'), key: 'totalPrice' },
     { title: t('orders-list-page.column-date'), key: 'createdAt' },
-    { title: t('orders-list-page.column-actions'), key: 'actions' }
+    // Reads no field on the row: the cell is the `item.actions` slot below.
+    { title: t('orders-list-page.column-actions'), key: 'actions', synthetic: true }
 ]);
 
 /**

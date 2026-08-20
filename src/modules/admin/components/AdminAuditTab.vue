@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
-import TableLoadingBar from '@/ui/molecules/TableLoadingBar.vue';
+import DataTable from '@/ui/organisms/DataTable.vue';
+import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { Search } from 'lucide-vue-next';
 import type { AuditEventItem } from '@types';
 import type { AdminAuditFilters } from '@/modules/admin/types.ts';
@@ -56,7 +57,7 @@ const limitOptions = [20, 50, 100, 200];
  *
  * @returns The localized headers, keyed on the audit event fields.
  */
-const tableHeaders = computed(() => [
+const tableHeaders = computed<CoreDataTableHeader<AuditEventItem>[]>(() => [
     { title: t('admin-page.audit-col-timestamp'), key: 'timestamp' },
     { title: t('admin-page.audit-col-actor'), key: 'actor_user_id' },
     { title: t('admin-page.audit-col-role'), key: 'actor_role' },
@@ -151,21 +152,13 @@ const truncateId = (value?: string, length = 8) =>
 
         <v-alert v-if="props.error" type="error" :text="props.error" />
 
-        <v-data-table
+        <DataTable
             v-else
             :headers="tableHeaders"
             :items="props.auditEvents"
             :loading="props.loading"
             :no-data-text="t('generic.no-data')"
-            items-per-page="-1"
-            hide-default-footer
-            class="rounded-xl border"
         >
-            <!-- Replaces Vuetify's unnamed internal bar — see `TableLoadingBar` for why. -->
-            <template #loader>
-                <TableLoadingBar />
-            </template>
-
             <template v-slot:[`item.timestamp`]="{ item }">
                 <span class="whitespace-nowrap">{{ formatDateTime(item.timestamp) }}</span>
             </template>
@@ -205,6 +198,6 @@ const truncateId = (value?: string, length = 8) =>
                     {{ truncateId(item.trace_id) }}
                 </span>
             </template>
-        </v-data-table>
+        </DataTable>
     </div>
 </template>

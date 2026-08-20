@@ -12,13 +12,19 @@ import { BookOpen, Timer } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
+import DataTable from '@/ui/organisms/DataTable.vue';
+import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useInventoryStore } from '@/modules/inventory/store.ts';
 import { useProductsStore } from '@/modules/products';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
-import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
+import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { StockMovementReason } from '@types';
-import type { StockMovementReason as TStockMovementReason } from '@types';
+import type {
+    InventoryLevel,
+    StockMovement,
+    StockMovementReason as TStockMovementReason
+} from '@types';
 
 /**
  * The stock board and the ledger behind it, admin-side — one page, deliberately.
@@ -45,6 +51,38 @@ const inventoryStore = useInventoryStore();
 const { movements, movementsTotal, levels, levelsTotal, loading } = storeToRefs(inventoryStore);
 const productsStore = useProductsStore();
 const { productsList } = storeToRefs(productsStore);
+
+/**
+ * Columns of the stock board.
+ *
+ * @returns The localized headers, re-translated on locale change.
+ */
+const levelHeaders = computed<CoreDataTableHeader<InventoryLevel>[]>(() => [
+    { title: t('inventory-page.column-product'), key: 'title' },
+    { title: t('inventory-page.column-on-hand'), key: 'onHand' },
+    { title: t('inventory-page.column-reserved'), key: 'reserved' },
+    { title: t('inventory-page.column-available'), key: 'available' },
+    // Reads no field: the cell is a button, and the column has no heading.
+    { title: '', key: 'history', synthetic: true }
+]);
+
+/**
+ * Columns of the movement ledger.
+ *
+ * `product` reads no field on the row — a movement carries a `productId`, and the title is looked
+ * up against the catalogue this page already loaded.
+ *
+ * @returns The localized headers, re-translated on locale change.
+ */
+const movementHeaders = computed<CoreDataTableHeader<StockMovement>[]>(() => [
+    { title: t('inventory-page.column-when'), key: 'createdAt' },
+    { title: t('inventory-page.column-product'), key: 'product', synthetic: true },
+    { title: t('inventory-page.column-on-hand'), key: 'onHandDelta' },
+    { title: t('inventory-page.column-reserved'), key: 'reservedDelta' },
+    { title: t('inventory-page.column-reason'), key: 'reason' },
+    { title: t('inventory-page.column-reference'), key: 'reference' },
+    { title: t('inventory-page.column-note'), key: 'note' }
+]);
 
 /** Small on purpose — this is an admin table to read, not a feed to scroll. */
 const PAGE_SIZE = 10;
@@ -272,35 +310,32 @@ onMounted(() => {
             </span>
         </div>
 
-        <v-table v-if="levels.length > 0" class="mb-2" data-test="levels-table">
-            <thead>
-                <tr>
-                    <th>{{ t('inventory-page.column-product') }}</th>
-                    <th>{{ t('inventory-page.column-on-hand') }}</th>
-                    <th>{{ t('inventory-page.column-reserved') }}</th>
-                    <th>{{ t('inventory-page.column-available') }}</th>
-                    <th />
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="level in levels" :key="level.productId" data-test="level-row">
-                    <td>{{ level.title }}</td>
-                    <td>{{ level.onHand }}</td>
-                    <td>{{ level.reserved }}</td>
-                    <td class="font-medium">{{ level.available }}</td>
-                    <td>
-                        <v-btn
-                            size="small"
-                            variant="text"
-                            data-test="level-history"
-                            @click="showHistory(level.productId)"
-                        >
-                            {{ t('inventory-page.button-history') }}
-                        </v-btn>
-                    </td>
-                </tr>
-            </tbody>
-        </v-table>
+        <DataTable
+            v-if="levels.length > 0"
+            class="mb-2"
+            :headers="levelHeaders"
+            :items="levels"
+            :loading="loading"
+            :loading-text="t('generic.loading')"
+            :no-data-text="t('generic.no-data')"
+            item-value="productId"
+            row-test="level-row"
+        >
+            <template v-slot:[`item.available`]="{ item }">
+                <span class="font-medium">{{ item.available }}</span>
+            </template>
+
+            <template v-slot:[`item.history`]="{ item }">
+                <v-btn
+                    size="small"
+                    variant="text"
+                    data-test="level-history"
+                    @click="showHistory(item.productId)"
+                >
+                    {{ t('inventory-page.button-history') }}
+                </v-btn>
+            </template>
+        </DataTable>
         <ListPagination v-model="levelsPage" :length="levelsPageTotal" class="mb-6" />
 
         <div class="mb-2 flex flex-wrap items-center gap-3">
@@ -350,53 +385,62 @@ onMounted(() => {
             </template>
         </v-empty-state>
 
-        <v-table v-else data-test="movements-table">
-            <thead>
-                <tr>
-                    <th>{{ t('inventory-page.column-when') }}</th>
-                    <th>{{ t('inventory-page.column-product') }}</th>
-                    <th>{{ t('inventory-page.column-on-hand') }}</th>
-                    <th>{{ t('inventory-page.column-reserved') }}</th>
-                    <th>{{ t('inventory-page.column-reason') }}</th>
-                    <th>{{ t('inventory-page.column-reference') }}</th>
-                    <th>{{ t('inventory-page.column-note') }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="movement in movements" :key="movement.id" data-test="movement-row">
-                    <td>{{ movement.createdAt ? formatDateTime(movement.createdAt) : '—' }}</td>
-                    <td>{{ productTitle(movement.productId) }}</td>
-                    <td :class="deltaClass(movement.onHandDelta)">
-                        {{ signed(movement.onHandDelta) }}
-                    </td>
-                    <td :class="deltaClass(movement.reservedDelta)">
-                        {{ signed(movement.reservedDelta) }}
-                    </td>
-                    <td>
-                        <v-chip size="x-small" data-test="movement-reason">
-                            {{ t(`inventory-page.reason-${movement.reason}`) }}
-                        </v-chip>
-                    </td>
-                    <td class="text-xs opacity-75">
-                        <!-- A reference is an order id, so it links to the order it explains. -->
-                        <router-link
-                            v-if="movement.reference"
-                            :to="
-                                routerLinkI18n({
-                                    name: 'OrderTarget',
-                                    params: { id: movement.reference }
-                                })
-                            "
-                            class="underline"
-                        >
-                            {{ movement.reference }}
-                        </router-link>
-                        <span v-else>—</span>
-                    </td>
-                    <td class="text-xs opacity-75">{{ movement.note ?? '—' }}</td>
-                </tr>
-            </tbody>
-        </v-table>
+        <DataTable
+            v-else
+            :headers="movementHeaders"
+            :items="movements"
+            :loading="loading"
+            :loading-text="t('generic.loading')"
+            :no-data-text="t('generic.no-data')"
+            row-test="movement-row"
+        >
+            <template v-slot:[`item.createdAt`]="{ item }">
+                {{ item.createdAt ? formatDateTime(item.createdAt) : EMPTY_VALUE }}
+            </template>
+
+            <template v-slot:[`item.product`]="{ item }">
+                {{ productTitle(item.productId) }}
+            </template>
+
+            <template v-slot:[`item.onHandDelta`]="{ item }">
+                <span :class="deltaClass(item.onHandDelta)">{{ signed(item.onHandDelta) }}</span>
+            </template>
+
+            <template v-slot:[`item.reservedDelta`]="{ item }">
+                <span :class="deltaClass(item.reservedDelta)">
+                    {{ signed(item.reservedDelta) }}
+                </span>
+            </template>
+
+            <template v-slot:[`item.reason`]="{ item }">
+                <v-chip size="x-small" data-test="movement-reason">
+                    {{ t(`inventory-page.reason-${item.reason}`) }}
+                </v-chip>
+            </template>
+
+            <template v-slot:[`item.reference`]="{ item }">
+                <span class="text-xs opacity-75">
+                    <!-- A reference is an order id, so it links to the order it explains. -->
+                    <router-link
+                        v-if="item.reference"
+                        :to="
+                            routerLinkI18n({
+                                name: 'OrderTarget',
+                                params: { id: item.reference }
+                            })
+                        "
+                        class="underline"
+                    >
+                        {{ item.reference }}
+                    </router-link>
+                    <span v-else>{{ EMPTY_VALUE }}</span>
+                </span>
+            </template>
+
+            <template v-slot:[`item.note`]="{ item }">
+                <span class="text-xs opacity-75">{{ item.note ?? EMPTY_VALUE }}</span>
+            </template>
+        </DataTable>
         <ListPagination v-model="movementsPage" :length="movementsPageTotal" />
     </LayoutDefault>
 </template>

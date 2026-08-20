@@ -23,6 +23,8 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import EntryFormDialog from '@/modules/locales/components/EntryFormDialog.vue';
 import EntriesImportDialog from '@/modules/locales/components/EntriesImportDialog.vue';
+import DataTable from '@/ui/organisms/DataTable.vue';
+import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { LocaleScope } from '@types';
 import type { LocaleEntry, LocaleEntryInput, LocaleScope as TLocaleScope } from '@types';
 
@@ -118,6 +120,29 @@ const handleAdd = (fields: { scope: TLocaleScope; key: string; value: string }) 
  * @param entry - The row as the store knows it.
  * @returns Nothing; the outcome is reported as a toast.
  */
+/**
+ * Columns of the entries table.
+ *
+ * @returns The localized headers, re-translated on locale change.
+ */
+const tableHeaders = computed<CoreDataTableHeader<LocaleEntry>[]>(() => [
+    { title: t('locale-entries-page.column-scope'), key: 'scope' },
+    { title: t('locale-entries-page.column-key'), key: 'key' },
+    { title: t('locale-entries-page.column-value'), key: 'value', width: '40%' },
+    { title: t('locale-entries-page.column-updated-at'), key: 'updatedAt' },
+    // Reads no field on the row: the cell is the `item.actions` slot below.
+    { title: t('locale-entries-page.column-actions'), key: 'actions', synthetic: true }
+]);
+
+/**
+ * Rows of the current page.
+ *
+ * @returns The page's entries, with the placeholder holes of the sparse pagination list filtered
+ *  out.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the toolkit's page window is a SPARSE array; holes are undefined at runtime whatever the element type claims
+const pageItems = computed(() => pageItemList.value.filter((item): item is LocaleEntry => !!item));
+
 const handleValueBlur = (entry: LocaleEntry) => {
     const draft = drafts.value[entry.id] as string | undefined;
     if (draft === undefined || draft === entry.value) return;
@@ -251,66 +276,64 @@ const handleExport = () =>
             data-test="entries-empty"
         />
 
-        <v-table v-else data-test="entries-table">
-            <thead>
-                <tr>
-                    <th>{{ t('locale-entries-page.column-scope') }}</th>
-                    <th>{{ t('locale-entries-page.column-key') }}</th>
-                    <th class="w-2/5">{{ t('locale-entries-page.column-value') }}</th>
-                    <th>{{ t('locale-entries-page.column-updated-at') }}</th>
-                    <th>{{ t('locale-entries-page.column-actions') }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="entry in pageItemList" :key="entry.id" data-test="entry-row">
-                    <td>
-                        <v-chip
-                            size="small"
-                            variant="tonal"
-                            :color="entry.scope === 'api' ? 'tertiary' : 'secondary'"
-                        >
-                            {{ t(`locales-list-page.scope-${entry.scope}`) }}
-                        </v-chip>
-                    </td>
-                    <td>
-                        <!-- Same native-title rule as the board's scope chips. -->
-                        <span
-                            class="font-mono text-sm opacity-80"
-                            :title="t('locale-entries-page.key-immutable')"
-                        >
-                            {{ entry.key }}
-                        </span>
-                    </td>
-                    <td>
-                        <v-text-field
-                            :model-value="drafts[entry.id] ?? entry.value"
-                            :aria-label="
-                                t('locale-entries-page.value-field-label', { key: entry.key })
-                            "
-                            density="compact"
-                            hide-details
-                            data-test="entry-value-field"
-                            @update:model-value="(draft) => (drafts[entry.id] = draft)"
-                            @blur="handleValueBlur(entry)"
-                            @keydown.enter.prevent="handleValueBlur(entry)"
-                        />
-                    </td>
-                    <td class="text-sm opacity-70">{{ formatDateTime(entry.updatedAt) }}</td>
-                    <td>
-                        <v-btn
-                            size="small"
-                            variant="tonal"
-                            color="error"
-                            data-test="entry-delete"
-                            :disabled="loading"
-                            @click="handleDelete(entry)"
-                        >
-                            {{ t('locale-entries-page.button-delete') }}
-                        </v-btn>
-                    </td>
-                </tr>
-            </tbody>
-        </v-table>
+        <DataTable
+            v-else
+            :headers="tableHeaders"
+            :items="pageItems"
+            :loading="loading"
+            :loading-text="t('generic.loading')"
+            :no-data-text="t('generic.no-data')"
+        >
+            <template v-slot:[`item.scope`]="{ item }">
+                <v-chip
+                    size="small"
+                    variant="tonal"
+                    :color="item.scope === 'api' ? 'tertiary' : 'secondary'"
+                >
+                    {{ t(`locales-list-page.scope-${item.scope}`) }}
+                </v-chip>
+            </template>
+
+            <template v-slot:[`item.key`]="{ item }">
+                <!-- Same native-title rule as the board's scope chips. -->
+                <span
+                    class="font-mono text-sm opacity-80"
+                    :title="t('locale-entries-page.key-immutable')"
+                >
+                    {{ item.key }}
+                </span>
+            </template>
+
+            <template v-slot:[`item.value`]="{ item }">
+                <v-text-field
+                    :model-value="drafts[item.id] ?? item.value"
+                    :aria-label="t('locale-entries-page.value-field-label', { key: item.key })"
+                    density="compact"
+                    hide-details
+                    data-test="entry-value-field"
+                    @update:model-value="(draft) => (drafts[item.id] = draft)"
+                    @blur="handleValueBlur(item)"
+                    @keydown.enter.prevent="handleValueBlur(item)"
+                />
+            </template>
+
+            <template v-slot:[`item.updatedAt`]="{ item }">
+                <span class="text-sm opacity-70">{{ formatDateTime(item.updatedAt) }}</span>
+            </template>
+
+            <template v-slot:[`item.actions`]="{ item }">
+                <v-btn
+                    size="small"
+                    variant="tonal"
+                    color="error"
+                    data-test="entry-delete"
+                    :disabled="loading"
+                    @click="handleDelete(item)"
+                >
+                    {{ t('locale-entries-page.button-delete') }}
+                </v-btn>
+            </template>
+        </DataTable>
 
         <ListPagination v-model="pageCurrent" :length="pageTotal" />
 

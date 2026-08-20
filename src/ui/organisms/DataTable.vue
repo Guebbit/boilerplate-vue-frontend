@@ -1,15 +1,7 @@
 <script setup lang="ts" generic="T extends object">
-import { computed } from 'vue';
+import { computed, useAttrs } from 'vue';
 import TableLoadingBar from '@/ui/molecules/TableLoadingBar.vue';
-
-/**
- * Minimal column definition: a visible title and the item key it reads.
- */
-// Exported: the props type references it, and an SFC's generated export may not name a private type.
-export interface CoreDataTableHeader {
-    title: string;
-    key: string;
-}
+import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 
 const {
     headers,
@@ -17,17 +9,37 @@ const {
     itemValue = 'id',
     loading,
     loadingText = 'Loading...',
-    noDataText = 'No data available'
+    noDataText = 'No data available',
+    rowTest = 'list-row'
 } = defineProps<{
-    headers: CoreDataTableHeader[];
+    headers: CoreDataTableHeader<T>[];
     items: T[];
     itemValue?: string;
     loading?: boolean;
     loadingText?: string;
     noDataText?: string;
+    /**
+     * `data-test` put on every row. Defaults to `list-row`, which is what a page with one table
+     * should keep — the specs read it the same way everywhere.
+     *
+     * It exists for the page that shows TWO tables at once: `inventory` puts a stock board above
+     * its movement ledger, and a spec asserting on rows has to be able to say which table it
+     * means.
+     */
+    rowTest?: string;
 }>();
 
 const modelValue = defineModel<unknown>();
+
+/**
+ * Whether the caller wants row selection at all.
+ *
+ * A table without a `v-model` is a table nobody asked to select from — an audit log, a read-only
+ * ledger — and it should not highlight a row or swallow a click. `defineModel` alone cannot tell
+ * a bound model from an unbound local ref, so the listener the parent passes is the evidence.
+ */
+const attributes = useAttrs();
+const isSelectable = computed(() => 'onUpdate:modelValue' in attributes);
 
 /**
  * Headers in the shape `v-data-table` expects.
@@ -38,7 +50,7 @@ const modelValue = defineModel<unknown>();
  * @returns The column definitions, stripped of any extra property.
  */
 const vuetifyHeaders = computed(() =>
-    headers.map((header) => ({ title: header.title, key: header.key }))
+    headers.map((header) => ({ title: header.title, key: header.key, width: header.width }))
 );
 
 /**
@@ -58,8 +70,11 @@ const getValue = (item: T, key: string): unknown => (item as Record<string, unkn
  *  row matches the model value, plus a `data-test` hook.
  */
 const rowProps = ({ item }: { item: T }) => ({
-    class: modelValue.value === getValue(item, itemValue) ? 'bg-surface-variant' : undefined,
-    'data-test': 'list-row'
+    class:
+        isSelectable.value && modelValue.value === getValue(item, itemValue)
+            ? 'bg-surface-variant'
+            : undefined,
+    'data-test': rowTest
 });
 
 /**
@@ -69,6 +84,7 @@ const rowProps = ({ item }: { item: T }) => ({
  * @param row - Slot argument holding the clicked row under `item`.
  */
 const handleRowClick = (_event: Event, { item }: { item: T }) => {
+    if (!isSelectable.value) return;
     modelValue.value = getValue(item, itemValue);
 };
 </script>

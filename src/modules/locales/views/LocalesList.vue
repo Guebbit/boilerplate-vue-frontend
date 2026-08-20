@@ -15,6 +15,8 @@ import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useLocalesStore } from '@/modules/locales/store.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import LanguageFormDialog from '@/modules/locales/components/LanguageFormDialog.vue';
+import DataTable from '@/ui/organisms/DataTable.vue';
+import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import type { LocaleCapability } from '@types';
 
 /**
@@ -38,7 +40,7 @@ const { capabilities, defaultLocale, fallbackLocale, loading } = storeToRefs(loc
 const formOpen = ref(false);
 const editing = ref<LocaleCapability | undefined>();
 
-const tableHeaders = computed(() => [
+const tableHeaders = computed<CoreDataTableHeader<LocaleCapability>[]>(() => [
     { title: t('locales-list-page.column-tag'), key: 'tag' },
     { title: t('locales-list-page.column-name'), key: 'name' },
     { title: t('locales-list-page.column-native-name'), key: 'nativeName' },
@@ -48,7 +50,8 @@ const tableHeaders = computed(() => [
     { title: t('locales-list-page.column-entries'), key: 'entryCount' },
     { title: t('locales-list-page.column-revision'), key: 'revision' },
     { title: t('locales-list-page.column-active'), key: 'active' },
-    { title: t('locales-list-page.column-actions'), key: 'actions' }
+    // Reads no field on the row: the cell is the `item.actions` slot below.
+    { title: t('locales-list-page.column-actions'), key: 'actions', synthetic: true }
 ]);
 
 const openCreate = () => {
@@ -143,113 +146,121 @@ onMounted(() => {
             </template>
         </v-empty-state>
 
-        <v-table v-else data-test="languages-table">
-            <thead>
-                <tr>
-                    <th v-for="header in tableHeaders" :key="header.key">{{ header.title }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr v-for="language in capabilities" :key="language.tag" data-test="language-row">
-                    <td>
-                        <span class="font-mono">{{ language.tag }}</span>
-                        <v-chip
-                            v-if="language.tag === defaultLocale"
-                            size="x-small"
-                            variant="tonal"
-                            color="primary"
-                            class="ml-1"
-                        >
-                            {{ t('locales-list-page.chip-default') }}
-                        </v-chip>
-                        <v-chip
-                            v-else-if="language.tag === fallbackLocale"
-                            size="x-small"
-                            variant="tonal"
-                            class="ml-1"
-                        >
-                            {{ t('locales-list-page.chip-fallback') }}
-                        </v-chip>
-                    </td>
-                    <td>{{ language.name }}</td>
-                    <td :dir="language.direction">{{ language.nativeName }}</td>
-                    <td>{{ t(`locales-list-page.direction-${language.direction}`) }}</td>
-                    <td>
-                        <div class="flex gap-1">
-                            <!--
-                                A native title rather than a v-tooltip: the two scopes are the
-                                field doing the real work, and the explanation has to reach a
-                                screen reader too — an ARIA tooltip node with no name fails axe.
-                            -->
-                            <v-chip
-                                v-for="scope in language.scopes"
-                                :key="scope"
-                                size="small"
-                                variant="tonal"
-                                :color="scope === 'api' ? 'tertiary' : 'secondary'"
-                                :title="t(`locales-list-page.scope-${scope}-hint`)"
-                                :aria-label="t(`locales-list-page.scope-${scope}-hint`)"
-                            >
-                                {{ t(`locales-list-page.scope-${scope}`) }}
-                            </v-chip>
-                        </div>
-                    </td>
-                    <td>{{ t(`locales-list-page.source-${language.source}`) }}</td>
-                    <td>{{ language.entryCount }}</td>
-                    <td>{{ language.revision }}</td>
-                    <td>
-                        <v-chip
-                            size="small"
-                            variant="tonal"
-                            :color="language.active ? 'success' : 'error'"
-                            data-test="language-active-chip"
-                        >
-                            {{ language.active ? t('generic.enabled') : t('generic.disabled') }}
-                        </v-chip>
-                    </td>
-                    <td>
-                        <!--
-                            A static-only language has no dynamic record behind it: nothing to
-                            list, edit or delete until someone registers it with "Add language".
-                        -->
-                        <div v-if="language.source !== 'static'" class="flex flex-wrap gap-1">
-                            <v-btn
-                                size="small"
-                                variant="tonal"
-                                data-test="row-entries"
-                                :to="
-                                    routerLinkI18n({
-                                        name: 'LocaleEntries',
-                                        params: { tag: language.tag }
-                                    })
-                                "
-                            >
-                                {{ t('locales-list-page.button-entries') }}
-                            </v-btn>
-                            <v-btn
-                                size="small"
-                                variant="tonal"
-                                color="secondary"
-                                data-test="row-edit"
-                                @click="openEdit(language)"
-                            >
-                                {{ t('locales-list-page.button-edit') }}
-                            </v-btn>
-                            <v-btn
-                                size="small"
-                                variant="tonal"
-                                color="error"
-                                data-test="row-delete"
-                                :disabled="loading"
-                                @click="handleDelete(language)"
-                            >
-                                {{ t('locales-list-page.button-delete') }}
-                            </v-btn>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </v-table>
+        <DataTable
+            v-else
+            :headers="tableHeaders"
+            :items="capabilities"
+            :loading="loading"
+            :loading-text="t('generic.loading')"
+            :no-data-text="t('generic.no-data')"
+            item-value="tag"
+        >
+            <template v-slot:[`item.tag`]="{ item }">
+                <span class="font-mono">{{ item.tag }}</span>
+                <v-chip
+                    v-if="item.tag === defaultLocale"
+                    size="x-small"
+                    variant="tonal"
+                    color="primary"
+                    class="ml-1"
+                >
+                    {{ t('locales-list-page.chip-default') }}
+                </v-chip>
+                <v-chip
+                    v-else-if="item.tag === fallbackLocale"
+                    size="x-small"
+                    variant="tonal"
+                    class="ml-1"
+                >
+                    {{ t('locales-list-page.chip-fallback') }}
+                </v-chip>
+            </template>
+
+            <template v-slot:[`item.nativeName`]="{ item }">
+                <span :dir="item.direction">{{ item.nativeName }}</span>
+            </template>
+
+            <template v-slot:[`item.direction`]="{ item }">
+                {{ t(`locales-list-page.direction-${item.direction}`) }}
+            </template>
+
+            <template v-slot:[`item.scopes`]="{ item }">
+                <div class="flex gap-1">
+                    <!--
+                        A native title rather than a v-tooltip: the two scopes are the field doing
+                        the real work, and the explanation has to reach a screen reader too — an
+                        ARIA tooltip node with no name fails axe.
+                    -->
+                    <v-chip
+                        v-for="scope in item.scopes"
+                        :key="scope"
+                        size="small"
+                        variant="tonal"
+                        :color="scope === 'api' ? 'tertiary' : 'secondary'"
+                        :title="t(`locales-list-page.scope-${scope}-hint`)"
+                        :aria-label="t(`locales-list-page.scope-${scope}-hint`)"
+                    >
+                        {{ t(`locales-list-page.scope-${scope}`) }}
+                    </v-chip>
+                </div>
+            </template>
+
+            <template v-slot:[`item.source`]="{ item }">
+                {{ t(`locales-list-page.source-${item.source}`) }}
+            </template>
+
+            <template v-slot:[`item.active`]="{ item }">
+                <v-chip
+                    size="small"
+                    variant="tonal"
+                    :color="item.active ? 'success' : 'error'"
+                    data-test="language-active-chip"
+                >
+                    {{ item.active ? t('generic.enabled') : t('generic.disabled') }}
+                </v-chip>
+            </template>
+
+            <template v-slot:[`item.actions`]="{ item }">
+                <!--
+                    A static-only language has no dynamic record behind it: nothing to list, edit
+                    or delete until someone registers it with "Add language".
+                -->
+                <div v-if="item.source !== 'static'" class="flex flex-wrap gap-1">
+                    <v-btn
+                        size="small"
+                        variant="tonal"
+                        data-test="row-entries"
+                        :to="
+                            routerLinkI18n({
+                                name: 'LocaleEntries',
+                                params: { tag: item.tag }
+                            })
+                        "
+                    >
+                        {{ t('locales-list-page.button-entries') }}
+                    </v-btn>
+                    <v-btn
+                        size="small"
+                        variant="tonal"
+                        color="secondary"
+                        data-test="row-edit"
+                        @click="openEdit(item)"
+                    >
+                        {{ t('locales-list-page.button-edit') }}
+                    </v-btn>
+                    <v-btn
+                        size="small"
+                        variant="tonal"
+                        color="error"
+                        data-test="row-delete"
+                        :disabled="loading"
+                        @click="handleDelete(item)"
+                    >
+                        {{ t('locales-list-page.button-delete') }}
+                    </v-btn>
+                </div>
+            </template>
+        </DataTable>
 
         <LanguageFormDialog v-model="formOpen" :language="editing" @save="handleSave" />
     </LayoutDefault>
