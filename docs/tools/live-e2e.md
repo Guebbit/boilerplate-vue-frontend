@@ -128,6 +128,6 @@ That check used to live here, as a Cypress spec pinning seeded ids by hand. It r
 ## Related pages
 
 - [Testing](./testing-and-docs.md) — suite overview
-- [Unit Testing](./unit-testing.md) — `httpValidateResponses.spec.ts` unit-tests the gate this page's response validation relies on
+- [Unit Testing](./unit-testing.md) — `http-validate-responses.spec.ts` unit-tests the gate this page's response validation relies on
 - [The demo profile](./demo-profile.md) — the fast profile this one complements
 - [OpenAPI Workflow](../api/openapi-workflow.md)

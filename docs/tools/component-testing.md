@@ -78,10 +78,10 @@ So the sequence is: component tests first, `.vue` into the mutation scope second
 
 | Path | Contents |
 | ---- | -------- |
-| `tests/unit/ui/FormImageUpload.spec.ts` | The object-URL lifecycle, the preview precedence, the idle-vs-zero distinction, the model shape |
-| `tests/unit/ui/ListPagination.spec.ts` | The render boundary and the visible-page cap |
-| `tests/unit/ui/FormCounterInput.spec.ts` | The original example — Vuetify's own test hooks, hold-to-repeat |
-| `tests/unit/app/AppNavigation.spec.ts` | Route-driven rendering |
+| `tests/unit/ui/form-image-upload.spec.ts` | The object-URL lifecycle, the preview precedence, the idle-vs-zero distinction, the model shape |
+| `tests/unit/ui/list-pagination.spec.ts` | The render boundary and the visible-page cap |
+| `tests/unit/ui/form-counter-input.spec.ts` | The original example — Vuetify's own test hooks, hold-to-repeat |
+| `tests/unit/app/app-navigation.spec.ts` | Route-driven rendering |
 | `tests/support/unit/setup.ts` | jsdom polyfills Vuetify needs — `ResizeObserver`, `matchMedia`, pointer capture, `visualViewport` |
 
 ## Commands

@@ -6,7 +6,7 @@ import Login from '@/modules/account/views/Login.vue';
 import { i18n, loadLocale } from '@/infrastructure/i18n';
 import vuetify from '@/ui/vuetify';
 import { usersSchema } from '@/modules/users';
-import { wireModulesIntoCore } from '../../../../tests/support/unit/wireModules.ts';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 
 /*
  * Login is account's view, but the field rules it renders are users' — so the expected copy is

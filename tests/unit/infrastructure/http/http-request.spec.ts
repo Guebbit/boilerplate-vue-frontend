@@ -6,7 +6,7 @@
  * believes they are signed in; failing to attach the language silently serves every response in
  * the fallback locale.
  *
- * The refresh-exclusion list is covered in `httpRefresh.spec.ts`, which drives the real
+ * The refresh-exclusion list is covered in `http-refresh.spec.ts`, which drives the real
  * interceptor chain against MSW and asserts on the server's own request log.
  */
 

@@ -27,7 +27,7 @@ const makeRoute = (name: string): RouteRecordRaw => ({
  * Names alone here: the cases below are about the graph, and every one of them would read worse
  * with a relationship kind and a sentence attached to an arrow between two modules called `a` and
  * `b`. The kinds are asserted where they mean something, against the real manifests, in
- * `tests/cross-cutting/contextMap.spec.ts`.
+ * `tests/cross-cutting/context-map.spec.ts`.
  */
 const makeModule = (name: string, dependsOn: string[] = []): AppModule => ({
     name,

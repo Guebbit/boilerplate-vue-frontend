@@ -6,7 +6,7 @@ import type { RouteAccess } from '@/app/guards/authentications';
 import type { RouteLocationNormalized } from 'vue-router';
 
 const addMessageMock = vi.fn();
-const profileRefs = {
+const visitorStanding = {
     isAuth: ref(false),
     isAdmin: ref(false)
 };
@@ -16,7 +16,7 @@ vi.mock('@/infrastructure/stores/session', () => ({
 }));
 
 vi.mock('pinia', () => ({
-    storeToRefs: () => profileRefs
+    storeToRefs: () => visitorStanding
 }));
 
 vi.mock('@guebbit/vue-toolkit', () => ({
@@ -70,8 +70,8 @@ describe('canAccess', () => {
 describe('enforceRouteAccess', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        profileRefs.isAuth.value = false;
-        profileRefs.isAdmin.value = false;
+        visitorStanding.isAuth.value = false;
+        visitorStanding.isAdmin.value = false;
     });
 
     it('lets a permitted navigation through without notifying anything', () => {
@@ -94,7 +94,7 @@ describe('enforceRouteAccess', () => {
     });
 
     it('sends an authenticated non-admin home, with no continue target', () => {
-        profileRefs.isAuth.value = true;
+        visitorStanding.isAuth.value = true;
 
         const result = enforceRouteAccess(route('admin'));
 
@@ -104,7 +104,7 @@ describe('enforceRouteAccess', () => {
     });
 
     it('sends an authenticated visitor away from a guest-only route', () => {
-        profileRefs.isAuth.value = true;
+        visitorStanding.isAuth.value = true;
 
         const result = enforceRouteAccess(route('guest'));
 
@@ -113,8 +113,8 @@ describe('enforceRouteAccess', () => {
     });
 
     it('lets an admin into an admin route', () => {
-        profileRefs.isAuth.value = true;
-        profileRefs.isAdmin.value = true;
+        visitorStanding.isAuth.value = true;
+        visitorStanding.isAdmin.value = true;
 
         expect(enforceRouteAccess(route('admin'))).toBeUndefined();
         expect(addMessageMock).not.toHaveBeenCalled();

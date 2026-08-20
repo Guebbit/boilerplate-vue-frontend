@@ -42,13 +42,14 @@ covered the day it is added.
 | File | What it guarantees | Read next |
 |---|---|---|
 | `tests/cross-cutting/registry.spec.ts` | Every module's manifest is valid and the registry rejects a malformed one at boot. | [Modules](../theory/modules.md) |
-| `tests/cross-cutting/contextMap.spec.ts` | Declared cross-module dependencies match the imports that actually exist. | [Strategic DDD](../theory/strategic-ddd.md) |
-| `tests/cross-cutting/publishedLanguage.spec.ts` | A module's barrel publishes exactly what its siblings import — no more, no less. | [Modules](../theory/modules.md) |
-| `tests/cross-cutting/subdomainDiscipline.spec.ts` | Modelling effort goes where the business is: a module's subdomain classification matches what it contains. | [Strategic DDD](../theory/strategic-ddd.md) |
+| `tests/cross-cutting/context-map.spec.ts` | Declared cross-module dependencies match the imports that actually exist. | [Strategic DDD](../theory/strategic-ddd.md) |
+| `tests/cross-cutting/published-language.spec.ts` | A module's barrel publishes exactly what its siblings import — no more, no less. | [Modules](../theory/modules.md) |
+| `tests/cross-cutting/store-location.spec.ts` | Every `defineStore` under `src/modules/` sits where the coverage floor's globs look — `store.ts`, or `stores/` for a module with several. | [State & Routing](../tools/state-and-routing.md) |
+| `tests/cross-cutting/subdomain-discipline.spec.ts` | Modelling effort goes where the business is: a module's subdomain classification matches what it contains. | [Strategic DDD](../theory/strategic-ddd.md) |
 | `tests/cross-cutting/schemas-i18n.spec.ts` | Every validation message resolves to a real dictionary key, so a form never renders a raw key at a user. | [App, Kernel & Types](./src-app.md) |
-| `tests/cross-cutting/a11yCoverage.spec.ts` | Every route reachable in the app is covered by the accessibility sweep — the check that stops a new page quietly escaping it. | [Accessibility Testing](../tools/accessibility-testing.md) |
-| `tests/cross-cutting/coverageAndMutateScope.spec.ts` | The coverage and Stryker `mutate` scopes still match the code that exists, so neither silently stops measuring a directory. | [Mutation Testing](../tools/mutation-testing.md) |
-| `tests/cross-cutting/mutationSafeImports.spec.ts` | No import pattern that would break under Stryker's instrumentation. | [Mutation Testing](../tools/mutation-testing.md) |
+| `tests/cross-cutting/a11y-coverage.spec.ts` | Every route reachable in the app is covered by the accessibility sweep — the check that stops a new page quietly escaping it. | [Accessibility Testing](../tools/accessibility-testing.md) |
+| `tests/cross-cutting/coverage-and-mutate-scope.spec.ts` | The coverage and Stryker `mutate` scopes still match the code that exists, so neither silently stops measuring a directory. | [Mutation Testing](../tools/mutation-testing.md) |
+| `tests/cross-cutting/mutation-safe-imports.spec.ts` | No import pattern that would break under Stryker's instrumentation. | [Mutation Testing](../tools/mutation-testing.md) |
 
 ## `tests/unit/`
 
@@ -58,9 +59,9 @@ covered the day it is added.
 | `tests/unit/app/router/router.spec.ts` | The router is assembled from the registry, and a module's routes arrive under the locale prefix. | [State & Routing](../tools/state-and-routing.md) |
 | `tests/unit/app/router/navigation.spec.ts` | The navigation model: what the shell renders, and where an unauthenticated visitor is sent. | [Sitemap & Access Control](../theory/sitemap.md) |
 | `tests/unit/app/guards/authentications.spec.ts` | A route's declared requirement is enforced, and a public route stays public. | [Sitemap & Access Control](../theory/sitemap.md) |
-| `tests/unit/app/guards/authenticationsRestore.spec.ts` | A visitor sent to sign in is returned to where they were aiming. | [Security](../tools/security.md) |
-| `tests/unit/app/guards/localeChoice.spec.ts` | The locale a route is entered under, and the dictionary assembled for it. | [Infrastructure](./src-infrastructure.md) |
-| `tests/unit/app/AppNavigation.spec.ts` | The shell's navigation renders from the registry rather than a hand-written list. | [App, Kernel & Types](./src-app.md) |
+| `tests/unit/app/guards/authentications-restore.spec.ts` | A visitor sent to sign in is returned to where they were aiming. | [Security](../tools/security.md) |
+| `tests/unit/app/guards/locale-choice.spec.ts` | The locale a route is entered under, and the dictionary assembled for it. | [Infrastructure](./src-infrastructure.md) |
+| `tests/unit/app/app-navigation.spec.ts` | The shell's navigation renders from the registry rather than a hand-written list. | [App, Kernel & Types](./src-app.md) |
 
 ### `tests/unit/infrastructure/`
 
@@ -68,19 +69,19 @@ covered the day it is added.
 |---|---|---|
 | `tests/unit/infrastructure/http/client.spec.ts` | The axios instance's base URL, credentials and timeouts. | [Infrastructure](./src-infrastructure.md) |
 | `tests/unit/infrastructure/http/http.spec.ts` | The transport's public surface — what a caller gets back, and in what shape. | [Endpoints](../api/endpoints.md) |
-| `tests/unit/infrastructure/http/httpRequest.spec.ts` | Request assembly, including the JSON-or-multipart duality the generated clients hand over. | [OpenAPI Workflow](../api/openapi-workflow.md) |
-| `tests/unit/infrastructure/http/httpRefresh.spec.ts` | The refresh-and-retry flow, and that the endpoints excluded from it stay excluded — a 401 on login is an answer, not a stale token. | [Security](../tools/security.md) |
-| `tests/unit/infrastructure/http/httpValidateResponses.spec.ts` | Responses are parsed through their contract schema when validation is on, and a mismatch is caught at the boundary. | [OpenAPI Workflow](../api/openapi-workflow.md) |
+| `tests/unit/infrastructure/http/http-request.spec.ts` | Request assembly, including the JSON-or-multipart duality the generated clients hand over. | [OpenAPI Workflow](../api/openapi-workflow.md) |
+| `tests/unit/infrastructure/http/http-refresh.spec.ts` | The refresh-and-retry flow, and that the endpoints excluded from it stay excluded — a 401 on login is an answer, not a stale token. | [Security](../tools/security.md) |
+| `tests/unit/infrastructure/http/http-validate-responses.spec.ts` | Responses are parsed through their contract schema when validation is on, and a mismatch is caught at the boundary. | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | `tests/unit/infrastructure/http/url.spec.ts` | Query strings, absolute URLs and the leading slash — the normalisation both the schema table and the refresh exclusion list match against. | [Contracts](./contracts.md) |
-| `tests/unit/infrastructure/http/responseSchemaMap.spec.ts` | Every generated call site maps to a schema — the check that stops a new endpoint being silently unvalidated. | [Contracts](./contracts.md) |
+| `tests/unit/infrastructure/http/response-schema-map.spec.ts` | Every generated call site maps to a schema — the check that stops a new endpoint being silently unvalidated. | [Contracts](./contracts.md) |
 | `tests/unit/infrastructure/i18n/i18n.spec.ts` | Dictionary resolution, including the array messages `tm()` and `rt()` render. | [App, Kernel & Types](./src-app.md) |
-| `tests/unit/infrastructure/i18n/localeOverrides.spec.ts` | Admin-edited copy overlays the bundled defaults, and removing an override restores the default. | [Admin Dashboard](../tools/admin-dashboard.md) |
+| `tests/unit/infrastructure/i18n/locale-overrides.spec.ts` | Admin-edited copy overlays the bundled defaults, and removing an override restores the default. | [Admin Dashboard](../tools/admin-dashboard.md) |
 | `tests/unit/infrastructure/stores/session.spec.ts` | The session store: what is held, what is cleared, and when. | [Security](../tools/security.md) |
 | `tests/unit/infrastructure/stores/observability.spec.ts` | Faro and Umami are wired behind one surface, and a disabled back end is a no-op rather than a crash. | [Observability](../tools/observability.md) |
-| `tests/unit/infrastructure/createSseClient.spec.ts` | The typed SSE wrapper: decoding, reconnection, and cleanup on unmount. | [Realtime](../tools/realtime.md) |
-| `tests/unit/infrastructure/composables/useAsyncAction.spec.ts` | Pending, error and result state for an API call driven from a component. | [State & Routing](../tools/state-and-routing.md) |
-| `tests/unit/infrastructure/composables/useApiHealth.spec.ts` | The liveness probe polls only while down, and only ever on one retry chain. | [Observability](../tools/observability.md) |
-| `tests/unit/infrastructure/composables/useUploadProgress.spec.ts` | Upload progress state, including the failure path. | [UI Kit](./src-ui.md) |
+| `tests/unit/infrastructure/create-sse-client.spec.ts` | The typed SSE wrapper: decoding, reconnection, and cleanup on unmount. | [Realtime](../tools/realtime.md) |
+| `tests/unit/infrastructure/composables/use-async-action.spec.ts` | Pending, error and result state for an API call driven from a component. | [State & Routing](../tools/state-and-routing.md) |
+| `tests/unit/infrastructure/composables/use-api-health.spec.ts` | The liveness probe polls only while down, and only ever on one retry chain. | [Observability](../tools/observability.md) |
+| `tests/unit/infrastructure/composables/use-upload-progress.spec.ts` | Upload progress state, including the failure path. | [UI Kit](./src-ui.md) |
 | `tests/unit/infrastructure/utils/errors.spec.ts` | A human-readable message out of any thrown value, so a `catch` never renders `[object Object]`. | [Endpoints](../api/endpoints.md) |
 | `tests/unit/infrastructure/utils/formatters.spec.ts` | Date, money and fallback rendering. | [UI Kit](./src-ui.md) |
 | `tests/unit/infrastructure/utils/formatters.property.spec.ts` | The same, as **properties** over generated inputs rather than examples. | [Property Testing](../tools/property-testing.md) |
@@ -91,12 +92,13 @@ covered the day it is added.
 
 | File | What it guarantees | Read next |
 |---|---|---|
-| `tests/unit/ui/FormCounterInput.spec.ts` | The counter's bounds and emitted value. | [UI Kit](./src-ui.md) |
-| `tests/unit/ui/FormImageUpload.spec.ts` | File selection, preview and the limits it enforces. | [UI Kit](./src-ui.md) |
-| `tests/unit/ui/ListPagination.spec.ts` | Page maths and the events a parent listens for. | [UI Kit](./src-ui.md) |
-| `tests/unit/scripts/specIdentity.spec.ts` | The cross-repo shared-file list, and that this checkout matches the sibling. | [Contracts](./contracts.md) |
-| `tests/unit/scripts/backendPath.spec.ts` | Sibling-checkout resolution, including the empty-value case an `??` would get wrong. | [Scripts & Hooks](./scripts.md) |
-| `tests/unit/scripts/mutationBaseline.spec.ts` | The ratchet reads a Stryker report into per-file scores correctly. | [Mutation Testing](../tools/mutation-testing.md) |
+| `tests/unit/ui/form-counter-input.spec.ts` | The counter's bounds and emitted value. | [UI Kit](./src-ui.md) |
+| `tests/unit/ui/form-image-upload.spec.ts` | File selection, preview and the limits it enforces. | [UI Kit](./src-ui.md) |
+| `tests/unit/ui/list-pagination.spec.ts` | Page maths and the events a parent listens for. | [UI Kit](./src-ui.md) |
+| `tests/unit/scripts/spec-globs.spec.ts` | The five spellings of the Cypress spec set resolve to the same files — `package.json`'s `--spec` arguments included, since they cannot import the constant. | [Package Scripts](../tools/package-scripts.md) |
+| `tests/unit/scripts/spec-identity.spec.ts` | The cross-repo shared-file list, and that this checkout matches the sibling. | [Contracts](./contracts.md) |
+| `tests/unit/scripts/backend-path.spec.ts` | Sibling-checkout resolution, including the empty-value case an `??` would get wrong. | [Scripts & Hooks](./scripts.md) |
+| `tests/unit/scripts/mutation-baseline.spec.ts` | The ratchet reads a Stryker report into per-file scores correctly. | [Mutation Testing](../tools/mutation-testing.md) |
 
 ## `tests/e2e/` — a real browser against a real backend
 
@@ -124,13 +126,13 @@ No assertions live here.
 | File | What it is | Read next |
 |---|---|---|
 | `tests/support/unit/setup.ts` | Vitest's per-run bootstrap: global plugins, and the state reset between cases. | [Unit Testing](../tools/unit-testing.md) |
-| `tests/support/unit/wireModules.ts` | Builds a router and registry from a chosen set of modules, so a test can exercise one domain without booting all fourteen. | [Modules](../theory/modules.md) |
-| `tests/support/unit/jsdom-quiet-css.env.ts` | Silences jsdom's unparseable-CSS noise, which Vuetify's stylesheets otherwise emit on every mount. | [Unit Testing](../tools/unit-testing.md) |
+| `tests/support/unit/wire-modules.ts` | Builds a router and registry from a chosen set of modules, so a test can exercise one domain without booting all fourteen. | [Modules](../theory/modules.md) |
+| `tests/support/unit/jsdom-quiet-css.environment.ts` | Silences jsdom's unparseable-CSS noise, which Vuetify's stylesheets otherwise emit on every mount. | [Unit Testing](../tools/unit-testing.md) |
 | `tests/support/stub.ts` | The one sanctioned cast for a hand-built stub, and the reason double casts can be banned everywhere else. | [Repository Root](./root.md) |
 | `tests/support/e2e/e2e.ts` | Cypress's support entry point — what loads before every browser spec. | [Live E2E](../tools/live-e2e.md) |
 | `tests/support/e2e/commands.ts` | The custom commands the specs are written in, including `cy.loginAs()` and `cy.resetState()` — the latter branching on which backend profile is running. | [Live E2E](../tools/live-e2e.md) |
-| `tests/support/e2e/a11ySweep.ts` | The reusable accessibility pass a spec applies to a page. | [Accessibility Testing](../tools/accessibility-testing.md) |
-| `tests/support/e2e/visualSweep.ts` | The reusable screenshot-and-compare pass. | [Visual Regression](../tools/visual-regression.md) |
+| `tests/support/e2e/a11y-sweep.ts` | The reusable accessibility pass a spec applies to a page. | [Accessibility Testing](../tools/accessibility-testing.md) |
+| `tests/support/e2e/visual-sweep.ts` | The reusable screenshot-and-compare pass. | [Visual Regression](../tools/visual-regression.md) |
 | `tests/support/e2e/visual-task.ts` | The Node-side task behind it — image comparison cannot run in the browser. | [Visual Regression](../tools/visual-regression.md) |
 
 ## Co-located module tests

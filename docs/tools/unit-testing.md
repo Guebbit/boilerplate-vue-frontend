@@ -8,10 +8,10 @@ The layer that answers: **does this one piece of logic — a component, a store,
 | --- | --- |
 | [Vitest](https://vitest.dev/) | Test runner — same Vite config and transforms the app itself uses, so no separate build step |
 | [@vue/test-utils](https://test-utils.vuejs.org/) | Mounts components, drives props/emits/slots |
-| [jsdom](https://github.com/jsdom/jsdom) | DOM implementation Vitest runs component tests against (via `tests/support/unit/jsdom-quiet-css.env.ts` — see that file for why it's a thin wrapper around plain `jsdom` rather than the string `'jsdom'`) |
+| [jsdom](https://github.com/jsdom/jsdom) | DOM implementation Vitest runs component tests against (via `tests/support/unit/jsdom-quiet-css.environment.ts` — see that file for why it's a thin wrapper around plain `jsdom` rather than the string `'jsdom'`) |
 | [Pinia](https://pinia.vuejs.org/) (`createPinia()` per test) | Stores under test get a fresh instance every time — no state leaks between tests |
 | `vi.mock()` | Replaces `@api` (the generated client), `@/infrastructure/observability`, etc. with hand-written stubs |
-| [msw/node](https://mswjs.io/docs/integrations/node) | The *one* place this layer mocks HTTP for real instead of stubbing a module — `httpRefresh.spec.ts`, see below |
+| [msw/node](https://mswjs.io/docs/integrations/node) | The *one* place this layer mocks HTTP for real instead of stubbing a module — `http-refresh.spec.ts`, see below |
 
 ## Where it sits
 
@@ -20,7 +20,7 @@ The layer that answers: **does this one piece of logic — a component, a store,
 flowchart TB
     Source["src/**\ncore · ui · platform · modules"] --> Unit["Vitest\ntests/unit/**/*.spec.ts"]
     Unit --> ModuleMock["vi.mock('@api', ...)\nhand-written return values"]
-    Unit --> NodeMSW["msw/node\nreal HTTP, real interceptor chain\n(httpRefresh.spec.ts only)"]
+    Unit --> NodeMSW["msw/node\nreal HTTP, real interceptor chain\n(http-refresh.spec.ts only)"]
     Unit --> Coverage[("v8 coverage\nnpm run test:unit:coverage")]
     Unit --> Mutation["Stryker\nmutation-tests THIS layer\nsee Mutation Testing"]
 
@@ -50,7 +50,7 @@ const mountCounter = (props = {}) =>
     mount(FormCounterInput, { props, global: { plugins: [vuetify] } });
 ```
 
-`tests/unit/ui/FormCounterInput.spec.ts` and `tests/unit/app/AppNavigation.spec.ts` are the two examples.
+`tests/unit/ui/form-counter-input.spec.ts` and `tests/unit/app/app-navigation.spec.ts` are the two examples.
 
 ### Store tests — `vi.mock('@api', ...)`
 
@@ -67,7 +67,7 @@ vi.mock('@api', () => ({
 
 ### The one exception — a real HTTP server for the refresh flow
 
-`tests/unit/infrastructure/http/httpRefresh.spec.ts` is deliberately **not** stubbed at the module boundary. The 401 → refresh → replay flow lives entirely inside axios's interceptor chain (`src/infrastructure/http/index.ts`), so a hand-rolled stub would never actually exercise it — there'd be nothing to intercept. It uses `msw/node` to run a real server and assert on the request sequence:
+`tests/unit/infrastructure/http/http-refresh.spec.ts` is deliberately **not** stubbed at the module boundary. The 401 → refresh → replay flow lives entirely inside axios's interceptor chain (`src/infrastructure/http/index.ts`), so a hand-rolled stub would never actually exercise it — there'd be nothing to intercept. It uses `msw/node` to run a real server and assert on the request sequence:
 
 ```ts
 const server = setupServer(
@@ -80,7 +80,7 @@ const server = setupServer(
 
 ### Response-validation and mock-transport tests
 
-`tests/unit/infrastructure/http/httpValidateResponses.spec.ts` unit-tests the load-bearing piece behind both e2e profiles: `orvalMutator`'s contract check, which parses every response through its OpenAPI-derived Zod schema and rejects a 2xx that violates it.
+`tests/unit/infrastructure/http/http-validate-responses.spec.ts` unit-tests the load-bearing piece behind both e2e profiles: `orvalMutator`'s contract check, which parses every response through its OpenAPI-derived Zod schema and rejects a 2xx that violates it.
 
 ## File map
 
@@ -93,8 +93,8 @@ const server = setupServer(
 | `tests/unit/app/**`, `tests/unit/kernel/**`, `tests/unit/infrastructure/**` | Route guards, router config, session store, formatters/error helpers, the SSE client |
 | `tests/cross-cutting/**` | Specs that sweep *every* domain (i18n key coverage), so they belong to none — and must not sit inside a module that could be deleted |
 | `tests/support/unit/setup.ts` | Global Vitest setup (runs before every file) |
-| `tests/support/unit/wireModules.ts` | Registers the modules' response schemas and dictionaries into `infrastructure`, as `src/main.ts` does. Any spec touching either subsystem needs it |
-| `tests/support/unit/jsdom-quiet-css.env.ts` | Custom environment: plain jsdom with one class of CSS-parser noise filtered — see the file's own comment |
+| `tests/support/unit/wire-modules.ts` | Registers the modules' response schemas and dictionaries into `infrastructure`, as `src/main.ts` does. Any spec touching either subsystem needs it |
+| `tests/support/unit/jsdom-quiet-css.environment.ts` | Custom environment: plain jsdom with one class of CSS-parser noise filtered — see the file's own comment |
 | `vitest.config.ts` | Test runner config (environment, setup files, coverage) |
 | `vitest.config.mutation.ts` | Narrower variant Stryker drives — see [Mutation Testing](./mutation-testing.md) |
 

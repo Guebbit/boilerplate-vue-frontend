@@ -87,15 +87,15 @@ const visitCapturingConsole = (path: string) => {
             (win as WindowWithConsoleCapture)[CONSOLE_CAPTURE_KEY] = capturedCalls;
 
             const originalError = win.console.error.bind(win.console);
-            win.console.error = (...args: unknown[]) => {
-                capturedCalls.push({ type: 'error', args });
-                originalError(...args);
+            win.console.error = (...parameters: unknown[]) => {
+                capturedCalls.push({ type: 'error', args: parameters });
+                originalError(...parameters);
             };
 
             const originalWarn = win.console.warn.bind(win.console);
-            win.console.warn = (...args: unknown[]) => {
-                capturedCalls.push({ type: 'warn', args });
-                originalWarn(...args);
+            win.console.warn = (...parameters: unknown[]) => {
+                capturedCalls.push({ type: 'warn', args: parameters });
+                originalWarn(...parameters);
             };
         }
     });
@@ -113,11 +113,11 @@ const assertNoConsoleNoise = () => {
 };
 
 const assertNoHorizontalOverflow = () => {
-    cy.document().then((doc) => {
+    cy.document().then((pageDocument) => {
         expect(
-            doc.body.scrollWidth,
+            pageDocument.body.scrollWidth,
             'page scrolls sideways — something is wider than the viewport'
-        ).to.be.at.most(doc.documentElement.clientWidth + MAX_HORIZONTAL_OVERFLOW_PX);
+        ).to.be.at.most(pageDocument.documentElement.clientWidth + MAX_HORIZONTAL_OVERFLOW_PX);
     });
 };
 

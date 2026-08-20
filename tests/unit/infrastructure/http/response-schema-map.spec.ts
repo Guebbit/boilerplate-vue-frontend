@@ -14,7 +14,7 @@
  *   say) that would break exactly one endpoint.
  *
  * Neither is visible in a code review of the table itself, which is what these tests are for.
- * The existing `httpValidateResponses.spec.ts` covers the mutator's *behaviour*; this covers the
+ * The existing `http-validate-responses.spec.ts` covers the mutator's *behaviour*; this covers the
  * lookup it depends on.
  */
 

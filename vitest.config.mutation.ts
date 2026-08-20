@@ -20,7 +20,7 @@ import baseConfig from './vitest.config';
  * lucky one: the run should be rooted wherever the copy of the project is.
  *
  * ── THE ONE EXCLUDED SPEC ────────────────────────────────────────────────────────────────────────
- * `mutationSafeImports.spec.ts` reads the files in the `mutate` scope as TEXT and checks each
+ * `mutation-safe-imports.spec.ts` reads the files in the `mutate` scope as TEXT and checks each
  * unsafe import specifier carries a `Stryker disable` directive. Inside the sandbox those files are
  * Babel's instrumented OUTPUT, not the repo's source: a comment survives, but which node it is
  * printed above depends on where the mutation switch landed. The spec would therefore be asserting
@@ -40,7 +40,7 @@ const mutationConfig = mergeConfig(
                 '**/dist/**',
                 '**/.stryker-tmp/**',
                 'reports/**',
-                'tests/cross-cutting/mutationSafeImports.spec.ts'
+                'tests/cross-cutting/mutation-safe-imports.spec.ts'
             ]
         }
     })

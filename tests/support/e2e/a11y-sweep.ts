@@ -15,7 +15,7 @@
  * meant to end. The routes belong to modules, so their accessibility coverage does too.
  *
  * The original argument is not discarded, it is MOVED: "the coverage is a list you can read"
- * became `tests/cross-cutting/a11yCoverage.spec.ts`, which asserts that every module declaring
+ * became `tests/cross-cutting/a11y-coverage.spec.ts`, which asserts that every module declaring
  * routes also declares an a11y sweep. A list that is checked beats a list that is merely readable,
  * because nothing stops a reader from not reading it.
  *

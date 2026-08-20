@@ -1,6 +1,6 @@
 /**
  * `orvalMutator`'s contract-validation layer (`VITE_VALIDATE_RESPONSES`), tested against a real
- * HTTP server the same way `httpRefresh.spec.ts` tests the refresh flow — a stubbed axios
+ * HTTP server the same way `http-refresh.spec.ts` tests the refresh flow — a stubbed axios
  * adapter wouldn't exercise the interceptor chain the mutator actually runs through.
  */
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';

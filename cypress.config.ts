@@ -21,6 +21,7 @@ import { defineConfig } from 'cypress';
 import { loadEnv } from 'vite';
 import path from 'node:path';
 import { resolveBackendPath } from './scripts/backend-path';
+import { ALL_SPEC_GLOBS } from './scripts/spec-globs';
 import { compareSnapshot } from './tests/support/e2e/visual-task';
 
 const viteEnvironment = loadEnv('', process.cwd(), '');
@@ -104,10 +105,7 @@ export default defineConfig({
          * `excludeSpecPattern` is applied to explicit `--spec` too. So the split is made by each
          * npm script naming the set it wants, not by the config hiding one of them.
          */
-        specPattern: [
-            'tests/e2e/{specs,visual}/**/*.{cy,spec}.{js,jsx,ts,tsx}',
-            'src/modules/*/tests/e2e/**/*.{cy,spec}.{js,jsx,ts,tsx}'
-        ],
+        specPattern: ALL_SPEC_GLOBS,
         supportFile: 'tests/support/e2e/e2e.ts',
         // Everything else about these tests lives under tests/e2e; Cypress' default would put the
         // upload fixtures in a `cypress/` folder at the repo root, alone.

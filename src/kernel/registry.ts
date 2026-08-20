@@ -110,7 +110,7 @@ export interface ContextEdge {
  * - `core` — the reason the product exists. Worth its own client-side rules.
  * - `supporting` — specific to this business but not a differentiator. Keep it plain.
  * - `generic` — a solved problem. Modelling effort here is waste, which is why
- *   `tests/cross-cutting/subdomainDiscipline.spec.ts` refuses a `domain/` folder inside one.
+ *   `tests/cross-cutting/subdomain-discipline.spec.ts` refuses a `domain/` folder inside one.
  */
 export type Subdomain = 'core' | 'supporting' | 'generic';
 

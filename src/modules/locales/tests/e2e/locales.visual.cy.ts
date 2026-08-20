@@ -8,7 +8,7 @@
  * `npm run test:e2e:visual:update` only after LOOKING at the diff image. Re-recording without
  * looking is the one thing that makes this suite worthless.
  */
-import { sweepVisual } from '../../../../../tests/support/e2e/visualSweep';
+import { sweepVisual } from '../../../../../tests/support/e2e/visual-sweep';
 
 sweepVisual(
     'locales',

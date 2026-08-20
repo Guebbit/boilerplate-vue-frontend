@@ -74,7 +74,7 @@ repos in one line. On the client, `account` and `users` share `usersSchema` and 
 record and the admin editing someone else's. Neither module writes anything; the API does. What they
 share is **vocabulary**, and vocabulary is the cheap kind of sharing.
 
-`contextMap.spec.ts` asserts no fourth kind appears. If one ever does, the client has started owning
+`context-map.spec.ts` asserts no fourth kind appears. If one ever does, the client has started owning
 state the server owns, which is the drift `scripts/spec-identity.ts` exists to catch elsewhere.
 
 ### What else the map is held to

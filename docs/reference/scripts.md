@@ -16,6 +16,7 @@ copy and not the other is how the two repos drift.
 
 | File | What it is | Read next |
 |---|---|---|
+| `scripts/spec-globs.ts` | Where the Cypress specs live, as the one definition `cypress.config.ts`, `eslint.config.ts` and the shard runner all read. `package.json` cannot import it, so a spec asserts its five `--spec` arguments resolve to the same files. | [Package Scripts](../tools/package-scripts.md) |
 | `scripts/backend-path.ts` | Where the paired backend is expected to be — a sibling checkout by default, overridable by environment. The mirror of the backend's `frontend-path.ts`, pointed the other way. | [Package Scripts](../tools/package-scripts.md) |
 | `scripts/spec-identity.ts` | The cross-repo check itself: which files must be identical in both repos, which side owns each, and the comparison. Mirrors the backend's copy; only the "which repo am I" constant differs. | [Contracts](./contracts.md) |
 | `scripts/check-spec-identity.ts` | Its CLI — `npm run check:spec-identity`. Degrades to a warning when the sibling is not on disk, because a half-cloned pair should still be able to commit, and is fatal under `CI` where a missing sibling means a misconfigured workflow. | [Contracts](./contracts.md) |

@@ -74,7 +74,7 @@ Most of the repository is repetition. A row per file would be neither writable n
 every tracked file lands in exactly one of three tiers.
 
 **Named.** The file is one of a kind — `vite.config.ts`, `src/kernel/registry.ts`,
-`tests/cross-cutting/publishedLanguage.spec.ts`. It gets its own row.
+`tests/cross-cutting/published-language.spec.ts`. It gets its own row.
 
 **Pattern.** The file is one instance of a shape that repeats. The shape gets the row and the
 explanation; an inventory table says which modules have it. This is where the leverage is:

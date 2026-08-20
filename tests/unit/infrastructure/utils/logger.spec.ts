@@ -16,9 +16,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /** Imports a fresh logger with the given environment. */
-const loadLogger = (env: Record<string, unknown>) => {
+const loadLogger = (environment: Record<string, unknown>) => {
     vi.resetModules();
-    for (const [key, value] of Object.entries(env)) vi.stubEnv(key, value as string);
+    for (const [key, value] of Object.entries(environment)) vi.stubEnv(key, value as string);
     return import('@/infrastructure/utils/logger');
 };
 

@@ -72,7 +72,7 @@ This was one central spec listing every route in the app, and that shape had rea
 
 What it could not survive is a **deleted module**. `rm -rf src/modules/users` left the central list still naming `/en/users` and `/en/users/create`, so the a11y suite failed on routes the app no longer served — an orphan, and precisely the failure that moved the other e2e specs into their modules. Routes belong to modules; their accessibility coverage does too.
 
-The readable list was not discarded, it was **upgraded into an assertion**. `tests/cross-cutting/a11yCoverage.spec.ts` fails when a module declaring routes has no sweep, and fails the other way too when a sweep outlives the routes it audited. A list that is checked beats a list that is merely readable, because nothing obliges a reader to read it.
+The readable list was not discarded, it was **upgraded into an assertion**. `tests/cross-cutting/a11y-coverage.spec.ts` fails when a module declaring routes has no sweep, and fails the other way too when a sweep outlives the routes it audited. A list that is checked beats a list that is merely readable, because nothing obliges a reader to read it.
 
 Modules serving no page — `delivery`, `payments`, reached through the cart and the order flow — are exempt, and that exemption is the rule rather than a hole in it: there is nothing for axe to visit.
 
@@ -88,8 +88,8 @@ Splitting per module meant auditing routes the central list had never contained.
 | ---- | -------- |
 | `src/modules/<name>/tests/e2e/a11y.cy.ts` | One per routed module: the route list, and the auth level to read it at |
 | `tests/e2e/specs/a11y.cy.ts` | The shell's own routes — home, and the 404 page |
-| `tests/support/e2e/a11ySweep.ts` | `sweepA11y()`: the describe, the login, the wait-for-content, the axe call. Names no domain |
-| `tests/cross-cutting/a11yCoverage.spec.ts` | Fails when a routed module has no sweep, or a sweep outlives its routes |
+| `tests/support/e2e/a11y-sweep.ts` | `sweepA11y()`: the describe, the login, the wait-for-content, the axe call. Names no domain |
+| `tests/cross-cutting/a11y-coverage.spec.ts` | Fails when a routed module has no sweep, or a sweep outlives its routes |
 | `tests/support/e2e/commands.ts` | `cy.checkPageA11y()`: the single axe pass, the impact threshold, the devtools exclusion |
 | `tests/support/e2e/e2e.ts` | Imports `cypress-axe`, making `cy.injectAxe()` / `cy.checkA11y()` available |
 
@@ -100,7 +100,7 @@ Splitting per module meant auditing routes the central list had never contained.
 | `npm run test:e2e` | Runs every module's sweep with the rest of the suite |
 | `E2E_SPEC='src/modules/*/tests/e2e/a11y.cy.ts' npm run test:e2e:spec` | Every sweep, and nothing else |
 | `E2E_SPEC=src/modules/users/tests/e2e/a11y.cy.ts npm run test:e2e:spec` | One module's |
-| `npx vitest run tests/cross-cutting/a11yCoverage.spec.ts` | Just the "is every module covered" check |
+| `npx vitest run tests/cross-cutting/a11y-coverage.spec.ts` | Just the "is every module covered" check |
 
 ## Adding a route
 

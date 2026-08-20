@@ -16,7 +16,7 @@
 import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { nextTick } from 'vue';
 import { loadLocale } from '@/infrastructure/i18n';
-import { wireModulesIntoCore } from '../../../../tests/support/unit/wireModules.ts';
+import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules.ts';
 import { ordersSchema } from '../schemas';
 import itMessages from '../locales/it.json';
 

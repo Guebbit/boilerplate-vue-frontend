@@ -11,7 +11,7 @@
  *
  * Not usable from a spec that calls `vi.resetModules()` — the reset gives that spec a different
  * copy of the core modules than the one imported here, so those specs re-wire inline against their
- * own freshly imported instances. `tests/unit/infrastructure/http/httpValidateResponses.spec.ts` is the
+ * own freshly imported instances. `tests/unit/infrastructure/http/http-validate-responses.spec.ts` is the
  * example.
  */
 import { registerResponseSchemas } from '@/infrastructure/http/response-schema-map';

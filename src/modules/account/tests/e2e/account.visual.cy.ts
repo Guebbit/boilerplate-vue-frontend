@@ -8,8 +8,8 @@
  * `npm run test:e2e:visual:update` only after LOOKING at the diff image. Re-recording without
  * looking is the one thing that makes this suite worthless.
  *
- * The sweep itself lives in `tests/support/e2e/visualSweep.ts`; this file is the screen list.
+ * The sweep itself lives in `tests/support/e2e/visual-sweep.ts`; this file is the screen list.
  */
-import { sweepVisual } from '../../../../../tests/support/e2e/visualSweep';
+import { sweepVisual } from '../../../../../tests/support/e2e/visual-sweep';
 
 sweepVisual('account', [['login', '/en/login', '#login-page']]);

@@ -7,9 +7,9 @@ import { useAsyncAction } from '@/infrastructure/composables/use-async-action.ts
 const deferred = <T>() => {
     let resolve!: (value: T) => void;
     let reject!: (reason: unknown) => void;
-    const promise = new Promise<T>((res, rej) => {
-        resolve = res;
-        reject = rej;
+    const promise = new Promise<T>((fulfil, refuse) => {
+        resolve = fulfil;
+        reject = refuse;
     });
     return { promise, resolve, reject };
 };

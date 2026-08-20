@@ -19,7 +19,7 @@ import itMessages from '@/locales/it.json';
 /**
  * The locale machinery itself, against a REAL vue-i18n instance.
  *
- * The other locale spec, `tests/unit/app/guards/localeChoice.spec.ts`, mocks
+ * The other locale spec, `tests/unit/app/guards/locale-choice.spec.ts`, mocks
  * `@/infrastructure/i18n` wholesale: it asserts that `changeLanguage` *was called with* `'it'` and
  * never that anything became Italian. That is the right way to test a router guard, and it leaves
  * everything underneath to this file.

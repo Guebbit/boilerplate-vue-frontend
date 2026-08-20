@@ -31,7 +31,7 @@ import { toPathname } from './url.ts';
  *    `<PascalCase-operationId>Response` export from `@api/schemas` — so the table and the client
  *    can be diffed by eye when an endpoint is added or removed.
  *
- * Both are checked by `tests/unit/infrastructure/http/responseSchemaMap.spec.ts`.
+ * Both are checked by `tests/unit/infrastructure/http/response-schema-map.spec.ts`.
  */
 export interface ResponseSchemaRoute {
     method: string;

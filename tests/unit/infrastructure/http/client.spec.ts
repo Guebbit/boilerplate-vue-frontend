@@ -11,12 +11,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 /**
  * Imports the client fresh, so the module-scope env reads run again.
  *
- * @param env - Variables to stub before the import; anything omitted is unset.
+ * @param environment - Variables to stub before the import; anything omitted is unset.
  * @returns The freshly imported module.
  */
-const loadClient = (env: Record<string, string | undefined>) => {
+const loadClient = (environment: Record<string, string | undefined>) => {
     vi.resetModules();
-    for (const [key, value] of Object.entries(env))
+    for (const [key, value] of Object.entries(environment))
         if (value === undefined) vi.stubEnv(key, undefined);
         else vi.stubEnv(key, value);
     return import('@/infrastructure/http/client.ts');

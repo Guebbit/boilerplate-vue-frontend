@@ -146,7 +146,7 @@ registerLocaleContributors(collectModuleLocales(enabledModules));
 
 This is the single most surprising thing in the codebase, and the thing most likely to bite: a test
 that exercises either subsystem without doing the same wiring silently measures an app with no
-domain vocabulary and no contract validation. `tests/support/unit/wireModules.ts` exists for that.
+domain vocabulary and no contract validation. `tests/support/unit/wire-modules.ts` exists for that.
 
 ## The manifest
 
@@ -208,7 +208,7 @@ succeeding and the app shell intact: no menu entry, no sign-in button, no dead l
 failures were 34 unit specs, all in one file: the openapi parity table.
 
 **Everything that can be fixed inside this repo has been.** The one remaining failure is
-`responseSchemaMap.spec.ts` reporting `expected [ 'GET /products', …(25) ] to deeply equal []` —
+`response-schema-map.spec.ts` reporting `expected [ 'GET /products', …(25) ] to deeply equal []` —
 26 operations that `openapi.yaml` documents and no enabled module covers.
 
 That is the parity gate working exactly as intended. Deleting a domain from the frontend does not

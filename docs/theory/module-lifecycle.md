@@ -163,7 +163,7 @@ it is a consumer, not a provider, and an empty barrel is a promise nobody asked 
 `infrastructure` may not import `@/modules`, so `main.ts` hands the response schemas and the locale
 contributors *down* at module scope. A test that exercises either subsystem without doing the same
 wiring silently measures an app with no domain vocabulary and no contract validation.
-`tests/support/unit/wireModules.ts` exists for exactly that.
+`tests/support/unit/wire-modules.ts` exists for exactly that.
 :::
 
 ### What it actually cost
@@ -238,7 +238,7 @@ sign-in route aborted the navigation and stranded the visitor on a blank screen.
 ### The contract is not ours alone
 
 `openapi.yaml` is shared **byte-identically** with the paired backend. Deleting a domain here does
-not delete it from the contract, so `responseSchemaMap.spec.ts` reports the orphaned operations:
+not delete it from the contract, so `response-schema-map.spec.ts` reports the orphaned operations:
 
 ```
 expected [ 'GET /products', …(25) ] to deeply equal []

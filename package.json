@@ -26,10 +26,10 @@
         "test:mutation:check": "tsx scripts/check-mutation-baseline.ts",
         "test:mutation:baseline": "tsx scripts/check-mutation-baseline.ts --update",
         "test:e2e": "npm run build:e2e && start-server-and-test 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 'tsx scripts/e2e-shard.ts'",
-        "test:e2e:serial": "npm run build:e2e && start-server-and-test 'npm run backend:demo' http-get://localhost:3000 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 \"cypress run --e2e --spec 'tests/e2e/specs/**/*.cy.ts,src/modules/*/tests/e2e/!(*.visual).cy.ts'\"",
-        "test:e2e:visual": "npm run build:e2e && start-server-and-test 'npm run backend:demo' http-get://localhost:3000 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 \"cypress run --e2e --spec 'tests/e2e/visual/**/*.cy.ts,src/modules/*/tests/e2e/*.visual.cy.ts'\"",
-        "test:e2e:visual:update": "npm run build:e2e && start-server-and-test 'npm run backend:demo' http-get://localhost:3000 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 \"cypress run --e2e --spec 'tests/e2e/visual/**/*.cy.ts,src/modules/*/tests/e2e/*.visual.cy.ts' --env updateSnapshots=true\"",
-        "test:e2e:live": "npm run build:e2e && start-server-and-test 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 \"cross-env CYPRESS_liveProfile=true cypress run --e2e --spec 'tests/e2e/specs/**/*.cy.ts,src/modules/*/tests/e2e/!(*.visual).cy.ts'\"",
+        "test:e2e:serial": "npm run build:e2e && start-server-and-test 'npm run backend:demo' http-get://localhost:3000 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 \"cypress run --e2e --spec 'tests/e2e/specs/**/*.cy.ts,src/modules/*/tests/e2e/**/!(*.visual).cy.ts'\"",
+        "test:e2e:visual": "npm run build:e2e && start-server-and-test 'npm run backend:demo' http-get://localhost:3000 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 \"cypress run --e2e --spec 'tests/e2e/visual/**/*.cy.ts,src/modules/*/tests/e2e/**/*.visual.cy.ts'\"",
+        "test:e2e:visual:update": "npm run build:e2e && start-server-and-test 'npm run backend:demo' http-get://localhost:3000 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 \"cypress run --e2e --spec 'tests/e2e/visual/**/*.cy.ts,src/modules/*/tests/e2e/**/*.visual.cy.ts' --env updateSnapshots=true\"",
+        "test:e2e:live": "npm run build:e2e && start-server-and-test 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 \"cross-env CYPRESS_liveProfile=true cypress run --e2e --spec 'tests/e2e/specs/**/*.cy.ts,src/modules/*/tests/e2e/**/!(*.visual).cy.ts'\"",
         "test:e2e:dev": "start-server-and-test 'npm run backend:demo' http-get://localhost:3000 'vite dev --port 8085' http://localhost:8085 'cypress open --e2e'",
         "docs:dev": "vitepress dev docs",
         "docs:build": "vitepress build docs",
@@ -51,7 +51,7 @@
         "prepare": "husky",
         "test:unit:report": "vitest run --reporter=json --outputFile=reports/test-report.json",
         "test:report": "tsx scripts/test-report.ts",
-        "test:e2e:spec": "npm run build:e2e && start-server-and-test 'npm run backend:demo' http-get://localhost:3000 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 'cypress run --e2e --spec \"${E2E_SPEC:-src/modules/*/tests/e2e/**/*.cy.ts}\"'"
+        "test:e2e:spec": "npm run build:e2e && start-server-and-test 'npm run backend:demo' http-get://localhost:3000 'vite preview --outDir dist-e2e --port 8085 --strictPort' http://localhost:8085 'cypress run --e2e --spec \"${E2E_SPEC:-tests/e2e/specs/**/*.cy.ts,src/modules/*/tests/e2e/**/!(*.visual).cy.ts}\"'"
     },
     "dependencies": {
         "@fontsource/roboto": "^5.3.0",

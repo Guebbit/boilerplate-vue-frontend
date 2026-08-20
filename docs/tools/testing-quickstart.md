@@ -113,7 +113,7 @@ src/modules/products/tests/
 ```
 
 A module that serves routes **must** have an `e2e/a11y.cy.ts` —
-`tests/cross-cutting/a11yCoverage.spec.ts` fails if it does not. Modules that serve no page
+`tests/cross-cutting/a11y-coverage.spec.ts` fails if it does not. Modules that serve no page
 (`delivery`, `payments`) are exempt, because there is nothing to audit.
 
 Adding a screen to either sweep is a line, not a file:

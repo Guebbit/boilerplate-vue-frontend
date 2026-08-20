@@ -10,6 +10,7 @@ import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import tseslint from 'typescript-eslint';
 import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { ALL_SPEC_GLOBS } from './scripts/spec-globs';
 
 /**
  * Module boundaries, one config block per module.
@@ -558,8 +559,14 @@ export default defineConfigWithVueTs(
             'unicorn/consistent-destructuring': 'error',
 
             // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/HEAD/docs/rules/filename-case.md
-            // Every file is kebab-case — one convention across both paired repos. Vue components
-            // and tests are the deliberate exceptions (see below).
+            // Every file is kebab-case — one convention across both paired repos, `tests/**`
+            // included. Vue components are the one exception, and they are PascalCase rather than
+            // unchecked (see below).
+            //
+            // `.spec.ts` / `.cy.ts` / `.visual.cy.ts` need no exemption: `multipleFileExtensions`
+            // defaults on, so only the part before the FIRST dot is checked — `use-async-action`
+            // in `use-async-action.spec.ts`. A spec is therefore named after the file it covers,
+            // spelled identically, which is what makes the pair greppable.
             'unicorn/filename-case': [
                 'error',
                 {
@@ -768,16 +775,6 @@ export default defineConfigWithVueTs(
         }
     },
 
-    /**
-     * "Special" files names are better to be left untouched
-     */
-    {
-        files: ['tests/**/*', '**/*.spec.ts', '**/*.test.ts', '**/*.cy.ts', '**/*.d.ts'],
-        rules: {
-            'unicorn/filename-case': 'off',
-            'unicorn/prevent-abbreviations': 'off'
-        }
-    },
     {
         // Scripts and the Cypress config print deliberately — a build script's output IS its
         // interface, and the shard runner reports which backend a run is talking to so a failure
@@ -819,15 +816,10 @@ export default defineConfigWithVueTs(
     },
     {
         ...pluginCypress.configs.recommended,
-        // Both central e2e homes, matching `cypress.config.ts`'s `specPattern`: the functional
-        // specs and the visual ones. A spec this list does not reach falls through to the default
-        // parser, which has no project claiming it, and lints as a parse error rather than as
-        // Cypress code.
-        files: [
-            'tests/e2e/{specs,visual}/**/*.{cy,spec}.{js,ts,jsx,tsx}',
-            'src/modules/*/tests/e2e/**/*.{cy,spec}.{js,ts,jsx,tsx}',
-            'tests/support/e2e/**/*.{js,ts,jsx,tsx}'
-        ],
+        // Every spec Cypress may run, plus the support files they import. A spec this list does
+        // not reach falls through to the default parser, which has no project claiming it, and
+        // lints as a parse error rather than as Cypress code.
+        files: [...ALL_SPEC_GLOBS, 'tests/support/e2e/**/*.{js,ts,jsx,tsx}'],
         languageOptions: {
             parserOptions: {
                 projectService: false,

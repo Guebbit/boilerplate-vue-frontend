@@ -41,30 +41,9 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { globSync } from 'node:fs';
 import path from 'node:path';
 import { resolveBackendPath } from './backend-path';
+import { FUNCTIONAL_SPEC_GLOBS } from './spec-globs';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..');
-
-/**
- * Where the e2e specs live — the two homes `cypress.config.ts`'s `specPattern` describes: the
- * cross-cutting suite centrally, and each domain's own specs inside the domain so that deleting
- * the folder takes them with it.
- *
- * Globbed rather than listed. A new module's suite is sharded the day it appears, and a deleted
- * one stops being scheduled without anyone remembering this file — which is the whole reason the
- * specs moved.
- */
-const SPEC_GLOBS = ['tests/e2e/specs/**/*.cy.ts', 'src/modules/*/tests/e2e/**/*.cy.ts'];
-
-/*
- * Visual specs live beside the functional ones — `src/modules/<name>/tests/e2e/<name>.visual.cy.ts`
- * — so that a module owns its own baselines. They are NOT part of this gate: a pixel diff answers
- * to the machine that recorded it, and `npm run test:e2e:visual` is where it belongs.
- *
- * Excluded by suffix rather than by directory precisely BECAUSE they are co-located. Without this
- * the gate would silently acquire twelve screenshot comparisons the first time someone ran it,
- * and the first font update would look like an application regression.
- */
-const EXCLUDED_SUFFIX = '.visual.cy.ts';
 
 /**
  * Seconds per spec, from the run of 2026-08-14 (`npm run test:e2e`, total 12m54s).
@@ -112,8 +91,9 @@ if (process.env.CYPRESS_liveProfile === 'true') {
 
 const shardCount = Math.max(1, Number(process.env.E2E_SHARDS?.trim() || 4));
 
-const specs = globSync(SPEC_GLOBS, { cwd: REPO_ROOT })
-    .filter((file) => !file.endsWith(EXCLUDED_SUFFIX))
+// Globbed rather than listed: a new module's suite is sharded the day it appears, and a deleted
+// one stops being scheduled without anyone editing this file.
+const specs = globSync(FUNCTIONAL_SPEC_GLOBS, { cwd: REPO_ROOT })
     // Cypress' `--spec` wants posix separators whatever the platform globbed with, and the sort
     // keeps a run's shard assignment stable rather than at the mercy of directory order.
     .map((entry) => entry.split(path.sep).join('/'))

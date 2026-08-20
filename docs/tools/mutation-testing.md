@@ -319,7 +319,7 @@ That is why the list above is so short. The bar for excluding something is **"a 
 
 `vitest.config.ts`'s coverage thresholds and this `mutate` list deliberately do not match, and the direction is the point: **`mutate` is the wider of the two**, because a file with no coverage is free to mutate and expensive to floor.
 
-The half that matters is enforced rather than described. `tests/cross-cutting/coverageAndMutateScope.spec.ts` fails if a file carrying a coverage floor falls outside the mutation scope — a floor says the file is executed, and without a mutant nothing then asks whether executing it proves anything. The reverse is deliberately **not** asserted: requiring a floor for everything mutated would turn every honest zero into a failing gate.
+The half that matters is enforced rather than described. `tests/cross-cutting/coverage-and-mutate-scope.spec.ts` fails if a file carrying a coverage floor falls outside the mutation scope — a floor says the file is executed, and without a mutant nothing then asks whether executing it proves anything. The reverse is deliberately **not** asserted: requiring a floor for everything mutated would turn every honest zero into a failing gate.
 
 **`.vue` files are deliberately still out**, and for a reason about the *tool* rather than about the tests. Stryker *can* mutate a single-file component — it maps the file to the HTML parser and mutates the `<script>` block — but it does **not** mutate template expressions. An SFC in scope would therefore report a score implying template coverage nobody has, and a misleading number is worse than an absent one. It is sequenced after component tests exist.
 
