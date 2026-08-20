@@ -4,11 +4,10 @@
  * One visual-regression sweep over a set of screens, at one authentication level.
  *
  * ── Why a helper, and why baselines are not central ──────────────────────────────────────────
- * The screens used to be one central list with one flat `tests/e2e/snapshots/` folder of PNGs.
- * That works until a module is deleted, at which point the folder is left holding photographs of
- * a screen the app no longer serves — a committed binary nobody will ever look at again, and
- * nothing to tell them. `cy.compareSnapshot()` therefore resolves baselines to a `__snapshots__`
- * folder BESIDE THE SPEC, so a module's screens belong to the module and go with it.
+ * `cy.compareSnapshot()` resolves baselines to a `__snapshots__` folder BESIDE THE SPEC, so a
+ * module's screens belong to the module and go with it. One flat central folder of PNGs would
+ * survive the module's deletion, holding photographs of a screen the app no longer serves — a
+ * committed binary nobody will ever look at again, and nothing to tell them.
  *
  * This file names no domain, and must not: living under `tests/support/` means being imported by
  * every module's visual spec, and a screen list here would rebuild the coupling the split removed.
@@ -16,7 +15,7 @@
  * ── What has to be frozen, and why this suite is not in the gate ─────────────────────────────
  * A screenshot reads the page once, so anything that varies between runs is a false failure:
  * viewport (pinned in `cypress.config.ts`), clock and animations (`cy.freezeForVisual()`), data
- * (the mock profile serves the same demo dataset), and auth state — the navigation gains a whole
+ * (the demo profile serves the same seeded dataset), and auth state — the navigation gains a whole
  * column when signed in, so the ROLE changes the layout and not merely the content.
  *
  * Even with all five pinned, fonts and antialiasing move pixels between machines. That is why
@@ -35,10 +34,9 @@ const SETTLE_ATTEMPTS = 20;
  * Give the page's in-flight requests a moment to land before it is photographed.
  *
  * The assertions in the sweep pass on the SHELL — the router renders the ready selector, the
- * `h1` and the `main` before any data arrives. Under the retired in-page mock that gap did not
- * exist, because a handler answered before the next tick. Against a real API over a real socket
- * it is wide enough to photograph, and `products-list` was being captured with the corner
- * spinner still turning and its rows still empty.
+ * `h1` and the `main` before any data arrives. Over a real socket that gap is wide enough to
+ * photograph: without this wait, `products-list` is captured with the corner spinner still
+ * turning and its rows still empty, and the baseline defends a screenshot of a loading screen.
  *
  * `LayoutDefault.vue` renders exactly one `role="status"` node — the corner activity indicator,
  * driven by the core store's request tracking — so it is the app's own answer to "is something

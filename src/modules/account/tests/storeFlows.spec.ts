@@ -173,7 +173,8 @@ describe('updateProfile', () => {
                     .find(({ method }) => method?.toUpperCase() === 'PUT')!;
 
                 // PUT /account, never the admin write: routing self-service through
-                // `/users/{id}` is the 403 this store used to ship.
+                // `/users/{id}` answers 403 for anyone who is not an admin — every visitor
+                // editing their own record.
                 expect(last.url).toBe('/account');
                 // `admin` was passed in and must NOT reach the wire: a user editing their own
                 // record cannot promote themselves, and the store is the only thing enforcing it.

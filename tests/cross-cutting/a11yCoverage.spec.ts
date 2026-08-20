@@ -1,14 +1,11 @@
 /**
  * Every module that serves a route also sweeps it for accessibility.
  *
- * The a11y coverage used to be one central spec listing every route in the app, and its own
- * docblock made the case for that shape: the coverage was a list you could read. Splitting the
- * sweeps into the modules that own the routes fixed the orphan problem — a deleted module no
- * longer leaves a central list naming routes that 404 — but it spent that readability, because
- * there is no longer one place showing what is covered.
- *
- * This is the replacement, and it is the stronger half of the trade: instead of a list a person
- * has to read, an assertion that fails. A new domain with a page and no sweep cannot be merged.
+ * The sweeps live in the modules that own the routes, so a deleted domain takes its accessibility
+ * coverage with it instead of leaving a central list naming routes that 404. The cost of that
+ * arrangement is that there is no single place showing what is covered — and this spec is what
+ * pays it: an assertion that fails, rather than a list a person has to read. A new domain with a
+ * page and no sweep cannot be merged.
  *
  * ── Why this is a structural check and not an axe run ────────────────────────────────────────
  * It reads the filesystem. Actually auditing the pages is Cypress' job and costs a browser; what

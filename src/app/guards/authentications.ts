@@ -55,9 +55,9 @@ export const canAccess = (
  * Silently restores the in-memory access token via the refresh endpoint.
  *
  * Only attempted when the `isAuth` cookie is present — avoids a pointless
- * network round-trip for every guest page view. In mock mode the cookie is
- * pre-set by the mock initializer when a default session exists, so the guard
- * still refreshes correctly there.
+ * network round-trip for every guest page view. The cookie is written by
+ * `setAccessToken`, which is the only thing that stores a token, so its presence
+ * means a session existed on this browser at some point.
  *
  * @returns A promise that always resolves: already-authenticated and guest
  *  cases resolve immediately, and a failed refresh is swallowed.

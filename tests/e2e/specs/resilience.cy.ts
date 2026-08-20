@@ -15,14 +15,14 @@
  *
  * ## Why this needs no random data
  *
- * It once lived behind a faker-generated mock profile, on the theory that "does the app survive
- * unusual data" needs unusual data. It does not: a console spy and `document.body.scrollWidth`
- * answer the question against ANY dataset, and the demo dataset already carries the awkward
- * records on purpose — one soft-deleted product, one inactive, one whose optional fields are all
- * at their schema defaults (empty description, no categories, no tags). The `barebones` product
- * in the backend's `src/modules/products/demo.ts` is the one that matters here: it is the record a
- * component assuming "every product has a description to truncate" falls over on, and case 6
- * below opens its detail page like any other.
+ * "Does the app survive unusual data" sounds like it needs randomised data, and does not: a
+ * console spy and `document.body.scrollWidth` answer the question against ANY dataset, and a
+ * generated one would only make a failure unreproducible. The demo dataset already carries the
+ * awkward records on purpose — one soft-deleted product, one inactive, one whose optional fields
+ * are all at their schema defaults (empty description, no categories, no tags). The `barebones`
+ * product in the backend's `src/modules/products/demo.ts` is the one that matters here: it is the
+ * record a component assuming "every product has a description to truncate" falls over on, and
+ * case 6 below opens its detail page like any other.
  *
  * What is deliberately NOT asserted: anything about how many of something there is. That belongs
  * in the specs that pin exact values, where a changed count is a signal rather than noise.

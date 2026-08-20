@@ -2,12 +2,12 @@ import type { AppModule } from '@/kernel/registry';
 import { deliveryResponseSchemas } from './response-schemas';
 
 /**
- * Shipping methods, shipments and the fake courier — components, not pages.
+ * Shipping methods and shipments — components, not pages.
  *
  * No routes and no navigation: the selector lives on the cart, the parcel panel on the order,
  * both mounted by their owners through this module's barrel (cart → delivery, orders →
- * delivery). Deleting this module removes the selector, the panels and the mock courier, and
- * checkouts simply stop carrying shipping — the state the shop was in before.
+ * delivery). Deleting this module removes the selector and the panels, and checkouts simply stop
+ * carrying shipping.
  */
 export default {
     name: 'delivery',

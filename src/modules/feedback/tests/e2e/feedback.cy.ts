@@ -1,7 +1,7 @@
 /**
  * The contact form and the inbox it lands in — the feedback module's whole loop, driven the way
- * a visitor and then an admin would drive it. The mock inbox starts empty on purpose (the BE
- * seeds no tickets), so the form IS the fixture.
+ * a visitor and then an admin would drive it. The inbox starts empty on purpose — the demo
+ * profile seeds no tickets — so the form IS the fixture.
  */
 describe('Feedback', () => {
     beforeEach(() => {
@@ -10,9 +10,9 @@ describe('Feedback', () => {
     });
 
     it('a message sent through the form lands in the inbox', () => {
-        // One page session throughout: the mock database re-seeds on a full reload, so the
-        // admin walks from the form to the inbox through the app's own navigation — which is
-        // also the more honest test of the two pages being wired together.
+        // One page session throughout: the admin walks from the form to the inbox through the
+        // app's own navigation, which is the more honest test of the two pages being wired
+        // together — and the only one that proves the ticket survived without a reload.
         cy.loginAs('admin');
         cy.visit('/en/contact');
         cy.get('[data-test=contact-email] input')

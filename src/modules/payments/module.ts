@@ -6,15 +6,14 @@ import { paymentsResponseSchemas } from './response-schemas';
  *
  * No routes and no navigation: paying happens ON the order, so this module contributes the
  * `PaymentPanel` component (through its barrel) and the orders module mounts it — that arrow is
- * orders → payments, declared there. Deleting this module removes the panel, the pay flow and
- * the mock provider in one `rm -rf` plus one registry line, and orders go back to being paid
- * nowhere — the state the shop was in before.
+ * orders → payments, declared there. Deleting this module removes the panel and the pay flow in
+ * one `rm -rf` plus one registry line, and orders go back to being paid nowhere.
  */
 export default {
     name: 'payments',
     /*
-     * Taking money is not this shop’s differentiator, and the provider is mocked. What stays is a
-     * panel that belongs to an order.
+     * Taking money is not this shop’s differentiator, and the provider is the API's business.
+     * What stays here is a panel that belongs to an order.
      */
     subdomain: 'supporting',
     routes: [],

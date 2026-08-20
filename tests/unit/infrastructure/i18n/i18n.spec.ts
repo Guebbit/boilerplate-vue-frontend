@@ -19,10 +19,10 @@ import itMessages from '@/locales/it.json';
 /**
  * The locale machinery itself, against a REAL vue-i18n instance.
  *
- * This layer had no test at all. The one locale spec that existed —
- * `tests/unit/app/guards/locale-choice.spec.ts` — mocks `@/infrastructure/i18n` wholesale, so it
- * asserts that `changeLanguage` *was called with* `'it'` and never that anything became Italian.
- * That is the right way to test a router guard, and it left everything underneath unverified.
+ * The other locale spec, `tests/unit/app/guards/localeChoice.spec.ts`, mocks
+ * `@/infrastructure/i18n` wholesale: it asserts that `changeLanguage` *was called with* `'it'` and
+ * never that anything became Italian. That is the right way to test a router guard, and it leaves
+ * everything underneath to this file.
  *
  * The `_`-prefixed functions take the instance to act on, which is exactly so a test can use a
  * throwaway one instead of mutating the app-wide singleton. `supportedLanguages` and

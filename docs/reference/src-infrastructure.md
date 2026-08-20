@@ -40,6 +40,7 @@ never build a request themselves.
 | `src/infrastructure/http/envelope.ts` | Readers for the `{ data }` envelope the API wraps most payloads in, so a caller works with the payload rather than the wrapper. | [Endpoints](../api/endpoints.md) |
 | `src/infrastructure/http/validate.ts` | Whether a response is parsed through its contract schema before the app sees it — the switch that turns the API's promises into a checked claim rather than a trusted one. | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | `src/infrastructure/http/response-schema-map.ts` | Maps every generated call site (method + URL) to the Zod schema validating its response. What makes the check above possible without a hand-written schema per call. | [OpenAPI Workflow](../api/openapi-workflow.md) · [Contracts](./contracts.md) |
+| `src/infrastructure/http/url.ts` | The one rule for turning a request URL into the pathname the layer matches on, so the route-schema table and the refresh exclusion list cannot recognise different sets of URLs. | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | `src/infrastructure/http/types.ts` | The transport's own types — the request payload shape the generated clients hand over. | [App, Kernel & Types](./src-app.md) |
 
 ## `i18n/`

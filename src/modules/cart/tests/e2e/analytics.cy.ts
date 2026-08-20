@@ -152,7 +152,7 @@ const waitForEvent = (
     });
 
 describe('Analytics, end to end', () => {
-    // The mock profile has no backend and no Umami, so there is nothing to count.
+    // The demo profile has no Umami behind it, so there is nothing to count.
     beforeEach(() => cy.skipUnlessLive());
 
     it('records one add-to-cart once, not twice', () => {

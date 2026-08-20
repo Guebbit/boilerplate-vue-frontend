@@ -2,8 +2,8 @@
  * One honest walk through the shop, as the two people who actually use it: a guest who browses
  * and hits the sign-in wall, then a customer who filters, buys, checks out, cancels and watches
  * the shelf recover. Every step after login navigates THROUGH THE APP — links and buttons, no
- * deep `cy.visit` — both because that is what a person does and because the mock database
- * re-seeds on a full reload, so surviving state is itself proof the flow shares one session.
+ * deep `cy.visit` — both because that is what a person does and because a full reload drops
+ * every store, so surviving state is itself proof the flow shares one session.
  *
  * The one deliberate reload is the login (nothing has been written yet, so nothing is lost);
  * from there to the end the page never reloads.
@@ -12,8 +12,8 @@ describe('The customer journey', () => {
     beforeEach(() => {
         cy.visit('/en');
         cy.resetState();
-        // The reset clears the mock session, but the page already loaded with the dev-default
-        // one — reload so the journey genuinely starts as a guest, like every other spec.
+        // `cy.resetState()` clears the session server-side, but the page in front of it already
+        // booted with the old one — reload so the journey genuinely starts as a guest.
         cy.visit('/en');
     });
 
@@ -92,9 +92,8 @@ describe('The customer journey', () => {
             .contains('a', /products lists/i)
             .click();
         // The store kept the walk's own filter, so the list comes back already narrowed —
-        // clicking the chip again would TOGGLE the filter off. (The mock's artificial 250ms
-        // delay used to hide exactly that: the row click landed before the unfiltered list
-        // could re-render.)
+        // clicking the chip again would TOGGLE the filter off, and the row click would then land
+        // on whatever the unfiltered list re-rendered underneath it.
         cy.get('[data-test=row-view]').should('have.length', 1);
         cy.get('[data-test=row-view]').first().click();
         cy.get('[data-test=product-stock]').should('contain.text', '25');

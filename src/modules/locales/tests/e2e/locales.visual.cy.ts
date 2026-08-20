@@ -13,7 +13,7 @@ import { sweepVisual } from '../../../../../tests/support/e2e/visualSweep';
 sweepVisual(
     'locales',
     [
-        // Ready selectors are DATA rows, not the page shell: the shell exists before the mock
+        // Ready selectors are DATA rows, not the page shell: the shell exists before the API
         // answers, and a baseline of the loading state is stable, meaningless, and never fails.
         ['locales-list', '/en/locales', '[data-test=language-row]'],
         ['locale-entries', '/en/locales/it', '[data-test=entry-row]']

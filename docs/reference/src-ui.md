@@ -20,6 +20,7 @@ Small, single-purpose, and composed into the organisms below.
 
 | File | What it is | Read next |
 |---|---|---|
+| `src/ui/molecules/DefinitionRow.vue` | One label/value row of a `<dl>` — the dense list shape, for a panel stating a dozen facts at once. | [UI Kit](./src-ui.md) |
 | `src/ui/molecules/FormCounterInput.vue` | A numeric input with increment and decrement affordances — quantity fields everywhere. | [Component Testing](../tools/component-testing.md) |
 | `src/ui/molecules/FormImageUpload.vue` | The image field: file picker, preview, and the client-side limits before a request is made. | [Infrastructure](./src-infrastructure.md) |
 | `src/ui/molecules/ItemDetailField.vue` | One read-only label/value pair, the atom every detail page is built from. | [UI Kit](./src-ui.md) |

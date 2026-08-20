@@ -74,8 +74,8 @@ describe('a thunked schema follows the active locale', () => {
  * re-translate what is already on screen, which is what `revalidateOn` does.
  *
  * A harness component rather than a full view: real schema, real composable, real i18n, real
- * rendering, and no six mocks in the way. `tests/cross-cutting/login-view-i18n.spec.ts` covers
- * the wiring in an actual view.
+ * rendering, and no six mocks in the way. `src/modules/account/tests/loginViewI18n.spec.ts`
+ * covers the wiring in an actual view.
  */
 const createHarness = (options: Parameters<typeof useStructureFormValidation>[2] = {}) =>
     defineComponent({

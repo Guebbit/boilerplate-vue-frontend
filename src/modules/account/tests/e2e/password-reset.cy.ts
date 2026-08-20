@@ -1,10 +1,10 @@
 /**
  * The forgot-password flow, with nothing waved through: the reset token must come out of the
- * (mock) email, the confirm actually moves the password, and both halves of the outcome are
+ * email the API sent, the confirm actually moves the password, and both halves of the outcome are
  * proven at the login form — the old password stops working AND the new one starts.
  *
  * `cy.demoEmailTo` reads the demo backend's `/__demo/emails` outbox, so these specs only mean something against
- * the mock profile; live, the email leaves through a real queue a browser cannot read.
+ * the demo profile; live, the email leaves through a real queue a browser cannot read.
  */
 describe('Password reset', () => {
     beforeEach(() => {

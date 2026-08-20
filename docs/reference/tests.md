@@ -71,6 +71,7 @@ covered the day it is added.
 | `tests/unit/infrastructure/http/httpRequest.spec.ts` | Request assembly, including the JSON-or-multipart duality the generated clients hand over. | [OpenAPI Workflow](../api/openapi-workflow.md) |
 | `tests/unit/infrastructure/http/httpRefresh.spec.ts` | The refresh-and-retry flow, and that the endpoints excluded from it stay excluded — a 401 on login is an answer, not a stale token. | [Security](../tools/security.md) |
 | `tests/unit/infrastructure/http/httpValidateResponses.spec.ts` | Responses are parsed through their contract schema when validation is on, and a mismatch is caught at the boundary. | [OpenAPI Workflow](../api/openapi-workflow.md) |
+| `tests/unit/infrastructure/http/url.spec.ts` | Query strings, absolute URLs and the leading slash — the normalisation both the schema table and the refresh exclusion list match against. | [Contracts](./contracts.md) |
 | `tests/unit/infrastructure/http/responseSchemaMap.spec.ts` | Every generated call site maps to a schema — the check that stops a new endpoint being silently unvalidated. | [Contracts](./contracts.md) |
 | `tests/unit/infrastructure/i18n/i18n.spec.ts` | Dictionary resolution, including the array messages `tm()` and `rt()` render. | [App, Kernel & Types](./src-app.md) |
 | `tests/unit/infrastructure/i18n/localeOverrides.spec.ts` | Admin-edited copy overlays the bundled defaults, and removing an override restores the default. | [Admin Dashboard](../tools/admin-dashboard.md) |
@@ -78,6 +79,7 @@ covered the day it is added.
 | `tests/unit/infrastructure/stores/observability.spec.ts` | Faro and Umami are wired behind one surface, and a disabled back end is a no-op rather than a crash. | [Observability](../tools/observability.md) |
 | `tests/unit/infrastructure/createSseClient.spec.ts` | The typed SSE wrapper: decoding, reconnection, and cleanup on unmount. | [Realtime](../tools/realtime.md) |
 | `tests/unit/infrastructure/composables/useAsyncAction.spec.ts` | Pending, error and result state for an API call driven from a component. | [State & Routing](../tools/state-and-routing.md) |
+| `tests/unit/infrastructure/composables/useApiHealth.spec.ts` | The liveness probe polls only while down, and only ever on one retry chain. | [Observability](../tools/observability.md) |
 | `tests/unit/infrastructure/composables/useUploadProgress.spec.ts` | Upload progress state, including the failure path. | [UI Kit](./src-ui.md) |
 | `tests/unit/infrastructure/utils/errors.spec.ts` | A human-readable message out of any thrown value, so a `catch` never renders `[object Object]`. | [Endpoints](../api/endpoints.md) |
 | `tests/unit/infrastructure/utils/formatters.spec.ts` | Date, money and fallback rendering. | [UI Kit](./src-ui.md) |

@@ -105,9 +105,8 @@ export default defineConfig({
                     // generate as `zod.record` and are untouched by this flag, which only applies
                     // to fixed-shape objects. So the toggle is blanket but exactly right here.
                     //
-                    // Without it, a mock handler returning more than the contract allows passes
-                    // `assertMockContract` unremarked, and the mock ends up describing an API that
-                    // does not exist.
+                    // Without it, a response carrying more than the contract allows validates
+                    // clean, and the extra key travels into the app as if the API had promised it.
                     //
                     // If a schema ever legitimately needs to accept unknown keys, model it as a
                     // free-form map in the spec. Do not turn this off.

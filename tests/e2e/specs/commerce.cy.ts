@@ -1,13 +1,13 @@
 /**
  * The money and the logistics, walked honestly: the customer chooses shipping and watches its
- * cost freeze onto the order, pays with the declined card first (the mock provider refuses the
- * same magic number the BE's fake does), retries with a good one, and keeps the cancel that a
- * PAID order now deserves. The admin ships an order and the parcel appears with its tracking
+ * cost freeze onto the order, pays with the declined card first (the API's demo provider refuses
+ * a magic number), retries with a good one, and keeps the cancel that a PAID order deserves. The
+ * admin ships an order and the parcel appears with its tracking
  * email, the courier button delivers it, and the inventory ledger tells the whole story with
  * reasons attached.
  *
- * Two sessions on purpose: the mock database re-seeds on every full page load, so each `it`
- * builds its own state and never reloads mid-arc — the same discipline as journey.cy.ts.
+ * Two sessions on purpose: each `it` builds its own state and never reloads mid-arc, so nothing
+ * it wrote depends on a store surviving a page load — the same discipline as journey.cy.ts.
  */
 /**
  * Moves the order on the edit page one step along its lifecycle.
@@ -87,9 +87,9 @@ describe('Commerce', () => {
         /*
          * Ship an order that has EARNED shipping. The state machine allows a pending order only
          * one move — cancelled — because shipping an unpaid order would be giving stock away;
-         * `paid` is reached exclusively through the payment flow. (The retired MSW mock let the
-         * old version of this spec ship a pending order directly, which is exactly the class of
-         * fiction that layer was retired for.) So the customer buys and pays first, for real.
+         * `paid` is reached exclusively through the payment flow. So the customer buys and pays
+         * first, for real — a spec that shipped a pending order directly would be asserting a
+         * transition the API refuses.
          */
         cy.loginAs('user');
         cy.get('.v-app-bar')

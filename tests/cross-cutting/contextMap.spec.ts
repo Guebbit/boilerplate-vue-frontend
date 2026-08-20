@@ -40,14 +40,14 @@ const listFiles = (directory: string): string[] =>
 /**
  * Which siblings a module's production code imports.
  *
- * Specs and mocks are excluded deliberately. A fixture may name another domain's data — that is
- * what `mockSeeds.after` is for, a separate graph — and counting it here would make every module
- * look coupled to every module it borrows sample data from.
+ * Specs are excluded deliberately: a spec may name another domain to build the state it needs,
+ * and counting that here would make every module look coupled to every module it borrows a
+ * fixture from.
  */
 const importedSiblings = (owner: string): Set<string> => {
     const siblings = new Set<string>();
     for (const file of listFiles(path.join(MODULES_ROOT, owner))) {
-        if (/[/\\](tests|mocks)[/\\]/.test(file)) continue;
+        if (/[/\\]tests[/\\]/.test(file)) continue;
         for (const match of readFileSync(file, 'utf8').matchAll(/["']@\/modules\/([^"'/]+)/g))
             if (match[1] !== owner) siblings.add(match[1]);
     }

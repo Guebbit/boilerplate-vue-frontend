@@ -6,8 +6,8 @@
  * deliberately do not cover the same list. `mutate` is the wider of the two, because a file with no
  * coverage is free to mutate and expensive to floor.
  *
- * "Wider" is the part worth enforcing, and it was previously asserted only in a comment. The
- * failure this catches is a floored file that nothing mutates: the floor says the file is executed,
+ * "Wider" is the part worth enforcing, and a comment cannot enforce it. The failure this catches
+ * is a floored file that nothing mutates: the floor says the file is executed,
  * and then nothing asks whether executing it proves anything. That is precisely the gap mutation
  * testing exists to close, so a file important enough to floor is important enough to mutate.
  *

@@ -17,9 +17,8 @@ describe('Products', () => {
 
         // `cy.resetState()` clears the session, so these run as an anonymous visitor.
         // Of the six seeded products one is soft-deleted and one is inactive, and the API
-        // hides both from non-admins — so the public list is 4, not 6. This assertion read
-        // the mock's own number until the handler learned the BE's active/deletedAt filtering;
-        // it passed against mocks and would have failed against the real API.
+        // hides both from non-admins — so the public list is 4, not 6. The number is the
+        // API's `active`/`deletedAt` filtering, which is the rule this case exists to pin.
         it('renders only publicly visible products for anonymous visitors', () => {
             cy.get('[data-test=list-row]').should('have.length', 4);
             cy.contains('[data-test=list-row]', 'Sallyno Carino').should('not.exist'); // soft-deleted
@@ -28,10 +27,8 @@ describe('Products', () => {
 
         // Addressed by title rather than by row index. The API sorts by `createdAt`, and seeded
         // rows can share a millisecond — so which product lands in which row is a property of
-        // the fixture's insertion timing, not behaviour this spec should pin. Indexing rows
-        // asserted the mock's array order against a real database and failed for that reason
-        // alone. The pairing of a title with its price is the actual claim, and it survives any
-        // ordering.
+        // the seed's insertion timing, not behaviour this spec should pin. The pairing of a
+        // title with its price is the actual claim, and it survives any ordering.
         it('displays product title and price in each row', () => {
             cy.contains('[data-test=list-row]', 'Sallyno Panino').within(() => {
                 cy.contains('100').should('exist');

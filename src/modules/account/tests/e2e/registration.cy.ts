@@ -1,12 +1,12 @@
 /**
  * Registration, end to end and honestly: the account exists because the form was filled in, the
- * token works because it came out of the (mock) email, and the password that logs in at the end
+ * token works because it came out of the email the API sent, and the password that logs in at the end
  * is the one typed at the start — with the wrong one refused first, to prove the check is real.
  *
  * The arc deliberately crosses page reloads the way the real flow does: the verification link is
- * "opened from the inbox" (`cy.demoEmailTo` reads the demo backend's `/__demo/emails`), which is a fresh page load —
- * the account journal in the account mock handlers is what carries the new user across it, the
- * same way the real database would.
+ * "opened from the inbox" (`cy.demoEmailTo` reads the demo backend's `/__demo/emails`), which is
+ * a fresh page load — nothing in the browser carries the new user across it, so the account has to
+ * genuinely exist server-side for the second half to work.
  */
 describe('Registration', () => {
     beforeEach(() => {

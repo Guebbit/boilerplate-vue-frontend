@@ -12,8 +12,8 @@
  * failure mode below asserts a resolved empty dictionary rather than a rejection.
  *
  * The i18n module is mocked so `supportedLanguages` / `loadedLanguages` are controlled by the
- * test rather than by whatever `VITE_APP_SUPPORTED_LOCALES` happens to hold in the developer's
- * `.env` — the suite must not change meaning when that file does.
+ * test rather than by whichever files happen to sit in `src/locales/` — the suite must not change
+ * meaning the day a translation is added.
  */
 
 import { asStub } from '../../../support/stub';

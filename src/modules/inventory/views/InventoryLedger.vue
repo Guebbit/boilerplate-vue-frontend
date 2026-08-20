@@ -46,7 +46,7 @@ const { movements, movementsTotal, levels, levelsTotal, loading } = storeToRefs(
 const productsStore = useProductsStore();
 const { productsList } = storeToRefs(productsStore);
 
-/** Shared with the mock and small on purpose — an admin table, not a feed. */
+/** Small on purpose — this is an admin table to read, not a feed to scroll. */
 const PAGE_SIZE = 10;
 
 const receiptProductId = ref<string | undefined>();

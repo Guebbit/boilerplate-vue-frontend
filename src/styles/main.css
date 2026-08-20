@@ -161,9 +161,9 @@
  * drops the column labels to roughly 1.7:1 against the surface — the worst contrast in the app,
  * on the text that says what each column contains.
  *
- * It also made the accessibility suite depend on timing rather than on the page: audit before
+ * It also makes the accessibility suite depend on timing rather than on the page: audit before
  * the rows arrive and the run fails, audit after and it passes, with nothing about the code
- * having changed. A gate whose result depends on how fast a mock replied is not a gate.
+ * having changed. A gate whose result depends on how fast the API replied is not a gate.
  *
  * Undimming loses nothing. The loading bar above the header is the cue that data is on its way,
  * and it is announced as well as drawn — whereas fading the labels only communicates to someone

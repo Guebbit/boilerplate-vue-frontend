@@ -112,9 +112,9 @@ export default defineConfig({
         // Everything else about these tests lives under tests/e2e; Cypress' default would put the
         // upload fixtures in a `cypress/` folder at the repo root, alone.
         fixturesFolder: 'tests/e2e/fixtures',
-        // Cypress' 4s default assumes a prebuilt app. These specs run against `vite dev`, which
-        // compiles each route the first time it is visited, so the first assertion on a spec
-        // waits for a build rather than for the app — and 4s is not enough on a loaded machine.
+        // Cypress' 4s default assumes a fast, idle machine. These specs run four shards against
+        // one preview server and four demo backends, so the first assertion on a spec can be
+        // queued behind three other browsers — and 4s is not enough under that contention.
         defaultCommandTimeout: 15_000,
         // 8085 sits in this repo's 8080-8099 host-port block.
         baseUrl: 'http://localhost:8085',

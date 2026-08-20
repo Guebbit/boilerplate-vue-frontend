@@ -146,8 +146,8 @@ const downloadInvoice = () => {
  * and `watchOrder` is cache-first — arriving from the orders list, it would settle for that row
  * and never ask the API. But the DETAIL representation is the one carrying `actions` — which
  * buttons this caller may press, answered by the server's own lifecycle rules — and only
- * `GET /orders/:id` serves it. (The retired MSW mock served `actions` on every representation,
- * which is how this page shipped without the fetch and nobody saw a missing button.)
+ * `GET /orders/:id` serves it. Drop the forced fetch and the page renders with no action buttons
+ * at all for anyone who arrived from the list, which looks like an order nothing may be done to.
  */
 watchOrder(() => id);
 

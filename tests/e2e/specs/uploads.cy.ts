@@ -197,8 +197,8 @@ describe('Image upload', () => {
 
     describe('User create', () => {
         /**
-         * The create branch, which takes a different generated client (`createUserWithMultipart`)
-         * and a different mock handler from the update branch above.
+         * The create branch, which takes a different generated client
+         * (`createUserWithMultipart`) and a different endpoint from the update branch above.
          */
         it('creates a user with an avatar and lands on their detail page', () => {
             cy.loginAs('admin');
@@ -245,8 +245,8 @@ describe('Image upload', () => {
      *
      * The only tests that touch the real pipeline: multer's `fileFilter`, the magic-byte re-check
      * in `identifyImageFile()`, the random stored name, and `express.static` actually serving
-     * `public/`. None of that has a mock equivalent, and a regression in any of it is invisible
-     * to every other spec in this suite.
+     * `public/`. The demo profile keeps uploads in memory and serves none of that back, so a
+     * regression in any of it is invisible to every other spec in this suite.
      */
     describe('Live backend', () => {
         it('stores the upload and serves it back over HTTP', () => {

@@ -39,7 +39,7 @@ describe('Profile access', () => {
 
     it('a token nobody was sent does not verify — the token is the credential', () => {
         // The confirm route is public (the visitor from the email link is not necessarily
-        // signed in), so the token carries all the authority — and one the mock never issued
+        // signed in), so the token carries all the authority — and one the API never issued
         // into its outbox is refused. The happy guest path lives in registration.cy.ts, where
         // the token comes from an actual signup email.
         cy.visit('/en');
@@ -194,7 +194,7 @@ describe('Profile self-service', () => {
         });
 
         it('the emailed token verifies the address and the banner goes', function () {
-            // The outbox is the mock profile's; against the live backend the email is real
+            // The outbox is the demo profile's; against the live backend the email is real
             // and unreadable from a browser.
             cy.skipUnlessDemo();
 

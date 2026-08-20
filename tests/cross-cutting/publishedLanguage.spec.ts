@@ -21,8 +21,8 @@
  * **component** or a **schema** are answering a narrower question, and are the better shape:
  * `PaymentPanel` renders a payment without its caller learning what a provider is.
  *
- * A module's own specs and mocks deliberately do not count as consumers. A spec importing its own
- * barrel is the module talking to itself; it should reach `../store` like the rest of the module.
+ * A module's own specs deliberately do not count as consumers. A spec importing its own barrel is
+ * the module talking to itself; it should reach `../store` like the rest of the module.
  */
 
 import { describe, expect, it } from 'vitest';

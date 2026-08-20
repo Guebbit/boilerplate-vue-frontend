@@ -46,8 +46,8 @@ declare global {
             freezeForVisual(isoTime?: string): Chainable<void>;
 
             /**
-             * Screenshots the viewport and compares it against the committed baseline in
-             * `tests/e2e/snapshots/`. Creates the baseline when there is none.
+             * Screenshots the viewport and compares it against the committed baseline in the
+             * `__snapshots__` folder beside the spec. Creates the baseline when there is none.
              *
              * @param name - snapshot name, used for the baseline and diff filenames
              */
@@ -363,7 +363,7 @@ Cypress.Commands.add('checkPageA11y', (context?: string) => {
  * Visual regression (L9).
  *
  * `cy.compareSnapshot('name')` screenshots the page and compares it, pixel by pixel, against a
- * committed baseline in `tests/e2e/snapshots/`.
+ * committed baseline in the `__snapshots__` folder beside the spec.
  *
  * ── What this catches that nothing else does ─────────────────────────────────────────────────
  * A CSS change that shifts a layout. Two elements overlapping. A web font failing to load. A
@@ -421,9 +421,8 @@ Cypress.Commands.add('compareSnapshot', (name: string) => {
         ({ visualDiffDirectory, updateSnapshots }) => {
             /*
              * Cypress writes screenshots as `<screenshotsFolder>/<spec relative path>/<name>.png`
-             * — the WHOLE path, not the file name. Taking only the basename worked while every
-             * visual spec sat at the same depth and broke the moment they moved into the modules,
-             * with an ENOENT naming a directory Cypress had never written to.
+             * — the WHOLE path, not the file name. Take only the basename and the read fails with
+             * an ENOENT naming a directory Cypress never wrote to.
              */
             const actualPath = `${Cypress.config('screenshotsFolder')}/${
                 Cypress.spec.relative
