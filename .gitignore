@@ -57,3 +57,6 @@ coverage
 
 *.tsbuildinfo
 .claude
+
+# graphify (code-graph tool) cache — generated, never committed
+graphify-out/
