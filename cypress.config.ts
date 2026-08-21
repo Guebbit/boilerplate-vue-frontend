@@ -20,9 +20,22 @@
 import { defineConfig } from 'cypress';
 import { loadEnv } from 'vite';
 import path from 'node:path';
-import { resolveBackendPath } from './scripts/backend-path';
+import { resolveBackendPath, resolveLiveResetCommand } from './scripts/backend-path';
 import { ALL_SPEC_GLOBS } from './scripts/spec-globs';
 import { compareSnapshot } from './tests/support/e2e/visual-task';
+
+/*
+ * `.env` into `process.env`, before anything below reads it. `loadEnv` answers with the file's
+ * contents but does not export them, and `resolveBackendPath()`/`resolveLiveResetCommand()` read
+ * the real environment — the same pair `scripts/check-spec-identity.ts` uses, so both agree about
+ * which backend a checkout is paired with. Node's own loader; a missing `.env` is not an error,
+ * because CI passes these as real variables.
+ */
+try {
+    process.loadEnvFile();
+} catch {
+    /* no .env in this checkout */
+}
 
 const viteEnvironment = loadEnv('', process.cwd(), '');
 
@@ -148,6 +161,10 @@ export default defineConfig({
             // scripts/backend-path.ts, shared with scripts/check-spec-identity.ts so the two can
             // never silently disagree about which backend they mean.
             backendPath: resolveBackendPath(),
+            // Only used by the live profile: the command `cy.resetState()` shells out to. The two
+            // paired backends expose the reset through different runners, so this is a command
+            // rather than a script name — see scripts/backend-path.ts.
+            liveResetCommand: resolveLiveResetCommand(),
             /*
              * Where the live profile reads its analytics back from. Both repos write into ONE
              * Umami website, and `analytics.cy.ts` is the only thing that can prove each event

@@ -22,8 +22,8 @@ declare global {
              *
              * - demo profile (default): POSTs the backend's `/__demo/reset`, which drops the
              *   in-memory database and reseeds it from the modules' demo fixtures, in-process.
-             * - live profile: runs the backend's `host -- db:seed:reset`, which drops the real
-             *   database, re-upserts the same fixtures and clears the Redis cache.
+             * - live profile: runs the backend's own seed-reset command, which drops the real
+             *   database, re-seeds the same fixtures and clears the cache.
              *
              * Both land on the dataset in the backend's `db/demo/index.ts`, which is why the same
              * specs and the same `cy.loginAs()` credentials work against either.
@@ -104,8 +104,8 @@ export interface DemoOutboxEmail {
 
 // `cy.exec` defaults to `failOnNonZeroExit: true`, so a failed seed already fails the test —
 // no extra assertion on the exit code is needed.
-const resetLiveDatabase = (backendPath: string) =>
-    cy.exec(`npm --prefix ${backendPath} run host -- db:seed:reset`, {
+const resetLiveDatabase = (command: string) =>
+    cy.exec(command, {
         timeout: LIVE_RESET_TIMEOUT_MS
     });
 
@@ -137,17 +137,19 @@ Cypress.on('window:before:load', (contentWindow) => {
 // `allowCypressEnv: false` in cypress.config.ts disables `Cypress.env()`, so the profile flag is
 // read through the stateful `cy.env()` API instead.
 Cypress.Commands.add('resetState', () =>
-    cy.env(['liveProfile', 'backendPath', 'apiUrl']).then(({ liveProfile, backendPath, apiUrl }) =>
-        liveProfile === true
-            ? resetLiveDatabase(String(backendPath))
-            : // The demo backend resets itself in-process; a plain request is all it takes,
-              // and a non-2xx already fails the test.
-              cy.request({
-                  method: 'POST',
-                  url: `${String(apiUrl)}/__demo/reset`,
-                  timeout: DEMO_RESET_TIMEOUT_MS
-              })
-    )
+    cy
+        .env(['liveProfile', 'liveResetCommand', 'apiUrl'])
+        .then(({ liveProfile, liveResetCommand, apiUrl }) =>
+            liveProfile === true
+                ? resetLiveDatabase(String(liveResetCommand))
+                : // The demo backend resets itself in-process; a plain request is all it takes,
+                  // and a non-2xx already fails the test.
+                  cy.request({
+                      method: 'POST',
+                      url: `${String(apiUrl)}/__demo/reset`,
+                      timeout: DEMO_RESET_TIMEOUT_MS
+                  })
+        )
 );
 
 /**

@@ -29,3 +29,27 @@ export const DEFAULT_BACKEND_PATH = '../boilerplate-node-backend';
  */
 export const resolveBackendPath = (): string =>
     path.resolve(process.cwd(), process.env.BACKEND_PATH?.trim() || DEFAULT_BACKEND_PATH);
+
+/**
+ * The command `cy.resetState()` runs to put the live backend's database back to its seed state.
+ *
+ * A command rather than a script name, because the two paired backends do not offer the reset
+ * through the same runner: the TypeScript one is an npm script, and the PHP one refuses to put
+ * anything that touches the database into its `package.json` at all (see that repo's
+ * `docs/tools/why-node-is-still-here.md`) — there it is `composer host -- db:seed:reset`.
+ * `LIVE_RESET_COMMAND` is what points the live profile at a backend that is not the default one.
+ *
+ * `{backend}` is substituted with the resolved absolute backend path, so an override does not have
+ * to repeat what `BACKEND_PATH` already says.
+ */
+export const DEFAULT_LIVE_RESET_COMMAND = 'npm --prefix {backend} run host -- db:seed:reset';
+
+/**
+ * Resolves that command with `{backend}` filled in. An EMPTY `LIVE_RESET_COMMAND` counts as unset,
+ * for the same reason `BACKEND_PATH` does: every `.env` copied from `.env-example` defines it.
+ */
+export const resolveLiveResetCommand = (): string =>
+    (process.env.LIVE_RESET_COMMAND?.trim() || DEFAULT_LIVE_RESET_COMMAND).replaceAll(
+        '{backend}',
+        resolveBackendPath()
+    );
