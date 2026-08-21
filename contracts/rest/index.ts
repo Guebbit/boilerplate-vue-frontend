@@ -818,6 +818,8 @@ export interface Session {
     id: Id;
     /** Absent on a token issued without an expiry tier. */
     expiration?: string;
+    /** When this session last made a request. Absent until it makes one, which is what makes an idle session visible as idle in the list. */
+    lastUsedAt?: string;
     /** Whether this session is the one making the request, matched through the refresh cookie. Always `false` for a caller authenticating by bearer token alone — an access token does not identify a session. */
     current: boolean;
 }

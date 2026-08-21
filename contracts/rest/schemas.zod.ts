@@ -1238,6 +1238,12 @@ export const GetSessionsResponse = zod.strictObject({
                     .datetime({ offset: true })
                     .optional()
                     .describe('Absent on a token issued without an expiry tier.'),
+                lastUsedAt: zod.iso
+                    .datetime({ offset: true })
+                    .optional()
+                    .describe(
+                        'When this session last made a request. Absent until it makes one, which is what makes an idle session visible as idle in the list.'
+                    ),
                 current: zod
                     .boolean()
                     .describe(
