@@ -13,6 +13,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useOrdersStore } from '@/modules/orders/store';
 import {
     listOrders,
+    searchOrders,
     getOrderById,
     createOrder as apiCreateOrder,
     updateOrderById,
@@ -36,6 +37,7 @@ const INVOICE = new Blob(['%PDF-1.4'], { type: 'application/pdf' });
 
 vi.mock('@api', () => ({
     listOrders: vi.fn(() => Promise.resolve({ data: { items: [] } })),
+    searchOrders: vi.fn(() => Promise.resolve({ data: { items: [] } })),
     getOrderById: vi.fn(() => Promise.resolve({ data: ORDER })),
     createOrder: vi.fn(() => Promise.resolve({ data: ORDER })),
     updateOrderById: vi.fn(() => Promise.resolve({ data: ORDER })),
@@ -66,14 +68,15 @@ describe('useOrdersStore', () => {
             useOrdersStore()
                 .fetchPaginationOrders()
                 .then(() => {
-                    expect(listOrders).toHaveBeenCalledWith({ page: 1, pageSize: 10 });
+                    // A paged read IS a search with no filters, so it rides the search route.
+                    expect(searchOrders).toHaveBeenCalledWith({ page: 1, pageSize: 10 });
                 }));
 
         it('passes an explicit page and size through', () =>
             useOrdersStore()
                 .fetchPaginationOrders(3, 25)
                 .then(() => {
-                    expect(listOrders).toHaveBeenCalledWith({ page: 3, pageSize: 25 });
+                    expect(searchOrders).toHaveBeenCalledWith({ page: 3, pageSize: 25 });
                 }));
     });
 
@@ -183,7 +186,7 @@ describe('useOrdersStore', () => {
     });
 
     describe('watchSearchOrders', () => {
-        it('sends every supported filter as a query parameter', () => {
+        it('posts every supported filter to /orders/search', () => {
             const store = useOrdersStore();
             store.filters = {
                 id: 'o1',
@@ -196,7 +199,7 @@ describe('useOrdersStore', () => {
                 .watchSearchOrders()
                 .search()
                 .then(() => {
-                    expect(listOrders).toHaveBeenCalledWith(
+                    expect(searchOrders).toHaveBeenCalledWith(
                         expect.objectContaining({
                             id: 'o1',
                             userId: 'u1',
@@ -217,7 +220,7 @@ describe('useOrdersStore', () => {
                 .then(() => {
                     // Dropping pagination here would silently return only the first page for
                     // every search, no matter which page the user is on.
-                    expect(listOrders).toHaveBeenCalledWith(
+                    expect(searchOrders).toHaveBeenCalledWith(
                         expect.objectContaining({
                             page: expect.any(Number),
                             pageSize: expect.any(Number)
@@ -228,7 +231,7 @@ describe('useOrdersStore', () => {
 
         it('reports a failed search to the supplied error handler', () => {
             const failure = new Error('network down');
-            vi.mocked(listOrders).mockRejectedValueOnce(failure);
+            vi.mocked(searchOrders).mockRejectedValueOnce(failure);
             const onError = vi.fn();
 
             return useOrdersStore()

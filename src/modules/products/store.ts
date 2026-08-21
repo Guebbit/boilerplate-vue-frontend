@@ -5,6 +5,7 @@ import type { AxiosRequestConfig } from 'axios';
 import { ref } from 'vue';
 import {
     listProducts,
+    searchProducts,
     getCatalogueFacets,
     getProductById,
     createProduct as apiCreateProduct,
@@ -72,7 +73,7 @@ export const useProductsStore = defineStore('products', () => {
             list: () => listProducts().then((response) => response.data.items),
 
             search: (filters, page, pageSize) =>
-                listProducts({
+                searchProducts({
                     page,
                     pageSize,
                     text: filters.text,

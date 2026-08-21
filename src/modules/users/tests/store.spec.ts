@@ -44,7 +44,8 @@ const respondWithItems = (items: unknown[]) =>
     vi.mocked(orvalMutator).mockResolvedValue({ data: { items } });
 
 /** The query parameters of the most recent request. */
-const lastParameters = () => asStub<{ params: Record<string, unknown> }>(lastRequest()).params;
+/** The JSON body of the most recent request — what `POST /users/search` reads. */
+const lastBody = () => asStub<{ data: Record<string, unknown> }>(lastRequest()).data;
 
 describe('useUsersStore', () => {
     beforeEach(() => {
@@ -242,10 +243,11 @@ describe('useUsersStore', () => {
             return useUsersStore()
                 .fetchPaginationUsers()
                 .then(() => {
+                    // A paged read IS a search with no filters, so it rides the search route.
                     expect(lastRequest()).toMatchObject({
-                        url: '/users',
-                        method: 'GET',
-                        params: { page: 1, pageSize: 10 }
+                        url: '/users/search',
+                        method: 'POST',
+                        data: { page: 1, pageSize: 10 }
                     });
                 });
         });
@@ -256,7 +258,7 @@ describe('useUsersStore', () => {
             return useUsersStore()
                 .fetchPaginationUsers(2, 50)
                 .then(() => {
-                    expect(lastRequest()).toMatchObject({ params: { page: 2, pageSize: 50 } });
+                    expect(lastRequest()).toMatchObject({ data: { page: 2, pageSize: 50 } });
                 });
         });
 
@@ -271,7 +273,7 @@ describe('useUsersStore', () => {
                 });
         });
 
-        it('watchSearchUsers sends every supported filter as a query parameter', () => {
+        it('watchSearchUsers posts every supported filter to /users/search', () => {
             respondWithItems([]);
             const store = useUsersStore();
             store.filters = {
@@ -286,7 +288,8 @@ describe('useUsersStore', () => {
                 .watchSearchUsers()
                 .search()
                 .then(() => {
-                    expect(lastParameters()).toMatchObject({
+                    expect(lastRequest()).toMatchObject({ url: '/users/search', method: 'POST' });
+                    expect(lastBody()).toMatchObject({
                         text: 'ada',
                         // Passed through under its own name here — contrast with the products
                         // store, where the same field is sent as `productId`.
@@ -309,7 +312,7 @@ describe('useUsersStore', () => {
                 .watchSearchUsers()
                 .search()
                 .then(() => {
-                    expect(lastParameters().active).toBe(false);
+                    expect(lastBody().active).toBe(false);
                 });
         });
 

@@ -58,7 +58,8 @@ const respondWithItems = (items: unknown[]) =>
     vi.mocked(orvalMutator).mockResolvedValue({ data: { items } });
 
 /** The query parameters of the most recent request. */
-const lastParameters = () => asStub<{ params: Record<string, unknown> }>(lastRequest()).params;
+/** The JSON body of the most recent request — what `POST /products/search` reads. */
+const lastBody = () => asStub<{ data: Record<string, unknown> }>(lastRequest()).data;
 
 describe('useProductsStore', () => {
     beforeEach(() => {
@@ -307,7 +308,7 @@ describe('useProductsStore', () => {
      * The pagination/caching machinery belongs to the toolkit and is not re-tested here. What IS
      * this repo's logic is the request each wrapper builds and the envelope depth it unwraps:
      * list endpoints answer `{ data: { items } }` while single-record ones answer `{ data }`, and
-     * `watchSearchProducts` sends `filters.id` as the `id` query parameter.
+     * `watchSearchProducts` posts `filters.id` as `id` in the `/products/search` body.
      *
      * That last one is worth pinning: `id` is the name the API reads, on both the GET query and
      * the `POST /products/search` body, and getting it wrong is invisible to TypeScript — every
@@ -337,10 +338,11 @@ describe('useProductsStore', () => {
                 return useProductsStore()
                     .fetchPaginationProducts()
                     .then(() => {
+                        // A paged read IS a search with no filters, so it rides the search route.
                         expect(lastRequest()).toMatchObject({
-                            url: '/products',
-                            method: 'GET',
-                            params: { page: 1, pageSize: 10 }
+                            url: '/products/search',
+                            method: 'POST',
+                            data: { page: 1, pageSize: 10 }
                         });
                     });
             });
@@ -352,7 +354,7 @@ describe('useProductsStore', () => {
                     .fetchPaginationProducts(3, 25)
                     .then(() => {
                         expect(lastRequest()).toMatchObject({
-                            params: { page: 3, pageSize: 25 }
+                            data: { page: 3, pageSize: 25 }
                         });
                     });
             });
@@ -376,7 +378,7 @@ describe('useProductsStore', () => {
         });
 
         describe('watchSearchProducts', () => {
-            it('sends the store filters as query parameters, id included', () => {
+            it('posts the store filters to /products/search, id included', () => {
                 respondWithItems([]);
                 const store = useProductsStore();
                 store.filters = { text: 'gad', id: 'p1', minPrice: 5, maxPrice: 50 };
@@ -385,7 +387,13 @@ describe('useProductsStore', () => {
                     .watchSearchProducts()
                     .search()
                     .then(() => {
-                        const parameters = lastParameters();
+                        // The SEARCH endpoint, not the list one: the list page filters through
+                        // the DTO route the contract provides for exactly this.
+                        expect(lastRequest()).toMatchObject({
+                            url: '/products/search',
+                            method: 'POST'
+                        });
+                        const parameters = lastBody();
                         expect(parameters).toMatchObject({
                             text: 'gad',
                             // `id`, the name the API actually reads; `productId` filters nothing.

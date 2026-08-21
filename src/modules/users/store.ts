@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { useCoreStore, useStructureCrudApi } from '@guebbit/vue-toolkit';
 import {
     listUsers,
+    searchUsers,
     getUserById,
     createUser as apiCreateUser,
     createUserWithMultipart,
@@ -69,7 +70,7 @@ export const useUsersStore = defineStore('users', () => {
             list: () => listUsers().then((response) => response.data.items),
 
             search: (filters, page, pageSize) =>
-                listUsers({
+                searchUsers({
                     page,
                     pageSize,
                     text: filters.text,

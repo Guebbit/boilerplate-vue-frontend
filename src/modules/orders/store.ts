@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { useCoreStore, useStructureCrudApi } from '@guebbit/vue-toolkit';
 import {
     listOrders,
+    searchOrders,
     getOrderById,
     createOrder as apiCreateOrder,
     updateOrderById,
@@ -71,7 +72,7 @@ export const useOrdersStore = defineStore('orders', () => {
             list: () => listOrders().then((response) => response.data.items),
 
             search: (filters, page, pageSize) =>
-                listOrders({
+                searchOrders({
                     page,
                     pageSize,
                     id: filters.id,
