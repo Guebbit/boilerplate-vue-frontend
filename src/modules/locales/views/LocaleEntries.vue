@@ -296,10 +296,7 @@ const handleExport = () =>
 
             <template v-slot:[`item.key`]="{ item }">
                 <!-- Same native-title rule as the board's scope chips. -->
-                <span
-                    class="font-mono text-sm opacity-80"
-                    :title="t('locale-entries-page.key-immutable')"
-                >
+                <span class="font-mono text-sm" :title="t('locale-entries-page.key-immutable')">
                     {{ item.key }}
                 </span>
             </template>
@@ -318,7 +315,7 @@ const handleExport = () =>
             </template>
 
             <template v-slot:[`item.updatedAt`]="{ item }">
-                <span class="text-sm opacity-70">{{ formatDateTime(item.updatedAt) }}</span>
+                <span class="text-sm">{{ formatDateTime(item.updatedAt) }}</span>
             </template>
 
             <template v-slot:[`item.actions`]="{ item }">

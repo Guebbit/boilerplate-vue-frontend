@@ -57,11 +57,16 @@ export const sweepA11y = (
                  * and about copy nobody is being asked to read yet. `h1` is the shell; this is
                  * the content.
                  *
-                 * `.v-btn--loading` and nothing wider. A bare `.v-progress-circular` also matches
-                 * the app shell's own indicator, which is mounted permanently and hidden by CSS,
-                 * so waiting on it waits forever.
+                 * A data table does the same: `.v-data-table--loading` sets every cell to the
+                 * disabled opacity while rows already on screen wait for the rest of their data,
+                 * which is a board that fills column by column — not the empty state.
+                 *
+                 * These two and nothing wider. A bare `.v-progress-circular` also matches the app
+                 * shell's own indicator, which is mounted permanently and hidden by CSS, so
+                 * waiting on it waits forever.
                  */
                 cy.get('.v-btn--loading').should('not.exist');
+                cy.get('.v-data-table--loading').should('not.exist');
                 cy.checkPageA11y(name);
             });
     });

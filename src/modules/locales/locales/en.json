@@ -31,7 +31,8 @@
         "success-create": "Language added.",
         "success-edit": "Language updated.",
         "success-delete": "Language removed.",
-        "column-active": "Active"
+        "column-active": "Active",
+        "button-dictionary": "Dictionary"
     },
     "locale-form": {
         "title-create": "Add a language",
@@ -79,6 +80,27 @@
         "success-import": "Import done: {created} created, {updated} updated, {removed} removed. Now at revision {revision}.",
         "error-merge-removed": "The merge reported deleted rows, which a merge must never do. Check the server.",
         "value-field-label": "Translation for {key}"
+    },
+    "locales-dictionary-page": {
+        "page-title": "Dictionary",
+        "intro": "Every key across every language, side by side. Edit a cell and leave it to save; clear a cell to remove that language's entry. A faded value is the API's deployed text, shown where no override exists.",
+        "back": "All languages",
+        "filter-text": "Search keys and values",
+        "filter-scope": "Scope",
+        "column-key": "Key",
+        "new-key-label": "New key",
+        "new-key-hint": "Flat and dotted, e.g. products.list.title",
+        "button-add-key": "Add key",
+        "button-add-language": "Add language",
+        "empty": "No keys yet — add one, or import a dictionary from a language's entries page",
+        "no-languages": "No language is registered for translation yet",
+        "cell-label": "{key} in {language}",
+        "confirm-clear": "Remove \"{key}\" from {language}? The other languages keep theirs.",
+        "success-save": "Saved.",
+        "success-remove": "Entry removed.",
+        "success-language": "Language added.",
+        "error-key-exists": "That key is already on the board.",
+        "meta-keys": "{count} keys"
     },
     "entry-form": {
         "title": "Add an entry",

@@ -22,6 +22,11 @@ export default {
      */
     subdomain: 'generic',
     routes,
+    /*
+     * One menu entry, not two: the dictionary board is reached from the languages board's own
+     * button. A second header item would be a sub-view promoted to a peer — and it moves every
+     * other module's header by one slot.
+     */
     navigation: [{ name: 'LocalesList', label: 'navigation.label-locales', plural: 2, order: 43 }],
     responseSchemas: localesResponseSchemas,
     locales: {

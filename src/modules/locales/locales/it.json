@@ -31,7 +31,8 @@
         "success-create": "Lingua aggiunta.",
         "success-edit": "Lingua aggiornata.",
         "success-delete": "Lingua rimossa.",
-        "column-active": "Attiva"
+        "column-active": "Attiva",
+        "button-dictionary": "Dizionario"
     },
     "locale-form": {
         "title-create": "Aggiungi una lingua",
@@ -79,6 +80,27 @@
         "success-import": "Import completato: {created} create, {updated} aggiornate, {removed} rimosse. Ora alla revisione {revision}.",
         "error-merge-removed": "Il merge riporta righe eliminate, cosa che un merge non deve mai fare. Controlla il server.",
         "value-field-label": "Traduzione per {key}"
+    },
+    "locales-dictionary-page": {
+        "page-title": "Dizionario",
+        "intro": "Ogni chiave in ogni lingua, fianco a fianco. Modifica una cella ed esci per salvare; svuota una cella per rimuovere la voce di quella lingua. Un valore sbiadito è il testo distribuito dall'API, mostrato dove non esiste un override.",
+        "back": "Tutte le lingue",
+        "filter-text": "Cerca chiavi e valori",
+        "filter-scope": "Ambito",
+        "column-key": "Chiave",
+        "new-key-label": "Nuova chiave",
+        "new-key-hint": "Piatta e puntata, es. products.list.title",
+        "button-add-key": "Aggiungi chiave",
+        "button-add-language": "Aggiungi lingua",
+        "empty": "Nessuna chiave — aggiungine una, o importa un dizionario dalla pagina voci di una lingua",
+        "no-languages": "Nessuna lingua è ancora registrata per la traduzione",
+        "cell-label": "{key} in {language}",
+        "confirm-clear": "Rimuovere \"{key}\" da {language}? Le altre lingue mantengono la loro.",
+        "success-save": "Salvato.",
+        "success-remove": "Voce rimossa.",
+        "success-language": "Lingua aggiunta.",
+        "error-key-exists": "Questa chiave è già nella tabella.",
+        "meta-keys": "{count} chiavi"
     },
     "entry-form": {
         "title": "Aggiungi una voce",

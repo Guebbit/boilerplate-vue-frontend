@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import { useCoreStore, useStructureCrudApi } from '@guebbit/vue-toolkit';
 import {
     getLocales,
+    getLocaleDictionary,
     createLocale,
     updateLocale as apiUpdateLocale,
     deleteLocale,
@@ -23,6 +24,8 @@ import type {
     LocaleEntryInput,
     LocaleImportResult
 } from '@types';
+import { flattenDictionary } from './dictionaries.ts';
+import type { TranslationDictionaries } from '@/infrastructure/i18n';
 
 /**
  * Search criteria for one language's entries.
@@ -54,6 +57,31 @@ export interface LocaleEntriesFilters {
  * after an edit is the view's business — see `applyLiveOverrides` in `LocaleEntries.vue` — because
  * a store that reached into `i18n` would couple every import of this module to boot order.
  */
+/**
+ * The API's OWN deployed dictionary for one language, flattened to dotted keys — tier 1.
+ *
+ * What an `api`-scoped entry OVERRIDES, so the dictionary board can show the deployed text
+ * under an empty cell: a translator deciding whether to override a string needs to see the
+ * string. Never merged into anything — it is the backend's keyspace, read here only to be
+ * displayed beside the rows that shadow it.
+ *
+ * Resolves with an empty dictionary for a language the API has no file for (404) — a
+ * dynamic-only language is the normal case for a freshly added one, not an error.
+ *
+ * @param tag - Which language.
+ * @returns A promise resolving with `key → deployed value`.
+ */
+const fetchApiDictionary = (tag: string): Promise<Record<string, string>> =>
+    getLocaleDictionary(tag)
+        .then((response) =>
+            Object.fromEntries(
+                flattenDictionary(response.data.messages as TranslationDictionaries).map(
+                    ({ key, value }) => [key, value]
+                )
+            )
+        )
+        .catch(() => ({}));
+
 export const useLocalesStore = defineStore('locales', () => {
     const { getLoading, setLoading } = useCoreStore();
 
@@ -269,6 +297,7 @@ export const useLocalesStore = defineStore('locales', () => {
         editEntry,
         removeEntry,
         importEntries,
-        fetchAllEntries
+        fetchAllEntries,
+        fetchApiDictionary
     };
 });

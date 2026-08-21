@@ -26,6 +26,7 @@ each [module page](../modules/) renders, so the two cannot disagree.
 | [`feedback`](../modules/feedback.md)   | `feedback`               | `FeedbackInbox`        | `admin`  | `views/FeedbackInbox.vue`        |
 | [`inventory`](../modules/inventory.md) | `inventory`              | `InventoryLedger`      | `admin`  | `views/InventoryLedger.vue`      |
 | [`locales`](../modules/locales.md)     | `locales`                | `LocalesList`          | `admin`  | `views/LocalesList.vue`          |
+| [`locales`](../modules/locales.md)     | `locales/dictionary`     | `LocalesDictionary`    | `admin`  | `views/LocalesDictionary.vue`    |
 | [`locales`](../modules/locales.md)     | `locales/:tag`           | `LocaleEntries`        | `admin`  | `views/LocaleEntries.vue`        |
 | [`orders`](../modules/orders.md)       | `orders`                 | `OrdersList`           | `auth`   | `views/OrdersList.vue`           |
 | [`orders`](../modules/orders.md)       | `orders/:id`             | `OrderTarget`          | `auth`   | `views/Order.vue`                |
@@ -41,7 +42,7 @@ each [module page](../modules/) renders, so the two cannot disagree.
 | [`users`](../modules/users.md)         | `users/:id/edit`         | `UserEdit`             | `admin`  | `views/UserEdit.vue`             |
 | [`wishlist`](../modules/wishlist.md)   | `wishlist`               | `Wishlist`             | `auth`   | `views/Wishlist.vue`             |
 
-29 screens across 12 modules. Paths are relative to the localised root. **Access** is the route’s own `meta.access`, which is the only place a permission is declared — a menu entry inherits it rather than restating it.
+30 screens across 12 modules. Paths are relative to the localised root. **Access** is the route’s own `meta.access`, which is the only place a permission is declared — a menu entry inherits it rather than restating it.
 
 <!-- gen:all-screens:end -->
 

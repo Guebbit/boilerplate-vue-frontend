@@ -14,6 +14,7 @@ sweepA11y(
     'locales',
     [
         ['languages board', '/en/locales'],
+        ['dictionary board', '/en/locales/dictionary'],
         ['translation entries', '/en/locales/it']
     ],
     'admin'

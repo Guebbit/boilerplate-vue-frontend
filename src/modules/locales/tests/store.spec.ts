@@ -61,7 +61,9 @@ const requestedUrls = () =>
 
 beforeEach(() => {
     setActivePinia(createPinia());
-    vi.clearAllMocks();
+    // `reset`, not `clear`: the paging test swaps the implementation, and a reset puts the
+    // table-driven one back for whatever runs after it.
+    vi.resetAllMocks();
     responses = {
         'GET /locales': {
             data: { locales: [CAPABILITY], default: 'en', fallback: 'en' }
@@ -225,5 +227,32 @@ describe('entry search and removal', () => {
         return store.removeEntry('es', ENTRY.id).then(() => {
             expect(requestedUrls()).toContain('DELETE /locales/es/entries/locale-entry-1');
         });
+    });
+});
+
+describe('fetchApiDictionary', () => {
+    it('flattens the deployed tree into dotted keys, the shape the board cells read', () => {
+        responses['GET /locales/es'] = {
+            data: { locale: 'es', messages: { generic: { search: 'Buscar', list: ['a', 'b'] } } }
+        };
+        return useLocalesStore()
+            .fetchApiDictionary('es')
+            .then((dictionary) => {
+                expect(dictionary).toEqual({
+                    'generic.search': 'Buscar',
+                    'generic.list.0': 'a',
+                    'generic.list.1': 'b'
+                });
+            });
+    });
+
+    it('answers an empty dictionary for a language the API has no file for', () => {
+        // A dynamic-only language is the normal case for a freshly added one, not an error.
+        vi.mocked(orvalMutator).mockRejectedValueOnce(new Error('404'));
+        return useLocalesStore()
+            .fetchApiDictionary('xx')
+            .then((dictionary) => {
+                expect(dictionary).toEqual({});
+            });
     });
 });

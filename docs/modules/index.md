@@ -136,7 +136,7 @@ assembles reads a state that belongs to the domain it came from.
 
 | Modules | core | supporting | generic | Screens | Stores | Context edges |
 | ------- | ---- | ---------- | ------- | ------- | ------ | ------------- |
-| 14      | 3    | 4          | 7       | 29      | 13     | 9             |
+| 14      | 3    | 4          | 7       | 30      | 13     | 9             |
 
 <!-- gen:tally:end -->
 
@@ -151,7 +151,7 @@ assembles reads a state that belongs to the domain it came from.
 | [`demo`](./demo.md)           | `generic`    | 1       | `counter`                | 0         | 0          | 0              |
 | [`feedback`](./feedback.md)   | `generic`    | 2       | `feedback`               | 3         | 0          | 0              |
 | [`inventory`](./inventory.md) | `supporting` | 1       | `inventory`              | 5         | 1          | 0              |
-| [`locales`](./locales.md)     | `generic`    | 2       | `locales`                | 9         | 0          | 0              |
+| [`locales`](./locales.md)     | `generic`    | 3       | `locales`                | 9         | 0          | 0              |
 | [`orders`](./orders.md)       | `core`       | 3       | `orders`                 | 11        | 3          | 0              |
 | [`payments`](./payments.md)   | `supporting` | 0       | `payments`               | 4         | 0          | 1              |
 | [`products`](./products.md)   | `core`       | 4       | `products`               | 10        | 2          | 1              |

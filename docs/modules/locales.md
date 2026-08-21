@@ -11,7 +11,7 @@
 | Fact                    | This module                                                         |
 | ----------------------- | ------------------------------------------------------------------- |
 | **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste. |
-| **Screens**             | 2 — `LocalesList` · `LocaleEntries`                                 |
+| **Screens**             | 3 — `LocalesList` · `LocalesDictionary` · `LocaleEntries`           |
 | **Store**               | `locales`                                                           |
 | **Menu entries**        | `LocalesList`                                                       |
 | **API calls**           | 9                                                                   |
@@ -67,11 +67,11 @@ so _may I request this language_ and _may I download a dictionary for it_ stay t
 
 Store `locales`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
-| Kind        | Members                                                                                                                                                                         | What it is                                                       |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `capabilities` · `defaultLocale` · `fallbackLocale` · `filters` · `pageCurrent` · `pageSize`                                                                                    | The refs the setup function returns — the only writable surface. |
-| **Getters** | `loading` · `pageTotal` · `pageItemList`                                                                                                                                        | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `fetchLanguages` · `createLanguage` · `editLanguage` · `removeLanguage` · `watchSearchEntries` · `addEntry` · `editEntry` · `removeEntry` · `importEntries` · `fetchAllEntries` | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                                                                                                                                                                | What it is                                                       |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| **State**   | `capabilities` · `defaultLocale` · `fallbackLocale` · `filters` · `pageCurrent` · `pageSize`                                                                                                           | The refs the setup function returns — the only writable surface. |
+| **Getters** | `loading` · `pageTotal` · `pageItemList`                                                                                                                                                               | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `fetchLanguages` · `createLanguage` · `editLanguage` · `removeLanguage` · `watchSearchEntries` · `addEntry` · `editEntry` · `removeEntry` · `importEntries` · `fetchAllEntries` · `fetchApiDictionary` | Everything that changes state or calls the API.                  |
 
 <!-- gen:state:end -->
 
@@ -79,10 +79,11 @@ Store `locales`, from `store.ts`. Only what the setup function returns is listed
 
 <!-- gen:screens:start -->
 
-| Path           | Route name      | Access  | View                      |
-| -------------- | --------------- | ------- | ------------------------- |
-| `locales`      | `LocalesList`   | `admin` | `views/LocalesList.vue`   |
-| `locales/:tag` | `LocaleEntries` | `admin` | `views/LocaleEntries.vue` |
+| Path                 | Route name          | Access  | View                          |
+| -------------------- | ------------------- | ------- | ----------------------------- |
+| `locales`            | `LocalesList`       | `admin` | `views/LocalesList.vue`       |
+| `locales/dictionary` | `LocalesDictionary` | `admin` | `views/LocalesDictionary.vue` |
+| `locales/:tag`       | `LocaleEntries`     | `admin` | `views/LocaleEntries.vue`     |
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` — a menu entry never restates it, which is what keeps the menu and the router from disagreeing.
 
@@ -120,27 +121,29 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 
 <!-- gen:files:start -->
 
-| File                                         | What it is                                                                                                                                                  | Explained in                          |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `components/EntriesImportDialog.vue`         | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
-| `components/EntryFormDialog.vue`             | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
-| `components/LanguageFormDialog.vue`          | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
-| `dictionaries.ts`                            | `locales` only. The runtime override merge — server rows layered over what the app bundles, key by key.                                                     | [read](../tools/i18n.md)              |
-| `locales/en.json`                            | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                             | [read](../tools/i18n.md)              |
-| `locales/it.json`                            | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                             | [read](../tools/i18n.md)              |
-| `module.ts`                                  | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas, dependency edges and locales. | [read](../theory/modules.md)          |
-| `response-schemas.ts`                        | One row per endpoint this domain calls, pairing a method and path pattern with the Zod envelope its response is validated against.                          | [read](../api/openapi-workflow.md)    |
-| `routes.ts`                                  | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                      | [read](../theory/sitemap.md)          |
-| `schemas.ts`                                 | Form schemas for this domain, built on the generated request schemas rather than hand-written beside them.                                                  | [read](../api/openapi-workflow.md)    |
-| `store.ts`                                   | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                      | [read](../tools/state-and-routing.md) |
-| `tests/dictionaries.spec.ts`                 | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
-| `tests/e2e/__snapshots__/locale-entries.png` | A committed visual-regression baseline.                                                                                                                     | [read](../tools/visual-regression.md) |
-| `tests/e2e/__snapshots__/locales-list.png`   | A committed visual-regression baseline.                                                                                                                     | [read](../tools/visual-regression.md) |
-| `tests/e2e/a11y.cy.ts`                       | Cypress suite — the screens, in a browser.                                                                                                                  | [read](../tools/component-testing.md) |
-| `tests/e2e/locales.visual.cy.ts`             | Cypress suite — the screens, in a browser.                                                                                                                  | [read](../tools/component-testing.md) |
-| `tests/store.spec.ts`                        | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
-| `views/LocaleEntries.vue`                    | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
-| `views/LocalesList.vue`                      | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
+| File                                             | What it is                                                                                                                                                  | Explained in                          |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `components/EntriesImportDialog.vue`             | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
+| `components/EntryFormDialog.vue`                 | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
+| `components/LanguageFormDialog.vue`              | A component this domain owns. Published through the barrel when a sibling mounts it, internal otherwise.                                                    | [read](../theory/layers.md)           |
+| `dictionaries.ts`                                | `locales` only. The runtime override merge — server rows layered over what the app bundles, key by key.                                                     | [read](../tools/i18n.md)              |
+| `locales/en.json`                                | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                             | [read](../tools/i18n.md)              |
+| `locales/it.json`                                | This domain’s translation dictionary for one language, loaded as its own chunk.                                                                             | [read](../tools/i18n.md)              |
+| `module.ts`                                      | The manifest — the only file the application loads directly. Declares the name, routes, navigation entries, response schemas, dependency edges and locales. | [read](../theory/modules.md)          |
+| `response-schemas.ts`                            | One row per endpoint this domain calls, pairing a method and path pattern with the Zod envelope its response is validated against.                          | [read](../api/openapi-workflow.md)    |
+| `routes.ts`                                      | The domain’s route records, spliced into the localised route tree. Each carries its own `meta.access`.                                                      | [read](../theory/sitemap.md)          |
+| `schemas.ts`                                     | Form schemas for this domain, built on the generated request schemas rather than hand-written beside them.                                                  | [read](../api/openapi-workflow.md)    |
+| `store.ts`                                       | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                      | [read](../tools/state-and-routing.md) |
+| `tests/dictionaries.spec.ts`                     | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
+| `tests/e2e/__snapshots__/locale-entries.png`     | A committed visual-regression baseline.                                                                                                                     | [read](../tools/visual-regression.md) |
+| `tests/e2e/__snapshots__/locales-dictionary.png` | A committed visual-regression baseline.                                                                                                                     | [read](../tools/visual-regression.md) |
+| `tests/e2e/__snapshots__/locales-list.png`       | A committed visual-regression baseline.                                                                                                                     | [read](../tools/visual-regression.md) |
+| `tests/e2e/a11y.cy.ts`                           | Cypress suite — the screens, in a browser.                                                                                                                  | [read](../tools/component-testing.md) |
+| `tests/e2e/locales.visual.cy.ts`                 | Cypress suite — the screens, in a browser.                                                                                                                  | [read](../tools/component-testing.md) |
+| `tests/store.spec.ts`                            | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
+| `views/LocaleEntries.vue`                        | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
+| `views/LocalesDictionary.vue`                    | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
+| `views/LocalesList.vue`                          | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 
 <!-- gen:files:end -->
 
@@ -152,7 +155,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | ---------------- | ----- | ---------------------------------------------- |
 | Vitest           | 2     | `src/modules/locales/tests/`                   |
 | Cypress          | 2     | `src/modules/locales/tests/e2e/`               |
-| Visual baselines | 2     | `src/modules/locales/tests/e2e/__snapshots__/` |
+| Visual baselines | 3     | `src/modules/locales/tests/e2e/__snapshots__/` |
 
 ```bash
 # this module's vitest suites

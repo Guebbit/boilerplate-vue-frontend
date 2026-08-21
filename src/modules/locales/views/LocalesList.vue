@@ -8,7 +8,7 @@ export default {
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { Languages, Plus } from 'lucide-vue-next';
+import { BookOpenText, Languages, Plus } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
@@ -131,6 +131,14 @@ onMounted(() => {
         <div class="mb-4 flex flex-wrap items-center gap-3">
             <p class="max-w-2xl text-sm opacity-70">{{ t('locales-list-page.intro') }}</p>
             <v-spacer />
+            <v-btn
+                variant="tonal"
+                data-test="dictionary-link"
+                :to="routerLinkI18n({ name: 'LocalesDictionary' })"
+            >
+                <BookOpenText :size="16" class="mr-1" aria-hidden="true" />
+                {{ t('locales-list-page.button-dictionary') }}
+            </v-btn>
             <v-btn color="primary" data-test="language-create" @click="openCreate">
                 <Plus :size="16" class="mr-1" aria-hidden="true" />
                 {{ t('locales-list-page.button-create') }}
