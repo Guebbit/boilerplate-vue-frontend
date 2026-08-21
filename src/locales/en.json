@@ -20,6 +20,7 @@
         "standard-user": "Standard user",
         "no-data": "No data available",
         "cancel": "Cancel",
+        "confirm": "Confirm",
         "fix-errors": "Please fix the highlighted form errors.",
         "api-unreachable": "The server is unreachable — showing what works offline. Retrying quietly."
     },

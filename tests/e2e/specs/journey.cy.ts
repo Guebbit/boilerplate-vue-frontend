@@ -76,6 +76,8 @@ describe('The customer journey', () => {
         cy.get('[data-test=row-view]').first().click();
         cy.get('#order-target').should('exist');
         cy.get('[data-test=order-cancel]').click();
+        // The app's own confirmation, not the browser's: Cypress auto-accepts only the latter.
+        cy.get('[data-test=app-dialog-confirm]').click();
         cy.contains('Order cancelled').should('exist');
         // The gate is the status: once cancelled, the button is gone and buy-again stays.
         cy.get('[data-test=order-cancel]').should('not.exist');

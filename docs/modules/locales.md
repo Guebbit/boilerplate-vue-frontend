@@ -67,11 +67,11 @@ so _may I request this language_ and _may I download a dictionary for it_ stay t
 
 Store `locales`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
-| Kind        | Members                                                                                                                                                                                                | What it is                                                       |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
-| **State**   | `capabilities` · `defaultLocale` · `fallbackLocale` · `filters` · `pageCurrent` · `pageSize`                                                                                                           | The refs the setup function returns — the only writable surface. |
-| **Getters** | `loading` · `pageTotal` · `pageItemList`                                                                                                                                                               | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `fetchLanguages` · `createLanguage` · `editLanguage` · `removeLanguage` · `watchSearchEntries` · `addEntry` · `editEntry` · `removeEntry` · `importEntries` · `fetchAllEntries` · `fetchApiDictionary` | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                                                                                                                                                                                           | What it is                                                       |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **State**   | `capabilities` · `defaultLocale` · `fallbackLocale` · `filters` · `pageCurrent` · `pageSize` · `entriesPageTotal`                                                                                                                 | The refs the setup function returns — the only writable surface. |
+| **Getters** | `loading` · `pageTotal` · `pageItemList`                                                                                                                                                                                          | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `fetchLanguages` · `createLanguage` · `editLanguage` · `removeLanguage` · `watchSearchEntries` · `addEntry` · `editEntry` · `removeEntry` · `importEntries` · `fetchAllEntries` · `fetchApiDictionary` · `fetchBundledDictionary` | Everything that changes state or calls the API.                  |
 
 <!-- gen:state:end -->
 

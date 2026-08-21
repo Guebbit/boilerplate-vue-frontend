@@ -5,6 +5,7 @@ import { LocaleScope } from '@types';
 import type { LocaleScope as TLocaleScope, LocaleEntryInput } from '@types';
 import type { TranslationDictionaries } from '@/infrastructure/i18n';
 import { flattenDictionary } from '../dictionaries';
+import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
 
 /**
  * The import dialog: a nested JSON dictionary in, flat rows out.
@@ -91,14 +92,20 @@ const handleImport = () => {
     const entries = parsedEntries.value;
     if (!entries) return;
     // The second look a replace deserves, naming the scope it is allowed to delete from.
-    if (
-        mode.value === 'replace' &&
-        !globalThis.confirm(
-            t('entries-import.confirm-replace', { scope: scope.value, count: entries.length })
-        )
-    )
-        return;
-    emit('import', { mode: mode.value, scope: scope.value, entries });
+    const secondLook =
+        mode.value === 'replace'
+            ? useDialogStore().confirm({
+                  message: t('entries-import.confirm-replace', {
+                      scope: scope.value,
+                      count: entries.length
+                  }),
+                  color: 'error'
+              })
+            : Promise.resolve(true);
+    return secondLook.then((accepted) => {
+        if (!accepted) return;
+        emit('import', { mode: mode.value, scope: scope.value, entries });
+    });
 };
 </script>
 

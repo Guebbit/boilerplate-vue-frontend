@@ -9,6 +9,7 @@ import type { AdminTabKey } from '@/modules/admin/types.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import AdminOverviewTab from '@/modules/admin/components/AdminOverviewTab.vue';
 import AdminAuditTab from '@/modules/admin/components/AdminAuditTab.vue';
+import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
 
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
@@ -54,13 +55,15 @@ onMounted(() => {
  * @returns A promise resolving once the toast has been raised, or nothing at all if the visitor
  *  declined the confirmation.
  */
-const confirmClearExpiredTokens = () => {
-    const shouldContinue = globalThis.confirm(t('admin-page.confirm-clear-expired-tokens'));
-    if (!shouldContinue) return;
-    return clearExpiredTokens()
-        .then(() => addMessage(t('admin-page.success-clear-expired-tokens')))
-        .catch(() => addMessage(t('admin-page.error-clear-expired-tokens')));
-};
+const confirmClearExpiredTokens = () =>
+    useDialogStore()
+        .confirm({ message: t('admin-page.confirm-clear-expired-tokens'), color: 'warning' })
+        .then((accepted) => {
+            if (!accepted) return;
+            return clearExpiredTokens()
+                .then(() => addMessage(t('admin-page.success-clear-expired-tokens')))
+                .catch(() => addMessage(t('admin-page.error-clear-expired-tokens')));
+        });
 </script>
 
 <template>

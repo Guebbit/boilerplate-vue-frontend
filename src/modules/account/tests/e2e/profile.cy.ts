@@ -171,6 +171,8 @@ describe('Profile self-service', () => {
             cy.contains('[data-test=address-item]', 'office')
                 .find('[data-test=address-remove]')
                 .click();
+            // The app's own confirmation, not the browser's: Cypress auto-accepts only the latter.
+            cy.get('[data-test=app-dialog-confirm]').click();
             cy.get('[data-test=address-item]').should('have.length', 1);
             cy.get('[data-test=address-default]').should('have.length', 1);
         });

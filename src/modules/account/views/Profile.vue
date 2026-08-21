@@ -17,6 +17,7 @@ import ProfileSessions from '@/modules/account/components/ProfileSessions.vue';
 import ProfileAddresses from '@/modules/account/components/ProfileAddresses.vue';
 import { z } from 'zod';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
 
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
@@ -32,12 +33,15 @@ const { requestAccountDelete } = useAccountStore();
  * @returns Nothing; a toast reports either that the confirmation email was sent
  *  or why the request failed.
  */
-const handleDeleteAccount = () => {
-    if (!globalThis.confirm(t('profile-page.confirm-delete-account'))) return;
-    requestAccountDelete()
-        .then(() => addMessage(t('profile-page.success-delete-request')))
-        .catch((error) => notifyErrorMessages(addMessage, error));
-};
+const handleDeleteAccount = () =>
+    useDialogStore()
+        .confirm({ message: t('profile-page.confirm-delete-account'), color: 'error' })
+        .then((accepted) => {
+            if (!accepted) return;
+            return requestAccountDelete()
+                .then(() => addMessage(t('profile-page.success-delete-request')))
+                .catch((error) => notifyErrorMessages(addMessage, error));
+        });
 
 /**
  * Profile logic

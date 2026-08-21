@@ -80,6 +80,8 @@ describe('Storefront', () => {
             cy.visit('/en/orders/65de73a69ca05739be2b5e85');
 
             cy.get('[data-test=order-cancel]').click();
+            // The app's own confirmation, not the browser's: Cypress auto-accepts only the latter.
+            cy.get('[data-test=app-dialog-confirm]').click();
             cy.contains('Order cancelled').should('exist');
             // The cancel gate is status-driven: once cancelled, the button goes.
             cy.get('[data-test=order-cancel]').should('not.exist');

@@ -13,6 +13,7 @@ import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAccountStore } from '@/modules/account/store.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import type { Address, AddressInput } from '@types';
+import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
 
 /**
  * The address book panel. Every write re-renders from the whole list the API answers with,
@@ -103,12 +104,15 @@ const handleMakeDefault = (address: Address) => {
  * @param address - The entry to remove.
  * @returns Nothing; the outcome is reported as a toast.
  */
-const handleRemove = (address: Address) => {
-    if (!globalThis.confirm(t('profile-page.addresses-confirm-remove'))) return;
-    removeAddress(address.id)
-        .then(() => addMessage(t('profile-page.addresses-removed')))
-        .catch((error) => notifyErrorMessages(addMessage, error));
-};
+const handleRemove = (address: Address) =>
+    useDialogStore()
+        .confirm({ message: t('profile-page.addresses-confirm-remove'), color: 'error' })
+        .then((accepted) => {
+            if (!accepted) return;
+            return removeAddress(address.id)
+                .then(() => addMessage(t('profile-page.addresses-removed')))
+                .catch((error) => notifyErrorMessages(addMessage, error));
+        });
 
 onMounted(fetchAddresses);
 </script>

@@ -25,6 +25,7 @@ import type {
     StockMovement,
     StockMovementReason as TStockMovementReason
 } from '@types';
+import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
 
 /**
  * The stock board and the ledger behind it, admin-side — one page, deliberately.
@@ -195,13 +196,18 @@ const handleAdjust = () => {
  * Expires every stale hold. Idempotent server-side, so the confirm is about intent, not danger —
  * the orders behind the released holds get cancelled, and that is worth a deliberate click.
  */
-const handleSweep = () => {
-    if (!globalThis.confirm(t('inventory-page.confirm-sweep'))) return;
-    inventoryStore
-        .sweep()
-        .then((expired) => addMessage(t('inventory-page.success-sweep', { expired: expired ?? 0 })))
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
-};
+const handleSweep = () =>
+    useDialogStore()
+        .confirm({ message: t('inventory-page.confirm-sweep'), color: 'warning' })
+        .then((accepted) => {
+            if (!accepted) return;
+            return inventoryStore
+                .sweep()
+                .then((expired) =>
+                    addMessage(t('inventory-page.success-sweep', { expired: expired ?? 0 }))
+                )
+                .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        });
 
 onMounted(() => {
     void loadLevels();

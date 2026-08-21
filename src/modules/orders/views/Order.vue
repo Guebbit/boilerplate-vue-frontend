@@ -31,6 +31,7 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { downloadBlob } from '@guebbit/js-toolkit';
 import { PaymentPanel } from '@/modules/payments';
 import { ShipmentPanel } from '@/modules/delivery';
+import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
 
 /**
  * Generic translation and notification accessors.
@@ -71,11 +72,16 @@ const cancellable = computed(() => currentOrder.value?.actions?.cancel === true)
  * @returns Nothing; the outcome is reported as a toast and the page re-renders the new status.
  */
 const handleCancel = () => {
-    if (!currentOrder.value) return;
-    if (!globalThis.confirm(t('order-target-page.confirm-cancel'))) return;
-    cancelOrder(currentOrder.value.id)
-        .then(() => addMessage(t('order-target-page.success-cancel')))
-        .catch((error) => notifyErrorMessages(addMessage, error));
+    const order = currentOrder.value;
+    if (!order) return;
+    return useDialogStore()
+        .confirm({ message: t('order-target-page.confirm-cancel'), color: 'error' })
+        .then((accepted) => {
+            if (!accepted) return;
+            return cancelOrder(order.id)
+                .then(() => addMessage(t('order-target-page.success-cancel')))
+                .catch((error) => notifyErrorMessages(addMessage, error));
+        });
 };
 
 /**

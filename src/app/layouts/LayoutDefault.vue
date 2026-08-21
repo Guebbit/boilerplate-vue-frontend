@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import { useLocale } from 'vuetify';
 import AppNavigation from '@/app/components/AppNavigation.vue';
 import AppHealthBanner from '@/app/components/AppHealthBanner.vue';
+import AppDialogHost from '@/app/components/AppDialogHost.vue';
 import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
 
 defineOptions({ inheritAttrs: false });
@@ -106,6 +107,9 @@ const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'er
                 <slot />
             </div>
         </v-main>
+
+        <!-- The one confirmation dialog, fed by `useDialogStore().confirm(...)` -->
+        <AppDialogHost />
 
         <!-- Toast stack (screen-reader friendly: announced politely) -->
         <div

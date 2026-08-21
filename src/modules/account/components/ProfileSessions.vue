@@ -15,6 +15,7 @@ import { useAccountStore } from '@/modules/account/store.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
 
 /**
  * The devices panel: every live refresh token as a session, the current one flagged, each
@@ -64,12 +65,15 @@ const handleRevoke = (sessionId: string, current: boolean) => {
  *
  * @returns Nothing; the outcome is reported as a toast.
  */
-const handleLogoutEverywhere = () => {
-    if (!globalThis.confirm(t('profile-page.sessions-confirm-logout-everywhere'))) return;
-    logoutEverywhere()
-        .then(() => router.push(routerLinkI18n({ name: 'Home' })))
-        .catch((error) => notifyErrorMessages(addMessage, error));
-};
+const handleLogoutEverywhere = () =>
+    useDialogStore()
+        .confirm({ message: t('profile-page.sessions-confirm-logout-everywhere'), color: 'error' })
+        .then((accepted) => {
+            if (!accepted) return;
+            return logoutEverywhere()
+                .then(() => router.push(routerLinkI18n({ name: 'Home' })))
+                .catch((error) => notifyErrorMessages(addMessage, error));
+        });
 
 onMounted(fetchSessions);
 </script>
