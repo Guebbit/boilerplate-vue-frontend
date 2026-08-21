@@ -167,19 +167,10 @@ export interface AppModule {
     navigation?: AppNavigationEntry[];
     responseSchemas?: ResponseSchemaRoute[];
     locales?: Record<string, () => Promise<TranslationDictionaries>>;
-    mockSeeds?: {
-        after?: string[];
-        build: (context: MockSeedContext) => Promise<Partial<MockSeedData>>;
-    };
     subdomain: Subdomain;
     dependsOn?: readonly ContextEdge[];
 }
 ```
-
-`mockSeeds.after` is a **second graph**, deliberately not folded into `dependsOn`: that one is about
-code (`Order.vue` calls `useCartStore` to reorder), this one about fixtures (an order embeds a
-product snapshot). A module can need another's data without importing a line of its code, and one
-field serving both would lie about one of them.
 
 `subdomain` and the shape of `dependsOn` are the module's **strategic** declarations — what it is
 to the business, and what kind of relationship each arrow is. An edge
@@ -188,7 +179,7 @@ changing products cost" are different questions and only the second one is usefu
 [Strategic DDD](./strategic-ddd.md).
 
 Each optional field replaced a shared file that used to enumerate domains — the navigation list,
-the response-schema table, the mock-handler registry, the locale bundle. That is the whole point:
+the response-schema table, the locale bundle. That is the whole point:
 **no shared file names a domain except `src/modules.ts`.**
 
 `dependsOn` is validated as a DAG while the router is assembled. A duplicate name, a dependency on
@@ -203,8 +194,8 @@ surfacing as a blank page on whichever navigation first crosses the gap.
 
 ## Adding and deleting a domain
 
-One folder and one line, in both directions. The procedure — the manifest fields, the mock-ternary
-trap, the commands — is [Adding & removing a module](./module-lifecycle.md). What belongs here is
+One folder and one line, in both directions. The procedure — the manifest fields and the commands —
+is [Adding & removing a module](./module-lifecycle.md). What belongs here is
 what the exercise taught.
 
 Both halves are measured rather than asserted. A scaffold `events` module cost 5 files and 2 lines

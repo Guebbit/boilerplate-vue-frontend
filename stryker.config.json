@@ -73,7 +73,7 @@
         "    here, where the tool cannot see most of the file. Sequenced after component tests exist.",
         "  - Each module's `index.ts` is a barrel: its mutants ask whether a re-export changed, which",
         "    is a question about the module system rather than about this code.",
-        "  - `mocks/` and `tests/` inside a module are test doubles and test code, not code under test.",
+        "  - `tests/` inside a module is test code, not code under test.",
         "",
         "Everything else stays in, INCLUDING code no test currently reaches. The observability files",
         "carry 187 of the 233 no-coverage mutants and are kept deliberately: that zero is the visible,",
@@ -119,7 +119,6 @@
         "src/kernel/**/*.ts",
         "src/modules/*/**/*.ts",
         "!src/modules/*/index.ts",
-        "!src/modules/*/mocks/**",
         "!src/modules/*/tests/**"
     ],
     "ignorePatterns": ["coverage/**", "reports/**", "dist/**", "docs/**", "cypress/**"],

@@ -12,7 +12,7 @@ here and why each earns its place — read **[Tools Explained](../tools/tools-ex
 the whole stack on one diagram. This page is about the code.
 :::
 
-::: warning Run it in mock mode while you read
+::: warning Run it against the demo backend while you read
 `npm --prefix ../boilerplate-node-backend run demo` and `npm run dev` gives you the whole storefront in seconds. Every
 file below is easier to read with the app open beside it.
 :::
@@ -144,7 +144,6 @@ generated code inherits all of the above without knowing it exists.
 | `src/ui/**` (molecules, organisms, vuetify) | You are building a screen. Presentational only, no domain knowledge. |
 | `src/infrastructure/i18n/index.ts` | You are adding a language. It is the densest file in the repo and explains nothing about the architecture. |
 | `src/infrastructure/stores/observability.ts`, `analytics-events.ts` | You are adding tracking. See [Observability](../tools/observability.md). |
-| `src/modules/*/mocks/**` | You are changing mock behaviour. See [The demo profile](../tools/demo-profile.md). |
 | `src/modules/account/**` | It is the biggest and least typical module (auth, sessions, addresses, password flows). Read `products` first. |
 | `src/modules/realtime/**`, `src/modules/admin/**` | They are demonstrations of a capability, not part of the core shape. |
 | `src/modules/demo/**` | It demonstrates the framework and nothing else. Delete it when you start a real project. |

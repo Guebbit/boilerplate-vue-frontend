@@ -8,16 +8,16 @@ This page is the map. Each layer has its own detail page — code, tools, patter
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 60}}}%%
 flowchart TB
     Unit["Unit\nVitest + @vue/test-utils\ncomponents · stores · plugins"]
-    Mock["E2E — Demo Profile\nCypress + the real API, in-memory\nexact values"]
+    Demo["E2E — Demo Profile\nCypress + the real API, in-memory\nexact values"]
     Live["E2E — Live\nCypress + real backend\nrequired CI job"]
     A11y["Accessibility\ncypress-axe\nis it usable?"]
     Visual["Visual Regression\nCypress + pixelmatch\ndoes it still look right?"]
     Mutation["Mutation\nStryker\nchecks the checkers"]
 
-    Unit --> Mock
-    Mock --> Live
-    Mock --> A11y
-    Mock --> Visual
+    Unit --> Demo
+    Demo --> Live
+    Demo --> A11y
+    Demo --> Visual
     Mutation -.mutates.-> Unit
 
     classDef fast fill:#dbeafe,stroke:#2563eb,color:#111827;
@@ -25,7 +25,7 @@ flowchart TB
     classDef live fill:#fef3c7,stroke:#d97706,color:#111827;
     classDef meta fill:#dcfce7,stroke:#16a34a,color:#111827;
     class Unit fast;
-    class Mock e2e;
+    class Demo e2e;
     class A11y,Visual e2e;
     class Live live;
     class Mutation meta;
@@ -36,15 +36,17 @@ flowchart TB
 | Unit | Does this one component/store/plugin behave correctly in isolation? | Vitest + @vue/test-utils + jsdom | `npm run test:unit` | [Unit Testing](./unit-testing.md) |
 | Component | Does this `.vue` render, emit and **clean up** correctly? | @vue/test-utils | `npm run test:unit` (same suite) | [Component Testing](./component-testing.md) |
 | Property | Does the rule hold for *every* input, not just the ones someone thought of? | fast-check | `npm run test:unit` (same suite) | [Property Testing](./property-testing.md) |
+| Cross-cutting | Is the repository still the shape it claims to be? | Vitest, reading the filesystem | `npm run test:unit` (same suite) | [Unit Testing](./unit-testing.md#the-cross-cutting-layer) |
 | Accessibility | Are there mechanical a11y failures on the routes a user reaches? | cypress-axe | `npm run test:e2e` (same suite) | [Accessibility Testing](./accessibility-testing.md) |
 | Visual Regression | Does the page still **look** the way it did? | Cypress + pixelmatch | `npm run test:e2e:visual` | [Visual Regression](./visual-regression.md) |
 | E2E — Demo Profile | Does the app behave correctly against **known** data? | Cypress + the real API on an in-memory Mongo, seeded | `npm run test:e2e` | [The demo profile](./demo-profile.md) |
 | E2E — Live | Does the frontend agree with the **actual** backend? | Cypress + real API | `npm run test:e2e:live` (required in CI) | [Live E2E](./live-e2e.md) |
 | Mutation | Do the tests **notice** when the source is wrong? | Stryker + vitest-runner | `npm run test:mutation` | [Mutation Testing](./mutation-testing.md) |
 
-None of the four testing layers replaces another — each closes a gap the others structurally cannot:
+None of these layers replaces another — each closes a gap the others structurally cannot:
 
 - **Unit** is fast and isolated, but a component that's individually correct can still be wired up wrong, or agree with a fixture that's drifted from reality.
+- **Cross-cutting** tests no behaviour at all. It reads the filesystem and the manifests, and it is the only layer that can fail on a file **nobody wrote** — a module with no accessibility sweep, a store the coverage glob cannot see, a form missing the wiring that moves focus. Every one of those is invisible to a suite that can only run the code that exists.
 - **Demo profile** runs the whole app against the real API — the paired backend's [demo profile](./demo-profile.md), one in-memory instance per shard — deterministic because the seeds are, so it can assert exact counts and values. The awkward shapes it needs (a soft-deleted product, an inactive one, one whose optional fields are all at their schema defaults) are records in the backend's demo dataset rather than generated: a named record can be asserted on, and it is a shape the real API actually answers with, because the real API is answering.
 - **Live** runs the same specs against the fully-composed stack — the real cache, the real broker, a cookie over a real network — everything the demo profile deliberately disables. It needs both repos plus a Mongo and a Redis, so it is minutes rather than seconds; it still gates every PR, after the fast layers have had their say.
 - **Mutation** doesn't test the app at all — it tests the *tests*, and only for the layer it's pointed at (unit).
@@ -136,7 +138,7 @@ Worth being explicit, because the boundary has bitten this project before.
 | Wrong response **shape** from the API | response validation — `orvalMutator` parses every response against the generated Zod schema in every profile but Vitest — see [Live E2E](./live-e2e.md) |
 | Generated client out of step with `openapi.yaml` | the `api-freshness` CI job |
 | App breaks on unusual but valid data (a record with every optional field at its default, an unusual role split) | add the record to the backend's demo dataset — [The demo profile](./demo-profile.md) |
-| Mock **behaviour** disagreeing with the real backend, or a live contract violation | [Live E2E](./live-e2e.md) — the `test-e2e-live` CI gate, plus response validation |
+| The demo dataset disagreeing with what the real backend answers, or a live contract violation | [Live E2E](./live-e2e.md) — the `test-e2e-live` CI gate, plus response validation |
 
 Both e2e profiles run the real backend, so "does this frontend agree with that backend" is answered by construction rather than by a reviewer checking a handler against a service. What the two profiles split between them is infrastructure: the demo profile answers fast with the cache and queue disabled, the live profile answers on every PR with everything attached. See [The demo profile](./demo-profile.md) and [Live E2E](./live-e2e.md).
 

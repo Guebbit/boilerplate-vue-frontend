@@ -26,7 +26,6 @@ flowchart TD
     classDef app fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef nav fill:#ede9fe,stroke:#7c3aed,color:#111827;
     classDef obs fill:#fce7f3,stroke:#db2777,color:#111827;
-    classDef mock fill:#f0fdf4,stroke:#16a34a,color:#111827;
 
     class Contract contract;
     class Generated,HTTP generated;

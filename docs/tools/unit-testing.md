@@ -88,15 +88,43 @@ const server = setupServer(
 | --- | --- |
 | `tests/unit/ui/**`, `tests/unit/app/*.spec.ts` | Component mount tests |
 | `src/modules/*/tests/**` | A domain's own specs, co-located so `rm -rf` takes them with it |
-| `tests/unit/infrastructure/http/**` | `orvalMutator`, the refresh flow, response validation |
-| `tests/unit/mocks/**` | Unit coverage for the mock layer's own building blocks (not the handlers themselves — those are exercised through Cypress) |
+| `tests/unit/infrastructure/http/**` | `orvalMutator`, the refresh flow, response validation, the URL→pathname rule |
 | `tests/unit/app/**`, `tests/unit/kernel/**`, `tests/unit/infrastructure/**` | Route guards, router config, session store, formatters/error helpers, the SSE client |
-| `tests/cross-cutting/**` | Specs that sweep *every* domain (i18n key coverage), so they belong to none — and must not sit inside a module that could be deleted |
+| `tests/unit/scripts/**` | The repo's own tooling — the shared-file identity check, the mutation ratchet, the backend path, the Cypress spec globs. Scripts nobody runs by hand until they break |
+| `tests/cross-cutting/**` | The architectural invariants. See below — this is a layer, not a folder |
 | `tests/support/unit/setup.ts` | Global Vitest setup (runs before every file) |
+| `tests/support/stub.ts` | `asStub`, for reading a `vi.fn()` back with its type intact |
 | `tests/support/unit/wire-modules.ts` | Registers the modules' response schemas and dictionaries into `infrastructure`, as `src/main.ts` does. Any spec touching either subsystem needs it |
 | `tests/support/unit/jsdom-quiet-css.environment.ts` | Custom environment: plain jsdom with one class of CSS-parser noise filtered — see the file's own comment |
+| `tests/support/e2e/**` | Cypress's, not Vitest's — the sweeps, the custom commands, the snapshot task |
 | `vitest.config.ts` | Test runner config (environment, setup files, coverage) |
 | `vitest.config.mutation.ts` | Narrower variant Stryker drives — see [Mutation Testing](./mutation-testing.md) |
+
+## The cross-cutting layer
+
+`tests/cross-cutting/` runs in this suite and on this runner, but it answers a different question.
+Every other spec here asks *does this behave correctly*. These ten ask *is the repository still the
+shape it claims to be* — and they fail on a **file that was never written**, which no behavioural
+test can do, because a spec that does not exist runs no assertions and reports nothing.
+
+| Spec | Refuses |
+| --- | --- |
+| `registry.spec.ts` | A module whose manifest breaks an invariant every enabled module must satisfy |
+| `context-map.spec.ts` | A `dependsOn` edge that the imports do not support, or an import with no edge |
+| `subdomain-discipline.spec.ts` | A `domain/` folder inside a `generic` module |
+| `published-language.spec.ts` | A barrel exporting more, or less, than its siblings import |
+| `a11y-coverage.spec.ts` | A routed module with no accessibility sweep — or a sweep outliving its routes |
+| `store-location.spec.ts` | A `defineStore` where the coverage floor's globs cannot see it |
+| `form-idiom.spec.ts` | A form reaching the toolkit directly, keeping its own "show errors" flag, or leaving a page form with nothing to focus |
+| `schemas-i18n.spec.ts` | A Zod message that stops following the active locale |
+| `coverage-and-mutate-scope.spec.ts` | A floored file that nothing mutates |
+| `mutation-safe-imports.spec.ts` | An import specifier a mutant could rewrite into something that still runs |
+
+They belong to no module and must never name one — see the rule below. A spec here iterates the
+registry; the moment it writes `products`, deleting that domain breaks a test that is not about it.
+
+Two of them (`spec-globs`, `spec-identity`) answer the same kind of question about the repo's
+tooling rather than its modules, and live in `tests/unit/scripts/` for that reason.
 
 ## Commands
 
@@ -120,9 +148,10 @@ Two homes, and the rule is ownership rather than kind (decision D4):
 | Spec is about… | Lives in |
 | --- | --- |
 | one domain | `src/modules/<name>/tests/` — deleted with the module |
-| core, ui, platform, or the mock layer | `tests/unit/<tier>/` |
-| every domain at once | `tests/cross-cutting/` |
-| nothing — it is shared machinery | `tests/support/{unit,e2e,mocks}/` |
+| core, ui, platform | `tests/unit/<tier>/` |
+| a script in `scripts/` | `tests/unit/scripts/` |
+| every domain at once, or the shape of the repo | `tests/cross-cutting/` |
+| nothing — it is shared machinery | `tests/support/{unit,e2e}/` |
 
 **The rule that decides it:**
 

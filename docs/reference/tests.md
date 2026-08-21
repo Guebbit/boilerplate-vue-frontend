@@ -44,6 +44,7 @@ covered the day it is added.
 | `tests/cross-cutting/registry.spec.ts` | Every module's manifest is valid and the registry rejects a malformed one at boot. | [Modules](../theory/modules.md) |
 | `tests/cross-cutting/context-map.spec.ts` | Declared cross-module dependencies match the imports that actually exist. | [Strategic DDD](../theory/strategic-ddd.md) |
 | `tests/cross-cutting/published-language.spec.ts` | A module's barrel publishes exactly what its siblings import — no more, no less. | [Modules](../theory/modules.md) |
+| `tests/cross-cutting/form-idiom.spec.ts` | Every form goes through `useAppForm`, keeps no second "show errors" flag of its own, and hands the composable an element to focus into. | [UI Kit](./src-ui.md) |
 | `tests/cross-cutting/store-location.spec.ts` | Every `defineStore` under `src/modules/` sits where the coverage floor's globs look — `store.ts`, or `stores/` for a module with several. | [State & Routing](../tools/state-and-routing.md) |
 | `tests/cross-cutting/subdomain-discipline.spec.ts` | Modelling effort goes where the business is: a module's subdomain classification matches what it contains. | [Strategic DDD](../theory/strategic-ddd.md) |
 | `tests/cross-cutting/schemas-i18n.spec.ts` | Every validation message resolves to a real dictionary key, so a form never renders a raw key at a user. | [App, Kernel & Types](./src-app.md) |

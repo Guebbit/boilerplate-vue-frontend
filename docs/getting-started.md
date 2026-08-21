@@ -27,10 +27,10 @@ flowchart TD
     R --> R3["Data persists in the container volume"]
 
     classDef q fill:#fef3c7,stroke:#d97706,color:#111827;
-    classDef mock fill:#dcfce7,stroke:#16a34a,color:#111827;
+    classDef demo fill:#dcfce7,stroke:#16a34a,color:#111827;
     classDef live fill:#dbeafe,stroke:#2563eb,color:#111827;
     class Q q;
-    class M,M1,M2,M3 mock;
+    class M,M1,M2,M3 demo;
     class R,R1,R2,R3 live;
 ```
 

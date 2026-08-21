@@ -83,12 +83,12 @@ Start at [the whole map](./modules/) — fourteen domains grouped by subdomain, 
 
 ### [Tools](./tools/)
 
-Dependency-focused pages: runtime, state, routing, security, mocking, observability, and testing.
+Dependency-focused pages: runtime, state, routing, security, observability, and testing.
 New to the stack? Start at [Tools Explained](./tools/tools-explained.md) for a plain-English "what is X and why is it here" summary of every tool.
 
 ### [API](./api/)
 
-Contract-first workflow: OpenAPI + AsyncAPI, codegen, generated client usage, and mocks.
+Contract-first workflow: OpenAPI + AsyncAPI, codegen, and generated client usage.
 
 ### [Files](./reference/)
 
@@ -119,7 +119,7 @@ flowchart LR
     classDef app fill:#dbeafe,stroke:#2563eb,color:#111827;
     classDef obs fill:#ede9fe,stroke:#7c3aed,color:#111827;
     class OpenSpec,AsyncSpec contract;
-    class Client,Schemas,Mocks,Realtime generated;
+    class Client,Schemas,Realtime generated;
     class Stores,Views,Router,I18N,RTClients app;
     class Obs obs;
 ```

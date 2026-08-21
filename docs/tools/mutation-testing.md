@@ -306,14 +306,13 @@ flowchart TB
     "src/kernel/**/*.ts",
     "src/modules/*/**/*.ts",
     "!src/modules/*/index.ts",
-    "!src/modules/*/mocks/**",
     "!src/modules/*/tests/**"
 ]
 ```
 
 A counterintuitive but important consequence of the table above: **untested files are free to include.** A mutant with no covering test is reported `NoCoverage` without running anything, so a file at 0% costs nothing and honestly records the gap. The cost lives entirely in _well-covered_ code — especially static-and-covered code.
 
-That is why the list above is so short. The bar for excluding something is **"a mutant here could not mean anything to anyone"**, not "our tests would not kill it" — an unkilled mutant is a finding, while a file missing from the report is a blind spot, since an absent file reads exactly like a file with no survivors. Only a module's `index.ts` (a barrel, whose mutants ask whether a re-export changed) and its `mocks/` and `tests/` (test doubles and test code, not code under test) clear that bar.
+That is why the list above is so short. The bar for excluding something is **"a mutant here could not mean anything to anyone"**, not "our tests would not kill it" — an unkilled mutant is a finding, while a file missing from the report is a blind spot, since an absent file reads exactly like a file with no survivors. Only a module's `index.ts` (a barrel, whose mutants ask whether a re-export changed) and its `tests/` (test code, not code under test) clear that bar.
 
 ### Its relationship to the coverage floors
 

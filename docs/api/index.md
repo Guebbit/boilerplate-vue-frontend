@@ -13,7 +13,6 @@ flowchart LR
     Generate --> Schemas[contracts/rest/schemas.zod.ts\nZod schemas]
     Client --> Stores[Pinia stores\ncall generated functions]
     Schemas --> Stores
-    Mocks --> Handlers[src/modules/<name>/mocks/*\nhand-written logic]
 
     classDef contract fill:#dcfce7,stroke:#16a34a,color:#111827;
     classDef tooling fill:#fef3c7,stroke:#d97706,color:#111827;
@@ -21,8 +20,8 @@ flowchart LR
     classDef app fill:#ede9fe,stroke:#7c3aed,color:#111827;
     class Spec contract;
     class Lint,Generate tooling;
-    class Client,Schemas,Mocks generated;
-    class Stores,Handlers app;
+    class Client,Schemas generated;
+    class Stores app;
 ```
 
 ## What matters most here

@@ -109,9 +109,9 @@ Not usefully: it has no API to call, and there is no mode in which it answers it
 Point `VITE_API_URL` at a backend — the lightest one being its
 [demo profile](./demo-profile.md), which needs no containers at all.
 
-That is deliberate: a lone container is loudly broken rather than quietly
-mocked, because a frontend that silently mocks the backend you just started looks like it works
-and does not.
+That is deliberate: a lone container is loudly broken rather than quietly faked. A frontend that
+silently answered its own requests while the backend you just started sat unreachable would look
+like it works and would not.
 
 ## Related pages
 
