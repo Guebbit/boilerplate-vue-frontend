@@ -74,6 +74,23 @@ describe('login', () => {
                 expect(useSessionStore().accessToken).toBe('jwt-token');
             }));
 
+    it('maps the remember checkbox to the medium tier, and sends no tier otherwise', () =>
+        useAccountStore()
+            .login('ada@example.com', 'hunter2hunter2', true)
+            .then(() => useAccountStore().login('ada@example.com', 'hunter2hunter2'))
+            .then(() => {
+                const bodies = vi
+                    .mocked(orvalMutator)
+                    .mock.calls.filter(
+                        (call) => (call[0] as { url: string }).url === '/account/login'
+                    )
+                    .map((call) => (call[0] as { data: unknown }).data);
+                expect(bodies).toEqual([
+                    { email: 'ada@example.com', password: 'hunter2hunter2', remember: 'medium' },
+                    { email: 'ada@example.com', password: 'hunter2hunter2', remember: undefined }
+                ]);
+            }));
+
     it('publishes the viewer the router guards read', () =>
         useAccountStore()
             .login('ada@example.com', 'hunter2hunter2')

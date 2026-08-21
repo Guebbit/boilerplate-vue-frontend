@@ -50,7 +50,8 @@ const {
     handleSubmit,
     applyServerErrors
 } = useAppForm<
-    LoginRequest & {
+    // The contract's `remember` is a tier; the form's is the checkbox the store maps to one.
+    Omit<LoginRequest, 'remember'> & {
         remember?: boolean;
     }
 >(
@@ -75,7 +76,7 @@ const submitForm = () => {
     const accountStore = useAccountStore();
     return handleSubmit(() =>
         accountStore
-            .login(form.value.email, form.value.password)
+            .login(form.value.email, form.value.password, form.value.remember)
             .then(() => {
                 /*
                  * The record's language wins over the tab's: the saved preference is what this

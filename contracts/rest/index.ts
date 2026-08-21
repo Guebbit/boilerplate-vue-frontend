@@ -899,9 +899,22 @@ export interface AccountDeleteConfirmRequest {
     token: string;
 }
 
+/**
+ * How long the refresh cookie outlives the tab — the "remember me" tiers, sized by the deployment (`NODE_TOKEN_REFRESH_TIME_*`). Omitted, the cookie lives only as long as an access token.
+ */
+export type LoginRequestRemember = (typeof LoginRequestRemember)[keyof typeof LoginRequestRemember];
+
+export const LoginRequestRemember = {
+    short: 'short',
+    medium: 'medium',
+    long: 'long'
+} as const;
+
 export interface LoginRequest {
     email: Email;
     password: Password;
+    /** How long the refresh cookie outlives the tab — the "remember me" tiers, sized by the deployment (`NODE_TOKEN_REFRESH_TIME_*`). Omitted, the cookie lives only as long as an access token. */
+    remember?: LoginRequestRemember;
 }
 
 export interface AuthTokens {

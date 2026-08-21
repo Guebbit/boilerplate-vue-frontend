@@ -1451,7 +1451,13 @@ export const loginBodyPasswordMin = 8;
 
 export const LoginBody = zod.strictObject({
     email: zod.email(),
-    password: zod.string().min(loginBodyPasswordMin)
+    password: zod.string().min(loginBodyPasswordMin),
+    remember: zod
+        .enum(['short', 'medium', 'long'])
+        .optional()
+        .describe(
+            'How long the refresh cookie outlives the tab — the \"remember me\" tiers, sized by the deployment (`NODE_TOKEN_REFRESH_TIME_\*`). Omitted, the cookie lives only as long as an access token.'
+        )
 });
 
 export const LoginResponse = zod.strictObject({

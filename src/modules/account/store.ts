@@ -10,6 +10,7 @@ import {
     requestAccountDelete as apiRequestAccountDelete,
     confirmAccountDelete as apiConfirmAccountDelete,
     login as apiLogin,
+    LoginRequestRemember,
     signup as apiSignup,
     signupWithMultipart,
     requestPasswordReset as apiRequestPasswordReset,
@@ -91,12 +92,19 @@ export const useAccountStore = defineStore('account', () => {
      *
      * @param email - Account email.
      * @param password - Plain-text password, sent over the wire only.
+     * @param remember - The "remember me" checkbox. One checkbox, one tier: thirty days is what
+     *  the phrase conventionally promises, so it maps to `medium`. Unchecked, the refresh cookie
+     *  the API sets lives only as long as an access token.
      * @returns A promise resolving once the token is stored and the profile has
      *  been (re)fetched.
      */
-    const login = (email: string, password: string) =>
+    const login = (email: string, password: string, remember = false) =>
         fetchAny(() =>
-            apiLogin({ email, password })
+            apiLogin({
+                email,
+                password,
+                remember: remember ? LoginRequestRemember.medium : undefined
+            })
                 .then((data) => {
                     session.setAccessToken(getTokenFromResponse(data));
                 })
