@@ -256,3 +256,38 @@ describe('fetchApiDictionary', () => {
             });
     });
 });
+
+describe('entriesPageTotal', () => {
+    it("is the server's page count for THIS search, not the local cache divided by page size", () => {
+        responses['GET /locales/fr/entries'] = {
+            data: {
+                items: [{ ...ENTRY, id: 'fr-1', locale: 'fr' }],
+                meta: { page: 1, pageSize: 10, totalItems: 1, totalPages: 1 }
+            }
+        };
+        const store = useLocalesStore();
+        store.filters = { tag: 'fr' };
+        return store
+            .watchSearchEntries()
+            .search()
+            .then(() => {
+                expect(store.entriesPageTotal).toBe(1);
+            });
+    });
+});
+
+describe('fetchBundledDictionary', () => {
+    it('flattens the bundled dictionary of a shipped language', () =>
+        useLocalesStore()
+            .fetchBundledDictionary('en')
+            .then((dictionary) => {
+                expect(dictionary['generic.search']).toBe('Search');
+            }));
+
+    it('answers an empty dictionary for a language this build does not ship', () =>
+        useLocalesStore()
+            .fetchBundledDictionary('kl')
+            .then((dictionary) => {
+                expect(dictionary).toEqual({});
+            }));
+});

@@ -9,7 +9,7 @@ import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { ArrowLeft, Download, Plus, Search, Upload } from 'lucide-vue-next';
+import { ArrowLeft, BookOpenText, Check, Download, Plus, Search, Upload } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { downloadBlob } from '@guebbit/js-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
@@ -27,6 +27,7 @@ import DataTable from '@/ui/organisms/DataTable.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { LocaleScope } from '@types';
 import type { LocaleEntry, LocaleEntryInput, LocaleScope as TLocaleScope } from '@types';
+import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
 
 /**
  * One language's translation rows: paginated, searched, edited inline.
@@ -43,7 +44,7 @@ const { t } = useI18n();
 const route = useRoute();
 const { addMessage } = useNotificationsStore();
 const localesStore = useLocalesStore();
-const { capabilities, filters, pageItemList, pageCurrent, pageTotal, loading } =
+const { capabilities, filters, pageItemList, pageCurrent, entriesPageTotal, loading } =
     storeToRefs(localesStore);
 
 /** The language whose rows this page shows, from `/locales/:tag`. */
@@ -60,13 +61,31 @@ const importOpen = ref(false);
 /** Local draft per row id, so a blur can tell "changed" from "clicked through". */
 const drafts = ref<Record<string, string>>({});
 
+/** Row ids whose last save just landed; the check mark beside the field, cleared after a beat. */
+const savedRows = ref<Record<string, true>>({});
+
+/** The "both scopes" choice of the scope select. */
+const ANY_SCOPE = '';
+
 const scopeFilterOptions = computed(() => [
-    { value: undefined, title: t('locale-entries-page.filter-scope-all') },
+    /*
+     * A real empty-string value, NOT `undefined`: Vuetify reads an item with no value as
+     * "use the title", and the page then sent `scope=Both+scopes` to the API.
+     */
+    { value: ANY_SCOPE, title: t('locale-entries-page.filter-scope-all') },
     ...Object.values(LocaleScope).map((scope) => ({
         value: scope,
         title: t(`locale-entries-page.scope-${scope}`)
     }))
 ]);
+
+/** The select's model: the sentinel on screen, `undefined` — no filter — in the store. */
+const scopeChoice = computed({
+    get: () => filters.value.scope ?? ANY_SCOPE,
+    set: (choice: TLocaleScope | typeof ANY_SCOPE) => {
+        filters.value.scope = choice === ANY_SCOPE ? undefined : choice;
+    }
+});
 
 /*
  * The tag rides INSIDE the filters so the search cache keys on it — see the store. Immediate,
@@ -149,24 +168,34 @@ const handleValueBlur = (entry: LocaleEntry) => {
     return localesStore
         .editEntry(tag.value, entry.id, draft)
         .then(() => {
-            addMessage(t('locale-entries-page.success-edit'));
+            // Feedback on the row, not a toast: ten edits in a row would be ten toasts.
+            savedRows.value[entry.id] = true;
+            setTimeout(() => {
+                savedRows.value = Object.fromEntries(
+                    Object.entries(savedRows.value).filter(([id]) => id !== entry.id)
+                );
+            }, 1500);
             return applyLiveOverrides();
         })
         .catch((error: unknown) => notifyErrorMessages(addMessage, error));
 };
 
 const handleDelete = (entry: LocaleEntry) => {
-    const shouldContinue = globalThis.confirm(
-        t('locale-entries-page.confirm-delete-entry', { key: entry.key })
-    );
-    if (!shouldContinue) return;
-    return localesStore
-        .removeEntry(tag.value, entry.id)
-        .then(() => {
-            addMessage(t('locale-entries-page.success-delete'));
-            return Promise.all([search(true), applyLiveOverrides()]);
+    return useDialogStore()
+        .confirm({
+            message: t('locale-entries-page.confirm-delete-entry', { key: entry.key }),
+            color: 'error'
         })
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        .then((accepted) => {
+            if (!accepted) return;
+            return localesStore
+                .removeEntry(tag.value, entry.id)
+                .then(() => {
+                    addMessage(t('locale-entries-page.success-delete'));
+                    return Promise.all([search(true), applyLiveOverrides()]);
+                })
+                .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        });
 };
 
 const handleImport = (payload: {
@@ -230,6 +259,14 @@ const handleExport = () =>
                 </span>
             </div>
             <v-spacer />
+            <v-btn
+                variant="text"
+                data-test="dictionary-link-header"
+                :to="routerLinkI18n({ name: 'LocalesDictionary' })"
+            >
+                <BookOpenText :size="16" class="mr-1" aria-hidden="true" />
+                {{ t('locale-entries-page.button-dictionary') }}
+            </v-btn>
             <v-btn variant="tonal" data-test="entries-export" @click="handleExport">
                 <Download :size="16" class="mr-1" aria-hidden="true" />
                 {{ t('locale-entries-page.button-export') }}
@@ -255,7 +292,7 @@ const handleExport = () =>
                         data-test="entries-filter-text"
                     />
                     <v-select
-                        v-model="filters.scope"
+                        v-model="scopeChoice"
                         :items="scopeFilterOptions"
                         :label="t('locale-entries-page.filter-scope')"
                         hide-details
@@ -273,8 +310,25 @@ const handleExport = () =>
         <v-empty-state
             v-if="!loading && pageItemList.length === 0"
             :title="t('locale-entries-page.empty')"
+            :text="t('locale-entries-page.empty-hint')"
             data-test="entries-empty"
-        />
+        >
+            <template #actions>
+                <!--
+                    Only the EDITED rows live here. Every key the app and the API actually use,
+                    edited or not, is the dictionary board's job — and the answer to "where are
+                    the other keys?".
+                -->
+                <v-btn
+                    variant="tonal"
+                    data-test="dictionary-link"
+                    :to="routerLinkI18n({ name: 'LocalesDictionary' })"
+                >
+                    <BookOpenText :size="16" class="mr-1" aria-hidden="true" />
+                    {{ t('locale-entries-page.button-dictionary') }}
+                </v-btn>
+            </template>
+        </v-empty-state>
 
         <DataTable
             v-else
@@ -311,7 +365,17 @@ const handleExport = () =>
                     @update:model-value="(draft) => (drafts[item.id] = draft)"
                     @blur="handleValueBlur(item)"
                     @keydown.enter.prevent="handleValueBlur(item)"
-                />
+                >
+                    <template v-if="savedRows[item.id]" #append-inner>
+                        <Check
+                            :size="16"
+                            class="text-success"
+                            data-test="entry-saved"
+                            role="img"
+                            :aria-label="t('locale-entries-page.success-edit')"
+                        />
+                    </template>
+                </v-text-field>
             </template>
 
             <template v-slot:[`item.updatedAt`]="{ item }">
@@ -332,7 +396,7 @@ const handleExport = () =>
             </template>
         </DataTable>
 
-        <ListPagination v-model="pageCurrent" :length="pageTotal" />
+        <ListPagination v-model="pageCurrent" :length="entriesPageTotal" />
 
         <EntryFormDialog v-model="entryFormOpen" :initial-scope="filters.scope" @save="handleAdd" />
         <EntriesImportDialog

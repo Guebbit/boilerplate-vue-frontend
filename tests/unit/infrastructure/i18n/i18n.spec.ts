@@ -10,6 +10,7 @@ import {
     _loadLocale,
     _updateLocale,
     i18n,
+    loadBundledDictionary,
     registerLocaleContributors
 } from '@/infrastructure/i18n';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
@@ -505,6 +506,38 @@ describe('registerLocaleContributors', () => {
             expect(instance.global.t('navigation.error-already-logged')).toBe(
                 itMessages.navigation['error-already-logged']
             );
+        });
+    });
+});
+
+describe('loadBundledDictionary', () => {
+    afterEach(() => registerLocaleContributors({}));
+
+    it('merges the shared file with every module slice, without touching the instance', () => {
+        registerLocaleContributors({
+            it: [() => Promise.resolve({ navigation: { 'label-extra': 'Extra' } })]
+        });
+        const before = i18n.global.getLocaleMessage('it');
+        return loadBundledDictionary('it').then((dictionary) => {
+            const navigation = dictionary.navigation as Record<string, string>;
+            // The shared file's keys survive beside the module's: a deep merge, not a replace.
+            expect(navigation['error-already-logged']).toBe(
+                itMessages.navigation['error-already-logged']
+            );
+            expect(navigation['label-extra']).toBe('Extra');
+            expect(i18n.global.getLocaleMessage('it')).toEqual(before);
+        });
+    });
+
+    it('answers an empty dictionary for a language this build does not ship', () =>
+        loadBundledDictionary('kl').then((dictionary) => {
+            expect(dictionary).toEqual({});
+        }));
+
+    it('never mutates the imported file object', () => {
+        registerLocaleContributors({ en: [() => Promise.resolve({ generic: { probe: 'x' } })] });
+        return loadBundledDictionary('en').then(() => {
+            expect((enMessages.generic as Record<string, string>).probe).toBeUndefined();
         });
     });
 });

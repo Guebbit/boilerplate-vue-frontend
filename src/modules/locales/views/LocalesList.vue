@@ -18,6 +18,7 @@ import LanguageFormDialog from '@/modules/locales/components/LanguageFormDialog.
 import DataTable from '@/ui/organisms/DataTable.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import type { LocaleCapability } from '@types';
+import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
 
 /**
  * The languages board: every language the deployment offers, from both tiers, each stating what
@@ -106,19 +107,27 @@ const handleSave = (fields: {
  * @returns Nothing; the outcome is reported as a toast.
  */
 const handleDelete = (language: LocaleCapability) => {
-    const shouldContinue = globalThis.confirm(
-        t('locales-list-page.confirm-delete', { tag: language.tag, count: language.entryCount })
-    );
-    if (!shouldContinue) return;
-    // The API refuses to delete an active language — its guard rail; the confirm above is this
-    // page's half — so an active row is deactivated first and an inactive one goes straight out.
-    const deactivated = language.active
-        ? localesStore.editLanguage(language.tag, { active: false })
-        : Promise.resolve(undefined);
-    return deactivated
-        .then(() => localesStore.removeLanguage(language.tag))
-        .then(() => addMessage(t('locales-list-page.success-delete')))
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+    return useDialogStore()
+        .confirm({
+            message: t('locales-list-page.confirm-delete', {
+                tag: language.tag,
+                count: language.entryCount
+            }),
+            color: 'error'
+        })
+        .then((accepted) => {
+            if (!accepted) return;
+            // The API refuses to delete an active language — its guard rail; the confirm above
+            // is this page's half — so an active row is deactivated first and an inactive one
+            // goes straight out.
+            const deactivated = language.active
+                ? localesStore.editLanguage(language.tag, { active: false })
+                : Promise.resolve(undefined);
+            return deactivated
+                .then(() => localesStore.removeLanguage(language.tag))
+                .then(() => addMessage(t('locales-list-page.success-delete')))
+                .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        });
 };
 
 onMounted(() => {

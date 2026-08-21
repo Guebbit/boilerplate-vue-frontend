@@ -79,11 +79,13 @@
         "success-delete": "Entry removed.",
         "success-import": "Import done: {created} created, {updated} updated, {removed} removed. Now at revision {revision}.",
         "error-merge-removed": "The merge reported deleted rows, which a merge must never do. Check the server.",
-        "value-field-label": "Translation for {key}"
+        "value-field-label": "Translation for {key}",
+        "empty-hint": "Only edited rows are listed here. Every key the app and the API use, edited or not, is on the dictionary board.",
+        "button-dictionary": "Dictionary"
     },
     "locales-dictionary-page": {
         "page-title": "Dictionary",
-        "intro": "Every key across every language, side by side. Edit a cell and leave it to save; clear a cell to remove that language's entry. A faded value is the API's deployed text, shown where no override exists.",
+        "intro": "Every key the app and the API use, in every language. Edit a cell and leave it to save; clear a cell to drop that language's override. An italic value is the bundled or deployed text nobody has overridden; an outlined cell has nothing at all.",
         "back": "All languages",
         "filter-text": "Search keys and values",
         "filter-scope": "Scope",
@@ -100,7 +102,14 @@
         "success-remove": "Entry removed.",
         "success-language": "Language added.",
         "error-key-exists": "That key is already on the board.",
-        "meta-keys": "{count} keys"
+        "meta-keys": "{count} keys",
+        "filter-incomplete": "Only incomplete keys",
+        "missing-count": "{missing} of {total} missing",
+        "complete": "complete",
+        "cell-missing": "Nothing renders for this key in this language yet.",
+        "cell-baseline-app": "This frontend's bundled text. Type to override it.",
+        "cell-baseline-api": "The API's deployed text. Type to override it.",
+        "empty-filtered": "No key matches — every language has this covered."
     },
     "entry-form": {
         "title": "Add an entry",

@@ -25,7 +25,7 @@ import type {
     LocaleImportResult
 } from '@types';
 import { flattenDictionary } from './dictionaries.ts';
-import type { TranslationDictionaries } from '@/infrastructure/i18n';
+import { loadBundledDictionary, type TranslationDictionaries } from '@/infrastructure/i18n';
 
 /**
  * Search criteria for one language's entries.
@@ -82,6 +82,18 @@ const fetchApiDictionary = (tag: string): Promise<Record<string, string>> =>
         )
         .catch(() => ({}));
 
+/**
+ * This frontend's BUNDLED dictionary for one language, flattened — what an `app`-scoped entry
+ * overrides. Empty for a language this build does not ship. Never rejects.
+ *
+ * @param tag - Which language.
+ * @returns A promise resolving with `key → bundled value`.
+ */
+const fetchBundledDictionary = (tag: string): Promise<Record<string, string>> =>
+    loadBundledDictionary(tag).then((dictionary) =>
+        Object.fromEntries(flattenDictionary(dictionary).map(({ key, value }) => [key, value]))
+    );
+
 export const useLocalesStore = defineStore('locales', () => {
     const { getLoading, setLoading } = useCoreStore();
 
@@ -105,10 +117,23 @@ export const useLocalesStore = defineStore('locales', () => {
                     pageSize: size,
                     text: searchFilters.text,
                     scope: searchFilters.scope
-                }).then((response) => response.data.items)
+                }).then((response) => {
+                    entriesPageTotal.value = response.data.meta.totalPages;
+                    return response.data.items;
+                })
         },
         { getLoading, setLoading }
     );
+
+    /**
+     * Pages in the CURRENT search, as the server counted them.
+     *
+     * Not the toolkit's `pageTotal`: that one divides the whole local record cache by the page
+     * size, and the cache holds every language visited this session — so after browsing Spanish,
+     * a two-row French search reported two pages, the second of them empty. The server's
+     * `meta.totalPages` is the only count that knows which rows belong to this search.
+     */
+    const entriesPageTotal = ref(0);
 
     /** The manifest: every language, both tiers merged, as last fetched. */
     const capabilities = ref<LocaleCapability[]>([]);
@@ -292,12 +317,14 @@ export const useLocalesStore = defineStore('locales', () => {
         pageSize,
         pageTotal,
         pageItemList,
+        entriesPageTotal,
         watchSearchEntries,
         addEntry,
         editEntry,
         removeEntry,
         importEntries,
         fetchAllEntries,
-        fetchApiDictionary
+        fetchApiDictionary,
+        fetchBundledDictionary
     };
 });

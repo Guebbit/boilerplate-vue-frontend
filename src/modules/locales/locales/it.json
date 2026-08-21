@@ -79,11 +79,13 @@
         "success-delete": "Voce rimossa.",
         "success-import": "Import completato: {created} create, {updated} aggiornate, {removed} rimosse. Ora alla revisione {revision}.",
         "error-merge-removed": "Il merge riporta righe eliminate, cosa che un merge non deve mai fare. Controlla il server.",
-        "value-field-label": "Traduzione per {key}"
+        "value-field-label": "Traduzione per {key}",
+        "empty-hint": "Qui ci sono solo le righe modificate. Ogni chiave usata dall'app e dall'API, modificata o no, è nel dizionario.",
+        "button-dictionary": "Dizionario"
     },
     "locales-dictionary-page": {
         "page-title": "Dizionario",
-        "intro": "Ogni chiave in ogni lingua, fianco a fianco. Modifica una cella ed esci per salvare; svuota una cella per rimuovere la voce di quella lingua. Un valore sbiadito è il testo distribuito dall'API, mostrato dove non esiste un override.",
+        "intro": "Ogni chiave usata dall'app e dall'API, in ogni lingua. Modifica una cella ed esci per salvare; svuota una cella per togliere l'override di quella lingua. Un valore in corsivo è il testo incluso o distribuito che nessuno ha sovrascritto; una cella bordata non ha nulla.",
         "back": "Tutte le lingue",
         "filter-text": "Cerca chiavi e valori",
         "filter-scope": "Ambito",
@@ -100,7 +102,14 @@
         "success-remove": "Voce rimossa.",
         "success-language": "Lingua aggiunta.",
         "error-key-exists": "Questa chiave è già nella tabella.",
-        "meta-keys": "{count} chiavi"
+        "meta-keys": "{count} chiavi",
+        "filter-incomplete": "Solo chiavi incomplete",
+        "missing-count": "{missing} di {total} mancanti",
+        "complete": "completa",
+        "cell-missing": "Per questa chiave, in questa lingua, non viene mostrato ancora nulla.",
+        "cell-baseline-app": "Il testo incluso in questo frontend. Scrivi per sovrascriverlo.",
+        "cell-baseline-api": "Il testo distribuito dall'API. Scrivi per sovrascriverlo.",
+        "empty-filtered": "Nessuna chiave corrisponde — ogni lingua è coperta."
     },
     "entry-form": {
         "title": "Aggiungi una voce",

@@ -133,6 +133,57 @@ export function _loadLocale(i18n: I18n, locale: string): Promise<unknown> {
 }
 
 /**
+ * One language's BUNDLED dictionary — the shared file plus every enabled module's slice — as a
+ * plain object, without touching the running instance.
+ *
+ * What {@link _updateLocale} installs, read back as data: the translation admin needs the baseline
+ * a stored override sits on top of, for a language the visitor is NOT reading, and switching the
+ * whole app to Spanish to find out what `cart.title` says there is not an option.
+ *
+ * Resolves with an empty dictionary for a language this build does not ship: that is the normal
+ * state of a language added through the admin, not an error.
+ *
+ * @param locale - Locale code, e.g. `it`.
+ * @returns A promise resolving with the merged bundled dictionary. Never rejects.
+ */
+export function loadBundledDictionary(locale: string): Promise<TranslationDictionaries> {
+    if (!supportedLanguages.includes(locale)) return Promise.resolve({});
+    return Promise.all([
+        // Stryker disable next-line StringLiteral: see `_loadLocale` for why this literal is exempt.
+        import(/* webpackChunkName: "locale-[request]" */ `@/locales/${locale}.json`)
+            .then((file: { default: TranslationDictionaries }) => file.default)
+            .catch((): TranslationDictionaries => ({})),
+        Promise.all((moduleLocaleLoaders[locale] ?? []).map((load) => load()))
+    ]).then(([shared, moduleDictionaries]) => {
+        let merged = structuredClone(shared);
+        for (const dictionary of moduleDictionaries) merged = mergeDeep(merged, dictionary);
+        return merged;
+    });
+}
+
+const isDictionaryNode = (value: unknown): value is TranslationDictionaries =>
+    typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/**
+ * Deep merge with the same rule vue-i18n's `mergeLocaleMessage` applies: nested groups combine,
+ * anything else is a leaf the later dictionary replaces.
+ */
+const mergeDeep = (
+    base: TranslationDictionaries,
+    extra: TranslationDictionaries
+): TranslationDictionaries => {
+    const merged: TranslationDictionaries = { ...base };
+    for (const [key, value] of Object.entries(extra)) {
+        const existing = merged[key];
+        merged[key] =
+            isDictionaryNode(existing) && isDictionaryNode(value)
+                ? mergeDeep(existing, value)
+                : value;
+    }
+    return merged;
+};
+
+/**
  * {@link _loadLocale} bound to the app-wide {@link i18n} instance.
  *
  * @param locale - Locale code to activate, e.g. `en`.

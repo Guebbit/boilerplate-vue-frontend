@@ -8,13 +8,14 @@ export default {
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { ArrowLeft, Plus, Search } from 'lucide-vue-next';
+import { ArrowLeft, Check, Plus, Search } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { updateLocale as applyDictionary } from '@/infrastructure/i18n';
 import { fetchLocaleOverrides } from '@/infrastructure/i18n/locale-overrides.ts';
+import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
 import { useLocalesStore } from '@/modules/locales/store.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import LanguageFormDialog from '@/modules/locales/components/LanguageFormDialog.vue';
@@ -26,16 +27,21 @@ import type { LocaleCapability, LocaleEntry, LocaleScope as TLocaleScope } from 
 /**
  * The dictionary board: every key down the side, every language across the top, one cell each.
  *
- * The entries page edits ONE language at a time, which is how a translator works through a
- * backlog. This is the other view of the same rows — the one a reviewer wants, where a key missing
- * in two languages out of five is visible as two empty cells on one line rather than as two
- * absences on two separate pages. Nothing is stored differently: a cell IS an entry, keyed by
- * (language, scope, key), and every write goes through the same store calls the entries page uses.
+ * EVERY key — not only the edited ones. The rows are the union of what the dictionaries actually
+ * contain: for the `app` scope, the keys this frontend bundles (shared file plus every module's
+ * slice); for the `api` scope, the keys the API's deployed files declare; plus, in both, whatever
+ * has been stored as an entry. The entries page lists edits; this page lists the language.
  *
- * Empty cells in the `api` scope show the API's deployed text as a placeholder — what the entry
- * would override. For `app` rows there is no such baseline to show: the client's bundled copy is
- * not a thing the API knows, and loading every module's dictionary for every language just to
- * grey it into a cell is not worth what it costs on boot.
+ * A cell is one of three things, and looks like it:
+ *   - an ENTRY — a stored override, shown as the field's value;
+ *   - a BASELINE — the bundled or deployed text nobody has overridden, shown as a marked
+ *     placeholder, so a translator sees what they would be replacing;
+ *   - MISSING — neither, which is the gap the header counts and the toggle isolates.
+ *
+ * Writing a cell creates, edits or removes the entry; nothing here ever writes a baseline — the
+ * files are a deploy, not a form. A language this build does not bundle has no `app` baseline at
+ * all, so every key is missing there until translated — which is exactly the work queue a new
+ * language is.
  *
  * Paged client-side. A whole language is a few hundred rows at most and the export already pages
  * it to completion, so this reuses that read per language rather than inventing a matrix endpoint
@@ -43,11 +49,15 @@ import type { LocaleCapability, LocaleEntry, LocaleScope as TLocaleScope } from 
  */
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
+const dialogStore = useDialogStore();
 const localesStore = useLocalesStore();
 const { capabilities, loading } = storeToRefs(localesStore);
 
 /** Rows per page of the board. */
 const PAGE_SIZE = 25;
+
+/** How long the "saved" mark stays on a cell, in milliseconds. */
+const SAVED_MARK_MS = 1500;
 
 /** Which of the two dictionaries the board shows; a key lives in exactly one. */
 const scope = ref<TLocaleScope>(LocaleScope.app);
@@ -58,6 +68,9 @@ const filterText = ref('');
 /** The filter as last submitted, so typing does not reshuffle the board under the cursor. */
 const appliedFilter = ref('');
 
+/** Show only the keys at least one language is missing. */
+const incompleteOnly = ref(false);
+
 const pageCurrent = ref(1);
 
 /** Every entry of every language, both scopes, by language tag. */
@@ -65,6 +78,9 @@ const entriesByTag = ref<Partial<Record<string, LocaleEntry[]>>>({});
 
 /** The API's deployed dictionary by language tag — the `api` scope's baseline. */
 const apiBaselines = ref<Partial<Record<string, Partial<Record<string, string>>>>>({});
+
+/** This build's bundled dictionary by language tag — the `app` scope's baseline. */
+const appBaselines = ref<Partial<Record<string, Partial<Record<string, string>>>>>({});
 
 /** Keys added on this page that have no entry in any language yet. */
 const pendingKeys = ref<string[]>([]);
@@ -76,9 +92,22 @@ const languageFormOpen = ref(false);
 /** Local draft per cell, so a blur can tell "changed" from "clicked through". */
 const drafts = ref<Partial<Record<string, string>>>({});
 
+/** Cells whose last save just landed; the check mark inside the field, cleared after a beat. */
+const savedCells = ref<Partial<Record<string, true>>>({});
+
 /** Drops one cell's draft, so the cell reads the stored value again. */
 const forgetDraft = (id: string) => {
     drafts.value = Object.fromEntries(Object.entries(drafts.value).filter(([k]) => k !== id));
+};
+
+/** Shows the saved mark on one cell, then takes it away. */
+const markSaved = (id: string) => {
+    savedCells.value = { ...savedCells.value, [id]: true };
+    setTimeout(() => {
+        savedCells.value = Object.fromEntries(
+            Object.entries(savedCells.value).filter(([k]) => k !== id)
+        );
+    }, SAVED_MARK_MS);
 };
 
 /**
@@ -113,34 +142,69 @@ const entriesIndex = computed(() => {
     return index;
 });
 
+/** The shown scope's baselines, by language tag. */
+const baselines = computed(() =>
+    scope.value === LocaleScope.api ? apiBaselines.value : appBaselines.value
+);
+
 const entryAt = (tag: string, key: string): LocaleEntry | undefined =>
     entriesIndex.value[tag]?.get(key);
 
-const baselineAt = (tag: string, key: string): string | undefined =>
-    scope.value === LocaleScope.api ? apiBaselines.value[tag]?.[key] : undefined;
+const baselineAt = (tag: string, key: string): string | undefined => baselines.value[tag]?.[key];
+
+/** A cell with neither an entry nor a baseline: the gap the board exists to show. */
+const isMissing = (tag: string, key: string) =>
+    entryAt(tag, key) === undefined && baselineAt(tag, key) === undefined;
+
+/** The cell's state, for its look and its title. */
+const cellState = (tag: string, key: string): 'entry' | 'baseline' | 'missing' => {
+    if (entryAt(tag, key)) return 'entry';
+    return baselineAt(tag, key) === undefined ? 'missing' : 'baseline';
+};
 
 /**
- * Every key on the board: the union across languages of the shown scope, plus what was added
- * here and not yet saved anywhere, sorted so related keys sit together.
+ * Every key on the board: the union, across languages, of the shown scope's baseline keys and
+ * entry keys, plus what was added here and not yet saved anywhere, sorted so related keys sit
+ * together.
  */
 const allKeys = computed(() => {
     const keys = new Set<string>(pendingKeys.value);
     for (const index of Object.values(entriesIndex.value))
         for (const key of index?.keys() ?? []) keys.add(key);
+    for (const baseline of Object.values(baselines.value))
+        for (const key of Object.keys(baseline ?? {})) keys.add(key);
     return [...keys].toSorted();
 });
 
-/** The keys matching the applied filter, searched across the key and every language's value. */
+/** Per language: how many of the board's keys it is missing. */
+const missingByTag = computed<Partial<Record<string, number>>>(() =>
+    Object.fromEntries(
+        languages.value.map((language) => [
+            language.tag,
+            allKeys.value.filter((key) => isMissing(language.tag, key)).length
+        ])
+    )
+);
+
+/** The keys matching the filters: text across key and values, and the incomplete-only toggle. */
 const filteredKeys = computed(() => {
     const needle = appliedFilter.value.trim().toLowerCase();
-    if (needle === '') return allKeys.value;
-    return allKeys.value.filter(
-        (key) =>
+    return allKeys.value.filter((key) => {
+        if (
+            incompleteOnly.value &&
+            !languages.value.some((language) => isMissing(language.tag, key))
+        )
+            return false;
+        if (needle === '') return true;
+        return (
             key.toLowerCase().includes(needle) ||
             languages.value.some((language) =>
-                entryAt(language.tag, key)?.value.toLowerCase().includes(needle)
+                (entryAt(language.tag, key)?.value ?? baselineAt(language.tag, key))
+                    ?.toLowerCase()
+                    .includes(needle)
             )
-    );
+        );
+    });
 });
 
 const pageTotal = computed(() => Math.max(1, Math.ceil(filteredKeys.value.length / PAGE_SIZE)));
@@ -161,14 +225,17 @@ const tableHeaders = computed<CoreDataTableHeader<{ key: string }>[]>(() => [
     }))
 ]);
 
-/** Reloads one language's column: its rows and, for the `api` scope, its deployed baseline. */
+/** Reloads one language's column: its rows and both baselines. */
 const loadLanguage = (tag: string) =>
-    Promise.all([localesStore.fetchAllEntries(tag), localesStore.fetchApiDictionary(tag)]).then(
-        ([entries, baseline]) => {
-            entriesByTag.value[tag] = entries ?? [];
-            apiBaselines.value[tag] = baseline;
-        }
-    );
+    Promise.all([
+        localesStore.fetchAllEntries(tag),
+        localesStore.fetchApiDictionary(tag),
+        localesStore.fetchBundledDictionary(tag)
+    ]).then(([entries, apiBaseline, appBaseline]) => {
+        entriesByTag.value[tag] = entries ?? [];
+        apiBaselines.value[tag] = apiBaseline;
+        appBaselines.value[tag] = appBaseline;
+    });
 
 /** Loads the manifest, then every writable language's column. */
 const loadBoard = () =>
@@ -198,10 +265,11 @@ const afterWrite = (tag: string) =>
  * Three outcomes, decided by what the cell held and what it holds now: a new value over an empty
  * cell CREATES the entry, a different value EDITS it, and an emptied cell REMOVES it — after a
  * confirmation, because an accidental select-all-and-delete must cost a click, not a translation.
+ * Removing an entry uncovers the baseline again; it never deletes the bundled text.
  *
  * @param language - The column.
  * @param key - The row.
- * @returns Nothing; the outcome is reported as a toast.
+ * @returns Nothing; success is shown on the cell, failure as a toast.
  */
 const handleCellBlur = (language: LocaleCapability, key: string) => {
     const id = cellId(language.tag, key);
@@ -209,26 +277,33 @@ const handleCellBlur = (language: LocaleCapability, key: string) => {
     const current = entryAt(language.tag, key);
     if (draft === undefined || draft === (current?.value ?? '')) return;
 
-    const named = { key, language: language.nativeName };
     let request: Promise<unknown>;
     if (current && draft === '') {
-        if (!globalThis.confirm(t('locales-dictionary-page.confirm-clear', named))) {
-            forgetDraft(id);
-            return;
-        }
-        request = localesStore
-            .removeEntry(language.tag, current.id)
-            .then(() => addMessage(t('locales-dictionary-page.success-remove')));
+        request = dialogStore
+            .confirm({
+                message: t('locales-dictionary-page.confirm-clear', {
+                    key,
+                    language: language.nativeName
+                }),
+                color: 'error'
+            })
+            .then((accepted) => {
+                if (!accepted) {
+                    forgetDraft(id);
+                    return;
+                }
+                return localesStore
+                    .removeEntry(language.tag, current.id)
+                    .then(() => addMessage(t('locales-dictionary-page.success-remove')));
+            });
     } else if (current) {
-        request = localesStore
-            .editEntry(language.tag, current.id, draft)
-            .then(() => addMessage(t('locales-dictionary-page.success-save')));
+        request = localesStore.editEntry(language.tag, current.id, draft).then(() => markSaved(id));
     } else if (draft === '') {
         return;
     } else {
         request = localesStore
             .addEntry(language.tag, { scope: scope.value, key, value: draft })
-            .then(() => addMessage(t('locales-dictionary-page.success-save')));
+            .then(() => markSaved(id));
     }
     return request
         .then(() => {
@@ -253,6 +328,7 @@ const handleAddKey = () => {
     newKey.value = '';
     appliedFilter.value = '';
     filterText.value = '';
+    incompleteOnly.value = false;
     // Land on the page the new row sorted into, so the translator sees where to type.
     pageCurrent.value = Math.floor(allKeys.value.indexOf(key) / PAGE_SIZE) + 1;
 };
@@ -283,6 +359,11 @@ watch(scope, () => {
     pageCurrent.value = 1;
     drafts.value = {};
     pendingKeys.value = [];
+});
+
+// The toggle narrows the list; a page that no longer exists would render empty.
+watch(incompleteOnly, () => {
+    pageCurrent.value = 1;
 });
 
 onMounted(() => {
@@ -330,6 +411,14 @@ onMounted(() => {
                         class="max-w-64"
                         data-test="dictionary-filter-scope"
                     />
+                    <v-switch
+                        v-model="incompleteOnly"
+                        :label="t('locales-dictionary-page.filter-incomplete')"
+                        color="primary"
+                        hide-details
+                        inset
+                        data-test="dictionary-filter-incomplete"
+                    />
                     <v-btn type="submit" color="primary">
                         <Search :size="16" class="mr-1" aria-hidden="true" />
                         {{ t('generic.search') }}
@@ -361,12 +450,16 @@ onMounted(() => {
         />
 
         <v-empty-state
-            v-else-if="!loading && allKeys.length === 0"
-            :title="t('locales-dictionary-page.empty')"
+            v-else-if="!loading && filteredKeys.length === 0"
+            :title="
+                incompleteOnly || appliedFilter
+                    ? t('locales-dictionary-page.empty-filtered')
+                    : t('locales-dictionary-page.empty')
+            "
             data-test="dictionary-empty"
         />
 
-        <div v-else class="overflow-x-auto">
+        <div v-else class="dictionary-board overflow-x-auto">
             <DataTable
                 :headers="tableHeaders"
                 :items="pageRows"
@@ -375,6 +468,34 @@ onMounted(() => {
                 :no-data-text="t('generic.no-data')"
                 item-value="key"
             >
+                <template
+                    v-for="language in languages"
+                    :key="`header-${language.tag}`"
+                    v-slot:[`header.${language.tag}`]="{ column }"
+                >
+                    <div class="flex flex-col">
+                        <span>{{ column.title }}</span>
+                        <!--
+                            The board's one number per language. Zero reads as "complete", which
+                            is the goal, rather than as a count of nothing.
+                        -->
+                        <span
+                            class="text-xs font-normal"
+                            :class="missingByTag[language.tag] ? 'text-error' : 'text-success'"
+                            data-test="dictionary-missing-count"
+                        >
+                            {{
+                                missingByTag[language.tag]
+                                    ? t('locales-dictionary-page.missing-count', {
+                                          missing: missingByTag[language.tag],
+                                          total: allKeys.length
+                                      })
+                                    : t('locales-dictionary-page.complete')
+                            }}
+                        </span>
+                    </div>
+                </template>
+
                 <template v-slot:[`item.key`]="{ item }">
                     <!-- Same native-title rule as the entries page's keys. -->
                     <span class="font-mono text-sm" :title="t('locale-entries-page.key-immutable')">
@@ -387,6 +508,12 @@ onMounted(() => {
                     :key="language.tag"
                     v-slot:[`item.${language.tag}`]="{ item }"
                 >
+                    <!--
+                        Three looks for three states — see the component note. The baseline
+                        class tints the field and the title says which baseline; the missing
+                        class is the only one with an outline, so a gap is visible from across
+                        the room.
+                    -->
                     <v-text-field
                         :model-value="
                             drafts[cellId(language.tag, item.key)] ??
@@ -401,17 +528,36 @@ onMounted(() => {
                                 language: language.nativeName
                             })
                         "
+                        :title="
+                            cellState(language.tag, item.key) === 'entry'
+                                ? undefined
+                                : cellState(language.tag, item.key) === 'missing'
+                                  ? t('locales-dictionary-page.cell-missing')
+                                  : t(`locales-dictionary-page.cell-baseline-${scope}`)
+                        "
                         :dir="language.direction"
                         density="compact"
                         hide-details
                         class="min-w-48"
+                        :class="`cell-${cellState(language.tag, item.key)}`"
                         data-test="dictionary-cell"
+                        :data-state="cellState(language.tag, item.key)"
                         @update:model-value="
                             (draft) => (drafts[cellId(language.tag, item.key)] = draft)
                         "
                         @blur="handleCellBlur(language, item.key)"
                         @keydown.enter.prevent="handleCellBlur(language, item.key)"
-                    />
+                    >
+                        <template v-if="savedCells[cellId(language.tag, item.key)]" #append-inner>
+                            <Check
+                                :size="16"
+                                class="text-success"
+                                data-test="dictionary-cell-saved"
+                                role="img"
+                                :aria-label="t('locales-dictionary-page.success-save')"
+                            />
+                        </template>
+                    </v-text-field>
                 </template>
             </DataTable>
         </div>
@@ -421,3 +567,33 @@ onMounted(() => {
         <LanguageFormDialog v-model="languageFormOpen" @save="handleCreateLanguage" />
     </LayoutDefault>
 </template>
+
+<style scoped>
+/*
+ * The key column stays put while the languages scroll: five columns of text fields overflow any
+ * viewport, and a row is meaningless without its key. The background is required — a sticky
+ * cell with none lets the scrolled cells show through it.
+ */
+.dictionary-board :deep(td:first-child),
+.dictionary-board :deep(th:first-child) {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: rgb(var(--v-theme-surface));
+}
+
+/* A baseline cell: the text is real, just not yet overridden here. */
+.dictionary-board :deep(.cell-baseline .v-field) {
+    background: rgba(var(--v-theme-secondary), 0.06);
+}
+
+.dictionary-board :deep(.cell-baseline input::placeholder) {
+    opacity: 0.85;
+    font-style: italic;
+}
+
+/* A missing cell: nothing renders for this key in this language. */
+.dictionary-board :deep(.cell-missing .v-field) {
+    box-shadow: inset 0 0 0 1px rgba(var(--v-theme-error), 0.5);
+}
+</style>

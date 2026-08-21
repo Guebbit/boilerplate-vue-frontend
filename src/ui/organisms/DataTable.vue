@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends object">
-import { computed, useAttrs } from 'vue';
+import { computed, useAttrs, useSlots } from 'vue';
 import TableLoadingBar from '@/ui/molecules/TableLoadingBar.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 
@@ -39,6 +39,10 @@ const modelValue = defineModel<unknown>();
  * a bound model from an unbound local ref, so the listener the parent passes is the evidence.
  */
 const attributes = useAttrs();
+const slots = useSlots();
+
+/** The columns whose head the view renders itself. */
+const customHeaders = computed(() => headers.filter((header) => `header.${header.key}` in slots));
 const isSelectable = computed(() => 'onUpdate:modelValue' in attributes);
 
 /**
@@ -106,6 +110,19 @@ const handleRowClick = (_event: Event, { item }: { item: T }) => {
         <!-- Replaces Vuetify's unnamed internal bar — see `TableLoadingBar` for why. -->
         <template #loader>
             <TableLoadingBar />
+        </template>
+
+        <!--
+            Forward a `header.*` slot ONLY when the view provides one, so a view can put more than
+            a title in a column head (a per-column count, a hint). Forwarding all of them would
+            replace Vuetify's default header — sort icon included — on every table in the app.
+        -->
+        <template
+            v-for="header in customHeaders"
+            #[`header.${header.key}`]
+            :key="'header-' + header.key"
+        >
+            <slot :name="`header.${header.key}`" :column="header" />
         </template>
 
         <!-- forward every `item.*` slot to keep the existing view API -->
