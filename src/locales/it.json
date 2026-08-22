@@ -68,7 +68,6 @@
         "hint": "PNG, JPEG o WebP, fino a {size}",
         "size-exceeded": "L'immagine non deve superare {size}",
         "wrong-type": "L'immagine deve essere un file PNG, JPEG o WebP",
-        "upload-failed": "Non è stato possibile caricare l'immagine",
         "upload-progress": "Caricamento… {percent}%",
         "preview-alt": "Anteprima immagine"
     },

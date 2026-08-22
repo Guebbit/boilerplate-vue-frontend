@@ -1,9 +1,7 @@
 {
     "products-list-page": {
         "page-title": "Lista prodotti",
-        "product": "@:generic.product [0]",
         "modified-products-list": "@.customSnakeCase:{'generic.product'} @:{'generic.list'}",
-        "button-go-to-details": "Pagina prodotto",
         "button-view": "Visualizza",
         "button-edit": "Modifica",
         "button-delete": "Elimina",

@@ -46,6 +46,3 @@ export const BACKEND_PAIRING: Readonly<Partial<Record<string, Pairing>>> = {
     users: { counterparts: ['users'] },
     wishlist: { counterparts: ['wishlist'] }
 };
-
-/** Backend modules with no counterpart here, and why. */
-export const BACKEND_ONLY: Readonly<Record<string, string>> = {};
