@@ -224,6 +224,7 @@ flowchart LR
 - Use **generated Zod schemas** from `@api/schemas` for mock response validation in unit tests.
 - By default, e2e tests run against per-shard demo backends — the real API, in-memory. `npm run test:e2e:live` runs the same specs against the fully-composed stack — see [Live E2E](./live-e2e.md).
 - Specs start **logged out**: `cy.resetState()` reseeds the shard's own demo backend (demo profile) or the real database (live profile). Call `cy.loginAs('admin')` when a spec needs elevated visibility.
+- Specs move through the chrome by **path, never by label**: `cy.navigateTo('/en/products')` for the icon-only bar, `cy.navigateViaMenu('account' | 'admin', path)` for an entry folded into a menu, `cy.logout()` to end the session. A label is a tooltip and a translated `aria-label`; the `href` is what the entry is in every locale.
 - **An assertion on a count is an assertion about a role.** Non-admins see 4 of the 6 seeded products (one is soft-deleted, one inactive). If you change an expected count, confirm you are still describing what the backend would return.
 
 ## Documentation rule of thumb

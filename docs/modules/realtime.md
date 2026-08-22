@@ -90,9 +90,9 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 
 #### Navigation entries
 
-| Route                | Label key                   | Order | Badge |
-| -------------------- | --------------------------- | ----- | ----- |
-| `RealtimePlayground` | `navigation.label-realtime` | 30    | —     |
+| Route                | Label key                   | Section | Order | Icon | Badge |
+| -------------------- | --------------------------- | ------- | ----- | ---- | ----- |
+| `RealtimePlayground` | `navigation.label-realtime` | `admin` | 30    | yes  | —     |
 
 <!-- gen:wiring:end -->
 

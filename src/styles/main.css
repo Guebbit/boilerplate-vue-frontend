@@ -173,6 +173,15 @@
 }
 
 /**
+ * List subheaders — the drawer's section headings — at the same contrast. Vuetify draws them at
+ * medium emphasis (0.6), which axe measures below 4.5:1 on the drawer surface.
+ */
+.v-application .v-list-subheader,
+.v-overlay-container .v-list-subheader {
+    --v-medium-emphasis-opacity: 0.82;
+}
+
+/**
  * `.v-overlay-container` above, and in the rules below: Vuetify teleports every dialog and menu
  * to a container that is a SIBLING of `.v-application`, not a child, so a rule scoped to the
  * application never reaches a field inside a dialog — which is where axe found the address and

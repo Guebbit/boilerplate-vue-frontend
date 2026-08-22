@@ -17,14 +17,22 @@
  * ── What each case protects ──────────────────────────────────────────────────────────────────
  * Every one of these was implemented on purpose, in a place a later edit could quietly undo:
  * the skip link in `LayoutDefault.vue`, the focus move in the router's `afterEach`, the drawer's
- * focus watch in `AppNavigation.vue`, the dialog in `AppDialogHost.vue`, the chip's role and
- * state in `ProductsList.vue`. None of those files has a unit test that can press Tab either.
+ * focus watch in `AppNavigation.vue`, the named icon-only entries in `AppNavIconButton.vue`, the
+ * menus in `AppNavMenu.vue`, the dialog in `AppDialogHost.vue`, the chip's role and state in
+ * `ProductsList.vue`. None of those files has a unit test that can press Tab either.
  *
  * Runs under the demo profile like every other spec in `ci.yml`.
  */
 
 /** iPhone 14-class portrait: the breakpoint below which the nav collapses into the drawer. */
 const PHONE = [390, 844] as const;
+
+/**
+ * The tooltip currently showing, by Vuetify's active class rather than by Cypress visibility:
+ * tooltip content is `pointer-events: none`, and Cypress reads a fixed element that
+ * `elementFromPoint` cannot hit as "covered", i.e. hidden — while axe and a visitor both see it.
+ */
+const SHOWN_TOOLTIP = '.v-tooltip.v-overlay--active .v-overlay__content';
 
 /** The admin's seeded order, pending — so the cancel button, and its confirmation, exist. */
 const CANCELLABLE_ORDER = '/en/orders/65de73a69ca05739be2b5e85';
@@ -86,6 +94,44 @@ describe('keyboard', () => {
         cy.get('#app-drawer').should('not.be.visible');
         // ...and came back to the control that opened it, so Tab continues from where it was.
         cy.focused().should('have.attr', 'aria-controls', 'app-drawer');
+    });
+
+    /**
+     * An icon-only entry shows its name as a tooltip on focus, not only on hover (WCAG 1.4.13),
+     * and the tooltip says the same thing the reader hears (WCAG 2.5.3).
+     */
+    it('shows the label of an icon-only entry as a tooltip on focus', () => {
+        cy.visit('/en');
+        cy.get('h1').should('exist');
+
+        // By a real Tab, not `.focus()`: the tooltip opens on `:focus-visible`, which a script
+        // focus does not set. Skip link → logo → first entry (the hamburger is hidden here).
+        cy.get('.skip-link').focus();
+        cy.realPress('Tab');
+        cy.realPress('Tab');
+        cy.focused().should('match', 'nav a');
+        cy.focused()
+            .invoke('attr', 'aria-label')
+            .then((label) => {
+                cy.get(SHOWN_TOOLTIP).should('have.length', 1).and('have.text', label);
+            });
+    });
+
+    it('opens the administration menu with ArrowDown and closes it with Escape', () => {
+        cy.loginAs('admin');
+        cy.visit('/en');
+        cy.get('h1').should('exist');
+
+        cy.get('[data-test=admin-menu]').focus();
+        cy.focused().should('have.attr', 'aria-haspopup', 'menu');
+        cy.focused().realPress('ArrowDown');
+        cy.get('[data-test=admin-menu]').should('have.attr', 'aria-expanded', 'true');
+        cy.get('[role=menu] [role=menuitem]').should('exist');
+
+        cy.realPress('Escape');
+        cy.get('[data-test=admin-menu]').should('have.attr', 'aria-expanded', 'false');
+        // Focus is still on the control that opened it, so Tab continues from where it was.
+        cy.focused().should('have.attr', 'data-test', 'admin-menu');
     });
 
     it('keeps focus inside the confirmation dialog and treats Escape as a decline', () => {

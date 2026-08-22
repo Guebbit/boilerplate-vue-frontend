@@ -46,6 +46,18 @@ each [module page](../modules/) renders, so the two cannot disagree.
 
 <!-- gen:all-screens:end -->
 
+### Navigation sections
+
+A navigation entry also says **where** it sits, with `section` — placement, never permission:
+
+| Section   | Desktop (`lg` and up)                                                              | Phone drawer           |
+| --------- | ---------------------------------------------------------------------------------- | ---------------------- |
+| `main`    | Inline in the app bar, icon-only: the label is the tooltip and the accessible name | Under "Browse"         |
+| `account` | The account menu (the signed-in visitor's icon), with logout at the end            | Under "Your account"   |
+| `admin`   | The administration menu, rendered only when at least one entry is reachable        | Under "Administration" |
+
+Every entry carries a lucide `icon`. Whether a section's chrome renders at all follows from the same `meta.access` rule as the entries: an anonymous visitor sees neither menu, and a drawer heading appears only above something visible.
+
 ### The platform's own routes
 
 These come from `src/app/router/`, not from a module, which is why they are not in the table above.

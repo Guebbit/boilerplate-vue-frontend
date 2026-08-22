@@ -92,9 +92,9 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 
 #### Navigation entries
 
-| Route        | Label key                     | Order | Badge |
-| ------------ | ----------------------------- | ----- | ----- |
-| `Playground` | `navigation.label-playground` | 20    | —     |
+| Route        | Label key                     | Section | Order | Icon | Badge |
+| ------------ | ----------------------------- | ------- | ----- | ---- | ----- |
+| `Playground` | `navigation.label-playground` | `main`  | 20    | yes  | —     |
 
 <!-- gen:wiring:end -->
 

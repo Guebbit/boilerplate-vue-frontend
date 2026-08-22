@@ -104,6 +104,28 @@ declare global {
              * @param address - the recipient to look for
              */
             demoEmailTo(address: string): Chainable<DemoOutboxEmail>;
+
+            /**
+             * Follows a main-navigation entry from the desktop bar, by the path it links to.
+             *
+             * The bar is icon-only, so a label is the wrong handle: it is a tooltip and an
+             * `aria-label`, translated. The `href` is what the entry IS, in every locale.
+             *
+             * @param path - locale-prefixed path, e.g. `/en/products`
+             */
+            navigateTo(path: string): Chainable<void>;
+
+            /**
+             * Follows an entry folded into one of the app bar's menus — the signed-in visitor's
+             * account menu or the administration menu — by the path it links to.
+             *
+             * @param menu - which menu holds the entry
+             * @param path - locale-prefixed path, e.g. `/en/cart`
+             */
+            navigateViaMenu(menu: 'account' | 'admin', path: string): Chainable<void>;
+
+            /** Ends the session through the account menu, as a visitor would. */
+            logout(): Chainable<void>;
         }
     }
 }
@@ -272,6 +294,27 @@ Cypress.Commands.add('demoEmailTo', (address: string) =>
             return email!;
         })
 );
+
+/**
+ * Navigation through the chrome, by `href` rather than by label — see the declarations above.
+ *
+ * The drawer holds the same links, hidden at desktop widths, so the visible one is the target.
+ */
+Cypress.Commands.add('navigateTo', (path: string) => {
+    cy.get(`header nav a[href="${path}"]`).filter(':visible').first().click();
+});
+
+const MENU_ACTIVATOR = { account: '[data-test=user-menu]', admin: '[data-test=admin-menu]' };
+
+Cypress.Commands.add('navigateViaMenu', (menu: 'account' | 'admin', path: string) => {
+    cy.get(MENU_ACTIVATOR[menu]).click();
+    cy.get(`[role=menu] a[href="${path}"]`).should('be.visible').click();
+});
+
+Cypress.Commands.add('logout', () => {
+    cy.get(MENU_ACTIVATOR.account).click();
+    cy.get('[role=menu] [data-test=logout]').should('be.visible').click();
+});
 
 Cypress.Commands.add('loginAs', (role = 'user') => {
     const credentials =

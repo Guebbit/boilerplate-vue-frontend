@@ -1,3 +1,4 @@
+import { ReceiptText } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { ordersResponseSchemas } from './response-schemas';
@@ -36,7 +37,16 @@ export default {
                 'Mounts `PaymentPanel`; paying happens on the order page without this module knowing a provider exists.'
         }
     ],
-    navigation: [{ name: 'OrdersList', label: 'navigation.label-orders', plural: 1, order: 90 }],
+    navigation: [
+        {
+            name: 'OrdersList',
+            label: 'navigation.label-orders',
+            plural: 1,
+            order: 90,
+            section: 'account',
+            icon: ReceiptText
+        }
+    ],
     responseSchemas: ordersResponseSchemas,
     locales: {
         en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),

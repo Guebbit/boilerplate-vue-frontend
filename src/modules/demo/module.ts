@@ -1,3 +1,4 @@
+import { FlaskConical } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 
@@ -24,7 +25,14 @@ export default {
     subdomain: 'generic',
     routes,
     navigation: [
-        { name: 'Playground', label: 'navigation.label-playground', plural: 1, order: 20 }
+        {
+            name: 'Playground',
+            label: 'navigation.label-playground',
+            plural: 1,
+            order: 20,
+            section: 'main',
+            icon: FlaskConical
+        }
     ],
     locales: {
         en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),

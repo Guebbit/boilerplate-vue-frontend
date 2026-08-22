@@ -28,7 +28,7 @@ describe('Feedback', () => {
         cy.get('[data-test=contact-submit]').click();
         cy.contains('Message sent').should('exist');
 
-        cy.contains('a', 'Inbox').click();
+        cy.navigateViaMenu('admin', '/en/feedback');
         cy.get('[data-test=feedback-item]').should('have.length', 1);
         cy.contains('[data-test=feedback-item]', 'A question about the cats').should('exist');
     });

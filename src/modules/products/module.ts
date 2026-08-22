@@ -1,3 +1,4 @@
+import { Package } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { productsResponseSchemas } from './response-schemas';
@@ -34,7 +35,14 @@ export default {
         }
     ],
     navigation: [
-        { name: 'ProductsList', label: 'navigation.label-products-list', plural: 2, order: 60 }
+        {
+            name: 'ProductsList',
+            label: 'navigation.label-products-list',
+            plural: 2,
+            order: 60,
+            section: 'main',
+            icon: Package
+        }
     ],
     responseSchemas: productsResponseSchemas,
     locales: {

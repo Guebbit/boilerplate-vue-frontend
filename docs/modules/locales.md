@@ -111,9 +111,9 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 
 #### Navigation entries
 
-| Route         | Label key                  | Order | Badge |
-| ------------- | -------------------------- | ----- | ----- |
-| `LocalesList` | `navigation.label-locales` | 43    | —     |
+| Route         | Label key                  | Section | Order | Icon | Badge |
+| ------------- | -------------------------- | ------- | ----- | ---- | ----- |
+| `LocalesList` | `navigation.label-locales` | `admin` | 43    | yes  | —     |
 
 <!-- gen:wiring:end -->
 

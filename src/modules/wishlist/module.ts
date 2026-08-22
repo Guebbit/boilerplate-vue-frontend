@@ -1,3 +1,4 @@
+import { Heart } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { wishlistResponseSchemas } from './response-schemas';
@@ -25,7 +26,16 @@ export default {
                 'Move-to-cart calls a wishlist endpoint and then asks the cart store to refetch itself; the cart is never asked to write.'
         }
     ],
-    navigation: [{ name: 'Wishlist', label: 'navigation.label-wishlist', plural: 1, order: 75 }],
+    navigation: [
+        {
+            name: 'Wishlist',
+            label: 'navigation.label-wishlist',
+            plural: 1,
+            order: 75,
+            section: 'account',
+            icon: Heart
+        }
+    ],
     responseSchemas: wishlistResponseSchemas,
     locales: {
         en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),

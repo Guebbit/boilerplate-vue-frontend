@@ -3,6 +3,7 @@ import type { RouteRecordRaw } from 'vue-router';
 import {
     collectModuleNavigation,
     collectModuleRoutes,
+    groupNavigation,
     sortNavigation,
     validateModules
 } from '@/kernel/registry';
@@ -166,6 +167,45 @@ describe('sortNavigation', () => {
         ];
 
         sortNavigation(entries);
+
+        expect(entries.map(({ name }) => name)).toEqual(['Cart', 'Home']);
+    });
+});
+
+describe('groupNavigation', () => {
+    it('buckets entries by section, defaulting an unplaced one to main', () => {
+        const groups = groupNavigation([
+            { name: 'Profile', label: 'profile', order: 70, section: 'account' },
+            { name: 'Home', label: 'home', order: 10 },
+            { name: 'Admin', label: 'admin', order: 40, section: 'admin' }
+        ]);
+
+        expect(groups.main.map(({ name }) => name)).toEqual(['Home']);
+        expect(groups.account.map(({ name }) => name)).toEqual(['Profile']);
+        expect(groups.admin.map(({ name }) => name)).toEqual(['Admin']);
+    });
+
+    it('keeps every section present, so a consumer can index an empty one without a guard', () => {
+        expect(groupNavigation([])).toEqual({ main: [], account: [], admin: [] });
+    });
+
+    it('ranks inside each section by order, not by registration order', () => {
+        const groups = groupNavigation([
+            { name: 'Cart', label: 'cart', order: 80, section: 'account' },
+            { name: 'Profile', label: 'profile', order: 70, section: 'account' },
+            { name: 'Unranked', label: 'unranked', section: 'account' }
+        ]);
+
+        expect(groups.account.map(({ name }) => name)).toEqual(['Profile', 'Cart', 'Unranked']);
+    });
+
+    it('does not mutate its argument', () => {
+        const entries: AppNavigationEntry[] = [
+            { name: 'Cart', label: 'cart', order: 80 },
+            { name: 'Home', label: 'home', order: 10 }
+        ];
+
+        groupNavigation(entries);
 
         expect(entries.map(({ name }) => name)).toEqual(['Cart', 'Home']);
     });

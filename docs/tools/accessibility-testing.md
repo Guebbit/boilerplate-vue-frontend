@@ -84,6 +84,10 @@ The states audited this way, and why each one:
 | ----- | ----- | -------------- |
 | Navigation drawer open, 390×844 | shell, home | The drawer's landmark label, its list, focus inside it |
 | Language menu open | shell, home | `role="menu"` / `menuitem` and the activator's name |
+| Navigation tooltip shown | shell, home | An icon-only entry's name, its tooltip, and the `aria-describedby` between them |
+| Account menu open | shell, home, as `user` | The account menu's `menu` / `menuitem` roles and its activator's name, email included |
+| Administration menu open | shell, home, as `admin` | Same, for the administration menu |
+| Drawer open with every section, 390×844 | shell, home, as `admin` | The three section headings and their entries |
 | Dark theme | home, products list, login | Every colour pair, measured on the other surface |
 | Italian | shell, `/it` | A translated label that lost its `aria-` counterpart |
 | Entry form dialog open | locales, `/en/locales/it` | A modal named by its title, the page behind it hidden |
@@ -149,6 +153,8 @@ An axe sweep reads the DOM and asks whether the markup is well-formed. It cannot
 | First Tab reaches the skip link; Enter lands on `#main-content` | `LayoutDefault.vue` — WCAG 2.4.1 |
 | A page change moves focus to the main region and retitles the tab | the router's `afterEach` — WCAG 2.4.2, 2.4.3 |
 | The drawer opens onto its first entry; Escape closes it and returns focus to the hamburger | `AppNavigation.vue`'s focus watch |
+| An icon-only entry shows its label as a tooltip on focus | `AppNavIconButton.vue` — WCAG 1.4.13, 2.5.3 |
+| ArrowDown opens the administration menu; Escape closes it and leaves focus on the button | `AppNavMenu.vue` over Vuetify's `v-menu` |
 | The confirmation dialog keeps focus inside; Escape declines | `AppDialogHost.vue` |
 | A facet chip toggles `aria-pressed` with Enter and with Space | `ProductsList.vue` |
 
@@ -165,8 +171,8 @@ The whole set, nothing switched off. The rules that look at native `<label>`/`<i
 | Path | Contents |
 | ---- | -------- |
 | `src/modules/<name>/tests/e2e/a11y.cy.ts` | One per routed module: the route list, and the auth level to read it at |
-| `tests/e2e/specs/a11y.cy.ts` | The shell's own routes — home, the prose pages, the error page — and the chrome's states: drawer, language menu, dark theme, Italian |
-| `tests/e2e/specs/keyboard.cy.ts` | The keyboard contract: skip link, focus on navigation, drawer, dialog, chips |
+| `tests/e2e/specs/a11y.cy.ts` | The shell's own routes — home, the prose pages, the error page — and the chrome's states: drawer, language menu, tooltip, account and administration menus, dark theme, Italian |
+| `tests/e2e/specs/keyboard.cy.ts` | The keyboard contract: skip link, focus on navigation, tooltip, menus, drawer, dialog, chips |
 | `tests/support/e2e/a11y-sweep.ts` | `sweepA11y()`: the describe, the login, the wait-for-content, the optional viewport / theme / `prepare`, the axe call. Names no domain |
 | `tests/cross-cutting/a11y-coverage.spec.ts` | Parses every `routes.ts` against its sweep; fails on an unswept route, a swept path no route serves, or a sweep that outlives its module. Holds `EXEMPT` |
 | `tests/support/e2e/commands.ts` | `cy.checkPageA11y()`: the single axe pass with pinned tags, the impact threshold, the report task call |

@@ -1,3 +1,4 @@
+import { Users } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { usersResponseSchemas } from './response-schemas';
@@ -17,7 +18,16 @@ export default {
      */
     subdomain: 'generic',
     routes,
-    navigation: [{ name: 'UsersList', label: 'navigation.label-users-list', plural: 2, order: 50 }],
+    navigation: [
+        {
+            name: 'UsersList',
+            label: 'navigation.label-users-list',
+            plural: 2,
+            order: 50,
+            section: 'admin',
+            icon: Users
+        }
+    ],
     responseSchemas: usersResponseSchemas,
     locales: {
         en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),

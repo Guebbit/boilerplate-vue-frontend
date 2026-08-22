@@ -1,3 +1,4 @@
+import { Inbox, Mail } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { feedbackResponseSchemas } from './response-schemas';
@@ -18,8 +19,22 @@ export default {
     subdomain: 'generic',
     routes,
     navigation: [
-        { name: 'Contact', label: 'navigation.label-contact', plural: 1, order: 95 },
-        { name: 'FeedbackInbox', label: 'navigation.label-feedback', plural: 1, order: 45 }
+        {
+            name: 'Contact',
+            label: 'navigation.label-contact',
+            plural: 1,
+            order: 95,
+            section: 'main',
+            icon: Mail
+        },
+        {
+            name: 'FeedbackInbox',
+            label: 'navigation.label-feedback',
+            plural: 1,
+            order: 45,
+            section: 'admin',
+            icon: Inbox
+        }
     ],
     responseSchemas: feedbackResponseSchemas,
     locales: {

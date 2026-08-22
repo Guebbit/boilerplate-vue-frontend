@@ -127,9 +127,9 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 
 #### Navigation entries
 
-| Route          | Label key                        | Order | Badge |
-| -------------- | -------------------------------- | ----- | ----- |
-| `ProductsList` | `navigation.label-products-list` | 60    | —     |
+| Route          | Label key                        | Section | Order | Icon | Badge |
+| -------------- | -------------------------------- | ------- | ----- | ---- | ----- |
+| `ProductsList` | `navigation.label-products-list` | `main`  | 60    | yes  | —     |
 
 <!-- gen:wiring:end -->
 

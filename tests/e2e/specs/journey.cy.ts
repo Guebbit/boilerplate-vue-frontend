@@ -19,9 +19,7 @@ describe('The customer journey', () => {
 
     it('guest browses but cannot buy; the customer buys, cancels, and the shelf recovers', () => {
         // ── Guest: browse via the nav, meet the wall ────────────────────────────────
-        cy.get('.v-app-bar')
-            .contains('a', /products lists/i)
-            .click();
+        cy.navigateTo('/en/products');
         cy.get('[data-test=category-chip]').contains('food (1)').click();
         cy.get('#products-list-page tbody tr').should('have.length', 1);
         cy.get('[data-test=row-view]').first().click();
@@ -37,9 +35,7 @@ describe('The customer journey', () => {
         cy.loginAs('user');
 
         // ── Customer: filter → product → cart → checkout ────────────────────────────
-        cy.get('.v-app-bar')
-            .contains('a', /products lists/i)
-            .click();
+        cy.navigateTo('/en/products');
         cy.get('[data-test=category-chip]').contains('food (1)').click();
         // The filter is a request; against a fast API the unfiltered list is still on screen for
         // a beat. One row is the chip's own count, so waiting for it IS waiting for the filter.
@@ -49,7 +45,7 @@ describe('The customer journey', () => {
         cy.get('[data-test=add-to-cart]').click();
         cy.contains('Product added to cart').should('exist');
 
-        cy.get('.v-app-bar').contains('a', /cart/i).click();
+        cy.navigateViaMenu('account', '/en/cart');
         // The demo customer's cart starts empty (the one seeded cart belongs to the admin), so
         // the line just added is the whole cart.
         cy.get('[data-test=cart-item]').should('have.length', 1);
@@ -90,9 +86,7 @@ describe('The customer journey', () => {
             cy.wrap(alert).find('.v-alert__close button').click();
         });
         cy.get('.v-alert').should('not.exist');
-        cy.get('.v-app-bar')
-            .contains('a', /products lists/i)
-            .click();
+        cy.navigateTo('/en/products');
         // The store kept the walk's own filter, so the list comes back already narrowed —
         // clicking the chip again would TOGGLE the filter off, and the row click would then land
         // on whatever the unfiltered list re-rendered underneath it.

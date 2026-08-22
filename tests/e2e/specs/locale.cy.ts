@@ -135,9 +135,7 @@ describe('the saved preference', () => {
 
         // End the session through the UI, then come back through the ENGLISH login form —
         // the record's preference, not the form's language, decides where they land.
-        cy.get('.v-app-bar')
-            .contains(/logout/i)
-            .click();
+        cy.logout();
         // The session is ended only once the viewer chip is gone — a locale-independent fact,
         // unlike any nav label after the switch above.
         cy.contains('gino@pino.it').should('not.exist');

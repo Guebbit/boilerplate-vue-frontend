@@ -37,7 +37,10 @@ export interface RouteFact {
 export interface NavigationFact {
     routeName: string;
     label: string;
+    /** Where the shell places it: `main` (the bar), `account` or `admin` (a menu). */
+    section: string;
     order?: number;
+    icon: boolean;
     badge: boolean;
 }
 
@@ -95,7 +98,9 @@ export interface RouteRecordShape {
 export interface NavigationShape {
     name: string;
     label: string;
+    section?: string;
     order?: number;
+    icon?: unknown;
     badge?: unknown;
 }
 
@@ -320,7 +325,9 @@ export const gatherFacts = async (
             navigation: (appModule.navigation ?? []).map((entry): NavigationFact => ({
                 routeName: entry.name,
                 label: entry.label,
+                section: entry.section ?? 'main',
                 order: entry.order,
+                icon: Boolean(entry.icon),
                 badge: Boolean(entry.badge)
             })),
             apiCalls: readApiCalls(appModule.name),

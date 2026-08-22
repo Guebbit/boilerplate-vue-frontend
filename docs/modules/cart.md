@@ -125,9 +125,9 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 
 #### Navigation entries
 
-| Route  | Label key               | Order | Badge |
-| ------ | ----------------------- | ----- | ----- |
-| `Cart` | `navigation.label-cart` | 80    | yes   |
+| Route  | Label key               | Section   | Order | Icon | Badge |
+| ------ | ----------------------- | --------- | ----- | ---- | ----- |
+| `Cart` | `navigation.label-cart` | `account` | 80    | yes  | yes   |
 
 #### Analytics events
 

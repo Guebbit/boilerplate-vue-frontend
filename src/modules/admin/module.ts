@@ -1,3 +1,4 @@
+import { LayoutDashboard } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { adminResponseSchemas } from './response-schemas';
@@ -17,7 +18,16 @@ export default {
      */
     subdomain: 'generic',
     routes,
-    navigation: [{ name: 'Admin', label: 'navigation.label-admin', plural: 1, order: 40 }],
+    navigation: [
+        {
+            name: 'Admin',
+            label: 'navigation.label-admin',
+            plural: 1,
+            order: 40,
+            section: 'admin',
+            icon: LayoutDashboard
+        }
+    ],
     responseSchemas: adminResponseSchemas,
     locales: {
         en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),

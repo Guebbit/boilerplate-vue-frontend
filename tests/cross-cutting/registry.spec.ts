@@ -18,7 +18,7 @@ import { describe, expect, it } from 'vitest';
 import type { RouteRecordRaw } from 'vue-router';
 import { enabledModules } from '@/modules';
 import type { TranslationDictionaries } from '@/infrastructure/i18n';
-import { validateModules } from '@/kernel/registry';
+import { NAVIGATION_SECTIONS, validateModules } from '@/kernel/registry';
 
 /** Every route name a record tree declares, at any depth. */
 const routeNamesOf = (routes: RouteRecordRaw[]): string[] =>
@@ -55,6 +55,20 @@ describe.each(moduleCases)('module %s', (_name, appModule) => {
 
     it('gives every navigation entry an order, so it cannot silently sink to the bottom', () => {
         for (const entry of appModule.navigation ?? []) expect(entry.order).toBeTypeOf('number');
+    });
+
+    /**
+     * The desktop bar renders an entry as its icon alone, with the label as tooltip and name.
+     * An entry without one would render an empty button — focusable, named, and blank.
+     */
+    it('gives every navigation entry an icon, because the bar shows nothing else', () => {
+        for (const entry of appModule.navigation ?? []) expect(entry.icon).toBeDefined();
+    });
+
+    it('places every navigation entry in a section the shell knows how to draw', () => {
+        // `undefined` is a valid answer: the shell reads it as `main`.
+        for (const entry of appModule.navigation ?? [])
+            expect([undefined, ...NAVIGATION_SECTIONS]).toContain(entry.section);
     });
 
     it('names every route it declares — the navigation and the guards address routes by name', () => {

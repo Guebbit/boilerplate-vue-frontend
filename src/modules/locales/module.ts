@@ -1,3 +1,4 @@
+import { Languages } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { localesResponseSchemas } from './response-schemas';
@@ -27,7 +28,16 @@ export default {
      * button. A second header item would be a sub-view promoted to a peer — and it moves every
      * other module's header by one slot.
      */
-    navigation: [{ name: 'LocalesList', label: 'navigation.label-locales', plural: 2, order: 43 }],
+    navigation: [
+        {
+            name: 'LocalesList',
+            label: 'navigation.label-locales',
+            plural: 2,
+            order: 43,
+            section: 'admin',
+            icon: Languages
+        }
+    ],
     responseSchemas: localesResponseSchemas,
     locales: {
         en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),

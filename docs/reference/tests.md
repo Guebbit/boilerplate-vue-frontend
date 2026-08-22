@@ -129,7 +129,7 @@ No assertions live here.
 | `tests/support/unit/jsdom-quiet-css.environment.ts` | Silences jsdom's unparseable-CSS noise, which Vuetify's stylesheets otherwise emit on every mount. | [Unit Testing](../tools/unit-testing.md) |
 | `tests/support/stub.ts` | The one sanctioned cast for a hand-built stub, and the reason double casts can be banned everywhere else. | [Repository Root](./root.md) |
 | `tests/support/e2e/e2e.ts` | Cypress's support entry point — what loads before every browser spec. | [Live E2E](../tools/live-e2e.md) |
-| `tests/support/e2e/commands.ts` | The custom commands the specs are written in, including `cy.loginAs()` and `cy.resetState()` — the latter branching on which backend profile is running. | [Live E2E](../tools/live-e2e.md) |
+| `tests/support/e2e/commands.ts` | The custom commands the specs are written in, including `cy.loginAs()`, `cy.resetState()` — the latter branching on which backend profile is running — and the chrome navigation trio `cy.navigateTo(path)`, `cy.navigateViaMenu(menu, path)`, `cy.logout()`, which address the icon-only bar and its menus by `href` rather than by label. | [Live E2E](../tools/live-e2e.md) |
 | `tests/support/e2e/a11y-sweep.ts` | The reusable accessibility pass a spec applies to a page. | [Accessibility Testing](../tools/accessibility-testing.md) |
 | `tests/support/e2e/visual-sweep.ts` | The reusable screenshot-and-compare pass. | [Visual Regression](../tools/visual-regression.md) |
 | `tests/support/e2e/visual-task.ts` | The Node-side task behind it — image comparison cannot run in the browser. | [Visual Regression](../tools/visual-regression.md) |

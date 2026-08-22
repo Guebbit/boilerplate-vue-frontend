@@ -8,9 +8,11 @@
  * page — reached both the way a visitor reaches it (a bad URL) and by its own address.
  *
  * The shell is also where the chrome every page shares lives — the app bar, the drawer, the
- * language menu, the theme toggle — so the states of that chrome are audited here, once, rather
- * than in every module's sweep. The drawer only exists on a phone-sized viewport; the language
- * menu and the dark theme only exist after a click.
+ * language menu, the theme toggle, the account and administration menus — so the states of that
+ * chrome are audited here, once, rather than in every module's sweep. The drawer only exists on
+ * a phone-sized viewport; the menus, a tooltip and the dark theme only exist after a click or a
+ * keystroke; the account and administration menus only exist for someone signed in, which is
+ * why those two states run as their own sweeps, under a role.
  *
  * What guarantees the coverage is complete is `tests/cross-cutting/a11y-coverage.spec.ts`, which
  * parses `src/app/router/index.ts` against this file and fails on any route it does not visit.
@@ -67,3 +69,65 @@ sweepA11y('the shell', [
         }
     }
 ]);
+
+/**
+ * The bar's entries are icon-only: the label lives in `aria-label` and in a tooltip that opens on
+ * focus. Audited with the tooltip showing, because that is when `aria-describedby` points at a
+ * node that exists and the two texts can be compared.
+ */
+const NAV_TOOLTIP_SHOWN = {
+    name: 'home, navigation tooltip shown',
+    route: '/en',
+    prepare: () => {
+        // A real Tab: the tooltip opens on `:focus-visible`, which `.focus()` does not set.
+        cy.get('.skip-link').focus();
+        cy.realPress('Tab');
+        cy.realPress('Tab');
+        cy.focused().should('match', 'nav a');
+        // By Vuetify's active class: tooltip content is `pointer-events: none`, which Cypress
+        // reads as "covered", i.e. not visible — axe and a visitor both see it.
+        cy.get('.v-tooltip.v-overlay--active .v-overlay__content').should('have.length', 1);
+    }
+};
+
+sweepA11y('the shell chrome', [NAV_TOOLTIP_SHOWN]);
+
+sweepA11y(
+    'the shell chrome, signed in',
+    [
+        {
+            name: 'home, account menu open',
+            route: '/en',
+            prepare: () => {
+                cy.get('[data-test=user-menu]').click();
+                cy.get('[role=menu] [role=menuitem]').should('be.visible');
+            }
+        }
+    ],
+    'user'
+);
+
+sweepA11y(
+    'the shell chrome, signed in as an admin',
+    [
+        {
+            name: 'home, administration menu open',
+            route: '/en',
+            prepare: () => {
+                cy.get('[data-test=admin-menu]').click();
+                cy.get('[role=menu] [role=menuitem]').should('be.visible');
+            }
+        },
+        {
+            name: 'home, navigation drawer open on a phone, every section',
+            route: '/en',
+            viewport: PHONE,
+            prepare: () => {
+                cy.get('[aria-controls=app-drawer]').click();
+                cy.get('#app-drawer').should('be.visible');
+                cy.get('[data-test=drawer-section-admin]').should('be.visible');
+            }
+        }
+    ],
+    'admin'
+);

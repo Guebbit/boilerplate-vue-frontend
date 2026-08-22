@@ -1,3 +1,4 @@
+import { Warehouse } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { inventoryResponseSchemas } from './response-schemas';
@@ -27,7 +28,14 @@ export default {
         }
     ],
     navigation: [
-        { name: 'InventoryLedger', label: 'navigation.label-inventory', plural: 1, order: 47 }
+        {
+            name: 'InventoryLedger',
+            label: 'navigation.label-inventory',
+            plural: 1,
+            order: 47,
+            section: 'admin',
+            icon: Warehouse
+        }
     ],
     responseSchemas: inventoryResponseSchemas,
     locales: {

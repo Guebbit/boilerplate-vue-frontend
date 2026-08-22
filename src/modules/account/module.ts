@@ -1,3 +1,4 @@
+import { IdCard } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { accountResponseSchemas } from './response-schemas';
@@ -34,7 +35,16 @@ export default {
                 'Validates every form against `usersSchema`/`usersPasswordSchema` — shared field rules, not a shared store.'
         }
     ],
-    navigation: [{ name: 'Profile', label: 'navigation.label-profile', plural: 2, order: 70 }],
+    navigation: [
+        {
+            name: 'Profile',
+            label: 'navigation.label-profile',
+            plural: 2,
+            order: 70,
+            section: 'account',
+            icon: IdCard
+        }
+    ],
     responseSchemas: accountResponseSchemas,
     locales: {
         en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),

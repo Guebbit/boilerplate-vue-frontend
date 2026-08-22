@@ -110,9 +110,9 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 
 #### Navigation entries
 
-| Route      | Label key                   | Order | Badge |
-| ---------- | --------------------------- | ----- | ----- |
-| `Wishlist` | `navigation.label-wishlist` | 75    | —     |
+| Route      | Label key                   | Section   | Order | Icon | Badge |
+| ---------- | --------------------------- | --------- | ----- | ---- | ----- |
+| `Wishlist` | `navigation.label-wishlist` | `account` | 75    | yes  | —     |
 
 <!-- gen:wiring:end -->
 

@@ -111,9 +111,9 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 
 #### Navigation entries
 
-| Route             | Label key                    | Order | Badge |
-| ----------------- | ---------------------------- | ----- | ----- |
-| `InventoryLedger` | `navigation.label-inventory` | 47    | —     |
+| Route             | Label key                    | Section | Order | Icon | Badge |
+| ----------------- | ---------------------------- | ------- | ----- | ---- | ----- |
+| `InventoryLedger` | `navigation.label-inventory` | `admin` | 47    | yes  | —     |
 
 <!-- gen:wiring:end -->
 

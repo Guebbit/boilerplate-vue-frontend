@@ -15,10 +15,29 @@
  * enabling or disabling a domain is a one-line edit rather than a folder move.
  */
 
-import type { Ref } from 'vue';
+import type { Component, Ref } from 'vue';
 import type { RouteRecordRaw } from 'vue-router';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 import type { TranslationDictionaries } from '@/infrastructure/i18n';
+
+/**
+ * Where an entry lives in the shell's chrome.
+ *
+ * - `main`: inline in the app bar, the pages anyone would browse to.
+ * - `account`: inside the signed-in visitor's own menu — their profile, their cart, their orders.
+ * - `admin`: inside the administration dropdown.
+ *
+ * The mobile drawer lists every section under its own heading, so placement only decides how the
+ * desktop bar folds fifteen entries into five buttons and two menus.
+ */
+export type AppNavigationSection = 'main' | 'account' | 'admin';
+
+/** Every section, in the order the drawer lists them. */
+export const NAVIGATION_SECTIONS = [
+    'main',
+    'account',
+    'admin'
+] as const satisfies readonly AppNavigationSection[];
 
 /**
  * One entry a module contributes to the main navigation.
@@ -57,6 +76,24 @@ export interface AppNavigationEntry {
      * is fine here — the accessor runs inside component setup, after pinia is installed.
      */
     badge?: () => Ref<number | undefined>;
+
+    /**
+     * Which part of the chrome shows the entry. Absent means `main`.
+     *
+     * This is placement, not permission. An `account` entry is not hidden from guests because it
+     * sits in the account menu — it is hidden because its route says `access: 'auth'`. Keeping the
+     * two apart is what lets the drawer show a section heading only when something under it is
+     * actually visible, without a second copy of the access rule.
+     */
+    section?: AppNavigationSection;
+
+    /**
+     * The glyph the entry wears, a lucide component. The desktop bar renders `main` entries as
+     * icon-only buttons (their label becomes the accessible name and the tooltip), so in practice
+     * every entry needs one; the cross-cutting spec enforces it. Typed as a Vue component rather
+     * than a lucide type so the kernel owes the icon library nothing.
+     */
+    icon?: Component;
 }
 
 /**
@@ -267,6 +304,27 @@ export const sortNavigation = (entries: AppNavigationEntry[]): AppNavigationEntr
         ({ order: a }, { order: b }) =>
             (a ?? Number.MAX_SAFE_INTEGER) - (b ?? Number.MAX_SAFE_INTEGER)
     );
+
+/**
+ * Rank navigation entries by `order`, then bucket them by section.
+ *
+ * Every section is present in the result, empty or not, so a consumer can index it without a
+ * guard. Sorting happens once, before the split, so the relative order of two entries is the
+ * same whichever section they land in.
+ *
+ * @param entries - navigation entries from any contributor
+ */
+export const groupNavigation = (
+    entries: AppNavigationEntry[]
+): Record<AppNavigationSection, AppNavigationEntry[]> => {
+    const groups: Record<AppNavigationSection, AppNavigationEntry[]> = {
+        main: [],
+        account: [],
+        admin: []
+    };
+    for (const entry of sortNavigation(entries)) groups[entry.section ?? 'main'].push(entry);
+    return groups;
+};
 
 /**
  * Collect every enabled module's response schemas, for `registerResponseSchemas`.

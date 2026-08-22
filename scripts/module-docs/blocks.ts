@@ -236,11 +236,13 @@ export const wiringBlock = (facts: ModuleFacts): string => {
             '#### Navigation entries',
             '',
             table(
-                ['Route', 'Label key', 'Order', 'Badge'],
+                ['Route', 'Label key', 'Section', 'Order', 'Icon', 'Badge'],
                 facts.navigation.map((entry) => [
                     `\`${entry.routeName}\``,
                     `\`${entry.label}\``,
+                    `\`${entry.section}\``,
                     entry.order === undefined ? '_last_' : String(entry.order),
+                    entry.icon ? 'yes' : '—',
                     entry.badge ? 'yes' : '—'
                 ]),
                 ''

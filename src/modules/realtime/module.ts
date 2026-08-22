@@ -1,3 +1,4 @@
+import { Radio } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 
@@ -17,7 +18,14 @@ export default {
     subdomain: 'generic',
     routes,
     navigation: [
-        { name: 'RealtimePlayground', label: 'navigation.label-realtime', plural: 1, order: 30 }
+        {
+            name: 'RealtimePlayground',
+            label: 'navigation.label-realtime',
+            plural: 1,
+            order: 30,
+            section: 'admin',
+            icon: Radio
+        }
     ],
     locales: {
         en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),

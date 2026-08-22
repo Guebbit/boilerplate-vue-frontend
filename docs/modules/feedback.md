@@ -97,10 +97,10 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 
 #### Navigation entries
 
-| Route           | Label key                   | Order | Badge |
-| --------------- | --------------------------- | ----- | ----- |
-| `Contact`       | `navigation.label-contact`  | 95    | —     |
-| `FeedbackInbox` | `navigation.label-feedback` | 45    | —     |
+| Route           | Label key                   | Section | Order | Icon | Badge |
+| --------------- | --------------------------- | ------- | ----- | ---- | ----- |
+| `Contact`       | `navigation.label-contact`  | `main`  | 95    | yes  | —     |
+| `FeedbackInbox` | `navigation.label-feedback` | `admin` | 45    | yes  | —     |
 
 <!-- gen:wiring:end -->
 

@@ -17,6 +17,9 @@
  * What is under test is the mechanism — filter by the resolved route's `meta.access`, order by
  * `order` — and the mechanism is what breaks. That every real module's entry points at a route it
  * actually declares is a separate, registry-driven invariant: `tests/cross-cutting/registry.spec.ts`.
+ *
+ * The three domains also cover the three SECTIONS — the bar, the account menu, the admin menu —
+ * so what folds where on desktop is asserted alongside who sees what.
  */
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
@@ -49,40 +52,63 @@ const routeAccess: Record<string, RouteAccess | undefined> = {
     Home: undefined,
     Playground: undefined,
     PublicThing: undefined,
+    LateThing: undefined,
     MemberThing: 'auth',
     StaffThing: 'admin'
 };
 
-/** The live count behind the public entry's badge; `0` renders no badge at all. */
-const publicCount = ref(0);
+/** The live count behind the member entry's badge; `0` renders no badge at all. */
+const memberCount = ref(0);
+
+/**
+ * Stands in for a lucide glyph: what matters is that it renders hidden from the reader. Hoisted
+ * because the module mock below reads it eagerly, and `vi.mock` runs before this file's body.
+ */
+const { Glyph } = vi.hoisted(() => ({
+    Glyph: { template: '<svg data-test="glyph" aria-hidden="true" />' }
+}));
 
 /*
- * Three invented domains, one per visibility class. `order` is deliberately out of sequence so the
- * sort is exercised rather than accidentally satisfied by declaration order.
+ * Three invented domains, one per visibility class and one per section. `order` is deliberately
+ * out of sequence so the sort is exercised rather than accidentally satisfied by declaration order.
  */
 vi.mock('@/modules', () => ({
     enabledModules: [
         {
             name: 'staff-domain',
             routes: [],
-            navigation: [{ name: 'StaffThing', label: 'navigation.label-staff', order: 90 }]
+            navigation: [
+                {
+                    name: 'StaffThing',
+                    label: 'navigation.label-staff',
+                    order: 90,
+                    section: 'admin',
+                    icon: Glyph
+                },
+                // A public entry from the FIRST registered module, ranked near the end of `main`.
+                { name: 'LateThing', label: 'navigation.label-late', order: 95, icon: Glyph }
+            ]
         },
         {
             name: 'public-domain',
             routes: [],
             navigation: [
-                {
-                    name: 'PublicThing',
-                    label: 'navigation.label-public',
-                    order: 30,
-                    badge: () => publicCount
-                }
+                { name: 'PublicThing', label: 'navigation.label-public', order: 30, icon: Glyph }
             ]
         },
         {
             name: 'member-domain',
             routes: [],
-            navigation: [{ name: 'MemberThing', label: 'navigation.label-member', order: 60 }]
+            navigation: [
+                {
+                    name: 'MemberThing',
+                    label: 'navigation.label-member',
+                    order: 60,
+                    section: 'account',
+                    icon: Glyph,
+                    badge: () => memberCount
+                }
+            ]
         }
     ]
 }));
@@ -128,7 +154,16 @@ const mountNav = () => {
                         '<header><slot name="prepend" /><slot /><slot name="append" /></header>'
                 },
                 // `v-model` becomes a plain attribute on a stub; the aside is always rendered.
-                VNavigationDrawer: { template: '<aside><slot /></aside>' }
+                VNavigationDrawer: { template: '<aside><slot /></aside>' },
+                // Both overlays render their content lazily, on open; here it is always there,
+                // so a menu's entries can be asserted without a click.
+                VMenu: {
+                    template:
+                        '<div data-test="menu"><slot name="activator" :props="{}" /><slot /></div>'
+                },
+                VTooltip: {
+                    template: '<div><slot name="activator" :props="{}" /><slot /></div>'
+                }
             }
         },
         // In the document, so focus can actually move: jsdom ignores `focus()` on a detached node.
@@ -156,7 +191,7 @@ describe('Navigation', () => {
         session.viewer.value = undefined;
         registeredRoutes.value = ['Login', 'Signup'];
         currentRoute.value = { fullPath: '/' };
-        publicCount.value = 0;
+        memberCount.value = 0;
         document.body.innerHTML = '';
     });
 
@@ -193,13 +228,26 @@ describe('Navigation', () => {
         expect(text).toContain('navigation.label-member');
     });
 
-    it('orders module entries by `order`, not by module registration order', () => {
+    it('orders entries within a section by `order`, not by module registration order', () => {
+        const { wrapper } = mountNav();
+
+        // staff-domain is registered first, but its public entry is ranked after the shell's.
+        expect(
+            wrapper.findAll('header nav a').map((link) => link.attributes('aria-label'))
+        ).toEqual([
+            'navigation.label-home:1',
+            'navigation.label-public:1',
+            'navigation.label-late:1',
+            'navigation.label-about:1'
+        ]);
+    });
+
+    it('lists the drawer sections in kernel order: main, then account, then admin', () => {
         session.isAuth.value = true;
         session.isAdmin.value = true;
 
-        const { text } = mountNav();
+        const text = mountNav().wrapper.find('#app-drawer').text();
 
-        // staff-domain is registered first but ordered last.
         expect(text.indexOf('navigation.label-public')).toBeLessThan(
             text.indexOf('navigation.label-member')
         );
@@ -279,8 +327,10 @@ describe('Navigation', () => {
      * A badge with no `label` is announced as "Badge" — a number with no subject. The label is
      * the plural form of the count, so "3" reads as "3 items".
      */
-    it('names the nav badge after its count', () => {
-        publicCount.value = 3;
+    it('names the nav badge after its count, on the menu the entry folds into', () => {
+        session.isAuth.value = true;
+        session.viewer.value = { email: 'someone@example.com' };
+        memberCount.value = 3;
 
         const { wrapper } = mountNav();
 
@@ -291,9 +341,90 @@ describe('Navigation', () => {
     });
 
     it('renders no badge, and therefore no label, for a zero count', () => {
+        session.isAuth.value = true;
+        session.viewer.value = { email: 'someone@example.com' };
+
         const { wrapper } = mountNav();
 
         expect(wrapper.find('[data-test="nav-badge"]').exists()).toBe(false);
+    });
+
+    /**
+     * Icon-only, but never nameless (WCAG 1.1.1, 2.5.3): each bar entry is a link whose
+     * accessible name is its label, and the glyph inside is hidden from the reader.
+     */
+    it('names every icon-only bar entry after its label, and hides the glyph', () => {
+        const { wrapper } = mountNav();
+
+        const links = wrapper.findAll('header nav a');
+        expect(links.map((link) => link.attributes('aria-label'))).toEqual([
+            'navigation.label-home:1',
+            'navigation.label-public:1',
+            'navigation.label-late:1',
+            'navigation.label-about:1'
+        ]);
+        for (const link of links) expect(link.find('svg').attributes('aria-hidden')).toBe('true');
+    });
+
+    it('folds the account entries into a user menu named after the signed-in email', () => {
+        session.isAuth.value = true;
+        session.viewer.value = { email: 'someone@example.com' };
+
+        const { wrapper } = mountNav();
+
+        const menu = wrapper.find('[data-test="user-menu"]');
+        expect(menu.attributes('aria-label')).toBe(
+            'navigation.label-account-menu: someone@example.com'
+        );
+        // The member entry sits in the menu, not in the bar.
+        expect(wrapper.find('header nav').text()).not.toContain('navigation.label-member');
+        const items = wrapper.findAll(
+            'header [role="menu"][aria-label="navigation.label-account-menu"] [role="menuitem"]'
+        );
+        expect(items.map((item) => item.text())).toEqual([
+            'navigation.label-member:1',
+            'navigation.label-logout'
+        ]);
+    });
+
+    it('offers no user menu to a guest', () => {
+        expect(mountNav().wrapper.find('[data-test="user-menu"]').exists()).toBe(false);
+    });
+
+    it('folds the admin entries into an administration menu, for admins only', () => {
+        expect(mountNav().wrapper.find('[data-test="admin-menu"]').exists()).toBe(false);
+
+        session.isAuth.value = true;
+        session.isAdmin.value = true;
+        const { wrapper } = mountNav();
+
+        expect(wrapper.find('[data-test="admin-menu"]').attributes('aria-label')).toBe(
+            'navigation.label-admin-menu'
+        );
+        expect(wrapper.find('header nav').text()).not.toContain('navigation.label-staff');
+        expect(
+            wrapper
+                .findAll(
+                    'header [role="menu"][aria-label="navigation.label-admin-menu"] [role="menuitem"]'
+                )
+                .map((item) => item.text())
+        ).toEqual(['navigation.label-staff:1']);
+    });
+
+    it('heads each drawer section, and only the sections with something in them', () => {
+        const guest = mountNav().wrapper;
+        expect(guest.find('[data-test="drawer-section-main"]').exists()).toBe(true);
+        expect(guest.find('[data-test="drawer-section-account"]').exists()).toBe(false);
+        expect(guest.find('[data-test="drawer-section-admin"]').exists()).toBe(false);
+
+        session.isAuth.value = true;
+        session.isAdmin.value = true;
+        const admin = mountNav().wrapper;
+        expect(admin.findAll('#app-drawer .v-list-subheader').map((h) => h.text())).toEqual([
+            'navigation.section-main',
+            'navigation.section-account',
+            'navigation.section-admin'
+        ]);
     });
 
     /**

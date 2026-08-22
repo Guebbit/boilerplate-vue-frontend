@@ -38,16 +38,14 @@ describe('Commerce', () => {
         cy.loginAs('user');
 
         // ── Buy something ───────────────────────────────────────────────────────────
-        cy.get('.v-app-bar')
-            .contains('a', /products lists/i)
-            .click();
+        cy.navigateTo('/en/products');
         cy.get('[data-test=category-chip]').contains('food (1)').click();
         cy.get('[data-test=row-view]').first().click();
         cy.get('[data-test=add-to-cart]').click();
         cy.contains('Product added to cart').should('exist');
 
         // ── Choose express at the cart; the selector quotes the flat rate ───────────
-        cy.get('.v-app-bar').contains('a', /cart/i).click();
+        cy.navigateViaMenu('account', '/en/cart');
         cy.get('[data-test=shipping-selector]').should('exist');
         cy.get('[data-test=shipping-method-express]').click();
         cy.get('[data-test=cart-checkout]').click();
@@ -94,15 +92,13 @@ describe('Commerce', () => {
          * transition the API refuses.
          */
         cy.loginAs('user');
-        cy.get('.v-app-bar')
-            .contains('a', /products lists/i)
-            .click();
+        cy.navigateTo('/en/products');
         cy.get('[data-test=category-chip]').contains('food (1)').click();
         cy.get('[data-test=row-view]').should('have.length', 1);
         cy.get('[data-test=row-view]').first().click();
         cy.get('[data-test=add-to-cart]').click();
         cy.contains('Product added to cart').should('exist');
-        cy.get('.v-app-bar').contains('a', /cart/i).click();
+        cy.navigateViaMenu('account', '/en/cart');
         cy.get('[data-test=cart-checkout]').click();
         cy.get('#orders-list-page tbody tr').should('have.length', 1);
         cy.get('[data-test=row-view]').first().click();
@@ -119,9 +115,7 @@ describe('Commerce', () => {
         cy.location('pathname').then((pathname) => {
             const orderId = pathname.split('/').at(-1);
 
-            cy.get('.v-app-bar')
-                .contains(/logout/i)
-                .click();
+            cy.logout();
             cy.contains('gino@pino.it').should('not.exist');
             cy.loginAs('admin');
             cy.visit(`/en/orders/${orderId}/edit`);
@@ -161,9 +155,7 @@ describe('Commerce', () => {
         cy.get('[data-test=courier-advance]').should('not.exist');
 
         // ── The ledger: receive a delivery and read the story back ──────────────────
-        cy.get('.v-app-bar')
-            .contains('a', /inventory/i)
-            .click();
+        cy.navigateViaMenu('admin', '/en/inventory');
         cy.get('#inventory-page').should('exist');
 
         // The board before, so the receipt can be read as a change rather than a number.

@@ -1,5 +1,6 @@
 import { watch } from 'vue';
 import { storeToRefs } from 'pinia';
+import { ShoppingCart } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { cartResponseSchemas } from './response-schemas';
@@ -41,6 +42,8 @@ export default {
             label: 'navigation.label-cart',
             plural: 1,
             order: 80,
+            section: 'account',
+            icon: ShoppingCart,
             /*
              * The Badge of the glossary above, finally worn. Runs inside the shell's setup, so
              * stores are reachable; seeds from the lightweight `GET /cart/summary` whenever a

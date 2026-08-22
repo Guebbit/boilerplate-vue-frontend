@@ -37,6 +37,11 @@
         "label-about": "About",
         "label-drawer": "Navigation menu",
         "label-legal": "About and legal pages",
+        "label-account-menu": "Account",
+        "label-admin-menu": "Administration",
+        "section-main": "Browse",
+        "section-account": "Your account",
+        "section-admin": "Administration",
         "skip-to-content": "Skip to main content",
         "badge-items": "{n} item | {n} items"
     },

@@ -172,6 +172,11 @@ export interface AppModule {
 }
 ```
 
+A navigation entry is `{ name, label, order, icon, section?, badge? }`: the route it points at, the
+label key, its rank, its lucide glyph, and the part of the chrome it sits in — `main` in the bar,
+`account` or `admin` in a menu. `section` is placement only; who sees the entry is still the
+route's `meta.access`. See [Sitemap](./sitemap.md#navigation-sections).
+
 `subdomain` and the shape of `dependsOn` are the module's **strategic** declarations — what it is
 to the business, and what kind of relationship each arrow is. An edge
 is `{ module, as, because }` rather than a bare name, because "who touches products" and "what does
