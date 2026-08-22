@@ -21,6 +21,7 @@ const {
     metrics,
     auditEvents,
     auditTotal,
+    auditPages,
     loadingHealth,
     loadingMetrics,
     loadingAudit,
@@ -100,6 +101,7 @@ const confirmClearExpiredTokens = () =>
                 <AdminAuditTab
                     :audit-events="auditEvents"
                     :total="auditTotal"
+                    :pages="auditPages"
                     :loading="loadingAudit"
                     :error="errorAudit"
                     @search="fetchAuditLogs"

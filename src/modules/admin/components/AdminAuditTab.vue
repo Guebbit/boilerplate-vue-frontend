@@ -2,6 +2,7 @@
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DataTable from '@/ui/organisms/DataTable.vue';
+import ListPagination from '@/ui/molecules/ListPagination.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { Search } from 'lucide-vue-next';
 import type { AuditEventItem } from '@types';
@@ -13,6 +14,7 @@ const { t } = useI18n();
 const props = defineProps<{
     auditEvents: AuditEventItem[];
     total: number;
+    pages: number;
     loading: boolean;
     error?: string;
 }>();
@@ -25,6 +27,9 @@ const emit = defineEmits<{
     search: [filters: AdminAuditFilters];
 }>();
 
+/** What the table asks for when nobody has chosen. */
+const DEFAULT_PAGE_SIZE = 50;
+
 /**
  * Live audit filter form state, sent as-is to the parent's search callback.
  */
@@ -33,7 +38,8 @@ const filters = reactive<AdminAuditFilters>({
     action: undefined,
     outcome: undefined,
     since: undefined,
-    limit: 50
+    page: 1,
+    pageSize: DEFAULT_PAGE_SIZE
 });
 
 /**
@@ -48,9 +54,10 @@ const outcomeOptions = computed(() => [
 ]);
 
 /**
- * Selectable page sizes for the audit table.
+ * Selectable page sizes, bounded by the `maximum: 100` the contract declares — an option the API
+ * answers with a 422 is not an option.
  */
-const limitOptions = [20, 50, 100, 200];
+const pageSizeOptions = [20, 50, 100];
 
 /**
  * Columns of the audit table.
@@ -72,18 +79,35 @@ const tableHeaders = computed<CoreDataTableHeader<AuditEventItem>[]>(() => [
  * Runs the search with the current filters.
  */
 const handleSearch = () => {
+    // Back to the first page: the previous page number belongs to the previous result set.
+    filters.page = 1;
     emit('search', { ...filters });
 };
 
 /**
- * Clears every filter (keeping the default limit) and re-runs the search.
+ * Turning the pager re-runs the search on that page.
+ *
+ * The page lives in the filter bag rather than in separate state: the trail is append-only and
+ * paged from the newest end, so a page number that outlived its filters would point at a
+ * different set of rows than the one the visitor was reading.
+ *
+ * @param page - The 1-based page the pager moved to.
+ */
+const handlePageChange = (page: number) => {
+    filters.page = page;
+    emit('search', { ...filters });
+};
+
+/**
+ * Clears every filter (keeping the default page size) and re-runs the search.
  */
 const handleReset = () => {
     filters.actor = undefined;
     filters.action = undefined;
     filters.outcome = undefined;
     filters.since = undefined;
-    filters.limit = 50;
+    filters.page = 1;
+    filters.pageSize = DEFAULT_PAGE_SIZE;
     emit('search', { ...filters });
 };
 
@@ -130,10 +154,11 @@ const truncateId = (value?: string, length = 8) =>
                         hide-details
                     />
                     <v-select
-                        v-model="filters.limit"
-                        :items="limitOptions"
+                        v-model="filters.pageSize"
+                        :items="pageSizeOptions"
                         :label="t('generic.page-size')"
                         hide-details
+                        @update:model-value="handleSearch"
                     />
                 </div>
                 <div class="mt-4 flex flex-wrap gap-2">
@@ -213,5 +238,12 @@ const truncateId = (value?: string, length = 8) =>
                 <span class="sr-only">{{ item.trace_id }}</span>
             </template>
         </DataTable>
+
+        <ListPagination
+            :model-value="filters.page"
+            :length="props.pages"
+            :aria-label="t('admin-page.audit-pagination')"
+            @update:model-value="handlePageChange"
+        />
     </div>
 </template>

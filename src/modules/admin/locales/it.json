@@ -93,6 +93,7 @@
         "metrics-no-data": "Nessun dato metriche disponibile",
         "audit-total": "{count} eventi",
         "audit-empty": "Nessun evento di audit",
+        "audit-pagination": "Pagine del registro di audit",
         "audit-table-caption": "Eventi di audit",
         "kpi-status-ok": "Stato: ok",
         "kpi-status-warn": "Stato: attenzione",

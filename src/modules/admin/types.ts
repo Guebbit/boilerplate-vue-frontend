@@ -23,5 +23,6 @@ export interface AdminAuditFilters {
     action?: string;
     outcome?: 'success' | 'failure';
     since?: string;
-    limit?: number;
+    page?: number;
+    pageSize?: number;
 }

@@ -93,6 +93,7 @@
         "metrics-no-data": "No metrics data available",
         "audit-total": "{count} events",
         "audit-empty": "No audit events",
+        "audit-pagination": "Audit trail pages",
         "audit-table-caption": "Audit events",
         "kpi-status-ok": "Status: ok",
         "kpi-status-warn": "Status: warning",

@@ -15,6 +15,7 @@ export interface UseAdminObservabilityReturn {
     metrics: Ref<ObservabilityMetricsSummary | undefined>;
     auditEvents: ComputedRef<AuditEventItem[]>;
     auditTotal: ComputedRef<number>;
+    auditPages: ComputedRef<number>;
     loadingHealth: Ref<boolean>;
     loadingMetrics: Ref<boolean>;
     loadingAudit: Ref<boolean>;
@@ -64,8 +65,8 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
     });
 
     /**
-     * The audit call answers with items AND a total, so its payload is the envelope; the two are
-     * split back out below rather than tracked as separate state that could disagree.
+     * The audit call answers with a page AND its meta, so its payload is the envelope; the parts
+     * are split back out below rather than tracked as separate state that could disagree.
      */
     const {
         data: audit,
@@ -79,13 +80,16 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
                 action: filters.action,
                 outcome: filters.outcome,
                 since: filters.since,
-                limit: filters.limit
+                page: filters.page,
+                pageSize: filters.pageSize
             }).then((response) => response.data),
         { fallbackErrorMessage: translate('admin-page.error-load-audit') }
     );
 
     const auditEvents = computed(() => audit.value?.items ?? []);
-    const auditTotal = computed(() => audit.value?.total ?? 0);
+    // Every entry matching the filters, not the page — which is what the pager below counts with.
+    const auditTotal = computed(() => audit.value?.meta.totalItems ?? 0);
+    const auditPages = computed(() => audit.value?.meta.totalPages ?? 0);
 
     /**
      * The three fetchers resolve with nothing: every consumer reads the state refs, and the
@@ -103,7 +107,8 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
     /**
      * Loads the audit log page matching the given filters.
      *
-     * @param filters - Actor/action/outcome/since/limit criteria; defaults to no filtering at all.
+     * @param filters - Actor/action/outcome/since criteria and the page to read; defaults to the
+     *   first page, unfiltered.
      * @returns A promise resolving once `auditEvents` + `auditTotal`, or `errorAudit`, are set.
      */
     const fetchAuditLogs = (filters: AdminAuditFilters = {}) =>
@@ -149,6 +154,7 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
         metrics,
         auditEvents,
         auditTotal,
+        auditPages,
         loadingHealth,
         loadingMetrics,
         loadingAudit,
