@@ -16,7 +16,9 @@ sweepVisual(
         // Ready selectors are DATA rows, not the page shell: the shell exists before the API
         // answers, and a baseline of the loading state is stable, meaningless, and never fails.
         ['locales-list', '/en/locales', '[data-test=list-row]'],
-        ['locales-dictionary', '/en/locales/dictionary', '[data-test=list-row]'],
+        // The board's header counts arrive with the LAST language's baselines, well after the
+        // first row: a row-ready baseline photographs the counts half-computed.
+        ['locales-dictionary', '/en/locales/dictionary', '[data-test=dictionary-missing-count]'],
         ['locale-entries', '/en/locales/it', '[data-test=list-row]']
     ],
     'admin'

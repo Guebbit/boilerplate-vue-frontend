@@ -1154,12 +1154,14 @@ export const GetObservabilityMetricsOverviewResponse = zod.strictObject({
  * Returns the most recent audit events, newest first, from the persisted audit trail.
  * Events include auth flows, admin CRUD actions, and security blocks.
  * Entries are retained for `NODE_AUDIT_RETENTION_DAYS` (default 90) and expire after.
- * `total` counts every event matching the filters, not just the returned page.
+ * `meta.totalItems` counts every event matching the filters, not just the returned page.
  * Requires admin role.
  * @summary Recent audit events
  */
-export const getObservabilityAuditLogsQueryLimitDefault = 200;
-export const getObservabilityAuditLogsQueryLimitMax = 200;
+export const getObservabilityAuditLogsQueryPageDefault = 1;
+
+export const getObservabilityAuditLogsQueryPageSizeDefault = 10;
+export const getObservabilityAuditLogsQueryPageSizeMax = 100;
 
 export const GetObservabilityAuditLogsQueryParams = zod.strictObject({
     actor: zod.string().optional().describe('Filter by actor user ID'),
@@ -1168,18 +1170,27 @@ export const GetObservabilityAuditLogsQueryParams = zod.strictObject({
     since: zod.iso
         .datetime({ offset: true })
         .optional()
-        .describe('Return events after this ISO-8601 timestamp'),
-    limit: zod
+        .describe('Return events strictly after this ISO-8601 timestamp — an exclusive bound'),
+    page: zod
         .number()
         .min(1)
-        .max(getObservabilityAuditLogsQueryLimitMax)
-        .default(getObservabilityAuditLogsQueryLimitDefault)
-        .describe(
-            'Maximum number of events to return. CLAMPED rather than refused, unlike the `pageSize` every paged endpoint takes: this read has no pages, so a number above the maximum is met with the maximum instead of a 422, and anything unusable — absent, blank, non-numeric — is also the maximum.'
-        )
+        .default(getObservabilityAuditLogsQueryPageDefault)
+        .describe('1-based page index'),
+    pageSize: zod
+        .number()
+        .min(1)
+        .max(getObservabilityAuditLogsQueryPageSizeMax)
+        .default(getObservabilityAuditLogsQueryPageSizeDefault)
 });
 
-export const getObservabilityAuditLogsResponseDataTotalMin = 0;
+export const getObservabilityAuditLogsResponseDataMetaPageDefault = 1;
+
+export const getObservabilityAuditLogsResponseDataMetaPageSizeDefault = 10;
+export const getObservabilityAuditLogsResponseDataMetaPageSizeMax = 100;
+
+export const getObservabilityAuditLogsResponseDataMetaTotalItemsMin = 0;
+
+export const getObservabilityAuditLogsResponseDataMetaTotalPagesMin = 0;
 
 export const GetObservabilityAuditLogsResponse = zod.strictObject({
     success: zod.literal(true),
@@ -1205,7 +1216,21 @@ export const GetObservabilityAuditLogsResponse = zod.strictObject({
                 level: zod.enum(['info', 'warn'])
             })
         ),
-        total: zod.number().min(getObservabilityAuditLogsResponseDataTotalMin)
+        meta: zod.strictObject({
+            page: zod
+                .number()
+                .min(1)
+                .default(getObservabilityAuditLogsResponseDataMetaPageDefault)
+                .describe('1-based page index'),
+            pageSize: zod
+                .number()
+                .min(1)
+                .max(getObservabilityAuditLogsResponseDataMetaPageSizeMax)
+                .default(getObservabilityAuditLogsResponseDataMetaPageSizeDefault)
+                .describe('Optional override; server may clamp to a max'),
+            totalItems: zod.number().min(getObservabilityAuditLogsResponseDataMetaTotalItemsMin),
+            totalPages: zod.number().min(getObservabilityAuditLogsResponseDataMetaTotalPagesMin)
+        })
     })
 });
 

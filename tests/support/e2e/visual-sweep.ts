@@ -26,38 +26,6 @@
  * @param screens - `[snapshot name, path, ready selector]`; the name becomes the PNG filename
  * @param role - sign in as this first; omitted, the sweep runs signed out
  */
-/** How long one settle poll waits, and how many times it looks. ~2s in total. */
-const SETTLE_POLL_MS = 100;
-const SETTLE_ATTEMPTS = 20;
-
-/**
- * Give the page's in-flight requests a moment to land before it is photographed.
- *
- * The assertions in the sweep pass on the SHELL — the router renders the ready selector, the
- * `h1` and the `main` before any data arrives. Over a real socket that gap is wide enough to
- * photograph: without this wait, `products-list` is captured with the corner spinner still
- * turning and its rows still empty, and the baseline defends a screenshot of a loading screen.
- *
- * `LayoutDefault.vue` renders exactly one `role="status"` node — the corner activity indicator,
- * driven by the core store's request tracking — so it is the app's own answer to "is something
- * still loading", and the only one that needs no per-screen knowledge.
- *
- * BEST-EFFORT, not an assertion, and that is the load-bearing part. Some screens
- * (`inventory-ledger`, the locales pair) leave that indicator visible indefinitely — a loading
- * counter that does not always return to zero, which is a real bug and not this suite's to fail
- * on. Asserting here made three green screens time out at 15s. So this waits for the quiet
- * moment when there is one, gives up when there is not, and `cy.freezeForVisual()` hides the
- * indicator either way so a shot can never depend on which happened.
- */
-const settleRequests = (attemptsLeft: number): void => {
-    cy.get('body').then(($body) => {
-        if (attemptsLeft <= 0 || $body.find('[role=status]:visible').length === 0) return;
-        // eslint-disable-next-line cypress/no-unnecessary-waiting -- the rule is aimed at a fixed sleep standing in for a condition; this IS the condition, re-checked, and the pause is what makes the loop a poll rather than a spin
-        cy.wait(SETTLE_POLL_MS);
-        settleRequests(attemptsLeft - 1);
-    });
-};
-
 export const sweepVisual = (
     label: string,
     screens: readonly (readonly [name: string, route: string, readySelector: string])[],
@@ -80,6 +48,8 @@ export const sweepVisual = (
 
         for (const [name, route, readySelector] of screens)
             it(`${name} matches its baseline`, () => {
+                // Before the visit, so the page's very first fetch is counted — see the command.
+                cy.trackNetwork();
                 cy.visit(route);
 
                 // Wait for real content before freezing: photographing a loading skeleton would
@@ -90,7 +60,12 @@ export const sweepVisual = (
                 // both assertions before this one.
                 cy.get('main, [role=main], #app').should('be.visible');
 
-                settleRequests(SETTLE_ATTEMPTS);
+                /*
+                 * Every request the page fired has answered. The shell assertions above pass
+                 * before any data arrives, and a baseline of a loading screen is stable,
+                 * meaningless and never fails — the worst outcome this suite can produce.
+                 */
+                cy.settleNetwork();
 
                 cy.freezeForVisual();
                 cy.compareSnapshot(name);

@@ -230,6 +230,7 @@ const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'er
                 v-show="isLoading && !loadings.core"
                 class="fixed bottom-4 left-4 z-[9998]"
                 role="status"
+                data-test="activity-indicator"
                 :aria-label="t('generic.loading-state')"
             >
                 <!--

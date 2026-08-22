@@ -809,8 +809,7 @@ export interface AuditEventItem {
 
 export interface AuditLogsPage {
     items: AuditEventItem[];
-    /** @minimum 0 */
-    total: number;
+    meta: PaginationMeta;
 }
 
 export interface AuditLogsResponseEnvelope {
@@ -1869,15 +1868,20 @@ export type GetObservabilityAuditLogsParams = {
      */
     outcome?: GetObservabilityAuditLogsOutcome;
     /**
-     * Return events after this ISO-8601 timestamp
+     * Return events strictly after this ISO-8601 timestamp — an exclusive bound
      */
     since?: string;
     /**
-     * Maximum number of events to return. CLAMPED rather than refused, unlike the `pageSize` every paged endpoint takes: this read has no pages, so a number above the maximum is met with the maximum instead of a 422, and anything unusable — absent, blank, non-numeric — is also the maximum.
+     * 1-based page index
      * @minimum 1
-     * @maximum 200
      */
-    limit?: number;
+    page?: PageParamParameter;
+    /**
+     * Optional override; server may clamp to a max
+     * @minimum 1
+     * @maximum 100
+     */
+    pageSize?: PageSizeParamParameter;
 };
 
 export type GetObservabilityAuditLogsOutcome =
@@ -2409,7 +2413,7 @@ export const getObservabilityMetricsOverview = (
  * Returns the most recent audit events, newest first, from the persisted audit trail.
  * Events include auth flows, admin CRUD actions, and security blocks.
  * Entries are retained for `NODE_AUDIT_RETENTION_DAYS` (default 90) and expire after.
- * `total` counts every event matching the filters, not just the returned page.
+ * `meta.totalItems` counts every event matching the filters, not just the returned page.
  * Requires admin role.
  * @summary Recent audit events
  */

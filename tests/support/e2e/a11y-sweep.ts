@@ -92,6 +92,8 @@ export const sweepA11y = (
                 // rather than reflowing under axe. Cypress restores the configured viewport
                 // between tests on its own.
                 if (viewport) cy.viewport(viewport[0], viewport[1]);
+                // Before the visit, so the page's very first fetch is counted — see the command.
+                cy.trackNetwork();
                 cy.visit(route);
                 // Wait for real content rather than the shell, so axe does not audit a loading
                 // state and report an empty page as perfect.
@@ -111,6 +113,11 @@ export const sweepA11y = (
                  * shell's own indicator, which is mounted permanently and hidden by CSS, so
                  * waiting on it waits forever.
                  */
+                /*
+                 * ...and both of those pass trivially BEFORE the first fetch fires, which is the
+                 * moment this used to audit. The network count cannot be fooled that way.
+                 */
+                cy.settleNetwork();
                 cy.get('.v-btn--loading').should('not.exist');
                 cy.get('.v-data-table--loading').should('not.exist');
                 if (theme === 'dark') {

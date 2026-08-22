@@ -38,6 +38,21 @@ declare global {
             loginAs(role?: 'user' | 'admin'): Chainable<void>;
 
             /**
+             * Starts counting API requests, so `settleNetwork()` can tell when the page has
+             * finished loading. Call BEFORE `cy.visit()`: an intercept registered after the
+             * navigation misses the requests the page fires on mount.
+             */
+            trackNetwork(): Chainable<void>;
+
+            /**
+             * Waits until no API request tracked by `trackNetwork()` is in flight, and stays so
+             * for two consecutive polls. The answer to "has the page finished loading" that needs
+             * no per-screen knowledge — the shell renders before any data arrives, so asserting
+             * on the shell alone audits or photographs a loading state.
+             */
+            settleNetwork(): Chainable<void>;
+
+            /**
              * Freezes everything that would make a screenshot differ between runs: the clock,
              * animations, the caret, and the dev-server overlay. Call before `compareSnapshot`.
              *
@@ -461,10 +476,51 @@ Cypress.Commands.add('freezeForVisual', (isoTime = '2026-01-01T12:00:00.000Z') =
              * would record whether a request happened to be in flight, which is a property of
              * the network rather than of the screen.
              */
-            [role='status'] { display: none !important; }
+            [data-test='activity-indicator'] { display: none !important; }
         `;
         document_.head.append(style);
     });
+});
+
+/*
+ * ── Network settling ─────────────────────────────────────────────────────────────────────────
+ * Counted in the spec's own closure rather than read off the page. The corner activity indicator
+ * is the app's own answer, but it is ALSO invisible before the first request fires — so a check
+ * that ran early enough saw a quiet page and declared it loaded. An intercept registered before
+ * the visit cannot be early: it sees every request the page fires from its first tick.
+ */
+let inFlight = 0;
+
+/** How long one settle poll waits, how many polls it may take, and how many quiet polls count. */
+const SETTLE_POLL_MS = 100;
+const SETTLE_MAX_POLLS = 100;
+const SETTLE_QUIET_POLLS = 2;
+
+Cypress.Commands.add('trackNetwork', () => {
+    inFlight = 0;
+    // `allowCypressEnv: false` in cypress.config.ts — the stateful API, as every other command.
+    cy.env(['apiUrl']).then(({ apiUrl }) => {
+        cy.intercept({ url: `${String(apiUrl)}/**`, middleware: true }, (request) => {
+            inFlight += 1;
+            request.on('after:response', () => {
+                inFlight -= 1;
+            });
+        });
+    });
+});
+
+const settle = (pollsLeft: number, quietPolls: number): void => {
+    if (quietPolls >= SETTLE_QUIET_POLLS) return;
+    if (pollsLeft <= 0)
+        throw new Error(
+            `settleNetwork: ${inFlight} request(s) still in flight after ${SETTLE_MAX_POLLS * SETTLE_POLL_MS}ms`
+        );
+    // eslint-disable-next-line cypress/no-unnecessary-waiting -- the pause is what makes the loop a poll rather than a spin; the condition is re-checked each time
+    cy.wait(SETTLE_POLL_MS).then(() => settle(pollsLeft - 1, inFlight === 0 ? quietPolls + 1 : 0));
+};
+
+Cypress.Commands.add('settleNetwork', () => {
+    settle(SETTLE_MAX_POLLS, 0);
 });
 
 Cypress.Commands.add('compareSnapshot', (name: string) => {
