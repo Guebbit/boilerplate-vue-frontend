@@ -24,7 +24,8 @@ import {
     getAddresses as apiGetAddresses,
     addAddress as apiAddAddress,
     updateAddress as apiUpdateAddress,
-    removeAddress as apiRemoveAddress
+    removeAddress as apiRemoveAddress,
+    updateUserById as apiUpdateUserById
 } from '@api';
 import type {
     Address,
@@ -252,6 +253,34 @@ export const useAccountStore = defineStore('account', () => {
     };
 
     /**
+     * Changes the visitor's OWN role, through the endpoint that owns roles.
+     *
+     * Deliberately not folded into {@link updateProfile}. `PUT /account` is the self-service
+     * payload and carries no role by design — routing a role change through it would hand every
+     * visitor the one field they must never set for themselves, which is the bug that endpoint
+     * exists to prevent. This goes to `PUT /users/{id}` instead: the admin route, behind the admin
+     * guard, so the API authorises the change rather than a hidden form field doing it. A
+     * non-admin calling this gets the 403 it deserves.
+     *
+     * `updateUserById` is reached through `@api` rather than through the users module: `@api` is
+     * infrastructure, not a sibling, so this is a contract call and not an `account → users` edge
+     * — the same reasoning that lets the cart resolve product titles without depending on
+     * products. The users barrel publishes vocabulary, and it stays that way.
+     *
+     * The profile is refetched rather than patched: demoting yourself is a real outcome here, and
+     * the shell's `isAdmin` projection must learn it from the record the server now holds — which
+     * is what {@link publishViewer} does on the way through.
+     *
+     * @param admin - The role to hold: `true` administrator, `false` standard user.
+     * @returns A promise resolving with the refreshed profile once the change has settled.
+     */
+    const updateOwnRole = (admin: boolean) => {
+        if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
+        const userId = selectedIdentifier.value;
+        return fetchAny(() => apiUpdateUserById(userId, { admin }).then(() => fetchProfile(true)));
+    };
+
+    /**
      * Changes the password of the LIVE session by proving the current one — no email round-trip,
      * unlike the reset flow. Other sessions stay signed in; the sessions panel is where they end.
      *
@@ -464,6 +493,7 @@ export const useAccountStore = defineStore('account', () => {
         confirmAccountDelete,
         fetchProfile,
         updateProfile,
+        updateOwnRole,
         changePassword,
         fetchSessions,
         revokeSession,

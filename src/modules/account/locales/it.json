@@ -5,7 +5,6 @@
         "label-password": "Password",
         "label-remember": "Ricorda il mio accesso",
         "link-password-reset": "Password dimenticata?",
-        "text-conditions": "Ho letto le condizioni della privacy",
         "button-submit": "Login",
         "label-toggle-password": "Mostra o nascondi la password"
     },
@@ -13,7 +12,6 @@
         "page-title": "Registrazione",
         "label-email": "Email",
         "label-password": "Password",
-        "label-remember": "Ricorda il mio accesso",
         "text-conditions": "Ho letto le condizioni della privacy",
         "button-submit": "Registrati",
         "success-email-code-sent": "Registrazione completata. Ti abbiamo inviato un'email con un codice di verifica."
@@ -24,6 +22,8 @@
         "label-email": "Email",
         "label-phone": "Numero di telefono",
         "label-website": "Website",
+        "label-language": "Lingua",
+        "language-hint": "La lingua in cui si apre questo account. Si salva insieme al resto del profilo.",
         "label-password": "Password",
         "label-passwordConfirm": "Conferma Password",
         "button-submit": "Salva modifiche",
@@ -49,7 +49,6 @@
         "sessions-logout-everywhere": "Esci ovunque",
         "sessions-confirm-logout-everywhere": "Uscire da tutti i dispositivi, compreso questo?",
         "addresses-title": "Indirizzi",
-        "addresses-intro": "I tuoi indirizzi di spedizione salvati. Uno è sempre quello predefinito usato al checkout.",
         "addresses-add": "Aggiungi indirizzo",
         "addresses-edit": "Modifica",
         "addresses-remove": "Rimuovi",
@@ -75,7 +74,13 @@
         "addresses-required-zip": "Il CAP è obbligatorio",
         "addresses-required-country": "Il paese è obbligatorio",
         "sessions-revoke-named": "Revoca la sessione {id}",
-        "sessions-revoke-current": "Revoca questa sessione (esci)"
+        "sessions-revoke-current": "Revoca questa sessione (esci)",
+        "role-title": "Ruolo",
+        "role-intro": "Gli amministratori possono cambiare il proprio ruolo. Rinunciarvi non è reversibile da qui.",
+        "label-role": "Ruolo",
+        "button-submit-role": "Aggiorna ruolo",
+        "confirm-self-demote": "Rinunciare ai permessi di amministratore? Non potrai ripristinarli da solo.",
+        "success-role-change": "Ruolo aggiornato."
     },
     "password-reset-request-page": {
         "page-title": "Reimposta password",

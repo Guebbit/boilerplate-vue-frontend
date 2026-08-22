@@ -226,6 +226,61 @@ describe('locale preference', () => {
     });
 });
 
+/**
+ * The role change is the one profile edit that does NOT go to `PUT /account`, and that is the
+ * whole point of it: the self-service payload carries no role, so a role change has to be made
+ * where the API can authorise it. These pin the endpoint and the projection, because getting
+ * either wrong is silent — the form would look like it worked.
+ */
+describe('own role', () => {
+    it('goes to the admin users endpoint, never to the self-service one', () => {
+        const store = useAccountStore();
+
+        return store
+            .fetchProfile(true)
+            .then(() => store.updateOwnRole(true))
+            .then(() => {
+                const put = vi
+                    .mocked(orvalMutator)
+                    .mock.calls.map(
+                        (call) =>
+                            call[0] as {
+                                method?: string;
+                                url: string;
+                                data?: { admin?: boolean };
+                            }
+                    )
+                    .find((call) => call.method?.toUpperCase() === 'PUT');
+
+                // `PUT /account` is deliberately roleless; `/users/{id}` is behind the admin
+                // guard, so the API decides whether this visitor may promote anyone.
+                expect(put?.url).toBe('/users/u1');
+                expect(put?.data).toEqual({ admin: true });
+            });
+    });
+
+    it('refetches the record, so the shell learns the role from the server', () => {
+        const store = useAccountStore();
+
+        return store
+            .login('ada@example.com', 'hunter2hunter2')
+            .then(() => {
+                expect(useSessionStore().isAdmin).toBe(false);
+                // What the server holds AFTER the write. The projection must follow this, not the
+                // value the form happened to send.
+                responses['GET /account'] = { data: { ...USER, admin: true } };
+                return store.updateOwnRole(true);
+            })
+            .then(() => {
+                expect(requestedUrls().at(-1)).toBe('/account');
+                expect(useSessionStore().isAdmin).toBe(true);
+            });
+    });
+
+    it('refuses when no profile is loaded, rather than writing to `/users/undefined`', () =>
+        expect(useAccountStore().updateOwnRole(true)).rejects.toThrow('invalid user'));
+});
+
 describe('logout', () => {
     it('ends THIS session only and clears the state the guards read', () => {
         const store = useAccountStore();

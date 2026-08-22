@@ -5,10 +5,13 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { onMounted, ref, useId, watch } from 'vue';
+import { computed, onMounted, ref, useId, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { changeLanguage, supportedLanguages } from '@/infrastructure/i18n';
+import { useSessionStore } from '@/infrastructure/stores/session.ts';
 import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
 import { useAccountStore } from '@/modules/account/store.ts';
 import { usersSchema, usersPasswordSchema } from '@/modules/users';
@@ -19,7 +22,9 @@ import { z } from 'zod';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const router = useRouter();
+const route = useRoute();
 const { addMessage } = useNotificationsStore();
 
 /**
@@ -46,8 +51,10 @@ const handleDeleteAccount = () =>
 /**
  * Profile logic
  */
-const { updateProfile, changePassword, requestEmailVerification, fetchProfile } = useAccountStore();
+const { updateProfile, updateOwnRole, changePassword, requestEmailVerification, fetchProfile } =
+    useAccountStore();
 const { profile } = storeToRefs(useAccountStore());
+const { isAdmin } = storeToRefs(useSessionStore());
 
 /*
  * The record this page edits, loaded by this page. The session restore only fills the shell's
@@ -76,6 +83,12 @@ interface ProfileForm {
     id?: string | null;
     email?: string;
     username?: string;
+    /**
+     * Preferred language, a tag from {@link supportedLanguages}. Part of the record rather than a
+     * UI-only field: `PUT /account` accepts it, and `Login.vue` reads it back to open the next
+     * session in the language this visitor asked for.
+     */
+    locale?: string;
     imageUrl?: string | null;
     admin?: boolean | null;
     active?: boolean | null;
@@ -156,6 +169,108 @@ watch(
 );
 
 /**
+ * The languages this build can switch to, named in the language currently on screen.
+ *
+ * `supportedLanguages` rather than a list of this page's own: it already includes whatever
+ * `GET /locales` reported at boot, so a deployment that adds a language gets it here for free.
+ */
+const languageOptions = computed(() =>
+    supportedLanguages.map((code) => ({ value: code, title: t(`generic.${code}`) }))
+);
+
+/**
+ * Re-enters the current route in the language the saved record now carries.
+ *
+ * The select writes a PREFERENCE, and the preference is only read at login (see `Login.vue`) — so
+ * without this a visitor saves "italian" and carries on reading English until they next sign in.
+ * Switching the i18n runtime alone would not hold either: the `:locale` route param is what
+ * `localeChoice` re-applies on the next navigation, and it would switch straight back. Hence
+ * both, in that order — the same two steps the header's language switcher takes, for the same
+ * reason.
+ *
+ * @param saved - The locale on the freshly saved record.
+ * @returns A promise resolving once language and URL agree; immediately when the choice did not
+ *  change. Never rejects — a failed re-entry must not report a saved profile as an error.
+ */
+const applyLanguagePreference = (saved?: string | null) =>
+    typeof saved === 'string' && saved !== locale.value && supportedLanguages.includes(saved)
+        ? changeLanguage(saved)
+              .then(() =>
+                  router.replace({
+                      params: { ...route.params, locale: saved },
+                      query: route.query
+                  })
+              )
+              .then(() => undefined)
+              .catch(() => undefined)
+        : Promise.resolve();
+
+/**
+ * The role shown in the admin-only select.
+ *
+ * Seeded from the record and re-seeded whenever it changes underneath — the profile form's
+ * "hydrate, never clobber" rule, without the dirty guard: a two-option select holds no keystrokes
+ * that a refresh could garble.
+ */
+const roleIsAdmin = ref(false);
+
+watch(
+    profile,
+    (userProfile) => {
+        roleIsAdmin.value = Boolean(userProfile?.admin);
+    },
+    { immediate: true }
+);
+
+const roleOptions = computed(() => [
+    { value: true, title: t('generic.administrator') },
+    { value: false, title: t('generic.standard-user') }
+]);
+
+/** Whether the select has been moved away from what the record says. */
+const roleIsDirty = computed(() => roleIsAdmin.value !== Boolean(profile.value?.admin));
+
+/**
+ * Applies the chosen role, confirming first when it gives administrator rights away.
+ *
+ * Only that direction asks. Demoting yourself is the one change on this page nobody can undo for
+ * themselves — the admin routes are precisely what you would have to reach to put it back — while
+ * promoting yourself needs no warning from a form you already had the rights to submit.
+ *
+ * The select is put back on refusal and on failure, so it never shows a role the record does not
+ * hold.
+ *
+ * @returns A promise resolving once the change settles, reported as a toast.
+ */
+const handleRoleChange = () => {
+    if (!roleIsDirty.value) return Promise.resolve();
+    const wanted = roleIsAdmin.value;
+    const restore = () => {
+        roleIsAdmin.value = Boolean(profile.value?.admin);
+    };
+
+    return (
+        wanted
+            ? Promise.resolve(true)
+            : useDialogStore().confirm({
+                  message: t('profile-page.confirm-self-demote'),
+                  color: 'error'
+              })
+    ).then((accepted) => {
+        if (!accepted) {
+            restore();
+            return;
+        }
+        return updateOwnRole(wanted)
+            .then(() => addMessage(t('profile-page.success-role-change')))
+            .catch((error) => {
+                restore();
+                notifyErrorMessages(addMessage, error);
+            });
+    });
+};
+
+/**
  * Toggle password change
  * (I'll add a password change form + schemas)
  *
@@ -182,6 +297,7 @@ const submitForm = () => {
     return updateProfile({
         email: form.value.email,
         username: form.value.username,
+        locale: form.value.locale,
         imageUrl: form.value.imageUrl ?? undefined
     })
         .then(() => {
@@ -190,6 +306,9 @@ const submitForm = () => {
             setInitialData(profile.value ?? {});
             resetForm();
             addMessage(t('profile-page.success-update'));
+            // Last, and on the SAVED record rather than on the form: the language only follows a
+            // preference the server actually accepted.
+            return applyLanguagePreference(profile.value?.locale);
         })
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
@@ -240,7 +359,6 @@ const submitPasswordChange = () =>
 
         <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
             <form ref="formElement" novalidate @submit.prevent="submitForm">
-                <!-- TODO language select + roles (user edit, if admin) -->
                 <v-text-field
                     v-model="form.username"
                     type="text"
@@ -271,6 +389,15 @@ const submitPasswordChange = () =>
                     autocomplete="url"
                     :label="t('profile-page.label-website')"
                     :error-messages="showErrors ? formErrors.website : []"
+                    class="mb-2"
+                />
+                <v-select
+                    v-model="form.locale"
+                    :items="languageOptions"
+                    :label="t('profile-page.label-language')"
+                    :hint="t('profile-page.language-hint')"
+                    :persistent-hint="true"
+                    data-test="profile-language"
                 />
 
                 <div class="mt-4 flex flex-wrap gap-2">
@@ -282,6 +409,37 @@ const submitPasswordChange = () =>
                     </v-btn>
                 </div>
             </form>
+
+            <!--
+                Its own block, deliberately outside the form above: a role change goes to a
+                different endpoint under a different authorisation, and folding it into "Save
+                changes" would put two authorisations behind one button. The password form below
+                is separated for the same reason.
+            -->
+            <template v-if="isAdmin">
+                <v-divider class="my-6" />
+
+                <section data-test="profile-role">
+                    <h2 class="mb-1 text-lg font-semibold">{{ t('profile-page.role-title') }}</h2>
+                    <p class="mb-4 opacity-80">{{ t('profile-page.role-intro') }}</p>
+
+                    <v-select
+                        v-model="roleIsAdmin"
+                        :items="roleOptions"
+                        :label="t('profile-page.label-role')"
+                        data-test="role-select"
+                    />
+
+                    <v-btn
+                        color="primary"
+                        :disabled="!roleIsDirty"
+                        data-test="role-submit"
+                        @click="handleRoleChange"
+                    >
+                        {{ t('profile-page.button-submit-role') }}
+                    </v-btn>
+                </section>
+            </template>
 
             <v-divider class="my-6" />
 

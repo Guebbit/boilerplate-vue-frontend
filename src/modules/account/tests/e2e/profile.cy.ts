@@ -80,6 +80,61 @@ describe('Profile self-service', () => {
         cy.get('#profile-page').should('exist');
     });
 
+    describe('language preference', () => {
+        it('saving a language switches the page and survives the next sign-in', () => {
+            cy.get('[data-test=profile-language]').click();
+            cy.get('.v-overlay-container').contains('.v-list-item', 'italian').click();
+            cy.get('#profile-page form button[type=submit]').first().click();
+
+            // Both halves of a language switch: the runtime, and the `:locale` segment the
+            // route guard re-applies on the next navigation. Without the second the page would
+            // read Italian until the visitor clicked anything at all.
+            cy.url().should('include', '/it/');
+            cy.contains('Salva modifiche').should('exist');
+
+            // The point of storing it on the record rather than in the tab: a fresh session
+            // opens in the language the visitor chose. `loginAs` starts at `/en/login`, so the
+            // Italian landing is the record's doing and not a leftover URL.
+            //
+            // Matched with an anchor rather than `include '/it/'`: login lands on Home, whose
+            // path is `/it` with nothing after it.
+            cy.logout();
+            cy.loginAs('user');
+            cy.url().should('match', /\/it(\/|$)/);
+        });
+    });
+
+    describe('role', () => {
+        it('offers no role control to a standard user', () => {
+            // The select is not merely disabled: a non-admin has no business being shown a
+            // control whose endpoint would answer them 403.
+            cy.get('[data-test=profile-role]').should('not.exist');
+        });
+
+        it('lets an administrator see it, and asks before rights are given away', () => {
+            cy.logout();
+            cy.loginAs('admin');
+            cy.visit('/en/profile');
+
+            cy.get('[data-test=profile-role]').should('exist');
+            // Nothing to apply until the select is moved off what the record says.
+            cy.get('[data-test=role-submit]').should('be.disabled');
+
+            cy.get('[data-test=role-select]').click();
+            cy.get('.v-overlay-container').contains('.v-list-item', 'Standard user').click();
+            cy.get('[data-test=role-submit]').should('not.be.disabled').click();
+
+            // Self-demotion is the one change here nobody can undo for themselves, so it asks.
+            // Declining must leave both the select and the rights exactly as they were — which
+            // is also why this spec never commits the change: the demo admin stays an admin for
+            // every other spec in the run.
+            cy.get('[data-test=app-dialog-cancel]').click();
+            cy.contains('Role updated').should('not.exist');
+            cy.get('[data-test=profile-role]').should('exist');
+            cy.get('[data-test=role-submit]').should('be.disabled');
+        });
+    });
+
     describe('password change', () => {
         it('changes the password through the current-password flow', () => {
             cy.get('[data-test=toggle-change-password]').click();

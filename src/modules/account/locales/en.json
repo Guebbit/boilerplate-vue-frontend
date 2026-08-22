@@ -5,7 +5,6 @@
         "label-password": "Password",
         "label-remember": "Remember me",
         "link-password-reset": "Forgot password?",
-        "text-conditions": "I have read the privacy conditions",
         "button-submit": "Login",
         "label-toggle-password": "Show or hide password"
     },
@@ -13,7 +12,6 @@
         "page-title": "Sign up",
         "label-email": "Email",
         "label-password": "Password",
-        "label-remember": "Remember me",
         "text-conditions": "I have read the privacy conditions",
         "button-submit": "Register now",
         "success-email-code-sent": "Registration successful. We sent an email with a verification code."
@@ -24,6 +22,8 @@
         "label-email": "Email",
         "label-phone": "Phone Number",
         "label-website": "Website",
+        "label-language": "Language",
+        "language-hint": "The language this account opens in. Saved with the rest of the profile.",
         "label-password": "Password",
         "label-passwordConfirm": "Confirm Password",
         "button-submit": "Save changes",
@@ -49,7 +49,6 @@
         "sessions-logout-everywhere": "Log out everywhere",
         "sessions-confirm-logout-everywhere": "Log out from every device, including this one?",
         "addresses-title": "Addresses",
-        "addresses-intro": "Your saved shipping addresses. One is always the default checkout ships to.",
         "addresses-add": "Add address",
         "addresses-edit": "Edit",
         "addresses-remove": "Remove",
@@ -75,7 +74,13 @@
         "addresses-required-zip": "A ZIP is required",
         "addresses-required-country": "A country is required",
         "sessions-revoke-named": "Revoke session {id}",
-        "sessions-revoke-current": "Revoke this session (signs you out)"
+        "sessions-revoke-current": "Revoke this session (signs you out)",
+        "role-title": "Role",
+        "role-intro": "Administrators can change their own role. Giving it up cannot be undone from here.",
+        "label-role": "Role",
+        "button-submit-role": "Update role",
+        "confirm-self-demote": "Give up your administrator rights? You will not be able to restore them yourself.",
+        "success-role-change": "Role updated."
     },
     "password-reset-request-page": {
         "page-title": "Reset password",
