@@ -191,10 +191,19 @@ const bootDemoBackends = async (count: number): Promise<(() => void)[]> => {
         removeDemoScratchDirectory(scratchDirectory);
     };
     process.on('exit', kill);
-    process.on('SIGINT', () => {
-        kill();
-        process.exit(130);
-    });
+    // `exit` does not fire for a signal that terminates by default, so both of the ways this
+    // runner actually gets stopped need saying explicitly: a ^C at a terminal, and the SIGTERM
+    // `start-server-and-test` sends when the suite above it finishes. Without the second one, a
+    // CI run left its ~200 MB of Mongo behind every time. Exit codes are the 128+signal
+    // convention, so a caller can still tell which signal ended the run.
+    for (const [signal, code] of [
+        ['SIGINT', 130],
+        ['SIGTERM', 143]
+    ] as const)
+        process.on(signal, () => {
+            kill();
+            process.exit(code);
+        });
 
     const ready = async ({ port, log }: (typeof children)[number]) => {
         const startedAt = Date.now();
