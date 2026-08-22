@@ -15,7 +15,17 @@ sweepA11y(
     [
         ['languages board', '/en/locales'],
         ['dictionary board', '/en/locales/dictionary'],
-        ['translation entries', '/en/locales/it']
+        ['translation entries', '/en/locales/it'],
+        {
+            // The entry form dialog over the entries table: a modal with three fields, named
+            // by its title, over a page the reader must not be able to wander into.
+            name: 'translation entries, entry dialog open',
+            route: '/en/locales/it',
+            prepare: () => {
+                cy.get('[data-test=entry-create]').click();
+                cy.get('[data-test=entry-form]').should('be.visible');
+            }
+        }
     ],
     'admin'
 );

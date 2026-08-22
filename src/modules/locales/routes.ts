@@ -11,7 +11,7 @@ export default [
     {
         path: 'locales',
         name: 'LocalesList',
-        meta: { access: 'admin' },
+        meta: { access: 'admin', title: 'locales-list-page.page-title' },
         component: () => import('./views/LocalesList.vue')
     },
     /*
@@ -22,13 +22,13 @@ export default [
     {
         path: 'locales/dictionary',
         name: 'LocalesDictionary',
-        meta: { access: 'admin' },
+        meta: { access: 'admin', title: 'locales-dictionary-page.page-title' },
         component: () => import('./views/LocalesDictionary.vue')
     },
     {
         path: 'locales/:tag',
         name: 'LocaleEntries',
-        meta: { access: 'admin' },
+        meta: { access: 'admin', title: 'locale-entries-page.page-title' },
         component: () => import('./views/LocaleEntries.vue')
     }
 ] satisfies RouteRecordRaw[];

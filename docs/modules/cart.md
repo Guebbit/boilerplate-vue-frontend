@@ -84,11 +84,11 @@ order and the header keeps showing items the server has already turned into one.
 
 Store `cart`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
-| Kind        | Members                                                                                                                      | What it is                                                       |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| **State**   | `cart`                                                                                                                       | The refs the setup function returns — the only writable surface. |
-| **Getters** | `cartItems` · `cartSummary` · `cartCount` · `badgeQuantity` · `loading`                                                      | Computed, derived from state. Read-only by construction.         |
-| **Actions** | `fetchSummary` · `fetchCart` · `checkout` · `reorder` · `upsertCartItem` · `updateCartItem` · `removeCartItem` · `clearCart` | Everything that changes state or calls the API.                  |
+| Kind        | Members                                                                                                                                                    | What it is                                                       |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| **State**   | `cart` · `productTitles`                                                                                                                                   | The refs the setup function returns — the only writable surface. |
+| **Getters** | `cartItems` · `cartSummary` · `cartCount` · `badgeQuantity` · `loading`                                                                                    | Computed, derived from state. Read-only by construction.         |
+| **Actions** | `fetchSummary` · `fetchCart` · `titleOf` · `resolveTitles` · `checkout` · `reorder` · `upsertCartItem` · `updateCartItem` · `removeCartItem` · `clearCart` | Everything that changes state or calls the API.                  |
 
 <!-- gen:state:end -->
 
@@ -159,6 +159,7 @@ The names themselves are declared in the backend, because both repositories writ
 | `tests/e2e/analytics.cy.ts`        | Cypress suite — the screens, in a browser.                                                                                                                  | [read](../tools/component-testing.md) |
 | `tests/e2e/cart.cy.ts`             | Cypress suite — the screens, in a browser.                                                                                                                  | [read](../tools/component-testing.md) |
 | `tests/e2e/cart.visual.cy.ts`      | Cypress suite — the screens, in a browser.                                                                                                                  | [read](../tools/component-testing.md) |
+| `tests/product-titles.spec.ts`     | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
 | `tests/quantity.spec.ts`           | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
 | `tests/routes.spec.ts`             | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
 | `tests/store.spec.ts`              | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
@@ -172,7 +173,7 @@ The names themselves are declared in the backend, because both repositories writ
 
 | Suite            | Files | Where                                       |
 | ---------------- | ----- | ------------------------------------------- |
-| Vitest           | 3     | `src/modules/cart/tests/`                   |
+| Vitest           | 4     | `src/modules/cart/tests/`                   |
 | Cypress          | 4     | `src/modules/cart/tests/e2e/`               |
 | Visual baselines | 1     | `src/modules/cart/tests/e2e/__snapshots__/` |
 

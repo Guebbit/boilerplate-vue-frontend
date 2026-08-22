@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { translate } from '@/infrastructure/i18n';
-import { LocaleScope } from '@types';
 
 /**
  * Validation schemas for the locale admin's two forms.
@@ -47,7 +46,8 @@ export const localesLanguageEditSchema = localesLanguageSchema.extend({
  * value edits inline in the table, so a row never comes back through the dialog.
  */
 export const localesEntrySchema = z.object({
-    scope: z.enum(LocaleScope),
+    // An id from the registry the dialog lists; the API refuses a stranger with a 422.
+    tenant: z.string().min(1, { error: () => translate('entry-form.tenant-required') }),
     key: z.string().min(1, { error: () => translate('entry-form.key-required') }),
     value: z.string().min(1, { error: () => translate('entry-form.value-required') })
 });

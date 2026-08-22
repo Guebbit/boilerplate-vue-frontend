@@ -25,8 +25,7 @@ import EntryFormDialog from '@/modules/locales/components/EntryFormDialog.vue';
 import EntriesImportDialog from '@/modules/locales/components/EntriesImportDialog.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
-import { LocaleScope } from '@types';
-import type { LocaleEntry, LocaleEntryInput, LocaleScope as TLocaleScope } from '@types';
+import type { LocaleEntry, LocaleEntryInput } from '@types';
 import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
 
 /**
@@ -44,7 +43,7 @@ const { t } = useI18n();
 const route = useRoute();
 const { addMessage } = useNotificationsStore();
 const localesStore = useLocalesStore();
-const { capabilities, filters, pageItemList, pageCurrent, entriesPageTotal, loading } =
+const { capabilities, tenants, filters, pageItemList, pageCurrent, entriesPageTotal, loading } =
     storeToRefs(localesStore);
 
 /** The language whose rows this page shows, from `/locales/:tag`. */
@@ -64,26 +63,23 @@ const drafts = ref<Record<string, string>>({});
 /** Row ids whose last save just landed; the check mark beside the field, cleared after a beat. */
 const savedRows = ref<Record<string, true>>({});
 
-/** The "both scopes" choice of the scope select. */
-const ANY_SCOPE = '';
+/** The "every tenant" choice of the tenant select. */
+const ANY_TENANT = '';
 
-const scopeFilterOptions = computed(() => [
+const tenantFilterOptions = computed(() => [
     /*
      * A real empty-string value, NOT `undefined`: Vuetify reads an item with no value as
-     * "use the title", and the page then sent `scope=Both+scopes` to the API.
+     * "use the title", and the page then sent the title itself to the API.
      */
-    { value: ANY_SCOPE, title: t('locale-entries-page.filter-scope-all') },
-    ...Object.values(LocaleScope).map((scope) => ({
-        value: scope,
-        title: t(`locale-entries-page.scope-${scope}`)
-    }))
+    { value: ANY_TENANT, title: t('locale-entries-page.filter-tenant-all') },
+    ...tenants.value.map(({ id, label }) => ({ value: id, title: `${label} (${id})` }))
 ]);
 
 /** The select's model: the sentinel on screen, `undefined` — no filter — in the store. */
-const scopeChoice = computed({
-    get: () => filters.value.scope ?? ANY_SCOPE,
-    set: (choice: TLocaleScope | typeof ANY_SCOPE) => {
-        filters.value.scope = choice === ANY_SCOPE ? undefined : choice;
+const tenantChoice = computed({
+    get: () => filters.value.tenant ?? ANY_TENANT,
+    set: (choice: string) => {
+        filters.value.tenant = choice === ANY_TENANT ? undefined : choice;
     }
 });
 
@@ -103,8 +99,10 @@ watch(tag, (nextTag) => {
     void search();
 });
 
-// The header needs the manifest; harmless when the list page already loaded it.
+// The header needs the manifest and the selects the registry; harmless when the list page
+// already loaded them.
 if (capabilities.value.length === 0) void localesStore.fetchLanguages();
+if (tenants.value.length === 0) void localesStore.fetchTenants();
 
 const handleSearch = () => {
     pageCurrent.value = 1;
@@ -123,7 +121,7 @@ const applyLiveOverrides = () =>
         // `fetchLocaleOverrides` already never rejects; this guards the merge itself.
         .catch(() => undefined);
 
-const handleAdd = (fields: { scope: TLocaleScope; key: string; value: string }) =>
+const handleAdd = (fields: { tenant: string; key: string; value: string }) =>
     localesStore
         .addEntry(tag.value, fields)
         .then(() => {
@@ -145,7 +143,7 @@ const handleAdd = (fields: { scope: TLocaleScope; key: string; value: string }) 
  * @returns The localized headers, re-translated on locale change.
  */
 const tableHeaders = computed<CoreDataTableHeader<LocaleEntry>[]>(() => [
-    { title: t('locale-entries-page.column-scope'), key: 'scope' },
+    { title: t('locale-entries-page.column-tenant'), key: 'tenant' },
     { title: t('locale-entries-page.column-key'), key: 'key' },
     { title: t('locale-entries-page.column-value'), key: 'value', width: '40%' },
     { title: t('locale-entries-page.column-updated-at'), key: 'updatedAt' },
@@ -200,11 +198,11 @@ const handleDelete = (entry: LocaleEntry) => {
 
 const handleImport = (payload: {
     mode: 'merge' | 'replace';
-    scope: TLocaleScope;
+    tenant: string;
     entries: LocaleEntryInput[];
 }) =>
     localesStore
-        .importEntries(tag.value, payload.mode, payload.scope, payload.entries)
+        .importEntries(tag.value, payload.mode, payload.tenant, payload.entries)
         .then((result) => {
             importOpen.value = false;
             addMessage(t('locale-entries-page.success-import', { ...result }));
@@ -219,7 +217,7 @@ const handleImport = (payload: {
         .catch((error: unknown) => notifyErrorMessages(addMessage, error));
 
 /**
- * Downloads the whole language as nested JSON — both scopes, paged to completion.
+ * Downloads the whole language as nested JSON — every tenant, paged to completion.
  *
  * Reads the entries collection rather than the messages route, which is `app`-only and invisible
  * for an inactive language; an export carries what is STORED.
@@ -253,7 +251,7 @@ const handleExport = () =>
             <div v-if="capability" class="flex flex-wrap items-baseline gap-2">
                 <span class="font-mono text-lg font-semibold">{{ capability.tag }}</span>
                 <span :dir="capability.direction">{{ capability.nativeName }}</span>
-                <span class="text-sm opacity-70">
+                <span class="text-sm opacity-70" role="status">
                     {{ t('locale-entries-page.meta-entries', { count: capability.entryCount }) }} ·
                     {{ t('locale-entries-page.meta-revision', { revision: capability.revision }) }}
                 </span>
@@ -292,12 +290,12 @@ const handleExport = () =>
                         data-test="entries-filter-text"
                     />
                     <v-select
-                        v-model="scopeChoice"
-                        :items="scopeFilterOptions"
-                        :label="t('locale-entries-page.filter-scope')"
+                        v-model="tenantChoice"
+                        :items="tenantFilterOptions"
+                        :label="t('locale-entries-page.filter-tenant')"
                         hide-details
                         class="max-w-64"
-                        data-test="entries-filter-scope"
+                        data-test="entries-filter-tenant"
                     />
                     <v-btn type="submit" color="primary">
                         <Search :size="16" class="mr-1" aria-hidden="true" />
@@ -334,25 +332,32 @@ const handleExport = () =>
             v-else
             :headers="tableHeaders"
             :items="pageItems"
+            :caption="t('locale-entries-page.table-caption', { tag })"
             :loading="loading"
             :loading-text="t('generic.loading')"
             :no-data-text="t('generic.no-data')"
         >
-            <template v-slot:[`item.scope`]="{ item }">
+            <template v-slot:[`item.tenant`]="{ item }">
                 <v-chip
                     size="small"
                     variant="tonal"
-                    :color="item.scope === 'api' ? 'tertiary' : 'secondary'"
+                    :color="item.tenant === localesStore.backendTenant ? 'tertiary' : 'secondary'"
                 >
-                    {{ t(`locales-list-page.scope-${item.scope}`) }}
+                    {{ localesStore.tenantLabel(item.tenant) }}
                 </v-chip>
             </template>
 
             <template v-slot:[`item.key`]="{ item }">
-                <!-- Same native-title rule as the board's scope chips. -->
+                <!--
+                    Same native-title rule as the board's tenant chips; the visually-hidden
+                    sibling repeats it for the reader, because a title alone is mouse-only. Not
+                    an `aria-label`: a bare span has no role, and axe (`aria-prohibited-attr`)
+                    rightly refuses to let one carry a name.
+                -->
                 <span class="font-mono text-sm" :title="t('locale-entries-page.key-immutable')">
                     {{ item.key }}
                 </span>
+                <span class="sr-only">{{ t('locale-entries-page.key-immutable') }}</span>
             </template>
 
             <template v-slot:[`item.value`]="{ item }">
@@ -388,6 +393,7 @@ const handleExport = () =>
                     variant="tonal"
                     color="error"
                     data-test="entry-delete"
+                    :aria-label="t('locale-entries-page.button-delete-named', { key: item.key })"
                     :disabled="loading"
                     @click="handleDelete(item)"
                 >
@@ -396,12 +402,22 @@ const handleExport = () =>
             </template>
         </DataTable>
 
-        <ListPagination v-model="pageCurrent" :length="entriesPageTotal" />
+        <ListPagination
+            v-model="pageCurrent"
+            :length="entriesPageTotal"
+            :aria-label="t('locale-entries-page.pagination-label')"
+        />
 
-        <EntryFormDialog v-model="entryFormOpen" :initial-scope="filters.scope" @save="handleAdd" />
+        <EntryFormDialog
+            v-model="entryFormOpen"
+            :tenants="tenants"
+            :initial-tenant="filters.tenant"
+            @save="handleAdd"
+        />
         <EntriesImportDialog
             v-model="importOpen"
-            :initial-scope="filters.scope"
+            :tenants="tenants"
+            :initial-tenant="filters.tenant"
             @import="handleImport"
         />
     </LayoutDefault>

@@ -39,11 +39,13 @@ export const GetHealthResponse = zod.strictObject({
  * Every language this deployment offers, from both tiers, each stating what it can
  * actually do.
  *
- * `scopes` is the field doing the real work. `api` means the API can answer requests
- * in that language — its dictionary is deployed and i18next holds it. `app` means a
- * client dictionary is downloadable from `GET /locales/{locale}/messages`. A language
- * can have either, or both, and the two are not the same capability: a language added
- * through the admin routes below is `app` only until a file is deployed for it.
+ * `tenants` is the field doing the real work: which tenants have words in that
+ * language. The backend tenant means the API can answer requests in it — its
+ * dictionary is deployed and i18next holds it. A frontend tenant means a client
+ * dictionary is downloadable from `GET /locales/{locale}/messages`. A language can
+ * have either, or both, and the two are not the same capability: a language added
+ * through the admin routes below carries only the frontend tenant until a file is
+ * deployed for it.
  *
  * Public, unauthenticated and cacheable. A client that has just failed to reach the
  * API is exactly who needs it.
@@ -54,6 +56,11 @@ export const GetHealthResponse = zod.strictObject({
  * @summary Supported languages
  */
 export const getLocalesResponseDataLocalesItemTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const getLocalesResponseDataLocalesItemTenantsItemMax = 64;
+
+export const getLocalesResponseDataLocalesItemTenantsItemRegExp = new RegExp(
+    '^[a-z0-9][a-z0-9-]*$'
+);
 
 export const getLocalesResponseDataLocalesItemEntryCountMin = 0;
 
@@ -86,17 +93,20 @@ export const GetLocalesResponse = zod.strictObject({
                                     'Writing direction, which a client needs before it can lay the language out. Trivial today because every deployed language is left-to-right; a column rather than a derivation because the day it is not, the alternative is a migration.'
                                 ),
                             active: zod.boolean(),
-                            scopes: zod
+                            tenants: zod
                                 .array(
                                     zod
-                                        .enum(['api', 'app'])
+                                        .string()
+                                        .min(1)
+                                        .max(getLocalesResponseDataLocalesItemTenantsItemMax)
+                                        .regex(getLocalesResponseDataLocalesItemTenantsItemRegExp)
                                         .describe(
-                                            "Which of the two dictionaries something belongs to. `api` is the API's own — the\nbackend's words. `app` is the client's — the frontend's words. They are separate\nkeyspaces, authored by different people, and a key present in both means two\nunrelated strings.\n\nOn a LANGUAGE it reports capability, and the two are independent: `api` — the API\ncan answer requests in it, because a dictionary file is deployed; `app` — a client\ndictionary is downloadable for it.\n\nOn an ENTRY it says which dictionary that row OVERRIDES. `app` rows are what\n`GET \/locales\/{locale}\/messages` serves to a frontend; `api` rows are layered over\nthe API's own deployed files at resolution time.\n"
+                                            "The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant's rows are\nlayered over the API's own deployed files at resolution time.\n"
                                         )
                                 )
                                 .min(1)
                                 .describe(
-                                    'What this language can do. Without it a client seeing `es` in the list cannot tell whether it may send `Accept-Language: es` and get Spanish error messages, or whether it may download a Spanish UI dictionary. Those are different questions.'
+                                    'Which tenants have words in this language. Without it a client seeing `es` in the list cannot tell whether it may send `Accept-Language: es` and get Spanish error messages (the backend tenant), or whether it may download a Spanish UI dictionary (a frontend tenant). Those are different questions.'
                                 ),
                             source: zod
                                 .enum(['static', 'dynamic', 'both'])
@@ -109,7 +119,7 @@ export const GetLocalesResponse = zod.strictObject({
                             revision: zod.number().min(getLocalesResponseDataLocalesItemRevisionMin)
                         })
                         .describe(
-                            'One language as the manifest describes it: a merge of whatever the two tiers each know about it. A tag present in both appears once, with both scopes.'
+                            'One language as the manifest describes it: a merge of whatever the two tiers each know about it. A tag present in both appears once, carrying both tenants.'
                         )
                 )
                 .describe('Every language, ordered by tag so the response is stable.'),
@@ -135,7 +145,8 @@ export const GetLocalesResponse = zod.strictObject({
  * Registers a language in the dynamic tier so entries can be translated into it.
  *
  * This does NOT teach the API to answer in the new language — that needs a dictionary
- * file and a deploy. A language created here is `app`-scoped until one exists.
+ * file and a deploy. A language created here carries only the frontend tenant until
+ * one exists.
  * @summary Add a language
  */
 export const createLocaleBodyTagRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
@@ -200,6 +211,53 @@ export const CreateLocaleResponse = zod.strictObject({
         .describe(
             'A language registered in the DYNAMIC tier. Its existence means entries can be translated into it and a client can download the result — never that the API can answer a request in it, which is decided by a deployed file and nothing else.'
         )
+});
+
+/**
+ * Every tenant this deployment holds words for — the keyspaces an entry can belong
+ * to. Configuration, not data: the ids come from the API's environment, so a client
+ * cannot invent one and an admin screen need not hardcode them.
+ *
+ * `kind` is what a client uses the list for. The `backend` tenant is this API's own
+ * copy — rows under it are layered over the deployed files at resolution time and
+ * never leave the API. A `frontend` tenant is a client's copy, downloadable from
+ * `GET /locales/{locale}/messages?tenant=`.
+ *
+ * Public and cacheable, like every other locale read.
+ * @summary Translation tenants
+ */
+export const getLocaleTenantsResponseDataTenantsItemIdMax = 64;
+
+export const getLocaleTenantsResponseDataTenantsItemIdRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+
+export const GetLocaleTenantsResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        tenants: zod
+            .array(
+                zod
+                    .strictObject({
+                        id: zod
+                            .string()
+                            .min(1)
+                            .max(getLocaleTenantsResponseDataTenantsItemIdMax)
+                            .regex(getLocaleTenantsResponseDataTenantsItemIdRegExp)
+                            .describe(
+                                "The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant's rows are\nlayered over the API's own deployed files at resolution time.\n"
+                            ),
+                        label: zod.string().describe('A human name, for an admin screen.'),
+                        kind: zod
+                            .enum(['frontend', 'backend'])
+                            .describe(
+                                "What a tenant is. `backend` is this API's own copy, applied internally and never served; `frontend` is a client's copy, downloadable per language."
+                            )
+                    })
+                    .describe('One tenant as the registry describes it.')
+            )
+            .min(1)
+    })
 });
 
 /**
@@ -346,10 +404,11 @@ export const DeleteLocaleResponse = zod.strictObject({
  * same nested shape `GET /locales/{locale}` serves — so a client has ONE merge path
  * for both tiers rather than two.
  *
- * `app`-scoped rows ONLY — the client's own keyspace. The API's half of the
- * collection (`api` rows) is layered over its deployed files internally and is never
- * served here: a frontend that merged it would be adopting the backend's keys as its
- * own.
+ * ONE frontend tenant's rows — the client's own keyspace, the one named by `tenant`
+ * or the deployment's default frontend tenant when omitted. The backend tenant is
+ * refused here with a 404: its rows are layered over the deployed files internally
+ * and never leave the API, because a frontend that merged them would be adopting the
+ * backend's keys as its own.
  *
  * OVERRIDES, not a dictionary: a client merges these over what it bundles, key by
  * key, so a key nobody has edited keeps its bundled value. A language the client does
@@ -371,6 +430,22 @@ export const GetLocaleMessagesParams = zod.strictObject({
         .string()
         .regex(getLocaleMessagesPathLocaleRegExp)
         .describe('A language tag from `GET \/locales`.')
+});
+
+export const getLocaleMessagesQueryTenantMax = 64;
+
+export const getLocaleMessagesQueryTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+
+export const GetLocaleMessagesQueryParams = zod.strictObject({
+    tenant: zod
+        .string()
+        .min(1)
+        .max(getLocaleMessagesQueryTenantMax)
+        .regex(getLocaleMessagesQueryTenantRegExp)
+        .optional()
+        .describe(
+            "Which frontend tenant's dictionary to build. Omitted, the deployment's default frontend tenant — a client paired one-to-one with this API never needs to say."
+        )
 });
 
 export const getLocaleMessagesResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
@@ -422,6 +497,10 @@ export const listLocaleEntriesQueryPageDefault = 1;
 export const listLocaleEntriesQueryPageSizeDefault = 10;
 export const listLocaleEntriesQueryPageSizeMax = 100;
 
+export const listLocaleEntriesQueryTenantMax = 64;
+
+export const listLocaleEntriesQueryTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+
 export const ListLocaleEntriesQueryParams = zod.strictObject({
     page: zod
         .number()
@@ -434,16 +513,24 @@ export const ListLocaleEntriesQueryParams = zod.strictObject({
         .max(listLocaleEntriesQueryPageSizeMax)
         .default(listLocaleEntriesQueryPageSizeDefault),
     text: zod.string().min(1).optional(),
-    scope: zod
-        .enum(['api', 'app'])
+    tenant: zod
+        .string()
+        .min(1)
+        .max(listLocaleEntriesQueryTenantMax)
+        .regex(listLocaleEntriesQueryTenantRegExp)
         .optional()
         .describe(
-            'Restrict the listing to one dictionary. Omitted lists both, which is what an admin screen wants before the operator has picked a side.'
+            "Restrict the listing to one tenant's dictionary. Omitted lists every tenant, which is what an admin screen wants before the operator has picked one."
         )
 });
 
 export const listLocaleEntriesResponseDataItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
+export const listLocaleEntriesResponseDataItemsItemTenantMax = 64;
+
+export const listLocaleEntriesResponseDataItemsItemTenantRegExp = new RegExp(
+    '^[a-z0-9][a-z0-9-]*$'
 );
 export const listLocaleEntriesResponseDataMetaPageDefault = 1;
 
@@ -469,10 +556,13 @@ export const ListLocaleEntriesResponse = zod.strictObject({
                         .describe(
                             'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
                         ),
-                    scope: zod
-                        .enum(['api', 'app'])
+                    tenant: zod
+                        .string()
+                        .min(1)
+                        .max(listLocaleEntriesResponseDataItemsItemTenantMax)
+                        .regex(listLocaleEntriesResponseDataItemsItemTenantRegExp)
                         .describe(
-                            "Which of the two dictionaries something belongs to. `api` is the API's own — the\nbackend's words. `app` is the client's — the frontend's words. They are separate\nkeyspaces, authored by different people, and a key present in both means two\nunrelated strings.\n\nOn a LANGUAGE it reports capability, and the two are independent: `api` — the API\ncan answer requests in it, because a dictionary file is deployed; `app` — a client\ndictionary is downloadable for it.\n\nOn an ENTRY it says which dictionary that row OVERRIDES. `app` rows are what\n`GET \/locales\/{locale}\/messages` serves to a frontend; `api` rows are layered over\nthe API's own deployed files at resolution time.\n"
+                            "The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant's rows are\nlayered over the API's own deployed files at resolution time.\n"
                         ),
                     key: zod
                         .string()
@@ -484,7 +574,7 @@ export const ListLocaleEntriesResponse = zod.strictObject({
                     updatedAt: zod.iso.datetime({ offset: true }).optional()
                 })
                 .describe(
-                    "One translated string: one row per (language, scope, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.\n`scope` is part of the identity, not a label on it: the two dictionaries both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in the client's. Without it in the key, one would overwrite the other."
+                    "One translated string: one row per (language, tenant, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.\n`tenant` is part of the identity, not a label on it: two tenants may both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in a client's. Without it in the key, one would overwrite the other."
                 )
         ),
         meta: zod.strictObject({
@@ -520,17 +610,27 @@ export const CreateLocaleEntryParams = zod.strictObject({
         .describe('A language tag from `GET \/locales`.')
 });
 
+export const createLocaleEntryBodyTenantMax = 64;
+
+export const createLocaleEntryBodyTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+
 export const CreateLocaleEntryBody = zod.strictObject({
-    scope: zod
-        .enum(['api', 'app'])
+    tenant: zod
+        .string()
+        .min(1)
+        .max(createLocaleEntryBodyTenantMax)
+        .regex(createLocaleEntryBodyTenantRegExp)
         .describe(
-            "Which of the two dictionaries something belongs to. `api` is the API's own — the\nbackend's words. `app` is the client's — the frontend's words. They are separate\nkeyspaces, authored by different people, and a key present in both means two\nunrelated strings.\n\nOn a LANGUAGE it reports capability, and the two are independent: `api` — the API\ncan answer requests in it, because a dictionary file is deployed; `app` — a client\ndictionary is downloadable for it.\n\nOn an ENTRY it says which dictionary that row OVERRIDES. `app` rows are what\n`GET \/locales\/{locale}\/messages` serves to a frontend; `api` rows are layered over\nthe API's own deployed files at resolution time.\n"
+            "The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant's rows are\nlayered over the API's own deployed files at resolution time.\n"
         ),
     key: zod.string().min(1),
     value: zod.string()
 });
 
 export const createLocaleEntryResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const createLocaleEntryResponseDataTenantMax = 64;
+
+export const createLocaleEntryResponseDataTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 
 export const CreateLocaleEntryResponse = zod.strictObject({
     success: zod.literal(true),
@@ -545,10 +645,13 @@ export const CreateLocaleEntryResponse = zod.strictObject({
                 .describe(
                     'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
                 ),
-            scope: zod
-                .enum(['api', 'app'])
+            tenant: zod
+                .string()
+                .min(1)
+                .max(createLocaleEntryResponseDataTenantMax)
+                .regex(createLocaleEntryResponseDataTenantRegExp)
                 .describe(
-                    "Which of the two dictionaries something belongs to. `api` is the API's own — the\nbackend's words. `app` is the client's — the frontend's words. They are separate\nkeyspaces, authored by different people, and a key present in both means two\nunrelated strings.\n\nOn a LANGUAGE it reports capability, and the two are independent: `api` — the API\ncan answer requests in it, because a dictionary file is deployed; `app` — a client\ndictionary is downloadable for it.\n\nOn an ENTRY it says which dictionary that row OVERRIDES. `app` rows are what\n`GET \/locales\/{locale}\/messages` serves to a frontend; `api` rows are layered over\nthe API's own deployed files at resolution time.\n"
+                    "The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant's rows are\nlayered over the API's own deployed files at resolution time.\n"
                 ),
             key: zod
                 .string()
@@ -560,7 +663,7 @@ export const CreateLocaleEntryResponse = zod.strictObject({
             updatedAt: zod.iso.datetime({ offset: true }).optional()
         })
         .describe(
-            "One translated string: one row per (language, scope, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.\n`scope` is part of the identity, not a label on it: the two dictionaries both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in the client's. Without it in the key, one would overwrite the other."
+            "One translated string: one row per (language, tenant, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.\n`tenant` is part of the identity, not a label on it: two tenants may both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in a client's. Without it in the key, one would overwrite the other."
         )
 });
 
@@ -586,12 +689,19 @@ export const ReplaceLocaleEntriesParams = zod.strictObject({
         .describe('A language tag from `GET \/locales`.')
 });
 
+export const replaceLocaleEntriesBodyTenantMax = 64;
+
+export const replaceLocaleEntriesBodyTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+
 export const ReplaceLocaleEntriesBody = zod
     .strictObject({
-        scope: zod
-            .enum(['api', 'app'])
+        tenant: zod
+            .string()
+            .min(1)
+            .max(replaceLocaleEntriesBodyTenantMax)
+            .regex(replaceLocaleEntriesBodyTenantRegExp)
             .describe(
-                "Which of the two dictionaries something belongs to. `api` is the API's own — the\nbackend's words. `app` is the client's — the frontend's words. They are separate\nkeyspaces, authored by different people, and a key present in both means two\nunrelated strings.\n\nOn a LANGUAGE it reports capability, and the two are independent: `api` — the API\ncan answer requests in it, because a dictionary file is deployed; `app` — a client\ndictionary is downloadable for it.\n\nOn an ENTRY it says which dictionary that row OVERRIDES. `app` rows are what\n`GET \/locales\/{locale}\/messages` serves to a frontend; `api` rows are layered over\nthe API's own deployed files at resolution time.\n"
+                "The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant's rows are\nlayered over the API's own deployed files at resolution time.\n"
             ),
         entries: zod.array(
             zod
@@ -605,7 +715,7 @@ export const ReplaceLocaleEntriesBody = zod
         )
     })
     .describe(
-        'The COMPLETE set of entries for this language IN ONE SCOPE. Anything already stored under that scope and not named here is deleted; the other scope is untouched.\nScope is named once for the batch rather than per row, so a replace cannot half- apply across the two dictionaries — the operation that deletes what it was not sent has to know exactly what it is allowed to delete.'
+        'The COMPLETE set of entries for this language IN ONE TENANT. Anything already stored under that tenant and not named here is deleted; the other tenants are untouched.\nThe tenant is named once for the batch rather than per row, so a replace cannot half-apply across dictionaries — the operation that deletes what it was not sent has to know exactly what it is allowed to delete.'
     );
 
 export const replaceLocaleEntriesResponseDataCreatedMin = 0;
@@ -649,12 +759,19 @@ export const MergeLocaleEntriesParams = zod.strictObject({
         .describe('A language tag from `GET \/locales`.')
 });
 
+export const mergeLocaleEntriesBodyTenantMax = 64;
+
+export const mergeLocaleEntriesBodyTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
+
 export const MergeLocaleEntriesBody = zod
     .strictObject({
-        scope: zod
-            .enum(['api', 'app'])
+        tenant: zod
+            .string()
+            .min(1)
+            .max(mergeLocaleEntriesBodyTenantMax)
+            .regex(mergeLocaleEntriesBodyTenantRegExp)
             .describe(
-                "Which of the two dictionaries something belongs to. `api` is the API's own — the\nbackend's words. `app` is the client's — the frontend's words. They are separate\nkeyspaces, authored by different people, and a key present in both means two\nunrelated strings.\n\nOn a LANGUAGE it reports capability, and the two are independent: `api` — the API\ncan answer requests in it, because a dictionary file is deployed; `app` — a client\ndictionary is downloadable for it.\n\nOn an ENTRY it says which dictionary that row OVERRIDES. `app` rows are what\n`GET \/locales\/{locale}\/messages` serves to a frontend; `api` rows are layered over\nthe API's own deployed files at resolution time.\n"
+                "The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant's rows are\nlayered over the API's own deployed files at resolution time.\n"
             ),
         entries: zod
             .array(
@@ -670,7 +787,7 @@ export const MergeLocaleEntriesBody = zod
             .min(1)
     })
     .describe(
-        'Entries to upsert into ONE scope. Anything already stored is left exactly as it was.'
+        'Entries to upsert into ONE tenant. Anything already stored is left exactly as it was.'
     );
 
 export const mergeLocaleEntriesResponseDataCreatedMin = 0;
@@ -718,6 +835,9 @@ export const UpdateLocaleEntryBody = zod.strictObject({
 });
 
 export const updateLocaleEntryResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
+export const updateLocaleEntryResponseDataTenantMax = 64;
+
+export const updateLocaleEntryResponseDataTenantRegExp = new RegExp('^[a-z0-9][a-z0-9-]*$');
 
 export const UpdateLocaleEntryResponse = zod.strictObject({
     success: zod.literal(true),
@@ -732,10 +852,13 @@ export const UpdateLocaleEntryResponse = zod.strictObject({
                 .describe(
                     'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
                 ),
-            scope: zod
-                .enum(['api', 'app'])
+            tenant: zod
+                .string()
+                .min(1)
+                .max(updateLocaleEntryResponseDataTenantMax)
+                .regex(updateLocaleEntryResponseDataTenantRegExp)
                 .describe(
-                    "Which of the two dictionaries something belongs to. `api` is the API's own — the\nbackend's words. `app` is the client's — the frontend's words. They are separate\nkeyspaces, authored by different people, and a key present in both means two\nunrelated strings.\n\nOn a LANGUAGE it reports capability, and the two are independent: `api` — the API\ncan answer requests in it, because a dictionary file is deployed; `app` — a client\ndictionary is downloadable for it.\n\nOn an ENTRY it says which dictionary that row OVERRIDES. `app` rows are what\n`GET \/locales\/{locale}\/messages` serves to a frontend; `api` rows are layered over\nthe API's own deployed files at resolution time.\n"
+                    "The id of one tenant — one keyspace, authored by one team. Which ids exist is\nconfiguration, listed by `GET \/locales\/tenants`; a row naming an unknown tenant is\nrefused with a 422.\n\nOn a LANGUAGE it reports capability: the backend tenant means the API can answer\nrequests in it, because a dictionary file is deployed; a frontend tenant means a\nclient dictionary is downloadable for it.\n\nOn an ENTRY it says whose dictionary that row OVERRIDES. A frontend tenant's rows\nare what `GET \/locales\/{locale}\/messages` serves; the backend tenant's rows are\nlayered over the API's own deployed files at resolution time.\n"
                 ),
             key: zod
                 .string()
@@ -747,7 +870,7 @@ export const UpdateLocaleEntryResponse = zod.strictObject({
             updatedAt: zod.iso.datetime({ offset: true }).optional()
         })
         .describe(
-            "One translated string: one row per (language, scope, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.\n`scope` is part of the identity, not a label on it: the two dictionaries both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in the client's. Without it in the key, one would overwrite the other."
+            "One translated string: one row per (language, tenant, key). That shape makes every operation this feature needs a single indexed query — add is an insert, edit is an update, a whole dictionary is one find — and adding a language touches nothing that already exists.\n`tenant` is part of the identity, not a label on it: two tenants may both declare a top-level `generic`, so `generic.error-internal` names one string in the API's copy and a different one in a client's. Without it in the key, one would overwrite the other."
         )
 });
 

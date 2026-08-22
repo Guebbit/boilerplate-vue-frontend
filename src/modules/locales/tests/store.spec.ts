@@ -17,7 +17,7 @@ const CAPABILITY = {
     nativeName: 'Español',
     direction: 'ltr',
     active: true,
-    scopes: ['app'],
+    tenants: ['demo-fe'],
     source: 'dynamic',
     entryCount: 2,
     revision: 3
@@ -37,7 +37,7 @@ const LANGUAGE = {
 const ENTRY = {
     id: 'locale-entry-1',
     locale: 'es',
-    scope: 'app',
+    tenant: 'demo-fe',
     key: 'generic.search',
     value: 'Buscar'
 };
@@ -70,6 +70,14 @@ beforeEach(() => {
         },
         'POST /locales': { data: LANGUAGE },
         'PUT /locales/es': { data: LANGUAGE },
+        'GET /locales/tenants': {
+            data: {
+                tenants: [
+                    { id: 'demo-be', label: 'API', kind: 'backend' },
+                    { id: 'demo-fe', label: 'Frontend', kind: 'frontend' }
+                ]
+            }
+        },
         'DELETE /locales/es': { data: { message: 'Deleted' } },
         'POST /locales/es/entries': { data: ENTRY },
         'PUT /locales/es/entries/locale-entry-1': { data: { ...ENTRY, value: 'Cercar' } },
@@ -126,7 +134,7 @@ describe('entry writes', () => {
     it('adds an entry against the language named in the call', () => {
         const store = useLocalesStore();
         return store
-            .addEntry('es', { scope: 'app', key: 'generic.search', value: 'Buscar' })
+            .addEntry('es', { tenant: 'demo-fe', key: 'generic.search', value: 'Buscar' })
             .then((entry) => {
                 expect(entry).toEqual(ENTRY);
                 expect(requestedUrls()).toEqual(['POST /locales/es/entries']);
@@ -145,7 +153,7 @@ describe('entry writes', () => {
     it('routes a merge to PATCH and answers the counted result', () => {
         const store = useLocalesStore();
         return store
-            .importEntries('es', 'merge', 'app', [{ key: 'a', value: 'b' }])
+            .importEntries('es', 'merge', 'demo-fe', [{ key: 'a', value: 'b' }])
             .then((result) => {
                 expect(requestedUrls()).toEqual(['PATCH /locales/es/entries']);
                 expect(result?.removed).toBe(0);
@@ -155,19 +163,24 @@ describe('entry writes', () => {
     it('routes a replace to PUT — the method carries the deleting semantics', () => {
         const store = useLocalesStore();
         return store
-            .importEntries('es', 'replace', 'app', [{ key: 'a', value: 'b' }])
+            .importEntries('es', 'replace', 'demo-fe', [{ key: 'a', value: 'b' }])
             .then((result) => {
                 expect(requestedUrls()).toEqual(['PUT /locales/es/entries']);
                 expect(result?.removed).toBe(5);
             });
     });
 
-    it('names the scope once for the whole batch, exactly as the contract shapes it', () => {
+    it('names the tenant once for the whole batch, exactly as the contract shapes it', () => {
         const store = useLocalesStore();
-        return store.importEntries('es', 'merge', 'api', [{ key: 'a', value: 'b' }]).then(() => {
-            const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
-            expect(call.data).toEqual({ scope: 'api', entries: [{ key: 'a', value: 'b' }] });
-        });
+        return store
+            .importEntries('es', 'merge', 'demo-be', [{ key: 'a', value: 'b' }])
+            .then(() => {
+                const call = vi.mocked(orvalMutator).mock.calls[0][0] as { data?: unknown };
+                expect(call.data).toEqual({
+                    tenant: 'demo-be',
+                    entries: [{ key: 'a', value: 'b' }]
+                });
+            });
     });
 });
 
@@ -201,7 +214,7 @@ describe('entry search and removal', () => {
     it('searches the language the filters name, through the toolkit search cache', () => {
         const store = useLocalesStore();
         responses['GET /locales/es/entries'] = { data: { items: [ENTRY] } };
-        store.filters = { tag: 'es', text: 'bus', scope: 'app' };
+        store.filters = { tag: 'es', text: 'bus', tenant: 'demo-fe' };
         return store
             .watchSearchEntries()
             .search()
@@ -290,4 +303,21 @@ describe('fetchBundledDictionary', () => {
             .then((dictionary) => {
                 expect(dictionary).toEqual({});
             }));
+});
+
+describe('the tenant registry', () => {
+    it('loads the tenants and names the backend one', () => {
+        const store = useLocalesStore();
+        return store.fetchTenants().then(() => {
+            expect(store.tenants.map(({ id }) => id)).toEqual(['demo-be', 'demo-fe']);
+            expect(store.backendTenant).toBe('demo-be');
+            expect(store.tenantLabel('demo-be')).toBe('API');
+            // A stranger renders as its id rather than as nothing.
+            expect(store.tenantLabel('nobody')).toBe('nobody');
+        });
+    });
+
+    it("knows this build's own tenant without asking the API", () => {
+        expect(useLocalesStore().ownTenant).toBe('demo-fe');
+    });
 });

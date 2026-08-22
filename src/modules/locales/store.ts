@@ -1,9 +1,10 @@
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureCrudApi } from '@guebbit/vue-toolkit';
 import {
     getLocales,
     getLocaleDictionary,
+    getLocaleTenants,
     createLocale,
     updateLocale as apiUpdateLocale,
     deleteLocale,
@@ -17,7 +18,7 @@ import {
 import type {
     LocaleCapability,
     LocaleEntry,
-    LocaleScope,
+    LocaleTenantDescriptor,
     CreateLocaleRequest,
     UpdateLocaleRequest,
     CreateLocaleEntryRequest,
@@ -26,6 +27,8 @@ import type {
 } from '@types';
 import { flattenDictionary } from './dictionaries.ts';
 import { loadBundledDictionary, type TranslationDictionaries } from '@/infrastructure/i18n';
+import { localeTenant } from '@/infrastructure/i18n/locale-overrides.ts';
+import { LocaleTenantKind } from '@types';
 
 /**
  * Search criteria for one language's entries.
@@ -37,7 +40,7 @@ import { loadBundledDictionary, type TranslationDictionaries } from '@/infrastru
 export interface LocaleEntriesFilters {
     tag?: string;
     text?: string;
-    scope?: LocaleScope;
+    tenant?: string;
 }
 
 /**
@@ -60,7 +63,7 @@ export interface LocaleEntriesFilters {
 /**
  * The API's OWN deployed dictionary for one language, flattened to dotted keys — tier 1.
  *
- * What an `api`-scoped entry OVERRIDES, so the dictionary board can show the deployed text
+ * What a backend-tenant entry OVERRIDES, so the dictionary board can show the deployed text
  * under an empty cell: a translator deciding whether to override a string needs to see the
  * string. Never merged into anything — it is the backend's keyspace, read here only to be
  * displayed beside the rows that shadow it.
@@ -83,7 +86,7 @@ const fetchApiDictionary = (tag: string): Promise<Record<string, string>> =>
         .catch(() => ({}));
 
 /**
- * This frontend's BUNDLED dictionary for one language, flattened — what an `app`-scoped entry
+ * This frontend's BUNDLED dictionary for one language, flattened — what an entry of its own tenant
  * overrides. Empty for a language this build does not ship. Never rejects.
  *
  * @param tag - Which language.
@@ -116,7 +119,7 @@ export const useLocalesStore = defineStore('locales', () => {
                     page,
                     pageSize: size,
                     text: searchFilters.text,
-                    scope: searchFilters.scope
+                    tenant: searchFilters.tenant
                 }).then((response) => {
                     entriesPageTotal.value = response.data.meta.totalPages;
                     return response.data.items;
@@ -137,6 +140,45 @@ export const useLocalesStore = defineStore('locales', () => {
 
     /** The manifest: every language, both tiers merged, as last fetched. */
     const capabilities = ref<LocaleCapability[]>([]);
+
+    /**
+     * The tenant registry: every keyspace the API holds words for, as last fetched.
+     *
+     * Configuration read back, not something this app decides — the ids come from the API's
+     * environment, and a screen that hardcoded them would accept a tenant the API refuses.
+     */
+    const tenants = ref<LocaleTenantDescriptor[]>([]);
+
+    /** This build's own tenant id — whose dictionary the running app downloads. */
+    const ownTenant = localeTenant();
+
+    /** The backend's tenant id, from the registry; absent until it loads. */
+    const backendTenant = computed(
+        () => tenants.value.find(({ kind }) => kind === LocaleTenantKind.backend)?.id
+    );
+
+    /**
+     * A tenant's display name, from the registry — the id itself when the registry has not
+     * answered or does not know it, so a row never renders blank.
+     *
+     * @param id - The tenant id.
+     * @returns The label to show.
+     */
+    const tenantLabel = (id: string): string =>
+        tenants.value.find((tenant) => tenant.id === id)?.label ?? id;
+
+    /**
+     * Loads the tenant registry.
+     *
+     * @returns A promise resolving with the tenants.
+     */
+    const fetchTenants = () =>
+        fetchAny(() =>
+            getLocaleTenants().then((response) => {
+                tenants.value = response.data.tenants;
+                return tenants.value;
+            })
+        );
 
     /** The deployment's default language, from the manifest. */
     const defaultLocale = ref<string>();
@@ -209,7 +251,7 @@ export const useLocalesStore = defineStore('locales', () => {
      * rethrown untouched so the view can show it verbatim.
      *
      * @param tag - Which language.
-     * @param body - Scope, key and value of the new row.
+     * @param body - Tenant, key and value of the new row.
      * @returns A promise resolving with the created entry.
      */
     const addEntry = (tag: string, body: CreateLocaleEntryRequest) =>
@@ -249,28 +291,28 @@ export const useLocalesStore = defineStore('locales', () => {
         deleteTarget(() => deleteLocaleEntry(tag, entryId), entryId);
 
     /**
-     * Bulk import into ONE scope, with the semantics spelled by the method it maps to.
+     * Bulk import into ONE tenant, with the semantics spelled by the method it maps to.
      *
-     * `merge` upserts what is sent and deletes nothing; `replace` makes the scope exactly what the
+     * `merge` upserts what is sent and deletes nothing; `replace` makes the tenant exactly what the
      * body carries — what is not sent is DELETED. The choice lives in the HTTP method on purpose,
      * so this wrapper keeps the two words rather than a boolean someone can pass inverted.
      *
      * @param tag - Which language.
      * @param mode - `merge` or `replace`.
-     * @param scope - Which of the two dictionaries the batch belongs to.
+     * @param tenant - Whose dictionary the batch belongs to.
      * @param entries - The rows, flat and dotted.
      * @returns A promise resolving with what the import actually did, counted.
      */
     const importEntries = (
         tag: string,
         mode: 'merge' | 'replace',
-        scope: LocaleScope,
+        tenant: string,
         entries: LocaleEntryInput[]
     ): Promise<LocaleImportResult | undefined> =>
         fetchAny(() =>
             (mode === 'replace'
-                ? replaceLocaleEntries(tag, { scope, entries })
-                : mergeLocaleEntries(tag, { scope, entries })
+                ? replaceLocaleEntries(tag, { tenant, entries })
+                : mergeLocaleEntries(tag, { tenant, entries })
             ).then((response) => {
                 // An import rewrote an unknown slice of the table; every cached page is stale.
                 resetSearches();
@@ -283,18 +325,18 @@ export const useLocalesStore = defineStore('locales', () => {
      * a nested dictionary.
      *
      * Reads the entries collection rather than `GET /locales/{tag}/messages` deliberately: the
-     * messages route serves `app` rows only and 404s for an inactive language, while an export
-     * should carry exactly what is stored, both scopes, visible or not.
+     * messages route serves one frontend tenant only and 404s for an inactive language, while an
+     * export should carry exactly what is stored, every tenant, visible or not.
      *
      * @param tag - Which language.
-     * @param scope - Narrow to one dictionary; omitted, both.
+     * @param tenant - Narrow to one tenant's dictionary; omitted, every tenant.
      * @returns A promise resolving with every matching row.
      */
-    const fetchAllEntries = (tag: string, scope?: LocaleScope) =>
+    const fetchAllEntries = (tag: string, tenant?: string) =>
         fetchAny(() => {
             const pageSize = 100;
             const collect = (page: number, soFar: LocaleEntry[]): Promise<LocaleEntry[]> =>
-                listLocaleEntries(tag, { page, pageSize, scope }).then((response) => {
+                listLocaleEntries(tag, { page, pageSize, tenant }).then((response) => {
                     const items = [...soFar, ...response.data.items];
                     const { totalPages } = response.data.meta;
                     return page < totalPages ? collect(page + 1, items) : items;
@@ -304,6 +346,11 @@ export const useLocalesStore = defineStore('locales', () => {
 
     return {
         capabilities,
+        tenants,
+        ownTenant,
+        backendTenant,
+        tenantLabel,
+        fetchTenants,
         defaultLocale,
         fallbackLocale,
         fetchLanguages,

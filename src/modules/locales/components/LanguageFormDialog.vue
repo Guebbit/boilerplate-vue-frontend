@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { watch, computed } from 'vue';
+import { watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
 import { localesLanguageEditSchema, localesLanguageSchema } from '@/modules/locales/schemas.ts';
@@ -37,12 +37,15 @@ const { t } = useI18n();
 
 const isEdit = computed(() => props.language !== undefined);
 
+/** The heading's id, so the dialog is announced by its title rather than as "dialog". */
+const titleId = useId();
+
 /*
  * Two schemas rather than one with a conditional tag rule: editing shows the tag disabled — it is
  * what every entry references, so the API keeps it immutable — and a field that is sometimes
  * required is a field nobody can read the rule of.
  */
-const { form, formErrors, showFormErrors, isValid, handleSubmit, setForm } = useAppForm<{
+const { form, formErrors, showFormErrors, handleSubmit, setForm } = useAppForm<{
     tag: string;
     name: string;
     nativeName: string;
@@ -77,11 +80,11 @@ const handleSave = () => handleSubmit((fields) => emit('save', fields));
 </script>
 
 <template>
-    <v-dialog v-model="isOpen" max-width="480">
+    <v-dialog v-model="isOpen" max-width="480" :aria-labelledby="titleId">
         <v-card class="p-5" data-test="language-form">
-            <h3 class="mb-1 text-lg font-semibold">
+            <h2 :id="titleId" class="mb-1 text-lg font-semibold">
                 {{ isEdit ? t('locale-form.title-edit') : t('locale-form.title-create') }}
-            </h3>
+            </h2>
             <p v-if="!isEdit" class="mb-4 text-sm opacity-70">
                 {{ t('locale-form.hint-create') }}
             </p>
@@ -126,12 +129,11 @@ const handleSave = () => handleSubmit((fields) => emit('save', fields));
                     <v-btn variant="tonal" @click="isOpen = false">
                         {{ t('locale-form.button-cancel') }}
                     </v-btn>
-                    <v-btn
-                        type="submit"
-                        color="primary"
-                        :disabled="!isValid"
-                        data-test="language-save"
-                    >
+                    <!--
+                        Never disabled on validity: a submit that cannot be pressed explains
+                        nothing, while `handleSubmit` shows the messages and says so.
+                    -->
+                    <v-btn type="submit" color="primary" data-test="language-save">
                         {{ t('locale-form.button-save') }}
                     </v-btn>
                 </div>

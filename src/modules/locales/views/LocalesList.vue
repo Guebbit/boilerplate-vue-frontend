@@ -36,7 +36,7 @@ import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 const localesStore = useLocalesStore();
-const { capabilities, defaultLocale, fallbackLocale, loading } = storeToRefs(localesStore);
+const { capabilities, tenants, defaultLocale, fallbackLocale, loading } = storeToRefs(localesStore);
 
 const formOpen = ref(false);
 const editing = ref<LocaleCapability | undefined>();
@@ -46,7 +46,7 @@ const tableHeaders = computed<CoreDataTableHeader<LocaleCapability>[]>(() => [
     { title: t('locales-list-page.column-name'), key: 'name' },
     { title: t('locales-list-page.column-native-name'), key: 'nativeName' },
     { title: t('locales-list-page.column-direction'), key: 'direction' },
-    { title: t('locales-list-page.column-scopes'), key: 'scopes' },
+    { title: t('locales-list-page.column-tenants'), key: 'tenants' },
     { title: t('locales-list-page.column-source'), key: 'source' },
     { title: t('locales-list-page.column-entries'), key: 'entryCount' },
     { title: t('locales-list-page.column-revision'), key: 'revision' },
@@ -130,8 +130,13 @@ const handleDelete = (language: LocaleCapability) => {
         });
 };
 
+/** What kind of tenant an id is, for the chip's colour and hint; `frontend` until the registry answers. */
+const tenantKind = (id: string) =>
+    tenants.value.find((tenant) => tenant.id === id)?.kind ?? 'frontend';
+
 onMounted(() => {
     void localesStore.fetchLanguages();
+    void localesStore.fetchTenants();
 });
 </script>
 
@@ -167,6 +172,7 @@ onMounted(() => {
             v-else
             :headers="tableHeaders"
             :items="capabilities"
+            :caption="t('locales-list-page.table-caption')"
             :loading="loading"
             :loading-text="t('generic.loading')"
             :no-data-text="t('generic.no-data')"
@@ -176,7 +182,7 @@ onMounted(() => {
                 <span class="font-mono">{{ item.tag }}</span>
                 <v-chip
                     v-if="item.tag === defaultLocale"
-                    size="x-small"
+                    size="small"
                     variant="tonal"
                     color="primary"
                     class="ml-1"
@@ -185,7 +191,7 @@ onMounted(() => {
                 </v-chip>
                 <v-chip
                     v-else-if="item.tag === fallbackLocale"
-                    size="x-small"
+                    size="small"
                     variant="tonal"
                     class="ml-1"
                 >
@@ -201,23 +207,27 @@ onMounted(() => {
                 {{ t(`locales-list-page.direction-${item.direction}`) }}
             </template>
 
-            <template v-slot:[`item.scopes`]="{ item }">
+            <template v-slot:[`item.tenants`]="{ item }">
                 <div class="flex gap-1">
                     <!--
-                        A native title rather than a v-tooltip: the two scopes are the field doing
+                        A native title rather than a v-tooltip: the tenants are the field doing
                         the real work, and the explanation has to reach a screen reader too — an
-                        ARIA tooltip node with no name fails axe.
+                        ARIA tooltip node with no name fails axe. A non-interactive chip renders
+                        as a role-less span, so the explanation is a visually-hidden sibling
+                        rather than an `aria-label` (`aria-prohibited-attr`).
                     -->
                     <v-chip
-                        v-for="scope in item.scopes"
-                        :key="scope"
+                        v-for="tenant in item.tenants"
+                        :key="tenant"
                         size="small"
                         variant="tonal"
-                        :color="scope === 'api' ? 'tertiary' : 'secondary'"
-                        :title="t(`locales-list-page.scope-${scope}-hint`)"
-                        :aria-label="t(`locales-list-page.scope-${scope}-hint`)"
+                        :color="tenantKind(tenant) === 'backend' ? 'tertiary' : 'secondary'"
+                        :title="t(`locales-list-page.tenant-${tenantKind(tenant)}-hint`)"
                     >
-                        {{ t(`locales-list-page.scope-${scope}`) }}
+                        {{ localesStore.tenantLabel(tenant) }}
+                        <span class="sr-only">
+                            {{ t(`locales-list-page.tenant-${tenantKind(tenant)}-hint`) }}
+                        </span>
                     </v-chip>
                 </div>
             </template>
@@ -247,6 +257,7 @@ onMounted(() => {
                         size="small"
                         variant="tonal"
                         data-test="row-entries"
+                        :aria-label="t('locales-list-page.button-entries-named', { tag: item.tag })"
                         :to="
                             routerLinkI18n({
                                 name: 'LocaleEntries',
@@ -261,6 +272,7 @@ onMounted(() => {
                         variant="tonal"
                         color="secondary"
                         data-test="row-edit"
+                        :aria-label="t('locales-list-page.button-edit-named', { tag: item.tag })"
                         @click="openEdit(item)"
                     >
                         {{ t('locales-list-page.button-edit') }}
@@ -270,6 +282,7 @@ onMounted(() => {
                         variant="tonal"
                         color="error"
                         data-test="row-delete"
+                        :aria-label="t('locales-list-page.button-delete-named', { tag: item.tag })"
                         :disabled="loading"
                         @click="handleDelete(item)"
                     >

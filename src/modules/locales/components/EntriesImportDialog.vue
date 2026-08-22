@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { LocaleScope } from '@types';
-import type { LocaleScope as TLocaleScope, LocaleEntryInput } from '@types';
+import type { LocaleEntryInput, LocaleTenantDescriptor } from '@types';
 import type { TranslationDictionaries } from '@/infrastructure/i18n';
 import { flattenDictionary } from '../dictionaries';
 import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
@@ -17,14 +16,14 @@ import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
  * confirmed once more before a replace fires.
  */
 const props = defineProps<{
-    /** The scope preselected on open. */
-    initialScope?: TLocaleScope;
+    /** The tenants the API serves, from its registry — what the select offers. */
+    tenants: LocaleTenantDescriptor[];
+    /** The tenant preselected on open. */
+    initialTenant?: string;
 }>();
 
 const emit = defineEmits<{
-    import: [
-        payload: { mode: 'merge' | 'replace'; scope: TLocaleScope; entries: LocaleEntryInput[] }
-    ];
+    import: [payload: { mode: 'merge' | 'replace'; tenant: string; entries: LocaleEntryInput[] }];
 }>();
 
 /** Two-way `v-model`, so the dialog neither declares the prop nor re-emits the event by hand. */
@@ -39,13 +38,17 @@ const { t } = useI18n();
  * hand back the same thing `parsed` already does.
  */
 
-const scope = ref<TLocaleScope>(LocaleScope.app);
+/** Ids for the dialog's name and for the parse error both inputs point at. */
+const titleId = useId();
+const errorId = useId();
+
+const tenant = ref('');
 const mode = ref<'merge' | 'replace'>('merge');
 const rawJson = ref('');
 
 watch(isOpen, (open) => {
     if (!open) return;
-    scope.value = props.initialScope ?? LocaleScope.app;
+    tenant.value = props.initialTenant ?? props.tenants.at(0)?.id ?? '';
     mode.value = 'merge';
     rawJson.value = '';
 });
@@ -91,12 +94,12 @@ const modeOptions = computed(() => [
 const handleImport = () => {
     const entries = parsedEntries.value;
     if (!entries) return;
-    // The second look a replace deserves, naming the scope it is allowed to delete from.
+    // The second look a replace deserves, naming the tenant it is allowed to delete from.
     const secondLook =
         mode.value === 'replace'
             ? useDialogStore().confirm({
                   message: t('entries-import.confirm-replace', {
-                      scope: scope.value,
+                      tenant: tenant.value,
                       count: entries.length
                   }),
                   color: 'error'
@@ -104,46 +107,70 @@ const handleImport = () => {
             : Promise.resolve(true);
     return secondLook.then((accepted) => {
         if (!accepted) return;
-        emit('import', { mode: mode.value, scope: scope.value, entries });
+        emit('import', { mode: mode.value, tenant: tenant.value, entries });
     });
 };
 </script>
 
 <template>
-    <v-dialog v-model="isOpen" max-width="640">
+    <v-dialog v-model="isOpen" max-width="640" :aria-labelledby="titleId">
         <v-card class="p-5" data-test="entries-import">
-            <h3 class="mb-1 text-lg font-semibold">{{ t('entries-import.title') }}</h3>
+            <h2 :id="titleId" class="mb-1 text-lg font-semibold">
+                {{ t('entries-import.title') }}
+            </h2>
             <p class="mb-4 text-sm opacity-70">{{ t('entries-import.intro') }}</p>
 
             <form novalidate class="flex flex-col gap-3" @submit.prevent="handleImport">
-                <v-file-input
-                    :label="t('entries-import.label-file')"
-                    accept=".json,application/json"
-                    density="compact"
-                    data-test="import-file"
-                    @update:model-value="handleFile"
-                />
-                <v-textarea
-                    v-model="rawJson"
-                    :label="t('entries-import.label-json')"
-                    :error-messages="parseError"
-                    rows="6"
-                    class="font-mono"
-                    data-test="import-json"
-                />
+                <!--
+                    One fieldset for the two ways in: a file lands in the paste area, and the
+                    parse error below speaks for either — so BOTH inputs point at it, and a reader
+                    on the file picker hears why its file was refused.
+                -->
+                <fieldset class="flex flex-col gap-3 border-0 p-0">
+                    <legend class="mb-2 text-sm font-medium">
+                        {{ t('entries-import.legend-source') }}
+                    </legend>
+                    <v-file-input
+                        :label="t('entries-import.label-file')"
+                        accept=".json,application/json"
+                        density="compact"
+                        :aria-describedby="parseError ? errorId : undefined"
+                        :aria-invalid="parseError ? 'true' : undefined"
+                        data-test="import-file"
+                        @update:model-value="handleFile"
+                    />
+                    <v-textarea
+                        v-model="rawJson"
+                        :label="t('entries-import.label-json')"
+                        :aria-describedby="parseError ? errorId : undefined"
+                        :aria-invalid="parseError ? 'true' : undefined"
+                        rows="6"
+                        class="font-mono"
+                        data-test="import-json"
+                    />
+                    <p
+                        v-if="parseError"
+                        :id="errorId"
+                        class="m-0 text-sm text-error"
+                        role="alert"
+                        data-test="import-error"
+                    >
+                        {{ parseError }}
+                    </p>
+                </fieldset>
                 <div class="flex flex-wrap items-start gap-4">
                     <v-select
-                        v-model="scope"
+                        v-model="tenant"
                         :items="
-                            Object.values(LocaleScope).map((option) => ({
-                                value: option,
-                                title: t(`locale-entries-page.scope-${option}`)
+                            tenants.map(({ id, label }) => ({
+                                value: id,
+                                title: `${label} (${id})`
                             }))
                         "
-                        :label="t('entries-import.label-scope')"
+                        :label="t('entries-import.label-tenant')"
                         hide-details
                         class="max-w-72"
-                        data-test="import-scope"
+                        data-test="import-tenant"
                     />
                     <v-radio-group
                         v-model="mode"
