@@ -64,6 +64,58 @@ afterEach(() => {
     vi.unstubAllEnvs();
 });
 
+/**
+ * The tab title and the route announcer (WCAG 2.4.2 / 4.1.3), both written by the same
+ * `afterEach` from the route's `meta.title`.
+ *
+ * `Home` is the platform's own route and its key is in the shared dictionary, so the assertion
+ * is on a TRANSLATED title. `Playground` is a module route whose dictionary is not registered
+ * here, so its key comes back as itself — which still proves the record carries one.
+ */
+describe('document title and announcer', () => {
+    it('sets the tab title to the page title and the app name', () =>
+        loadRouter().then(() => {
+            expect(document.title).toBe('Home — Guebbit');
+        }));
+
+    it('reads the app name from VITE_APP_NAME', () => {
+        vi.stubEnv('VITE_APP_NAME', 'Acme Shop');
+        return loadRouter().then(() => {
+            expect(document.title).toBe('Home — Acme Shop');
+        });
+    });
+
+    it('follows the route', () =>
+        loadRouter().then((router) =>
+            router.push('/en/playground').then(() => {
+                expect(document.title).toBe('playground-page.page-title — Guebbit');
+            })
+        ));
+
+    it('tells the announcer the same title', () =>
+        loadRouter().then((router) =>
+            import('@/app/router/announcer.ts').then(({ routeAnnouncement }) =>
+                router.push('/en/playground').then(() => {
+                    expect(routeAnnouncement.value).toBe('playground-page.page-title');
+                })
+            )
+        ));
+
+    /**
+     * Every route that renders a page declares a title. The shell's own records are the ones
+     * a platform spec may name; each module pins its own in `src/modules/<name>/tests/routes.spec.ts`.
+     */
+    it.each(['Home', 'StaticAbout', 'StaticFaq', 'StaticTerms', 'StaticPrivacy', 'Error'])(
+        'declares a title on the %s route',
+        (name) =>
+            loadRouter().then((router) => {
+                expect(
+                    router.resolve({ name, params: { locale: 'en', status: '404' } }).meta.title
+                ).toBeTruthy();
+            })
+    );
+});
+
 describe('locale handling', () => {
     it('redirects the bare root to the locale-prefixed home', () =>
         loadRouter().then((router) => {

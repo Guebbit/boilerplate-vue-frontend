@@ -9,7 +9,8 @@ import {
     removeCartItem,
     clearCart,
     checkout as apiCheckout,
-    reorder as apiReorder
+    reorder as apiReorder,
+    getProductById
 } from '@api';
 import type { CartItem, CartResponse, CartSummaryResponse, CheckoutRequest } from '@types';
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
@@ -205,6 +206,43 @@ export const useCartStore = defineStore('cart', () => {
             })
         );
 
+    /**
+     * Product titles keyed by id, for the lines the API answers as ids only — this store's and the
+     * wishlist's, whose `CartItem` / `WishlistItem` carry a `productId` and nothing else. A line
+     * headed by its id alone reads as a UUID to a screen reader.
+     *
+     * Lives here rather than in products because `products → cart` is a declared edge, and the
+     * reverse would close a loop. The read goes through the contract directly — `@api` is
+     * infrastructure, not a sibling — and a title that cannot be fetched simply stays absent: the
+     * id is still rendered, so nothing is lost, only prettiness.
+     */
+    const productTitles = ref<Record<string, string>>({});
+
+    /**
+     * The title of one product, or its id while unknown.
+     *
+     * @param productId - The product.
+     * @returns Something a human can call the line by.
+     */
+    const titleOf = (productId: string) => productTitles.value[productId] ?? productId;
+
+    /**
+     * Resolves the titles not yet known, one request each, failures ignored.
+     *
+     * @param productIds - The lines' products.
+     * @returns A promise settling when every lookup has answered one way or the other.
+     */
+    const resolveTitles = (productIds: string[]) =>
+        Promise.allSettled(
+            [...new Set(productIds)]
+                .filter((productId) => !(productId in productTitles.value))
+                .map((productId) =>
+                    getProductById(productId).then(({ data }) => {
+                        productTitles.value = { ...productTitles.value, [productId]: data.title };
+                    })
+                )
+        ).then(() => productTitles.value);
+
     return {
         cart,
         cartItems,
@@ -215,6 +253,9 @@ export const useCartStore = defineStore('cart', () => {
 
         loading,
         fetchCart,
+        productTitles,
+        titleOf,
+        resolveTitles,
         checkout,
         reorder,
         upsertCartItem: upsertCartItemAction,

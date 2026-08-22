@@ -6,7 +6,8 @@
         "orval.config.*",
         "scripts/**/*.ts",
         "cypress.config.*",
-        "tests/support/e2e/visual-task.ts"
+        "tests/support/e2e/visual-task.ts",
+        "tests/support/e2e/a11y-task.ts"
     ],
     "compilerOptions": {
         "composite": true,

@@ -66,7 +66,16 @@
         "addresses-label-city": "City",
         "addresses-label-zip": "ZIP",
         "addresses-label-country": "Country",
-        "addresses-label-phone": "Phone"
+        "addresses-label-phone": "Phone",
+        "addresses-edit-named": "Edit address {name}",
+        "addresses-remove-named": "Remove address {name}",
+        "addresses-required-full-name": "A full name is required",
+        "addresses-required-street": "A street is required",
+        "addresses-required-city": "A city is required",
+        "addresses-required-zip": "A ZIP is required",
+        "addresses-required-country": "A country is required",
+        "sessions-revoke-named": "Revoke session {id}",
+        "sessions-revoke-current": "Revoke this session (signs you out)"
     },
     "password-reset-request-page": {
         "page-title": "Reset password",

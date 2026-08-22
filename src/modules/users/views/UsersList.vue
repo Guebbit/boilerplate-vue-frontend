@@ -168,6 +168,7 @@ const handleDelete = (userId: string) => {
             v-model="selectedUserId"
             :headers="tableHeaders"
             :items="pageItems"
+            :caption="t('users-list-page.table-caption')"
             :loading="loading"
             :loading-text="t('generic.loading')"
         >
@@ -194,6 +195,9 @@ const handleDelete = (userId: string) => {
                         size="small"
                         variant="tonal"
                         data-test="row-view"
+                        :aria-label="
+                            t('users-list-page.button-view-named', { name: item.username })
+                        "
                         :to="routerLinkI18n({ name: 'UserTarget', params: { id: item.id } })"
                     >
                         {{ t('users-list-page.button-view') }}
@@ -203,6 +207,9 @@ const handleDelete = (userId: string) => {
                         variant="tonal"
                         color="secondary"
                         data-test="row-edit"
+                        :aria-label="
+                            t('users-list-page.button-edit-named', { name: item.username })
+                        "
                         :to="routerLinkI18n({ name: 'UserEdit', params: { id: item.id } })"
                     >
                         {{ t('users-list-page.button-edit') }}
@@ -212,6 +219,9 @@ const handleDelete = (userId: string) => {
                         variant="tonal"
                         color="error"
                         data-test="row-delete"
+                        :aria-label="
+                            t('users-list-page.button-delete-named', { name: item.username })
+                        "
                         :disabled="loading"
                         @click.stop="handleDelete(item.id!)"
                     >

@@ -182,6 +182,7 @@ const handleDelete = (orderId: string) => {
             v-model="selectedOrderId"
             :headers="tableHeaders"
             :items="pageItems"
+            :caption="t('orders-list-page.table-caption')"
             :loading="loading"
             :loading-text="t('generic.loading')"
         >
@@ -205,6 +206,7 @@ const handleDelete = (orderId: string) => {
                         size="small"
                         variant="tonal"
                         data-test="row-view"
+                        :aria-label="t('orders-list-page.button-view-named', { id: item.id })"
                         :to="routerLinkI18n({ name: 'OrderTarget', params: { id: item.id } })"
                     >
                         {{ t('orders-list-page.button-view') }}
@@ -215,6 +217,7 @@ const handleDelete = (orderId: string) => {
                         variant="tonal"
                         color="secondary"
                         data-test="row-edit"
+                        :aria-label="t('orders-list-page.button-edit-named', { id: item.id })"
                         :to="routerLinkI18n({ name: 'OrderEdit', params: { id: item.id } })"
                     >
                         {{ t('orders-list-page.button-edit') }}
@@ -225,6 +228,7 @@ const handleDelete = (orderId: string) => {
                         variant="tonal"
                         color="error"
                         data-test="row-delete"
+                        :aria-label="t('orders-list-page.button-delete-named', { id: item.id })"
                         :disabled="loading"
                         @click.stop="handleDelete(item.id)"
                     >

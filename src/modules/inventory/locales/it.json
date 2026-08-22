@@ -37,7 +37,13 @@
         "total-items": "{total} totali",
         "button-sweep": "Scadenza prenotazioni",
         "confirm-sweep": "Liberare ogni prenotazione la cui finestra di pagamento è chiusa? Gli ordini dietro di esse verranno annullati.",
-        "success-sweep": "{expired} prenotazioni scadute liberate."
+        "success-sweep": "{expired} prenotazioni scadute liberate.",
+        "error-product-required": "Scegli un prodotto",
+        "error-quantity-positive": "Una consegna è almeno un'unità intera",
+        "error-delta-nonzero": "Una correzione è un numero intero diverso da zero",
+        "button-history-named": "Storico di {name}",
+        "pagination-board": "Pagine della giacenza",
+        "pagination-ledger": "Pagine del registro"
     },
     "navigation": {
         "label-inventory": "Magazzino"

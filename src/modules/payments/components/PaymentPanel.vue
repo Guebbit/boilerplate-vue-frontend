@@ -70,23 +70,26 @@ onMounted(() => {
     <v-card class="p-4" data-test="payment-panel">
         <h3 class="mb-2 text-base font-semibold">{{ t('payments-panel.title') }}</h3>
 
-        <template v-if="payable">
+        <!--
+            The decline hint is the field's own `hint`, so it is wired as the field's description
+            rather than sitting beside it as a paragraph a reader never connects to the input.
+        -->
+        <form v-if="payable" novalidate @submit.prevent="submitPayment">
             <v-text-field
                 v-model="cardNumber"
                 :label="t('payments-panel.label-card')"
+                :hint="t('payments-panel.hint-decline')"
+                persistent-hint
+                autocomplete="cc-number"
+                inputmode="numeric"
                 data-test="payment-card-input"
                 :disabled="loading"
+                class="mb-3"
             />
-            <p class="m-0 mb-3 text-xs opacity-75">{{ t('payments-panel.hint-decline') }}</p>
-            <v-btn
-                color="primary"
-                data-test="payment-submit"
-                :disabled="loading"
-                @click="submitPayment"
-            >
+            <v-btn type="submit" color="primary" data-test="payment-submit" :disabled="loading">
                 {{ t('payments-panel.button-pay') }}
             </v-btn>
-        </template>
+        </form>
 
         <template v-else-if="payment">
             <div class="flex items-center gap-3" data-test="payment-status">

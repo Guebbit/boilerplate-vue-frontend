@@ -12,7 +12,9 @@
         "stat-requests": "Richieste",
         "stat-errors-suffix": "errori",
         "stat-sse-clients": "Client SSE",
-        "empty-metrics": "Nessun evento di metriche"
+        "empty-metrics": "Nessun evento di metriche",
+        "connection-status": "Stato della connessione: {status}",
+        "feed-summary": "{count} eventi ricevuti — ultimo: {kind} alle {time}"
     },
     "navigation": {
         "label-realtime": "tempo reale"

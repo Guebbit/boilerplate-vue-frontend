@@ -10,14 +10,6 @@ import { REALTIME_SSE_EVENT_NAMES } from '@types';
 let activeClient: ReturnType<typeof createSseClient> | undefined;
 
 /**
- * Resolves the SSE endpoint URL.
- *
- * @returns `VITE_API_SSE`, or the local dev server endpoint when unset.
- */
-const getSseUrl = () =>
-    import.meta.env.VITE_API_SSE ?? 'http://localhost:3000/observability/events';
-
-/**
  * Manages the SSE connection feeding the observability dashboard.
  *
  * Uses a module-level `activeClient` singleton so re-mounting the component does
@@ -39,45 +31,50 @@ export const useRealtimeObservability = () => {
         activeClient?.close();
         store.setStatus('connecting');
 
-        // Create the SSE client and wire each metric event type to its store action
-        activeClient = createSseClient(getSseUrl(), REALTIME_SSE_EVENT_NAMES, {
-            onOpen: () => store.setStatus('open'),
-            onError: () => {
-                store.setStatus('error');
-                store.setError('SSE connection error');
-            },
-            onEvent: (eventName, payload) => {
-                if (eventName === 'observability.metrics.snapshot') {
-                    store.setSnapshot(payload);
+        // Wire each metric event type to its store action; the endpoint falls back to the local
+        // dev server when `VITE_API_SSE` is unset.
+        activeClient = createSseClient(
+            import.meta.env.VITE_API_SSE ?? 'http://localhost:3000/observability/events',
+            REALTIME_SSE_EVENT_NAMES,
+            {
+                onOpen: () => store.setStatus('open'),
+                onError: () => {
+                    store.setStatus('error');
+                    store.setError('SSE connection error');
+                },
+                onEvent: (eventName, payload) => {
+                    if (eventName === 'observability.metrics.snapshot') {
+                        store.setSnapshot(payload);
+                        store.addEntry({
+                            id: `snapshot-${payload.timestamp}`,
+                            kind: 'snapshot',
+                            timestamp: payload.timestamp,
+                            payload
+                        });
+                        return;
+                    }
+
+                    if (eventName === 'observability.metrics.updated') {
+                        store.setUpdate(payload);
+                        store.addEntry({
+                            id: `update-${payload.timestamp}`,
+                            kind: 'update',
+                            timestamp: payload.timestamp,
+                            payload
+                        });
+                        return;
+                    }
+
+                    store.setHeartbeat(payload);
                     store.addEntry({
-                        id: `snapshot-${payload.timestamp}`,
-                        kind: 'snapshot',
+                        id: `heartbeat-${payload.timestamp}`,
+                        kind: 'heartbeat',
                         timestamp: payload.timestamp,
                         payload
                     });
-                    return;
                 }
-
-                if (eventName === 'observability.metrics.updated') {
-                    store.setUpdate(payload);
-                    store.addEntry({
-                        id: `update-${payload.timestamp}`,
-                        kind: 'update',
-                        timestamp: payload.timestamp,
-                        payload
-                    });
-                    return;
-                }
-
-                store.setHeartbeat(payload);
-                store.addEntry({
-                    id: `heartbeat-${payload.timestamp}`,
-                    kind: 'heartbeat',
-                    timestamp: payload.timestamp,
-                    payload
-                });
             }
-        });
+        );
     };
 
     /**

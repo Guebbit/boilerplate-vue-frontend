@@ -18,11 +18,12 @@ const getLocalesMock = vi.fn();
 const getLocaleMessagesMock = vi.fn();
 
 vi.mock('@api', async (importOriginal) => ({
-    // `LocaleScope` is a generated const object, not a network call — the module under test
-    // compares against it, so the real one has to survive the mock.
+    // The generated const objects are not network calls — the module under test may compare
+    // against them, so the real ones have to survive the mock.
     ...(await importOriginal<Record<string, unknown>>()),
     getLocales: () => getLocalesMock(),
-    getLocaleMessages: (locale: string) => getLocaleMessagesMock(locale)
+    getLocaleMessages: (locale: string, parameters?: { tenant?: string }) =>
+        getLocaleMessagesMock(locale, parameters)
 }));
 
 const {
@@ -40,19 +41,19 @@ let snapshot: string[] = [];
 /**
  * A capability row as `GET /locales` publishes one.
  *
- * The endpoint answers CAPABILITIES, not bare tags: `scopes` says whether the API can answer in
+ * The endpoint answers CAPABILITIES, not bare tags: `tenants` says whether the API can answer in
  * that language (`api`), whether a dictionary can be downloaded for it (`app`), or both.
  *
  * @param tag - the language tag
- * @param scopes - what that language can do
+ * @param tenants - which tenants have words in that language
  * @returns the capability row
  */
-const capability = (tag: string, scopes: ('api' | 'app')[] = ['api', 'app']) => ({
+const capability = (tag: string, tenants: string[] = ['demo-be', 'demo-fe']) => ({
     tag,
     name: tag,
     nativeName: tag,
     direction: 'ltr',
-    scopes,
+    tenants,
     source: 'both'
 });
 
@@ -75,23 +76,23 @@ describe('fetchRemoteLocales', () => {
     });
 
     /**
-     * Both scopes belong in the switcher, and they are different offers — `app` translates the
+     * Both tenants belong in the switcher, and they are different offers — the frontend translates the
      * interface, `api` translates what the API says. A language with one and not the other is
      * half-usable, which is a state a person chose and not one to filter away: see the note on
      * `fetchRemoteLocales` about why nothing here reconciles the two sides.
      */
     it.each([
-        ['downloadable only', ['app'] as ('api' | 'app')[]],
-        ['answerable only', ['api'] as ('api' | 'app')[]],
-        ['both', ['api', 'app'] as ('api' | 'app')[]]
-    ])('keeps a language that is %s', (_label, scopes) => {
-        getLocalesMock.mockResolvedValue({ data: { locales: [capability('es', scopes)] } });
+        ['downloadable only', ['demo-fe']],
+        ['answerable only', ['demo-be']],
+        ['both', ['demo-be', 'demo-fe']]
+    ])('keeps a language that is %s', (_label, tenants) => {
+        getLocalesMock.mockResolvedValue({ data: { locales: [capability('es', tenants)] } });
         return expect(fetchRemoteLocales()).resolves.toEqual(['es']);
     });
 
-    it('drops a language that claims neither scope', () => {
+    it('drops a language that claims no tenant at all', () => {
         getLocalesMock.mockResolvedValue({
-            data: { locales: [capability('en'), { ...capability('es'), scopes: [] }] }
+            data: { locales: [capability('en'), { ...capability('es'), tenants: [] }] }
         });
         return expect(fetchRemoteLocales()).resolves.toEqual(['en']);
     });
@@ -116,7 +117,8 @@ describe('fetchLocaleOverrides', () => {
         return expect(fetchLocaleOverrides('it'))
             .resolves.toEqual({ greeting: 'Ciao' })
             .then(() => {
-                expect(getLocaleMessagesMock).toHaveBeenCalledWith('it');
+                // Named tenant: the API builds THIS frontend's dictionary, never another client's.
+                expect(getLocaleMessagesMock).toHaveBeenCalledWith('it', { tenant: 'demo-fe' });
             });
     });
 

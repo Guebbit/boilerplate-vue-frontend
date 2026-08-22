@@ -5,25 +5,25 @@ export default [
     {
         path: 'login',
         name: 'Login',
-        meta: { access: 'guest' },
+        meta: { access: 'guest', title: 'login-page.page-title' },
         component: () => import('@/modules/account/views/Login.vue')
     },
     {
         path: 'signup',
         name: 'Signup',
-        meta: { access: 'guest' },
+        meta: { access: 'guest', title: 'signup-page.page-title' },
         component: () => import('@/modules/account/views/Signup.vue')
     },
     {
         path: 'password-reset',
         name: 'PasswordResetRequest',
-        meta: { access: 'guest' },
+        meta: { access: 'guest', title: 'password-reset-request-page.page-title' },
         component: () => import('@/modules/account/views/PasswordResetRequest.vue')
     },
     {
         path: 'password-reset/confirm',
         name: 'PasswordResetConfirm',
-        meta: { access: 'guest' },
+        meta: { access: 'guest', title: 'password-reset-confirm-page.page-title' },
         component: () => import('@/modules/account/views/PasswordResetConfirm.vue')
     },
     {
@@ -31,23 +31,26 @@ export default [
         // it is by definition not logged in — the token in the URL is the credential.
         path: 'account-delete/confirm',
         name: 'AccountDeleteConfirm',
+        meta: { title: 'account-delete-confirm-page.page-title' },
         component: () => import('@/modules/account/views/AccountDeleteConfirm.vue')
     },
     {
         // Public for the same reason as the two confirms above: the token is the credential.
         path: 'verify-email/confirm',
         name: 'VerifyEmailConfirm',
+        meta: { title: 'verify-email-confirm-page.page-title' },
         component: () => import('@/modules/account/views/VerifyEmailConfirm.vue')
     },
     {
         path: 'profile',
         name: 'Profile',
-        meta: { access: 'auth' },
+        meta: { access: 'auth', title: 'profile-page.page-title' },
         component: () => import('@/modules/account/views/Profile.vue')
     },
     {
         path: 'logout',
         name: 'Logout',
+        meta: { title: 'navigation.label-logout' },
         component: {
             /**
              * No need for a true component: log the user out, then leave.

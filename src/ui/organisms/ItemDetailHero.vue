@@ -19,7 +19,7 @@ defineProps<{
         <div>
             <p
                 v-if="eyebrow !== undefined && eyebrow !== null"
-                class="mb-1 text-xs uppercase tracking-[0.12em] opacity-60"
+                class="mb-1 text-xs uppercase tracking-[0.12em] opacity-80"
             >
                 {{ eyebrow }}
             </p>

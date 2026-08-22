@@ -3,11 +3,12 @@
         "page-title": "Wishlist",
         "empty": "Nothing saved yet",
         "button-go-to-products": "Browse products",
-        "label-product-id": "Product",
         "button-move-to-cart": "Move to cart",
         "button-remove": "Remove",
         "success-moved": "Product moved to cart.",
-        "success-removed": "Product removed from wishlist."
+        "success-removed": "Product removed from wishlist.",
+        "button-move-to-cart-named": "Move product {id} to cart",
+        "button-remove-named": "Remove product {id}"
     },
     "navigation": {
         "label-wishlist": "Wishlist"

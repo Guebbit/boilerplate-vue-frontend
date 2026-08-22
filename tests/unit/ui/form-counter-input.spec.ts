@@ -74,3 +74,17 @@ describe('CounterInput component UNIT TEST', () => {
             });
     });
 });
+
+describe('CounterInput — the name and the messages', () => {
+    it('names the field when no visible label fits', () => {
+        const input = mountCounter({ ariaLabel: 'Count' }).find('input');
+
+        expect(input.attributes('aria-label')).toBe('Count');
+    });
+
+    it('shows the error messages it is handed, like every other field', () => {
+        const wrapper = mountCounter({ label: 'Count', errorMessages: ['Too many'] });
+
+        expect(wrapper.text()).toContain('Too many');
+    });
+});

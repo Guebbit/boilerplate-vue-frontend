@@ -23,6 +23,8 @@ import path from 'node:path';
 import { resolveBackendPath, resolveLiveResetCommand } from './scripts/backend-path';
 import { ALL_SPEC_GLOBS } from './scripts/spec-globs';
 import { compareSnapshot } from './tests/support/e2e/visual-task';
+import { recordA11yViolations } from './tests/support/e2e/a11y-task';
+import type { A11yRecordRequest } from './tests/support/e2e/a11y-task';
 
 /*
  * `.env` into `process.env`, before anything below reads it. `loadEnv` answers with the file's
@@ -39,6 +41,10 @@ try {
 
 const viteEnvironment = loadEnv('', process.cwd(), '');
 
+/** Name shared with `cy.checkPageA11y()` in `tests/support/e2e/commands.ts`. */
+const A11Y_REPORT_TASK = 'recordA11yViolations';
+const A11Y_REPORT_DIRECTORY = path.resolve('reports/a11y');
+
 export default defineConfig({
     screenshotsFolder: 'tests/e2e/screenshots',
     videosFolder: 'tests/e2e/videos',
@@ -48,6 +54,14 @@ export default defineConfig({
     // invalidate every baseline.
     viewportWidth: 1280,
     viewportHeight: 800,
+    /*
+     * One retry in `cypress run`, none in `cypress open`. A headless run shares one preview
+     * server and one machine with three other shards, and the specs already wait on conditions
+     * rather than durations — so a test that fails once and passes on retry is contention, not
+     * a bug, and one retry is what separates the two. None when open: a developer watching a
+     * test wants to see the first failure, not a green that hid it.
+     */
+    retries: { runMode: 1, openMode: 0 },
     e2e: {
         /**
          * Node-side hooks. `compareVisualSnapshot` is the image diff behind
@@ -70,6 +84,13 @@ export default defineConfig({
                     }).then((response) => response.ok),
                 compareVisualSnapshot: (options: Parameters<typeof compareSnapshot>[0]) =>
                     compareSnapshot(options),
+                /*
+                 * Every axe finding `cy.checkPageA11y()` saw, blocking or not, to
+                 * `reports/a11y/<spec>.json` — see `tests/support/e2e/a11y-task.ts`. Gitignored
+                 * under `reports/` and uploaded by CI, like the visual diffs.
+                 */
+                [A11Y_REPORT_TASK]: (request: A11yRecordRequest) =>
+                    recordA11yViolations(request, A11Y_REPORT_DIRECTORY),
 
                 /*
                  * A line on the terminal from inside a spec, for the things that are worth

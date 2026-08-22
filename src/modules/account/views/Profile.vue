@@ -5,7 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref, useId, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -101,10 +101,13 @@ const {
 /**
  * Another instance of form only for the password
  */
+const passwordFormElement = ref<HTMLFormElement>();
+
 const {
     form: passwordForm,
     formErrors: passwordErrors,
-    isValid: passwordIsValid
+    showFormErrors: showPasswordErrors,
+    handleSubmit: handlePasswordSubmit
 } = useAppForm(
     {
         currentPassword: '',
@@ -129,7 +132,8 @@ const {
                     message: t('users-form.password-dont-match'),
                     path: ['passwordConfirm']
                 });
-        })
+        }),
+    { formElement: passwordFormElement }
 );
 
 /**
@@ -158,6 +162,9 @@ watch(
  * If password change is active, all password errors will be shown instantly
  */
 const showChangePassword = ref(false);
+
+/** The password form's id, for the toggle's `aria-controls`. */
+const passwordFormId = useId();
 
 /**
  * Validates and saves the profile changes — the fields a user owns. Role and account state
@@ -193,22 +200,20 @@ const submitForm = () => {
  *
  * @returns A promise resolving once the change settles, reported as a toast.
  */
-const submitPasswordChange = () => {
-    if (!passwordIsValid.value) return;
-    return changePassword(
-        passwordForm.value.currentPassword,
-        passwordForm.value.password,
-        passwordForm.value.passwordConfirm
-    )
-        .then(() => {
-            addMessage(t('profile-page.success-password-change'));
-            passwordForm.value.currentPassword = '';
-            passwordForm.value.password = '';
-            passwordForm.value.passwordConfirm = '';
-            showChangePassword.value = false;
-        })
-        .catch((error) => notifyErrorMessages(addMessage, error));
-};
+const submitPasswordChange = () =>
+    // `handleSubmit` is the gate: an invalid form shows its messages and focuses the first one
+    // rather than sitting behind a button that cannot be pressed.
+    handlePasswordSubmit(({ currentPassword, password, passwordConfirm }) =>
+        changePassword(currentPassword, password, passwordConfirm)
+            .then(() => {
+                addMessage(t('profile-page.success-password-change'));
+                passwordForm.value.currentPassword = '';
+                passwordForm.value.password = '';
+                passwordForm.value.passwordConfirm = '';
+                showChangePassword.value = false;
+            })
+            .catch((error) => notifyErrorMessages(addMessage, error))
+    );
 </script>
 
 <template>
@@ -284,6 +289,8 @@ const submitPasswordChange = () => {
                 variant="tonal"
                 color="secondary"
                 data-test="toggle-change-password"
+                :aria-expanded="showChangePassword ? 'true' : 'false'"
+                :aria-controls="passwordFormId"
                 @click="showChangePassword = !showChangePassword"
             >
                 {{ t('profile-page.button-change-password') }}
@@ -292,6 +299,8 @@ const submitPasswordChange = () => {
             <v-expand-transition>
                 <form
                     v-show="showChangePassword"
+                    :id="passwordFormId"
+                    ref="passwordFormElement"
                     novalidate
                     class="mt-4"
                     @submit.prevent="submitPasswordChange"
@@ -302,7 +311,9 @@ const submitPasswordChange = () => {
                         autocomplete="current-password"
                         data-test="current-password"
                         :label="t('profile-page.label-current-password')"
-                        :error-messages="passwordErrors.currentPassword ?? []"
+                        :error-messages="
+                            showPasswordErrors ? (passwordErrors.currentPassword ?? []) : []
+                        "
                         class="mb-2"
                     />
                     <v-text-field
@@ -311,7 +322,7 @@ const submitPasswordChange = () => {
                         autocomplete="new-password"
                         data-test="new-password"
                         :label="t('profile-page.label-password')"
-                        :error-messages="passwordErrors.password ?? []"
+                        :error-messages="showPasswordErrors ? (passwordErrors.password ?? []) : []"
                         class="mb-2"
                     />
                     <v-text-field
@@ -320,14 +331,15 @@ const submitPasswordChange = () => {
                         autocomplete="new-password"
                         data-test="new-password-confirm"
                         :label="t('profile-page.label-passwordConfirm')"
-                        :error-messages="passwordErrors.passwordConfirm ?? []"
+                        :error-messages="
+                            showPasswordErrors ? (passwordErrors.passwordConfirm ?? []) : []
+                        "
                     />
                     <v-btn
                         type="submit"
                         color="primary"
                         class="mt-2"
                         data-test="submit-password-change"
-                        :disabled="!passwordIsValid"
                     >
                         {{ t('profile-page.button-submit-password') }}
                     </v-btn>

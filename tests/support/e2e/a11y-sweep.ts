@@ -15,26 +15,66 @@
  * meant to end. The routes belong to modules, so their accessibility coverage does too.
  *
  * The original argument is not discarded, it is MOVED: "the coverage is a list you can read"
- * became `tests/cross-cutting/a11y-coverage.spec.ts`, which asserts that every module declaring
- * routes also declares an a11y sweep. A list that is checked beats a list that is merely readable,
- * because nothing stops a reader from not reading it.
+ * became `tests/cross-cutting/a11y-coverage.spec.ts`, which parses every module's `routes.ts`
+ * against its sweep and fails on any route path no sweep visits. A list that is checked beats a
+ * list that is merely readable, because nothing stops a reader from not reading it.
  *
  * ── What this file may not know ──────────────────────────────────────────────────────────────
  * It names no domain, and must not. Living under `tests/support/` means being imported by every
  * module's spec, so a route list here would recreate the central coupling this split removed.
  * Callers pass their own routes; this owns only the sweep.
  *
+ * ── A page is more than its first paint ──────────────────────────────────────────────────────
+ * A route audited once, as it loads, misses everything that only exists after the visitor acts:
+ * the drawer on a phone, the language menu, a dialog, a form showing its errors, the dark theme.
+ * Those are where hand-written ARIA lives, and so where the defects are. A case may therefore
+ * carry a `viewport`, a `theme` and a `prepare` step — all applied AFTER the content wait and
+ * BEFORE axe — so the same sweep audits the page in the state the visitor actually reaches.
+ *
  * WHAT FAILS A RUN: `serious` and `critical` only — see `cy.checkPageA11y()`. Briefly: a gate that
  * fires on advisory contrast findings is a gate somebody disables, and those two impact levels are
  * the ones that mean "unusable with a keyboard or a screen reader" rather than "could be nicer".
- *
+ * Every finding, the lighter ones included, is written to `reports/a11y/` by the same command.
+ */
+
+/** One audited state of one route. */
+export interface A11ySweepCase {
+    /** What a failure reports. */
+    name: string;
+    /** The path to visit, locale prefix included (`/en/...`). */
+    route: string;
+    /**
+     * Puts the page in the state to audit — open a drawer, submit an empty form — after the
+     * content has loaded and before axe runs. Plain Cypress commands; they are enqueued in order.
+     */
+    prepare?: () => void;
+    /**
+     * Audit under the dark theme, switched on the way the visitor does it: through the app bar's
+     * toggle. A sweep that set Vuetify's theme directly would audit a state no click can reach.
+     */
+    theme?: 'dark';
+    /** `[width, height]`, for the layouts a phone gets — the drawer, the stacked forms. */
+    viewport?: readonly [width: number, height: number];
+}
+
+/** The terse spelling for the common case — a route, loaded, audited. */
+type A11ySweepEntry = readonly [name: string, route: string] | A11ySweepCase;
+
+/** Selector of the app bar's theme toggle — `data-test`, so the `/it/` sweep finds it too. */
+const THEME_TOGGLE = '[data-test=theme-toggle]';
+
+const toCase = (entry: A11ySweepEntry): A11ySweepCase =>
+    Array.isArray(entry) ? { name: entry[0], route: entry[1] } : (entry as A11ySweepCase);
+
+/**
  * @param label - what this group of routes is, for the describe title
- * @param routes - `[human name, path]` pairs; the name is what a failure reports
+ * @param routes - `[human name, path]` pairs, or full {@link A11ySweepCase} objects for a state
+ *  the visitor has to act to reach
  * @param role - sign in as this first; omitted, the sweep runs as an anonymous visitor
  */
 export const sweepA11y = (
     label: string,
-    routes: readonly (readonly [name: string, route: string])[],
+    routes: readonly A11ySweepEntry[],
     role?: 'user' | 'admin'
 ): void => {
     describe(`accessibility — ${label}`, () => {
@@ -44,8 +84,14 @@ export const sweepA11y = (
             if (role) cy.loginAs(role);
         });
 
-        for (const [name, route] of routes)
+        for (const { name, route, prepare, theme, viewport } of routes.map((entry) =>
+            toCase(entry)
+        ))
             it(`has no serious or critical violations on ${name}`, () => {
+                // Before the visit, so the page lays itself out for that size from the start
+                // rather than reflowing under axe. Cypress restores the configured viewport
+                // between tests on its own.
+                if (viewport) cy.viewport(viewport[0], viewport[1]);
                 cy.visit(route);
                 // Wait for real content rather than the shell, so axe does not audit a loading
                 // state and report an empty page as perfect.
@@ -67,6 +113,13 @@ export const sweepA11y = (
                  */
                 cy.get('.v-btn--loading').should('not.exist');
                 cy.get('.v-data-table--loading').should('not.exist');
+                if (theme === 'dark') {
+                    cy.get(THEME_TOGGLE).click();
+                    // Vuetify stamps the active theme on the app root; colours are only worth
+                    // measuring once that has flipped.
+                    cy.get('.v-application.v-theme--dark').should('exist');
+                }
+                prepare?.();
                 cy.checkPageA11y(name);
             });
     });

@@ -76,14 +76,75 @@
  */
 @layer base {
     html {
-        scroll-behavior: smooth;
+        /*
+         * Anchored scrolls and focus moves stop short of the fixed app bar (top) and the toast
+         * stack (bottom), so a target is never revealed underneath either. Vuetify publishes the
+         * bar's height as `--v-layout-top`; the fallback is its comfortable-density height.
+         */
+        scroll-padding-top: calc(var(--v-layout-top, 56px) + 1rem);
+        scroll-padding-bottom: 6rem;
     }
 
-    /* visible focus for keyboard users, brand-colored, on every element */
-    :focus-visible {
-        outline: 2px solid rgb(var(--v-theme-primary));
-        outline-offset: 2px;
+    /* Smooth scrolling is motion, so it is opt-in by OS preference (WCAG 2.3.3). */
+    @media (prefers-reduced-motion: no-preference) {
+        html {
+            scroll-behavior: smooth;
+        }
     }
+
+    /*
+     * Visible focus for keyboard users, on every element. The ring is the `focus` theme token —
+     * dark on the light theme, cyan on the dark one — and the halo is the surface colour, so the
+     * ring keeps a 3:1 edge whether it is drawn over a white card or a dark primary button.
+     */
+    :focus-visible {
+        outline: 2px solid rgb(var(--v-theme-focus));
+        outline-offset: 2px;
+        box-shadow: 0 0 0 2px rgb(var(--v-theme-surface));
+    }
+}
+
+/**
+ * Reduced motion, app-wide.
+ *
+ * Deliberately OUTSIDE `@layer`, for the same reason as the label rules below: Vuetify sets its
+ * own transition durations at component level, and a layered rule would lose to them. Durations
+ * are made near-zero rather than `none` so `transitionend`/`animationend` still fire — Vuetify's
+ * overlays and menus wait for those events before they consider themselves closed.
+ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/**
+ * The skip link: off-screen until it has keyboard focus, then pinned over the app bar.
+ *
+ * Outside `@layer` and above Vuetify's z-indexes, because it has to win over the app bar it sits
+ * on — a layered rule would be painted under it and the link would be focused but invisible,
+ * which is worse than no skip link at all.
+ */
+.skip-link {
+    position: fixed;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 10000;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background: rgb(var(--v-theme-surface));
+    color: rgb(var(--v-theme-on-surface));
+    font-weight: 600;
+    transform: translateY(-200%);
+}
+
+.skip-link:focus-visible {
+    transform: none;
 }
 
 /**
@@ -105,8 +166,26 @@
  * tinted field backgrounds, while still reading as secondary next to full-emphasis text.
  */
 .v-application .v-label,
-.v-application .v-field-label {
+.v-application .v-field-label,
+.v-overlay-container .v-label,
+.v-overlay-container .v-field-label {
     opacity: 0.82;
+}
+
+/**
+ * `.v-overlay-container` above, and in the rules below: Vuetify teleports every dialog and menu
+ * to a container that is a SIBLING of `.v-application`, not a child, so a rule scoped to the
+ * application never reaches a field inside a dialog — which is where axe found the address and
+ * entry dialogs' labels still at 0.6.
+ *
+ * In the ERROR state the label and the message change colour to `error` — #b71c1c, which
+ * measures 5.6:1 on the page background at full opacity and fails at 0.82. Full opacity, so a form that has
+ * just been submitted empty is the one place the label is easiest to read, not hardest.
+ */
+.v-input--error .v-label,
+.v-input--error .v-field-label,
+.v-input--error .v-messages {
+    opacity: 1;
 }
 
 /**
@@ -131,11 +210,13 @@
  * multiply — 0.6 x 0.82 lands near 0.49, darker than the default it was meant to lighten. The
  * message itself is pinned to full opacity so the two can never compound again.
  */
-.v-application .v-messages {
+.v-application .v-messages,
+.v-overlay-container .v-messages {
     opacity: 0.82;
 }
 
-.v-application .v-messages__message {
+.v-application .v-messages__message,
+.v-overlay-container .v-messages__message {
     opacity: 1;
 }
 

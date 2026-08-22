@@ -37,7 +37,7 @@ const displayValue = computed(() => {
             {{ props.icon ?? '' }}
         </div>
         <div class="min-w-0">
-            <p class="text-xs uppercase tracking-[0.08em] opacity-65">{{ props.label }}</p>
+            <p class="text-xs uppercase tracking-[0.08em] opacity-80">{{ props.label }}</p>
             <div class="mt-1.5 leading-relaxed [overflow-wrap:anywhere]">
                 <slot>{{ displayValue }}</slot>
             </div>

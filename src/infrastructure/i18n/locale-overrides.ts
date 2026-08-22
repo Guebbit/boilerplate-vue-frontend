@@ -1,5 +1,5 @@
 import { getLocales, getLocaleMessages } from '@api';
-import { supportedLanguages, type TranslationDictionaries } from './index.ts';
+import { localeDirections, supportedLanguages, type TranslationDictionaries } from './index.ts';
 
 /**
  * The runtime half of this app's dictionaries: which languages exist, and what has been edited.
@@ -23,25 +23,39 @@ import { supportedLanguages, type TranslationDictionaries } from './index.ts';
  *
  * The API's own dictionary. It resolves its own keys and puts finished text on the wire, so a
  * response already arrives translated and there is nothing for a client to look up. Its overrides
- * (`api`-scoped rows) are layered onto its files inside the API and never leave it — a frontend
- * that merged them would be adopting the backend's keyspace as its own, and both sides declare a
- * top-level `generic`. See `docs/theory/layers.md`.
+ * (the backend tenant's rows) are layered onto its files inside the API and never leave it — a
+ * frontend that merged them would be adopting the backend's keyspace as its own, and both sides
+ * declare a top-level `generic`. See `docs/theory/layers.md`.
  */
+
+/**
+ * This frontend's TENANT — whose dictionary `GET /locales/{locale}/messages` builds for it.
+ *
+ * A tenant is one keyspace, authored by one team; the API lists the ones it serves under
+ * `GET /locales/tenants`. This build names its own in `VITE_LOCALE_TENANT` and falls back to the
+ * demo pair's frontend id, so a checkout with no `.env` still talks to the demo backend.
+ */
+export const localeTenant = (): string =>
+    (import.meta.env.VITE_LOCALE_TENANT as string | undefined)?.trim() || 'demo-fe';
 
 /**
  * Languages the deployment offers, from the API's manifest.
  *
- * Both scopes are kept, and they answer different questions. `app` means a dictionary can be
- * downloaded for it; `api` means the API can ANSWER in it. A language with only `api` still
- * belongs in the switcher — the UI falls back per key while every error message arrives in the
- * right language — and a language with only `app` is the opposite: the interface translates and
- * the API answers in the fallback.
+ * Every tenant is kept, and they answer different questions. A frontend tenant means a dictionary
+ * can be downloaded for it; the backend tenant means the API can ANSWER in it. A language with
+ * only the backend tenant still belongs in the switcher — the UI falls back per key while every
+ * error message arrives in the right language — and a language with only a frontend tenant is
+ * the opposite: the interface translates and the API answers in the fallback.
  *
  * NEITHER IS CHECKED AGAINST THE OTHER, deliberately. This app can bundle `it.json` while the API
  * has no Italian at all, in which case the interface is Italian and the API's messages arrive in
  * its fallback. That inconsistency is a HUMAN decision — someone wanted the interface translated
  * and did not care about the backend's half — so nothing here prevents it or warns about it. If it
  * is ever wrong, it is wrong in a way only a person can judge.
+ *
+ * The writing direction of every language the manifest lists is recorded on the way past, into
+ * {@link localeDirections}: it is the one thing the manifest knows that the dictionary does not,
+ * and the only moment it is in hand.
  *
  * @returns The API's language tags, or an empty list when it cannot be reached. Never rejects.
  */
@@ -51,10 +65,13 @@ export const fetchRemoteLocales = (): Promise<string[]> =>
             response.data.locales
                 .filter(
                     (language) =>
-                        // Every scope is `app` or `api`, so "offers either dictionary" is "offers any".
-                        language.scopes.length > 0
+                        // Any tenant at all is "offers some dictionary", which is all the switcher asks.
+                        language.tenants.length > 0
                 )
-                .map((language) => language.tag)
+                .map((language) => {
+                    localeDirections[language.tag] = language.direction;
+                    return language.tag;
+                })
         )
         .catch(() => []);
 
@@ -68,7 +85,7 @@ export const fetchRemoteLocales = (): Promise<string[]> =>
  * @returns The overrides, or an empty dictionary. Never rejects.
  */
 export const fetchLocaleOverrides = (locale: string): Promise<TranslationDictionaries> =>
-    getLocaleMessages(locale)
+    getLocaleMessages(locale, { tenant: localeTenant() })
         .then((response) => response.data.messages as TranslationDictionaries)
         .catch(() => ({}));
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
+import type { ComponentPublicInstance } from 'vue';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useTheme } from 'vuetify';
@@ -34,6 +35,32 @@ const baseUrl = import.meta.env.BASE_URL;
  * Mobile drawer open state
  */
 const drawer = ref(false);
+
+/** The hamburger, so focus can go back to it when the drawer closes. */
+const hamburger = ref<ComponentPublicInstance | null>(null);
+
+/** The drawer's element id: what the hamburger's `aria-controls` points at. */
+const DRAWER_ID = 'app-drawer';
+
+/**
+ * Focus follows the drawer (WCAG 2.4.3): onto its first entry when it opens, back onto the
+ * hamburger when it closes. Next tick, because the drawer renders its content after the flag
+ * flips, and the element to focus does not exist yet when this runs.
+ */
+watch(drawer, (isOpen) => {
+    void nextTick(() => {
+        if (isOpen) {
+            document
+                .querySelector<HTMLElement>(
+                    `#${DRAWER_ID} a[href], #${DRAWER_ID} button, #${DRAWER_ID} [tabindex="0"]`
+                )
+                ?.focus();
+            return;
+        }
+        const element = hamburger.value?.$el as HTMLElement | undefined;
+        element?.focus();
+    });
+});
 
 /**
  * The two entries the app shell owns, because their routes belong to no domain.
@@ -118,8 +145,11 @@ const toggleTheme = () => {
         <!-- Mobile: hamburger -->
         <template #prepend>
             <v-app-bar-nav-icon
+                ref="hamburger"
                 class="lg:hidden"
                 :aria-label="t('navigation.label-menu')"
+                :aria-expanded="drawer"
+                :aria-controls="DRAWER_ID"
                 @click="drawer = !drawer"
             >
                 <Menu :size="22" aria-hidden="true" />
@@ -143,9 +173,11 @@ const toggleTheme = () => {
                 class="px-3 capitalize"
             >
                 {{ item.title }}
+                <!-- `label` is the badge's accessible name; without it Vuetify announces "Badge". -->
                 <v-badge
                     v-if="item.badge"
                     :content="item.badge"
+                    :label="t('navigation.badge-items', item.badge)"
                     color="primary"
                     inline
                     data-test="nav-badge"
@@ -170,34 +202,40 @@ const toggleTheme = () => {
                     {{ viewer.email }}
                 </v-chip>
 
+                <!--
+                    Links, not buttons: they go somewhere, so a screen reader should say so and a
+                    middle-click should open a tab. One `v-if` each — a `v-show`-hidden button is
+                    still in the tab order, invisible and focusable. Logout stays a button: it
+                    mutates the session, it does not merely navigate.
+                -->
                 <v-btn
-                    v-if="hasSignIn"
-                    v-show="!isAuth && route.name !== SIGN_IN_ROUTE_NAME"
+                    v-if="hasSignIn && !isAuth && route.name !== SIGN_IN_ROUTE_NAME"
                     variant="text"
-                    @click="router.push(routerLinkI18n(loginContinueTo(route.fullPath)))"
+                    :to="routerLinkI18n(loginContinueTo(route.fullPath))"
                 >
                     {{ t('navigation.label-login') }}
                 </v-btn>
                 <v-btn
-                    v-if="hasSignUp"
-                    v-show="!isAuth && route.name !== SIGN_UP_ROUTE_NAME"
+                    v-if="hasSignUp && !isAuth && route.name !== SIGN_UP_ROUTE_NAME"
                     color="primary"
                     class="hidden sm:inline-flex"
-                    @click="router.push(routerLinkI18n({ name: SIGN_UP_ROUTE_NAME }))"
+                    :to="routerLinkI18n({ name: SIGN_UP_ROUTE_NAME })"
                 >
                     {{ t('navigation.label-signup') }}
                 </v-btn>
                 <v-btn
-                    v-show="isAuth"
+                    v-if="isAuth"
                     variant="text"
                     @click="router.push(routerLinkI18n({ name: 'Logout' }))"
                 >
                     {{ t('navigation.label-logout') }}
                 </v-btn>
 
+                <!-- `data-test`: the a11y sweep flips the theme through this, in every locale. -->
                 <v-btn
                     icon
                     variant="text"
+                    data-test="theme-toggle"
                     :aria-label="t('navigation.label-theme')"
                     @click="toggleTheme"
                 >
@@ -210,9 +248,20 @@ const toggleTheme = () => {
         </template>
     </v-app-bar>
 
-    <!-- Mobile: drawer -->
-    <v-navigation-drawer v-model="drawer" temporary>
-        <v-list nav :aria-label="t('navigation.label-menu')">
+    <!-- Mobile: drawer. Its own label, distinct from the desktop nav's, so the two landmarks can be told apart. -->
+    <v-navigation-drawer
+        :id="DRAWER_ID"
+        v-model="drawer"
+        temporary
+        :aria-label="t('navigation.label-drawer')"
+        @keydown.esc="drawer = false"
+    >
+        <!--
+            `role="presentation"`: Vuetify gives the list `role="list"`, whose only permitted
+            children are list items — and these are links (axe `aria-required-children`). The
+            `<nav>` around them is the landmark; the list is layout.
+        -->
+        <v-list nav role="presentation" :aria-label="t('navigation.label-drawer')">
             <v-list-item
                 v-for="item in visibleNavItems"
                 :key="'drawer-' + item.title"
@@ -222,7 +271,13 @@ const toggleTheme = () => {
             >
                 <v-list-item-title>
                     {{ item.title }}
-                    <v-badge v-if="item.badge" :content="item.badge" color="primary" inline />
+                    <v-badge
+                        v-if="item.badge"
+                        :content="item.badge"
+                        :label="t('navigation.badge-items', item.badge)"
+                        color="primary"
+                        inline
+                    />
                 </v-list-item-title>
             </v-list-item>
 
@@ -231,14 +286,14 @@ const toggleTheme = () => {
             <v-list-item
                 v-if="!isAuth && hasSignIn"
                 color="primary"
-                @click="router.push(routerLinkI18n(loginContinueTo(route.fullPath)))"
+                :to="routerLinkI18n(loginContinueTo(route.fullPath))"
             >
                 <v-list-item-title>{{ t('navigation.label-login') }}</v-list-item-title>
             </v-list-item>
             <v-list-item
                 v-if="!isAuth && hasSignUp"
                 color="primary"
-                @click="router.push(routerLinkI18n({ name: SIGN_UP_ROUTE_NAME }))"
+                :to="routerLinkI18n({ name: SIGN_UP_ROUTE_NAME })"
             >
                 <v-list-item-title>{{ t('navigation.label-signup') }}</v-list-item-title>
             </v-list-item>

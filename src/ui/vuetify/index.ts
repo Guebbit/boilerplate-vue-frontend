@@ -38,10 +38,29 @@ const light: ThemeDefinition = {
         'on-surface': '#1d2433',
         'surface-variant': '#eef1f8',
         'on-surface-variant': '#43506b',
-        error: '#c62828',
-        success: '#2e7d32',
-        warning: '#b26a00',
-        info: '#0277bd',
+        // #c62828 measured 4.4:1 on the page background (#f6f7fb) under a field's messages;
+        // this is 5.6:1 there and keeps white `on-error` at 8.6:1.
+        error: '#b71c1c',
+        /*
+         * Status colours, dark enough to read as TEXT on their own tonal wash.
+         *
+         * `VAlert` defaults to `variant="tonal"`, which draws the colour at 12% opacity as the
+         * background and at full strength as the text — so the token has to pass 4.5:1 against
+         * itself-on-white, not against white. The previous #2e7d32 / #b26a00 / #0277bd measured
+         * about 4.3:1, 3.9:1 and 4.1:1 on their washes; these measure 5.9:1, 5.6:1 and 6.5:1.
+         * Solid uses (`color="warning"` on a button or system bar) still get a white `on-*`,
+         * which Vuetify derives automatically and which only improves as the base darkens.
+         */
+        success: '#1b5e20',
+        warning: '#8a5200',
+        info: '#01579b',
+        /*
+         * Keyboard focus ring. Dark rather than brand orange: #ff9800 measures about 2:1 on
+         * white, and a focus ring has to reach 3:1 against whatever it is drawn over (WCAG
+         * 2.4.11). The same near-black as `on-surface`, with a surface-coloured halo in
+         * main.css so it still separates from a dark button.
+         */
+        focus: '#1d2433',
         /*
          * Link text needs its OWN colour, and cannot reuse `primary`.
          *
@@ -74,10 +93,14 @@ const dark: ThemeDefinition = {
         'on-surface': '#e7eaf1',
         'surface-variant': '#232936',
         'on-surface-variant': '#aab4c8',
-        error: '#ef5350',
+        // Lighter than the #ef5350 it replaces: on its own 12% tonal wash over the dark
+        // surface that measured about 4.0:1, this 5.9:1. The other three already pass.
+        error: '#ff8a80',
         success: '#66bb6a',
         warning: '#ffb74d',
         info: '#4fc3f7',
+        // The cyan that was the focus ring before it became a token; 9:1 on the dark surface.
+        focus: '#26c6da',
         // Light enough to pass AA against the dark surface — see the light theme for why.
         link: '#ffb74d'
     }

@@ -99,3 +99,12 @@ describe('ListPagination — the model', () => {
         expect(wrapper.findAll('.v-pagination__item').length).toBeLessThanOrEqual(9);
     });
 });
+
+describe('ListPagination — the name', () => {
+    it('forwards the label a page with two pagers needs', async () => {
+        const wrapper = mountPager({ length: 5, ariaLabel: 'Ledger pages' });
+        await wrapper.vm.$nextTick();
+
+        expect(wrapper.find('nav').attributes('aria-label')).toBe('Ledger pages');
+    });
+});

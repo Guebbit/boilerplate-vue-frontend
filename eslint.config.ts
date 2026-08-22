@@ -4,6 +4,7 @@ import pluginUnicorn from 'eslint-plugin-unicorn';
 import { globalIgnores } from 'eslint/config';
 import { defineConfigWithVueTs, vueTsConfigs } from '@vue/eslint-config-typescript';
 import pluginVue from 'eslint-plugin-vue';
+import pluginVueA11y from 'eslint-plugin-vuejs-accessibility';
 import pluginVitest from '@vitest/eslint-plugin';
 import pluginCypress from 'eslint-plugin-cypress';
 import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
@@ -283,6 +284,27 @@ export default defineConfigWithVueTs(
      * Unicorn plugin
      */
     pluginUnicorn.configs['flat/recommended'],
+
+    /**
+     * Accessibility, at the template: the static half of what the axe sweeps check at runtime.
+     *
+     * axe audits a rendered page, and only the pages and states a sweep visits. The lint rules
+     * read every template, rendered or not, and fail the edit rather than the e2e run — a
+     * `<div @click>` with no key handler, an `<img>` with no `alt`, an `aria-` attribute that no
+     * element may carry. Production templates only: `tests/` has no templates, and a `.vue`
+     * fixture under a module's tests is a test double, not a page.
+     *
+     * The whole recommended set, nothing switched off: the rules that look at native
+     * `<label>`/`<input>` pairs (`label-has-for`, `form-control-has-label`) see nothing in a
+     * Vuetify component — `v-text-field` renders its own associated label — and so stay silent
+     * rather than noisy here. The runtime sweep covers that gap: an unlabelled field is a
+     * `critical` axe finding.
+     */
+    ...pluginVueA11y.configs['flat/recommended'].map((block) => ({
+        ...block,
+        files: ['src/**/*.vue'],
+        ignores: ['src/modules/*/tests/**']
+    })),
 
     /**
      * Every `eslint-disable` must say why — matching the paired backend.

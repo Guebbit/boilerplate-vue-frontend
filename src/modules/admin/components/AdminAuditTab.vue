@@ -129,7 +129,12 @@ const truncateId = (value?: string, length = 8) =>
                         :label="t('admin-page.audit-filter-since')"
                         hide-details
                     />
-                    <v-select v-model="filters.limit" :items="limitOptions" hide-details />
+                    <v-select
+                        v-model="filters.limit"
+                        :items="limitOptions"
+                        :label="t('generic.page-size')"
+                        hide-details
+                    />
                 </div>
                 <div class="mt-4 flex flex-wrap gap-2">
                     <v-btn type="submit" color="primary" :disabled="props.loading">
@@ -141,7 +146,7 @@ const truncateId = (value?: string, length = 8) =>
             </form>
         </v-card>
 
-        <p class="m-0 text-sm opacity-70">
+        <p class="m-0 text-sm opacity-70" role="status">
             {{
                 t('admin-page.audit-showing', {
                     shown: props.auditEvents.length,
@@ -156,6 +161,7 @@ const truncateId = (value?: string, length = 8) =>
             v-else
             :headers="tableHeaders"
             :items="props.auditEvents"
+            :caption="t('admin-page.audit-table-caption')"
             :loading="props.loading"
             :no-data-text="t('generic.no-data')"
         >
@@ -188,15 +194,23 @@ const truncateId = (value?: string, length = 8) =>
             </template>
 
             <template v-slot:[`item.request_id`]="{ item }">
-                <span :title="item.request_id" class="font-mono text-xs">
+                <!--
+                    The full id for the reader too — a title alone is mouse-only. As hidden text
+                    rather than an `aria-label`: a role-less span may not carry a name
+                    (`aria-prohibited-attr`), and the visible span is hidden from the reader so
+                    the id is not announced twice.
+                -->
+                <span :title="item.request_id" class="font-mono text-xs" aria-hidden="true">
                     {{ truncateId(item.request_id) }}
                 </span>
+                <span class="sr-only">{{ item.request_id }}</span>
             </template>
 
             <template v-slot:[`item.trace_id`]="{ item }">
-                <span :title="item.trace_id" class="font-mono text-xs">
+                <span :title="item.trace_id" class="font-mono text-xs" aria-hidden="true">
                     {{ truncateId(item.trace_id) }}
                 </span>
+                <span class="sr-only">{{ item.trace_id }}</span>
             </template>
         </DataTable>
     </div>

@@ -24,9 +24,9 @@ watch(providedVariable, (value) => {
 
 <template>
     <v-card class="w-full max-w-md p-6">
-        <h3 class="text-lg font-semibold">
+        <h2 class="text-lg font-semibold">
             <b>{{ providedVariable }}</b>
-        </h3>
+        </h2>
         <p class="mb-4 opacity-70">{{ t('playground-page.label-provided') }}</p>
 
         <p class="mb-1 font-medium">

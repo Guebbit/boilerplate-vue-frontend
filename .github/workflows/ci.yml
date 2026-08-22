@@ -506,6 +506,18 @@ jobs:
                   retention-days: 14
                   if-no-files-found: ignore
 
+            - name: Upload accessibility reports
+              # Every axe finding the sweeps saw, the advisory ones included — `cy.checkPageA11y()`
+              # gates on serious/critical and writes the rest to `reports/a11y/`. Uploaded on
+              # success as well, because the point is the data a green run still produced.
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: a11y-reports
+                  path: reports/a11y/
+                  retention-days: 14
+                  if-no-files-found: ignore
+
             - name: Upload Cypress screenshots
               if: failure()
               uses: actions/upload-artifact@v4

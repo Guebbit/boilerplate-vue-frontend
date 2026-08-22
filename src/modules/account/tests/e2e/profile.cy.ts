@@ -83,13 +83,15 @@ describe('Profile self-service', () => {
     describe('password change', () => {
         it('changes the password through the current-password flow', () => {
             cy.get('[data-test=toggle-change-password]').click();
-            cy.get('[data-test=current-password] input').should('not.be.disabled').type('password'); // gino's real one
+            // gino's real one; the new one satisfies `usersPasswordSchema` — the submit is no longer
+            // disabled behind an invalid form, it reveals the errors, so the fixture must pass them.
+            cy.get('[data-test=current-password] input').should('not.be.disabled').type('password');
             cy.get('[data-test=new-password] input')
                 .should('not.be.disabled')
-                .type('brand-new-secret');
+                .type('BrandNew_Secret1!');
             cy.get('[data-test=new-password-confirm] input')
                 .should('not.be.disabled')
-                .type('brand-new-secret');
+                .type('BrandNew_Secret1!');
             cy.get('[data-test=submit-password-change]').click();
 
             cy.contains('Password changed').should('exist');
@@ -102,10 +104,10 @@ describe('Profile self-service', () => {
                 .type('wrong-password');
             cy.get('[data-test=new-password] input')
                 .should('not.be.disabled')
-                .type('brand-new-secret');
+                .type('BrandNew_Secret1!');
             cy.get('[data-test=new-password-confirm] input')
                 .should('not.be.disabled')
-                .type('brand-new-secret');
+                .type('BrandNew_Secret1!');
             cy.get('[data-test=submit-password-change]').click();
 
             // The toast shows the envelope's status message (the app's convention for API

@@ -5,6 +5,7 @@ import {
     getCurrentLocale,
     getDefaultLocale,
     loadedLanguages,
+    localeDirections,
     _changeLanguage,
     _ensureFallbackLoaded,
     _loadLocale,
@@ -177,6 +178,28 @@ describe('_changeLanguage', () => {
         return _changeLanguage(instance, 'it').then(() => {
             expect(document.documentElement.getAttribute('lang')).toBe('it');
         });
+    });
+
+    /**
+     * `<html dir>` too: the manifest is the only thing that knows a language's writing
+     * direction, and a right-to-left language laid out left-to-right is unreadable. Bundled
+     * languages are all `ltr`, so a tag the manifest never described defaults to it.
+     */
+    it('keeps <html dir> in sync with the direction the manifest reported', () => {
+        const instance = freshInstance();
+        loadedLanguages.splice(0, Number.POSITIVE_INFINITY, 'it', 'ar');
+        localeDirections.ar = 'rtl';
+        return _changeLanguage(instance, 'ar')
+            .then(() => {
+                expect(document.documentElement.getAttribute('dir')).toBe('rtl');
+            })
+            .then(() => _changeLanguage(instance, 'it'))
+            .then(() => {
+                expect(document.documentElement.getAttribute('dir')).toBe('ltr');
+            })
+            .finally(() => {
+                delete localeDirections.ar;
+            });
     });
 
     /**

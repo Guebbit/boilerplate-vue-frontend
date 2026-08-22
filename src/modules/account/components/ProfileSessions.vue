@@ -82,7 +82,7 @@ onMounted(fetchSessions);
     <v-card class="p-8" data-test="profile-sessions">
         <div class="mb-4 flex items-center gap-2">
             <MonitorSmartphone :size="20" aria-hidden="true" />
-            <h3 class="text-lg font-semibold">{{ t('profile-page.sessions-title') }}</h3>
+            <h2 class="text-lg font-semibold">{{ t('profile-page.sessions-title') }}</h2>
         </div>
 
         <p class="mb-4 opacity-80">{{ t('profile-page.sessions-intro') }}</p>
@@ -114,6 +114,11 @@ onMounted(fetchSessions);
                         color="error"
                         size="small"
                         data-test="session-revoke"
+                        :aria-label="
+                            session.current
+                                ? t('profile-page.sessions-revoke-current')
+                                : t('profile-page.sessions-revoke-named', { id: session.id })
+                        "
                         :loading="revokingId === session.id"
                         @click="handleRevoke(session.id, session.current)"
                     >

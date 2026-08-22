@@ -48,22 +48,30 @@ function switchLanguage(newLocale: string) {
 <template>
     <v-menu location="bottom end">
         <template #activator="{ props: menuProps }">
+            <!--
+                The accessible name contains the visible text (WCAG 2.5.3): a voice-control user
+                says what they see, and "Language" alone would not match a button reading "EN".
+            -->
             <v-btn
                 v-bind="menuProps"
                 variant="text"
                 class="px-2"
-                :aria-label="t('navigation.label-language')"
+                data-test="language-switcher"
+                :aria-label="`${t('navigation.label-language')}: ${locale.toUpperCase()}`"
             >
                 <Languages :size="18" class="mr-1" aria-hidden="true" />
                 {{ locale.toUpperCase() }}
             </v-btn>
         </template>
 
-        <v-list density="compact" :aria-label="t('navigation.label-language')">
+        <!-- A menu of actions, not a listbox: picking one switches the language and closes it. -->
+        <v-list density="compact" role="menu" :aria-label="t('navigation.label-language')">
             <v-list-item
                 v-for="sLocale in supportedLanguages"
                 :key="`locale-${sLocale}`"
+                role="menuitem"
                 :active="locale === sLocale"
+                :aria-current="locale === sLocale ? 'true' : undefined"
                 color="primary"
                 @click="switchLanguage(sLocale)"
             >

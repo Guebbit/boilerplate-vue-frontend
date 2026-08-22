@@ -25,6 +25,12 @@ declare module 'vue-router' {
     // merging only works against the exact interface it declares.
     interface RouteMeta {
         access?: RouteAccess;
+        /**
+         * Dictionary key of the page's title, resolved into `document.title` after every
+         * navigation (WCAG 2.4.2) and read out by the route announcer. Absent on the redirect
+         * shells that never render a page.
+         */
+        title?: string;
     }
 }
 

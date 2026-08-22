@@ -67,7 +67,7 @@ describe('Italian locale', () => {
         cy.get('form').submit();
         cy.get('.v-messages__message').should('contain.text', 'Must be a valid email');
 
-        cy.get('[aria-label="Language"]').first().click();
+        cy.get('[data-test=language-switcher]').first().click();
         cy.contains('.v-list-item-title', 'italian').click();
 
         cy.url().should('include', '/it/login');
@@ -90,7 +90,7 @@ describe('switching the language in place', () => {
         cy.visit('/en');
         cy.contains('Welcome to your Vue boilerplate').should('exist');
 
-        cy.get('[aria-label="Language"]').first().click();
+        cy.get('[data-test=language-switcher]').first().click();
         cy.contains('.v-list-item-title', 'italian').click();
 
         cy.get('html').should('have.attr', 'lang', 'it');
@@ -115,7 +115,7 @@ describe('the saved preference', () => {
     it("a guest's switch writes nothing to any account", function () {
         cy.skipUnlessDemo();
 
-        cy.get('[aria-label="Language"]').first().click();
+        cy.get('[data-test=language-switcher]').first().click();
         cy.contains('.v-list-item-title', 'italian').click();
         cy.get('html').should('have.attr', 'lang', 'it');
 
@@ -129,7 +129,7 @@ describe('the saved preference', () => {
         cy.skipUnlessDemo();
 
         cy.loginAs('user');
-        cy.get('[aria-label="Language"]').first().click();
+        cy.get('[data-test=language-switcher]').first().click();
         cy.contains('.v-list-item-title', 'italian').click();
         cy.get('html').should('have.attr', 'lang', 'it');
 
@@ -166,7 +166,7 @@ describe('a locale only the API has', () => {
     it('is offered in the switcher even though this app has no dictionary for it', () => {
         cy.visit('/en');
 
-        cy.get('[aria-label="Language"]').first().click();
+        cy.get('[data-test=language-switcher]').first().click();
         cy.contains('.v-list-item-title', 'spanish').should('exist');
     });
 
@@ -203,7 +203,7 @@ describe('a locale only the API has', () => {
             expect(downloads, 'no download before the choice').to.have.length(0);
         });
 
-        cy.get('[aria-label="Language"]').first().click();
+        cy.get('[data-test=language-switcher]').first().click();
         cy.contains('.v-list-item-title', 'spanish').click();
 
         cy.get('html').should('have.attr', 'lang', 'es');

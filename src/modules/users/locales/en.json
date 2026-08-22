@@ -24,7 +24,11 @@
         "filter-active": "Status",
         "filter-active-all": "All",
         "filter-active-yes": "Active",
-        "filter-active-no": "Inactive"
+        "filter-active-no": "Inactive",
+        "table-caption": "Users",
+        "button-view-named": "View {name}",
+        "button-edit-named": "Edit {name}",
+        "button-delete-named": "Delete {name}"
     },
     "users-form": {
         "email-required": "Email is required",

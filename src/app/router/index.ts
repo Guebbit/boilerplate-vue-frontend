@@ -1,9 +1,11 @@
-import { createRouter, createWebHistory, RouterView } from 'vue-router';
+import { nextTick } from 'vue';
+import { createRouter, createWebHistory, RouterView, START_LOCATION } from 'vue-router';
 import type { RouteLocationNormalized } from 'vue-router';
 import { localeChoice } from '@/app/guards/locale-choice';
 import { tryRestoreAuth, enforceRouteAccess } from '@/app/guards/authentications.ts';
-import { getDefaultLocale } from '@/infrastructure/i18n';
+import { getDefaultLocale, translate } from '@/infrastructure/i18n';
 import { signInLocation } from '@/app/router/navigation.ts';
+import { routeAnnouncement, requestMainFocus, consumeMainFocus } from '@/app/router/announcer.ts';
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 
@@ -21,8 +23,36 @@ import { enabledModules } from '@/modules';
  */
 const moduleRoutes = collectModuleRoutes(enabledModules);
 
+/**
+ * The name that follows every page title in the browser tab, and stands alone on a route that
+ * declares none. An env value so a derived project renames the tab without touching the router.
+ */
+const appName = (import.meta.env.VITE_APP_NAME as string | undefined) || 'Guebbit';
+
+/** Whether the visitor asked the OS for less motion; read per call, since the setting can change. */
+const prefersReducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 const router = createRouter({
     history: createWebHistory(import.meta.env.VITE_APP_BASE_URL),
+    /**
+     * Back/forward restore where the visitor was; a new page starts at the top, or at its anchor.
+     *
+     * A navigation that only changes the query — a list page re-searching — keeps its position:
+     * jumping to the top on every filter change would throw the visitor off the control they just
+     * used. Smooth only when the OS has not asked for reduced motion (WCAG 2.3.3).
+     *
+     * @param to - Route being entered.
+     * @param from - Route being left.
+     * @param savedPosition - Where the visitor was, on a history navigation; `null` otherwise.
+     * @returns The scroll target, or `false` to leave the viewport alone.
+     */
+    scrollBehavior: (to, from, savedPosition) => {
+        const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
+        if (savedPosition) return { ...savedPosition, behavior };
+        if (to.hash) return { el: to.hash, behavior };
+        if (to.path === from.path) return false;
+        return { top: 0, behavior };
+    },
     routes: [
         {
             path: '/',
@@ -40,6 +70,7 @@ const router = createRouter({
                 {
                     path: '',
                     name: 'Home',
+                    meta: { title: 'home-page.page-title' },
                     component: () => import('@/app/views/Home.vue')
                 },
                 /*
@@ -49,12 +80,14 @@ const router = createRouter({
                 ...(['about', 'faq', 'terms', 'privacy'] as const).map((page) => ({
                     path: page,
                     name: 'Static' + page[0].toUpperCase() + page.slice(1),
+                    meta: { title: `static-pages.${page}.title` },
                     component: () => import('@/app/views/StaticPage.vue'),
                     props: { page }
                 })),
                 {
                     path: 'error/:status/:message?',
                     name: 'Error',
+                    meta: { title: 'error-page.page-title' },
                     component: () => import('@/app/views/Error.vue'),
                     props: true
                 },
@@ -113,8 +146,7 @@ router.onError((error: Error, to: RouteLocationNormalized) => {
     // are visible in the error dashboard rather than silently swallowed.
     // eslint-disable-next-line no-restricted-syntax -- an analytics/observability failure must never abort a navigation; the catch reports and lets the route proceed
     try {
-        const obs = useObservabilityStore();
-        obs.captureException(error);
+        useObservabilityStore().captureException(error);
     } catch {
         // Store may not be initialised yet in edge cases — ignore.
     }
@@ -173,6 +205,35 @@ router.beforeEach((to, from) => {
 });
 
 router.beforeResolve(localeChoice);
+
+/**
+ * After every navigation: the tab title, the announcement, and where focus goes.
+ *
+ * Registered AFTER `localeChoice`, and that order is load-bearing: `translate` reads the active
+ * dictionary, and the guard is what loads it. Resolved here, once, rather than in each view —
+ * a view that forgot would leave the previous page's title in the tab (WCAG 2.4.2).
+ *
+ * Focus moves to `<v-main>` on a real page change only. The initial load already starts at the
+ * top, and a navigation to an anchor must leave focus alone so the anchor wins; a query-only
+ * change (a list re-searching) keeps focus on the control that caused it (WCAG 2.4.3).
+ *
+ * @param to - Route that has just been entered.
+ * @param from - Route that was left; `START_LOCATION` on the initial load.
+ */
+router.afterEach((to, from) => {
+    const title = to.meta.title ? translate(to.meta.title) : '';
+    document.title = title ? `${title} — ${appName}` : appName;
+    routeAnnouncement.value = title;
+
+    const isPageChange = from !== START_LOCATION && to.path !== from.path && !to.hash;
+    if (!isPageChange) return;
+
+    // The new view mounts its own layout, and that layout consumes the request on mount. The
+    // tick below covers the other case — a navigation that kept the same view (detail → detail),
+    // where nothing remounts and nobody else would consume it.
+    requestMainFocus();
+    void nextTick(consumeMainFocus);
+});
 
 // NOTE: pageviews are tracked automatically by the Umami tracker script
 // (it hooks SPA history changes), so there is no manual page_view event here.

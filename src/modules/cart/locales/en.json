@@ -3,7 +3,6 @@
         "page-title": "My Cart",
         "empty-cart": "Your cart is empty",
         "button-go-to-products": "Browse products",
-        "label-product-id": "Product",
         "label-quantity": "Quantity",
         "label-summary": "Summary",
         "label-items-count": "Items",
@@ -14,7 +13,10 @@
         "button-checkout": "Checkout",
         "success-checkout": "Order placed successfully!",
         "button-decrease": "Decrease quantity",
-        "button-increase": "Increase quantity"
+        "button-increase": "Increase quantity",
+        "button-decrease-named": "Decrease quantity of product {id}",
+        "button-increase-named": "Increase quantity of product {id}",
+        "button-remove-named": "Remove product {id}"
     },
     "navigation": {
         "label-cart": "Cart"

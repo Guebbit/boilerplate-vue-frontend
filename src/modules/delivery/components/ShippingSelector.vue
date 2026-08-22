@@ -5,7 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onMounted, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
@@ -24,6 +24,9 @@ const { itemsTotal } = defineProps<{
 const methodId = defineModel<string | undefined>();
 
 const { t } = useI18n();
+
+/** The heading's id: it is the group's label too, so the radios are named by it. */
+const titleId = useId();
 const deliveryStore = useDeliveryStore();
 const { methods } = storeToRefs(deliveryStore);
 
@@ -34,8 +37,10 @@ onMounted(() => {
 
 <template>
     <div data-test="shipping-selector">
-        <h3 class="mb-1 text-base font-semibold">{{ t('shipping-selector.title') }}</h3>
-        <v-radio-group v-model="methodId">
+        <h3 :id="titleId" class="mb-1 text-base font-semibold">
+            {{ t('shipping-selector.title') }}
+        </h3>
+        <v-radio-group v-model="methodId" :aria-labelledby="titleId">
             <v-radio
                 v-for="method in methods"
                 :key="method.id"

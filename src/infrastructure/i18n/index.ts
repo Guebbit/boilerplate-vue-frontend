@@ -51,6 +51,16 @@ export const supportedLanguages = [...bundledLocales];
 export const loadedLanguages: string[] = [];
 
 /**
+ * Writing direction per language tag, as the API's manifest reports it.
+ *
+ * Filled by `mergeRemoteLocales` at boot; empty offline, and every bundled language is
+ * left-to-right, so a tag missing here is `ltr`. Read by {@link _changeLanguage} to set
+ * `<html dir>`: a right-to-left language laid out left-to-right is unreadable, and the attribute
+ * is the one switch the whole page follows.
+ */
+export const localeDirections: Record<string, 'ltr' | 'rtl'> = {};
+
+/**
  * Per-locale loaders for the dictionaries the enabled modules contribute.
  *
  * A domain owns its own copy under `src/modules/<name>/locales/`, merged at boot, per locale, on
@@ -269,7 +279,7 @@ export function _ensureFallbackLoaded(i18n: I18n, locale: string): Promise<unkno
 
 /**
  * Switches the active language, loading its vocabulary first when missing, and keeps
- * `<html lang>` in sync.
+ * `<html lang>` and `<html dir>` in sync.
  *
  * @param i18n - The vue-i18n instance to switch.
  * @param locale - Locale code to activate, e.g. `en`.
@@ -278,7 +288,9 @@ export function _ensureFallbackLoaded(i18n: I18n, locale: string): Promise<unkno
 export function _changeLanguage(i18n: I18n, locale: string): Promise<unknown> {
     const setLocale = () => {
         (i18n.global.locale as WritableComputedRef<string>).value = locale;
-        document.querySelector('html')?.setAttribute('lang', locale);
+        const html = document.querySelector('html');
+        html?.setAttribute('lang', locale);
+        html?.setAttribute('dir', localeDirections[locale] ?? 'ltr');
         return nextTick();
     };
     if (!loadedLanguages.includes(locale)) return _loadLocale(i18n, locale).then(() => setLocale());

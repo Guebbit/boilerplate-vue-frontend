@@ -193,3 +193,14 @@ jobs:
                   path: tests/e2e/videos
                   retention-days: 14
                   if-no-files-found: ignore
+
+            - name: Upload accessibility reports
+              # Same artifact `ci.yml`'s demo-profile job uploads, from the live stack: every axe
+              # finding `cy.checkPageA11y()` saw, written to `reports/a11y/` — advisory ones too.
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: a11y-reports-live
+                  path: reports/a11y/
+                  retention-days: 14
+                  if-no-files-found: ignore

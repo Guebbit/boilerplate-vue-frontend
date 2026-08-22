@@ -20,7 +20,8 @@
         "status-new": "Nuovo",
         "status-in_progress": "In lavorazione",
         "status-resolved": "Risolto",
-        "status-spam": "Spam"
+        "status-spam": "Spam",
+        "status-label": "Stato di \"{subject}\""
     },
     "navigation": {
         "label-contact": "Contatti",

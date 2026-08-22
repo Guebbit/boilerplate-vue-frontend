@@ -4,7 +4,7 @@ export default [
     {
         path: 'admin',
         name: 'Admin',
-        meta: { access: 'admin' },
+        meta: { access: 'admin', title: 'admin-page.page-title' },
         component: () => import('@/modules/admin/views/Admin.vue')
     }
 ] as RouteRecordRaw[];

@@ -3,7 +3,6 @@
         "page-title": "Il mio carrello",
         "empty-cart": "Il tuo carrello è vuoto",
         "button-go-to-products": "Sfoglia i prodotti",
-        "label-product-id": "Prodotto",
         "label-quantity": "Quantità",
         "label-summary": "Riepilogo",
         "label-items-count": "Articoli",
@@ -14,7 +13,10 @@
         "button-checkout": "Acquista",
         "success-checkout": "Ordine effettuato con successo!",
         "button-decrease": "Diminuisci quantità",
-        "button-increase": "Aumenta quantità"
+        "button-increase": "Aumenta quantità",
+        "button-decrease-named": "Diminuisci quantità del prodotto {id}",
+        "button-increase-named": "Aumenta quantità del prodotto {id}",
+        "button-remove-named": "Rimuovi il prodotto {id}"
     },
     "navigation": {
         "label-cart": "Carrello"

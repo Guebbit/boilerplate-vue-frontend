@@ -10,6 +10,8 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { BookOpen, Timer } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { z } from 'zod';
+import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
@@ -88,13 +90,52 @@ const movementHeaders = computed<CoreDataTableHeader<StockMovement>[]>(() => [
 /** Small on purpose — this is an admin table to read, not a feed to scroll. */
 const PAGE_SIZE = 10;
 
-const receiptProductId = ref<string | undefined>();
-const receiptQuantity = ref(10);
-const receiptNote = ref('');
+/**
+ * The two write forms, each on `useAppForm` like every other write in the app: a submit with a
+ * missing product or a zero quantity SAYS so under the field, rather than sitting behind a button
+ * that cannot be pressed and explains nothing.
+ */
+const receiptFormElement = ref<HTMLFormElement>();
+const {
+    form: receiptForm,
+    formErrors: receiptErrors,
+    showFormErrors: showReceiptErrors,
+    handleSubmit: handleReceiptSubmit
+} = useAppForm(
+    { productId: '', quantity: 10, note: '' },
+    z.object({
+        productId: z.string().min(1, { error: () => t('inventory-page.error-product-required') }),
+        // Strictly positive: a delivery that removes units is not a delivery.
+        quantity: z
+            .number({ error: () => t('inventory-page.error-quantity-positive') })
+            .int({ error: () => t('inventory-page.error-quantity-positive') })
+            .min(1, { error: () => t('inventory-page.error-quantity-positive') }),
+        note: z.string()
+    }),
+    { formElement: receiptFormElement }
+);
 
-const adjustProductId = ref<string | undefined>();
-const adjustDelta = ref(-1);
-const adjustNote = ref('');
+const adjustFormElement = ref<HTMLFormElement>();
+const {
+    form: adjustForm,
+    formErrors: adjustErrors,
+    showFormErrors: showAdjustErrors,
+    handleSubmit: handleAdjustSubmit
+} = useAppForm(
+    { productId: '', delta: -1, note: '' },
+    z.object({
+        productId: z.string().min(1, { error: () => t('inventory-page.error-product-required') }),
+        // Signed, but never zero: a correction of nothing is a row that explains nothing.
+        delta: z
+            .number({ error: () => t('inventory-page.error-delta-nonzero') })
+            .int({ error: () => t('inventory-page.error-delta-nonzero') })
+            .refine((delta) => delta !== 0, {
+                error: () => t('inventory-page.error-delta-nonzero')
+            }),
+        note: z.string()
+    }),
+    { formElement: adjustFormElement }
+);
 
 const levelsPage = ref(1);
 const lowOnly = ref(false);
@@ -161,18 +202,21 @@ const showHistory = (productId: string) => {
     movementsPage.value = 1;
 };
 
-const handleReceipt = () => {
-    if (!receiptProductId.value) return;
-    inventoryStore
-        .receive(receiptProductId.value, receiptQuantity.value, receiptNote.value || undefined)
-        .then((level) => {
-            addMessage(t('inventory-page.success-receipt', { available: level?.available ?? 0 }));
-            receiptNote.value = '';
-            // The catalogue carries its own copy of the counters, so it has to hear about this too.
-            return productsStore.fetchProducts();
-        })
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
-};
+const handleReceipt = () =>
+    handleReceiptSubmit(({ productId, quantity, note }) =>
+        inventoryStore
+            .receive(productId, quantity, note || undefined)
+            .then((level) => {
+                addMessage(
+                    t('inventory-page.success-receipt', { available: level?.available ?? 0 })
+                );
+                receiptForm.value.note = '';
+                // The catalogue carries its own copy of the counters, so it has to hear about this too.
+                return productsStore.fetchProducts();
+            })
+            .then(() => undefined)
+            .catch((error: unknown) => notifyErrorMessages(addMessage, error))
+    );
 
 /**
  * A stocktake correction. The interesting failure is the 409 — the correction would leave fewer
@@ -180,17 +224,20 @@ const handleReceipt = () => {
  * carries it through verbatim, because "cancel orders, don't make availability negative" is the
  * fix and the copy already names it.
  */
-const handleAdjust = () => {
-    if (!adjustProductId.value || adjustDelta.value === 0) return;
-    inventoryStore
-        .adjust(adjustProductId.value, adjustDelta.value, adjustNote.value || undefined)
-        .then((level) => {
-            addMessage(t('inventory-page.success-adjust', { available: level?.available ?? 0 }));
-            adjustNote.value = '';
-            return productsStore.fetchProducts();
-        })
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
-};
+const handleAdjust = () =>
+    handleAdjustSubmit(({ productId, delta, note }) =>
+        inventoryStore
+            .adjust(productId, delta, note || undefined)
+            .then((level) => {
+                addMessage(
+                    t('inventory-page.success-adjust', { available: level?.available ?? 0 })
+                );
+                adjustForm.value.note = '';
+                return productsStore.fetchProducts();
+            })
+            .then(() => undefined)
+            .catch((error: unknown) => notifyErrorMessages(addMessage, error))
+    );
 
 /**
  * Expires every stale hold. Idempotent server-side, so the confirm is about intent, not danger —
@@ -220,88 +267,102 @@ onMounted(() => {
     <LayoutDefault id="inventory-page" :title="t('inventory-page.page-title')">
         <div class="mb-6 grid gap-4 lg:grid-cols-2">
             <v-card class="p-4" data-test="receipt-form">
-                <h3 class="mb-2 text-base font-semibold">
+                <h2 class="mb-2 text-base font-semibold">
                     {{ t('inventory-page.receipt-title') }}
-                </h3>
-                <div class="flex flex-wrap items-center gap-3">
+                </h2>
+                <form
+                    ref="receiptFormElement"
+                    novalidate
+                    class="flex flex-wrap items-start gap-3"
+                    @submit.prevent="handleReceipt"
+                >
                     <v-select
-                        v-model="receiptProductId"
+                        v-model="receiptForm.productId"
                         :items="productOptions"
                         :label="t('inventory-page.label-product')"
+                        :error-messages="showReceiptErrors ? (receiptErrors.productId ?? []) : []"
                         data-test="receipt-product"
                         class="min-w-56"
-                        hide-details
+                        hide-details="auto"
                     />
                     <v-text-field
-                        v-model.number="receiptQuantity"
+                        v-model.number="receiptForm.quantity"
                         type="number"
                         min="1"
                         :label="t('inventory-page.label-quantity')"
+                        :error-messages="showReceiptErrors ? (receiptErrors.quantity ?? []) : []"
                         data-test="receipt-quantity"
                         class="max-w-28"
-                        hide-details
+                        hide-details="auto"
                     />
                     <v-text-field
-                        v-model="receiptNote"
+                        v-model="receiptForm.note"
                         :label="t('inventory-page.label-note')"
                         data-test="receipt-note"
                         class="min-w-40 grow"
-                        hide-details
+                        hide-details="auto"
                     />
                     <v-btn
+                        type="submit"
                         color="primary"
                         data-test="receipt-submit"
-                        :disabled="loading || !receiptProductId || receiptQuantity < 1"
-                        @click="handleReceipt"
+                        :disabled="loading"
                     >
                         {{ t('inventory-page.button-receipt') }}
                     </v-btn>
-                </div>
+                </form>
             </v-card>
 
             <v-card class="p-4" data-test="adjust-form">
-                <h3 class="mb-2 text-base font-semibold">
+                <h2 class="mb-2 text-base font-semibold">
                     {{ t('inventory-page.adjust-title') }}
-                </h3>
-                <div class="flex flex-wrap items-center gap-3">
+                </h2>
+                <form
+                    ref="adjustFormElement"
+                    novalidate
+                    class="flex flex-wrap items-start gap-3"
+                    @submit.prevent="handleAdjust"
+                >
                     <v-select
-                        v-model="adjustProductId"
+                        v-model="adjustForm.productId"
                         :items="productOptions"
                         :label="t('inventory-page.label-product')"
+                        :error-messages="showAdjustErrors ? (adjustErrors.productId ?? []) : []"
                         data-test="adjust-product"
                         class="min-w-56"
-                        hide-details
+                        hide-details="auto"
                     />
                     <v-text-field
-                        v-model.number="adjustDelta"
+                        v-model.number="adjustForm.delta"
                         type="number"
                         :label="t('inventory-page.label-delta')"
                         :hint="t('inventory-page.hint-delta')"
+                        :error-messages="showAdjustErrors ? (adjustErrors.delta ?? []) : []"
                         data-test="adjust-delta"
                         class="max-w-28"
                         persistent-hint
                     />
                     <v-text-field
-                        v-model="adjustNote"
+                        v-model="adjustForm.note"
                         :label="t('inventory-page.label-note-why')"
                         data-test="adjust-note"
                         class="min-w-40 grow"
-                        hide-details
+                        hide-details="auto"
                     />
                     <v-btn
+                        type="submit"
                         color="secondary"
                         data-test="adjust-submit"
-                        :disabled="loading || !adjustProductId || adjustDelta === 0"
-                        @click="handleAdjust"
+                        :disabled="loading"
                     >
                         {{ t('inventory-page.button-adjust') }}
                     </v-btn>
-                </div>
+                </form>
             </v-card>
         </div>
 
         <div class="mb-2 flex flex-wrap items-center gap-3">
-            <h3 class="text-base font-semibold">{{ t('inventory-page.board-title') }}</h3>
+            <h2 class="text-base font-semibold">{{ t('inventory-page.board-title') }}</h2>
             <v-switch
                 v-model="lowOnly"
                 :label="t('inventory-page.label-low-only')"
@@ -311,7 +372,7 @@ onMounted(() => {
                 data-test="levels-low-only"
             />
             <v-spacer />
-            <span class="text-sm opacity-70">
+            <span class="text-sm opacity-70" role="status" data-test="levels-total">
                 {{ t('inventory-page.total-items', { total: levelsTotal }) }}
             </span>
         </div>
@@ -321,6 +382,7 @@ onMounted(() => {
             class="mb-2"
             :headers="levelHeaders"
             :items="levels"
+            :caption="t('inventory-page.board-title')"
             :loading="loading"
             :loading-text="t('generic.loading')"
             :no-data-text="t('generic.no-data')"
@@ -336,16 +398,22 @@ onMounted(() => {
                     size="small"
                     variant="text"
                     data-test="level-history"
+                    :aria-label="t('inventory-page.button-history-named', { name: item.title })"
                     @click="showHistory(item.productId)"
                 >
                     {{ t('inventory-page.button-history') }}
                 </v-btn>
             </template>
         </DataTable>
-        <ListPagination v-model="levelsPage" :length="levelsPageTotal" class="mb-6" />
+        <ListPagination
+            v-model="levelsPage"
+            :length="levelsPageTotal"
+            :aria-label="t('inventory-page.pagination-board')"
+            class="mb-6"
+        />
 
         <div class="mb-2 flex flex-wrap items-center gap-3">
-            <h3 class="text-base font-semibold">{{ t('inventory-page.ledger-title') }}</h3>
+            <h2 class="text-base font-semibold">{{ t('inventory-page.ledger-title') }}</h2>
             <v-select
                 v-model="movementsProductId"
                 :items="productFilterOptions"
@@ -369,7 +437,7 @@ onMounted(() => {
                 The audit's honest number: how many rows MATCH, not how many are shown. A read
                 that returned only the newest rows would misreport history as complete.
             -->
-            <span class="text-sm opacity-70" data-test="movements-total">
+            <span class="text-sm opacity-70" role="status" data-test="movements-total">
                 {{ t('inventory-page.total-items', { total: movementsTotal }) }}
             </span>
             <v-btn
@@ -395,6 +463,7 @@ onMounted(() => {
             v-else
             :headers="movementHeaders"
             :items="movements"
+            :caption="t('inventory-page.ledger-title')"
             :loading="loading"
             :loading-text="t('generic.loading')"
             :no-data-text="t('generic.no-data')"
@@ -419,7 +488,7 @@ onMounted(() => {
             </template>
 
             <template v-slot:[`item.reason`]="{ item }">
-                <v-chip size="x-small" data-test="movement-reason">
+                <v-chip size="small" data-test="movement-reason">
                     {{ t(`inventory-page.reason-${item.reason}`) }}
                 </v-chip>
             </template>
@@ -447,6 +516,10 @@ onMounted(() => {
                 <span class="text-xs opacity-75">{{ item.note ?? EMPTY_VALUE }}</span>
             </template>
         </DataTable>
-        <ListPagination v-model="movementsPage" :length="movementsPageTotal" />
+        <ListPagination
+            v-model="movementsPage"
+            :length="movementsPageTotal"
+            :aria-label="t('inventory-page.pagination-ledger')"
+        />
     </LayoutDefault>
 </template>

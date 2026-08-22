@@ -16,6 +16,12 @@
 // Import commands.js using ES2015 syntax:
 
 import 'cypress-axe';
+/*
+ * `cy.realPress()` and friends: keystrokes through the Chrome DevTools Protocol, so a Tab moves
+ * focus the way the visitor's Tab does. Cypress' own `.type('{tab}')` is simulated and does not
+ * — which is why `keyboard.cy.ts` could not be written without this.
+ */
+import 'cypress-real-events';
 import './commands';
 
 beforeEach(() => {

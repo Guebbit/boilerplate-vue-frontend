@@ -142,11 +142,18 @@ const handleDelete = (productId: string) => {
                 <span class="text-sm opacity-70">{{
                     t('products-list-page.label-categories')
                 }}</span>
+                <!--
+                    A chip with `@click` is already a keyboard stop in Vuetify (tabindex, Enter and
+                    Space); what it lacks is a role and a stated state, so the selected chip is
+                    announced as pressed rather than only coloured.
+                -->
                 <v-chip
                     v-for="facet in facets.categories"
                     :key="'category-' + facet.name"
                     size="small"
+                    role="button"
                     data-test="category-chip"
+                    :aria-pressed="filters.category === facet.name ? 'true' : 'false'"
                     :color="filters.category === facet.name ? 'primary' : undefined"
                     @click="handleCategoryChip(facet.name)"
                 >
@@ -158,8 +165,10 @@ const handleDelete = (productId: string) => {
                 <v-chip
                     v-for="facet in facets.tags"
                     :key="'tag-' + facet.name"
-                    size="x-small"
+                    size="small"
+                    role="button"
                     data-test="tag-chip"
+                    :aria-pressed="filters.tag === facet.name ? 'true' : 'false'"
                     :color="filters.tag === facet.name ? 'primary' : undefined"
                     @click="handleTagChip(facet.name)"
                 >
@@ -229,6 +238,7 @@ const handleDelete = (productId: string) => {
             v-model="selectedProductId"
             :headers="tableHeaders"
             :items="pageItems"
+            :caption="t('products-list-page.table-caption')"
             :loading="loading"
             :loading-text="t('generic.loading')"
         >
@@ -252,6 +262,9 @@ const handleDelete = (productId: string) => {
                         size="small"
                         variant="tonal"
                         data-test="row-view"
+                        :aria-label="
+                            t('products-list-page.button-view-named', { name: item.title })
+                        "
                         :to="routerLinkI18n({ name: 'ProductTarget', params: { id: item.id } })"
                     >
                         {{ t('products-list-page.button-view') }}
@@ -262,6 +275,9 @@ const handleDelete = (productId: string) => {
                         variant="tonal"
                         color="secondary"
                         data-test="row-edit"
+                        :aria-label="
+                            t('products-list-page.button-edit-named', { name: item.title })
+                        "
                         :to="routerLinkI18n({ name: 'ProductEdit', params: { id: item.id } })"
                     >
                         {{ t('products-list-page.button-edit') }}
@@ -272,6 +288,9 @@ const handleDelete = (productId: string) => {
                         variant="tonal"
                         color="error"
                         data-test="row-delete"
+                        :aria-label="
+                            t('products-list-page.button-delete-named', { name: item.title })
+                        "
                         :disabled="loading"
                         @click.stop="handleDelete(item.id)"
                     >

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, useId } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
@@ -19,6 +19,10 @@ const { t } = useI18n();
 const dialogStore = useDialogStore();
 const { queue } = storeToRefs(dialogStore);
 
+/** Ids the dialog is named and described by — the title when one is given, the question always. */
+const titleId = useId();
+const messageId = useId();
+
 /** The question being shown; the rest wait their turn. */
 const current = computed(() => queue.value.at(0));
 
@@ -31,9 +35,24 @@ const isOpen = computed({
 </script>
 
 <template>
-    <v-dialog v-model="isOpen" max-width="480" data-test="app-dialog">
-        <v-card v-if="current" :title="current.title" role="alertdialog" aria-modal="true">
-            <v-card-text data-test="app-dialog-message">{{ current.message }}</v-card-text>
+    <!--
+        Named by its title when the caller gave one, by the question itself otherwise — a
+        confirmation with no accessible name is announced as "dialog" and nothing else. The role
+        sits on the overlay Vuetify marks as the dialog, not on the card inside it.
+    -->
+    <v-dialog
+        v-model="isOpen"
+        max-width="480"
+        role="alertdialog"
+        :aria-labelledby="current?.title ? titleId : messageId"
+        :aria-describedby="messageId"
+        data-test="app-dialog"
+    >
+        <v-card v-if="current">
+            <v-card-title v-if="current.title" :id="titleId">{{ current.title }}</v-card-title>
+            <v-card-text :id="messageId" data-test="app-dialog-message">
+                {{ current.message }}
+            </v-card-text>
             <v-card-actions>
                 <v-spacer />
                 <v-btn

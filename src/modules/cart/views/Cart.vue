@@ -35,7 +35,9 @@ const {
     updateCartItem,
     removeCartItem,
     clearCart,
-    checkout: placeOrder
+    checkout: placeOrder,
+    titleOf,
+    resolveTitles
 } = useCartStore();
 const { cartItems, cartSummary } = storeToRefs(useCartStore());
 
@@ -67,7 +69,9 @@ const checkout = () =>
 /**
  * Load cart on mount
  */
-onMounted(fetchCart);
+onMounted(() =>
+    fetchCart().then((cart) => resolveTitles((cart?.items ?? []).map(({ productId }) => productId)))
+);
 </script>
 
 <template>
@@ -91,10 +95,11 @@ onMounted(fetchCart);
                     data-test="cart-item"
                     class="p-5"
                 >
-                    <h3 class="text-lg font-semibold">
-                        {{ t('cart-page.label-product-id') }}: <b>{{ item.productId }}</b>
-                    </h3>
-                    <p class="mt-1 opacity-80">
+                    <h2 class="text-lg font-semibold">
+                        <b>{{ titleOf(item.productId) }}</b>
+                    </h2>
+                    <!-- A status: the steppers below change it, and a reader should hear the new number. -->
+                    <p class="mt-1 opacity-80" role="status">
                         {{ t('cart-page.label-quantity') }}: {{ item.quantity }}
                     </p>
                     <div class="mt-3 flex flex-wrap items-center gap-2">
@@ -104,7 +109,11 @@ onMounted(fetchCart);
                             variant="tonal"
                             data-test="cart-decrease"
                             :disabled="item.quantity <= MIN_LINE_QUANTITY"
-                            :aria-label="t('cart-page.button-decrease')"
+                            :aria-label="
+                                t('cart-page.button-decrease-named', {
+                                    id: titleOf(item.productId)
+                                })
+                            "
                             @click="
                                 updateCartItem(item.productId, steppedQuantity(item.quantity, -1))
                             "
@@ -116,7 +125,11 @@ onMounted(fetchCart);
                             size="small"
                             variant="tonal"
                             data-test="cart-increase"
-                            :aria-label="t('cart-page.button-increase')"
+                            :aria-label="
+                                t('cart-page.button-increase-named', {
+                                    id: titleOf(item.productId)
+                                })
+                            "
                             @click="
                                 updateCartItem(item.productId, steppedQuantity(item.quantity, 1))
                             "
@@ -127,6 +140,9 @@ onMounted(fetchCart);
                             variant="text"
                             color="error"
                             data-test="cart-remove"
+                            :aria-label="
+                                t('cart-page.button-remove-named', { id: titleOf(item.productId) })
+                            "
                             @click="removeCartItem(item.productId)"
                         >
                             {{ t('cart-page.button-remove') }}
@@ -137,7 +153,7 @@ onMounted(fetchCart);
 
             <div class="flex flex-col gap-4">
                 <v-card v-if="cartSummary" data-test="cart-summary" class="p-5 lg:sticky lg:top-20">
-                    <h3 class="text-lg font-semibold">{{ t('cart-page.label-summary') }}</h3>
+                    <h2 class="text-lg font-semibold">{{ t('cart-page.label-summary') }}</h2>
                     <dl class="mt-3 grid grid-cols-[1fr_auto] gap-y-1">
                         <dt class="opacity-70">{{ t('cart-page.label-items-count') }}</dt>
                         <dd class="text-right font-medium">{{ cartSummary.itemsCount }}</dd>
@@ -149,7 +165,7 @@ onMounted(fetchCart);
                     <v-divider class="my-3" />
                     <div class="flex items-baseline justify-between">
                         <span class="opacity-70">{{ t('cart-page.label-total') }}</span>
-                        <span class="text-xl font-bold">
+                        <span class="text-xl font-bold" role="status">
                             {{ formatCurrency(cartSummary.total, cartSummary.currency) }}
                         </span>
                     </div>

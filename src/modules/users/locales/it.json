@@ -24,7 +24,11 @@
         "filter-active": "Stato",
         "filter-active-all": "Tutti",
         "filter-active-yes": "Attivo",
-        "filter-active-no": "Inattivo"
+        "filter-active-no": "Inattivo",
+        "table-caption": "Utenti",
+        "button-view-named": "Visualizza {name}",
+        "button-edit-named": "Modifica {name}",
+        "button-delete-named": "Elimina {name}"
     },
     "users-form": {
         "email-required": "L'email è obbligatoria",

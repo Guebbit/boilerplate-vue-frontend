@@ -92,7 +92,13 @@
         "metrics-db-errors": "DB errors",
         "metrics-no-data": "No metrics data available",
         "audit-total": "{count} events",
-        "audit-empty": "No audit events"
+        "audit-empty": "No audit events",
+        "audit-table-caption": "Audit events",
+        "kpi-status-ok": "Status: ok",
+        "kpi-status-warn": "Status: warning",
+        "kpi-status-error": "Status: error",
+        "kpi-status-loading": "Status: loading",
+        "kpi-status-unknown": "Status: unknown"
     },
     "navigation": {
         "label-admin": "Admin"

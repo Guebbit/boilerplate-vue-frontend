@@ -4,6 +4,7 @@ export default [
     {
         path: 'products',
         name: 'ProductsList',
+        meta: { title: 'products-list-page.page-title' },
         component: () => import('@/modules/products/views/ProductsList.vue')
     },
     {
@@ -13,19 +14,20 @@ export default [
         // should not have to know the ranking rules to be sure.
         path: 'products/create',
         name: 'ProductCreate',
-        meta: { access: 'admin' },
+        meta: { access: 'admin', title: 'product-create-page.page-title' },
         component: () => import('@/modules/products/views/ProductCreate.vue')
     },
     {
         path: 'products/:id',
         name: 'ProductTarget',
+        meta: { title: 'product-target-page.page-title' },
         component: () => import('@/modules/products/views/Product.vue'),
         props: true
     },
     {
         path: 'products/:id/edit',
         name: 'ProductEdit',
-        meta: { access: 'admin' },
+        meta: { access: 'admin', title: 'product-edit-page.page-title' },
         component: () => import('@/modules/products/views/ProductEdit.vue'),
         props: true
     }

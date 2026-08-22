@@ -5,11 +5,13 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, useId } from 'vue';
+import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { MapPin, Plus, Star } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
 import { useAccountStore } from '@/modules/account/store.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import type { Address, AddressInput } from '@types';
@@ -25,8 +27,19 @@ const { addMessage } = useNotificationsStore();
 const { fetchAddresses, addAddress, updateAddress, removeAddress } = useAccountStore();
 const { addresses, loading } = storeToRefs(useAccountStore());
 
+/** The dialog's fields: every `AddressInput` string, optional ones as empty strings. */
+interface AddressForm {
+    label: string;
+    fullName: string;
+    street: string;
+    city: string;
+    zip: string;
+    country: string;
+    phone: string;
+}
+
 /** Blank form — also what "add another" resets to. */
-const emptyForm = (): AddressInput => ({
+const emptyForm = (): AddressForm => ({
     label: '',
     fullName: '',
     street: '',
@@ -39,12 +52,37 @@ const emptyForm = (): AddressInput => ({
 const dialogOpen = ref(false);
 /** The entry being edited, or `undefined` when the dialog is adding a new one. */
 const editingId = ref<string>();
-const form = ref<AddressInput>(emptyForm());
+
+/** The dialog heading's id, so the dialog is announced by its title rather than as "dialog". */
+const dialogTitleId = useId();
+
+/**
+ * The contract's own rule — five non-empty strings — said in the visitor's language. Messages
+ * are thunks so they resolve in the active locale, like every other schema here.
+ */
+const addressSchema = z.object({
+    label: z.string(),
+    fullName: z.string().min(1, { error: () => t('profile-page.addresses-required-full-name') }),
+    street: z.string().min(1, { error: () => t('profile-page.addresses-required-street') }),
+    city: z.string().min(1, { error: () => t('profile-page.addresses-required-city') }),
+    zip: z.string().min(1, { error: () => t('profile-page.addresses-required-zip') }),
+    country: z.string().min(1, { error: () => t('profile-page.addresses-required-country') }),
+    phone: z.string()
+});
+
+/*
+ * No `formElement`: the dialog traps focus already — see `use-app-form.ts` on why a dialog's
+ * `revealErrors` is a state change, not a focus move.
+ */
+const { form, formErrors, showFormErrors, handleSubmit, setForm } = useAppForm<AddressForm>(
+    emptyForm(),
+    addressSchema
+);
 
 /** Opens the dialog empty, for a new entry. */
 const openAdd = () => {
     editingId.value = undefined;
-    form.value = emptyForm();
+    setForm(emptyForm());
     dialogOpen.value = true;
 };
 
@@ -55,7 +93,7 @@ const openAdd = () => {
  */
 const openEdit = (address: Address) => {
     editingId.value = address.id;
-    form.value = {
+    setForm({
         label: address.label ?? '',
         fullName: address.fullName,
         street: address.street,
@@ -63,7 +101,7 @@ const openEdit = (address: Address) => {
         zip: address.zip,
         country: address.country,
         phone: address.phone ?? ''
-    };
+    });
     dialogOpen.value = true;
 };
 
@@ -73,18 +111,23 @@ const openEdit = (address: Address) => {
  *
  * @returns Nothing; the outcome is reported as a toast.
  */
-const handleSave = () => {
-    const payload: AddressInput = {
-        ...form.value,
-        label: form.value.label || undefined,
-        phone: form.value.phone || undefined
-    };
-    const save = editingId.value ? updateAddress(editingId.value, payload) : addAddress(payload);
-    save.then(() => {
-        addMessage(t('profile-page.addresses-saved'));
-        dialogOpen.value = false;
-    }).catch((error) => notifyErrorMessages(addMessage, error));
-};
+const handleSave = () =>
+    handleSubmit((fields) => {
+        const payload: AddressInput = {
+            ...fields,
+            label: fields.label || undefined,
+            phone: fields.phone || undefined
+        };
+        const save = editingId.value
+            ? updateAddress(editingId.value, payload)
+            : addAddress(payload);
+        return save
+            .then(() => {
+                addMessage(t('profile-page.addresses-saved'));
+                dialogOpen.value = false;
+            })
+            .catch((error) => notifyErrorMessages(addMessage, error));
+    });
 
 /**
  * Claims the default slot for one entry.
@@ -122,7 +165,7 @@ onMounted(fetchAddresses);
         <div class="mb-4 flex items-center justify-between gap-2">
             <div class="flex items-center gap-2">
                 <MapPin :size="20" aria-hidden="true" />
-                <h3 class="text-lg font-semibold">{{ t('profile-page.addresses-title') }}</h3>
+                <h2 class="text-lg font-semibold">{{ t('profile-page.addresses-title') }}</h2>
             </div>
             <v-btn
                 color="primary"
@@ -154,7 +197,7 @@ onMounted(fetchAddresses);
                             {{ address.label || address.fullName }}
                             <v-chip
                                 v-if="address.default"
-                                size="x-small"
+                                size="small"
                                 color="primary"
                                 class="ml-1"
                                 data-test="address-default"
@@ -182,10 +225,16 @@ onMounted(fetchAddresses);
                         <Star :size="14" class="mr-1" aria-hidden="true" />
                         {{ t('profile-page.addresses-make-default') }}
                     </v-btn>
+                    <!-- Named per entry: a list of identical "Edit" buttons is a list of one. -->
                     <v-btn
                         variant="text"
                         size="small"
                         data-test="address-edit"
+                        :aria-label="
+                            t('profile-page.addresses-edit-named', {
+                                name: address.label || address.fullName
+                            })
+                        "
                         @click="openEdit(address)"
                     >
                         {{ t('profile-page.addresses-edit') }}
@@ -195,6 +244,11 @@ onMounted(fetchAddresses);
                         color="error"
                         size="small"
                         data-test="address-remove"
+                        :aria-label="
+                            t('profile-page.addresses-remove-named', {
+                                name: address.label || address.fullName
+                            })
+                        "
                         @click="handleRemove(address)"
                     >
                         {{ t('profile-page.addresses-remove') }}
@@ -203,30 +257,33 @@ onMounted(fetchAddresses);
             </v-card>
         </div>
 
-        <v-dialog v-model="dialogOpen" max-width="480">
+        <v-dialog v-model="dialogOpen" max-width="480" :aria-labelledby="dialogTitleId">
             <v-card class="p-6" data-test="address-dialog">
-                <h3 class="mb-4 text-lg font-semibold">
+                <h2 :id="dialogTitleId" class="mb-4 text-lg font-semibold">
                     {{
                         editingId
                             ? t('profile-page.addresses-edit')
                             : t('profile-page.addresses-add')
                     }}
-                </h3>
+                </h2>
                 <form novalidate @submit.prevent="handleSave">
                     <v-text-field
                         v-model="form.label"
                         :label="t('profile-page.addresses-label-label')"
+                        :error-messages="showFormErrors ? (formErrors.label ?? []) : []"
                         class="mb-2"
                     />
                     <v-text-field
                         v-model="form.fullName"
                         :label="t('profile-page.addresses-label-full-name')"
+                        :error-messages="showFormErrors ? (formErrors.fullName ?? []) : []"
                         autocomplete="name"
                         class="mb-2"
                     />
                     <v-text-field
                         v-model="form.street"
                         :label="t('profile-page.addresses-label-street')"
+                        :error-messages="showFormErrors ? (formErrors.street ?? []) : []"
                         autocomplete="street-address"
                         class="mb-2"
                     />
@@ -234,23 +291,28 @@ onMounted(fetchAddresses);
                         <v-text-field
                             v-model="form.zip"
                             :label="t('profile-page.addresses-label-zip')"
+                            :error-messages="showFormErrors ? (formErrors.zip ?? []) : []"
                             autocomplete="postal-code"
                         />
                         <v-text-field
                             v-model="form.city"
                             :label="t('profile-page.addresses-label-city')"
+                            :error-messages="showFormErrors ? (formErrors.city ?? []) : []"
                             autocomplete="address-level2"
                         />
                     </div>
+                    <!-- `country-name`: the field holds the name a person types, not an ISO code. -->
                     <v-text-field
                         v-model="form.country"
                         :label="t('profile-page.addresses-label-country')"
-                        autocomplete="country"
+                        :error-messages="showFormErrors ? (formErrors.country ?? []) : []"
+                        autocomplete="country-name"
                         class="mb-2"
                     />
                     <v-text-field
                         v-model="form.phone"
                         :label="t('profile-page.addresses-label-phone')"
+                        :error-messages="showFormErrors ? (formErrors.phone ?? []) : []"
                         autocomplete="tel"
                         type="tel"
                     />

@@ -3,11 +3,12 @@
         "page-title": "Lista dei desideri",
         "empty": "Non hai ancora salvato nulla",
         "button-go-to-products": "Sfoglia i prodotti",
-        "label-product-id": "Prodotto",
         "button-move-to-cart": "Sposta nel carrello",
         "button-remove": "Rimuovi",
         "success-moved": "Prodotto spostato nel carrello.",
-        "success-removed": "Prodotto rimosso dalla lista dei desideri."
+        "success-removed": "Prodotto rimosso dalla lista dei desideri.",
+        "button-move-to-cart-named": "Sposta il prodotto {id} nel carrello",
+        "button-remove-named": "Rimuovi il prodotto {id}"
     },
     "navigation": {
         "label-wishlist": "Lista desideri"

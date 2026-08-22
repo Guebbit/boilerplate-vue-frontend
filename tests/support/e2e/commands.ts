@@ -296,6 +296,27 @@ Cypress.Commands.add('loginAs', (role = 'user') => {
 const BLOCKING_IMPACTS = new Set(['serious', 'critical']);
 
 /**
+ * The rule set, pinned by tag rather than left to axe's default.
+ *
+ * axe's default runs "everything except experimental", and what "everything" means moves with
+ * every axe-core release — so an `npm update` could add a rule and fail a page that had not
+ * changed, or drop one and pass a page that had regressed. Naming the tags makes the contract
+ * explicit: WCAG 2.0/2.1/2.2 at A and AA, plus axe's own best practices (the landmark and
+ * heading-order rules, most of which land as `moderate` and so inform rather than gate).
+ */
+const AXE_RULE_TAGS = [
+    'wcag2a',
+    'wcag2aa',
+    'wcag21a',
+    'wcag21aa',
+    'wcag22aa',
+    'best-practice'
+] as const;
+
+/** Where every finding lands, blocking or not — see `a11y-task.ts`. */
+const A11Y_REPORT_TASK = 'recordA11yViolations';
+
+/**
  * Blocks until no CSS transition is still running.
  *
  * `color-contrast` is measured from computed colour, so it is only meaningful once colours have
@@ -336,10 +357,40 @@ Cypress.Commands.add('checkPageA11y', (context?: string) => {
     cy.injectAxe();
     cy.checkA11y(
         undefined,
-        undefined,
+        { runOnly: { type: 'tag', values: [...AXE_RULE_TAGS] } },
         (violations) => {
             for (const { id, impact, nodes, help } of violations)
                 cy.log(`${label} ${impact}: ${id} — ${help} (${nodes.length} node(s))`);
+
+            /*
+             * Everything to disk, the advisory findings included: the Cypress log above is gone
+             * the moment the run ends, and the JSON is what CI uploads. Recorded BEFORE the gate
+             * below throws, so a failing page's full picture is in the report too.
+             */
+            cy.url({ log: false }).then((url) => {
+                cy.task(
+                    A11Y_REPORT_TASK,
+                    {
+                        spec: Cypress.spec.relative,
+                        context: context ?? url,
+                        url,
+                        violations: violations.map(
+                            ({ id, impact, help, helpUrl, tags, nodes }) => ({
+                                id,
+                                impact,
+                                help,
+                                helpUrl,
+                                tags,
+                                nodes: nodes.map(({ target, html }) => ({
+                                    target: target.map(String),
+                                    html
+                                }))
+                            })
+                        )
+                    },
+                    { log: false }
+                );
+            });
 
             const blocking = violations.filter(({ impact }) => BLOCKING_IMPACTS.has(impact ?? ''));
             if (blocking.length > 0)

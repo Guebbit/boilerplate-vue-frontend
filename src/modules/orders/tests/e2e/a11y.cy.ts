@@ -9,4 +9,17 @@
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
-sweepA11y('orders', [['orders list', '/en/orders']], 'user');
+/** The first seeded order — the admin's, pending, so every action button is on the page. */
+const ORDER_ID = '65de73a69ca05739be2b5e85';
+
+sweepA11y('orders — signed in', [['orders list', '/en/orders']], 'user');
+
+// As the admin: the detail page is reachable by its owner only, and the edit page is admin-only.
+sweepA11y(
+    'orders — admin',
+    [
+        ['order detail', `/en/orders/${ORDER_ID}`],
+        ['order edit', `/en/orders/${ORDER_ID}/edit`]
+    ],
+    'admin'
+);

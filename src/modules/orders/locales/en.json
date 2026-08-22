@@ -20,7 +20,11 @@
         "filter-id": "Order ID",
         "filter-user-id": "User ID",
         "filter-product-id": "Product ID",
-        "filter-email": "Email"
+        "filter-email": "Email",
+        "table-caption": "Orders",
+        "button-view-named": "View order {id}",
+        "button-edit-named": "Edit order {id}",
+        "button-delete-named": "Delete order {id}"
     },
     "orders-form": {
         "status-invalid": "Invalid order status",

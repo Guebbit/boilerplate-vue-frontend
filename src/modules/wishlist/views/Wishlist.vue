@@ -11,6 +11,7 @@ import { storeToRefs } from 'pinia';
 import { Heart, ShoppingCart } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useWishlistStore } from '@/modules/wishlist/store.ts';
+import { useCartStore } from '@/modules/cart';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 
@@ -24,6 +25,8 @@ const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 const { fetchWishlist, removeFromWishlist, moveToCart } = useWishlistStore();
 const { items } = storeToRefs(useWishlistStore());
+/** The saved products' titles — the wishlist answers ids only, and the cart store holds the join. */
+const { titleOf, resolveTitles } = useCartStore();
 
 /**
  * Moves one saved product into the cart.
@@ -49,7 +52,9 @@ const handleRemove = (productId: string) => {
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
 
-onMounted(fetchWishlist);
+onMounted(() =>
+    fetchWishlist().then((lines) => resolveTitles((lines ?? []).map(({ productId }) => productId)))
+);
 </script>
 
 <template>
@@ -72,26 +77,30 @@ onMounted(fetchWishlist);
                 data-test="wishlist-item"
                 class="p-5"
             >
-                <h3 class="text-lg font-semibold">
-                    {{ t('wishlist-page.label-product-id') }}:
+                <h2 class="text-lg font-semibold">
                     <router-link
                         class="underline"
                         :to="
                             routerLinkI18n({
                                 name: 'ProductTarget',
-                                params: { id: item.productId }
+                                params: { id: titleOf(item.productId) }
                             })
                         "
                     >
-                        {{ item.productId }}
+                        {{ titleOf(item.productId) }}
                     </router-link>
-                </h3>
+                </h2>
                 <div class="mt-3 flex flex-wrap items-center gap-2">
                     <v-btn
                         color="primary"
                         variant="tonal"
                         size="small"
                         data-test="wishlist-move-to-cart"
+                        :aria-label="
+                            t('wishlist-page.button-move-to-cart-named', {
+                                id: titleOf(item.productId)
+                            })
+                        "
                         @click="handleMoveToCart(item.productId)"
                     >
                         <ShoppingCart :size="16" class="mr-1" aria-hidden="true" />
@@ -102,6 +111,9 @@ onMounted(fetchWishlist);
                         color="error"
                         size="small"
                         data-test="wishlist-remove"
+                        :aria-label="
+                            t('wishlist-page.button-remove-named', { id: titleOf(item.productId) })
+                        "
                         @click="handleRemove(item.productId)"
                     >
                         {{ t('wishlist-page.button-remove') }}

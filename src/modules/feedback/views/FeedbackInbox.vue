@@ -70,7 +70,7 @@ onMounted(fetchRequests);
             >
                 <div class="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                        <h3 class="text-lg font-semibold">{{ request.subject }}</h3>
+                        <h2 class="text-lg font-semibold">{{ request.subject }}</h2>
                         <p class="text-sm opacity-70">
                             {{ request.name || t('feedback-inbox-page.anonymous') }} —
                             {{ request.email }} · {{ formatDateTime(request.createdAt) }}
@@ -80,6 +80,9 @@ onMounted(fetchRequests);
                         :model-value="request.status"
                         :items="statusOptions"
                         :loading="loading"
+                        :aria-label="
+                            t('feedback-inbox-page.status-label', { subject: request.subject })
+                        "
                         density="compact"
                         hide-details
                         style="max-width: 180px"

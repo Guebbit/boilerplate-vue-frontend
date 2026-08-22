@@ -8,6 +8,6 @@ export default [
         path: 'inventory',
         name: 'InventoryLedger',
         component: () => import('./views/InventoryLedger.vue'),
-        meta: { access: 'admin' }
+        meta: { access: 'admin', title: 'inventory-page.page-title' }
     }
 ] satisfies RouteRecordRaw[];

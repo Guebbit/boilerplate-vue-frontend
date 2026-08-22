@@ -37,7 +37,13 @@
         "total-items": "{total} total",
         "button-sweep": "Expire stale holds",
         "confirm-sweep": "Release every hold whose payment window has closed? The orders behind them will be cancelled.",
-        "success-sweep": "{expired} stale holds released."
+        "success-sweep": "{expired} stale holds released.",
+        "error-product-required": "Pick a product",
+        "error-quantity-positive": "A delivery is at least one whole unit",
+        "error-delta-nonzero": "A correction is a whole number other than zero",
+        "button-history-named": "History of {name}",
+        "pagination-board": "Stock board pages",
+        "pagination-ledger": "Ledger pages"
     },
     "navigation": {
         "label-inventory": "Inventory"

@@ -22,7 +22,8 @@
         "cancel": "Cancel",
         "confirm": "Confirm",
         "fix-errors": "Please fix the highlighted form errors.",
-        "api-unreachable": "The server is unreachable — showing what works offline. Retrying quietly."
+        "api-unreachable": "The server is unreachable — showing what works offline. Retrying quietly.",
+        "notifications": "Notifications"
     },
     "navigation": {
         "label-home": "home",
@@ -33,7 +34,11 @@
         "label-theme": "Toggle theme",
         "label-language": "Language",
         "label-logo": "Guebbit home",
-        "label-about": "About"
+        "label-about": "About",
+        "label-drawer": "Navigation menu",
+        "label-legal": "About and legal pages",
+        "skip-to-content": "Skip to main content",
+        "badge-items": "{n} item | {n} items"
     },
     "home-page": {
         "page-title": "Home",

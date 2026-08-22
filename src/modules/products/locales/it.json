@@ -21,7 +21,11 @@
         "filter-min-price": "Prezzo minimo",
         "filter-max-price": "Prezzo massimo",
         "label-categories": "Categorie:",
-        "label-tags": "Tag:"
+        "label-tags": "Tag:",
+        "table-caption": "Prodotti",
+        "button-view-named": "Visualizza {name}",
+        "button-edit-named": "Modifica {name}",
+        "button-delete-named": "Elimina {name}"
     },
     "products-form": {
         "title-required": "Il titolo è obbligatorio",

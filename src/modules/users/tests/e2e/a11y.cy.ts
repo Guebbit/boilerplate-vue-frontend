@@ -9,11 +9,16 @@
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
+/** The seeded non-admin user — `gino@pino.it`, the `cy.loginAs('user')` account. */
+const USER_ID = '65de646a44f861fd83c13f13';
+
 sweepA11y(
     'users',
     [
         ['users list', '/en/users'],
-        ['user create', '/en/users/create']
+        ['user create', '/en/users/create'],
+        ['user detail', `/en/users/${USER_ID}`],
+        ['user edit', `/en/users/${USER_ID}/edit`]
     ],
     'admin'
 );

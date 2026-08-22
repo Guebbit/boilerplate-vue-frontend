@@ -42,10 +42,22 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
         <section class="grid gap-6">
             <v-card class="flex flex-col gap-4 p-6">
                 <div>
-                    <h3 class="text-lg font-semibold">
+                    <h2 class="text-lg font-semibold">
                         {{ t('realtime-playground-page.sse-observability') }}
-                    </h3>
-                    <v-chip size="small" variant="tonal" color="secondary" class="mt-1">
+                    </h2>
+                    <!-- A status, named as one: the bare word "open" means nothing out of context. -->
+                    <v-chip
+                        size="small"
+                        variant="tonal"
+                        color="secondary"
+                        class="mt-1"
+                        role="status"
+                        :aria-label="
+                            t('realtime-playground-page.connection-status', {
+                                status: observabilityStatus
+                            })
+                        "
+                    >
                         {{ observabilityStatus }}
                     </v-chip>
                 </div>
@@ -66,9 +78,9 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
                 </div>
 
                 <div v-if="latestEntry" class="grid gap-3">
-                    <h4 class="text-sm font-semibold">
+                    <h3 class="text-sm font-semibold">
                         {{ t('realtime-playground-page.section-current') }}
-                    </h4>
+                    </h3>
                     <div class="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-4">
                         <CardMaterialStat
                             :title="t('realtime-playground-page.stat-uptime')"
@@ -95,10 +107,31 @@ const feedEntries = computed(() => observabilityEntries.value.toReversed());
                 </div>
 
                 <div class="grid gap-3">
-                    <h4 class="text-sm font-semibold">
+                    <h3 class="text-sm font-semibold">
                         {{ t('realtime-playground-page.section-feed') }}
-                    </h4>
-                    <div class="max-h-[320px] overflow-y-auto" aria-live="polite">
+                    </h3>
+                    <!--
+                        One line is live, not the feed: a live region over a list of cards reads
+                        every card again on every event. The feed itself is a log a reader can
+                        scroll into — focusable, since a scroll box without focus is keyboard-dead.
+                    -->
+                    <p class="m-0 text-xs opacity-70" role="status" aria-live="polite">
+                        {{
+                            latestEntry
+                                ? t('realtime-playground-page.feed-summary', {
+                                      count: feedEntries.length,
+                                      kind: latestEntry.kind,
+                                      time: formatTime(latestEntry.timestamp)
+                                  })
+                                : t('realtime-playground-page.empty-metrics')
+                        }}
+                    </p>
+                    <div
+                        class="max-h-[320px] overflow-y-auto"
+                        tabindex="0"
+                        role="log"
+                        :aria-label="t('realtime-playground-page.section-feed')"
+                    >
                         <template v-if="feedEntries.length > 0">
                             <v-card
                                 v-for="entry in feedEntries"

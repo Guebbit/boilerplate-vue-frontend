@@ -53,6 +53,9 @@ const routeAccess: Record<string, RouteAccess | undefined> = {
     StaffThing: 'admin'
 };
 
+/** The live count behind the public entry's badge; `0` renders no badge at all. */
+const publicCount = ref(0);
+
 /*
  * Three invented domains, one per visibility class. `order` is deliberately out of sequence so the
  * sort is exercised rather than accidentally satisfied by declaration order.
@@ -67,7 +70,14 @@ vi.mock('@/modules', () => ({
         {
             name: 'public-domain',
             routes: [],
-            navigation: [{ name: 'PublicThing', label: 'navigation.label-public', order: 30 }]
+            navigation: [
+                {
+                    name: 'PublicThing',
+                    label: 'navigation.label-public',
+                    order: 30,
+                    badge: () => publicCount
+                }
+            ]
         },
         {
             name: 'member-domain',
@@ -82,7 +92,8 @@ vi.mock('vue-i18n', async (importOriginal) => {
     return {
         ...actual,
         useI18n: () => ({
-            t: (key: string) => key,
+            // The plural form is echoed so a label built with `t(key, count)` can be asserted on.
+            t: (key: string, count?: number) => (count === undefined ? key : `${key}:${count}`),
             locale: ref('en')
         })
     };
@@ -116,26 +127,27 @@ const mountNav = () => {
                     template:
                         '<header><slot name="prepend" /><slot /><slot name="append" /></header>'
                 },
+                // `v-model` becomes a plain attribute on a stub; the aside is always rendered.
                 VNavigationDrawer: { template: '<aside><slot /></aside>' }
             }
-        }
+        },
+        // In the document, so focus can actually move: jsdom ignores `focus()` on a detached node.
+        attachTo: document.body
     });
     return { wrapper, text: wrapper.text() };
 };
 
 /**
- * Whether the app-bar button carrying `label` is `v-show`-hidden.
+ * Whether the app bar renders NO control carrying `label`.
  *
- * `v-show` keeps the node in the DOM and sets `display: none`, so `wrapper.text()` cannot tell
- * the two states apart — the style is the only observable difference.
+ * The auth links are `v-if`-ed, not `v-show`-hidden: a hidden-but-present button is still in
+ * the tab order, which is the accessibility defect this helper now guards against. So "hidden"
+ * means "absent from the DOM" — an `a` or a `button`, whichever Vuetify renders for a `to`.
  */
-const isHidden = (wrapper: ReturnType<typeof mountNav>['wrapper'], label: string) => {
-    const button = wrapper
-        .findAll('header button')
-        .find((candidate) => candidate.text().includes(label));
-    expect(button, `no app-bar button carrying ${label}`).toBeDefined();
-    return (button!.element as HTMLElement).style.display === 'none';
-};
+const isHidden = (wrapper: ReturnType<typeof mountNav>['wrapper'], label: string) =>
+    !wrapper
+        .findAll('header a, header button')
+        .some((candidate) => candidate.text().includes(label));
 
 describe('Navigation', () => {
     beforeEach(() => {
@@ -144,6 +156,8 @@ describe('Navigation', () => {
         session.viewer.value = undefined;
         registeredRoutes.value = ['Login', 'Signup'];
         currentRoute.value = { fullPath: '/' };
+        publicCount.value = 0;
+        document.body.innerHTML = '';
     });
 
     it('renders properly', () => {
@@ -240,5 +254,87 @@ describe('Navigation', () => {
 
         expect(text).toContain('navigation.label-home');
         expect(text).toContain('navigation.label-about');
+    });
+
+    /**
+     * Links, not buttons. A screen reader says "link" for something that navigates, and a
+     * middle-click opens a tab; the old `@click="router.push(...)"` buttons did neither.
+     */
+    it('renders sign-in and sign-up as links to their routes', () => {
+        const { wrapper } = mountNav();
+
+        // The mocked `RouterLink` resolves no `href`, so the element's kind is what is pinned.
+        const login = wrapper
+            .findAll('header a')
+            .find((candidate) => candidate.text().includes('navigation.label-login'));
+        expect(login, 'login is not a link').toBeDefined();
+        expect(
+            wrapper
+                .findAll('header button')
+                .some((b) => b.text().includes('navigation.label-login'))
+        ).toBe(false);
+    });
+
+    /**
+     * A badge with no `label` is announced as "Badge" — a number with no subject. The label is
+     * the plural form of the count, so "3" reads as "3 items".
+     */
+    it('names the nav badge after its count', () => {
+        publicCount.value = 3;
+
+        const { wrapper } = mountNav();
+
+        // `data-test` lands on the wrapper; Vuetify puts the name on the badge element inside.
+        const badge = wrapper.find('[data-test="nav-badge"] .v-badge__badge');
+        expect(badge.exists()).toBe(true);
+        expect(badge.attributes('aria-label')).toBe('navigation.badge-items:3');
+    });
+
+    it('renders no badge, and therefore no label, for a zero count', () => {
+        const { wrapper } = mountNav();
+
+        expect(wrapper.find('[data-test="nav-badge"]').exists()).toBe(false);
+    });
+
+    /**
+     * The hamburger and the drawer are wired to each other (WCAG 4.1.2): `aria-controls` names
+     * the drawer, `aria-expanded` follows its state, and the drawer carries a label of its own,
+     * distinct from the desktop nav's, so the two landmarks can be told apart.
+     */
+    it('declares the drawer it controls and whether it is open', () => {
+        const { wrapper } = mountNav();
+
+        const hamburger = wrapper.find('header button[aria-controls="app-drawer"]');
+        expect(hamburger.exists()).toBe(true);
+        expect(hamburger.attributes('aria-expanded')).toBe('false');
+        expect(wrapper.find('#app-drawer').attributes('aria-label')).toBe(
+            'navigation.label-drawer'
+        );
+
+        return hamburger.trigger('click').then(() => {
+            expect(hamburger.attributes('aria-expanded')).toBe('true');
+        });
+    });
+
+    it('closes the drawer on Escape and returns focus to the hamburger', () => {
+        const { wrapper } = mountNav();
+        const hamburger = wrapper.find('header button[aria-controls="app-drawer"]');
+
+        return (
+            hamburger
+                .trigger('click')
+                // Let the drawer take focus first, as it does for a real visitor, so the return
+                // trip is what is asserted rather than a focus that never left.
+                .then(() =>
+                    vi.waitFor(() => expect(document.activeElement).not.toBe(document.body))
+                )
+                .then(() => wrapper.find('#app-drawer').trigger('keydown', { key: 'Escape' }))
+                .then(() =>
+                    vi.waitFor(() => expect(hamburger.attributes('aria-expanded')).toBe('false'))
+                )
+                .then(() =>
+                    vi.waitFor(() => expect(document.activeElement).toBe(hamburger.element))
+                )
+        );
     });
 });

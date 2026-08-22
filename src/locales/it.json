@@ -22,7 +22,8 @@
         "cancel": "Annulla",
         "confirm": "Conferma",
         "fix-errors": "Correggi gli errori evidenziati nel modulo.",
-        "api-unreachable": "Il server non è raggiungibile — mostriamo ciò che funziona offline. Riproviamo in silenzio."
+        "api-unreachable": "Il server non è raggiungibile — mostriamo ciò che funziona offline. Riproviamo in silenzio.",
+        "notifications": "Notifiche"
     },
     "navigation": {
         "label-home": "home",
@@ -33,7 +34,11 @@
         "label-theme": "Cambia tema",
         "label-language": "Lingua",
         "label-logo": "Home di Guebbit",
-        "label-about": "Informazioni"
+        "label-about": "Informazioni",
+        "label-drawer": "Menu di navigazione",
+        "label-legal": "Pagine informative e legali",
+        "skip-to-content": "Vai al contenuto principale",
+        "badge-items": "{n} elemento | {n} elementi"
     },
     "home-page": {
         "page-title": "Home",

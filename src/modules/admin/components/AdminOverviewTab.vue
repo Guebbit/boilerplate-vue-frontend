@@ -177,12 +177,29 @@ const kpiDotClass = (status: AdminKpiCard['status']) =>
     })[status ?? 'unknown'];
 
 /**
+ * Names a KPI status for a reader who cannot see the dot's colour.
+ *
+ * @param status - Status of the card, possibly unset.
+ * @returns The localised status word.
+ */
+const kpiStatusText = (status: AdminKpiCard['status']) =>
+    t(`admin-page.kpi-status-${status ?? 'unknown'}`);
+
+/**
  * Renders a boolean integration row as a glyph.
  *
  * @param value - Whether the integration is enabled; `undefined` counts as off.
  * @returns `✓` when enabled, `✗` otherwise.
  */
 const flag = (value?: boolean) => (value ? '✓' : '✗');
+
+/**
+ * The glyph's words, for a reader who gets neither the shape nor the colour.
+ *
+ * @param value - Whether the integration is enabled; `undefined` counts as off.
+ * @returns The localised Enabled/Disabled.
+ */
+const flagText = (value?: boolean) => (value ? t('generic.enabled') : t('generic.disabled'));
 </script>
 
 <template>
@@ -204,11 +221,15 @@ const flag = (value?: boolean) => (value ? '✓' : '✗');
                     <p class="text-xs font-medium uppercase tracking-widest opacity-80">
                         {{ card.title }}
                     </p>
-                    <span
-                        class="h-2 w-2 shrink-0 rounded-full"
-                        :class="kpiDotClass(card.status)"
-                        aria-hidden="true"
-                    />
+                    <!-- The dot is colour only; the status word beside it is what a reader gets. -->
+                    <span class="flex shrink-0 items-center gap-1">
+                        <span
+                            class="h-2 w-2 rounded-full"
+                            :class="kpiDotClass(card.status)"
+                            aria-hidden="true"
+                        />
+                        <span class="sr-only">{{ kpiStatusText(card.status) }}</span>
+                    </span>
                 </div>
                 <p class="mt-2 text-2xl font-semibold leading-tight">{{ card.value }}</p>
                 <p v-if="card.hint" class="mt-1 text-xs text-error">{{ card.hint }}</p>
@@ -216,7 +237,7 @@ const flag = (value?: boolean) => (value ? '✓' : '✗');
         </div>
 
         <v-card v-if="props.metrics?.auth" class="p-5" variant="flat" border>
-            <h3 class="mb-3 text-lg font-semibold">{{ t('admin-page.section-auth') }}</h3>
+            <h2 class="mb-3 text-lg font-semibold">{{ t('admin-page.section-auth') }}</h2>
             <dl class="grid gap-x-8 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
                 <DefinitionRow :label="t('admin-page.label-login-success')">{{
                     props.metrics.auth.loginSuccess ?? 0
@@ -233,7 +254,7 @@ const flag = (value?: boolean) => (value ? '✓' : '✗');
         </v-card>
 
         <v-card v-if="props.metrics?.business" class="p-5" variant="flat" border>
-            <h3 class="mb-3 text-lg font-semibold">{{ t('admin-page.section-business') }}</h3>
+            <h2 class="mb-3 text-lg font-semibold">{{ t('admin-page.section-business') }}</h2>
             <dl class="grid gap-x-8 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
                 <DefinitionRow :label="t('admin-page.label-orders-created')">{{
                     props.metrics.business.ordersCreated ?? 0
@@ -245,7 +266,7 @@ const flag = (value?: boolean) => (value ? '✓' : '✗');
         </v-card>
 
         <v-card v-if="props.health" class="p-5" variant="flat" border>
-            <h3 class="mb-3 text-lg font-semibold">{{ t('admin-page.section-system') }}</h3>
+            <h2 class="mb-3 text-lg font-semibold">{{ t('admin-page.section-system') }}</h2>
             <dl class="grid gap-x-8 gap-y-1 sm:grid-cols-2 lg:grid-cols-3">
                 <DefinitionRow :label="t('admin-page.label-environment')">{{
                     props.health.environment
@@ -278,18 +299,22 @@ const flag = (value?: boolean) => (value ? '✓' : '✗');
                     on purpose — losing one costs visibility, not capability.
                 -->
                 <template v-if="props.health.telemetry">
-                    <DefinitionRow :label="t('admin-page.label-loki')">{{
-                        flag(props.health.telemetry.loki)
-                    }}</DefinitionRow>
-                    <DefinitionRow :label="t('admin-page.label-faro')">{{
-                        flag(props.health.telemetry.faro)
-                    }}</DefinitionRow>
-                    <DefinitionRow :label="t('admin-page.label-umami')">{{
-                        flag(props.health.telemetry.umami)
-                    }}</DefinitionRow>
-                    <DefinitionRow :label="t('admin-page.label-otel')">{{
-                        flag(props.health.telemetry.otel)
-                    }}</DefinitionRow>
+                    <DefinitionRow :label="t('admin-page.label-loki')">
+                        <span aria-hidden="true">{{ flag(props.health.telemetry.loki) }}</span>
+                        <span class="sr-only">{{ flagText(props.health.telemetry.loki) }}</span>
+                    </DefinitionRow>
+                    <DefinitionRow :label="t('admin-page.label-faro')">
+                        <span aria-hidden="true">{{ flag(props.health.telemetry.faro) }}</span>
+                        <span class="sr-only">{{ flagText(props.health.telemetry.faro) }}</span>
+                    </DefinitionRow>
+                    <DefinitionRow :label="t('admin-page.label-umami')">
+                        <span aria-hidden="true">{{ flag(props.health.telemetry.umami) }}</span>
+                        <span class="sr-only">{{ flagText(props.health.telemetry.umami) }}</span>
+                    </DefinitionRow>
+                    <DefinitionRow :label="t('admin-page.label-otel')">
+                        <span aria-hidden="true">{{ flag(props.health.telemetry.otel) }}</span>
+                        <span class="sr-only">{{ flagText(props.health.telemetry.otel) }}</span>
+                    </DefinitionRow>
                 </template>
             </dl>
         </v-card>
