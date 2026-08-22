@@ -27,7 +27,7 @@ describe('Password reset', () => {
 
         // ── Open the email, follow the link ─────────────────────────────────────────
         cy.demoEmailTo('gino@pino.it').then((email) => {
-            expect(email.template).to.equal('account.reset-request.ejs');
+            expect(email.template).to.equal('account.reset-request');
             cy.visit(`/en/password-reset/confirm?token=${email.token}`);
         });
         cy.get('#password-reset-confirm-page [type=password]')

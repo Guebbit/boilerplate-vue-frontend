@@ -64,7 +64,7 @@ describe('The customer journey', () => {
             cy.demoEmailTo('gino@pino.it').then((email) => {
                 // The outbox records template variables; the line items are structured data the
                 // orders page below asserts far more precisely than a variable dump could.
-                expect(email.template).to.equal('orders.order-confirm.ejs');
+                expect(email.template).to.equal('orders.order-confirm');
             });
         });
 

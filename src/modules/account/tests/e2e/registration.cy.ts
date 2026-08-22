@@ -32,7 +32,7 @@ describe('Registration', () => {
 
         // ── The verification email ──────────────────────────────────────────────────
         cy.demoEmailTo('new.customer@example.com').then((email) => {
-            expect(email.template).to.equal('account.verify-request.ejs');
+            expect(email.template).to.equal('account.verify-request');
             expect(email.token, 'the emailed verification token').to.be.a('string');
             // Following the link is a fresh page load, as a guest — the token is the credential.
             cy.visit(`/en/verify-email/confirm?token=${email.token}`);

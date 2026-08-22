@@ -139,7 +139,7 @@ describe('Commerce', () => {
                     emails: { template: string; lines?: string[] }[];
                 };
                 const shipped = emails.find(
-                    ({ template }) => template === 'delivery.shipment-shipped.ejs'
+                    ({ template }) => template === 'delivery.shipment-shipped'
                 );
                 expect(shipped, 'the shipped email in the outbox').to.not.equal(undefined);
                 // Order-independent on purpose: the outbox records template variables, not rendered
