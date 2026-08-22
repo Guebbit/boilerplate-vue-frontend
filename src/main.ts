@@ -78,9 +78,7 @@ const bootstrapApplication = () =>
             return mergeRemoteLocales().then(() => pinia);
         })
         .then((pinia) => {
-            const app = createApp(App);
-
-            app.use(pinia).use(router).use(i18n).use(vuetify).mount('#app');
+            createApp(App).use(pinia).use(router).use(i18n).use(vuetify).mount('#app');
 
             // Obtain the observability store (Grafana Faro + Umami).
             const observability = useObservabilityStore();

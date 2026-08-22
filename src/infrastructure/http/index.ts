@@ -49,7 +49,7 @@ export const orvalMutator = <T>(
 };
 
 export { instance } from './client.ts';
-export { getAccessToken, onRequest, onRequestReject, onResponseReject } from './interceptors.ts';
+export { onRequest, onRequestReject, onResponseReject } from './interceptors.ts';
 export { onResponseRejectWithRefresh } from './refresh.ts';
 export { getTokenFromResponse, getPayloadFromResponse } from './envelope.ts';
 export type {

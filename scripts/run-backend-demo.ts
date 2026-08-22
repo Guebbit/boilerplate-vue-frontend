@@ -9,8 +9,7 @@
 import { spawn } from 'node:child_process';
 import { resolveBackendPath } from './backend-path';
 
-const backend = resolveBackendPath();
-const child = spawn('npm', ['--prefix', backend, 'run', 'demo'], {
+const child = spawn('npm', ['--prefix', resolveBackendPath(), 'run', 'demo'], {
     stdio: 'inherit',
     env: process.env
 });

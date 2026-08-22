@@ -64,6 +64,7 @@ const ID = '65dc8a99604c307b702b5ccc';
 const ROUTES: [method: string, path: string, name: string][] = [
     ['GET', '/', 'GetHealthResponse'],
     ['GET', '/locales', 'GetLocalesResponse'],
+    ['GET', '/locales/tenants', 'GetLocaleTenantsResponse'],
     ['GET', '/locales/en', 'GetLocaleDictionaryResponse'],
     ['POST', '/locales', 'CreateLocaleResponse'],
     ['PUT', '/locales/es', 'UpdateLocaleResponse'],

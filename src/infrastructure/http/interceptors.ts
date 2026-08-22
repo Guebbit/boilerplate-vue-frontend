@@ -6,16 +6,6 @@ import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import type { AxiosRequestData, AxiosResponseErrorBody, AxiosResponseErrorData } from './types.ts';
 
 /**
- * Reads the current access token outside of a component scope.
- *
- * @returns The in-memory bearer token, or `undefined` when not authenticated.
- */
-export const getAccessToken = () => {
-    const { accessToken } = storeToRefs(useSessionStore());
-    return accessToken.value;
-};
-
-/**
  * Picks a user-facing message for a failed request.
  *
  * Only for the cases where the API sent no message of its own — an empty body, a proxy's bare
@@ -83,10 +73,9 @@ export const onResponseReject = (
     const traceId = error.response?.headers['x-trace-id'] as string | undefined;
 
     if (error.response?.data && Object.hasOwnProperty.call(error.response.data, 'errors')) {
-        const envelope = error.response.data;
         // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract; every catch downstream destructures it
         return Promise.reject({
-            ...envelope,
+            ...error.response.data,
             ...(requestId && { requestId }),
             ...(traceId && { traceId })
         });

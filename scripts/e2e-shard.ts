@@ -100,14 +100,8 @@ const specs = globSync(FUNCTIONAL_SPEC_GLOBS, { cwd: REPO_ROOT })
     .toSorted()
     .map((file) => ({ file, key: path.basename(file, '.cy.ts') }));
 
-const total = (values: number[]): number => {
-    let sum = 0;
-    for (const value of values) sum += value;
-    return sum;
-};
-
 const known = Object.values(SECONDS);
-const mean = total(known) / known.length;
+const mean = known.reduce((sum, value) => sum + value, 0) / known.length;
 const weighted = specs
     .map(({ file, key }) => ({ file, weight: SECONDS[key] ?? mean }))
     .toSorted((a, b) => b.weight - a.weight);
@@ -126,7 +120,7 @@ const active = shards.filter((shard) => shard.files.length > 0);
 console.log(
     `[e2e-shard] ${specs.length} specs across ${active.length} shard(s); ` +
         `predicted wall-clock ~${Math.round(Math.max(...active.map((shard) => shard.load)))}s ` +
-        `(sequential is ~${Math.round(total(weighted.map((spec) => spec.weight)))}s)`
+        `(sequential is ~${Math.round(weighted.reduce((sum, spec) => sum + spec.weight, 0))}s)`
 );
 
 /**

@@ -34,7 +34,7 @@ vi.mock('@/infrastructure/i18n', () => ({
     i18n: { global: { t: (key: string) => key } }
 }));
 
-const { onRequest, onRequestReject, getAccessToken } = await import('@/infrastructure/http');
+const { onRequest, onRequestReject } = await import('@/infrastructure/http');
 
 /** Minimal outgoing config — `onRequest` only writes to `headers`. */
 const makeConfig = () => asStub<InternalAxiosRequestConfig<unknown>>({ headers: {} });
@@ -42,18 +42,6 @@ const makeConfig = () => asStub<InternalAxiosRequestConfig<unknown>>({ headers: 
 beforeEach(() => {
     accessToken.value = undefined;
     vi.clearAllMocks();
-});
-
-describe('getAccessToken', () => {
-    it('reads the token off the session store', () => {
-        accessToken.value = 'abc.def.ghi';
-
-        expect(getAccessToken()).toBe('abc.def.ghi');
-    });
-
-    it('is undefined when nobody is signed in', () => {
-        expect(getAccessToken()).toBeUndefined();
-    });
 });
 
 describe('onRequest', () => {

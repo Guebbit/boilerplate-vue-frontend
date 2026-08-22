@@ -22,6 +22,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 import { createPinia, setActivePinia } from 'pinia';
+import { useSessionStore } from '@/infrastructure/stores/session.ts';
 
 /** Base URL the axios instance is built against; also what the handlers below are mounted on. */
 const API = 'http://api.test';
@@ -141,7 +142,7 @@ const server = setupServer(
  * has to be in place first and the registry has to be reset between cases — otherwise the
  * interceptors stack up and one request runs the chain several times.
  *
- * @returns The freshly imported module, with `orvalMutator` and `getAccessToken` on it.
+ * @returns The freshly imported module, with `orvalMutator` on it.
  */
 const loadHttp = () => {
     vi.resetModules();
@@ -210,9 +211,9 @@ describe('401 refresh flow', () => {
                 }));
 
         it('stores the refreshed token, so later calls carry it', () =>
-            loadHttp().then(({ orvalMutator, getAccessToken }) =>
+            loadHttp().then(({ orvalMutator }) =>
                 orvalMutator({ url: '/orders', method: 'GET' }).then(() => {
-                    expect(getAccessToken()).toBe(FRESH_TOKEN);
+                    expect(useSessionStore().accessToken).toBe(FRESH_TOKEN);
                 })
             ));
 

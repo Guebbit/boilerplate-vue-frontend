@@ -74,6 +74,8 @@ const coreRouteSchemas: ResponseSchemaRoute[] = [
      * validate an entries page against the dictionary schema.
      */
     { method: 'GET', pattern: /^\/locales$/, schema: schemas.GetLocalesResponse },
+    // A static segment the by-tag wildcard below would otherwise swallow: before it, always.
+    { method: 'GET', pattern: /^\/locales\/tenants$/, schema: schemas.GetLocaleTenantsResponse },
     {
         method: 'GET',
         pattern: /^\/locales\/[^/]+\/messages$/,

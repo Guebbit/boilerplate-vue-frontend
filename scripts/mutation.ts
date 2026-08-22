@@ -58,7 +58,6 @@ try {
 }
 
 const passthrough = process.argv.slice(2);
-const wasPassed = (flag: string) => passthrough.some((argument) => argument.startsWith(flag));
 
 /** A positive integer from the environment, or undefined when unset, empty or nonsense. */
 const positiveInteger = (value: string | undefined): number | undefined => {
@@ -71,7 +70,9 @@ const heapMb = positiveInteger(process.env.STRYKER_WORKER_HEAP_MB);
 
 const strykerArguments = [
     'run',
-    ...(concurrency && !wasPassed('--concurrency') ? ['--concurrency', String(concurrency)] : []),
+    ...(concurrency && !passthrough.some((argument) => argument.startsWith('--concurrency'))
+        ? ['--concurrency', String(concurrency)]
+        : []),
     ...passthrough
 ];
 
