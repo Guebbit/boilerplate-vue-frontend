@@ -6,8 +6,6 @@
 **Breaks if you change** — nothing outside this folder. Rendering never depended on it.
 :::
 
-<!-- gen:identity:start -->
-
 | Fact                    | This module                                                         |
 | ----------------------- | ------------------------------------------------------------------- |
 | **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste. |
@@ -25,15 +23,9 @@
 No module depends on this one and it depends on none. Deleting the folder and its line in `src/modules.ts` costs nothing else.
 :::
 
-<!-- gen:identity:end -->
-
 ## The map
 
-<!-- gen:map:start -->
-
 `locales` sits on no edge of the context map — nothing imports it and it imports nothing.
-
-<!-- gen:map:end -->
 
 ## The story
 
@@ -63,8 +55,6 @@ so _may I request this language_ and _may I download a dictionary for it_ stay t
 
 ## State
 
-<!-- gen:state:start -->
-
 Store `locales`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
 | Kind        | Members                                                                                                                                                                                                                                                            | What it is                                                       |
@@ -73,11 +63,7 @@ Store `locales`, from `store.ts`. Only what the setup function returns is listed
 | **Getters** | `ownTenant` · `backendTenant` · `loading` · `pageTotal` · `pageItemList`                                                                                                                                                                                           | Computed, derived from state. Read-only by construction.         |
 | **Actions** | `tenantLabel` · `fetchTenants` · `fetchLanguages` · `createLanguage` · `editLanguage` · `removeLanguage` · `watchSearchEntries` · `addEntry` · `editEntry` · `removeEntry` · `importEntries` · `fetchAllEntries` · `fetchApiDictionary` · `fetchBundledDictionary` | Everything that changes state or calls the API.                  |
 
-<!-- gen:state:end -->
-
 ## Screens
-
-<!-- gen:screens:start -->
 
 | Path                 | Route name          | Access  | View                          |
 | -------------------- | ------------------- | ------- | ----------------------------- |
@@ -87,11 +73,7 @@ Store `locales`, from `store.ts`. Only what the setup function returns is listed
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` — a menu entry never restates it, which is what keeps the menu and the router from disagreeing.
 
-<!-- gen:screens:end -->
-
 ## Wiring
-
-<!-- gen:wiring:start -->
 
 #### Endpoints called
 
@@ -115,11 +97,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | ------------- | -------------------------- | ------- | ----- | ---- | ----- |
 | `LocalesList` | `navigation.label-locales` | `admin` | 43    | yes  | —     |
 
-<!-- gen:wiring:end -->
-
 ## Files
-
-<!-- gen:files:start -->
 
 | File                                             | What it is                                                                                                                                                  | Explained in                          |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
@@ -145,11 +123,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | `views/LocalesDictionary.vue`                    | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 | `views/LocalesList.vue`                          | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 
-<!-- gen:files:end -->
-
 ## Working on it
-
-<!-- gen:working:start -->
 
 | Suite            | Files | Where                                          |
 | ---------------- | ----- | ---------------------------------------------- |
@@ -168,15 +142,9 @@ npm run test:e2e -- --spec 'src/modules/locales/tests/e2e/*.cy.ts'
 npm run regenerate
 ```
 
-<!-- gen:working:end -->
-
 ## Deeper in
 
-<!-- gen:subpages:start -->
-
 - [Runtime overrides](./locales-overrides.md)
-
-<!-- gen:subpages:end -->
 
 ## Related pages
 

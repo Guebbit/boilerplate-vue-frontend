@@ -6,8 +6,6 @@
 **Breaks if you change** — nothing outside this folder. No module depends on it.
 :::
 
-<!-- gen:identity:start -->
-
 | Fact                    | This module                                                                     |
 | ----------------------- | ------------------------------------------------------------------------------- |
 | **Subdomain**           | `core` — The reason the product exists. Worth its own client-side rules.        |
@@ -21,11 +19,7 @@
 | **Publishes**           | _nothing_ — no barrel, so no sibling may import it                              |
 | **Backend counterpart** | `orders` in `boilerplate-node-backend`                                          |
 
-<!-- gen:identity:end -->
-
 ## The map
-
-<!-- gen:map:start -->
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
@@ -46,8 +40,6 @@ flowchart LR
 - → `cart` **customer-supplier** — The reorder button asks the cart store to refill itself from a past order.
 - → `delivery` **published-language** — Mounts `ShipmentPanel`; the parcel renders itself and this module never touches a shipment.
 - → `payments` **published-language** — Mounts `PaymentPanel`; paying happens on the order page without this module knowing a provider exists.
-
-<!-- gen:map:end -->
 
 ## The story
 
@@ -76,8 +68,6 @@ the API.
 
 ## State
 
-<!-- gen:state:start -->
-
 Store `orders`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
 | Kind        | Members                                                                                                                                                                                                          | What it is                                                       |
@@ -86,11 +76,7 @@ Store `orders`, from `store.ts`. Only what the setup function returns is listed 
 | **Getters** | `ordersList` · `currentOrder` · `loading` · `pageTotal` · `pageItemList`                                                                                                                                         | Computed, derived from state. Read-only by construction.         |
 | **Actions** | `addOrder` · `fetchOrders` · `fetchPaginationOrders` · `watchSearchOrders` · `fetchOrder` · `watchOrder` · `createOrder` · `updateOrder` · `deleteOrder` · `cancelOrder` · `hardDeleteOrder` · `downloadInvoice` | Everything that changes state or calls the API.                  |
 
-<!-- gen:state:end -->
-
 ## Screens
-
-<!-- gen:screens:start -->
 
 | Path              | Route name    | Access  | View                   |
 | ----------------- | ------------- | ------- | ---------------------- |
@@ -100,11 +86,7 @@ Store `orders`, from `store.ts`. Only what the setup function returns is listed 
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` — a menu entry never restates it, which is what keeps the menu and the router from disagreeing.
 
-<!-- gen:screens:end -->
-
 ## Wiring
-
-<!-- gen:wiring:start -->
 
 #### Endpoints called
 
@@ -130,11 +112,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | ------------ | ------------------------- | --------- | ----- | ---- | ----- |
 | `OrdersList` | `navigation.label-orders` | `account` | 90    | yes  | —     |
 
-<!-- gen:wiring:end -->
-
 ## Files
-
-<!-- gen:files:start -->
 
 | File                                      | What it is                                                                                                                                                  | Explained in                          |
 | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
@@ -157,11 +135,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | `views/OrderEdit.vue`                     | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 | `views/OrdersList.vue`                    | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 
-<!-- gen:files:end -->
-
 ## Working on it
-
-<!-- gen:working:start -->
 
 | Suite            | Files | Where                                         |
 | ---------------- | ----- | --------------------------------------------- |
@@ -180,15 +154,9 @@ npm run test:e2e -- --spec 'src/modules/orders/tests/e2e/*.cy.ts'
 npm run regenerate
 ```
 
-<!-- gen:working:end -->
-
 ## Deeper in
 
-<!-- gen:subpages:start -->
-
 Nothing in this domain needs a page of its own — the story above is the whole of it.
-
-<!-- gen:subpages:end -->
 
 ## Related pages
 

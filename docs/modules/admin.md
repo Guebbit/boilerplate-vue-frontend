@@ -6,8 +6,6 @@
 **Breaks if you change** — nothing outside this folder. It is designed to be deleted.
 :::
 
-<!-- gen:identity:start -->
-
 | Fact                    | This module                                                                                                                                                                                                                      |
 | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste.                                                                                                                                                              |
@@ -25,15 +23,9 @@
 No module depends on this one and it depends on none. Deleting the folder and its line in `src/modules.ts` costs nothing else.
 :::
 
-<!-- gen:identity:end -->
-
 ## The map
 
-<!-- gen:map:start -->
-
 `admin` sits on no edge of the context map — nothing imports it and it imports nothing.
-
-<!-- gen:map:end -->
 
 ## The story
 
@@ -61,15 +53,9 @@ row it shows was written server-side by a module that had no idea a dashboard ex
 
 ## State
 
-<!-- gen:state:start -->
-
 This module owns no store. Whatever state its screens read belongs to a module it depends on, or to `src/infrastructure/stores/`.
 
-<!-- gen:state:end -->
-
 ## Screens
-
-<!-- gen:screens:start -->
 
 | Path    | Route name | Access  | View              |
 | ------- | ---------- | ------- | ----------------- |
@@ -77,11 +63,7 @@ This module owns no store. Whatever state its screens read belongs to a module i
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` — a menu entry never restates it, which is what keeps the menu and the router from disagreeing.
 
-<!-- gen:screens:end -->
-
 ## Wiring
-
-<!-- gen:wiring:start -->
 
 #### Endpoints called
 
@@ -101,11 +83,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | ------- | ------------------------ | ------- | ----- | ---- | ----- |
 | `Admin` | `navigation.label-admin` | `admin` | 40    | yes  | —     |
 
-<!-- gen:wiring:end -->
-
 ## Files
-
-<!-- gen:files:start -->
 
 | File                                          | What it is                                                                                                                                                  | Explained in                          |
 | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
@@ -125,11 +103,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | `types.ts`                                    | `admin` only. The shapes the dashboard assembles that no endpoint answers with directly.                                                                    | [read](../tools/admin-dashboard.md)   |
 | `views/Admin.vue`                             | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 
-<!-- gen:files:end -->
-
 ## Working on it
-
-<!-- gen:working:start -->
 
 | Suite            | Files | Where                                        |
 | ---------------- | ----- | -------------------------------------------- |
@@ -148,15 +122,9 @@ npm run test:e2e -- --spec 'src/modules/admin/tests/e2e/*.cy.ts'
 npm run regenerate
 ```
 
-<!-- gen:working:end -->
-
 ## Deeper in
 
-<!-- gen:subpages:start -->
-
 - [The dashboard](./admin-dashboard.md)
-
-<!-- gen:subpages:end -->
 
 ## Related pages
 

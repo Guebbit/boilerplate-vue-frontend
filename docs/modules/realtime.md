@@ -6,8 +6,6 @@
 **Breaks if you change** — nothing outside this folder.
 :::
 
-<!-- gen:identity:start -->
-
 | Fact                    | This module                                                                                                                                                                                                                     |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste.                                                                                                                                                             |
@@ -25,15 +23,9 @@
 No module depends on this one and it depends on none. Deleting the folder and its line in `src/modules.ts` costs nothing else.
 :::
 
-<!-- gen:identity:end -->
-
 ## The map
 
-<!-- gen:map:start -->
-
 `realtime` sits on no edge of the context map — nothing imports it and it imports nothing.
-
-<!-- gen:map:end -->
 
 ## The story
 
@@ -60,8 +52,6 @@ route is the only place that is declared.
 
 ## State
 
-<!-- gen:state:start -->
-
 Store `realtime-observability`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
 | Kind        | Members                                                                                      | What it is                                                       |
@@ -70,11 +60,7 @@ Store `realtime-observability`, from `store.ts`. Only what the setup function re
 | **Getters** | —                                                                                            | Computed, derived from state. Read-only by construction.         |
 | **Actions** | `setStatus` · `setSnapshot` · `setUpdate` · `setHeartbeat` · `addEntry` · `setError`         | Everything that changes state or calls the API.                  |
 
-<!-- gen:state:end -->
-
 ## Screens
-
-<!-- gen:screens:start -->
 
 | Path                  | Route name           | Access  | View                           |
 | --------------------- | -------------------- | ------- | ------------------------------ |
@@ -82,11 +68,7 @@ Store `realtime-observability`, from `store.ts`. Only what the setup function re
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` — a menu entry never restates it, which is what keeps the menu and the router from disagreeing.
 
-<!-- gen:screens:end -->
-
 ## Wiring
-
-<!-- gen:wiring:start -->
 
 #### Navigation entries
 
@@ -94,11 +76,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | -------------------- | --------------------------- | ------- | ----- | ---- | ----- |
 | `RealtimePlayground` | `navigation.label-realtime` | `admin` | 30    | yes  | —     |
 
-<!-- gen:wiring:end -->
-
 ## Files
-
-<!-- gen:files:start -->
 
 | File                                              | What it is                                                                                                                                                  | Explained in                          |
 | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
@@ -116,11 +94,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `use-realtime-observability.ts`                   | `realtime` only. The composable a screen uses to subscribe to that stream and unsubscribe on unmount.                                                       | [read](../tools/realtime.md)          |
 | `views/RealtimePlayground.vue`                    | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 
-<!-- gen:files:end -->
-
 ## Working on it
-
-<!-- gen:working:start -->
 
 | Suite            | Files | Where                                           |
 | ---------------- | ----- | ----------------------------------------------- |
@@ -136,15 +110,9 @@ npm run test:unit -- realtime
 npm run test:e2e -- --spec 'src/modules/realtime/tests/e2e/*.cy.ts'
 ```
 
-<!-- gen:working:end -->
-
 ## Deeper in
 
-<!-- gen:subpages:start -->
-
 Nothing in this domain needs a page of its own — the story above is the whole of it.
-
-<!-- gen:subpages:end -->
 
 ## Related pages
 

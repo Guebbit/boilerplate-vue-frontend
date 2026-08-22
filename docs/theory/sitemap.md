@@ -7,8 +7,6 @@ All routes are locale-prefixed (`/:locale/…`). A missing locale is injected au
 Every screen the enabled modules contribute, generated from their route records — the same records
 each [module page](../modules/) renders, so the two cannot disagree.
 
-<!-- gen:all-screens:start -->
-
 | Module                                 | Path                     | Route name             | Access   | View                             |
 | -------------------------------------- | ------------------------ | ---------------------- | -------- | -------------------------------- |
 | [`account`](../modules/account.md)     | `login`                  | `Login`                | `guest`  | `views/Login.vue`                |
@@ -43,8 +41,6 @@ each [module page](../modules/) renders, so the two cannot disagree.
 | [`wishlist`](../modules/wishlist.md)   | `wishlist`               | `Wishlist`             | `auth`   | `views/Wishlist.vue`             |
 
 30 screens across 12 modules. Paths are relative to the localised root. **Access** is the route’s own `meta.access`, which is the only place a permission is declared — a menu entry inherits it rather than restating it.
-
-<!-- gen:all-screens:end -->
 
 ### Navigation sections
 

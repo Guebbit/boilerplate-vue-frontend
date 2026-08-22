@@ -6,8 +6,6 @@
 **Breaks if you change** — nothing. That is the entire design.
 :::
 
-<!-- gen:identity:start -->
-
 | Fact                    | This module                                                                                                                                      |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste.                                                                              |
@@ -25,15 +23,9 @@
 No module depends on this one and it depends on none. Deleting the folder and its line in `src/modules.ts` costs nothing else.
 :::
 
-<!-- gen:identity:end -->
-
 ## The map
 
-<!-- gen:map:start -->
-
 `demo` sits on no edge of the context map — nothing imports it and it imports nothing.
-
-<!-- gen:map:end -->
 
 ## The story
 
@@ -62,8 +54,6 @@ job is to be read while someone learns what a store is.
 
 ## State
 
-<!-- gen:state:start -->
-
 Store `counter`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
 | Kind        | Members                          | What it is                                                       |
@@ -72,11 +62,7 @@ Store `counter`, from `store.ts`. Only what the setup function returns is listed
 | **Getters** | `doubleCount`                    | Computed, derived from state. Read-only by construction.         |
 | **Actions** | `increment` · `incrementDelayed` | Everything that changes state or calls the API.                  |
 
-<!-- gen:state:end -->
-
 ## Screens
-
-<!-- gen:screens:start -->
 
 | Path         | Route name   | Access   | View                   |
 | ------------ | ------------ | -------- | ---------------------- |
@@ -84,11 +70,7 @@ Store `counter`, from `store.ts`. Only what the setup function returns is listed
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` — a menu entry never restates it, which is what keeps the menu and the router from disagreeing.
 
-<!-- gen:screens:end -->
-
 ## Wiring
-
-<!-- gen:wiring:start -->
 
 #### Navigation entries
 
@@ -96,11 +78,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | ------------ | ----------------------------- | ------- | ----- | ---- | ----- |
 | `Playground` | `navigation.label-playground` | `main`  | 20    | yes  | —     |
 
-<!-- gen:wiring:end -->
-
 ## Files
-
-<!-- gen:files:start -->
 
 | File                                  | What it is                                                                                                                                                  | Explained in                          |
 | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
@@ -118,11 +96,7 @@ Paths are relative to the localised root, so `cart` is served at `/:locale/cart`
 | `tests/store.spec.ts`                 | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
 | `views/Playground.vue`                | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 
-<!-- gen:files:end -->
-
 ## Working on it
-
-<!-- gen:working:start -->
 
 | Suite   | Files | Where                         |
 | ------- | ----- | ----------------------------- |
@@ -137,15 +111,9 @@ npm run test:unit -- demo
 npm run test:e2e -- --spec 'src/modules/demo/tests/e2e/*.cy.ts'
 ```
 
-<!-- gen:working:end -->
-
 ## Deeper in
 
-<!-- gen:subpages:start -->
-
 Nothing in this domain needs a page of its own — the story above is the whole of it.
-
-<!-- gen:subpages:end -->
 
 ## Related pages
 

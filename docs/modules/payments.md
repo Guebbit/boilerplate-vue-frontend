@@ -6,8 +6,6 @@
 **Breaks if you change** — `PaymentPanel`'s props. [`orders`](./orders.md) mounts it.
 :::
 
-<!-- gen:identity:start -->
-
 | Fact                    | This module                                                                    |
 | ----------------------- | ------------------------------------------------------------------------------ |
 | **Subdomain**           | `supporting` — Specific to this business but not a differentiator. Kept plain. |
@@ -21,11 +19,7 @@
 | **Publishes**           | `PaymentPanel` · `useOrderRefund`                                              |
 | **Backend counterpart** | `payments` in `boilerplate-node-backend`                                       |
 
-<!-- gen:identity:end -->
-
 ## The map
-
-<!-- gen:map:start -->
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
@@ -41,8 +35,6 @@ flowchart LR
 ```
 
 - `orders` → **published-language** — Mounts `PaymentPanel`; paying happens on the order page without this module knowing a provider exists.
-
-<!-- gen:map:end -->
 
 ## The story
 
@@ -71,8 +63,6 @@ an error toast.
 
 ## State
 
-<!-- gen:state:start -->
-
 Store `payments`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
 | Kind        | Members                                                   | What it is                                                       |
@@ -81,19 +71,11 @@ Store `payments`, from `store.ts`. Only what the setup function returns is liste
 | **Getters** | `loading`                                                 | Computed, derived from state. Read-only by construction.         |
 | **Actions** | `fetchPaymentForOrder` · `payForOrder` · `refundForOrder` | Everything that changes state or calls the API.                  |
 
-<!-- gen:state:end -->
-
 ## Screens
-
-<!-- gen:screens:start -->
 
 This module routes to nothing. It contributes components, schemas or a store to the modules that depend on it.
 
-<!-- gen:screens:end -->
-
 ## Wiring
-
-<!-- gen:wiring:start -->
 
 #### Endpoints called
 
@@ -106,11 +88,7 @@ This module routes to nothing. It contributes components, schemas or a store to 
 
 Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 
-<!-- gen:wiring:end -->
-
 ## Files
-
-<!-- gen:files:start -->
 
 | File                              | What it is                                                                                                                                                  | Explained in                          |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
@@ -125,11 +103,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | `tests/store.spec.ts`             | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
 | `tests/use-order-refund.spec.ts`  | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
 
-<!-- gen:files:end -->
-
 ## Working on it
-
-<!-- gen:working:start -->
 
 | Suite  | Files | Where                         |
 | ------ | ----- | ----------------------------- |
@@ -143,15 +117,9 @@ npm run test:unit -- payments
 npm run regenerate
 ```
 
-<!-- gen:working:end -->
-
 ## Deeper in
 
-<!-- gen:subpages:start -->
-
 Nothing in this domain needs a page of its own — the story above is the whole of it.
-
-<!-- gen:subpages:end -->
 
 ## Related pages
 

@@ -6,8 +6,6 @@
 **Breaks if you change** — either component's props. [`cart`](./cart.md) and [`orders`](./orders.md) mount them.
 :::
 
-<!-- gen:identity:start -->
-
 | Fact                    | This module                                                                    |
 | ----------------------- | ------------------------------------------------------------------------------ |
 | **Subdomain**           | `supporting` — Specific to this business but not a differentiator. Kept plain. |
@@ -21,11 +19,7 @@
 | **Publishes**           | `ShipmentPanel` · `ShippingSelector`                                           |
 | **Backend counterpart** | `delivery` in `boilerplate-node-backend`                                       |
 
-<!-- gen:identity:end -->
-
 ## The map
-
-<!-- gen:map:start -->
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
@@ -43,8 +37,6 @@ flowchart LR
 
 - `cart` → **published-language** — Mounts `ShippingSelector`, a self-contained component that renders shipping without this module learning what a rate is.
 - `orders` → **published-language** — Mounts `ShipmentPanel`; the parcel renders itself and this module never touches a shipment.
-
-<!-- gen:map:end -->
 
 ## The story
 
@@ -74,8 +66,6 @@ concerns, and between them they cover four of the client's nine context edges.
 
 ## State
 
-<!-- gen:state:start -->
-
 Store `delivery`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
 | Kind        | Members                                                                 | What it is                                                       |
@@ -84,19 +74,11 @@ Store `delivery`, from `store.ts`. Only what the setup function returns is liste
 | **Getters** | `loading`                                                               | Computed, derived from state. Read-only by construction.         |
 | **Actions** | `fetchMethods` · `effectivePrice` · `fetchShipmentForOrder` · `advance` | Everything that changes state or calls the API.                  |
 
-<!-- gen:state:end -->
-
 ## Screens
-
-<!-- gen:screens:start -->
 
 This module routes to nothing. It contributes components, schemas or a store to the modules that depend on it.
 
-<!-- gen:screens:end -->
-
 ## Wiring
-
-<!-- gen:wiring:start -->
 
 #### Endpoints called
 
@@ -108,11 +90,7 @@ This module routes to nothing. It contributes components, schemas or a store to 
 
 Each row registers one Zod envelope through the manifest, so enabling the domain turns its contract validation on and deleting the folder turns it off.
 
-<!-- gen:wiring:end -->
-
 ## Files
-
-<!-- gen:files:start -->
 
 | File                              | What it is                                                                                                                                                  | Explained in                          |
 | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
@@ -126,11 +104,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | `store.ts`                        | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                      | [read](../tools/state-and-routing.md) |
 | `tests/store.spec.ts`             | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
 
-<!-- gen:files:end -->
-
 ## Working on it
-
-<!-- gen:working:start -->
 
 | Suite  | Files | Where                         |
 | ------ | ----- | ----------------------------- |
@@ -144,15 +118,9 @@ npm run test:unit -- delivery
 npm run regenerate
 ```
 
-<!-- gen:working:end -->
-
 ## Deeper in
 
-<!-- gen:subpages:start -->
-
 Nothing in this domain needs a page of its own — the story above is the whole of it.
-
-<!-- gen:subpages:end -->
 
 ## Related pages
 

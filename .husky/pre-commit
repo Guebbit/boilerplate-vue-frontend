@@ -27,11 +27,12 @@
 # `git add -p` to include the whole regenerated output — which is what you want for a generated
 # file, and a surprise exactly once.
 #
-# `docs/modules/` and `docs/theory/sitemap.md` are on the list for the same reason `contracts/` is:
-# `regenerate` ends with `docs:modules`, which rewrites the generated blocks of every module page
-# and the app-wide route table from the manifests. Leave them off and `check:module-docs` verifies a
-# working tree that is fresher than the commit — green gate, stale pages.
+# `docs/` is deliberately NOT on the list: the module pages and the sitemap are written by hand
+# now, so nothing regenerates them and there is nothing to re-stage. What keeps them honest is
+# review, plus the two rules that outlived the generator —
+# `tests/cross-cutting/module-file-shapes.spec.ts` and `backend-pairing.spec.ts`, which run with
+# the rest of the suite below.
 npm run regenerate
-git add contracts src/types/asyncapi.generated.ts docs/modules docs/theory/sitemap.md
+git add contracts src/types/asyncapi.generated.ts
 
 npm run complete

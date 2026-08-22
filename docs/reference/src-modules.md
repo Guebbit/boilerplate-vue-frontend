@@ -16,9 +16,9 @@ Everything below describes a **file shape** — what a `store.ts` is, wherever y
 domain does with those shapes, which of them it carries, and what it owns is on its own page under
 [Modules](../modules/).
 
-The shapes below are also enforced. `scripts/module-docs/shapes.ts` holds the same catalogue in code,
-and `npm run check:module-docs` fails on a file in a module folder that matches none of them — so a
-new shape costs one line here and one there, and stops being invisible.
+The shapes below are also enforced. `tests/cross-cutting/module-file-shapes.spec.ts` holds the same
+catalogue in code, and fails on a file in a module folder that matches none of them — so a new shape
+costs one line here and one there, and stops being invisible.
 :::
 
 ## The shape of one module
@@ -90,6 +90,5 @@ catalogued on [Tests](./tests.md), with the rest of the suite.
 Per-module answers live on the [Modules](../modules/) pages, one per domain, and the whole set is
 [the matrix on its overview](../modules/index.md#every-module).
 
-Both are generated from the manifests rather than transcribed, which is the reason they are there and
-not here: a module that gains a screen or a store gains the row on the next `npm run docs:modules`,
-and `npm run check:module-docs` fails while it has not.
+Both are per-domain answers rather than file shapes, which is the reason they are there and not here.
+They are written by hand: a module that gains a screen or a store gains the row when someone adds it.

@@ -31,8 +31,6 @@ client-side rules of a domain — the reasoning behind the rules lives in the
 
 ## The whole map
 
-<!-- gen:overview-map:start -->
-
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 30, 'rankSpacing': 80}}}%%
 flowchart LR
@@ -80,14 +78,10 @@ flowchart LR
     style GENERIC fill:#f8fdfc,stroke:#cbd5e1
 ```
 
-<!-- gen:overview-map:end -->
-
 ## Reading the diagrams
 
 Every diagram in this section encodes two things and only two, so a map is readable without a key
 beside it.
-
-<!-- gen:legend:start -->
 
 **Node fill — where the domain sits in the business.**
 
@@ -118,29 +112,21 @@ server remains the single writer. That divergence is what
 [Domain layer](../theory/domain-layer.md) means by the domain living behind the API.
 :::
 
-Every diagram under `/modules/` uses this and only this. Since the diagrams are generated, obedience is free.
-
-<!-- gen:legend:end -->
+Every diagram under `/modules/` uses this and only this.
 
 ## Every module
 
-The shape of the client in one row, then one row per domain. Both are generated from the manifests,
-so a module that gains a screen or a store gains it here on the next `npm run docs:modules`.
+The shape of the client in one row, then one row per domain. Both are maintained by hand, so a module
+that gains a screen or a store gains it here when someone adds it.
 
 Three rows are worth noticing before you read any page: [`delivery`](./delivery.md) and
 [`payments`](./payments.md) have **no screens at all** — their published surface is a component
 another module mounts — and [`admin`](./admin.md) has **no store**, because every screen it
 assembles reads a state that belongs to the domain it came from.
 
-<!-- gen:tally:start -->
-
 | Modules | core | supporting | generic | Screens | Stores | Context edges |
 | ------- | ---- | ---------- | ------- | ------- | ------ | ------------- |
 | 14      | 3    | 4          | 7       | 30      | 13     | 9             |
-
-<!-- gen:tally:end -->
-
-<!-- gen:matrix:start -->
 
 | Module                        | Subdomain    | Screens | Store                    | API calls | Depends on | Depended on by |
 | ----------------------------- | ------------ | ------- | ------------------------ | --------- | ---------- | -------------- |
@@ -159,8 +145,6 @@ assembles reads a state that belongs to the domain it came from.
 | [`users`](./users.md)         | `generic`    | 4       | `users`                  | 9         | 0          | 1              |
 | [`wishlist`](./wishlist.md)   | `supporting` | 1       | `wishlist`               | 4         | 1          | 1              |
 
-<!-- gen:matrix:end -->
-
 ## The two repositories
 
 Eleven of fourteen domains exist on both sides under the same name. **The other three are the
@@ -168,10 +152,10 @@ interesting ones**, and until this table the asymmetry was written down nowhere 
 [`admin`](./admin.md) renders two backend modules, [`realtime`](./realtime.md) consumes a stream one
 of them serves, and [`demo`](./demo.md) has no backend domain at all.
 
-`npm run check:module-docs` fails when an enabled module has no entry here, or when an entry pairs
-with something other than its own name and gives no reason. The gap cannot widen quietly.
-
-<!-- gen:pairing:start -->
+`tests/cross-cutting/backend-pairing.spec.ts` holds the same table in code and fails when an enabled
+module has no entry, or when an entry pairs with something other than its own name and gives no
+reason. The gap cannot widen quietly — though keeping the table below in step with it is a review
+job, not a checked one.
 
 | This repository               | boilerplate-node-backend       | Note                                                                                                                                                                            |
 | ----------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -190,4 +174,3 @@ with something other than its own name and gives no reason. The gap cannot widen
 | [`users`](./users.md)         | `users`                        | —                                                                                                                                                                               |
 | [`wishlist`](./wishlist.md)   | `wishlist`                     | —                                                                                                                                                                               |
 
-<!-- gen:pairing:end -->

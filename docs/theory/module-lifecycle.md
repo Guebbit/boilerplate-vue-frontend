@@ -40,11 +40,10 @@ generated from it.
 That asymmetry is the single most important thing to know before deleting anything — see
 [the contract is not ours alone](#the-contract-is-not-ours-alone).
 
-The second registry is documentation, not runtime: `scripts/module-docs/pairing.ts` names the
-**backend** module each domain here answers, or a sentence saying why none does.
-`npm run check:module-docs` fails on a missing entry, which is what stops the FE/BE gap from
-widening unnoticed — and it is the only file in this repository that names a domain on the other
-side.
+The second registry is not runtime: `tests/cross-cutting/backend-pairing.spec.ts` names the
+**backend** module each domain here answers, or a sentence saying why none does. It fails on a
+missing entry, which is what stops the FE/BE gap from widening unnoticed — and it is the only file
+in this repository that names a domain on the other side.
 
 ---
 
@@ -54,7 +53,7 @@ side.
 %%{init: {'flowchart': {'nodeSpacing': 40, 'rankSpacing': 45}}}%%
 flowchart LR
     A["1 · mkdir src/modules/&lt;name&gt;/<br/>write module.ts"] --> B["2 · one line in<br/>src/modules.ts"]
-    B --> P["3 · npm run docs:modules<br/>then write two sections"]
+    B --> P["3 · write docs/modules/&lt;name&gt;.md"]
     P --> C["4 · npm run build<br/>npm run test:unit"]
     C --> D["✅ routed · navigated · translated<br/>· validated · documented"]
     classDef s fill:#dcfce7,stroke:#16a34a,color:#111827;
@@ -161,23 +160,21 @@ vue-router's own ranking makes irrelevant for distinct paths.
 
 ### 4 · The page
 
-```bash
-npm run docs:modules
-```
-
-The generator creates `docs/modules/<name>.md` from the template and fills its eight generated
-blocks from the manifest, the route records, the store and the response-schema rows. Two sections
-are left for you:
+Write `docs/modules/<name>.md`. Copy the section order from a page of a domain the same size —
+**The map**, **State**, **Screens**, **Wiring**, **Files** — and fill it from the manifest, the
+route records, the store and the response-schema rows. The two sections worth the most are the ones
+only you can write:
 
 - the **At a glance** box — what it owns, what it depends on, what breaks if you change it
 - **The story** — why the domain exists, the decisions that are not obvious from the code, the traps
 
-Then add the entry to `BACKEND_PAIRING` in `scripts/module-docs/pairing.ts`, and the page to the
-`/modules/` sidebar in `docs/.vitepress/config.mts`. `npm run check:module-docs` fails until the
-pairing entry exists.
+Then add the entry to `BACKEND_PAIRING` in `tests/cross-cutting/backend-pairing.spec.ts`, and the
+page to the `/modules/` sidebar in `docs/.vitepress/config.mts`. That spec fails until the pairing
+entry exists.
 
 If the domain carries a file shape no other module has, add one line to
-`scripts/module-docs/shapes.ts` describing it — the same check fails on a shape nothing documents.
+`tests/cross-cutting/module-file-shapes.spec.ts` describing it — that spec fails on a shape nothing
+documents.
 
 ### 5 · Check
 
@@ -229,13 +226,13 @@ flowchart LR
 rm -rf src/modules/<name>
 # delete the import and the array entry in src/modules.ts
 rm docs/modules/<name>.md
-# and any sub-pages declared for it in scripts/module-docs/subpages.ts
+# and any sub-pages it had, e.g. docs/modules/<name>-<flow>.md
 npm run complete
 ```
 
-Then drop its entry from `BACKEND_PAIRING`, its sub-pages from `SUB_PAGES`, and its sidebar entries
-from `docs/.vitepress/config.mts`. `npm run check:module-docs` reports each of those independently,
-by name, so there is no order to get right — run it and work the list.
+Then drop its entry from `BACKEND_PAIRING` in `tests/cross-cutting/backend-pairing.spec.ts`, and its
+sidebar entries from `docs/.vitepress/config.mts`. That spec names a stale pairing entry by itself;
+the pages and the sidebar are yours to check, since nothing generates them.
 
 Deleting a module named in another module's `dependsOn` throws while the router assembles, with the
 offending name in the sentence — not a blank page on whichever navigation first crosses the gap.

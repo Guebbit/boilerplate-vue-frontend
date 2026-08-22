@@ -6,8 +6,6 @@
 **Breaks if you change** — `schemas.ts`. [`account`](./account.md) validates every one of its forms against it.
 :::
 
-<!-- gen:identity:start -->
-
 | Fact                    | This module                                                         |
 | ----------------------- | ------------------------------------------------------------------- |
 | **Subdomain**           | `generic` — A solved problem. Modelling effort here would be waste. |
@@ -21,11 +19,7 @@
 | **Publishes**           | `usersPasswordSchema` · `usersSchema`                               |
 | **Backend counterpart** | `users` in `boilerplate-node-backend`                               |
 
-<!-- gen:identity:end -->
-
 ## The map
-
-<!-- gen:map:start -->
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 75}}}%%
@@ -41,8 +35,6 @@ flowchart LR
 ```
 
 - `account` → **published-language** — Validates every form against `usersSchema`/`usersPasswordSchema` — shared field rules, not a shared store.
-
-<!-- gen:map:end -->
 
 ## The story
 
@@ -68,8 +60,6 @@ would rank it correctly either way, and a reader should not have to know that.
 
 ## State
 
-<!-- gen:state:start -->
-
 Store `users`, from `store.ts`. Only what the setup function returns is listed — an internal ref is not part of the surface.
 
 | Kind        | Members                                                                                                                                                            | What it is                                                       |
@@ -78,11 +68,7 @@ Store `users`, from `store.ts`. Only what the setup function returns is listed �
 | **Getters** | `usersList` · `currentUser` · `loading` · `pageTotal` · `pageItemList`                                                                                             | Computed, derived from state. Read-only by construction.         |
 | **Actions** | `addUser` · `fetchUsers` · `fetchPaginationUsers` · `watchSearchUsers` · `fetchUser` · `watchUser` · `createUser` · `updateUser` · `deleteUser` · `hardDeleteUser` | Everything that changes state or calls the API.                  |
 
-<!-- gen:state:end -->
-
 ## Screens
-
-<!-- gen:screens:start -->
 
 | Path             | Route name   | Access  | View                   |
 | ---------------- | ------------ | ------- | ---------------------- |
@@ -93,11 +79,7 @@ Store `users`, from `store.ts`. Only what the setup function returns is listed �
 
 Paths are relative to the localised root, so `cart` is served at `/:locale/cart`. **Access** is the route’s own `meta.access` — a menu entry never restates it, which is what keeps the menu and the router from disagreeing.
 
-<!-- gen:screens:end -->
-
 ## Wiring
-
-<!-- gen:wiring:start -->
 
 #### Endpoints called
 
@@ -121,11 +103,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | ----------- | ----------------------------- | ------- | ----- | ---- | ----- |
 | `UsersList` | `navigation.label-users-list` | `admin` | 50    | yes  | —     |
 
-<!-- gen:wiring:end -->
-
 ## Files
-
-<!-- gen:files:start -->
 
 | File                                     | What it is                                                                                                                                                  | Explained in                          |
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
@@ -148,11 +126,7 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | `views/UserEdit.vue`                     | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 | `views/UsersList.vue`                    | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 
-<!-- gen:files:end -->
-
 ## Working on it
-
-<!-- gen:working:start -->
 
 | Suite            | Files | Where                                        |
 | ---------------- | ----- | -------------------------------------------- |
@@ -171,15 +145,9 @@ npm run test:e2e -- --spec 'src/modules/users/tests/e2e/*.cy.ts'
 npm run regenerate
 ```
 
-<!-- gen:working:end -->
-
 ## Deeper in
 
-<!-- gen:subpages:start -->
-
 Nothing in this domain needs a page of its own — the story above is the whole of it.
-
-<!-- gen:subpages:end -->
 
 ## Related pages
 

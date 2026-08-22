@@ -72,7 +72,7 @@ a glance which shapes came from the contract and which this client invented. Put
 :::
 
 This is the only module in either repository with a `types.ts`, and the file-shape catalogue
-(`scripts/module-docs/shapes.ts`) says so.
+(`tests/cross-cutting/module-file-shapes.spec.ts`) says so.
 
 ## The audit table reads somebody else's writes
 
@@ -89,8 +89,9 @@ client could author is not evidence of anything.
 So it depends on nothing, reads the observability endpoints directly rather than through any other
 domain's store, and keeps its assembled shapes in its own folder.
 
-`rm -rf src/modules/admin`, one line of `src/modules.ts`, one sidebar entry, one pairing entry — and
-`npm run check:module-docs` names each of those four independently if you miss one.
+`rm -rf src/modules/admin`, one line of `src/modules.ts`, one sidebar entry, one pairing entry in
+`tests/cross-cutting/backend-pairing.spec.ts` — and that spec names the pairing if you miss it. The
+sidebar and this page are yours to remove.
 :::
 
 ## Related pages
