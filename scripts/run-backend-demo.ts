@@ -8,10 +8,26 @@
  */
 import { spawn } from 'node:child_process';
 import { resolveBackendPath } from './backend-path';
+import { createDemoScratchDirectory, removeDemoScratchDirectory } from './demo-scratch';
+
+// The backend's in-memory Mongo writes under this, not under the machine's `/tmp` — see
+// `demo-scratch.ts` for the tmpfs it was filling.
+const scratchDirectory = createDemoScratchDirectory();
 
 const child = spawn('npm', ['--prefix', resolveBackendPath(), 'run', 'demo'], {
     stdio: 'inherit',
-    env: process.env
+    env: { ...process.env, TMPDIR: scratchDirectory }
 });
-// eslint-disable-next-line unicorn/no-process-exit -- a CLI wrapper's exit code IS its interface; there is nobody left to throw to in a close handler
-child.on('close', (code) => process.exit(code ?? 1));
+
+// `start-server-and-test` ends this wrapper with a signal; the backend under it must get the
+// same one, so its `mongod.stop()` runs and the scratch directory below has nothing left in it.
+for (const signal of ['SIGTERM', 'SIGINT'] as const)
+    process.on(signal, () => {
+        child.kill(signal);
+    });
+
+child.on('close', (code) => {
+    removeDemoScratchDirectory(scratchDirectory);
+    // eslint-disable-next-line unicorn/no-process-exit -- a CLI wrapper's exit code IS its interface; there is nobody left to throw to in a close handler
+    process.exit(code ?? 1);
+});

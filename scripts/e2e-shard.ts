@@ -41,6 +41,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { globSync } from 'node:fs';
 import path from 'node:path';
 import { resolveBackendPath } from './backend-path';
+import { createDemoScratchDirectory, removeDemoScratchDirectory } from './demo-scratch';
 import { FUNCTIONAL_SPEC_GLOBS } from './spec-globs';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..');
@@ -154,6 +155,9 @@ const DEMO_PORT_BASE = 3101;
  */
 const bootDemoBackends = async (count: number): Promise<(() => void)[]> => {
     const backendPath = resolveBackendPath();
+    // Every backend's in-memory Mongo writes under this, not under the machine's `/tmp` — see
+    // `demo-scratch.ts` for the tmpfs it was filling.
+    const scratchDirectory = createDemoScratchDirectory();
     const children = Array.from({ length: count }, (_, index) => {
         const port = DEMO_PORT_BASE + index;
         // `detached` puts each backend in its own process GROUP, so the kill below can signal
@@ -163,7 +167,12 @@ const bootDemoBackends = async (count: number): Promise<(() => void)[]> => {
         const child = spawn('npm', ['--prefix', backendPath, 'run', 'demo'], {
             stdio: ['ignore', 'pipe', 'pipe'],
             detached: true,
-            env: { ...process.env, NODE_PORT: String(port), NODE_DEMO: 'true' }
+            env: {
+                ...process.env,
+                NODE_PORT: String(port),
+                NODE_DEMO: 'true',
+                TMPDIR: scratchDirectory
+            }
         });
         let output = '';
         child.stdout.on('data', (chunk: Buffer) => (output += chunk.toString()));
@@ -179,6 +188,7 @@ const bootDemoBackends = async (count: number): Promise<(() => void)[]> => {
             } catch {
                 /* already gone */
             }
+        removeDemoScratchDirectory(scratchDirectory);
     };
     process.on('exit', kill);
     process.on('SIGINT', () => {
