@@ -113,6 +113,7 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['DELETE', `/users/${ID}/hard`, 'HardDeleteUserByIdResponse'],
     ['POST', '/feedback/contact', 'CreateFeedbackRequestResponse'],
     ['GET', '/feedback', 'ListFeedbackRequestsResponse'],
+    ['POST', '/feedback/search', 'SearchFeedbackRequestsResponse'],
     ['PUT', `/feedback/${ID}`, 'UpdateFeedbackRequestStatusResponse'],
     ['GET', '/products', 'ListProductsResponse'],
     ['POST', '/products', 'CreateProductResponse'],

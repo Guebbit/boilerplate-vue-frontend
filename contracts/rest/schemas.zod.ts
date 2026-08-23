@@ -1956,9 +1956,16 @@ export const UpdateUserResponse = zod.strictObject({
 });
 
 /**
- * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record.
+ * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; the query wins if both are sent.
  * @summary Delete user
  */
+export const DeleteUserQueryParams = zod.strictObject({
+    hardDelete: zod
+        .boolean()
+        .optional()
+        .describe('Permanently remove the record instead of soft-deleting it.')
+});
+
 export const deleteUserBodyHardDeleteDefault = false;
 
 export const DeleteUserBody = zod.strictObject({
@@ -2077,7 +2084,10 @@ export const DeleteUserByIdParams = zod.strictObject({
 });
 
 export const DeleteUserByIdQueryParams = zod.strictObject({
-    hardDelete: zod.boolean().optional()
+    hardDelete: zod
+        .boolean()
+        .optional()
+        .describe('Permanently remove the record instead of soft-deleting it.')
 });
 
 export const deleteUserByIdBodyHardDeleteDefault = false;
@@ -2245,28 +2255,6 @@ export const ListFeedbackRequestsQueryParams = zod.strictObject({
     status: zod.string().optional()
 });
 
-export const listFeedbackRequestsBodyPageDefault = 1;
-
-export const listFeedbackRequestsBodyPageSizeDefault = 10;
-export const listFeedbackRequestsBodyPageSizeMax = 100;
-
-export const ListFeedbackRequestsBody = zod.strictObject({
-    page: zod
-        .number()
-        .min(1)
-        .default(listFeedbackRequestsBodyPageDefault)
-        .describe('1-based page index'),
-    pageSize: zod
-        .number()
-        .min(1)
-        .max(listFeedbackRequestsBodyPageSizeMax)
-        .default(listFeedbackRequestsBodyPageSizeDefault)
-        .describe('Optional override; server may clamp to a max'),
-    text: zod.string().min(1).optional().describe('Free-text search string'),
-    status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional(),
-    email: zod.email().optional()
-});
-
 export const listFeedbackRequestsResponseDataMetaPageDefault = 1;
 
 export const listFeedbackRequestsResponseDataMetaPageSizeDefault = 10;
@@ -2309,6 +2297,78 @@ export const ListFeedbackRequestsResponse = zod.strictObject({
                 .describe('Optional override; server may clamp to a max'),
             totalItems: zod.number().min(listFeedbackRequestsResponseDataMetaTotalItemsMin),
             totalPages: zod.number().min(listFeedbackRequestsResponseDataMetaTotalPagesMin)
+        })
+    })
+});
+
+/**
+ * Searches and filters feedback requests via a JSON request body. Functionally equivalent to `GET /feedback` with query parameters.
+ * @summary Search feedback requests (DTO-friendly)
+ */
+export const searchFeedbackRequestsBodyPageDefault = 1;
+
+export const searchFeedbackRequestsBodyPageSizeDefault = 10;
+export const searchFeedbackRequestsBodyPageSizeMax = 100;
+
+export const SearchFeedbackRequestsBody = zod.strictObject({
+    page: zod
+        .number()
+        .min(1)
+        .default(searchFeedbackRequestsBodyPageDefault)
+        .describe('1-based page index'),
+    pageSize: zod
+        .number()
+        .min(1)
+        .max(searchFeedbackRequestsBodyPageSizeMax)
+        .default(searchFeedbackRequestsBodyPageSizeDefault)
+        .describe('Optional override; server may clamp to a max'),
+    text: zod.string().min(1).optional().describe('Free-text search string'),
+    status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional(),
+    email: zod.email().optional()
+});
+
+export const searchFeedbackRequestsResponseDataMetaPageDefault = 1;
+
+export const searchFeedbackRequestsResponseDataMetaPageSizeDefault = 10;
+export const searchFeedbackRequestsResponseDataMetaPageSizeMax = 100;
+
+export const searchFeedbackRequestsResponseDataMetaTotalItemsMin = 0;
+
+export const searchFeedbackRequestsResponseDataMetaTotalPagesMin = 0;
+
+export const SearchFeedbackRequestsResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        items: zod.array(
+            zod.strictObject({
+                id: zod.string().describe('Resource identifier'),
+                name: zod.string().optional(),
+                email: zod.email(),
+                subject: zod.string(),
+                message: zod.string(),
+                status: zod.enum(['new', 'in_progress', 'resolved', 'spam']),
+                adminNotes: zod.string().optional(),
+                respondedAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true }),
+                updatedAt: zod.iso.datetime({ offset: true }).optional()
+            })
+        ),
+        meta: zod.strictObject({
+            page: zod
+                .number()
+                .min(1)
+                .default(searchFeedbackRequestsResponseDataMetaPageDefault)
+                .describe('1-based page index'),
+            pageSize: zod
+                .number()
+                .min(1)
+                .max(searchFeedbackRequestsResponseDataMetaPageSizeMax)
+                .default(searchFeedbackRequestsResponseDataMetaPageSizeDefault)
+                .describe('Optional override; server may clamp to a max'),
+            totalItems: zod.number().min(searchFeedbackRequestsResponseDataMetaTotalItemsMin),
+            totalPages: zod.number().min(searchFeedbackRequestsResponseDataMetaTotalPagesMin)
         })
     })
 });
@@ -2593,9 +2653,16 @@ export const UpdateProductResponse = zod.strictObject({
 });
 
 /**
- * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record
+ * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; the query wins if both are sent.
  * @summary Delete product
  */
+export const DeleteProductQueryParams = zod.strictObject({
+    hardDelete: zod
+        .boolean()
+        .optional()
+        .describe('Permanently remove the record instead of soft-deleting it.')
+});
+
 export const deleteProductBodyHardDeleteDefault = false;
 
 export const DeleteProductBody = zod.strictObject({
@@ -2770,7 +2837,10 @@ export const DeleteProductByIdParams = zod.strictObject({
 });
 
 export const DeleteProductByIdQueryParams = zod.strictObject({
-    hardDelete: zod.boolean().optional()
+    hardDelete: zod
+        .boolean()
+        .optional()
+        .describe('Permanently remove the record instead of soft-deleting it.')
 });
 
 export const deleteProductByIdBodyHardDeleteDefault = false;
@@ -4007,9 +4077,16 @@ export const UpdateOrderResponse = zod.strictObject({
 });
 
 /**
- * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record
+ * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; the query wins if both are sent.
  * @summary Delete order
  */
+export const DeleteOrderQueryParams = zod.strictObject({
+    hardDelete: zod
+        .boolean()
+        .optional()
+        .describe('Permanently remove the record instead of soft-deleting it.')
+});
+
 export const deleteOrderBodyHardDeleteDefault = false;
 
 export const DeleteOrderBody = zod.strictObject({
@@ -4574,7 +4651,10 @@ export const DeleteOrderByIdParams = zod.strictObject({
 });
 
 export const DeleteOrderByIdQueryParams = zod.strictObject({
-    hardDelete: zod.boolean().optional()
+    hardDelete: zod
+        .boolean()
+        .optional()
+        .describe('Permanently remove the record instead of soft-deleting it.')
 });
 
 export const deleteOrderByIdBodyHardDeleteDefault = false;

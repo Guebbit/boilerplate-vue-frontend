@@ -1136,6 +1136,18 @@ export interface FeedbackRequestEnvelope {
     data: FeedbackRequest;
 }
 
+export interface FeedbackRequestsResponse {
+    items: FeedbackRequest[];
+    meta: PaginationMeta;
+}
+
+export interface FeedbackRequestsResponseEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: FeedbackRequestsResponse;
+}
+
 export type SearchFeedbackRequestsRequestStatus =
     (typeof SearchFeedbackRequestsRequestStatus)[keyof typeof SearchFeedbackRequestsRequestStatus];
 
@@ -1152,18 +1164,6 @@ export interface SearchFeedbackRequestsRequest {
     text?: Text;
     status?: SearchFeedbackRequestsRequestStatus;
     email?: Email;
-}
-
-export interface FeedbackRequestsResponse {
-    items: FeedbackRequest[];
-    meta: PaginationMeta;
-}
-
-export interface FeedbackRequestsResponseEnvelope {
-    success: EnvelopeSuccess;
-    status: EnvelopeStatus;
-    message: EnvelopeMessage;
-    data: FeedbackRequestsResponse;
 }
 
 export type UpdateFeedbackRequestStatusRequestStatus =
@@ -1794,6 +1794,11 @@ export type UserIdParamParameter = Id;
 
 export type ProductIdParamParameter = Id;
 
+/**
+ * Permanently remove the record instead of soft-deleting it.
+ */
+export type HardDeleteParamParameter = boolean;
+
 export type MessagesTenantQueryParamParameter = LocaleTenant;
 
 export type EntryTenantQueryParamParameter = LocaleTenant;
@@ -1918,8 +1923,18 @@ export type ListUsersParams = {
     active?: boolean;
 };
 
+export type DeleteUserParams = {
+    /**
+     * Permanently remove the record instead of soft-deleting it.
+     */
+    hardDelete?: HardDeleteParamParameter;
+};
+
 export type DeleteUserByIdParams = {
-    hardDelete?: boolean;
+    /**
+     * Permanently remove the record instead of soft-deleting it.
+     */
+    hardDelete?: HardDeleteParamParameter;
 };
 
 export type ListFeedbackRequestsParams = {
@@ -1976,8 +1991,18 @@ export type ListProductsParams = {
     maxPrice?: number;
 };
 
+export type DeleteProductParams = {
+    /**
+     * Permanently remove the record instead of soft-deleting it.
+     */
+    hardDelete?: HardDeleteParamParameter;
+};
+
 export type DeleteProductByIdParams = {
-    hardDelete?: boolean;
+    /**
+     * Permanently remove the record instead of soft-deleting it.
+     */
+    hardDelete?: HardDeleteParamParameter;
 };
 
 export type ListOrdersParams = {
@@ -2007,8 +2032,18 @@ export type ListOrdersParams = {
     email?: Email;
 };
 
+export type DeleteOrderParams = {
+    /**
+     * Permanently remove the record instead of soft-deleting it.
+     */
+    hardDelete?: HardDeleteParamParameter;
+};
+
 export type DeleteOrderByIdParams = {
-    hardDelete?: boolean;
+    /**
+     * Permanently remove the record instead of soft-deleting it.
+     */
+    hardDelete?: HardDeleteParamParameter;
 };
 
 export type ListInventoryLevelsParams = {
@@ -2922,11 +2957,12 @@ export const updateUserWithMultipart = (
 };
 
 /**
- * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record.
+ * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; the query wins if both are sent.
  * @summary Delete user
  */
 export const deleteUser = (
     deleteUserRequest: DeleteUserRequest,
+    params?: DeleteUserParams,
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>(
@@ -2934,7 +2970,8 @@ export const deleteUser = (
             url: `/users`,
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            data: deleteUserRequest
+            data: deleteUserRequest,
+            params
         },
         options
     );
@@ -3087,16 +3124,29 @@ export const createFeedbackRequest = (
  * @summary List feedback requests
  */
 export const listFeedbackRequests = (
-    searchFeedbackRequestsRequest?: SearchFeedbackRequestsRequest,
     params?: ListFeedbackRequestsParams,
     options?: SecondParameter<typeof orvalMutator<FeedbackRequestsResponseEnvelope>>
 ) => {
     return orvalMutator<FeedbackRequestsResponseEnvelope>(
+        { url: `/feedback`, method: 'GET', params },
+        options
+    );
+};
+
+/**
+ * Searches and filters feedback requests via a JSON request body. Functionally equivalent to `GET /feedback` with query parameters.
+ * @summary Search feedback requests (DTO-friendly)
+ */
+export const searchFeedbackRequests = (
+    searchFeedbackRequestsRequest: SearchFeedbackRequestsRequest,
+    options?: SecondParameter<typeof orvalMutator<FeedbackRequestsResponseEnvelope>>
+) => {
+    return orvalMutator<FeedbackRequestsResponseEnvelope>(
         {
-            url: `/feedback`,
-            method: 'GET',
+            url: `/feedback/search`,
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            params
+            data: searchFeedbackRequestsRequest
         },
         options
     );
@@ -3259,11 +3309,12 @@ export const updateProductWithMultipart = (
 };
 
 /**
- * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record
+ * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; the query wins if both are sent.
  * @summary Delete product
  */
 export const deleteProduct = (
     deleteProductRequest: DeleteProductRequest,
+    params?: DeleteProductParams,
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>(
@@ -3271,7 +3322,8 @@ export const deleteProduct = (
             url: `/products`,
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            data: deleteProductRequest
+            data: deleteProductRequest,
+            params
         },
         options
     );
@@ -3651,11 +3703,12 @@ export const updateOrder = (
 };
 
 /**
- * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true` to permanently remove the record
+ * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; the query wins if both are sent.
  * @summary Delete order
  */
 export const deleteOrder = (
     deleteOrderRequest: DeleteOrderRequest,
+    params?: DeleteOrderParams,
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>(
@@ -3663,7 +3716,8 @@ export const deleteOrder = (
             url: `/orders`,
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            data: deleteOrderRequest
+            data: deleteOrderRequest,
+            params
         },
         options
     );
@@ -4072,6 +4126,9 @@ export type CreateFeedbackRequestResult = NonNullable<
 >;
 export type ListFeedbackRequestsResult = NonNullable<
     Awaited<ReturnType<typeof listFeedbackRequests>>
+>;
+export type SearchFeedbackRequestsResult = NonNullable<
+    Awaited<ReturnType<typeof searchFeedbackRequests>>
 >;
 export type UpdateFeedbackRequestStatusResult = NonNullable<
     Awaited<ReturnType<typeof updateFeedbackRequestStatus>>
