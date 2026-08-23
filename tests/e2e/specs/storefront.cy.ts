@@ -1,8 +1,10 @@
 /**
  * The storefront surface the customer release added: facet chips on the listing, stock and
- * add-to-cart on the product page, the wishlist and its move-to-cart exit, and the order page's
- * cancel and buy-again. The API enforces its own invariants (public-scope facets, the stock
- * gate, the one order write), so these pin the pages honouring them.
+ * add-to-cart on the product page, and the order page's cancel and buy-again. The API enforces
+ * its own invariants (public-scope facets, the stock gate, the one order write), so these pin
+ * the pages honouring them.
+ *
+ * The wishlist lives with its module, in `src/modules/wishlist/tests/e2e/wishlist.cy.ts`.
  */
 describe('Storefront', () => {
     beforeEach(() => {
@@ -55,63 +57,6 @@ describe('Storefront', () => {
 
             cy.get('[data-test=add-to-cart]').click();
             cy.contains('Product added to cart').should('exist');
-        });
-    });
-
-    describe('wishlist', () => {
-        it('the heart saves and unsaves from the product page', () => {
-            cy.loginAs('user');
-            /*
-             * The subject is a product the demo user has ALREADY saved, so the heart starts
-             * filled — found by reading the wishlist rather than by naming a seeded pair.
-             *
-             * The wishlist answers product IDS and fetches their titles in a second request, so an
-             * item reads as its own id until that lands. Hence a retrying `should` that waits for
-             * the text to name a catalogue entry, rather than a one-shot read of whatever is
-             * there — which is the id, and matches nothing.
-             */
-            cy.publicProducts().then((products) => {
-                const idByTitle = new Map(products.map((product) => [product.title, product.id]));
-
-                cy.visit('/en/wishlist');
-                cy.get('[data-test=wishlist-item] h2')
-                    .first()
-                    .should(($heading) => {
-                        expect(
-                            [...idByTitle.keys()],
-                            'the first saved product is a listed one, with its title resolved'
-                        ).to.include($heading.text().trim());
-                    })
-                    .then(($heading) => {
-                        cy.visit(`/en/products/${idByTitle.get($heading.text().trim()) ?? ''}`);
-                    });
-            });
-
-            cy.get('[data-test=wishlist-toggle]').should('contain.text', 'Saved');
-            cy.get('[data-test=wishlist-toggle]').click();
-            cy.get('[data-test=wishlist-toggle]').should('contain.text', 'Save to wishlist');
-        });
-
-        it('lists the saved products and moves one to the cart', () => {
-            cy.loginAs('user');
-            cy.visit('/en/wishlist');
-
-            // The claim is that moving one REMOVES one, so the starting length is read rather
-            // than asserted: a seed with three saved products tests the same rule.
-            cy.get('[data-test=wishlist-item]').then(($items) => {
-                const before = $items.length;
-                expect(before, 'the demo user starts with something saved').to.be.greaterThan(0);
-
-                cy.get('[data-test=wishlist-move-to-cart]').first().click();
-                cy.get('[data-test=wishlist-item]').should('have.length', before - 1);
-            });
-            cy.visit('/en/cart');
-            cy.get('[data-test=cart-item]').should('exist');
-        });
-
-        it('is a guarded route: guests land on the login', () => {
-            cy.visit('/en/wishlist');
-            cy.get('#login-page').should('exist');
         });
     });
 

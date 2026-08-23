@@ -83,7 +83,7 @@ onMounted(() =>
                         :to="
                             routerLinkI18n({
                                 name: 'ProductTarget',
-                                params: { id: titleOf(item.productId) }
+                                params: { id: item.productId }
                             })
                         "
                     >

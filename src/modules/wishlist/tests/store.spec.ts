@@ -47,6 +47,20 @@ describe('fetchWishlist', () => {
             }));
 });
 
+describe('addToWishlist', () => {
+    it('renders the list the API answered and the heart reads saved', () => {
+        const store = useWishlistStore();
+        return store.addToWishlist('p1').then(() => {
+            expect(store.items.map(({ productId }) => productId)).toEqual(['p1', 'p2']);
+            // The payload is the whole list, so saving one product also learns about the other:
+            // a store appending locally would hold one line here and be wrong the moment two
+            // tabs save different products.
+            expect(store.isSaved('p2')).toBe(true);
+            expect(requestedUrls()).toEqual(['/wishlist']);
+        });
+    });
+});
+
 describe('removeFromWishlist', () => {
     it('renders the list the API answered, not a local guess', () => {
         const store = useWishlistStore();
