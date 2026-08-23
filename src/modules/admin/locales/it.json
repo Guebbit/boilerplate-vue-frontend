@@ -32,7 +32,7 @@
         "label-checkout-success": "Checkout completati",
         "label-environment": "Ambiente",
         "label-service": "Servizio",
-        "label-node-version": "Versione Node.js",
+        "label-runtime-version": "Versione runtime",
         "label-heap-used": "Heap usato",
         "label-heap-total": "Heap totale",
         "label-platform": "Piattaforma",

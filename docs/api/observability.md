@@ -31,7 +31,7 @@ src/modules/admin/
   "status": "ok",
   "environment": "production",
   "service": "boilerplate-node-backend",
-  "nodeVersion": "v22.x.x",
+  "runtimeVersion": "v22.x.x",
   "uptimeSeconds": 3600,
   "database": { "status": "connected" },
   "integrations": {

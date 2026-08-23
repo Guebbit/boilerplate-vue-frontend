@@ -274,8 +274,8 @@ const flagText = (value?: boolean) => (value ? t('generic.enabled') : t('generic
                 <DefinitionRow :label="t('admin-page.label-service')">{{
                     props.health.service
                 }}</DefinitionRow>
-                <DefinitionRow :label="t('admin-page.label-node-version')">{{
-                    props.health.nodeVersion
+                <DefinitionRow :label="t('admin-page.label-runtime-version')">{{
+                    props.health.runtimeVersion
                 }}</DefinitionRow>
                 <template v-if="props.health.memory">
                     <DefinitionRow :label="t('admin-page.label-heap-used')">{{

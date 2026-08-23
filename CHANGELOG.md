@@ -78,6 +78,11 @@ keeping moved into cross-cutting specs.
 
 ### Changed
 
+- **BREAKING (contract):** `ObservabilityHealth.nodeVersion` is now `runtimeVersion`. The old name
+  forced every backend to emit a Node-shaped key for its own runtime — the PHP twin was satisfying
+  it with `PHP_VERSION`. The admin overview card reads the new name, and its label is now "Runtime
+  version" / "Versione runtime" (`admin-page.label-runtime-version`). Anything else reading
+  `health.nodeVersion` gets `undefined`.
 - `openapi.yaml` adopts the API's `422` declarations on the four id-taking operations that were
   missing them. No client type changes — the responses were already reachable, only undeclared.
 - `listFeedbackRequests` lost its request-body argument, and `searchFeedbackRequests` is new. The

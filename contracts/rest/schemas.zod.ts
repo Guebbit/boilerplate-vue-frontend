@@ -935,7 +935,11 @@ export const GetObservabilityHealthResponse = zod.strictObject({
             ),
         environment: zod.string(),
         service: zod.string(),
-        nodeVersion: zod.string(),
+        runtimeVersion: zod
+            .string()
+            .describe(
+                'The version of the language runtime serving this API, as that runtime reports it. Diagnostic only — what is actually deployed right now, which is the question a release leaves open.'
+            ),
         uptimeSeconds: zod.number().min(getObservabilityHealthResponseDataUptimeSecondsMin),
         dependencies: zod
             .strictObject({
