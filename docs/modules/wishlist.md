@@ -109,17 +109,19 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 | `store.ts`                             | The Pinia store: this domain’s state, and every call it makes to the generated client.                                                                      | [read](../tools/state-and-routing.md) |
 | `tests/e2e/__snapshots__/wishlist.png` | A committed visual-regression baseline.                                                                                                                     | [read](../tools/visual-regression.md) |
 | `tests/e2e/a11y.cy.ts`                 | Cypress suite — the screens, in a browser.                                                                                                                  | [read](../tools/component-testing.md) |
+| `tests/e2e/wishlist.cy.ts`             | Cypress suite — the screens, in a browser.                                                                                                                  | [read](../tools/component-testing.md) |
 | `tests/e2e/wishlist.visual.cy.ts`      | Cypress suite — the screens, in a browser.                                                                                                                  | [read](../tools/component-testing.md) |
 | `tests/routes.spec.ts`                 | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
 | `tests/store.spec.ts`                  | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
+| `tests/wishlist-view.spec.ts`          | Vitest suite — the store, the routes and the rules, in isolation.                                                                                           | [read](../tools/unit-testing.md)      |
 | `views/Wishlist.vue`                   | A routed screen. Reads its store, renders, and holds no fetching logic of its own.                                                                          | [read](../theory/layers.md)           |
 
 ## Working on it
 
 | Suite            | Files | Where                                           |
 | ---------------- | ----- | ----------------------------------------------- |
-| Vitest           | 2     | `src/modules/wishlist/tests/`                   |
-| Cypress          | 2     | `src/modules/wishlist/tests/e2e/`               |
+| Vitest           | 3     | `src/modules/wishlist/tests/`                   |
+| Cypress          | 3     | `src/modules/wishlist/tests/e2e/`               |
 | Visual baselines | 1     | `src/modules/wishlist/tests/e2e/__snapshots__/` |
 
 ```bash
