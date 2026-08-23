@@ -41,8 +41,14 @@
 export interface A11ySweepCase {
     /** What a failure reports. */
     name: string;
-    /** The path to visit, locale prefix included (`/en/...`). */
-    route: string;
+    /**
+     * The path to visit, locale prefix included (`/en/...`), or a function yielding one.
+     *
+     * The function form is what lets a route carry a record's id without naming one: the id is
+     * resolved inside the test, off the backend actually running, rather than baked into a
+     * literal at collection time — see `cy.productInRole()`.
+     */
+    route: A11ySweepRoute;
     /**
      * Puts the page in the state to audit — open a drawer, submit an empty form — after the
      * content has loaded and before axe runs. Plain Cypress commands; they are enqueued in order.
@@ -57,14 +63,21 @@ export interface A11ySweepCase {
     viewport?: readonly [width: number, height: number];
 }
 
+/** A path, or a way to find one once the backend can be asked. */
+export type A11ySweepRoute = string | (() => Cypress.Chainable<string>);
+
 /** The terse spelling for the common case — a route, loaded, audited. */
-type A11ySweepEntry = readonly [name: string, route: string] | A11ySweepCase;
+type A11ySweepEntry = readonly [name: string, route: A11ySweepRoute] | A11ySweepCase;
 
 /** Selector of the app bar's theme toggle — `data-test`, so the `/it/` sweep finds it too. */
 const THEME_TOGGLE = '[data-test=theme-toggle]';
 
 const toCase = (entry: A11ySweepEntry): A11ySweepCase =>
     Array.isArray(entry) ? { name: entry[0], route: entry[1] } : (entry as A11ySweepCase);
+
+/** A literal path passes straight through; a lookup is run now, inside the test. */
+const resolveRoute = (route: A11ySweepRoute): Cypress.Chainable<string> =>
+    typeof route === 'string' ? cy.wrap(route, { log: false }) : route();
 
 /**
  * @param label - what this group of routes is, for the describe title
@@ -94,7 +107,9 @@ export const sweepA11y = (
                 if (viewport) cy.viewport(viewport[0], viewport[1]);
                 // Before the visit, so the page's very first fetch is counted — see the command.
                 cy.trackNetwork();
-                cy.visit(route);
+                resolveRoute(route).then((path) => {
+                    cy.visit(path);
+                });
                 // Wait for real content rather than the shell, so axe does not audit a loading
                 // state and report an empty page as perfect.
                 cy.get('h1').should('exist');

@@ -23,6 +23,7 @@ import 'cypress-axe';
  */
 import 'cypress-real-events';
 import './commands';
+import './fixtures';
 
 beforeEach(() => {
     cy.clearCookies();

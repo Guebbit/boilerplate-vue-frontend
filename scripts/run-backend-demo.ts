@@ -5,16 +5,20 @@
  *
  * A thin exec wrapper because `start-server-and-test` (and a human) wants one command with the
  * path already resolved: `npm run backend:demo`. `NODE_PORT` passes through.
+ *
+ * WHICH command is `BACKEND_DEMO_COMMAND`'s to say — the two paired backends do not expose the
+ * demo profile through the same runner. See `resolveBackendDemoCommand`.
  */
 import { spawn } from 'node:child_process';
-import { resolveBackendPath } from './backend-path';
+import { resolveBackendDemoCommand } from './backend-path';
 import { createDemoScratchDirectory, removeDemoScratchDirectory } from './demo-scratch';
 
 // The backend's in-memory Mongo writes under this, not under the machine's `/tmp` — see
 // `demo-scratch.ts` for the tmpfs it was filling.
 const scratchDirectory = createDemoScratchDirectory();
 
-const child = spawn('npm', ['--prefix', resolveBackendPath(), 'run', 'demo'], {
+const [command, ...commandArguments] = resolveBackendDemoCommand();
+const child = spawn(command, commandArguments, {
     stdio: 'inherit',
     env: { ...process.env, TMPDIR: scratchDirectory }
 });

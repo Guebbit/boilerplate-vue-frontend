@@ -11,25 +11,37 @@ describe('Storefront', () => {
     });
 
     describe('catalogue facets', () => {
+        /*
+         * The counts are DERIVED from the public list rather than written down, which is what
+         * makes this the scope assertion it is meant to be: a chip saying `pets (4)` where the
+         * guest can see two of them is exactly the leak, and the expectation moves with the
+         * dataset instead of pinning one backend's catalogue.
+         */
         it('renders the chips with public counts and filters by one', () => {
-            cy.visit('/en/products');
+            cy.publicProducts().then((products) => {
+                const counts = new Map<string, number>();
+                for (const product of products)
+                    for (const category of product.categories ?? [])
+                        counts.set(category, (counts.get(category) ?? 0) + 1);
 
-            // Counts follow the public scope: `pets` is on four seed products, but one is
-            // soft-deleted and one inactive — a guest's chip must say 2.
-            cy.get('[data-test=category-chip]').contains('pets (2)').should('exist');
-            cy.get('[data-test=category-chip]').contains('food (1)').should('exist');
+                const [category, count] = [...counts.entries()].toSorted((a, b) => a[1] - b[1])[0];
 
-            cy.get('[data-test=category-chip]').contains('food (1)').click();
-            cy.get('#products-list-page tbody tr').should('have.length', 1);
-            cy.contains('#products-list-page tbody', 'Sallyno Panino').should('exist');
+                cy.visit('/en/products');
+                cy.get('[data-test=category-chip]')
+                    .contains(`${category} (${String(count)})`)
+                    .should('exist')
+                    .click();
+                cy.get('#products-list-page tbody tr').should('have.length', count);
+            });
         });
     });
 
     describe('product page', () => {
         it('shows the shelf and blocks buying what is out of stock', () => {
-            // `Miciona inutile` is the seeded stock: 0 product.
             cy.loginAs('user');
-            cy.visit('/en/products/65dc9be92f2794d1c16741e1');
+            cy.productInRole('outOfStock').then((product) => {
+                cy.visit(`/en/products/${product.id}`);
+            });
 
             cy.get('[data-test=add-to-cart]').should('be.disabled');
             cy.contains('Out of stock').should('exist');
@@ -37,7 +49,9 @@ describe('Storefront', () => {
 
         it('adds a unit to the cart and the badge follows', () => {
             cy.loginAs('user');
-            cy.visit('/en/products/65dc8a99604c307b702b5ccc');
+            cy.productInRole('inStock').then((product) => {
+                cy.visit(`/en/products/${product.id}`);
+            });
 
             cy.get('[data-test=add-to-cart]').click();
             cy.contains('Product added to cart').should('exist');
@@ -47,9 +61,32 @@ describe('Storefront', () => {
     describe('wishlist', () => {
         it('the heart saves and unsaves from the product page', () => {
             cy.loginAs('user');
-            cy.visit('/en/products/65dc8a99604c307b702b5ccc');
+            /*
+             * The subject is a product the demo user has ALREADY saved, so the heart starts
+             * filled — found by reading the wishlist rather than by naming a seeded pair.
+             *
+             * The wishlist answers product IDS and fetches their titles in a second request, so an
+             * item reads as its own id until that lands. Hence a retrying `should` that waits for
+             * the text to name a catalogue entry, rather than a one-shot read of whatever is
+             * there — which is the id, and matches nothing.
+             */
+            cy.publicProducts().then((products) => {
+                const idByTitle = new Map(products.map((product) => [product.title, product.id]));
 
-            // Seeded as saved for the demo user, so the heart starts filled.
+                cy.visit('/en/wishlist');
+                cy.get('[data-test=wishlist-item] h2')
+                    .first()
+                    .should(($heading) => {
+                        expect(
+                            [...idByTitle.keys()],
+                            'the first saved product is a listed one, with its title resolved'
+                        ).to.include($heading.text().trim());
+                    })
+                    .then(($heading) => {
+                        cy.visit(`/en/products/${idByTitle.get($heading.text().trim()) ?? ''}`);
+                    });
+            });
+
             cy.get('[data-test=wishlist-toggle]').should('contain.text', 'Saved');
             cy.get('[data-test=wishlist-toggle]').click();
             cy.get('[data-test=wishlist-toggle]').should('contain.text', 'Save to wishlist');
@@ -59,10 +96,15 @@ describe('Storefront', () => {
             cy.loginAs('user');
             cy.visit('/en/wishlist');
 
-            cy.get('[data-test=wishlist-item]').should('have.length', 2);
-            cy.get('[data-test=wishlist-move-to-cart]').first().click();
+            // The claim is that moving one REMOVES one, so the starting length is read rather
+            // than asserted: a seed with three saved products tests the same rule.
+            cy.get('[data-test=wishlist-item]').then(($items) => {
+                const before = $items.length;
+                expect(before, 'the demo user starts with something saved').to.be.greaterThan(0);
 
-            cy.get('[data-test=wishlist-item]').should('have.length', 1);
+                cy.get('[data-test=wishlist-move-to-cart]').first().click();
+                cy.get('[data-test=wishlist-item]').should('have.length', before - 1);
+            });
             cy.visit('/en/cart');
             cy.get('[data-test=cart-item]').should('exist');
         });
@@ -76,8 +118,11 @@ describe('Storefront', () => {
     describe('order actions', () => {
         it('cancels a pending order and buying again refills the cart', () => {
             cy.loginAs('admin');
-            // The first seeded order belongs to the admin and starts pending.
-            cy.visit('/en/orders/65de73a69ca05739be2b5e85');
+            // Any order the cancel gate is still open on — the page hides the button for every
+            // other status, so the role IS the precondition this case needs.
+            cy.orderInRole('cancellable').then((order) => {
+                cy.visit(`/en/orders/${order.id}`);
+            });
 
             cy.get('[data-test=order-cancel]').click();
             // The app's own confirmation, not the browser's: Cypress auto-accepts only the latter.

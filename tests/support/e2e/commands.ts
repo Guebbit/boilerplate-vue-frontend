@@ -1,5 +1,7 @@
 /// <reference types="cypress" />
 
+import { E2E_ACCOUNTS } from './accounts';
+
 /*
  * A demo reset drops the in-memory database and reseeds it inside the backend process
  * (`POST /__demo/reset`, see the backend's `src/app/demo.ts`) — measured in tens of
@@ -317,10 +319,7 @@ Cypress.Commands.add('logout', () => {
 });
 
 Cypress.Commands.add('loginAs', (role = 'user') => {
-    const credentials =
-        role === 'admin'
-            ? { email: 'root@root.it', password: 'rootroot' }
-            : { email: 'gino@pino.it', password: 'password' };
+    const credentials = E2E_ACCOUNTS[role];
 
     cy.visit('/en/login');
     cy.get('[type=email]').clear();

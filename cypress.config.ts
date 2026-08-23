@@ -24,6 +24,7 @@ import { resolveBackendPath, resolveLiveResetCommand } from './scripts/backend-p
 import { ALL_SPEC_GLOBS } from './scripts/spec-globs';
 import { compareSnapshot } from './tests/support/e2e/visual-task';
 import { recordA11yViolations } from './tests/support/e2e/a11y-task';
+import { adminApi } from './tests/support/e2e/admin-api-task';
 import type { A11yRecordRequest } from './tests/support/e2e/a11y-task';
 
 /*
@@ -76,6 +77,13 @@ export default defineConfig({
                  * which session counts as "current" — is left untouched. The sessions specs use
                  * it to make "another device" exist without pretending.
                  */
+                /**
+                 * One authenticated admin call, made from Node — see
+                 * `tests/support/e2e/admin-api-task.ts`. The e2e fixtures provision their own
+                 * subjects through this rather than through `cy.request`, so the page's own
+                 * session and refresh cookie are left exactly as the spec found them.
+                 */
+                adminApi: (request: Parameters<typeof adminApi>[0]) => adminApi(request),
                 createSession: ({ apiUrl, email, password }: Record<string, string>) =>
                     fetch(`${apiUrl}/account/login`, {
                         method: 'POST',

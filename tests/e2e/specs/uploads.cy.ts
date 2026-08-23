@@ -28,18 +28,22 @@ const expectNoPendingLocalPreview = () =>
             expect(image.getAttribute('src') ?? '').not.to.match(/^blob:/);
     });
 
-const PRODUCT_ID = '65dc8a99604c307b702b5ccc';
-const PRODUCT_TITLE = 'Sallyno Panino';
-
 /**
- * Waits for `activateAutoHydrate` to have filled the form from the fetched record.
+ * Opens the edit form for some in-stock product, and waits for it to be hydrated.
+ *
+ * The subject is asked for by ROLE — any editable product will do, and naming one would tie this
+ * spec to a single backend's ids. Visit and readiness gate are one helper because the gate needs
+ * that product's own title, which only exists inside the lookup.
  *
  * `#product-edit-page` is the layout's id and exists before the product has loaded, so it is not
  * a readiness gate: submitting on it fails validation on the still-empty title and price, and the
  * failure looks exactly like a broken image field. The hydrated title is the real signal.
  */
-const waitForHydratedProductForm = () =>
-    cy.get('#product-edit-page input[type=text]').first().should('have.value', PRODUCT_TITLE);
+const openHydratedProductEditForm = () =>
+    cy.productInRole('inStock').then((product) => {
+        cy.visit(`/en/products/${product.id}/edit`);
+        cy.get('#product-edit-page input[type=text]').first().should('have.value', product.title);
+    });
 
 /** Picks the fixture image. `force` because Vuetify keeps the real input visually hidden. */
 const selectSampleImage = () =>
@@ -54,8 +58,7 @@ describe('Image upload', () => {
     describe('Product edit', () => {
         beforeEach(() => {
             cy.loginAs('admin');
-            cy.visit(`/en/products/${PRODUCT_ID}/edit`);
-            waitForHydratedProductForm();
+            openHydratedProductEditForm();
         });
 
         it('offers a file field that accepts only the types the API takes', () => {
@@ -252,8 +255,7 @@ describe('Image upload', () => {
         it('stores the upload and serves it back over HTTP', () => {
             cy.skipUnlessLive();
             cy.loginAs('admin');
-            cy.visit(`/en/products/${PRODUCT_ID}/edit`);
-            waitForHydratedProductForm();
+            openHydratedProductEditForm();
 
             selectSampleImage();
             cy.get('form').submit();
@@ -284,8 +286,7 @@ describe('Image upload', () => {
         it('answers 422 when the declared type and the actual bytes disagree', () => {
             cy.skipUnlessLive();
             cy.loginAs('admin');
-            cy.visit(`/en/products/${PRODUCT_ID}/edit`);
-            waitForHydratedProductForm();
+            openHydratedProductEditForm();
 
             cy.get('input[type=file]').selectFile(
                 {

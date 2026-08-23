@@ -47,9 +47,6 @@ interface UmamiSession {
     token: string;
 }
 
-/** The seeded in-stock product `storefront.cy.ts` also buys. */
-const IN_STOCK_PRODUCT_ID = '65dc8a99604c307b702b5ccc';
-
 /** How long Umami is given to make a fire-and-forget write readable. */
 const INGEST_TIMEOUT_MS = 20_000;
 const POLL_INTERVAL_MS = 1000;
@@ -166,10 +163,12 @@ describe('Analytics, end to end', () => {
                 const startedBefore = before.app_started ?? 0;
 
                 // Through the UI, not the API: the point is ONE user action, and it is the click
-                // that sets both trackers off at once. The product is the seeded in-stock one
-                // `storefront.cy.ts` buys, so this walks the same path a person does.
+                // that sets both trackers off at once. Any in-stock product walks the same path a
+                // person does, so the subject is asked for by role.
                 cy.loginAs('user');
-                cy.visit(`/en/products/${IN_STOCK_PRODUCT_ID}`);
+                cy.productInRole('inStock').then((product) => {
+                    cy.visit(`/en/products/${product.id}`);
+                });
 
                 cy.get('[data-test=add-to-cart]').should('be.enabled').click();
                 cy.contains('Product added to cart').should('exist');

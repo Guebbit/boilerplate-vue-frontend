@@ -53,3 +53,29 @@ export const resolveLiveResetCommand = (): string =>
         '{backend}',
         resolveBackendPath()
     );
+
+/**
+ * The command `npm run backend:demo` runs to boot the paired backend's demo profile.
+ *
+ * Parameterised for the reason `LIVE_RESET_COMMAND` above is: the two paired backends do not
+ * expose the demo profile through the same runner. The TypeScript one is an npm script, and the
+ * PHP one keeps database-shaped commands out of `package.json` entirely — there it is
+ * `composer demo`, which `npm --prefix` cannot reach. Without this, the profile that boots its
+ * own backend can only ever talk to one of the two.
+ *
+ * `{backend}` is substituted with the resolved absolute backend path.
+ */
+export const DEFAULT_BACKEND_DEMO_COMMAND = 'npm --prefix {backend} run demo';
+
+/**
+ * Resolves that command with `{backend}` filled in, split into the argv `spawn` wants. An EMPTY
+ * `BACKEND_DEMO_COMMAND` counts as unset, for the same reason `BACKEND_PATH` does.
+ *
+ * Split on whitespace rather than run through a shell: the backend is spawned with `stdio:
+ * 'inherit'` and killed by signal when `start-server-and-test` ends, and an intervening shell
+ * would take the signal instead of the server it wrapped.
+ */
+export const resolveBackendDemoCommand = (): readonly string[] =>
+    (process.env.BACKEND_DEMO_COMMAND?.trim() || DEFAULT_BACKEND_DEMO_COMMAND)
+        .replaceAll('{backend}', resolveBackendPath())
+        .split(/\s+/);

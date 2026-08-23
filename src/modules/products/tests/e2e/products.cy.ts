@@ -15,14 +15,42 @@ describe('Products', () => {
             cy.get('h1').should('contain.text', 'Products list');
         });
 
-        // `cy.resetState()` clears the session, so these run as an anonymous visitor.
-        // Of the six seeded products one is soft-deleted and one is inactive, and the API
-        // hides both from non-admins — so the public list is 4, not 6. The number is the
-        // API's `active`/`deletedAt` filtering, which is the rule this case exists to pin.
-        it('renders only publicly visible products for anonymous visitors', () => {
-            cy.get('[data-test=list-row]').should('have.length', 4);
-            cy.contains('[data-test=list-row]', 'Sallyno Carino').should('not.exist'); // soft-deleted
-            cy.contains('[data-test=list-row]', 'Bundle micini').should('not.exist'); // inactive
+        /*
+         * The rule, tested as a TRANSITION rather than as a tableau: each case creates a product,
+         * confirms an anonymous visitor can see it, hides it one way, and confirms it is gone.
+         * A pre-hidden fixture can only show the end state, and cannot tell "the filter works"
+         * apart from "that row was never there".
+         *
+         * `deletedAt` and `active` are independent, so they get one case each — a single mixed
+         * assertion would go red without saying which filter moved.
+         */
+        it('hides soft-deleted products from anonymous visitors', () => {
+            cy.createProduct().then((product) => {
+                cy.reload();
+                cy.contains('[data-test=list-row]', product.title).should('exist');
+
+                cy.softDeleteProduct(product.id);
+                cy.reload();
+                cy.contains('[data-test=list-row]', product.title).should('not.exist');
+            });
+        });
+
+        it('hides inactive products from anonymous visitors', () => {
+            cy.createProduct().then((product) => {
+                cy.reload();
+                cy.contains('[data-test=list-row]', product.title).should('exist');
+
+                cy.deactivateProduct(product);
+                cy.reload();
+                cy.contains('[data-test=list-row]', product.title).should('not.exist');
+            });
+        });
+
+        // The list an anonymous visitor gets IS the API's public scope — no more, no less.
+        it('renders exactly the publicly visible products for anonymous visitors', () => {
+            cy.publicProducts().then((products) => {
+                cy.get('[data-test=list-row]').should('have.length', products.length);
+            });
         });
 
         // Addressed by title rather than by row index. The API sorts by `createdAt`, and seeded
@@ -30,11 +58,11 @@ describe('Products', () => {
         // the seed's insertion timing, not behaviour this spec should pin. The pairing of a
         // title with its price is the actual claim, and it survives any ordering.
         it('displays product title and price in each row', () => {
-            cy.contains('[data-test=list-row]', 'Sallyno Panino').within(() => {
-                cy.contains('100').should('exist');
-            });
-            cy.contains('[data-test=list-row]', 'Micino pufettino').within(() => {
-                cy.contains('77').should('exist');
+            cy.publicProducts().then((products) => {
+                for (const product of products)
+                    cy.contains('[data-test=list-row]', product.title).within(() => {
+                        cy.contains(String(product.price)).should('exist');
+                    });
             });
         });
 
@@ -73,14 +101,19 @@ describe('Products', () => {
                 });
         });
 
-        // The other half of the same rule: an admin sees the inactive and soft-deleted rows a
-        // non-admin does not.
+        // The other half of the same rule: what the public list drops, an admin still sees.
         it('shows inactive and soft-deleted products to admin users', () => {
-            cy.loginAs('admin');
-            cy.visit('/en/products');
-            cy.get('[data-test=list-row]').should('have.length', 6);
-            cy.contains('[data-test=list-row]', 'Sallyno Carino').should('exist');
-            cy.contains('[data-test=list-row]', 'Bundle micini').should('exist');
+            cy.createProduct().then((softDeleted) =>
+                cy.createProduct().then((inactive) => {
+                    cy.softDeleteProduct(softDeleted.id);
+                    cy.deactivateProduct(inactive);
+
+                    cy.loginAs('admin');
+                    cy.visit('/en/products');
+                    cy.contains('[data-test=list-row]', softDeleted.title).should('exist');
+                    cy.contains('[data-test=list-row]', inactive.title).should('exist');
+                })
+            );
         });
 
         // The expected id is read off the row that gets clicked, not hard-coded. The API sorts by
@@ -102,8 +135,20 @@ describe('Products', () => {
     });
 
     describe('Product detail', () => {
+        /*
+         * `rich` rather than `inStock`, because the cases below assert on a description and a
+         * price: the role has to guarantee the fields being read, or the spec is one dataset
+         * away from asserting on an empty string. Every expectation is taken off the record the
+         * API served, so the page is checked against the answer rather than against a catalogue
+         * somebody remembered.
+         */
+        let subject: { id: string; title: string; price: number; description?: string };
+
         beforeEach(() => {
-            cy.visit('/en/products/65dc8a99604c307b702b5ccc');
+            cy.productInRole('rich').then((product) => {
+                subject = product;
+                cy.visit(`/en/products/${product.id}`);
+            });
             cy.get('#product-target').should('exist');
         });
 
@@ -113,15 +158,15 @@ describe('Products', () => {
         });
 
         it('displays the product title', () => {
-            cy.contains('Sallyno Panino').should('exist');
+            cy.contains(subject.title).should('exist');
         });
 
         it('displays the product price', () => {
-            cy.contains('100').should('exist');
+            cy.contains(String(subject.price)).should('exist');
         });
 
         it('displays the product description', () => {
-            cy.contains('Piccolo Sallyno panino. Da mangiare di coccole').should('exist');
+            cy.contains(subject.description ?? '').should('exist');
         });
 
         it('has a link back to the products list', () => {
