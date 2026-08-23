@@ -1148,36 +1148,16 @@ export interface FeedbackRequestsResponseEnvelope {
     data: FeedbackRequestsResponse;
 }
 
-export type SearchFeedbackRequestsRequestStatus =
-    (typeof SearchFeedbackRequestsRequestStatus)[keyof typeof SearchFeedbackRequestsRequestStatus];
-
-export const SearchFeedbackRequestsRequestStatus = {
-    new: 'new',
-    in_progress: 'in_progress',
-    resolved: 'resolved',
-    spam: 'spam'
-} as const;
-
 export interface SearchFeedbackRequestsRequest {
     page?: Page;
     pageSize?: PageSize;
     text?: Text;
-    status?: SearchFeedbackRequestsRequestStatus;
+    status?: FeedbackRequestStatus;
     email?: Email;
 }
 
-export type UpdateFeedbackRequestStatusRequestStatus =
-    (typeof UpdateFeedbackRequestStatusRequestStatus)[keyof typeof UpdateFeedbackRequestStatusRequestStatus];
-
-export const UpdateFeedbackRequestStatusRequestStatus = {
-    new: 'new',
-    in_progress: 'in_progress',
-    resolved: 'resolved',
-    spam: 'spam'
-} as const;
-
 export interface UpdateFeedbackRequestStatusRequest {
-    status?: UpdateFeedbackRequestStatusRequestStatus;
+    status?: FeedbackRequestStatus;
     adminNotes?: string;
 }
 
@@ -1955,7 +1935,7 @@ export type ListFeedbackRequestsParams = {
      */
     text?: TextParamParameter;
     email?: Email;
-    status?: string;
+    status?: FeedbackRequestStatus;
 };
 
 export type ListProductsParams = {

@@ -2252,7 +2252,7 @@ export const ListFeedbackRequestsQueryParams = zod.strictObject({
         .default(listFeedbackRequestsQueryPageSizeDefault),
     text: zod.string().min(1).optional(),
     email: zod.email().optional(),
-    status: zod.string().optional()
+    status: zod.enum(['new', 'in_progress', 'resolved', 'spam']).optional()
 });
 
 export const listFeedbackRequestsResponseDataMetaPageDefault = 1;
