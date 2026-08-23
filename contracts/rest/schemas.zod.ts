@@ -567,7 +567,7 @@ export const ListLocaleEntriesResponse = zod.strictObject({
                     key: zod
                         .string()
                         .describe(
-                            'Flat and dotted. Stored AS A STRING and never as a Mongo path — a document per language with `$set: { \"messages.products.list.title\": v }` would have Mongo read three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting.'
+                            'Flat and dotted. Stored AS A STRING, and never as a path INTO a nested structure: a store that interprets the dots reads three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting.'
                         ),
                     value: zod.string(),
                     createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -656,7 +656,7 @@ export const CreateLocaleEntryResponse = zod.strictObject({
             key: zod
                 .string()
                 .describe(
-                    'Flat and dotted. Stored AS A STRING and never as a Mongo path — a document per language with `$set: { \"messages.products.list.title\": v }` would have Mongo read three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting.'
+                    'Flat and dotted. Stored AS A STRING, and never as a path INTO a nested structure: a store that interprets the dots reads three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting.'
                 ),
             value: zod.string(),
             createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -863,7 +863,7 @@ export const UpdateLocaleEntryResponse = zod.strictObject({
             key: zod
                 .string()
                 .describe(
-                    'Flat and dotted. Stored AS A STRING and never as a Mongo path — a document per language with `$set: { \"messages.products.list.title\": v }` would have Mongo read three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting.'
+                    'Flat and dotted. Stored AS A STRING, and never as a path INTO a nested structure: a store that interprets the dots reads three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting.'
                 ),
             value: zod.string(),
             createdAt: zod.iso.datetime({ offset: true }).optional(),
@@ -3357,7 +3357,7 @@ export const CheckoutResponse = zod.strictObject({
             status: zod
                 .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                 .describe(
-                    "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's `domain\/lifecycle.ts`, answered per caller by `OrderActions`."
+                    "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
                 ),
             actions: zod
                 .strictObject({
@@ -3373,7 +3373,7 @@ export const CheckoutResponse = zod.strictObject({
                                     'cancelled'
                                 ])
                                 .describe(
-                                    "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's `domain\/lifecycle.ts`, answered per caller by `OrderActions`."
+                                    "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
                                 )
                         )
                         .describe(
@@ -3672,7 +3672,7 @@ export const ListOrdersResponse = zod.strictObject({
                 status: zod
                     .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                     .describe(
-                        "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's `domain\/lifecycle.ts`, answered per caller by `OrderActions`."
+                        "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
                     ),
                 actions: zod
                     .strictObject({
@@ -3688,7 +3688,7 @@ export const ListOrdersResponse = zod.strictObject({
                                         'cancelled'
                                     ])
                                     .describe(
-                                        "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's `domain\/lifecycle.ts`, answered per caller by `OrderActions`."
+                                        "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
                                     )
                             )
                             .describe(
@@ -3859,7 +3859,7 @@ export const CreateOrderResponse = zod.strictObject({
         status: zod
             .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
             .describe(
-                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's `domain\/lifecycle.ts`, answered per caller by `OrderActions`."
+                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
             ),
         actions: zod
             .strictObject({
@@ -3875,7 +3875,7 @@ export const CreateOrderResponse = zod.strictObject({
                                 'cancelled'
                             ])
                             .describe(
-                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's `domain\/lifecycle.ts`, answered per caller by `OrderActions`."
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
                             )
                     )
                     .describe(
@@ -4033,7 +4033,7 @@ export const UpdateOrderResponse = zod.strictObject({
         status: zod
             .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
             .describe(
-                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's `domain\/lifecycle.ts`, answered per caller by `OrderActions`."
+                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
             ),
         actions: zod
             .strictObject({
@@ -4049,7 +4049,7 @@ export const UpdateOrderResponse = zod.strictObject({
                                 'cancelled'
                             ])
                             .describe(
-                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's `domain\/lifecycle.ts`, answered per caller by `OrderActions`."
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
                             )
                     )
                     .describe(
@@ -4248,7 +4248,7 @@ export const SearchOrdersResponse = zod.strictObject({
                 status: zod
                     .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
                     .describe(
-                        "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's `domain\/lifecycle.ts`, answered per caller by `OrderActions`."
+                        "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
                     ),
                 actions: zod
                     .strictObject({
@@ -4264,7 +4264,7 @@ export const SearchOrdersResponse = zod.strictObject({
                                         'cancelled'
                                     ])
                                     .describe(
-                                        "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's `domain\/lifecycle.ts`, answered per caller by `OrderActions`."
+                                        "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
                                     )
                             )
                             .describe(
@@ -4423,7 +4423,7 @@ export const GetOrderByIdResponse = zod.strictObject({
         status: zod
             .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
             .describe(
-                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's `domain\/lifecycle.ts`, answered per caller by `OrderActions`."
+                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
             ),
         actions: zod
             .strictObject({
@@ -4439,7 +4439,7 @@ export const GetOrderByIdResponse = zod.strictObject({
                                 'cancelled'
                             ])
                             .describe(
-                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's `domain\/lifecycle.ts`, answered per caller by `OrderActions`."
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
                             )
                     )
                     .describe(
@@ -4599,7 +4599,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
         status: zod
             .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
             .describe(
-                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's `domain\/lifecycle.ts`, answered per caller by `OrderActions`."
+                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
             ),
         actions: zod
             .strictObject({
@@ -4615,7 +4615,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                                 'cancelled'
                             ])
                             .describe(
-                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's `domain\/lifecycle.ts`, answered per caller by `OrderActions`."
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
                             )
                     )
                     .describe(
@@ -4813,7 +4813,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
         status: zod
             .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
             .describe(
-                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's `domain\/lifecycle.ts`, answered per caller by `OrderActions`."
+                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
             ),
         actions: zod
             .strictObject({
@@ -4829,7 +4829,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
                                 'cancelled'
                             ])
                             .describe(
-                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's `domain\/lifecycle.ts`, answered per caller by `OrderActions`."
+                                "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
                             )
                     )
                     .describe(

@@ -193,7 +193,7 @@ export interface OrderItem {
 }
 
 /**
- * Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's `domain/lifecycle.ts`, answered per caller by `OrderActions`.
+ * Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`.
  */
 export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
 
@@ -494,7 +494,7 @@ export interface LocaleEntry {
     id: Id;
     locale: Locale;
     tenant: LocaleTenant;
-    /** Flat and dotted. Stored AS A STRING and never as a Mongo path — a document per language with `$set: { "messages.products.list.title": v }` would have Mongo read three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting. */
+    /** Flat and dotted. Stored AS A STRING, and never as a path INTO a nested structure: a store that interprets the dots reads three levels of nesting where one key was meant, which is a trap that bites once and then keeps biting. */
     key: string;
     value: string;
     createdAt?: string;
