@@ -1098,6 +1098,8 @@ export interface SearchUsersRequest {
     email?: Email;
     username?: string;
     active?: boolean;
+    admin?: boolean;
+    verified?: boolean;
 }
 
 export interface CreateFeedbackRequest {
@@ -1290,6 +1292,8 @@ export interface SearchProductsRequest {
     maxPrice?: number;
     category?: string;
     tag?: string;
+    title?: string;
+    active?: boolean;
 }
 
 export interface CartSummaryResponse {
@@ -1454,6 +1458,8 @@ export interface SearchOrdersRequest {
     userId?: Id;
     productId?: Id;
     email?: Email;
+    status?: OrderStatus;
+    notes?: string;
 }
 
 /**
@@ -1776,7 +1782,7 @@ export type UserIdParamParameter = Id;
 export type ProductIdParamParameter = Id;
 
 /**
- * Permanently remove the record instead of soft-deleting it.
+ * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
  */
 export type HardDeleteParamParameter = boolean;
 
@@ -1902,18 +1908,20 @@ export type ListUsersParams = {
     email?: Email;
     username?: string;
     active?: boolean;
+    admin?: boolean;
+    verified?: boolean;
 };
 
 export type DeleteUserParams = {
     /**
-     * Permanently remove the record instead of soft-deleting it.
+     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
      */
     hardDelete?: HardDeleteParamParameter;
 };
 
 export type DeleteUserByIdParams = {
     /**
-     * Permanently remove the record instead of soft-deleting it.
+     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
      */
     hardDelete?: HardDeleteParamParameter;
 };
@@ -1970,18 +1978,20 @@ export type ListProductsParams = {
      * @minimum 0
      */
     maxPrice?: number;
+    title?: string;
+    active?: boolean;
 };
 
 export type DeleteProductParams = {
     /**
-     * Permanently remove the record instead of soft-deleting it.
+     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
      */
     hardDelete?: HardDeleteParamParameter;
 };
 
 export type DeleteProductByIdParams = {
     /**
-     * Permanently remove the record instead of soft-deleting it.
+     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
      */
     hardDelete?: HardDeleteParamParameter;
 };
@@ -2011,18 +2021,20 @@ export type ListOrdersParams = {
      */
     productId?: ProductIdParamParameter;
     email?: Email;
+    status?: OrderStatus;
+    notes?: string;
 };
 
 export type DeleteOrderParams = {
     /**
-     * Permanently remove the record instead of soft-deleting it.
+     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
      */
     hardDelete?: HardDeleteParamParameter;
 };
 
 export type DeleteOrderByIdParams = {
     /**
-     * Permanently remove the record instead of soft-deleting it.
+     * Permanently remove the record instead of soft-deleting it. Where the same operation also accepts the flag in its path or body, a `true` from any of them wins.
      */
     hardDelete?: HardDeleteParamParameter;
 };
@@ -2938,7 +2950,7 @@ export const updateUserWithMultipart = (
 };
 
 /**
- * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; the query wins if both are sent.
+ * Deletes the user identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it.
  * @summary Delete user
  */
 export const deleteUser = (
@@ -3290,7 +3302,7 @@ export const updateProductWithMultipart = (
 };
 
 /**
- * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; the query wins if both are sent.
+ * Deletes the product identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it.
  * @summary Delete product
  */
 export const deleteProduct = (
@@ -3684,7 +3696,7 @@ export const updateOrder = (
 };
 
 /**
- * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; the query wins if both are sent.
+ * Deletes the order identified by the `id` field in the request body. Set `hardDelete` to `true`, in the query or the body, to permanently remove the record; a `true` from any source wins, so a `false` sent elsewhere does not cancel it.
  * @summary Delete order
  */
 export const deleteOrder = (
