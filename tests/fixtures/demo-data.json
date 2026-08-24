@@ -1,0 +1,704 @@
+{
+    "_meta": {
+        "shapes": {
+            "addressBooks": "stored",
+            "carts": "stored",
+            "localeMessages": "stored",
+            "locales": "stored",
+            "orders": "response",
+            "products": "response",
+            "users": "response",
+            "wishlists": "stored"
+        }
+    },
+    "collections": {
+        "addressBooks": [
+            {
+                "id": "01HQP0A10000000000000000AA",
+                "user_id": "01HQKZ6KVRJ46CA4PEG00YW2G0",
+                "label": "Home",
+                "full_name": "Root Rootsson",
+                "street": "Via del Boilerplate 1",
+                "city": "Modena",
+                "zip": "41121",
+                "country": "IT",
+                "phone": "+39 059 000001",
+                "is_default": true
+            },
+            {
+                "id": "01HQP0A20000000000000000AB",
+                "user_id": "01HQKZ6KVRJ46CA4PEG00YW2G0",
+                "label": "Office",
+                "full_name": "Root Rootsson",
+                "street": "Viale Storchi 42",
+                "city": "Modena",
+                "zip": "41122",
+                "country": "IT",
+                "phone": null,
+                "is_default": false
+            },
+            {
+                "id": "01HQP0A30000000000000000AC",
+                "user_id": "01HQPBGFGG88YGC2YTG6R26Y26",
+                "label": "Home",
+                "full_name": "Gino Pino",
+                "street": "Via Emilia Est 100",
+                "city": "Bologna",
+                "zip": "40100",
+                "country": "IT",
+                "phone": "+39 051 000002",
+                "is_default": true
+            }
+        ],
+        "carts": [
+            {
+                "id": "01HQP0C10000000000000000CA",
+                "user_id": "01HQPBGFGG88YGC2YTG6R26Y26",
+                "items": [
+                    {
+                        "id": "01HQP0C1000000000000000000",
+                        "product_id": "01HQM000000000000000000MVG",
+                        "quantity": 2
+                    },
+                    {
+                        "id": "01HQP0C1000000000000000001",
+                        "product_id": "01HQM000000000000000001AMP",
+                        "quantity": 1
+                    }
+                ]
+            }
+        ],
+        "localeMessages": [
+            {
+                "id": "01HQKZ6KVR000000000MSG01",
+                "locale": "es",
+                "tenant": "demo-fe",
+                "key": "generic.error-not-found",
+                "value": "No hemos encontrado eso."
+            },
+            {
+                "id": "01HQKZ6KVR000000000MSG02",
+                "locale": "es",
+                "tenant": "demo-fe",
+                "key": "generic.error-unauthorized",
+                "value": "Tu sesión ha caducado. Vuelve a entrar."
+            },
+            {
+                "id": "01HQKZ6KVR000000000MSG03",
+                "locale": "es",
+                "tenant": "demo-fe",
+                "key": "cart.empty",
+                "value": "Tu carrito está vacío."
+            },
+            {
+                "id": "01HQKZ6KVR000000000MSG04",
+                "locale": "es",
+                "tenant": "demo-fe",
+                "key": "orders.not-found",
+                "value": "No hemos encontrado ese pedido."
+            },
+            {
+                "id": "01HQKZ6KVR000000000MSG05",
+                "locale": "it",
+                "tenant": "demo-be",
+                "key": "cart.empty",
+                "value": "Il carrello è ancora vuoto."
+            }
+        ],
+        "locales": [
+            {
+                "id": "01HQKZ6KVR0000000000LANG",
+                "tag": "en",
+                "base_language": "en",
+                "name": "English",
+                "native_name": "English",
+                "direction": "ltr",
+                "active": true
+            },
+            {
+                "id": "01HQKZ6KVR0000000000LANH",
+                "tag": "it",
+                "base_language": "it",
+                "name": "Italian",
+                "native_name": "Italiano",
+                "direction": "ltr",
+                "active": true
+            },
+            {
+                "id": "01HQKZ6KVR0000000000LANJ",
+                "tag": "es",
+                "base_language": "es",
+                "name": "Spanish",
+                "native_name": "Español",
+                "direction": "ltr",
+                "active": true
+            },
+            {
+                "id": "01HQKZ6KVR0000000000LANK",
+                "tag": "fr",
+                "base_language": "fr",
+                "name": "French",
+                "native_name": "Français",
+                "direction": "ltr",
+                "active": false
+            }
+        ],
+        "orders": [
+            {
+                "id": "01HQNA10000000000000000000",
+                "userId": "01HQKZ6KVRJ46CA4PEG00YW2G0",
+                "email": "oldpsw@root.it",
+                "status": "pending",
+                "items": [
+                    {
+                        "product": {
+                            "id": "01HQM000000000000000001AMP",
+                            "tags": [
+                                "popular"
+                            ],
+                            "price": 39.9,
+                            "title": "Reading lamp",
+                            "imageUrl": "/images/seed/reading-lamp.svg",
+                            "categories": [
+                                "home"
+                            ],
+                            "description": "Seeded demo product."
+                        },
+                        "quantity": 1
+                    },
+                    {
+                        "product": {
+                            "id": "01HQM0000000000000000P1ANT",
+                            "tags": [
+                                "sale"
+                            ],
+                            "price": 24,
+                            "title": "Potted fern",
+                            "imageUrl": "/images/seed/potted-fern.svg",
+                            "categories": [
+                                "garden",
+                                "home"
+                            ],
+                            "description": "Seeded demo product."
+                        },
+                        "quantity": 10
+                    }
+                ],
+                "totalItems": 2,
+                "totalQuantity": 11,
+                "totalPrice": 279.9,
+                "shippingCost": 0.0,
+                "createdAt": "2024-02-27T12:53:23+00:00",
+                "updatedAt": "2024-02-27T12:53:23+00:00"
+            },
+            {
+                "id": "01HQNA20000000000000000000",
+                "userId": "01HQKZ6KVRJ46CA4PEG00YW2G0",
+                "email": "root@root.it",
+                "status": "shipped",
+                "items": [
+                    {
+                        "product": {
+                            "id": "01HQM00000000000000000DESK",
+                            "tags": [
+                                "new"
+                            ],
+                            "price": 449,
+                            "title": "Standing desk",
+                            "imageUrl": "/images/seed/standing-desk.svg",
+                            "categories": [
+                                "office"
+                            ],
+                            "description": "Seeded demo product."
+                        },
+                        "quantity": 20
+                    }
+                ],
+                "totalItems": 1,
+                "totalQuantity": 20,
+                "totalPrice": 8980.0,
+                "shippingMethod": "standard",
+                "shippingCost": 0.0,
+                "shippingAddress": {
+                    "fullName": "Root Rootsson",
+                    "street": "Via del Boilerplate 1",
+                    "city": "Modena",
+                    "zip": "41121",
+                    "country": "IT",
+                    "phone": "+39 059 000001"
+                },
+                "createdAt": "2024-02-27T12:53:56+00:00",
+                "updatedAt": "2024-02-27T12:53:56+00:00"
+            },
+            {
+                "id": "01HQNA30000000000000000000",
+                "userId": "01HQPBGFGG88YGC2YTG6R26Y26",
+                "email": "gino@pino.it",
+                "status": "pending",
+                "items": [
+                    {
+                        "product": {
+                            "id": "01HQM000000000000000001AMP",
+                            "tags": [
+                                "popular"
+                            ],
+                            "price": 39.9,
+                            "title": "Reading lamp",
+                            "imageUrl": "/images/seed/reading-lamp.svg",
+                            "categories": [
+                                "home"
+                            ],
+                            "description": "Seeded demo product."
+                        },
+                        "quantity": 4
+                    }
+                ],
+                "totalItems": 1,
+                "totalQuantity": 4,
+                "totalPrice": 159.6,
+                "shippingCost": 0.0,
+                "createdAt": "2024-02-27T12:54:29+00:00",
+                "updatedAt": "2024-02-27T12:54:29+00:00",
+                "deletedAt": "2024-02-27T12:54:29+00:00"
+            }
+        ],
+        "products": [
+            {
+                "id": "01HQM000000000000000000MVG",
+                "title": "Enamel mug",
+                "price": 12.5,
+                "onHand": 300,
+                "reserved": 0,
+                "available": 300,
+                "description": "Seeded demo product.",
+                "active": true,
+                "imageUrl": "/images/seed/enamel-mug.svg",
+                "categories": [
+                    "kitchen"
+                ],
+                "tags": [
+                    "sale"
+                ],
+                "createdAt": "2024-02-27T00:38:50+00:00",
+                "updatedAt": "2024-02-27T00:38:50+00:00"
+            },
+            {
+                "id": "01HQM000000000000000000RVG",
+                "title": "Wool rug",
+                "price": 189.0,
+                "onHand": 8,
+                "reserved": 0,
+                "available": 8,
+                "description": "Seeded demo product.",
+                "active": true,
+                "imageUrl": "/images/seed/wool-rug.svg",
+                "categories": [
+                    "home"
+                ],
+                "tags": [
+                    "popular"
+                ],
+                "createdAt": "2024-02-27T00:38:50+00:00",
+                "updatedAt": "2024-02-27T00:38:50+00:00"
+            },
+            {
+                "id": "01HQM000000000000000001AMP",
+                "title": "Reading lamp",
+                "price": 39.9,
+                "onHand": 120,
+                "reserved": 0,
+                "available": 120,
+                "description": "Seeded demo product.",
+                "active": true,
+                "imageUrl": "/images/seed/reading-lamp.svg",
+                "categories": [
+                    "home"
+                ],
+                "tags": [
+                    "popular"
+                ],
+                "createdAt": "2024-02-27T00:38:50+00:00",
+                "updatedAt": "2024-02-27T00:38:50+00:00"
+            },
+            {
+                "id": "01HQM00000000000000000BARE",
+                "title": "Plain box",
+                "price": 9.0,
+                "onHand": 100,
+                "reserved": 0,
+                "available": 100,
+                "active": true,
+                "categories": [],
+                "tags": [],
+                "createdAt": "2024-02-27T00:38:50+00:00",
+                "updatedAt": "2024-02-27T00:38:50+00:00"
+            },
+            {
+                "id": "01HQM00000000000000000DESK",
+                "title": "Standing desk",
+                "price": 449.0,
+                "onHand": 12,
+                "reserved": 0,
+                "available": 12,
+                "description": "Seeded demo product.",
+                "active": true,
+                "imageUrl": "/images/seed/standing-desk.svg",
+                "categories": [
+                    "office"
+                ],
+                "tags": [
+                    "new"
+                ],
+                "createdAt": "2024-02-27T00:38:50+00:00",
+                "updatedAt": "2024-02-27T00:38:50+00:00"
+            },
+            {
+                "id": "01HQM0000000000000000C10CK",
+                "title": "Wall clock",
+                "price": 32.0,
+                "onHand": 60,
+                "reserved": 0,
+                "available": 60,
+                "description": "Seeded demo product.",
+                "active": true,
+                "imageUrl": "/images/seed/wall-clock.svg",
+                "categories": [
+                    "home"
+                ],
+                "tags": [],
+                "createdAt": "2024-02-27T00:38:50+00:00",
+                "updatedAt": "2024-02-27T00:38:50+00:00"
+            },
+            {
+                "id": "01HQM0000000000000000CHA1R",
+                "title": "Office chair",
+                "price": 219.0,
+                "onHand": 30,
+                "reserved": 0,
+                "available": 30,
+                "description": "Seeded demo product.",
+                "active": true,
+                "imageUrl": "/images/seed/office-chair.svg",
+                "categories": [
+                    "office",
+                    "home"
+                ],
+                "tags": [],
+                "createdAt": "2024-02-27T00:38:50+00:00",
+                "updatedAt": "2024-02-27T00:38:50+00:00"
+            },
+            {
+                "id": "01HQM0000000000000000GH0ST",
+                "title": "Discontinued lamp",
+                "price": 29.0,
+                "onHand": 4,
+                "reserved": 0,
+                "available": 4,
+                "description": "Seeded demo product.",
+                "active": true,
+                "imageUrl": "/images/seed/discontinued-lamp.svg",
+                "categories": [
+                    "home"
+                ],
+                "tags": [],
+                "createdAt": "2024-02-27T00:38:50+00:00",
+                "updatedAt": "2024-02-27T00:38:50+00:00",
+                "deletedAt": "2024-02-27T00:38:50+00:00"
+            },
+            {
+                "id": "01HQM0000000000000000P1ANT",
+                "title": "Potted fern",
+                "price": 24.0,
+                "onHand": 0,
+                "reserved": 0,
+                "available": 0,
+                "description": "Seeded demo product.",
+                "active": true,
+                "imageUrl": "/images/seed/potted-fern.svg",
+                "categories": [
+                    "garden",
+                    "home"
+                ],
+                "tags": [
+                    "sale"
+                ],
+                "createdAt": "2024-02-27T00:38:50+00:00",
+                "updatedAt": "2024-02-27T00:38:50+00:00"
+            },
+            {
+                "id": "01HQM0000000000000000SHE1F",
+                "title": "Wall shelf",
+                "price": 64.0,
+                "onHand": 45,
+                "reserved": 0,
+                "available": 45,
+                "description": "Seeded demo product.",
+                "active": true,
+                "imageUrl": "/images/seed/wall-shelf.svg",
+                "categories": [
+                    "home"
+                ],
+                "tags": [],
+                "createdAt": "2024-02-27T00:38:50+00:00",
+                "updatedAt": "2024-02-27T00:38:50+00:00"
+            },
+            {
+                "id": "01HQM0000000000000000ST001",
+                "title": "Bar stool",
+                "price": 74.0,
+                "onHand": 22,
+                "reserved": 0,
+                "available": 22,
+                "description": "Seeded demo product.",
+                "active": true,
+                "imageUrl": "/images/seed/bar-stool.svg",
+                "categories": [
+                    "kitchen",
+                    "home"
+                ],
+                "tags": [],
+                "createdAt": "2024-02-27T00:38:50+00:00",
+                "updatedAt": "2024-02-27T00:38:50+00:00"
+            },
+            {
+                "id": "01HQM0000000000000000THR0W",
+                "title": "Linen throw",
+                "price": 42.0,
+                "onHand": 33,
+                "reserved": 0,
+                "available": 33,
+                "description": "Seeded demo product.",
+                "active": true,
+                "imageUrl": "/images/seed/linen-throw.svg",
+                "categories": [
+                    "home"
+                ],
+                "tags": [
+                    "popular"
+                ],
+                "createdAt": "2024-02-27T00:38:50+00:00",
+                "updatedAt": "2024-02-27T00:38:50+00:00"
+            },
+            {
+                "id": "01HQM000000000000000BASKET",
+                "title": "Storage basket",
+                "price": 18.0,
+                "onHand": 140,
+                "reserved": 0,
+                "available": 140,
+                "description": "Seeded demo product.",
+                "active": true,
+                "imageUrl": "/images/seed/storage-basket.svg",
+                "categories": [
+                    "home"
+                ],
+                "tags": [
+                    "sale"
+                ],
+                "createdAt": "2024-02-27T00:38:50+00:00",
+                "updatedAt": "2024-02-27T00:38:50+00:00"
+            },
+            {
+                "id": "01HQM000000000000000H1DDEN",
+                "title": "Seasonal wreath",
+                "price": 21.0,
+                "onHand": 12,
+                "reserved": 0,
+                "available": 12,
+                "description": "Seeded demo product.",
+                "active": false,
+                "imageUrl": "/images/seed/seasonal-wreath.svg",
+                "categories": [
+                    "garden"
+                ],
+                "tags": [],
+                "createdAt": "2024-02-27T00:38:50+00:00",
+                "updatedAt": "2024-02-27T00:38:50+00:00"
+            },
+            {
+                "id": "01HQM000000000000000KETT1E",
+                "title": "Copper kettle",
+                "price": 58.0,
+                "onHand": 25,
+                "reserved": 0,
+                "available": 25,
+                "description": "Seeded demo product.",
+                "active": true,
+                "imageUrl": "/images/seed/copper-kettle.svg",
+                "categories": [
+                    "kitchen"
+                ],
+                "tags": [
+                    "new"
+                ],
+                "createdAt": "2024-02-27T00:38:50+00:00",
+                "updatedAt": "2024-02-27T00:38:50+00:00"
+            },
+            {
+                "id": "01HQM000000000000000M1RR0R",
+                "title": "Round mirror",
+                "price": 96.0,
+                "onHand": 15,
+                "reserved": 0,
+                "available": 15,
+                "description": "Seeded demo product.",
+                "active": true,
+                "imageUrl": "/images/seed/round-mirror.svg",
+                "categories": [
+                    "home"
+                ],
+                "tags": [],
+                "createdAt": "2024-02-27T00:38:50+00:00",
+                "updatedAt": "2024-02-27T00:38:50+00:00"
+            }
+        ],
+        "users": [
+            {
+                "id": "01HQKZ6KVR00000000000VSER1",
+                "email": "ada@person.test",
+                "username": "ada",
+                "locale": "en",
+                "admin": false,
+                "active": true,
+                "verified": true,
+                "createdAt": "2024-02-27T00:24:59+00:00",
+                "updatedAt": "2024-02-27T00:24:59+00:00"
+            },
+            {
+                "id": "01HQKZ6KVR00000000000VSER2",
+                "email": "bruno@person.test",
+                "username": "bruno",
+                "locale": "it",
+                "admin": false,
+                "active": true,
+                "verified": true,
+                "createdAt": "2024-02-27T00:24:59+00:00",
+                "updatedAt": "2024-02-27T00:24:59+00:00"
+            },
+            {
+                "id": "01HQKZ6KVR00000000000VSER3",
+                "email": "carla@person.test",
+                "username": "carla",
+                "locale": "en",
+                "admin": false,
+                "active": true,
+                "verified": true,
+                "createdAt": "2024-02-27T00:24:59+00:00",
+                "updatedAt": "2024-02-27T00:24:59+00:00"
+            },
+            {
+                "id": "01HQKZ6KVR00000000000VSER4",
+                "email": "dario@person.test",
+                "username": "dario",
+                "locale": "it",
+                "admin": false,
+                "active": true,
+                "verified": true,
+                "createdAt": "2024-02-27T00:24:59+00:00",
+                "updatedAt": "2024-02-27T00:24:59+00:00"
+            },
+            {
+                "id": "01HQKZ6KVR00000000000VSER5",
+                "email": "elena@person.test",
+                "username": "elena",
+                "locale": "en",
+                "admin": false,
+                "active": true,
+                "verified": true,
+                "createdAt": "2024-02-27T00:24:59+00:00",
+                "updatedAt": "2024-02-27T00:24:59+00:00"
+            },
+            {
+                "id": "01HQKZ6KVR00000000000VSER6",
+                "email": "fabio@person.test",
+                "username": "fabio",
+                "locale": "it",
+                "admin": false,
+                "active": true,
+                "verified": true,
+                "createdAt": "2024-02-27T00:24:59+00:00",
+                "updatedAt": "2024-02-27T00:24:59+00:00"
+            },
+            {
+                "id": "01HQKZ6KVR00000000000VSER7",
+                "email": "gaia@person.test",
+                "username": "gaia",
+                "locale": "en",
+                "admin": false,
+                "active": true,
+                "verified": false,
+                "createdAt": "2024-02-27T00:24:59+00:00",
+                "updatedAt": "2024-02-27T00:24:59+00:00"
+            },
+            {
+                "id": "01HQKZ6KVR00000000000VSER8",
+                "email": "hugo@person.test",
+                "username": "hugo",
+                "locale": "it",
+                "admin": false,
+                "active": false,
+                "verified": true,
+                "createdAt": "2024-02-27T00:24:59+00:00",
+                "updatedAt": "2024-02-27T00:24:59+00:00"
+            },
+            {
+                "id": "01HQKZ6KVRJ46CA4PEG00YW2G0",
+                "email": "root@root.it",
+                "username": "root",
+                "locale": "en",
+                "admin": true,
+                "active": true,
+                "verified": true,
+                "createdAt": "2024-02-27T00:24:59+00:00",
+                "updatedAt": "2024-02-27T00:24:59+00:00"
+            },
+            {
+                "id": "01HQPBGFGG88YGC2YTG6R26Y26",
+                "email": "gino@pino.it",
+                "username": "gino",
+                "locale": "it",
+                "admin": false,
+                "active": true,
+                "verified": true,
+                "createdAt": "2024-02-27T22:38:34+00:00",
+                "updatedAt": "2024-02-27T22:38:34+00:00"
+            }
+        ],
+        "wishlists": [
+            {
+                "id": "01HQP0W10000000000000000WA",
+                "user_id": "01HQPBGFGG88YGC2YTG6R26Y26",
+                "items": [
+                    {
+                        "id": "01HQP0W1000000000000000000",
+                        "product_id": "01HQM0000000000000000P1ANT"
+                    },
+                    {
+                        "id": "01HQP0W1000000000000000001",
+                        "product_id": "01HQM00000000000000000DESK"
+                    }
+                ]
+            },
+            {
+                "id": "01HQP0W20000000000000000WB",
+                "user_id": "01HQKZ6KVRJ46CA4PEG00YW2G0",
+                "items": [
+                    {
+                        "id": "01HQP0W2000000000000000000",
+                        "product_id": "01HQM0000000000000000CHA1R"
+                    }
+                ]
+            }
+        ]
+    },
+    "credentials": {
+        "admin": {
+            "email": "root@root.it",
+            "password": "rootroot"
+        },
+        "user": {
+            "email": "gino@pino.it",
+            "password": "password"
+        }
+    }
+}
