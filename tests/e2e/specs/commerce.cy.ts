@@ -133,7 +133,14 @@ describe('Commerce', () => {
         cy.get('[data-test=shipment-status]').should('contain.text', 'Shipped');
         // By template, not recipient: whichever seeded customer's order the admin shipped,
         // the tracking email carries the code the panel shows.
-        cy.env(['apiUrl']).then(({ apiUrl }) =>
+        //
+        // Only the demo profile has a readable outbox — `GET /__demo/emails` is mounted behind
+        // `NODE_DEMO=true` — so live, the email leaves for real and there is nothing to read.
+        // Guarded here rather than with `cy.skipUnlessDemo()` at the top of the test, because
+        // everything around it is exactly what the live profile exists to prove: the shipment
+        // panel above, and the courier and the ledger below. Same shape as `journey.cy.ts`.
+        cy.env(['apiUrl', 'liveProfile']).then(({ apiUrl, liveProfile }) => {
+            if (liveProfile === true) return;
             cy.request(`${String(apiUrl)}/__demo/emails`).then((response) => {
                 const { emails } = response.body as {
                     emails: { template: string; lines?: string[] }[];
@@ -145,8 +152,8 @@ describe('Commerce', () => {
                 // Order-independent on purpose: the outbox records template variables, not rendered
                 // body lines, and their order is the template's business.
                 expect(shipped!.lines?.some((line) => line.includes('TRK-'))).to.equal(true);
-            })
-        );
+            });
+        });
 
         // ── The courier is a button, and it works exactly once ──────────────────────
         cy.get('[data-test=courier-advance]').click();

@@ -71,6 +71,37 @@ jobs:
                     --health-timeout 5s
                     --health-retries 10
 
+            # Umami, and the Postgres behind it. Here because `analytics.cy.ts` is the one spec
+            # neither repo's own suite can replace: this frontend's browser tracker and the
+            # backend's server-side one write into ONE website, and the bug it guards — both sides
+            # firing `cart_item_added`, every count reading double — was invisible from inside
+            # either. Asking "how many rows exist" needs a real Umami with both trackers pointed
+            # at it, which only this workflow has.
+            umami-db:
+                image: postgres:16-alpine
+                ports:
+                    - 5432:5432
+                env:
+                    POSTGRES_USER: umami
+                    POSTGRES_PASSWORD: umami
+                    POSTGRES_DB: umami
+                options: >-
+                    --health-cmd "pg_isready -U umami"
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 10
+            umami:
+                image: ghcr.io/umami-software/umami:postgresql-v2.14.0
+                ports:
+                    # 3080 on the host, matching the compose stack and the frontend's
+                    # VITE_UMAMI_SRC default, so nothing has to know it is running in CI.
+                    - 3080:3000
+                env:
+                    DATABASE_TYPE: postgresql
+                    # Service containers reach each other by label on the job network.
+                    DATABASE_URL: postgresql://umami:umami@umami-db:5432/umami
+                    APP_SECRET: ci-not-a-secret
+
         steps:
             - name: Checkout frontend
               uses: actions/checkout@v4
@@ -120,6 +151,25 @@ jobs:
                   NODE_REDIS_HOST: localhost
               run: npm run db:bootstrap:host
 
+            # Umami seeds a fixed admin account on first boot but offers no env var for its
+            # credentials, and no way to pre-create a website. The backend's own init script does
+            # both, against Postgres directly — the same one its compose stack runs, so CI and a
+            # developer's machine come up identical. A step rather than a service container:
+            # services start before checkout, and this needs the script from the backend repo.
+            #
+            # It waits for Umami's migrations itself (`until` on the seeded admin row), so it also
+            # serves as the readiness gate for the container above.
+            - name: Stamp the Umami admin and website
+              working-directory: ${{ env.BACKEND_PATH }}
+              env:
+                  DATABASE_URL: postgresql://umami:umami@localhost:5432/umami
+                  UMAMI_ADMIN_USER: admin
+                  UMAMI_ADMIN_PASSWORD: umami
+                  UMAMI_WEBSITE_ID: 00000000-0000-4000-8000-000000000001
+                  UMAMI_WEBSITE_NAME: Frontend
+                  UMAMI_WEBSITE_DOMAIN: localhost
+              run: sh .docker/observability/umami-init.sh
+
             # Backgrounded, with its PID kept so the teardown step can stop it. Its stdout goes
             # to a file rather than the step log: the log is uploaded as an artifact below, and a
             # backend that logs continuously would otherwise bury the Cypress output.
@@ -130,6 +180,16 @@ jobs:
                   NODE_MONGODB_HOST: localhost
                   NODE_REDIS_URL: ''
                   NODE_REDIS_HOST: localhost
+                  # The server-side half of the analytics pair. Unset, the backend logs "events
+                  # are being discarded" and carries on — Umami would be up, the browser tracker
+                  # would still write, and `analytics.cy.ts` would read one row where it expects
+                  # one, passing for the wrong reason. `INGEST_HOST` is localhost here, not the
+                  # compose stack's `http://umami:3000`, because this process runs on the runner
+                  # rather than inside the job network.
+                  NODE_ANALYTICS_PROVIDER: umami
+                  NODE_UMAMI_INGEST_HOST: http://localhost:3080
+                  NODE_UMAMI_HOST: http://localhost:3080
+                  NODE_UMAMI_WEBSITE_ID: 00000000-0000-4000-8000-000000000001
                   # The live suite drives login, signup and reset far harder than a person does,
                   # from one address. Same reasoning as tests/helpers/setup.ts in the backend:
                   # raised so the limiter cannot silently truncate a spec, not disabled, so a
@@ -154,7 +214,18 @@ jobs:
 
             # The point of the whole workflow: the same specs as `test-e2e` in ci.yml, against
             # the composed stack rather than the demo profile's in-memory database.
+            #
+            # The `VITE_UMAMI_*` pair is BUILD-time: this script runs `build:e2e` first, and Vite
+            # inlines them then. There is no `.env` on a runner, so without them
+            # `readUmamiConfig()` returns undefined, the tracker is never injected, and
+            # `analytics.cy.ts` fails on its control assertion — which reads as a broken Umami
+            # rather than a build that was never told about one. The website id is the same fixed
+            # UUID the init step stamped, so both trackers write into one website, which is the
+            # arrangement the spec exists to police.
             - name: Run e2e tests against the live backend
+              env:
+                  VITE_UMAMI_SRC: http://localhost:3080/script.js
+                  VITE_UMAMI_WEBSITE_ID: 00000000-0000-4000-8000-000000000001
               run: npm run test:e2e:live
 
             # `always()` so a failed run does not leave the process holding the port for whatever
