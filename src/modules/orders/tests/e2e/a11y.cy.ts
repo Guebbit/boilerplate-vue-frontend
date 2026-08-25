@@ -9,8 +9,16 @@
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
-/** The first seeded order — the admin's, pending, so every action button is on the page. */
-const ORDER_ID = '65de73a69ca05739be2b5e85';
+/*
+ * The order is named by ROLE, resolved inside the test off whichever backend the profile started.
+ * `cancellable` is the admin's own pending one, and pending is the status that puts every action
+ * button on the page — which is the state worth auditing, since a disabled control and a missing
+ * one fail accessibility differently.
+ */
+const orderDetail = () => cy.orderInRole('cancellable').then((order) => `/en/orders/${order.id}`);
+
+const orderEdit = () =>
+    cy.orderInRole('cancellable').then((order) => `/en/orders/${order.id}/edit`);
 
 sweepA11y('orders — signed in', [['orders list', '/en/orders']], 'user');
 
@@ -18,8 +26,8 @@ sweepA11y('orders — signed in', [['orders list', '/en/orders']], 'user');
 sweepA11y(
     'orders — admin',
     [
-        ['order detail', `/en/orders/${ORDER_ID}`],
-        ['order edit', `/en/orders/${ORDER_ID}/edit`]
+        ['order detail', orderDetail],
+        ['order edit', orderEdit]
     ],
     'admin'
 );

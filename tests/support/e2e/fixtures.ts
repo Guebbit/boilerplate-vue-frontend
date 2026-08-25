@@ -8,14 +8,15 @@
  * naming one has adopted a constraint the contract refused to make. Two ways out, and the choice
  * between them is about what the spec is for:
  *
- * - `cy.productInRole()` FINDS a subject. For specs that need a product to act on but do not care
- *   which — a detail page to audit, a row to edit, an event to attribute.
+ * - `cy.productInRole()` and `cy.accountInRole()` FIND a subject. For specs that need a product or
+ *   a user to act on but do not care which — a detail page to audit, a row to edit, an event to
+ *   attribute.
  * - `cy.createProduct()` / `cy.softDeleteProduct()` / `cy.deactivateProduct()` MAKE one. For specs
  *   asserting a visibility RULE: creating the row and hiding it tests the transition, where a
  *   pre-hidden fixture only tests a tableau.
  */
 
-import { E2E_ACCOUNTS } from './accounts';
+import { E2E_ACCOUNTS, type E2ERole } from './accounts';
 
 /**
  * The `Product` fields the roles below branch on.
@@ -32,16 +33,18 @@ interface ProductLike {
     categories?: string[];
 }
 
-export type ProductRole = 'inStock' | 'rich' | 'outOfStock' | 'minimal';
+export type ProductRole = 'inStock' | 'rich' | 'outOfStock';
 
 /*
  * What each role MEANS, in the contract's vocabulary — not which record happens to fill it.
  *
- * `minimal` and `rich` are the two ends of the same axis, and a spec has to say which it needs:
- * `minimal` is the shape `POST /products` answers with when only the required fields are sent,
- * and `rich` is the one with every optional field populated. Asking for `inStock` and then
- * asserting on a description gets whichever the backend happened to list first — and a case that
- * skips when it draws the wrong one reports success while covering nothing.
+ * `rich` is the shape with every optional field populated — its opposite, the bare shape
+ * `POST /products` answers with when only the required fields are sent, has no e2e case that
+ * needs a real backend to draw one: `src/modules/products/tests/product-view.spec.ts` seeds that
+ * shape directly and asserts on it in milliseconds, which is what it means for a shape to not
+ * need a fixture. Asking for `inStock` and then asserting on a description gets whichever the
+ * backend happened to list first — and a case that skips when it draws the wrong one reports
+ * success while covering nothing.
  */
 const ROLE_PREDICATES: Record<ProductRole, (product: ProductLike) => boolean> = {
     inStock: (product) => (product.onHand ?? 0) > 0,
@@ -49,8 +52,7 @@ const ROLE_PREDICATES: Record<ProductRole, (product: ProductLike) => boolean> = 
         (product.onHand ?? 0) > 0 &&
         Boolean(product.description) &&
         (product.categories?.length ?? 0) > 0,
-    outOfStock: (product) => product.onHand === 0,
-    minimal: (product) => !product.description && (product.categories?.length ?? 0) === 0
+    outOfStock: (product) => product.onHand === 0
 };
 
 /*
@@ -90,6 +92,18 @@ declare global {
              * @param role - the only role so far: an order the cancel gate is open on
              */
             orderInRole(role: 'cancellable'): Chainable<{ id: string; status: string }>;
+
+            /**
+             * The seeded account `cy.loginAs(role)` signs in as, as the API serialises it.
+             *
+             * A page addressed by a user's id — `/en/users/{id}` and its edit form — needs one,
+             * and the id is the backend's to choose. The account asks the API who it is instead:
+             * the credentials in `accounts.ts` are the suite's own, honoured by every backend that
+             * can pair with this repo, so they name a subject without naming a record.
+             *
+             * @param role - which of the two seeded accounts
+             */
+            accountInRole(role: E2ERole): Chainable<{ id: string; email: string }>;
 
             /**
              * Creates a product as admin, server-side, and yields it as the API serialised it.
@@ -145,16 +159,20 @@ Cypress.Commands.add('productInRole', (role: ProductRole) =>
  * call would have to log in again and leave a refresh cookie behind — which the sessions specs
  * count and the analytics spec attributes.
  */
-const adminApi = <T>(path: string, method: string, body?: Record<string, unknown>) =>
+const apiAs = <T>(role: E2ERole, path: string, method: string, body?: Record<string, unknown>) =>
     cy.env(['apiUrl']).then(({ apiUrl }) =>
         cy.task<T>('adminApi', {
             apiUrl: String(apiUrl),
             path,
             method,
             body,
-            ...E2E_ACCOUNTS.admin
+            ...E2E_ACCOUNTS[role]
         })
     );
+
+/** The overwhelmingly common case: provisioning needs the admin. */
+const adminApi = <T>(path: string, method: string, body?: Record<string, unknown>) =>
+    apiAs<T>('admin', path, method, body);
 
 Cypress.Commands.add('createProduct', (overrides: Record<string, unknown> = {}) =>
     adminApi<ProductLike>('/products', 'POST', {
@@ -181,6 +199,16 @@ Cypress.Commands.add('deactivateProduct', (product: ProductLike) =>
     })
 );
 
+Cypress.Commands.add('accountInRole', (role: E2ERole) =>
+    apiAs<{ id: string; email: string }>(role, '/account', 'GET').then((account) => {
+        if (!account)
+            throw new Error(
+                `accountInRole: GET /account answered no body for the "${role}" account`
+            );
+        return account;
+    })
+);
+
 /*
  * Orders are per-caller, so this one cannot use the public list: it reads them as the admin the
  * order specs sign in as. `pending` is the status the cancel gate is open on — the page hides the
@@ -191,13 +219,13 @@ Cypress.Commands.add('deactivateProduct', (product: ProductLike) =>
  * refills nothing. The account is asked for its id rather than told one.
  */
 Cypress.Commands.add('orderInRole', (role: 'cancellable') =>
-    adminApi<{ id: string }>('/account', 'GET').then((account) =>
+    cy.accountInRole('admin').then((account) =>
         adminApi<{ items: { id: string; status: string; userId?: string }[] }>(
             `/orders?pageSize=${String(PUBLIC_PAGE_SIZE)}`,
             'GET'
         ).then((page) => {
             const found = page?.items.find(
-                (order) => order.status === 'pending' && order.userId === account?.id
+                (order) => order.status === 'pending' && order.userId === account.id
             );
             if (!found)
                 throw new Error(

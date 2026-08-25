@@ -9,16 +9,23 @@
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
-/** The seeded non-admin user — `gino@pino.it`, the `cy.loginAs('user')` account. */
-const USER_ID = '65de646a44f861fd83c13f13';
+/*
+ * The subject is the seeded non-admin — the `cy.loginAs('user')` account — asked for its own id
+ * rather than told one, so the sweep addresses whichever backend the profile started. Not the
+ * admin: the sweep signs in as the admin, and a page rendering your own row hides the controls
+ * that act on someone else's.
+ */
+const userDetail = () => cy.accountInRole('user').then((account) => `/en/users/${account.id}`);
+
+const userEdit = () => cy.accountInRole('user').then((account) => `/en/users/${account.id}/edit`);
 
 sweepA11y(
     'users',
     [
         ['users list', '/en/users'],
         ['user create', '/en/users/create'],
-        ['user detail', `/en/users/${USER_ID}`],
-        ['user edit', `/en/users/${USER_ID}/edit`]
+        ['user detail', userDetail],
+        ['user edit', userEdit]
     ],
     'admin'
 );

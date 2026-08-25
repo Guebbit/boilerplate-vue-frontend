@@ -34,9 +34,6 @@ const PHONE = [390, 844] as const;
  */
 const SHOWN_TOOLTIP = '.v-tooltip.v-overlay--active .v-overlay__content';
 
-/** The admin's seeded order, pending — so the cancel button, and its confirmation, exist. */
-const CANCELLABLE_ORDER = '/en/orders/65de73a69ca05739be2b5e85';
-
 describe('keyboard', () => {
     beforeEach(() => {
         cy.visit('/en');
@@ -136,7 +133,11 @@ describe('keyboard', () => {
 
     it('keeps focus inside the confirmation dialog and treats Escape as a decline', () => {
         cy.loginAs('admin');
-        cy.visit(CANCELLABLE_ORDER);
+        // By role: the admin's own pending order is the one the cancel button, and so the
+        // confirmation dialog this case is about, exist on.
+        cy.orderInRole('cancellable').then((order) => {
+            cy.visit(`/en/orders/${order.id}`);
+        });
         cy.get('[data-test=order-cancel]').click();
         cy.get('[data-test=app-dialog-message]').should('be.visible');
 
