@@ -3,7 +3,7 @@
  *
  * A set of files exists in BOTH this repo and the paired backend, byte-for-byte identical,
  * maintained by hand. Codegen on both sides reads the specs among them — orval and the AsyncAPI
- * type generator here, orval and `gen-asyncapi-types` there — so a one-line edit in one checkout
+ * type generator here, orval and `generate-asyncapi-types` there — so a one-line edit in one checkout
  * silently forks what both sides believe they share. Nothing detected that: each repo's
  * CI lints its own copy and finds it perfectly valid, because a forked spec is still a valid spec.
  *
@@ -103,7 +103,7 @@ export const SHARED_FILES: readonly SharedFile[] = [
      * `npm run gen:asyncapi` from that repo's own `asyncapi.yaml` — are deliberately NOT in this
      * list, for the same reason as the API client collections below: they are an OUTPUT, and every
      * input they have is compared already. The shared half of the spec is compared above, and
-     * `scripts/gen-asyncapi-types.ts` at the bottom.
+     * `scripts/generate-asyncapi-types.ts` at the bottom.
      *
      * The two outputs are NOT identical, and are not meant to be: the backend generates from the
      * full contract and carries the queue payloads, this repo from the shared subset and does not.
@@ -154,14 +154,17 @@ export const SHARED_FILES: readonly SharedFile[] = [
         backend: 'scripts/check-mutation-baseline.ts',
         frontend: 'scripts/check-mutation-baseline.ts'
     },
-    { backend: 'scripts/gen-asyncapi-types.ts', frontend: 'scripts/gen-asyncapi-types.ts' },
+    {
+        backend: 'scripts/generate-asyncapi-types.ts',
+        frontend: 'scripts/generate-asyncapi-types.ts'
+    },
     /*
      * The per-module test report. Shared for a reason the others are not: it parses a runner's
      * JSON, and Vitest's `json` reporter emits the same shape Jest's `--json` does — so one reader
      * genuinely serves both, and two copies drifting would mean the two repos disagreeing about
      * what their own test suites cost.
      */
-    { backend: 'scripts/test-report.ts', frontend: 'scripts/test-report.ts' }
+    { backend: 'scripts/report-test-results.ts', frontend: 'scripts/report-test-results.ts' }
 ] as const;
 
 export type SpecComparisonStatus = 'match' | 'drift' | 'missing-here' | 'missing-there';

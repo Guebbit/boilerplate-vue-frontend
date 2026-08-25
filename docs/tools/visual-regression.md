@@ -83,7 +83,7 @@ Diffs go the other way, to `reports/visual-diff/` — one gitignored folder, bec
 
 ## Not in the gate — deliberately
 
-The visual specs sit inside `src/modules/*/tests/e2e/`, which is also the functional e2e glob, so `scripts/e2e-shard.ts` excludes them **by the `.visual.cy.ts` suffix**. Without that the merge gate would have silently acquired twelve pixel comparisons, and the first font update would have looked like an application regression.
+The visual specs sit inside `src/modules/*/tests/e2e/`, which is also the functional e2e glob, so `scripts/run-e2e-shards.ts` excludes them **by the `.visual.cy.ts` suffix**. Without that the merge gate would have silently acquired twelve pixel comparisons, and the first font update would have looked like an application regression.
 
 `npm run test:e2e:visual` is where they run.
 

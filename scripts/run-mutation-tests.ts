@@ -3,7 +3,7 @@
  * Runs Stryker — `npm run test:mutation`.
  *
  * A wrapper rather than a bare `stryker run`, for three jobs a JSON config cannot do. The backend
- * mirrors it at `scripts/mutation.ts`; the two differ only in the scratch they clean, because the
+ * mirrors it at `scripts/run-mutation-tests.ts`; the two differ only in the scratch they clean, because the
  * backend's runner starts an in-memory MongoDB per suite and this one starts nothing.
  *
  * ── 1. MACHINE SETTINGS COME FROM `.env` ─────────────────────────────────────────────────────────

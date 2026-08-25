@@ -36,7 +36,7 @@ import {
     sharedFileProblems,
     type RepoRole
 } from '../../../scripts/spec-identity';
-import { resolveBackendPath } from '../../../scripts/backend-path';
+import { resolveBackendPath } from '../../../scripts/paired-backend-path';
 
 /** Builds a throwaway repo root holding the named files with the given contents. */
 const makeRoot = (files: Record<string, string>): string => {

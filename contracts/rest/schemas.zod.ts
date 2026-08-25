@@ -947,21 +947,21 @@ export const GetObservabilityHealthResponse = zod.strictObject({
                     status: zod
                         .enum(['ready', 'connecting', 'unavailable', 'disabled'])
                         .describe(
-                            'One backing service\'s state, in the four words this payload uses for all of them.\n`disabled` means \"not configured in this deployment\" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a 40-second start period, during which \"not yet\" and \"broken\" look identical on the wire and mean opposite things.'
+                            'One backing service\'s state, in the four words this payload uses for all of them.\n`disabled` means \"not configured in this deployment\" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a start period, during which \"not yet\" and \"broken\" look identical on the wire and mean opposite things.'
                         )
                 }),
                 cache: zod.strictObject({
                     status: zod
                         .enum(['ready', 'connecting', 'unavailable', 'disabled'])
                         .describe(
-                            'One backing service\'s state, in the four words this payload uses for all of them.\n`disabled` means \"not configured in this deployment\" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a 40-second start period, during which \"not yet\" and \"broken\" look identical on the wire and mean opposite things.'
+                            'One backing service\'s state, in the four words this payload uses for all of them.\n`disabled` means \"not configured in this deployment\" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a start period, during which \"not yet\" and \"broken\" look identical on the wire and mean opposite things.'
                         )
                 }),
                 queue: zod.strictObject({
                     status: zod
                         .enum(['ready', 'connecting', 'unavailable', 'disabled'])
                         .describe(
-                            'One backing service\'s state, in the four words this payload uses for all of them.\n`disabled` means \"not configured in this deployment\" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a 40-second start period, during which \"not yet\" and \"broken\" look identical on the wire and mean opposite things.'
+                            'One backing service\'s state, in the four words this payload uses for all of them.\n`disabled` means \"not configured in this deployment\" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a start period, during which \"not yet\" and \"broken\" look identical on the wire and mean opposite things.'
                         )
                 })
             })

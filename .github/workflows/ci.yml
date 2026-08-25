@@ -430,7 +430,7 @@ jobs:
         # nothing is composed — `test-e2e-live` below is the job that attaches the real datastores,
         # and when the two disagree it wins. See docs/tools/demo-profile.md.
         #
-        # The sibling checkout is what `scripts/e2e-shard.ts` boots, so this job needs it as much
+        # The sibling checkout is what `scripts/run-e2e-shards.ts` boots, so this job needs it as much
         # as `spec-identity` above does — with its dependencies installed, since the demo profile
         # runs through tsx.
         runs-on: ubuntu-latest
@@ -438,7 +438,7 @@ jobs:
         permissions:
             contents: read
         env:
-            # Where the backend checkout lands, and what scripts/backend-path.ts resolves. Same
+            # Where the backend checkout lands, and what scripts/paired-backend-path.ts resolves. Same
             # name and same value as e2e-live.yml, so the two e2e jobs describe one layout.
             BACKEND_PATH: .backend
         steps:
@@ -495,7 +495,7 @@ jobs:
               run: npm run test:e2e
 
             - name: Upload failing-shard logs
-              # `e2e-shard.ts` writes a failed shard's full Cypress output here. Uploaded because
+              # `run-e2e-shards.ts` writes a failed shard's full Cypress output here. Uploaded because
               # stderr is the one copy that can be lost to a truncated log, and once it is the
               # failure is undiagnosable.
               if: failure()

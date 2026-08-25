@@ -94,9 +94,9 @@ covered the day it is added.
 | `tests/unit/ui/form-counter-input.spec.ts` | The counter's bounds and emitted value. | [UI Kit](./src-ui.md) |
 | `tests/unit/ui/form-image-upload.spec.ts` | File selection, preview and the limits it enforces. | [UI Kit](./src-ui.md) |
 | `tests/unit/ui/list-pagination.spec.ts` | Page maths and the events a parent listens for. | [UI Kit](./src-ui.md) |
-| `tests/unit/scripts/spec-globs.spec.ts` | The five spellings of the Cypress spec set resolve to the same files — `package.json`'s `--spec` arguments included, since they cannot import the constant. | [Package Scripts](../tools/package-scripts.md) |
+| `tests/unit/scripts/cypress-spec-globs.spec.ts` | The five spellings of the Cypress spec set resolve to the same files — `package.json`'s `--spec` arguments included, since they cannot import the constant. | [Package Scripts](../tools/package-scripts.md) |
 | `tests/unit/scripts/spec-identity.spec.ts` | The cross-repo shared-file list, and that this checkout matches the sibling. | [Contracts](./contracts.md) |
-| `tests/unit/scripts/backend-path.spec.ts` | Sibling-checkout resolution, including the empty-value case an `??` would get wrong. | [Scripts & Hooks](./scripts.md) |
+| `tests/unit/scripts/paired-backend-path.spec.ts` | Sibling-checkout resolution, including the empty-value case an `??` would get wrong. | [Scripts & Hooks](./scripts.md) |
 | `tests/unit/scripts/mutation-baseline.spec.ts` | The ratchet reads a Stryker report into per-file scores correctly. | [Mutation Testing](../tools/mutation-testing.md) |
 
 ## `tests/e2e/` — a real browser against a real backend

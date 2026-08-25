@@ -69,7 +69,7 @@ import { REALTIME_SSE_EVENT_NAMES } from '@types';
 | ---- | --- |
 | `@asyncapi/cli` | validates `asyncapi.yaml` (`npm run lint:asyncapi`) |
 | `@asyncapi/modelina` | generates TypeScript types from AsyncAPI schemas |
-| custom `scripts/gen-asyncapi-types.ts` | runs modelina + appends the channel constants and the SSE payload map |
+| custom `scripts/generate-asyncapi-types.ts` | runs modelina + appends the channel constants and the SSE payload map |
 
 ## Commands
 
@@ -81,13 +81,13 @@ npm run check:asyncapi-types  # fail if the committed types are not what asyncap
 
 ## Shared with the backend
 
-`scripts/gen-asyncapi-types.ts` is **byte-identical** to the one in `boilerplate-node-backend`, and
+`scripts/generate-asyncapi-types.ts` is **byte-identical** to the one in `boilerplate-node-backend`, and
 both write the same path:
 
 | Repo | Command | Reads |
 | --- | --- | --- |
-| Frontend | `tsx scripts/gen-asyncapi-types.ts --out src/types/asyncapi.generated.ts` | this repo's `asyncapi.yaml` — the shared half |
-| Backend | `tsx scripts/gen-asyncapi-types.ts --out src/types/asyncapi.generated.ts` | its own `asyncapi.yaml` — every channel |
+| Frontend | `tsx scripts/generate-asyncapi-types.ts --out src/types/asyncapi.generated.ts` | this repo's `asyncapi.yaml` — the shared half |
+| Backend | `tsx scripts/generate-asyncapi-types.ts --out src/types/asyncapi.generated.ts` | its own `asyncapi.yaml` — every channel |
 
 The script is the same, the INPUT is not — so the two outputs differ, and are meant to: only the
 backend's carries `EmailJobPayload`, `PdfJobPayload` and `WORKER_CHANNELS`. Everything this repo's

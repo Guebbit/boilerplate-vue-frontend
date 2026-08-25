@@ -100,7 +100,7 @@ Run `npm run check:spec-identity` alongside it when the pair has moved — a for
 
 ## `BACKEND_PATH`
 
-`cy.resetState()` shells out to the backend checkout for `host -- db:seed:reset` (under the demo profile it POSTs the backend's in-process `/__demo/reset` instead — see `tests/support/e2e/commands.ts`). Which checkout that is comes from `scripts/backend-path.ts`, which `cypress.config.ts` reads:
+`cy.resetState()` shells out to the backend checkout for `host -- db:seed:reset` (under the demo profile it POSTs the backend's in-process `/__demo/reset` instead — see `tests/support/e2e/commands.ts`). Which checkout that is comes from `scripts/paired-backend-path.ts`, which `cypress.config.ts` reads:
 
 ```sh
 # default: a sibling checkout
@@ -136,7 +136,7 @@ That check used to live here, as a Cypress spec pinning seeded ids by hand. It r
 
 | Path | Contents |
 | --- | --- |
-| `scripts/backend-path.ts` | `resolveBackendPath()`, read by `cypress.config.ts` |
+| `scripts/paired-backend-path.ts` | `resolveBackendPath()`, read by `cypress.config.ts` |
 | `src/infrastructure/http/index.ts` | `orvalMutator`, `VITE_VALIDATE_RESPONSES` gate |
 | `src/infrastructure/http/response-schema-map.ts` | Route → Zod schema table `orvalMutator` validates against |
 | `src/modules/account/tests/e2e/auth.cy.ts` | Live session-refresh case (alongside the demo-profile auth specs) |

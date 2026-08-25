@@ -123,7 +123,7 @@ test can do, because a spec that does not exist runs no assertions and reports n
 They belong to no module and must never name one — see the rule below. A spec here iterates the
 registry; the moment it writes `products`, deleting that domain breaks a test that is not about it.
 
-Two of them (`spec-globs`, `spec-identity`) answer the same kind of question about the repo's
+Two of them (`cypress-spec-globs`, `spec-identity`) answer the same kind of question about the repo's
 tooling rather than its modules, and live in `tests/unit/scripts/` for that reason.
 
 ## Commands

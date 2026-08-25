@@ -40,9 +40,12 @@ import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { globSync } from 'node:fs';
 import path from 'node:path';
-import { resolveBackendPath } from './backend-path';
-import { createDemoScratchDirectory, removeDemoScratchDirectory } from './demo-scratch';
-import { FUNCTIONAL_SPEC_GLOBS } from './spec-globs';
+import { resolveBackendPath } from './paired-backend-path';
+import {
+    createDemoScratchDirectory,
+    removeDemoScratchDirectory
+} from './backend-demo-scratch-directory';
+import { FUNCTIONAL_SPEC_GLOBS } from './cypress-spec-globs';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..');
 

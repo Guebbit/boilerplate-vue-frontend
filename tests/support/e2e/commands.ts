@@ -150,7 +150,7 @@ const resetLiveDatabase = (command: string) =>
 
 /*
  * `__E2E_API_URL` is how one built bundle serves many backends: each shard owns its own demo API
- * (see scripts/e2e-shard.ts), and the app's axios client reads this override before falling back
+ * (see scripts/run-e2e-shards.ts), and the app's axios client reads this override before falling back
  * to the baked VITE_API_URL. Injected from `window:before:load` rather than a `cy.visit`
  * overwrite, because the hook fires for EVERY page load — `cy.reload()` and app-initiated
  * navigations included — while an overwrite covers only the visits Cypress itself issues. The

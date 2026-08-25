@@ -68,7 +68,7 @@ Every layer above answers "did it break". None of them answers **which module ow
   slowest suites / slowest tests / line coverage per module / failures named by module
 ```
 
-JSON rather than JUnit, and the choice is not incidental: Vitest emits both, Jest emits only JSON without a dependency, and JSON carries strictly more — per-assertion durations, ancestor titles, full failure messages. So the artefact is JSON and `scripts/test-report.ts` is the reader, **byte-identical in both repos** because Vitest's `json` reporter emits the shape Jest's `--json` does. `check:spec-identity` keeps the two copies honest.
+JSON rather than JUnit, and the choice is not incidental: Vitest emits both, Jest emits only JSON without a dependency, and JSON carries strictly more — per-assertion durations, ancestor titles, full failure messages. So the artefact is JSON and `scripts/report-test-results.ts` is the reader, **byte-identical in both repos** because Vitest's `json` reporter emits the shape Jest's `--json` does. `check:spec-identity` keeps the two copies honest.
 
 If PR-line annotations are ever wanted, that is the moment to add a JUnit reporter *alongside* this one, not to replace it.
 
@@ -158,7 +158,7 @@ promise.
 | `npm run test:e2e:live` | ~13m | the full suite against a real backend — `complete:manual`, sequential |
 
 **Cypress is the gate**, and the reason `test:e2e` is sharded. Sequentially those 17 specs take
-**12m54s** on one core; `scripts/e2e-shard.ts` splits them across processes sharing one preview server.
+**12m54s** on one core; `scripts/run-e2e-shards.ts` splits them across processes sharing one preview server.
 `npm run test:e2e:serial` keeps the old behaviour for when an interleaved failure is hard to read.
 
 Measured on the 16-core / 30 GB machine, same 17 specs:

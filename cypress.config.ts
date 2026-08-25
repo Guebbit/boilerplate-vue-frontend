@@ -20,8 +20,8 @@
 import { defineConfig } from 'cypress';
 import { loadEnv } from 'vite';
 import path from 'node:path';
-import { resolveBackendPath, resolveLiveResetCommand } from './scripts/backend-path';
-import { ALL_SPEC_GLOBS } from './scripts/spec-globs';
+import { resolveBackendPath, resolveLiveResetCommand } from './scripts/paired-backend-path';
+import { ALL_SPEC_GLOBS } from './scripts/cypress-spec-globs';
 import { compareSnapshot } from './tests/support/e2e/visual-task';
 import { recordA11yViolations } from './tests/support/e2e/a11y-task';
 import { adminApi } from './tests/support/e2e/admin-api-task';
@@ -187,12 +187,12 @@ export default defineConfig({
             // Only used by the live profile: `cy.resetState()` shells out to this checkout's
             // `host -- db:seed:reset` to restore the seed dataset between tests. `BACKEND_PATH` env
             // override, or a sibling-checkout default, always resolved to an absolute path — see
-            // scripts/backend-path.ts, shared with scripts/check-spec-identity.ts so the two can
+            // scripts/paired-backend-path.ts, shared with scripts/check-spec-identity.ts so the two can
             // never silently disagree about which backend they mean.
             backendPath: resolveBackendPath(),
             // Only used by the live profile: the command `cy.resetState()` shells out to. The two
             // paired backends expose the reset through different runners, so this is a command
-            // rather than a script name — see scripts/backend-path.ts.
+            // rather than a script name — see scripts/paired-backend-path.ts.
             liveResetCommand: resolveLiveResetCommand(),
             /*
              * Where the live profile reads its analytics back from. Both repos write into ONE

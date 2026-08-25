@@ -1,5 +1,5 @@
 /**
- * `scripts/backend-path.ts` — where both halves of the pairing look for the other repo.
+ * `scripts/paired-backend-path.ts` — where both halves of the pairing look for the other repo.
  *
  * One resolver serves two callers that fail in different ways: `cypress.config.ts` shells into the
  * result with `npm --prefix` for `cy.resetState()`, and `check-spec-identity.ts` hashes files under
@@ -20,7 +20,7 @@ import {
     DEFAULT_BACKEND_PATH,
     resolveBackendDemoCommand,
     resolveBackendPath
-} from '../../../scripts/backend-path';
+} from '../../../scripts/paired-backend-path';
 
 const previous = process.env.BACKEND_PATH;
 const previousDemoCommand = process.env.BACKEND_DEMO_COMMAND;
