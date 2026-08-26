@@ -3993,7 +3993,7 @@ components:
         - disabled
       description: |-
         One backing service's state, in the four words this payload uses for all of them.
-        `disabled` means "not configured in this deployment" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a 40-second start period, during which "not yet" and "broken" look identical on the wire and mean opposite things.
+        `disabled` means "not configured in this deployment" and is a supported state, not a failure — it never degrades `status`. `connecting` is separate from `unavailable` because the production HEALTHCHECK allows a start period, during which "not yet" and "broken" look identical on the wire and mean opposite things.
     ObservabilityDependency:
       type: object
       additionalProperties: false
@@ -4869,6 +4869,8 @@ components:
           type: boolean
         imageUrl:
           $ref: '#/components/schemas/ImageUrl'
+        locale:
+          $ref: '#/components/schemas/Locale'
     UpdateUserByIdRequestMultipart:
       type: object
       additionalProperties: false
@@ -4887,6 +4889,8 @@ components:
           type: string
           format: binary
           description: Optional user profile image
+        locale:
+          $ref: '#/components/schemas/Locale'
     SearchUsersRequest:
       type: object
       additionalProperties: false

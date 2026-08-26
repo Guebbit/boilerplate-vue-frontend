@@ -1078,6 +1078,7 @@ export interface UpdateUserByIdRequest {
     admin?: boolean;
     active?: boolean;
     imageUrl?: ImageUrl;
+    locale?: Locale;
 }
 
 export interface UpdateUserByIdRequestMultipart {
@@ -1088,6 +1089,7 @@ export interface UpdateUserByIdRequestMultipart {
     active?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
+    locale?: Locale;
 }
 
 export interface SearchUsersRequest {
@@ -3028,6 +3030,9 @@ export const updateUserByIdWithMultipart = (
     }
     if (updateUserByIdRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, updateUserByIdRequestMultipart.imageUpload);
+    }
+    if (updateUserByIdRequestMultipart.locale !== undefined) {
+        formData.append(`locale`, updateUserByIdRequestMultipart.locale);
     }
 
     return orvalMutator<UserEnvelope>(
