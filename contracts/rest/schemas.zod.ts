@@ -1836,18 +1836,20 @@ export const ListUsersResponse = zod.strictObject({
 });
 
 /**
- * Creates a new user account with the supplied email, username, and password. Optional image can be uploaded.
+ * Creates a new user account with the supplied email and username. A password may be supplied directly, or omitted and left to `sendSetupEmail` — see that field. Optional image can be uploaded.
  * @summary Create user
  */
 export const createUserBodyPasswordMin = 8;
 
+export const createUserBodySendSetupEmailDefault = false;
 export const createUserBodyActiveDefault = true;
 export const createUserBodyLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
 export const CreateUserBody = zod.strictObject({
     email: zod.email(),
     username: zod.string(),
-    password: zod.string().min(createUserBodyPasswordMin),
+    password: zod.string().min(createUserBodyPasswordMin).optional(),
+    sendSetupEmail: zod.boolean().default(createUserBodySendSetupEmailDefault),
     admin: zod.boolean().optional(),
     active: zod.boolean().default(createUserBodyActiveDefault),
     imageUrl: zod

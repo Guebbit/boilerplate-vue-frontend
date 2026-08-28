@@ -1048,7 +1048,8 @@ export interface UpdateUserRequestMultipart {
 export interface CreateUserRequest {
     email: Email;
     username: string;
-    password: Password;
+    password?: Password;
+    sendSetupEmail?: boolean;
     admin?: boolean;
     active?: boolean;
     imageUrl?: ImageUrl;
@@ -1058,7 +1059,8 @@ export interface CreateUserRequest {
 export interface CreateUserRequestMultipart {
     email: Email;
     username: string;
-    password: Password;
+    password?: Password;
+    sendSetupEmail?: boolean;
     admin?: boolean;
     active?: boolean;
     /** Optional user profile image */
@@ -2835,7 +2837,7 @@ export const listUsers = (
 };
 
 /**
- * Creates a new user account with the supplied email, username, and password. Optional image can be uploaded.
+ * Creates a new user account with the supplied email and username. A password may be supplied directly, or omitted and left to `sendSetupEmail` — see that field. Optional image can be uploaded.
  * @summary Create user
  */
 export const createUser = (
@@ -2854,7 +2856,7 @@ export const createUser = (
 };
 
 /**
- * Creates a new user account with the supplied email, username, and password. Optional image can be uploaded.
+ * Creates a new user account with the supplied email and username. A password may be supplied directly, or omitted and left to `sendSetupEmail` — see that field. Optional image can be uploaded.
  * @summary Create user
  */
 export const createUserWithMultipart = (
@@ -2864,7 +2866,12 @@ export const createUserWithMultipart = (
     const formData = new FormData();
     formData.append(`email`, createUserRequestMultipart.email);
     formData.append(`username`, createUserRequestMultipart.username);
-    formData.append(`password`, createUserRequestMultipart.password);
+    if (createUserRequestMultipart.password !== undefined) {
+        formData.append(`password`, createUserRequestMultipart.password);
+    }
+    if (createUserRequestMultipart.sendSetupEmail !== undefined) {
+        formData.append(`sendSetupEmail`, createUserRequestMultipart.sendSetupEmail.toString());
+    }
     if (createUserRequestMultipart.admin !== undefined) {
         formData.append(`admin`, createUserRequestMultipart.admin.toString());
     }

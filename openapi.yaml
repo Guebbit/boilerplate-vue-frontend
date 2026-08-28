@@ -1200,7 +1200,7 @@ paths:
       tags:
         - Users
       summary: Create user
-      description: Creates a new user account with the supplied email, username, and password. Optional image can be uploaded.
+      description: Creates a new user account with the supplied email and username. A password may be supplied directly, or omitted and left to `sendSetupEmail` — see that field. Optional image can be uploaded.
       operationId: createUser
       security:
         - bearerAuth: []
@@ -4800,7 +4800,6 @@ components:
       required:
         - email
         - username
-        - password
       properties:
         email:
           $ref: '#/components/schemas/Email'
@@ -4808,6 +4807,9 @@ components:
           type: string
         password:
           $ref: '#/components/schemas/Password'
+        sendSetupEmail:
+          type: boolean
+          default: false
         admin:
           type: boolean
         active:
@@ -4823,7 +4825,6 @@ components:
       required:
         - email
         - username
-        - password
       properties:
         email:
           $ref: '#/components/schemas/Email'
@@ -4831,6 +4832,9 @@ components:
           type: string
         password:
           $ref: '#/components/schemas/Password'
+        sendSetupEmail:
+          type: boolean
+          default: false
         admin:
           type: boolean
         active:
