@@ -1169,7 +1169,7 @@ export const getObservabilityAuditLogsQueryPageSizeMax = 100;
 
 export const GetObservabilityAuditLogsQueryParams = zod.strictObject({
     actor: zod.string().optional().describe('Filter by actor user ID'),
-    action: zod.string().optional().describe('Filter by action name (e.g. auth.login.failed)'),
+    action: zod.string().optional().describe('Filter by action name (e.g. order.created)'),
     outcome: zod.enum(['success', 'failure']).optional().describe('Filter by outcome'),
     since: zod.iso
         .datetime({ offset: true })
@@ -1205,9 +1205,7 @@ export const GetObservabilityAuditLogsResponse = zod.strictObject({
             zod.strictObject({
                 actor_user_id: zod.string(),
                 actor_role: zod.enum(['admin', 'user', 'anonymous']),
-                action: zod
-                    .string()
-                    .describe('Dot-notation action name (e.g. auth.login.succeeded)'),
+                action: zod.string().describe('Dot-notation action name (e.g. order.created)'),
                 outcome: zod.enum(['success', 'failure']),
                 ip: zod.string().optional(),
                 user_agent: zod.string().optional(),

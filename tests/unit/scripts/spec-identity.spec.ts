@@ -1,7 +1,7 @@
 /**
  * `scripts/spec-identity.ts` — the cross-repo contract check.
  *
- * Two separate things are worth testing here, and only one of them is the comparison logic:
+ * Three separate things are worth testing here, and only one of them is the comparison logic:
  *
  *  1. **The logic**, against fixtures on a temp directory. It has to work when the sibling
  *     checkout is absent, which is the state of every CI runner that has not checked it out and
@@ -9,7 +9,12 @@
  *     roots rather than the real neighbouring repo. A test that needed the sibling present would
  *     be the one thing that cannot run where the check matters most.
  *
- *  2. **The real pair**, when the sibling actually is beside this checkout. That case is
+ *  2. **The two-backend cases**, unique to this repo's copy of the module: a candidate backend
+ *     path resolved to whichever one exists, and a YAML fingerprint that agrees across two
+ *     different serialisations of the same document. Neither backend's own copy of this file needs
+ *     either, since each one only ever compares itself against the one frontend.
+ *
+ *  3. **The real pair**, when the sibling actually is beside this checkout. That case is
  *     conditional on purpose: it is the live assertion that the two repos agree today, and it is
  *     the only one that would notice a fork introduced by hand. Where the sibling is missing it
  *     reports as skipped rather than passing quietly, because a check that silently evaporates is
@@ -19,7 +24,7 @@
  * to the check is covered by every case below without touching this file — and, more to the
  * point, cannot be added *without* being covered.
  *
- * Mirrors `tests/unit/scripts/spec-identity.test.ts` in the backend.
+ * Mirrors `tests/unit/scripts/spec-identity.test.ts` in the backend, apart from section 2.
  */
 import { describe, it, expect, afterAll } from 'vitest';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -33,6 +38,7 @@ import {
     compareSharedFiles,
     formatSharedFileProblems,
     hashFile,
+    fingerprint,
     sharedFileProblems,
     type RepoRole
 } from '../../../scripts/spec-identity';
@@ -48,33 +54,39 @@ const makeRoot = (files: Record<string, string>): string => {
     return root;
 };
 
+/** The backend side of an entry, as ONE path — the first candidate when there are several. */
+const backendPath = (shared: (typeof SHARED_FILES)[number]): string => {
+    const { backend } = shared;
+    // `Array.isArray` alone does not narrow a `string | readonly string[]` union cleanly — its lib
+    // signature predicates `any[]`, which does not flow back through a `readonly` member type.
+    return Array.isArray(backend) ? (backend as readonly string[])[0] : (backend as string);
+};
+
 /**
  * Every shared file as one side spells it, with contents keyed by the pair's *index*.
  *
  * Indexed rather than named because the two sides do not agree on names: the seed identities live
  * at different paths, so contents keyed by path would differ between the repos and every pair
- * would read as forked. What must match is the bytes, not the filename.
+ * would read as forked. What must match is the content, not the filename.
  */
 const sharedFiles = (role: RepoRole, suffix = ''): Record<string, string> =>
     Object.fromEntries(
-        SHARED_FILES.map((shared, index) => [shared[role], `shared-${index} contents${suffix}`])
+        SHARED_FILES.map((shared, index) => [
+            role === 'backend' ? backendPath(shared) : shared.frontend,
+            `shared-${index} contents${suffix}`
+        ])
     );
 
 /**
- * The three contract files, as named constants, spelled the way THIS repo spells them.
+ * The two contract files, as named constants, spelled the way THIS repo spells them.
  *
  * Declared rather than written inline because a filename is not an identifier: `'openapi.yaml'` as
  * a literal object key trips the naming-convention lint rule in every fixture, while a computed
  * key built from a variable does not. `sharedFilesWith` and `withoutFile` exist for the same
  * reason — they are the only two shapes a fixture needs.
- *
- * Only two of them are same-path: the async contract is `asyncapi.yaml` here and
- * `asyncapi.public.yaml` in the backend, so it can key a fixture on THIS side only. Fixtures that
- * need to write the sibling's copy use `CROSS_PATH` instead.
  */
 const OPENAPI = 'openapi.yaml';
 const ASYNCAPI = 'asyncapi.yaml';
-const SPECTRAL = 'spectral.yaml';
 
 /** `sharedFiles(role)` with one entry replaced. */
 const sharedFilesWith = (
@@ -94,7 +106,13 @@ const HERE: RepoRole = 'frontend';
 const THERE: RepoRole = 'backend';
 
 /** A pair whose paths differ between the repos — the case a same-path check could not express. */
-const CROSS_PATH = SHARED_FILES.find(({ backend, frontend }) => backend !== frontend)!;
+const CROSS_PATH = SHARED_FILES.find(
+    ({ backend, frontend }) => backendPath({ backend, frontend }) !== frontend
+)!;
+
+/** The one entry with more than one backend candidate — BEold's layout, or BE(php)'s. */
+const CANDIDATE_ENTRY = SHARED_FILES.find(({ backend }) => Array.isArray(backend))!;
+const [FIRST_CANDIDATE, SECOND_CANDIDATE] = CANDIDATE_ENTRY.backend as readonly string[];
 
 const roots: string[] = [];
 const root = (files: Record<string, string>) => {
@@ -120,37 +138,33 @@ describe('SHARED_FILES', () => {
 
         expect(frontendPaths).toContain(OPENAPI);
         expect(frontendPaths).toContain(ASYNCAPI);
-        expect(frontendPaths).toContain(SPECTRAL);
-        // The one that went unguarded until the list could hold differing paths. (The demo
-        // dataset left the list with the MSW mocks: the demo profile seeds from the backend's
-        // own fixtures, so there is no frontend copy left to compare.)
         expect(frontendPaths).toContain('src/infrastructure/observability/analytics-events.ts');
+        // And nothing else. Three files, every one produced in the backend, which is what makes
+        // a fork answerable at all — `spectral.yaml` and the three shared scripts are gone, along
+        // with the Node backend's own copy of them.
+        expect(frontendPaths.size).toBe(3);
     });
 
     it('excludes anything this repo regenerates from a file already in the list', () => {
-        // A generated output carries no fact the list does not compare already: the shared half of
-        // the spec is compared, and so is the generator that reads it. Listing an output buys
-        // nothing and costs a manual copy per contract change, so `check:asyncapi-types` guards it
-        // inside this repo instead — which is also the only workable answer now that the two
-        // outputs legitimately differ, the backend's carrying the queue payloads this one's does
-        // not.
         const frontendPaths = new Set(SHARED_FILES.map(({ frontend }) => frontend));
 
         expect(frontendPaths).not.toContain('src/types/asyncapi.generated.ts');
     });
 
     it('holds at least one pair whose paths differ between the repos', () => {
-        // Guards the reason the list is pairs at all: if this ever became empty, the structure
-        // could quietly collapse back to single names and the seed fixtures would fall out.
         expect(CROSS_PATH).toBeDefined();
-        expect(CROSS_PATH.backend).not.toBe(CROSS_PATH.frontend);
+    });
+
+    it('holds at least one entry with more than one backend candidate', () => {
+        // The case neither backend's own copy of this file needs: this repo alone faces two
+        // possible layouts for the same shared file, one per paired backend.
+        expect(Array.isArray(CANDIDATE_ENTRY.backend)).toBe(true);
+        expect((CANDIDATE_ENTRY.backend as readonly string[]).length).toBeGreaterThan(1);
     });
 
     it('lists no file twice on either side', () => {
-        const backendPaths = SHARED_FILES.map(({ backend }) => backend);
         const frontendPaths = SHARED_FILES.map(({ frontend }) => frontend);
 
-        expect(new Set(backendPaths).size).toBe(backendPaths.length);
         expect(new Set(frontendPaths).size).toBe(frontendPaths.length);
     });
 });
@@ -170,8 +184,6 @@ describe('compareSharedFiles', () => {
     });
 
     it('matches a cross-path pair across its two different names', () => {
-        // `asyncapi.public.yaml` there, `asyncapi.yaml` here; `analytics-events.frontend.ts`
-        // there, `analytics-events.ts` here.
         const here = root(sharedFiles(HERE));
         const there = root(sharedFiles(THERE));
 
@@ -180,17 +192,16 @@ describe('compareSharedFiles', () => {
         );
 
         expect(comparison?.status).toBe('match');
-        expect(comparison?.siblingFile).toBe(CROSS_PATH.backend);
+        expect(comparison?.siblingFile).toBe(backendPath(CROSS_PATH));
     });
 
     it('reports a cross-path pair as forked when only one side changed', () => {
-        // The bug these pairs exist to catch: a contract or a seed fixture edited in one repo
-        // only. Both suites stay green — each is consistent with its own copy — and only this
-        // notices.
+        // The bug these pairs exist to catch: a contract edited in one repo only. Both suites stay
+        // green — each is consistent with its own copy — and only this notices.
         const here = root(sharedFiles(HERE));
         const there = root({
             ...sharedFiles(THERE),
-            [CROSS_PATH.backend]: 'edited on one side only'
+            [backendPath(CROSS_PATH)]: 'edited on one side only'
         });
 
         const drifted = compareSharedFiles(there, here, HERE).filter(
@@ -200,27 +211,43 @@ describe('compareSharedFiles', () => {
         expect(drifted.map(({ file }) => file)).toEqual([CROSS_PATH.frontend]);
     });
 
-    it('reports a one-byte difference as a fork', () => {
-        // The whole point: a spec that still parses, still lints, and no longer agrees.
+    it('reports a one-byte difference in a non-YAML file as a fork', () => {
+        // analytics-events.ts is compared as raw text, not parsed — a real content change is the
+        // only kind of change it has.
+        const file = 'src/infrastructure/observability/analytics-events.ts';
         const here = root(sharedFiles(HERE));
-        const there = root(sharedFilesWith(THERE, OPENAPI, 'shared-0 contents '));
+        const there = root(sharedFilesWith(THERE, FIRST_CANDIDATE, 'edited by one byte '));
 
         const drifted = compareSharedFiles(there, here, HERE).filter(
             ({ status }) => status === 'drift'
         );
 
-        expect(drifted.map(({ file }) => file)).toEqual([OPENAPI]);
-        expect(drifted[0]?.ours).not.toBe(drifted[0]?.theirs);
+        expect(drifted.map((d) => d.file)).toEqual([file]);
     });
 
-    it('names spectral.yaml too, not only the two specs', () => {
-        // The ruleset is as shared as the documents it lints — see the note in spec-identity.ts.
-        const here = root(sharedFiles(HERE));
-        const there = root(sharedFilesWith(THERE, SPECTRAL, 'different rules'));
+    it('finds the second backend candidate when the first is absent', () => {
+        // The case that does not exist for either backend's own copy: this repo does not know in
+        // advance which of the two layouts the paired backend uses.
+        const here = root({ [CANDIDATE_ENTRY.frontend]: 'shared contents' });
+        const there = root({ [SECOND_CANDIDATE]: 'shared contents' });
 
-        expect(
-            sharedFileProblems(compareSharedFiles(there, here, HERE)).map(({ file }) => file)
-        ).toEqual([SPECTRAL]);
+        const comparison = compareSharedFiles(there, here, HERE).find(
+            ({ file }) => file === CANDIDATE_ENTRY.frontend
+        );
+
+        expect(comparison?.status).toBe('match');
+        expect(comparison?.siblingFile).toBe(SECOND_CANDIDATE);
+    });
+
+    it('reports missing-there only when NEITHER backend candidate exists', () => {
+        const here = root({ [CANDIDATE_ENTRY.frontend]: 'shared contents' });
+        const there = root({});
+
+        const comparison = compareSharedFiles(there, here, HERE).find(
+            ({ file }) => file === CANDIDATE_ENTRY.frontend
+        );
+
+        expect(comparison?.status).toBe('missing-there');
     });
 
     it('distinguishes a missing sibling checkout from a forked contract', () => {
@@ -236,16 +263,77 @@ describe('compareSharedFiles', () => {
     });
 
     it('reports a file deleted on this side', () => {
-        const here = root(withoutFile(HERE, SPECTRAL));
+        const here = root(withoutFile(HERE, OPENAPI));
         const there = root(sharedFiles(THERE));
 
         const comparisons = compareSharedFiles(there, here, HERE);
 
-        expect(comparisons.find(({ file }) => file === SPECTRAL)?.status).toBe('missing-here');
+        expect(comparisons.find(({ file }) => file === OPENAPI)?.status).toBe('missing-here');
     });
 
     it('does not throw when neither side has anything', () => {
         expect(() => compareSharedFiles(root({}), root({}), HERE)).not.toThrow();
+    });
+});
+
+describe('fingerprint', () => {
+    it('gives a non-YAML file the same digest as hashFile', () => {
+        const directory = root({ 'analytics-events.ts': 'const x = 1;\n' });
+        const file = path.join(directory, 'analytics-events.ts');
+
+        expect(fingerprint(file)).toBe(hashFile(file));
+    });
+
+    it('agrees on two YAML documents that mean the same thing but are quoted differently', () => {
+        // The real case this exists for: the PHP backend's `symfony/yaml` quotes what redocly
+        // leaves bare. A raw byte hash would call a real sync forked on formatting alone.
+        const a = root({ 'openapi.yaml': 'title: Demo API\nversion: 2.0.0\n' });
+        const b = root({ 'openapi.yaml': "title: 'Demo API'\nversion: '2.0.0'\n" });
+
+        expect(fingerprint(path.join(a, 'openapi.yaml'))).toBe(
+            fingerprint(path.join(b, 'openapi.yaml'))
+        );
+    });
+
+    it('agrees on two YAML documents whose maps are keyed in a different order', () => {
+        const a = root({ 'openapi.yaml': 'a: 1\nb: 2\n' });
+        const b = root({ 'openapi.yaml': 'b: 2\na: 1\n' });
+
+        expect(fingerprint(path.join(a, 'openapi.yaml'))).toBe(
+            fingerprint(path.join(b, 'openapi.yaml'))
+        );
+    });
+
+    it('agrees on two YAML documents whose only difference is a trailing newline in a block scalar', () => {
+        // `|` keeps the block scalar's trailing newline, `|-` strips it — a dumper's chomping
+        // choice, not content. The real case: BE(php)'s `info.description` carried one, BEold's
+        // did not, for text that was otherwise identical.
+        const a = root({ 'openapi.yaml': 'description: |\n  one line\n' });
+        const b = root({ 'openapi.yaml': 'description: |-\n  one line\n' });
+
+        expect(fingerprint(path.join(a, 'openapi.yaml'))).toBe(
+            fingerprint(path.join(b, 'openapi.yaml'))
+        );
+    });
+
+    it('still disagrees on two YAML documents with different content', () => {
+        const a = root({ 'openapi.yaml': 'title: Demo API\n' });
+        const b = root({ 'openapi.yaml': 'title: Other API\n' });
+
+        expect(fingerprint(path.join(a, 'openapi.yaml'))).not.toBe(
+            fingerprint(path.join(b, 'openapi.yaml'))
+        );
+    });
+
+    it('does not reorder a LIST the way it reorders a MAP', () => {
+        // `security`, `enum` and a path's `parameters` all mean something by their position, so a
+        // blanket sort would call two different documents identical.
+        const a = root({ 'openapi.yaml': 'enum: [a, b]\n' });
+        const b = root({ 'openapi.yaml': 'enum: [b, a]\n' });
+
+        expect(fingerprint(path.join(a, 'openapi.yaml'))).not.toBe(
+            fingerprint(path.join(b, 'openapi.yaml'))
+        );
     });
 });
 
@@ -268,7 +356,7 @@ describe('formatSharedFileProblems', () => {
         expect(formatSharedFileProblems(compareSharedFiles(there, here, HERE), there)).toBe('');
     });
 
-    it('names the forked file and both digests', () => {
+    it('names the forked file and both fingerprints', () => {
         // A same-path pair, so one constant names the file in both roots. The cross-path case has
         // its own test below.
         const here = root(sharedFiles(HERE));
@@ -278,20 +366,18 @@ describe('formatSharedFileProblems', () => {
 
         expect(message).toContain(OPENAPI);
         expect(message).toContain('FORKED');
-        // Both digests, so the message can be pasted into an issue and mean something later.
-        expect(message).toContain(hashFile(path.join(here, OPENAPI)));
-        expect(message).toContain(hashFile(path.join(there, OPENAPI)));
+        // Both fingerprints, so the message can be pasted into an issue and mean something later.
+        expect(message).toContain(fingerprint(path.join(here, OPENAPI)));
+        expect(message).toContain(fingerprint(path.join(there, OPENAPI)));
     });
 
     it('names both paths when a cross-path pair forks', () => {
-        // "demo-data.json is forked" would send the reader to one of two files with no way to
-        // tell which repo the other one is in.
         const here = root(sharedFiles(HERE));
-        const there = root({ ...sharedFiles(THERE), [CROSS_PATH.backend]: 'forked' });
+        const there = root({ ...sharedFiles(THERE), [backendPath(CROSS_PATH)]: 'forked' });
 
         const message = formatSharedFileProblems(compareSharedFiles(there, here, HERE), there);
 
-        expect(message).toContain(CROSS_PATH.backend);
+        expect(message).toContain(backendPath(CROSS_PATH));
         expect(message).toContain(CROSS_PATH.frontend);
     });
 
@@ -301,14 +387,11 @@ describe('formatSharedFileProblems', () => {
         const message = formatSharedFileProblems(compareSharedFiles(there, here, HERE), there);
 
         expect(message).toContain('npm run gen:api');
-        // Four of the seven are assembled from per-module fragments in the backend, so "copy
-        // whichever side is right" is the wrong instruction for them: the fix is to re-bundle
-        // there and copy the result here. A message that omitted that invites an edit to this
-        // repo's copy that the next `contracts:bundle` silently reverts.
-        expect(message).toContain('npm run contracts:bundle');
-        // Both of this repo's own generators, because a fresh copy of either spec leaves the
-        // outputs built from it stale — and `asyncapi.generated.ts` is no longer carried over
-        // from the backend, so nothing else would mention regenerating it.
+        // Every entry is assembled from per-module fragments in the backend, so "copy whichever
+        // side is right" is the wrong instruction: the fix is to re-bundle there and copy the
+        // result here. A message that omitted that invites an edit to this repo's copy that the
+        // next `contracts:bundle` silently reverts.
+        expect(message).toContain('contracts:bundle');
         expect(message).toContain('npm run gen:asyncapi');
     });
 });
@@ -323,7 +406,18 @@ describe('formatSharedFileProblems', () => {
  * So the absence is asserted rather than assumed: locally it says so out loud, and under `CI` it
  * fails, because a pipeline that checks out one half of a pair and reports success on the shared
  * contract is reporting something it did not check.
+ *
+ * `resolveBackendPath()` reads `BACKEND_PATH` off `process.env`, and nothing in the Vitest runner
+ * loads `.env` into it the way `check-spec-identity.ts`'s CLI does for itself — so this loads it
+ * the same guarded way, or a `.env` pointed at the PHP backend would still get checked against the
+ * Node one here.
  */
+try {
+    process.loadEnvFile();
+} catch {
+    /* no .env in this checkout */
+}
+
 const siblingRoot = resolveBackendPath();
 const siblingPresent = existsSync(siblingRoot);
 
@@ -337,7 +431,7 @@ describe(`the paired backend at ${siblingRoot}`, () => {
         expect(process.env.CI ? message : '').toBe('');
     });
 
-    it('carries byte-identical copies of every shared file', () => {
+    it('carries identical copies of every shared file', () => {
         // Nothing to compare without the sibling. The test above is what makes that visible —
         // and what fails in CI — so this one simply has no work to do.
         if (!siblingPresent) return;

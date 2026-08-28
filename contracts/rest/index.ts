@@ -794,7 +794,7 @@ export const AuditEventItemLevel = {
 export interface AuditEventItem {
     actor_user_id: string;
     actor_role: AuditEventItemActorRole;
-    /** Dot-notation action name (e.g. auth.login.succeeded) */
+    /** Dot-notation action name (e.g. order.created) */
     action: string;
     outcome: AuditEventItemOutcome;
     ip?: string;
@@ -1854,7 +1854,7 @@ export type GetObservabilityAuditLogsParams = {
      */
     actor?: string;
     /**
-     * Filter by action name (e.g. auth.login.failed)
+     * Filter by action name (e.g. order.created)
      */
     action?: string;
     /**

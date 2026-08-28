@@ -1,30 +1,22 @@
 /**
  * The cross-repo contract check.
  *
- * A set of files exists in BOTH this repo and the paired backend, byte-for-byte identical,
- * maintained by hand. Codegen on both sides reads the specs among them — orval and the AsyncAPI
- * type generator here, orval and `generate-asyncapi-types` there — so a one-line edit in one checkout
- * silently forks what both sides believe they share. Nothing detected that: each repo's
- * CI lints its own copy and finds it perfectly valid, because a forked spec is still a valid spec.
+ * A set of files exists in BOTH this repo and the paired backend, identical. Codegen on both sides
+ * reads the specs among them, so a one-line edit in one checkout silently forks what both sides
+ * believe they share — and neither CI notices, because a forked spec is still a valid spec.
  *
- * This module is the detector. It is deliberately dumber than a semantic diff: identity, not
- * equivalence. Two specs that mean the same thing but differ in key order or comments are still a
- * fork in the making, because the next person to regenerate from one of them gets a diff nobody
- * asked for. Reordering both copies together is a two-line change; letting them drift is not.
+ * The backend mirrors this file; only `THIS_REPO` differs there, so a file added on one side is a
+ * one-line copy on the other. This repo is the one exception to "mirror": it is the side that
+ * pairs with EITHER backend (`.env`'s `BACKEND_PATH` says which), so it is also the one side that
+ * cannot assume a single backend layout — see `SharedFile.backend` and `fingerprint` below, neither
+ * of which the backend's own copy of this file needs.
  *
- * It treats the symptom, and should say so: the cure is one source of truth — a package both
- * repos consume, or a third repo — which is a bigger decision than a CI job. Until that is made,
- * this fails the build on the commit that forks a shared file rather than on the release that
- * ships the mismatch.
- *
- * The backend mirrors this file. The two are separate copies on purpose: a shared package would
- * itself be a cross-repo dependency, which is the problem rather than the fix. Only `THIS_REPO`
- * differs between them — the file list is identical, so a file added on one side is a one-line
- * copy on the other rather than a translation.
+ * See: docs/reference/contracts.md#keeping-the-pair-in-step
  */
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import { parse as parseYaml } from 'yaml';
 
 /** Which of the paired repos a checkout is. */
 export type RepoRole = 'backend' | 'frontend';
@@ -32,13 +24,11 @@ export type RepoRole = 'backend' | 'frontend';
 /**
  * One shared file, named on both sides.
  *
- * Two paths rather than one because identity does not imply a shared location: the demo dataset is
- * published seed data there and test scaffolding here, and the analytics names sit under a
- * filename each repo's lint config insists on. A single-path list could not express either, which
- * is why they went unguarded.
+ * `backend` is a list rather than one path for the one entry whose location the two paired
+ * backends do not agree on — everything else, a single string is enough.
  */
 export interface SharedFile {
-    backend: string;
+    backend: string | readonly string[];
     frontend: string;
 }
 
@@ -57,114 +47,60 @@ export const siblingRole = (role: RepoRole): RepoRole =>
  * sides keep building, keep passing their own suites, and disagree only in production or in a
  * live-API run.
  *
- * `spectral.yaml` is here alongside the specs because it is the ruleset both `lint:openapi` jobs
- * enforce: if the two repos lint the same document under different rules, one of them passes a
- * spec the other would reject.
+ * EVERY ENTRY IS PRODUCED IN THE BACKEND and copied here, which is what makes a fork answerable:
+ * this repo's copy is an OUTPUT, so "which side is right" has one answer, and `sync:frontend`
+ * applies it. Editing the copy is the failure this list is worst at describing and best at
+ * catching — the next regeneration reverts it, and the diff looks like the backend broke
+ * something. `asyncapi.public.yaml` is the one whose name differs on arrival: it lands as this
+ * repo's `asyncapi.yaml`, because the shared subset is the whole of the async contract as far as
+ * this repo is concerned.
  *
- * Deliberately NOT here: `public/favicon/*`, `.prettierrc`, `.dockerignore`, `.husky/*`,
- * `.docker/nginx.docs.conf` and `docs/.vitepress/theme/*`. They are identical by convention, not
- * by requirement — either repo may legitimately change its own icon or formatting width, and a
- * gate that fails on that trains people to ignore it.
+ * That is the whole membership rule, and it is narrower than it once was. Files the two repos kept
+ * identical FOR CONVENIENCE used to be here too — `spectral.yaml` and three shared scripts
+ * (`check-mutation-baseline.ts`, `report-test-results.ts`, `generate-asyncapi-types.ts`) — hand-
+ * maintained on both sides, so a fork was a question no script could answer and the gate could only
+ * report it. They were removed on the Node backend's side of this pair; this list follows that
+ * decision rather than re-deriving it, because the two lists drifting is exactly the failure mode
+ * this file exists to prevent. Nothing breaks silently when two repos lint under rulesets that have
+ * drifted apart, or when one holds a newer test reporter — and, now that a second backend can be
+ * the paired one, those three scripts have no PHP equivalent to compare against at all.
  *
- * THREE OF THESE ARE PRODUCED IN THE BACKEND and copied here — the two specs, the demo dataset and
- * the analytics names. The async contract is the one whose name differs in transit: it is
- * `asyncapi.public.yaml` there and lands as `asyncapi.yaml` here, because the shared subset is the
- * whole of the async contract as far as this repo is concerned. Every one of them covers every domain, so every one is produced there from
- * per-module sources: the specs and the analytics names by assembling fragments
- * (`npm run contracts:bundle`), the dataset by seeding a database and reading it back
- * (`npm run seed:export`). For those, "decide which side is right" has one answer: the backend's,
- * because this repo's copy is an output. Editing the copy is the failure this list is worst at
- * describing and best at catching — the next regeneration reverts it, and the diff looks like the
- * backend broke something.
+ * Also deliberately absent, for the same reason: `public/favicon/*`, `.prettierrc`,
+ * `.dockerignore`, `.husky/*`, `.docker/nginx.docs.conf` and `docs/.vitepress/theme/*`. Identical
+ * by convention, and a gate that fails on an icon trains people to ignore it.
  *
- * Nothing that either repo can REGENERATE from a file already in this list belongs here. Such a
- * copy carries no fact the list does not already compare, and every entry costs a manual step per
- * contract change. The generated realtime types and the backend's `contract.<tool>.*` collections
- * are both out for that reason; each is guarded instead by a freshness check inside its own repo.
+ * Nothing this repo can REGENERATE from a file already here belongs here either. Such a copy
+ * carries no fact the list does not already compare, and every entry costs a manual step per
+ * contract change. The generated realtime types and the API client collections are out for that
+ * reason; each is guarded by a freshness check inside its own repo.
  */
 export const SHARED_FILES: readonly SharedFile[] = [
-    /* The contract itself, and the ruleset both sides lint it under. */
+    /* The contract itself. */
     { backend: 'openapi.yaml', frontend: 'openapi.yaml' },
     /*
-     * The async contract, in its SHARED half only. The backend's `asyncapi.yaml` holds every channel
-     * that service has, RabbitMQ queues included; `asyncapi.public.yaml` is the same document minus
-     * the sections no API client can reach, and it is that subset this repo receives as its own
-     * `asyncapi.yaml`. Both are built there from one set of section documents, so the two bundles
-     * cannot describe a shared channel differently.
-     *
-     * A browser can neither publish to nor consume from a broker, so the queue payloads would be a
-     * contract this repo carries and cannot honour. It never sees them.
+     * The async contract, in its SHARED half only. Either backend's `asyncapi.yaml` holds every
+     * channel that service has, internal queues included; `asyncapi.public.yaml` is the same
+     * document minus the sections no API client can reach, and it is that subset this repo
+     * receives as its own `asyncapi.yaml`.
      */
     { backend: 'asyncapi.public.yaml', frontend: 'asyncapi.yaml' },
-    { backend: 'spectral.yaml', frontend: 'spectral.yaml' },
-
     /*
-     * The generated realtime types — `src/types/asyncapi.generated.ts` in BOTH repos, each built by
-     * `npm run gen:asyncapi` from that repo's own `asyncapi.yaml` — are deliberately NOT in this
-     * list, for the same reason as the API client collections below: they are an OUTPUT, and every
-     * input they have is compared already. The shared half of the spec is compared above, and
-     * `scripts/generate-asyncapi-types.ts` at the bottom.
+     * The analytics event names THIS app emits — the only analytics file crossing the boundary.
+     * One Umami namespace, one emitter per name; a backend's own names are never published because
+     * its controllers import them directly.
      *
-     * The two outputs are NOT identical, and are not meant to be: the backend generates from the
-     * full contract and carries the queue payloads, this repo from the shared subset and does not.
-     * Comparing them would demand a sameness the split exists to remove — while what a cross-repo
-     * comparison would actually add, "did this repo regenerate after the last spec edit", is
-     * answered by `npm run check:asyncapi-types` inside each repo, with no sibling checkout to find
-     * and no file to carry across.
-     */
-
-    /*
-     * The four API client collections (`contract.<tool>.*` at the backend's root) are deliberately NOT here.
-     * They earned a place in this list when they were written by hand — a hand-maintained
-     * restatement of the contract forks the moment an endpoint lands on one side only. They are
-     * generated from `openapi.yaml` now, pinned to a fresh generation by the backend's
-     * contract-bundles test, and `openapi.yaml` itself is compared above: identical spec plus
-     * deterministic generator means a frontend copy could never disagree without the spec
-     * disagreeing first. So the frontend holds no copy at all, and the collections live only
-     * where they are produced.
-     */
-
-    /*
-     * The analytics event names THIS app emits — its whole catalogue. Both repos write into one
-     * Umami website, so the names form one namespace, but each name has exactly one emitter:
-     * everything with an API call behind it is emitted by the backend, where it cannot be blocked
-     * by an extension, lost with the tab, or forged from a console, and this app keeps only the
-     * moments no request can carry. The backend's own names are never published — its controllers
-     * import them directly, so a copy here would name events this app must not fire.
-     *
-     * Authored as `shared/contracts/analytics.frontend.ts` over there, the analytics twin of the
-     * `asyncapi.yaml` subset above. Nothing else compares the two copies: each repo's suite asserts
-     * its own and passes. Different paths because the two lint configs disagree on filename case.
+     * The one entry with two backend candidates: the Node twin publishes it under its own
+     * `src/infrastructure/observability/` layout, the PHP twin under `shared/contracts/` — each
+     * repo's own lint config decided the location, and this list has to be able to find either one
+     * without being told in advance which backend is paired.
      */
     {
-        backend: 'src/infrastructure/observability/analytics-events.frontend.ts',
+        backend: [
+            'src/infrastructure/observability/analytics-events.frontend.ts',
+            'shared/contracts/analytics-events.ts'
+        ],
         frontend: 'src/infrastructure/observability/analytics-events.ts'
-    },
-
-    /*
-     * Shared tooling, duplicated rather than packaged for the reason in this file's header. Both
-     * are read by CI on both sides, so a fix applied to one copy and not the other is a CI job
-     * that behaves differently per repo while claiming to be the same gate.
-     *
-     * `spec-identity.ts` and `mutation-baseline.ts` are NOT here: they carry per-repo prose (this
-     * file names the backend as its sibling; the backend's names the frontend), so they are
-     * mirrors rather than copies.
-     */
-    {
-        backend: 'scripts/check-mutation-baseline.ts',
-        frontend: 'scripts/check-mutation-baseline.ts'
-    },
-    {
-        backend: 'scripts/generate-asyncapi-types.ts',
-        frontend: 'scripts/generate-asyncapi-types.ts'
-    },
-    /*
-     * The per-module test report. Shared for a reason the others are not: it parses a runner's
-     * JSON, and Vitest's `json` reporter emits the same shape Jest's `--json` does — so one reader
-     * genuinely serves both, and two copies drifting would mean the two repos disagreeing about
-     * what their own test suites cost.
-     */
-    { backend: 'scripts/report-test-results.ts', frontend: 'scripts/report-test-results.ts' }
+    }
 ] as const;
 
 export type SpecComparisonStatus = 'match' | 'drift' | 'missing-here' | 'missing-there';
@@ -172,11 +108,11 @@ export type SpecComparisonStatus = 'match' | 'drift' | 'missing-here' | 'missing
 export interface SpecComparison {
     /** This repo's path for the file — what a reader of the failure message has to go open. */
     file: string;
-    /** The sibling's path. Equal to `file` for everything but the cross-path pairs. */
+    /** The sibling's path — whichever candidate was actually found, or the first when none was. */
     siblingFile: string;
-    /** sha256 of this repo's copy, or undefined when the file is absent here. */
+    /** Identity fingerprint of this repo's copy, or undefined when the file is absent here. */
     ours?: string;
-    /** sha256 of the sibling's copy, or undefined when the file is absent there. */
+    /** Identity fingerprint of the sibling's copy, or undefined when the file is absent there. */
     theirs?: string;
     status: SpecComparisonStatus;
 }
@@ -190,11 +126,62 @@ export const hashFile = (filePath: string): string =>
     createHash('sha256').update(readFileSync(filePath)).digest('hex');
 
 /**
+ * The same data with every MAP sorted by key and every LIST left alone — mirrors the backend's own
+ * `SharedContract::normalise()` exactly, for the reasons written there:
+ *
+ * - Map key order is ignored. Two bundlers listing an operation's responses in a different order
+ *   describe one API.
+ * - Sequence order is not. `security`, `enum` and a path's `parameters` all mean something by
+ *   their position, so a blanket sort would call two different documents identical.
+ * - A trailing newline is ignored, a trailing space is not. The first is a block scalar's
+ *   chomping indicator (`|` vs `|-`), decided by the dumper; the second is content.
+ */
+const normalise = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.map((entry) => normalise(entry));
+
+    if (value !== null && typeof value === 'object') {
+        const sorted: Record<string, unknown> = {};
+        for (const key of Object.keys(value).toSorted()) {
+            sorted[key] = normalise(value[key as keyof typeof value]);
+        }
+        return sorted;
+    }
+
+    return typeof value === 'string' ? value.replace(/\n+$/, '') : value;
+};
+
+/**
+ * A digest of a file's IDENTITY rather than its bytes, for `.yaml`/`.yml`.
+ *
+ * Either paired backend can be the one deployed, and only one of them bundles byte-stably: the
+ * Node twin's redocly output is deterministic, the PHP twin's `symfony/yaml` quotes what redocly
+ * leaves bare and reflows a bearer-auth array across two lines. A raw byte hash would report a
+ * real sync from the PHP twin as forked on formatting alone — parse first, then hash the parsed
+ * and re-serialised form, so two documents that mean the same thing fingerprint the same and a
+ * real content change still doesn't.
+ *
+ * Everything else is hashed as raw bytes, unchanged: `.ts` files are a bundler's string template,
+ * not a serialised document, and neither twin has shown byte instability in one.
+ */
+export const fingerprint = (filePath: string): string => {
+    if (path.extname(filePath) !== '.yaml' && path.extname(filePath) !== '.yml') {
+        return hashFile(filePath);
+    }
+
+    const parsed = normalise(parseYaml(readFileSync(filePath, 'utf8')));
+    return createHash('sha256').update(JSON.stringify(parsed)).digest('hex');
+};
+
+/** Every candidate path for one side of a shared-file entry, in order. */
+const candidates = (root: string, entry: string | readonly string[]): string[] =>
+    (Array.isArray(entry) ? entry : [entry]).map((entryPath) => path.join(root, entryPath));
+
+/**
  * Compare every shared file against a sibling checkout.
  *
  * Never throws on a missing file: an absent file is reported as its own status, so the caller can
  * tell "the sibling checkout is not where I looked" (everything `missing-there`) from "someone
- * deleted asyncapi.yaml" (one entry). Those want different messages, and a thrown ENOENT gives
+ * deleted openapi.yaml" (one entry). Those want different messages, and a thrown ENOENT gives
  * neither.
  *
  * @param siblingRoot - absolute path to the other repo's checkout
@@ -207,22 +194,33 @@ export const compareSharedFiles = (
     role: RepoRole = THIS_REPO
 ): SpecComparison[] =>
     SHARED_FILES.map((shared) => {
-        const file = shared[role];
-        const siblingFile = shared[siblingRole(role)];
+        // This checkout always has exactly one path for its own side — a candidate list only
+        // ever appears on the OTHER side, the one this checkout does not control.
+        const ownEntry = shared[role];
+        const file = Array.isArray(ownEntry) ? ownEntry[0] : ownEntry;
         const ourPath = path.join(here, file);
-        const theirPath = path.join(siblingRoot, siblingFile);
+
+        const siblingEntry = shared[siblingRole(role)];
+        const siblingPaths = candidates(siblingRoot, siblingEntry);
+        const theirPath = siblingPaths.find((candidatePath) => existsSync(candidatePath));
+        const siblingFile = theirPath
+            ? path.relative(siblingRoot, theirPath)
+            : Array.isArray(siblingEntry)
+              ? siblingEntry[0]
+              : siblingEntry;
 
         if (!existsSync(ourPath)) return { file, siblingFile, status: 'missing-here' as const };
-        if (!existsSync(theirPath))
+        if (theirPath === undefined) {
             return {
                 file,
                 siblingFile,
-                ours: hashFile(ourPath),
+                ours: fingerprint(ourPath),
                 status: 'missing-there' as const
             };
+        }
 
-        const ours = hashFile(ourPath);
-        const theirs = hashFile(theirPath);
+        const ours = fingerprint(ourPath);
+        const theirs = fingerprint(theirPath);
         return {
             file,
             siblingFile,
@@ -271,13 +269,12 @@ export const formatSharedFileProblems = (
 
     return (
         `Shared contract mismatch against ${siblingRoot}:\n${lines.join('\n')}\n\n` +
-        `  Both repos must carry byte-identical copies of ${SHARED_FILES.length} files.\n` +
-        `  Four of them are PRODUCED IN THE BACKEND from per-module sources:\n` +
-        `    cd <backend> && npm run contracts:bundle   # the shared specs and the analytics names\n` +
-        `    cd <backend> && npm run seed:export        # the demo dataset\n` +
-        `    cd <backend> && npm run sync:frontend      # copies all four over\n` +
-        `  The rest are hand-maintained on both sides: decide which copy is right and copy it\n` +
-        `  over the other. Either way, regenerate this repo's OWN outputs afterwards:\n` +
+        `  Both repos carry identical copies of ${SHARED_FILES.length} files, and EVERY ONE is\n` +
+        `  produced in the backend from per-module sources — so this never needs a decision about\n` +
+        `  which copy is right. This repo's is an output. Rebuild it and hand it over:\n` +
+        `    cd <backend> && npm run contracts:bundle   # or: php artisan contracts:bundle\n` +
+        `    cd <backend> && npm run sync:frontend       # or: composer sync:frontend\n` +
+        `  Then regenerate this repo's OWN outputs, which are not shared and not copied:\n` +
         `    npm run gen:api && npm run gen:asyncapi`
     );
 };

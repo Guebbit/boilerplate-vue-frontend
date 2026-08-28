@@ -27,8 +27,6 @@ export interface AnonymousSchema11 {
 }
 
 export type MetricsSnapshotEvent = ObservabilityMetricsPayload;
-export type MetricsUpdatedEvent = ObservabilityMetricsPayload;
-export type HeartbeatEvent = ObservabilityMetricsPayload;
 
 /* Channel name constants (canonical identifiers from asyncapi.yaml) */
 
@@ -49,8 +47,8 @@ export const REALTIME_SSE_EVENT_NAMES = [
 ] as const;
 export type SseEventName = (typeof REALTIME_SSE_EVENT_NAMES)[number];
 export interface SseEventPayloadMap {
-    "observability.heartbeat": HeartbeatEvent;
-    "observability.metrics.snapshot": MetricsSnapshotEvent;
-    "observability.metrics.updated": MetricsUpdatedEvent;
+    "observability.heartbeat": ObservabilityMetricsPayload;
+    "observability.metrics.snapshot": ObservabilityMetricsPayload;
+    "observability.metrics.updated": ObservabilityMetricsPayload;
 }
 export type SseEventPayload<TEventName extends SseEventName> = SseEventPayloadMap[TEventName];

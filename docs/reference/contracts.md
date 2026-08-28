@@ -64,5 +64,18 @@ Three of the entries are produced in the backend and arrive here as outputs, so 
 correct resolution: the backend's copy is right, and `npm run sync:frontend` **over there** applies
 it. Editing this side's copy is the failure the list is worst at describing and best at catching.
 
+**Which backend `check:spec-identity` compares against is `.env`'s `BACKEND_PATH`, not whichever
+one synced last.** This repo pairs with one backend at a time (`boilerplate-node-backend` or
+`boilerplate-php-laravel-backend`), and `BACKEND_PATH` says which — unset, it defaults to the Node
+one. Switching which backend you mean to work against means flipping that variable, not just
+running its `sync:frontend`: the check reads it fresh every time, so a sync from the "wrong" side
+of `BACKEND_PATH` still reports a fork even though the files really did just get copied.
+
+The two backends' bundles are function-identical (same routes, same event/action names) but not
+byte-identical — different bundlers, and the PHP one is not byte-stable run to run. `spec-identity`
+compares `.yaml` files parsed and normalised rather than as raw bytes for exactly that reason
+(mirrors the PHP backend's own `SharedContract::normalise()`), so reformatting alone never reports
+as a fork; a real content difference still does.
+
 See [Scripts & Hooks](./scripts.md) for the tooling, and the backend's own Contracts page for how
 the specs are assembled in the first place.
