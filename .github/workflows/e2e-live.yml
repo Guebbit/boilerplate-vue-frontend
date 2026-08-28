@@ -38,6 +38,10 @@ env:
     NODE_VERSION: 22
     # Where the backend checkout lands, and what the frontend's scripts/paired-backend-path.ts resolves.
     BACKEND_PATH: .backend
+    # What `cy.resetState()` shells out to between specs. There is no default in the code — unset
+    # means "do not reset" — so the pairing has to be spelled out here as it is in `.env-example`;
+    # this is the Node twin's, the PHP one goes through composer.
+    LIVE_RESET_COMMAND: npm --prefix {backend} run host -- db:seed:reset
 
 jobs:
     test-e2e-live:

@@ -192,8 +192,9 @@ export default defineConfig({
             backendPath: resolveBackendPath(),
             // Only used by the live profile: the command `cy.resetState()` shells out to. The two
             // paired backends expose the reset through different runners, so this is a command
-            // rather than a script name — see scripts/paired-backend-path.ts.
-            liveResetCommand: resolveLiveResetCommand(),
+            // rather than a script name — see scripts/paired-backend-path.ts. `null` when
+            // LIVE_RESET_COMMAND is unset, and then the live profile does not reset at all.
+            liveResetCommand: resolveLiveResetCommand() ?? null,
             /*
              * Where the live profile reads its analytics back from. Both repos write into ONE
              * Umami website, and `analytics.cy.ts` is the only thing that can prove each event

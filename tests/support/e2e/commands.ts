@@ -25,7 +25,8 @@ declare global {
              * - demo profile (default): POSTs the backend's `/__demo/reset`, which drops the
              *   in-memory database and reseeds it from the modules' demo fixtures, in-process.
              * - live profile: runs the backend's own seed-reset command, which drops the real
-             *   database, re-seeds the same fixtures and clears the cache.
+             *   database, re-seeds the same fixtures and clears the cache. With no
+             *   `LIVE_RESET_COMMAND` in `.env` there is no such command, and nothing is reset.
              *
              * Both land on the dataset in the backend's `db/demo/index.ts`, which is why the same
              * specs and the same `cy.loginAs()` credentials work against either.
@@ -178,17 +179,22 @@ Cypress.on('window:before:load', (contentWindow) => {
 Cypress.Commands.add('resetState', () =>
     cy
         .env(['liveProfile', 'liveResetCommand', 'apiUrl'])
-        .then(({ liveProfile, liveResetCommand, apiUrl }) =>
-            liveProfile === true
-                ? resetLiveDatabase(String(liveResetCommand))
-                : // The demo backend resets itself in-process; a plain request is all it takes,
-                  // and a non-2xx already fails the test.
-                  cy.request({
-                      method: 'POST',
-                      url: `${String(apiUrl)}/__demo/reset`,
-                      timeout: DEMO_RESET_TIMEOUT_MS
-                  })
-        )
+        .then(({ liveProfile, liveResetCommand, apiUrl }) => {
+            if (liveProfile !== true)
+                // The demo backend resets itself in-process; a plain request is all it takes,
+                // and a non-2xx already fails the test.
+                return cy.request({
+                    method: 'POST',
+                    url: `${String(apiUrl)}/__demo/reset`,
+                    timeout: DEMO_RESET_TIMEOUT_MS
+                });
+            // No LIVE_RESET_COMMAND in this checkout's `.env`, so there is nothing to shell out
+            // to: the specs run against the live database as they find it. Logged rather than
+            // silent, because a spec that assumed a seed dataset fails later and elsewhere.
+            if (typeof liveResetCommand !== 'string' || liveResetCommand === '')
+                return cy.log('resetState: LIVE_RESET_COMMAND is unset — not resetting');
+            return resetLiveDatabase(liveResetCommand);
+        })
 );
 
 /**

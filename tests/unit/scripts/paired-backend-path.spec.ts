@@ -19,11 +19,13 @@ import path from 'node:path';
 import {
     DEFAULT_BACKEND_PATH,
     resolveBackendDemoCommand,
-    resolveBackendPath
+    resolveBackendPath,
+    resolveLiveResetCommand
 } from '../../../scripts/paired-backend-path';
 
 const previous = process.env.BACKEND_PATH;
 const previousDemoCommand = process.env.BACKEND_DEMO_COMMAND;
+const previousResetCommand = process.env.LIVE_RESET_COMMAND;
 
 /** What the sibling-directory convention resolves to from this checkout. */
 const sibling = path.resolve(process.cwd(), DEFAULT_BACKEND_PATH);
@@ -34,6 +36,9 @@ afterEach(() => {
 
     if (previousDemoCommand === undefined) delete process.env.BACKEND_DEMO_COMMAND;
     else process.env.BACKEND_DEMO_COMMAND = previousDemoCommand;
+
+    if (previousResetCommand === undefined) delete process.env.LIVE_RESET_COMMAND;
+    else process.env.LIVE_RESET_COMMAND = previousResetCommand;
 });
 
 describe('resolveBackendPath', () => {
@@ -78,27 +83,64 @@ describe('resolveBackendPath', () => {
 });
 
 /**
- * The demo-boot command is the same shape of setting, and exists for the same reason the reset
- * command does: the PHP backend exposes its demo profile through composer, which `npm --prefix`
- * cannot reach. It answers with argv rather than a string because the backend is spawned without
- * a shell — one would swallow the signal that stops it.
+ * The two commands are the same shape of setting, and exist for the same reason: the PHP backend
+ * exposes its reset and its demo profile through composer, which `npm --prefix` cannot reach.
+ * Neither has a fallback — `.env-example` carries both spellings, and an unset variable means the
+ * step is skipped rather than run against a backend nobody chose. The demo one answers with argv
+ * rather than a string because the backend is spawned without a shell — one would swallow the
+ * signal that stops it.
  */
-describe('resolveBackendDemoCommand', () => {
-    it("defaults to the TypeScript backend's npm script, with the path filled in", () => {
-        delete process.env.BACKEND_DEMO_COMMAND;
+describe('resolveLiveResetCommand', () => {
+    it('answers undefined when LIVE_RESET_COMMAND is unset, so no reset is attempted', () => {
+        delete process.env.LIVE_RESET_COMMAND;
+
+        expect(resolveLiveResetCommand()).toBeUndefined();
+    });
+
+    it('treats an empty LIVE_RESET_COMMAND as unset', () => {
+        process.env.LIVE_RESET_COMMAND = '   ';
+
+        expect(resolveLiveResetCommand()).toBeUndefined();
+    });
+
+    it('substitutes {backend} into the value — the Node pairing `.env-example` ships', () => {
+        process.env.LIVE_RESET_COMMAND = 'npm --prefix {backend} run host -- db:seed:reset';
         delete process.env.BACKEND_PATH;
 
-        expect(resolveBackendDemoCommand()).toEqual(['npm', '--prefix', sibling, 'run', 'demo']);
+        expect(resolveLiveResetCommand()).toBe(`npm --prefix ${sibling} run host -- db:seed:reset`);
+    });
+
+    it('substitutes {backend} into the PHP pairing too', () => {
+        process.env.LIVE_RESET_COMMAND = 'composer --working-dir={backend} host -- db:seed:reset';
+        process.env.BACKEND_PATH = '/srv/checkouts/php-backend';
+
+        expect(resolveLiveResetCommand()).toBe(
+            'composer --working-dir=/srv/checkouts/php-backend host -- db:seed:reset'
+        );
+    });
+});
+
+describe('resolveBackendDemoCommand', () => {
+    it('answers undefined when BACKEND_DEMO_COMMAND is unset, so nothing is booted', () => {
+        delete process.env.BACKEND_DEMO_COMMAND;
+
+        expect(resolveBackendDemoCommand()).toBeUndefined();
     });
 
     it('treats an empty BACKEND_DEMO_COMMAND as unset', () => {
         process.env.BACKEND_DEMO_COMMAND = '   ';
+
+        expect(resolveBackendDemoCommand()).toBeUndefined();
+    });
+
+    it('substitutes {backend} into the value — the Node pairing `.env-example` ships', () => {
+        process.env.BACKEND_DEMO_COMMAND = 'npm --prefix {backend} run demo';
         delete process.env.BACKEND_PATH;
 
         expect(resolveBackendDemoCommand()).toEqual(['npm', '--prefix', sibling, 'run', 'demo']);
     });
 
-    it('substitutes {backend} into an override — the PHP pairing', () => {
+    it('substitutes {backend} into the PHP pairing too', () => {
         process.env.BACKEND_DEMO_COMMAND = 'composer --working-dir={backend} demo';
         process.env.BACKEND_PATH = '/srv/checkouts/php-backend';
 
@@ -112,6 +154,6 @@ describe('resolveBackendDemoCommand', () => {
     it('never answers with an empty argument, which spawn would reject', () => {
         process.env.BACKEND_DEMO_COMMAND = '  npm   --prefix {backend}   run  demo  ';
 
-        expect(resolveBackendDemoCommand().every(Boolean)).toBe(true);
+        expect(resolveBackendDemoCommand()?.every(Boolean)).toBe(true);
     });
 });

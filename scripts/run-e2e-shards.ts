@@ -40,7 +40,7 @@ import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { globSync } from 'node:fs';
 import path from 'node:path';
-import { resolveBackendPath } from './paired-backend-path';
+import { resolveBackendDemoCommand } from './paired-backend-path';
 import {
     createDemoScratchDirectory,
     removeDemoScratchDirectory
@@ -152,28 +152,60 @@ const LOG_DIR = path.join(REPO_ROOT, 'reports', 'e2e');
 const DEMO_PORT_BASE = 3101;
 
 /**
- * One demo backend per shard — the paired repo's `npm run demo`, each owning its own in-memory
- * Mongo. Booted in parallel (the mongod binary is cached after the first ever run), readiness is
- * a 200 from `GET /`, and every child is killed however the run ends: an orphaned backend would
- * hold its port and fail the NEXT run with EADDRINUSE, which reads as a mystery.
+ * One demo backend per shard, booted through `resolveBackendDemoCommand()` — `npm run demo`
+ * against an in-memory Mongo for the Node twin, `composer demo` against MySQL for the PHP one.
+ * Booted in parallel, readiness is a 200 from `GET /`, and every child is killed however the run
+ * ends: an orphaned backend would hold its port and fail the NEXT run with EADDRINUSE, which reads
+ * as a mystery.
+ *
+ * Isolation is free for the Node twin — a fresh in-memory Mongo per process — and provisioned
+ * ahead of time for the PHP one: `DB_DATABASE=e2e_demo_shard_{n}` below lands each shard's
+ * `migrate:fresh --seed` in one of four databases created for exactly this
+ * (`.docker/mysql/02-e2e-demo-shards.sql`), never the developer's own `boilerplate` database.
+ * Four is this file's own shard ceiling (`DEMO_PORT_BASE` below), so it matches without needing
+ * to read `E2E_SHARDS` here too.
  */
 const bootDemoBackends = async (count: number): Promise<(() => void)[]> => {
-    const backendPath = resolveBackendPath();
+    // BACKEND_DEMO_COMMAND unset: boot nothing, and treat the ports as somebody else's to serve.
+    // The readiness wait below still runs, so a shard never starts against a port with nothing on
+    // it — it fails there, saying why, instead of inside Cypress.
+    const demoCommand = resolveBackendDemoCommand();
+    if (demoCommand === undefined)
+        console.log(
+            `[e2e-shard] BACKEND_DEMO_COMMAND is unset — booting nothing; expecting backends already on :${DEMO_PORT_BASE}–:${DEMO_PORT_BASE + count - 1}`
+        );
+
     // Every backend's in-memory Mongo writes under this, not under the machine's `/tmp` — see
-    // `demo-scratch.ts` for the tmpfs it was filling.
-    const scratchDirectory = createDemoScratchDirectory();
+    // `demo-scratch.ts` for the tmpfs it was filling. The PHP twin ignores it; nothing there reads
+    // TMPDIR for its own state.
+    const scratchDirectory = demoCommand ? createDemoScratchDirectory() : undefined;
     const children = Array.from({ length: count }, (_, index) => {
         const port = DEMO_PORT_BASE + index;
-        // `detached` puts each backend in its own process GROUP, so the kill below can signal
-        // the whole npm → tsx → node → mongod chain. Killing only the npm wrapper orphans the
-        // grandchildren, and an orphan holding its port makes the NEXT run's shard talk to a
-        // backend full of last run's state — a flake that reads as anything but what it is.
-        const child = spawn('npm', ['--prefix', backendPath, 'run', 'demo'], {
+        if (!demoCommand)
+            return {
+                child: undefined,
+                port,
+                log: () => '(BACKEND_DEMO_COMMAND is unset, so nothing was booted on this port)'
+            };
+        const [command, ...commandArguments] = demoCommand;
+        // `detached` puts each backend in its own process GROUP, so the kill below can signal the
+        // whole command chain (npm → tsx → node → mongod, or composer → php → artisan). Killing
+        // only the wrapper orphans the grandchildren, and an orphan holding its port makes the
+        // NEXT run's shard talk to a backend full of last run's state — a flake that reads as
+        // anything but what it is.
+        const child = spawn(command, commandArguments, {
             stdio: ['ignore', 'pipe', 'pipe'],
             detached: true,
             env: {
                 ...process.env,
+                // NODE_PORT: read by the Node twin's own `demo` script. SERVER_PORT: read by
+                // Laravel's `artisan serve` (honoured since the PHP twin's own toolchain started
+                // forwarding it). DB_DATABASE: read by Laravel's own config for which schema to
+                // migrate — the Node twin has no such variable, so it is simply unread there. Each
+                // backend reads what it recognises and ignores the rest.
                 NODE_PORT: String(port),
+                SERVER_PORT: String(port),
+                DB_DATABASE: `e2e_demo_shard_${index + 1}`,
                 NODE_DEMO: 'true',
                 TMPDIR: scratchDirectory
             }
@@ -188,11 +220,11 @@ const bootDemoBackends = async (count: number): Promise<(() => void)[]> => {
         for (const { child } of children)
             try {
                 // Negative pid = the child's whole process group — see `detached` above.
-                if (child.pid !== undefined) process.kill(-child.pid, 'SIGTERM');
+                if (child?.pid !== undefined) process.kill(-child.pid, 'SIGTERM');
             } catch {
                 /* already gone */
             }
-        removeDemoScratchDirectory(scratchDirectory);
+        if (scratchDirectory) removeDemoScratchDirectory(scratchDirectory);
     };
     process.on('exit', kill);
     // `exit` does not fire for a signal that terminates by default, so both of the ways this

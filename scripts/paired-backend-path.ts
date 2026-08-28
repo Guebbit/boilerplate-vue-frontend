@@ -31,51 +31,45 @@ export const resolveBackendPath = (): string =>
     path.resolve(process.cwd(), process.env.BACKEND_PATH?.trim() || DEFAULT_BACKEND_PATH);
 
 /**
- * The command `cy.resetState()` runs to put the live backend's database back to its seed state.
+ * The command `cy.resetState()` runs to put the live backend's database back to its seed state,
+ * or `undefined` when `LIVE_RESET_COMMAND` is unset — in which case the live profile simply does
+ * not reset between specs, rather than shelling into a guess.
  *
  * A command rather than a script name, because the two paired backends do not offer the reset
  * through the same runner: the TypeScript one is an npm script, and the PHP one refuses to put
  * anything that touches the database into its `package.json` at all (see that repo's
- * `docs/tools/why-node-is-still-here.md`) — there it is `composer host -- db:seed:reset`.
- * `LIVE_RESET_COMMAND` is what points the live profile at a backend that is not the default one.
+ * `docs/tools/why-node-is-still-here.md`) — there it is `composer host -- db:seed:reset`. Both
+ * spellings live in `.env-example`, which is where the choice belongs; nothing is hardcoded here,
+ * so a checkout that never set the variable cannot silently run one backend's reset against the
+ * other's.
  *
- * `{backend}` is substituted with the resolved absolute backend path, so an override does not have
- * to repeat what `BACKEND_PATH` already says.
+ * `{backend}` is substituted with the resolved absolute backend path, so the value does not have
+ * to repeat what `BACKEND_PATH` already says. An EMPTY value counts as unset, for the same reason
+ * `BACKEND_PATH` does: every `.env` copied from `.env-example` defines it.
  */
-export const DEFAULT_LIVE_RESET_COMMAND = 'npm --prefix {backend} run host -- db:seed:reset';
+export const resolveLiveResetCommand = (): string | undefined => {
+    const command = process.env.LIVE_RESET_COMMAND?.trim();
+    return command ? command.replaceAll('{backend}', resolveBackendPath()) : undefined;
+};
 
 /**
- * Resolves that command with `{backend}` filled in. An EMPTY `LIVE_RESET_COMMAND` counts as unset,
- * for the same reason `BACKEND_PATH` does: every `.env` copied from `.env-example` defines it.
- */
-export const resolveLiveResetCommand = (): string =>
-    (process.env.LIVE_RESET_COMMAND?.trim() || DEFAULT_LIVE_RESET_COMMAND).replaceAll(
-        '{backend}',
-        resolveBackendPath()
-    );
-
-/**
- * The command `npm run backend:demo` runs to boot the paired backend's demo profile.
+ * The command `npm run backend:demo` runs to boot the paired backend's demo profile, or
+ * `undefined` when `BACKEND_DEMO_COMMAND` is unset — in which case nothing is booted, and a
+ * backend already listening is what the suite talks to.
  *
  * Parameterised for the reason `LIVE_RESET_COMMAND` above is: the two paired backends do not
  * expose the demo profile through the same runner. The TypeScript one is an npm script, and the
  * PHP one keeps database-shaped commands out of `package.json` entirely — there it is
- * `composer demo`, which `npm --prefix` cannot reach. Without this, the profile that boots its
- * own backend can only ever talk to one of the two.
+ * `composer demo`, which `npm --prefix` cannot reach. Both spellings live in `.env-example`.
  *
- * `{backend}` is substituted with the resolved absolute backend path.
- */
-export const DEFAULT_BACKEND_DEMO_COMMAND = 'npm --prefix {backend} run demo';
-
-/**
- * Resolves that command with `{backend}` filled in, split into the argv `spawn` wants. An EMPTY
+ * `{backend}` is substituted with the resolved absolute backend path. An EMPTY
  * `BACKEND_DEMO_COMMAND` counts as unset, for the same reason `BACKEND_PATH` does.
  *
  * Split on whitespace rather than run through a shell: the backend is spawned with `stdio:
- * 'inherit'` and killed by signal when `start-server-and-test` ends, and an intervening shell
- * would take the signal instead of the server it wrapped.
+ * 'inherit'` (or piped, per caller) and killed by signal when the test runner ends, and an
+ * intervening shell would take the signal instead of the server it wrapped.
  */
-export const resolveBackendDemoCommand = (): readonly string[] =>
-    (process.env.BACKEND_DEMO_COMMAND?.trim() || DEFAULT_BACKEND_DEMO_COMMAND)
-        .replaceAll('{backend}', resolveBackendPath())
-        .split(/\s+/);
+export const resolveBackendDemoCommand = (): readonly string[] | undefined => {
+    const command = process.env.BACKEND_DEMO_COMMAND?.trim();
+    return command ? command.replaceAll('{backend}', resolveBackendPath()).split(/\s+/) : undefined;
+};

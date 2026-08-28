@@ -441,6 +441,10 @@ jobs:
             # Where the backend checkout lands, and what scripts/paired-backend-path.ts resolves. Same
             # name and same value as e2e-live.yml, so the two e2e jobs describe one layout.
             BACKEND_PATH: .backend
+            # How the shard runner boots each demo backend. There is no default in the code —
+            # unset means "boot nothing" — so the pairing has to be spelled out here as it is in
+            # `.env-example`; this is the Node twin's, the PHP one goes through composer.
+            BACKEND_DEMO_COMMAND: npm --prefix {backend} run demo
         steps:
             - name: Checkout
               uses: actions/checkout@v4
