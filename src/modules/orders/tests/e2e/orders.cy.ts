@@ -31,13 +31,14 @@ describe('Orders', () => {
                 });
         });
 
-        it('shows View, Edit and Delete actions per row', () => {
+        it('shows View, Edit, Delete and Hard delete actions per row', () => {
             cy.get('[data-test=list-row]')
                 .eq(0)
                 .within(() => {
                     cy.get('[data-test=row-view]').should('exist');
                     cy.get('[data-test=row-edit]').should('exist');
                     cy.get('[data-test=row-delete]').should('exist');
+                    cy.get('[data-test=row-hard-delete]').should('exist');
                 });
         });
 

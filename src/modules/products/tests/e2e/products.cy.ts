@@ -85,10 +85,11 @@ describe('Products', () => {
                     cy.get('[data-test=row-view]').should('exist');
                     cy.get('[data-test=row-edit]').should('not.exist');
                     cy.get('[data-test=row-delete]').should('not.exist');
+                    cy.get('[data-test=row-hard-delete]').should('not.exist');
                 });
         });
 
-        it('shows View, Edit and Delete actions per row for admin users', () => {
+        it('shows View, Edit, Delete and Hard delete actions per row for admin users', () => {
             cy.loginAs('admin');
             cy.visit('/en/products');
             cy.get('[data-test=list-row]').should('have.length.at.least', 1);
@@ -98,6 +99,7 @@ describe('Products', () => {
                     cy.get('[data-test=row-view]').should('exist');
                     cy.get('[data-test=row-edit]').should('exist');
                     cy.get('[data-test=row-delete]').should('exist');
+                    cy.get('[data-test=row-hard-delete]').should('exist');
                 });
         });
 

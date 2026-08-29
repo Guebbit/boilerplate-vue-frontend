@@ -26,7 +26,7 @@ import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
-const { watchSearchOrders, deleteOrder } = useOrdersStore();
+const { watchSearchOrders, deleteOrder, hardDeleteOrder } = useOrdersStore();
 const {
     filters,
     ordersList,
@@ -127,6 +127,20 @@ const handleDelete = (orderId: string) => {
     if (!confirm(t('orders-list-page.confirm-delete'))) return;
     deleteOrder(orderId)
         .then(() => addMessage(t('orders-list-page.success-delete')))
+        .catch((error) => notifyErrorMessages(addMessage, error));
+};
+
+/**
+ * Permanently deletes an order after an explicit confirmation. Unlike {@link handleDelete}, this
+ * bypasses the soft-delete and cannot be undone.
+ *
+ * @param orderId - Identifier of the order to hard-delete.
+ * @returns Nothing; the outcome is reported as a toast.
+ */
+const handleHardDelete = (orderId: string) => {
+    if (!confirm(t('orders-list-page.confirm-hard-delete'))) return;
+    hardDeleteOrder(orderId)
+        .then(() => addMessage(t('orders-list-page.success-hard-delete')))
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
 </script>
@@ -239,6 +253,20 @@ const handleDelete = (orderId: string) => {
                         @click.stop="handleDelete(item.id)"
                     >
                         {{ t('orders-list-page.button-delete') }}
+                    </v-btn>
+                    <v-btn
+                        v-if="isAdmin"
+                        size="small"
+                        variant="tonal"
+                        color="error"
+                        data-test="row-hard-delete"
+                        :aria-label="
+                            t('orders-list-page.button-hard-delete-named', { id: item.id })
+                        "
+                        :disabled="loading"
+                        @click.stop="handleHardDelete(item.id)"
+                    >
+                        {{ t('orders-list-page.button-hard-delete') }}
                     </v-btn>
                 </div>
             </template>

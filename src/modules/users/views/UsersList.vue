@@ -24,7 +24,7 @@ import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
-const { watchSearchUsers, deleteUser } = useUsersStore();
+const { watchSearchUsers, deleteUser, hardDeleteUser } = useUsersStore();
 const { filters, pageItemList, selectedUserId, pageCurrent, pageSize, pageTotal, loading } =
     storeToRefs(useUsersStore());
 
@@ -105,6 +105,20 @@ const handleDelete = (userId: string) => {
     if (!confirm(t('users-list-page.confirm-delete'))) return;
     deleteUser(userId)
         .then(() => addMessage(t('users-list-page.success-delete')))
+        .catch((error) => notifyErrorMessages(addMessage, error));
+};
+
+/**
+ * Permanently deletes a user after an explicit confirmation. Unlike {@link handleDelete}, this
+ * bypasses the soft-delete and cannot be undone.
+ *
+ * @param userId - Identifier of the user to hard-delete.
+ * @returns Nothing; the outcome is reported as a toast.
+ */
+const handleHardDelete = (userId: string) => {
+    if (!confirm(t('users-list-page.confirm-hard-delete'))) return;
+    hardDeleteUser(userId)
+        .then(() => addMessage(t('users-list-page.success-hard-delete')))
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
 </script>
@@ -228,6 +242,19 @@ const handleDelete = (userId: string) => {
                         @click.stop="handleDelete(item.id!)"
                     >
                         {{ t('users-list-page.button-delete') }}
+                    </v-btn>
+                    <v-btn
+                        size="small"
+                        variant="tonal"
+                        color="error"
+                        data-test="row-hard-delete"
+                        :aria-label="
+                            t('users-list-page.button-hard-delete-named', { name: item.username })
+                        "
+                        :disabled="loading"
+                        @click.stop="handleHardDelete(item.id!)"
+                    >
+                        {{ t('users-list-page.button-hard-delete') }}
                     </v-btn>
                 </div>
             </template>

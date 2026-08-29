@@ -7,6 +7,9 @@
         "button-delete": "Elimina",
         "confirm-delete": "Sei sicuro di voler eliminare questo utente?",
         "success-delete": "Utente eliminato con successo",
+        "button-hard-delete": "Eliminazione definitiva",
+        "confirm-hard-delete": "Questo eliminerà definitivamente l'utente. L'operazione non può essere annullata. Continuare?",
+        "success-hard-delete": "Utente eliminato definitivamente",
         "column-id": "ID",
         "column-username": "Nome utente",
         "column-email": "Email",
@@ -25,7 +28,8 @@
         "table-caption": "Utenti",
         "button-view-named": "Visualizza {name}",
         "button-edit-named": "Modifica {name}",
-        "button-delete-named": "Elimina {name}"
+        "button-delete-named": "Elimina {name}",
+        "button-hard-delete-named": "Elimina definitivamente {name}"
     },
     "users-form": {
         "email-invalid": "Deve essere un'email valida",

@@ -25,7 +25,7 @@ import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
-const { watchSearchProducts, deleteProduct, fetchFacets } = useProductsStore();
+const { watchSearchProducts, deleteProduct, hardDeleteProduct, fetchFacets } = useProductsStore();
 const {
     filters,
     pageItemList,
@@ -131,6 +131,20 @@ const handleDelete = (productId: string) => {
     if (!confirm(t('products-list-page.confirm-delete'))) return;
     deleteProduct(productId)
         .then(() => addMessage(t('products-list-page.success-delete')))
+        .catch((error) => notifyErrorMessages(addMessage, error));
+};
+
+/**
+ * Permanently deletes a product after an explicit confirmation. Unlike {@link handleDelete}, this
+ * bypasses the soft-delete and cannot be undone.
+ *
+ * @param productId - Identifier of the product to hard-delete.
+ * @returns Nothing; the outcome is reported as a toast.
+ */
+const handleHardDelete = (productId: string) => {
+    if (!confirm(t('products-list-page.confirm-hard-delete'))) return;
+    hardDeleteProduct(productId)
+        .then(() => addMessage(t('products-list-page.success-hard-delete')))
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
 </script>
@@ -295,6 +309,20 @@ const handleDelete = (productId: string) => {
                         @click.stop="handleDelete(item.id)"
                     >
                         {{ t('products-list-page.button-delete') }}
+                    </v-btn>
+                    <v-btn
+                        v-if="isAdmin"
+                        size="small"
+                        variant="tonal"
+                        color="error"
+                        data-test="row-hard-delete"
+                        :aria-label="
+                            t('products-list-page.button-hard-delete-named', { name: item.title })
+                        "
+                        :disabled="loading"
+                        @click.stop="handleHardDelete(item.id)"
+                    >
+                        {{ t('products-list-page.button-hard-delete') }}
                     </v-btn>
                 </div>
             </template>

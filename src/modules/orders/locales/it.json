@@ -8,6 +8,9 @@
         "button-delete": "Elimina",
         "confirm-delete": "Sei sicuro di voler eliminare questo ordine?",
         "success-delete": "Ordine eliminato con successo",
+        "button-hard-delete": "Eliminazione definitiva",
+        "confirm-hard-delete": "Questo eliminerà definitivamente l'ordine. L'operazione non può essere annullata. Continuare?",
+        "success-hard-delete": "Ordine eliminato definitivamente",
         "column-id": "ID",
         "column-status": "Stato",
         "column-total": "Totale",
@@ -20,7 +23,8 @@
         "table-caption": "Ordini",
         "button-view-named": "Visualizza ordine {id}",
         "button-edit-named": "Modifica ordine {id}",
-        "button-delete-named": "Elimina ordine {id}"
+        "button-delete-named": "Elimina ordine {id}",
+        "button-hard-delete-named": "Elimina definitivamente ordine {id}"
     },
     "orders-form": {
         "status-invalid": "Stato ordine non valido",
