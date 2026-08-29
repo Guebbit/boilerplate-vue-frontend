@@ -17,7 +17,6 @@ import {
     ACCEPTED_IMAGE_TYPES,
     ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE,
     MAX_UPLOAD_BYTES,
-    formatUploadSize,
     MAX_UPLOAD_SIZE_LABEL,
     imageUploadSchema,
     isAcceptedImageType,
@@ -81,19 +80,6 @@ describe('size limit', () => {
 
     it('accepts an empty file, which is the backend’s problem and not the picker’s', () => {
         expect(isWithinUploadSizeLimit(fileOfSize(0))).toBe(true);
-    });
-
-    it.each([
-        [5 * 1024 * 1024, '5 MB'],
-        [1.5 * 1024 * 1024, '1.5 MB'],
-        [512 * 1024, '0.5 MB']
-    ])('renders %i bytes as %s', (bytes, expected) => {
-        expect(formatUploadSize(bytes)).toBe(expected);
-    });
-
-    /** The field hint and the size-exceeded message must quote the same number. */
-    it('exposes the limit as one shared label', () => {
-        expect(MAX_UPLOAD_SIZE_LABEL).toBe(formatUploadSize(MAX_UPLOAD_BYTES));
     });
 });
 

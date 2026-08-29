@@ -3,7 +3,7 @@
 Two things, in order:
 
 1. **`domain/`** — the folder, the rule, and where a piece of logic goes.
-2. **DDD** — what it actually is, and why it is *not* the same as this architecture.
+2. **DDD** — what it actually is, and why it is _not_ the same as this architecture.
 
 Sections 2–5 mirror the API repo's page of the same name. Section 1 is where the two differ, because
 a frontend has far less to put in this folder.
@@ -89,15 +89,15 @@ flowchart LR
 
 **The arrow points inward only.** `domain/` may not import:
 
-| Forbidden | Why |
-| --------- | --- |
-| `vue` | a rule may not know it is rendered |
-| `pinia` | a rule may not hold state |
-| `axios` | a rule decides; the store fetches |
-| `vue-router`, `vue-i18n` | routes and copy are delivery concerns |
-| `@/infrastructure/**`, `@/kernel/**`, `@/app/**`, `@/ui/**` | those are tiers; domain sits below them |
-| `@/modules/**` | a sibling's rules are its own |
-| `../*` — its own module's outer files | domain may not read `../store` or `../views` |
+| Forbidden                                                   | Why                                          |
+| ----------------------------------------------------------- | -------------------------------------------- |
+| `vue`                                                       | a rule may not know it is rendered           |
+| `pinia`                                                     | a rule may not hold state                    |
+| `axios`                                                     | a rule decides; the store fetches            |
+| `vue-router`, `vue-i18n`                                    | routes and copy are delivery concerns        |
+| `@/infrastructure/**`, `@/kernel/**`, `@/app/**`, `@/ui/**` | those are tiers; domain sits below them      |
+| `@/modules/**`                                              | a sibling's rules are its own                |
+| `../*` — its own module's outer files                       | domain may not read `../store` or `../views` |
 
 ### Is this standard?
 
@@ -165,12 +165,12 @@ everything `canDecrement(item.quantity)` said, minus an import, a barrel line an
 
 Both halves are live:
 
-| Kept              | Why it clears the floor                                                             |
+| Kept              | Why it clears the floor                                                              |
 | ----------------- | ------------------------------------------------------------------------------------ |
 | `steppedQuantity` | One caller, but a real trap: the clamp catches a double click outrunning `:disabled` |
 
-| Removed        | Why it did not                            |
-| -------------- | ------------------------------------------- |
+| Removed        | Why it did not                                |
+| -------------- | --------------------------------------------- |
 | `canDecrement` | `q > MIN_LINE_QUANTITY`, one template binding |
 
 The same floor is applied on the API side, where it removed `nextDeletionState` and `readScope`.
@@ -180,14 +180,14 @@ The same floor is applied on the API side, where it removed `nextDeletionState` 
 Only `cart` has one. On a frontend most modules never will.
 
 Worth noting: `canAccess()` in `app/guards/authentications.ts` is already exactly this pattern
-— a pure function, requirement in, boolean out. It stays in `app/` because it is a rule about *this
-application's route tree*, not about one domain.
+— a pure function, requirement in, boolean out. It stays in `app/` because it is a rule about _this
+application's route tree_, not about one domain.
 
 ---
 
 ## 2. What DDD is
 
-**Domain-Driven Design** (Eric Evans, 2003) is a way of *modelling a business in code*. It has two
+**Domain-Driven Design** (Eric Evans, 2003) is a way of _modelling a business in code_. It has two
 halves, and almost everyone means the second when they say "DDD".
 
 ```mermaid
@@ -254,19 +254,19 @@ done.**
 
 **DDD is a _modelling_ decision.** What do the files contain?
 
-| | Feature architecture | DDD (tactical) |
-| --- | --- | --- |
-| Answers | *where does this file live?* | *how is this rule expressed?* |
-| Unit | a folder | an aggregate |
-| Deliverable | a directory tree | a model of the business |
-| Alone? | yes — and this repo largely is | yes, in any tree shape |
+|             | Feature architecture           | DDD (tactical)                |
+| ----------- | ------------------------------ | ----------------------------- |
+| Answers     | _where does this file live?_   | _how is this rule expressed?_ |
+| Unit        | a folder                       | an aggregate                  |
+| Deliverable | a directory tree               | a model of the business       |
+| Alone?      | yes — and this repo largely is | yes, in any tree shape        |
 
 **You can have immaculate feature folders and zero DDD.** That is roughly this repo's position, and
 it is a good one — the usual failure is the reverse: elaborate tactical patterns inside a ball of mud.
 
 A **bounded context** and a **feature folder** often end up being the same directory, which is why
-people conflate them. But a bounded context is defined by *where one model and one language stop
-being valid*, not by where you put files.
+people conflate them. But a bounded context is defined by _where one model and one language stop
+being valid_, not by where you put files.
 
 ---
 
@@ -276,23 +276,23 @@ being valid*, not by where you put files.
 behind it, not a claim about intent. See [Strategic DDD](./strategic-ddd.md) for what each one
 enforces and what it refuses.
 
-| Concept | Where |
-| --- | --- |
-| Bounded context | one folder per module; `rm -rf` deletes the domain |
-| Published language | the module barrel, `index.ts` — and a spec forbids widening it past what a sibling imports |
-| Context map | typed `dependsOn` edges in each `module.ts`, validated as a DAG and against the real imports |
-| Ubiquitous language | `language` in each `module.ts` — per context, and often deliberately different from the server's word for the same thing |
-| Subdomain distillation | `subdomain` in each `module.ts` — a generic module may not carry a `domain/` folder |
-| Domain service | `cart/domain/quantity.ts` |
+| Concept                | Where                                                                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Bounded context        | one folder per module; `rm -rf` deletes the domain                                                                       |
+| Published language     | the module barrel, `index.ts` — and a spec forbids widening it past what a sibling imports                               |
+| Context map            | typed `dependsOn` edges in each `module.ts`, validated as a DAG and against the real imports                             |
+| Ubiquitous language    | `language` in each `module.ts` — per context, and often deliberately different from the server's word for the same thing |
+| Subdomain distillation | `subdomain` in each `module.ts` — a generic module may not carry a `domain/` folder                                      |
+| Domain service         | `cart/domain/quantity.ts`                                                                                                |
 
 **Tactical DDD — absent, and mostly correctly so:**
 
-| Concept | Today |
-| --- | --- |
-| Entity | none — stores hold API-shaped data |
-| Value object | none |
-| Aggregate root | none |
-| Repository | none — the generated API client is called directly |
+| Concept        | Today                                              |
+| -------------- | -------------------------------------------------- |
+| Entity         | none — stores hold API-shaped data                 |
+| Value object   | none                                               |
+| Aggregate root | none                                               |
+| Repository     | none — the generated API client is called directly |
 
 On a client backed by an API, that list being empty is the expected answer, not a shortfall.
 
@@ -316,7 +316,7 @@ flowchart TD
 ```
 
 For an API-backed storefront or admin — which is what this boilerplate produces — the answer is the
-left branch. Going right means maintaining a client model *and* keeping it reconciled with the
+left branch. Going right means maintaining a client model _and_ keeping it reconciled with the
 server's.
 
 `TACTICAL_DDD_PLAN.md` (workspace root, beside this repo) prices the right branch in full for the

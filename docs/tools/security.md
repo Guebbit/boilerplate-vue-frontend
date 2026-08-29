@@ -49,14 +49,14 @@ flowchart TD
 
 ## Where token logic lives
 
-| Concern | File |
-| ------- | ---- |
-| Token storage + session state | `src/infrastructure/stores/session.ts` — the token and a `{ id, email, admin }` projection, nothing more |
-| The visitor's own account record | `src/modules/account/store.ts` |
-| Attaching Bearer token to requests | `src/infrastructure/http/index.ts` (request interceptor) |
-| Handling `401` responses | `src/infrastructure/http/index.ts` (response interceptor) |
-| Restoring auth on page reload | `src/app/guards/authentications.ts` → `tryRestoreAuth` |
-| Route guards | `src/app/guards/authentications.ts` → `canAccess`, `enforceRouteAccess` |
+| Concern                            | File                                                                                                     |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Token storage + session state      | `src/infrastructure/stores/session.ts` — the token and a `{ id, email, admin }` projection, nothing more |
+| The visitor's own account record   | `src/modules/account/store.ts`                                                                           |
+| Attaching Bearer token to requests | `src/infrastructure/http/index.ts` (request interceptor)                                                 |
+| Handling `401` responses           | `src/infrastructure/http/index.ts` (response interceptor)                                                |
+| Restoring auth on page reload      | `src/app/guards/authentications.ts` → `tryRestoreAuth`                                                   |
+| Route guards                       | `src/app/guards/authentications.ts` → `canAccess`, `enforceRouteAccess`                                  |
 
 ## Route guards
 
@@ -65,12 +65,12 @@ A route declares its requirement once, as `meta.access`; `enforceRouteAccess` ru
 one predicate covers all three, and `AppNavigation` calls the same one to decide whether to show a
 link, so a visible link can never bounce you.
 
-| `meta.access` | Effect |
-| ------------- | ------ |
-| absent | Public. Anyone may enter. |
-| `auth` | Must be logged in. Redirects to `/login?continue=<current-path>` on failure. |
-| `admin` | Must be logged in **and** admin. Redirects to Home on failure. |
-| `guest` | Must NOT be logged in. Redirects to Home if already authenticated. |
+| `meta.access` | Effect                                                                       |
+| ------------- | ---------------------------------------------------------------------------- |
+| absent        | Public. Anyone may enter.                                                    |
+| `auth`        | Must be logged in. Redirects to `/login?continue=<current-path>` on failure. |
+| `admin`       | Must be logged in **and** admin. Redirects to Home on failure.               |
+| `guest`       | Must NOT be logged in. Redirects to Home if already authenticated.           |
 
 Every refusal notifies the visitor — silently bouncing someone reads as a broken link.
 
@@ -78,11 +78,11 @@ Every refusal notifies the visitor — silently bouncing someone reads as a brok
 
 ## Interceptor error handling
 
-| Status | What happens |
-| ------ | ------------ |
-| `401` | Redirect to Login with `?continue=` preserved; form-level actions show auth-focused messages |
-| `403` | Show a clear "forbidden" message (never treated as a server error) |
-| `5xx` | Navigate to `/error/500`; `captureException()` sends the error to Grafana Faro |
+| Status | What happens                                                                                 |
+| ------ | -------------------------------------------------------------------------------------------- |
+| `401`  | Redirect to Login with `?continue=` preserved; form-level actions show auth-focused messages |
+| `403`  | Show a clear "forbidden" message (never treated as a server error)                           |
+| `5xx`  | Navigate to `/error/500`; `captureException()` sends the error to Grafana Faro               |
 
 ## Security properties provided
 

@@ -50,10 +50,10 @@ translated yet.
 
 ## Author and consumer are different halves
 
-| Half | Where | Needed by |
-| --- | --- | --- |
+| Half         | Where                                     | Needed by                    |
+| ------------ | ----------------------------------------- | ---------------------------- |
 | **Consumer** | `infrastructure/i18n/locale-overrides.ts` | every visitor, on every page |
-| **Author** | this module's two screens | an admin, occasionally |
+| **Author**   | this module's two screens                 | an admin, occasionally       |
 
 ::: tip Which is why deleting this module costs so little
 The two admin screens go. **Every language already translated keeps rendering**, because rendering
@@ -71,13 +71,13 @@ comes from files on the server, and a language with no file behind it has no API
 `GET /locales` therefore reports **scopes** per language rather than a bare list of tags, so two
 questions stay separate:
 
-| Question | Answered by |
-| --- | --- |
+| Question                                  | Answered by     |
+| ----------------------------------------- | --------------- |
 | May I request this language from the API? | the `api` scope |
-| May I download an app dictionary for it? | the `app` scope |
+| May I download an app dictionary for it?  | the `app` scope |
 
 The seeded dataset registers `es` with no server-side file behind it precisely so both answers are
-reachable in the demo — *no* to the first, *yes* to the second.
+reachable in the demo — _no_ to the first, _yes_ to the second.
 
 ## The screens
 

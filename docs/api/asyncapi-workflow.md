@@ -18,10 +18,10 @@ That is the whole of it, and deliberately so — see below.
 `asyncapi.yaml` here is not the backend's `asyncapi.yaml`. The backend publishes its async contract
 twice from one set of sources:
 
-| Backend file | Holds | Copied here |
-| ------------ | ----- | ----------- |
-| `asyncapi.yaml` | every channel — SSE **and** the RabbitMQ worker queues | no |
-| `asyncapi.public.yaml` | the SSE channels only | yes, as this repo's `asyncapi.yaml` |
+| Backend file           | Holds                                                  | Copied here                         |
+| ---------------------- | ------------------------------------------------------ | ----------------------------------- |
+| `asyncapi.yaml`        | every channel — SSE **and** the RabbitMQ worker queues | no                                  |
+| `asyncapi.public.yaml` | the SSE channels only                                  | yes, as this repo's `asyncapi.yaml` |
 
 A browser can neither publish to nor consume from a broker, so `worker.email.send` and
 `worker.pdf.generate` are not this repo's business. Carrying their payload types would mean holding
@@ -34,9 +34,9 @@ backend broke something.
 
 ## Servers declared
 
-| Name | Protocol | Purpose | Env var |
-| ---- | -------- | ------- | ------- |
-| `sseLocal` | `http` | SSE observability stream | `VITE_API_SSE` |
+| Name       | Protocol | Purpose                  | Env var        |
+| ---------- | -------- | ------------------------ | -------------- |
+| `sseLocal` | `http`   | SSE observability stream | `VITE_API_SSE` |
 
 One server, because a server travels with the channels bound to it and this document holds only the
 SSE ones. The AMQP broker is declared beside the queues in the backend's own contract and never
@@ -65,10 +65,10 @@ import { REALTIME_SSE_EVENT_NAMES } from '@types';
 
 ## Tooling used here
 
-| Tool | Job |
-| ---- | --- |
-| `@asyncapi/cli` | validates `asyncapi.yaml` (`npm run lint:asyncapi`) |
-| `@asyncapi/modelina` | generates TypeScript types from AsyncAPI schemas |
+| Tool                                        | Job                                                                   |
+| ------------------------------------------- | --------------------------------------------------------------------- |
+| `@asyncapi/cli`                             | validates `asyncapi.yaml` (`npm run lint:asyncapi`)                   |
+| `@asyncapi/modelina`                        | generates TypeScript types from AsyncAPI schemas                      |
 | custom `scripts/generate-asyncapi-types.ts` | runs modelina + appends the channel constants and the SSE payload map |
 
 ## Commands
@@ -84,10 +84,10 @@ npm run check:asyncapi-types  # fail if the committed types are not what asyncap
 `scripts/generate-asyncapi-types.ts` is **byte-identical** to the one in `boilerplate-node-backend`, and
 both write the same path:
 
-| Repo | Command | Reads |
-| --- | --- | --- |
+| Repo     | Command                                                                        | Reads                                         |
+| -------- | ------------------------------------------------------------------------------ | --------------------------------------------- |
 | Frontend | `tsx scripts/generate-asyncapi-types.ts --out src/types/asyncapi.generated.ts` | this repo's `asyncapi.yaml` — the shared half |
-| Backend | `tsx scripts/generate-asyncapi-types.ts --out src/types/asyncapi.generated.ts` | its own `asyncapi.yaml` — every channel |
+| Backend  | `tsx scripts/generate-asyncapi-types.ts --out src/types/asyncapi.generated.ts` | its own `asyncapi.yaml` — every channel       |
 
 The script is the same, the INPUT is not — so the two outputs differ, and are meant to: only the
 backend's carries `EmailJobPayload`, `PdfJobPayload` and `WORKER_CHANNELS`. Everything this repo's
@@ -100,7 +100,7 @@ deliberately: they legitimately differ now, and even where they overlap a cross-
 would only re-ask a question the two entries above already answer, at the price of carrying another
 file between the repos on every contract change.
 
-What that comparison *would* have added — "did this repo regenerate after the last spec edit" —
+What that comparison _would_ have added — "did this repo regenerate after the last spec edit" —
 `check:asyncapi-types` answers here, with no sibling checkout to find. The backend runs the same
 gate over its own copy.
 

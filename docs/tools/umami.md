@@ -1,6 +1,6 @@
 # Umami
 
-The *why*. Every operational rule — the event taxonomy, the env vars, the code examples, the
+The _why_. Every operational rule — the event taxonomy, the env vars, the code examples, the
 architecture — lives in [Observability](./observability.md), and deliberately only there: this
 page and that one used to restate the same rules, and the copies drifted until one of them
 documented functions that no longer existed.

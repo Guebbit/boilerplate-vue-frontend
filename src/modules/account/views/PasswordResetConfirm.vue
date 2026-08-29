@@ -79,12 +79,10 @@ const submitForm = () =>
                 addMessage(t('password-reset-confirm-page.success'));
                 return router.push(routerLinkI18n({ name: 'Login' }));
             })
-            .then(() => {
-                // Swallows `router.push`'s resolved value: it is a
-                // `NavigationFailure | undefined`, which the submit handler's `Promise<void>`
-                // will not take, and a failed navigation is the router's own `onError` to
-                // report rather than this form's.
-            })
+            // Swallows `router.push`'s resolved value: it is a `NavigationFailure | undefined`,
+            // which the submit handler's `Promise<void>` will not take, and a failed navigation is
+            // the router's own `onError` to report rather than this form's.
+            .then(() => undefined)
     ).catch((error) => {
         if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
     });

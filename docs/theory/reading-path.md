@@ -19,12 +19,12 @@ file below is easier to read with the app open beside it.
 
 ---
 
-
 ::: tip Landed on a file instead
 This page is for reading the codebase in order. If you got here from a filename you did not
 recognise, the **[File Glossary](../reference/)** is the other direction: look the file up, get a
 sentence and a link, carry on with what you were doing.
 :::
+
 ## The path
 
 ```mermaid
@@ -65,7 +65,7 @@ Twelve domains, one array. Identical in spirit to the backend's file of the same
 
 **Take away:** deleting a domain is `rm -rf` plus removing one line.
 
-### 3 · `src/kernel/registry.ts` — what a module *is*
+### 3 · `src/kernel/registry.ts` — what a module _is_
 
 The thesis of the repository. A module is a **typed object** declaring: `routes`, `navigation`,
 `dependsOn`, `responseSchemas` and `locales`. The
@@ -125,29 +125,29 @@ generated code inherits all of the above without knowing it exists.
 
 ## Then: pick your next question
 
-| You want to… | Go to |
-| --- | --- |
-| Follow a request from click to render | [Request Flow](./request-flow.md) |
-| Understand what may import what | [Layers](./layers.md) |
-| Add or delete a domain | [Adding & Removing a Module](./module-lifecycle.md) |
-| Work without a backend | [The demo profile](../tools/demo-profile.md) |
-| Change an endpoint's contract | [OpenAPI Workflow](../api/openapi-workflow.md) |
-| Know which tool does what, and why it is here | [Tools Explained](../tools/tools-explained.md) |
-| Know what is planned but unbuilt | [Roadmap](./roadmap.md) |
+| You want to…                                  | Go to                                               |
+| --------------------------------------------- | --------------------------------------------------- |
+| Follow a request from click to render         | [Request Flow](./request-flow.md)                   |
+| Understand what may import what               | [Layers](./layers.md)                               |
+| Add or delete a domain                        | [Adding & Removing a Module](./module-lifecycle.md) |
+| Work without a backend                        | [The demo profile](../tools/demo-profile.md)        |
+| Change an endpoint's contract                 | [OpenAPI Workflow](../api/openapi-workflow.md)      |
+| Know which tool does what, and why it is here | [Tools Explained](../tools/tools-explained.md)      |
+| Know what is planned but unbuilt              | [Roadmap](./roadmap.md)                             |
 
 ---
 
 ## What to skip on a first pass
 
-| Skip | Until |
-| --- | --- |
-| `src/ui/**` (molecules, organisms, vuetify) | You are building a screen. Presentational only, no domain knowledge. |
-| `src/infrastructure/i18n/index.ts` | You are adding a language. It is the densest file in the repo and explains nothing about the architecture. |
-| `src/infrastructure/stores/observability.ts`, `analytics-events.ts` | You are adding tracking. See [Observability](../tools/observability.md). |
-| `src/modules/account/**` | It is the biggest and least typical module (auth, sessions, addresses, password flows). Read `products` first. |
-| `src/modules/realtime/**`, `src/modules/admin/**` | They are demonstrations of a capability, not part of the core shape. |
-| `src/modules/demo/**` | It demonstrates the framework and nothing else. Delete it when you start a real project. |
-| `eslint.config.ts`, `stryker.config.json`, `cypress.config.ts` | You are changing the gate itself. |
+| Skip                                                                | Until                                                                                                          |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `src/ui/**` (molecules, organisms, vuetify)                         | You are building a screen. Presentational only, no domain knowledge.                                           |
+| `src/infrastructure/i18n/index.ts`                                  | You are adding a language. It is the densest file in the repo and explains nothing about the architecture.     |
+| `src/infrastructure/stores/observability.ts`, `analytics-events.ts` | You are adding tracking. See [Observability](../tools/observability.md).                                       |
+| `src/modules/account/**`                                            | It is the biggest and least typical module (auth, sessions, addresses, password flows). Read `products` first. |
+| `src/modules/realtime/**`, `src/modules/admin/**`                   | They are demonstrations of a capability, not part of the core shape.                                           |
+| `src/modules/demo/**`                                               | It demonstrates the framework and nothing else. Delete it when you start a real project.                       |
+| `eslint.config.ts`, `stryker.config.json`, `cypress.config.ts`      | You are changing the gate itself.                                                                              |
 
 ---
 

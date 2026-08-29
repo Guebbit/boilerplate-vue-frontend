@@ -45,7 +45,6 @@ import {
 import {
     ACCEPTED_IMAGE_TYPES,
     MAX_UPLOAD_BYTES,
-    formatUploadSize,
     isAcceptedImageType,
     isWithinUploadSizeLimit
 } from '@/infrastructure/utils/uploads';
@@ -285,28 +284,4 @@ describe('upload predicates', () => {
      * one byte more"), and restating it was a straight duplicate. The property above covers the
      * whole range; that one pins the single value `fc.nat()` would only reach by luck.
      */
-
-    it('renders every size as a positive-looking MB label', () =>
-        fc.assert(
-            fc.property(fc.nat(), (bytes) => {
-                const label = formatUploadSize(bytes);
-                expect(label).toMatch(/^\d+(\.\d)? MB$/);
-                // `Number(...toFixed(1))` drops a trailing ".0", which is the whole reason the
-                // conversion is written that way — "5 MB", not "5.0 MB".
-                expect(label).not.toMatch(/\.0 MB$/);
-            }),
-            RUN
-        ));
-
-    it('is monotonic in bytes', () =>
-        fc.assert(
-            fc.property(fc.nat(), fc.nat(), (a, b) => {
-                fc.pre(a < b);
-                const sizeA = Number.parseFloat(formatUploadSize(a));
-                const sizeB = Number.parseFloat(formatUploadSize(b));
-                // Rounding may make them equal; it must never invert them.
-                expect(sizeA).toBeLessThanOrEqual(sizeB);
-            }),
-            RUN
-        ));
 });

@@ -1,6 +1,4 @@
 # Logs
-logs
-logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -37,7 +35,6 @@ docs/.vitepress/cache
 # generic
 node_modules
 .DS_Store
-css
 dist
 dist-e2e
 dist-ssr

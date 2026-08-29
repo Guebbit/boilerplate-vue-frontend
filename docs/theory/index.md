@@ -76,12 +76,12 @@ API. What belongs there is what the UI needs to know _before_ it calls. Most mod
 
 The word shows up in four senses across this documentation. They are related, but not the same:
 
-| When you read…                | It means                                                    | Example                           |
-| ----------------------------- | ----------------------------------------------------------- | --------------------------------- |
-| "a domain", "modular domains" | one business area = one folder in `src/modules/`            | `cart`, `orders`                  |
-| "the `domain/` folder"        | the pure-rules layer _inside_ one of those                  | `cart/domain/quantity.ts`         |
-| "a domain store"              | the Pinia store owning that area's data                     | `cart/store.ts`                   |
-| "the domain" (in DDD)         | the business itself, as a thing to be modelled              | [Domain layer](./domain-layer.md) |
+| When you read…                | It means                                         | Example                           |
+| ----------------------------- | ------------------------------------------------ | --------------------------------- |
+| "a domain", "modular domains" | one business area = one folder in `src/modules/` | `cart`, `orders`                  |
+| "the `domain/` folder"        | the pure-rules layer _inside_ one of those       | `cart/domain/quantity.ts`         |
+| "a domain store"              | the Pinia store owning that area's data          | `cart/store.ts`                   |
+| "the domain" (in DDD)         | the business itself, as a thing to be modelled   | [Domain layer](./domain-layer.md) |
 
 It never means a DNS name on these pages.
 
@@ -127,15 +127,15 @@ point.
 
 ## Where each topic lives
 
-| Need | Go to |
-| ---- | ----- |
-| **Open the code for the first time** | **[Reading Path](./reading-path.md)** |
-| Understand the big blocks and boundaries | [Architecture](./architecture.md) |
-| Read the folder-by-folder explanation | [Layers](./layers.md) |
-| Understand how domains stay separable | [Modules](./modules.md) |
-| Actually add or remove a domain | [Adding & Removing a Module](./module-lifecycle.md) |
-| Understand the domain-modelling stance | [Strategic DDD](./strategic-ddd.md) |
-| Follow one request end-to-end | [Request Flow](./request-flow.md) |
-| See all routes and access levels at a glance | [Sitemap & Access Control](./sitemap.md) |
-| Understand dependency choices | [Tools](../tools/) |
-| Change contract, types, or mocks | [API](../api/) |
+| Need                                         | Go to                                               |
+| -------------------------------------------- | --------------------------------------------------- |
+| **Open the code for the first time**         | **[Reading Path](./reading-path.md)**               |
+| Understand the big blocks and boundaries     | [Architecture](./architecture.md)                   |
+| Read the folder-by-folder explanation        | [Layers](./layers.md)                               |
+| Understand how domains stay separable        | [Modules](./modules.md)                             |
+| Actually add or remove a domain              | [Adding & Removing a Module](./module-lifecycle.md) |
+| Understand the domain-modelling stance       | [Strategic DDD](./strategic-ddd.md)                 |
+| Follow one request end-to-end                | [Request Flow](./request-flow.md)                   |
+| See all routes and access levels at a glance | [Sitemap & Access Control](./sitemap.md)            |
+| Understand dependency choices                | [Tools](../tools/)                                  |
+| Change contract, types, or mocks             | [API](../api/)                                      |

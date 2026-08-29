@@ -97,12 +97,6 @@ const handleReset = () => {
 };
 
 /**
- * Deletes a product after an explicit confirmation.
- *
- * @param productId - Identifier of the product to delete.
- * @returns Nothing; the outcome is reported as a toast.
- */
-/**
  * Toggles one category chip: selecting it filters the list, selecting it again clears it.
  * Chips restart from the first page like any other filter change.
  *
@@ -127,6 +121,12 @@ const handleTagChip = (name: string) => {
 
 onMounted(fetchFacets);
 
+/**
+ * Deletes a product after an explicit confirmation.
+ *
+ * @param productId - Identifier of the product to delete.
+ * @returns Nothing; the outcome is reported as a toast.
+ */
 const handleDelete = (productId: string) => {
     if (!confirm(t('products-list-page.confirm-delete'))) return;
     deleteProduct(productId)

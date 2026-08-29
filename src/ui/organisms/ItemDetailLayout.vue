@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { ThemeAccent } from '@/ui/types.ts';
 import { useSlots } from 'vue';
 
 /**
@@ -9,7 +10,7 @@ import { useSlots } from 'vue';
  * Slots: hero, stats, default (main card), aside, actions.
  */
 defineProps<{
-    accent?: 'primary' | 'secondary' | 'tertiary';
+    accent?: ThemeAccent;
 }>();
 
 const slots = useSlots();

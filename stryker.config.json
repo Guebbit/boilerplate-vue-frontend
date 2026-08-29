@@ -121,7 +121,7 @@
         "!src/modules/*/index.ts",
         "!src/modules/*/tests/**"
     ],
-    "ignorePatterns": ["coverage/**", "reports/**", "dist/**", "docs/**", "cypress/**"],
+    "ignorePatterns": ["coverage/**", "reports/**", "dist/**", "docs/**"],
     "thresholds": {
         "high": 80,
         "low": 60,

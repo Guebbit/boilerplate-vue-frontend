@@ -2,16 +2,16 @@
 
 ## Main runtime tools
 
-| Tool | Why it is here | Repo role |
-| ---- | -------------- | --------- |
-| [Vue 3](https://vuejs.org/) | Reactive UI framework, Composition API, SFCs | source of all components and views in `src/` |
-| [TypeScript](https://www.typescriptlang.org/) | Static types | source language; `vue-tsc` type-checks `.vue` files |
-| [Node.js 22+](https://nodejs.org/) | JavaScript runtime | required for dev tooling (`vite`, `vitest`, `orval`, etc.) |
-| [Vite](https://vite.dev/) | Dev server + production bundler | `vite.config.ts`; dev on `:8080`, production via `npm run build` |
-| [@vitejs/plugin-vue](https://github.com/vitejs/vite-plugin-vue) | `.vue` SFC support in Vite | transforms SFCs in both dev and build |
-| [vue-tsc](https://github.com/vuejs/language-tools/tree/master/packages/tsc) | TypeScript type-check for `.vue` files | runs in `npm run build` and CI |
-| [Sass / sass-embedded](https://sass-lang.com/) | SCSS authoring | `src/styles/` global styles; design tokens from `@guebbit/css-toolkit` |
-| [Axios](https://axios-http.com/) | HTTP client | used by the generated API client; interceptors in `src/infrastructure/http/index.ts` |
+| Tool                                                                        | Why it is here                               | Repo role                                                                            |
+| --------------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------ |
+| [Vue 3](https://vuejs.org/)                                                 | Reactive UI framework, Composition API, SFCs | source of all components and views in `src/`                                         |
+| [TypeScript](https://www.typescriptlang.org/)                               | Static types                                 | source language; `vue-tsc` type-checks `.vue` files                                  |
+| [Node.js 22+](https://nodejs.org/)                                          | JavaScript runtime                           | required for dev tooling (`vite`, `vitest`, `orval`, etc.)                           |
+| [Vite](https://vite.dev/)                                                   | Dev server + production bundler              | `vite.config.ts`; dev on `:8080`, production via `npm run build`                     |
+| [@vitejs/plugin-vue](https://github.com/vitejs/vite-plugin-vue)             | `.vue` SFC support in Vite                   | transforms SFCs in both dev and build                                                |
+| [vue-tsc](https://github.com/vuejs/language-tools/tree/master/packages/tsc) | TypeScript type-check for `.vue` files       | runs in `npm run build` and CI                                                       |
+| [Sass / sass-embedded](https://sass-lang.com/)                              | SCSS authoring                               | `src/styles/` global styles; design tokens from `@guebbit/css-toolkit`               |
+| [Axios](https://axios-http.com/)                                            | HTTP client                                  | used by the generated API client; interceptors in `src/infrastructure/http/index.ts` |
 
 ## Runtime visual
 
@@ -42,10 +42,10 @@ flowchart LR
 
 ## Path aliases
 
-| Alias | Resolves to |
-| ----- | ----------- |
-| `@/` | `src/` |
-| `@api` | `contracts/rest/index.ts` |
+| Alias          | Resolves to                     |
+| -------------- | ------------------------------- |
+| `@/`           | `src/`                          |
+| `@api`         | `contracts/rest/index.ts`       |
 | `@api/schemas` | `contracts/rest/schemas.zod.ts` |
 
 ## Related pages

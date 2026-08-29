@@ -36,15 +36,15 @@ flowchart TD
 
 ## What each block owns
 
-| Block | Owns | Avoids |
-| ----- | ---- | ------ |
-| Contract layer | public request/event shapes — see [OpenAPI Workflow](../api/openapi-workflow.md) | hidden drift from implementation |
-| Generated layer | typed axios functions, Zod schemas — all derived from `openapi.yaml` | hand-written duplicates |
-| HTTP layer | axios instance, request/response interceptors, error shaping into `IResponseReject` | business decisions |
-| Pinia stores | data fetching, caching, reactive state, API calls | direct DOM manipulation |
-| Views (platform + modules) | template rendering, UI composition, user events | data fetching logic |
-| Router + I18N | navigation, locale injection, route guards | deep business decisions |
-| Observability | error capture + tracing (Grafana Faro) and analytics (Umami) via a single store | scattered vendor calls |
+| Block                      | Owns                                                                                | Avoids                           |
+| -------------------------- | ----------------------------------------------------------------------------------- | -------------------------------- |
+| Contract layer             | public request/event shapes — see [OpenAPI Workflow](../api/openapi-workflow.md)    | hidden drift from implementation |
+| Generated layer            | typed axios functions, Zod schemas — all derived from `openapi.yaml`                | hand-written duplicates          |
+| HTTP layer                 | axios instance, request/response interceptors, error shaping into `IResponseReject` | business decisions               |
+| Pinia stores               | data fetching, caching, reactive state, API calls                                   | direct DOM manipulation          |
+| Views (platform + modules) | template rendering, UI composition, user events                                     | data fetching logic              |
+| Router + I18N              | navigation, locale injection, route guards                                          | deep business decisions          |
+| Observability              | error capture + tracing (Grafana Faro) and analytics (Umami) via a single store     | scattered vendor calls           |
 
 ## Why this page exists next to Layers
 

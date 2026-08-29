@@ -132,12 +132,6 @@ const handleAdd = (fields: { tenant: string; key: string; value: string }) =>
         .catch((error: unknown) => notifyErrorMessages(addMessage, error));
 
 /**
- * Saves one row's value on blur — if it actually changed.
- *
- * @param entry - The row as the store knows it.
- * @returns Nothing; the outcome is reported as a toast.
- */
-/**
  * Columns of the entries table.
  *
  * @returns The localized headers, re-translated on locale change.
@@ -160,6 +154,12 @@ const tableHeaders = computed<CoreDataTableHeader<LocaleEntry>[]>(() => [
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the toolkit's page window is a SPARSE array; holes are undefined at runtime whatever the element type claims
 const pageItems = computed(() => pageItemList.value.filter((item): item is LocaleEntry => !!item));
 
+/**
+ * Saves one row's value on blur — if it actually changed.
+ *
+ * @param entry - The row as the store knows it.
+ * @returns Nothing; the outcome is reported as a toast.
+ */
 const handleValueBlur = (entry: LocaleEntry) => {
     const draft = drafts.value[entry.id] as string | undefined;
     if (draft === undefined || draft === entry.value) return;

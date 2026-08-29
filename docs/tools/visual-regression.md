@@ -6,12 +6,12 @@ Photographing a handful of screens and comparing them, pixel by pixel, against c
 
 Every other test in this repository reads the DOM. They ask what exists, what it contains, what it announces. None of them asks what the page **looks like**, and there is a whole class of defect that lives exactly there:
 
-| Defect | What the DOM says | What the user sees |
-| ------ | ----------------- | ------------------ |
-| A CSS change shifts a layout | every element present, correct text | content overlapping the footer |
-| A web font fails to load | text nodes intact | fallback font, everything reflowed |
-| A dark-mode token goes wrong | correct colour variable referenced | grey text on a grey card |
-| A stylesheet is dropped from the build | identical markup | unstyled document |
+| Defect                                 | What the DOM says                   | What the user sees                 |
+| -------------------------------------- | ----------------------------------- | ---------------------------------- |
+| A CSS change shifts a layout           | every element present, correct text | content overlapping the footer     |
+| A web font fails to load               | text nodes intact                   | fallback font, everything reflowed |
+| A dark-mode token goes wrong           | correct colour variable referenced  | grey text on a grey card           |
+| A stylesheet is dropped from the build | identical markup                    | unstyled document                  |
 
 In every row the DOM assertions pass. Only the appearance is wrong, and only a picture catches it.
 
@@ -52,20 +52,20 @@ Visual testing is the classic flake generator, and its failure mode is **social*
 
 Twelve screens that are genuinely looked at beat forty that are rubber-stamped. The rule is **one per module — its main screen — plus the two the shell owns**, which keeps the count tied to the architecture rather than to somebody's enthusiasm. A module gaining a second baseline should be a decision, not a habit.
 
-| Screen | Owner | Layout family it stands for |
-| ------ | ----- | --------------------------- |
-| `home` | shell | marketing content, cards, hero |
-| `not-found` | shell | error state, empty state |
-| `products-list` | `products` | data table, filter form, pagination |
-| `login` | `account` | centred narrow form |
-| `cart` | `cart` | line items, totals panel |
-| `orders-list` | `orders` | data table, authenticated |
-| `wishlist` | `wishlist` | card grid, authenticated |
-| `users-list` | `users` | admin data table |
-| `admin-dashboard` | `admin` | KPI tiles, dense numbers |
-| `inventory-ledger` | `inventory` | admin table, board + ledger |
-| `contact` | `feedback` | public form |
-| `realtime-playground` | `realtime` | live-updating panels |
+| Screen                | Owner       | Layout family it stands for         |
+| --------------------- | ----------- | ----------------------------------- |
+| `home`                | shell       | marketing content, cards, hero      |
+| `not-found`           | shell       | error state, empty state            |
+| `products-list`       | `products`  | data table, filter form, pagination |
+| `login`               | `account`   | centred narrow form                 |
+| `cart`                | `cart`      | line items, totals panel            |
+| `orders-list`         | `orders`    | data table, authenticated           |
+| `wishlist`            | `wishlist`  | card grid, authenticated            |
+| `users-list`          | `users`     | admin data table                    |
+| `admin-dashboard`     | `admin`     | KPI tiles, dense numbers            |
+| `inventory-ledger`    | `inventory` | admin table, board + ledger         |
+| `contact`             | `feedback`  | public form                         |
+| `realtime-playground` | `realtime`  | live-updating panels                |
 
 ## Where the baselines live
 
@@ -93,7 +93,7 @@ Adding a fifth is cheap. Adding a fiftieth is how the suite dies.
 
 Both live in `tests/support/e2e/visual-task.ts`, deliberately spelled out rather than hidden in a plugin's options.
 
-**`PIXEL_THRESHOLD` (0.15)** — per-pixel colour tolerance. How different two pixels must be before `pixelmatch` counts them as different *at all*. This absorbs antialiasing and sub-pixel font rendering, which differ between machines with nothing having changed.
+**`PIXEL_THRESHOLD` (0.15)** — per-pixel colour tolerance. How different two pixels must be before `pixelmatch` counts them as different _at all_. This absorbs antialiasing and sub-pixel font rendering, which differ between machines with nothing having changed.
 
 **`MAX_DIFFERING_RATIO` (0.002)** — how much of the image may differ before the test fails. This is the one that separates classes of change:
 
@@ -124,7 +124,7 @@ A screenshot is only useful if an unchanged app produces identical pixels twice.
 cy.window().should('have.property', '_appReady', true);
 ```
 
-`_appReady` is set on `window` by the app once it has booted — and the **outgoing** `window` object survives right up to the moment the new document commits. So on the second `cy.visit()` inside a test, that assertion could look at the page being navigated *away from*, see a flag it set long ago, and resolve immediately. Every command afterwards ran against the previous screen.
+`_appReady` is set on `window` by the app once it has booted — and the **outgoing** `window` object survives right up to the moment the new document commits. So on the second `cy.visit()` inside a test, that assertion could look at the page being navigated _away from_, see a flag it set long ago, and resolve immediately. Every command afterwards ran against the previous screen.
 
 In an ordinary spec this is almost invisible, because `cy.get()` retries: the page swaps underneath it and the assertion passes a beat later. It is entirely visible to anything that reads the page **once** — a screenshot, `cy.document()`, `location.href`.
 
@@ -222,24 +222,24 @@ Visual regression plugins wrap roughly this much code around `pixelmatch`. The p
 
 ## File map
 
-| Path | Contents |
-| ---- | -------- |
-| `tests/e2e/visual/visual.cy.ts` | The four screens, the readiness selectors, the determinism `beforeEach` |
-| `tests/support/e2e/visual-task.ts` | The comparison itself — thresholds, the three outcomes, diff output. Runs in **Node**, because the browser cannot read the committed baselines |
-| `tests/support/e2e/commands.ts` | `cy.freezeForVisual()`, `cy.compareSnapshot()`, and the `visit` override with its per-visit token |
-| `cypress.config.ts` | Registers the `compareSnapshot` task and pins the 1280×800 viewport |
-| `src/modules/<name>/tests/e2e/__snapshots__/*.png` | The committed baselines — reviewed as images, in the PR diff |
-| `reports/visual-diff/` | Diff images written on failure. Not committed |
+| Path                                               | Contents                                                                                                                                       |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/e2e/visual/visual.cy.ts`                    | The four screens, the readiness selectors, the determinism `beforeEach`                                                                        |
+| `tests/support/e2e/visual-task.ts`                 | The comparison itself — thresholds, the three outcomes, diff output. Runs in **Node**, because the browser cannot read the committed baselines |
+| `tests/support/e2e/commands.ts`                    | `cy.freezeForVisual()`, `cy.compareSnapshot()`, and the `visit` override with its per-visit token                                              |
+| `cypress.config.ts`                                | Registers the `compareSnapshot` task and pins the 1280×800 viewport                                                                            |
+| `src/modules/<name>/tests/e2e/__snapshots__/*.png` | The committed baselines — reviewed as images, in the PR diff                                                                                   |
+| `reports/visual-diff/`                             | Diff images written on failure. Not committed                                                                                                  |
 
 Note the directory split: the visual spec lives under `tests/e2e/visual/` rather than `tests/e2e/specs/`, because the ordinary `npm run test:e2e` run must not record or compare screenshots. Each npm script scopes itself with `--spec`.
 
 ## Commands
 
-| Command | Effect |
-| ------- | ------ |
-| `npm run test:e2e:visual` | Compare against the committed baselines |
-| `npm run test:e2e:visual:update` | Re-record every baseline, then review the images |
-| `npm run test:e2e` | The functional e2e suite — deliberately excludes the visual spec |
+| Command                          | Effect                                                           |
+| -------------------------------- | ---------------------------------------------------------------- |
+| `npm run test:e2e:visual`        | Compare against the committed baselines                          |
+| `npm run test:e2e:visual:update` | Re-record every baseline, then review the images                 |
+| `npm run test:e2e`               | The functional e2e suite — deliberately excludes the visual spec |
 
 ## Where it sits, and where it does not
 

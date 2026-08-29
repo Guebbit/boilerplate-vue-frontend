@@ -10,12 +10,10 @@ import { translate } from '@/infrastructure/i18n';
  * in a package that does not know which languages this app speaks.
  *
  * @param error - Unknown value caught in a `catch` block or promise rejection.
- * @param fallback - Message to use when the rejection carries nothing readable. Already
- *  translated by the caller; omit it for the generic translated "something went wrong".
- * @returns The best message found, otherwise `fallback`.
+ * @returns The best message found, otherwise the generic translated "something went wrong".
  */
-export const getErrorMessage = (error: unknown, fallback?: string): string =>
-    extractErrorMessage(error, fallback ?? translate('api-errors.unknown'));
+const getErrorMessage = (error: unknown): string =>
+    extractErrorMessage(error, translate('api-errors.unknown'));
 
 /**
  * Whether a rejected API call never got an answer at all.

@@ -28,13 +28,6 @@ const emit = defineEmits<{
 }>();
 
 /**
- * Local alias of the loading prop, so the KPI helpers below read consistently.
- *
- * @returns `true` while the dashboard data is being fetched.
- */
-const loading = computed(() => props.loading);
-
-/**
  * Formats an error rate as a percentage.
  *
  * @param rate - Ratio in the 0..1 range, possibly unknown.
@@ -52,7 +45,7 @@ const formatErrorRate = (rate?: number): string => {
  *  data, then `ok`/`warn` from the reported status.
  */
 const healthStatus = computed((): AdminKpiCard['status'] => {
-    if (loading.value) return 'loading';
+    if (props.loading) return 'loading';
     if (props.healthError) return 'error';
     if (!props.health) return 'unknown';
     return props.health.status === 'ok' ? 'ok' : 'warn';
@@ -126,7 +119,7 @@ const kpiCards = computed<AdminKpiCard[]>(() => [
         title: t('admin-page.kpi-requests'),
         value: props.metrics?.http.totalRequests ?? EMPTY_VALUE,
         hint: props.metricsError ?? undefined,
-        status: loading.value ? 'loading' : 'ok'
+        status: props.loading ? 'loading' : 'ok'
     },
     {
         title: t('admin-page.kpi-errors'),
@@ -205,9 +198,14 @@ const flagText = (value?: boolean) => (value ? t('generic.enabled') : t('generic
 <template>
     <div class="grid gap-6">
         <div class="flex flex-wrap items-center gap-3">
-            <v-btn color="primary" variant="tonal" :disabled="loading" @click="emit('refresh')">
+            <v-btn
+                color="primary"
+                variant="tonal"
+                :disabled="props.loading"
+                @click="emit('refresh')"
+            >
                 <RefreshCw :size="16" class="mr-1" aria-hidden="true" />
-                {{ loading ? t('generic.loading-state') : t('admin-page.button-refresh') }}
+                {{ props.loading ? t('generic.loading-state') : t('admin-page.button-refresh') }}
             </v-btn>
             <span v-if="props.health?.timestamp" class="text-sm opacity-70">
                 {{ t('admin-page.label-last-updated') }}:
@@ -320,7 +318,7 @@ const flagText = (value?: boolean) => (value ? t('generic.enabled') : t('generic
         </v-card>
 
         <v-empty-state
-            v-if="!loading && !props.health && !props.metrics"
+            v-if="!props.loading && !props.health && !props.metrics"
             :title="t('generic.no-data')"
         />
     </div>

@@ -18,24 +18,24 @@ because the stream itself (`GET /observability/events`) is admin-only on the API
 
 ## Transport at a glance
 
-| Transport | URL env var | Direction | Use case |
-| --------- | ----------- | --------- | -------- |
-| **SSE** | `VITE_API_SSE` | server → client only | Live metrics / observability stream |
+| Transport | URL env var    | Direction            | Use case                            |
+| --------- | -------------- | -------------------- | ----------------------------------- |
+| **SSE**   | `VITE_API_SSE` | server → client only | Live metrics / observability stream |
 
 SSE is the only realtime transport: nothing on the FE needs to push over a persistent
 connection, so everything client → server goes through the REST API instead.
 
 ## Where the code lives
 
-| Concern | File |
-| ------- | ---- |
-| SSE client factory | `src/infrastructure/create-sse-client.ts` |
-| SSE composable | `src/modules/realtime/use-realtime-observability.ts` |
-| Observability SSE store + state | `src/modules/realtime/store.ts` |
-| Generated realtime types | `src/types/asyncapi.generated.ts` (DO NOT edit) |
-| App-level type helpers | `src/types/realtime.ts` |
-| Route | `src/modules/realtime/views/RealtimePlayground.vue` |
-| Route definition | `src/modules/realtime/routes.ts` |
+| Concern                         | File                                                 |
+| ------------------------------- | ---------------------------------------------------- |
+| SSE client factory              | `src/infrastructure/create-sse-client.ts`            |
+| SSE composable                  | `src/modules/realtime/use-realtime-observability.ts` |
+| Observability SSE store + state | `src/modules/realtime/store.ts`                      |
+| Generated realtime types        | `src/types/asyncapi.generated.ts` (DO NOT edit)      |
+| App-level type helpers          | `src/types/realtime.ts`                              |
+| Route                           | `src/modules/realtime/views/RealtimePlayground.vue`  |
+| Route definition                | `src/modules/realtime/routes.ts`                     |
 
 ## SSE client lifecycle
 
@@ -62,11 +62,11 @@ Event names come from `REALTIME_SSE_EVENT_NAMES`, generated into `src/types/asyn
 
 **Server → Client**
 
-| Event | Payload | When |
-| ----- | ------- | ---- |
+| Event                            | Payload                       | When                              |
+| -------------------------------- | ----------------------------- | --------------------------------- |
 | `observability.metrics.snapshot` | `ObservabilityMetricsPayload` | Initial snapshot, sent on connect |
-| `observability.metrics.updated` | `ObservabilityMetricsPayload` | Periodic metrics update |
-| `observability.heartbeat` | `ObservabilityMetricsPayload` | Keep-alive heartbeat |
+| `observability.metrics.updated`  | `ObservabilityMetricsPayload` | Periodic metrics update           |
+| `observability.heartbeat`        | `ObservabilityMetricsPayload` | Keep-alive heartbeat              |
 
 All three carry the same payload shape (timestamp, uptime, memory, HTTP counters, `realtime.sseClients`); the store keeps them apart so the feed can label each kind.
 

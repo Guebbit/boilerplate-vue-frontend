@@ -41,20 +41,6 @@ export default defineConfig(({ mode }) => ({
             ]
         }
     },
-    optimizeDeps: {
-        // Never pre-bundle the Guebbit packages.
-        //
-        // Vite caches pre-bundled dependencies in `node_modules/.vite/deps` and keys that cache
-        // off the lockfile, not off package *contents* — which is exactly wrong for a package
-        // that is `npm link`ed, since its content changes without the lockfile ever moving. The
-        // dev server then keeps serving a stale build of it: a function added upstream arrives as
-        // `undefined`, and the page dies with `X is not a function` while the unit tests and the
-        // production build (both of which resolve fresh) stay green.
-        //
-        // Excluding them costs nothing — both ship ESM, so there is no CommonJS interop to
-        // pre-bundle for — and it means a rebuild of either toolkit is picked up on reload.
-        exclude: ['@guebbit/vue-toolkit', '@guebbit/js-toolkit']
-    },
     plugins: [
         vue(),
         // auto-imports Vuetify components/directives on use (tree-shaken)
@@ -66,30 +52,6 @@ export default defineConfig(({ mode }) => ({
         })
     ],
     resolve: {
-        // Always resolve these to THIS app's copy, never to one nested inside a dependency.
-        //
-        // It matters while `@guebbit/*` is `npm link`ed: a linked package is a symlink to a
-        // checkout that carries its own `vue` and `pinia` in devDependencies, and Vite would
-        // happily load those too. Two Vue instances means `inject()` finds nothing and
-        // `getActivePinia()` throws inside the toolkit while working fine everywhere else —
-        // a failure that looks like a toolkit bug and is not.
-        //
-        // Harmless once the dependency comes from npm again (there is only one copy to pick),
-        // so it stays in rather than being a step someone has to remember.
-        dedupe: [
-            'vue',
-            'pinia',
-            'vue-router',
-            'vue-i18n',
-            '@tanstack/query-core',
-            // `@guebbit/js-toolkit` is also a runtime dependency of `@guebbit/vue-toolkit`, so a
-            // nested copy of it sits inside that package. Without this, the app loads the linked
-            // one and the toolkit loads its own — two copies of the same library, and the nested
-            // one is an older build whose module shape the browser cannot read as named exports
-            // (`does not provide an export named 'getUuid'`). Deduping keeps everything on the
-            // app's copy, which is the one being developed against anyway.
-            '@guebbit/js-toolkit'
-        ],
         alias: {
             '@': fileURLToPath(new URL('src', import.meta.url)),
             '@types': fileURLToPath(new URL('src/types', import.meta.url)),
@@ -104,7 +66,6 @@ export default defineConfig(({ mode }) => ({
         preprocessorOptions: {
             scss: {
                 silenceDeprecations: ['legacy-js-api']
-                // quietDeps: true
             }
         }
     },

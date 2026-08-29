@@ -17,7 +17,7 @@ Read this first. The rest of the page uses these words precisely, and several of
 | **`break` threshold**  | The score below which the run fails. A backstop for "has this collapsed", not a target.                                                                                                                                                                                                  |
 | **Baseline / ratchet** | `mutation-baseline.json` records what **each file** scored. Improvements are written back, regressions fail. See [The per-file ratchet](#the-per-file-ratchet).                                                                                                                          |
 | **Nightly**            | A GitHub Actions workflow on a `cron` schedule (03:00 UTC) rather than on push. Nothing waits for it; it reports the next morning. Mutation lives here because a run takes minutes-to-hours.                                                                                             |
-| **Concurrency**        | How many mutants Stryker tests **in parallel**. Each one is a separate OS process running a full test runner _and its own jsdom environment_, so the limit is memory as much as CPU cores.                                                                                                      |
+| **Concurrency**        | How many mutants Stryker tests **in parallel**. Each one is a separate OS process running a full test runner _and its own jsdom environment_, so the limit is memory as much as CPU cores.                                                                                               |
 | **`coverageAnalysis`** | Set to `perTest`: Stryker first records which tests touch which code, then runs **only the covering tests** for each mutant instead of the whole suite. This is the main reason a run is minutes and not days — except for static mutants, below.                                        |
 | **Static mutant**      | A mutant in code that runs when the file is **imported**, not when a test calls it — a `new Schema({...})`, a repository built at module scope, a config object. See [Why a run is slow](#why-a-run-is-slow-static-mutants); it is the single biggest cost in this repo.                 |
 | **Incremental**        | Stryker remembers per-mutant results in a committed file, so the next run only re-mutates what changed. **Enabled**, with the nightly passing `--force` to rebuild from scratch. See [Incremental mode](#incremental-mode--what-it-is).                                                  |
@@ -82,10 +82,10 @@ The source on disk is never left mutated — Stryker works in a throwaway copy u
 
 ## Tools
 
-| Tool                                   | Role                                                                          |
-| -------------------------------------- | ----------------------------------------------------------------------------- |
-| [Stryker](https://stryker-mutator.io/) | Generates mutants, re-runs the suite once per mutant, scores what survived    |
-| `@stryker-mutator/vitest-runner`       | Drives Vitest as the test runner, via `vitest.config.mutation.ts`             |
+| Tool                                   | Role                                                                       |
+| -------------------------------------- | -------------------------------------------------------------------------- |
+| [Stryker](https://stryker-mutator.io/) | Generates mutants, re-runs the suite once per mutant, scores what survived |
+| `@stryker-mutator/vitest-runner`       | Drives Vitest as the test runner, via `vitest.config.mutation.ts`          |
 
 ## Architecture
 
@@ -320,7 +320,7 @@ That is why the list above is so short. The bar for excluding something is **"a 
 
 The half that matters is enforced rather than described. `tests/cross-cutting/coverage-and-mutate-scope.spec.ts` fails if a file carrying a coverage floor falls outside the mutation scope — a floor says the file is executed, and without a mutant nothing then asks whether executing it proves anything. The reverse is deliberately **not** asserted: requiring a floor for everything mutated would turn every honest zero into a failing gate.
 
-**`.vue` files are deliberately still out**, and for a reason about the *tool* rather than about the tests. Stryker *can* mutate a single-file component — it maps the file to the HTML parser and mutates the `<script>` block — but it does **not** mutate template expressions. An SFC in scope would therefore report a score implying template coverage nobody has, and a misleading number is worse than an absent one. It is sequenced after component tests exist.
+**`.vue` files are deliberately still out**, and for a reason about the _tool_ rather than about the tests. Stryker _can_ mutate a single-file component — it maps the file to the HTML parser and mutates the `<script>` block — but it does **not** mutate template expressions. An SFC in scope would therefore report a score implying template coverage nobody has, and a misleading number is worse than an absent one. It is sequenced after component tests exist.
 
 ### Reading a 0%, and why it is kept
 
@@ -384,7 +384,7 @@ After that the rule is: raise `break` when a score **sustains** a higher band; n
 | ------------------------------------ | ------------------------------------------------------------------------------ |
 | `stryker.config.json`                | Scope (`mutate`), the Vitest runner config, thresholds, concurrency, reporters |
 | `mutation-baseline.json`             | Per-file scores. Committed. The ratchet's memory. Absent until the first run.  |
-| `scripts/mutation-baseline.ts`        | Ratchet logic — scoring, comparison, the "never lower" rule                    |
+| `scripts/mutation-baseline.ts`       | Ratchet logic — scoring, comparison, the "never lower" rule                    |
 | `scripts/check-mutation-baseline.ts` | CLI for the two commands below                                                 |
 | `.github/workflows/mutation.yml`     | Nightly schedule + dispatch, uploads the report even on failure                |
 | `reports/mutation/index.html`        | Human-readable report (generated per run)                                      |

@@ -173,4 +173,3 @@ job, not a checked one.
 | [`realtime`](./realtime.md)   | `observability`                | It consumes `GET /observability/events`, the SSE stream that module serves. There is no backend `realtime` module because the stream is one route on a dashboard, not a domain. |
 | [`users`](./users.md)         | `users`                        | —                                                                                                                                                                               |
 | [`wishlist`](./wishlist.md)   | `wishlist`                     | —                                                                                                                                                                               |
-

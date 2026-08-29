@@ -5,6 +5,7 @@ export default {
 </script>
 
 <script setup lang="ts">
+import type { ThemeAccent } from '@/ui/types.ts';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
@@ -41,7 +42,7 @@ const featuredProducts = computed<
     {
         title: string;
         description: string;
-        variant: 'primary' | 'secondary' | 'tertiary';
+        variant: ThemeAccent;
         icon: Component;
     }[]
 >(() => [

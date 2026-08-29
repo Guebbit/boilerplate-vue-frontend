@@ -30,12 +30,14 @@ const { filters, pageItemList, selectedUserId, pageCurrent, pageSize, pageTotal,
 
 /**
  * Options of the "active" filter select.
+ *
+ * @returns The localized options, re-translated on locale change.
  */
-const activeOptions = [
+const activeOptions = computed(() => [
     { value: undefined, label: t('users-list-page.filter-active-all') },
     { value: true, label: t('users-list-page.filter-active-yes') },
     { value: false, label: t('users-list-page.filter-active-no') }
-];
+]);
 /**
  * Selectable page sizes for the users table.
  */

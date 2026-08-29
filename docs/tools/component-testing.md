@@ -8,12 +8,12 @@ The tempting answer is "check the markup". That is usually the least valuable th
 
 The valuable questions are the ones no other layer asks:
 
-| Question | Why nothing else catches it |
-| -------- | --------------------------- |
-| Does it release the **resources** it acquires? | An object URL never revoked is a leak; e2e never notices, and it is invisible on screen |
+| Question                                          | Why nothing else catches it                                                                              |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Does it release the **resources** it acquires?    | An object URL never revoked is a leak; e2e never notices, and it is invisible on screen                  |
 | Does it distinguish states that **look** similar? | `undefined` (idle) versus `0` (started, nothing sent) render almost identically and mean opposite things |
 | Does it emit what the parent's model **expects**? | A component that emits an array where the contract declares a single value breaks the parent, not itself |
-| Does the **boundary** behave? | 0 pages, 1 page, 2 pages — a pager is nothing but boundaries |
+| Does the **boundary** behave?                     | 0 pages, 1 page, 2 pages — a pager is nothing but boundaries                                             |
 
 ```mermaid
 %%{init: {'flowchart': {'nodeSpacing': 45, 'rankSpacing': 50}}}%%
@@ -34,7 +34,7 @@ flowchart TB
 
 ## Resources are the real subject
 
-`FormImageUpload` is the worked example. Its validation logic lives in `utils/uploads.ts` and is well covered there. What the *component* owns is a resource: `URL.createObjectURL` pins a blob in memory until `revokeObjectURL` releases it.
+`FormImageUpload` is the worked example. Its validation logic lives in `utils/uploads.ts` and is well covered there. What the _component_ owns is a resource: `URL.createObjectURL` pins a blob in memory until `revokeObjectURL` releases it.
 
 There are three moments where failing to release leaks an entire image, and none of them is visible in the UI or catchable by e2e:
 
@@ -50,7 +50,7 @@ The specs select `[data-testid=upload-progress]`, and that is not a style prefer
 
 Vuetify's `v-file-input` renders **its own** `.v-progress-linear` inside the field loader. A spec written against the class matches that one too, so it passes whether the component's own bar is rendered or not. It asserted nothing, in both directions.
 
-This is the general hazard of asserting on a component library's markup: you are testing their DOM, not yours, and theirs can change without your behaviour changing. A `data-testid` is a contract *you* own.
+This is the general hazard of asserting on a component library's markup: you are testing their DOM, not yours, and theirs can change without your behaviour changing. A `data-testid` is a contract _you_ own.
 
 ## Boundaries, stated as boundaries
 
@@ -76,20 +76,20 @@ So the sequence is: component tests first, `.vue` into the mutation scope second
 
 ## File map
 
-| Path | Contents |
-| ---- | -------- |
-| `tests/unit/ui/form-image-upload.spec.ts` | The object-URL lifecycle, the preview precedence, the idle-vs-zero distinction, the model shape |
-| `tests/unit/ui/list-pagination.spec.ts` | The render boundary and the visible-page cap |
-| `tests/unit/ui/form-counter-input.spec.ts` | The original example — Vuetify's own test hooks, hold-to-repeat |
-| `tests/unit/app/app-navigation.spec.ts` | Route-driven rendering |
-| `tests/support/unit/setup.ts` | jsdom polyfills Vuetify needs — `ResizeObserver`, `matchMedia`, pointer capture, `visualViewport` |
+| Path                                       | Contents                                                                                          |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `tests/unit/ui/form-image-upload.spec.ts`  | The object-URL lifecycle, the preview precedence, the idle-vs-zero distinction, the model shape   |
+| `tests/unit/ui/list-pagination.spec.ts`    | The render boundary and the visible-page cap                                                      |
+| `tests/unit/ui/form-counter-input.spec.ts` | The original example — Vuetify's own test hooks, hold-to-repeat                                   |
+| `tests/unit/app/app-navigation.spec.ts`    | Route-driven rendering                                                                            |
+| `tests/support/unit/setup.ts`              | jsdom polyfills Vuetify needs — `ResizeObserver`, `matchMedia`, pointer capture, `visualViewport` |
 
 ## Commands
 
-| Command | Effect |
-| ------- | ------ |
-| `npm run test:unit` | Runs component specs with the rest of the unit suite |
-| `npx vitest run tests/unit/ui/` | Just the component specs |
+| Command                         | Effect                                               |
+| ------------------------------- | ---------------------------------------------------- |
+| `npm run test:unit`             | Runs component specs with the rest of the unit suite |
+| `npx vitest run tests/unit/ui/` | Just the component specs                             |
 
 ## Extending it
 

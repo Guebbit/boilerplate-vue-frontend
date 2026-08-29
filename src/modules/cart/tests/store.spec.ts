@@ -98,13 +98,12 @@ describe('useCartStore', () => {
     });
 
     describe('before anything is fetched', () => {
-        it('exposes an empty item list and a zero count', () => {
+        it('exposes an empty item list and no summary', () => {
             const store = useCartStore();
 
             expect(store.cart).toBeUndefined();
             expect(store.cartItems).toEqual([]);
             expect(store.cartSummary).toBeUndefined();
-            expect(store.cartCount).toBe(0);
         });
     });
 
@@ -116,7 +115,7 @@ describe('useCartStore', () => {
                 expect(getCart).toHaveBeenCalled();
                 expect(store.cartItems).toEqual(CART.items);
                 expect(store.cartSummary).toEqual(CART.summary);
-                expect(store.cartCount).toBe(1);
+                expect(store.cartSummary?.itemsCount).toBe(1);
             });
         });
     });
@@ -157,7 +156,7 @@ describe('useCartStore', () => {
 
             return store.updateCartItem('p1', 5).then((result) => {
                 expect(store.cart).toEqual(CART);
-                expect(store.cartCount).toBe(1);
+                expect(store.cartSummary?.itemsCount).toBe(1);
                 expect(result).toEqual(CART);
             });
         });
@@ -218,13 +217,13 @@ describe('useCartStore', () => {
             return store
                 .fetchCart()
                 .then(() => {
-                    expect(store.cartCount).toBe(1);
+                    expect(store.cartSummary?.itemsCount).toBe(1);
                     return store.checkout();
                 })
                 .then(() => {
                     expect(store.cart).toBeUndefined();
                     expect(store.cartItems).toEqual([]);
-                    expect(store.cartCount).toBe(0);
+                    expect(store.cartSummary).toBeUndefined();
                 });
         });
 
@@ -290,7 +289,7 @@ describe('useCartStore', () => {
             return store.reorder('o1').then((result) => {
                 expect(apiReorder).toHaveBeenCalledWith('o1');
                 expect(store.cart).toEqual(CART);
-                expect(store.cartCount).toBe(1);
+                expect(store.cartSummary?.itemsCount).toBe(1);
                 expect(result).toEqual(CART);
             });
         });

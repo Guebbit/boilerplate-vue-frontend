@@ -39,19 +39,19 @@ regeneration, and the diff will look like the backend broke something.
 
 ## The specs
 
-| File | What it is | Read next |
-|---|---|---|
-| `openapi.yaml` | The REST contract, byte-identical with the backend's. Every generated client, every response schema and every mock example comes from it. | [OpenAPI Workflow](../api/openapi-workflow.md) |
+| File            | What it is                                                                                                                                                                                                                                   | Read next                                        |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `openapi.yaml`  | The REST contract, byte-identical with the backend's. Every generated client, every response schema and every mock example comes from it.                                                                                                    | [OpenAPI Workflow](../api/openapi-workflow.md)   |
 | `asyncapi.yaml` | The realtime contract — and only the **public half** of the backend's. The channels a browser can legitimately observe; the internal queues stay over there, which is why this file is shorter than its counterpart and is not a copy of it. | [AsyncAPI Workflow](../api/asyncapi-workflow.md) |
-| `spectral.yaml` | The lint ruleset for `openapi.yaml`. Shared with the backend on purpose: if the two repos linted the same document under different rules, one of them would pass a spec the other would reject. | [OpenAPI Workflow](../api/openapi-workflow.md) |
+| `spectral.yaml` | The lint ruleset for `openapi.yaml`. Shared with the backend on purpose: if the two repos linted the same document under different rules, one of them would pass a spec the other would reject.                                              | [OpenAPI Workflow](../api/openapi-workflow.md)   |
 
 ## The generated client
 
-| File | What it is | Read next |
-|---|---|---|
-| `contracts/rest/index.ts` | **Generated** by `npm run gen:api`. One typed function per operation, each routed through the shared axios instance rather than calling the network itself. | [OpenAPI Workflow](../api/openapi-workflow.md) · [Infrastructure](./src-infrastructure.md) |
-| `contracts/rest/schemas.zod.ts` | **Generated.** A Zod schema per contract shape — what `response-schema-map.ts` points every call site at, so a response that does not match the contract is caught here rather than three components later. | [Infrastructure](./src-infrastructure.md) |
-| `orval.config.ts` | Tells Orval what to generate and how to route it. Its non-obvious job: seven operations accept the same payload as either JSON or multipart — anything with an optional image — and this is where that duality is resolved so a caller does not have to pick. | [Regenerating](../api/openapi-workflow.md) |
+| File                            | What it is                                                                                                                                                                                                                                                    | Read next                                                                                  |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `contracts/rest/index.ts`       | **Generated** by `npm run gen:api`. One typed function per operation, each routed through the shared axios instance rather than calling the network itself.                                                                                                   | [OpenAPI Workflow](../api/openapi-workflow.md) · [Infrastructure](./src-infrastructure.md) |
+| `contracts/rest/schemas.zod.ts` | **Generated.** A Zod schema per contract shape — what `response-schema-map.ts` points every call site at, so a response that does not match the contract is caught here rather than three components later.                                                   | [Infrastructure](./src-infrastructure.md)                                                  |
+| `orval.config.ts`               | Tells Orval what to generate and how to route it. Its non-obvious job: seven operations accept the same payload as either JSON or multipart — anything with an optional image — and this is where that duality is resolved so a caller does not have to pick. | [Regenerating](../api/openapi-workflow.md)                                                 |
 
 ## Keeping the pair in step
 

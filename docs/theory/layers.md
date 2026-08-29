@@ -12,14 +12,14 @@ There are two axes, and confusing them is the usual source of "where does this g
 
 ## Tiers
 
-| Tier     | Folder           | Knows                          | Contents                                                          |
-| -------- | ---------------- | ------------------------------ | ----------------------------------------------------------------- |
-| App      | `src/app`         | this application                | router, layouts, guards, app views, the navigation                                    |
-| Registry | `src/modules.ts`  | which domains are in this build | the one file that names every enabled domain                                          |
-| Modules  | `src/modules/*`   | one domain each, top to bottom  | `index.ts` is a module's only public surface                                          |
-| Kernel   | `src/kernel`    | that modules exist — never which  | the module registry mechanism, and nothing else                                       |
-| UI       | `src/ui`          | the design system, no domain    | Vuetify theme tokens + icon set, and the components built on them                     |
-| Infrastructure | `src/infrastructure`  | nothing about this app          | `http/`, `i18n/`, `observability/` config, `stores/` (session, observability), `composables/`, `utils/` |
+| Tier           | Folder               | Knows                            | Contents                                                                                                |
+| -------------- | -------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| App            | `src/app`            | this application                 | router, layouts, guards, app views, the navigation                                                      |
+| Registry       | `src/modules.ts`     | which domains are in this build  | the one file that names every enabled domain                                                            |
+| Modules        | `src/modules/*`      | one domain each, top to bottom   | `index.ts` is a module's only public surface                                                            |
+| Kernel         | `src/kernel`         | that modules exist — never which | the module registry mechanism, and nothing else                                                         |
+| UI             | `src/ui`             | the design system, no domain     | Vuetify theme tokens + icon set, and the components built on them                                       |
+| Infrastructure | `src/infrastructure` | nothing about this app           | `http/`, `i18n/`, `observability/` config, `stores/` (session, observability), `composables/`, `utils/` |
 
 Dependencies point one way — `infrastructure → ui → kernel → modules → app` — and `eslint.config.ts`
 enforces it with one `no-restricted-imports` block per tier.
@@ -111,44 +111,44 @@ flowchart TD
 
 ## Quick map
 
-| Layer | Folder(s) | Main job |
-| ----- | --------- | -------- |
-| Views | `src/app/views/`, `src/modules/*/views/` | template rendering, user events, layout |
-| Module composables | `src/modules/*/composables/` | domain-scoped logic, form handling |
-| Infrastructure helpers | `src/infrastructure/utils/`, `src/infrastructure/composables/` | cross-domain helpers (formatters, errors, uploads, logger, `useAppForm`, `useUploadProgress`) |
-| i18n runtime | `src/infrastructure/i18n/` | the vue-i18n instance and locale loading (`index.ts`), the locale-prefixed router locations (`router-link.ts`), the language manifest and the API-stored overrides (`locale-overrides.ts`) |
-| Stores | `src/infrastructure/stores/session.ts`, `src/infrastructure/stores/observability.ts`, `src/modules/*/store.ts` | global reactive state, API orchestration |
-| Generated client | `contracts/rest/index.ts`, `contracts/rest/schemas.zod.ts` | typed axios functions + Zod schemas (DO NOT edit) |
-| HTTP layer | `src/infrastructure/http/` | axios instance (`client.ts`), interceptors and error shaping (`interceptors.ts`), the 401 replay (`refresh.ts`), contract validation (`validate.ts`), envelope readers (`envelope.ts`), the orval mutator and the barrel (`index.ts`), response-schema map |
-| Design system | `src/ui/vuetify/` | theme tokens, component defaults, lucide icon set |
-| Shared components | `src/ui/molecules/`, `src/ui/organisms/` | domain-agnostic components, placed here by consumer count |
-| Layouts | `src/app/layouts/` | page shell components |
-| App shell components | `src/app/components/` | navigation and the language switcher — they know this app's domains and locales, not a design system |
-| Router | `src/app/router/`, `src/app/guards/`, `src/modules/*/routes.ts`, `src/modules.ts` | navigation, locale prefix, guards |
-| Locales | `src/locales/` (shared), `src/modules/*/locales/` (per domain) | vue-i18n message files, deep-merged per locale at boot |
-| Styles | `src/styles/` | global CSS (layer order, fonts) |
-| Types | `src/types/` | shared TS types, re-exports from `@api` |
+| Layer                  | Folder(s)                                                                                                      | Main job                                                                                                                                                                                                                                                   |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Views                  | `src/app/views/`, `src/modules/*/views/`                                                                       | template rendering, user events, layout                                                                                                                                                                                                                    |
+| Module composables     | `src/modules/*/composables/`                                                                                   | domain-scoped logic, form handling                                                                                                                                                                                                                         |
+| Infrastructure helpers | `src/infrastructure/utils/`, `src/infrastructure/composables/`                                                 | cross-domain helpers (formatters, errors, uploads, logger, `useAppForm`, `useUploadProgress`)                                                                                                                                                              |
+| i18n runtime           | `src/infrastructure/i18n/`                                                                                     | the vue-i18n instance and locale loading (`index.ts`), the locale-prefixed router locations (`router-link.ts`), the language manifest and the API-stored overrides (`locale-overrides.ts`)                                                                 |
+| Stores                 | `src/infrastructure/stores/session.ts`, `src/infrastructure/stores/observability.ts`, `src/modules/*/store.ts` | global reactive state, API orchestration                                                                                                                                                                                                                   |
+| Generated client       | `contracts/rest/index.ts`, `contracts/rest/schemas.zod.ts`                                                     | typed axios functions + Zod schemas (DO NOT edit)                                                                                                                                                                                                          |
+| HTTP layer             | `src/infrastructure/http/`                                                                                     | axios instance (`client.ts`), interceptors and error shaping (`interceptors.ts`), the 401 replay (`refresh.ts`), contract validation (`validate.ts`), envelope readers (`envelope.ts`), the orval mutator and the barrel (`index.ts`), response-schema map |
+| Design system          | `src/ui/vuetify/`                                                                                              | theme tokens, component defaults, lucide icon set                                                                                                                                                                                                          |
+| Shared components      | `src/ui/molecules/`, `src/ui/organisms/`                                                                       | domain-agnostic components, placed here by consumer count                                                                                                                                                                                                  |
+| Layouts                | `src/app/layouts/`                                                                                             | page shell components                                                                                                                                                                                                                                      |
+| App shell components   | `src/app/components/`                                                                                          | navigation and the language switcher — they know this app's domains and locales, not a design system                                                                                                                                                       |
+| Router                 | `src/app/router/`, `src/app/guards/`, `src/modules/*/routes.ts`, `src/modules.ts`                              | navigation, locale prefix, guards                                                                                                                                                                                                                          |
+| Locales                | `src/locales/` (shared), `src/modules/*/locales/` (per domain)                                                 | vue-i18n message files, deep-merged per locale at boot                                                                                                                                                                                                     |
+| Styles                 | `src/styles/`                                                                                                  | global CSS (layer order, fonts)                                                                                                                                                                                                                            |
+| Types                  | `src/types/`                                                                                                   | shared TS types, re-exports from `@api`                                                                                                                                                                                                                    |
 
 ## Where a component's logic goes
 
 Two questions decide where a component lives and what it may hold, and they are **independent**.
 Reading them as one is the usual source of confusion.
 
-| | Question | Answered by |
-| --- | --- | --- |
-| **Tier** | what may this file *know*? | its folder — enforced by the boundary rules in `eslint.config.ts` |
-| **Purity** | how much may it *do*? | one rule, below — enforced for the API by `@typescript-eslint/no-restricted-imports` on `**/*.vue` |
+|            | Question                   | Answered by                                                                                        |
+| ---------- | -------------------------- | -------------------------------------------------------------------------------------------------- |
+| **Tier**   | what may this file _know_? | its folder — enforced by the boundary rules in `eslint.config.ts`                                  |
+| **Purity** | how much may it _do_?      | one rule, below — enforced for the API by `@typescript-eslint/no-restricted-imports` on `**/*.vue` |
 
 > **A component wires, it does not compute.** Its own logic is what it renders and what it hands to
 > a click. The call behind that click lives one step away.
 
 "One step away" has exactly three addresses, and the tier picks which:
 
-| Component | Its logic belongs in |
-| --- | --- |
-| `src/modules/<n>/**` | that module's `store.ts` or `composables/` |
-| `src/app/**` (shell, layouts, views) | `src/infrastructure/` — no domain owns it |
-| `src/ui/**` | nowhere: it takes a prop and emits a model. It may not *have* behaviour |
+| Component                            | Its logic belongs in                                                    |
+| ------------------------------------ | ----------------------------------------------------------------------- |
+| `src/modules/<n>/**`                 | that module's `store.ts` or `composables/`                              |
+| `src/app/**` (shell, layouts, views) | `src/infrastructure/` — no domain owns it                               |
+| `src/ui/**`                          | nowhere: it takes a prop and emits a model. It may not _have_ behaviour |
 
 The payoff is not tidiness. A call sitting one step out is testable without mounting anything,
 reusable by a second component, and mockable in one place — `persistLocalePreference` on the
@@ -168,12 +168,12 @@ instead of two.
 
 `AppNavigation.vue` is 228 lines and that is fine — all of it is shell assembly (collecting the
 registry, filtering by `canAccess`, the `hasRoute` guards, the theme toggle, drawer state). A
-container is *allowed* to know many things. When one gets genuinely unwieldy the release valve is a
+container is _allowed_ to know many things. When one gets genuinely unwieldy the release valve is a
 composable beside it — the shape `useAdminObservability` already has — never props and emits.
 
 `defineEmits`, in this codebase, is for something else entirely: a **domain component crossing a
 module boundary**. `PaymentPanel` and `ShipmentPanel` are the only two files that use it, and there
-the emit *is* the published language — the panel says "a payment happened" and the order page
+the emit _is_ the published language — the panel says "a payment happened" and the order page
 decides what that means, neither side learning the other's store. Every component in `src/ui` uses
 `defineProps`/`defineModel` instead.
 
@@ -238,7 +238,7 @@ Both are initialized in `src/main.ts` and accessed via `useObservabilityStore()`
 ### The session store is not the account module
 
 `infrastructure/http` reads the access token on every request and the router guards read `isAuth` /
-`isAdmin` before any domain code runs — both are the bottom of the stack. The *user record* — the
+`isAdmin` before any domain code runs — both are the bottom of the stack. The _user record_ — the
 editable `User`, its email, its avatar, the endpoints that change it — is domain knowledge and
 lives in `src/modules/account`.
 
@@ -246,21 +246,21 @@ One store for both would give `infrastructure` a `User` entity and make the app 
 domain to render a name. So the session holds a deliberately minimal projection instead:
 
 ```ts
-viewer = { id, email, admin }
+viewer = { id, email, admin };
 ```
 
-The shell knows *someone is signed in, here is their display name, they are staff*. It does not
+The shell knows _someone is signed in, here is their display name, they are staff_. It does not
 know what a `User` is, and deleting the account module does not break it.
 
 Which `/account` calls belong to the session: the ones it needs to restore, remember or end
 **itself** — `GET /account` (who am I), `/account/refresh`, `/account/logout`, `/account/logout-all`,
 and the language preference write. Everything else under `/account` — signup, the password resets,
-the deletion flow, editing your own record — is an operation *on* an account rather than *on* the
+the deletion flow, editing your own record — is an operation _on_ an account rather than _on_ the
 session, and belongs to the module.
 
 ### Each repository owns its own dictionary
 
-The two repos synchronize the *choice* of language — that is what `Accept-Language` does — and
+The two repos synchronize the _choice_ of language — that is what `Accept-Language` does — and
 nothing else. Neither depends on the other for its own strings, which is what lets either
 boilerplate be recombined with a different counterpart.
 
@@ -275,10 +275,10 @@ language, including the ones this build does not bundle.
 
 Both repos work the same way, and the shape is worth stating once:
 
-| | defaults | overrides |
-| --- | --- | --- |
+|                    | defaults                            | overrides                                                        |
+| ------------------ | ----------------------------------- | ---------------------------------------------------------------- |
 | this app's strings | `src/locales/*.json`, in the bundle | `app`-scoped rows, fetched from `GET /locales/{locale}/messages` |
-| the API's strings | its own `src/locales/*.json` | `api`-scoped rows, layered onto them inside the API |
+| the API's strings  | its own `src/locales/*.json`        | `api`-scoped rows, layered onto them inside the API              |
 
 One collection, one row per `(language, scope, key)`, edited by people who never open a code
 editor. `scope` is what keeps the two apart, and it has to be part of the row's identity rather

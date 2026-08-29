@@ -92,14 +92,14 @@ flowchart LR
 
 ## What each layer does
 
-| Layer | Responsibility |
-| ----- | -------------- |
-| View / template | Renders data, captures user events, delegates to composables |
-| Composable | Encapsulates form state, validation, and list logic for one domain |
-| Pinia store | Orchestrates API calls, holds reactive data, exposes actions |
-| Generated client (`contracts/rest/index.ts`) | Typed axios function per operation — regenerated from `openapi.yaml` |
-| `src/infrastructure/http/index.ts` | Single axios instance; request/response interceptors; shapes errors into `IResponseReject` |
-| Router guards | `tryRestoreAuth` then `enforceRouteAccess` (`beforeEach`), `localeChoice` (`beforeResolve`) — run before the view is entered; redirect on failure |
+| Layer                                        | Responsibility                                                                                                                                    |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| View / template                              | Renders data, captures user events, delegates to composables                                                                                      |
+| Composable                                   | Encapsulates form state, validation, and list logic for one domain                                                                                |
+| Pinia store                                  | Orchestrates API calls, holds reactive data, exposes actions                                                                                      |
+| Generated client (`contracts/rest/index.ts`) | Typed axios function per operation — regenerated from `openapi.yaml`                                                                              |
+| `src/infrastructure/http/index.ts`           | Single axios instance; request/response interceptors; shapes errors into `IResponseReject`                                                        |
+| Router guards                                | `tryRestoreAuth` then `enforceRouteAccess` (`beforeEach`), `localeChoice` (`beforeResolve`) — run before the view is entered; redirect on failure |
 
 ## Cross-cutting strategies
 

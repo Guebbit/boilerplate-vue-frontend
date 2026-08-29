@@ -79,9 +79,7 @@ export default withMermaid(
                             {
                                 text: 'admin',
                                 link: '/modules/admin',
-                                items: [
-                                    { text: 'The dashboard', link: '/modules/admin-dashboard' }
-                                ]
+                                items: [{ text: 'The dashboard', link: '/modules/admin-dashboard' }]
                             },
                             { text: 'demo', link: '/modules/demo' },
                             { text: 'feedback', link: '/modules/feedback' },

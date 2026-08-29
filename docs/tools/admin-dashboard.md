@@ -58,11 +58,11 @@ starting point for a distributed trace rather than a dead end.
 
 ## Files
 
-| File | Role |
-| ---- | ---- |
-| `src/modules/admin/views/Admin.vue` | Tab shell (Overview + Audit Log) |
+| File                                                       | Role                                                      |
+| ---------------------------------------------------------- | --------------------------------------------------------- |
+| `src/modules/admin/views/Admin.vue`                        | Tab shell (Overview + Audit Log)                          |
 | `src/modules/admin/composables/use-admin-observability.ts` | Fetches health, metrics and audit; exposes reactive state |
-| `src/modules/admin/types.ts` | View-model types (`IAdminKpi`, `IAdminAuditFilters`) |
+| `src/modules/admin/types.ts`                               | View-model types (`IAdminKpi`, `IAdminAuditFilters`)      |
 
 ::: warning `useAdminObservability` has no unit tests
 It is one of the three files carrying almost all of this repo's no-coverage mutants. See

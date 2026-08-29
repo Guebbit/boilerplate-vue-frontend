@@ -414,9 +414,6 @@ export const useAccountStore = defineStore('account', () => {
      * @returns Nothing; state is cleared as a side effect.
      */
     const clearSession = () => {
-        // `resetAll()` rather than emptying `itemDictionary` by hand, because the hand-written
-        // version left the TanStack entries behind — so a logout followed by a login could be
-        // served the previous user's cached response until it went stale.
         resetAll();
         session.clearSession();
     };
@@ -480,7 +477,6 @@ export const useAccountStore = defineStore('account', () => {
 
     return {
         profile,
-        publishViewer,
         sessions,
         addresses,
 

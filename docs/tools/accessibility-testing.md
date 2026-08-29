@@ -36,7 +36,7 @@ The run fails on **`serious` and `critical` only**. Everything lighter is still 
 
 That is a deliberate trade. `minor` and `moderate` findings are largely advisory — a contrast ratio a designer chose on purpose, a landmark preference, a heading-order nicety. Gating merges on those produces failures nobody agrees with, and **a gate nobody agrees with is a gate that gets disabled**. Once disabled, the serious findings stop being caught either.
 
-`serious`/`critical` are the ones that mean *unusable*: no accessible name on a control, no alt text, no label. Those are not matters of taste.
+`serious`/`critical` are the ones that mean _unusable_: no accessible name on a control, no alt text, no label. Those are not matters of taste.
 
 The lighter findings are logged rather than dropped so the information exists on the record. Tightening the threshold later is then a decision made from data, not a rediscovery.
 
@@ -80,35 +80,35 @@ sweepA11y('the shell', [
 
 The states audited this way, and why each one:
 
-| State | Where | What it guards |
-| ----- | ----- | -------------- |
-| Navigation drawer open, 390×844 | shell, home | The drawer's landmark label, its list, focus inside it |
-| Language menu open | shell, home | `role="menu"` / `menuitem` and the activator's name |
-| Navigation tooltip shown | shell, home | An icon-only entry's name, its tooltip, and the `aria-describedby` between them |
-| Account menu open | shell, home, as `user` | The account menu's `menu` / `menuitem` roles and its activator's name, email included |
-| Administration menu open | shell, home, as `admin` | Same, for the administration menu |
-| Drawer open with every section, 390×844 | shell, home, as `admin` | The three section headings and their entries |
-| Dark theme | home, products list, login | Every colour pair, measured on the other surface |
-| Italian | shell, `/it` | A translated label that lost its `aria-` counterpart |
-| Entry form dialog open | locales, `/en/locales/it` | A modal named by its title, the page behind it hidden |
-| Address dialog open | account, profile | Same, for the other hand-written dialog |
-| Form submitted empty | login, product create | Each error tied to its field and announced, not only coloured |
+| State                                   | Where                      | What it guards                                                                        |
+| --------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------- |
+| Navigation drawer open, 390×844         | shell, home                | The drawer's landmark label, its list, focus inside it                                |
+| Language menu open                      | shell, home                | `role="menu"` / `menuitem` and the activator's name                                   |
+| Navigation tooltip shown                | shell, home                | An icon-only entry's name, its tooltip, and the `aria-describedby` between them       |
+| Account menu open                       | shell, home, as `user`     | The account menu's `menu` / `menuitem` roles and its activator's name, email included |
+| Administration menu open                | shell, home, as `admin`    | Same, for the administration menu                                                     |
+| Drawer open with every section, 390×844 | shell, home, as `admin`    | The three section headings and their entries                                          |
+| Dark theme                              | home, products list, login | Every colour pair, measured on the other surface                                      |
+| Italian                                 | shell, `/it`               | A translated label that lost its `aria-` counterpart                                  |
+| Entry form dialog open                  | locales, `/en/locales/it`  | A modal named by its title, the page behind it hidden                                 |
+| Address dialog open                     | account, profile           | Same, for the other hand-written dialog                                               |
+| Form submitted empty                    | login, product create      | Each error tied to its field and announced, not only coloured                         |
 
 ## What it actually found
 
 Worth recording, because all five are **boilerplate** defects rather than demo-app ones — every project copied from this repository would have inherited them, and none is visible in any other test layer.
 
-| Violation | Where it lived | Fix |
-| --------- | -------------- | --- |
-| `aria-progressbar-name` | `LayoutDefault.vue` — the full-page and corner loaders | An `aria-label` on each. `role="progressbar"` with no name is announced as an unlabelled control, and the full-page one is the *only* thing on screen while the app boots |
-| `aria-progressbar-name` | `v-data-table`'s internal loading bar | The `#loader` slot, replacing Vuetify's unnamed bar with a named one. Component `defaults` cannot fix this: `aria-label` is not a declared prop of `v-progress-linear`, so the value never reaches the element |
-| `color-contrast` 3.32:1 | every input label in the app | Vuetify's "medium emphasis" resolves to `#898d95` on white. Raised via a rule on `.v-label`/`.v-field-label` in `main.css` |
-| `color-contrast` ~2:1 | the "Forgot password?" link | It used `text-primary`. Brand `primary` is designed as a *background* with `on-primary` text over it; used as text on white it fails badly. A dedicated `link` colour now exists in both themes |
-| `color-contrast` 1.74:1 | table column headers, while loading | Vuetify dims the header row to `opacity: 0.38` for as long as `loading` is set. Undimmed — the loading bar is already the cue, and it is announced as well as drawn |
+| Violation               | Where it lived                                         | Fix                                                                                                                                                                                                            |
+| ----------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `aria-progressbar-name` | `LayoutDefault.vue` — the full-page and corner loaders | An `aria-label` on each. `role="progressbar"` with no name is announced as an unlabelled control, and the full-page one is the _only_ thing on screen while the app boots                                      |
+| `aria-progressbar-name` | `v-data-table`'s internal loading bar                  | The `#loader` slot, replacing Vuetify's unnamed bar with a named one. Component `defaults` cannot fix this: `aria-label` is not a declared prop of `v-progress-linear`, so the value never reaches the element |
+| `color-contrast` 3.32:1 | every input label in the app                           | Vuetify's "medium emphasis" resolves to `#898d95` on white. Raised via a rule on `.v-label`/`.v-field-label` in `main.css`                                                                                     |
+| `color-contrast` ~2:1   | the "Forgot password?" link                            | It used `text-primary`. Brand `primary` is designed as a _background_ with `on-primary` text over it; used as text on white it fails badly. A dedicated `link` colour now exists in both themes                |
+| `color-contrast` 1.74:1 | table column headers, while loading                    | Vuetify dims the header row to `opacity: 0.38` for as long as `loading` is set. Undimmed — the loading bar is already the cue, and it is announced as well as drawn                                            |
 
 The last one also made the suite **timing-dependent**: audit before the rows arrived and it failed, audit after and it passed, with nothing about the code having changed. A gate whose result depends on how fast the API replied is not a gate, so this was a correctness fix as much as an accessibility one.
 
-Two of these were only reachable at all after a bug in the shared `cy.visit()` override was fixed — until then most cases were quietly auditing the *previous* route. That story is in [Visual Regression](./visual-regression.md#the-bug-this-suite-found-in-the-test-harness), which is where it surfaced.
+Two of these were only reachable at all after a bug in the shared `cy.visit()` override was fixed — until then most cases were quietly auditing the _previous_ route. That story is in [Visual Regression](./visual-regression.md#the-bug-this-suite-found-in-the-test-harness), which is where it surfaced.
 
 ## Everything on the page is ours
 
@@ -148,15 +148,15 @@ Splitting per module meant auditing routes the central list had never contained.
 
 An axe sweep reads the DOM and asks whether the markup is well-formed. It cannot press a key, and the shell's accessibility is mostly **behaviour**: the skip link being the first Tab stop, focus following a page change, a drawer returning focus to the control that opened it, a dialog keeping focus inside it. `tests/e2e/specs/keyboard.cy.ts` performs those, with real keystrokes:
 
-| Case | What it protects, and where it lives |
-| ---- | ------------------------------------ |
-| First Tab reaches the skip link; Enter lands on `#main-content` | `LayoutDefault.vue` — WCAG 2.4.1 |
-| A page change moves focus to the main region and retitles the tab | the router's `afterEach` — WCAG 2.4.2, 2.4.3 |
-| The drawer opens onto its first entry; Escape closes it and returns focus to the hamburger | `AppNavigation.vue`'s focus watch |
-| An icon-only entry shows its label as a tooltip on focus | `AppNavIconButton.vue` — WCAG 1.4.13, 2.5.3 |
-| ArrowDown opens the administration menu; Escape closes it and leaves focus on the button | `AppNavMenu.vue` over Vuetify's `v-menu` |
-| The confirmation dialog keeps focus inside; Escape declines | `AppDialogHost.vue` |
-| A facet chip toggles `aria-pressed` with Enter and with Space | `ProductsList.vue` |
+| Case                                                                                       | What it protects, and where it lives         |
+| ------------------------------------------------------------------------------------------ | -------------------------------------------- |
+| First Tab reaches the skip link; Enter lands on `#main-content`                            | `LayoutDefault.vue` — WCAG 2.4.1             |
+| A page change moves focus to the main region and retitles the tab                          | the router's `afterEach` — WCAG 2.4.2, 2.4.3 |
+| The drawer opens onto its first entry; Escape closes it and returns focus to the hamburger | `AppNavigation.vue`'s focus watch            |
+| An icon-only entry shows its label as a tooltip on focus                                   | `AppNavIconButton.vue` — WCAG 1.4.13, 2.5.3  |
+| ArrowDown opens the administration menu; Escape closes it and leaves focus on the button   | `AppNavMenu.vue` over Vuetify's `v-menu`     |
+| The confirmation dialog keeps focus inside; Escape declines                                | `AppDialogHost.vue`                          |
+| A facet chip toggles `aria-pressed` with Enter and with Space                              | `ProductsList.vue`                           |
 
 `cypress-real-events` is what makes this possible: Cypress' own `.type('{tab}')` dispatches an event and moves nothing, because focus traversal is the browser's behaviour rather than a handler's. `cy.realPress()` sends the keystroke through the DevTools Protocol, so the browser performs it. The trade is Chromium only, which is every headless run here.
 
@@ -168,35 +168,39 @@ The whole set, nothing switched off. The rules that look at native `<label>`/`<i
 
 ## File map
 
-| Path | Contents |
-| ---- | -------- |
-| `src/modules/<name>/tests/e2e/a11y.cy.ts` | One per routed module: the route list, and the auth level to read it at |
-| `tests/e2e/specs/a11y.cy.ts` | The shell's own routes — home, the prose pages, the error page — and the chrome's states: drawer, language menu, tooltip, account and administration menus, dark theme, Italian |
-| `tests/e2e/specs/keyboard.cy.ts` | The keyboard contract: skip link, focus on navigation, tooltip, menus, drawer, dialog, chips |
-| `tests/support/e2e/a11y-sweep.ts` | `sweepA11y()`: the describe, the login, the wait-for-content, the optional viewport / theme / `prepare`, the axe call. Names no domain |
-| `tests/cross-cutting/a11y-coverage.spec.ts` | Parses every `routes.ts` against its sweep; fails on an unswept route, a swept path no route serves, or a sweep that outlives its module. Holds `EXEMPT` |
-| `tests/support/e2e/commands.ts` | `cy.checkPageA11y()`: the single axe pass with pinned tags, the impact threshold, the report task call |
-| `tests/support/e2e/a11y-task.ts` | The Node side: writes every finding to `reports/a11y/<spec>.json`. Registered in `cypress.config.ts` |
-| `tests/support/e2e/e2e.ts` | Imports `cypress-axe` (`cy.injectAxe()` / `cy.checkA11y()`) and `cypress-real-events` (`cy.realPress()`) |
-| `eslint.config.ts` | `eslint-plugin-vuejs-accessibility`, `flat/recommended`, scoped to `src/**/*.vue` |
+| Path                                        | Contents                                                                                                                                                                        |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/modules/<name>/tests/e2e/a11y.cy.ts`   | One per routed module: the route list, and the auth level to read it at                                                                                                         |
+| `tests/e2e/specs/a11y.cy.ts`                | The shell's own routes — home, the prose pages, the error page — and the chrome's states: drawer, language menu, tooltip, account and administration menus, dark theme, Italian |
+| `tests/e2e/specs/keyboard.cy.ts`            | The keyboard contract: skip link, focus on navigation, tooltip, menus, drawer, dialog, chips                                                                                    |
+| `tests/support/e2e/a11y-sweep.ts`           | `sweepA11y()`: the describe, the login, the wait-for-content, the optional viewport / theme / `prepare`, the axe call. Names no domain                                          |
+| `tests/cross-cutting/a11y-coverage.spec.ts` | Parses every `routes.ts` against its sweep; fails on an unswept route, a swept path no route serves, or a sweep that outlives its module. Holds `EXEMPT`                        |
+| `tests/support/e2e/commands.ts`             | `cy.checkPageA11y()`: the single axe pass with pinned tags, the impact threshold, the report task call                                                                          |
+| `tests/support/e2e/a11y-task.ts`            | The Node side: writes every finding to `reports/a11y/<spec>.json`. Registered in `cypress.config.ts`                                                                            |
+| `tests/support/e2e/e2e.ts`                  | Imports `cypress-axe` (`cy.injectAxe()` / `cy.checkA11y()`) and `cypress-real-events` (`cy.realPress()`)                                                                        |
+| `eslint.config.ts`                          | `eslint-plugin-vuejs-accessibility`, `flat/recommended`, scoped to `src/**/*.vue`                                                                                               |
 
 ## Commands
 
-| Command | Effect |
-| ------- | ------ |
-| `npm run test:e2e` | Runs every module's sweep with the rest of the suite |
-| `E2E_SPEC='src/modules/*/tests/e2e/a11y.cy.ts' npm run test:e2e:spec` | Every sweep, and nothing else |
-| `E2E_SPEC=src/modules/users/tests/e2e/a11y.cy.ts npm run test:e2e:spec` | One module's |
-| `E2E_SPEC=tests/e2e/specs/keyboard.cy.ts npm run test:e2e:spec` | The keyboard suite alone |
-| `npx vitest run tests/cross-cutting/a11y-coverage.spec.ts` | Just the "is every route covered" check |
-| `npm run lint` | Includes the template a11y rules |
+| Command                                                                 | Effect                                               |
+| ----------------------------------------------------------------------- | ---------------------------------------------------- |
+| `npm run test:e2e`                                                      | Runs every module's sweep with the rest of the suite |
+| `E2E_SPEC='src/modules/*/tests/e2e/a11y.cy.ts' npm run test:e2e:spec`   | Every sweep, and nothing else                        |
+| `E2E_SPEC=src/modules/users/tests/e2e/a11y.cy.ts npm run test:e2e:spec` | One module's                                         |
+| `E2E_SPEC=tests/e2e/specs/keyboard.cy.ts npm run test:e2e:spec`         | The keyboard suite alone                             |
+| `npx vitest run tests/cross-cutting/a11y-coverage.spec.ts`              | Just the "is every route covered" check              |
+| `npm run lint`                                                          | Includes the template a11y rules                     |
 
 ## Adding a route
 
 Add a line to the owning module's sweep:
 
 ```ts
-sweepA11y('products — admin', [['product edit', '/en/products/65dc8a99604c307b702b5ccc/edit']], 'admin');
+sweepA11y(
+    'products — admin',
+    [['product edit', '/en/products/65dc8a99604c307b702b5ccc/edit']],
+    'admin'
+);
 ```
 
 A **new module** with pages needs its own `src/modules/<name>/tests/e2e/a11y.cy.ts`. You will not forget: the coverage guard fails until it exists, and names the module — and, once it exists, names every route in the module's `routes.ts` the sweep does not yet visit. A route that genuinely renders nothing (a redirect) goes in `EXEMPT`, with its reason.

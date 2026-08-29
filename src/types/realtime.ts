@@ -11,9 +11,4 @@ export interface RealtimeMetricsEntry {
     payload: ObservabilityMetricsPayload;
 }
 
-export type RealtimeConnectionStatus =
-    | 'idle'
-    | 'connecting'
-    | 'open'
-    | 'closed'
-    | 'error';
+export type RealtimeConnectionStatus = 'idle' | 'connecting' | 'open' | 'closed' | 'error';

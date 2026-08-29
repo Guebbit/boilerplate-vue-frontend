@@ -36,11 +36,11 @@ This repo learned the value the expensive way, before adopting the technique. `s
 
 Pure, total, and rich in invariants:
 
-| Target                   | Invariants worth stating                                                                                                              |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `infrastructure/totals.ts`         | order-independent, non-negative, zero for empty, additive over concatenation, never `NaN`                                             |
-| `models/serialize.ts`    | `_id` → `id` always, `__v` always gone, omitted keys always gone, never mutates its input, idempotent                                 |
-| `repositories/search.ts` | `escapeRegex` never produces an uncompilable pattern, always matches its own input literally, strips every metacharacter of its power |
+| Target                     | Invariants worth stating                                                                                                              |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `infrastructure/totals.ts` | order-independent, non-negative, zero for empty, additive over concatenation, never `NaN`                                             |
+| `models/serialize.ts`      | `_id` → `id` always, `__v` always gone, omitted keys always gone, never mutates its input, idempotent                                 |
+| `repositories/search.ts`   | `escapeRegex` never produces an uncompilable pattern, always matches its own input literally, strips every metacharacter of its power |
 
 A function whose only "invariant" is its exact return value for one input is not a property target — write an example.
 

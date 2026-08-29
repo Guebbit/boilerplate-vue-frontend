@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Camera, RefreshCw, HeartPulse } from 'lucide-vue-next';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
@@ -16,6 +16,9 @@ const {
     connect: connectObservability,
     disconnect: disconnectObservability
 } = useRealtimeObservability();
+
+// Leaving the playground must not leave the SSE connection open for the rest of the session.
+onUnmounted(disconnectObservability);
 
 /** When on, each feed entry shows its full raw JSON payload instead of the metric grid. */
 const showRawEvents = ref(false);

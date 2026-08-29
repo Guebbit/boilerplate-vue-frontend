@@ -2,7 +2,8 @@
  * The API transport: one axios instance, its interceptors, and the single unwrap point.
  *
  * This file is the tier's public surface — `orval.config.ts` points every generated client at
- * `orvalMutator` here, and the rest is re-exported so call sites and specs have one import path.
+ * `orvalMutator` here, and the request interceptors are re-exported beside it because their specs
+ * exercise them through this module. Everything else is imported from its own leaf file.
  */
 import { instance } from './client.ts';
 import { onRequest, onRequestReject } from './interceptors.ts';
@@ -48,13 +49,4 @@ export const orvalMutator = <T>(
     });
 };
 
-export { instance } from './client.ts';
 export { onRequest, onRequestReject, onResponseReject } from './interceptors.ts';
-export { onResponseRejectWithRefresh } from './refresh.ts';
-export { getTokenFromResponse, getPayloadFromResponse } from './envelope.ts';
-export type {
-    AxiosRequestData,
-    AxiosResponseErrorData,
-    AxiosResponseErrorBody,
-    AxiosRequestConfigWithRetry
-} from './types.ts';

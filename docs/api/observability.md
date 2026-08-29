@@ -6,12 +6,12 @@ The SSE stream is consumed separately by `realtimeObservability` store in the `R
 
 ## Endpoints consumed by the FE
 
-| Endpoint | Auth | What the FE shows |
-| -------- | ---- | ----------------- |
-| `GET /observability/health` | admin | API status, DB status, uptime, memory, integrations |
+| Endpoint                              | Auth  | What the FE shows                                                             |
+| ------------------------------------- | ----- | ----------------------------------------------------------------------------- |
+| `GET /observability/health`           | admin | API status, DB status, uptime, memory, integrations                           |
 | `GET /observability/metrics/overview` | admin | HTTP totals, error rate, in-flight, latency p50/p95, auth & business counters |
-| `GET /observability/audit` | admin | Recent audit events with filters |
-| `GET /observability/events` | none | SSE stream — live metrics, consumed by realtime stores |
+| `GET /observability/audit`            | admin | Recent audit events with filters                                              |
+| `GET /observability/events`           | none  | SSE stream — live metrics, consumed by realtime stores                        |
 
 ## Admin Dashboard implementation
 
@@ -28,21 +28,21 @@ src/modules/admin/
 
 ```json
 {
-  "status": "ok",
-  "environment": "production",
-  "service": "boilerplate-node-backend",
-  "runtimeVersion": "v22.x.x",
-  "uptimeSeconds": 3600,
-  "database": { "status": "connected" },
-  "integrations": {
-    "loki": true,
-    "otelEnabled": true,
-    "umami": true,
-    "faro": true
-  },
-  "memory": { "heapUsedMb": 45, "heapTotalMb": 80, "rssMb": 120 },
-  "system": { "platform": "linux", "cpuCount": 4, "loadAvg": [0.5, 0.3, 0.2] },
-  "timestamp": "2026-05-29T09:00:00.000Z"
+    "status": "ok",
+    "environment": "production",
+    "service": "boilerplate-node-backend",
+    "runtimeVersion": "v22.x.x",
+    "uptimeSeconds": 3600,
+    "database": { "status": "connected" },
+    "integrations": {
+        "loki": true,
+        "otelEnabled": true,
+        "umami": true,
+        "faro": true
+    },
+    "memory": { "heapUsedMb": 45, "heapTotalMb": 80, "rssMb": 120 },
+    "system": { "platform": "linux", "cpuCount": 4, "loadAvg": [0.5, 0.3, 0.2] },
+    "timestamp": "2026-05-29T09:00:00.000Z"
 }
 ```
 
@@ -50,17 +50,17 @@ src/modules/admin/
 
 ```json
 {
-  "http": {
-    "totalRequests": 12500,
-    "totalErrors": 23,
-    "errorRate": 0.00184,
-    "inFlight": 3,
-    "latencyMs": { "p50": 12, "p95": 85 }
-  },
-  "auth": { "loginSuccess": 340, "loginFailure": 12, "signupSuccess": 58 },
-  "business": { "checkoutSuccess": 102, "ordersCreated": 97 },
-  "process": { "uptimeSeconds": 3600, "heapUsedMb": 45 },
-  "timestamp": "2026-05-29T09:00:00.000Z"
+    "http": {
+        "totalRequests": 12500,
+        "totalErrors": 23,
+        "errorRate": 0.00184,
+        "inFlight": 3,
+        "latencyMs": { "p50": 12, "p95": 85 }
+    },
+    "auth": { "loginSuccess": 340, "loginFailure": 12, "signupSuccess": 58 },
+    "business": { "checkoutSuccess": 102, "ordersCreated": 97 },
+    "process": { "uptimeSeconds": 3600, "heapUsedMb": 45 },
+    "timestamp": "2026-05-29T09:00:00.000Z"
 }
 ```
 
@@ -79,13 +79,13 @@ KPI cards rendered from this response:
 
 ## GET /observability/audit — query params
 
-| Param | Type | Description |
-| ----- | ---- | ----------- |
-| `actor` | string | Filter by user ID |
-| `action` | string | Filter by action string |
-| `outcome` | `success` \| `failure` | Filter by outcome |
-| `since` | ISO-8601 | Return events after this timestamp |
-| `limit` | integer (1–200) | Max events (default 50) |
+| Param     | Type                   | Description                        |
+| --------- | ---------------------- | ---------------------------------- |
+| `actor`   | string                 | Filter by user ID                  |
+| `action`  | string                 | Filter by action string            |
+| `outcome` | `success` \| `failure` | Filter by outcome                  |
+| `since`   | ISO-8601               | Return events after this timestamp |
+| `limit`   | integer (1–200)        | Max events (default 50)            |
 
 The Audit Log tab passes these filters from `IAdminAuditFilters` reactive state directly as query params.
 

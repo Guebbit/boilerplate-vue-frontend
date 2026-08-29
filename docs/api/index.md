@@ -33,14 +33,14 @@ flowchart LR
 
 ## Read by task
 
-| Need | Go to |
-| ---- | ----- |
-| Change the contract or regenerate the client | [OpenAPI Workflow](./openapi-workflow.md) |
-| Change SSE event contracts | [AsyncAPI Workflow](./asyncapi-workflow.md) |
-| Browse all available endpoints | [Endpoints](./endpoints.md) |
+| Need                                          | Go to                                         |
+| --------------------------------------------- | --------------------------------------------- |
+| Change the contract or regenerate the client  | [OpenAPI Workflow](./openapi-workflow.md)     |
+| Change SSE event contracts                    | [AsyncAPI Workflow](./asyncapi-workflow.md)   |
+| Browse all available endpoints                | [Endpoints](./endpoints.md)                   |
 | Understand the Admin Dashboard's backend data | [Observability Endpoints](./observability.md) |
-| Understand how the FE handles HTTP errors | [Request Flow](../theory/request-flow.md) |
-| Understand the layer behind stores | [Theory / Layers](../theory/layers.md) |
+| Understand how the FE handles HTTP errors     | [Request Flow](../theory/request-flow.md)     |
+| Understand the layer behind stores            | [Theory / Layers](../theory/layers.md)        |
 
 ## Consuming the generated client
 

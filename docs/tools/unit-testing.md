@@ -4,14 +4,14 @@ The layer that answers: **does this one piece of logic — a component, a store,
 
 ## Tools
 
-| Tool | Role |
-| --- | --- |
-| [Vitest](https://vitest.dev/) | Test runner — same Vite config and transforms the app itself uses, so no separate build step |
-| [@vue/test-utils](https://test-utils.vuejs.org/) | Mounts components, drives props/emits/slots |
-| [jsdom](https://github.com/jsdom/jsdom) | DOM implementation Vitest runs component tests against (via `tests/support/unit/jsdom-quiet-css.environment.ts` — see that file for why it's a thin wrapper around plain `jsdom` rather than the string `'jsdom'`) |
-| [Pinia](https://pinia.vuejs.org/) (`createPinia()` per test) | Stores under test get a fresh instance every time — no state leaks between tests |
-| `vi.mock()` | Replaces `@api` (the generated client), `@/infrastructure/observability`, etc. with hand-written stubs |
-| [msw/node](https://mswjs.io/docs/integrations/node) | The *one* place this layer mocks HTTP for real instead of stubbing a module — `http-refresh.spec.ts`, see below |
+| Tool                                                         | Role                                                                                                                                                                                                               |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [Vitest](https://vitest.dev/)                                | Test runner — same Vite config and transforms the app itself uses, so no separate build step                                                                                                                       |
+| [@vue/test-utils](https://test-utils.vuejs.org/)             | Mounts components, drives props/emits/slots                                                                                                                                                                        |
+| [jsdom](https://github.com/jsdom/jsdom)                      | DOM implementation Vitest runs component tests against (via `tests/support/unit/jsdom-quiet-css.environment.ts` — see that file for why it's a thin wrapper around plain `jsdom` rather than the string `'jsdom'`) |
+| [Pinia](https://pinia.vuejs.org/) (`createPinia()` per test) | Stores under test get a fresh instance every time — no state leaks between tests                                                                                                                                   |
+| `vi.mock()`                                                  | Replaces `@api` (the generated client), `@/infrastructure/observability`, etc. with hand-written stubs                                                                                                             |
+| [msw/node](https://mswjs.io/docs/integrations/node)          | The _one_ place this layer mocks HTTP for real instead of stubbing a module — `http-refresh.spec.ts`, see below                                                                                                    |
 
 ## Where it sits
 
@@ -84,41 +84,41 @@ const server = setupServer(
 
 ## File map
 
-| Path | Contents |
-| --- | --- |
-| `tests/unit/ui/**`, `tests/unit/app/*.spec.ts` | Component mount tests |
-| `src/modules/*/tests/**` | A domain's own specs, co-located so `rm -rf` takes them with it |
-| `tests/unit/infrastructure/http/**` | `orvalMutator`, the refresh flow, response validation, the URL→pathname rule |
-| `tests/unit/app/**`, `tests/unit/kernel/**`, `tests/unit/infrastructure/**` | Route guards, router config, session store, formatters/error helpers, the SSE client |
-| `tests/unit/scripts/**` | The repo's own tooling — the shared-file identity check, the mutation ratchet, the backend path, the Cypress spec globs. Scripts nobody runs by hand until they break |
-| `tests/cross-cutting/**` | The architectural invariants. See below — this is a layer, not a folder |
-| `tests/support/unit/setup.ts` | Global Vitest setup (runs before every file) |
-| `tests/support/stub.ts` | `asStub`, for reading a `vi.fn()` back with its type intact |
-| `tests/support/unit/wire-modules.ts` | Registers the modules' response schemas and dictionaries into `infrastructure`, as `src/main.ts` does. Any spec touching either subsystem needs it |
-| `tests/support/unit/jsdom-quiet-css.environment.ts` | Custom environment: plain jsdom with one class of CSS-parser noise filtered — see the file's own comment |
-| `tests/support/e2e/**` | Cypress's, not Vitest's — the sweeps, the custom commands, the snapshot task |
-| `vitest.config.ts` | Test runner config (environment, setup files, coverage) |
-| `vitest.config.mutation.ts` | Narrower variant Stryker drives — see [Mutation Testing](./mutation-testing.md) |
+| Path                                                                        | Contents                                                                                                                                                              |
+| --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/unit/ui/**`, `tests/unit/app/*.spec.ts`                              | Component mount tests                                                                                                                                                 |
+| `src/modules/*/tests/**`                                                    | A domain's own specs, co-located so `rm -rf` takes them with it                                                                                                       |
+| `tests/unit/infrastructure/http/**`                                         | `orvalMutator`, the refresh flow, response validation, the URL→pathname rule                                                                                          |
+| `tests/unit/app/**`, `tests/unit/kernel/**`, `tests/unit/infrastructure/**` | Route guards, router config, session store, formatters/error helpers, the SSE client                                                                                  |
+| `tests/unit/scripts/**`                                                     | The repo's own tooling — the shared-file identity check, the mutation ratchet, the backend path, the Cypress spec globs. Scripts nobody runs by hand until they break |
+| `tests/cross-cutting/**`                                                    | The architectural invariants. See below — this is a layer, not a folder                                                                                               |
+| `tests/support/unit/setup.ts`                                               | Global Vitest setup (runs before every file)                                                                                                                          |
+| `tests/support/stub.ts`                                                     | `asStub`, for reading a `vi.fn()` back with its type intact                                                                                                           |
+| `tests/support/unit/wire-modules.ts`                                        | Registers the modules' response schemas and dictionaries into `infrastructure`, as `src/main.ts` does. Any spec touching either subsystem needs it                    |
+| `tests/support/unit/jsdom-quiet-css.environment.ts`                         | Custom environment: plain jsdom with one class of CSS-parser noise filtered — see the file's own comment                                                              |
+| `tests/support/e2e/**`                                                      | Cypress's, not Vitest's — the sweeps, the custom commands, the snapshot task                                                                                          |
+| `vitest.config.ts`                                                          | Test runner config (environment, setup files, coverage)                                                                                                               |
+| `vitest.config.mutation.ts`                                                 | Narrower variant Stryker drives — see [Mutation Testing](./mutation-testing.md)                                                                                       |
 
 ## The cross-cutting layer
 
 `tests/cross-cutting/` runs in this suite and on this runner, but it answers a different question.
-Every other spec here asks *does this behave correctly*. These ten ask *is the repository still the
-shape it claims to be* — and they fail on a **file that was never written**, which no behavioural
+Every other spec here asks _does this behave correctly_. These ten ask _is the repository still the
+shape it claims to be_ — and they fail on a **file that was never written**, which no behavioural
 test can do, because a spec that does not exist runs no assertions and reports nothing.
 
-| Spec | Refuses |
-| --- | --- |
-| `registry.spec.ts` | A module whose manifest breaks an invariant every enabled module must satisfy |
-| `context-map.spec.ts` | A `dependsOn` edge that the imports do not support, or an import with no edge |
-| `subdomain-discipline.spec.ts` | A `domain/` folder inside a `generic` module |
-| `published-language.spec.ts` | A barrel exporting more, or less, than its siblings import |
-| `a11y-coverage.spec.ts` | A routed module with no accessibility sweep — or a sweep outliving its routes |
-| `store-location.spec.ts` | A `defineStore` where the coverage floor's globs cannot see it |
-| `form-idiom.spec.ts` | A form reaching the toolkit directly, keeping its own "show errors" flag, or leaving a page form with nothing to focus |
-| `schemas-i18n.spec.ts` | A Zod message that stops following the active locale |
-| `coverage-and-mutate-scope.spec.ts` | A floored file that nothing mutates |
-| `mutation-safe-imports.spec.ts` | An import specifier a mutant could rewrite into something that still runs |
+| Spec                                | Refuses                                                                                                                |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `registry.spec.ts`                  | A module whose manifest breaks an invariant every enabled module must satisfy                                          |
+| `context-map.spec.ts`               | A `dependsOn` edge that the imports do not support, or an import with no edge                                          |
+| `subdomain-discipline.spec.ts`      | A `domain/` folder inside a `generic` module                                                                           |
+| `published-language.spec.ts`        | A barrel exporting more, or less, than its siblings import                                                             |
+| `a11y-coverage.spec.ts`             | A routed module with no accessibility sweep — or a sweep outliving its routes                                          |
+| `store-location.spec.ts`            | A `defineStore` where the coverage floor's globs cannot see it                                                         |
+| `form-idiom.spec.ts`                | A form reaching the toolkit directly, keeping its own "show errors" flag, or leaving a page form with nothing to focus |
+| `schemas-i18n.spec.ts`              | A Zod message that stops following the active locale                                                                   |
+| `coverage-and-mutate-scope.spec.ts` | A floored file that nothing mutates                                                                                    |
+| `mutation-safe-imports.spec.ts`     | An import specifier a mutant could rewrite into something that still runs                                              |
 
 They belong to no module and must never name one — see the rule below. A spec here iterates the
 registry; the moment it writes `products`, deleting that domain breaks a test that is not about it.
@@ -128,11 +128,11 @@ tooling rather than its modules, and live in `tests/unit/scripts/` for that reas
 
 ## Commands
 
-| Command | Effect |
-| --- | --- |
-| `npm run test:unit` | Full suite, CI mode |
-| `npm run test:unit:coverage` | Same, with v8 coverage |
-| `npx vitest run <path>` | One file, for fast iteration while editing it |
+| Command                      | Effect                                        |
+| ---------------------------- | --------------------------------------------- |
+| `npm run test:unit`          | Full suite, CI mode                           |
+| `npm run test:unit:coverage` | Same, with v8 coverage                        |
+| `npx vitest run <path>`      | One file, for fast iteration while editing it |
 
 ## Related pages
 
@@ -145,13 +145,13 @@ tooling rather than its modules, and live in `tests/unit/scripts/` for that reas
 
 Two homes, and the rule is ownership rather than kind (decision D4):
 
-| Spec is about… | Lives in |
-| --- | --- |
-| one domain | `src/modules/<name>/tests/` — deleted with the module |
-| core, ui, platform | `tests/unit/<tier>/` |
-| a script in `scripts/` | `tests/unit/scripts/` |
-| every domain at once, or the shape of the repo | `tests/cross-cutting/` |
-| nothing — it is shared machinery | `tests/support/{unit,e2e}/` |
+| Spec is about…                                 | Lives in                                              |
+| ---------------------------------------------- | ----------------------------------------------------- |
+| one domain                                     | `src/modules/<name>/tests/` — deleted with the module |
+| core, ui, platform                             | `tests/unit/<tier>/`                                  |
+| a script in `scripts/`                         | `tests/unit/scripts/`                                 |
+| every domain at once, or the shape of the repo | `tests/cross-cutting/`                                |
+| nothing — it is shared machinery               | `tests/support/{unit,e2e}/`                           |
 
 **The rule that decides it:**
 

@@ -46,18 +46,18 @@ flowchart LR
 
 ## Read by intent
 
-| Group | Page | What you'll find |
-| ----- | ---- | ---------------- |
-| Overview | **[Tools Explained](./tools-explained.md)** | "What is X and why is it here?" for every tool: plain-English definition, problem it solves, and how it's wired in this repo. |
-| Setup | **[Runtime](./runtime.md)** | Vue 3, Vite, TypeScript, Sass, @vitejs/plugin-vue: the framework-level packages that make the app build and run. |
-| Setup | **[Security](./security.md)** | How the FE handles JWT access tokens, refresh cookies, and route guards. |
-| Setup | **[Package Dependencies](./package-dependencies.md)** | Guided tour of `package.json` grouped by concern. |
-| Setup | **[Package Scripts](./package-scripts.md)** | What every `npm run <script>` does and when to reach for it. |
-| Setup | **[Docker & Podman](./docker-and-podman.md)** | The compose stack, and how this app pairs with the backend's without being joined to it. |
-| Framework | **[State & Routing](./state-and-routing.md)** | Pinia stores, Vue Router locale routing and guards, Vue I18n setup. |
-| Framework | **[Realtime](./realtime.md)** | FE SSE client, `createSseClient`, realtime observability store. |
-| Observability | **[Observability](./observability.md)** | Grafana Faro (errors + tracing + web-vitals) and Umami (product analytics) wired into one Pinia store. |
-| Observability | **[Umami](./umami.md)** | Product analytics events and the event taxonomy used in this repo. |
-| Testing | **[Testing](./testing-and-docs.md)** | Vitest, @vue/test-utils, Cypress, and VitePress: how the repo tests itself and builds this docs site. |
-| Testing | **[The demo profile](./demo-profile.md)** | The paired backend booted self-contained, how dev and the e2e suites reach it, and the `/__demo` control surface. |
-| API | **[API](../api/)** | Orval, Spectral, generated client, and contract-first workflow. |
+| Group         | Page                                                  | What you'll find                                                                                                              |
+| ------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Overview      | **[Tools Explained](./tools-explained.md)**           | "What is X and why is it here?" for every tool: plain-English definition, problem it solves, and how it's wired in this repo. |
+| Setup         | **[Runtime](./runtime.md)**                           | Vue 3, Vite, TypeScript, Sass, @vitejs/plugin-vue: the framework-level packages that make the app build and run.              |
+| Setup         | **[Security](./security.md)**                         | How the FE handles JWT access tokens, refresh cookies, and route guards.                                                      |
+| Setup         | **[Package Dependencies](./package-dependencies.md)** | Guided tour of `package.json` grouped by concern.                                                                             |
+| Setup         | **[Package Scripts](./package-scripts.md)**           | What every `npm run <script>` does and when to reach for it.                                                                  |
+| Setup         | **[Docker & Podman](./docker-and-podman.md)**         | The compose stack, and how this app pairs with the backend's without being joined to it.                                      |
+| Framework     | **[State & Routing](./state-and-routing.md)**         | Pinia stores, Vue Router locale routing and guards, Vue I18n setup.                                                           |
+| Framework     | **[Realtime](./realtime.md)**                         | FE SSE client, `createSseClient`, realtime observability store.                                                               |
+| Observability | **[Observability](./observability.md)**               | Grafana Faro (errors + tracing + web-vitals) and Umami (product analytics) wired into one Pinia store.                        |
+| Observability | **[Umami](./umami.md)**                               | Product analytics events and the event taxonomy used in this repo.                                                            |
+| Testing       | **[Testing](./testing-and-docs.md)**                  | Vitest, @vue/test-utils, Cypress, and VitePress: how the repo tests itself and builds this docs site.                         |
+| Testing       | **[The demo profile](./demo-profile.md)**             | The paired backend booted self-contained, how dev and the e2e suites reach it, and the `/__demo` control surface.             |
+| API           | **[API](../api/)**                                    | Orval, Spectral, generated client, and contract-first workflow.                                                               |

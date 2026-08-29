@@ -3,7 +3,7 @@ import { instance } from './client.ts';
 import { getTokenFromResponse } from './envelope.ts';
 import { onResponseReject } from './interceptors.ts';
 import { toPathname } from './url.ts';
-import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import type { AxiosError } from 'axios';
 import type { ResponseSuccess } from '@/types';
 import type {
     AxiosRequestConfigWithRetry,
@@ -46,8 +46,7 @@ export const onResponseRejectWithRefresh = (
     error: AxiosError<AxiosResponseErrorData, AxiosResponseErrorBody>
 ) => {
     const { setAccessToken } = useSessionStore();
-    const originalRequest = error.config as
-        (InternalAxiosRequestConfig & { _dontRetry?: boolean }) | undefined;
+    const originalRequest = error.config as AxiosRequestConfigWithRetry | undefined;
     // `_dontRetry` is the loop guard: a 401 on the refresh call itself must not trigger a refresh.
     if (
         error.response?.status === 401 &&

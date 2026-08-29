@@ -46,11 +46,6 @@ export const useCartStore = defineStore('cart', () => {
     const cartSummary = computed<CartSummaryResponse | undefined>(() => cart.value?.summary);
 
     /**
-     * Number of distinct items in cart
-     */
-    const cartCount = computed(() => cartSummary.value?.itemsCount ?? 0);
-
-    /**
      * The summary alone, as `GET /cart/summary` answers it — the lightweight read that exists so
      * a header badge does not cost the whole cart on every page. Only a SEED: every cart mutation
      * replaces `cart` wholesale, and the full response's summary is fresher from that moment on.
@@ -247,7 +242,6 @@ export const useCartStore = defineStore('cart', () => {
         cart,
         cartItems,
         cartSummary,
-        cartCount,
         badgeQuantity,
         fetchSummary,
 

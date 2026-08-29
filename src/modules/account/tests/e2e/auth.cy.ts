@@ -85,7 +85,7 @@ describe('Authentication', () => {
 
         it('shows an error when passwords do not match', () => {
             cy.get('[type=email]').should('not.be.disabled').type('newuser@example.com');
-            cy.get('[type=password]').eq(0).should('not.be.disabled').type('rootroot');
+            cy.get('[type=password]').eq(0).should('not.be.disabled').type('NewUser_Pass1!');
             cy.get('[type=password]').eq(1).should('not.be.disabled').type('DifferentPass_456!');
             cy.get('[type=checkbox]').check();
             cy.get('#signup-page button[type="submit"]').click();
@@ -94,8 +94,8 @@ describe('Authentication', () => {
 
         it('signs up successfully and redirects to login (no auto-login)', () => {
             cy.get('[type=email]').should('not.be.disabled').type('newuser@example.com');
-            cy.get('[type=password]').eq(0).should('not.be.disabled').type('rootroot');
-            cy.get('[type=password]').eq(1).should('not.be.disabled').type('rootroot');
+            cy.get('[type=password]').eq(0).should('not.be.disabled').type('NewUser_Pass1!');
+            cy.get('[type=password]').eq(1).should('not.be.disabled').type('NewUser_Pass1!');
             cy.get('[type=checkbox]').check();
             cy.get('#signup-page button[type="submit"]').click();
 

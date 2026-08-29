@@ -36,7 +36,7 @@ plan lives outside both repositories, at `BOILERPLATE_SPLIT_PLAN.md` in the work
   on the current polishing pass finishing.
 - **css-ui variant** — from the skeleton. When doing it, recover the old `_root.scss` and
   `_cards.scss` (for `simple-card`) from earlier commits rather than rewriting them.
-- **Vuetify variant** — from the skeleton. Note this repository already *is* the Vuetify one; the
+- **Vuetify variant** — from the skeleton. Note this repository already _is_ the Vuetify one; the
   variant is what remains once the domains are gone.
 - **Quasar variant**, **Nuxt variant** — from the skeleton.
 
@@ -46,14 +46,14 @@ Everything that exists only to demonstrate the framework now lives in one module
 the counter store, the teaching route guard and the Playground sandbox. Deleting it is `rm -rf
 src/modules/demo` plus its line in `src/modules.ts`, and nothing else in the app refers to it.
 
-| File                                    | What it is                                            |
-| --------------------------------------- | ----------------------------------------------------- |
-| `src/modules/demo/store.ts`             | the Pinia counter from the Vue scaffold               |
-| `src/modules/demo/guards.ts`            | a guard that shows what a guard can and cannot reach   |
-| `src/modules/demo/views/Playground.vue` | the component sandbox                                  |
+| File                                    | What it is                                           |
+| --------------------------------------- | ---------------------------------------------------- |
+| `src/modules/demo/store.ts`             | the Pinia counter from the Vue scaffold              |
+| `src/modules/demo/guards.ts`            | a guard that shows what a guard can and cannot reach |
+| `src/modules/demo/views/Playground.vue` | the component sandbox                                |
 
 They are genuinely useful in a boilerplate and genuinely noise in an application, so the decision to
-make is **not "delete or keep"** — it is *where does teaching code live*. A `demo` module the
+make is **not "delete or keep"** — it is _where does teaching code live_. A `demo` module the
 registry can drop in one line would answer it, and would put these three under the same deletion
 rule as every other domain instead of leaving them permanent residents of `app/`.
 

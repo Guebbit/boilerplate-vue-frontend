@@ -271,10 +271,7 @@ const handleRoleChange = () => {
 };
 
 /**
- * Toggle password change
- * (I'll add a password change form + schemas)
- *
- * If password change is active, all password errors will be shown instantly
+ * Whether the password-change form below is open. While it is, its errors show instantly.
  */
 const showChangePassword = ref(false);
 

@@ -14,7 +14,7 @@ import { useAccountStore } from '@/modules/account/store.ts';
 import { useRouter, useRoute } from 'vue-router';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
-import { usersSchema } from '@/modules/users';
+import { usersSchema, usersPasswordSchema } from '@/modules/users';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import { useUploadProgress } from '@/infrastructure/composables/use-upload-progress.ts';
@@ -32,7 +32,6 @@ const route = useRoute();
  */
 interface UserSignupForm {
     email?: string;
-    username?: string;
     password?: string;
     passwordConfirm?: string;
     conditions?: boolean;
@@ -46,7 +45,7 @@ interface UserSignupForm {
 const signupSchema = usersSchema
     .pick({ email: true })
     .extend({
-        password: z.string().min(8, { error: () => t('users-form.password-required') }),
+        password: usersPasswordSchema,
         passwordConfirm: z
             .string()
             .min(8, { error: () => t('users-form.password-confirm-required') }),
@@ -72,7 +71,6 @@ const {
 } = useAppForm<UserSignupForm>(
     {
         email: '',
-        username: '',
         password: '',
         passwordConfirm: '',
         conditions: false
@@ -100,14 +98,13 @@ const { signup } = useAccountStore();
  *  named (a taken email, most often) or as a toast when it named none.
  */
 const submitForm = () =>
-    handleSubmit(() => {
-        const username = form.value.username?.trim();
-        return trackUpload(form.value.imageUpload, (options) =>
+    handleSubmit(() =>
+        // No username field on this form: the store defaults it to the email address.
+        trackUpload(form.value.imageUpload, (options) =>
             signup(
                 {
                     email: form.value.email!,
                     password: form.value.password!,
-                    username: username || undefined,
                     passwordConfirm: form.value.passwordConfirm!,
                     imageUpload: form.value.imageUpload
                 },
@@ -115,8 +112,8 @@ const submitForm = () =>
             )
         )
             .then(() => router.push({ name: 'Login', query: route.query }))
-            .then(() => addMessage(t('signup-page.success-email-code-sent')));
-    }).catch((error) => {
+            .then(() => addMessage(t('signup-page.success-email-code-sent')))
+    ).catch((error) => {
         if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
     });
 </script>

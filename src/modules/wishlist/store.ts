@@ -95,7 +95,6 @@ export const useWishlistStore = defineStore('wishlist', () => {
 
     return {
         items,
-        savedProductIds,
         isSaved,
 
         loading,

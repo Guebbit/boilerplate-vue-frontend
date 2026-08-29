@@ -11,12 +11,12 @@ export interface TranslationDictionaries {
 }
 
 /**
- * Minimal translate signature compatible with vue-i18n's `t`, for modules outside a component
- * scope (Zod schemas, upload validators) that need key lookup and nothing else.
+ * Minimal translate signature compatible with vue-i18n's `t` — the type `translate` below is
+ * annotated with.
  *
  * `named` carries interpolation values, e.g. `t('image-upload-form.size-exceeded', { size: '5 MB' })`.
  */
-export type TranslateFunction = (key: string, named?: Record<string, unknown>) => string;
+type TranslateFunction = (key: string, named?: Record<string, unknown>) => string;
 
 /**
  * [on build] Locales with a dictionary in the bundle, discovered from the folder.

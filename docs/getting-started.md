@@ -91,12 +91,12 @@ port pointing at nothing.
 
 ## Check it worked
 
-| What you should see             | Where                                              |
-| ------------------------------- | -------------------------------------------------- |
-| A product grid with demo items  | `http://localhost:8080`                             |
-| The locale prefix in the URL    | `/en/products` — routing is locale-first            |
-| A language switch that persists | top bar; the choice survives a reload               |
-| Docs (this site)                | `npm run docs:dev`, or `:8090` in compose           |
+| What you should see             | Where                                     |
+| ------------------------------- | ----------------------------------------- |
+| A product grid with demo items  | `http://localhost:8080`                   |
+| The locale prefix in the URL    | `/en/products` — routing is locale-first  |
+| A language switch that persists | top bar; the choice survives a reload     |
+| Docs (this site)                | `npm run docs:dev`, or `:8090` in compose |
 
 ## The one command before you commit
 
@@ -132,13 +132,13 @@ npm run test:mutation         # Stryker; nightly in CI, by hand when you want it
 
 ## Where to go next
 
-| You want to                                | Read                                                            |
-| ------------------------------------------ | --------------------------------------------------------------- |
-| Understand the folder layout               | [Modules](./theory/modules.md), [Layers](./theory/layers.md)     |
-| Add or remove a domain                     | [Adding & Removing a Module](./theory/module-lifecycle.md)       |
-| Change an endpoint or a payload            | [OpenAPI Workflow](./api/openapi-workflow.md)                    |
-| Know what dev and e2e run against          | [The demo profile](./tools/demo-profile.md)                           |
-| Understand routes, guards and access       | [Sitemap & Access Control](./theory/sitemap.md)                  |
-| Find out what a dependency is doing here   | [Tools Explained](./tools/tools-explained.md)                    |
-| Look up a script                           | [Package Scripts](./tools/package-scripts.md)                    |
-| Know what is planned but unbuilt           | [Roadmap](./theory/roadmap.md)                                   |
+| You want to                              | Read                                                         |
+| ---------------------------------------- | ------------------------------------------------------------ |
+| Understand the folder layout             | [Modules](./theory/modules.md), [Layers](./theory/layers.md) |
+| Add or remove a domain                   | [Adding & Removing a Module](./theory/module-lifecycle.md)   |
+| Change an endpoint or a payload          | [OpenAPI Workflow](./api/openapi-workflow.md)                |
+| Know what dev and e2e run against        | [The demo profile](./tools/demo-profile.md)                  |
+| Understand routes, guards and access     | [Sitemap & Access Control](./theory/sitemap.md)              |
+| Find out what a dependency is doing here | [Tools Explained](./tools/tools-explained.md)                |
+| Look up a script                         | [Package Scripts](./tools/package-scripts.md)                |
+| Know what is planned but unbuilt         | [Roadmap](./theory/roadmap.md)                               |

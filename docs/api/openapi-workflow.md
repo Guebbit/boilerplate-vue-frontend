@@ -45,7 +45,7 @@ There is deliberately **no script** for this. Syncing is a judgement call, not a
 
 Then review the diff — a spec change may require store or view updates. To confirm parity by hand, `diff openapi.yaml ../boilerplate-node-backend/openapi.yaml` should print nothing.
 
-CI cannot catch a stale *copy*; it can only catch a spec edited **within this repo** without regenerating (see below). Cross-repo parity remains a human step.
+CI cannot catch a stale _copy_; it can only catch a spec edited **within this repo** without regenerating (see below). Cross-repo parity remains a human step.
 
 ## Freshness enforcement in CI
 
@@ -65,11 +65,11 @@ If you change this job, verify it can actually fail: edit `openapi.yaml` without
 
 ## Tools around the contract
 
-| Tool | Job |
-| ---- | --- |
-| [`openapi.yaml`](https://spec.openapis.org/oas/latest.html) | single contract file (OpenAPI 3.x) |
-| [Spectral](https://stoplight.io/open-source/spectral) | lint the spec against `spectral.yaml` rules |
-| [orval](https://orval.dev) | generate `contracts/rest/` — axios client, Zod schemas |
+| Tool                                                        | Job                                                    |
+| ----------------------------------------------------------- | ------------------------------------------------------ |
+| [`openapi.yaml`](https://spec.openapis.org/oas/latest.html) | single contract file (OpenAPI 3.x)                     |
+| [Spectral](https://stoplight.io/open-source/spectral)       | lint the spec against `spectral.yaml` rules            |
+| [orval](https://orval.dev)                                  | generate `contracts/rest/` — axios client, Zod schemas |
 
 ## Generated output (`contracts/rest/`)
 
@@ -110,10 +110,10 @@ Naming convention: schema name + property name, PascalCase. Example: `UpdateFeed
 
 `orval.config.ts` at the project root controls code generation. It defines **three independent output blocks**, each reading the same spec:
 
-| Block | Target | Effect |
-| ----- | ------ | ------ |
-| `api` | `./contracts/rest/index.ts` | typed axios functions, routed through `orvalMutator` |
-| `zodSchemas` | `./contracts/rest/schemas.zod.ts` | Zod schema per request/response shape |
+| Block        | Target                            | Effect                                               |
+| ------------ | --------------------------------- | ---------------------------------------------------- |
+| `api`        | `./contracts/rest/index.ts`       | typed axios functions, routed through `orvalMutator` |
+| `zodSchemas` | `./contracts/rest/schemas.zod.ts` | Zod schema per request/response shape                |
 
 Every target listed here must also appear in the `api-freshness` CI job's pathspec, or changes to it go unguarded.
 
@@ -127,9 +127,9 @@ the body straight to the mutator and generates no encoding at all.
 `splitByContentType` therefore generates one function per content type, and an inline
 `transformer` in `orval.config.ts` names them:
 
-| Call | Sends |
-| ---- | ----- |
-| `createProduct(body)` | `application/json` |
+| Call                               | Sends                                                  |
+| ---------------------------------- | ------------------------------------------------------ |
+| `createProduct(body)`              | `application/json`                                     |
 | `createProductWithMultipart(body)` | `multipart/form-data`, encoded by the generated client |
 
 The JSON function keeps the plain operation name, so JSON call sites are unaffected by the split.

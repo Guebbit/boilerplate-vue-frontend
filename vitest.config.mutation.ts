@@ -1,4 +1,4 @@
-import { mergeConfig, defineConfig } from 'vitest/config';
+import { mergeConfig, defineConfig, configDefaults } from 'vitest/config';
 import baseConfig from './vitest.config';
 
 /**
@@ -34,9 +34,10 @@ const mutationConfig = mergeConfig(
     baseConfig,
     defineConfig({
         test: {
-            // The HTML report and Stryker's own scratch space are not test sources.
+            // On top of vitest's own defaults, which the base config also takes verbatim: the
+            // build output, the HTML report and Stryker's scratch space are not test sources.
             exclude: [
-                '**/node_modules/**',
+                ...configDefaults.exclude,
                 '**/dist/**',
                 '**/.stryker-tmp/**',
                 'reports/**',

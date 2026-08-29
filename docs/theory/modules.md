@@ -47,13 +47,13 @@ flowchart TD
 **Every arrow points down and none points back.** `eslint.config.ts` enforces each edge in both
 directions, one `no-restricted-imports` block per tier.
 
-| Tier | Folder | Knows about | May import |
-| ---- | ------ | ----------- | ---------- |
-| **App** | `src/app` | this application: which domains exist and how they are assembled | modules, kernel, ui, infra |
-| **Modules** | `src/modules/<name>` | its own domain, plus siblings' **barrels** | kernel, ui, infra |
-| **Kernel** | `src/kernel` | this *kind* of app — never which domains exist | ui, infra |
-| **UI** | `src/ui` | nothing but design | infra |
-| **Infrastructure** | `src/infrastructure` | nothing above it | — |
+| Tier               | Folder               | Knows about                                                      | May import                 |
+| ------------------ | -------------------- | ---------------------------------------------------------------- | -------------------------- |
+| **App**            | `src/app`            | this application: which domains exist and how they are assembled | modules, kernel, ui, infra |
+| **Modules**        | `src/modules/<name>` | its own domain, plus siblings' **barrels**                       | kernel, ui, infra          |
+| **Kernel**         | `src/kernel`         | this _kind_ of app — never which domains exist                   | ui, infra                  |
+| **UI**             | `src/ui`             | nothing but design                                               | infra                      |
+| **Infrastructure** | `src/infrastructure` | nothing above it                                                 | —                          |
 
 ### Why `app` exists, and what it fixed
 
@@ -65,13 +65,13 @@ this kind of application.
 
 Making the tier explicit moved five things and deleted the exemption:
 
-| Was | Is now | Why |
-| --- | ------ | --- |
-| `platform/router/` | `app/router/` | splices every enabled module's routes |
-| `platform/components/AppNavigation.vue` | `app/components/` | renders every enabled module's nav entries |
-| `platform/middlewares/` | `app/guards/` | route guards for this app's route tree |
-| `platform/layouts/` | `app/layouts/` | the app shell, which composes the navigation |
-| `platform/views/` | `app/views/` | Home, Error, the prose pages — pages of this app |
+| Was                                     | Is now            | Why                                              |
+| --------------------------------------- | ----------------- | ------------------------------------------------ |
+| `platform/router/`                      | `app/router/`     | splices every enabled module's routes            |
+| `platform/components/AppNavigation.vue` | `app/components/` | renders every enabled module's nav entries       |
+| `platform/middlewares/`                 | `app/guards/`     | route guards for this app's route tree           |
+| `platform/layouts/`                     | `app/layouts/`    | the app shell, which composes the navigation     |
+| `platform/views/`                       | `app/views/`      | Home, Error, the prose pages — pages of this app |
 
 **This mirrors the backend**, which made the same split at the same time — the four tiers there are
 `app → modules → kernel → infrastructure`, with `ui` being the one tier a backend has no use for.
@@ -91,12 +91,12 @@ and that is correct: `infrastructure/http/index.ts` is axios-coupled substrate a
 where it is. The one thing it may never contain is the knowledge that a module system exists.
 
 Being domain-free is **not enough** to earn a place in `kernel` — most of `infrastructure` and all
-of `ui` are domain-free too. A `kernel` file's *purpose* has to dissolve if modules do. By that test
+of `ui` are domain-free too. A `kernel` file's _purpose_ has to dissolve if modules do. By that test
 `kernel` holds exactly one thing:
 
 | File          | Why it cannot be infrastructure                                            |
 | ------------- | -------------------------------------------------------------------------- |
-| `registry.ts` | it *is* the module system — `AppModule`, the nav entries, the route splice |
+| `registry.ts` | it _is_ the module system — `AppModule`, the nav entries, the route splice |
 
 That is literally the whole tier: **one file**. Three others used to sit beside it —
 `FormCounterInput.vue`, `AppLanguageSwitcher.vue` and `counter.ts` — and each failed the test, since
@@ -107,7 +107,7 @@ drives its locale-prefixed routes, and `counter.ts` to the `demo` module, becaus
 scaffolding for the Playground rather than shared state.
 
 One file is the honest size of a module system in a frontend, and it is deliberate: the tier earns
-its place by being unambiguous, not by being large. Everything domain-free that is *not* the module
+its place by being unambiguous, not by being large. Everything domain-free that is _not_ the module
 system has two better homes already — `ui` for anything with a template, `infrastructure` for the
 rest.
 
@@ -125,7 +125,7 @@ overloaded one makes them think they already know, and that failure is silent.
 
 `platform` was borrowed from VS Code, where `vs/base` is utility code, `vs/platform` is the service
 layer and `vs/workbench` is the application. Two things outweighed the precedent: `vs/platform` is a
-*service and DI layer*, a third meaning again, and in current industry usage "the platform" is the
+_service and DI layer_, a third meaning again, and in current industry usage "the platform" is the
 base layer everything runs on — which is this repo's `infrastructure`. Read cold, the two old names
 pointed at each other's contents. `kernel` names what the folder is: a microkernel that loads and
 connects plugins it has never heard of.
@@ -157,7 +157,7 @@ the domain's own page.
 
 ## The manifest
 
-A module is a value, not a convention. Everything the application does *for* a domain is declared
+A module is a value, not a convention. Everything the application does _for_ a domain is declared
 in one typed object:
 
 ```ts
@@ -235,22 +235,22 @@ remembering:
    central parity file importing two modules' handlers, is the same coupling the manifest removed
    from `src/` — just moved into `tests/`. The rule that fixed it:
 
-   > A spec outside a module may **iterate** the registry. It may never **name** a domain.
+    > A spec outside a module may **iterate** the registry. It may never **name** a domain.
 
-   So the mechanism tests use invented domains (`public-domain`, `staff-domain`, `/widgets`) and
-   invented schemas; the per-domain facts moved into `src/modules/<name>/tests/`; and
-   `tests/cross-cutting/registry.spec.ts` sweeps every enabled module for invariants — every
-   navigation entry points at a route that module declares, every route is named, every module
-   ships the same set of locales — without naming one.
+    So the mechanism tests use invented domains (`public-domain`, `staff-domain`, `/widgets`) and
+    invented schemas; the per-domain facts moved into `src/modules/<name>/tests/`; and
+    `tests/cross-cutting/registry.spec.ts` sweeps every enabled module for invariants — every
+    navigation entry points at a route that module declares, every route is named, every module
+    ships the same set of locales — without naming one.
 
 3. **The contract, which is not ours alone.** See above.
 
-4. **A store that was two stores.** `infrastructure/profile.ts` held the access token *and* the `User`
+4. **A store that was two stores.** `infrastructure/profile.ts` held the access token _and_ the `User`
    record, so `infrastructure` owned a domain entity and the app shell reached into a domain to render a
    name. Split into `infrastructure/stores/session.ts` — token, plus a `{ id, email, admin }` projection and the
    three `/account` calls a session needs to restore or end itself — and
    `modules/account/store.ts`, which owns the editable record and every operation on it. The shell
-   now knows *someone is signed in, here is their name, they are staff*, and nothing more.
+   now knows _someone is signed in, here is their name, they are staff_, and nothing more.
 
 ### The honest scorecard
 

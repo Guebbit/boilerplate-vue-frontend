@@ -13,22 +13,22 @@ npm run complete                              # the whole gate, exactly as CI ru
 ```
 
 If you change one module, the first line is the loop you want. If a build went red and you want to
-know *which domain*, the third line is the one.
+know _which domain_, the third line is the one.
 
 ## Every command, and when to reach for it
 
-| Command | Answers | Time | Gate? |
-| --- | --- | --- | --- |
-| `test:module -- <path>` | Did I break the module I'm editing? | seconds | — |
-| `test:unit` | Did I break a unit anywhere? | ~9s | ✅ |
-| `test:unit:coverage` | …and what is still unexercised? | ~25s | ✅ |
-| `test:unit:report` + `test:report` | Which module owns the failure, and where did the time go? | +1s | ✅ (prints in CI) |
-| `test:e2e` | Does the app work against the real API? | ~2m | ✅ |
-| `test:e2e:spec` | …just this one spec? | ~30s | — |
-| `test:e2e:live` | Does the app agree with the **real backend**? | ~6m | ✅ (CI job) |
-| `test:e2e:visual` | Does it still *look* right? | ~1m | ❌ by design |
-| `test:mutation` | Do the tests **notice** when the source is wrong? | ~9m | ❌ nightly |
-| `complete` | All of the gate, in CI's order | ~7m | — |
+| Command                            | Answers                                                   | Time    | Gate?             |
+| ---------------------------------- | --------------------------------------------------------- | ------- | ----------------- |
+| `test:module -- <path>`            | Did I break the module I'm editing?                       | seconds | —                 |
+| `test:unit`                        | Did I break a unit anywhere?                              | ~9s     | ✅                |
+| `test:unit:coverage`               | …and what is still unexercised?                           | ~25s    | ✅                |
+| `test:unit:report` + `test:report` | Which module owns the failure, and where did the time go? | +1s     | ✅ (prints in CI) |
+| `test:e2e`                         | Does the app work against the real API?                   | ~2m     | ✅                |
+| `test:e2e:spec`                    | …just this one spec?                                      | ~30s    | —                 |
+| `test:e2e:live`                    | Does the app agree with the **real backend**?             | ~6m     | ✅ (CI job)       |
+| `test:e2e:visual`                  | Does it still _look_ right?                               | ~1m     | ❌ by design      |
+| `test:mutation`                    | Do the tests **notice** when the source is wrong?         | ~9m     | ❌ nightly        |
+| `complete`                         | All of the gate, in CI's order                            | ~7m     | —                 |
 
 ## Running one thing
 
@@ -88,11 +88,11 @@ before anything else; the terminal copy can be truncated, the file cannot.
 
 ## The three e2e profiles
 
-| Profile | Backend | Command | What it proves |
-| --- | --- | --- | --- |
-| **demo** | the real API, in-memory (one per shard) | `test:e2e` | The app works, flows included, against known seeds. Fast |
-| **live** | the real API, fully composed | `test:e2e:live` | Everything the demo profile disables: real cache, real broker, real network |
-| **visual** | the real API, in-memory | `test:e2e:visual` | The pages still look right. Answers to the machine that recorded them |
+| Profile    | Backend                                 | Command           | What it proves                                                              |
+| ---------- | --------------------------------------- | ----------------- | --------------------------------------------------------------------------- |
+| **demo**   | the real API, in-memory (one per shard) | `test:e2e`        | The app works, flows included, against known seeds. Fast                    |
+| **live**   | the real API, fully composed            | `test:e2e:live`   | Everything the demo profile disables: real cache, real broker, real network |
+| **visual** | the real API, in-memory                 | `test:e2e:visual` | The pages still look right. Answers to the machine that recorded them       |
 
 Both functional profiles run the real backend — see [The demo profile](./demo-profile.md) — so there
 is no imitation left to disagree with it.

@@ -201,11 +201,6 @@ const tierBoundaryRules = [
     }
 ];
 
-// To allow more languages other than `ts` in `.vue` files, uncomment the following lines:
-// import { configureVueProject } from '@vue/eslint-config-typescript'
-// configureVueProject({ scriptLangs: ['ts', 'tsx'] })
-// More info at https://github.com/vuejs/eslint-config-typescript/#advanced-setup
-
 /**
  * `x as unknown as T` — the double cast that erases the type system's objection instead of
  * answering it — is banned everywhere, tests included; the paired backend carries the identical
@@ -224,6 +219,302 @@ const bannedDoubleCasts = [
             '`as any as T` erases the type error instead of answering it. Type the source honestly — or, for a hand-built test stub, use `asStub<T>()` from tests/support/stub.ts.'
     }
 ];
+
+/*
+ * Two unicorn rules turned off rather than exempted eleven times, plus the rest of the
+ * plugin's tuning in one place.
+ *
+ * `no-null`/`no-useless-undefined` were being disabled inline wherever they fired, which
+ * is the signal that the rule disagrees with the stack rather than with the code:
+ *
+ *   no-null              — the DOM and the API both use `null` with meaning. A
+ *                          `ref<T | null>(null)` is Vue's own idiom, and a JSON body
+ *                          carrying `null` is not carrying `undefined`.
+ *   no-useless-undefined — an explicit `undefined` is this codebase's stated way of
+ *                          saying "looked, found nothing".
+ *
+ * A rule that needs eight exemptions is not catching bugs, it is collecting signatures.
+ */
+const unicornTuningRules = {
+    'unicorn/no-null': 'off',
+    'unicorn/no-useless-undefined': 'off',
+    'no-nested-ternary': 'off',
+    'unicorn/no-nested-ternary': 'off',
+    'unicorn/prefer-top-level-await': 'off',
+
+    // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/HEAD/docs/rules/consistent-destructuring.md
+    'unicorn/better-regex': 'error',
+
+    // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/HEAD/docs/rules/better-regex.md
+    'unicorn/consistent-destructuring': 'error',
+
+    // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/HEAD/docs/rules/filename-case.md
+    // Every file is kebab-case — one convention across both paired repos, `tests/**`
+    // included. Vue components are the one exception, and they are PascalCase rather than
+    // unchecked (see below).
+    //
+    // `.spec.ts` / `.cy.ts` / `.visual.cy.ts` need no exemption: `multipleFileExtensions`
+    // defaults on, so only the part before the FIRST dot is checked — `use-async-action`
+    // in `use-async-action.spec.ts`. A spec is therefore named after the file it covers,
+    // spelled identically, which is what makes the pair greppable.
+    'unicorn/filename-case': [
+        'error',
+        {
+            case: 'kebabCase'
+        }
+    ],
+
+    // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/HEAD/docs/rules/catch-error-name.md
+    'unicorn/catch-error-name': [
+        'error',
+        {
+            name: 'error'
+        }
+    ],
+
+    // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/main/docs/rules/prevent-abbreviations.md
+    'unicorn/prevent-abbreviations': [
+        'error',
+        {
+            replacements: {
+                i: false,
+                e: false,
+                len: false,
+                prop: false,
+                props: false,
+                prev: false,
+                opts: {
+                    options: true
+                },
+                ref: {
+                    reference: false
+                }
+            }
+        }
+    ]
+};
+
+/**
+ * Vue SFC conventions: the house rules for how a `.vue` file is laid out, independent of
+ * what it may import (see the tier/module/domain boundary rules below) or what copy it
+ * may render (see `bareStringsInTemplateRule`).
+ *
+ * `block-order` fixes one order across every SFC: script, then template, then style. The
+ * rule's own default is `[['script', 'template'], 'style']` — script and template
+ * interchangeable — which is how this codebase ended up with both spellings and with two
+ * sibling list views that could not be read side by side. Naming the order explicitly is
+ * the point; which order it is matters far less than that there is one. Components
+ * declaring both a plain `<script>` (for `name`) and a `<script setup>` keep them adjacent
+ * in that order, since both count as `script` here.
+ */
+const vueSfcConventionRules = {
+    'vue/script-indent': 'off',
+    'vue/multi-word-component-names': 'off',
+    'vue/require-default-prop': 'off',
+    'vue/no-v-html': 'off',
+    'vue/block-order': ['error', { order: ['script', 'template', 'style'] }]
+};
+
+/**
+ * Every user-facing string goes through vue-i18n. This catches the two shapes that
+ * slip past review most easily — a bare text node (`<h3>SSE observability</h3>`) and
+ * a static attribute a screen reader or a tab title reads (`alt="logo"`,
+ * `title="Realtime playground"`) — since neither looks like "untranslated copy" at a
+ * glance the way a missing `t()` call does.
+ *
+ * The `attributes` list is the accessibility/UX surface only. Attributes that are
+ * NOT here (`class`, `id`, `type`, `name`, `variant`…) are markup, not copy.
+ *
+ * This governs templates. Technician-facing strings — console output, thrown
+ * `Error` messages, analytics event names — are deliberately English; see the i18n
+ * section of README.md.
+ */
+const bareStringsInTemplateRule = {
+    'vue/no-bare-strings-in-template': [
+        'error',
+        {
+            // Punctuation, symbols and SI unit abbreviations: identical in every
+            // language, so putting them through a dictionary buys nothing and invites
+            // a translator to "fix" them.
+            allowlist: [
+                '(',
+                ')',
+                ',',
+                '.',
+                '&',
+                '+',
+                '-',
+                '=',
+                '*',
+                '/',
+                '#',
+                '%',
+                '!',
+                '?',
+                ':',
+                '[',
+                ']',
+                '{',
+                '}',
+                '<',
+                '>',
+                '·',
+                '•',
+                '–',
+                '—',
+                '|',
+                '@',
+                '©',
+                '×',
+                'MB',
+                'GB',
+                'KB',
+                'ms'
+            ],
+            attributes: {
+                '/.+/': [
+                    'alt',
+                    'aria-label',
+                    'aria-placeholder',
+                    'aria-roledescription',
+                    'aria-valuetext',
+                    'label',
+                    'placeholder',
+                    'title'
+                ]
+            },
+            directives: ['v-text']
+        }
+    ]
+};
+
+/**
+ * `@typescript-eslint` accommodations that relax `strictTypeChecked`/`stylisticTypeChecked`
+ * for shapes this codebase relies on: numbers stringify one way; `=> emit(...)` is the
+ * idiom, not a confusion; `_`-prefixed means "unused on purpose"; `value || fallback` on a
+ * STRING is the spelling of "empty means unset"; and destructuring is required for objects
+ * but not arrays, matching the paired backend.
+ */
+const typeScriptStrictnessReliefRules = {
+    '@typescript-eslint/no-non-null-assertion': 'off',
+    '@typescript-eslint/use-unknown-in-catch-callback-variable': 'off',
+
+    '@typescript-eslint/restrict-plus-operands': [
+        'error',
+        {
+            allowNumberAndString: true
+        }
+    ],
+
+    '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
+    '@typescript-eslint/no-confusing-void-expression': ['error', { ignoreArrowShorthand: true }],
+    '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+            argsIgnorePattern: '^_',
+            varsIgnorePattern: '^_',
+            caughtErrorsIgnorePattern: '^_'
+        }
+    ],
+    '@typescript-eslint/prefer-nullish-coalescing': [
+        'error',
+        { ignorePrimitives: { string: true } }
+    ],
+    'prefer-destructuring': 'off',
+    '@typescript-eslint/prefer-destructuring': [
+        'error',
+        {
+            VariableDeclarator: { array: false, object: true },
+            AssignmentExpression: { array: false, object: false }
+        }
+    ]
+};
+
+/**
+ * `@typescript-eslint/naming-convention`, the 78-line ladder covering every syntax kind
+ * this codebase names: default identifiers, quoted wire keys, variables, classes/types,
+ * functions, interfaces, type aliases, enums, type parameters and class/enum members.
+ */
+const namingConventionRule = {
+    '@typescript-eslint/naming-convention': [
+        'error',
+        /*
+         * `allowSingleOrDouble`, not `allow`. A single leading underscore was permitted
+         * and a double one was not — but `__esModule` and friends are fixed spellings
+         * owned by other ecosystems, not names this codebase gets to choose.
+         */
+        {
+            selector: 'default',
+            format: ['camelCase', 'PascalCase'],
+            leadingUnderscore: 'allowSingleOrDouble',
+            trailingUnderscore: 'allow'
+        },
+        /*
+         * Quoted keys are spelled by whoever owns the wire: `'Content-Type'`,
+         * `'x-request-id'`, `'data-test'`. Requiring camelCase there asks the codebase to
+         * rename an HTTP header, which is why this rule was being disabled inline at
+         * every one of those call sites instead.
+         */
+        {
+            selector: ['objectLiteralProperty', 'typeProperty'],
+            modifiers: ['requiresQuotes'],
+            format: null
+        },
+        {
+            selector: 'variable',
+            format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
+            leadingUnderscore: 'allowSingleOrDouble',
+            trailingUnderscore: 'allow'
+        },
+        {
+            selector: ['class', 'typeLike', 'enum'],
+            format: ['PascalCase']
+        },
+        {
+            selector: ['function'],
+            format: ['camelCase'],
+            leadingUnderscore: 'allow'
+        },
+        {
+            selector: 'interface',
+            format: ['PascalCase'],
+            custom: {
+                regex: '^I[A-Z]',
+                match: false
+            }
+        },
+        {
+            selector: 'typeAlias',
+            format: ['PascalCase'],
+            custom: {
+                regex: '^[TI][A-Z]',
+                match: false
+            }
+        },
+        {
+            selector: 'enum',
+            format: ['PascalCase'],
+            custom: {
+                regex: '^E[A-Z]',
+                match: false
+            }
+        },
+        {
+            selector: 'typeParameter',
+            format: ['PascalCase'],
+            custom: {
+                regex: '^T[A-Z]?',
+                match: true
+            }
+        },
+        {
+            selector: ['memberLike', 'enumMember'],
+            format: ['camelCase', 'PascalCase', 'UPPER_CASE', 'snake_case'],
+            leadingUnderscore: 'allowSingleOrDouble',
+            trailingUnderscore: 'allow'
+        }
+    ]
+};
 
 export default defineConfigWithVueTs(
     {
@@ -343,305 +634,13 @@ export default defineConfigWithVueTs(
              */
             'no-console': 'error',
             'no-debugger': 'warn',
-
-            /*
-             * Two unicorn rules turned off rather than exempted eleven times.
-             *
-             * Each was being disabled inline wherever it fired, which is the signal that the rule
-             * disagrees with the stack rather than with the code:
-             *
-             *   no-null              — the DOM and the API both use `null` with meaning. A
-             *                          `ref<T | null>(null)` is Vue's own idiom, and a JSON body
-             *                          carrying `null` is not carrying `undefined`.
-             *   no-useless-undefined — an explicit `undefined` is this codebase's stated way of
-             *                          saying "looked, found nothing".
-             *
-             * A rule that needs eight exemptions is not catching bugs, it is collecting signatures.
-             */
-            'unicorn/no-null': 'off',
-            'unicorn/no-useless-undefined': 'off',
-            'vue/script-indent': 'off',
-            'vue/multi-word-component-names': 'off',
-            'vue/require-default-prop': 'off',
-            'vue/no-v-html': 'off',
-
-            /**
-             * One block order across every SFC: script, then template, then style.
-             *
-             * The rule's own default is `[['script', 'template'], 'style']` — script and template
-             * interchangeable — which is how this codebase ended up with both spellings and with
-             * two sibling list views that could not be read side by side. Naming the order
-             * explicitly is the point; which order it is matters far less than that there is one.
-             *
-             * Components declaring both a plain `<script>` (for `name`) and a `<script setup>`
-             * keep them adjacent in that order, since both count as `script` here.
-             */
-            'vue/block-order': ['error', { order: ['script', 'template', 'style'] }],
-
-            /**
-             * Every user-facing string goes through vue-i18n. This catches the two shapes that
-             * slip past review most easily — a bare text node (`<h3>SSE observability</h3>`) and
-             * a static attribute a screen reader or a tab title reads (`alt="logo"`,
-             * `title="Realtime playground"`) — since neither looks like "untranslated copy" at a
-             * glance the way a missing `t()` call does.
-             *
-             * The `attributes` list is the accessibility/UX surface only. Attributes that are
-             * NOT here (`class`, `id`, `type`, `name`, `variant`…) are markup, not copy.
-             *
-             * This governs templates. Technician-facing strings — console output, thrown
-             * `Error` messages, analytics event names — are deliberately English; see the i18n
-             * section of README.md.
-             */
-            'vue/no-bare-strings-in-template': [
-                'error',
-                {
-                    // Punctuation, symbols and SI unit abbreviations: identical in every
-                    // language, so putting them through a dictionary buys nothing and invites
-                    // a translator to "fix" them.
-                    allowlist: [
-                        '(',
-                        ')',
-                        ',',
-                        '.',
-                        '&',
-                        '+',
-                        '-',
-                        '=',
-                        '*',
-                        '/',
-                        '#',
-                        '%',
-                        '!',
-                        '?',
-                        ':',
-                        '[',
-                        ']',
-                        '{',
-                        '}',
-                        '<',
-                        '>',
-                        '·',
-                        '•',
-                        '–',
-                        '—',
-                        '|',
-                        '@',
-                        '©',
-                        '×',
-                        'MB',
-                        'GB',
-                        'KB',
-                        'ms'
-                    ],
-                    attributes: {
-                        '/.+/': [
-                            'alt',
-                            'aria-label',
-                            'aria-placeholder',
-                            'aria-roledescription',
-                            'aria-valuetext',
-                            'label',
-                            'placeholder',
-                            'title'
-                        ]
-                    },
-                    directives: ['v-text']
-                }
-            ],
-            '@typescript-eslint/no-non-null-assertion': 'off',
-            // '@typescript-eslint/no-confusing-void-expression': 'off',
-            '@typescript-eslint/use-unknown-in-catch-callback-variable': 'off',
-            'no-nested-ternary': 'off',
-            'unicorn/no-nested-ternary': 'off',
-            'unicorn/prefer-top-level-await': 'off',
-
-            '@typescript-eslint/restrict-plus-operands': [
-                'error',
-                {
-                    allowNumberAndString: true
-                }
-            ],
-
-            /*
-             * The same accommodations the paired backend documents at length: numbers stringify
-             * one way; `=> emit(...)` is the idiom, not a confusion; `_`-prefixed means "unused
-             * on purpose"; and `value || fallback` on a STRING is the spelling of "empty means
-             * unset".
-             */
-            '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
-            '@typescript-eslint/no-confusing-void-expression': [
-                'error',
-                { ignoreArrowShorthand: true }
-            ],
-            '@typescript-eslint/no-unused-vars': [
-                'error',
-                {
-                    argsIgnorePattern: '^_',
-                    varsIgnorePattern: '^_',
-                    caughtErrorsIgnorePattern: '^_'
-                }
-            ],
-            '@typescript-eslint/prefer-nullish-coalescing': [
-                'error',
-                { ignorePrimitives: { string: true } }
-            ],
-            'prefer-destructuring': 'off',
-            '@typescript-eslint/prefer-destructuring': [
-                'error',
-                {
-                    VariableDeclarator: { array: false, object: true },
-                    AssignmentExpression: { array: false, object: false }
-                }
-            ],
             '@eslint-community/eslint-comments/require-description': 'error',
 
-            '@typescript-eslint/naming-convention': [
-                'error',
-                /*
-                 * `allowSingleOrDouble`, not `allow`. A single leading underscore was permitted
-                 * and a double one was not — but `__esModule` and friends are fixed spellings
-                 * owned by other ecosystems, not names this codebase gets to choose.
-                 */
-                {
-                    selector: 'default',
-                    format: ['camelCase', 'PascalCase'],
-                    leadingUnderscore: 'allowSingleOrDouble',
-                    trailingUnderscore: 'allow'
-                },
-                /*
-                 * Quoted keys are spelled by whoever owns the wire: `'Content-Type'`,
-                 * `'x-request-id'`, `'data-test'`. Requiring camelCase there asks the codebase to
-                 * rename an HTTP header, which is why this rule was being disabled inline at
-                 * every one of those call sites instead.
-                 */
-                {
-                    selector: ['objectLiteralProperty', 'typeProperty'],
-                    modifiers: ['requiresQuotes'],
-                    format: null
-                },
-                {
-                    selector: 'variable',
-                    format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
-                    leadingUnderscore: 'allowSingleOrDouble',
-                    trailingUnderscore: 'allow'
-                },
-                {
-                    selector: ['class', 'typeLike', 'enum'],
-                    format: ['PascalCase']
-                },
-                {
-                    selector: ['function'],
-                    format: ['camelCase'],
-                    leadingUnderscore: 'allow'
-                },
-                {
-                    selector: 'interface',
-                    format: ['PascalCase'],
-                    custom: {
-                        regex: '^I[A-Z]',
-                        match: false
-                    }
-                },
-                {
-                    selector: 'typeAlias',
-                    format: ['PascalCase'],
-                    custom: {
-                        regex: '^[TI][A-Z]',
-                        match: false
-                    }
-                },
-                {
-                    selector: 'enum',
-                    format: ['PascalCase'],
-                    custom: {
-                        regex: '^E[A-Z]',
-                        match: false
-                    }
-                },
-                {
-                    selector: 'typeParameter',
-                    format: ['PascalCase'],
-                    custom: {
-                        regex: '^T[A-Z]?',
-                        match: true
-                    }
-                },
-                {
-                    selector: ['memberLike', 'enumMember'],
-                    format: ['camelCase', 'PascalCase', 'UPPER_CASE', 'snake_case'],
-                    leadingUnderscore: 'allowSingleOrDouble',
-                    trailingUnderscore: 'allow'
-                }
-            ],
-
-            // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/HEAD/docs/rules/consistent-destructuring.md
-            'unicorn/better-regex': 'error',
-
-            // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/HEAD/docs/rules/better-regex.md
-            'unicorn/consistent-destructuring': 'error',
-
-            // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/HEAD/docs/rules/filename-case.md
-            // Every file is kebab-case — one convention across both paired repos, `tests/**`
-            // included. Vue components are the one exception, and they are PascalCase rather than
-            // unchecked (see below).
-            //
-            // `.spec.ts` / `.cy.ts` / `.visual.cy.ts` need no exemption: `multipleFileExtensions`
-            // defaults on, so only the part before the FIRST dot is checked — `use-async-action`
-            // in `use-async-action.spec.ts`. A spec is therefore named after the file it covers,
-            // spelled identically, which is what makes the pair greppable.
-            'unicorn/filename-case': [
-                'error',
-                {
-                    case: 'kebabCase'
-                }
-            ],
-
-            // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/HEAD/docs/rules/catch-error-name.md
-            'unicorn/catch-error-name': [
-                'error',
-                {
-                    name: 'error'
-                }
-            ],
-
-            // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/main/docs/rules/prevent-abbreviations.md
-            'unicorn/prevent-abbreviations': [
-                'error',
-                {
-                    replacements: {
-                        i: false,
-                        e: false,
-                        len: false,
-                        prop: false,
-                        props: false,
-                        prev: false,
-                        opts: {
-                            options: true
-                        },
-                        ref: {
-                            reference: false
-                        }
-                    }
-                }
-            ]
-
-            // https://github.com/sindresorhus/eslint-plugin-unicorn/blob/HEAD/docs/rules/string-content.md
-            // 'unicorn/string-content': [
-            //   'error',
-            //   {
-            //     patterns: {
-            //       unicorn: '🦄',
-            //       awesome: {
-            //         suggest: '😎',
-            //         message: 'Please use `😎` instead of `awesome`.',
-            //       },
-            //       cool: {
-            //         suggest: '😎',
-            //         fix: false,
-            //       },
-            //     },
-            //   },
-            // ],
+            ...unicornTuningRules,
+            ...vueSfcConventionRules,
+            ...bareStringsInTemplateRule,
+            ...typeScriptStrictnessReliefRules,
+            ...namingConventionRule
         }
     },
 

@@ -60,10 +60,9 @@ const submitForm = () =>
                 addMessage(t('verify-email-confirm-page.success'));
                 return router.push(routerLinkI18n({ name: 'Home' }));
             })
-            .then(() => {
-                // Swallows `router.push`'s resolved value — a failed navigation is the router's
-                // own `onError` to report, not this form's. Same note as the reset confirm.
-            })
+            // Swallows `router.push`'s resolved value — a failed navigation is the router's own
+            // `onError` to report, not this form's. Same note as the reset confirm.
+            .then(() => undefined)
     ).catch((error) => notifyErrorMessages(addMessage, error));
 </script>
 

@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import type { ThemeAccent } from '@/ui/types.ts';
 import { computed } from 'vue';
 
 const props = defineProps<{
     title: string;
     value: string | number;
     subtitle?: string;
-    accent?: 'primary' | 'secondary' | 'tertiary';
+    accent?: ThemeAccent;
 }>();
 
 /**

@@ -158,7 +158,6 @@ export const useOrdersStore = defineStore('orders', () => {
     return {
         orders,
         ordersList,
-        addOrder,
         selectedOrderId,
         currentOrder,
 

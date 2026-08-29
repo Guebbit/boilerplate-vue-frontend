@@ -55,15 +55,14 @@ export const siblingRole = (role: RepoRole): RepoRole =>
  * repo's `asyncapi.yaml`, because the shared subset is the whole of the async contract as far as
  * this repo is concerned.
  *
- * That is the whole membership rule, and it is narrower than it once was. Files the two repos kept
- * identical FOR CONVENIENCE used to be here too — `spectral.yaml` and three shared scripts
- * (`check-mutation-baseline.ts`, `report-test-results.ts`, `generate-asyncapi-types.ts`) — hand-
- * maintained on both sides, so a fork was a question no script could answer and the gate could only
- * report it. They were removed on the Node backend's side of this pair; this list follows that
- * decision rather than re-deriving it, because the two lists drifting is exactly the failure mode
- * this file exists to prevent. Nothing breaks silently when two repos lint under rulesets that have
- * drifted apart, or when one holds a newer test reporter — and, now that a second backend can be
- * the paired one, those three scripts have no PHP equivalent to compare against at all.
+ * That is the whole membership rule. Files the two repos keep identical FOR CONVENIENCE are out —
+ * `spectral.yaml` and the shared scripts (`check-mutation-baseline.ts`, `report-test-results.ts`,
+ * `generate-asyncapi-types.ts`), hand-maintained on both sides, so a fork is a question no script
+ * can answer and the gate could only report it. Nothing breaks silently when two repos lint under
+ * rulesets that have drifted apart, or when one holds a newer test reporter — and, now that a
+ * second backend can be the paired one, those scripts have no PHP equivalent to compare against at
+ * all. This list matches the Node backend's rather than re-deriving it, because the two drifting is
+ * exactly the failure mode this file exists to prevent.
  *
  * Also deliberately absent, for the same reason: `public/favicon/*`, `.prettierrc`,
  * `.dockerignore`, `.husky/*`, `.docker/nginx.docs.conf` and `docs/.vitepress/theme/*`. Identical

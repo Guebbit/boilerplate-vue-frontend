@@ -94,7 +94,13 @@ if (process.env.CYPRESS_liveProfile === 'true') {
     process.exit(2);
 }
 
-const shardCount = Math.max(1, Number(process.env.E2E_SHARDS?.trim() || 4));
+/** A positive integer from the environment, or undefined when unset, empty or nonsense. */
+const positiveInteger = (value: string | undefined): number | undefined => {
+    const parsed = Number(value?.trim());
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+};
+
+const shardCount = positiveInteger(process.env.E2E_SHARDS) ?? 4;
 
 // Globbed rather than listed: a new module's suite is sharded the day it appears, and a deleted
 // one stops being scheduled without anyone editing this file.
@@ -165,7 +171,7 @@ const DEMO_PORT_BASE = 3101;
  * Four is this file's own shard ceiling (`DEMO_PORT_BASE` below), so it matches without needing
  * to read `E2E_SHARDS` here too.
  */
-const bootDemoBackends = async (count: number): Promise<(() => void)[]> => {
+const bootDemoBackends = async (count: number): Promise<() => void> => {
     // BACKEND_DEMO_COMMAND unset: boot nothing, and treat the ports as somebody else's to serve.
     // The readiness wait below still runs, so a shard never starts against a port with nothing on
     // it — it fails there, saying why, instead of inside Cypress.
@@ -262,7 +268,7 @@ const bootDemoBackends = async (count: number): Promise<(() => void)[]> => {
     console.log(
         `[e2e-shard] ${count} demo backend(s) ready on :${DEMO_PORT_BASE}–:${DEMO_PORT_BASE + count - 1}`
     );
-    return [kill];
+    return kill;
 };
 
 /**
@@ -305,7 +311,7 @@ const runShard = (files: string[], index: number) =>
 
 const main = async () => {
     const startedAt = Date.now();
-    const [killBackends] = await bootDemoBackends(active.length);
+    const killBackends = await bootDemoBackends(active.length);
     const results = await Promise.all(active.map((shard, index) => runShard(shard.files, index)));
     killBackends();
 

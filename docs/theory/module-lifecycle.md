@@ -33,7 +33,7 @@ flowchart LR
 Every one of those five reads the registry and never names an entry, so none of them appears in
 either checklist. **`src/modules.ts` is the whole runtime registry on this side** — unlike the
 backend, which also owns the contract fragments and their section lists. Here the contract is
-*consumed*:
+_consumed_:
 `openapi.yaml` arrives from the paired backend, and `contracts/rest/schemas.zod.ts` and `api/` are
 generated from it.
 
@@ -118,9 +118,7 @@ export default {
             because: 'Reads `useProductsStore` as it is, to name the product a widget belongs to.'
         }
     ],
-    navigation: [
-        { name: 'WidgetsList', label: 'navigation.label-widgets', plural: 2, order: 40 }
-    ],
+    navigation: [{ name: 'WidgetsList', label: 'navigation.label-widgets', plural: 2, order: 40 }],
     responseSchemas: widgetsResponseSchemas,
     locales: {
         en: () => import('./locales/en.json').then(({ default: dictionary }) => dictionary),
@@ -131,12 +129,12 @@ export default {
 
 Five fields need care:
 
-| Field               | Rule                                                                                                |
-| ------------------- | ---------------------------------------------------------------------------------------------------- |
-| `name`              | must match the folder name under `src/modules/`                                                     |
-| `subdomain`         | `core`, `supporting` or `generic`. A `generic` module may not carry a `domain/` folder               |
-| `dependsOn`         | names **siblings** whose code this module imports, each with its relationship kind and a reason      |
-| `navigation[].name` | must be a route **this module declares** — swept by `registry.spec.ts`                              |
+| Field               | Rule                                                                                            |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| `name`              | must match the folder name under `src/modules/`                                                 |
+| `subdomain`         | `core`, `supporting` or `generic`. A `generic` module may not carry a `domain/` folder          |
+| `dependsOn`         | names **siblings** whose code this module imports, each with its relationship kind and a reason |
+| `navigation[].name` | must be a route **this module declares** — swept by `registry.spec.ts`                          |
 
 The last three are strategic rather than operational: nothing reads them at runtime, and
 `tests/cross-cutting/` reads all of them. An edge nothing imports, an import no edge declares, a
@@ -188,7 +186,7 @@ it is a consumer, not a provider, and an empty barrel is a promise nobody asked 
 
 ::: warning A spec that touches http or i18n must wire the modules itself
 `infrastructure` may not import `@/modules`, so `main.ts` hands the response schemas and the locale
-contributors *down* at module scope. A test that exercises either subsystem without doing the same
+contributors _down_ at module scope. A test that exercises either subsystem without doing the same
 wiring silently measures an app with no domain vocabulary and no contract validation.
 `tests/support/unit/wire-modules.ts` exists for exactly that.
 :::
@@ -197,12 +195,12 @@ wiring silently measures an app with no domain vocabulary and no contract valida
 
 A scaffold `events` module, measured:
 
-|                                                  |                                                               |
-| ------------------------------------------------ | ------------------------------------------------------------- |
-| files added                                      | 5 (`module.ts`, `routes.ts`, one view, `locales/{en,it}.json`) |
-| lines changed elsewhere                          | 2, both in `src/modules.ts` (the import and the array entry)  |
-| documentation written by hand                    | two sections of one page — the other eight blocks are generated |
-| existing files needing an edit to accommodate it | **0**                                                         |
+|                                                  |                                                                                   |
+| ------------------------------------------------ | --------------------------------------------------------------------------------- |
+| files added                                      | 5 (`module.ts`, `routes.ts`, one view, `locales/{en,it}.json`)                    |
+| lines changed elsewhere                          | 2, both in `src/modules.ts` (the import and the array entry)                      |
+| documentation written by hand                    | two sections of one page — the other eight blocks are generated                   |
+| existing files needing an edit to accommodate it | **0**                                                                             |
 | result                                           | type-check, lint and the unit suite green; the view built into its own lazy chunk |
 
 ---
@@ -259,11 +257,11 @@ flowchart TD
 This is the failure class worth remembering, because **neither the compiler, `vue-tsc`, nor lint can
 see it.** Three places in the app shell address a module's route by name:
 
-| File                            | Names                        |
-| ------------------------------- | ---------------------------- |
-| `src/app/views/Home.vue`        | `ProductsList`               |
+| File                                   | Names                       |
+| -------------------------------------- | --------------------------- |
+| `src/app/views/Home.vue`               | `ProductsList`              |
 | `src/app/components/AppNavigation.vue` | `Signup`, the sign-in route |
-| `src/app/router/navigation.ts`  | the sign-in route            |
+| `src/app/router/navigation.ts`         | the sign-in route           |
 
 Each rendered a control that navigated nowhere once its module was deleted — and a 401 with no
 sign-in route aborted the navigation and stranded the visitor on a blank screen. All of them now ask
@@ -290,13 +288,13 @@ assembled from — not a frontend chore.
 Deleting `products`, `cart`, `orders` **and `account`** together — four folders, five lines, and
 `account` is the hard one because the app shell shows who is signed in:
 
-|                     |                                                             |
-| ------------------- | ----------------------------------------------------------- |
-| `src/` type-checks  | **yes**                                                     |
-| lint                | **clean**                                                   |
-| production build    | **succeeds**                                                |
-| app-shell breakage  | **none** — no menu entry, no sign-in button, no dead link   |
-| unit specs failing  | 34, all in **one** file — the openapi parity table          |
+|                    |                                                           |
+| ------------------ | --------------------------------------------------------- |
+| `src/` type-checks | **yes**                                                   |
+| lint               | **clean**                                                 |
+| production build   | **succeeds**                                              |
+| app-shell breakage | **none** — no menu entry, no sign-in button, no dead link |
+| unit specs failing | 34, all in **one** file — the openapi parity table        |
 
 Everything fixable inside this repo has been fixed. The one remaining failure is the shared
 contract, and it is correct.
@@ -350,10 +348,10 @@ ones a sweep cannot express:
   public surface, so no import rule can tell it from a correct one. What makes it fragile is the
   _reason_ for the import. The rule that fixed this class is a review rule, not a test:
 
-  > A spec outside a module may **iterate** the registry. It may never **name** a domain.
+    > A spec outside a module may **iterate** the registry. It may never **name** a domain.
 
-  So the mechanism tests use invented domains (`public-domain`, `staff-domain`, `/widgets`) and
-  invented schemas, and the per-domain facts live in `src/modules/<name>/tests/`.
+    So the mechanism tests use invented domains (`public-domain`, `staff-domain`, `/widgets`) and
+    invented schemas, and the per-domain facts live in `src/modules/<name>/tests/`.
 
 What the suite does cover is the neighbouring ground: `registry.spec.ts` sweeps every enabled module
 for the invariants — every navigation entry points at a route that module declares, the registry is

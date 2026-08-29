@@ -50,18 +50,19 @@ dependsOn: [
     {
         module: 'payments',
         as: 'published-language',
-        because: 'Mounts `PaymentPanel`; paying happens on the order page without this module knowing a provider exists.'
+        because:
+            'Mounts `PaymentPanel`; paying happens on the order page without this module knowing a provider exists.'
     }
 ];
 ```
 
 Three kinds, because three is what this client actually has:
 
-| Kind                 | What it means                                                    | Cost when the upstream changes                   | Example                |
-| -------------------- | ---------------------------------------------------------------- | ------------------------------------------------ | ---------------------- |
-| `conformist`         | reads another module's store as it is, no translation, no say    | **high** — its shape is your shape too           | `inventory → products` |
-| `customer-supplier`  | calls a sibling's store to make something happen                 | medium — the call survives, the payload may not  | `products → cart`      |
-| `published-language` | receives vocabulary, not state: a schema, a self-contained component | **low** — neither side learns the other's store  | `orders → payments`    |
+| Kind                 | What it means                                                        | Cost when the upstream changes                  | Example                |
+| -------------------- | -------------------------------------------------------------------- | ----------------------------------------------- | ---------------------- |
+| `conformist`         | reads another module's store as it is, no translation, no say        | **high** — its shape is your shape too          | `inventory → products` |
+| `customer-supplier`  | calls a sibling's store to make something happen                     | medium — the call survives, the payload may not | `products → cart`      |
+| `published-language` | receives vocabulary, not state: a schema, a self-contained component | **low** — neither side learns the other's store | `orders → payments`    |
 
 ### The one that is missing
 
@@ -94,9 +95,9 @@ language co-evolve, and the code is the primary expression of both.
 
 What an identifier cannot carry is the meaning behind it, and that lives in
 **[Glossary](./glossary.md)** — one section per module. On a client it is worth more than it first
-looks, because this repo's word is frequently not the server's: a `Cart` here is *a view of the
-server's cart, not a second copy of it*, while the backend's `Cart` is *one open basket per user,
-priced against the live catalogue*. Both are right in their own context, and a single shared
+looks, because this repo's word is frequently not the server's: a `Cart` here is _a view of the
+server's cart, not a second copy of it_, while the backend's `Cart` is _one open basket per user,
+priced against the live catalogue_. Both are right in their own context, and a single shared
 glossary would have to pick one and be wrong in the other place.
 
 Writing the client's definition down is also the cheapest guard there is against someone deciding
@@ -110,11 +111,11 @@ prose moved to the glossary page.
 
 ## 4. Subdomain distillation — where to spend effort
 
-| Subdomain    | Meaning                                                        | Here                                                    |
-| ------------ | -------------------------------------------------------------- | ------------------------------------------------------- |
-| `core`       | the reason the product exists — worth client-side rules        | `products`, `cart`, `orders`                            |
-| `supporting` | specific to this business, not a differentiator — keep it plain | `delivery`, `payments`, `inventory`, `wishlist`         |
-| `generic`    | a solved problem, interchangeable with something bought        | `account`, `users`, `admin`, `feedback`, `realtime`     |
+| Subdomain    | Meaning                                                         | Here                                                |
+| ------------ | --------------------------------------------------------------- | --------------------------------------------------- |
+| `core`       | the reason the product exists — worth client-side rules         | `products`, `cart`, `orders`                        |
+| `supporting` | specific to this business, not a differentiator — keep it plain | `delivery`, `payments`, `inventory`, `wishlist`     |
+| `generic`    | a solved problem, interchangeable with something bought         | `account`, `users`, `admin`, `feedback`, `realtime` |
 
 The enforced rule: **a `generic` module may not carry a `domain/` folder.**
 

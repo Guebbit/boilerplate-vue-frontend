@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import type { ThemeAccent } from '@/ui/types.ts';
 import { computed } from 'vue';
 import { Info } from 'lucide-vue-next';
 
 const props = defineProps<{
     title: string;
     description: string;
-    variant?: 'primary' | 'secondary' | 'tertiary';
+    variant?: ThemeAccent;
 }>();
 
 /**

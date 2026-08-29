@@ -41,6 +41,9 @@ const {
 } = useCartStore();
 const { cartItems, cartSummary } = storeToRefs(useCartStore());
 
+/** The chosen shipping method — optional, exactly as the API treats it. */
+const shippingMethodId = ref<string | undefined>();
+
 /**
  * Places an order from the current cart.
  *
@@ -50,9 +53,6 @@ const { cartItems, cartSummary } = storeToRefs(useCartStore());
  * @returns A promise resolving once the flow settles: a success toast and a navigation to the
  *  orders list, or an error toast.
  */
-/** The chosen shipping method — optional, exactly as the API treats it. */
-const shippingMethodId = ref<string | undefined>();
-
 const checkout = () =>
     placeOrder(
         shippingMethodId.value === undefined

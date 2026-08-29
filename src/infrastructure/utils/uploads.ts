@@ -38,17 +38,6 @@ export const ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE = ACCEPTED_IMAGE_TYPES.join(',');
  */
 export const MAX_UPLOAD_BYTES = Number(import.meta.env.VITE_MAX_UPLOAD_BYTES) || 5 * 1024 * 1024;
 
-/**
- * Renders a byte count as a human-readable size, for the "file too large" message.
- *
- * Pinned to MB rather than letting `formatFileSize` pick the unit: a limit that reads `512 KB` on
- * one deployment and `5 MB` on the next is harder to compare against.
- *
- * @param bytes - Size in bytes.
- * @returns The size in MB with at most one decimal, e.g. `5 MB` or `1.5 MB`.
- */
-export const formatUploadSize = (bytes: number) => formatFileSize(bytes, { unit: 'MB' });
-
 /** {@link MAX_UPLOAD_BYTES} as display text, resolved once for the hint and the error message. */
 export const MAX_UPLOAD_SIZE_LABEL = formatFileSize(MAX_UPLOAD_BYTES);
 

@@ -9,7 +9,7 @@ The demo profile ([The demo profile](./demo-profile.md)) runs the same API this 
 Three places:
 
 - **On every PR**, as the required `test-e2e-live` job in `.github/workflows/ci.yml`. That job delegates to `e2e-live.yml` through `workflow_call` rather than duplicating its setup — one definition of the datastores, the sibling checkout and the seeding, so the gate and the nightly cannot drift apart.
-- **Nightly**, via `e2e-live.yml`'s own `cron` (03:15 UTC, plus `workflow_dispatch`). This answers a question no PR run can: does `main` still agree with the *backend's* default branch? The backend moves on its own, so a frontend that was green yesterday can be wrong today without anyone touching it.
+- **Nightly**, via `e2e-live.yml`'s own `cron` (03:15 UTC, plus `workflow_dispatch`). This answers a question no PR run can: does `main` still agree with the _backend's_ default branch? The backend moves on its own, so a frontend that was green yesterday can be wrong today without anyone touching it.
 - **By hand**, with the boot sequence below.
 
 **Scheduled workflows only ever run on the default branch.** A `cron` trigger fires against `main` and nothing else — but that no longer leaves a branch uncovered, because the PR gate runs the same job against the branch.
@@ -78,7 +78,7 @@ All three are needed and they are separate buckets: the global one covers browsi
 
 `compose:restart` starts Umami on `:3080`, and the frontend's tracker finds it on its own — `VITE_UMAMI_SRC` and `VITE_UMAMI_WEBSITE_ID` in `.env-example` already name it. The **backend** is the half that does not: `NODE_UMAMI_*` is commented out there, because the compose stack sets it on the `app` service, and `npm run host` runs the backend outside that service. So a backend booted the way this page describes emits nothing, logs `Analytics provider is 'umami' but ... events are being discarded`, and carries on.
 
-That failure is quiet in the worst way. `analytics.cy.ts` asserts that ONE add-to-cart writes ONE row, and with the backend silent the frontend's own row is still written — one row, spec green, for exactly the wrong reason. Its control assertion catches the mirror case (a silent *frontend*) but nothing catches a silent backend except knowing to set these:
+That failure is quiet in the worst way. `analytics.cy.ts` asserts that ONE add-to-cart writes ONE row, and with the backend silent the frontend's own row is still written — one row, spec green, for exactly the wrong reason. Its control assertion catches the mirror case (a silent _frontend_) but nothing catches a silent backend except knowing to set these:
 
 ```sh
 # terminal 1 — backend, for a live E2E run (with the rate limits above)
@@ -96,7 +96,7 @@ The `test-e2e-live` CI job sets all of this itself, including the two `VITE_UMAM
 
 Boot the backend first. Nothing here waits for it: with no backend listening on `VITE_API_URL` (default `http://localhost:3000`), every spec fails on a network error rather than on anything it was written to check.
 
-Run `npm run check:spec-identity` alongside it when the pair has moved — a forked `demo-data.json` makes a live run fail on *data* rather than on behaviour, and that is a confusing hour if you are not expecting it.
+Run `npm run check:spec-identity` alongside it when the pair has moved — a forked `demo-data.json` makes a live run fail on _data_ rather than on behaviour, and that is a confusing hour if you are not expecting it.
 
 ## `BACKEND_PATH`
 
@@ -124,7 +124,7 @@ This is the single highest-value piece of this profile: it converts all five pre
 
 ## Where seed drift is caught
 
-Not here. The demo dataset is published by the backend's `npm run seed:export` and copied to this repo by `npm run sync:frontend`, so both sides read one file and `npm run check:spec-identity` fails the build if the copies fork. Whether the *database a deployment actually builds* still matches that file is a property of the backend's migrations, and the backend asserts it directly in `tests/unit/db/migration-demo-data.test.ts` — seeding and migrating one database in both orders and comparing the result to the published artefact.
+Not here. The demo dataset is published by the backend's `npm run seed:export` and copied to this repo by `npm run sync:frontend`, so both sides read one file and `npm run check:spec-identity` fails the build if the copies fork. Whether the _database a deployment actually builds_ still matches that file is a property of the backend's migrations, and the backend asserts it directly in `tests/unit/db/migration-demo-data.test.ts` — seeding and migrating one database in both orders and comparing the result to the published artefact.
 
 That check used to live here, as a Cypress spec pinning seeded ids by hand. It ran in the slowest harness available, in the repo that cannot fix a migration, and it went stale the first time the backend added a product.
 
@@ -134,14 +134,14 @@ That check used to live here, as a Cypress spec pinning seeded ids by hand. It r
 
 ## File map
 
-| Path | Contents |
-| --- | --- |
-| `scripts/paired-backend-path.ts` | `resolveBackendPath()`, read by `cypress.config.ts` |
-| `src/infrastructure/http/index.ts` | `orvalMutator`, `VITE_VALIDATE_RESPONSES` gate |
-| `src/infrastructure/http/response-schema-map.ts` | Route → Zod schema table `orvalMutator` validates against |
-| `src/modules/account/tests/e2e/auth.cy.ts` | Live session-refresh case (alongside the demo-profile auth specs) |
-| `tests/support/e2e/commands.ts` | `cy.resetState()`'s live branch, `cy.skipUnlessLive()` |
-| `cypress.config.ts` | `env.backendPath`, `env.liveProfile`, `env.apiUrl` |
+| Path                                             | Contents                                                          |
+| ------------------------------------------------ | ----------------------------------------------------------------- |
+| `scripts/paired-backend-path.ts`                 | `resolveBackendPath()`, read by `cypress.config.ts`               |
+| `src/infrastructure/http/index.ts`               | `orvalMutator`, `VITE_VALIDATE_RESPONSES` gate                    |
+| `src/infrastructure/http/response-schema-map.ts` | Route → Zod schema table `orvalMutator` validates against         |
+| `src/modules/account/tests/e2e/auth.cy.ts`       | Live session-refresh case (alongside the demo-profile auth specs) |
+| `tests/support/e2e/commands.ts`                  | `cy.resetState()`'s live branch, `cy.skipUnlessLive()`            |
+| `cypress.config.ts`                              | `env.backendPath`, `env.liveProfile`, `env.apiUrl`                |
 
 ## Related pages
 

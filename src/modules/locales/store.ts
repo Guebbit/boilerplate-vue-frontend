@@ -44,23 +44,6 @@ export interface LocaleEntriesFilters {
 }
 
 /**
- * The translation admin surface: languages on one side, one language's entries on the other.
- *
- * Two halves rather than one CRUD resource because the API answers with two different records:
- * `getLocales` serves `LocaleCapability` — the merged manifest of both tiers — while the writes
- * answer with `Language`, the dynamic-tier row alone. The manifest is what the board renders, so
- * every write refetches it rather than trying to splice a `Language` into a list it is not shaped
- * like.
- *
- * The entries half is the ordinary paginated resource the users and products stores are, and uses
- * the same toolkit surface. Only the writes differ: every operation needs the language tag as
- * well as the row id, so they are explicit wrappers rather than the generic `createOne` family.
- *
- * Nothing here touches the RUNNING app's dictionaries. Reloading what the visitor is looking at
- * after an edit is the view's business — see `applyLiveOverrides` in `LocaleEntries.vue` — because
- * a store that reached into `i18n` would couple every import of this module to boot order.
- */
-/**
  * The API's OWN deployed dictionary for one language, flattened to dotted keys — tier 1.
  *
  * What a backend-tenant entry OVERRIDES, so the dictionary board can show the deployed text
@@ -97,6 +80,23 @@ const fetchBundledDictionary = (tag: string): Promise<Record<string, string>> =>
         Object.fromEntries(flattenDictionary(dictionary).map(({ key, value }) => [key, value]))
     );
 
+/**
+ * The translation admin surface: languages on one side, one language's entries on the other.
+ *
+ * Two halves rather than one CRUD resource because the API answers with two different records:
+ * `getLocales` serves `LocaleCapability` — the merged manifest of both tiers — while the writes
+ * answer with `Language`, the dynamic-tier row alone. The manifest is what the board renders, so
+ * every write refetches it rather than trying to splice a `Language` into a list it is not shaped
+ * like.
+ *
+ * The entries half is the ordinary paginated resource the users and products stores are, and uses
+ * the same toolkit surface. Only the writes differ: every operation needs the language tag as
+ * well as the row id, so they are explicit wrappers rather than the generic `createOne` family.
+ *
+ * Nothing here touches the RUNNING app's dictionaries. Reloading what the visitor is looking at
+ * after an edit is the view's business — see `applyLiveOverrides` in `LocaleEntries.vue` — because
+ * a store that reached into `i18n` would couple every import of this module to boot order.
+ */
 export const useLocalesStore = defineStore('locales', () => {
     const { getLoading, setLoading } = useCoreStore();
 

@@ -47,13 +47,13 @@ two domains, and the fifth read on that base path goes somewhere else entirely: 
 
 ## The five reads
 
-| Call | Feeds |
-| --- | --- |
-| `GET /observability/health` | the Overview tab's status panel |
-| `GET /observability/metrics/overview` | the KPI tiles |
-| `GET /observability/metrics` | the raw Prometheus exposition, shown as text |
-| `GET /observability/events` | registered here, consumed by [`realtime`](./realtime.md)'s screen |
-| `GET /observability/audit` | the Audit tab's table |
+| Call                                  | Feeds                                                             |
+| ------------------------------------- | ----------------------------------------------------------------- |
+| `GET /observability/health`           | the Overview tab's status panel                                   |
+| `GET /observability/metrics/overview` | the KPI tiles                                                     |
+| `GET /observability/metrics`          | the raw Prometheus exposition, shown as text                      |
+| `GET /observability/events`           | registered here, consumed by [`realtime`](./realtime.md)'s screen |
+| `GET /observability/audit`            | the Audit tab's table                                             |
 
 All five are registered through this module's manifest, so enabling the domain turns their contract
 validation on and deleting the folder turns it off. There is no shared table to remember to edit.
@@ -61,8 +61,8 @@ validation on and deleting the folder turns it off. There is no shared table to 
 ## Why `types.ts` exists here and nowhere else
 
 ::: warning A KPI tile is not a response shape
-The generated types describe exactly what each endpoint returns. A tile showing *requests per second,
-trending, against yesterday* is assembled from a metrics payload by
+The generated types describe exactly what each endpoint returns. A tile showing _requests per second,
+trending, against yesterday_ is assembled from a metrics payload by
 `composables/use-admin-observability.ts` — and that assembled shape has no generated type, because no
 endpoint answers with it.
 

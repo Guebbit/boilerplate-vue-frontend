@@ -40,17 +40,17 @@ flowchart TD
     class Contracts,Ops,Dev,Tests side;
 ```
 
-| Page | Covers |
-|---|---|
-| [Repository Root](./root.md) | Everything with no directory above it — build, test, lint and TypeScript configs |
-| [App, Kernel & Types](./src-app.md) | `src/app/`, `src/kernel/`, `src/types/`, `src/locales/`, `src/styles/`, and the three files at the top of `src/` |
-| [Infrastructure](./src-infrastructure.md) | `src/infrastructure/` — http, i18n, stores, composables, observability, utils |
-| [Modules](./src-modules.md) | The file shapes a module is built from, and which module has which |
-| [UI Kit](./src-ui.md) | `src/ui/` — the components that know no domain |
-| [Contracts](./contracts.md) | `openapi.yaml`, `asyncapi.yaml`, the generated `contracts/`, Orval and Spectral config |
-| [Scripts & Hooks](./scripts.md) | `scripts/`, `.husky/` |
-| [Tests](./tests.md) | `tests/` and the co-located module suites |
-| [Ops & Assets](./ops.md) | `.docker/`, `.github/`, compose files, `public/`, the docs site |
+| Page                                      | Covers                                                                                                           |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| [Repository Root](./root.md)              | Everything with no directory above it — build, test, lint and TypeScript configs                                 |
+| [App, Kernel & Types](./src-app.md)       | `src/app/`, `src/kernel/`, `src/types/`, `src/locales/`, `src/styles/`, and the three files at the top of `src/` |
+| [Infrastructure](./src-infrastructure.md) | `src/infrastructure/` — http, i18n, stores, composables, observability, utils                                    |
+| [Modules](./src-modules.md)               | The file shapes a module is built from, and which module has which                                               |
+| [UI Kit](./src-ui.md)                     | `src/ui/` — the components that know no domain                                                                   |
+| [Contracts](./contracts.md)               | `openapi.yaml`, `asyncapi.yaml`, the generated `contracts/`, Orval and Spectral config                           |
+| [Scripts & Hooks](./scripts.md)           | `scripts/`, `.husky/`                                                                                            |
+| [Tests](./tests.md)                       | `tests/` and the co-located module suites                                                                        |
+| [Ops & Assets](./ops.md)                  | `.docker/`, `.github/`, compose files, `public/`, the docs site                                                  |
 
 ---
 
@@ -58,11 +58,11 @@ flowchart TD
 
 Every page is a table. Three columns, and the third is the point:
 
-| File | What it is | Read next |
-|---|---|---|
+| File             | What it is                                                                                                                                                      | Read next                       |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
 | `src/modules.ts` | The list of domains this build serves: one import and one array entry each. Enabling or disabling a domain is one line here — there is no filesystem discovery. | [Modules](../theory/modules.md) |
 
-- **What it is** — one or two sentences, present tense, saying what the file *is* and what breaks
+- **What it is** — one or two sentences, present tense, saying what the file _is_ and what breaks
   without it. If an entry needs three sentences, the concept belongs in a linked page and the
   entry links to it.
 - **Read next** — where the explanation lives. `—` means no page covers it yet, and that is a

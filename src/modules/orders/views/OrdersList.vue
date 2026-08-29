@@ -16,6 +16,7 @@ import { useSessionStore } from '@/infrastructure/stores/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
 import type { Order } from '@types';
+import { OrderStatus } from '@types';
 
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
@@ -75,20 +76,25 @@ const { search } = watchSearchOrders({
 });
 
 /**
+ * Semantic theme color per order status. `satisfies` requires every `OrderStatus` member to
+ * appear here, so a status added to the contract fails the type check instead of rendering grey.
+ */
+const STATUS_COLORS = {
+    pending: 'warning',
+    paid: 'info',
+    processing: 'info',
+    shipped: 'secondary',
+    delivered: 'success',
+    cancelled: 'error'
+} satisfies Record<OrderStatus, string>;
+
+/**
  * Maps an order status onto a semantic theme color.
  *
  * @param status - Order status, possibly unset.
  * @returns The Vuetify color name, defaulting to `secondary`.
  */
-const statusColor = (status?: string) =>
-    ({
-        pending: 'warning',
-        paid: 'info',
-        processing: 'info',
-        shipped: 'secondary',
-        delivered: 'success',
-        cancelled: 'error'
-    })[status ?? ''] ?? 'secondary';
+const statusColor = (status?: OrderStatus) => (status ? STATUS_COLORS[status] : 'secondary');
 
 /**
  * Applies the current filters, restarting from the first page.

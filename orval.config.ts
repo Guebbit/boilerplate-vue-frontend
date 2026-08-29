@@ -61,15 +61,10 @@ export default defineConfig({
             // 'tags-split'  - a folder per tag, each further split into impl/schemas
             mode: 'single',
             target: './contracts/rest/index.ts',
-            // Shape of the generated client. Options include:
-            // 'axios'            - factory function (e.g. getXxxAPI()) returning bound
-            //                      methods; supports DI'ing a custom axios instance per call
-            // 'axios-functions'  - (orval default) plain top-level exported functions, no factory
-            // 'vue-query'        - wraps operations as TanStack Query composables (useXxxQuery/Mutation)
-            // 'fetch'            - native fetch instead of axios
-            // (angular/react-query/svelte-query/swr/zod/effect/hono/mcp also available,
-            // not relevant to this axios + Pinia-store setup)
-            // client: 'axios-functions',
+            // `client` is left at orval's default, 'axios-functions': plain top-level exported
+            // functions, no factory. The alternatives ('axios', 'vue-query', 'fetch', and the
+            // framework-specific ones) all answer a question this axios + Pinia-store setup does
+            // not ask.
             override: {
                 // Routes every generated call through our shared http.ts instance
                 // instead of orval's default bare axios.request(config).

@@ -2,10 +2,10 @@
 
 The FE observability layer covers two complementary concerns, both wired into a **single Pinia store** at `src/infrastructure/stores/observability.ts`. Everything runs against a **self-hosted, local stack** (Docker/Podman) — there are no external SaaS accounts.
 
-| Tool | Role | Endpoint |
-| ---- | ---- | -------- |
+| Tool                                                                     | Role                                                      | Endpoint                                                        |
+| ------------------------------------------------------------------------ | --------------------------------------------------------- | --------------------------------------------------------------- |
 | **Grafana Faro** (`@grafana/faro-web-sdk` + `@grafana/faro-web-tracing`) | Error/crash monitoring, frontend tracing, Core Web Vitals | Grafana Alloy Faro receiver on `http://localhost:12347/collect` |
-| **Umami** (`script.js` tracker) | Product analytics — pageviews + custom events | `http://localhost:3080` |
+| **Umami** (`script.js` tracker)                                          | Product analytics — pageviews + custom events             | `http://localhost:3080`                                         |
 
 Both are no-ops when their env vars are absent, so local dev works without the stack running. You verify the data in **Grafana** (`http://localhost:3001`, default `admin/admin`) and the **Umami dashboard** (`http://localhost:3080`).
 
@@ -36,8 +36,8 @@ Both tools are initialized in `src/main.ts` via the store:
 
 ```ts
 const obs = useObservabilityStore();
-obs.initFaro();    // no-op if VITE_FARO_URL is absent
-obs.initUmami();   // no-op if VITE_UMAMI_WEBSITE_ID is absent
+obs.initFaro(); // no-op if VITE_FARO_URL is absent
+obs.initUmami(); // no-op if VITE_UMAMI_WEBSITE_ID is absent
 ```
 
 ## Grafana Faro
@@ -59,12 +59,12 @@ Manual exceptions go through `captureException()` — called from `src/infrastru
 
 ### Environment variables
 
-| Variable | Purpose |
-| -------- | ------- |
-| `VITE_FARO_URL` | Alloy Faro receiver URL — empty disables Faro entirely |
-| `VITE_FARO_APP_NAME` | App name reported to Faro (default `frontend`) |
-| `VITE_FARO_APP_VERSION` | App version (default `1.0.0`) |
-| `VITE_FARO_ENVIRONMENT` | Environment tag (default: Vite `MODE`) |
+| Variable                | Purpose                                                |
+| ----------------------- | ------------------------------------------------------ |
+| `VITE_FARO_URL`         | Alloy Faro receiver URL — empty disables Faro entirely |
+| `VITE_FARO_APP_NAME`    | App name reported to Faro (default `frontend`)         |
+| `VITE_FARO_APP_VERSION` | App version (default `1.0.0`)                          |
+| `VITE_FARO_ENVIRONMENT` | Environment tag (default: Vite `MODE`)                 |
 
 The trace-propagation origin is derived from `VITE_API_URL`.
 
@@ -97,12 +97,12 @@ Two lists, because they are two different things and conflating them is what mak
 **What this app emits.** The complete contents of `analyticsEvents` — if a name is not here, this
 app cannot fire it:
 
-| Event | When |
-| ----- | ---- |
-| `app_started` | Boot, before the shell mounts |
-| `app_ready` | The shell has mounted and the first view is renderable |
-| `user_logged_out` | A client-side token discard; the API has no request to attribute it to |
-| `checkout_request_failed` | A checkout that never reached the API — dropped connection, request that failed to leave the browser. NOT the twin of `checkout_failed`, which is the server *rejecting* a checkout it received |
+| Event                     | When                                                                                                                                                                                            |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app_started`             | Boot, before the shell mounts                                                                                                                                                                   |
+| `app_ready`               | The shell has mounted and the first view is renderable                                                                                                                                          |
+| `user_logged_out`         | A client-side token discard; the API has no request to attribute it to                                                                                                                          |
+| `checkout_request_failed` | A checkout that never reached the API — dropped connection, request that failed to leave the browser. NOT the twin of `checkout_failed`, which is the server _rejecting_ a checkout it received |
 
 **What the backend emits: everything else.** Reading one Umami dashboard, the rule tells you which
 side produced a row without anyone maintaining a list — **if an API call happens at that moment,
@@ -121,10 +121,10 @@ Pageviews are handled automatically by Umami and belong to neither side.
 
 ### Environment variables
 
-| Variable | Purpose |
-| -------- | ------- |
+| Variable                | Purpose                                                            |
+| ----------------------- | ------------------------------------------------------------------ |
 | `VITE_UMAMI_WEBSITE_ID` | Umami website id (from the Umami dashboard) — empty disables Umami |
-| `VITE_UMAMI_SRC` | Tracker script URL (default `http://localhost:3080/script.js`) |
+| `VITE_UMAMI_SRC`        | Tracker script URL (default `http://localhost:3080/script.js`)     |
 
 ### External references
 
