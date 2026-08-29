@@ -1,4 +1,4 @@
-import { useAccountStore } from '@/modules/account/store.ts';
+import { useAuthStore } from '@/modules/account/stores/auth.ts';
 import type { RouteRecordRaw } from 'vue-router';
 
 export default [
@@ -62,7 +62,7 @@ export default [
              * @returns A promise resolving to `Home`, whether the logout call succeeds or fails.
              */
             beforeRouteEnter: (to) => {
-                const { logout } = useAccountStore();
+                const { logout } = useAuthStore();
                 const locale = to.params.locale as string;
                 return logout()
                     .then(() => ({ name: 'Home', params: { locale } }))

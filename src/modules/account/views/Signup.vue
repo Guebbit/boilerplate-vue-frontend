@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
-import { useAccountStore } from '@/modules/account/store.ts';
+import { useAuthStore } from '@/modules/account/stores/auth.ts';
 import { useRouter, useRoute } from 'vue-router';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
@@ -85,7 +85,7 @@ const {
  */
 const { uploadProgress, trackUpload } = useUploadProgress();
 
-const { signup } = useAccountStore();
+const { signup } = useAuthStore();
 
 /**
  * Validates the form and registers the account.

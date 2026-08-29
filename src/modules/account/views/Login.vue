@@ -12,7 +12,8 @@ import { z } from 'zod';
 import { Eye, EyeOff } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
-import { useAccountStore } from '@/modules/account/store.ts';
+import { useAuthStore } from '@/modules/account/stores/auth.ts';
+import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { usersSchema } from '@/modules/users';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
@@ -73,9 +74,10 @@ const {
  *  the field the server named, or reported as a toast when it named none.
  */
 const submitForm = () => {
-    const accountStore = useAccountStore();
+    const authStore = useAuthStore();
+    const profileStore = useProfileStore();
     return handleSubmit(() =>
-        accountStore
+        authStore
             .login(form.value.email, form.value.password, form.value.remember)
             .then(() => {
                 /*
@@ -84,7 +86,7 @@ const submitForm = () => {
                  * A `?continue=` deep link keeps its own locale — the page it names wins — and a
                  * record with no preference (or one this build does not speak) changes nothing.
                  */
-                const saved = accountStore.profile?.locale;
+                const saved = profileStore.profile?.locale;
                 const applyPreference =
                     !route.query.continue &&
                     typeof saved === 'string' &&

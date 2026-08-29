@@ -52,7 +52,7 @@ flowchart TD
 | Concern                            | File                                                                                                     |
 | ---------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | Token storage + session state      | `src/infrastructure/stores/session.ts` — the token and a `{ id, email, admin }` projection, nothing more |
-| The visitor's own account record   | `src/modules/account/store.ts`                                                                           |
+| The visitor's own account record   | `src/modules/account/stores/profile.ts`                                                                  |
 | Attaching Bearer token to requests | `src/infrastructure/http/index.ts` (request interceptor)                                                 |
 | Handling `401` responses           | `src/infrastructure/http/index.ts` (response interceptor)                                                |
 | Restoring auth on page reload      | `src/app/guards/authentications.ts` → `tryRestoreAuth`                                                   |

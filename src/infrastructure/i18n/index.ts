@@ -1,5 +1,7 @@
 import { nextTick, type WritableComputedRef } from 'vue';
 import { createI18n, type I18n } from 'vue-i18n';
+import { applyHtmlLocaleAttributes } from './dom.ts';
+import { mergeDictionaries } from './merge-dictionaries.ts';
 
 export interface TranslationDictionaries {
     /*
@@ -166,32 +168,10 @@ export function loadBundledDictionary(locale: string): Promise<TranslationDictio
         Promise.all((moduleLocaleLoaders[locale] ?? []).map((load) => load()))
     ]).then(([shared, moduleDictionaries]) => {
         let merged = structuredClone(shared);
-        for (const dictionary of moduleDictionaries) merged = mergeDeep(merged, dictionary);
+        for (const dictionary of moduleDictionaries) merged = mergeDictionaries(merged, dictionary);
         return merged;
     });
 }
-
-const isDictionaryNode = (value: unknown): value is TranslationDictionaries =>
-    typeof value === 'object' && value !== null && !Array.isArray(value);
-
-/**
- * Deep merge with the same rule vue-i18n's `mergeLocaleMessage` applies: nested groups combine,
- * anything else is a leaf the later dictionary replaces.
- */
-const mergeDeep = (
-    base: TranslationDictionaries,
-    extra: TranslationDictionaries
-): TranslationDictionaries => {
-    const merged: TranslationDictionaries = { ...base };
-    for (const [key, value] of Object.entries(extra)) {
-        const existing = merged[key];
-        merged[key] =
-            isDictionaryNode(existing) && isDictionaryNode(value)
-                ? mergeDeep(existing, value)
-                : value;
-    }
-    return merged;
-};
 
 /**
  * {@link _loadLocale} bound to the app-wide {@link i18n} instance.
@@ -288,9 +268,7 @@ export function _ensureFallbackLoaded(i18n: I18n, locale: string): Promise<unkno
 export function _changeLanguage(i18n: I18n, locale: string): Promise<unknown> {
     const setLocale = () => {
         (i18n.global.locale as WritableComputedRef<string>).value = locale;
-        const html = document.querySelector('html');
-        html?.setAttribute('lang', locale);
-        html?.setAttribute('dir', localeDirections[locale] ?? 'ltr');
+        applyHtmlLocaleAttributes(locale, localeDirections[locale] ?? 'ltr');
         return nextTick();
     };
     if (!loadedLanguages.includes(locale)) return _loadLocale(i18n, locale).then(() => setLocale());

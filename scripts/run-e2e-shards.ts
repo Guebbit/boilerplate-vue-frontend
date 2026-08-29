@@ -46,36 +46,9 @@ import {
     removeDemoScratchDirectory
 } from './backend-demo-scratch-directory';
 import { FUNCTIONAL_SPEC_GLOBS } from './cypress-spec-globs';
+import { SECONDS, weighSpecs, balanceShards } from './e2e-shard-balancer';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..');
-
-/**
- * Seconds per spec, from the run of 2026-08-14 (`npm run test:e2e`, total 12m54s).
- *
- * Refresh them from a run's summary table when the balance drifts — they only need to be roughly
- * right, since LPT is tolerant of error. A spec missing from this map is scheduled at the mean,
- * which keeps a newly added file from either hogging a shard or being treated as free.
- */
-const SECONDS: Record<string, number> = {
-    uploads: 86,
-    profile: 83,
-    auth: 73,
-    cart: 73,
-    a11y: 69,
-    products: 62,
-    resilience: 57,
-    locale: 52,
-    storefront: 30,
-    wishlist: 18,
-    orders: 33,
-    registration: 30,
-    feedback: 26,
-    commerce: 25,
-    home: 20,
-    'password-reset': 19,
-    journey: 15,
-    parity: 1
-};
 
 try {
     process.loadEnvFile();
@@ -111,20 +84,8 @@ const specs = globSync(FUNCTIONAL_SPEC_GLOBS, { cwd: REPO_ROOT })
     .toSorted()
     .map((file) => ({ file, key: path.basename(file, '.cy.ts') }));
 
-const known = Object.values(SECONDS);
-const mean = known.reduce((sum, value) => sum + value, 0) / known.length;
-const weighted = specs
-    .map(({ file, key }) => ({ file, weight: SECONDS[key] ?? mean }))
-    .toSorted((a, b) => b.weight - a.weight);
-
-/** Longest-processing-time first: each spec joins whichever shard is currently lightest. */
-const shards = Array.from({ length: shardCount }, () => ({ files: [] as string[], load: 0 }));
-for (const { file, weight } of weighted) {
-    let lightest = shards[0];
-    for (const shard of shards) if (shard.load < lightest.load) lightest = shard;
-    lightest.files.push(file);
-    lightest.load += weight;
-}
+const weighted = weighSpecs(specs, SECONDS);
+const shards = balanceShards(weighted, shardCount);
 
 const active = shards.filter((shard) => shard.files.length > 0);
 

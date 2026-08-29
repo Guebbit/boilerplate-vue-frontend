@@ -11,7 +11,8 @@ import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import { MonitorSmartphone } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useAccountStore } from '@/modules/account/store.ts';
+import { useAuthStore } from '@/modules/account/stores/auth.ts';
+import { useAccountSessionsStore } from '@/modules/account/stores/sessions.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
@@ -27,8 +28,9 @@ import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
 const { t } = useI18n();
 const router = useRouter();
 const { addMessage } = useNotificationsStore();
-const { fetchSessions, revokeSession, logoutEverywhere } = useAccountStore();
-const { sessions } = storeToRefs(useAccountStore());
+const { fetchSessions, revokeSession } = useAccountSessionsStore();
+const { sessions } = storeToRefs(useAccountSessionsStore());
+const { logoutEverywhere } = useAuthStore();
 
 /**
  * The session currently being revoked, if any.

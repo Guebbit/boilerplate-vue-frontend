@@ -12,7 +12,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import { useAccountStore } from '@/modules/account/store.ts';
+import { useAuthStore } from '@/modules/account/stores/auth.ts';
 import { usersPasswordSchema } from '@/modules/users';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
@@ -31,7 +31,7 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const { addMessage } = useNotificationsStore();
-const { confirmPasswordReset } = useAccountStore();
+const { confirmPasswordReset } = useAuthStore();
 
 const formElement = ref<HTMLFormElement>();
 

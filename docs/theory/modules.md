@@ -245,12 +245,17 @@ remembering:
 
 3. **The contract, which is not ours alone.** See above.
 
-4. **A store that was two stores.** `infrastructure/profile.ts` held the access token _and_ the `User`
-   record, so `infrastructure` owned a domain entity and the app shell reached into a domain to render a
-   name. Split into `infrastructure/stores/session.ts` — token, plus a `{ id, email, admin }` projection and the
-   three `/account` calls a session needs to restore or end itself — and
-   `modules/account/store.ts`, which owns the editable record and every operation on it. The shell
-   now knows _someone is signed in, here is their name, they are staff_, and nothing more.
+4. **A store that was two stores, then a store that was four.** `infrastructure/profile.ts` held the
+   access token _and_ the `User` record, so `infrastructure` owned a domain entity and the app shell
+   reached into a domain to render a name. Split into `infrastructure/stores/session.ts` — token, plus
+   a `{ id, email, admin }` projection and the three `/account` calls a session needs to restore or end
+   itself — and the account module's own store. That store later split again, by the same logic one
+   level down: `modules/account/stores/auth.ts` establishes or ends a session (login, signup, password
+   reset, logout), `stores/profile.ts` owns the editable record itself (fetch/update, role view, email
+   verification, account deletion), and `stores/sessions.ts` / `stores/addresses.ts` each hold state
+   scoped to the one component that renders it. The shell still knows only _someone is signed in, here
+   is their name, they are staff_ — the further split moved responsibilities within the account domain,
+   not across the session/account boundary.
 
 ### The honest scorecard
 

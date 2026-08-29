@@ -12,7 +12,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
-import { useAccountStore } from '@/modules/account/store.ts';
+import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
@@ -27,7 +27,7 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const { addMessage } = useNotificationsStore();
-const { confirmAccountDelete } = useAccountStore();
+const { confirmAccountDelete } = useProfileStore();
 
 const formElement = ref<HTMLFormElement>();
 

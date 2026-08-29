@@ -12,7 +12,7 @@ import { storeToRefs } from 'pinia';
 import { MapPin, Plus, Star } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
-import { useAccountStore } from '@/modules/account/store.ts';
+import { useAddressesStore } from '@/modules/account/stores/addresses.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import type { Address, AddressInput } from '@types';
 import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
@@ -24,8 +24,8 @@ import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
  */
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
-const { fetchAddresses, addAddress, updateAddress, removeAddress } = useAccountStore();
-const { addresses, loading } = storeToRefs(useAccountStore());
+const { fetchAddresses, addAddress, updateAddress, removeAddress } = useAddressesStore();
+const { addresses, loading } = storeToRefs(useAddressesStore());
 
 /** The dialog's fields: every `AddressInput` string, optional ones as empty strings. */
 interface AddressForm {
