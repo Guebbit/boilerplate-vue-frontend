@@ -196,7 +196,7 @@ describe('updateProfile', () => {
                 // `admin` was passed in and must NOT reach the wire: a user editing their own
                 // record cannot promote themselves, and the store is the only thing enforcing it.
                 expect(Object.keys(last.data).toSorted()).toEqual(
-                    ['email', 'username', 'locale', 'imageUrl'].toSorted()
+                    ['email', 'username', 'locale', 'imageUrl', 'phone', 'website'].toSorted()
                 );
                 expect(last.data.username).toBe('ada2');
             });

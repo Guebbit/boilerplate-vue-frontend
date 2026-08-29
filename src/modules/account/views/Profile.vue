@@ -76,8 +76,8 @@ const handleResendVerification = () => {
 };
 
 /**
- * Extended profile form interface to accommodate extra UI fields (phone, website)
- * that are not part of the core User schema but are displayed in the profile form.
+ * The record this form edits — every field nullable in addition to optional, matching how
+ * `profile.value` arrives from the store rather than how the API contract declares them.
  */
 interface ProfileForm {
     id?: string | null;
@@ -295,7 +295,9 @@ const submitForm = () => {
         email: form.value.email,
         username: form.value.username,
         locale: form.value.locale,
-        imageUrl: form.value.imageUrl ?? undefined
+        imageUrl: form.value.imageUrl ?? undefined,
+        phone: form.value.phone,
+        website: form.value.website
     })
         .then(() => {
             // Re-baseline on what the server now holds: the store refetched it, and a form

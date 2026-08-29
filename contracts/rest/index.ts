@@ -129,6 +129,8 @@ export interface User {
     verified?: boolean;
     imageUrl?: ImageUrl;
     locale?: Locale;
+    phone?: string;
+    website?: string;
     createdAt?: string;
     updatedAt?: string;
     deletedAt?: string;
@@ -826,6 +828,8 @@ export interface UpdateAccountRequest {
     username?: string;
     locale?: Locale;
     imageUrl?: ImageUrl;
+    phone?: string;
+    website?: string;
 }
 
 export interface UpdateAccountRequestMultipart {
@@ -835,6 +839,8 @@ export interface UpdateAccountRequestMultipart {
     locale?: Locale;
     /** Optional user profile image */
     imageUpload?: Blob;
+    phone?: string;
+    website?: string;
 }
 
 export interface ChangePasswordRequest {
@@ -1031,6 +1037,8 @@ export interface UpdateUserRequest {
     active?: boolean;
     imageUrl?: ImageUrl;
     locale?: Locale;
+    phone?: string;
+    website?: string;
 }
 
 export interface UpdateUserRequestMultipart {
@@ -1043,6 +1051,8 @@ export interface UpdateUserRequestMultipart {
     /** Optional user profile image */
     imageUpload?: Blob;
     locale?: Locale;
+    phone?: string;
+    website?: string;
 }
 
 export interface CreateUserRequest {
@@ -1081,6 +1091,8 @@ export interface UpdateUserByIdRequest {
     active?: boolean;
     imageUrl?: ImageUrl;
     locale?: Locale;
+    phone?: string;
+    website?: string;
 }
 
 export interface UpdateUserByIdRequestMultipart {
@@ -1092,6 +1104,8 @@ export interface UpdateUserByIdRequestMultipart {
     /** Optional user profile image */
     imageUpload?: Blob;
     locale?: Locale;
+    phone?: string;
+    website?: string;
 }
 
 export interface SearchUsersRequest {
@@ -2507,6 +2521,12 @@ export const updateAccountWithMultipart = (
     if (updateAccountRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, updateAccountRequestMultipart.imageUpload);
     }
+    if (updateAccountRequestMultipart.phone !== undefined) {
+        formData.append(`phone`, updateAccountRequestMultipart.phone);
+    }
+    if (updateAccountRequestMultipart.website !== undefined) {
+        formData.append(`website`, updateAccountRequestMultipart.website);
+    }
 
     return orvalMutator<UserEnvelope>(
         {
@@ -2946,6 +2966,12 @@ export const updateUserWithMultipart = (
     if (updateUserRequestMultipart.locale !== undefined) {
         formData.append(`locale`, updateUserRequestMultipart.locale);
     }
+    if (updateUserRequestMultipart.phone !== undefined) {
+        formData.append(`phone`, updateUserRequestMultipart.phone);
+    }
+    if (updateUserRequestMultipart.website !== undefined) {
+        formData.append(`website`, updateUserRequestMultipart.website);
+    }
 
     return orvalMutator<UserEnvelope>(
         {
@@ -3040,6 +3066,12 @@ export const updateUserByIdWithMultipart = (
     }
     if (updateUserByIdRequestMultipart.locale !== undefined) {
         formData.append(`locale`, updateUserByIdRequestMultipart.locale);
+    }
+    if (updateUserByIdRequestMultipart.phone !== undefined) {
+        formData.append(`phone`, updateUserByIdRequestMultipart.phone);
+    }
+    if (updateUserByIdRequestMultipart.website !== undefined) {
+        formData.append(`website`, updateUserByIdRequestMultipart.website);
     }
 
     return orvalMutator<UserEnvelope>(

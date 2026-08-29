@@ -220,7 +220,8 @@ export const useAccountStore = defineStore('account', () => {
      * role or account state. Changing the email unverifies the account server-side; the fresh
      * record in the response carries that, so the banner appears without a refetch.
      *
-     * @param userData - Fields to change; `email`, `username`, `locale` and `imageUrl` are sent.
+     * @param userData - Fields to change; `email`, `username`, `locale`, `imageUrl`, `phone` and
+     *  `website` are sent.
      * @returns A promise resolving with the updated profile, rejected with an
      *  `invalid user` error when no profile is selected.
      */
@@ -232,7 +233,9 @@ export const useAccountStore = defineStore('account', () => {
                     email: userData.email,
                     username: userData.username,
                     locale: userData.locale,
-                    imageUrl: userData.imageUrl
+                    imageUrl: userData.imageUrl,
+                    phone: userData.phone,
+                    website: userData.website
                 }).then((data) => {
                     const payload = getPayloadFromResponse<User>(data);
                     // The projection must not lag the record — same rule as fetchProfile.

@@ -48,6 +48,8 @@ export const usersSchema = z.object({
     email: usersEmailSchema,
     username: usersUsernameSchema,
     imageUrl: z.string().nullish(),
+    phone: z.string().optional(),
+    website: z.string().optional(),
     admin: z.boolean().nullish(),
     active: z.boolean().nullish(),
     createdAt: z.string().nullish(),

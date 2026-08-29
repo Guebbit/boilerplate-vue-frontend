@@ -166,10 +166,10 @@ const DEMO_PORT_BASE = 3101;
  *
  * Isolation is free for the Node twin — a fresh in-memory Mongo per process — and provisioned
  * ahead of time for the PHP one: `DB_DATABASE=e2e_demo_shard_{n}` below lands each shard's
- * `migrate:fresh --seed` in one of four databases created for exactly this
- * (`.docker/mysql/02-e2e-demo-shards.sql`), never the developer's own `boilerplate` database.
- * Four is this file's own shard ceiling (`DEMO_PORT_BASE` below), so it matches without needing
- * to read `E2E_SHARDS` here too.
+ * `migrate:fresh --seed` in one of four databases the PAIRED PHP REPO creates for exactly this
+ * (`boilerplate-php-laravel-backend/.docker/mysql/02-e2e-demo-shards.sql`), never the developer's
+ * own `boilerplate` database. That file provisions exactly 4 — see the guard below for what
+ * happens if `count` (from `E2E_SHARDS`) ever asks for more against the PHP pairing.
  */
 const bootDemoBackends = async (count: number): Promise<() => void> => {
     // BACKEND_DEMO_COMMAND unset: boot nothing, and treat the ports as somebody else's to serve.
@@ -179,6 +179,19 @@ const bootDemoBackends = async (count: number): Promise<() => void> => {
     if (demoCommand === undefined)
         console.log(
             `[e2e-shard] BACKEND_DEMO_COMMAND is unset — booting nothing; expecting backends already on :${DEMO_PORT_BASE}–:${DEMO_PORT_BASE + count - 1}`
+        );
+
+    // The PHP pairing's databases are provisioned ahead of time, by name, in the PHP repo's own
+    // `.docker/mysql/02-e2e-demo-shards.sql` — unlike the Node twin's in-memory Mongo, which needs
+    // no such provisioning and so has no ceiling to violate. A 5th shard against the PHP pairing
+    // would compute `DB_DATABASE=e2e_demo_shard_5`, a database that file never created or granted,
+    // and fail deep inside Laravel's DB connection with no hint of the real cause. Caught here
+    // instead, naming the file that would need a matching 5th `CREATE DATABASE` block.
+    if (demoCommand?.[0] === 'composer' && count > 4)
+        throw new Error(
+            `[e2e-shard] E2E_SHARDS=${count} exceeds the PHP pairing's provisioned shard count (4). ` +
+                'Add a 5th CREATE DATABASE/GRANT block to ' +
+                '`boilerplate-php-laravel-backend/.docker/mysql/02-e2e-demo-shards.sql` first.'
         );
 
     // Every backend's in-memory Mongo writes under this, not under the machine's `/tmp` — see

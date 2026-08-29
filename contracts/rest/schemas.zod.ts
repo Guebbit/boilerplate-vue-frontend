@@ -1266,6 +1266,8 @@ export const GetAccountResponse = zod.strictObject({
             .describe(
                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
             ),
+        phone: zod.string().optional(),
+        website: zod.string().optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
         deletedAt: zod.iso.datetime({ offset: true }).optional()
@@ -1295,7 +1297,9 @@ export const UpdateAccountBody = zod.strictObject({
         .optional()
         .describe(
             'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-        )
+        ),
+    phone: zod.string().optional(),
+    website: zod.string().optional()
 });
 
 export const updateAccountResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
@@ -1324,6 +1328,8 @@ export const UpdateAccountResponse = zod.strictObject({
             .describe(
                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
             ),
+        phone: zod.string().optional(),
+        website: zod.string().optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
         deletedAt: zod.iso.datetime({ offset: true }).optional()
@@ -1676,6 +1682,8 @@ export const SignupResponse = zod.strictObject({
             .describe(
                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
             ),
+        phone: zod.string().optional(),
+        website: zod.string().optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
         deletedAt: zod.iso.datetime({ offset: true }).optional()
@@ -1812,6 +1820,8 @@ export const ListUsersResponse = zod.strictObject({
                     .describe(
                         'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
                     ),
+                phone: zod.string().optional(),
+                website: zod.string().optional(),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
                 updatedAt: zod.iso.datetime({ offset: true }).optional(),
                 deletedAt: zod.iso.datetime({ offset: true }).optional()
@@ -1893,6 +1903,8 @@ export const CreateUserResponse = zod.strictObject({
             .describe(
                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
             ),
+        phone: zod.string().optional(),
+        website: zod.string().optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
         deletedAt: zod.iso.datetime({ offset: true }).optional()
@@ -1926,7 +1938,9 @@ export const UpdateUserBody = zod.strictObject({
         .optional()
         .describe(
             'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-        )
+        ),
+    phone: zod.string().optional(),
+    website: zod.string().optional()
 });
 
 export const updateUserResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
@@ -1955,6 +1969,8 @@ export const UpdateUserResponse = zod.strictObject({
             .describe(
                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
             ),
+        phone: zod.string().optional(),
+        website: zod.string().optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
         deletedAt: zod.iso.datetime({ offset: true }).optional()
@@ -2021,6 +2037,8 @@ export const GetUserByIdResponse = zod.strictObject({
             .describe(
                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
             ),
+        phone: zod.string().optional(),
+        website: zod.string().optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
         deletedAt: zod.iso.datetime({ offset: true }).optional()
@@ -2057,7 +2075,9 @@ export const UpdateUserByIdBody = zod.strictObject({
         .optional()
         .describe(
             'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
-        )
+        ),
+    phone: zod.string().optional(),
+    website: zod.string().optional()
 });
 
 export const updateUserByIdResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
@@ -2086,6 +2106,8 @@ export const UpdateUserByIdResponse = zod.strictObject({
             .describe(
                 'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
             ),
+        phone: zod.string().optional(),
+        website: zod.string().optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
         deletedAt: zod.iso.datetime({ offset: true }).optional()
@@ -2199,6 +2221,8 @@ export const SearchUsersResponse = zod.strictObject({
                     .describe(
                         'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
                     ),
+                phone: zod.string().optional(),
+                website: zod.string().optional(),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
                 updatedAt: zod.iso.datetime({ offset: true }).optional(),
                 deletedAt: zod.iso.datetime({ offset: true }).optional()
