@@ -43,50 +43,6 @@ const COVERAGE_FLOOR = {
     lines: 70
 };
 
-/**
- * Drop the Vue DevTools plugins from every test run.
- *
- * `vite.config.ts` adds `vueDevTools()`, which is not one plugin but four —
- * `vite-plugin-inspect`, `vite-plugin-vue-inspector`, its `:post` half, and
- * `vite-plugin-vue-devtools`. They exist to serve an inspector UI next to a running dev server.
- * A test run has no dev server and nobody to look at it, so at best they are transform overhead
- * on every file.
- *
- * At worst they break the run outright, which is why this is code rather than a preference.
- * `vite-plugin-inspect` resolves paths against the project directory it was created for; under
- * Stryker, which copies the project into `.stryker-tmp/sandbox-XXXXXX` and runs vitest there, it
- * ends up asking Vite to load that directory as if it were a module and the mutation run dies in
- * the dry run with `ERR_LOAD_URL: Failed to load url .../.stryker-tmp/sandbox-XXXXXX`, before a
- * single mutant is tested.
- *
- * Filtered here rather than in `vitest.config.mutation.ts` because the reasoning is not specific
- * to mutation testing: no test run wants a devtools server. The mutation run is only where the
- * cost stopped being invisible.
- *
- * Matched by NAME rather than by removing the `vueDevTools()` call in `vite.config.ts`, so that
- * the dev server keeps the plugin it is actually for and the two configs do not drift.
- */
-const isDevelopmentToolsPlugin = (plugin: unknown): boolean => {
-    const { name } = (plugin ?? {}) as { name?: string };
-    return (
-        typeof name === 'string' &&
-        (name.startsWith('vite-plugin-inspect') ||
-            name.startsWith('vite-plugin-vue-inspector') ||
-            name.startsWith('vite-plugin-vue-devtools'))
-    );
-};
-
-// `.flat(Infinity)` first: a Vite plugin entry may itself be an array of plugins, which is exactly
-// how `vueDevTools()` returns its four, so a filter over the unflattened list would see one opaque
-// array and match nothing. Flattened as `unknown[]` because `.flat(Infinity)` over Vite's own
-// recursive `PluginOption` union sends TypeScript into a depth-limit spiral (TS2589); the filter
-// only reads `name` anyway, and the cast back restores the declared shape.
-resolvedViteConfig.plugins = ((resolvedViteConfig.plugins ?? []) as unknown[])
-    .flat(Number.POSITIVE_INFINITY)
-    .filter(
-        (plugin) => plugin && !isDevelopmentToolsPlugin(plugin)
-    ) as typeof resolvedViteConfig.plugins;
-
 export default mergeConfig(
     resolvedViteConfig,
     defineConfig({

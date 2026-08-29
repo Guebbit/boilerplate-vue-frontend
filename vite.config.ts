@@ -46,10 +46,17 @@ export default defineConfig(({ mode }) => ({
         // auto-imports Vuetify components/directives on use (tree-shaken)
         vuetify({ autoImport: true }),
         tailwindcss(),
-        vueDevTools({
-            // open webstorm instead of vscode when using the __devtools__
-            launchEditor: 'webstorm'
-        })
+        // Excluded from a test run: there is no dev server to serve its inspector UI to, and
+        // under Stryker's sandboxed project copy its path resolution breaks the run outright
+        // before a single mutant is tested.
+        ...(mode === 'test'
+            ? []
+            : [
+                  vueDevTools({
+                      // open webstorm instead of vscode when using the __devtools__
+                      launchEditor: 'webstorm'
+                  })
+              ])
     ],
     resolve: {
         alias: {
