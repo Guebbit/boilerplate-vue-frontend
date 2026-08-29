@@ -6,10 +6,12 @@ import { accountResponseSchemas } from './response-schemas';
 /**
  * The visitor's own account: login, signup, profile, password reset and account deletion.
  *
- * `dependsOn: ['users']` is the field rules, not the screens — every form here validates against
+ * Reaches into `users` for the field rules, not the screens — every form here validates against
  * `usersSchema`/`usersPasswordSchema` from the users barrel, so that "what makes a valid username"
  * is answered once for the person editing their own record and for the admin editing someone
- * else's. A build with account but not users would validate nothing.
+ * else's. A build with account but not users would validate nothing. The relationship is
+ * `published-language`: shared vocabulary, not a shared store — neither module writes anything, the
+ * API does.
  *
  * The session itself is not in here: the token lives in `infrastructure/session`, because
  * `infrastructure/http` has to read it on every request and the router guards have to read
@@ -25,16 +27,7 @@ export default {
      * Login, signup, password reset. There is no version of this that is a competitive advantage,
      * and the client half is thinner still — it renders forms over rules the server owns.
      */
-    subdomain: 'generic',
     routes,
-    dependsOn: [
-        {
-            module: 'users',
-            as: 'published-language',
-            because:
-                'Validates every form against `usersSchema`/`usersPasswordSchema` — shared field rules, not a shared store.'
-        }
-    ],
     navigation: [
         {
             name: 'Profile',

@@ -272,18 +272,18 @@ being valid_, not by where you put files.
 
 ## 4. Where this repo stands
 
-**Strategic DDD — adopted, and machine-checked.** Each row is a declaration in the code with a test
-behind it, not a claim about intent. See [Strategic DDD](./strategic-ddd.md) for what each one
-enforces and what it refuses.
+**Strategic DDD — adopted, most of it machine-checked, none of it a claim about intent.** See
+[Strategic DDD](./strategic-ddd.md) for what each one enforces, what it refuses, and — for context
+map and subdomain distillation — why the enforcement moved off a manifest field.
 
-| Concept                | Where                                                                                                                    |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Bounded context        | one folder per module; `rm -rf` deletes the domain                                                                       |
-| Published language     | the module barrel, `index.ts` — and a spec forbids widening it past what a sibling imports                               |
-| Context map            | typed `dependsOn` edges in each `module.ts`, validated as a DAG and against the real imports                             |
-| Ubiquitous language    | `language` in each `module.ts` — per context, and often deliberately different from the server's word for the same thing |
-| Subdomain distillation | `subdomain` in each `module.ts` — a generic module may not carry a `domain/` folder                                      |
-| Domain service         | `cart/domain/quantity.ts`                                                                                                |
+| Concept                | Where                                                                                                                 |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Bounded context        | one folder per module; `rm -rf` deletes the domain                                                                    |
+| Published language     | the module barrel, `index.ts` — and a spec forbids widening it past what a sibling imports                            |
+| Context map            | prose in each `module.ts`'s docblock, next to its imports; which siblings it may reach is a generated ESLint rule     |
+| Ubiquitous language    | the code's own identifiers, per context — and often deliberately different from the server's word for the same thing  |
+| Subdomain distillation | prose in each `module.ts`'s docblock; a `generic` module carrying a `domain/` folder is a review question, not a spec |
+| Domain service         | `cart/domain/quantity.ts`                                                                                             |
 
 **Tactical DDD — absent, and mostly correctly so:**
 

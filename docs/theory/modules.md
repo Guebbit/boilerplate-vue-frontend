@@ -150,7 +150,7 @@ domain vocabulary and no contract validation. `tests/support/unit/wire-modules.t
 
 ::: tip The live version of this map
 The diagrams on this page explain the **rules**. The context map as it stands — every edge, labelled
-with its relationship and its reason, generated from the manifests — is
+with its relationship and its reason, kept in sync by hand against the real imports — is
 [the map on the Modules overview](../modules/index.md#the-whole-map), and every node there links to
 the domain's own page.
 :::
@@ -167,8 +167,6 @@ export interface AppModule {
     navigation?: AppNavigationEntry[];
     responseSchemas?: ResponseSchemaRoute[];
     locales?: Record<string, () => Promise<TranslationDictionaries>>;
-    subdomain: Subdomain;
-    dependsOn?: readonly ContextEdge[];
 }
 ```
 
@@ -177,19 +175,20 @@ label key, its rank, its lucide glyph, and the part of the chrome it sits in —
 `account` or `admin` in a menu. `section` is placement only; who sees the entry is still the
 route's `meta.access`. See [Sitemap](./sitemap.md#navigation-sections).
 
-`subdomain` and the shape of `dependsOn` are the module's **strategic** declarations — what it is
-to the business, and what kind of relationship each arrow is. An edge
-is `{ module, as, because }` rather than a bare name, because "who touches products" and "what does
-changing products cost" are different questions and only the second one is useful. See
-[Strategic DDD](./strategic-ddd.md).
+What subdomain a module sits in, and what kind of relationship each arrow to a sibling is, are the
+module's **strategic** declarations too — but they are not fields here. They are prose in the
+docblock at the top of each `module.ts`, next to the imports and the navigation entries they
+describe, because a reader meets a claim and the code it describes in the same place that way. See
+[Strategic DDD](./strategic-ddd.md) for why that reads better than a typed `subdomain` and
+`dependsOn` used to.
 
 Each optional field replaced a shared file that used to enumerate domains — the navigation list,
 the response-schema table, the locale bundle. That is the whole point:
 **no shared file names a domain except `src/modules.ts`.**
 
-`dependsOn` is validated as a DAG while the router is assembled. A duplicate name, a dependency on
-a module that is not enabled, or a cycle throws with the offending path named, rather than
-surfacing as a blank page on whichever navigation first crosses the gap.
+Which siblings a module may reach at all is enforced separately, by a generated ESLint rule rather
+than a manifest field: `eslint.config.ts`'s `MODULE_EDGES` map names, per module, which siblings it
+may import, and a reach outside that list fails `npm run lint` at the offending line.
 
 ### Why three fields are lazy
 

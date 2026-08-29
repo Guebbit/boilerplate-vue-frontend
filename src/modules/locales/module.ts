@@ -21,7 +21,6 @@ export default {
      * Translation management is a solved problem — every CMS grows one of these screens and none
      * of them differ. The modelling effort lives server-side, where the rows are.
      */
-    subdomain: 'generic',
     routes,
     /*
      * One menu entry, not two: the dictionary board is reached from the languages board's own

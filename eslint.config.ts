@@ -14,11 +14,35 @@ import { fileURLToPath } from 'node:url';
 import { ALL_SPEC_GLOBS } from './scripts/cypress-spec-globs';
 
 /**
+ * Which siblings a module may reach at all, hand-maintained rather than declared per module.
+ *
+ * This used to be a `dependsOn` field on each module's manifest — a typed `{ module, as, because }`
+ * edge array — reconciled against real imports by a cross-cutting spec. It is gone: nothing read it
+ * at runtime, and what it genuinely bought (a new cross-module coupling being a deliberate edit
+ * rather than a one-line import nobody questions) is bought here instead, at the offending import.
+ * See `docs/theory/strategic-ddd.md` §2.
+ *
+ * The WHY for each edge — what is reached, and what kind of relationship it is
+ * (conformist/customer-supplier/published-language) — is prose in the docblock at the top of the
+ * dependent module's `module.ts`, next to the imports it describes.
+ */
+const MODULE_EDGES: Record<string, string[]> = {
+    account: ['users'],
+    cart: ['delivery'],
+    inventory: ['products'],
+    orders: ['cart', 'delivery', 'payments'],
+    products: ['cart', 'wishlist'],
+    wishlist: ['cart']
+};
+
+/**
  * Module boundaries, one config block per module.
  *
  * A module owns everything about its domain and exposes one surface: `index.ts`. A sibling may
- * import `@/modules/<name>`; reaching `@/modules/<name>/store` or any other internal is what these
- * rules stop, because the moment one happens the module stops being deletable.
+ * import `@/modules/<name>`; reaching `@/modules/<name>/store` or any other internal is what the
+ * first pattern below stops, because the moment one happens the module stops being deletable. The
+ * second pattern is coupling, not internals: a module may only reach the siblings `MODULE_EDGES`
+ * names for it, so a new cross-module import fails at lint time until someone decides it belongs.
  *
  * The list is read from the filesystem rather than written out, so adding a domain never edits
  * this file — which is the same reason `src/modules.ts` is the only place that names one. Each
@@ -29,23 +53,34 @@ const moduleBoundaryRules = readdirSync(fileURLToPath(new URL('src/modules', imp
     withFileTypes: true
 })
     .filter((entry) => entry.isDirectory())
-    .map(({ name }) => ({
-        files: [`src/modules/${name}/**/*.{ts,mts,tsx,vue}`],
-        rules: {
-            'no-restricted-imports': [
-                'error',
-                {
-                    patterns: [
-                        {
-                            group: ['@/modules/*/*', `!@/modules/${name}/**`],
-                            message:
-                                'Import a sibling module through its public barrel (@/modules/<name>), never its internals.'
-                        }
-                    ]
-                }
-            ]
-        }
-    }));
+    .map(({ name }) => {
+        const reaches = MODULE_EDGES[name] ?? [];
+        return {
+            files: [`src/modules/${name}/**/*.{ts,mts,tsx,vue}`],
+            rules: {
+                'no-restricted-imports': [
+                    'error',
+                    {
+                        patterns: [
+                            {
+                                group: ['@/modules/*/*', `!@/modules/${name}/**`],
+                                message:
+                                    'Import a sibling module through its public barrel (@/modules/<name>), never its internals.'
+                            },
+                            {
+                                group: [
+                                    '@/modules/*',
+                                    `!@/modules/${name}`,
+                                    ...reaches.map((reach) => `!@/modules/${reach}`)
+                                ],
+                                message: `${name} may reach ${reaches.join(', ') || 'no sibling'}. A new one is a new coupling: add it to MODULE_EDGES in eslint.config.ts and say in this module's docblock what it reaches for and why — or find a way not to need it.`
+                            }
+                        ]
+                    }
+                ]
+            }
+        };
+    });
 
 /**
  * The domain layer: `src/modules/<name>/domain/**` — pure rules.

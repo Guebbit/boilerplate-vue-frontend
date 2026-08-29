@@ -15,7 +15,6 @@ export default {
      * Shipping is specific to how this shop operates but is not what anyone buys. Two components
      * and a store — supporting, and deliberately page-less.
      */
-    subdomain: 'supporting',
     routes: [],
     responseSchemas: deliveryResponseSchemas,
     locales: {

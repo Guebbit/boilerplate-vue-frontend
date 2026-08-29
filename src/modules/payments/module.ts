@@ -15,7 +15,6 @@ export default {
      * Taking money is not this shop’s differentiator, and the provider is the API's business.
      * What stays here is a panel that belongs to an order.
      */
-    subdomain: 'supporting',
     routes: [],
     responseSchemas: paymentsResponseSchemas,
     locales: {

@@ -39,14 +39,18 @@ paired backend's demo profile.
 One file per architectural rule, asserted over all fourteen modules at once. A new module is
 covered the day it is added.
 
+Two files used to live here: `context-map.spec.ts` and `subdomain-discipline.spec.ts`, reconciling
+a typed `dependsOn`/`subdomain` field against real imports and real folders. Both are gone along
+with the fields — the coupling half moved to a generated ESLint rule (`MODULE_EDGES` in
+`eslint.config.ts`), checked structurally on every `npm run lint`. See
+[Strategic DDD](../theory/strategic-ddd.md) §2 and §4.
+
 | File                                                    | What it guarantees                                                                                                                        | Read next                                                  |
 | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| `tests/cross-cutting/registry.spec.ts`                  | Every module's manifest is valid and the registry rejects a malformed one at boot.                                                        | [Modules](../theory/modules.md)                            |
-| `tests/cross-cutting/context-map.spec.ts`               | Declared cross-module dependencies match the imports that actually exist.                                                                 | [Strategic DDD](../theory/strategic-ddd.md)                |
+| `tests/cross-cutting/registry.spec.ts`                  | Every enabled module's manifest satisfies the invariants any module must — routes named, navigation pointing at a real route.             | [Modules](../theory/modules.md)                            |
 | `tests/cross-cutting/published-language.spec.ts`        | A module's barrel publishes exactly what its siblings import — no more, no less.                                                          | [Modules](../theory/modules.md)                            |
 | `tests/cross-cutting/form-idiom.spec.ts`                | Every form goes through `useAppForm`, keeps no second "show errors" flag of its own, and hands the composable an element to focus into.   | [UI Kit](./src-ui.md)                                      |
 | `tests/cross-cutting/store-location.spec.ts`            | Every `defineStore` under `src/modules/` sits where the coverage floor's globs look — `store.ts`, or `stores/` for a module with several. | [State & Routing](../tools/state-and-routing.md)           |
-| `tests/cross-cutting/subdomain-discipline.spec.ts`      | Modelling effort goes where the business is: a module's subdomain classification matches what it contains.                                | [Strategic DDD](../theory/strategic-ddd.md)                |
 | `tests/cross-cutting/schemas-i18n.spec.ts`              | Every validation message resolves to a real dictionary key, so a form never renders a raw key at a user.                                  | [App, Kernel & Types](./src-app.md)                        |
 | `tests/cross-cutting/a11y-coverage.spec.ts`             | Every route reachable in the app is covered by the accessibility sweep — the check that stops a new page quietly escaping it.             | [Accessibility Testing](../tools/accessibility-testing.md) |
 | `tests/cross-cutting/coverage-and-mutate-scope.spec.ts` | The coverage and Stryker `mutate` scopes still match the code that exists, so neither silently stops measuring a directory.               | [Mutation Testing](../tools/mutation-testing.md)           |
@@ -56,7 +60,7 @@ covered the day it is added.
 
 | File                                                    | What it guarantees                                                                               | Read next                                        |
 | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| `tests/unit/kernel/registry.spec.ts`                    | Module validation fails loudly — the registry decides what "this build" means.                   | [Modules](../theory/modules.md)                  |
+| `tests/unit/kernel/registry.spec.ts`                    | The registry's route- and navigation-collecting functions behave correctly on synthetic modules. | [Modules](../theory/modules.md)                  |
 | `tests/unit/app/router/router.spec.ts`                  | The router is assembled from the registry, and a module's routes arrive under the locale prefix. | [State & Routing](../tools/state-and-routing.md) |
 | `tests/unit/app/router/navigation.spec.ts`              | The navigation model: what the shell renders, and where an unauthenticated visitor is sent.      | [Sitemap & Access Control](../theory/sitemap.md) |
 | `tests/unit/app/guards/authentications.spec.ts`         | A route's declared requirement is enforced, and a public route stays public.                     | [Sitemap & Access Control](../theory/sitemap.md) |

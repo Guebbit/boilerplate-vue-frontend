@@ -11,9 +11,8 @@
  * here, and writing that line is the point: it is the moment to ask whether the shape should exist
  * at all, rather than the moment it becomes invisible.
  *
- * Nothing else in this suite covers this. `store-location.spec.ts` rules on store FILENAMES,
- * `subdomain-discipline.spec.ts` on whether a `domain/` folder is allowed — neither sweeps the
- * whole folder, and a stray file passes both.
+ * Nothing else in this suite covers this. `store-location.spec.ts` rules on store FILENAMES — it
+ * does not sweep the whole folder, and a stray file passes it.
  *
  * ── Where this came from ─────────────────────────────────────────────────────────────────────
  * This catalogue used to live in `scripts/module-docs/shapes.ts`, where it rendered the **Files**

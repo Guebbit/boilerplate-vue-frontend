@@ -15,7 +15,6 @@ export default {
      * A playground for the metrics stream. It exists to demonstrate the SSE transport, which is
      * itself infrastructure — there is no domain here to model.
      */
-    subdomain: 'generic',
     routes,
     navigation: [
         {

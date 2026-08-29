@@ -6,26 +6,18 @@ import { wishlistResponseSchemas } from './response-schemas';
 /**
  * The visitor's saved products.
  *
- * The one edge is the move-to-cart exit: the move is a WISHLIST endpoint, and the cart store is
- * then asked to refetch itself so the header's badge cannot lag a write this module initiated.
- * The reverse arrow does not exist — the cart never reads the wishlist — which is what keeps
- * `products → wishlist → cart → orders` a line rather than a loop.
+ * The one edge is the move-to-cart exit, `conformist`: the move is a WISHLIST endpoint, and the cart
+ * store is then asked to refetch itself so the header's badge cannot lag a write this module
+ * initiated — the cart is never asked to write. The reverse arrow does not exist — the cart never
+ * reads the wishlist — which is what keeps `products → wishlist → cart → orders` a line rather than
+ * a loop.
  */
 export default {
     name: 'wishlist',
     /*
      * A saved list with one exit into the cart. Deleting it costs a convenience, not a capability.
      */
-    subdomain: 'supporting',
     routes,
-    dependsOn: [
-        {
-            module: 'cart',
-            as: 'conformist',
-            because:
-                'Move-to-cart calls a wishlist endpoint and then asks the cart store to refetch itself; the cart is never asked to write.'
-        }
-    ],
     navigation: [
         {
             name: 'Wishlist',

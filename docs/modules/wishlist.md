@@ -50,9 +50,9 @@ is why the edge is `conformist` rather than `customer-supplier` — the cart is 
 
 ::: tip Why this is a line and not a loop
 The reverse arrow does not exist. The cart never reads the wishlist. That is what keeps
-`products → wishlist → cart → orders` a chain rather than a cycle — and a cycle would have failed
-`validateModules` at startup with a sentence, rather than on the first navigation with a blank
-screen.
+`products → wishlist → cart → orders` a chain rather than a cycle — and a cycle would show up as a
+`no-restricted-imports` failure on `npm run lint` at whichever import closed the loop, rather than
+on the first navigation with a blank screen.
 :::
 
 The heart on a product card is [`products`](./products.md) asking this store to save — the arrow

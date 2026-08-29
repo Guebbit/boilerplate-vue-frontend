@@ -16,7 +16,6 @@ export default {
      * An admin CRUD over a user record with an email and an admin flag — the same problem in every
      * application that has ever had one.
      */
-    subdomain: 'generic',
     routes,
     navigation: [
         {

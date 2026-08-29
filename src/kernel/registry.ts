@@ -6,9 +6,9 @@
  * rather than grepping ten. `src/modules.ts` lists the enabled modules; this file is what turns
  * that list into a running application.
  *
- * Mirrors the backend registry on the idea and on the field names — `name`, `routes`, `dependsOn` —
- * while staying idiomatic here: routes are vue-router records rather than an express router, and
- * there is no `basePath` because a vue-router record carries its own path.
+ * Mirrors the backend registry on the idea and on the field names — `name`, `routes` — while staying
+ * idiomatic here: routes are vue-router records rather than an express router, and there is no
+ * `basePath` because a vue-router record carries its own path.
  *
  * The registry deliberately does not discover modules from the filesystem. An explicit list is the
  * honest answer to "what is in this build?", it stays statically typed and tree-shakeable, and
@@ -97,81 +97,19 @@ export interface AppNavigationEntry {
 }
 
 /**
- * How this module treats the one it depends on — the label on the arrow, not just the arrow.
- *
- * A bare dependency list says two domains touch. It does not say what kind of touching, and that is
- * the question that decides what a change upstream costs. The three names below are the shapes this
- * client actually has, and each maps to something visible in the import:
- *
- * - `conformist` — reads another module's store as it is, with no translation and no say in its
- *   shape. `inventory` reading `useProductsStore` to fill a receipt select.
- * - `customer-supplier` — calls a sibling's store to make something happen, and that sibling's
- *   surface is shaped by the demand. Add-to-cart, move-to-cart and reorder are all this.
- * - `published-language` — receives vocabulary rather than state: a Zod schema, a pure function, or
- *   a self-contained component that renders its own concern. The strongest edge, because neither
- *   side learns the other's store. `orders` embedding `PaymentPanel` is the clearest case.
- *
- * `shared-kernel` is deliberately absent, and its absence is a real finding rather than an
- * omission. On the backend `account → users` is one, because both write the same User record; here
- * the same pair is `published-language`, because the client shares only the validation vocabulary
- * and the server remains the single writer. That divergence is what
- * [Domain layer](../../docs/theory/domain-layer.md) means by the domain living behind the API.
- */
-export type ContextRelationship = 'conformist' | 'customer-supplier' | 'published-language';
-
-/** One edge of the context map: who is depended on, how, and why that shape. */
-export interface ContextEdge {
-    /** The sibling module's registry name. */
-    module: string;
-
-    /** What kind of relationship this is. See {@link ContextRelationship}. */
-    as: ContextRelationship;
-
-    /**
-     * One sentence, present tense, naming what is actually reached across the edge.
-     *
-     * Required rather than optional on purpose: an edge whose reason cannot be written in a line is
-     * usually two edges, or a module boundary in the wrong place.
-     */
-    because: string;
-}
-
-/**
- * Where this module sits in the business, in the strategic-DDD sense.
- *
- * Mirrored from the backend manifest, and read with one caveat that is specific to a client: **this
- * application owns almost none of the domain it displays**. Prices, totals, eligibility and
- * permissions are decided server-side, so a `core` label here marks where the screens and the
- * client-side rules are load-bearing, not where the business logic lives.
- *
- * - `core` — the reason the product exists. Worth its own client-side rules.
- * - `supporting` — specific to this business but not a differentiator. Keep it plain.
- * - `generic` — a solved problem. Modelling effort here is waste, which is why
- *   `tests/cross-cutting/subdomain-discipline.spec.ts` refuses a `domain/` folder inside one.
- */
-export type Subdomain = 'core' | 'supporting' | 'generic';
-
-/**
  * Everything a module declares about itself.
  *
  * Keep this interface small. A field that only one module ever fills does not belong here — that
- * module should do the thing itself, behind its own barrel.
- *
- * `subdomain` is read by nothing at runtime, which looks like it breaks that rule. It does not: a
- * test acts on it — a `generic` module may carry no `domain/` folder. A field nothing reads and
- * nothing checks is a comment with extra syntax; the module's vocabulary was one, and now lives in
- * `docs/theory/glossary.md`.
+ * module should do the thing itself, behind its own barrel. A field nothing reads at runtime is a
+ * comment with extra syntax: what a module depends on is its `import` statements, how it relates to
+ * a sibling is prose in the docblock above the manifest, and which subdomain it sits in is context a
+ * reader gets from that same prose rather than a classification nothing checks. See
+ * `docs/theory/strategic-ddd.md` §2 and §4 for what used to live here as typed fields and why it
+ * moved.
  */
 export interface AppModule {
     /** Registry identity. Must match the folder name under `src/modules/`. */
     name: string;
-
-    /**
-     * Which of the three kinds of subdomain this is. Required, because the interesting answer is
-     * the one nobody wants to write down: most modules are not core, and a field that can be
-     * omitted collects only the flattering half of the truth.
-     */
-    subdomain: Subdomain;
 
     /** The domain's route records, spliced into the localised route tree. */
     routes: RouteRecordRaw[];
@@ -196,78 +134,15 @@ export interface AppModule {
      * visitor downloads one language, for the enabled domains only.
      */
     locales?: Record<string, () => Promise<TranslationDictionaries>>;
-
-    /**
-     * Modules this one imports from, each with the shape of the relationship. Declared rather than
-     * inferred, because the point is to fail at startup with a sentence instead of on the first
-     * navigation with a blank screen — and, since the edges are typed, to make "what does a change
-     * to products cost" answerable by reading one field.
-     *
-     * This must stay a DAG. Two modules that each need the other are not a dependency pair — they
-     * are one module.
-     */
-    dependsOn?: readonly ContextEdge[];
 }
-
-/**
- * Reject duplicate names, unknown dependencies and dependency cycles.
- *
- * The cycle walk is a depth-first search with an explicit "in progress" set, which reports the
- * offending path rather than just the fact of a cycle.
- *
- * @param appModules - the enabled module list, in registration order
- */
-export const validateModules = (appModules: AppModule[]): void => {
-    const byName = new Map<string, AppModule>();
-
-    // Pass 1 — index by name, rejecting a duplicate registration on the way.
-    for (const appModule of appModules) {
-        if (byName.has(appModule.name))
-            throw new Error(`Module "${appModule.name}" is registered twice in src/modules.ts`);
-        byName.set(appModule.name, appModule);
-    }
-
-    // Pass 2 — every named dependency must be enabled, checked before the walk needs it.
-    for (const appModule of appModules)
-        for (const edge of appModule.dependsOn ?? []) {
-            if (!byName.has(edge.module))
-                throw new Error(
-                    `Module "${appModule.name}" depends on "${edge.module}", which is not enabled. ` +
-                        `Add it to src/modules.ts or drop the dependency.`
-                );
-            // A module that depends on itself is a typo, and the cycle walk below would report it
-            // as a one-hop loop rather than as the mistake it is.
-            if (edge.module === appModule.name)
-                throw new Error(`Module "${appModule.name}" declares a dependency on itself.`);
-        }
-
-    // `settled` is proven acyclic; `walking` is the current path, so a hit on it IS the cycle.
-    const settled = new Set<string>();
-    const walking = new Set<string>();
-
-    // Depth-first, carrying `trail` so the error can print the path rather than just assert one.
-    const walk = (name: string, trail: string[]): void => {
-        if (settled.has(name)) return;
-        if (walking.has(name))
-            throw new Error(`Module dependency cycle: ${[...trail, name].join(' → ')}.`);
-
-        walking.add(name);
-        for (const edge of byName.get(name)?.dependsOn ?? []) walk(edge.module, [...trail, name]);
-        // Off the current path, onto the settled set: this subtree is clean.
-        walking.delete(name);
-        settled.add(name);
-    };
-
-    // Every module is a possible root — a disconnected pair still has to be checked.
-    for (const appModule of appModules) walk(appModule.name, []);
-};
 
 /**
  * Collect every enabled module's route records.
  *
- * Registry validity — no duplicate name, no unknown or cyclic dependency — is checked separately,
- * by `tests/cross-cutting/registry.spec.ts` against this exact list, so a misconfiguration fails
- * on `npm test` rather than needing a boot-time call here to say the same thing.
+ * An unknown or cyclic module coupling, and a stray reach into a sibling's internals, fail on
+ * `npm run lint` without help from this function: `no-restricted-imports` in `eslint.config.ts`
+ * enforces which sibling a module may reach at all — the enforceable half of what used to be a
+ * `dependsOn` field on this manifest. See `docs/theory/strategic-ddd.md` §2.
  *
  * @param appModules - the enabled module list
  */

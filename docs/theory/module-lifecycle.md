@@ -107,17 +107,15 @@ import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { widgetsResponseSchemas } from './response-schemas';
 
+/**
+ * Widgets: a supporting subdomain, specific to this business but not a differentiator.
+ *
+ * Reaches into `products` — a `conformist` read of `useProductsStore` as it is, to name the
+ * product a widget belongs to.
+ */
 export default {
     name: 'widgets',
-    subdomain: 'supporting',
     routes,
-    dependsOn: [
-        {
-            module: 'products',
-            as: 'conformist',
-            because: 'Reads `useProductsStore` as it is, to name the product a widget belongs to.'
-        }
-    ],
     navigation: [{ name: 'WidgetsList', label: 'navigation.label-widgets', plural: 2, order: 40 }],
     responseSchemas: widgetsResponseSchemas,
     locales: {
@@ -127,22 +125,27 @@ export default {
 } satisfies AppModule;
 ```
 
-Five fields need care:
+Two fields need care:
 
-| Field               | Rule                                                                                            |
-| ------------------- | ----------------------------------------------------------------------------------------------- |
-| `name`              | must match the folder name under `src/modules/`                                                 |
-| `subdomain`         | `core`, `supporting` or `generic`. A `generic` module may not carry a `domain/` folder          |
-| `dependsOn`         | names **siblings** whose code this module imports, each with its relationship kind and a reason |
-| `navigation[].name` | must be a route **this module declares** — swept by `registry.spec.ts`                          |
+| Field               | Rule                                                                   |
+| ------------------- | ---------------------------------------------------------------------- |
+| `name`              | must match the folder name under `src/modules/`                        |
+| `navigation[].name` | must be a route **this module declares** — swept by `registry.spec.ts` |
 
-The last three are strategic rather than operational: nothing reads them at runtime, and
-`tests/cross-cutting/` reads all of them. An edge nothing imports, an import no edge declares, a
-placeholder glossary or a `domain/` folder in a generic module each fail a spec. See
-[Strategic DDD](./strategic-ddd.md).
+Two more things need care that are not fields at all:
 
-The temptation is to fill them in later. Do not — the questions are easiest to answer while you
-still remember why you drew the boundary.
+- **which subdomain the module sits in, and what kind of relationship each import to a sibling is** —
+  write both in the docblock above the manifest, the way the `widgets` example above does. Nothing
+  reads either at runtime; both used to be typed fields (`subdomain`, `dependsOn`) held to a
+  cross-cutting spec, and both are gone — see [Strategic DDD](./strategic-ddd.md) §2 and §4 for why
+  prose next to the import turned out to be the better home.
+- **which siblings the module may import at all** — add the module to `MODULE_EDGES` in
+  `eslint.config.ts` the moment it reaches a sibling, naming which one(s). This is the part that
+  stays enforced, just no longer on the manifest: an import to a sibling not in that list fails
+  `npm run lint` at the offending line.
+
+The temptation is to fill the docblock in later. Do not — the questions are easiest to answer while
+you still remember why you drew the boundary.
 
 ### 3 · The line
 
@@ -232,8 +235,10 @@ Then drop its entry from `BACKEND_PAIRING` in `tests/cross-cutting/backend-pairi
 sidebar entries from `docs/.vitepress/config.mts`. That spec names a stale pairing entry by itself;
 the pages and the sidebar are yours to check, since nothing generates them.
 
-Deleting a module named in another module's `dependsOn` throws while the router assembles, with the
-offending name in the sentence — not a blank page on whichever navigation first crosses the gap.
+Deleting a module a sibling still imports fails `npm run build` at the unresolved `@/modules/<name>`
+specifier, with the importing file and line named — not a blank page on whichever navigation first
+crosses the gap. Drop the deleted name from `MODULE_EDGES` in `eslint.config.ts` too, so the coupling
+rule stops naming a sibling that no longer exists.
 
 ### Read the failures — they are not all equal
 

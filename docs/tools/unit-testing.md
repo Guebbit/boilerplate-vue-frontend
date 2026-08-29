@@ -103,15 +103,20 @@ const server = setupServer(
 ## The cross-cutting layer
 
 `tests/cross-cutting/` runs in this suite and on this runner, but it answers a different question.
-Every other spec here asks _does this behave correctly_. These ten ask _is the repository still the
+Every other spec here asks _does this behave correctly_. These eight ask _is the repository still the
 shape it claims to be_ — and they fail on a **file that was never written**, which no behavioural
 test can do, because a spec that does not exist runs no assertions and reports nothing.
+
+Two specs used to live in this list: `context-map.spec.ts`, reconciling a typed `dependsOn` edge
+against real imports, and `subdomain-discipline.spec.ts`, refusing a `domain/` folder in a `generic`
+module. Both are gone along with the manifest fields they checked — the coupling half moved to a
+generated ESLint rule (`MODULE_EDGES` in `eslint.config.ts`), checked structurally on every
+`npm run lint` rather than reconciled against a description on a separate run. See
+[Strategic DDD](../theory/strategic-ddd.md) §2 and §4.
 
 | Spec                                | Refuses                                                                                                                |
 | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | `registry.spec.ts`                  | A module whose manifest breaks an invariant every enabled module must satisfy                                          |
-| `context-map.spec.ts`               | A `dependsOn` edge that the imports do not support, or an import with no edge                                          |
-| `subdomain-discipline.spec.ts`      | A `domain/` folder inside a `generic` module                                                                           |
 | `published-language.spec.ts`        | A barrel exporting more, or less, than its siblings import                                                             |
 | `a11y-coverage.spec.ts`             | A routed module with no accessibility sweep — or a sweep outliving its routes                                          |
 | `store-location.spec.ts`            | A `defineStore` where the coverage floor's globs cannot see it                                                         |

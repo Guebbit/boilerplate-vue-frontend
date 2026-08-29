@@ -55,10 +55,11 @@ That is the strongest kind of edge on the map: neither side touches the other's 
 render their own concern, fetch their own data, and this module holds the layout around them.
 
 ::: tip The third edge runs against the server's arrow, deliberately
-`dependsOn: ['cart']` is the **reorder button** — the order page refills the visitor's cart through
+Reaching into `cart` is the **reorder button** — the order page refills the visitor's cart through
 the cart barrel. On the server the arrow points the other way, because a checkout creates an order.
 
-Both are correct. A manifest declares **imports**, and the import here is order-page → cart store.
+Both are correct. A module's imports are what it depends on, and the import here is
+order-page → cart store.
 :::
 
 Reads are scoped: a customer sees only their own orders, an admin reaches all of them through the

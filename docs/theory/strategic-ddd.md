@@ -1,8 +1,9 @@
 # Strategic DDD
 
 **The part of Domain-Driven Design that survives on a client** — bounded contexts, context mapping,
-ubiquitous language and subdomain distillation. All four are in the code, declared per module and
-asserted by specs.
+ubiquitous language and subdomain distillation. All four are in the code — as folders, imports,
+identifiers and docblocks, which is where a reader actually meets them rather than in a manifest
+field asserted by a spec.
 
 The other half — entities, value objects, aggregates, repositories — is **not** here, and on a
 frontend that is more emphatic than a preference. [Domain layer](./domain-layer.md) explains why:
@@ -24,14 +25,17 @@ nothing". Those sentences are true when written and unverifiable forever after. 
 document says one thing, the imports say another, and the document is the one that loses — quietly,
 because nothing fails.
 
-This client had exactly that, twice, and both were found the day the checks went in:
+This client had exactly that, twice:
 
 - `cart` declared `dependsOn: ['orders']` long after checkout moved into the cart store and the
   import disappeared.
 - `orders` published `useOrdersStore` "for the cart's checkout" — same vanished import, and the
   export outlived its reason by a whole refactor.
 
-So each claim is now a **field on the manifest** with a **spec behind it**.
+Both were found the day a typed `dependsOn` field and a spec reconciling it against real imports
+went in — and both are still findable, because what caught them was never the typed field. It was
+comparing a declared edge to a real import. That comparison now happens where a change actually
+shows up: `eslint.config.ts`'s generated coupling rule, checked on every `npm run lint`. See §2.
 
 ---
 
@@ -41,22 +45,10 @@ One module is one context. `rm -rf src/modules/wishlist` plus one line in `src/m
 the domain, and anything that breaks is real coupling worth seeing. Covered in
 [Modules](./modules.md).
 
-## 2. Context map — typed edges
+## 2. Context map — how a module reaches its siblings
 
-`dependsOn` is not a dependency list. It is a labelled graph:
-
-```ts
-dependsOn: [
-    {
-        module: 'payments',
-        as: 'published-language',
-        because:
-            'Mounts `PaymentPanel`; paying happens on the order page without this module knowing a provider exists.'
-    }
-];
-```
-
-Three kinds, because three is what this client actually has:
+A module's imports are its dependency list. What they do not say is what KIND of reach each one is,
+and the kinds differ enormously in what they cost when the upstream moves:
 
 | Kind                 | What it means                                                        | Cost when the upstream changes                  | Example                |
 | -------------------- | -------------------------------------------------------------------- | ----------------------------------------------- | ---------------------- |
@@ -64,29 +56,38 @@ Three kinds, because three is what this client actually has:
 | `customer-supplier`  | calls a sibling's store to make something happen                     | medium — the call survives, the payload may not | `products → cart`      |
 | `published-language` | receives vocabulary, not state: a schema, a self-contained component | **low** — neither side learns the other's store | `orders → payments`    |
 
-### The one that is missing
+### Where the map lives
+
+In the docblock at the top of each module's `module.ts`, in prose, next to the imports it describes.
+`cart` reaches five siblings, and its docblock says how it depends on each: two `conformist` reads,
+two `customer-supplier` calls, one `published-language`. The last is the cheapest relationship in
+the table and the one to copy: `delivery` publishes a component and no storage at all.
+
+This used to be a `dependsOn` field on the manifest — a typed array of `{ module, as, because }`
+edges — held to a 108-line cross-cutting spec that checked every edge was really imported, every
+import had a declared edge, and every `because` was a written sentence. Both are gone, and it is
+worth saying why, because the reasoning applies to any labelled-graph field someone is tempted to add
+back:
+
+- **Nothing read it at runtime.** Not the router, not a store, not a guard. It was documentation
+  with a type annotation.
+- **It was self-reported.** Because it was not derived from real imports, it could only prove a
+  developer's annotations agreed with each other — the actual proof still needed a spec scanning
+  every `.ts` and `.vue` file for `@/modules/` strings.
+- **The enforcement that matters is structural and still there.** `eslint.config.ts` generates one
+  `no-restricted-imports` rule per module from a hand-maintained `MODULE_EDGES` map: a module may
+  reach only the siblings that map names for it, checked at the offending import on every
+  `npm run lint`. A new coupling fails immediately, at the line that adds it, rather than on a
+  separate spec run.
+
+### The one worth still noticing
 
 The backend has a fourth kind, `shared-kernel`, and exactly one edge that is one: `account → users`,
-because both modules write the same User record.
-
-**Here the same pair is `published-language`**, and that is the whole difference between the two
-repos in one line. On the client, `account` and `users` share `usersSchema` and `usersPasswordSchema`
-— field rules, so "what makes a valid username" is answered once for the person editing their own
-record and the admin editing someone else's. Neither module writes anything; the API does. What they
-share is **vocabulary**, and vocabulary is the cheap kind of sharing.
-
-`context-map.spec.ts` asserts no fourth kind appears. If one ever does, the client has started owning
-state the server owns, which is the drift `scripts/spec-identity.ts` exists to catch elsewhere.
-
-### What else the map is held to
-
-- **no declared edge that nothing imports** — the `cart → orders` failure above.
-- **no import that no edge declares.** ESLint stops a module reaching a sibling's _internals_;
-  nothing until now stopped it reaching a sibling it never admitted to needing.
-- **every edge has a reason a human wrote.**
-
-`.vue` files are scanned alongside `.ts`, because on a client most cross-module reach happens in a
-component. A sweep that read only TypeScript would miss most of the real graph.
+because both modules write the same User record. Here the same pair is `published-language` —
+`account` and `users` share `usersSchema`/`usersPasswordSchema`, field rules rather than a store,
+because neither module writes anything; the API does. That divergence is what
+[Domain layer](./domain-layer.md) means by the domain living behind the API, and it is worth reading
+`account/module.ts`'s docblock for, even though nothing checks it holds.
 
 ## 3. Ubiquitous language — per context, not per app
 
@@ -111,18 +112,34 @@ prose moved to the glossary page.
 
 ## 4. Subdomain distillation — where to spend effort
 
+DDD's own advice is the part most often skipped: tactical patterns belong in the **core** domain,
+and everything else should use the simplest thing that works.
+
 | Subdomain    | Meaning                                                         | Here                                                |
 | ------------ | --------------------------------------------------------------- | --------------------------------------------------- |
 | `core`       | the reason the product exists — worth client-side rules         | `products`, `cart`, `orders`                        |
 | `supporting` | specific to this business, not a differentiator — keep it plain | `delivery`, `payments`, `inventory`, `wishlist`     |
 | `generic`    | a solved problem, interchangeable with something bought         | `account`, `users`, `admin`, `feedback`, `realtime` |
 
-The enforced rule: **a `generic` module may not carry a `domain/` folder.**
+The rule of thumb that follows: **a `generic` module should not carry a `domain/` folder.** A
+pure-rules layer inside authentication or i18n is effort spent on the part of the client that should
+stay replaceable.
 
-There is deliberately **no** rule that `core` must have one, and on a client that matters more than
-on the server. `cart` has a `domain/` because quantity clamping is a genuine client-side rule.
-`products` and `orders` are core and have none — prices and status transitions are the server's to
-decide, and a second implementation here would be drift, not thoroughness.
+This used to be a required `subdomain` field on the manifest, held to that rule by a cross-cutting
+spec. Both are gone: nothing read the field at runtime, and the check it enabled — refusing a
+`domain/` folder inside a module classified `generic` — was a test acting on a label nothing else
+ever consulted. The classification above is still true and still useful to a reader deciding where
+to put a new rule; it just is not proven by a passing test any more, the same way `core` never was.
+
+There is deliberately **no** rule, enforced or otherwise, that `core` must have a `domain/`. `cart`
+has one because quantity clamping is a genuine client-side rule. `products` and `orders` are core and
+have none — prices and status transitions are the server's to decide, and a second implementation
+here would be drift, not thoroughness.
+
+::: tip These values are this project's, not a rule for the next one
+A boilerplate has no core domain. The table above is this shop's answer, and the first thing a real
+project built from this one should do is re-decide it for its own business.
+:::
 
 ::: warning A `core` label here marks screens, not logic
 This application owns almost none of the domain it displays. `orders` is core because the order

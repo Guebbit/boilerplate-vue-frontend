@@ -85,11 +85,11 @@ beside it.
 
 **Node fill — where the domain sits in the business.**
 
-| Fill      | Subdomain    | What it means                                                                                                                              |
-| --------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 🟪 violet | `core`       | The reason the product exists. Worth its own client-side rules.                                                                            |
-| 🟦 blue   | `supporting` | Specific to this business but not a differentiator. Kept plain.                                                                            |
-| 🟩 teal   | `generic`    | A solved problem. Modelling effort here is waste — a `domain/` folder inside one fails `tests/cross-cutting/subdomain-discipline.spec.ts`. |
+| Fill      | Subdomain    | What it means                                                                                                                                           |
+| --------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🟪 violet | `core`       | The reason the product exists. Worth its own client-side rules.                                                                                         |
+| 🟦 blue   | `supporting` | Specific to this business but not a differentiator. Kept plain.                                                                                         |
+| 🟩 teal   | `generic`    | A solved problem. Modelling effort here is waste — a `domain/` folder inside one is a rule of thumb this codebase asks a reviewer to catch, not a spec. |
 
 ::: warning Read `core` with one caveat, on a client
 This application owns almost none of the domain it displays. Prices, totals, eligibility and

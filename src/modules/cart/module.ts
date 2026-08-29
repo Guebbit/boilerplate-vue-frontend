@@ -26,15 +26,6 @@ export default {
      * and the only place this client holds a multi-step flow of its own. Every other module points
      * at it.
      */
-    subdomain: 'core',
-    dependsOn: [
-        {
-            module: 'delivery',
-            as: 'published-language',
-            because:
-                'Mounts `ShippingSelector`, a self-contained component that renders shipping without this module learning what a rate is.'
-        }
-    ],
     routes,
     navigation: [
         {

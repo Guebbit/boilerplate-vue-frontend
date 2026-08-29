@@ -17,9 +17,9 @@ import { enabledModules } from '@/modules';
  * all — which is the whole point of the registry. Enabling or dropping a domain is `src/modules.ts`
  * and its folder; nothing here changes.
  *
- * Registry validity — no duplicate name, no unknown or cyclic dependency — is checked by
- * `tests/cross-cutting/registry.spec.ts` against this exact list, so a misconfigured registry fails
- * on `npm test` rather than here.
+ * A module reaching a sibling it has no coupling rule for is checked by `eslint.config.ts`'s
+ * generated `moduleCouplingRules`, so a misconfigured coupling fails on `npm run lint` rather than
+ * here.
  */
 const moduleRoutes = collectModuleRoutes(enabledModules);
 

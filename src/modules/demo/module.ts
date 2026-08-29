@@ -22,7 +22,6 @@ declare module '@/infrastructure/utils/logger.ts' {
 export default {
     name: 'demo',
     // A showroom is not the business. There is nothing to model here.
-    subdomain: 'generic',
     routes,
     navigation: [
         {

@@ -16,7 +16,6 @@ export default {
      * An ops console over endpoints the server already exposes. Interchangeable with any
      * off-the-shelf dashboard, and the first thing a downstream project without ops deletes.
      */
-    subdomain: 'generic',
     routes,
     navigation: [
         {

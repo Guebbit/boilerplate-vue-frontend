@@ -18,7 +18,7 @@ import { describe, expect, it } from 'vitest';
 import type { RouteRecordRaw } from 'vue-router';
 import { enabledModules } from '@/modules';
 import type { TranslationDictionaries } from '@/infrastructure/i18n';
-import { NAVIGATION_SECTIONS, validateModules } from '@/kernel/registry';
+import { NAVIGATION_SECTIONS } from '@/kernel/registry';
 
 /** Every route name a record tree declares, at any depth. */
 const routeNamesOf = (routes: RouteRecordRaw[]): string[] =>
@@ -30,19 +30,8 @@ const routeNamesOf = (routes: RouteRecordRaw[]): string[] =>
 const moduleCases = enabledModules.map((appModule) => [appModule.name, appModule] as const);
 
 describe('the enabled registry', () => {
-    it('is internally consistent — no duplicate name, no unknown or cyclic dependency', () => {
-        expect(() => validateModules(enabledModules)).not.toThrow();
-    });
-
     it('enables at least one module, so the sweeps below are not vacuously true', () => {
         expect(enabledModules.length).toBeGreaterThan(0);
-    });
-
-    it('declares every dependency as a module that is itself enabled', () => {
-        const names = new Set(enabledModules.map(({ name }) => name));
-
-        for (const { dependsOn = [] } of enabledModules)
-            for (const edge of dependsOn) expect(names).toContain(edge.module);
     });
 });
 

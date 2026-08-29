@@ -16,7 +16,6 @@ export default {
      * A contact form and an inbox. Every application grows one, none of them differ, and this one
      * references no other domain’s records.
      */
-    subdomain: 'generic',
     routes,
     navigation: [
         {

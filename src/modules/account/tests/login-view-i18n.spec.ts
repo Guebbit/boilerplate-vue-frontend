@@ -11,7 +11,7 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 /*
  * Login is account's view, but the field rules it renders are users' — so the expected copy is
  * derived by parsing with `usersSchema` itself, taken from the users **barrel**. That the two
- * modules agree on one set of rules is the point of `account`'s `dependsOn: ['users']`.
+ * modules agree on one set of rules is the point of `account` reaching into `users` at all.
  *
  * Reading users' locale JSON directly would be quicker and is what this spec did at first; lint
  * rejected it, correctly — a sibling's dictionary is an internal, and `@/modules/users` is the
