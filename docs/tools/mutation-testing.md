@@ -175,6 +175,10 @@ there.
 
 A run re-executes the unit suite once per mutant. `.github/workflows/mutation.yml` is a separate workflow from `ci.yml` — **nightly** (`cron: '0 3 * * *'`) plus manual dispatch. Kept structurally separate rather than folded into `ci.yml` behind a conditional: a separate file can't become a PR gate by accident.
 
+## Concurrency
+
+`stryker.config.json`'s `concurrency` is only the **fallback** for a bare `npx stryker run`. `npm run test:mutation` goes through `scripts/run-mutation-tests.ts`, which reads `STRYKER_CONCURRENCY` from `.env` and passes it as `--concurrency` — and an explicit CLI flag always wins over the value in the file. The number is a property of the machine, not the project, which is why it lives in `.env` rather than the committed config.
+
 ## Why a run is slow — static mutants
 
 This is the thing worth understanding, because it explains an otherwise baffling number.
@@ -380,15 +384,16 @@ After that the rule is: raise `break` when a score **sustains** a higher band; n
 
 ## File map
 
-| Path                                 | Contents                                                                       |
-| ------------------------------------ | ------------------------------------------------------------------------------ |
-| `stryker.config.json`                | Scope (`mutate`), the Vitest runner config, thresholds, concurrency, reporters |
-| `mutation-baseline.json`             | Per-file scores. Committed. The ratchet's memory. Absent until the first run.  |
-| `scripts/mutation-baseline.ts`       | Ratchet logic — scoring, comparison, the "never lower" rule                    |
-| `scripts/check-mutation-baseline.ts` | CLI for the two commands below                                                 |
-| `.github/workflows/mutation.yml`     | Nightly schedule + dispatch, uploads the report even on failure                |
-| `reports/mutation/index.html`        | Human-readable report (generated per run)                                      |
-| `reports/mutation/mutation.json`     | Machine-readable report the ratchet reads                                      |
+| Path                                 | Contents                                                                                |
+| ------------------------------------ | --------------------------------------------------------------------------------------- |
+| `stryker.config.json`                | Scope (`mutate`), the Vitest runner config, thresholds, concurrency fallback, reporters |
+| `scripts/run-mutation-tests.ts`      | Entry point for `npm run test:mutation`; reads `STRYKER_CONCURRENCY` from `.env`        |
+| `mutation-baseline.json`             | Per-file scores. Committed. The ratchet's memory. Absent until the first run.           |
+| `scripts/mutation-baseline.ts`       | Ratchet logic — scoring, comparison, the "never lower" rule                             |
+| `scripts/check-mutation-baseline.ts` | CLI for the two commands below                                                          |
+| `.github/workflows/mutation.yml`     | Nightly schedule + dispatch, uploads the report even on failure                         |
+| `reports/mutation/index.html`        | Human-readable report (generated per run)                                               |
+| `reports/mutation/mutation.json`     | Machine-readable report the ratchet reads                                               |
 
 ## Commands
 

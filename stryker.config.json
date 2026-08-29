@@ -1,17 +1,5 @@
 {
     "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
-    "_comment": [
-        "Mutation testing: breaks the source on purpose and checks the tests notice. A mutant that",
-        "leaves the suite green is a bug the tests cannot see — unlike line coverage, this cannot be",
-        "satisfied by executing code without asserting on it.",
-        "",
-        "Full explanation, glossary, scope rationale and current numbers: docs/tools/mutation-testing.md.",
-        "This file carries only the settings themselves.",
-        "",
-        "`concurrency` below is the fallback for a bare `npx stryker run`. `npm run test:mutation`",
-        "goes through `scripts/run-mutation-tests.ts`, which reads STRYKER_CONCURRENCY from `.env`",
-        "and passes it as `--concurrency`, and an explicit CLI flag always wins over this file."
-    ],
     "packageManager": "npm",
     "testRunner": "vitest",
     "vitest": {
