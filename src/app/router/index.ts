@@ -17,9 +17,9 @@ import { enabledModules } from '@/modules';
  * all — which is the whole point of the registry. Enabling or dropping a domain is `src/modules.ts`
  * and its folder; nothing here changes.
  *
- * `collectModuleRoutes` validates the registry before returning anything, so a duplicate name, a
- * dependency on a module that is not enabled, or a cycle fails while the router is assembled rather
- * than on the navigation that first crosses the gap.
+ * Registry validity — no duplicate name, no unknown or cyclic dependency — is checked by
+ * `tests/cross-cutting/registry.spec.ts` against this exact list, so a misconfigured registry fails
+ * on `npm test` rather than here.
  */
 const moduleRoutes = collectModuleRoutes(enabledModules);
 

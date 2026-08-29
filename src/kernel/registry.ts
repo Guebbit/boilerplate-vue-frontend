@@ -263,17 +263,16 @@ export const validateModules = (appModules: AppModule[]): void => {
 };
 
 /**
- * Validate the registry, then collect every enabled module's route records.
+ * Collect every enabled module's route records.
  *
- * Validation happens here rather than in the router so that a misconfigured registry fails while
- * the app is being assembled, not on the navigation that first crosses the gap.
+ * Registry validity — no duplicate name, no unknown or cyclic dependency — is checked separately,
+ * by `tests/cross-cutting/registry.spec.ts` against this exact list, so a misconfiguration fails
+ * on `npm test` rather than needing a boot-time call here to say the same thing.
  *
  * @param appModules - the enabled module list
  */
-export const collectModuleRoutes = (appModules: AppModule[]): RouteRecordRaw[] => {
-    validateModules(appModules);
-    return appModules.flatMap((appModule) => appModule.routes);
-};
+export const collectModuleRoutes = (appModules: AppModule[]): RouteRecordRaw[] =>
+    appModules.flatMap((appModule) => appModule.routes);
 
 /**
  * Collect every enabled module's navigation entries, in `order`.

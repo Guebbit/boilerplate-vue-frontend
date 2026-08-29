@@ -37,29 +37,19 @@ export const providedVariableKey: InjectionKey<ProvidedVariableContext> =
  */
 export const provideVariable = (): ProvidedVariableContext => {
     const providedVariable = ref<ProvidedVariable>('From the Playground');
-
     const setProvidedVariable: ProvidedVariableMutation = (value = '') => {
         providedVariable.value = value;
     };
 
-    const context = { providedVariable, setProvidedVariable };
-    provide(providedVariableKey, context);
-    return context;
+    provide(providedVariableKey, { providedVariable, setProvidedVariable });
+    return { providedVariable, setProvidedVariable };
 };
 
 /**
- * Injects the pair.
- *
- * Throws rather than falling back to a placeholder: a silent default renders a page that looks
- * like it works while demonstrating nothing, which is the one outcome a demo must not have.
+ * Injects the pair. Its one caller only ever renders under a `provideVariable()` ancestor, so a
+ * missing one is a wiring mistake that throws on the same page load regardless — Vue's own
+ * `TypeError` on the destructure, just without a demo-specific message.
  *
  * @returns The provided pair.
  */
-export const useProvidedVariable = (): ProvidedVariableContext => {
-    const context = inject(providedVariableKey);
-    if (!context)
-        throw new Error(
-            'useProvidedVariable() needs an ancestor calling provideVariable() — see src/modules/demo/provided.ts.'
-        );
-    return context;
-};
+export const useProvidedVariable = (): ProvidedVariableContext => inject(providedVariableKey)!;

@@ -6,7 +6,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { useCounterStore } from '../store';
+import { useDemoStore } from '../store';
 
 beforeEach(() => {
     setActivePinia(createPinia());
@@ -14,7 +14,7 @@ beforeEach(() => {
 
 describe('counter store', () => {
     it('starts at zero and doubles as it goes', () => {
-        const store = useCounterStore();
+        const store = useDemoStore();
 
         expect(store.count).toBe(0);
         expect(store.doubleCount).toBe(0);
@@ -27,7 +27,7 @@ describe('counter store', () => {
 
     it('increments after the delay, not before it', () => {
         vi.useFakeTimers();
-        const store = useCounterStore();
+        const store = useDemoStore();
 
         const pending = store.incrementDelayed();
         // The whole point of the async action: nothing has happened yet.

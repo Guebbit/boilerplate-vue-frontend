@@ -109,10 +109,6 @@ describe('collectModuleRoutes', () => {
 
         expect(routes.map((route) => route.name)).toEqual(['products', 'cart']);
     });
-
-    it('validates before collecting, so a broken registry yields no routes at all', () => {
-        expect(() => collectModuleRoutes([makeModule('cart', ['products'])])).toThrow();
-    });
 });
 
 describe('collectModuleNavigation', () => {

@@ -1,7 +1,7 @@
 import { storeToRefs } from 'pinia';
 import { i18n } from '@/infrastructure/i18n';
 import { logger } from '@/infrastructure/utils/logger.ts';
-import { useCounterStore } from '@/modules/demo/store.ts';
+import { useDemoStore } from '@/modules/demo/store.ts';
 
 import type { RouteLocationNormalized } from 'vue-router';
 
@@ -17,7 +17,7 @@ import type { RouteLocationNormalized } from 'vue-router';
  * @param to - Route being entered; its path is fed to a demo translation.
  */
 export const exampleGuard = (to: RouteLocationNormalized) => {
-    const { count } = storeToRefs(useCounterStore());
+    const { count } = storeToRefs(useDemoStore());
     count.value++;
     logger.debug('demo', 'count++: ' + count.value);
 

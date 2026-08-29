@@ -2,7 +2,7 @@ import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 
 /** Pinia store demo: state, getter, sync action and async action, and nothing else. */
-export const useCounterStore = defineStore('counter', () => {
+export const useDemoStore = defineStore('counter', () => {
     const count = ref(0);
 
     const doubleCount = computed(() => count.value * 2);

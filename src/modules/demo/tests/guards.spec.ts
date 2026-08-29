@@ -39,7 +39,7 @@ vi.mock('@/infrastructure/i18n', () => ({
 }));
 
 const { exampleGuard } = await import('@/modules/demo/guards.ts');
-const { useCounterStore } = await import('@/modules/demo/store.ts');
+const { useDemoStore } = await import('@/modules/demo/store.ts');
 
 const routeTo = (path = '/en/products') =>
     asStub<RouteLocationNormalized>({ path, name: 'products', params: {}, query: {} });
@@ -67,7 +67,7 @@ describe('exampleGuard', () => {
     });
 
     it('increments the counter store, proving stores are reachable from a guard', () => {
-        const store = useCounterStore();
+        const store = useDemoStore();
         expect(store.count).toBe(0);
 
         exampleGuard(routeTo());
@@ -76,7 +76,7 @@ describe('exampleGuard', () => {
     });
 
     it('accumulates across navigations rather than resetting', () => {
-        const store = useCounterStore();
+        const store = useDemoStore();
 
         exampleGuard(routeTo('/en'));
         exampleGuard(routeTo('/en/products'));

@@ -9,7 +9,7 @@ import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 
-import { useCounterStore } from '@/modules/demo/store.ts';
+import { useDemoStore } from '@/modules/demo/store.ts';
 import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCounterInput from '@/ui/molecules/FormCounterInput.vue';
@@ -64,12 +64,12 @@ const {
     count,
     doubleCount
     // Refs needs to be extracted with this helper function
-} = storeToRefs(useCounterStore());
+} = storeToRefs(useDemoStore());
 
 /**
  * These functions can be used even without being deconstructed
  */
-const { increment, incrementDelayed } = useCounterStore();
+const { increment, incrementDelayed } = useDemoStore();
 
 /**
  * The providing half of the provide/inject demo; `ProvidedVariableCard` below is the injecting
