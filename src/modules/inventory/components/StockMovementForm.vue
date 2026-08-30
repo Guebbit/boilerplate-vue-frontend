@@ -5,6 +5,13 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Receipt/adjustment form, instantiated twice with a `mode` prop rather than a runtime sign
+ * toggle — so a mis-click cannot turn a delivery into a correction. Validation schema branches on
+ * `mode` (strictly positive for a receipt, signed non-zero for an adjustment) and is handed to
+ * `useAppForm`, which owns the field state and submit gating.
+ */
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -26,22 +33,56 @@ const props = defineProps<{
     mode: 'receipt' | 'adjust';
 }>();
 
+/**
+ * Whether this instance is the receipt form, as opposed to the adjustment form.
+ */
 const isReceipt = computed(() => props.mode === 'receipt');
 
+/**
+ * i18n translator for this component's template and messages.
+ */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher used to report the write's outcome.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Owns the receipt/adjustment writes and their loading flag.
+ */
 const inventoryStore = useInventoryStore();
+
+/**
+ * Source of the product select's options.
+ */
 const productsStore = useProductsStore();
+
+/**
+ * The catalogue, kept in sync via `fetchProducts` after every write.
+ */
 const { productsList } = storeToRefs(productsStore);
+
+/**
+ * True while the pending write is in flight; binds to the submit button.
+ */
 const { loading } = storeToRefs(inventoryStore);
 
-/** One select item per known product, so the form talks titles while the API talks ids. */
+/**
+ * One select item per known product, so the form talks titles while the API talks ids.
+ */
 const productOptions = computed(() =>
     productsList.value.map((product) => ({ value: product.id, title: product.title }))
 );
 
+/**
+ * The `<form>` element, handed to `useAppForm` for its native-validity wiring.
+ */
 const formElement = ref<HTMLFormElement>();
 
+/**
+ * Zod schema, branching on `mode`: strictly positive for a receipt, signed non-zero for an adjustment.
+ */
 const schema = computed(() =>
     z.object({
         productId: z.string().min(1, { error: () => t('inventory-page.error-product-required') }),
@@ -60,6 +101,9 @@ const schema = computed(() =>
     })
 );
 
+/**
+ * Field state, errors and submit gating, seeded with the mode's default amount sign.
+ */
 const { form, formErrors, showFormErrors, handleSubmit } = useAppForm(
     { productId: '', amount: props.mode === 'receipt' ? 10 : -1, note: '' },
     schema,

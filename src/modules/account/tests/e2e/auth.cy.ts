@@ -1,3 +1,9 @@
+/**
+ * @module
+ * End-to-end authentication flows: login, signup, the route guards that gate `/cart`, `/orders`,
+ * `/admin` and `/users`, logout, and a live-only session-refresh case that crosses the app/API
+ * origin boundary.
+ */
 describe('Authentication', () => {
     beforeEach(() => {
         cy.visit('/en');

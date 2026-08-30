@@ -10,6 +10,9 @@ import { useSlots } from 'vue';
  * Slots: hero, stats, default (main card), aside, actions.
  */
 defineProps<{
+    /**
+     * Theme accent applied as `--detail-accent`. Defaults to `primary`.
+     */
     accent?: ThemeAccent;
 }>();
 

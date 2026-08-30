@@ -1,3 +1,10 @@
+/**
+ * @module
+ * Pinia store split into two halves behind one `defineStore` setup function: language capabilities
+ * (read the manifest, write through explicit wrappers, always refetch after a write) and one
+ * language's entries (the ordinary toolkit-driven paginated CRUD resource, via
+ * `useStructureCrudApi`).
+ */
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureCrudApi } from '@guebbit/vue-toolkit';
@@ -138,7 +145,9 @@ export const useLocalesStore = defineStore('locales', () => {
      */
     const entriesPageTotal = ref(0);
 
-    /** The manifest: every language, both tiers merged, as last fetched. */
+    /**
+     * The manifest: every language, both tiers merged, as last fetched.
+     */
     const capabilities = ref<LocaleCapability[]>([]);
 
     /**
@@ -149,10 +158,14 @@ export const useLocalesStore = defineStore('locales', () => {
      */
     const tenants = ref<LocaleTenantDescriptor[]>([]);
 
-    /** This build's own tenant id — whose dictionary the running app downloads. */
+    /**
+     * This build's own tenant id — whose dictionary the running app downloads.
+     */
     const ownTenant = localeTenant();
 
-    /** The backend's tenant id, from the registry; absent until it loads. */
+    /**
+     * The backend's tenant id, from the registry; absent until it loads.
+     */
     const backendTenant = computed(
         () => tenants.value.find(({ kind }) => kind === LocaleTenantKind.backend)?.id
     );
@@ -180,10 +193,14 @@ export const useLocalesStore = defineStore('locales', () => {
             })
         );
 
-    /** The deployment's default language, from the manifest. */
+    /**
+     * The deployment's default language, from the manifest.
+     */
     const defaultLocale = ref<string>();
 
-    /** The deployment's fallback language, from the manifest. */
+    /**
+     * The deployment's fallback language, from the manifest.
+     */
     const fallbackLocale = ref<string>();
 
     /**

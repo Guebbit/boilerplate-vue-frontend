@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Pinia store (Composition API form) wrapping `useStructureRestApi` for the device-session list:
+ * a plain ref rather than the record structure, since a session has no detail page and the list
+ * is only ever read whole.
+ */
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';

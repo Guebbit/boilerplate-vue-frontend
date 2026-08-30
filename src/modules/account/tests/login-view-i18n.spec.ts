@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Proves a mounted view is actually wired to `usersSchema` + vue-i18n's `revalidateOn`, by
+ * parsing with the real schema and reading the rendered `v-text-field` error text in two
+ * languages — not a mock of either.
+ */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
@@ -24,7 +30,9 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
  */
 wireModulesIntoCore();
 
-/** The message `usersSchema` produces for an invalid email, in whatever locale is active. */
+/**
+ * The message `usersSchema` produces for an invalid email, in whatever locale is active.
+ */
 const emailInvalidMessage = () => {
     const [message] = (
         usersSchema.safeParse({ email: 'nope', username: 'ada' }).error?.issues ?? []
@@ -52,6 +60,9 @@ vi.mock('vue-router', () => ({
     useRouter: () => ({ push: vi.fn(), replace: vi.fn() })
 }));
 
+/**
+ * Mounts `Login` with the plugins and stub it needs — the DOM under test for every case below.
+ */
 const mountLogin = () =>
     mount(Login, {
         global: {
@@ -62,6 +73,9 @@ const mountLogin = () =>
         }
     });
 
+/**
+ * The Vuetify validation-message texts currently rendered in the wrapper.
+ */
 const errorTexts = (wrapper: ReturnType<typeof mountLogin>) =>
     wrapper.findAll('.v-messages__message').map((node) => node.text());
 

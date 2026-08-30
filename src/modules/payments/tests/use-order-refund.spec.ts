@@ -51,7 +51,9 @@ beforeEach(() => {
     };
 });
 
-/** Lets the immediate watcher's fetch settle before the assertion reads its result. */
+/**
+ * Lets the immediate watcher's fetch settle before the assertion reads its result.
+ */
 const settled = () => Promise.resolve().then(() => undefined);
 
 describe('useOrderRefund', () => {

@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Registers the response-envelope schema for every payments endpoint, matched by method and URL
+ * pattern against {@link ResponseSchemaRoute}.
+ */
 import * as schemas from '@api/schemas';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 

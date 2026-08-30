@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Pinia store (Composition API form) for session lifecycle: wraps `useStructureRestApi` for the
+ * login/signup/reset calls, and each action chains a `.then` into the session/profile stores it
+ * coordinates rather than awaiting them stepwise.
+ */
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';

@@ -1,4 +1,10 @@
 <script setup lang="ts">
+/**
+ * @module
+ * App shell navigation bar/drawer. Merges the shell's own two nav entries with whatever the
+ * enabled modules contribute (via the kernel registry), filters each section by `canAccess`,
+ * and renders the result as the desktop bar, the account/admin menus and the mobile drawer.
+ */
 import { computed, nextTick, ref, watch } from 'vue';
 import type { ComponentPublicInstance } from 'vue';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
@@ -48,10 +54,14 @@ const baseUrl = import.meta.env.BASE_URL;
  */
 const drawer = ref(false);
 
-/** The hamburger, so focus can go back to it when the drawer closes. */
+/**
+ * The hamburger, so focus can go back to it when the drawer closes.
+ */
 const hamburger = ref<ComponentPublicInstance | null>(null);
 
-/** The drawer's element id: what the hamburger's `aria-controls` points at. */
+/**
+ * The drawer's element id: what the hamburger's `aria-controls` points at.
+ */
 const DRAWER_ID = 'app-drawer';
 
 /**
@@ -100,6 +110,9 @@ const shellNavEntries: AppNavigationEntry[] = [
 const hasSignIn = computed(() => router.hasRoute(SIGN_IN_ROUTE_NAME));
 const hasSignUp = computed(() => router.hasRoute(SIGN_UP_ROUTE_NAME));
 
+/**
+ * Every nav entry — the shell's own plus every enabled module's — grouped by section.
+ */
 const navSections = groupNavigation([
     ...shellNavEntries,
     ...collectModuleNavigation(enabledModules)
@@ -160,6 +173,9 @@ const accountBadge = computed(
     () => visibleSections.value.account.find((item) => item.badge)?.badge
 );
 
+/**
+ * Navigates to the logout route, ending the session.
+ */
 const logout = () => router.push(routerLinkI18n({ name: 'Logout' }));
 
 const theme = useTheme();

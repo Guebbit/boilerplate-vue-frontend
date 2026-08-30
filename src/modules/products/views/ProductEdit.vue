@@ -5,6 +5,11 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Edit form for a product: auto-hydrates from the fetched record, then submits changes (and an
+ * optional replacement image) through the store's multipart-aware `updateProduct`.
+ */
 import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
@@ -82,6 +87,9 @@ const editSchema = productsSchema.pick({ title: true, price: true }).extend({
  */
 const formElement = ref<HTMLFormElement>();
 
+/**
+ * Reactive form state and submit handler built from the ref above.
+ */
 const {
     form,
     formErrors,

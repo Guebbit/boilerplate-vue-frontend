@@ -1,3 +1,10 @@
+/**
+ * @module
+ * The composition root's entry point: wires infrastructure (pinia, router, i18n, vuetify) to the
+ * enabled modules' contributed data (response schemas, locale dictionaries), then boots the app
+ * as one promise chain — remote-locale merge, mount, observability init, readiness signal — so
+ * no step can race the one after it.
+ */
 import { createApp } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { i18n } from '@/infrastructure/i18n';

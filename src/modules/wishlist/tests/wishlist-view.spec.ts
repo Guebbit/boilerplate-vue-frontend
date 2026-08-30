@@ -1,4 +1,5 @@
 /**
+ * @module
  * The wishlist page, mounted: the shapes the browser suite pays a database for, and one link
  * whose href has to carry an ID while its text carries a TITLE.
  *
@@ -26,7 +27,9 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 
 wireModulesIntoCore();
 
-/** The saved product, and the title the cart store resolves for it — deliberately not the id. */
+/**
+ * The saved product, and the title the cart store resolves for it — deliberately not the id.
+ */
 const PRODUCT_ID = '01J8ZQ7X4M0000000000000001';
 const PRODUCT_TITLE = 'Wireless Headphones';
 

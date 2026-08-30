@@ -5,6 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Collapsible live-password-change form: a zod schema built once (with a `superRefine` for the
+ * confirm-match check) feeds `useAppForm`, and the toggle keeps the profile page from opening
+ * with three forms visible at once.
+ */
 import { ref, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
@@ -23,10 +29,14 @@ const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 const { changePassword } = useProfileStore();
 
-/** Whether the form below is open. While it is, its errors show instantly. */
+/**
+ * Whether the form below is open. While it is, its errors show instantly.
+ */
 const showChangePassword = ref(false);
 
-/** The form's id, for the toggle's `aria-controls`. */
+/**
+ * The form's id, for the toggle's `aria-controls`.
+ */
 const passwordFormId = useId();
 
 const passwordFormElement = ref<HTMLFormElement>();

@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Module manifest for `account`. A plain object satisfying `AppModule`, spliced into the kernel
+ * registry by name — the routes, nav entry, response schemas and locale loaders declared here are
+ * what "having this module enabled" means.
+ */
 import { IdCard } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';

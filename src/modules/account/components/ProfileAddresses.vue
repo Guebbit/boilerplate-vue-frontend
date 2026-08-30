@@ -5,6 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Address-book panel. Every write chains through the store's fetch-after-write actions and
+ * re-renders from the whole list the API answers with, since the fact worth showing after any of
+ * them — exactly one default — is a property of the list rather than of the entry that changed.
+ */
 import { onMounted, ref, useId } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
@@ -27,7 +33,9 @@ const { addMessage } = useNotificationsStore();
 const { fetchAddresses, addAddress, updateAddress, removeAddress } = useAddressesStore();
 const { addresses, loading } = storeToRefs(useAddressesStore());
 
-/** The dialog's fields: every `AddressInput` string, optional ones as empty strings. */
+/**
+ * The dialog's fields: every `AddressInput` string, optional ones as empty strings.
+ */
 interface AddressForm {
     label: string;
     fullName: string;
@@ -38,7 +46,9 @@ interface AddressForm {
     phone: string;
 }
 
-/** Blank form — also what "add another" resets to. */
+/**
+ * Blank form — also what "add another" resets to.
+ */
 const emptyForm = (): AddressForm => ({
     label: '',
     fullName: '',
@@ -49,11 +59,19 @@ const emptyForm = (): AddressForm => ({
     phone: ''
 });
 
+/**
+ * Whether the add/edit dialog is open.
+ */
 const dialogOpen = ref(false);
-/** The entry being edited, or `undefined` when the dialog is adding a new one. */
+
+/**
+ * The entry being edited, or `undefined` when the dialog is adding a new one.
+ */
 const editingId = ref<string>();
 
-/** The dialog heading's id, so the dialog is announced by its title rather than as "dialog". */
+/**
+ * The dialog heading's id, so the dialog is announced by its title rather than as "dialog".
+ */
 const dialogTitleId = useId();
 
 /**
@@ -79,7 +97,9 @@ const { form, formErrors, showFormErrors, handleSubmit, setForm } = useAppForm<A
     addressSchema
 );
 
-/** Opens the dialog empty, for a new entry. */
+/**
+ * Opens the dialog empty, for a new entry.
+ */
 const openAdd = () => {
     editingId.value = undefined;
     setForm(emptyForm());

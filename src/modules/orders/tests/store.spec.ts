@@ -1,4 +1,10 @@
 /**
+ * @module
+ * Vitest spec mocking the `@api` client module directly, then exercising the
+ * orders store's actions against canned responses.
+ */
+
+/**
  * Unit tests for the orders store.
  *
  * One thing here is this repo's own logic rather than the toolkit's: `downloadInvoice`, the one
@@ -22,6 +28,9 @@ import {
     getOrderInvoice
 } from '@api';
 
+/**
+ * Fixture order returned by the mocked `@api` client.
+ */
 const ORDER = {
     id: 'o1',
     userId: 'u1',
@@ -33,6 +42,9 @@ const ORDER = {
     status: 'pending'
 };
 
+/**
+ * Fixture PDF blob returned by the mocked invoice endpoint.
+ */
 const INVOICE = new Blob(['%PDF-1.4'], { type: 'application/pdf' });
 
 vi.mock('@api', () => ({

@@ -1,10 +1,9 @@
 /**
- * Unit tests for the auth store's `signup`.
- *
- * Same shape as the products/users store specs: `@api` is NOT mocked, because the multipart
- * encoding is exactly what is under test and it lives in the generated client. The transport
- * (`orvalMutator`) is mocked instead, so every assertion is about the request that actually goes
- * out — JSON body vs. `FormData`, and which URL it lands on.
+ * @module
+ * Unit tests for the auth store's `signup`, pinning the JSON-vs-multipart branch and the request
+ * each produces. Same shape as the products/users store specs: `@api` is NOT mocked, since the
+ * multipart encoding under test lives in the generated client — the transport (`orvalMutator`) is
+ * mocked instead, so every assertion is about the request that actually goes out.
  *
  * `openapi.yaml` declares `SignupRequest.imageUpload` and the generator emits
  * `signupWithMultipart` for it, so the branch that picks between the two clients is the thing
@@ -22,23 +21,32 @@ vi.mock('@/infrastructure/http', () => ({
     )
 }));
 
-/** The axios config handed to orvalMutator on its most recent call. */
+/**
+ * The axios config handed to orvalMutator on its most recent call.
+ */
 const lastRequest = () => {
     const call = vi.mocked(orvalMutator).mock.calls.at(-1);
     if (!call) throw new Error('orvalMutator was never called');
     return call[0] as { url: string; method: string; data: unknown };
 };
 
-/** As above, asserting the body was multipart-encoded. */
+/**
+ * As above, asserting the body was multipart-encoded.
+ */
 const lastFormData = () => {
     const { data } = lastRequest();
     if (!(data instanceof FormData)) throw new Error('last request body was not FormData');
     return data;
 };
 
+/**
+ * A fresh avatar file per call, for signup's optional image-upload field.
+ */
 const IMAGE = () => new File(['x'], 'avatar.png', { type: 'image/png' });
 
-/** A fully-specified account, for the cases that are not about the defaults. */
+/**
+ * A fully-specified account, for the cases that are not about the defaults.
+ */
 const CREDENTIALS = {
     email: 'ada@example.com',
     password: 'hunter2hunter2',

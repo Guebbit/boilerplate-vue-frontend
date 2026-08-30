@@ -1,4 +1,5 @@
 /**
+ * @module
  * The wishlist store — id-set state, whole-list replacement, and the one cross-module effect:
  * move-to-cart refreshes the cart it just wrote into.
  *

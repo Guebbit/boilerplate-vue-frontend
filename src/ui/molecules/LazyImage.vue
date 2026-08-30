@@ -57,9 +57,13 @@ const {
      * MISSING avatar announcing the placeholder wording would be worse still.
      */
     alt: string;
-    /** Display width in CSS pixels; also the width asked of the thumbnail. */
+    /**
+     * Display width in CSS pixels; also the width asked of the thumbnail.
+     */
     width?: number;
-    /** Display height in CSS pixels. With `width`, reserves the box before any byte arrives. */
+    /**
+     * Display height in CSS pixels. With `width`, reserves the box before any byte arrives.
+     */
     height?: number;
     /**
      * Loads immediately instead of when scrolled near. For the one image that is certainly
@@ -67,16 +71,22 @@ const {
      * contentful paint it was meant to protect.
      */
     eager?: boolean;
-    /** Corner rounding, as a Tailwind class. `rounded-full` makes it an avatar. */
+    /**
+     * Corner rounding, as a Tailwind class. `rounded-full` makes it an avatar.
+     */
     rounded?: string;
 }>();
 
 const { t } = useI18n();
 
-/** Set when the browser gives up on the resolved URL — a deleted file, a stopped API. */
+/**
+ * Set when the browser gives up on the resolved URL — a deleted file, a stopped API.
+ */
 const failed = ref(false);
 
-/** Set once the full image has decoded, which is when the thumbnail underneath may go. */
+/**
+ * Set once the full image has decoded, which is when the thumbnail underneath may go.
+ */
 const loaded = ref(false);
 
 // A new record in the same component instance (a table row recycled by `v-for`, a route param
@@ -90,7 +100,9 @@ watch(
     }
 );
 
-/** The full image's URL, or `undefined` when there is no image or the one there is has failed. */
+/**
+ * The full image's URL, or `undefined` when there is no image or the one there is has failed.
+ */
 const fullSource = computed(() => (failed.value ? undefined : resolveImageUrl(src)));
 
 /**
@@ -102,12 +114,19 @@ const fullSource = computed(() => (failed.value ? undefined : resolveImageUrl(sr
  */
 const thumbnailSource = computed(() => (failed.value ? undefined : thumbnailImageUrl(src, width)));
 
-/** Whether what is on screen is a stand-in rather than this record's own picture. */
+/**
+ * Whether what is on screen is a stand-in rather than this record's own picture.
+ */
 const isPlaceholder = computed(() => fullSource.value === undefined);
 
+/**
+ * The URL actually rendered: the full image, or the bundled placeholder when there is none.
+ */
 const displayedSource = computed(() => fullSource.value ?? placeholderImageUrl());
 
-/** The box, reserved before anything loads so a late image cannot reflow the row around it. */
+/**
+ * The box, reserved before anything loads so a late image cannot reflow the row around it.
+ */
 const boxStyle = computed(() => ({
     width: `${width}px`,
     aspectRatio: `${width} / ${height}`

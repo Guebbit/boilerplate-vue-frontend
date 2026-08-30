@@ -1,4 +1,5 @@
 /**
+ * @module
  * Cart quantity rules — `src/modules/cart/domain/quantity.ts`.
  *
  * No `mount`, no Pinia, no HTTP. The rules take their inputs as arguments and hand back a verdict,

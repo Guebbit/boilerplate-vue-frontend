@@ -1,4 +1,9 @@
 <script setup lang="ts">
+/**
+ * @module
+ * Language-switcher menu. Delegates dictionary loading to the i18n runtime and locale
+ * persistence to the session store; this file only decides the routing side of a switch.
+ */
 import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Check, Languages } from 'lucide-vue-next';

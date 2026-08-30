@@ -1,4 +1,5 @@
 /**
+ * @module
  * `use-line-quantity.ts` — the debounce that removed a real race, tested as the race.
  *
  * The old steppers sent one request per click, and the store replaces the whole cart with each
@@ -16,7 +17,9 @@ import { useLineQuantity } from '@/modules/cart/composables/use-line-quantity';
 
 const DELAY = 400;
 
-/** Deferred promises, so a request can be left in flight for as long as a test needs. */
+/**
+ * Deferred promises, so a request can be left in flight for as long as a test needs.
+ */
 const makeUpdate = () => {
     const settle: ((value: unknown) => void)[] = [];
     const calls: [productId: string, quantity: number][] = [];
@@ -42,42 +45,42 @@ afterEach(() => {
 });
 
 describe('useLineQuantity — the race it removes', () => {
-    it('sends ONE request, for the number the visitor stopped on', async () => {
+    it('sends ONE request, for the number the visitor stopped on', () => {
         const { update, calls } = makeUpdate();
         const lines = useLineQuantity(update, vi.fn(), DELAY);
 
         lines.stepQuantity('p1', 1, 1);
         lines.stepQuantity('p1', 1, 1);
         lines.stepQuantity('p1', 1, 1);
-        await vi.advanceTimersByTimeAsync(DELAY);
-
-        // Three requests here was the bug: 2, 3 and 4 in flight, last answer wins.
-        expect(update).toHaveBeenCalledTimes(1);
-        expect(calls).toEqual([['p1', 4]]);
+        return vi.advanceTimersByTimeAsync(DELAY).then(() => {
+            // Three requests here was the bug: 2, 3 and 4 in flight, last answer wins.
+            expect(update).toHaveBeenCalledTimes(1);
+            expect(calls).toEqual([['p1', 4]]);
+        });
     });
 
-    it('keeps two lines independent', async () => {
+    it('keeps two lines independent', () => {
         // Debouncing globally would make stepping one line cancel the other's pending change.
         const { update, calls } = makeUpdate();
         const lines = useLineQuantity(update, vi.fn(), DELAY);
 
         lines.stepQuantity('p1', 1, 1);
         lines.stepQuantity('p2', 5, -1);
-        await vi.advanceTimersByTimeAsync(DELAY);
-
-        expect(calls).toHaveLength(2);
-        expect(calls).toContainEqual(['p1', 2]);
-        expect(calls).toContainEqual(['p2', 4]);
+        return vi.advanceTimersByTimeAsync(DELAY).then(() => {
+            expect(calls).toHaveLength(2);
+            expect(calls).toContainEqual(['p1', 2]);
+            expect(calls).toContainEqual(['p2', 4]);
+        });
     });
 
-    it('sends nothing until the visitor stops clicking', async () => {
+    it('sends nothing until the visitor stops clicking', () => {
         const { update } = makeUpdate();
         const lines = useLineQuantity(update, vi.fn(), DELAY);
 
         lines.stepQuantity('p1', 1, 1);
-        await vi.advanceTimersByTimeAsync(DELAY - 1);
-
-        expect(update).not.toHaveBeenCalled();
+        return vi.advanceTimersByTimeAsync(DELAY - 1).then(() => {
+            expect(update).not.toHaveBeenCalled();
+        });
     });
 });
 
@@ -91,29 +94,33 @@ describe('useLineQuantity — what the visitor sees', () => {
         expect(lines.quantityOf('p1', 1)).toBe(2);
     });
 
-    it('hands the line back to the store once the API has been told', async () => {
+    it('hands the line back to the store once the API has been told', () => {
         const { update, settleAll } = makeUpdate();
         const lines = useLineQuantity(update, vi.fn(), DELAY);
 
         lines.stepQuantity('p1', 1, 1);
-        await vi.advanceTimersByTimeAsync(DELAY);
-        settleAll();
-        await vi.advanceTimersByTimeAsync(0);
-
-        // The stored quantity is authoritative again, so a change made elsewhere is not masked.
-        expect(lines.quantityOf('p1', 9)).toBe(9);
+        return vi
+            .advanceTimersByTimeAsync(DELAY)
+            .then(() => {
+                settleAll();
+                return vi.advanceTimersByTimeAsync(0);
+            })
+            .then(() => {
+                // The stored quantity is authoritative again, so a change made elsewhere is not masked.
+                expect(lines.quantityOf('p1', 9)).toBe(9);
+            });
     });
 
-    it('reports a failed send and stops showing a number the API rejected', async () => {
+    it('reports a failed send and stops showing a number the API rejected', () => {
         const onError = vi.fn();
         const update = vi.fn(() => Promise.reject(new Error('nope')));
         const lines = useLineQuantity(update, onError, DELAY);
 
         lines.stepQuantity('p1', 1, 1);
-        await vi.advanceTimersByTimeAsync(DELAY);
-
-        expect(onError).toHaveBeenCalledOnce();
-        expect(lines.quantityOf('p1', 1)).toBe(1);
+        return vi.advanceTimersByTimeAsync(DELAY).then(() => {
+            expect(onError).toHaveBeenCalledOnce();
+            expect(lines.quantityOf('p1', 1)).toBe(1);
+        });
     });
 
     it('never steps a line below the floor', () => {
@@ -160,15 +167,15 @@ describe('useLineQuantity — the ways a debounce loses data', () => {
         expect(calls).toEqual([['p1', 2]]);
     });
 
-    it('forgets a removed line, so a queued step cannot resurrect it', async () => {
+    it('forgets a removed line, so a queued step cannot resurrect it', () => {
         const { update } = makeUpdate();
         const lines = useLineQuantity(update, vi.fn(), DELAY);
 
         lines.stepQuantity('p1', 1, 1);
         lines.forget('p1');
-        await vi.advanceTimersByTimeAsync(DELAY);
-
-        expect(update).not.toHaveBeenCalled();
-        expect(lines.quantityOf('p1', 1)).toBe(1);
+        return vi.advanceTimersByTimeAsync(DELAY).then(() => {
+            expect(update).not.toHaveBeenCalled();
+            expect(lines.quantityOf('p1', 1)).toBe(1);
+        });
     });
 });

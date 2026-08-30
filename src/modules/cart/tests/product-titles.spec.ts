@@ -1,4 +1,5 @@
 /**
+ * @module
  * The cart store's product-title join — the one the cart and wishlist pages need, because both contracts
  * answer lines as product ids only.
  *

@@ -5,6 +5,11 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Public products list: search/filter form, facet chips, and the paginated table with
+ * admin-only row actions (edit, soft delete, hard delete).
+ */
 import { computed, onMounted } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
@@ -23,10 +28,24 @@ import DataTable from '@/ui/organisms/DataTable.vue';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 
+/**
+ * Localized dictionary helper.
+ */
 const { t } = useI18n();
+
+/**
+ * Toast helper for search and mutation failures.
+ */
 const { addMessage } = useNotificationsStore();
 
+/**
+ * Products store actions.
+ */
 const { watchSearchProducts, deleteProduct, hardDeleteProduct, fetchFacets } = useProductsStore();
+
+/**
+ * Products store reactive state — filters, current page window and the facets list.
+ */
 const {
     filters,
     pageItemList,
@@ -37,6 +56,10 @@ const {
     loading,
     facets
 } = storeToRefs(useProductsStore());
+
+/**
+ * Whether the signed-in visitor may see the admin-only actions (create, edit, delete).
+ */
 const { isAdmin } = storeToRefs(useSessionStore());
 
 /**
@@ -77,6 +100,9 @@ const tableHeaders = computed<CoreDataTableHeader<Product>[]>(() => [
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the toolkit's page window is a SPARSE array; holes are undefined at runtime whatever the element type claims
 const pageItems = computed(() => pageItemList.value.filter((item): item is Product => !!item));
 
+/**
+ * Search trigger bound to the store's current filters.
+ */
 const { search } = watchSearchProducts({
     onError: (error) => notifyErrorMessages(addMessage, error)
 });

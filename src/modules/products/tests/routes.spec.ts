@@ -1,22 +1,21 @@
 /**
- * The access requirement every products route declares.
+ * @module
+ * Table-driven assertions of each products route's declared `meta.access`, plus a closed-set
+ * check that no route was added without one — asserted against the module's own route records
+ * rather than a resolved router, so it needs neither the locale prefix nor the rest of the app.
  *
- * A route that quietly loses its `meta.access` is indistinguishable from a public one: it keeps
- * rendering, keeps passing every other test, and is simply open to anyone. Nothing else in the
- * suite would say so, which is why each expected value is written out rather than derived from the
- * records under test.
- *
- * Lives with the module because these are facts about THIS domain — held in one table in a
- * platform spec, deleting a domain would break that spec, see `docs/theory/modules.md`. The
- * router spec proves enforcement is *attached*; this proves the declarations are *there*.
- *
- * Asserted against the module's own route records rather than a resolved router, so it needs
- * neither the locale prefix nor the rest of the app.
+ * A route that quietly loses `meta.access` is indistinguishable from a public one, which is why
+ * each expected value is written out rather than derived. Lives with the module as a fact about
+ * THIS domain (see `docs/theory/modules.md`); the router spec proves enforcement is *attached*,
+ * this proves the declarations are *there*.
  */
 import { describe, expect, it } from 'vitest';
 import type { RouteRecordRaw } from 'vue-router';
 import routes from '../routes';
 
+/**
+ * Looks up one route record from this module's own route table by its name.
+ */
 const byName = (name: string): RouteRecordRaw | undefined =>
     routes.find((route) => route.name === name);
 

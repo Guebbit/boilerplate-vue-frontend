@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Zod validation schemas for the locale admin's forms, with error messages built as thunks so
+ * they translate lazily at parse time rather than freezing into whatever locale was active when
+ * the schema was created.
+ */
 import { z } from 'zod';
 import { translate } from '@/infrastructure/i18n';
 
@@ -36,7 +42,9 @@ export const localesLanguageSchema = z.object({
     active: z.boolean()
 });
 
-/** The same form on edit, where the tag is shown but not writable. */
+/**
+ * The same form on edit, where the tag is shown but not writable.
+ */
 export const localesLanguageEditSchema = localesLanguageSchema.extend({
     tag: z.string()
 });

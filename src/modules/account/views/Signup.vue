@@ -5,6 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Signup form: the zod schema chains a password-confirm `.refine` onto the shared
+ * `usersSchema`/`usersPasswordSchema` rules, and `trackUpload` wraps the store call so
+ * `FormImageUpload` can show real upload progress when an avatar is attached.
+ */
 import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';

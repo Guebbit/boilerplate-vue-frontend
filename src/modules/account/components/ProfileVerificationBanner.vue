@@ -5,6 +5,11 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * The "please verify your email" banner: renders only when the loaded profile is known
+ * unverified, with one action to resend the link.
+ */
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';

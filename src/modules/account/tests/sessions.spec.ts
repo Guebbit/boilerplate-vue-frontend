@@ -1,7 +1,7 @@
 /**
- * The device-sessions store: the list, and revoking one entry.
- *
- * Only the transport is mocked, keyed by request URL — see `profile.spec.ts` for why.
+ * @module
+ * Unit tests for the device-sessions store — the list, and revoking one entry — mocking only the
+ * transport and keying answers by request URL, same pattern as `profile.spec.ts`.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
@@ -9,6 +9,9 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useAccountSessionsStore } from '@/modules/account/stores/sessions.ts';
 import { orvalMutator } from '@/infrastructure/http';
 
+/**
+ * Responses per endpoint, consulted by the mocked transport below and reset in `beforeEach`.
+ */
 let responses: Record<string, unknown>;
 
 vi.mock('@/infrastructure/http', () => ({
@@ -18,6 +21,9 @@ vi.mock('@/infrastructure/http', () => ({
     })
 }));
 
+/**
+ * Every request URL handed to the transport, in order.
+ */
 const requestedUrls = () =>
     vi.mocked(orvalMutator).mock.calls.map((call) => (call[0] as { url: string }).url);
 

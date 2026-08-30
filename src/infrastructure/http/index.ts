@@ -1,4 +1,11 @@
 /**
+ * @module
+ * Composition root of the http tier: imports the leaf modules, wires the interceptors onto the
+ * shared axios instance, and exposes `orvalMutator` as the one function every generated client
+ * call goes through.
+ */
+
+/**
  * The API transport: one axios instance, its interceptors, and the single unwrap point.
  *
  * This file is the tier's public surface — `orval.config.ts` points every generated client at

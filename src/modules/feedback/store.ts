@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Pinia store for the feedback module: a public submit action plus the
+ * admin's whole-list inbox and status-update action, built on the toolkit's
+ * `useStructureRestApi` for shared loading-flag plumbing.
+ */
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
@@ -10,13 +16,22 @@ import type { CreateFeedbackRequest, FeedbackRequest, FeedbackRequestStatus } fr
  * this store is the first frontend code to call them.
  */
 export const useFeedbackStore = defineStore('feedback', () => {
+    /**
+     * Shared per-key loading flags, keyed internally by this store's name.
+     */
     const { getLoading, setLoading } = useCoreStore();
+
+    /**
+     * The toolkit's generic loading/fetch wrapper — this store's actions are hand-written, so this is all it takes from it.
+     */
     const { loading, fetchAny } = useStructureRestApi<FeedbackRequest, string>({
         getLoading,
         setLoading
     });
 
-    /** The admin inbox — whole-list state; the inbox is only ever read as a page. */
+    /**
+     * The admin inbox — whole-list state; the inbox is only ever read as a page.
+     */
     const requests = ref<FeedbackRequest[]>([]);
 
     /**

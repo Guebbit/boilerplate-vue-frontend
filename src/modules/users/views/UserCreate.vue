@@ -5,6 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * User-create page. Builds a form on `useAppForm`, submitting multipart when
+ * an avatar is attached and JSON otherwise (the branch itself lives in the
+ * users store).
+ */
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
@@ -55,8 +61,14 @@ const createSchema = usersSchema.pick({ email: true, username: true }).extend({
     imageUpload: imageUploadSchema
 });
 
+/**
+ * Reference to the mounted `FormCard`, read for its `<form>` element.
+ */
 const card = ref<InstanceType<typeof FormCard>>();
 
+/**
+ * Form state, validation and submission wiring from the shared app-form composable.
+ */
 const {
     form,
     formErrors,

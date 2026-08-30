@@ -5,6 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Orders list/search page. Wires the store's paginated search to a filter
+ * form and a `DataTable`, with per-row view/edit/delete/hard-delete actions
+ * gated on the signed-in role.
+ */
 import { computed } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
@@ -23,9 +29,15 @@ import ListPagination from '@/ui/molecules/ListPagination.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 
+/**
+ * Generic translation and notification accessors.
+ */
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
+/**
+ * Orders store actions and reactive list/pagination state.
+ */
 const { watchSearchOrders, deleteOrder, hardDeleteOrder } = useOrdersStore();
 const {
     filters,
@@ -37,6 +49,10 @@ const {
     pageSize,
     loading
 } = storeToRefs(useOrdersStore());
+
+/**
+ * Whether the signed-in user may see the admin-only row actions.
+ */
 const { isAdmin } = storeToRefs(useSessionStore());
 
 /**
@@ -71,6 +87,10 @@ const tableHeaders = computed<CoreDataTableHeader<Order>[]>(() => [
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the toolkit's page window is a SPARSE array; holes are undefined at runtime whatever the element type claims
 const pageItems = computed(() => pageItemList.value.filter((item): item is Order => !!item));
 
+/**
+ * Search function bound to the store's reactive `filters`/pagination, reporting
+ * a failed request as a toast.
+ */
 const { search } = watchSearchOrders({
     onError: (error) => notifyErrorMessages(addMessage, error)
 });

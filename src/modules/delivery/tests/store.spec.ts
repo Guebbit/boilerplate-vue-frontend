@@ -11,14 +11,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useDeliveryStore } from '@/modules/delivery/store.ts';
 
+/**
+ * Fixture methods: one with a free-above threshold, one flat-rate.
+ */
 const METHODS = [
     { id: 'standard', price: 5, freeAbove: 100 },
     { id: 'express', price: 15 }
 ];
 
+/**
+ * The mocked HTTP responses, keyed `METHOD /url`; reset per test in `beforeEach`.
+ */
 let responses: Record<string, unknown>;
 
-/** The reject envelope `onResponseReject` builds, which is the only shape a store ever catches. */
+/**
+ * The reject envelope `onResponseReject` builds, which is the only shape a store ever catches.
+ */
 const rejectWith = (status: number, message: string) =>
     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
     Promise.reject({ success: false, status, message, errors: [message] });

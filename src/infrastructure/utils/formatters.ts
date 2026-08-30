@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Locale-bound formatting wrappers: each function binds the toolkit's pure `formatXBase` to this
+ * app's active locale and shared empty-value glyph, so a call site never restates either.
+ */
+
 import {
     formatDuration,
     formatText as formatTextBase,

@@ -1,6 +1,16 @@
+/**
+ * @module
+ * The account module's route table — one array of `RouteRecordRaw`, spliced into the app router
+ * by the kernel. Each entry pairs a path with an access requirement the route guard reads;
+ * `Logout` is a routeless component whose `beforeRouteEnter` does the work instead of rendering.
+ */
 import { useAuthStore } from '@/modules/account/stores/auth.ts';
 import type { RouteRecordRaw } from 'vue-router';
 
+/**
+ * Every route this module contributes: the login/signup/reset/verify/delete flows, the
+ * authenticated profile page, and the routeless `Logout` entry.
+ */
 export default [
     {
         path: 'login',

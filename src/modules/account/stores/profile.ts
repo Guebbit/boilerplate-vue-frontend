@@ -1,3 +1,10 @@
+/**
+ * @module
+ * Pinia store (Composition API form) wrapping `useStructureRestApi` for the visitor's own
+ * editable record: fetch/update, role self-service, live password change, email verification and
+ * account deletion each reuse the shared `selectedIdentifier`/`fetchTarget`/`updateTarget`
+ * primitives rather than duplicating request/cache logic per action.
+ */
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/stores/session.ts';

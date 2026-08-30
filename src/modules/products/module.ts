@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Module manifest: wires this domain's routes, navigation entry, response schemas and locale
+ * loaders into the app's module registry.
+ */
 import { Package } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';

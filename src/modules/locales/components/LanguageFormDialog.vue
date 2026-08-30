@@ -1,4 +1,10 @@
 <script setup lang="ts">
+/**
+ * @module
+ * Dialog component: a schema-validated form (via `useAppForm`) that swaps between a create and an
+ * edit schema depending on whether a `language` prop was passed, resets on every open, and emits
+ * the saved fields upward.
+ */
 import { watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
@@ -13,12 +19,16 @@ import type { LocaleCapability, LocaleDirection } from '@types';
  * immutable and this dialog says so rather than hiding it.
  */
 const props = defineProps<{
-    /** The language being edited; absent means the dialog creates one. */
+    /**
+     * The language being edited; absent means the dialog creates one.
+     */
     language?: LocaleCapability;
 }>();
 
 const emit = defineEmits<{
-    /** The saved fields; `tag` is only meaningful on create. */
+    /**
+     * The saved fields; `tag` is only meaningful on create.
+     */
     save: [
         fields: {
             tag: string;
@@ -30,14 +40,21 @@ const emit = defineEmits<{
     ];
 }>();
 
-/** Two-way `v-model`, so the dialog neither declares the prop nor re-emits the event by hand. */
+/**
+ * Two-way `v-model`, so the dialog neither declares the prop nor re-emits the event by hand.
+ */
 const isOpen = defineModel<boolean>({ required: true });
 
 const { t } = useI18n();
 
+/**
+ * Whether the dialog is editing an existing language rather than creating one.
+ */
 const isEdit = computed(() => props.language !== undefined);
 
-/** The heading's id, so the dialog is announced by its title rather than as "dialog". */
+/**
+ * The heading's id, so the dialog is announced by its title rather than as "dialog".
+ */
 const titleId = useId();
 
 /*
@@ -71,11 +88,17 @@ watch(isOpen, (open) => {
     });
 });
 
+/**
+ * The direction select's two options.
+ */
 const directionOptions = computed(() => [
     { value: 'ltr', title: t('locales-list-page.direction-ltr') },
     { value: 'rtl', title: t('locales-list-page.direction-rtl') }
 ]);
 
+/**
+ * Validates and emits, or shows the form's errors — `handleSubmit`'s job either way.
+ */
 const handleSave = () => handleSubmit((fields) => emit('save', fields));
 </script>
 

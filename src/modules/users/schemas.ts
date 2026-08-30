@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Zod validation schemas for the user forms, with i18n-thunked error messages
+ * resolved at parse time rather than at schema-definition time.
+ */
 import { z } from 'zod';
 import { translate } from '@/infrastructure/i18n';
 import { signupBodyUsernameMin, createUserBodyPasswordMin } from '@api/schemas';

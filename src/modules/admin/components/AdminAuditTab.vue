@@ -1,4 +1,10 @@
 <script setup lang="ts">
+/**
+ * @module
+ * Audit-log tab of the admin dashboard. Owns the filter form's local state and turns it into
+ * the parent's `search` emit; the table and pager render declaratively off the props the parent
+ * feeds back in, so this component never fetches anything itself.
+ */
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import DataTable from '@/ui/organisms/DataTable.vue';
@@ -9,8 +15,14 @@ import type { AuditEventItem } from '@types';
 import type { AdminAuditFilters } from '@/modules/admin/types.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 
+/**
+ * i18n translator for this component's template and messages.
+ */
 const { t } = useI18n();
 
+/**
+ * Audit events, pagination totals and the parent's load/error state.
+ */
 const props = defineProps<{
     auditEvents: AuditEventItem[];
     total: number;
@@ -27,7 +39,9 @@ const emit = defineEmits<{
     search: [filters: AdminAuditFilters];
 }>();
 
-/** What the table asks for when nobody has chosen. */
+/**
+ * What the table asks for when nobody has chosen.
+ */
 const DEFAULT_PAGE_SIZE = 50;
 
 /**

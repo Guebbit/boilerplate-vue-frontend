@@ -1,3 +1,10 @@
+/**
+ * @module
+ * Pinia setup store built on the toolkit's useCoreStore/useStructureRestApi: refs hold the
+ * fetched state, and each action wraps one API call through `fetchAny` for shared loading
+ * tracking.
+ */
+
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
@@ -19,10 +26,14 @@ export const useDeliveryStore = defineStore('delivery', () => {
         setLoading
     });
 
-    /** What the shop offers, flat rates and free-above thresholds. */
+    /**
+     * What the shop offers, flat rates and free-above thresholds.
+     */
     const methods = ref<ShippingMethod[]>([]);
 
-    /** The current order's parcel, or undefined while nothing has shipped. */
+    /**
+     * The current order's parcel, or undefined while nothing has shipped.
+     */
     const shipment = ref<Shipment | undefined>();
 
     /**

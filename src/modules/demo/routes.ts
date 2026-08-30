@@ -1,6 +1,14 @@
+/**
+ * @module
+ * Route table for the demo module: one public route, guarded by the teaching
+ * `exampleGuard` so its lesson runs only while this module is kept.
+ */
 import type { RouteRecordRaw } from 'vue-router';
 import { exampleGuard } from './guards.ts';
 
+/**
+ * Route records for the demo module, mounted under the app's module registry.
+ */
 export default [
     {
         path: 'playground',

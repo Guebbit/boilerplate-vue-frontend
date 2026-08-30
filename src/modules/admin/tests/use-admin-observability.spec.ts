@@ -1,4 +1,5 @@
 /**
+ * @module
  * Unit tests for the Admin dashboard's data composable.
  *
  * The three endpoints are mocked at `@api`: what this file owns is the composition — that each
@@ -21,7 +22,10 @@ import { useAdminObservability } from '@/modules/admin/composables/use-admin-obs
 
 const HEALTH = { status: 'ok', uptimeSeconds: 120 };
 const METRICS = { totalRequests: 42, totalErrors: 1 };
-/** A page's worth of meta, as `PaginationMeta` declares it. */
+
+/**
+ * A page's worth of meta, as `PaginationMeta` declares it.
+ */
 const meta = (totalItems: number, totalPages = 1, page = 1, pageSize = 50) => ({
     page,
     pageSize,
@@ -82,77 +86,84 @@ describe('useAdminObservability', () => {
     });
 
     describe('fetchHealth', () => {
-        it('unwraps the response body into health', async () => {
+        it('unwraps the response body into health', () => {
             const { health, fetchHealth } = useAdminObservability();
 
-            await expect(fetchHealth()).resolves.toBeUndefined();
-
-            expect(getObservabilityHealth).toHaveBeenCalledTimes(1);
-            expect(health.value).toEqual(HEALTH);
+            return expect(fetchHealth())
+                .resolves.toBeUndefined()
+                .then(() => {
+                    expect(getObservabilityHealth).toHaveBeenCalledTimes(1);
+                    expect(health.value).toEqual(HEALTH);
+                });
         });
 
-        it('is loading while the call is in flight', async () => {
+        it('is loading while the call is in flight', () => {
             const { loadingHealth, fetchHealth } = useAdminObservability();
 
             const pending = fetchHealth();
             expect(loadingHealth.value).toBe(true);
 
-            await pending;
-            expect(loadingHealth.value).toBe(false);
+            return pending.then(() => {
+                expect(loadingHealth.value).toBe(false);
+            });
         });
 
-        it('reports its own failure without rejecting or touching the other panels', async () => {
+        it('reports its own failure without rejecting or touching the other panels', () => {
             vi.mocked(getObservabilityHealth).mockRejectedValueOnce(
                 apiFailure(503, 'Health probe timed out')
             );
             const { health, errorHealth, errorMetrics, errorAudit, fetchHealth } =
                 useAdminObservability();
 
-            await expect(fetchHealth()).resolves.toBeUndefined();
-
-            // The API's own words, not the fallback: the panel is more useful for saying which
-            // probe failed than for saying that something did.
-            expect(errorHealth.value).toBe('Health probe timed out');
-            expect(health.value).toBeUndefined();
-            expect(errorMetrics.value).toBeUndefined();
-            expect(errorAudit.value).toBeUndefined();
+            return expect(fetchHealth())
+                .resolves.toBeUndefined()
+                .then(() => {
+                    // The API's own words, not the fallback: the panel is more useful for saying which
+                    // probe failed than for saying that something did.
+                    expect(errorHealth.value).toBe('Health probe timed out');
+                    expect(health.value).toBeUndefined();
+                    expect(errorMetrics.value).toBeUndefined();
+                    expect(errorAudit.value).toBeUndefined();
+                });
         });
     });
 
     describe('fetchMetrics', () => {
-        it('unwraps the response body into metrics', async () => {
+        it('unwraps the response body into metrics', () => {
             const { metrics, fetchMetrics } = useAdminObservability();
 
-            await fetchMetrics();
-
-            expect(getObservabilityMetricsOverview).toHaveBeenCalledTimes(1);
-            expect(metrics.value).toEqual(METRICS);
+            return fetchMetrics().then(() => {
+                expect(getObservabilityMetricsOverview).toHaveBeenCalledTimes(1);
+                expect(metrics.value).toEqual(METRICS);
+            });
         });
 
-        it('carries its own fallback message when the rejection says nothing', async () => {
+        it('carries its own fallback message when the rejection says nothing', () => {
             // A rejection with no readable message at all — a transport failure that never got a
             // body — is the only case the per-panel fallback is for.
             vi.mocked(getObservabilityMetricsOverview).mockRejectedValueOnce({ status: 0 });
             const { errorMetrics, fetchMetrics } = useAdminObservability();
 
-            await fetchMetrics();
-
-            expect(errorMetrics.value).toBe('admin-page.error-load-metrics');
+            return fetchMetrics().then(() => {
+                expect(errorMetrics.value).toBe('admin-page.error-load-metrics');
+            });
         });
     });
 
     describe('fetchAuditLogs', () => {
-        it('splits the envelope into items, total and page count', async () => {
+        it('splits the envelope into items, total and page count', () => {
             const { auditEvents, auditTotal, auditPages, fetchAuditLogs } = useAdminObservability();
 
-            await expect(fetchAuditLogs()).resolves.toBeUndefined();
-
-            expect(auditEvents.value).toEqual([AUDIT_ITEM]);
-            expect(auditTotal.value).toBe(1);
-            expect(auditPages.value).toBe(1);
+            return expect(fetchAuditLogs())
+                .resolves.toBeUndefined()
+                .then(() => {
+                    expect(auditEvents.value).toEqual([AUDIT_ITEM]);
+                    expect(auditTotal.value).toBe(1);
+                    expect(auditPages.value).toBe(1);
+                });
         });
 
-        it('reports a total larger than the page, and the pages that reach the rest', async () => {
+        it('reports a total larger than the page, and the pages that reach the rest', () => {
             // The number the dashboard renders as "50 of 3,412" — and, unlike the capped read it
             // replaces, a page count that can actually get to the 3,412nd.
             vi.mocked(getObservabilityAuditLogs).mockResolvedValueOnce({
@@ -160,110 +171,115 @@ describe('useAdminObservability', () => {
             } as never);
             const { auditTotal, auditPages, fetchAuditLogs } = useAdminObservability();
 
-            await fetchAuditLogs();
-
-            expect(auditTotal.value).toBe(3412);
-            expect(auditPages.value).toBe(69);
+            return fetchAuditLogs().then(() => {
+                expect(auditTotal.value).toBe(3412);
+                expect(auditPages.value).toBe(69);
+            });
         });
 
-        it('sends every filter through under its contract name', async () => {
+        it('sends every filter through under its contract name', () => {
             const { fetchAuditLogs } = useAdminObservability();
 
-            await fetchAuditLogs({
+            return fetchAuditLogs({
                 actor: 'ada@example.com',
                 action: 'user.login',
                 outcome: 'failure',
                 since: '2026-01-01T00:00:00.000Z',
                 page: 3,
                 pageSize: 25
-            });
-
-            expect(getObservabilityAuditLogs).toHaveBeenCalledWith({
-                actor: 'ada@example.com',
-                action: 'user.login',
-                outcome: 'failure',
-                since: '2026-01-01T00:00:00.000Z',
-                page: 3,
-                pageSize: 25
+            }).then(() => {
+                expect(getObservabilityAuditLogs).toHaveBeenCalledWith({
+                    actor: 'ada@example.com',
+                    action: 'user.login',
+                    outcome: 'failure',
+                    since: '2026-01-01T00:00:00.000Z',
+                    page: 3,
+                    pageSize: 25
+                });
             });
         });
 
-        it('asks for everything when called with no filters', async () => {
+        it('asks for everything when called with no filters', () => {
             const { fetchAuditLogs } = useAdminObservability();
 
-            await fetchAuditLogs();
-
-            expect(getObservabilityAuditLogs).toHaveBeenCalledWith({
-                actor: undefined,
-                action: undefined,
-                outcome: undefined,
-                since: undefined,
-                page: undefined,
-                pageSize: undefined
+            return fetchAuditLogs().then(() => {
+                expect(getObservabilityAuditLogs).toHaveBeenCalledWith({
+                    actor: undefined,
+                    action: undefined,
+                    outcome: undefined,
+                    since: undefined,
+                    page: undefined,
+                    pageSize: undefined
+                });
             });
         });
 
-        it('reads an empty page as no events and a zero total', async () => {
+        it('reads an empty page as no events and a zero total', () => {
             vi.mocked(getObservabilityAuditLogs).mockResolvedValueOnce({
                 data: { items: [], meta: meta(0, 0) }
             } as never);
             const { auditEvents, auditTotal, auditPages, fetchAuditLogs } = useAdminObservability();
 
-            await fetchAuditLogs();
-
-            expect(auditEvents.value).toEqual([]);
-            expect(auditTotal.value).toBe(0);
-            // No pages rather than one empty one: the pager hides itself below two.
-            expect(auditPages.value).toBe(0);
+            return fetchAuditLogs().then(() => {
+                expect(auditEvents.value).toEqual([]);
+                expect(auditTotal.value).toBe(0);
+                // No pages rather than one empty one: the pager hides itself below two.
+                expect(auditPages.value).toBe(0);
+            });
         });
 
-        it('falls back to an empty page when the call fails', async () => {
+        it('falls back to an empty page when the call fails', () => {
             vi.mocked(getObservabilityAuditLogs).mockRejectedValueOnce(
                 apiFailure(500, 'Audit store unavailable')
             );
             const { auditEvents, auditTotal, auditPages, errorAudit, fetchAuditLogs } =
                 useAdminObservability();
 
-            await fetchAuditLogs();
-
-            // The panel renders "no events" rather than throwing on an undefined envelope
-            expect(auditEvents.value).toEqual([]);
-            expect(auditTotal.value).toBe(0);
-            expect(auditPages.value).toBe(0);
-            expect(errorAudit.value).toBe('Audit store unavailable');
+            return fetchAuditLogs().then(() => {
+                // The panel renders "no events" rather than throwing on an undefined envelope
+                expect(auditEvents.value).toEqual([]);
+                expect(auditTotal.value).toBe(0);
+                expect(auditPages.value).toBe(0);
+                expect(errorAudit.value).toBe('Audit store unavailable');
+            });
         });
 
-        it('replaces the previous page rather than appending to it', async () => {
+        it('replaces the previous page rather than appending to it', () => {
             vi.mocked(getObservabilityAuditLogs).mockResolvedValueOnce({
                 data: { items: [AUDIT_ITEM, AUDIT_ITEM], meta: meta(2) }
             } as never);
             const { auditEvents, auditTotal, fetchAuditLogs } = useAdminObservability();
 
-            await fetchAuditLogs();
-            expect(auditTotal.value).toBe(2);
-
-            await fetchAuditLogs({ actor: 'ada@example.com' });
-            expect(auditEvents.value).toEqual([AUDIT_ITEM]);
-            expect(auditTotal.value).toBe(1);
+            return fetchAuditLogs()
+                .then(() => {
+                    expect(auditTotal.value).toBe(2);
+                    return fetchAuditLogs({ actor: 'ada@example.com' });
+                })
+                .then(() => {
+                    expect(auditEvents.value).toEqual([AUDIT_ITEM]);
+                    expect(auditTotal.value).toBe(1);
+                });
         });
     });
 
     describe('fetchAll', () => {
-        it('loads all three panels in one call', async () => {
+        it('loads all three panels in one call', () => {
             const { health, metrics, auditEvents, auditTotal, fetchAll } = useAdminObservability();
 
-            await expect(fetchAll()).resolves.toBeUndefined();
-
-            expect(getObservabilityHealth).toHaveBeenCalledTimes(1);
-            expect(getObservabilityMetricsOverview).toHaveBeenCalledTimes(1);
-            expect(getObservabilityAuditLogs).toHaveBeenCalledTimes(1);
-            expect(health.value).toEqual(HEALTH);
-            expect(metrics.value).toEqual(METRICS);
-            expect(auditEvents.value).toEqual([AUDIT_ITEM]);
-            expect(auditTotal.value).toBe(1);
+            return expect(fetchAll())
+                .resolves.toBeUndefined()
+                .then(() => {
+                    expect(getObservabilityHealth).toHaveBeenCalledTimes(1);
+                    expect(getObservabilityMetricsOverview).toHaveBeenCalledTimes(1);
+                    expect(getObservabilityAuditLogs).toHaveBeenCalledTimes(1);
+                    expect(health.value).toEqual(HEALTH);
+                    expect(metrics.value).toEqual(METRICS);
+                    expect(auditEvents.value).toEqual([AUDIT_ITEM]);
+                    expect(auditTotal.value).toBe(1);
+                });
         });
 
-        it('starts the three calls together rather than one after the other', async () => {
+        it('starts the three calls together rather than one after the other', () => {
             const { loadingHealth, loadingMetrics, loadingAudit, fetchAll } =
                 useAdminObservability();
 
@@ -272,25 +288,28 @@ describe('useAdminObservability', () => {
             expect(loadingMetrics.value).toBe(true);
             expect(loadingAudit.value).toBe(true);
 
-            await pending;
-            expect(loadingHealth.value).toBe(false);
-            expect(loadingMetrics.value).toBe(false);
-            expect(loadingAudit.value).toBe(false);
+            return pending.then(() => {
+                expect(loadingHealth.value).toBe(false);
+                expect(loadingMetrics.value).toBe(false);
+                expect(loadingAudit.value).toBe(false);
+            });
         });
 
-        it('renders the panels that answered when one endpoint is down', async () => {
+        it('renders the panels that answered when one endpoint is down', () => {
             vi.mocked(getObservabilityMetricsOverview).mockRejectedValueOnce(
                 apiFailure(502, 'Metrics upstream refused')
             );
             const { health, metrics, errorMetrics, auditEvents, fetchAll } =
                 useAdminObservability();
 
-            await expect(fetchAll()).resolves.toBeUndefined();
-
-            expect(errorMetrics.value).toBe('Metrics upstream refused');
-            expect(metrics.value).toBeUndefined();
-            expect(health.value).toEqual(HEALTH);
-            expect(auditEvents.value).toEqual([AUDIT_ITEM]);
+            return expect(fetchAll())
+                .resolves.toBeUndefined()
+                .then(() => {
+                    expect(errorMetrics.value).toBe('Metrics upstream refused');
+                    expect(metrics.value).toBeUndefined();
+                    expect(health.value).toEqual(HEALTH);
+                    expect(auditEvents.value).toEqual([AUDIT_ITEM]);
+                });
         });
     });
 
@@ -301,31 +320,37 @@ describe('useAdminObservability', () => {
      * the view binds to the button and never sets — so both halves are asserted here.
      */
     describe('clearExpiredTokens', () => {
-        it('flags the purge as pending while the call is in flight', async () => {
+        it('flags the purge as pending while the call is in flight', () => {
             const { clearingExpiredTokens, clearExpiredTokens } = useAdminObservability();
 
             const pending = clearExpiredTokens();
             expect(clearingExpiredTokens.value).toBe(true);
 
-            await pending;
-            expect(clearingExpiredTokens.value).toBe(false);
+            return pending.then(() => {
+                expect(clearingExpiredTokens.value).toBe(false);
+            });
         });
 
-        it('resolves with nothing, so the view answers with its own copy', async () => {
+        it('resolves with nothing, so the view answers with its own copy', () => {
             const { clearExpiredTokens } = useAdminObservability();
 
-            await expect(clearExpiredTokens()).resolves.toBeUndefined();
-            expect(deleteExpiredTokens).toHaveBeenCalledTimes(1);
+            return expect(clearExpiredTokens())
+                .resolves.toBeUndefined()
+                .then(() => {
+                    expect(deleteExpiredTokens).toHaveBeenCalledTimes(1);
+                });
         });
 
-        it('rejects on failure rather than swallowing it into an error ref', async () => {
+        it('rejects on failure rather than swallowing it into an error ref', () => {
             vi.mocked(deleteExpiredTokens).mockRejectedValueOnce('down');
             const { clearingExpiredTokens, clearExpiredTokens } = useAdminObservability();
 
-            await expect(clearExpiredTokens()).rejects.toBe('down');
-
-            // `.finally`, not `.then` — a failed purge must not leave the button spinning.
-            expect(clearingExpiredTokens.value).toBe(false);
+            return expect(clearExpiredTokens())
+                .rejects.toBe('down')
+                .then(() => {
+                    // `.finally`, not `.then` — a failed purge must not leave the button spinning.
+                    expect(clearingExpiredTokens.value).toBe(false);
+                });
         });
     });
 });

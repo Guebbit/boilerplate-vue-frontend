@@ -1,4 +1,10 @@
 <script setup lang="ts">
+/**
+ * @module
+ * A numeric stepper built on Vuetify's `v-number-input`. Wraps it only to add the
+ * label-or-aria-label dev-time guard below and to give the field the same `errorMessages` prop
+ * shape every other field in these forms takes.
+ */
 import { onMounted } from 'vue';
 import { logger } from '@/infrastructure/utils/logger.ts';
 

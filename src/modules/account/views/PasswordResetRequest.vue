@@ -5,6 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Public request page: asks the backend for a reset token by email, and always shows the same
+ * acknowledgement whether or not the account exists — see the e2e for the enumeration-safety
+ * assertion.
+ */
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';

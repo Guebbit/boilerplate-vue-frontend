@@ -18,16 +18,27 @@ import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
  * Slots: default (the fields).
  */
 const { loading } = defineProps<{
-    /** The submit button's text, already translated. */
+    /**
+     * The submit button's text, already translated.
+     */
     submitLabel: string;
-    /** Where the text link under the form goes; the locale prefix is added here. */
+    /**
+     * Where the text link under the form goes; the locale prefix is added here.
+     */
     backTo: RouteLocationRaw;
-    /** The text link's own text, already translated. */
+    /**
+     * The text link's own text, already translated.
+     */
     backLabel: string;
-    /** Whether a submit is in flight — the button spins and refuses a second one. */
+    /**
+     * Whether a submit is in flight — the button spins and refuses a second one.
+     */
     loading?: boolean;
 }>();
 
+/**
+ * Emitted on form submit; the page owns validation and does the actual submitting.
+ */
 const emit = defineEmits<{ submit: [] }>();
 
 /**

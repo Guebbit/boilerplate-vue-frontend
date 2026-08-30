@@ -5,6 +5,11 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Wishlist page. Renders the store's saved lines, joined against the cart store's
+ * product-title cache, with the two exits: move-to-cart and remove.
+ */
 import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -25,7 +30,9 @@ const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 const { fetchWishlist, removeFromWishlist, moveToCart } = useWishlistStore();
 const { items } = storeToRefs(useWishlistStore());
-/** The saved products' titles — the wishlist answers ids only, and the cart store holds the join. */
+/**
+ * The saved products' titles — the wishlist answers ids only, and the cart store holds the join.
+ */
 const { titleOf, resolveTitles } = useCartStore();
 
 /**

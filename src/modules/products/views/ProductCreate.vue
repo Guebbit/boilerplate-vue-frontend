@@ -5,6 +5,11 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Create form for a product: builds a picked/extended slice of the shared products schema, wires
+ * it to `useAppForm`, and submits through the store's multipart-aware `createProduct`.
+ */
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
@@ -71,6 +76,9 @@ const createSchema = productsSchema.pick({ title: true, price: true }).extend({
  */
 const card = ref<InstanceType<typeof FormCard>>();
 
+/**
+ * Toolkit form state and submit handler.
+ */
 const {
     form,
     formErrors,

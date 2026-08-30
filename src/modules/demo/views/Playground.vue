@@ -5,6 +5,13 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * The showroom page: the counter store, the provide/inject demo, a toast
+ * trigger and a couple of fake sequential loading states, wired straight
+ * into the template with no intermediate abstraction — the point is to be
+ * readable, not idiomatic.
+ */
 import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';

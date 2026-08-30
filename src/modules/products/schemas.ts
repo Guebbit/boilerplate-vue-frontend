@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Zod schemas for the product create/edit forms, built from the API contract's own constraints
+ * (e.g. the price minimum) so the form cannot validate more loosely than the server.
+ */
 import { z } from 'zod';
 import { translate } from '@/infrastructure/i18n';
 import { createProductBodyPriceMin } from '@api/schemas';

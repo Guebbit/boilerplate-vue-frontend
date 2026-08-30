@@ -1,4 +1,5 @@
 /**
+ * @module
  * Wishlist — public barrel.
  *
  * The only surface a sibling module may import. `products` reaches the store for the heart

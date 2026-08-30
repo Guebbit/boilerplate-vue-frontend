@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Pinia store for the wishlist module. Every mutating action replaces the local list
+ * wholesale with the payload the API returned; `moveToCart` additionally refetches the
+ * cart store so the header badge cannot lag the write it just caused.
+ */
 import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
@@ -20,10 +26,14 @@ export const useWishlistStore = defineStore('wishlist', () => {
         setLoading
     });
 
-    /** The saved lines. */
+    /**
+     * The saved lines.
+     */
     const items = ref<WishlistItem[]>([]);
 
-    /** Saved product ids, for O(1) "is this saved" reads. */
+    /**
+     * Saved product ids, for O(1) "is this saved" reads.
+     */
     const savedProductIds = computed(() => new Set(items.value.map(({ productId }) => productId)));
 
     /**

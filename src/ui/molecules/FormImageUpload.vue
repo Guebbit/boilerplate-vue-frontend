@@ -1,4 +1,9 @@
 <script setup lang="ts">
+/**
+ * @module
+ * An image picker field: `v-file-input` plus a live preview built from an object URL, and an
+ * optional upload-progress bar driven by a `progress` prop the parent controls.
+ */
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
@@ -57,14 +62,26 @@ const {
  */
 const pickedFile = defineModel<File | undefined>();
 
+/**
+ * Collapses `VFileInput`'s possible array selection down to the single file this component
+ * models, or `undefined` when nothing usable was picked.
+ *
+ * @param value - Whatever the model currently holds.
+ * @returns The single picked `File`, or `undefined`.
+ */
 const normaliseSelection = (value: unknown): File | undefined => {
     if (Array.isArray(value)) return value[0];
     return value instanceof File ? value : undefined;
 };
 
+/**
+ * Whether an upload is currently in flight, per the `progress` prop.
+ */
 const isUploading = computed(() => progress !== undefined);
 
-/** Whole-percent completion, for both the bar and its label. */
+/**
+ * Whole-percent completion, for both the bar and its label.
+ */
 const progressPercent = computed(() => Math.round(progress ?? 0));
 
 /**
@@ -77,6 +94,12 @@ const progressPercent = computed(() => Math.round(progress ?? 0));
  */
 const objectUrl = ref<string>();
 
+/**
+ * Revokes the current object URL, if one is held, and clears the ref.
+ *
+ * Safe to call unconditionally: a no-op when nothing is picked. Called both on every selection
+ * change (before minting the replacement) and on unmount, so the blob never outlives the field.
+ */
 const releaseObjectUrl = () => {
     if (!objectUrl.value) return;
     URL.revokeObjectURL(objectUrl.value);

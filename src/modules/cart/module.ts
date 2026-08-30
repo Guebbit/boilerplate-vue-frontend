@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Cart module manifest. Declares the module's routes, nav entry (with a badge that
+ * seeds the cart count on auth), response schemas and locale loaders for the app
+ * registry — see `AppModule`.
+ */
 import { watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { ShoppingCart } from 'lucide-vue-next';

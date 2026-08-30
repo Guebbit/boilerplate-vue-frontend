@@ -1,4 +1,5 @@
 /**
+ * @module
  * The wishlist end to end: the heart on the product page, the saved list and its two exits —
  * the move-to-cart button, and the link on each saved item.
  *

@@ -32,7 +32,9 @@ import type { TranslationDictionaries } from '@/infrastructure/i18n';
  */
 export type AppNavigationSection = 'main' | 'account' | 'admin';
 
-/** Every section, in the order the drawer lists them. */
+/**
+ * Every section, in the order the drawer lists them.
+ */
 export const NAVIGATION_SECTIONS = [
     'main',
     'account',
@@ -47,10 +49,14 @@ export const NAVIGATION_SECTIONS = [
  * the router disagree. An entry's permissions come along with its route.
  */
 export interface AppNavigationEntry {
-    /** Route name to link to. Its `meta.access` decides who sees the entry. */
+    /**
+     * Route name to link to. Its `meta.access` decides who sees the entry.
+     */
     name: string;
 
-    /** i18n key for the label. */
+    /**
+     * i18n key for the label.
+     */
     label: string;
 
     /**
@@ -108,10 +114,14 @@ export interface AppNavigationEntry {
  * moved.
  */
 export interface AppModule {
-    /** Registry identity. Must match the folder name under `src/modules/`. */
+    /**
+     * Registry identity. Must match the folder name under `src/modules/`.
+     */
     name: string;
 
-    /** The domain's route records, spliced into the localised route tree. */
+    /**
+     * The domain's route records, spliced into the localised route tree.
+     */
     routes: RouteRecordRaw[];
 
     /**

@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Client-side mirror of the backend's upload limits, plus the reusable Zod rule built from them.
+ * A UX affordance only — the backend re-checks Content-Type and magic bytes independently.
+ */
+
 import { z } from 'zod';
 import { formatFileSize, isAcceptedFileType, isWithinFileSize } from '@guebbit/js-toolkit';
 import { translate } from '@/infrastructure/i18n';
@@ -38,7 +44,9 @@ export const ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE = ACCEPTED_IMAGE_TYPES.join(',');
  */
 export const MAX_UPLOAD_BYTES = Number(import.meta.env.VITE_MAX_UPLOAD_BYTES) || 5 * 1024 * 1024;
 
-/** {@link MAX_UPLOAD_BYTES} as display text, resolved once for the hint and the error message. */
+/**
+ * {@link MAX_UPLOAD_BYTES} as display text, resolved once for the hint and the error message.
+ */
 export const MAX_UPLOAD_SIZE_LABEL = formatFileSize(MAX_UPLOAD_BYTES);
 
 /**

@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Composable owning the dictionary board's three-source read model: entries, the API baseline,
+ * the bundled baseline and pending keys, merged into per-cell lookups the board and the cell
+ * editor both read through rather than touching the sources directly.
+ */
 import { computed, ref, type Ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -35,12 +41,16 @@ export function useDictionaryAggregation(tenant: Ref<string>) {
     const localesStore = useLocalesStore();
     const { capabilities, tenants, loading } = storeToRefs(localesStore);
 
-    /** What kind of tenant is on the board — decides which baseline, if any, the cells show. */
+    /**
+     * What kind of tenant is on the board — decides which baseline, if any, the cells show.
+     */
     const tenantKind = computed(
         () => tenants.value.find(({ id }) => id === tenant.value)?.kind ?? LocaleTenantKind.frontend
     );
 
-    /** Whether the shown tenant has a baseline this build can read: its own bundle, or the API's files. */
+    /**
+     * Whether the shown tenant has a baseline this build can read: its own bundle, or the API's files.
+     */
     const hasBaseline = computed(
         () =>
             tenant.value === localesStore.ownTenant || tenantKind.value === LocaleTenantKind.backend
@@ -56,23 +66,36 @@ export function useDictionaryAggregation(tenant: Ref<string>) {
         capabilities.value.filter((language) => language.source !== 'static')
     );
 
+    /**
+     * The tenant select's options, from the registry.
+     */
     const tenantOptions = computed(() =>
         tenants.value.map(({ id, label }) => ({ value: id, title: `${label} (${id})` }))
     );
 
-    /** Every entry of every language, every tenant, by language tag. */
+    /**
+     * Every entry of every language, every tenant, by language tag.
+     */
     const entriesByTag = ref<Partial<Record<string, LocaleEntry[]>>>({});
 
-    /** The API's deployed dictionary by language tag — the backend tenant's baseline. */
+    /**
+     * The API's deployed dictionary by language tag — the backend tenant's baseline.
+     */
     const apiBaselines = ref<Partial<Record<string, Partial<Record<string, string>>>>>({});
 
-    /** This build's bundled dictionary by language tag — its own tenant's baseline. */
+    /**
+     * This build's bundled dictionary by language tag — its own tenant's baseline.
+     */
     const appBaselines = ref<Partial<Record<string, Partial<Record<string, string>>>>>({});
 
-    /** Keys added on this page that have no entry in any language yet. */
+    /**
+     * Keys added on this page that have no entry in any language yet.
+     */
     const pendingKeys = ref<string[]>([]);
 
-    /** One language's entries of the shown tenant, by key. */
+    /**
+     * One language's entries of the shown tenant, by key.
+     */
     const entriesIndex = computed(() => {
         const index: Partial<Record<string, Map<string, LocaleEntry>>> = {};
         for (const [tag, entries] of Object.entries(entriesByTag.value))
@@ -84,24 +107,36 @@ export function useDictionaryAggregation(tenant: Ref<string>) {
         return index;
     });
 
-    /** The shown tenant's baselines, by language tag — none for a tenant this build cannot read. */
+    /**
+     * The shown tenant's baselines, by language tag — none for a tenant this build cannot read.
+     */
     const baselines = computed<Partial<Record<string, Partial<Record<string, string>>>>>(() => {
         if (tenant.value === localesStore.ownTenant) return appBaselines.value;
         if (tenantKind.value === LocaleTenantKind.backend) return apiBaselines.value;
         return {};
     });
 
+    /**
+     * The stored entry for one cell, when there is one.
+     */
     const entryAt = (tag: string, key: string): LocaleEntry | undefined =>
         entriesIndex.value[tag]?.get(key);
 
+    /**
+     * The baseline text for one cell, when the shown tenant has one.
+     */
     const baselineAt = (tag: string, key: string): string | undefined =>
         baselines.value[tag]?.[key];
 
-    /** A cell with neither an entry nor a baseline: the gap the board exists to show. */
+    /**
+     * A cell with neither an entry nor a baseline: the gap the board exists to show.
+     */
     const isMissing = (tag: string, key: string) =>
         entryAt(tag, key) === undefined && baselineAt(tag, key) === undefined;
 
-    /** The cell's state, for its look and its title. */
+    /**
+     * The cell's state, for its look and its title.
+     */
     const cellState = (tag: string, key: string): 'entry' | 'baseline' | 'missing' => {
         if (entryAt(tag, key)) return 'entry';
         return baselineAt(tag, key) === undefined ? 'missing' : 'baseline';
@@ -121,7 +156,9 @@ export function useDictionaryAggregation(tenant: Ref<string>) {
         return [...keys].toSorted();
     });
 
-    /** Per language: how many of the board's keys it is missing. */
+    /**
+     * Per language: how many of the board's keys it is missing.
+     */
     const missingByTag = computed<Partial<Record<string, number>>>(() =>
         Object.fromEntries(
             languages.value.map((language) => [
@@ -131,7 +168,9 @@ export function useDictionaryAggregation(tenant: Ref<string>) {
         )
     );
 
-    /** Reloads one language's column: its rows and both baselines. */
+    /**
+     * Reloads one language's column: its rows and both baselines.
+     */
     const loadLanguage = (tag: string) =>
         Promise.all([
             localesStore.fetchAllEntries(tag),
@@ -143,22 +182,30 @@ export function useDictionaryAggregation(tenant: Ref<string>) {
             appBaselines.value[tag] = appBaseline;
         });
 
-    /** Loads the registry and the manifest, then every writable language's column. */
+    /**
+     * Loads the registry and the manifest, then every writable language's column.
+     */
     const loadBoard = () =>
         Promise.all([localesStore.fetchTenants(), localesStore.fetchLanguages()])
             .then(() => Promise.all(languages.value.map((language) => loadLanguage(language.tag))))
             .catch((error: unknown) => notifyErrorMessages(addMessage, error));
 
-    /** What every write does afterwards: the column, the manifest's counts, the running app. */
+    /**
+     * What every write does afterwards: the column, the manifest's counts, the running app.
+     */
     const afterWrite = (tag: string) =>
         Promise.all([loadLanguage(tag), localesStore.fetchLanguages(), applyLiveOverrides(tag)]);
 
-    /** Records a key added here, not yet backed by an entry anywhere — see `allKeys`. */
+    /**
+     * Records a key added here, not yet backed by an entry anywhere — see `allKeys`.
+     */
     const addPendingKey = (key: string) => {
         pendingKeys.value.push(key);
     };
 
-    /** Forgets this tenant's added-but-unsaved keys — a tenant switch is a different board. */
+    /**
+     * Forgets this tenant's added-but-unsaved keys — a tenant switch is a different board.
+     */
     const resetPendingKeys = () => {
         pendingKeys.value = [];
     };

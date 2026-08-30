@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Composable owning per-cell writes on the dictionary board: a local draft keyed by `cellId` so a
+ * blur can tell "changed" from "clicked through", the save/clear/enter handlers that call into the
+ * locales store, and the transient saved-mark/error state each cell shows for its own last write.
+ */
 import { ref, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { omit } from 'lodash-es';
@@ -7,10 +13,14 @@ import { useLocalesStore } from '@/modules/locales/store.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import type { LocaleCapability, LocaleEntry } from '@types';
 
-/** How long the "saved" mark stays on a cell, in milliseconds. */
+/**
+ * How long the "saved" mark stays on a cell, in milliseconds.
+ */
 const SAVED_MARK_MS = 1500;
 
-/** The cell's draft key: tag and key joined by a separator no BCP 47 tag can contain. */
+/**
+ * The cell's draft key: tag and key joined by a separator no BCP 47 tag can contain.
+ */
 const cellId = (tag: string, key: string) => `${tag}|${key}`;
 
 /**
@@ -36,29 +46,43 @@ export function useDictionaryCellEditor(
     const dialogStore = useDialogStore();
     const localesStore = useLocalesStore();
 
-    /** Local draft per cell, so a blur can tell "changed" from "clicked through". */
+    /**
+     * Local draft per cell, so a blur can tell "changed" from "clicked through".
+     */
     const drafts = ref<Partial<Record<string, string>>>({});
 
-    /** Cells whose last save just landed; the check mark inside the field, cleared after a beat. */
+    /**
+     * Cells whose last save just landed; the check mark inside the field, cleared after a beat.
+     */
     const savedCells = ref<Partial<Record<string, true>>>({});
 
-    /** Cells whose last write failed; the message stays under the field until the cell is edited. */
+    /**
+     * Cells whose last write failed; the message stays under the field until the cell is edited.
+     */
     const cellErrors = ref<Partial<Record<string, string>>>({});
 
-    /** The board's element, so a new row's cell can be found and focused without a global query. */
+    /**
+     * The board's element, so a new row's cell can be found and focused without a global query.
+     */
     const boardElement = ref<HTMLElement>();
 
-    /** Drops one cell's draft, so the cell reads the stored value again. */
+    /**
+     * Drops one cell's draft, so the cell reads the stored value again.
+     */
     const forgetDraft = (id: string) => {
         drafts.value = omit(drafts.value, id);
     };
 
-    /** Drops one cell's error, so a fresh attempt starts clean. */
+    /**
+     * Drops one cell's error, so a fresh attempt starts clean.
+     */
     const forgetError = (id: string) => {
         cellErrors.value = omit(cellErrors.value, id);
     };
 
-    /** Shows the saved mark on one cell, then takes it away. */
+    /**
+     * Shows the saved mark on one cell, then takes it away.
+     */
     const markSaved = (id: string) => {
         savedCells.value = { ...savedCells.value, [id]: true };
         setTimeout(() => {
@@ -66,11 +90,15 @@ export function useDictionaryCellEditor(
         }, SAVED_MARK_MS);
     };
 
-    /** The `<input>` a cell event came from, whether the key landed on it or its clear button. */
+    /**
+     * The `<input>` a cell event came from, whether the key landed on it or its clear button.
+     */
     const inputOf = (event: Event): HTMLElement | null =>
         (event.target as HTMLElement | null)?.closest('.v-field')?.querySelector('input') ?? null;
 
-    /** What every cell write ends with: the draft gone, the column reloaded, a failure on the cell. */
+    /**
+     * What every cell write ends with: the draft gone, the column reloaded, a failure on the cell.
+     */
     const settleWrite = (language: LocaleCapability, id: string, request: Promise<unknown>) =>
         request
             .then(() => {
@@ -177,14 +205,18 @@ export function useDictionaryCellEditor(
         return draft === '' ? handleCellClear(language, key, event) : handleCellBlur(language, key);
     };
 
-    /** Records a keystroke in the cell's draft; a cell being typed into is no longer in error. */
+    /**
+     * Records a keystroke in the cell's draft; a cell being typed into is no longer in error.
+     */
     const handleCellInput = (language: LocaleCapability, key: string, draft: string) => {
         const id = cellId(language.tag, key);
         drafts.value[id] = draft;
         if (cellErrors.value[id]) forgetError(id);
     };
 
-    /** The cell's accessible name: the key, the language, and the baseline it would be replacing. */
+    /**
+     * The cell's accessible name: the key, the language, and the baseline it would be replacing.
+     */
     const cellLabel = (language: LocaleCapability, key: string) => {
         const baseline = baselineAt(language.tag, key);
         return baseline === undefined || entryAt(language.tag, key)

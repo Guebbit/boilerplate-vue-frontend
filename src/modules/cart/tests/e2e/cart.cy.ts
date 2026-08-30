@@ -1,3 +1,13 @@
+/**
+ * @module
+ * The cart page end to end: viewing, stepping, removing, clearing and checking out.
+ */
+
+/**
+ * Reads and parses the quantity label of the first cart line.
+ *
+ * @returns The parsed quantity, asserted to be a positive integer.
+ */
 const readFirstItemQuantity = () =>
     cy
         .get('[data-test=cart-item]')

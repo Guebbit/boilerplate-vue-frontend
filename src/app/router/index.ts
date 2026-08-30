@@ -1,3 +1,10 @@
+/**
+ * @module
+ * The app's router. Locale-prefixed routes, with every domain route contributed by enabled
+ * modules through the kernel registry — this file names no domain. Guards restore the session,
+ * enforce `meta.access` and sync the i18n locale; `afterEach` sets the tab title, the a11y
+ * announcement and focus.
+ */
 import { nextTick } from 'vue';
 import { createRouter, createWebHistory, RouterView, START_LOCATION } from 'vue-router';
 import type { RouteLocationNormalized } from 'vue-router';
@@ -29,9 +36,15 @@ const moduleRoutes = collectModuleRoutes(enabledModules);
  */
 const appName = (import.meta.env.VITE_APP_NAME as string | undefined) || 'Guebbit';
 
-/** Whether the visitor asked the OS for less motion; read per call, since the setting can change. */
+/**
+ * Whether the visitor asked the OS for less motion; read per call, since the setting can change.
+ */
 const prefersReducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/**
+ * The application's router: locale-prefixed routes, module-contributed routes merged in via
+ * the kernel registry, plus the top-level 404/redirect shells the shell owns itself.
+ */
 const router = createRouter({
     history: createWebHistory(import.meta.env.VITE_APP_BASE_URL),
     /**

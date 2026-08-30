@@ -1,3 +1,10 @@
+/**
+ * @module
+ * Route table mapping method+URL patterns to Zod response schemas, checked by exact regex match
+ * against the request's pathname. Core rows are baked in; modules extend the table at boot via
+ * `registerResponseSchemas`.
+ */
+
 import * as zod from 'zod';
 import * as schemas from '@api/schemas';
 import { toPathname } from './url.ts';
@@ -88,7 +95,9 @@ const coreRouteSchemas: ResponseSchemaRoute[] = [
     }
 ];
 
-/** Core rows plus whatever the enabled modules last registered. */
+/**
+ * Core rows plus whatever the enabled modules last registered.
+ */
 let routeSchemas: ResponseSchemaRoute[] = [...coreRouteSchemas];
 
 /**

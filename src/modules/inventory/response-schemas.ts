@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Maps each inventory endpoint's method + path pattern to the Zod schema its response envelope
+ * must satisfy — one row per call this module makes, read by the response-schema-map middleware.
+ */
 import * as schemas from '@api/schemas';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 

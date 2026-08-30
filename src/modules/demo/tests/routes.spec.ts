@@ -1,4 +1,10 @@
 /**
+ * @module
+ * Vitest spec asserting the demo route is public and carries the teaching
+ * `exampleGuard`.
+ */
+
+/**
  * The demo module's route surface.
  *
  * Public and guarded by `exampleGuard` — both are the point of the module, so both are asserted:

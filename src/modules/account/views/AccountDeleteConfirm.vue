@@ -5,6 +5,11 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Public confirm page for account deletion: the one-time token from the email link is the
+ * credential, so the route carries no auth guard and the form works for a signed-out visitor too.
+ */
 import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';

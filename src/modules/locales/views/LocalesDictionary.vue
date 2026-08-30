@@ -5,6 +5,13 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Route view: client-side paginated, debounced-filtered board over every key across every
+ * language, delegating the three-source read model to `useDictionaryAggregation` and per-cell
+ * writes to `useDictionaryCellEditor` — this file owns only filtering, paging and the "add key"
+ * flow.
+ */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { debounce } from 'lodash-es';
@@ -57,10 +64,14 @@ const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 const localesStore = useLocalesStore();
 
-/** Rows per page of the board. */
+/**
+ * Rows per page of the board.
+ */
 const PAGE_SIZE = 25;
 
-/** Whose dictionary the board shows; a key lives in exactly one tenant. This build's own by default. */
+/**
+ * Whose dictionary the board shows; a key lives in exactly one tenant. This build's own by default.
+ */
 const tenant = ref(localesStore.ownTenant);
 
 const {
@@ -95,7 +106,9 @@ const {
     cellLabel
 } = useDictionaryCellEditor(tenant, entryAt, baselineAt, afterWrite);
 
-/** Client-side text filter over keys and values. */
+/**
+ * Client-side text filter over keys and values.
+ */
 const filterText = ref('');
 
 /**
@@ -113,16 +126,29 @@ const filterText = ref('');
  */
 const appliedFilter = ref('');
 
-/** Show only the keys at least one language is missing. */
+/**
+ * Show only the keys at least one language is missing.
+ */
 const incompleteOnly = ref(false);
 
+/**
+ * The board's current page.
+ */
 const pageCurrent = ref(1);
 
+/**
+ * The "add key" field's draft, cleared once the key is added.
+ */
 const newKey = ref('');
 
+/**
+ * Whether the "create language" dialog is open.
+ */
 const languageFormOpen = ref(false);
 
-/** The keys matching the filters: text across key and values, and the incomplete-only toggle. */
+/**
+ * The keys matching the filters: text across key and values, and the incomplete-only toggle.
+ */
 const filteredKeys = computed(() => {
     const needle = appliedFilter.value.trim().toLowerCase();
     return allKeys.value.filter((key) => {
@@ -143,15 +169,23 @@ const filteredKeys = computed(() => {
     });
 });
 
+/**
+ * How many pages {@link filteredKeys} spans, at least one even when it is empty.
+ */
 const pageTotal = computed(() => Math.max(1, Math.ceil(filteredKeys.value.length / PAGE_SIZE)));
 
-/** Rows of the current page. The row object carries the key only; cells read the index. */
+/**
+ * Rows of the current page. The row object carries the key only; cells read the index.
+ */
 const pageRows = computed(() =>
     filteredKeys.value
         .slice((pageCurrent.value - 1) * PAGE_SIZE, pageCurrent.value * PAGE_SIZE)
         .map((key) => ({ key }))
 );
 
+/**
+ * Columns of the board: the key column plus one synthetic column per language.
+ */
 const tableHeaders = computed<CoreDataTableHeader<{ key: string }>[]>(() => [
     { title: t('locales-dictionary-page.column-key'), key: 'key' },
     ...languages.value.map((language) => ({
@@ -161,7 +195,9 @@ const tableHeaders = computed<CoreDataTableHeader<{ key: string }>[]>(() => [
     }))
 ]);
 
-/** Puts the typed text on the board and returns to the first page, which the new list redefines. */
+/**
+ * Puts the typed text on the board and returns to the first page, which the new list redefines.
+ */
 const applyFilter = () => {
     appliedFilter.value = filterText.value;
     pageCurrent.value = 1;
@@ -173,6 +209,12 @@ const applyFilter = () => {
  */
 const FILTER_DEBOUNCE_MS = 250;
 
+/**
+ * The debounced filter apply the field's own typing drives.
+ *
+ * lodash-es `debounce(fn, wait)` fires trailing-edge by default — after typing stops for
+ * {@link FILTER_DEBOUNCE_MS}, not on every keystroke — which is what a "stopped typing" filter wants.
+ */
 const applyFilterSoon = debounce(applyFilter, FILTER_DEBOUNCE_MS);
 
 watch(filterText, () => applyFilterSoon());
@@ -221,6 +263,9 @@ const handleAddKey = () => {
     });
 };
 
+/**
+ * Creates a language from the dialog, then loads its column onto the board.
+ */
 const handleCreateLanguage = (fields: {
     tag: string;
     name: string;

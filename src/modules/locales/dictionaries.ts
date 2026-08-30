@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Pure, side-effect-free conversions between the API's flat dotted-key rows and the nested
+ * dictionary shape vue-i18n consumes — `flattenDictionary` one way, `expandEntries` the other,
+ * with array folding handled by a shared recursive helper.
+ */
 import type { TranslationDictionaries } from '@/infrastructure/i18n';
 
 /**

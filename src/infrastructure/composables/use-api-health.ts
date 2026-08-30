@@ -1,3 +1,10 @@
+/**
+ * @module
+ * Thin composable wrapping the toolkit's generic liveness-probe mechanism with this app's
+ * specific endpoint. The polling/backoff logic lives in `useLivenessProbe`; this file only
+ * supplies which request counts as the ping.
+ */
+
 import { useLivenessProbe } from '@guebbit/vue-toolkit';
 import { getHealth } from '@api';
 

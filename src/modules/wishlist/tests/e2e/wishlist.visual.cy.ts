@@ -1,4 +1,5 @@
 /**
+ * @module
  * Visual regression for this module's own screen.
  *
  * Baselines live in `__snapshots__/` beside this file, so deleting the module deletes its

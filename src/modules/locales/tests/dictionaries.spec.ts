@@ -1,7 +1,9 @@
 /**
- * The two dictionary conversions — the only real logic this module owns, and pure, so this is
- * where the edge cases live: arrays folding to numeric keys and back, deep nesting, the
- * deeper-key-wins rule on data the API should never produce but a test can.
+ * @module
+ * Unit tests for `flattenDictionary`/`expandEntries`, exercising both conversions directly against
+ * plain fixtures — no store, no transport. The only real logic this module owns, and pure, so
+ * this is where the edge cases live: arrays folding to numeric keys and back, deep nesting, and
+ * the deeper-key-wins rule on data the API should never produce but a test can.
  */
 import { describe, expect, it } from 'vitest';
 import { flattenDictionary, expandEntries } from '@/modules/locales/dictionaries.ts';

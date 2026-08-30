@@ -1,3 +1,10 @@
+/**
+ * @module
+ * Contract validation for `orvalMutator`: a feature flag plus a Zod parse against the schema
+ * `response-schema-map.ts` resolves for the request, throwing loudly on a real mismatch and
+ * logging (not throwing) on an unmapped route.
+ */
+
 import { logger } from '@/infrastructure/utils/logger.ts';
 import { resolveResponseSchema } from './response-schema-map.ts';
 import type { AxiosRequestConfig } from 'axios';

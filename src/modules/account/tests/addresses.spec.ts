@@ -1,14 +1,12 @@
 /**
- * The address book store.
+ * @module
+ * Unit tests for the address-book store, mocking only the transport (`orvalMutator`) so the
+ * store's own fetch-after-write logic runs for real.
  *
- * All four endpoints answer with the WHOLE book rather than with the row that changed, because
- * the invariant worth rendering after any write — exactly one default — is a property of the
- * list. So the thing to pin for each is the same: the right request goes out, and the local list
- * is replaced by the answer rather than patched locally.
- *
- * `removeAddress` is the one where that matters most: deleting the default promotes the oldest
- * survivor server-side, so a store that removed the row locally would show a book with no
- * default at all until the next reload.
+ * All four endpoints answer with the WHOLE book rather than the row that changed, so each case
+ * pins the same invariant: exactly one default, and the local list replaced by the answer rather
+ * than patched. `removeAddress` matters most — deleting the default promotes the oldest survivor
+ * server-side, so a store that removed the row locally would show no default until reload.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
@@ -20,14 +18,18 @@ vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn(() => Promise.resolve({ data: {} }))
 }));
 
-/** The axios config handed to orvalMutator on its most recent call. */
+/**
+ * The axios config handed to orvalMutator on its most recent call.
+ */
 const lastRequest = () => {
     const call = vi.mocked(orvalMutator).mock.calls.at(-1);
     if (!call) throw new Error('orvalMutator was never called');
     return call[0] as { url: string; method: string; data: unknown };
 };
 
-/** Makes the transport answer every address endpoint with this book. */
+/**
+ * Makes the transport answer every address endpoint with this book.
+ */
 const respondWithBook = (addresses: unknown[]) =>
     vi.mocked(orvalMutator).mockResolvedValue({ data: { addresses } });
 

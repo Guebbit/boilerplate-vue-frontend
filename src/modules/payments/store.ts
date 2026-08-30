@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Pinia store for the payments module. Wraps useStructureRestApi's fetchAny for loading state
+ * and mirrors the API's payment record locally, keeping the PSP intent/confirm sequence and the
+ * "404 means no payment yet" rule in one place.
+ */
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
@@ -19,7 +25,9 @@ export const usePaymentsStore = defineStore('payments', () => {
         setLoading
     });
 
-    /** The current order's payment, or undefined while none exists (no intent yet, or a guest). */
+    /**
+     * The current order's payment, or undefined while none exists (no intent yet, or a guest).
+     */
     const payment = ref<Payment | undefined>();
 
     /**

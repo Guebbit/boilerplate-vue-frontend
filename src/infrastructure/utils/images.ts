@@ -1,3 +1,10 @@
+/**
+ * @module
+ * Three URL-shaping leaves that answer one question from different angles: given a record's
+ * `imageUrl`, what does `<img src>` get? Resolve to absolute, ask for a thumbnail variant, or
+ * fall back to a bundled placeholder.
+ */
+
 import { instance } from '@/infrastructure/http/client.ts';
 
 /**

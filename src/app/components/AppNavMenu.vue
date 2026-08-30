@@ -1,4 +1,9 @@
 <script setup lang="ts">
+/**
+ * @module
+ * Generic dropdown-menu shell around `AppNavIconButton`: renders a list of `AppNavItem`s as a
+ * `role="menu"`, used for both the account menu and the admin menu.
+ */
 import type { Component } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -8,13 +13,19 @@ import AppNavIconButton from '@/app/components/AppNavIconButton.vue';
  * One navigation entry, resolved for the current visitor: translated, locale-prefixed, counted.
  */
 export interface AppNavItem {
-    /** Route name, stable across locales — the `key` of every render. */
+    /**
+     * Route name, stable across locales — the `key` of every render.
+     */
     name: string;
-    /** Translated label. */
+    /**
+     * Translated label.
+     */
     title: string;
     to: RouteLocationRaw;
     icon?: Component;
-    /** Live count; `undefined` renders no badge. */
+    /**
+     * Live count; `undefined` renders no badge.
+     */
     badge?: number;
 }
 
@@ -30,16 +41,26 @@ export interface AppNavItem {
  */
 defineProps<{
     items: AppNavItem[];
-    /** Translated name of the menu: tooltip, accessible name and the list's label. */
+    /**
+     * Translated name of the menu: tooltip, accessible name and the list's label.
+     */
     label: string;
     icon: Component;
-    /** Folded into the activator's accessible name, shown as a heading inside the menu. */
+    /**
+     * Folded into the activator's accessible name, shown as a heading inside the menu.
+     */
     description?: string;
-    /** A count the activator wears, e.g. the cart's, so it stays visible while the menu is shut. */
+    /**
+     * A count the activator wears, e.g. the cart's, so it stays visible while the menu is shut.
+     */
     badge?: number;
-    /** Shows the visitor's picture on the activator instead of `icon` — the account menu only. */
+    /**
+     * Shows the visitor's picture on the activator instead of `icon` — the account menu only.
+     */
     avatar?: boolean;
-    /** The visitor's `imageUrl`, unresolved. Only read when {@link avatar} is set. */
+    /**
+     * The visitor's `imageUrl`, unresolved. Only read when {@link avatar} is set.
+     */
     avatarUrl?: string | null;
     dataTest?: string;
 }>();

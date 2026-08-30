@@ -5,6 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Order-edit page. Loads one order by route id, exposes a status/email form
+ * built on `useAppForm`, and the operator's cancel/refund actions — each
+ * gated on the `actions` the server attaches to the loaded record.
+ */
 import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
@@ -51,7 +57,9 @@ const { id } = defineProps<{
 const { watchOrder, updateOrder, cancelOrder } = useOrdersStore();
 const { currentOrder, loading } = storeToRefs(useOrdersStore());
 
-/** The money half of the operator's actions — `payments` answers for it, this page only asks. */
+/**
+ * The money half of the operator's actions — `payments` answers for it, this page only asks.
+ */
 const { canRefund, refund } = useOrderRefund(computed(() => id));
 
 /**
@@ -136,6 +144,9 @@ const editSchema = z.object({
  */
 const formElement = ref<HTMLFormElement>();
 
+/**
+ * Form state, validation and submission wiring from the shared app-form composable.
+ */
 const {
     form,
     formErrors,

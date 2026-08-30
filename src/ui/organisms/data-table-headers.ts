@@ -16,7 +16,9 @@
 export interface CoreDataTableFieldHeader<T> {
     title: string;
     key: Extract<keyof T, string>;
-    /** Column width, when one column has to be wider than the table would choose. */
+    /**
+     * Column width, when one column has to be wider than the table would choose.
+     */
     width?: string | number;
 }
 
@@ -31,9 +33,13 @@ export interface CoreDataTableSyntheticHeader {
     title: string;
     key: string;
     synthetic: true;
-    /** Column width, when one column has to be wider than the table would choose. */
+    /**
+     * Column width, when one column has to be wider than the table would choose.
+     */
     width?: string | number;
 }
 
-/** One column: either a field of the row, or explicitly not one. */
+/**
+ * One column: either a field of the row, or explicitly not one.
+ */
 export type CoreDataTableHeader<T> = CoreDataTableFieldHeader<T> | CoreDataTableSyntheticHeader;

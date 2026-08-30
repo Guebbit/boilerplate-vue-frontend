@@ -1,12 +1,11 @@
 /**
- * Registration, end to end and honestly: the account exists because the form was filled in, the
- * token works because it came out of the email the API sent, and the password that logs in at the end
- * is the one typed at the start — with the wrong one refused first, to prove the check is real.
+ * @module
+ * End-to-end registration arc across page reloads: signup, spend the emailed verification token
+ * as a guest, then prove the password gate is real (wrong password refused, right one accepted).
  *
  * The arc deliberately crosses page reloads the way the real flow does: the verification link is
- * "opened from the inbox" (`cy.demoEmailTo` reads the demo backend's `/__demo/emails`), which is
- * a fresh page load — nothing in the browser carries the new user across it, so the account has to
- * genuinely exist server-side for the second half to work.
+ * "opened from the inbox" (`cy.demoEmailTo` reads the demo backend's `/__demo/emails`), a fresh
+ * page load, so the account has to genuinely exist server-side for the second half to work.
  */
 describe('Registration', () => {
     beforeEach(() => {

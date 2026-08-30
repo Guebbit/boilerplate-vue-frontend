@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Module manifest: declares this domain's routes, navigation entry and locale loaders through the
+ * `AppModule` shape the kernel registry reads.
+ */
 import { Radio } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';

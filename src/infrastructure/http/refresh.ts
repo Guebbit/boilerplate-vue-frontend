@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Response interceptor for the refresh-and-retry flow: on a 401 (outside the excluded auth
+ * endpoints), renews the token once and replays the original request exactly once.
+ */
+
 import { useSessionStore } from '@/infrastructure/stores/session.ts';
 import { instance } from './client.ts';
 import { getTokenFromResponse } from './envelope.ts';

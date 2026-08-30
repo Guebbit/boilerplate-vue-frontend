@@ -1,4 +1,9 @@
 /**
+ * @module
+ * Barrel re-export: this module's only public surface for sibling modules to import.
+ */
+
+/**
  * Users — public barrel.
  *
  * The only surface a sibling module may import. See any sibling's barrel for the rule.

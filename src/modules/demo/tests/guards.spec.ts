@@ -1,4 +1,10 @@
 /**
+ * @module
+ * Vitest spec mocking `@/infrastructure/i18n` directly (translations aren't
+ * loaded yet when this guard runs), while leaving Pinia real.
+ */
+
+/**
  * Demo router guard — `src/modules/demo/guards.ts`.
  *
  * A teaching guard, scoped to the Playground route, but two of its properties are real Vue Router
@@ -22,7 +28,14 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import type { RouteLocationNormalized } from 'vue-router';
 
+/**
+ * Stub for `i18n.global.t`, returning the key unchanged — the guard's own point is that `t()` may not have real messages yet.
+ */
 const translateMock = vi.fn((key: string) => key);
+
+/**
+ * Stub for `i18n.global.locale`, boxed like the real ref so `.value` reads work.
+ */
 const localeRef = { value: 'en' };
 
 vi.mock('@/infrastructure/i18n', () => ({
@@ -38,12 +51,25 @@ vi.mock('@/infrastructure/i18n', () => ({
     }
 }));
 
+/**
+ * The guard under test, imported after `vi.mock` above so its own `i18n` import resolves to the stub.
+ */
 const { exampleGuard } = await import('@/modules/demo/guards.ts');
+
+/**
+ * The real store — proving from inside the guard that Pinia (unlike i18n) needs no mock.
+ */
 const { useDemoStore } = await import('@/modules/demo/store.ts');
 
+/**
+ * Builds a minimal route stub carrying just the fields the guard reads.
+ */
 const routeTo = (path = '/en/products') =>
     asStub<RouteLocationNormalized>({ path, name: 'products', params: {}, query: {} });
 
+/**
+ * Holds the per-test `console.log` spy so `afterEach` can restore it.
+ */
 let consoleSpy: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {

@@ -5,6 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Device-sessions panel: lists live refresh tokens as sessions and revokes them one at a time,
+ * plus the logout-everywhere button. Revoking the CURRENT session navigates home afterwards,
+ * since the API treats that revoke as a logout.
+ */
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';

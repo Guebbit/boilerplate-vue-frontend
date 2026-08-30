@@ -5,6 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Public confirm page for a password reset: the emailed one-time token is the credential, and
+ * the zod schema chains a `.refine` to check the two password fields match before the store is
+ * called.
+ */
 import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';

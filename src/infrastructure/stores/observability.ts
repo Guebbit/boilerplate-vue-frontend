@@ -1,4 +1,11 @@
 /**
+ * @module
+ * Pinia store wrapping two independent, lazily-initialized telemetry SDKs behind one API.
+ * Analytics events fired before Umami's script has loaded are queued and flushed on load, so
+ * boot-time events are never silently lost to the network round-trip.
+ */
+
+/**
  * Observability store: Grafana Faro (errors, tracing, web-vitals) and Umami (product analytics).
  *
  * The browser only ever talks to Grafana Alloy's Faro receiver; Alloy fans out to
@@ -27,10 +34,16 @@ interface UmamiTracker {
     identify?: (data: Record<string, unknown>) => void;
 }
 
+/**
+ * Augments the global scope: `umami` exists once the tracker script above has loaded.
+ */
 declare global {
     var umami: UmamiTracker | undefined;
 }
 
+/**
+ * Store instance: see the module doc above for the overall shape.
+ */
 export const useObservabilityStore = defineStore('observability', () => {
     // ── State ────────────────────────────────────────────────────────────────
 

@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Leaf of the http tier: the one shared axios instance, configured but otherwise inert — no
+ * interceptors, no imports of this app. `index.ts` wires the interceptors onto it.
+ */
+
 import axiosClient from 'axios';
 
 /**

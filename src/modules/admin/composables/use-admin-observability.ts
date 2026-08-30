@@ -1,3 +1,10 @@
+/**
+ * @module
+ * Composable wrapping the admin dashboard's three read endpoints (health, metrics, audit) and one
+ * write (expired-token purge). Each read is a {@link useAsyncAction}, so a failure resolves into
+ * that panel's own error ref rather than rejecting; the write rejects instead, since its outcome
+ * is owed to the visitor who asked for it.
+ */
 import { computed, ref, type ComputedRef, type Ref } from 'vue';
 import { useAsyncAction } from '@guebbit/vue-toolkit';
 import {
@@ -10,23 +17,78 @@ import type { ObservabilityHealth, ObservabilityMetricsSummary, AuditEventItem }
 import type { AdminAuditFilters } from '@/modules/admin/types.ts';
 import { translate } from '@/infrastructure/i18n';
 
+/**
+ * Shape returned by {@link useAdminObservability}: the three panels' payloads and per-call
+ * load/error state, plus the fetchers and the token-purge action.
+ */
 export interface UseAdminObservabilityReturn {
+    /**
+     * Latest health payload, or `undefined` before the first successful call.
+     */
     health: Ref<ObservabilityHealth | undefined>;
+    /**
+     * Latest metrics payload, or `undefined` before the first successful call.
+     */
     metrics: Ref<ObservabilityMetricsSummary | undefined>;
+    /**
+     * Audit rows for the current page.
+     */
     auditEvents: ComputedRef<AuditEventItem[]>;
+    /**
+     * Total audit rows matching the current filters, across every page.
+     */
     auditTotal: ComputedRef<number>;
+    /**
+     * Total pages the current filters span.
+     */
     auditPages: ComputedRef<number>;
+    /**
+     * Whether the health call is in flight.
+     */
     loadingHealth: Ref<boolean>;
+    /**
+     * Whether the metrics call is in flight.
+     */
     loadingMetrics: Ref<boolean>;
+    /**
+     * Whether the audit call is in flight.
+     */
     loadingAudit: Ref<boolean>;
+    /**
+     * The health call's error message, if its last attempt failed.
+     */
     errorHealth: Ref<string | undefined>;
+    /**
+     * The metrics call's error message, if its last attempt failed.
+     */
     errorMetrics: Ref<string | undefined>;
+    /**
+     * The audit call's error message, if its last attempt failed.
+     */
     errorAudit: Ref<string | undefined>;
+    /**
+     * Runs the health fetch.
+     */
     fetchHealth: () => Promise<void>;
+    /**
+     * Runs the metrics fetch.
+     */
     fetchMetrics: () => Promise<void>;
+    /**
+     * Runs the audit fetch with the given filters.
+     */
     fetchAuditLogs: (filters?: AdminAuditFilters) => Promise<void>;
+    /**
+     * Runs all three fetches in parallel.
+     */
     fetchAll: () => Promise<void>;
+    /**
+     * Whether the expired-token purge is in flight.
+     */
     clearingExpiredTokens: Ref<boolean>;
+    /**
+     * Purges expired refresh tokens; rejects on failure.
+     */
     clearExpiredTokens: () => Promise<void>;
 }
 
@@ -46,6 +108,9 @@ export interface UseAdminObservabilityReturn {
  *  fetchers.
  */
 export const useAdminObservability = (): UseAdminObservabilityReturn => {
+    /**
+     * Wraps GET /observability/health; resolves into `errorHealth` rather than rejecting.
+     */
     const {
         data: health,
         error: errorHealth,
@@ -55,6 +120,10 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
         fallbackErrorMessage: translate('admin-page.error-load-health')
     });
 
+    /**
+     * Wraps GET /observability/metrics/overview; resolves into `errorMetrics` rather than
+     * rejecting.
+     */
     const {
         data: metrics,
         error: errorMetrics,
@@ -86,9 +155,17 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
         { fallbackErrorMessage: translate('admin-page.error-load-audit') }
     );
 
+    /**
+     * Audit rows for the current page, or none while nothing has loaded yet.
+     */
     const auditEvents = computed(() => audit.value?.items ?? []);
+
     // Every entry matching the filters, not the page — which is what the pager below counts with.
     const auditTotal = computed(() => audit.value?.meta.totalItems ?? 0);
+
+    /**
+     * How many pages the current filters span, for the pager's `length`.
+     */
     const auditPages = computed(() => audit.value?.meta.totalPages ?? 0);
 
     /**
@@ -122,6 +199,9 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
     const fetchAll = () =>
         Promise.all([fetchHealth(), fetchMetrics(), fetchAuditLogs()]).then(() => undefined);
 
+    /**
+     * Pending flag for {@link clearExpiredTokens}, bound by the view to its button.
+     */
     const clearingExpiredTokens = ref(false);
 
     /**

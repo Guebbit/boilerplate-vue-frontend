@@ -1,4 +1,10 @@
 /**
+ * @module
+ * Sole console boundary: every write is gated by a level ceiling and, for the quieter levels, an
+ * opt-in scope set — both read once from env vars at module load, not re-evaluated per call.
+ */
+
+/**
  * The only module in this app allowed to touch `console`. `no-console` is an error everywhere else.
  *
  * Two axes, mirroring the paired backend:
@@ -16,9 +22,14 @@
  * store, and a failure before Faro initialises still leaves a trace.
  */
 
-/** Severity, most severe first. Position in this array IS the ordering. */
+/**
+ * Severity, most severe first. Position in this array IS the ordering.
+ */
 const LEVELS = ['error', 'warn', 'info', 'debug'] as const;
 
+/**
+ * One of {@link LEVELS}, narrowed from the array's own values.
+ */
 export type LogLevel = (typeof LEVELS)[number];
 
 /**
@@ -80,11 +91,15 @@ const resolveScopes = (): Set<string> => {
 const level = resolveLevel();
 const scopes = resolveScopes();
 
-/** Whether `candidate` is at or above the configured ceiling. */
+/**
+ * Whether `candidate` is at or above the configured ceiling.
+ */
 const meetsLevel = (candidate: LogLevel): boolean =>
     LEVELS.indexOf(candidate) <= LEVELS.indexOf(level);
 
-/** Whether this area was opted into. `*` enables every area, present and future. */
+/**
+ * Whether this area was opted into. `*` enables every area, present and future.
+ */
 const inScope = (scope: LogScope): boolean => scopes.has('*') || scopes.has(scope);
 
 /**
@@ -133,5 +148,7 @@ export const error = (...parts: unknown[]): void => {
     console.error(...parts);
 };
 
-/** Grouped export, for call sites that read better as `logger.debug(...)`. */
+/**
+ * Grouped export, for call sites that read better as `logger.debug(...)`.
+ */
 export const logger = { debug, info, warn, error };

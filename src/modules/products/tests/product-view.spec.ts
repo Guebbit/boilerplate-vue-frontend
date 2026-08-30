@@ -1,12 +1,12 @@
 /**
- * The product detail page, mounted: every product SHAPE the API can answer with, rather than the
- * one row a fixture happens to seed.
+ * @module
+ * Mounts the real detail page against a real, memory-history router — every product SHAPE the API
+ * can answer with, rather than the one row a fixture happens to seed.
  *
  * The router is REAL — `createMemoryHistory` over `collectModuleRoutes(enabledModules)`, the same
  * nesting `app/router/index.ts` builds — same template as `wishlist-view.spec.ts`. `watchProduct`
  * is stubbed so the store's own fetch never runs; the shape under test is seeded directly into
- * the dictionary instead, which is what lets one spec exercise every branch in milliseconds
- * instead of one browser round trip per shape.
+ * the dictionary instead, which is what lets one spec exercise every branch in milliseconds.
  */
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
@@ -25,9 +25,14 @@ import type { Product as ProductType } from '@types';
 
 wireModulesIntoCore();
 
-/** Satisfies `watchProduct`'s `WatchStopHandle` return type without setting up a real watcher. */
+/**
+ * Satisfies `watchProduct`'s `WatchStopHandle` return type without setting up a real watcher.
+ */
 const noopStopHandle = () => undefined;
 
+/**
+ * The real app router, scoped to the modules this test suite enables.
+ */
 const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -35,7 +40,9 @@ const router = createRouter({
     ]
 });
 
-/** A signed-in visitor, so the add-to-cart button is present rather than hidden behind a login prompt. */
+/**
+ * A signed-in visitor, so the add-to-cart button is present rather than hidden behind a login prompt.
+ */
 const signIn = () => {
     const session = useSessionStore();
     session.accessToken = 'test-token';

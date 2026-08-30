@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Route table: a plain array of `RouteRecordRaw`, each entry lazy-loading its view, spliced into
+ * the app router by the module registry.
+ */
 import type { RouteRecordRaw } from 'vue-router';
 
 /**

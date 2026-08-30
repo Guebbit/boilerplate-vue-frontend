@@ -1,11 +1,28 @@
 <script setup lang="ts">
+/**
+ * @module
+ * A stat tile: title, big value, optional subtitle, with a top border keyed to a theme accent.
+ * `accentBorderClass` is the only logic — everything else is layout.
+ */
 import type { ThemeAccent } from '@/ui/types.ts';
 import { computed } from 'vue';
 
 const props = defineProps<{
+    /**
+     * Stat label.
+     */
     title: string;
+    /**
+     * The headline value, already formatted by the caller.
+     */
     value: string | number;
+    /**
+     * Optional secondary line under the value.
+     */
     subtitle?: string;
+    /**
+     * Theme accent for the top border. Defaults to `primary`.
+     */
     accent?: ThemeAccent;
 }>();
 

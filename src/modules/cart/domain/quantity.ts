@@ -1,10 +1,13 @@
 /**
+ * @module
  * Cart line quantity rules. Pure: no Vue, no store.
  * A line cannot reach zero by stepping — zero is a removal, which is a different call.
  * See `docs/theory/domain-layer.md`.
  */
 
-/** The smallest a line may be. Below this, remove the line instead of updating it. */
+/**
+ * The smallest a line may be. Below this, remove the line instead of updating it.
+ */
 export const MIN_LINE_QUANTITY = 1;
 
 /**

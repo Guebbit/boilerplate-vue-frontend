@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Barrel aggregating this app's type modules — `api`, `http`, generated AsyncAPI types, and
+ * `realtime` — behind one import path, `@/types`.
+ */
 export * from './api';
 export * from './http';
 

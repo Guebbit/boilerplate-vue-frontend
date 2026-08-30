@@ -5,6 +5,13 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Order detail page for both the customer and the operator. Loads one order
+ * by route id, forces a detail re-fetch when the cached record lacks
+ * `actions`, and mounts the payment/shipment panels as self-contained
+ * published-language components.
+ */
 import { computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';

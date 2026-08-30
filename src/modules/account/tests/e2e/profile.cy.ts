@@ -1,14 +1,15 @@
 /**
- * The self-service account surface: password change, sessions, the address book and email
- * verification — everything the profile page grew when the API stopped being admin-only about
- * the visitor's own record.
+ * @module
+ * End-to-end self-service account surface: password change, sessions, the address book and email
+ * verification — run against the real API in its demo profile so the invariants under test (one
+ * default address, a `current` session flag, unverify-on-email-change) are the backend's own.
  *
- * Runs against the real API in its demo profile, so the invariants behind these assertions (one
- * default address, sessions with a `current` flag, an email change unverifying the account) are
- * the service's own. What these specs pin is the page honouring them, not the rules themselves —
- * those are the backend's to test.
+ * What these specs pin is the page honouring those invariants, not the rules themselves — those
+ * are the backend's to test.
  */
-/** Fills the address dialog's six required inputs and saves. */
+/**
+ * Fills the address dialog's six required inputs and saves.
+ */
 const fillAddress = (label: string, street: string) => {
     cy.get('[data-test=address-dialog]').within(() => {
         cy.get('input').eq(0).should('not.be.disabled').clear();

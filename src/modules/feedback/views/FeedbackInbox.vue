@@ -5,6 +5,11 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Admin inbox: fetches the whole ticket list on mount and moves a ticket
+ * through its statuses via a per-row select, reloading the list afterwards.
+ */
 import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -21,8 +26,20 @@ import type { FeedbackRequestStatus as TFeedbackRequestStatus } from '@types';
  * The admin inbox for the public contact form: every ticket, movable through its statuses.
  */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * The admin actions this page drives.
+ */
 const { fetchRequests, updateStatus } = useFeedbackStore();
+
+/**
+ * The inbox list and its shared loading flag.
+ */
 const { requests, loading } = storeToRefs(useFeedbackStore());
 
 /**

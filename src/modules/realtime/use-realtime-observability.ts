@@ -1,3 +1,10 @@
+/**
+ * @module
+ * Composable managing a module-level singleton SSE connection: `connect` opens it and routes each
+ * typed event to the paired store's actions, `disconnect` tears it down. The singleton lives
+ * outside the composable's closure so re-mounting the consuming component never opens a second
+ * stream.
+ */
 import { storeToRefs } from 'pinia';
 import { useRealtimeObservabilityStore } from '@/modules/realtime/store';
 import { createSseClient } from '@/infrastructure/create-sse-client';

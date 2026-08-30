@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Types for the realtime observability feed: the shape of one rendered SSE entry, and the
+ * possible lifecycle states of the connection feeding it.
+ */
+
 import type { ObservabilityMetricsPayload } from './asyncapi.generated';
 
 /**
@@ -11,4 +17,8 @@ export interface RealtimeMetricsEntry {
     payload: ObservabilityMetricsPayload;
 }
 
+/**
+ * Lifecycle state of a realtime connection (SSE), from not-yet-started through open to closed
+ * or errored.
+ */
 export type RealtimeConnectionStatus = 'idle' | 'connecting' | 'open' | 'closed' | 'error';

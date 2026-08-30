@@ -5,6 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Stock board tab: current shelf counts, one row per product, filterable to low-availability
+ * only. Reads through `useInventoryStore` directly; the row's history button just emits — the
+ * parent view owns jumping the ledger below to that product.
+ */
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -23,11 +29,15 @@ const inventoryStore = useInventoryStore();
 const { levels, levelsTotal, loading } = storeToRefs(inventoryStore);
 
 const emit = defineEmits<{
-    /** A row's history button was pressed; the ledger below should jump to this product. */
+    /**
+     * A row's history button was pressed; the ledger below should jump to this product.
+     */
     history: [productId: string];
 }>();
 
-/** Small on purpose — this is an admin table to read, not a feed to scroll. */
+/**
+ * Small on purpose — this is an admin table to read, not a feed to scroll.
+ */
 const PAGE_SIZE = 10;
 
 /**
@@ -44,11 +54,24 @@ const levelHeaders = computed<CoreDataTableHeader<InventoryLevel>[]>(() => [
     { title: '', key: 'history', synthetic: true }
 ]);
 
+/**
+ * Which board page is showing.
+ */
 const levelsPage = ref(1);
+
+/**
+ * When on, narrows the board to products at or under the server's low-availability threshold.
+ */
 const lowOnly = ref(false);
 
+/**
+ * How many pages the current filter spans.
+ */
 const levelsPageTotal = computed(() => Math.ceil(levelsTotal.value / PAGE_SIZE));
 
+/**
+ * Loads the board page matching the current filters.
+ */
 const loadLevels = () =>
     inventoryStore.fetchLevels({
         page: levelsPage.value,

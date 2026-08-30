@@ -1,9 +1,7 @@
 /**
- * Accessibility for this module's own routes.
- *
- * Co-located so that deleting the module deletes its a11y coverage with it — a central list would
- * be left naming routes the app no longer serves. `tests/cross-cutting/a11y-coverage.spec.ts`
- * asserts every routed module has one of these, so the split cannot quietly lose a domain.
+ * @module
+ * Declares this module's routes (and one dialog state) to the shared `sweepA11y` runner, which
+ * visits each and asserts against axe.
  *
  * `it` rather than `es` for the entries page: both are seeded, but `it` has exactly one entry, so
  * the sweep sees the table populated without depending on the bigger fixture's row count.

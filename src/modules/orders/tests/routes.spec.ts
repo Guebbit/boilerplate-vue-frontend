@@ -1,4 +1,10 @@
 /**
+ * @module
+ * Vitest spec asserting each orders route record's declared `meta.access`
+ * against a hard-coded table, checked by name via a lookup helper.
+ */
+
+/**
  * The access requirement every orders route declares.
  *
  * A route that quietly loses its `meta.access` is indistinguishable from a public one: it keeps
@@ -17,6 +23,12 @@ import { describe, expect, it } from 'vitest';
 import type { RouteRecordRaw } from 'vue-router';
 import routes from '../routes';
 
+/**
+ * Looks up a route record by its name.
+ *
+ * @param name - The route's `name`.
+ * @returns The matching record, or `undefined` if none declares that name.
+ */
 const byName = (name: string): RouteRecordRaw | undefined =>
     routes.find((route) => route.name === name);
 

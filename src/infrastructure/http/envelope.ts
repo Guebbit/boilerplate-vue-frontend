@@ -1,4 +1,11 @@
 /**
+ * @module
+ * Type-guard based readers for the `{ data }` response envelope: narrow to a plain object first,
+ * then check for the `data` key, so a wrapped and an unwrapped response are both handled by the
+ * same call site.
+ */
+
+/**
  * Readers for the `{ data }` envelope the API wraps most payloads in.
  *
  * Here rather than in a store because the envelope is a property of the transport: a login

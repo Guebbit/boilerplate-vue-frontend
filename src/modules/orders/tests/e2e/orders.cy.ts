@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Cypress end-to-end spec driving the real app: logs in, visits the orders
+ * list, and asserts on the rendered rows and their actions.
+ */
 describe('Orders', () => {
     beforeEach(() => {
         cy.visit('/en');

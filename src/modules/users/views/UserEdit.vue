@@ -5,6 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * User-edit page. Loads one user by route id, exposes an email/password/avatar
+ * form built on `useAppForm` — an empty password or avatar field means "leave
+ * as is" — and submits multipart only when a new avatar is attached.
+ */
 import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
@@ -78,6 +84,9 @@ const editSchema = usersSchema.pick({ email: true }).extend({
  */
 const formElement = ref<HTMLFormElement>();
 
+/**
+ * Form state, validation and submission wiring from the shared app-form composable.
+ */
 const {
     form,
     formErrors,

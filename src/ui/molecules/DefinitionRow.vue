@@ -6,7 +6,9 @@
  * The value is a slot so a caller can colour or wrap it without this component learning why.
  */
 defineProps<{
-    /** Already-translated label; this component does no i18n of its own. */
+    /**
+     * Already-translated label; this component does no i18n of its own.
+     */
     label: string;
 }>();
 </script>

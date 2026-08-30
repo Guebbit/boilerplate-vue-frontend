@@ -5,6 +5,13 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Inventory admin page. Fetches the shared product catalogue once here and lets `StockBoard`
+ * and `MovementLedger` both read `useInventoryStore()` directly, so a write's reactivity carries
+ * from one child to the other with no wiring of this page's own — the only wiring it does own is
+ * the board's `history` emit into the ledger's exposed `focusProduct`.
+ */
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -27,6 +34,9 @@ import { useProductsStore } from '@/modules/products';
  */
 const { t } = useI18n();
 
+/**
+ * The ledger child instance, so its exposed `focusProduct` can be called from the board's emit.
+ */
 const movementLedger = ref<InstanceType<typeof MovementLedger>>();
 
 /*

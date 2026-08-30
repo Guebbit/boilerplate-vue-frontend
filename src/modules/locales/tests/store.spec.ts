@@ -1,16 +1,20 @@
 /**
- * The locales store — transport-mocked like the inventory's spec.
+ * @module
+ * Store tests driven by mocking `orvalMutator` and asserting on the URLs it was called with, per
+ * canned `responses` keyed by `METHOD path` — same transport-mock pattern as the inventory spec.
  *
  * Worth pinning: every language write refetches the manifest BEFORE answering (the board renders
- * `LocaleCapability`, and the writes answer with `Language` — a record it is not shaped like),
- * and the entry writes keep the toolkit's search cache honest — a create resets it, an edit
- * patches the record in place.
+ * `LocaleCapability`, writes answer with `Language` — a different shape), and entry writes keep
+ * the toolkit's search cache honest — create resets it, edit patches the record in place.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useLocalesStore } from '@/modules/locales/store.ts';
 import { orvalMutator } from '@/infrastructure/http';
 
+/**
+ * A `GET /locales` row: the merged manifest shape the board renders.
+ */
 const CAPABILITY = {
     tag: 'es',
     name: 'Spanish',
@@ -23,6 +27,9 @@ const CAPABILITY = {
     revision: 3
 };
 
+/**
+ * A write response's `Language` row — the dynamic-tier record alone, not the merged manifest.
+ */
 const LANGUAGE = {
     id: 'language-es',
     tag: 'es',
@@ -34,6 +41,9 @@ const LANGUAGE = {
     revision: 3
 };
 
+/**
+ * A stored entry row, as the entries endpoints answer with it.
+ */
 const ENTRY = {
     id: 'locale-entry-1',
     locale: 'es',
@@ -42,6 +52,9 @@ const ENTRY = {
     value: 'Buscar'
 };
 
+/**
+ * The canned response for each `METHOD path` the mocked `orvalMutator` is called with, reset per test.
+ */
 let responses: Record<string, unknown>;
 
 vi.mock('@/infrastructure/http', () => ({
@@ -51,6 +64,9 @@ vi.mock('@/infrastructure/http', () => ({
     })
 }));
 
+/**
+ * The `METHOD path` of every call the mocked `orvalMutator` received so far, in order.
+ */
 const requestedUrls = () =>
     vi
         .mocked(orvalMutator)

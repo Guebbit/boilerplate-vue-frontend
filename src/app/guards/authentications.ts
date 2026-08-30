@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Route access control. `canAccess` is the single predicate both the router guard
+ * (`enforceRouteAccess`) and the nav (`AppNavigation`) call, so what is reachable and what is
+ * shown can never disagree. `tryRestoreAuth` silently rehydrates the session before it runs.
+ */
 import { storeToRefs } from 'pinia';
 import { useSessionStore } from '@/infrastructure/stores/session';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';

@@ -1,4 +1,10 @@
 <script setup lang="ts">
+/**
+ * @module
+ * Overview tab of the admin dashboard. Derives the KPI cards' values and status colours from the
+ * health/metrics payloads the parent fetched; every dot-colour and glyph mapping here is a pure
+ * function of the props, so the tab has nothing of its own to keep in sync.
+ */
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { RefreshCw } from 'lucide-vue-next';
@@ -12,8 +18,14 @@ import {
 } from '@/infrastructure/utils/formatters.ts';
 import DefinitionRow from '@/ui/molecules/DefinitionRow.vue';
 
+/**
+ * i18n translator for this component's template and messages.
+ */
 const { t } = useI18n();
 
+/**
+ * Health/metrics payloads and their per-call load/error state, owned by the parent.
+ */
 const props = defineProps<{
     health?: ObservabilityHealth;
     metrics?: ObservabilityMetricsSummary;
@@ -23,7 +35,9 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-    /** The visitor asked for fresh numbers. The parent owns the fetching. */
+    /**
+     * The visitor asked for fresh numbers. The parent owns the fetching.
+     */
     refresh: [];
 }>();
 

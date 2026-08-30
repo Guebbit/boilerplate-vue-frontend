@@ -1,3 +1,9 @@
+/**
+ * @module
+ * App-module manifest: a plain object satisfying `AppModule`, registering this module's
+ * response schemas and locale loaders. No routes — see the doc on the default export for why.
+ */
+
 import type { AppModule } from '@/kernel/registry';
 import { deliveryResponseSchemas } from './response-schemas';
 

@@ -1,15 +1,13 @@
 /**
- * The profile store's flows: fetch/update the record, the role-view widget, the live password
- * change, email verification, and account deletion.
+ * @module
+ * Unit tests for the profile store's flows: fetch/update the record, the role-view widget, the
+ * live password change, email verification, and account deletion. Mocks only the transport and
+ * keys answers by request URL, so every layer above it — the generated client, `session.ts`, the
+ * observability store, `useStructureRestApi` — runs for real.
  *
- * ── What is mocked, and what deliberately is not ─────────────────────────────────────────────
- * Only the transport. `orvalMutator` is replaced with a router keyed on the request URL, so every
- * layer above it is the real one: the generated `@api` client, `session.ts`, the observability
- * store, and the `useStructureRestApi` composable that owns `selectedIdentifier` and the cache.
- *
- * A few cases need a session established first — `updateOwnRole`'s refetch assertion, the
- * deletion flow's "must not touch the session yet" case — so those go through `useAuthStore().login`
- * first, exactly like a real caller would.
+ * A few cases need a session established first (`updateOwnRole`'s refetch, deletion's "must not
+ * touch the session yet"), so those log in through the real `useAuthStore().login` first, exactly
+ * like a real caller would.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
@@ -19,6 +17,9 @@ import { useAuthStore } from '@/modules/account/stores/auth.ts';
 import { useSessionStore } from '@/infrastructure/stores/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 
+/**
+ * A representative user record, used across the fetch/update/role assertions below.
+ */
 const USER = { id: 'u1', username: 'ada', email: 'ada@example.com', admin: false };
 
 /**
@@ -37,7 +38,9 @@ vi.mock('@/infrastructure/http', () => ({
     })
 }));
 
-/** Every request URL handed to the transport, in order. */
+/**
+ * Every request URL handed to the transport, in order.
+ */
 const requestedUrls = () =>
     vi.mocked(orvalMutator).mock.calls.map((call) => (call[0] as { url: string }).url);
 

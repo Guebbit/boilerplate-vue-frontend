@@ -1,4 +1,10 @@
 /**
+ * @module
+ * Vitest spec mocking `orvalMutator` directly, keyed by `METHOD /url`, so
+ * the generated client and the store under test stay real.
+ */
+
+/**
  * The feedback store — transport-mocked like the wishlist's spec: `orvalMutator` is a router
  * keyed on `METHOD /url`, the generated client and this store are real. What is worth pinning
  * is whole-list replacement (the inbox renders what the API answered, never a local guess) and
@@ -9,6 +15,9 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useFeedbackStore } from '@/modules/feedback/store.ts';
 import { orvalMutator } from '@/infrastructure/http';
 
+/**
+ * Fixture ticket returned by the mocked `orvalMutator` responses below.
+ */
 const TICKET = {
     id: 'f1',
     email: 'curious@example.com',
@@ -17,6 +26,9 @@ const TICKET = {
     status: 'new'
 };
 
+/**
+ * Per-test response table, keyed by `METHOD /url`; reset in `beforeEach`.
+ */
 let responses: Record<string, unknown>;
 
 vi.mock('@/infrastructure/http', () => ({
@@ -26,6 +38,9 @@ vi.mock('@/infrastructure/http', () => ({
     })
 }));
 
+/**
+ * The URLs `orvalMutator` was actually called with, in call order.
+ */
 const requestedUrls = () =>
     vi.mocked(orvalMutator).mock.calls.map((call) => (call[0] as { url: string }).url);
 

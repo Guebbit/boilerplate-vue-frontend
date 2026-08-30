@@ -1,3 +1,8 @@
+/**
+ * @module
+ * A flat array of `{ method, pattern, schema }` rows, one per admin-only locale endpoint, read by
+ * the response-envelope validator via regex match on method plus URL.
+ */
 import * as schemas from '@api/schemas';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 

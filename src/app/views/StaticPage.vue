@@ -5,6 +5,11 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * One component for every prose page (about/FAQ/terms/privacy) — see the block below for how
+ * it reads `static-pages.<page>` out of the dictionary.
+ */
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
@@ -18,7 +23,9 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
  * nav entry (About) is enough to reach all four.
  */
 const { page } = defineProps<{
-    /** Which `static-pages.*` dictionary this instance renders. */
+    /**
+     * Which `static-pages.*` dictionary this instance renders.
+     */
     page: 'about' | 'faq' | 'terms' | 'privacy';
 }>();
 
@@ -37,12 +44,16 @@ const messageList = (path: string): unknown[] => {
     return Array.isArray(messages) ? messages : [];
 };
 
-/** The page's prose, one string per paragraph. */
+/**
+ * The page's prose, one string per paragraph.
+ */
 const paragraphs = computed(() =>
     messageList(`static-pages.${page}.paragraphs`).map((message) => rt(message as string))
 );
 
-/** The FAQ's question/answer pairs; empty for the prose-only pages. */
+/**
+ * The FAQ's question/answer pairs; empty for the prose-only pages.
+ */
 const entries = computed(() =>
     messageList(`static-pages.${page}.entries`).map((entry) => ({
         question: rt((entry as { q: string; a: string }).q),
@@ -50,7 +61,9 @@ const entries = computed(() =>
     }))
 );
 
-/** The sibling pages, for the cross-links at the bottom. */
+/**
+ * The sibling pages, for the cross-links at the bottom.
+ */
 const siblings = computed(() =>
     (['about', 'faq', 'terms', 'privacy'] as const).filter((name) => name !== page)
 );

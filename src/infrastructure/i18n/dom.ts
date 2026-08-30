@@ -1,4 +1,10 @@
 /**
+ * @module
+ * Single-purpose DOM write, kept isolated from the i18n module's own state so it stays a plain
+ * function with no dependency on vue-i18n.
+ */
+
+/**
  * Keeps `<html lang>` and `<html dir>` in sync with the active locale.
  *
  * A right-to-left language laid out left-to-right is unreadable, and `dir` is the one switch the

@@ -106,6 +106,10 @@ const dark: ThemeDefinition = {
     }
 };
 
+/**
+ * The app's Vuetify instance — theme, icon set and component `defaults` — installed by
+ * `src/main.ts`.
+ */
 export default createVuetify({
     theme: {
         defaultTheme: 'system',

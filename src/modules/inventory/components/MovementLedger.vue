@@ -5,6 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Movement ledger tab: every stock transition newest-first, filterable by product and reason,
+ * plus the sweep action that expires stale reservation holds. Reads/writes go through
+ * `useInventoryStore` directly — filters live as local refs, re-fetched on change via `watch`.
+ */
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -33,7 +39,9 @@ const { movements, movementsTotal, loading } = storeToRefs(inventoryStore);
 const productsStore = useProductsStore();
 const { productsList } = storeToRefs(productsStore);
 
-/** Small on purpose — this is an admin table to read, not a feed to scroll. */
+/**
+ * Small on purpose — this is an admin table to read, not a feed to scroll.
+ */
 const PAGE_SIZE = 10;
 
 /**
@@ -54,17 +62,32 @@ const movementHeaders = computed<CoreDataTableHeader<StockMovement>[]>(() => [
     { title: t('inventory-page.column-note'), key: 'note' }
 ]);
 
+/**
+ * Which ledger page is showing.
+ */
 const movementsPage = ref(1);
+
+/**
+ * Narrows the ledger to one product; `undefined` shows every product.
+ */
 const movementsProductId = ref<string | undefined>();
+
+/**
+ * Narrows the ledger to one kind of transition; `undefined` shows every reason.
+ */
 const movementsReason = ref<TStockMovementReason | undefined>();
 
-/** The product filter, with an "everything" row on top. */
+/**
+ * The product filter, with an "everything" row on top.
+ */
 const productFilterOptions = computed(() => [
     { value: undefined, title: t('inventory-page.filter-product-all') },
     ...productsList.value.map((product) => ({ value: product.id, title: product.title }))
 ]);
 
-/** One row per transition, each labelled with what it does to the counters. */
+/**
+ * One row per transition, each labelled with what it does to the counters.
+ */
 const reasonFilterOptions = computed(() => [
     { value: undefined, title: t('inventory-page.filter-reason-all') },
     ...Object.values(StockMovementReason).map((reason) => ({
@@ -73,19 +96,31 @@ const reasonFilterOptions = computed(() => [
     }))
 ]);
 
+/**
+ * How many pages the current filters span.
+ */
 const movementsPageTotal = computed(() => Math.ceil(movementsTotal.value / PAGE_SIZE));
 
-/** `+3` / `-3` / `0` — the sign is the information, so it is never dropped. */
+/**
+ * `+3` / `-3` / `0` — the sign is the information, so it is never dropped.
+ */
 const signed = (delta: number) => (delta > 0 ? `+${delta}` : String(delta));
 
-/** Green for units gained, red for units lost, neutral for a counter this transition left alone. */
+/**
+ * Green for units gained, red for units lost, neutral for a counter this transition left alone.
+ */
 const deltaClass = (delta: number) =>
     delta === 0 ? 'opacity-50' : delta < 0 ? 'text-error' : 'text-success';
 
-/** Title lookup for the ledger — it stores ids, the page can still say names. */
+/**
+ * Title lookup for the ledger — it stores ids, the page can still say names.
+ */
 const productTitle = (productId: string) =>
     productsList.value.find(({ id }) => id === productId)?.title ?? productId;
 
+/**
+ * Loads the ledger page matching the current filters.
+ */
 const loadMovements = () =>
     inventoryStore.fetchMovements({
         page: movementsPage.value,

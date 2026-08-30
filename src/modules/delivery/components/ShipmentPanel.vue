@@ -5,6 +5,13 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Single-file component: `<script setup>` wires session/delivery-store state, the template
+ * renders conditionally on `shipment` being loaded, with the courier button gated by `isAdmin`
+ * and the shipment's `status`.
+ */
+
 import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -18,12 +25,16 @@ import { useDeliveryStore } from '../store.ts';
  * this repo has no cron, an operator is the timer, and the demo makes that a visible click.
  */
 const { orderId } = defineProps<{
-    /** The order whose parcel this shows. */
+    /**
+     * The order whose parcel this shows.
+     */
     orderId: string;
 }>();
 
 const emit = defineEmits<
-    /** The courier advanced and the order's status moved — the parent should re-read it. */
+    /**
+     * The courier advanced and the order's status moved — the parent should re-read it.
+     */
     (event: 'advanced') => void
 >();
 
@@ -33,6 +44,11 @@ const { isAdmin } = storeToRefs(useSessionStore());
 const deliveryStore = useDeliveryStore();
 const { shipment } = storeToRefs(deliveryStore);
 
+/**
+ * Ticks the fake courier, then re-reads this order's parcel so the shown status catches up.
+ *
+ * @returns A promise resolving once the panel has refreshed.
+ */
 const advanceCourier = () =>
     deliveryStore.advance().then(() => {
         addMessage(t('shipment-panel.advanced'));

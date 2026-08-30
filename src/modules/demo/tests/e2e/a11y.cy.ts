@@ -1,4 +1,10 @@
 /**
+ * @module
+ * Cypress a11y sweep route list for the demo module, run through the shared
+ * `sweepA11y` helper.
+ */
+
+/**
  * Accessibility for this module's own routes.
  *
  * Co-located so that deleting the module deletes its a11y coverage with it.

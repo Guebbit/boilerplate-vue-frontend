@@ -1,8 +1,20 @@
+/**
+ * @module
+ * Core i18n runtime: which languages exist, which are loaded, and the load/activate/merge
+ * pipeline every locale switch funnels through. Bundled dictionaries are code-split per locale;
+ * `locale-overrides.ts` layers the API's edited overrides on top at the edges (main.ts, router
+ * guard), never here.
+ */
+
 import { nextTick, type WritableComputedRef } from 'vue';
 import { createI18n, type I18n } from 'vue-i18n';
 import { mergeWith } from 'lodash-es';
 import { applyHtmlLocaleAttributes } from './dom.ts';
 
+/**
+ * Shape of one locale's message tree: nested groups of strings, with array leaves for the static
+ * pages' paragraph/FAQ lists (rendered via vue-i18n's `tm()`/`rt()`).
+ */
 export interface TranslationDictionaries {
     /*
      * Arrays are legitimate vue-i18n messages — `tm()` + `rt()` render them — and the static
@@ -49,7 +61,9 @@ const bundledLocales = Object.keys(import.meta.glob('/src/locales/*.json')).map(
  */
 export const supportedLanguages = [...bundledLocales];
 
-/** [on build] Languages already fetched. */
+/**
+ * [on build] Languages already fetched.
+ */
 export const loadedLanguages: string[] = [];
 
 /**
@@ -87,6 +101,9 @@ export const registerLocaleContributors = (
     moduleLocaleLoaders = loadersByLocale;
 };
 
+/**
+ * The app-wide vue-i18n instance every locale function below binds itself to.
+ */
 export const i18n = createI18n({
     // MUST be false to use the composition API.
     legacy: false,

@@ -5,12 +5,21 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Generic error page: shows the status/message the router redirected with (either an i18n key
+ * or router-supplied free text), with a way back Home.
+ */
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useI18n } from 'vue-i18n';
 import { computed } from 'vue';
 import { SearchX } from 'lucide-vue-next';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
+/**
+ * Params supplied by the route: the HTTP-like status shown in the title, and the message —
+ * either a raw string from `router.onError`, or an i18n key the template translates.
+ */
 const { message = '' } = defineProps<{
     status?: string;
     message?: string;
@@ -20,6 +29,7 @@ const { message = '' } = defineProps<{
  * Generics
  */
 const { t } = useI18n();
+
 /**
  * Message actually displayed.
  *

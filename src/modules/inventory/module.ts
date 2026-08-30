@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Module manifest for the inventory domain — the shape every domain registers under
+ * `AppModule`: routes, nav entry, response-schema validation and locale loaders, assembled from
+ * this module's own files and wired into the kernel's registry.
+ */
 import { Warehouse } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';

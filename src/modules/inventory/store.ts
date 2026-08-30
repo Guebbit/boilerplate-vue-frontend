@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Pinia store for the inventory domain. Wraps `useStructureRestApi` for its shared loading
+ * bookkeeping; the two reads are whole-list replacement and the three writes reload both views
+ * before resolving, so no caller ever observes a counter the views have not caught up with.
+ */
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
@@ -38,28 +44,47 @@ import type {
  * complete.
  */
 export const useInventoryStore = defineStore('inventory', () => {
+    /**
+     * This store's slice of the app-wide loading registry.
+     */
     const { getLoading, setLoading } = useCoreStore();
+
+    /**
+     * Shared loading flag plus the request runner every read/write below goes through.
+     */
     const { loading, fetchAny } = useStructureRestApi<StockMovement, string>({
         getLoading,
         setLoading
     });
 
-    /** The latest movements, as last fetched. */
+    /**
+     * The latest movements, as last fetched.
+     */
     const movements = ref<StockMovement[]>([]);
 
-    /** How many movements match the last filters, across every page. */
+    /**
+     * How many movements match the last filters, across every page.
+     */
     const movementsTotal = ref(0);
 
-    /** The last movements query, so a write can reload the page being looked at. */
+    /**
+     * The last movements query, so a write can reload the page being looked at.
+     */
     let movementsQuery: ListStockMovementsParams = {};
 
-    /** The current shelf counts, one row per product on the current page. */
+    /**
+     * The current shelf counts, one row per product on the current page.
+     */
     const levels = ref<InventoryLevel[]>([]);
 
-    /** How many products the board holds, across every page. */
+    /**
+     * How many products the board holds, across every page.
+     */
     const levelsTotal = ref(0);
 
-    /** The last levels query, for the same reload-what-is-shown reason. */
+    /**
+     * The last levels query, for the same reload-what-is-shown reason.
+     */
     let levelsQuery: ListInventoryLevelsParams = {};
 
     /**

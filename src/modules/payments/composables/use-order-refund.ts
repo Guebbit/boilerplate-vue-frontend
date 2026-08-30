@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Composable wrapping the payments store's refund flow for a single order, reactive to an
+ * order id ref.
+ */
 import { computed, watch, type Ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { usePaymentsStore } from '../store';
@@ -30,7 +35,9 @@ export const useOrderRefund = (orderId: Ref<string | undefined>) => {
     );
 
     return {
-        /** Whether `refund()` would be accepted — false once the money is already back. */
+        /**
+         * Whether `refund()` would be accepted — false once the money is already back.
+         */
         canRefund: computed(() => payment.value?.actions?.refund === true),
         /**
          * Returns the money without touching the order's status.

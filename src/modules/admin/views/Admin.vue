@@ -1,4 +1,10 @@
 <script setup lang="ts">
+/**
+ * @module
+ * Admin dashboard shell. Owns the active-tab state and wires {@link useAdminObservability}'s
+ * shared state and fetchers down to the overview/audit tabs as props and emit handlers; the tabs
+ * themselves render declaratively off what this view feeds them.
+ */
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Trash2 } from 'lucide-vue-next';
@@ -11,11 +17,24 @@ import AdminOverviewTab from '@/modules/admin/components/AdminOverviewTab.vue';
 import AdminAuditTab from '@/modules/admin/components/AdminAuditTab.vue';
 import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
 
+/**
+ * i18n translator for this view's template and messages.
+ */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher used to report the token-purge outcome.
+ */
 const { addMessage } = useNotificationsStore();
 
+/**
+ * Which tab — overview or audit — is currently shown.
+ */
 const activeTab = ref<AdminTabKey>('overview');
 
+/**
+ * Shared observability state and fetchers, handed down to both tabs.
+ */
 const {
     health,
     metrics,

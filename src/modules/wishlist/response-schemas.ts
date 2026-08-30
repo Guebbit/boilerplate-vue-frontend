@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Wishlist response-schema table. A flat array of `{ method, pattern, schema }` rows
+ * the HTTP layer matches a response against, for runtime contract validation.
+ */
 import * as schemas from '@api/schemas';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 

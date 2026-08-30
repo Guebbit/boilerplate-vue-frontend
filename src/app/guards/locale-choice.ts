@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Router guard that keeps the active i18n locale in sync with the `:locale` route param —
+ * loading the bundled dictionary plus any remote overrides on first use of a locale, and
+ * redirecting to the default locale when the param is missing or unsupported.
+ */
 import {
     getDefaultLocale,
     getCurrentLocale,

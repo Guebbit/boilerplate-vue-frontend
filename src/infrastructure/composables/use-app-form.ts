@@ -1,3 +1,10 @@
+/**
+ * @module
+ * Composable binding the toolkit's generic `useStructureFormValidation` to this app's fixed
+ * answers for i18n, notifications and the invalid-field selector, so every form wires the same
+ * way instead of re-deciding those three things each time.
+ */
+
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';

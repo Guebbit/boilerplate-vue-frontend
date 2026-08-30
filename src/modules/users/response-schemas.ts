@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Declarative table mapping method+path patterns to the Zod response schema
+ * that validates them — consumed by the response-schema-map infrastructure.
+ */
 import * as schemas from '@api/schemas';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 

@@ -1,3 +1,9 @@
+/**
+ * @module
+ * A flat list of {method, URL pattern, schema} rows, one per endpoint, matched by the HTTP
+ * layer against every response this module's client functions receive.
+ */
+
 import * as schemas from '@api/schemas';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 

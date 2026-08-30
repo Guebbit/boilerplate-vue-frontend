@@ -1,4 +1,5 @@
 /**
+ * @module
  * Unit tests for the cart store.
  *
  * Unlike products/users, this store owns real state: every action replaces the local cart with
@@ -44,7 +45,9 @@ const EMPTY_CART = { items: [], summary: { itemsCount: 0, totalQuantity: 0, tota
 
 const ORDER = { id: 'o1', totalPrice: 19.98 };
 
-/** The reject envelope `onResponseReject` builds — never an `Error`, which is the whole point. */
+/**
+ * The reject envelope `onResponseReject` builds — never an `Error`, which is the whole point.
+ */
 const apiFailure = (status: number) =>
     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
     Promise.reject({ success: false, status, message: 'nope', errors: ['nope'] }) as never;

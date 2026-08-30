@@ -1,4 +1,5 @@
 /**
+ * @module
  * The access requirement every admin route declares.
  *
  * A route that quietly loses its `meta.access` is indistinguishable from a public one: it keeps
@@ -17,6 +18,9 @@ import { describe, expect, it } from 'vitest';
 import type { RouteRecordRaw } from 'vue-router';
 import routes from '../routes';
 
+/**
+ * Looks up a route record by its `name`, for asserting its `meta.access`.
+ */
 const byName = (name: string): RouteRecordRaw | undefined =>
     routes.find((route) => route.name === name);
 

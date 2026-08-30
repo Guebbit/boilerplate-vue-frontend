@@ -5,6 +5,11 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Order-page panel component: renders a pay form or the payment's status, delegating the
+ * intent/confirm sequence to the payments store.
+ */
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -22,14 +27,20 @@ import { usePaymentsStore } from '../store.ts';
  * decline is deliberately one documented number away (the hint below the field says which).
  */
 const { orderId, orderPayable } = defineProps<{
-    /** The order this panel pays. */
+    /**
+     * The order this panel pays.
+     */
     orderId: string;
-    /** The order's own `actions.pay` — whether it is still awaiting payment. */
+    /**
+     * The order's own `actions.pay` — whether it is still awaiting payment.
+     */
     orderPayable?: boolean;
 }>();
 
 const emit = defineEmits<
-    /** The charge landed and the order's status moved — the parent should re-read it. */
+    /**
+     * The charge landed and the order's status moved — the parent should re-read it.
+     */
     (event: 'paid') => void
 >();
 
@@ -38,6 +49,9 @@ const { addMessage } = useNotificationsStore();
 const paymentsStore = usePaymentsStore();
 const { payment, loading } = storeToRefs(paymentsStore);
 
+/**
+ * The card number field, prefilled with the demo's conventional success number.
+ */
 const cardNumber = ref('4242 4242 4242 4242');
 
 /**
@@ -52,6 +66,10 @@ const payable = computed(() =>
     payment.value ? payment.value.actions?.pay === true : orderPayable
 );
 
+/**
+ * Pays the order with the entered card, notifies the result, and tells the parent to re-read
+ * the order on success.
+ */
 const submitPayment = () =>
     paymentsStore
         .payForOrder(orderId, cardNumber.value)

@@ -1,4 +1,5 @@
 /**
+ * @module
  * The access requirement every cart route declares.
  *
  * A route that quietly loses its `meta.access` is indistinguishable from a public one: it keeps

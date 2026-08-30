@@ -1,5 +1,13 @@
+/**
+ * @module
+ * Route table for the products domain, consumed by the module manifest and merged into the app
+ * router.
+ */
 import type { RouteRecordRaw } from 'vue-router';
 
+/**
+ * The products module's routes: public list and detail, admin-only create and edit.
+ */
 export default [
     {
         path: 'products',

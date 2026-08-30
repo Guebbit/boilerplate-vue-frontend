@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Pinia store for the products domain. Declares the CRUD/search endpoints once and lets
+ * `useStructureCrudApi` derive dictionary, pagination, caching and optimistic-update state from
+ * them, then layers on a hard-delete action and a facets read that the toolkit has no shape for.
+ */
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureCrudApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
@@ -35,8 +41,15 @@ type ProductsFilters = Omit<SearchProductsRequest, 'page' | 'pageSize'>;
  * from them — dictionary, filters, pagination, caching, optimistic updates and rollback included.
  */
 export const useProductsStore = defineStore('products', () => {
+    /**
+     * Core store's shared loading-flag helpers, used to key this store's own loading state.
+     */
     const { getLoading, setLoading } = useCoreStore();
 
+    /**
+     * The store's public surface, all derived from `useStructureCrudApi`: dictionary/list views,
+     * selection, filters, pagination and the CRUD operations themselves.
+     */
     const {
         itemDictionary: products,
         itemList: productsList,

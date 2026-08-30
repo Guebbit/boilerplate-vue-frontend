@@ -1,16 +1,13 @@
 /**
- * The auth store's session flows: login, logout, logoutEverywhere, and the password reset request
- * pair. `auth-signup.spec.ts` covers `signup` separately — see that file for why.
+ * @module
+ * Unit tests for the auth store's session flows (login, logout, logoutEverywhere, password reset
+ * request), mocking only the transport and keying answers by request URL so every layer above it
+ * — the generated client, session/profile/observability stores — runs for real. `signup` is
+ * covered separately, see `auth-signup.spec.ts`.
  *
- * ── What is mocked, and what deliberately is not ─────────────────────────────────────────────
- * Only the transport. `orvalMutator` is replaced with a router keyed on the request URL, so every
- * layer above it is the real one: the generated `@api` client, `session.ts`, the observability
- * store, and the profile store `login` reaches into to load a profile after the token is stored.
- *
- * That matters because `login` is COORDINATION rather than computation — it does not transform
- * anything, it puts a token somewhere and then asks for a profile. Mocking the session or profile
- * store would leave nothing under test but the order of two calls into a double. Asserting against
- * the real session store asserts the thing the router guards actually read.
+ * `login` is COORDINATION rather than computation: it puts a token somewhere and asks for a
+ * profile, so asserting against the real session store — rather than mocking it — asserts the
+ * same thing the router guards actually read.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
@@ -20,6 +17,9 @@ import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { useSessionStore } from '@/infrastructure/stores/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 
+/**
+ * A representative user record, used across the login/session assertions below.
+ */
 const USER = { id: 'u1', username: 'ada', email: 'ada@example.com', admin: false };
 
 /**
@@ -41,7 +41,9 @@ vi.mock('@/infrastructure/http', () => ({
     })
 }));
 
-/** Every request URL handed to the transport, in order. */
+/**
+ * Every request URL handed to the transport, in order.
+ */
 const requestedUrls = () =>
     vi.mocked(orvalMutator).mock.calls.map((call) => (call[0] as { url: string }).url);
 

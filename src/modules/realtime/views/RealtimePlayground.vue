@@ -1,4 +1,10 @@
 <script setup lang="ts">
+/**
+ * @module
+ * Route view: renders the live SSE state from `useRealtimeObservability` — connection status,
+ * a KPI summary of the latest event, and a scrollable feed toggling between a metric grid and raw
+ * JSON per entry.
+ */
 import { computed, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Camera, RefreshCw, HeartPulse } from 'lucide-vue-next';
@@ -20,10 +26,14 @@ const {
 // Leaving the playground must not leave the SSE connection open for the rest of the session.
 onUnmounted(disconnectObservability);
 
-/** When on, each feed entry shows its full raw JSON payload instead of the metric grid. */
+/**
+ * When on, each feed entry shows its full raw JSON payload instead of the metric grid.
+ */
 const showRawEvents = ref(false);
 
-/** Icon, chip color and left-border accent for each SSE event kind. */
+/**
+ * Icon, chip color and left-border accent for each SSE event kind.
+ */
 const KIND_META: Record<
     RealtimeMetricsEntry['kind'],
     { icon: typeof Camera; color: string; border: string }
@@ -33,10 +43,14 @@ const KIND_META: Record<
     heartbeat: { icon: HeartPulse, color: 'secondary', border: 'border-s-secondary' }
 };
 
-/** The most recently received event, driving the KPI tiles above the feed. */
+/**
+ * The most recently received event, driving the KPI tiles above the feed.
+ */
 const latestEntry = computed(() => observabilityEntries.value.at(-1));
 
-/** The feed, newest event first — a live stream reads better without manual scrolling. */
+/**
+ * The feed, newest event first — a live stream reads better without manual scrolling.
+ */
 const feedEntries = computed(() => observabilityEntries.value.toReversed());
 </script>
 

@@ -5,6 +5,11 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Public product detail page: renders the fetched record, and issues the storefront's two
+ * visitor writes (add to cart, toggle wishlist) through their owning modules' stores.
+ */
 import { computed, onMounted } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';

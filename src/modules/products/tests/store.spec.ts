@@ -1,20 +1,16 @@
 /**
- * Unit tests for the products store.
+ * @module
+ * Unit coverage of the products store's own logic: which branch a create/update call takes (JSON
+ * vs multipart) and how the request is shaped. The CRUD wrappers are thin over
+ * `@guebbit/vue-toolkit`, so testing them would be testing the toolkit — the multipart branch is
+ * what's actually this repo's logic.
  *
- * The CRUD wrappers are thin over `@guebbit/vue-toolkit`, so testing them would be testing the
- * toolkit. What is *this repo's* logic is the multipart branch: whether a call goes out as JSON
- * or as `FormData`, and how that `FormData` is built.
- *
- * `@api` is deliberately NOT mocked. The FormData encoding lives in the generated client
- * (orval's `splitByContentType` output), so mocking `@api` would assert only that the store
- * picked a function name and would stop covering the encoding itself. Mocking the transport
- * instead runs store → generated client → `orvalMutator` for real, and asserts the request that
- * actually goes on the wire: repeated `categories` rather than `categories[0]`, and unset
- * optional fields omitted rather than sent as the string `"undefined"`. Both are invisible to
- * TypeScript, and a regression in either sends a request the backend silently misreads.
- *
- * Each `it` RETURNS its chain rather than awaiting — vitest fails a test whose returned promise
- * rejects, so the assertions inside a `.then` are as binding as awaited ones.
+ * `@api` is deliberately NOT mocked, since the FormData encoding lives in the generated client;
+ * mocking the transport instead runs store → generated client → `orvalMutator` for real, and
+ * asserts the request that actually goes on the wire — both `categories` repetition and unset
+ * optional fields are invisible to TypeScript, and a regression in either sends a request the
+ * backend silently misreads. Each `it` RETURNS its chain rather than awaiting, so the assertions
+ * inside a `.then` are as binding as awaited ones.
  */
 import { asStub } from '../../../../tests/support/stub';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -28,20 +24,27 @@ vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn(() => Promise.resolve({ data: { id: 'p1', title: 'T', price: 1 } }))
 }));
 
-/** The axios config handed to orvalMutator on its most recent call. */
+/**
+ * The axios config handed to orvalMutator on its most recent call.
+ */
 const lastRequest = () => {
     const call = vi.mocked(orvalMutator).mock.calls.at(-1);
     if (!call) throw new Error('orvalMutator was never called');
     return call[0] as { url: string; method: string; data: unknown };
 };
 
-/** As above, asserting the body was multipart-encoded. */
+/**
+ * As above, asserting the body was multipart-encoded.
+ */
 const lastFormData = () => {
     const { data } = lastRequest();
     if (!(data instanceof FormData)) throw new Error('last request body was not FormData');
     return data;
 };
 
+/**
+ * A fully populated product, used as seed state for the optimistic-update tests.
+ */
 const PRODUCT: Product = {
     id: 'p1',
     title: 'Gadget',
@@ -53,12 +56,18 @@ const PRODUCT: Product = {
     active: true
 };
 
-/** Makes the transport answer with a paginated envelope for this test. */
+/**
+ * Makes the transport answer with a paginated envelope for this test.
+ */
 const respondWithItems = (items: unknown[]) =>
     vi.mocked(orvalMutator).mockResolvedValue({ data: { items } });
 
-/** The query parameters of the most recent request. */
-/** The JSON body of the most recent request — what `POST /products/search` reads. */
+/**
+ * The query parameters of the most recent request.
+ */
+/**
+ * The JSON body of the most recent request — what `POST /products/search` reads.
+ */
 const lastBody = () => asStub<{ data: Record<string, unknown> }>(lastRequest()).data;
 
 describe('useProductsStore', () => {

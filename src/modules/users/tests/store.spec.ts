@@ -1,4 +1,11 @@
 /**
+ * @module
+ * Vitest spec mocking `orvalMutator` directly (the multipart encoding lives
+ * in the generated client), then inspecting the raw requests sent by the
+ * users store's actions.
+ */
+
+/**
  * Unit tests for the users store.
  *
  * Same shape as the products store, including why `@api` is not mocked — see the header there:
@@ -25,26 +32,36 @@ vi.mock('@/infrastructure/http', () => ({
     )
 }));
 
-/** The axios config handed to orvalMutator on its most recent call. */
+/**
+ * The axios config handed to orvalMutator on its most recent call.
+ */
 const lastRequest = () => {
     const call = vi.mocked(orvalMutator).mock.calls.at(-1);
     if (!call) throw new Error('orvalMutator was never called');
     return call[0] as { url: string; method: string; data: unknown };
 };
 
-/** As above, asserting the body was multipart-encoded. */
+/**
+ * As above, asserting the body was multipart-encoded.
+ */
 const lastFormData = () => {
     const { data } = lastRequest();
     if (!(data instanceof FormData)) throw new Error('last request body was not FormData');
     return data;
 };
 
-/** Makes the transport answer with a paginated envelope for this test. */
+/**
+ * Makes the transport answer with a paginated envelope for this test.
+ */
 const respondWithItems = (items: unknown[]) =>
     vi.mocked(orvalMutator).mockResolvedValue({ data: { items } });
 
-/** The query parameters of the most recent request. */
-/** The JSON body of the most recent request — what `POST /users/search` reads. */
+/**
+ * The query parameters of the most recent request.
+ */
+/**
+ * The JSON body of the most recent request — what `POST /users/search` reads.
+ */
 const lastBody = () => asStub<{ data: Record<string, unknown> }>(lastRequest()).data;
 
 describe('useUsersStore', () => {

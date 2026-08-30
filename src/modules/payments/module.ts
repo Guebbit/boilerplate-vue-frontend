@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Declares the payments module manifest: no routes, just the response schemas and locale
+ * loaders the app registry needs to wire the panel in.
+ */
 import type { AppModule } from '@/kernel/registry';
 import { paymentsResponseSchemas } from './response-schemas';
 

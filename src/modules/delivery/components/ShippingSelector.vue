@@ -5,6 +5,13 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Single-file component: `<script setup>` reads the delivery store's methods (fetching them
+ * once on mount if empty) and drives a radio group bound to `defineModel`; pricing math is
+ * delegated to the store so the template only formats and displays it.
+ */
+
 import { onMounted, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -17,15 +24,22 @@ import { useDeliveryStore } from '../store.ts';
  * shipping is not required to buy, and the checkout sends no method for `undefined`.
  */
 const { itemsTotal } = defineProps<{
-    /** The cart's lines total, the number free-above thresholds compare against. */
+    /**
+     * The cart's lines total, the number free-above thresholds compare against.
+     */
     itemsTotal: number;
 }>();
 
+/**
+ * The chosen method's id, or undefined while nothing is selected.
+ */
 const methodId = defineModel<string | undefined>();
 
 const { t } = useI18n();
 
-/** The heading's id: it is the group's label too, so the radios are named by it. */
+/**
+ * The heading's id: it is the group's label too, so the radios are named by it.
+ */
 const titleId = useId();
 const deliveryStore = useDeliveryStore();
 const { methods } = storeToRefs(deliveryStore);

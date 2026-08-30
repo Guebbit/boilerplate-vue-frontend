@@ -24,7 +24,9 @@ const PAYMENT = {
 
 let responses: Record<string, unknown>;
 
-/** The reject envelope `onResponseReject` builds, which is the only shape a store ever catches. */
+/**
+ * The reject envelope `onResponseReject` builds, which is the only shape a store ever catches.
+ */
 const rejectWith = (status: number, message: string) =>
     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
     Promise.reject({ success: false, status, message, errors: [message] });

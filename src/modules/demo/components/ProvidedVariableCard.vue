@@ -1,4 +1,9 @@
 <script setup lang="ts">
+/**
+ * @module
+ * The injecting half of the provide/inject demo: reads the shared ref via
+ * `useProvidedVariable` and logs every change it observes.
+ */
 import { watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -13,8 +18,14 @@ import { logger } from '@/infrastructure/utils/logger.ts';
  * visible. This is that boundary.
  */
 
+/**
+ * Translation function.
+ */
 const { t } = useI18n();
 
+/**
+ * The injected pair, provided by `Playground.vue`.
+ */
 const { providedVariable, setProvidedVariable } = useProvidedVariable();
 
 watch(providedVariable, (value) => {

@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Small piece of router-owned state read by the layout: the last navigation's page title (for
+ * a visually-hidden live region) and a one-shot flag for moving focus to `<v-main>` after a
+ * real page change.
+ */
 import { ref } from 'vue';
 
 /**
@@ -10,7 +16,9 @@ import { ref } from 'vue';
  */
 export const routeAnnouncement = ref('');
 
-/** The main landmark's selector — `<v-main data-main-content>` in `LayoutDefault.vue`. */
+/**
+ * The main landmark's selector — `<v-main data-main-content>` in `LayoutDefault.vue`.
+ */
 export const MAIN_CONTENT = 'main[data-main-content]';
 
 /**
@@ -22,7 +30,9 @@ export const MAIN_CONTENT = 'main[data-main-content]';
  */
 let mainFocusPending = false;
 
-/** Asks for focus to land on the main landmark once the next page is in the DOM. */
+/**
+ * Asks for focus to land on the main landmark once the next page is in the DOM.
+ */
 export const requestMainFocus = () => {
     mainFocusPending = true;
 };

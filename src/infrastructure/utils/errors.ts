@@ -1,3 +1,10 @@
+/**
+ * @module
+ * Shared error-handling leaves: the app's fallback wording bound to the toolkit's message
+ * extractor, transport-vs-answered failure classification, and the toast+Faro reporting pair
+ * every catch block calls.
+ */
+
 import { extractErrorMessage } from '@guebbit/js-toolkit';
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
 import { translate } from '@/infrastructure/i18n';

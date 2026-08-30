@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Pinia store for the cart module. Every mutating action replaces the local cart
+ * wholesale with the payload the API returned, rather than patching it locally — the
+ * getters below are all derived from that one `cart` ref.
+ */
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';

@@ -1,4 +1,9 @@
 <script setup lang="ts">
+/**
+ * @module
+ * Wraps Vuetify's `v-pagination`: hides itself entirely for a one-page list, names itself for
+ * assistive tech via `ariaLabel`, and moves focus to `<main>` when it unmounts out from under it.
+ */
 import { ref, watch, nextTick } from 'vue';
 
 const { length = 0, ariaLabel } = defineProps<{
@@ -14,9 +19,14 @@ const { length = 0, ariaLabel } = defineProps<{
     ariaLabel?: string;
 }>();
 
+/**
+ * The current page, one-based.
+ */
 const modelValue = defineModel<number>({ default: 1 });
 
-/** The pager's root, to know whether focus is inside it when it is about to go. */
+/**
+ * The pager's root, to know whether focus is inside it when it is about to go.
+ */
 const root = ref<HTMLElement | undefined>();
 
 /**

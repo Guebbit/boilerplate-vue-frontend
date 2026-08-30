@@ -5,6 +5,11 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Public contact form, validated with `useAppForm` against a Zod schema and
+ * submitted through the feedback store; success resets the form in place.
+ */
 import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
@@ -25,12 +30,29 @@ interface ContactForm {
     message?: string;
 }
 
+/**
+ * Translation function.
+ */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * The public submit action this form calls.
+ */
 const { submitContact } = useFeedbackStore();
 
+/**
+ * The `<form>` element, handed to `useAppForm` so it can trigger native validation UI.
+ */
 const formElement = ref<HTMLFormElement>();
 
+/**
+ * Form state, validation and submit wiring, built on the schema below.
+ */
 const { form, formErrors, showFormErrors, isSubmitting, handleSubmit, resetForm } =
     useAppForm<ContactForm>(
         { name: '', email: '', subject: '', message: '' },

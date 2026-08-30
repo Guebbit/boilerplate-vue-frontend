@@ -1,3 +1,8 @@
+/**
+ * @module
+ * End-to-end coverage of the products list and detail screens, driven through a real browser
+ * against the seeded backend.
+ */
 describe('Products', () => {
     beforeEach(() => {
         cy.visit('/en');

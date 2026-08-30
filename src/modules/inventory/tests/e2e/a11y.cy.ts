@@ -1,4 +1,5 @@
 /**
+ * @module
  * Accessibility for this module's own routes.
  *
  * Co-located so that deleting the module deletes its a11y coverage with it — a central list would

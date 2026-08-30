@@ -1,4 +1,10 @@
 <script setup lang="ts">
+/**
+ * @module
+ * The one page shell every view renders through: skip link, health banner, nav, page hero,
+ * footer, confirmation dialog host, toast stack and loading indicators. Preloads nothing
+ * domain-specific — see the note near the end of this block.
+ */
 import { onMounted, useSlots, watch } from 'vue';
 import { RouterLink } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -32,7 +38,9 @@ defineProps<{
  */
 const slots = useSlots();
 
-/** A page change asked the router for focus on `<v-main>`; this layout is the one that has it. */
+/**
+ * A page change asked the router for focus on `<v-main>`; this layout is the one that has it.
+ */
 onMounted(consumeMainFocus);
 
 /**

@@ -1,3 +1,10 @@
+/**
+ * @module
+ * Fetch layer for the runtime half of the dictionaries: manifest + per-locale overrides, each
+ * function resolving to a safe default (never rejecting) so the offline-bundled files remain the
+ * floor the app always renders from.
+ */
+
 import { getLocales, getLocaleMessages } from '@api';
 import {
     localeDirections,

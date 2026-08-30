@@ -1,4 +1,10 @@
 /**
+ * @module
+ * Single normalization function shared by the two consumers that must agree on which pathname a
+ * URL maps to: strips scheme/host and query string, guarantees a leading slash.
+ */
+
+/**
  * The one rule for turning an Axios request URL into the pathname the HTTP layer matches on.
  *
  * A leaf both `response-schema-map.ts` (route patterns) and `refresh.ts` (the exclusion set) read,

@@ -5,6 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Route view: the languages board, a thin CRUD screen over the manifest — reads
+ * `LocaleCapability` rows, writes through the store's explicit language wrappers, and opens the
+ * shared create/edit dialog.
+ */
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -38,9 +44,19 @@ const { addMessage } = useNotificationsStore();
 const localesStore = useLocalesStore();
 const { capabilities, tenants, defaultLocale, fallbackLocale, loading } = storeToRefs(localesStore);
 
+/**
+ * Whether the create/edit dialog is open.
+ */
 const formOpen = ref(false);
+
+/**
+ * The row being edited; absent means the dialog is creating one.
+ */
 const editing = ref<LocaleCapability | undefined>();
 
+/**
+ * Columns of the languages board.
+ */
 const tableHeaders = computed<CoreDataTableHeader<LocaleCapability>[]>(() => [
     { title: t('locales-list-page.column-tag'), key: 'tag' },
     { title: t('locales-list-page.column-name'), key: 'name' },
@@ -55,11 +71,17 @@ const tableHeaders = computed<CoreDataTableHeader<LocaleCapability>[]>(() => [
     { title: t('locales-list-page.column-actions'), key: 'actions', synthetic: true }
 ]);
 
+/**
+ * Opens the dialog with nothing being edited, i.e. a create.
+ */
 const openCreate = () => {
     editing.value = undefined;
     formOpen.value = true;
 };
 
+/**
+ * Opens the dialog against one row.
+ */
 const openEdit = (language: LocaleCapability) => {
     editing.value = language;
     formOpen.value = true;
@@ -130,7 +152,9 @@ const handleDelete = (language: LocaleCapability) => {
         });
 };
 
-/** What kind of tenant an id is, for the chip's colour and hint; `frontend` until the registry answers. */
+/**
+ * What kind of tenant an id is, for the chip's colour and hint; `frontend` until the registry answers.
+ */
 const tenantKind = (id: string) =>
     tenants.value.find((tenant) => tenant.id === id)?.kind ?? 'frontend';
 

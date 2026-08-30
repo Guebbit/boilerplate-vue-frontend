@@ -5,6 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Cart page. Renders the store's lines and summary, and layers a debounced local
+ * stepper (`useLineQuantity`) on top of the store's own quantity update so rapid
+ * clicks collapse into one request per line.
+ */
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -44,7 +50,9 @@ const {
 } = useCartStore();
 const { cartItems, cartSummary } = storeToRefs(useCartStore());
 
-/** The chosen shipping method — optional, exactly as the API treats it. */
+/**
+ * The chosen shipping method — optional, exactly as the API treats it.
+ */
 const shippingMethodId = ref<string | undefined>();
 
 /**

@@ -1,10 +1,22 @@
+/**
+ * @module
+ * Thin wrapper around the browser's `EventSource`: opens one connection, registers a listener
+ * per typed event name, JSON-parses each frame, and drops frames that fail to parse.
+ */
+
 import type { SseEventName, SseEventPayload } from '@types';
 
-/** Callbacks registered on an SSE connection. */
+/**
+ * Callbacks registered on an SSE connection.
+ */
 export interface SseClientCallbacks {
-    /** Called when the connection is successfully established. */
+    /**
+     * Called when the connection is successfully established.
+     */
     onOpen?: () => void;
-    /** Called when the browser fires an error event on the EventSource. */
+    /**
+     * Called when the browser fires an error event on the EventSource.
+     */
     onError?: (error: Event) => void;
     /**
      * Called for each typed server-sent event.
@@ -16,7 +28,9 @@ export interface SseClientCallbacks {
     ) => void;
 }
 
-/** Handle returned by {@link createSseClient} to allow callers to close the connection. */
+/**
+ * Handle returned by {@link createSseClient} to allow callers to close the connection.
+ */
 export interface SseClient {
     close: () => void;
 }
@@ -73,7 +87,9 @@ export const createSseClient = (
     }
 
     return {
-        /** Closes the underlying EventSource and stops all SSE traffic. */
+        /**
+         * Closes the underlying EventSource and stops all SSE traffic.
+         */
         close: () => eventSource.close()
     };
 };

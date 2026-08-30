@@ -1,4 +1,5 @@
 /**
+ * @module
  * The access requirement every wishlist route declares — same reasoning as the account module's
  * twin: a route that quietly loses its `meta.access` keeps rendering and is simply open.
  */

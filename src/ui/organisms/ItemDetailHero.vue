@@ -1,11 +1,26 @@
 <script setup lang="ts">
+/**
+ * @module
+ * A detail page's hero: the record's picture (or a fallback icon tile when the record has none)
+ * beside its title/eyebrow/description. Whether a picture renders at all is `hasImage`, a
+ * property of the record's TYPE — see the prop doc for why it is not inferred from `imageUrl`.
+ */
 import CardDetail from '@/ui/organisms/CardDetail.vue';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 
 // No default on `hasImage`: Vue already casts an absent boolean prop to `false`.
 const { hasImage } = defineProps<{
+    /**
+     * Main heading.
+     */
     title: string;
+    /**
+     * Body copy under the title.
+     */
     description: string;
+    /**
+     * Small line above the title, e.g. a category or status.
+     */
     eyebrow?: string | number | null;
     /**
      * Whether this kind of record HAS a picture at all — not whether this particular one does.
@@ -17,9 +32,13 @@ const { hasImage } = defineProps<{
      * hero keeps the icon it has always had, by simply not passing this.
      */
     hasImage?: boolean;
-    /** The record's `imageUrl`, unresolved. Only read when {@link hasImage} is set. */
+    /**
+     * The record's `imageUrl`, unresolved. Only read when {@link hasImage} is set.
+     */
     imageUrl?: string | null;
-    /** What the picture shows, for a reader who cannot see it. Required whenever `hasImage` is. */
+    /**
+     * What the picture shows, for a reader who cannot see it. Required whenever `hasImage` is.
+     */
     imageAlt?: string;
 }>();
 </script>

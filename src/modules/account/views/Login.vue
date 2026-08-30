@@ -5,6 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Login form: email/password validated against a schema built from the shared `usersSchema`,
+ * plus the post-login redirect chained after the store call settles — a `?continue=` target when
+ * present, or the record's saved language preference re-applied before landing on `Home`.
+ */
 import { ref } from 'vue';
 import { RouterLink, useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -41,7 +47,11 @@ const loginSchema = usersSchema.pick({ email: true }).extend({
     password: z.string().min(8, { error: () => t('users-form.password-required') })
 });
 
+/**
+ * Whether the password field shows its plaintext.
+ */
 const showPassword = ref(false);
+
 const formElement = ref<HTMLFormElement>();
 
 const {

@@ -1,17 +1,30 @@
 /**
+ * @module
+ * Pure env-var readers for the two telemetry back-ends: each returns `undefined` when its
+ * required variable is unset, which is the single opt-in switch `stores/observability.ts` checks.
+ */
+
+/**
  * Environment-driven configuration for the two telemetry back-ends.
  *
  * Both are opt-in through a single variable each — no URL, no Faro; no website id, no analytics —
  * so a build with neither set ships the code and calls nothing.
  */
 
+/**
+ * Configuration read from `VITE_FARO_*`, passed straight into `initializeFaro()`.
+ */
 export interface FaroConfig {
-    /** Grafana Alloy Faro receiver endpoint (e.g. http://localhost:12347/collect). */
+    /**
+     * Grafana Alloy Faro receiver endpoint (e.g. http://localhost:12347/collect).
+     */
     url: string;
     appName: string;
     appVersion: string;
     environment: string;
-    /** API origin(s) to propagate the W3C `traceparent` header to (stitches FE↔BE traces). */
+    /**
+     * API origin(s) to propagate the W3C `traceparent` header to (stitches FE↔BE traces).
+     */
     apiOrigin: string;
     /**
      * URLs Faro must not instrument — the telemetry endpoints themselves.
@@ -22,9 +35,17 @@ export interface FaroConfig {
     ignoreUrls: (string | RegExp)[];
 }
 
+/**
+ * Configuration read from `VITE_UMAMI_*`, used to inject the tracker script.
+ */
 export interface UmamiConfig {
-    /** Umami tracker script URL (e.g. http://localhost:3080/script.js). */
+    /**
+     * Umami tracker script URL (e.g. http://localhost:3080/script.js).
+     */
     src: string;
+    /**
+     * Umami website id, the whole enable/disable switch for analytics.
+     */
     websiteId: string;
 }
 

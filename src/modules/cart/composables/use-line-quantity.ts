@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Cart line-quantity composable. Debounces per-product stepper clicks into one
+ * trailing API call each, while a local `pending` map answers the visitor's own
+ * last click so the UI never waits on the round trip.
+ */
 import { ref } from 'vue';
 import { debounce } from 'lodash-es';
 import { steppedQuantity } from '@/modules/cart/domain';
@@ -31,7 +37,9 @@ export const useLineQuantity = (
     onError: (error: unknown) => void,
     delayMs = 400
 ) => {
-    /** Quantities the visitor has stepped to and the API has not been told about yet. */
+    /**
+     * Quantities the visitor has stepped to and the API has not been told about yet.
+     */
     const pending = ref<Partial<Record<string, number>>>({});
 
     /**
@@ -42,7 +50,9 @@ export const useLineQuantity = (
      */
     const senders = new Map<string, ReturnType<typeof debounce<() => void>>>();
 
-    /** Drops a line's pending entry without touching its timer. */
+    /**
+     * Drops a line's pending entry without touching its timer.
+     */
     const forgetPending = (productId: string) => {
         const { [productId]: _sent, ...rest } = pending.value;
         pending.value = rest;

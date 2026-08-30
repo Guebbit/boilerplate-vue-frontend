@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Module manifest: wires the orders routes, nav entry, response schemas and
+ * locale loaders into the app's module registry.
+ */
 import { ReceiptText } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';

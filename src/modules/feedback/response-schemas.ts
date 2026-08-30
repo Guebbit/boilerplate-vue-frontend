@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Table of `{ method, pattern, schema }` rows, one per feedback endpoint,
+ * matched against a response's request to pick its validation schema.
+ */
 import * as schemas from '@api/schemas';
 import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-map';
 

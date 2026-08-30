@@ -1,4 +1,10 @@
 /**
+ * @module
+ * Vitest spec mocking `orvalMutator` directly, so the assertions can inspect
+ * the raw request body sent for each `cancelOrder` call.
+ */
+
+/**
  * `cancelOrder` — the orders store's one customer write. Transport-mocked like the other store
  * flow specs; what is pinned is that the cancelled record REPLACES the cached one (the fact
  * worth rendering is the new status. A payload-less 200 cannot reach this store: `orvalMutator`
@@ -9,6 +15,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useOrdersStore } from '@/modules/orders/store.ts';
 
+/**
+ * Fixture order returned by the mocked cancel endpoint.
+ */
 const ORDER = {
     id: 'o1',
     userId: 'u1',
@@ -20,9 +29,14 @@ const ORDER = {
     status: 'cancelled'
 };
 
+/**
+ * Canned response bodies keyed by `METHOD url`, read by the `orvalMutator` mock.
+ */
 let responses: Record<string, unknown>;
 
-/** Every request the store made, so the BODY can be asserted and not just the URL. */
+/**
+ * Every request the store made, so the BODY can be asserted and not just the URL.
+ */
 let sent: { url: string; method: string; data?: unknown }[];
 
 vi.mock('@/infrastructure/http', () => ({

@@ -1,3 +1,10 @@
+/**
+ * @module
+ * Rewrites any vue-router location so it carries the current locale, prefixing string/`path`
+ * forms and injecting `params.locale` for named ones — vue-router ignores `params` when `path`
+ * is present, so the two forms need different treatment.
+ */
+
 import { getCurrentLocale, supportedLanguages } from './index.ts';
 import type { RouteLocationRaw } from 'vue-router';
 

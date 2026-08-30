@@ -1,11 +1,25 @@
 <script setup lang="ts">
+/**
+ * @module
+ * An icon-tile info card: a gradient square keyed to a theme accent, a title and a description.
+ * `variantClass` is the only logic — everything else is layout.
+ */
 import type { ThemeAccent } from '@/ui/types.ts';
 import { computed } from 'vue';
 import { Info } from 'lucide-vue-next';
 
 const props = defineProps<{
+    /**
+     * Card title.
+     */
     title: string;
+    /**
+     * Card body text.
+     */
     description: string;
+    /**
+     * Theme accent for the icon tile. Defaults to `primary`.
+     */
     variant?: ThemeAccent;
 }>();
 

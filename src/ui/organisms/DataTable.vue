@@ -1,4 +1,12 @@
 <script setup lang="ts" generic="T extends object">
+/**
+ * @module
+ * A thin wrapper over `v-data-table`: translates this app's `CoreDataTableHeader<T>` shape into
+ * Vuetify's headers, forwards `header.*`/`item.*` slots the caller actually provided, swaps in
+ * the accessible `TableLoadingBar`, and adds optional single-row selection through `v-model`
+ * (detected from whether a listener for `update:modelValue` is bound, since pagination here is
+ * server-side and the footer stays hidden).
+ */
 import { computed, getCurrentInstance, useSlots } from 'vue';
 import TableLoadingBar from '@/ui/molecules/TableLoadingBar.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
@@ -36,6 +44,9 @@ const {
     rowTest?: string;
 }>();
 
+/**
+ * Selected row's `itemValue`, or `undefined` when the table is unbound / nothing is selected.
+ */
 const modelValue = defineModel<unknown>();
 
 /**
@@ -55,7 +66,9 @@ const isSelectable = computed(
     () => vnodeProps !== null && vnodeProps !== undefined && 'onUpdate:modelValue' in vnodeProps
 );
 
-/** The columns whose head the view renders itself. */
+/**
+ * The columns whose head the view renders itself.
+ */
 const customHeaders = computed(() => headers.filter((header) => `header.${header.key}` in slots));
 
 /**

@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Wires lucide-vue-next into Vuetify as its icon system: `lucideAliases` maps every internal
+ * name Vuetify components reference to a lucide component, and `lucideIconSet` is the render
+ * function Vuetify calls to turn an alias (or a caller-supplied component) into a vnode.
+ */
 import { h } from 'vue';
 import type { Component } from 'vue';
 import type { IconAliases, IconProps, IconSet } from 'vuetify';

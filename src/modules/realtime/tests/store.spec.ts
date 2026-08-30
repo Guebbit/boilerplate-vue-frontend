@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Unit tests for the realtime observability Pinia store's actions, run against a fresh Pinia
+ * instance per test.
+ */
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { useRealtimeObservabilityStore } from '@/modules/realtime/store';

@@ -61,6 +61,11 @@ export type Locale = string;
  */
 export type ImageUrl = string;
 
+/**
+ * Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs/tools/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.
+ */
+export type ThumbnailUrl = string;
+
 export interface PaginationMeta {
     page: Page;
     pageSize: PageSize;
@@ -128,6 +133,7 @@ export interface User {
     active?: boolean;
     verified?: boolean;
     imageUrl?: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
     locale?: Locale;
     phone?: string;
     website?: string;
@@ -166,6 +172,7 @@ export interface Product {
     description?: string;
     active?: boolean;
     imageUrl?: ImageUrl;
+    thumbnailUrl?: ThumbnailUrl;
     categories?: string[];
     tags?: string[];
     createdAt?: string;

@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Composable binding the toolkit's generic upload-progress state machine to axios, so the five
+ * forms that upload a file share one implementation of the progress bar plumbing.
+ */
+
 import { useUploadProgress as useToolkitUploadProgress } from '@guebbit/vue-toolkit';
 import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 

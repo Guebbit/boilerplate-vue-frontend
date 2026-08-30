@@ -1,4 +1,10 @@
 /**
+ * @module
+ * Vitest spec exercising the counter store's sync and delayed actions, the
+ * latter driven with fake timers rather than a real wait.
+ */
+
+/**
  * The counter store — the boilerplate's worked example of state, getter, action and async action.
  *
  * Tested because it is demonstrated: a Playground showing a broken counter teaches the wrong

@@ -1,4 +1,10 @@
 <script setup lang="ts">
+/**
+ * @module
+ * Icon-only nav button/link with a proper accessible name (tooltip text doubling as
+ * `aria-label`). All non-prop attributes fall through to the underlying `<v-btn>` via
+ * `useAttrs`/`mergeProps` so a parent can use this as a `v-menu` activator.
+ */
 import { mergeProps, useAttrs } from 'vue';
 import type { Component } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
@@ -18,15 +24,25 @@ import LazyImage from '@/ui/molecules/LazyImage.vue';
 defineOptions({ inheritAttrs: false });
 
 const props = defineProps<{
-    /** The visible name: tooltip text and accessible name. */
+    /**
+     * The visible name: tooltip text and accessible name.
+     */
     label: string;
-    /** A lucide component. */
+    /**
+     * A lucide component.
+     */
     icon: Component;
-    /** When set, renders a link; otherwise a button. */
+    /**
+     * When set, renders a link; otherwise a button.
+     */
     to?: RouteLocationRaw;
-    /** A count worn on the icon. Zero or absent renders no badge. */
+    /**
+     * A count worn on the icon. Zero or absent renders no badge.
+     */
     badge?: number;
-    /** The badge's accessible name, e.g. "3 items" — without it Vuetify announces "Badge". */
+    /**
+     * The badge's accessible name, e.g. "3 items" — without it Vuetify announces "Badge".
+     */
     badgeLabel?: string;
     /**
      * Extra detail folded into the accessible name after the label, e.g. the signed-in email.
@@ -42,7 +58,9 @@ const props = defineProps<{
      * placeholder, which says "you have no picture set" where a generic person glyph says nothing.
      */
     avatar?: boolean;
-    /** The visitor's `imageUrl`, unresolved. Only read when {@link avatar} is set. */
+    /**
+     * The visitor's `imageUrl`, unresolved. Only read when {@link avatar} is set.
+     */
     avatarUrl?: string | null;
 }>();
 
@@ -57,6 +75,12 @@ const attributes = useAttrs();
  */
 const buttonProps = (tooltipProps: Record<string, unknown>) => mergeProps(attributes, tooltipProps);
 
+/**
+ * The button's accessible name: the label alone, or the label plus {@link description}
+ * when the caller supplied one (the account menu's signed-in email, say).
+ *
+ * @returns The string used for both `aria-label` and the tooltip.
+ */
 const accessibleName = () =>
     props.description ? `${props.label}: ${props.description}` : props.label;
 </script>

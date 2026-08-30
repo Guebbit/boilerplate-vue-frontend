@@ -1,4 +1,5 @@
 /**
+ * @module
  * One add-to-cart writes ONE row into Umami — the claim neither repo's own suite can make.
  *
  * ── WHY THIS CANNOT BE A UNIT TEST ───────────────────────────────────────────────────────────
@@ -28,7 +29,9 @@
  * `cy.resetState()` is, and it should stop running for the same reason too.
  */
 
-/** Umami aggregates events per name over a window; this is one row of that answer. */
+/**
+ * Umami aggregates events per name over a window; this is one row of that answer.
+ */
 interface UmamiEventMetric {
     x: string;
     y: number;
@@ -47,7 +50,9 @@ interface UmamiSession {
     token: string;
 }
 
-/** How long Umami is given to make a fire-and-forget write readable. */
+/**
+ * How long Umami is given to make a fire-and-forget write readable.
+ */
 const INGEST_TIMEOUT_MS = 20_000;
 const POLL_INTERVAL_MS = 1000;
 

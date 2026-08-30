@@ -1,4 +1,10 @@
 /**
+ * @module
+ * Vitest spec asserting each feedback route record's declared `meta.access`
+ * against a hard-coded table.
+ */
+
+/**
  * The access requirement every feedback route declares — same reasoning as the account module's
  * twin: a route that quietly loses its `meta.access` keeps rendering and is simply open. Here
  * the split IS the module: the contact form is deliberately public, the inbox deliberately not.

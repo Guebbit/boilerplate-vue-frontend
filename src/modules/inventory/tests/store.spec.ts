@@ -1,4 +1,5 @@
 /**
+ * @module
  * The inventory store — transport-mocked like the wishlist's spec.
  *
  * Worth pinning: both reads are whole-list replacement (the page renders what the API answered),
@@ -11,6 +12,9 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useInventoryStore } from '@/modules/inventory/store.ts';
 import { orvalMutator } from '@/infrastructure/http';
 
+/**
+ * A stock movement row, as the ledger renders it.
+ */
 const MOVEMENT = {
     id: 'movement-1',
     productId: 'p1',
@@ -19,8 +23,14 @@ const MOVEMENT = {
     reservedDelta: 2
 };
 
+/**
+ * A stock level row, as the board renders it.
+ */
 const LEVEL = { productId: 'p1', title: 'Product one', onHand: 24, reserved: 2, available: 22 };
 
+/**
+ * The mocked transport's canned response, keyed by `METHOD /path`; reset in `beforeEach`.
+ */
 let responses: Record<string, unknown>;
 
 vi.mock('@/infrastructure/http', () => ({
@@ -30,6 +40,9 @@ vi.mock('@/infrastructure/http', () => ({
     })
 }));
 
+/**
+ * The URLs requested so far, in call order — used to assert a write's reload sequence.
+ */
 const requestedUrls = () =>
     vi.mocked(orvalMutator).mock.calls.map((call) => (call[0] as { url: string }).url);
 

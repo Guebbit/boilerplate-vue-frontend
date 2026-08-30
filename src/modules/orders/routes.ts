@@ -1,5 +1,13 @@
+/**
+ * @module
+ * Route table for the orders module: each record pairs a path with the lazy-loaded
+ * view and the `meta.access` level the router guard enforces.
+ */
 import type { RouteRecordRaw } from 'vue-router';
 
+/**
+ * Route records for the orders module, mounted under the app's module registry.
+ */
 export default [
     {
         path: 'orders',

@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Wishlist module manifest. Declares the module's routes, nav entry, response
+ * schemas and locale loaders for the app registry — see `AppModule`.
+ */
 import { Heart } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';

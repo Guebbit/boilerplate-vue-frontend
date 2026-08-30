@@ -5,6 +5,13 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * The profile page: composes the record-edit form with the role/password/delete/sessions/
+ * addresses panels as siblings, each owning its own store slice. `applyLanguagePreference` chains
+ * the i18n switch and the route's `:locale` re-entry in that order after a save, mirroring the
+ * header's language switcher.
+ */
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';

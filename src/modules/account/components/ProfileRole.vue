@@ -5,6 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Self-service role switch, visible only to an admin viewing their own profile. A `watch` on the
+ * profile record re-seeds the select whenever it changes, and `roleIsDirty`/`handleRoleChange`
+ * confirm only the one direction that cannot be undone by the visitor alone: demoting themselves.
+ */
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
@@ -42,12 +48,17 @@ watch(
     { immediate: true }
 );
 
+/**
+ * The two role choices, translated.
+ */
 const roleOptions = computed(() => [
     { value: true, title: t('generic.administrator') },
     { value: false, title: t('generic.standard-user') }
 ]);
 
-/** Whether the select has been moved away from what the record says. */
+/**
+ * Whether the select has been moved away from what the record says.
+ */
 const roleIsDirty = computed(() => roleIsAdmin.value !== Boolean(profile.value?.admin));
 
 /**

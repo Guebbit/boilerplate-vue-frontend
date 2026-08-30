@@ -1,4 +1,10 @@
 /**
+ * @module
+ * Vitest spec wiring the real i18n instance and locale dictionaries, then
+ * parsing invalid values through the schemas to check the resolved messages.
+ */
+
+/**
  * Orders' validation messages follow the active locale.
  *
  * The MECHANISM — that a thunked Zod message re-resolves at parse time — is proven once, with an
@@ -20,9 +26,17 @@ import { wireModulesIntoCore } from '../../../../tests/support/unit/wire-modules
 import { ordersSchema } from '../schemas';
 import itMessages from '../locales/it.json';
 
+/**
+ * Switches the active i18n locale and waits for the DOM-facing reactivity to settle.
+ *
+ * @param locale - Locale code to switch to.
+ * @returns A promise resolving once the locale is active.
+ */
 const setLocale = (locale: string) => loadLocale(locale).then(() => nextTick());
 
-/** Every issue message a schema produces for a value, in the currently active locale. */
+/**
+ * Every issue message a schema produces for a value, in the currently active locale.
+ */
 const messagesOf = (
     schema: { safeParse: (value: unknown) => { error?: { issues: { message: string }[] } } },
     value: unknown

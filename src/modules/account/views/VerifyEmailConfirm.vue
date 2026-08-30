@@ -5,6 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Public confirm page for email verification: the token is the credential, and a submit button
+ * (rather than firing on mount) keeps a mail scanner that prefetches the link from spending the
+ * token before the human arrives.
+ */
 import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';

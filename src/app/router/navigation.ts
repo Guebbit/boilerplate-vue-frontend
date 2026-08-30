@@ -1,4 +1,11 @@
 /**
+ * @module
+ * Sign-in/sign-up route names and helpers for building a "continue here after login" location.
+ * The route names are plain strings, not typed route names, because the account module that
+ * owns them may not be part of a given build — callers check `router.hasRoute` first.
+ */
+
+/**
  * The route the app shell sends an unauthenticated visitor to.
  *
  * A string naming a route a MODULE declares, so nothing type-checks it: with the account module

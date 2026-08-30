@@ -5,6 +5,11 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Users list/search page. Wires the store's paginated search to a filter
+ * form and a `DataTable`, with per-row view/edit/delete/hard-delete actions.
+ */
 import { computed } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
@@ -22,9 +27,15 @@ import DataTable from '@/ui/organisms/DataTable.vue';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 
+/**
+ * Generic translation and notification accessors.
+ */
 const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 
+/**
+ * Users store actions and reactive list/pagination state.
+ */
 const { watchSearchUsers, deleteUser, hardDeleteUser } = useUsersStore();
 const { filters, pageItemList, selectedUserId, pageCurrent, pageSize, pageTotal, loading } =
     storeToRefs(useUsersStore());
@@ -78,6 +89,10 @@ const tableHeaders = computed<CoreDataTableHeader<User>[]>(() => [
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the toolkit's page window is a SPARSE array; holes are undefined at runtime whatever the element type claims
 const pageItems = computed(() => pageItemList.value.filter((item): item is User => !!item));
 
+/**
+ * Search function bound to the store's reactive `filters`/pagination, reporting
+ * a failed request as a toast.
+ */
 const { search } = watchSearchUsers({ onError: (error) => notifyErrorMessages(addMessage, error) });
 
 /**

@@ -5,6 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Landing page. Static hero plus a translated showcase grid; the one cross-domain link (to the
+ * products list) is guarded by `router.hasRoute` so the page still renders with that module
+ * disabled.
+ */
 import type { ThemeAccent } from '@/ui/types.ts';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';

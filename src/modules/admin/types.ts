@@ -1,4 +1,5 @@
 /**
+ * @module
  * Admin dashboard view-layer types.
  *
  * Contract types (ObservabilityHealth, ObservabilityMetricsSummary, AuditEventItem, etc.)
@@ -6,10 +7,14 @@
  * Only UI/composition-specific types belong here.
  */
 
-/** Identifies each tab in the Admin dashboard. */
+/**
+ * Identifies each tab in the Admin dashboard.
+ */
 export type AdminTabKey = 'overview' | 'audit';
 
-/** A single KPI card shown in the admin overview. */
+/**
+ * A single KPI card shown in the admin overview.
+ */
 export interface AdminKpiCard {
     title: string;
     value: string | number;
@@ -17,7 +22,9 @@ export interface AdminKpiCard {
     status?: 'ok' | 'warn' | 'error' | 'loading' | 'unknown';
 }
 
-/** Audit filter form state. */
+/**
+ * Audit filter form state.
+ */
 export interface AdminAuditFilters {
     actor?: string;
     action?: string;

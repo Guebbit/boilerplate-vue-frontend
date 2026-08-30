@@ -1,3 +1,10 @@
+/**
+ * @module
+ * Pinia store for the token/viewer pair that gates the app: an in-memory access token plus a
+ * minimal projection of who holds it. `isAuth`/`isAdmin` derive from both together, never either
+ * alone, so a restored-but-not-yet-identified session cannot be read as authenticated.
+ */
+
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import {
@@ -17,7 +24,9 @@ import { getTokenFromResponse, getPayloadFromResponse } from '@/infrastructure/h
  * `/account` calls belong here.
  */
 
-/** The least the app shell and the guards need to know about the signed-in visitor. */
+/**
+ * The least the app shell and the guards need to know about the signed-in visitor.
+ */
 export interface SessionViewer {
     id: string;
     email: string;
@@ -43,6 +52,9 @@ const setCookie = (value: string) => {
     cookieDescriptor?.set?.call(document, value);
 };
 
+/**
+ * Store instance: see the module doc above for the `isAuth`/`isAdmin` derivation rule.
+ */
 export const useSessionStore = defineStore('session', () => {
     /**
      * User access token. In memory only — the refresh token is an httpOnly cookie the browser
@@ -50,7 +62,9 @@ export const useSessionStore = defineStore('session', () => {
      */
     const accessToken = ref<string>();
 
-    /** The signed-in visitor, as much of them as the shell and the guards are entitled to. */
+    /**
+     * The signed-in visitor, as much of them as the shell and the guards are entitled to.
+     */
     const viewer = ref<SessionViewer>();
 
     /**

@@ -1,4 +1,9 @@
 <script setup lang="ts">
+/**
+ * @module
+ * Thin presentational banner: wires `useApiHealth`'s reachability flag to a persistent
+ * `aria-live` region so the message is announced only when it actually changes.
+ */
 import { useI18n } from 'vue-i18n';
 import { CloudOff } from 'lucide-vue-next';
 import { useApiHealth } from '@/infrastructure/composables/use-api-health.ts';

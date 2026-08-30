@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Module manifest: wires the feedback routes, nav entries, response schemas
+ * and locale loaders into the app's module registry.
+ */
 import { Inbox, Mail } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
 import routes from './routes';

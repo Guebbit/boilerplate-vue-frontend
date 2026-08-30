@@ -1,4 +1,9 @@
 <script setup lang="ts">
+/**
+ * @module
+ * Dialog component: a schema-validated form (via `useAppForm`) that resets its fields on every
+ * open and emits the saved fields upward — no store access of its own.
+ */
 import { watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
@@ -10,9 +15,13 @@ import type { LocaleTenantDescriptor } from '@types';
  * inline in the table, so a row never comes back through here.
  */
 const props = defineProps<{
-    /** The tenants the API serves, from its registry — what the select offers. */
+    /**
+     * The tenants the API serves, from its registry — what the select offers.
+     */
     tenants: LocaleTenantDescriptor[];
-    /** The tenant preselected on open — whatever the page's tenant filter is on. */
+    /**
+     * The tenant preselected on open — whatever the page's tenant filter is on.
+     */
     initialTenant?: string;
 }>();
 
@@ -20,15 +29,21 @@ const emit = defineEmits<{
     save: [fields: { tenant: string; key: string; value: string }];
 }>();
 
-/** Two-way `v-model`, so the dialog neither declares the prop nor re-emits the event by hand. */
+/**
+ * Two-way `v-model`, so the dialog neither declares the prop nor re-emits the event by hand.
+ */
 const isOpen = defineModel<boolean>({ required: true });
 
 const { t } = useI18n();
 
-/** The heading's id, so the dialog is announced by its title rather than as "dialog". */
+/**
+ * The heading's id, so the dialog is announced by its title rather than as "dialog".
+ */
 const titleId = useId();
 
-/** The first tenant the registry lists — the default when the page has no filter on. */
+/**
+ * The first tenant the registry lists — the default when the page has no filter on.
+ */
 const defaultTenant = computed(() => props.initialTenant ?? props.tenants.at(0)?.id ?? '');
 
 const { form, formErrors, showFormErrors, handleSubmit, setForm } = useAppForm(
@@ -45,10 +60,16 @@ watch(isOpen, (open) => {
     setForm({ tenant: defaultTenant.value, key: '', value: '' });
 });
 
+/**
+ * The select's options, from the tenants the API's registry serves.
+ */
 const tenantOptions = computed(() =>
     props.tenants.map(({ id, label }) => ({ value: id, title: `${label} (${id})` }))
 );
 
+/**
+ * Validates and emits, or shows the form's errors — `handleSubmit`'s job either way.
+ */
 const handleSave = () =>
     handleSubmit(({ tenant, key, value }) => {
         emit('save', { tenant, key, value });

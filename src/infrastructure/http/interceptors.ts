@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Request/response axios interceptors: attach auth + language on the way out, normalize every
+ * rejection to one envelope shape on the way back. No refresh logic here — see `refresh.ts`.
+ */
+
 import { storeToRefs } from 'pinia';
 import { translate, getCurrentLocale } from '@/infrastructure/i18n';
 import { useSessionStore } from '@/infrastructure/stores/session.ts';

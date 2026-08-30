@@ -5,6 +5,12 @@ export default {
 </script>
 
 <script setup lang="ts">
+/**
+ * @module
+ * Route view: reads `:tag` from the route, drives the toolkit's paginated search over one
+ * language's entries, and wraps every write with a refresh of the running app's own dictionary so
+ * an edit is visible immediately.
+ */
 import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -47,26 +53,46 @@ const localesStore = useLocalesStore();
 const { capabilities, tenants, filters, pageItemList, pageCurrent, entriesPageTotal, loading } =
     storeToRefs(localesStore);
 
-/** The language whose rows this page shows, from `/locales/:tag`. */
+/**
+ * The language whose rows this page shows, from `/locales/:tag`.
+ */
 const tag = computed(() => String(route.params.tag));
 
-/** This language's manifest row, for the header. Absent until the manifest loads. */
+/**
+ * This language's manifest row, for the header. Absent until the manifest loads.
+ */
 const capability = computed(() =>
     capabilities.value.find((language) => language.tag === tag.value)
 );
 
+/**
+ * Whether the "add entry" dialog is open.
+ */
 const entryFormOpen = ref(false);
+
+/**
+ * Whether the import dialog is open.
+ */
 const importOpen = ref(false);
 
-/** Local draft per row id, so a blur can tell "changed" from "clicked through". */
+/**
+ * Local draft per row id, so a blur can tell "changed" from "clicked through".
+ */
 const drafts = ref<Record<string, string>>({});
 
-/** Row ids whose last save just landed; the check mark beside the field, cleared after a beat. */
+/**
+ * Row ids whose last save just landed; the check mark beside the field, cleared after a beat.
+ */
 const savedRows = ref<Record<string, true>>({});
 
-/** The "every tenant" choice of the tenant select. */
+/**
+ * The "every tenant" choice of the tenant select.
+ */
 const ANY_TENANT = '';
 
+/**
+ * The tenant filter's options: an "every tenant" sentinel plus the registry.
+ */
 const tenantFilterOptions = computed(() => [
     /*
      * A real empty-string value, NOT `undefined`: Vuetify reads an item with no value as
@@ -76,7 +102,9 @@ const tenantFilterOptions = computed(() => [
     ...tenants.value.map(({ id, label }) => ({ value: id, title: `${label} (${id})` }))
 ]);
 
-/** The select's model: the sentinel on screen, `undefined` — no filter — in the store. */
+/**
+ * The select's model: the sentinel on screen, `undefined` — no filter — in the store.
+ */
 const tenantChoice = computed({
     get: () => filters.value.tenant ?? ANY_TENANT,
     set: (choice: string) => {
@@ -105,6 +133,9 @@ watch(tag, (nextTag) => {
 if (capabilities.value.length === 0) void localesStore.fetchLanguages();
 if (tenants.value.length === 0) void localesStore.fetchTenants();
 
+/**
+ * Applies the text/tenant filters, returning to the first page.
+ */
 const handleSearch = () => {
     pageCurrent.value = 1;
     return search();
@@ -122,6 +153,9 @@ const applyLiveOverrides = () =>
         // `fetchLocaleOverrides` already never rejects; this guards the merge itself.
         .catch(() => undefined);
 
+/**
+ * Adds one entry from the "add entry" dialog, then refreshes the page and the running app.
+ */
 const handleAdd = (fields: { tenant: string; key: string; value: string }) =>
     localesStore
         .addEntry(tag.value, fields)
@@ -177,6 +211,9 @@ const handleValueBlur = (entry: LocaleEntry) => {
         .catch((error: unknown) => notifyErrorMessages(addMessage, error));
 };
 
+/**
+ * Confirms, then removes one entry and refreshes the page and the running app.
+ */
 const handleDelete = (entry: LocaleEntry) => {
     return useDialogStore()
         .confirm({
@@ -195,6 +232,9 @@ const handleDelete = (entry: LocaleEntry) => {
         });
 };
 
+/**
+ * Runs the import dialog's batch, then refreshes the page, the manifest and the running app.
+ */
 const handleImport = (payload: {
     mode: 'merge' | 'replace';
     tenant: string;

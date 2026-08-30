@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Typed provide/inject pair: a ref plus its paired mutation, exchanged
+ * through a `Symbol` `InjectionKey` rather than a magic string.
+ */
 import { ref, provide, inject } from 'vue';
 import type { InjectionKey, Ref } from 'vue';
 
@@ -10,13 +15,19 @@ import type { InjectionKey, Ref } from 'vue';
  * is the promise `src/modules.ts` makes about every module.
  */
 
-/** What travels down the tree. A string, because the demo is about the mechanism. */
+/**
+ * What travels down the tree. A string, because the demo is about the mechanism.
+ */
 export type ProvidedVariable = string;
 
-/** Paired mutation, so a descendant never writes to the injected ref directly. */
+/**
+ * Paired mutation, so a descendant never writes to the injected ref directly.
+ */
 export type ProvidedVariableMutation = (value?: ProvidedVariable) => void;
 
-/** The pair, as descendants receive it. */
+/**
+ * The pair, as descendants receive it.
+ */
 export interface ProvidedVariableContext {
     providedVariable: Ref<ProvidedVariable>;
     setProvidedVariable: ProvidedVariableMutation;

@@ -1,3 +1,8 @@
+/**
+ * @module
+ * Route table for the inventory domain — one entry, lazy-loaded so the ledger's bundle only
+ * loads when the page is actually navigated to.
+ */
 import type { RouteRecordRaw } from 'vue-router';
 
 /**

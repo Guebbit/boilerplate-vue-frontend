@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Vue Router `beforeEnter` guard, scoped to the Playground route. Reads a
+ * Pinia store and calls `i18n.global.t` directly to demonstrate what is (and
+ * isn't) reachable this early in navigation.
+ */
 import { storeToRefs } from 'pinia';
 import { i18n } from '@/infrastructure/i18n';
 import { logger } from '@/infrastructure/utils/logger.ts';

@@ -1,4 +1,10 @@
 <script setup lang="ts">
+/**
+ * @module
+ * Confirmation dialog host mounted once by the layout. Reads the dialog store's queue and
+ * renders the front entry as a Vuetify alertdialog; answering (confirm, cancel, dismiss) always
+ * resolves the store's pending promise.
+ */
 import { computed, useId } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
@@ -19,13 +25,21 @@ const { t } = useI18n();
 const dialogStore = useDialogStore();
 const { queue } = storeToRefs(dialogStore);
 
-/** Ids the dialog is named and described by — the title when one is given, the question always. */
+/**
+ * Ids the dialog is named and described by — the title when one is given, the question always.
+ */
 const titleId = useId();
 const messageId = useId();
 
-/** The question being shown; the rest wait their turn. */
+/**
+ * The question being shown; the rest wait their turn.
+ */
 const current = computed(() => queue.value.at(0));
 
+/**
+ * Whether the host is showing a dialog. Setting it to `false` — the cancel button, Escape, a
+ * scrim click — always answers `false`; there is no other way to close it.
+ */
 const isOpen = computed({
     get: () => queue.value.length > 0,
     set: (open) => {

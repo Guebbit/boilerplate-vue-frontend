@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Pinia store implementing `globalThis.confirm()` as an async, themeable, queued promise: callers
+ * push a request and await the resolution; `AppDialogHost` renders the queue's head and answers it.
+ */
+
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 
@@ -8,21 +14,39 @@ import { defineStore } from 'pinia';
  * and owns no dictionary. The caller has `t()`; the store has a promise.
  */
 export interface DialogRequest {
-    /** Optional heading. Omitted, the message stands alone. */
+    /**
+     * Optional heading. Omitted, the message stands alone.
+     */
     title?: string;
-    /** The question. Required: a confirmation with nothing to confirm is a bug. */
+    /**
+     * The question. Required: a confirmation with nothing to confirm is a bug.
+     */
     message: string;
-    /** Label of the button that resolves `true`. The host falls back to its generic label. */
+    /**
+     * Label of the button that resolves `true`. The host falls back to its generic label.
+     */
     confirmLabel?: string;
-    /** Label of the button that resolves `false`. The host falls back to its generic label. */
+    /**
+     * Label of the button that resolves `false`. The host falls back to its generic label.
+     */
     cancelLabel?: string;
-    /** Colour of the confirming button — `error` for a destructive action, the default otherwise. */
+    /**
+     * Colour of the confirming button — `error` for a destructive action, the default otherwise.
+     */
     color?: 'primary' | 'error' | 'warning';
 }
 
-/** One pending question: what was asked, plus how to answer it. */
+/**
+ * One pending question: what was asked, plus how to answer it.
+ */
 export interface DialogEntry extends DialogRequest {
+    /**
+     * Monotonically increasing id, oldest-first ordering key.
+     */
     id: number;
+    /**
+     * Settles the caller's promise with the viewer's answer.
+     */
     resolve: (answer: boolean) => void;
 }
 
@@ -43,9 +67,14 @@ export interface DialogEntry extends DialogRequest {
  * promises, which is what makes it testable in jsdom without a component tree.
  */
 export const useDialogStore = defineStore('dialog', () => {
-    /** Pending questions, oldest first. The host renders the first one. */
+    /**
+     * Pending questions, oldest first. The host renders the first one.
+     */
     const queue = ref<DialogEntry[]>([]);
 
+    /**
+     * Source of {@link DialogEntry.id}; increments once per {@link confirm} call.
+     */
     let nextId = 1;
 
     /**

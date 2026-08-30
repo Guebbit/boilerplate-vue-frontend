@@ -1,3 +1,9 @@
+/**
+ * @module
+ * Pinia store (Composition API form) wrapping `useStructureRestApi` for the address book: every
+ * write re-fetches the whole list from the response envelope rather than patching one entry,
+ * because the invariant worth rendering — exactly one default — is a property of the list.
+ */
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
