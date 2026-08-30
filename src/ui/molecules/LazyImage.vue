@@ -8,8 +8,8 @@ import {
 } from '@/infrastructure/utils/images.ts';
 
 /**
- * One record's picture, in three tiers: thumbnail first, full image lazily, dog when there is
- * neither.
+ * One record's picture, in three tiers: thumbnail first, full image lazily, a bundled placeholder
+ * icon when there is neither.
  *
  * ── Why a component and not an `<img>` ───────────────────────────────────────────────────────
  * Every place this app shows a stored image has the same four things to get right, and no place
@@ -46,7 +46,7 @@ const {
     /**
      * What the picture shows, for a reader who cannot see it. Required, and deliberately not
      * defaulted: an image of a product is `alt="Photo of <title>"`, and only the caller knows the
-     * title. The placeholder overrides it with its own wording — a dog stock photo is not a
+     * title. The placeholder overrides it with its own wording — the placeholder icon is not a
      * picture of the product, and announcing it as one is a lie told to exactly the visitors who
      * cannot check.
      *
@@ -57,7 +57,7 @@ const {
      * MISSING avatar announcing the placeholder wording would be worse still.
      */
     alt: string;
-    /** Display width in CSS pixels; also the width asked of the placeholder and the thumbnail. */
+    /** Display width in CSS pixels; also the width asked of the thumbnail. */
     width?: number;
     /** Display height in CSS pixels. With `width`, reserves the box before any byte arrives. */
     height?: number;
@@ -105,7 +105,7 @@ const thumbnailSource = computed(() => (failed.value ? undefined : thumbnailImag
 /** Whether what is on screen is a stand-in rather than this record's own picture. */
 const isPlaceholder = computed(() => fullSource.value === undefined);
 
-const displayedSource = computed(() => fullSource.value ?? placeholderImageUrl(width, height));
+const displayedSource = computed(() => fullSource.value ?? placeholderImageUrl());
 
 /** The box, reserved before anything loads so a late image cannot reflow the row around it. */
 const boxStyle = computed(() => ({

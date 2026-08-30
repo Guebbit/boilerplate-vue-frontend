@@ -89,17 +89,14 @@ export const thumbnailImageUrl = (source?: string | null, width = 64): string | 
 /**
  * A stand-in picture for a record that has none.
  *
- * Deliberately a dog from `placedog.net` rather than a grey box, and deliberately a RANDOM one: a
- * missing image should be unmistakable at a glance and impossible to mistake for a real product
- * photo, which is exactly what a tasteful neutral placeholder fails at.
+ * A bundled asset (`public/images/no-image-placeholder.svg`) rather than a third-party fetch: no
+ * network dependency, nothing to intercept in tests, nothing to point at another company's
+ * infrastructure for every visitor without a picture. It is a vector, so it scales cleanly to
+ * whatever box `LazyImage` reserves without a width/height of its own to pass along.
  *
- * The cost is a third-party request from every visitor's browser, and it is why this is one
- * function rather than a URL written into six templates: a catalogue with real pictures replaces
- * the body with a bundled asset and nothing else changes.
+ * One function rather than a path written into six templates, so a catalogue that later wants a
+ * different stand-in changes it here once.
  *
- * @param width - Requested width in pixels.
- * @param height - Requested height in pixels.
- * @returns An absolute URL for `<img src>`.
+ * @returns The placeholder's URL, same-origin, for `<img src>`.
  */
-export const placeholderImageUrl = (width: number, height: number): string =>
-    `https://placedog.net/${Math.round(width)}/${Math.round(height)}`;
+export const placeholderImageUrl = (): string => '/images/no-image-placeholder.svg';

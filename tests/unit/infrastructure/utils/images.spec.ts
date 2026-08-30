@@ -125,11 +125,7 @@ describe('thumbnailImageUrl', () => {
 });
 
 describe('placeholderImageUrl', () => {
-    it('asks placedog for the box it is filling', () => {
-        expect(placeholderImageUrl(56, 56)).toBe('https://placedog.net/56/56');
-    });
-
-    it('rounds, because a fractional box is not a path segment', () => {
-        expect(placeholderImageUrl(56.4, 71.6)).toBe('https://placedog.net/56/72');
+    it('is the bundled asset, same-origin', () => {
+        expect(placeholderImageUrl()).toBe('/images/no-image-placeholder.svg');
     });
 });

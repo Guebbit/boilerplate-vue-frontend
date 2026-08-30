@@ -6,9 +6,10 @@
  *
  *   1. **The placeholder is chosen by absence, not by failure.** A record with no picture and a
  *      record whose picture 404s must both end up showing the stand-in — the second only after the
- *      browser has actually given up, so a slow image is never replaced by a dog mid-load.
- *   2. **`alt` follows what is on screen.** Announcing "Photo of Blue Widget" over a stock dog is
- *      a lie told to exactly the visitors who cannot check it. The one exception is `alt=""`,
+ *      browser has actually given up, so a slow image is never pre-empted by the placeholder
+ *      mid-load.
+ *   2. **`alt` follows what is on screen.** Announcing "Photo of Blue Widget" over the placeholder
+ *      icon is a lie told to exactly the visitors who cannot check it. The one exception is `alt=""`,
  *      which means decorative and has to STAY decorative in every tier — the account button in the
  *      navigation carries its own name, and an avatar that announced itself would say it twice.
  *   3. **Failure state is per-URL, not per-instance.** A `v-for` over table rows recycles one
@@ -64,7 +65,7 @@ describe('LazyImage — which picture is shown', () => {
     it('shows the placeholder when the record has no image', () => {
         const wrapper = mountImage({ src: undefined, width: 56, height: 56 });
 
-        expect(mainImage(wrapper).attributes('src')).toBe('https://placedog.net/56/56');
+        expect(mainImage(wrapper).attributes('src')).toBe('/images/no-image-placeholder.svg');
         expect(wrapper.attributes('data-placeholder')).toBe('true');
     });
 
@@ -76,7 +77,7 @@ describe('LazyImage — which picture is shown', () => {
 
         await mainImage(wrapper).trigger('error');
 
-        expect(mainImage(wrapper).attributes('src')).toBe('https://placedog.net/56/56');
+        expect(mainImage(wrapper).attributes('src')).toBe('/images/no-image-placeholder.svg');
     });
 
     it('gives a new record a clean slate after the previous one failed', async () => {
