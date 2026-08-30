@@ -11,6 +11,7 @@
 
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import { mapValues } from 'lodash-es';
 import type { Faro } from '@grafana/faro-web-sdk';
 import type { AnalyticsEventName } from '@/infrastructure/observability/analytics-events.ts';
 import {
@@ -276,10 +277,5 @@ export const useObservabilityStore = defineStore('observability', () => {
  * @returns The same keys with values stringified (JSON for non-strings).
  */
 function normalizeContext(data: Record<string, unknown>): Record<string, string> {
-    return Object.fromEntries(
-        Object.entries(data).map(([key, value]) => [
-            key,
-            typeof value === 'string' ? value : JSON.stringify(value)
-        ])
-    );
+    return mapValues(data, (value) => (typeof value === 'string' ? value : JSON.stringify(value)));
 }

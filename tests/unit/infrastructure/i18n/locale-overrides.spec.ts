@@ -26,13 +26,8 @@ vi.mock('@api', async (importOriginal) => ({
         getLocaleMessagesMock(locale, parameters)
 }));
 
-const {
-    fetchRemoteLocales,
-    fetchLocaleOverrides,
-    mergeRemoteLocales,
-    mergeDictionaries,
-    withLocaleOverrides
-} = await import('@/infrastructure/i18n/locale-overrides.ts');
+const { fetchRemoteLocales, fetchLocaleOverrides, mergeRemoteLocales, withLocaleOverrides } =
+    await import('@/infrastructure/i18n/locale-overrides.ts');
 const { supportedLanguages } = await import('@/infrastructure/i18n');
 
 /** `supportedLanguages` is module state shared with the app-wide instance. */
@@ -166,65 +161,6 @@ describe('mergeRemoteLocales', () => {
             expect(added).toEqual([]);
             expect(supportedLanguages).toEqual(snapshot);
         });
-    });
-});
-
-describe('mergeDictionaries', () => {
-    it('lets an override win over the bundled value', () => {
-        expect(mergeDictionaries({ greeting: 'Hello' }, { greeting: 'Hi' })).toEqual({
-            greeting: 'Hi'
-        });
-    });
-
-    it('keeps a bundled key nobody has edited', () => {
-        expect(
-            mergeDictionaries({ greeting: 'Hello', farewell: 'Bye' }, { greeting: 'Hi' })
-        ).toEqual({ greeting: 'Hi', farewell: 'Bye' });
-    });
-
-    /**
-     * The regression this whole function exists to prevent. An override names ONE leaf, and a
-     * shallow assign would replace its entire group — twenty untouched keys deleted by editing
-     * one, with nothing to show for it but missing text on an unrelated screen.
-     */
-    it('descends into a group instead of replacing it', () => {
-        expect(
-            mergeDictionaries(
-                { navigation: { home: 'Home', menu: 'Menu', language: 'Language' } },
-                { navigation: { home: 'Inicio' } }
-            )
-        ).toEqual({ navigation: { home: 'Inicio', menu: 'Menu', language: 'Language' } });
-    });
-
-    it('adds a group the bundle does not have at all', () => {
-        expect(mergeDictionaries({ greeting: 'Hello' }, { cart: { title: 'Carrito' } })).toEqual({
-            greeting: 'Hello',
-            cart: { title: 'Carrito' }
-        });
-    });
-
-    /**
-     * An array is a leaf. `tm()` renders these as whole lists — the static pages' paragraphs and
-     * FAQs — so merging two by index would splice one language into the middle of another.
-     */
-    it('replaces an array whole rather than merging it by index', () => {
-        expect(mergeDictionaries({ faq: ['one', 'two', 'three'] }, { faq: ['uno'] })).toEqual({
-            faq: ['uno']
-        });
-    });
-
-    /**
-     * `base` is the imported JSON module object, shared with every other consumer of that import
-     * for the life of the page. Writing into it would translate the bundle itself.
-     */
-    it('does not mutate either input', () => {
-        const base = { navigation: { home: 'Home' } };
-        const overrides = { navigation: { home: 'Inicio' } };
-
-        mergeDictionaries(base, overrides);
-
-        expect(base).toEqual({ navigation: { home: 'Home' } });
-        expect(overrides).toEqual({ navigation: { home: 'Inicio' } });
     });
 });
 

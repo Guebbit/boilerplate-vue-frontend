@@ -1,5 +1,6 @@
 import { ref, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { omit } from 'lodash-es';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
 import { useLocalesStore } from '@/modules/locales/store.ts';
@@ -49,23 +50,19 @@ export function useDictionaryCellEditor(
 
     /** Drops one cell's draft, so the cell reads the stored value again. */
     const forgetDraft = (id: string) => {
-        drafts.value = Object.fromEntries(Object.entries(drafts.value).filter(([k]) => k !== id));
+        drafts.value = omit(drafts.value, id);
     };
 
     /** Drops one cell's error, so a fresh attempt starts clean. */
     const forgetError = (id: string) => {
-        cellErrors.value = Object.fromEntries(
-            Object.entries(cellErrors.value).filter(([k]) => k !== id)
-        );
+        cellErrors.value = omit(cellErrors.value, id);
     };
 
     /** Shows the saved mark on one cell, then takes it away. */
     const markSaved = (id: string) => {
         savedCells.value = { ...savedCells.value, [id]: true };
         setTimeout(() => {
-            savedCells.value = Object.fromEntries(
-                Object.entries(savedCells.value).filter(([k]) => k !== id)
-            );
+            savedCells.value = omit(savedCells.value, id);
         }, SAVED_MARK_MS);
     };
 

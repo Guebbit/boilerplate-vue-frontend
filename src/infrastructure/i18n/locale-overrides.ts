@@ -1,5 +1,10 @@
 import { getLocales, getLocaleMessages } from '@api';
-import { localeDirections, supportedLanguages, type TranslationDictionaries } from './index.ts';
+import {
+    localeDirections,
+    mergeDictionaries,
+    supportedLanguages,
+    type TranslationDictionaries
+} from './index.ts';
 
 /**
  * The runtime half of this app's dictionaries: which languages exist, and what has been edited.
@@ -109,42 +114,6 @@ export const mergeRemoteLocales = (): Promise<string[]> =>
 
         return added;
     });
-
-const isDictionary = (value: unknown): value is TranslationDictionaries =>
-    typeof value === 'object' && value !== null && !Array.isArray(value);
-
-/**
- * `overrides` layered onto `base`, descending into nested groups.
- *
- * DEEP, and that is the whole point of the tier. An override names one leaf — `generic.product` —
- * and a shallow assign would replace the entire `generic` group with the one key that was edited,
- * silently deleting the twenty nobody touched. Anything that is not two objects is a leaf the
- * override replaces, arrays included: a translated list is edited whole or not at all, and merging
- * two arrays by index would produce a sentence half in each language.
- *
- * Neither argument is mutated — `base` is the imported JSON module object, shared with every other
- * consumer of that import for the life of the page.
- *
- * @param base - The bundled dictionary, or an empty one for a language this build does not ship.
- * @param overrides - What has been edited, from {@link fetchLocaleOverrides}.
- * @returns A new dictionary with the overrides winning key by key.
- */
-export const mergeDictionaries = (
-    base: TranslationDictionaries,
-    overrides: TranslationDictionaries
-): TranslationDictionaries => {
-    const merged: TranslationDictionaries = { ...base };
-
-    for (const [key, value] of Object.entries(overrides)) {
-        const existing = merged[key];
-        merged[key] =
-            isDictionary(existing) && isDictionary(value)
-                ? mergeDictionaries(existing, value)
-                : value;
-    }
-
-    return merged;
-};
 
 /**
  * One language's dictionary: what this build bundled, with the edited overrides on top.

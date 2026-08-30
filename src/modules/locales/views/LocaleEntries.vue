@@ -9,6 +9,7 @@ import { computed, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
+import { omit } from 'lodash-es';
 import { ArrowLeft, BookOpenText, Check, Download, Plus, Search, Upload } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { downloadBlob } from '@guebbit/js-toolkit';
@@ -169,9 +170,7 @@ const handleValueBlur = (entry: LocaleEntry) => {
             // Feedback on the row, not a toast: ten edits in a row would be ten toasts.
             savedRows.value[entry.id] = true;
             setTimeout(() => {
-                savedRows.value = Object.fromEntries(
-                    Object.entries(savedRows.value).filter(([id]) => id !== entry.id)
-                );
+                savedRows.value = omit(savedRows.value, entry.id);
             }, 1500);
             return applyLiveOverrides();
         })

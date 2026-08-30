@@ -33,7 +33,8 @@ const i18nState = {
 const changeLanguageMock = vi.fn((_locale: string) => Promise.resolve());
 const updateLocaleMock = vi.fn((_locale: string, _messages: unknown) => Promise.resolve());
 
-vi.mock('@/infrastructure/i18n', () => ({
+vi.mock('@/infrastructure/i18n', async (importOriginal) => ({
+    ...(await importOriginal<Record<string, unknown>>()),
     get supportedLanguages() {
         return i18nState.supportedLanguages;
     },

@@ -1,7 +1,7 @@
 import { nextTick, type WritableComputedRef } from 'vue';
 import { createI18n, type I18n } from 'vue-i18n';
+import { mergeWith } from 'lodash-es';
 import { applyHtmlLocaleAttributes } from './dom.ts';
-import { mergeDictionaries } from './merge-dictionaries.ts';
 
 export interface TranslationDictionaries {
     /*
@@ -143,6 +143,24 @@ export function _loadLocale(i18n: I18n, locale: string): Promise<unknown> {
 
     return _changeLanguage(i18n, getDefaultLocale());
 }
+
+/**
+ * Deep merge with the same rule vue-i18n's `mergeLocaleMessage` applies: nested groups combine,
+ * anything else is a leaf the later dictionary replaces — arrays included, since a translated
+ * list is edited whole or not at all and merging two arrays by index would produce a sentence
+ * half in each language. `mergeWith`'s default behaviour already does the rest (deep-merge plain
+ * objects, overwrite everything else) once arrays are excluded from it.
+ *
+ * Neither argument is mutated — `mergeWith` writes into its first argument, so that argument is a
+ * clone.
+ */
+export const mergeDictionaries = (
+    base: TranslationDictionaries,
+    extra: TranslationDictionaries
+): TranslationDictionaries =>
+    mergeWith(structuredClone(base), extra, (_target, source) =>
+        Array.isArray(source) ? source : undefined
+    );
 
 /**
  * One language's BUNDLED dictionary — the shared file plus every enabled module's slice — as a
