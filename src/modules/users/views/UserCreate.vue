@@ -15,6 +15,7 @@ import { useUsersStore } from '@/modules/users/store';
 import { usersSchema, usersPasswordSchema } from '@/modules/users/schemas.ts';
 import { z } from 'zod';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
+import FormCard from '@/ui/organisms/FormCard.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
@@ -54,7 +55,7 @@ const createSchema = usersSchema.pick({ email: true, username: true }).extend({
     imageUpload: imageUploadSchema
 });
 
-const formElement = ref<HTMLFormElement>();
+const card = ref<InstanceType<typeof FormCard>>();
 
 const {
     form,
@@ -62,7 +63,11 @@ const {
     showFormErrors: showErrors,
     isSubmitting,
     handleSubmit
-} = useAppForm<UserCreateForm>({}, createSchema, { formElement });
+} = useAppForm<UserCreateForm>({}, createSchema, {
+    // The `<form>` lives in `FormCard`; read through a getter so the element is resolved when a
+    // failed submit actually needs it, not while the card is still mounting.
+    formElement: () => card.value?.formElement
+});
 
 /**
  * Avatar upload progress, shown by `FormImageUpload` while the multipart create is in flight.
@@ -101,56 +106,46 @@ const submitForm = () =>
 
 <template>
     <LayoutDefault id="user-create-page" :title="t('user-create-page.page-title')">
-        <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
-            <form ref="formElement" novalidate @submit.prevent="submitForm">
-                <v-text-field
-                    v-model="form.email"
-                    type="email"
-                    :label="t('user-create-page.label-email')"
-                    :error-messages="showErrors ? formErrors.email : []"
-                    class="mb-2"
-                />
-                <v-text-field
-                    v-model="form.username"
-                    type="text"
-                    :label="t('user-create-page.label-username')"
-                    :error-messages="showErrors ? formErrors.username : []"
-                    class="mb-2"
-                />
-                <v-text-field
-                    v-model="form.password"
-                    type="password"
-                    autocomplete="new-password"
-                    :label="t('user-create-page.label-password')"
-                    :error-messages="showErrors ? formErrors.password : []"
-                />
-                <FormImageUpload
-                    v-model="form.imageUpload"
-                    :error-messages="showErrors ? formErrors.imageUpload : []"
-                    :progress="uploadProgress"
-                    :disabled="isSubmitting"
-                    class="mt-2"
-                />
-                <div class="flex flex-wrap gap-x-8">
-                    <v-switch v-model="form.admin" :label="t('user-create-page.label-admin')" />
-                    <v-switch v-model="form.active" :label="t('user-create-page.label-active')" />
-                </div>
-                <v-btn
-                    type="submit"
-                    color="primary"
-                    size="large"
-                    block
-                    :loading="isSubmitting"
-                    class="mt-2"
-                >
-                    {{ t('user-create-page.button-submit') }}
-                </v-btn>
-            </form>
-            <div class="mt-4 flex justify-center">
-                <v-btn variant="text" :to="routerLinkI18n({ name: 'UsersList' })">
-                    {{ t('user-create-page.button-go-to-list') }}
-                </v-btn>
+        <FormCard
+            ref="card"
+            :submit-label="t('user-create-page.button-submit')"
+            :back-to="{ name: 'UsersList' }"
+            :back-label="t('user-create-page.button-go-to-list')"
+            :loading="isSubmitting"
+            @submit="submitForm"
+        >
+            <v-text-field
+                v-model="form.email"
+                type="email"
+                :label="t('user-create-page.label-email')"
+                :error-messages="showErrors ? formErrors.email : []"
+                class="mb-2"
+            />
+            <v-text-field
+                v-model="form.username"
+                type="text"
+                :label="t('user-create-page.label-username')"
+                :error-messages="showErrors ? formErrors.username : []"
+                class="mb-2"
+            />
+            <v-text-field
+                v-model="form.password"
+                type="password"
+                autocomplete="new-password"
+                :label="t('user-create-page.label-password')"
+                :error-messages="showErrors ? formErrors.password : []"
+            />
+            <FormImageUpload
+                v-model="form.imageUpload"
+                :error-messages="showErrors ? formErrors.imageUpload : []"
+                :progress="uploadProgress"
+                :disabled="isSubmitting"
+                class="mt-2"
+            />
+            <div class="flex flex-wrap gap-x-8">
+                <v-switch v-model="form.admin" :label="t('user-create-page.label-admin')" />
+                <v-switch v-model="form.active" :label="t('user-create-page.label-active')" />
             </div>
-        </v-card>
+        </FormCard>
     </LayoutDefault>
 </template>

@@ -15,6 +15,7 @@ import { useProductsStore } from '@/modules/products/store';
 import { productsSchema } from '@/modules/products/schemas.ts';
 import { z } from 'zod';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
+import FormCard from '@/ui/organisms/FormCard.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
@@ -68,7 +69,7 @@ const createSchema = productsSchema.pick({ title: true, price: true }).extend({
  * `price` starts at 0 for the same reason plus one more: the contract's minimum is 0, so the
  * starting value is already valid rather than an error waiting to be revealed.
  */
-const formElement = ref<HTMLFormElement>();
+const card = ref<InstanceType<typeof FormCard>>();
 
 const {
     form,
@@ -79,7 +80,9 @@ const {
 } = useAppForm<ProductCreateForm>(
     { title: '', price: 0, description: '', active: true },
     createSchema,
-    { formElement }
+    // The `<form>` lives in `FormCard`; read through a getter so the element is resolved when a
+    // failed submit actually needs it, not while the card is still mounting.
+    { formElement: () => card.value?.formElement }
 );
 
 /**
@@ -120,54 +123,44 @@ const submitForm = () =>
 
 <template>
     <LayoutDefault id="product-create-page" :title="t('product-create-page.page-title')">
-        <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
-            <form ref="formElement" novalidate @submit.prevent="submitForm">
-                <v-text-field
-                    v-model="form.title"
-                    type="text"
-                    :label="t('product-create-page.label-title')"
-                    :error-messages="showErrors ? formErrors.title : []"
-                    class="mb-2"
-                />
-                <v-number-input
-                    v-model="form.price"
-                    :label="t('product-create-page.label-price')"
-                    :min="0"
-                    :step="0.01"
-                    :precision="2"
-                    control-variant="stacked"
-                    :error-messages="showErrors ? formErrors.price : []"
-                    class="mb-2"
-                />
-                <v-textarea
-                    v-model="form.description"
-                    :label="t('product-create-page.label-description')"
-                    :rows="5"
-                />
-                <FormImageUpload
-                    v-model="form.imageUpload"
-                    :error-messages="showErrors ? formErrors.imageUpload : []"
-                    :progress="uploadProgress"
-                    :disabled="isSubmitting"
-                    class="mt-2"
-                />
-                <v-switch v-model="form.active" :label="t('product-create-page.label-active')" />
-                <v-btn
-                    type="submit"
-                    color="primary"
-                    size="large"
-                    block
-                    :loading="isSubmitting"
-                    class="mt-2"
-                >
-                    {{ t('product-create-page.button-submit') }}
-                </v-btn>
-            </form>
-            <div class="mt-4 flex justify-center">
-                <v-btn variant="text" :to="routerLinkI18n({ name: 'ProductsList' })">
-                    {{ t('product-create-page.button-go-to-list') }}
-                </v-btn>
-            </div>
-        </v-card>
+        <FormCard
+            ref="card"
+            :submit-label="t('product-create-page.button-submit')"
+            :back-to="{ name: 'ProductsList' }"
+            :back-label="t('product-create-page.button-go-to-list')"
+            :loading="isSubmitting"
+            @submit="submitForm"
+        >
+            <v-text-field
+                v-model="form.title"
+                type="text"
+                :label="t('product-create-page.label-title')"
+                :error-messages="showErrors ? formErrors.title : []"
+                class="mb-2"
+            />
+            <v-number-input
+                v-model="form.price"
+                :label="t('product-create-page.label-price')"
+                :min="0"
+                :step="0.01"
+                :precision="2"
+                control-variant="stacked"
+                :error-messages="showErrors ? formErrors.price : []"
+                class="mb-2"
+            />
+            <v-textarea
+                v-model="form.description"
+                :label="t('product-create-page.label-description')"
+                :rows="5"
+            />
+            <FormImageUpload
+                v-model="form.imageUpload"
+                :error-messages="showErrors ? formErrors.imageUpload : []"
+                :progress="uploadProgress"
+                :disabled="isSubmitting"
+                class="mt-2"
+            />
+            <v-switch v-model="form.active" :label="t('product-create-page.label-active')" />
+        </FormCard>
     </LayoutDefault>
 </template>
