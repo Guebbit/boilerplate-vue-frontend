@@ -1,0 +1,37 @@
+{
+  "generated_at": "2026-08-30T15:47:00.025032+00:00",
+  "head": "5700688757e720bd67a12d5405448f9206042f86",
+  "threshold": 5,
+  "layers": {
+    "execution": {
+      "artifact": ".2repo/EXECUTION.md"
+    },
+    "memory": {
+      "artifact": ".2repo/repo-memory.json",
+      "report": ".2repo/REPO_MEMORY.md",
+      "synced_entries": 0,
+      "count": 0,
+      "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "index": {
+      "artifact": ".2repo/repo-index.json",
+      "revision": "940115c292182ee334e8c17faa3d15b9795fc0c7d29d357c7c5fc71adf55ff67",
+      "chunk_count": 217,
+      "artifact_count": 3,
+      "artifact_digest": "7e81b05cb169e11dc721dcaab61f9d21ffba21660686c041af8a59c784c617f2"
+    },
+    "context": {
+      "artifact": ".2repo/REPO_CONTEXT.md",
+      "injected": [
+        "/target-repo/.graphifyignore",
+        "/target-repo/.gitattributes",
+        "/target-repo/.gitignore",
+        "/target-repo/CLAUDE.md"
+      ],
+      "ai_target": "claude",
+      "provider": "ollama",
+      "model": "qwen3.8:27b",
+      "mode": "extract"
+    }
+  }
+}
