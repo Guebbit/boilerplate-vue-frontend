@@ -137,9 +137,10 @@ onMounted(() => {
                     :title="heroTitle"
                     :description="heroDescription"
                     :eyebrow="currentProduct?.id"
-                >
-                    <template #icon><Package :size="32" /></template>
-                </ItemDetailHero>
+                    :has-image="true"
+                    :image-url="currentProduct?.imageUrl"
+                    :image-alt="t('product-target-page.image-alt', { name: heroTitle })"
+                />
             </template>
 
             <template #stats>

@@ -20,6 +20,7 @@ import type { Product } from '@types';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
+import LazyImage from '@/ui/molecules/LazyImage.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 
 const { t } = useI18n();
@@ -53,6 +54,11 @@ const pageSizeOptions = [
  * @returns The localized headers, re-translated on locale change.
  */
 const tableHeaders = computed<CoreDataTableHeader<Product>[]>(() => [
+    /*
+     * `synthetic` although `imageUrl` IS a field: the cell renders the picture, not the string,
+     * and a sortable column of URLs is a control that offers an ordering nobody wants.
+     */
+    { title: t('products-list-page.column-image'), key: 'image', synthetic: true, width: '72px' },
     { title: t('products-list-page.column-id'), key: 'id' },
     { title: t('products-list-page.column-title'), key: 'title' },
     { title: t('products-list-page.column-price'), key: 'price' },
@@ -256,6 +262,15 @@ const handleHardDelete = (productId: string) => {
             :loading="loading"
             :loading-text="t('generic.loading')"
         >
+            <template v-slot:[`item.image`]="{ item }">
+                <LazyImage
+                    :src="item.imageUrl"
+                    :alt="t('products-list-page.image-alt', { name: item.title })"
+                    :width="56"
+                    :height="56"
+                />
+            </template>
+
             <template v-slot:[`item.price`]="{ item }">
                 {{ formatCurrency(item.price) }}
             </template>

@@ -29,7 +29,9 @@
         "button-view-named": "View {name}",
         "button-edit-named": "Edit {name}",
         "button-delete-named": "Delete {name}",
-        "button-hard-delete-named": "Permanently delete {name}"
+        "button-hard-delete-named": "Permanently delete {name}",
+        "column-image": "Picture",
+        "image-alt": "Profile picture of {name}"
     },
     "users-form": {
         "email-invalid": "Must be a valid email",
@@ -55,7 +57,8 @@
         "label-admin": "Admin",
         "label-active": "Active",
         "label-created-at": "Created at",
-        "label-updated-at": "Updated at"
+        "label-updated-at": "Updated at",
+        "image-alt": "Profile picture of {name}"
     },
     "user-create-page": {
         "page-title": "Create user",

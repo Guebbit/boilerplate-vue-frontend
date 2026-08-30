@@ -37,6 +37,10 @@ defineProps<{
     description?: string;
     /** A count the activator wears, e.g. the cart's, so it stays visible while the menu is shut. */
     badge?: number;
+    /** Shows the visitor's picture on the activator instead of `icon` — the account menu only. */
+    avatar?: boolean;
+    /** The visitor's `imageUrl`, unresolved. Only read when {@link avatar} is set. */
+    avatarUrl?: string | null;
     dataTest?: string;
 }>();
 
@@ -53,6 +57,8 @@ const { t } = useI18n();
                 :description="description"
                 :badge="badge"
                 :badge-label="badge ? t('navigation.badge-items', badge) : undefined"
+                :avatar="avatar"
+                :avatar-url="avatarUrl"
                 :data-test="dataTest"
             />
         </template>

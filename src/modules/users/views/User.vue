@@ -89,9 +89,10 @@ watchUser(() => id);
                     :title="heroTitle"
                     :description="heroDescription"
                     :eyebrow="currentUser?.id"
-                >
-                    <template #icon><User :size="32" /></template>
-                </ItemDetailHero>
+                    :has-image="true"
+                    :image-url="currentUser?.imageUrl"
+                    :image-alt="t('user-target-page.image-alt', { name: heroTitle })"
+                />
             </template>
 
             <template #stats>

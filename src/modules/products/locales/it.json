@@ -27,7 +27,9 @@
         "button-view-named": "Visualizza {name}",
         "button-edit-named": "Modifica {name}",
         "button-delete-named": "Elimina {name}",
-        "button-hard-delete-named": "Elimina definitivamente {name}"
+        "button-hard-delete-named": "Elimina definitivamente {name}",
+        "column-image": "Immagine",
+        "image-alt": "Foto di {name}"
     },
     "products-form": {
         "title-required": "Il titolo è obbligatorio",
@@ -50,7 +52,8 @@
         "success-add-to-cart": "Prodotto aggiunto al carrello.",
         "button-save-wishlist": "Salva nei desideri",
         "button-unsave-wishlist": "Salvato",
-        "login-to-buy": "Accedi per acquistare o salvare questo prodotto."
+        "login-to-buy": "Accedi per acquistare o salvare questo prodotto.",
+        "image-alt": "Foto di {name}"
     },
     "product-create-page": {
         "page-title": "Crea prodotto",

@@ -19,6 +19,7 @@ import type { User } from '@types';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ListPagination from '@/ui/molecules/ListPagination.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
+import LazyImage from '@/ui/molecules/LazyImage.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 
 const { t } = useI18n();
@@ -53,6 +54,11 @@ const pageSizeOptions = [
  * @returns The localized headers, re-translated on locale change.
  */
 const tableHeaders = computed<CoreDataTableHeader<User>[]>(() => [
+    /*
+     * `synthetic` although `imageUrl` IS a field: the cell renders the picture, not the string,
+     * and a sortable column of URLs is a control that offers an ordering nobody wants.
+     */
+    { title: t('users-list-page.column-image'), key: 'image', synthetic: true, width: '72px' },
     { title: t('users-list-page.column-id'), key: 'id' },
     { title: t('users-list-page.column-username'), key: 'username' },
     { title: t('users-list-page.column-email'), key: 'email' },
@@ -188,6 +194,16 @@ const handleHardDelete = (userId: string) => {
             :loading="loading"
             :loading-text="t('generic.loading')"
         >
+            <template v-slot:[`item.image`]="{ item }">
+                <LazyImage
+                    :src="item.imageUrl"
+                    :alt="t('users-list-page.image-alt', { name: item.username })"
+                    :width="56"
+                    :height="56"
+                    rounded="rounded-full"
+                />
+            </template>
+
             <template v-slot:[`item.admin`]="{ item }">
                 <v-chip v-if="item.admin" size="small" variant="tonal" color="tertiary">
                     {{ t('generic.administrator') }}

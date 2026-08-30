@@ -71,6 +71,9 @@
         "upload-progress": "Caricamento… {percent}%",
         "preview-alt": "Anteprima immagine"
     },
+    "image": {
+        "placeholder-alt": "Nessuna immagine disponibile — immagine segnaposto"
+    },
     "api-errors": {
         "unauthorized": "Non hai effettuato l’accesso, oppure la sessione è scaduta.",
         "forbidden": "Non hai i permessi per farlo.",

@@ -22,6 +22,12 @@ export interface SessionViewer {
     id: string;
     email: string;
     admin: boolean;
+    /**
+     * The visitor's own picture, for the avatar the account menu wears — the shell renders it on
+     * every page, so it is one of the few user fields the shell genuinely needs rather than one
+     * the account module could keep to itself.
+     */
+    imageUrl?: string;
 }
 
 /**
@@ -100,9 +106,15 @@ export const useSessionStore = defineStore('session', () => {
                 id: string;
                 email: string;
                 admin?: boolean;
+                imageUrl?: string;
             }>(data);
             setViewer(
-                payload && { id: payload.id, email: payload.email, admin: Boolean(payload.admin) }
+                payload && {
+                    id: payload.id,
+                    email: payload.email,
+                    admin: Boolean(payload.admin),
+                    imageUrl: payload.imageUrl
+                }
             );
             return payload;
         });

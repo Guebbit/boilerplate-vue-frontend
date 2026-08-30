@@ -71,6 +71,9 @@
         "upload-progress": "Uploading… {percent}%",
         "preview-alt": "Image preview"
     },
+    "image": {
+        "placeholder-alt": "No image available — placeholder picture"
+    },
     "api-errors": {
         "unauthorized": "You are not signed in, or your session has expired.",
         "forbidden": "You do not have permission to do that.",

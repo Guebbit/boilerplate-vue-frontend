@@ -29,6 +29,20 @@ import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import vuetify from '@/ui/vuetify';
 import { i18n } from '@/infrastructure/i18n';
 import { ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE } from '@/infrastructure/utils/uploads';
+import { instance } from '@/infrastructure/http/client';
+
+/**
+ * What a stored image's path becomes in `src`.
+ *
+ * The API answers an upload with a path relative to ITSELF (`/images/…`), and the browser would
+ * resolve that against THIS app's origin — a 404 on every deployment where the two differ. The
+ * preview therefore prefixes the API's own origin, and the expectation is built from the axios
+ * instance rather than written out, so a spec cannot pass by agreeing with a stale `.env`.
+ *
+ * @param path - The path as the API returned it.
+ * @returns The absolute URL the preview should show.
+ */
+const served = (path: string) => `${String(instance.defaults.baseURL)}${path}`;
 
 /** Object-URL bookkeeping, so a missing revoke is observable. */
 const created: string[] = [];
@@ -118,7 +132,7 @@ describe('FormImageUpload — the preview', () => {
     it('shows the existing image while nothing is picked', () => {
         const wrapper = mountUpload({ currentImageUrl: '/images/existing.png' });
 
-        expect(wrapper.find('img').attributes('src')).toBe('/images/existing.png');
+        expect(wrapper.find('img').attributes('src')).toBe(served('/images/existing.png'));
     });
 
     it('prefers the picked file over the existing image', async () => {
@@ -143,7 +157,7 @@ describe('FormImageUpload — the preview', () => {
         await wrapper.setProps({ modelValue: undefined });
         await wrapper.vm.$nextTick();
 
-        expect(wrapper.find('img').attributes('src')).toBe('/images/existing.png');
+        expect(wrapper.find('img').attributes('src')).toBe(served('/images/existing.png'));
     });
 });
 

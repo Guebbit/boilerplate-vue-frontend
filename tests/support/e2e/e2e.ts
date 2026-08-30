@@ -28,6 +28,21 @@ import './fixtures';
 beforeEach(() => {
     cy.clearCookies();
     cy.clearAllSessionStorage();
+
+    /*
+     * The missing-image placeholder is a RANDOM dog from placedog.net (see
+     * `src/infrastructure/utils/images.ts`), which is two problems for a test run and one fixture
+     * solves both: the suite otherwise reaches the public internet on every page that shows a
+     * record without a picture, and the visual baselines would compare a different animal each
+     * time. Answering with the sample image makes the placeholder deterministic without the app
+     * knowing it is under test.
+     *
+     * `middleware: true` so a spec that wants to assert something of its own about placeholder
+     * requests can still register its own intercept and have it win.
+     */
+    cy.intercept({ hostname: 'placedog.net', middleware: true }, (request) => {
+        request.reply({ fixture: 'sample-image.png' });
+    });
 });
 
 // Alternatively you can use CommonJS syntax:

@@ -5,8 +5,9 @@ export default {
 </script>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { debounce } from 'lodash-es';
 import { ArrowLeft, Check, Plus, Search } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
@@ -97,7 +98,19 @@ const {
 /** Client-side text filter over keys and values. */
 const filterText = ref('');
 
-/** The filter as last submitted, so typing does not reshuffle the board under the cursor. */
+/**
+ * The filter the board is actually drawn from, a short beat behind {@link filterText}.
+ *
+ * The two are separate refs because the board is expensive to redraw — `filteredKeys` walks every
+ * key across every language, and the page renders a field per cell — so filtering on the raw
+ * keystroke made the field itself stutter. That used to be solved by not filtering until Search
+ * was pressed, which is a strange thing to ask of a filter that never leaves the browser: there is
+ * no request to spare, only frames.
+ *
+ * Debouncing spends those frames instead of the interaction. The Search button still works and
+ * still applies immediately — see {@link handleSearch} — for someone who types and reaches for it
+ * faster than the delay.
+ */
 const appliedFilter = ref('');
 
 /** Show only the keys at least one language is missing. */
@@ -148,6 +161,34 @@ const tableHeaders = computed<CoreDataTableHeader<{ key: string }>[]>(() => [
     }))
 ]);
 
+/** Puts the typed text on the board and returns to the first page, which the new list redefines. */
+const applyFilter = () => {
+    appliedFilter.value = filterText.value;
+    pageCurrent.value = 1;
+};
+
+/**
+ * Long enough that a whole word is one redraw rather than six, short enough to still read as the
+ * board following the typing.
+ */
+const FILTER_DEBOUNCE_MS = 250;
+
+const applyFilterSoon = debounce(applyFilter, FILTER_DEBOUNCE_MS);
+
+watch(filterText, () => applyFilterSoon());
+
+// A filter left in flight when the page goes has nowhere to land.
+onBeforeUnmount(() => applyFilterSoon.cancel());
+
+/**
+ * Submitting the filter form applies what is typed AT ONCE, cancelling the pending debounce —
+ * otherwise the queued call would fire straight after and apply the same value a second time.
+ */
+const handleSearch = () => {
+    applyFilterSoon.cancel();
+    applyFilter();
+};
+
 /**
  * Adds a row to the board. Nothing is written: the key only exists once a cell is filled, which
  * is also how the API sees it — there is no "key" record, only entries that happen to share one.
@@ -164,6 +205,12 @@ const handleAddKey = () => {
     appliedFilter.value = '';
     filterText.value = '';
     incompleteOnly.value = false;
+    /*
+     * Clearing `filterText` schedules a debounced apply like any other edit would, and that one
+     * would land 250ms from now and reset `pageCurrent` — undoing the page this function is about
+     * to compute, so the new row would scroll away from the cursor just placed in it.
+     */
+    applyFilterSoon.cancel();
     // Land on the page the new row sorted into, so the translator sees where to type.
     pageCurrent.value = Math.floor(allKeys.value.indexOf(key) / PAGE_SIZE) + 1;
     // And put the cursor there: the page moved under them, and the row is the reason it did.
@@ -172,11 +219,6 @@ const handleAddKey = () => {
             ?.querySelector<HTMLElement>(`[data-key="${CSS.escape(key)}"] input`)
             ?.focus();
     });
-};
-
-const handleSearch = () => {
-    appliedFilter.value = filterText.value;
-    pageCurrent.value = 1;
 };
 
 const handleCreateLanguage = (fields: {

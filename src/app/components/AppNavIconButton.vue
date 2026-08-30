@@ -2,6 +2,7 @@
 import { mergeProps, useAttrs } from 'vue';
 import type { Component } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
+import LazyImage from '@/ui/molecules/LazyImage.vue';
 
 /**
  * An icon-only button (or link) that still has a name.
@@ -32,6 +33,17 @@ const props = defineProps<{
      * Keeps the tooltip short while the reader still hears who the account menu belongs to.
      */
     description?: string;
+    /**
+     * Renders the visitor's own picture in place of {@link icon}. Set on the ACCOUNT button and
+     * nowhere else — every other entry in the bar stands for a destination, and a destination has
+     * an icon, not a portrait.
+     *
+     * Passing it with no URL is still meaningful: the avatar becomes the shared missing-image
+     * placeholder, which says "you have no picture set" where a generic person glyph says nothing.
+     */
+    avatar?: boolean;
+    /** The visitor's `imageUrl`, unresolved. Only read when {@link avatar} is set. */
+    avatarUrl?: string | null;
 }>();
 
 const attributes = useAttrs();
@@ -76,7 +88,19 @@ const accessibleName = () =>
                     :to="to"
                     :aria-label="accessibleName()"
                 >
-                    <component :is="icon" :size="20" aria-hidden="true" />
+                    <!--
+                        `alt=""`: the button already carries the whole accessible name, and a
+                        reader that also announced the image would say the account twice.
+                    -->
+                    <LazyImage
+                        v-if="avatar"
+                        :src="avatarUrl"
+                        alt=""
+                        :width="28"
+                        :height="28"
+                        rounded="rounded-full"
+                    />
+                    <component :is="icon" v-else :size="20" aria-hidden="true" />
                 </v-btn>
             </v-badge>
         </template>

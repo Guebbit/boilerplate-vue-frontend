@@ -257,6 +257,8 @@ const toggleTheme = () => {
                     :description="viewer.email"
                     :icon="CircleUserRound"
                     :badge="accountBadge"
+                    :avatar="true"
+                    :avatar-url="viewer.imageUrl"
                     data-test="user-menu"
                 >
                     <template #after>

@@ -12,8 +12,13 @@
  * The path the API hands back for an uploaded file. One shape for both profiles now: the demo
  * profile IS the real API, so the write is a real multipart write everywhere — a field arriving
  * as a string is a 422 in every run of this suite, not only the live one.
+ *
+ * The origin is optional because the API's answer is a path relative to the API — `/images/…` —
+ * and `resolveImageUrl` prefixes it with the API host before it reaches `src`, since a bare path
+ * would otherwise be resolved against THIS app's origin and 404. Optional rather than required so
+ * the pattern still holds for a single-origin deployment, where there is no prefix to add.
  */
-const UPLOAD_PATH = /^\/images\/[\da-f]{32}\.(png|jpg|jpeg|webp)$/;
+const UPLOAD_PATH = /^(?:https?:\/\/[^/]+)?\/images\/[\da-f]{32}\.(png|jpg|jpeg|webp)$/;
 
 /**
  * Asserts no locally-picked file is still sitting in the preview.

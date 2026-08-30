@@ -5,6 +5,7 @@ import {
     ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE,
     MAX_UPLOAD_SIZE_LABEL
 } from '@/infrastructure/utils/uploads.ts';
+import { resolveImageUrl } from '@/infrastructure/utils/images.ts';
 
 const { t } = useI18n();
 
@@ -98,10 +99,15 @@ onBeforeUnmount(releaseObjectUrl);
 /**
  * What the preview shows.
  *
+ * Both candidates go through `resolveImageUrl`, which is a no-op on the object URL and the whole
+ * point for the stored one: the API answers an upload with a path relative to ITSELF, and a bare
+ * `/images/…` in `src` is resolved by the browser against this app's origin instead — a 404 on
+ * every deployment where the two differ, which is every deployment including the default `.env`.
+ *
  * @returns The picked file's object URL, the record's existing image while nothing is picked, or
  *  `undefined` when there is neither and the preview is omitted entirely.
  */
-const previewSource = computed(() => objectUrl.value ?? currentImageUrl ?? undefined);
+const previewSource = computed(() => resolveImageUrl(objectUrl.value ?? currentImageUrl));
 </script>
 
 <template>

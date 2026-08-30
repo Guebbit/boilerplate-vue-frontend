@@ -1,16 +1,47 @@
 <script setup lang="ts">
 import CardDetail from '@/ui/organisms/CardDetail.vue';
+import LazyImage from '@/ui/molecules/LazyImage.vue';
 
-defineProps<{
+// No default on `hasImage`: Vue already casts an absent boolean prop to `false`.
+const { hasImage } = defineProps<{
     title: string;
     description: string;
     eyebrow?: string | number | null;
+    /**
+     * Whether this kind of record HAS a picture at all — not whether this particular one does.
+     *
+     * The distinction is the whole reason it is a separate prop from `imageUrl`. A product and a
+     * user both have an image field, so their heroes show a picture, and one with an empty field
+     * shows the stand-in that says so. An ORDER has no image field, and rendering a stand-in there
+     * would invent a missing picture for a record that was never going to have one — so an order's
+     * hero keeps the icon it has always had, by simply not passing this.
+     */
+    hasImage?: boolean;
+    /** The record's `imageUrl`, unresolved. Only read when {@link hasImage} is set. */
+    imageUrl?: string | null;
+    /** What the picture shows, for a reader who cannot see it. Required whenever `hasImage` is. */
+    imageAlt?: string;
 }>();
 </script>
 
 <template>
     <CardDetail class="detail-hero grid items-center gap-5 sm:grid-cols-[auto_minmax(0,1fr)]">
+        <LazyImage
+            v-if="hasImage"
+            :src="imageUrl"
+            :alt="imageAlt ?? title"
+            :width="72"
+            :height="72"
+            :eager="true"
+            rounded="rounded-3xl"
+            class="shadow-lg"
+        />
+        <!--
+            The icon tile the hero has always been, still the default: `h-18 w-18` matches the
+            image's 72px box so swapping one for the other cannot move the text beside it.
+        -->
         <div
+            v-else
             class="grid h-18 w-18 place-items-center rounded-3xl text-3xl shadow-lg bg-gradient-to-br from-[rgb(var(--detail-accent))] to-[rgb(var(--detail-accent))]/65 text-surface"
             aria-hidden="true"
         >

@@ -29,7 +29,9 @@
         "button-view-named": "Visualizza {name}",
         "button-edit-named": "Modifica {name}",
         "button-delete-named": "Elimina {name}",
-        "button-hard-delete-named": "Elimina definitivamente {name}"
+        "button-hard-delete-named": "Elimina definitivamente {name}",
+        "column-image": "Immagine",
+        "image-alt": "Immagine del profilo di {name}"
     },
     "users-form": {
         "email-invalid": "Deve essere un'email valida",
@@ -55,7 +57,8 @@
         "label-admin": "Admin",
         "label-active": "Attivo",
         "label-created-at": "Creato il",
-        "label-updated-at": "Aggiornato il"
+        "label-updated-at": "Aggiornato il",
+        "image-alt": "Immagine del profilo di {name}"
     },
     "user-create-page": {
         "page-title": "Crea utente",

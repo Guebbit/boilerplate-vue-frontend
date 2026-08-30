@@ -46,7 +46,14 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * @param user - The freshly loaded or updated account record.
      */
     const publishViewer = (user?: User) => {
-        session.setViewer(user && { id: user.id, email: user.email, admin: Boolean(user.admin) });
+        session.setViewer(
+            user && {
+                id: user.id,
+                email: user.email,
+                admin: Boolean(user.admin),
+                imageUrl: user.imageUrl
+            }
+        );
     };
 
     /**
