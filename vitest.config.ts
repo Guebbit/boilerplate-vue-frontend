@@ -124,7 +124,7 @@ export default mergeConfig(
 
                     // Every domain store. Two shapes: `store.ts` for the one store a module
                     // normally has, `stores/*.ts` for a module that genuinely has several — the
-                    // arrangement `src/infrastructure/stores/` already uses.
+                    // arrangement `src/modules/account/` uses.
                     //
                     // A store outside both globs would lose its floor without anything failing,
                     // which is why `tests/cross-cutting/store-location.spec.ts` asserts every

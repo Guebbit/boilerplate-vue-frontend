@@ -53,7 +53,7 @@ row it shows was written server-side by a module that had no idea a dashboard ex
 
 ## State
 
-This module owns no store. Whatever state its screens read belongs to a module it depends on, or to `src/infrastructure/stores/`.
+This module owns no store. Whatever state its screens read belongs to a module it depends on, or to the app-wide stores in `src/infrastructure/`.
 
 ## Screens
 

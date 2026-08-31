@@ -38,7 +38,7 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { downloadBlob } from '@guebbit/js-toolkit';
 import { PaymentPanel } from '@/modules/payments';
 import { ShipmentPanel } from '@/modules/delivery';
-import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 
 /**
  * Generic translation and notification accessors.

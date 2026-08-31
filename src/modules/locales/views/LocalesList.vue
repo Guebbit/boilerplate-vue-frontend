@@ -24,7 +24,7 @@ import LanguageFormDialog from '@/modules/locales/components/LanguageFormDialog.
 import DataTable from '@/ui/organisms/DataTable.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import type { LocaleCapability } from '@types';
-import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 
 /**
  * The languages board: every language the deployment offers, from both tiers, each stating what

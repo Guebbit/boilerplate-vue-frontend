@@ -8,7 +8,7 @@ import { ref, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { omit } from 'lodash-es';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 import { useLocalesStore } from '@/modules/locales/store.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import type { LocaleCapability, LocaleEntry } from '@types';

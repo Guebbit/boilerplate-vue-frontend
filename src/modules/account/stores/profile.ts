@@ -7,7 +7,7 @@
  */
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
-import { useSessionStore } from '@/infrastructure/stores/session.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import type { User } from '@types';
 import {
@@ -20,7 +20,7 @@ import {
     confirmEmailVerification as apiConfirmEmailVerification,
     updateUserById as apiUpdateUserById
 } from '@api';
-import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
+import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 
 /**
  * The visitor's own editable record, and every operation on it: fetch/update, the role-view

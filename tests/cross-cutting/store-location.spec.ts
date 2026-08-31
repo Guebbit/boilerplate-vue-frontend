@@ -8,8 +8,8 @@
  * Two shapes, and a module picks one:
  *
  *   - `store.ts` — one store, which is every module today.
- *   - `stores/*.ts` — genuinely more than one, the shape `src/infrastructure/stores/` already
- *     uses for `session` and `observability`.
+ *   - `stores/*.ts` — genuinely more than one, the shape `account` uses for `auth`, `profile`,
+ *     `addresses` and `sessions`.
  *
  * Never both, because "which file holds the cart store" must have one answer, and never any other
  * filename. A module reaching for the plural form is worth a second look before it is granted: two

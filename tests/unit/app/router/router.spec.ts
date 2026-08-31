@@ -22,7 +22,7 @@ vi.mock('@/app/guards/authentications.ts', () => ({
     enforceRouteAccess: (to: unknown) => enforceRouteAccess(to)
 }));
 
-vi.mock('@/infrastructure/stores/observability.ts', () => ({
+vi.mock('@/infrastructure/observability/store.ts', () => ({
     useObservabilityStore: () => ({ captureException: vi.fn() })
 }));
 

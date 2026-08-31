@@ -17,7 +17,7 @@ import { storeToRefs } from 'pinia';
 import { PackagePlus, Search } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/modules/products/store';
-import { useSessionStore } from '@/infrastructure/stores/session.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatCurrency, formatDate } from '@/infrastructure/utils/formatters.ts';
 import type { Product } from '@types';

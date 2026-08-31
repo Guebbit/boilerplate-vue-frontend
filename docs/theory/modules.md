@@ -246,7 +246,7 @@ remembering:
 
 4. **A store that was two stores, then a store that was four.** `infrastructure/profile.ts` held the
    access token _and_ the `User` record, so `infrastructure` owned a domain entity and the app shell
-   reached into a domain to render a name. Split into `infrastructure/stores/session.ts` — token, plus
+   reached into a domain to render a name. Split into `infrastructure/session.ts` — token, plus
    a `{ id, email, admin }` projection and the three `/account` calls a session needs to restore or end
    itself — and the account module's own store. That store later split again, by the same logic one
    level down: `modules/account/stores/auth.ts` establishes or ends a session (login, signup, password

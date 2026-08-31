@@ -17,7 +17,7 @@ flowchart TD
     HTTP["HTTP layer\nsrc/infrastructure/http/index.ts\naxios + interceptors"] --> Stores
     Generated --> HTTP
 
-    Obs["Observability\nGrafana Faro + Umami\nsrc/infrastructure/stores/observability.ts"] --> Views
+    Obs["Observability\nGrafana Faro + Umami\nsrc/infrastructure/observability/store.ts"] --> Views
     Obs --> Router
 
 

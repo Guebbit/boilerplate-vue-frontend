@@ -15,10 +15,10 @@ import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useSessionStore } from '@/infrastructure/stores/session.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
-import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 
 /**
  * The role-change widget — an admin viewing their OWN profile can move their own role between

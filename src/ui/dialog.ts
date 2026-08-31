@@ -1,7 +1,7 @@
 /**
  * @module
  * Pinia store implementing `globalThis.confirm()` as an async, themeable, queued promise: callers
- * push a request and await the resolution; `AppDialogHost` renders the queue's head and answers it.
+ * push a request and await the resolution; `DialogHost` renders the queue's head and answers it.
  */
 
 import { ref } from 'vue';
@@ -10,7 +10,7 @@ import { defineStore } from 'pinia';
 /**
  * What a confirmation asks, and how it is dressed.
  *
- * Copy only — every string arrives already translated, because this store sits in the bottom tier
+ * Copy only — every string arrives already translated, because this store is design-system code
  * and owns no dictionary. The caller has `t()`; the store has a promise.
  */
 export interface DialogRequest {
@@ -62,7 +62,7 @@ export interface DialogEntry extends DialogRequest {
  * Questions QUEUE rather than replace: two components asking at once — a row delete racing a
  * navigation guard — each get their answer in order, and neither resolves on the other's click.
  *
- * The rendering lives in `app/components/AppDialogHost.vue`, mounted once by the layout. This
+ * The rendering lives in `ui/organisms/DialogHost.vue`, mounted once by the layout. This
  * store neither imports Vuetify nor knows what a dialog looks like; it holds the queue and the
  * promises, which is what makes it testable in jsdom without a component tree.
  */

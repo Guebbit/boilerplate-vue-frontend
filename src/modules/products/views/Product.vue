@@ -17,7 +17,7 @@ import { storeToRefs } from 'pinia';
 import { useProductsStore } from '@/modules/products/store';
 import { useCartStore } from '@/modules/cart';
 import { useWishlistStore } from '@/modules/wishlist';
-import { useSessionStore } from '@/infrastructure/stores/session.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';

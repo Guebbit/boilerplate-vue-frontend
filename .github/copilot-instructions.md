@@ -81,7 +81,7 @@ Two separate jobs — do not conflate them:
 ### How to track events
 
 ```ts
-import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
+import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 
 const obs = useObservabilityStore();
 

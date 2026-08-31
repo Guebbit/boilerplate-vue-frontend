@@ -9,7 +9,7 @@ import { useI18n } from 'vue-i18n';
 import type { LocaleEntryInput, LocaleTenantDescriptor } from '@types';
 import type { TranslationDictionaries } from '@/infrastructure/i18n';
 import { flattenDictionary } from '../dictionaries';
-import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 
 /**
  * The import dialog: a nested JSON dictionary in, flat rows out.

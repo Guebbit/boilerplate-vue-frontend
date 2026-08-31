@@ -1,5 +1,5 @@
 /**
- * `persistLocalePreference` — `src/infrastructure/stores/session.ts`.
+ * `persistLocalePreference` — `src/infrastructure/session.ts`.
  *
  * The one write the session store makes that is not about the session itself, and the reason
  * `AppLanguageSwitcher` does not know what a session is. Every case below is the same claim from
@@ -22,7 +22,7 @@ vi.mock('@api', () => ({
     updateAccount: (body: { locale: string }) => updateAccountMock(body)
 }));
 
-const { useSessionStore } = await import('@/infrastructure/stores/session.ts');
+const { useSessionStore } = await import('@/infrastructure/session.ts');
 
 /** A store with a token AND a viewer, which is what `isAuth` actually requires. */
 const signedIn = () => {

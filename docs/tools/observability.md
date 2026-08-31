@@ -1,6 +1,6 @@
 # Observability
 
-The FE observability layer covers two complementary concerns, both wired into a **single Pinia store** at `src/infrastructure/stores/observability.ts`. Everything runs against a **self-hosted, local stack** (Docker/Podman) — there are no external SaaS accounts.
+The FE observability layer covers two complementary concerns, both wired into a **single Pinia store** at `src/infrastructure/observability/store.ts`. Everything runs against a **self-hosted, local stack** (Docker/Podman) — there are no external SaaS accounts.
 
 | Tool                                                                     | Role                                                      | Endpoint                                                        |
 | ------------------------------------------------------------------------ | --------------------------------------------------------- | --------------------------------------------------------------- |
@@ -17,7 +17,7 @@ Both are no-ops when their env vars are absent, so local dev works without the s
 %%{init: {'flowchart': {'nodeSpacing': 50, 'rankSpacing': 65}}}%%
 flowchart LR
     Main["src/main.ts\ninitFaro() + initUmami()"]
-    Store["src/infrastructure/stores/observability.ts\nuseObservabilityStore()"]
+    Store["src/infrastructure/observability/store.ts\nuseObservabilityStore()"]
     HTTP["src/infrastructure/http/index.ts\ncaptureException() on 5xx"]
     Components["Stores + composables\ntrack() / identifyUser()"]
 
@@ -134,7 +134,7 @@ fact, because a name emitted from both sides writes two rows nothing downstream 
 All observability calls go through `useObservabilityStore()`. Never import the Faro SDK or touch `window.umami` directly in components.
 
 ```ts
-import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
+import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 
 const obs = useObservabilityStore();
 

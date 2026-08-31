@@ -5,7 +5,7 @@
  * shown can never disagree. `tryRestoreAuth` silently rehydrates the session before it runs.
  */
 import { storeToRefs } from 'pinia';
-import { useSessionStore } from '@/infrastructure/stores/session';
+import { useSessionStore } from '@/infrastructure/session';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { getCookie } from '@guebbit/js-toolkit';
 import { loginContinueTo } from '@/app/router/navigation';

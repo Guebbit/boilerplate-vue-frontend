@@ -155,7 +155,7 @@ An axe sweep reads the DOM and asks whether the markup is well-formed. It cannot
 | The drawer opens onto its first entry; Escape closes it and returns focus to the hamburger | `AppNavigation.vue`'s focus watch            |
 | An icon-only entry shows its label as a tooltip on focus                                   | `AppNavIconButton.vue` — WCAG 1.4.13, 2.5.3  |
 | ArrowDown opens the administration menu; Escape closes it and leaves focus on the button   | `AppNavMenu.vue` over Vuetify's `v-menu`     |
-| The confirmation dialog keeps focus inside; Escape declines                                | `AppDialogHost.vue`                          |
+| The confirmation dialog keeps focus inside; Escape declines                                | `DialogHost.vue`                             |
 | A facet chip toggles `aria-pressed` with Enter and with Space                              | `ProductsList.vue`                           |
 
 `cypress-real-events` is what makes this possible: Cypress' own `.type('{tab}')` dispatches an event and moves nothing, because focus traversal is the browser's behaviour rather than a handler's. `cy.realPress()` sends the keystroke through the DevTools Protocol, so the browser performs it. The trade is Chromium only, which is every headless run here.

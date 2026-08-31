@@ -16,6 +16,7 @@
     "incremental": true,
     "mutate": [
         "src/infrastructure/**/*.ts",
+        "src/ui/dialog.ts",
         "src/app/**/*.ts",
         "src/kernel/**/*.ts",
         "src/modules/*/**/*.ts",

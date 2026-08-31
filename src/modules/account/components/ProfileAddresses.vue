@@ -23,7 +23,7 @@ import {
     VUETIFY_INVALID_FIELD_SELECTOR
 } from '@/infrastructure/utils/errors.ts';
 import type { Address, AddressInput } from '@types';
-import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 
 /**
  * The address book panel. Every write re-renders from the whole list the API answers with,

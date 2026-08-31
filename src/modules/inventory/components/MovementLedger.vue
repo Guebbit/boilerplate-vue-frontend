@@ -26,7 +26,7 @@ import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { EMPTY_VALUE, formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { StockMovementReason } from '@types';
 import type { StockMovement, StockMovementReason as TStockMovementReason } from '@types';
-import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 
 /**
  * Every movement newest first, with its why. The sweep is here too: releasing stale holds is a

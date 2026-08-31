@@ -8,7 +8,7 @@
 import { computed, useId } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
-import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 
 /**
  * Renders the confirmation at the front of the dialog store's queue, one at a time.

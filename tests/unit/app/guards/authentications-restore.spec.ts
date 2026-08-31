@@ -21,7 +21,7 @@ const sessionStore = {
 
 const getCookieMock = vi.fn();
 
-vi.mock('@/infrastructure/stores/session', () => ({ useSessionStore: () => sessionStore }));
+vi.mock('@/infrastructure/session', () => ({ useSessionStore: () => sessionStore }));
 vi.mock('@guebbit/js-toolkit', () => ({ getCookie: (name: string) => getCookieMock(name) }));
 vi.mock('@guebbit/vue-toolkit', () => ({ useNotificationsStore: () => ({ addMessage: vi.fn() }) }));
 vi.mock('pinia', () => ({

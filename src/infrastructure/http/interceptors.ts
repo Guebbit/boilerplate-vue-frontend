@@ -6,7 +6,7 @@
 
 import { storeToRefs } from 'pinia';
 import { translate, getCurrentLocale } from '@/infrastructure/i18n';
-import { useSessionStore } from '@/infrastructure/stores/session.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import type { AxiosRequestData, AxiosResponseErrorBody, AxiosResponseErrorData } from './types.ts';

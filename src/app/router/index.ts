@@ -13,7 +13,7 @@ import { tryRestoreAuth, enforceRouteAccess } from '@/app/guards/authentications
 import { getDefaultLocale, translate } from '@/infrastructure/i18n';
 import { signInLocation } from '@/app/router/navigation.ts';
 import { routeAnnouncement, requestMainFocus, consumeMainFocus } from '@/app/router/announcer.ts';
-import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
+import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 
 import { collectModuleRoutes } from '@/kernel/registry';

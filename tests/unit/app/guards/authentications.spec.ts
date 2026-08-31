@@ -11,7 +11,7 @@ const visitorStanding = {
     isAdmin: ref(false)
 };
 
-vi.mock('@/infrastructure/stores/session', () => ({
+vi.mock('@/infrastructure/session', () => ({
     useSessionStore: () => ({})
 }));
 

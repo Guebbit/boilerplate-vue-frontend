@@ -143,7 +143,7 @@ generated code inherits all of the above without knowing it exists.
 | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | `src/ui/**` (molecules, organisms, vuetify)                    | You are building a screen. Presentational only, no domain knowledge.                                           |
 | `src/infrastructure/i18n/index.ts`                             | You are adding a language. It is the densest file in the repo and explains nothing about the architecture.     |
-| `src/infrastructure/stores/observability.ts`                   | You are adding tracking. See [Observability](../tools/observability.md).                                       |
+| `src/infrastructure/observability/store.ts`                    | You are adding tracking. See [Observability](../tools/observability.md).                                       |
 | `src/modules/account/**`                                       | It is the biggest and least typical module (auth, sessions, addresses, password flows). Read `products` first. |
 | `src/modules/realtime/**`, `src/modules/admin/**`              | They are demonstrations of a capability, not part of the core shape.                                           |
 | `src/modules/demo/**`                                          | It demonstrates the framework and nothing else. Delete it when you start a real project.                       |

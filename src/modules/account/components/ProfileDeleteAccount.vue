@@ -14,7 +14,7 @@ import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
-import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 
 /**
  * Account deletion request with confirmation dialog.

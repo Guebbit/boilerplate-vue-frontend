@@ -8,7 +8,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Check, Languages } from 'lucide-vue-next';
 import { changeLanguage, supportedLanguages } from '@/infrastructure/i18n';
-import { useSessionStore } from '@/infrastructure/stores/session.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 
 /**
  * Router instance used to re-enter the current route under the new locale.

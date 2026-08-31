@@ -51,7 +51,7 @@ export interface ResponseSchemaRoute {
  *
  * `GET /`, `/locales*` and the session's three `/account` calls are infrastructure — the health
  * probe, the language manifest and overrides `i18n/locale-overrides.ts` fetches, and the
- * whoami/refresh/logout-all that `infrastructure/stores/session.ts` needs — so they live at the
+ * whoami/refresh/logout-all that `infrastructure/session.ts` needs — so they live at the
  * bottom tier with the code that calls them.
  *
  * It is also the shelf for a contract endpoint no frontend domain has claimed yet, so its

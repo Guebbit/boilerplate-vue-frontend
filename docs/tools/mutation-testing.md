@@ -328,9 +328,9 @@ The half that matters is enforced rather than described. `tests/cross-cutting/co
 
 ### Reading a 0%, and why it is kept
 
-Everything else stays in scope, including code no test currently reaches. That is what made the telemetry surface a single legible finding rather than diffuse neglect: it once carried **187 of the 233 no-coverage mutants** — `infrastructure/stores/observability.ts` alone accounting for 123, with `useRealtimeObservability` (37) and `useAdminObservability` (27) behind it — and the gap between the run's total and covered scores was the finding, not a rounding error.
+Everything else stays in scope, including code no test currently reaches. That is what made the telemetry surface a single legible finding rather than diffuse neglect: it once carried **187 of the 233 no-coverage mutants** — `infrastructure/observability/store.ts` alone accounting for 123, with `useRealtimeObservability` (37) and `useAdminObservability` (27) behind it — and the gap between the run's total and covered scores was the finding, not a rounding error.
 
-All three now have suites (`tests/unit/infrastructure/stores/observability.spec.ts`, and one beside each composable), so those numbers are historical; read the next full run's instead. `initFaro` stays uncovered on purpose — it dynamically imports two Grafana SDKs and hands them a real browser, so a test would either load both into jsdom or mock them until it asserted only the shape of the mock.
+All three now have suites (`tests/unit/infrastructure/observability.spec.ts`, and one beside each composable), so those numbers are historical; read the next full run's instead. `initFaro` stays uncovered on purpose — it dynamically imports two Grafana SDKs and hands them a real browser, so a test would either load both into jsdom or mock them until it asserted only the shape of the mock.
 
 **Read the two scores together.** Far apart means "write tests that reach the code"; close together means "sharpen the tests that already run it".
 

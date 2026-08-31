@@ -9,7 +9,7 @@ import { createApp } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import { i18n } from '@/infrastructure/i18n';
 import { mergeRemoteLocales } from '@/infrastructure/i18n/locale-overrides.ts';
-import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
+import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 
 import App from './App.vue';
 import router from '@/app/router';

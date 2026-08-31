@@ -1,7 +1,8 @@
 # UI Kit
 
-`src/ui/` holds the components that know **no domain**. A component here can be dropped into any
-module — or into a different project — because nothing in it names a product, an order or a user.
+`src/ui/` holds the design system: the components that know **no domain**, and the one store that
+serves them. Anything here can be dropped into any module — or into a different project — because
+nothing in it names a product, an order or a user.
 
 This directory has no counterpart in the paired backend. It is the one place where being a
 frontend changes the shape of the repository rather than just the contents.
@@ -29,14 +30,25 @@ Small, single-purpose, and composed into the organisms below.
 
 ## Organisms
 
-| File                                    | What it is                                                                                                                          | Read next                                      |
-| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| `src/ui/organisms/DataTable.vue`        | The list surface every admin screen uses: columns declared as data, with sorting, loading and pagination wired in.                  | [Admin Dashboard](../tools/admin-dashboard.md) |
-| `src/ui/organisms/ItemDetailLayout.vue` | The shared skeleton for entity detail and edit pages — product, order, user. What keeps twelve detail screens looking like one app. | [Admin Dashboard](../tools/admin-dashboard.md) |
-| `src/ui/organisms/ItemDetailHero.vue`   | The header band of that skeleton: title, subtitle, actions.                                                                         | [UI Kit](./src-ui.md)                          |
-| `src/ui/organisms/CardDetail.vue`       | A card presenting one entity's fields.                                                                                              | [UI Kit](./src-ui.md)                          |
-| `src/ui/organisms/CardInfo.vue`         | A gradient tile keyed to the theme accent, for summary panels.                                                                      | [UI Kit](./src-ui.md)                          |
-| `src/ui/organisms/CardMaterialStat.vue` | A statistic tile with a coloured top border keyed to the theme accent — the dashboard's number cards.                               | [Admin Dashboard](../tools/admin-dashboard.md) |
+| File                                    | What it is                                                                                                                          | Read next                                                  |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `src/ui/organisms/DataTable.vue`        | The list surface every admin screen uses: columns declared as data, with sorting, loading and pagination wired in.                  | [Admin Dashboard](../tools/admin-dashboard.md)             |
+| `src/ui/organisms/ItemDetailLayout.vue` | The shared skeleton for entity detail and edit pages — product, order, user. What keeps twelve detail screens looking like one app. | [Admin Dashboard](../tools/admin-dashboard.md)             |
+| `src/ui/organisms/ItemDetailHero.vue`   | The header band of that skeleton: title, subtitle, actions.                                                                         | [UI Kit](./src-ui.md)                                      |
+| `src/ui/organisms/CardDetail.vue`       | A card presenting one entity's fields.                                                                                              | [UI Kit](./src-ui.md)                                      |
+| `src/ui/organisms/CardInfo.vue`         | A gradient tile keyed to the theme accent, for summary panels.                                                                      | [UI Kit](./src-ui.md)                                      |
+| `src/ui/organisms/CardMaterialStat.vue` | A statistic tile with a coloured top border keyed to the theme accent — the dashboard's number cards.                               | [Admin Dashboard](../tools/admin-dashboard.md)             |
+| `src/ui/organisms/DialogHost.vue`       | Renders the head of the confirmation queue and answers it. Mounted once by the layout; every `confirm()` in the app resolves here.  | [Accessibility testing](../tools/accessibility-testing.md) |
+
+## The dialog store
+
+The one non-component in this tier, and it earns the place: `globalThis.confirm()` as an async,
+themeable, queued promise. It knows no domain and imports no Vuetify — the copy arrives already
+translated, so the store holds a queue and the promises and nothing else.
+
+| File               | What it is                                                                                                                                           | Read next                                                  |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `src/ui/dialog.ts` | The confirmation queue: `confirm(request)` resolves `true` or `false`, questions queue rather than replace, and `DialogHost.vue` above renders them. | [Accessibility testing](../tools/accessibility-testing.md) |
 
 ## Vuetify
 

@@ -138,7 +138,7 @@ vi.mock('vue-router', () => ({
     })
 }));
 
-vi.mock('@/infrastructure/stores/session.ts', () => ({
+vi.mock('@/infrastructure/session.ts', () => ({
     useSessionStore: () => session
 }));
 

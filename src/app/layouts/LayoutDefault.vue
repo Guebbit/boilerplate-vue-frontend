@@ -13,7 +13,7 @@ import { useLocale } from 'vuetify';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import AppNavigation from '@/app/components/AppNavigation.vue';
 import AppHealthBanner from '@/app/components/AppHealthBanner.vue';
-import AppDialogHost from '@/app/components/AppDialogHost.vue';
+import DialogHost from '@/ui/organisms/DialogHost.vue';
 import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { consumeMainFocus, MAIN_CONTENT } from '@/app/router/announcer.ts';
 
@@ -201,7 +201,7 @@ const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'er
         </v-footer>
 
         <!-- The one confirmation dialog, fed by `useDialogStore().confirm(...)` -->
-        <AppDialogHost />
+        <DialogHost />
 
         <!--
             Toast stack. The wrapper is a named region, NOT a live region: each alert announces

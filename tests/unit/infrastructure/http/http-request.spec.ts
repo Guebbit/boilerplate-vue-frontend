@@ -17,7 +17,7 @@ import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 const accessToken = ref<string | undefined>(undefined);
 
-vi.mock('@/infrastructure/stores/session', () => ({
+vi.mock('@/infrastructure/session', () => ({
     useSessionStore: () => ({})
 }));
 

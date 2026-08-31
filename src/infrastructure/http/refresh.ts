@@ -4,7 +4,7 @@
  * endpoints), renews the token once and replays the original request exactly once.
  */
 
-import { useSessionStore } from '@/infrastructure/stores/session.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { instance } from './client.ts';
 import { getTokenFromResponse } from './envelope.ts';
 import { onResponseReject } from './interceptors.ts';

@@ -11,7 +11,7 @@ import type { AppModule } from '@/kernel/registry';
 import routes from './routes';
 import { cartResponseSchemas } from './response-schemas';
 import { useCartStore } from './store';
-import { useSessionStore } from '@/infrastructure/stores/session.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 
 /**
  * The shopping cart, and the checkout that turns it into an order.

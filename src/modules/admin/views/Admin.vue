@@ -15,7 +15,7 @@ import type { AdminTabKey } from '@/modules/admin/types.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import AdminOverviewTab from '@/modules/admin/components/AdminOverviewTab.vue';
 import AdminAuditTab from '@/modules/admin/components/AdminAuditTab.vue';
-import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 
 /**
  * i18n translator for this view's template and messages.

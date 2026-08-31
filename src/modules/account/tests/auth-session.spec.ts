@@ -14,7 +14,7 @@ import { createPinia, setActivePinia } from 'pinia';
 
 import { useAuthStore } from '@/modules/account/stores/auth.ts';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
-import { useSessionStore } from '@/infrastructure/stores/session.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { orvalMutator } from '@/infrastructure/http';
 
 /**

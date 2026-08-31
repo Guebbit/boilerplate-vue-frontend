@@ -32,7 +32,7 @@ import {
     SIGN_UP_ROUTE_NAME
 } from '@/app/router/navigation.ts';
 import { canAccess } from '@/app/guards/authentications.ts';
-import { useSessionStore } from '@/infrastructure/stores/session.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { collectModuleNavigation, groupNavigation, NAVIGATION_SECTIONS } from '@/kernel/registry';
 import type { AppNavigationEntry, AppNavigationSection } from '@/kernel/registry';
 import { enabledModules } from '@/modules';

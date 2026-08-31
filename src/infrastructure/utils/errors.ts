@@ -6,7 +6,7 @@
  */
 
 import { extractErrorMessage } from '@guebbit/js-toolkit';
-import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
+import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { translate } from '@/infrastructure/i18n';
 
 /**

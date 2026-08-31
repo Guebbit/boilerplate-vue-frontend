@@ -15,7 +15,7 @@ import { createRouter, createMemoryHistory, RouterView } from 'vue-router';
 import Product from '@/modules/products/views/Product.vue';
 import { useProductsStore } from '@/modules/products/store';
 import { useWishlistStore } from '@/modules/wishlist';
-import { useSessionStore } from '@/infrastructure/stores/session.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { i18n, loadLocale } from '@/infrastructure/i18n';
 import vuetify from '@/ui/vuetify';
 import { collectModuleRoutes } from '@/kernel/registry';

@@ -7,7 +7,7 @@
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
-import { useSessionStore } from '@/infrastructure/stores/session.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 import { getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
 import {
     login as apiLogin,
@@ -17,7 +17,7 @@ import {
     requestPasswordReset as apiRequestPasswordReset,
     confirmPasswordReset as apiConfirmPasswordReset
 } from '@api';
-import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
+import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { useProfileStore } from './profile.ts';
 
 /**

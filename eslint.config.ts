@@ -203,7 +203,10 @@ const tierBoundaryRules = [
                                 'ui is the design system: it may not import kernel, app or a module. A component that needs domain data takes it as a prop.'
                         },
                         {
-                            group: ['@/infrastructure/session*', '@/infrastructure/observability*'],
+                            group: [
+                                '@/infrastructure/session.ts',
+                                '@/infrastructure/observability/**'
+                            ],
                             message:
                                 'ui may use infrastructure, but not the app-stateful parts of it. Session and observability are read by the caller and passed in — a design-system component that reads who is signed in cannot be reused.'
                         }

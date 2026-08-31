@@ -22,7 +22,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
 import { createPinia, setActivePinia } from 'pinia';
-import { useSessionStore } from '@/infrastructure/stores/session.ts';
+import { useSessionStore } from '@/infrastructure/session.ts';
 
 /** Base URL the axios instance is built against; also what the handlers below are mounted on. */
 const API = 'http://api.test';

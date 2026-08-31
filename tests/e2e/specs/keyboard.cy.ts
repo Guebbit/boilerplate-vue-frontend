@@ -18,7 +18,7 @@
  * Every one of these was implemented on purpose, in a place a later edit could quietly undo:
  * the skip link in `LayoutDefault.vue`, the focus move in the router's `afterEach`, the drawer's
  * focus watch in `AppNavigation.vue`, the named icon-only entries in `AppNavIconButton.vue`, the
- * menus in `AppNavMenu.vue`, the dialog in `AppDialogHost.vue`, the chip's role and state in
+ * menus in `AppNavMenu.vue`, the dialog in `DialogHost.vue`, the chip's role and state in
  * `ProductsList.vue`. None of those files has a unit test that can press Tab either.
  *
  * Runs under the demo profile like every other spec in `ci.yml`.

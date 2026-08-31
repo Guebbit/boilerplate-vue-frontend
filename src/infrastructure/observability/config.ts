@@ -1,7 +1,7 @@
 /**
  * @module
  * Pure env-var readers for the two telemetry back-ends: each returns `undefined` when its
- * required variable is unset, which is the single opt-in switch `stores/observability.ts` checks —
+ * required variable is unset, which is the single opt-in switch `store.ts` checks —
  * no URL, no Faro; no website id, no analytics — so a build with neither set ships the code and
  * calls nothing.
  */

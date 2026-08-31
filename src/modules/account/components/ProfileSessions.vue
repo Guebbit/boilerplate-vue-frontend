@@ -22,7 +22,7 @@ import { useAccountSessionsStore } from '@/modules/account/stores/sessions.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
-import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 
 /**
  * The devices panel: every live refresh token as a session, the current one flagged, each
