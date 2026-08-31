@@ -10,7 +10,6 @@ import { createPinia, setActivePinia } from 'pinia';
 import { i18n } from '@/infrastructure/i18n';
 import { mergeRemoteLocales } from '@/infrastructure/i18n/locale-overrides.ts';
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
-import { analyticsEvents } from '@/infrastructure/observability/analytics-events.ts';
 
 import App from './App.vue';
 import router from '@/app/router';
@@ -94,22 +93,14 @@ const bootstrapApplication = () =>
             // Captures uncaught errors and starts tracing fetch/XHR to the API.
             void observability.initFaro();
 
-            // Umami = product analytics. Injects the tracker script; pageviews are
-            // tracked automatically, custom events go through observability.track().
+            // Umami = product analytics. Injects the tracker script; the pageview for this
+            // load is tracked automatically, so boot needs no custom event of its own.
             observability.initUmami();
-
-            // Track application mount. `initUmami()` above only injects the tag — the tracker
-            // itself arrives a round-trip later, so this event is buffered by the store and sent
-            // when the script lands rather than fired at a global that does not exist yet.
-            observability.track(analyticsEvents.APP_STARTED);
 
             return router.isReady().then(() => {
                 // Signal to Cypress (or any test runner) that the app is fully ready: Vue is
                 // mounted and the initial navigation has resolved.
                 (globalThis as typeof globalThis & { _appReady?: boolean })._appReady = true;
-
-                // Track application fully ready
-                observability.track(analyticsEvents.APP_READY);
             });
         });
 

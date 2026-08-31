@@ -81,17 +81,12 @@ Two separate jobs — do not conflate them:
 ### How to track events
 
 ```ts
-import { useObservabilityStore, analyticsEvents } from '@/infrastructure/observability';
+import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
 
 const obs = useObservabilityStore();
 
-// Track a named event
-obs.track(analyticsEvents.PRODUCT_VIEWED, { product_id: '123' });
-
-// Convenience helpers
-obs.trackProductView('123', 'Widget');
-obs.trackItemAddedToCart('123', 2);
-obs.trackOrderPlaced('order-abc', 49.99, 3);
+// Track a custom event. This app declares none — see the taxonomy below.
+obs.track('some_client_only_moment', { order_id: 'order-abc' });
 
 // Errors go to Faro
 obs.captureException(error);
@@ -99,22 +94,17 @@ obs.captureException(error);
 
 ### Event taxonomy
 
-Event names are the canonical names the backend also emits, so FE and BE analytics line up.
-
-| Category            | Events                                                                                          |
-| ------------------- | ----------------------------------------------------------------------------------------------- |
-| Lifecycle (FE-only) | `app_started`, `app_ready`                                                                      |
-| Auth                | `user_signed_up`, `user_logged_in`, `user_logged_out`, `user_profile_viewed`, `account_deleted` |
-| Products            | `products_searched`, `product_viewed`                                                           |
-| Cart                | `cart_viewed`, `cart_item_added`, `cart_item_updated`, `cart_item_removed`, `cart_cleared`      |
-| Checkout / Orders   | `checkout_completed`, `checkout_failed`, `order_created`, `orders_viewed`                       |
-
-Pageviews are automatic (Umami) and are not in this table.
+**This app emits no custom analytics events.** Pageviews (including SPA route changes) are written
+by the Umami tag itself, and web vitals, errors and a span per fetch/XHR go to Faro. Everything
+else — signups, logins, logouts, cart and wishlist mutations, checkout outcomes, orders, payments —
+is emitted by the backend from the handler that decided it, where an extension cannot block it, a
+closing tab cannot lose it and a console cannot forge it. The names live in the backend's
+`src/modules/<name>/analytics.ts`.
 
 ### Rules
 
 - **No PII** in event properties — never send email, name, or personal data.
-- **Use constants** from `analyticsEvents` — never hardcode event name strings, and keep them matching the backend's names.
+- **Check the backend first** — before adding a `track()` call here, confirm the API cannot report the same fact. A name emitted from both sides writes two rows nothing downstream can tell apart.
 - **Fire-and-forget** — analytics calls must be async-safe; no `await` on `track()`.
 - **Two jobs, one store** — Faro handles errors/traces/web-vitals; Umami handles product analytics. No feature-flag provider exists (`isFeatureEnabled()` always returns `false`).
 - **Disabled locally** — Faro is a no-op without `VITE_FARO_URL`; Umami is a no-op without `VITE_UMAMI_WEBSITE_ID`.

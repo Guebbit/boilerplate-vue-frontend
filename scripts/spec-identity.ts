@@ -6,10 +6,9 @@
  * believe they share — and neither CI notices, because a forked spec is still a valid spec.
  *
  * The backend mirrors this file; only `THIS_REPO` differs there, so a file added on one side is a
- * one-line copy on the other. This repo is the one exception to "mirror": it is the side that
- * pairs with EITHER backend (`.env`'s `BACKEND_PATH` says which), so it is also the one side that
- * cannot assume a single backend layout — see `SharedFile.backend` and `fingerprint` below, neither
- * of which the backend's own copy of this file needs.
+ * one-line copy on the other. The one part it does not need is `fingerprint` below: this repo is
+ * the side that pairs with EITHER backend (`.env`'s `BACKEND_PATH` says which), and the two twins
+ * do not serialise YAML identically.
  *
  * See: docs/reference/contracts.md#keeping-the-pair-in-step
  */
@@ -24,11 +23,13 @@ export type RepoRole = 'backend' | 'frontend';
 /**
  * One shared file, named on both sides.
  *
- * `backend` is a list rather than one path for the one entry whose location the two paired
- * backends do not agree on — everything else, a single string is enough.
+ * Two fields rather than one path because the two repos do not always spell a shared file the
+ * same way — `asyncapi.public.yaml` lands here as `asyncapi.yaml`.
  */
 export interface SharedFile {
-    backend: string | readonly string[];
+    /** The path the paired backend keeps it at, relative to that checkout's root. */
+    backend: string;
+    /** The path this repo keeps it at, relative to this checkout's root. */
     frontend: string;
 }
 
@@ -82,24 +83,7 @@ export const SHARED_FILES: readonly SharedFile[] = [
      * document minus the sections no API client can reach, and it is that subset this repo
      * receives as its own `asyncapi.yaml`.
      */
-    { backend: 'asyncapi.public.yaml', frontend: 'asyncapi.yaml' },
-    /*
-     * The analytics event names THIS app emits — the only analytics file crossing the boundary.
-     * One Umami namespace, one emitter per name; a backend's own names are never published because
-     * its controllers import them directly.
-     *
-     * The one entry with two backend candidates: the Node twin publishes it under its own
-     * `src/infrastructure/observability/` layout, the PHP twin under `shared/contracts/` — each
-     * repo's own lint config decided the location, and this list has to be able to find either one
-     * without being told in advance which backend is paired.
-     */
-    {
-        backend: [
-            'src/infrastructure/observability/analytics-events.frontend.ts',
-            'shared/contracts/analytics-events.ts'
-        ],
-        frontend: 'src/infrastructure/observability/analytics-events.ts'
-    }
+    { backend: 'asyncapi.public.yaml', frontend: 'asyncapi.yaml' }
 ] as const;
 
 export type SpecComparisonStatus = 'match' | 'drift' | 'missing-here' | 'missing-there';
@@ -107,7 +91,7 @@ export type SpecComparisonStatus = 'match' | 'drift' | 'missing-here' | 'missing
 export interface SpecComparison {
     /** This repo's path for the file — what a reader of the failure message has to go open. */
     file: string;
-    /** The sibling's path — whichever candidate was actually found, or the first when none was. */
+    /** The sibling's path for the same file, which is not always the same name. */
     siblingFile: string;
     /** Identity fingerprint of this repo's copy, or undefined when the file is absent here. */
     ours?: string;
@@ -171,10 +155,6 @@ export const fingerprint = (filePath: string): string => {
     return createHash('sha256').update(JSON.stringify(parsed)).digest('hex');
 };
 
-/** Every candidate path for one side of a shared-file entry, in order. */
-const candidates = (root: string, entry: string | readonly string[]): string[] =>
-    (Array.isArray(entry) ? entry : [entry]).map((entryPath) => path.join(root, entryPath));
-
 /**
  * Compare every shared file against a sibling checkout.
  *
@@ -193,23 +173,13 @@ export const compareSharedFiles = (
     role: RepoRole = THIS_REPO
 ): SpecComparison[] =>
     SHARED_FILES.map((shared) => {
-        // This checkout always has exactly one path for its own side — a candidate list only
-        // ever appears on the OTHER side, the one this checkout does not control.
-        const ownEntry = shared[role];
-        const file = Array.isArray(ownEntry) ? ownEntry[0] : ownEntry;
+        const file = shared[role];
+        const siblingFile = shared[siblingRole(role)];
         const ourPath = path.join(here, file);
-
-        const siblingEntry = shared[siblingRole(role)];
-        const siblingPaths = candidates(siblingRoot, siblingEntry);
-        const theirPath = siblingPaths.find((candidatePath) => existsSync(candidatePath));
-        const siblingFile = theirPath
-            ? path.relative(siblingRoot, theirPath)
-            : Array.isArray(siblingEntry)
-              ? siblingEntry[0]
-              : siblingEntry;
+        const theirPath = path.join(siblingRoot, siblingFile);
 
         if (!existsSync(ourPath)) return { file, siblingFile, status: 'missing-here' as const };
-        if (theirPath === undefined) {
+        if (!existsSync(theirPath)) {
             return {
                 file,
                 siblingFile,

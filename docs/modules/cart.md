@@ -113,11 +113,9 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 
 #### Analytics events
 
-| Constant                                  | Emitted from |
-| ----------------------------------------- | ------------ |
-| `analyticsEvents.CHECKOUT_REQUEST_FAILED` | this module  |
-
-The names themselves are declared in the backend, because both repositories write into one event namespace.
+None. Every checkout outcome — the order created, the checkout refused — is emitted by the backend
+from the handler that decided it, and a request that never reached the API is already a failed span
+in Faro. See [Observability](../tools/observability.md#event-taxonomy).
 
 ## Files
 

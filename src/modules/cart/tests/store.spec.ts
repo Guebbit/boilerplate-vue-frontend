@@ -28,14 +28,6 @@ import {
     checkout as apiCheckout,
     reorder as apiReorder
 } from '@api';
-import { analyticsEvents } from '@/infrastructure/observability/analytics-events.ts';
-
-const track = vi.fn();
-
-vi.mock('@/infrastructure/stores/observability.ts', () => ({
-    useObservabilityStore: () => ({ track })
-}));
-
 const CART = {
     items: [{ productId: 'p1', quantity: 2 }],
     summary: { itemsCount: 1, totalQuantity: 2, total: 19.98 }
@@ -142,13 +134,6 @@ describe('useCartStore', () => {
                     expect(updateCartItemById).toHaveBeenCalledWith('p1', { quantity: 5 });
                 }));
 
-        it('emits no analytics event', () =>
-            useCartStore()
-                .updateCartItem('p1', 5)
-                .then(() => {
-                    expect(track).not.toHaveBeenCalled();
-                }));
-
         /**
          * The endpoint recalculates the summary, so the response is the whole cart and not just
          * the edited line. Without this, an implementation that fired the request and threw the
@@ -175,7 +160,6 @@ describe('useCartStore', () => {
                 .then(() => {
                     expect(removeCartItem).toHaveBeenCalledWith('p1');
                     expect(store.cartItems).toEqual([]);
-                    expect(track).not.toHaveBeenCalled();
                 });
         });
     });
@@ -186,7 +170,6 @@ describe('useCartStore', () => {
                 .clearCart()
                 .then(() => {
                     expect(clearCart).toHaveBeenCalledWith(undefined);
-                    expect(track).not.toHaveBeenCalled();
                 }));
 
         it('sends a productId body when removing one line', () =>
@@ -194,7 +177,6 @@ describe('useCartStore', () => {
                 .clearCart('p1')
                 .then(() => {
                     expect(clearCart).toHaveBeenCalledWith({ productId: 'p1' });
-                    expect(track).not.toHaveBeenCalled();
                 }));
     });
 
@@ -230,36 +212,24 @@ describe('useCartStore', () => {
                 });
         });
 
-        it('reports nothing when the API answered, and still rejects', () => {
-            // The backend emitted `checkout_failed` from the handler that made this decision and
-            // knows why. Reporting it here as well would write one refusal into Umami as two rows
-            // nothing can tell apart — the double count this split exists to prevent.
-            //
-            // The rejection still has to reach the caller: the view turns it into the toast the
-            // user sees, and a swallowed error is a failure reported to nobody.
+        it('lets a refusal the API answered reach the caller', () => {
+            // The rejection has to survive the store: the view turns it into the toast the user
+            // sees, and a swallowed error is a failure reported to nobody.
             vi.mocked(apiCheckout).mockRejectedValueOnce({
                 status: 409,
                 errors: [{ code: 'CART_EMPTY' }]
             });
 
-            return expect(useCartStore().checkout())
-                .rejects.toMatchObject({ status: 409 })
-                .then(() => {
-                    expect(track).not.toHaveBeenCalled();
-                });
+            return expect(useCartStore().checkout()).rejects.toMatchObject({ status: 409 });
         });
 
-        it('reports a status-less rejection as a request that never arrived', () => {
+        it('lets a request that never arrived reach the caller too', () => {
             // No status means no response: the connection dropped, or the request never left the
-            // browser. The server cannot know this happened, so it is the one checkout failure
-            // this side owns.
+            // browser. Faro's fetch instrumentation already records it, so the store adds nothing
+            // and only has to keep the rejection intact.
             vi.mocked(apiCheckout).mockRejectedValueOnce(new Error('Network Error'));
 
-            return expect(useCartStore().checkout())
-                .rejects.toThrow('Network Error')
-                .then(() => {
-                    expect(track).toHaveBeenCalledWith(analyticsEvents.CHECKOUT_REQUEST_FAILED);
-                });
+            return expect(useCartStore().checkout()).rejects.toThrow('Network Error');
         });
 
         /**

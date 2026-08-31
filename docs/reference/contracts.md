@@ -60,9 +60,14 @@ regeneration, and the diff will look like the backend broke something.
 today" but **"does a fork cause a silent bug?"** — everything on the list fails quietly, with both
 sides building and passing their own suites.
 
-Three of the entries are produced in the backend and arrive here as outputs, so a fork has one
-correct resolution: the backend's copy is right, and `npm run sync:frontend` **over there** applies
-it. Editing this side's copy is the failure the list is worst at describing and best at catching.
+Both entries are produced in the backend and arrive here as outputs, so a fork has one correct
+resolution: the backend's copy is right, and `npm run sync:frontend` **over there** applies it.
+Editing this side's copy is the failure the list is worst at describing and best at catching.
+
+A third entry used to sit there: the analytics event names this app emitted. It emits none any more
+— pageviews are automatic and everything with a request behind it is reported by the backend — so
+there is no catalogue to publish and nothing to keep in step. See
+[Observability](../tools/observability.md#event-taxonomy).
 
 **Which backend `check:spec-identity` compares against is `.env`'s `BACKEND_PATH`, not whichever
 one synced last.** This repo pairs with one backend at a time (`boilerplate-node-backend` or

@@ -18,7 +18,6 @@ import {
     confirmPasswordReset as apiConfirmPasswordReset
 } from '@api';
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
-import { analyticsEvents } from '@/infrastructure/observability/analytics-events.ts';
 import { useProfileStore } from './profile.ts';
 
 /**
@@ -137,9 +136,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
      */
     const logout = () => {
         // The httpOnly jwt cookie can only be cleared server-side; isAuth is JS-accessible.
-        const obs = useObservabilityStore();
-        obs.track(analyticsEvents.USER_LOGGED_OUT);
-        obs.unidentifyUser();
+        useObservabilityStore().unidentifyUser();
         return session.logout().then(() => {
             useProfileStore().resetAll();
         });
@@ -151,9 +148,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
      * @returns A promise resolving once every refresh token is revoked and local state cleared.
      */
     const logoutEverywhere = () => {
-        const obs = useObservabilityStore();
-        obs.track(analyticsEvents.USER_LOGGED_OUT);
-        obs.unidentifyUser();
+        useObservabilityStore().unidentifyUser();
         return session.logoutAll().then(() => {
             useProfileStore().resetAll();
         });

@@ -595,9 +595,7 @@ export default defineConfigWithVueTs(
          * generator to satisfy a rule, or carrying a suppression header that only one of the two
          * repos can act on.
          */
-        'src/types/asyncapi.generated.ts',
-        // Generated in the paired backend and copied here byte-identical — see its header.
-        'src/infrastructure/observability/analytics-events.ts'
+        'src/types/asyncapi.generated.ts'
     ]),
 
     /**

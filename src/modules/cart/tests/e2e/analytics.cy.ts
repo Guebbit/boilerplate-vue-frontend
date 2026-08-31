@@ -17,9 +17,10 @@
  * A delta of one is the right answer, and it is also what a completely broken backend tracker
  * would produce if the frontend were still emitting — and what a broken FRONTEND tracker produces
  * when the backend is correct. So the spec first proves the browser tracker reaches this Umami, by
- * watching `app_started` move. With the browser half demonstrably live and `cart_item_added` still
- * arriving exactly once, the row can only be the backend's — the frontend has no constant for that
- * name to fire.
+ * watching the PAGEVIEW count move. Pageviews are the only thing this app writes into Umami — it
+ * emits no custom events at all — which is what makes them the honest liveness signal here: with
+ * the browser half demonstrably live and `cart_item_added` still arriving exactly once, the row
+ * can only be the backend's.
  *
  * ── WHY IT SKIPS UNDER THE DEMO PROFILE ──────────────────────────────────────────────────────
  * `npm run test:e2e` runs a real backend, but the demo profile wires no Umami — so the event is
@@ -110,37 +111,56 @@ const eventCounts = (
         );
 
 /**
- * Poll until `name` has been recorded `expected` times since `since`, or give up.
+ * How many pageviews were recorded since `since` — the app's only unconditional write.
  *
- * Recursive rather than a fixed wait, because the two writes this spec cares about travel by
- * different routes — the browser's tracker and the API's fire-and-forget `fetch` — and a sleep
- * long enough for the slower one is dead time on every run.
+ * A different endpoint from {@link eventCounts} because it is a different kind of fact: Umami's
+ * `metrics?type=event` answers for CUSTOM events only, and this app fires none. The pageview is
+ * what the tracker script sends by itself on load, so it is the one signal that says "the browser
+ * half is alive" without either repo having to emit anything for the test's benefit.
+ *
+ * @param session - Connection from {@link umamiSession}.
+ * @param since - Epoch milliseconds to count from.
+ * @returns The pageview count over the window.
+ */
+const pageviewCount = (session: UmamiSession, since: number): Cypress.Chainable<number> =>
+    cy
+        .request<{ pageviews: { value: number } }>({
+            method: 'GET',
+            url: `${session.url}/api/websites/${session.websiteId}/stats`,
+            // Same future-shifted `endAt` as `eventCounts`, for the same clock-skew reason.
+            qs: { startAt: since, endAt: Date.now() + 5 * 60 * 1000 },
+            headers: { Authorization: `Bearer ${session.token}` }
+        })
+        .then(({ body }) => body.pageviews.value);
+
+/**
+ * Poll `read` until `satisfied` accepts what it yields, or give up at `deadline`.
+ *
+ * Recursive rather than a fixed wait, because the writes this spec cares about travel by different
+ * routes — the browser's tracker and the API's fire-and-forget `fetch` — and a sleep long enough
+ * for the slowest one is dead time on every run.
  *
  * Deliberately settles on "at least", never "exactly": waiting for a count to STOP rising cannot
  * be distinguished from a second write that has not landed yet. The exact-count assertion belongs
  * in the test, after this has established the write arrived at all.
  *
- * Callers assert with `.then`, never `.should`. What this yields is a plain object that will never
- * change again, so a retrying assertion on top of it re-checks the same numbers until the command
- * timeout and then blames the timeout — reporting "timed out retrying" for a value that was
- * decided the moment polling stopped. The waiting belongs here; the verdict belongs there.
+ * Callers assert with `.then`, never `.should`. What this yields will never change again, so a
+ * retrying assertion on top of it re-checks the same numbers until the command timeout and then
+ * blames the timeout — reporting "timed out retrying" for a value that was decided the moment
+ * polling stopped. The waiting belongs here; the verdict belongs there.
  *
- * @param session - Connection from {@link umamiSession}.
- * @param since - Epoch milliseconds to count from.
- * @param name - Event name to wait for.
- * @param expected - Minimum count to wait for.
+ * @param read - Reads the current value from Umami.
+ * @param satisfied - Whether that value is enough to stop polling.
  * @param deadline - Epoch milliseconds after which to stop polling.
- * @returns The counts as of the last poll.
+ * @returns The value as of the last poll.
  */
-const waitForEvent = (
-    session: UmamiSession,
-    since: number,
-    name: string,
-    expected: number,
+const pollUntil = <T>(
+    read: () => Cypress.Chainable<T>,
+    satisfied: (value: T) => boolean,
     deadline: number = Date.now() + INGEST_TIMEOUT_MS
-): Cypress.Chainable<Record<string, number>> =>
-    eventCounts(session, since).then((counts) => {
-        if ((counts[name] ?? 0) >= expected || Date.now() >= deadline) return cy.wrap(counts);
+): Cypress.Chainable<T> =>
+    read().then((value) => {
+        if (satisfied(value) || Date.now() >= deadline) return cy.wrap(value);
         /*
          * The rule this suppresses is about waiting between UI actions, where a fixed sleep hides
          * a missing assertion. This is a poll interval against a THIRD system that neither repo
@@ -150,8 +170,31 @@ const waitForEvent = (
         // eslint-disable-next-line cypress/no-unnecessary-waiting -- the debounce under test only flushes after real time passes; see the note above
         return cy
             .wait(POLL_INTERVAL_MS, { log: false })
-            .then(() => waitForEvent(session, since, name, expected, deadline));
+            .then(() => pollUntil(read, satisfied, deadline));
     });
+
+/** {@link pollUntil} over {@link eventCounts}: wait until `name` reached `expected`. */
+const waitForEvent = (
+    session: UmamiSession,
+    since: number,
+    name: string,
+    expected: number
+): Cypress.Chainable<Record<string, number>> =>
+    pollUntil(
+        () => eventCounts(session, since),
+        (counts) => (counts[name] ?? 0) >= expected
+    );
+
+/** {@link pollUntil} over {@link pageviewCount}: wait until the browser tracker has written. */
+const waitForPageviews = (
+    session: UmamiSession,
+    since: number,
+    expected: number
+): Cypress.Chainable<number> =>
+    pollUntil(
+        () => pageviewCount(session, since),
+        (views) => views >= expected
+    );
 
 describe('Analytics, end to end', () => {
     // The demo profile has no Umami behind it, so there is nothing to count.
@@ -165,72 +208,75 @@ describe('Analytics, end to end', () => {
         umamiSession().then((session) => {
             eventCounts(session, since).then((before) => {
                 const addedBefore = before.cart_item_added ?? 0;
-                const startedBefore = before.app_started ?? 0;
 
-                // Through the UI, not the API: the point is ONE user action, and it is the click
-                // that sets both trackers off at once. Any in-stock product walks the same path a
-                // person does, so the subject is asked for by role.
-                cy.loginAs('user');
-                cy.productInRole('inStock').then((product) => {
-                    cy.visit(`/en/products/${product.id}`);
-                });
+                pageviewCount(session, since).then((viewsBefore) => {
+                    // Through the UI, not the API: the point is ONE user action, and it is the
+                    // click that sets both trackers off at once. Any in-stock product walks the
+                    // same path a person does, so the subject is asked for by role.
+                    cy.loginAs('user');
+                    cy.productInRole('inStock').then((product) => {
+                        cy.visit(`/en/products/${product.id}`);
+                    });
 
-                cy.get('[data-test=add-to-cart]').should('be.enabled').click();
-                cy.contains('Product added to cart').should('exist');
+                    cy.get('[data-test=add-to-cart]').should('be.enabled').click();
+                    cy.contains('Product added to cart').should('exist');
 
-                // The control: the browser tracker reached this Umami on this visit. Without it a
-                // silent frontend and a correct backend look identical to a broken backend and a
-                // still-emitting frontend — both report one row.
-                waitForEvent(session, since, 'app_started', startedBefore + 1).then((counts) =>
-                    expect(
-                        counts.app_started ?? 0,
-                        'the browser tracker reached Umami — otherwise this spec proves nothing'
-                    ).to.be.greaterThan(startedBefore)
-                );
-
-                waitForEvent(session, since, 'cart_item_added', addedBefore + 1).should(
-                    (counts) => {
-                        const delta = (counts.cart_item_added ?? 0) - addedBefore;
+                    // The control: the browser tracker reached this Umami on this visit. Without
+                    // it a silent frontend and a correct backend look identical to a broken
+                    // backend and a still-emitting frontend — both report one row.
+                    waitForPageviews(session, since, viewsBefore + 1).then((views) =>
                         expect(
-                            delta,
-                            'one add-to-cart writes one row: 2 is both repos emitting the same name, ' +
-                                '0 is the backend tracker not reporting at all'
-                        ).to.equal(1);
-                    }
-                );
+                            views,
+                            'the browser tracker reached Umami — otherwise this spec proves nothing'
+                        ).to.be.greaterThan(viewsBefore)
+                    );
+
+                    waitForEvent(session, since, 'cart_item_added', addedBefore + 1).should(
+                        (counts) => {
+                            const delta = (counts.cart_item_added ?? 0) - addedBefore;
+                            expect(
+                                delta,
+                                'one add-to-cart writes one row: 2 is both repos emitting the same name, ' +
+                                    '0 is the backend tracker not reporting at all'
+                            ).to.equal(1);
+                        }
+                    );
+                });
             });
         });
     });
 
     it('writes no server-owned event for a visit that changes nothing', () => {
-        // The other half of the split. Loading a page emits the client's own lifecycle names and
-        // must emit none of the backend's — a reload is not a checkout. Measured as a DELTA rather
-        // than as a count over a window, because whatever the rest of the suite did a minute ago
-        // is not this test's business, and asserting on it would make this spec fail for other
-        // people's reasons.
+        // The other half of the split. Loading a page writes its pageview and must emit none of
+        // the backend's event names — a reload is not a checkout. Measured as a DELTA rather than
+        // as a count over a window, because whatever the rest of the suite did a minute ago is not
+        // this test's business, and asserting on it would make this spec fail for other people's
+        // reasons.
         const since = Date.now() - 60 * 1000;
 
         umamiSession().then((session) => {
             eventCounts(session, since).then((before) => {
-                const startedBefore = before.app_started ?? 0;
+                pageviewCount(session, since).then((viewsBefore) => {
+                    cy.visit('/en');
 
-                cy.visit('/en');
-
-                waitForEvent(session, since, 'app_started', startedBefore + 1).then((counts) => {
-                    expect(
-                        counts.app_started ?? 0,
-                        'the visit emitted app_started, so the tracker was awake for this check'
-                    ).to.be.greaterThan(startedBefore);
-
-                    for (const owned of [
-                        'checkout_completed',
-                        'order_created',
-                        'payment_succeeded'
-                    ])
+                    waitForPageviews(session, since, viewsBefore + 1).then((views) =>
                         expect(
-                            (counts[owned] ?? 0) - (before[owned] ?? 0),
-                            `${owned} is the backend's, and a page load makes no such request`
-                        ).to.equal(0);
+                            views,
+                            'the visit was recorded, so the tracker was awake for this check'
+                        ).to.be.greaterThan(viewsBefore)
+                    );
+
+                    eventCounts(session, since).then((counts) => {
+                        for (const owned of [
+                            'checkout_completed',
+                            'order_created',
+                            'payment_succeeded'
+                        ])
+                            expect(
+                                (counts[owned] ?? 0) - (before[owned] ?? 0),
+                                `${owned} is the backend's, and a page load makes no such request`
+                            ).to.equal(0);
+                    });
                 });
             });
         });

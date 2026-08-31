@@ -123,11 +123,9 @@ Each row registers one Zod envelope through the manifest, so enabling the domain
 
 #### Analytics events
 
-| Constant                          | Emitted from |
-| --------------------------------- | ------------ |
-| `analyticsEvents.USER_LOGGED_OUT` | this module  |
-
-The names themselves are declared in the backend, because both repositories write into one event namespace.
+None. Both logout routes are real requests the API answers, so `user_logged_out` is emitted there —
+counting the logout that succeeded rather than the one that was attempted. See
+[Observability](../tools/observability.md#event-taxonomy).
 
 ## Files
 

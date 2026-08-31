@@ -19,9 +19,7 @@ import {
     getProductById
 } from '@api';
 import type { CartItem, CartResponse, CartSummaryResponse, CheckoutRequest } from '@types';
-import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
-import { analyticsEvents } from '@/infrastructure/observability/analytics-events.ts';
-import { absentIs, isTransportFailure } from '@/infrastructure/utils/errors';
+import { absentIs } from '@/infrastructure/utils/errors';
 
 /**
  * Owns the authenticated user's shopping cart: every action replaces the local
@@ -172,32 +170,21 @@ export const useCartStore = defineStore('cart', () => {
     /**
      * Turns the authenticated user's cart into an order.
      *
-     * Reports only the failures the API never saw. Both outcomes it DID see — the order it created
-     * and the checkout it refused — are emitted by the backend from the handler that decided them,
-     * so it knows the reason and cannot be blocked by an extension or lost with the tab. A request
-     * that never arrived is the one fact left for this side to report.
+     * Emits nothing: every checkout outcome the API saw is reported by the backend from the
+     * handler that decided it, and a request that never arrived is already a failed span in Faro.
      *
      * @param checkoutData - Optional checkout payload (email, order notes).
      * @returns A promise resolving with the checkout response, the created order included.
      */
     const checkout = (checkoutData?: CheckoutRequest) =>
         fetchAny(() =>
-            apiCheckout(checkoutData).then(
-                (response) => {
-                    /* The server empties the cart on success. The local copy is dropped rather
-                     * than guessed at: this store never invents a payload the API did not send,
-                     * and every getter already reads an unfetched cart as empty. */
-                    cart.value = undefined;
-                    return response.data;
-                },
-                (error: unknown) => {
-                    if (isTransportFailure(error)) {
-                        const obs = useObservabilityStore();
-                        obs.track(analyticsEvents.CHECKOUT_REQUEST_FAILED);
-                    }
-                    throw error;
-                }
-            )
+            apiCheckout(checkoutData).then((response) => {
+                /* The server empties the cart on success. The local copy is dropped rather
+                 * than guessed at: this store never invents a payload the API did not send,
+                 * and every getter already reads an unfetched cart as empty. */
+                cart.value = undefined;
+                return response.data;
+            })
         );
 
     /**

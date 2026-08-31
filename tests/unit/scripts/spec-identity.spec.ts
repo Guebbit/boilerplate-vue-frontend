@@ -9,10 +9,10 @@
  *     roots rather than the real neighbouring repo. A test that needed the sibling present would
  *     be the one thing that cannot run where the check matters most.
  *
- *  2. **The two-backend cases**, unique to this repo's copy of the module: a candidate backend
- *     path resolved to whichever one exists, and a YAML fingerprint that agrees across two
- *     different serialisations of the same document. Neither backend's own copy of this file needs
- *     either, since each one only ever compares itself against the one frontend.
+ *  2. **The YAML fingerprint**, unique to this repo's copy of the module: two different
+ *     serialisations of the same document have to agree. Neither backend's own copy of this file
+ *     needs it, since each one only ever compares itself against the one frontend, written by the
+ *     same dumper.
  *
  *  3. **The real pair**, when the sibling actually is beside this checkout. That case is
  *     conditional on purpose: it is the live assertion that the two repos agree today, and it is
@@ -54,14 +54,6 @@ const makeRoot = (files: Record<string, string>): string => {
     return root;
 };
 
-/** The backend side of an entry, as ONE path — the first candidate when there are several. */
-const backendPath = (shared: (typeof SHARED_FILES)[number]): string => {
-    const { backend } = shared;
-    // `Array.isArray` alone does not narrow a `string | readonly string[]` union cleanly — its lib
-    // signature predicates `any[]`, which does not flow back through a `readonly` member type.
-    return Array.isArray(backend) ? (backend as readonly string[])[0] : (backend as string);
-};
-
 /**
  * Every shared file as one side spells it, with contents keyed by the pair's *index*.
  *
@@ -72,7 +64,7 @@ const backendPath = (shared: (typeof SHARED_FILES)[number]): string => {
 const sharedFiles = (role: RepoRole, suffix = ''): Record<string, string> =>
     Object.fromEntries(
         SHARED_FILES.map((shared, index) => [
-            role === 'backend' ? backendPath(shared) : shared.frontend,
+            role === 'backend' ? shared.backend : shared.frontend,
             `shared-${index} contents${suffix}`
         ])
     );
@@ -106,13 +98,7 @@ const HERE: RepoRole = 'frontend';
 const THERE: RepoRole = 'backend';
 
 /** A pair whose paths differ between the repos — the case a same-path check could not express. */
-const CROSS_PATH = SHARED_FILES.find(
-    ({ backend, frontend }) => backendPath({ backend, frontend }) !== frontend
-)!;
-
-/** The one entry with more than one backend candidate — BEold's layout, or BE(php)'s. */
-const CANDIDATE_ENTRY = SHARED_FILES.find(({ backend }) => Array.isArray(backend))!;
-const [FIRST_CANDIDATE, SECOND_CANDIDATE] = CANDIDATE_ENTRY.backend as readonly string[];
+const CROSS_PATH = SHARED_FILES.find(({ backend, frontend }) => backend !== frontend)!;
 
 const roots: string[] = [];
 const root = (files: Record<string, string>) => {
@@ -133,16 +119,15 @@ describe('SHARED_FILES', () => {
         expect(siblingRole(THIS_REPO)).toBe('backend');
     });
 
-    it('covers the contract and the analytics names', () => {
+    it('covers both halves of the contract', () => {
         const frontendPaths = new Set(SHARED_FILES.map(({ frontend }) => frontend));
 
         expect(frontendPaths).toContain(OPENAPI);
         expect(frontendPaths).toContain(ASYNCAPI);
-        expect(frontendPaths).toContain('src/infrastructure/observability/analytics-events.ts');
-        // And nothing else. Three files, every one produced in the backend, which is what makes
-        // a fork answerable at all — `spectral.yaml` and the three shared scripts are gone, along
-        // with the Node backend's own copy of them.
-        expect(frontendPaths.size).toBe(3);
+        // And nothing else. Two files, both produced in the backend, which is what makes a fork
+        // answerable at all — `spectral.yaml` and the three shared scripts are gone, along with
+        // the Node backend's own copy of them.
+        expect(frontendPaths.size).toBe(2);
     });
 
     it('excludes anything this repo regenerates from a file already in the list', () => {
@@ -153,13 +138,6 @@ describe('SHARED_FILES', () => {
 
     it('holds at least one pair whose paths differ between the repos', () => {
         expect(CROSS_PATH).toBeDefined();
-    });
-
-    it('holds at least one entry with more than one backend candidate', () => {
-        // The case neither backend's own copy of this file needs: this repo alone faces two
-        // possible layouts for the same shared file, one per paired backend.
-        expect(Array.isArray(CANDIDATE_ENTRY.backend)).toBe(true);
-        expect((CANDIDATE_ENTRY.backend as readonly string[]).length).toBeGreaterThan(1);
     });
 
     it('lists no file twice on either side', () => {
@@ -192,7 +170,7 @@ describe('compareSharedFiles', () => {
         );
 
         expect(comparison?.status).toBe('match');
-        expect(comparison?.siblingFile).toBe(backendPath(CROSS_PATH));
+        expect(comparison?.siblingFile).toBe(CROSS_PATH.backend);
     });
 
     it('reports a cross-path pair as forked when only one side changed', () => {
@@ -201,7 +179,7 @@ describe('compareSharedFiles', () => {
         const here = root(sharedFiles(HERE));
         const there = root({
             ...sharedFiles(THERE),
-            [backendPath(CROSS_PATH)]: 'edited on one side only'
+            [CROSS_PATH.backend]: 'edited on one side only'
         });
 
         const drifted = compareSharedFiles(there, here, HERE).filter(
@@ -209,45 +187,6 @@ describe('compareSharedFiles', () => {
         );
 
         expect(drifted.map(({ file }) => file)).toEqual([CROSS_PATH.frontend]);
-    });
-
-    it('reports a one-byte difference in a non-YAML file as a fork', () => {
-        // analytics-events.ts is compared as raw text, not parsed — a real content change is the
-        // only kind of change it has.
-        const file = 'src/infrastructure/observability/analytics-events.ts';
-        const here = root(sharedFiles(HERE));
-        const there = root(sharedFilesWith(THERE, FIRST_CANDIDATE, 'edited by one byte '));
-
-        const drifted = compareSharedFiles(there, here, HERE).filter(
-            ({ status }) => status === 'drift'
-        );
-
-        expect(drifted.map((d) => d.file)).toEqual([file]);
-    });
-
-    it('finds the second backend candidate when the first is absent', () => {
-        // The case that does not exist for either backend's own copy: this repo does not know in
-        // advance which of the two layouts the paired backend uses.
-        const here = root({ [CANDIDATE_ENTRY.frontend]: 'shared contents' });
-        const there = root({ [SECOND_CANDIDATE]: 'shared contents' });
-
-        const comparison = compareSharedFiles(there, here, HERE).find(
-            ({ file }) => file === CANDIDATE_ENTRY.frontend
-        );
-
-        expect(comparison?.status).toBe('match');
-        expect(comparison?.siblingFile).toBe(SECOND_CANDIDATE);
-    });
-
-    it('reports missing-there only when NEITHER backend candidate exists', () => {
-        const here = root({ [CANDIDATE_ENTRY.frontend]: 'shared contents' });
-        const there = root({});
-
-        const comparison = compareSharedFiles(there, here, HERE).find(
-            ({ file }) => file === CANDIDATE_ENTRY.frontend
-        );
-
-        expect(comparison?.status).toBe('missing-there');
     });
 
     it('distinguishes a missing sibling checkout from a forked contract', () => {
@@ -278,8 +217,8 @@ describe('compareSharedFiles', () => {
 
 describe('fingerprint', () => {
     it('gives a non-YAML file the same digest as hashFile', () => {
-        const directory = root({ 'analytics-events.ts': 'const x = 1;\n' });
-        const file = path.join(directory, 'analytics-events.ts');
+        const directory = root({ 'notes.txt': 'const x = 1;\n' });
+        const file = path.join(directory, 'notes.txt');
 
         expect(fingerprint(file)).toBe(hashFile(file));
     });
@@ -373,11 +312,11 @@ describe('formatSharedFileProblems', () => {
 
     it('names both paths when a cross-path pair forks', () => {
         const here = root(sharedFiles(HERE));
-        const there = root({ ...sharedFiles(THERE), [backendPath(CROSS_PATH)]: 'forked' });
+        const there = root({ ...sharedFiles(THERE), [CROSS_PATH.backend]: 'forked' });
 
         const message = formatSharedFileProblems(compareSharedFiles(there, here, HERE), there);
 
-        expect(message).toContain(backendPath(CROSS_PATH));
+        expect(message).toContain(CROSS_PATH.backend);
         expect(message).toContain(CROSS_PATH.frontend);
     });
 

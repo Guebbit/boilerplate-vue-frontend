@@ -85,39 +85,35 @@ The trace-propagation origin is derived from `VITE_API_URL`.
 ### Rules
 
 - **No PII** — never send email, name, or personal data in event properties.
-- **Use constants** from `analyticsEvents` — never hardcode event name strings.
-- **Match the backend** — the event constants are the canonical names the backend emits, so FE and BE analytics line up. `src/infrastructure/observability/analytics-events.ts` is a **copy of a backend-authored file**: it is assembled there from each module's own fragment and copied here byte-identically, so a new shared name is added in the backend module that emits it and the rebuilt file is copied over. `npm run check:spec-identity` fails the build when the two forks. Names only THIS app emits (the lifecycle events) are declared in that same file.
 - **Fire-and-forget** — never `await` a `track()` call.
+- **Check the backend first** — see below. Almost every event worth having belongs there.
 
 ### Event taxonomy
 
-Two lists, because they are two different things and conflating them is what makes
-`analyticsEvents.PRODUCT_VIEWED` look importable when it is not.
+**This app emits no custom events at all**, and that is the design rather than an omission. Two
+things cover the ground:
 
-**What this app emits.** The complete contents of `analyticsEvents` — if a name is not here, this
-app cannot fire it:
+- **Pageviews**, including SPA route changes, are written by the Umami tag itself. There is nothing
+  to call and nothing to maintain.
+- **Web vitals, errors and a span per fetch/XHR** go to Faro, which is the better tool for each of
+  them anyway.
 
-| Event                     | When                                                                                                                                                                                            |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `app_started`             | Boot, before the shell mounts                                                                                                                                                                   |
-| `app_ready`               | The shell has mounted and the first view is renderable                                                                                                                                          |
-| `user_logged_out`         | A client-side token discard; the API has no request to attribute it to                                                                                                                          |
-| `checkout_request_failed` | A checkout that never reached the API — dropped connection, request that failed to leave the browser. NOT the twin of `checkout_failed`, which is the server _rejecting_ a checkout it received |
+**Everything else is the backend's**, emitted from the handler that decided the outcome — where an
+extension cannot block it, a closing tab cannot lose it and a console cannot forge it. Reading one
+Umami dashboard, the rule tells you which side produced a row without anyone maintaining a list:
+**if an API call happens at that moment, the row is the backend's; otherwise it is a pageview.**
+Signups, logins, logouts, every cart and wishlist mutation, checkout outcomes, orders and payments
+are all emitted there.
 
-**What the backend emits: everything else.** Reading one Umami dashboard, the rule tells you which
-side produced a row without anyone maintaining a list — **if an API call happens at that moment,
-the row is the backend's.** Signups, logins, every cart and wishlist mutation, checkout outcomes,
-orders and payments are all emitted there, where an extension cannot block them, a closing tab
-cannot lose them and a console cannot forge them.
+The names live beside the controllers that fire them, in the backend's
+`src/modules/<name>/analytics.ts` — deliberately not restated here. A list in this repo is a copy of
+the other repo's data with nothing comparing the two, which is the same failure that once had both
+sides emitting the same event; the last copy that lived here had already lost four names before
+anyone noticed.
 
-The names themselves live beside the controllers that fire them, in the backend's
-`src/modules/<name>/analytics.ts` — deliberately not restated here. A list in this repo is a copy
-of the other repo's data with nothing comparing the two, which is the same failure that had both
-sides emitting the same event until the catalogue was split; the last copy that lived here had
-already lost four names before anyone noticed. The rule above does not drift, and a name that
-needs looking up is one `grep` away in a repo that is already on disk.
-
-Pageviews are handled automatically by Umami and belong to neither side.
+`track()` is still on the store, taking any string, for an app built on this boilerplate that has a
+moment only the browser can see. Before reaching for it, check that the backend cannot report the
+same fact — a name emitted from both sides writes two rows nothing downstream can tell apart.
 
 ### Environment variables
 
@@ -139,13 +135,12 @@ All observability calls go through `useObservabilityStore()`. Never import the F
 
 ```ts
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
-import { analyticsEvents } from '@/infrastructure/observability/analytics-events.ts';
 
 const obs = useObservabilityStore();
 
-// Track a named event — the constant must come from `analyticsEvents`, which is the
-// complete list of what this app is allowed to emit. There are no per-domain helpers.
-obs.track(analyticsEvents.CHECKOUT_REQUEST_FAILED, { order_id: 'order-abc' });
+// Track a custom event. This app declares none — see the taxonomy above — so the name is a
+// bare string, and an app built on this boilerplate declares its own catalogue.
+obs.track('some_client_only_moment', { order_id: 'order-abc' });
 
 // Identify the visitor after login, and drop the association on logout
 obs.identifyUser(userId);

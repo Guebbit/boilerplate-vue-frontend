@@ -26,7 +26,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
-import { analyticsEvents } from '@/infrastructure/observability/analytics-events.ts';
+
+/**
+ * Two arbitrary event names.
+ *
+ * This app publishes no catalogue of its own — pageviews are automatic and everything with an API
+ * call behind it is emitted by the backend — so `track` takes any string, and what these tests
+ * pin is the buffering, not a name.
+ */
+const FIRST_EVENT = 'first_event';
+
+const SECOND_EVENT = 'second_event';
 
 /** Stands in for the object the Umami script attaches to `window` once it loads. */
 const installUmamiTracker = () => {
@@ -59,21 +69,6 @@ describe('useObservabilityStore', () => {
     afterEach(() => {
         vi.unstubAllEnvs();
         delete globalThis.umami;
-    });
-
-    describe('analyticsEvents', () => {
-        it('carries only the moments no API request can carry', () => {
-            // Authored in the backend and byte-identical here, guarded by `check:spec-identity`.
-            // Every name with an API call behind it is emitted over there instead, so the two
-            // repos never write the same fact into one Umami website twice — asserted as an
-            // exact set, because an extra entry here IS that bug coming back.
-            expect(analyticsEvents).toEqual({
-                APP_STARTED: 'app_started',
-                APP_READY: 'app_ready',
-                USER_LOGGED_OUT: 'user_logged_out',
-                CHECKOUT_REQUEST_FAILED: 'checkout_request_failed'
-            });
-        });
     });
 
     describe('initUmami', () => {
@@ -122,16 +117,16 @@ describe('useObservabilityStore', () => {
             const tracker = installUmamiTracker();
             // Deliberately no `initUmami()`: the script loads asynchronously, so the first
             // events of a session can arrive before it. Dropping them is the accepted trade.
-            useObservabilityStore().track(analyticsEvents.APP_STARTED);
+            useObservabilityStore().track(FIRST_EVENT);
 
             expect(tracker.track).not.toHaveBeenCalled();
         });
 
         it('forwards the event and its properties once ready', () => {
             const tracker = installUmamiTracker();
-            readyStore().track(analyticsEvents.APP_READY, { boot_ms: 12 });
+            readyStore().track(SECOND_EVENT, { boot_ms: 12 });
 
-            expect(tracker.track).toHaveBeenCalledWith('app_ready', { boot_ms: 12 });
+            expect(tracker.track).toHaveBeenCalledWith(SECOND_EVENT, { boot_ms: 12 });
         });
 
         it('does not throw when the script has not attached its global yet', () => {
@@ -140,15 +135,15 @@ describe('useObservabilityStore', () => {
             const store = readyStore();
             delete globalThis.umami;
 
-            expect(() => store.track(analyticsEvents.APP_READY)).not.toThrow();
+            expect(() => store.track(SECOND_EVENT)).not.toThrow();
         });
     });
 
     /**
      * The window between injecting the tag and the tracker existing is one network round-trip
-     * long, and `main.ts` emits `app_started` inside it — every session, without exception. While
-     * those events were dropped, the two boot events in the catalogue could not appear in a
-     * dashboard at all: not rare, not lossy, simply never recorded.
+     * long, and anything an app built on this boilerplate emits during boot falls inside it. While
+     * those events were dropped, a boot-time event could not appear in a dashboard at all: not
+     * rare, not lossy, simply never recorded.
      *
      * These cases pin the buffer to that scenario rather than to its implementation — what is
      * asserted is that an event tracked before the script lands arrives after it does.
@@ -158,32 +153,32 @@ describe('useObservabilityStore', () => {
             const store = readyStore();
 
             // The real boot order: the tag is in the document, the tracker is not there yet.
-            store.track(analyticsEvents.APP_STARTED);
+            store.track(FIRST_EVENT);
 
             const tracker = installUmamiTracker();
             scriptLoads();
 
-            expect(tracker.track).toHaveBeenCalledWith('app_started', undefined);
+            expect(tracker.track).toHaveBeenCalledWith(FIRST_EVENT, undefined);
         });
 
         it('keep their order and their properties', () => {
             const store = readyStore();
 
-            store.track(analyticsEvents.APP_STARTED);
-            store.track(analyticsEvents.APP_READY, { boot_ms: 12 });
+            store.track(FIRST_EVENT);
+            store.track(SECOND_EVENT, { boot_ms: 12 });
 
             const tracker = installUmamiTracker();
             scriptLoads();
 
             expect(tracker.track.mock.calls).toEqual([
-                ['app_started', undefined],
-                ['app_ready', { boot_ms: 12 }]
+                [FIRST_EVENT, undefined],
+                [SECOND_EVENT, { boot_ms: 12 }]
             ]);
         });
 
         it('are sent once, however many times the buffer is flushed', () => {
             const store = readyStore();
-            store.track(analyticsEvents.APP_STARTED);
+            store.track(FIRST_EVENT);
 
             const tracker = installUmamiTracker();
             scriptLoads();
@@ -196,7 +191,7 @@ describe('useObservabilityStore', () => {
             const tracker = installUmamiTracker();
             const store = readyStore();
 
-            store.track(analyticsEvents.APP_READY);
+            store.track(SECOND_EVENT);
 
             // Already delivered before any load event: nothing was buffered.
             expect(tracker.track).toHaveBeenCalledTimes(1);
@@ -210,7 +205,7 @@ describe('useObservabilityStore', () => {
             const store = readyStore();
 
             for (let index = 0; index < 60; index += 1) {
-                store.track(analyticsEvents.APP_READY, { index });
+                store.track(SECOND_EVENT, { index });
             }
 
             const tracker = installUmamiTracker();
@@ -218,14 +213,14 @@ describe('useObservabilityStore', () => {
 
             expect(tracker.track).toHaveBeenCalledTimes(50);
             // The oldest ten were evicted, so the first survivor is number 10.
-            expect(tracker.track.mock.calls[0]).toEqual([analyticsEvents.APP_READY, { index: 10 }]);
+            expect(tracker.track.mock.calls[0]).toEqual([SECOND_EVENT, { index: 10 }]);
         });
 
         it('are dropped, not buffered, while analytics is disabled', () => {
             // No script is coming, so a buffer would only ever grow.
             vi.stubEnv('VITE_UMAMI_WEBSITE_ID', '');
             const store = useObservabilityStore();
-            store.track(analyticsEvents.APP_STARTED);
+            store.track(FIRST_EVENT);
 
             const tracker = installUmamiTracker();
             scriptLoads();

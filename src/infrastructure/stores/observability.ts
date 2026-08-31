@@ -14,7 +14,6 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { mapValues } from 'lodash-es';
 import type { Faro } from '@grafana/faro-web-sdk';
-import type { AnalyticsEventName } from '@/infrastructure/observability/analytics-events.ts';
 import {
     readFaroConfig,
     readUmamiConfig,
@@ -53,12 +52,12 @@ export const useObservabilityStore = defineStore('observability', () => {
     /**
      * Events tracked before the Umami script finished loading.
      *
-     * Injecting the tag and having a working tracker are a network round-trip apart, and the boot
-     * events all fall inside that window — dropping them would lose `app_started` and `app_ready`
-     * every single time. The cap is the safety valve for a script that never arrives (ad blocker,
-     * Umami down), which would otherwise leave an array growing for as long as the tab is open.
+     * Injecting the tag and having a working tracker are a network round-trip apart, so anything
+     * fired during boot falls inside that window and would be dropped. The cap is the safety valve
+     * for a script that never arrives (ad blocker, Umami down), which would otherwise leave an
+     * array growing for as long as the tab is open.
      */
-    const pendingEvents: { event: AnalyticsEventName; properties?: Record<string, unknown> }[] = [];
+    const pendingEvents: { event: string; properties?: Record<string, unknown> }[] = [];
     const pendingEventsLimit = 50;
 
     /**
@@ -235,10 +234,15 @@ export const useObservabilityStore = defineStore('observability', () => {
      * Events emitted before the tracker script lands are buffered (see {@link pendingEvents});
      * events emitted while analytics is disabled are dropped, since no script is coming.
      *
-     * @param event - Event name from the published catalogue.
+     * This app emits none of its own: pageviews are automatic and everything with an API call
+     * behind it is reported by the backend, which cannot be blocked by an extension or lost with
+     * the tab. The name is therefore a bare `string` — an app built on this boilerplate declares
+     * its own catalogue and narrows it there.
+     *
+     * @param event - Umami event name.
      * @param properties - Optional event payload.
      */
-    const track = (event: AnalyticsEventName, properties?: Record<string, unknown>): void => {
+    const track = (event: string, properties?: Record<string, unknown>): void => {
         if (!umamiReady.value) {
             return;
         }
