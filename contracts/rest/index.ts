@@ -1360,7 +1360,7 @@ export interface UpsertCartItemRequest {
 }
 
 export interface RemoveCartItemRequest {
-    productId?: Id;
+    productId: Id;
 }
 
 export interface UpdateCartItemByIdRequest {
@@ -3541,11 +3541,11 @@ export const upsertCartItem = (
 };
 
 /**
- * Clear cart or, ir productId is set, removes a specific product from the authenticated user's cart. Returns the updated cart (can be empty)
- * @summary Empty cart or, if productId is set, remove target cart item
+ * Removes the cart line for the product identified by `productId` in the body from the authenticated user's cart. Alternate spelling of `DELETE /cart/{productId}`, for a caller that would rather carry the id in the body. To empty the cart entirely, use `DELETE /cart/all` instead — a stripped or malformed body here 422s rather than falling back to clearing everything. Returns the updated cart.
+ * @summary Remove item from cart
  */
-export const clearCart = (
-    removeCartItemRequest?: RemoveCartItemRequest,
+export const removeCartItemByBody = (
+    removeCartItemRequest: RemoveCartItemRequest,
     options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>
 ) => {
     return orvalMutator<CartResponseEnvelope>(
@@ -3557,6 +3557,14 @@ export const clearCart = (
         },
         options
     );
+};
+
+/**
+ * Empties the authenticated user's cart entirely. Bodyless on purpose — the destructive spelling gets its own URL instead of being what `DELETE /cart` falls back to when a body goes missing, so a body stripped in transit 422s there instead of silently landing here.
+ * @summary Clear cart
+ */
+export const clearCart = (options?: SecondParameter<typeof orvalMutator<CartResponseEnvelope>>) => {
+    return orvalMutator<CartResponseEnvelope>({ url: `/cart/all`, method: 'DELETE' }, options);
 };
 
 /**
@@ -4200,6 +4208,9 @@ export type HardDeleteProductByIdResult = NonNullable<
 export type SearchProductsResult = NonNullable<Awaited<ReturnType<typeof searchProducts>>>;
 export type GetCartResult = NonNullable<Awaited<ReturnType<typeof getCart>>>;
 export type UpsertCartItemResult = NonNullable<Awaited<ReturnType<typeof upsertCartItem>>>;
+export type RemoveCartItemByBodyResult = NonNullable<
+    Awaited<ReturnType<typeof removeCartItemByBody>>
+>;
 export type ClearCartResult = NonNullable<Awaited<ReturnType<typeof clearCart>>>;
 export type UpdateCartItemByIdResult = NonNullable<Awaited<ReturnType<typeof updateCartItemById>>>;
 export type RemoveCartItemResult = NonNullable<Awaited<ReturnType<typeof removeCartItem>>>;

@@ -150,18 +150,14 @@ export const useCartStore = defineStore('cart', () => {
         );
 
     /**
-     * Empties the cart entirely, or removes a single item when a product is
-     * supplied.
+     * Empties the cart entirely. `DELETE /cart/all` — its own URL, not what `removeCartItem`
+     * falls back to when a product id goes missing.
      *
-     * Delegates to `DELETE /cart` with a `{ productId }` body for single-item
-     * removal, and without a body to clear everything.
-     *
-     * @param productId - When provided, only this product's line is removed.
-     * @returns A promise resolving with the updated cart response.
+     * @returns A promise resolving with the updated (empty) cart response.
      */
-    const clearCartAction = (productId?: string) =>
+    const clearCartAction = () =>
         fetchAny(() =>
-            clearCart(productId ? { productId } : undefined).then((response) => {
+            clearCart().then((response) => {
                 cart.value = response.data;
                 return response.data;
             })

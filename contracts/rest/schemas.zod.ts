@@ -3204,12 +3204,52 @@ export const UpsertCartItemResponse = zod.strictObject({
 });
 
 /**
- * Clear cart or, ir productId is set, removes a specific product from the authenticated user's cart. Returns the updated cart (can be empty)
- * @summary Empty cart or, if productId is set, remove target cart item
+ * Removes the cart line for the product identified by `productId` in the body from the authenticated user's cart. Alternate spelling of `DELETE /cart/{productId}`, for a caller that would rather carry the id in the body. To empty the cart entirely, use `DELETE /cart/all` instead — a stripped or malformed body here 422s rather than falling back to clearing everything. Returns the updated cart.
+ * @summary Remove item from cart
  */
-export const ClearCartBody = zod.strictObject({
-    productId: zod.string().optional().describe('Resource identifier')
+export const RemoveCartItemByBodyBody = zod.strictObject({
+    productId: zod.string().describe('Resource identifier')
 });
+
+export const removeCartItemByBodyResponseDataSummaryItemsCountMin = 0;
+
+export const removeCartItemByBodyResponseDataSummaryTotalQuantityMin = 0;
+
+export const removeCartItemByBodyResponseDataSummaryTotalMin = 0;
+
+export const RemoveCartItemByBodyResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        items: zod.array(
+            zod.strictObject({
+                productId: zod.string().describe('Resource identifier'),
+                quantity: zod.number().min(1)
+            })
+        ),
+        summary: zod.strictObject({
+            itemsCount: zod
+                .number()
+                .min(removeCartItemByBodyResponseDataSummaryItemsCountMin)
+                .describe('Number of distinct cart lines\/items'),
+            totalQuantity: zod
+                .number()
+                .min(removeCartItemByBodyResponseDataSummaryTotalQuantityMin)
+                .describe('Sum of quantities across all items'),
+            total: zod
+                .number()
+                .min(removeCartItemByBodyResponseDataSummaryTotalMin)
+                .describe('Sum of item prices \* quantity (before tax\/shipping\/discounts)'),
+            currency: zod.string().optional().describe('ISO-4217 currency code (e.g. USD)')
+        })
+    })
+});
+
+/**
+ * Empties the authenticated user's cart entirely. Bodyless on purpose — the destructive spelling gets its own URL instead of being what `DELETE /cart` falls back to when a body goes missing, so a body stripped in transit 422s there instead of silently landing here.
+ * @summary Clear cart
+ */
 
 export const clearCartResponseDataSummaryItemsCountMin = 0;
 

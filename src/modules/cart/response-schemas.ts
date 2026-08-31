@@ -16,9 +16,13 @@ import type { ResponseSchemaRoute } from '@/infrastructure/http/response-schema-
 export const cartResponseSchemas: ResponseSchemaRoute[] = [
     { method: 'GET', pattern: /^\/cart$/, schema: schemas.GetCartResponse },
     { method: 'POST', pattern: /^\/cart$/, schema: schemas.UpsertCartItemResponse },
-    { method: 'DELETE', pattern: /^\/cart$/, schema: schemas.ClearCartResponse },
+    { method: 'DELETE', pattern: /^\/cart$/, schema: schemas.RemoveCartItemByBodyResponse },
     { method: 'GET', pattern: /^\/cart\/summary$/, schema: schemas.GetCartSummaryResponse },
     { method: 'POST', pattern: /^\/cart\/checkout$/, schema: schemas.CheckoutResponse },
+    /* Before the `[^/]+` by-id row: `find()` returns the first match, and `all` is a static
+     * segment the wildcard would otherwise swallow — the same order rule the products/categories
+     * row follows. */
+    { method: 'DELETE', pattern: /^\/cart\/all$/, schema: schemas.ClearCartResponse },
     { method: 'PUT', pattern: /^\/cart\/[^/]+$/, schema: schemas.UpdateCartItemByIdResponse },
     { method: 'DELETE', pattern: /^\/cart\/[^/]+$/, schema: schemas.RemoveCartItemResponse },
     {

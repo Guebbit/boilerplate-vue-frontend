@@ -3,11 +3,12 @@
  * Unit tests for the cart store.
  *
  * Unlike products/users, this store owns real state: every action replaces the local cart with
- * the payload the API returned, and three of them emit analytics. Two rules are worth guarding:
+ * the payload the API returned. Two rules are worth guarding:
  *
- *   - `clearCart(productId)` and `clearCart()` are the *same* endpoint with and without a body,
- *     and only the bodyless call is a "cart cleared" event. Getting that wrong pollutes analytics
- *     in a way no type checks and no e2e assertion would notice.
+ *   - `clearCart()` is bodyless and hits `DELETE /cart/all`, a separate URL from
+ *     `removeCartItem(productId)`'s `DELETE /cart/:productId` — the two used to be one
+ *     overloaded endpoint, and collapsing them back into an optional-body call would restore the
+ *     failure a stripped body used to cause: silently clearing everything instead of one line.
  *   - the summary getters must survive an unfetched cart, since the header renders the item
  *     count before anything has been loaded.
  *   - checkout reports BOTH outcomes. The backend emits `checkout_completed` and `checkout_failed`
@@ -165,18 +166,11 @@ describe('useCartStore', () => {
     });
 
     describe('clearCart', () => {
-        it('sends no body when clearing everything', () =>
+        it('takes no arguments — clearing is DELETE /cart/all, not an optional body', () =>
             useCartStore()
                 .clearCart()
                 .then(() => {
-                    expect(clearCart).toHaveBeenCalledWith(undefined);
-                }));
-
-        it('sends a productId body when removing one line', () =>
-            useCartStore()
-                .clearCart('p1')
-                .then(() => {
-                    expect(clearCart).toHaveBeenCalledWith({ productId: 'p1' });
+                    expect(clearCart).toHaveBeenCalledWith();
                 }));
     });
 
