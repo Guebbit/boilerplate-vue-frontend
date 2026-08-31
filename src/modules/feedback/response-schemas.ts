@@ -33,5 +33,10 @@ export const feedbackResponseSchemas: ResponseSchemaRoute[] = [
         method: 'PUT',
         pattern: /^\/feedback\/[^/]+$/,
         schema: schemas.UpdateFeedbackRequestStatusResponse
+    },
+    {
+        method: 'DELETE',
+        pattern: /^\/feedback\/[^/]+$/,
+        schema: schemas.DeleteFeedbackRequestResponse
     }
 ];

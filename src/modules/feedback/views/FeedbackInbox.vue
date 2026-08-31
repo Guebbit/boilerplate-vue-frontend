@@ -17,6 +17,7 @@ import { Inbox } from 'lucide-vue-next';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useFeedbackStore } from '@/modules/feedback/store.ts';
+import { useDialogStore } from '@/ui/dialog.ts';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatDateTime } from '@/infrastructure/utils/formatters.ts';
 import { FeedbackRequestStatus } from '@types';
@@ -35,7 +36,7 @@ const { addMessage } = useNotificationsStore();
 /**
  * The admin actions this page drives.
  */
-const { fetchRequests, updateStatus } = useFeedbackStore();
+const { fetchRequests, updateStatus, deleteRequest } = useFeedbackStore();
 
 /**
  * The inbox list and its shared loading flag.
@@ -67,6 +68,26 @@ const handleStatus = (requestId: string, status: TFeedbackRequestStatus) => {
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
 
+/**
+ * Permanently removes one ticket, after an explicit confirmation — the erasure path a GDPR
+ * request goes through, once an operator has found the rows by search.
+ *
+ * @param requestId - Which ticket.
+ * @param subject - Named in the confirmation, so declining or accepting is about a specific
+ * ticket rather than "the one I last clicked".
+ * @returns Nothing; the outcome is reported as a toast.
+ */
+const handleDelete = (requestId: string, subject: string) => {
+    return useDialogStore()
+        .confirm({ message: t('feedback-inbox-page.confirm-delete', { subject }), color: 'error' })
+        .then((accepted) => {
+            if (!accepted) return;
+            return deleteRequest(requestId)
+                .then(() => addMessage(t('feedback-inbox-page.success-delete')))
+                .catch((error) => notifyErrorMessages(addMessage, error));
+        });
+};
+
 onMounted(fetchRequests);
 </script>
 
@@ -93,21 +114,39 @@ onMounted(fetchRequests);
                             {{ request.email }} · {{ formatDateTime(request.createdAt) }}
                         </p>
                     </div>
-                    <v-select
-                        :model-value="request.status"
-                        :items="statusOptions"
-                        :loading="loading"
-                        :aria-label="
-                            t('feedback-inbox-page.status-label', { subject: request.subject })
-                        "
-                        density="compact"
-                        hide-details
-                        style="max-width: 180px"
-                        data-test="feedback-status"
-                        @update:model-value="
-                            (status) => handleStatus(request.id, status as TFeedbackRequestStatus)
-                        "
-                    />
+                    <div class="flex items-center gap-2">
+                        <v-select
+                            :model-value="request.status"
+                            :items="statusOptions"
+                            :loading="loading"
+                            :aria-label="
+                                t('feedback-inbox-page.status-label', { subject: request.subject })
+                            "
+                            density="compact"
+                            hide-details
+                            style="max-width: 180px"
+                            data-test="feedback-status"
+                            @update:model-value="
+                                (status) =>
+                                    handleStatus(request.id, status as TFeedbackRequestStatus)
+                            "
+                        />
+                        <v-btn
+                            size="small"
+                            variant="tonal"
+                            color="error"
+                            data-test="feedback-delete"
+                            :aria-label="
+                                t('feedback-inbox-page.button-delete-named', {
+                                    subject: request.subject
+                                })
+                            "
+                            :disabled="loading"
+                            @click="handleDelete(request.id, request.subject)"
+                        >
+                            {{ t('feedback-inbox-page.button-delete') }}
+                        </v-btn>
+                    </div>
                 </div>
                 <p class="mt-3 whitespace-pre-line">{{ request.message }}</p>
             </v-card>

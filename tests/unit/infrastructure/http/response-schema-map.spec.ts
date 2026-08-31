@@ -115,6 +115,7 @@ const ROUTES: [method: string, path: string, name: string][] = [
     ['GET', '/feedback', 'ListFeedbackRequestsResponse'],
     ['POST', '/feedback/search', 'SearchFeedbackRequestsResponse'],
     ['PUT', `/feedback/${ID}`, 'UpdateFeedbackRequestStatusResponse'],
+    ['DELETE', `/feedback/${ID}`, 'DeleteFeedbackRequestResponse'],
     ['GET', '/products', 'ListProductsResponse'],
     ['POST', '/products', 'CreateProductResponse'],
     ['PUT', '/products', 'UpdateProductResponse'],

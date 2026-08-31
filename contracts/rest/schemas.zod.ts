@@ -2304,11 +2304,20 @@ export const SearchUsersResponse = zod.strictObject({
  * Creates a user feedback/contact request and notifies admins via email.
  * @summary Submit contact request
  */
+export const createFeedbackRequestBodyWebsiteMax = 200;
+
 export const CreateFeedbackRequestBody = zod.strictObject({
     name: zod.string().optional(),
     email: zod.email(),
     subject: zod.string(),
-    message: zod.string()
+    message: zod.string(),
+    website: zod
+        .string()
+        .max(createFeedbackRequestBodyWebsiteMax)
+        .optional()
+        .describe(
+            'Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `FeedbackRequest`, which does not declare it.\n'
+        )
 });
 
 export const CreateFeedbackRequestResponse = zod.strictObject({
@@ -2501,6 +2510,20 @@ export const UpdateFeedbackRequestStatusResponse = zod.strictObject({
         createdAt: zod.iso.datetime({ offset: true }),
         updatedAt: zod.iso.datetime({ offset: true }).optional()
     })
+});
+
+/**
+ * Permanently removes the feedback request identified by `{id}`.
+ * @summary Delete feedback request
+ */
+export const DeleteFeedbackRequestParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const DeleteFeedbackRequestResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
 });
 
 /**

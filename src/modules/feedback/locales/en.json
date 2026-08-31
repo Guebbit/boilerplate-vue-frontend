@@ -21,7 +21,11 @@
         "status-in_progress": "In progress",
         "status-resolved": "Resolved",
         "status-spam": "Spam",
-        "status-label": "Status of \"{subject}\""
+        "status-label": "Status of \"{subject}\"",
+        "button-delete": "Delete",
+        "button-delete-named": "Delete \"{subject}\"",
+        "confirm-delete": "Permanently delete \"{subject}\"? This cannot be undone.",
+        "success-delete": "Ticket deleted."
     },
     "navigation": {
         "label-contact": "Contact",

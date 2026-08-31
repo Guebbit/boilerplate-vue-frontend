@@ -45,7 +45,8 @@ beforeEach(() => {
     responses = {
         'POST /feedback/contact': { data: TICKET },
         'GET /feedback': { data: { items: [TICKET] } },
-        'PUT /feedback/f1': { data: { ...TICKET, status: 'resolved' } }
+        'PUT /feedback/f1': { data: { ...TICKET, status: 'resolved' } },
+        'DELETE /feedback/f1': { data: undefined }
     };
 });
 
@@ -59,6 +60,19 @@ describe('submitContact', () => {
             })
             .then(() => {
                 expect(requestedUrls()).toEqual(['/feedback/contact']);
+            }));
+
+    it("passes the honeypot through untouched — deciding what it means is the BE's job", () =>
+        useFeedbackStore()
+            .submitContact({
+                email: 'curious@example.com',
+                subject: 'A question',
+                message: 'About the cats',
+                website: 'https://spam-bot.example'
+            })
+            .then(() => {
+                const [request] = vi.mocked(orvalMutator).mock.calls[0] as [{ data?: unknown }];
+                expect(request.data).toMatchObject({ website: 'https://spam-bot.example' });
             }));
 });
 
@@ -79,6 +93,19 @@ describe('updateStatus', () => {
             .then(() => store.updateStatus('f1', 'resolved'))
             .then(() => {
                 // The reload is the point: the row worth rendering is the API's.
+                expect(requestedUrls()).toEqual(['/feedback', '/feedback/f1', '/feedback']);
+            });
+    });
+});
+
+describe('deleteRequest', () => {
+    it('removes the ticket, then reloads the inbox it emptied', () => {
+        const store = useFeedbackStore();
+        return store
+            .fetchRequests()
+            .then(() => store.deleteRequest('f1'))
+            .then(() => {
+                // Same reload rule as updateStatus, for the same reason.
                 expect(requestedUrls()).toEqual(['/feedback', '/feedback/f1', '/feedback']);
             });
     });

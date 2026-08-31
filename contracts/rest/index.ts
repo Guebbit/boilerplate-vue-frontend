@@ -1132,6 +1132,11 @@ export interface CreateFeedbackRequest {
     email: Email;
     subject: string;
     message: string;
+    /**
+     * Honeypot. Hidden in the form and always submitted empty by a real client; a non-empty value marks the submission as spam. Named for what a scraper expects to find. Never persisted and never returned — see `FeedbackRequest`, which does not declare it.
+     * @maxLength 200
+     */
+    website?: string;
 }
 
 export type FeedbackRequestStatus =
@@ -3217,6 +3222,17 @@ export const updateFeedbackRequestStatus = (
 };
 
 /**
+ * Permanently removes the feedback request identified by `{id}`.
+ * @summary Delete feedback request
+ */
+export const deleteFeedbackRequest = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>({ url: `/feedback/${id}`, method: 'DELETE' }, options);
+};
+
+/**
  * Returns a paginated list of products.
  * @summary List products (paginated)
  */
@@ -4184,6 +4200,9 @@ export type SearchFeedbackRequestsResult = NonNullable<
 >;
 export type UpdateFeedbackRequestStatusResult = NonNullable<
     Awaited<ReturnType<typeof updateFeedbackRequestStatus>>
+>;
+export type DeleteFeedbackRequestResult = NonNullable<
+    Awaited<ReturnType<typeof deleteFeedbackRequest>>
 >;
 export type ListProductsResult = NonNullable<Awaited<ReturnType<typeof listProducts>>>;
 export type CreateProductResult = NonNullable<Awaited<ReturnType<typeof createProduct>>>;

@@ -21,7 +21,11 @@
         "status-in_progress": "In lavorazione",
         "status-resolved": "Risolto",
         "status-spam": "Spam",
-        "status-label": "Stato di \"{subject}\""
+        "status-label": "Stato di \"{subject}\"",
+        "button-delete": "Elimina",
+        "button-delete-named": "Elimina \"{subject}\"",
+        "confirm-delete": "Eliminare definitivamente \"{subject}\"? L'operazione non può essere annullata.",
+        "success-delete": "Ticket eliminato."
     },
     "navigation": {
         "label-contact": "Contatti",

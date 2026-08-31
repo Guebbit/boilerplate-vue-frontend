@@ -30,6 +30,12 @@ interface ContactForm {
     email?: string;
     subject?: string;
     message?: string;
+    /**
+     * Honeypot. A real visitor never sees or reaches this field — see the template — so it
+     * stays empty; a bot's generic autofill often populates it by name. The BE writes a non-empty
+     * value as spam and skips the notification.
+     */
+    website?: string;
 }
 
 /**
@@ -57,12 +63,15 @@ const formElement = ref<HTMLFormElement>();
  */
 const { form, formErrors, showFormErrors, isSubmitting, handleSubmit, resetForm } =
     useStructureFormValidation<ContactForm>(
-        { name: '', email: '', subject: '', message: '' },
+        { name: '', email: '', subject: '', message: '', website: '' },
         z.object({
             name: z.string().optional(),
             email: z.email({ error: () => t('contact-page.email-invalid') }),
             subject: z.string().min(1, { error: () => t('contact-page.subject-required') }),
-            message: z.string().min(10, { error: () => t('contact-page.message-min') })
+            message: z.string().min(10, { error: () => t('contact-page.message-min') }),
+            // Never shown to a visitor, so never validated — the BE decides what a filled value
+            // means; this form only has to carry it through unedited.
+            website: z.string().optional()
         }),
         {
             formElement,
@@ -83,7 +92,8 @@ const submitForm = () =>
             name: form.value.name || undefined,
             email: form.value.email ?? '',
             subject: form.value.subject ?? '',
-            message: form.value.message ?? ''
+            message: form.value.message ?? '',
+            website: form.value.website || undefined
         }).then(() => {
             addMessage(t('contact-page.success'));
             resetForm();
@@ -96,6 +106,24 @@ const submitForm = () =>
         <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
             <p class="mb-4 opacity-80">{{ t('contact-page.intro') }}</p>
             <form ref="formElement" novalidate @submit.prevent="submitForm">
+                <!--
+                    Honeypot. `aria-hidden` and `tabindex="-1"` take it out of the accessibility
+                    tree and the tab order entirely, rather than merely out of sight — a
+                    `display:none` field a screen reader still exposed would fail every a11y check
+                    for a nonexistent label, and a sighted visitor who somehow reached it would be
+                    filling in something that marks their own message as spam. `autocomplete="off"`
+                    keeps a browser from ever offering to fill it for a real visitor either.
+                -->
+                <div class="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
+                    <input
+                        v-model="form.website"
+                        type="text"
+                        tabindex="-1"
+                        autocomplete="off"
+                        name="website"
+                        data-test="contact-website"
+                    />
+                </div>
                 <v-text-field
                     v-model="form.name"
                     type="text"
