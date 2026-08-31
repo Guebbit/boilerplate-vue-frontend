@@ -12,9 +12,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
 const updateAccountMock = vi.fn();
+const getAccountMock = vi.fn();
 
 vi.mock('@api', () => ({
-    getAccount: vi.fn(),
+    getAccount: () => getAccountMock(),
     refreshToken: vi.fn(),
     logout: vi.fn(),
     logoutAll: vi.fn(),
@@ -79,5 +80,41 @@ describe('persistLocalePreference', () => {
      */
     it('resolves with nothing on the happy path too, so the caller can ignore it', () => {
         return expect(signedIn().persistLocalePreference('en')).resolves.toBeUndefined();
+    });
+});
+
+describe('loadViewer', () => {
+    /**
+     * `thumbnailUrl` rides alongside `imageUrl` on the account payload — the shell's avatar is the
+     * one place outside `account` itself that reads either, so a projection that dropped it would
+     * silently fall back to loading the full image for every navigation-bar avatar.
+     */
+    it('carries thumbnailUrl into the viewer projection', () => {
+        getAccountMock.mockResolvedValue({
+            data: {
+                id: '1',
+                email: 'a@b.c',
+                admin: false,
+                imageUrl: '/images/abc.png',
+                thumbnailUrl: '/images/thumbs/v1/abc.webp'
+            }
+        });
+        const store = useSessionStore();
+
+        return store.loadViewer().then(() => {
+            expect(store.viewer?.imageUrl).toBe('/images/abc.png');
+            expect(store.viewer?.thumbnailUrl).toBe('/images/thumbs/v1/abc.webp');
+        });
+    });
+
+    it('leaves thumbnailUrl undefined for an account with none', () => {
+        getAccountMock.mockResolvedValue({
+            data: { id: '1', email: 'a@b.c', admin: false, imageUrl: '/images/abc.png' }
+        });
+        const store = useSessionStore();
+
+        return store.loadViewer().then(() => {
+            expect(store.viewer?.thumbnailUrl).toBeUndefined();
+        });
     });
 });

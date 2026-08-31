@@ -37,6 +37,12 @@ const { hasImage } = defineProps<{
      */
     imageUrl?: string | null;
     /**
+     * The record's `thumbnailUrl`, unresolved. Only read when {@link hasImage} is set; absent for
+     * a record whose image is a remote/default URL rather than an upload, or whose digest job has
+     * not finished yet.
+     */
+    thumbnailUrl?: string | null;
+    /**
      * What the picture shows, for a reader who cannot see it. Required whenever `hasImage` is.
      */
     imageAlt?: string;
@@ -48,6 +54,7 @@ const { hasImage } = defineProps<{
         <LazyImage
             v-if="hasImage"
             :src="imageUrl"
+            :thumbnail-src="thumbnailUrl"
             :alt="imageAlt ?? title"
             :width="72"
             :height="72"

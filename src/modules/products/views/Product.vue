@@ -144,6 +144,7 @@ onMounted(() => {
                     :eyebrow="currentProduct?.id"
                     :has-image="true"
                     :image-url="currentProduct?.imageUrl"
+                    :thumbnail-url="currentProduct?.thumbnailUrl"
                     :image-alt="t('product-target-page.image-alt', { name: heroTitle })"
                 />
             </template>

@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-    placeholderImageUrl,
-    resolveImageUrl,
-    thumbnailImageUrl
-} from '@/infrastructure/utils/images.ts';
+import { placeholderImageUrl, resolveImageUrl } from '@/infrastructure/utils/images.ts';
 
 /**
  * One record's picture, in three tiers: thumbnail first, full image lazily, a bundled placeholder
@@ -19,19 +15,23 @@ import {
  * the row jumps when the bytes land.
  *
  * ── The two-tier load ────────────────────────────────────────────────────────────────────────
- * When `thumbnailImageUrl` has something to offer, the small variant paints immediately, blurred
- * and slightly overscaled — the blur is what makes a low-resolution upscale read as "loading"
- * instead of "bad picture", and the overscale hides the soft edge blur leaves behind. The full
- * image fades in over it once decoded.
+ * When the caller passes `thumbnailSrc`, the small variant paints immediately, blurred and
+ * slightly overscaled — the blur is what makes a low-resolution upscale read as "loading" instead
+ * of "bad picture", and the overscale hides the soft edge blur leaves behind. The full image fades
+ * in over it once decoded.
  *
- * The backend serves no thumbnails today, so in practice the first tier is empty and this behaves
- * as a plain lazy image. That is the intended degradation, not a stopgap: the second tier is the
- * one that must always work.
+ * `thumbnailSrc` and `src` are two independent fields on the record (`thumbnailUrl`/`imageUrl`),
+ * not one derived from the other — the backend promotes them to distinct paths, a small WebP
+ * derivative and the digested original, so there is no `width` parameter to ask for here. A
+ * record with no thumbnail (a remote/default image, or a digest job still pending) simply omits
+ * `thumbnailSrc`, and this behaves as a plain lazy image — the degradation every caller already
+ * had to handle before thumbnails existed at all.
  */
 // `eager` takes no default: Vue casts an absent boolean prop to `false` already, and restating it
 // is the one thing `no-useless-default-assignment` is there to catch.
 const {
     src,
+    thumbnailSrc,
     alt,
     width = 96,
     height = 96,
@@ -43,6 +43,13 @@ const {
      * job, and a caller that resolves it first is a caller doing the same work twice.
      */
     src?: string | null;
+    /**
+     * The record's `thumbnailUrl`, exactly as the API returned it — resolving it is this
+     * component's job, same as {@link src}. Absent for a record whose image is a remote/default
+     * URL rather than an upload, or whose digest job has not finished yet; either way the
+     * component simply skips the first tier.
+     */
+    thumbnailSrc?: string | null;
     /**
      * What the picture shows, for a reader who cannot see it. Required, and deliberately not
      * defaulted: an image of a product is `alt="Photo of <title>"`, and only the caller knows the
@@ -58,7 +65,7 @@ const {
      */
     alt: string;
     /**
-     * Display width in CSS pixels; also the width asked of the thumbnail.
+     * Display width in CSS pixels.
      */
     width?: number;
     /**
@@ -106,13 +113,13 @@ watch(
 const fullSource = computed(() => (failed.value ? undefined : resolveImageUrl(src)));
 
 /**
- * The first tier: the small variant, while the API serves one.
+ * The first tier: the small variant, when the caller passed one.
  *
  * Stays mounted after the full image has decoded rather than unmounting on `loaded`. Removing it
  * at the moment the fade STARTS leaves 300ms of empty box, since the layer fading in is still
  * transparent; underneath a fully opaque image it costs nothing to leave in place.
  */
-const thumbnailSource = computed(() => (failed.value ? undefined : thumbnailImageUrl(src, width)));
+const thumbnailSource = computed(() => (failed.value ? undefined : resolveImageUrl(thumbnailSrc)));
 
 /**
  * Whether what is on screen is a stand-in rather than this record's own picture.
@@ -150,6 +157,7 @@ const boxStyle = computed(() => ({
             :src="thumbnailSource"
             alt=""
             aria-hidden="true"
+            data-test="lazy-image-thumbnail"
             class="absolute inset-0 h-full w-full scale-105 object-cover blur-sm"
         />
 

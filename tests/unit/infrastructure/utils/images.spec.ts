@@ -1,5 +1,5 @@
 /**
- * `src/infrastructure/utils/images.ts` — the three answers to "what goes in `src`".
+ * `src/infrastructure/utils/images.ts` — the two answers to "what goes in `src`".
  *
  * The interesting one is {@link resolveImageUrl}, and it is interesting because the behaviour it
  * replaced looked correct: the API returns `/images/<hash>.png`, that is a perfectly good `src`,
@@ -7,19 +7,17 @@
  * arrangement here and every deployment that is not single-origin. Nothing caught it, including
  * the e2e suite, because asserting on the `src` ATTRIBUTE asserts a string and never that a byte
  * arrived. So the assertions below are about the prefix, and the cases either side of it: the
- * shapes that must be left exactly alone.
+ * shapes that must be left exactly alone. `thumbnailUrl` goes through the same function — the
+ * backend promotes it to its own server-relative path, exactly like `imageUrl` — which is why
+ * there is no separate `thumbnailImageUrl` leaf to test any more.
  *
  * `baseURL` is written directly on the axios instance rather than stubbed through the env, because
  * that is where the function reads it from — including the e2e runner's runtime override, which no
  * build-time env read can see.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { instance } from '@/infrastructure/http/client';
-import {
-    placeholderImageUrl,
-    resolveImageUrl,
-    thumbnailImageUrl
-} from '@/infrastructure/utils/images';
+import { placeholderImageUrl, resolveImageUrl } from '@/infrastructure/utils/images';
 
 const originalBaseUrl = instance.defaults.baseURL;
 
@@ -30,24 +28,6 @@ beforeEach(() => {
 afterEach(() => {
     instance.defaults.baseURL = originalBaseUrl;
 });
-
-/**
- * The thumbnail parameter is read at module load, so the module has to be re-imported after the
- * env is stubbed — the top-level import would freeze the unset value.
- *
- * `resetModules` re-evaluates the axios client along with it, so the fresh instance has to be
- * given the same `baseURL` the suite's `beforeEach` puts on the original one. Without that, the
- * block below would silently assert against whatever `.env` happens to say.
- *
- * @returns The freshly evaluated images module, with thumbnails switched on.
- */
-const withThumbnails = async () => {
-    vi.stubEnv('VITE_IMAGE_THUMBNAIL_PARAM', 'w');
-    vi.resetModules();
-    const { instance: freshInstance } = await import('@/infrastructure/http/client');
-    freshInstance.defaults.baseURL = 'https://api.example.test';
-    return import('@/infrastructure/utils/images');
-};
 
 describe('resolveImageUrl', () => {
     it('prefixes a path the API returned with the API origin', () => {
@@ -84,43 +64,6 @@ describe('resolveImageUrl', () => {
 
         expect(resolveImageUrl('/images/abc.png')).toBe('/images/abc.png');
         expect(resolveImageUrl('images/abc.png')).toBe('/images/abc.png');
-    });
-});
-
-describe('thumbnailImageUrl', () => {
-    it('has nothing to offer while the API serves one size per upload', () => {
-        // The state of the backend today: `VITE_IMAGE_THUMBNAIL_PARAM` unset. `undefined` is the
-        // whole contract — it is what tells `LazyImage` there is no first tier to paint.
-        expect(thumbnailImageUrl('/images/abc.png')).toBeUndefined();
-    });
-
-    describe('once the API serves sized variants', () => {
-        afterEach(() => {
-            vi.unstubAllEnvs();
-            vi.resetModules();
-        });
-
-        it('asks for the width, on the resolved URL', async () => {
-            const images = await withThumbnails();
-
-            expect(images.thumbnailImageUrl('/images/abc.png', 64)).toBe(
-                'https://api.example.test/images/abc.png?w=64'
-            );
-        });
-
-        it('appends to a URL that already carries a query', async () => {
-            const images = await withThumbnails();
-
-            expect(images.thumbnailImageUrl('https://cdn.example.test/a.png?v=2', 32)).toBe(
-                'https://cdn.example.test/a.png?v=2&w=32'
-            );
-        });
-
-        it('still has nothing to offer for a record with no image', async () => {
-            const images = await withThumbnails();
-
-            expect(images.thumbnailImageUrl(undefined)).toBeUndefined();
-        });
     });
 });
 

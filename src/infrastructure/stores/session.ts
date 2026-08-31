@@ -37,6 +37,11 @@ export interface SessionViewer {
      * the account module could keep to itself.
      */
     imageUrl?: string;
+    /**
+     * The small variant of {@link imageUrl}, shown as the avatar's first-paint tier. Absent for a
+     * remote/default image or while a digest job is still pending.
+     */
+    thumbnailUrl?: string;
 }
 
 /**
@@ -121,13 +126,15 @@ export const useSessionStore = defineStore('session', () => {
                 email: string;
                 admin?: boolean;
                 imageUrl?: string;
+                thumbnailUrl?: string;
             }>(data);
             setViewer(
                 payload && {
                     id: payload.id,
                     email: payload.email,
                     admin: Boolean(payload.admin),
-                    imageUrl: payload.imageUrl
+                    imageUrl: payload.imageUrl,
+                    thumbnailUrl: payload.thumbnailUrl
                 }
             );
             return payload;

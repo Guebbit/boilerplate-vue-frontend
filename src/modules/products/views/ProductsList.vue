@@ -291,6 +291,7 @@ const handleHardDelete = (productId: string) => {
             <template v-slot:[`item.image`]="{ item }">
                 <LazyImage
                     :src="item.imageUrl"
+                    :thumbnail-src="item.thumbnailUrl"
                     :alt="t('products-list-page.image-alt', { name: item.title })"
                     :width="56"
                     :height="56"

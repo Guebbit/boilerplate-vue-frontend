@@ -1,22 +1,22 @@
 /**
  * @module
- * Three URL-shaping leaves that answer one question from different angles: given a record's
- * `imageUrl`, what does `<img src>` get? Resolve to absolute, ask for a thumbnail variant, or
- * fall back to a bundled placeholder.
+ * Two URL-shaping leaves that answer one question from different angles: given a record's
+ * `imageUrl` (or `thumbnailUrl`), what does `<img src>` get? Resolve to absolute, or fall back to
+ * a bundled placeholder.
  */
 
 import { instance } from '@/infrastructure/http/client.ts';
 
 /**
  * Turning what the API stores into something a browser can actually fetch — and standing in for
- * what it does not store yet.
+ * what it does not store at all.
  *
- * Three separate jobs, kept in one leaf because they are the same decision seen from three sides:
- * given a record's `imageUrl`, what does `<img src>` get?
+ * Two separate jobs, kept in one leaf because they are the same decision seen from two sides:
+ * given a record's `imageUrl` (or `thumbnailUrl` — both are server-relative paths, `resolveImageUrl`
+ * does not care which field they came from), what does `<img src>` get?
  *
  *   1. {@link resolveImageUrl} — the path the API returns is relative TO THE API, not to us.
- *   2. {@link thumbnailImageUrl} — the small variant, which nothing serves yet.
- *   3. {@link placeholderImageUrl} — what to show when the answer to 1 is "nothing".
+ *   2. {@link placeholderImageUrl} — what to show when the answer to 1 is "nothing".
  */
 
 /**
@@ -55,42 +55,6 @@ export const resolveImageUrl = (source?: string | null): string | undefined => {
     if (!apiOrigin) return source.startsWith('/') ? source : `/${source}`;
 
     return `${apiOrigin.replace(/\/+$/, '')}/${source.replace(/^\/+/, '')}`;
-};
-
-/**
- * Name of the query parameter the API takes to resize an image, e.g. `w` for `?w=64`.
- *
- * Empty — the default, and the state of the world today — means the backend serves ONE size per
- * upload and there is no thumbnail to ask for. See {@link thumbnailImageUrl}.
- */
-const THUMBNAIL_WIDTH_PARAMETER =
-    (import.meta.env.VITE_IMAGE_THUMBNAIL_PARAM as string | undefined)?.trim() ?? '';
-
-/**
- * The small, cheap variant of an image, for the tier that loads first.
- *
- * **The backend does not serve one yet.** It stores exactly the bytes that were uploaded, at one
- * size, so asking for a thumbnail today has no answer and this returns `undefined` — which
- * {@link LazyImage} reads as "there is no first tier, load the full image lazily and be done".
- *
- * When the backend grows sized variants, this becomes a one-line `.env` change rather than a code
- * change: set `VITE_IMAGE_THUMBNAIL_PARAM` to whatever it names the width parameter and every call
- * site starts requesting thumbnails. The query-string shape is the one nearly every image pipeline
- * offers (imgproxy, thumbor, a sharp middleware); a backend that instead serves variants at
- * distinct PATHS would need this function rewritten, and that is the intended place to do it.
- *
- * @param source - The record's `imageUrl`.
- * @param width - Intended display width in CSS pixels.
- * @returns The thumbnail URL, or `undefined` when the API serves no variants.
- */
-export const thumbnailImageUrl = (source?: string | null, width = 64): string | undefined => {
-    if (!THUMBNAIL_WIDTH_PARAMETER) return undefined;
-
-    const resolved = resolveImageUrl(source);
-    if (!resolved) return undefined;
-
-    const separator = resolved.includes('?') ? '&' : '?';
-    return `${resolved}${separator}${THUMBNAIL_WIDTH_PARAMETER}=${Math.round(width)}`;
 };
 
 /**

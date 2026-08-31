@@ -62,6 +62,12 @@ const props = defineProps<{
      * The visitor's `imageUrl`, unresolved. Only read when {@link avatar} is set.
      */
     avatarUrl?: string | null;
+    /**
+     * The visitor's `thumbnailUrl`, unresolved. Only read when {@link avatar} is set; absent when
+     * the account image is a remote/default URL rather than an upload, or its digest job has not
+     * finished yet.
+     */
+    avatarThumbnailUrl?: string | null;
 }>();
 
 const attributes = useAttrs();
@@ -119,6 +125,7 @@ const accessibleName = () =>
                     <LazyImage
                         v-if="avatar"
                         :src="avatarUrl"
+                        :thumbnail-src="avatarThumbnailUrl"
                         alt=""
                         :width="28"
                         :height="28"

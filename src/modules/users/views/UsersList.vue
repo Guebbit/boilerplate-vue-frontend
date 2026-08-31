@@ -212,6 +212,7 @@ const handleHardDelete = (userId: string) => {
             <template v-slot:[`item.image`]="{ item }">
                 <LazyImage
                     :src="item.imageUrl"
+                    :thumbnail-src="item.thumbnailUrl"
                     :alt="t('users-list-page.image-alt', { name: item.username })"
                     :width="56"
                     :height="56"

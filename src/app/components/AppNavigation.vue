@@ -275,6 +275,7 @@ const toggleTheme = () => {
                     :badge="accountBadge"
                     :avatar="true"
                     :avatar-url="viewer.imageUrl"
+                    :avatar-thumbnail-url="viewer.thumbnailUrl"
                     data-test="user-menu"
                 >
                     <template #after>

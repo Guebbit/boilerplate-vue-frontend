@@ -283,6 +283,41 @@ describe('Image upload', () => {
         });
 
         /**
+         * The digest pipeline runs inline when no broker is configured — see
+         * `docs/tools/image-processing.md` on the backend — so by the time the save resolves the
+         * response already carries a real `thumbnailUrl`, not the pending-image placeholder. The
+         * edit form's own preview never shows it (`FormImageUpload.vue` has no thumbnail tier);
+         * the detail page's `LazyImage` does, which is why this visits it after saving.
+         */
+        it('produces a thumbnail alongside the promoted image', () => {
+            cy.skipUnlessLive();
+            cy.loginAs('admin');
+            openHydratedProductEditForm();
+
+            selectSampleImage();
+            cy.get('form').submit();
+            cy.contains('Product updated successfully').should('exist');
+
+            cy.url().then((editUrl) => cy.visit(editUrl.replace(/\/edit$/, '')));
+
+            cy.get('[data-test="lazy-image-thumbnail"]')
+                .should('have.attr', 'src')
+                .then((source) => {
+                    const thumbnailPath = source as string;
+                    // The backend's own derivative path, distinct from the main image's — see
+                    // `imageStore.putDerivative` on the backend.
+                    expect(thumbnailPath).to.match(/^\/images\/thumbs\/v1\/[\w.-]+\.webp$/);
+
+                    cy.env(['apiUrl']).then(({ apiUrl }) => {
+                        cy.request(`${String(apiUrl)}${thumbnailPath}`).then((response) => {
+                            expect(response.status).to.equal(200);
+                            expect(response.headers['content-type']).to.match(/^image\/webp/);
+                        });
+                    });
+                });
+        });
+
+        /**
          * The two-gate design, from the outside. `fileFilter` only ever sees the client's own
          * `Content-Type` header, which nothing verifies — so bytes that are not an image, sent
          * under an image mime type, get past the first gate and must be caught by the second.

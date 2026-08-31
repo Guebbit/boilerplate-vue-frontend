@@ -62,6 +62,10 @@ defineProps<{
      * The visitor's `imageUrl`, unresolved. Only read when {@link avatar} is set.
      */
     avatarUrl?: string | null;
+    /**
+     * The visitor's `thumbnailUrl`, unresolved. Only read when {@link avatar} is set.
+     */
+    avatarThumbnailUrl?: string | null;
     dataTest?: string;
 }>();
 
@@ -80,6 +84,7 @@ const { t } = useI18n();
                 :badge-label="badge ? t('navigation.badge-items', badge) : undefined"
                 :avatar="avatar"
                 :avatar-url="avatarUrl"
+                :avatar-thumbnail-url="avatarThumbnailUrl"
                 :data-test="dataTest"
             />
         </template>

@@ -52,6 +52,10 @@ const mountImage = (props: Record<string, unknown> = {}) =>
 /** The full-image layer — always the LAST `img`, under any thumbnail tier. */
 const mainImage = (wrapper: ReturnType<typeof mountImage>) => wrapper.findAll('img').at(-1)!;
 
+/** The blurred first-paint layer — absent from the DOM entirely when there is none. */
+const thumbnailImage = (wrapper: ReturnType<typeof mountImage>) =>
+    wrapper.find('[data-test="lazy-image-thumbnail"]');
+
 describe('LazyImage — which picture is shown', () => {
     it('shows the record’s own image, resolved against the API origin', () => {
         const wrapper = mountImage({ src: '/images/abc.png' });
@@ -138,9 +142,55 @@ describe('LazyImage — how it loads', () => {
         expect(wrapper.attributes('style')).toContain('aspect-ratio: 56 / 72');
     });
 
-    it('renders no thumbnail tier while the API serves no sized variants', () => {
-        // Today's backend. The single `img` IS the assertion: a second one would mean the
-        // component is painting a blurred layer with nothing behind it.
+    it('renders no thumbnail tier when the caller passes none', () => {
+        // The single `img` IS the assertion: a second one would mean the component is painting a
+        // blurred layer with nothing behind it.
         expect(mountImage({ src: '/images/abc.png' }).findAll('img')).toHaveLength(1);
+    });
+});
+
+describe('LazyImage — the thumbnail tier', () => {
+    it('paints the thumbnail, resolved against the API origin, alongside the full image', () => {
+        const wrapper = mountImage({
+            src: '/images/abc.png',
+            thumbnailSrc: '/images/thumbs/v1/abc.webp'
+        });
+
+        expect(thumbnailImage(wrapper).exists()).toBe(true);
+        expect(thumbnailImage(wrapper).attributes('src')).toBe(
+            `${String(instance.defaults.baseURL)}/images/thumbs/v1/abc.webp`
+        );
+        expect(wrapper.findAll('img')).toHaveLength(2);
+    });
+
+    it('is decorative: empty alt and aria-hidden, so a reader never announces it', () => {
+        const wrapper = mountImage({
+            src: '/images/abc.png',
+            thumbnailSrc: '/images/thumbs/v1/abc.webp'
+        });
+
+        expect(thumbnailImage(wrapper).attributes('alt')).toBe('');
+        expect(thumbnailImage(wrapper).attributes('aria-hidden')).toBe('true');
+    });
+
+    it('is independent of `src`: a record with an image but no thumbnail shows only the full tier', () => {
+        // A remote/default image, or an upload whose digest job has not finished — `thumbnailSrc`
+        // is absent in both, and nothing here derives one from `src`.
+        const wrapper = mountImage({ src: '/images/abc.png', thumbnailSrc: undefined });
+
+        expect(thumbnailImage(wrapper).exists()).toBe(false);
+        expect(wrapper.findAll('img')).toHaveLength(1);
+    });
+
+    it('drops the thumbnail once the full image has failed, same as the placeholder rule', async () => {
+        const wrapper = mountImage({
+            src: '/images/gone.png',
+            thumbnailSrc: '/images/thumbs/v1/gone.webp'
+        });
+        expect(thumbnailImage(wrapper).exists()).toBe(true);
+
+        await mainImage(wrapper).trigger('error');
+
+        expect(thumbnailImage(wrapper).exists()).toBe(false);
     });
 });

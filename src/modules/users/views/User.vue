@@ -96,6 +96,7 @@ watchUser(() => id);
                     :eyebrow="currentUser?.id"
                     :has-image="true"
                     :image-url="currentUser?.imageUrl"
+                    :thumbnail-url="currentUser?.thumbnailUrl"
                     :image-alt="t('user-target-page.image-alt', { name: heroTitle })"
                 />
             </template>
