@@ -76,7 +76,7 @@ All observability code lives in the Pinia store `src/infrastructure/observabilit
 Two separate jobs — do not conflate them:
 
 1. **Grafana Faro** — errors/crashes, frontend tracing, web-vitals. Browser sends only to Grafana Alloy's Faro receiver (`:12347`), never directly to the OTel collector / Loki / Prometheus. Tracing propagates the W3C `traceparent` header to the API origin so FE and BE traces link.
-2. **Umami** — product analytics. Tracker script is injected; pageviews are automatic (no manual `page_view` event); custom events via `track()`.
+2. **Umami** — product analytics. Tracker script is injected; pageviews are automatic (no manual `page_view` event). There is no `track()` — this app emits no custom events, the backend does.
 
 ### How to track events
 
@@ -85,11 +85,11 @@ import { useObservabilityStore } from '@/infrastructure/stores/observability.ts'
 
 const obs = useObservabilityStore();
 
-// Track a custom event. This app declares none — see the taxonomy below.
-obs.track('some_client_only_moment', { order_id: 'order-abc' });
-
 // Errors go to Faro
 obs.captureException(error);
+
+// Identity, best-effort, after login
+obs.identifyUser('user-123');
 ```
 
 ### Event taxonomy
@@ -104,7 +104,7 @@ closing tab cannot lose it and a console cannot forge it. The names live in the 
 ### Rules
 
 - **No PII** in event properties — never send email, name, or personal data.
-- **Check the backend first** — before adding a `track()` call here, confirm the API cannot report the same fact. A name emitted from both sides writes two rows nothing downstream can tell apart.
+- **Check the backend first** — before adding any client-side event, confirm the API cannot report the same fact. A name emitted from both sides writes two rows nothing downstream can tell apart.
 - **Fire-and-forget** — analytics calls must be async-safe; no `await` on `track()`.
 - **Two jobs, one store** — Faro handles errors/traces/web-vitals; Umami handles product analytics. No feature-flag provider exists (`isFeatureEnabled()` always returns `false`).
 - **Disabled locally** — Faro is a no-op without `VITE_FARO_URL`; Umami is a no-op without `VITE_UMAMI_WEBSITE_ID`.

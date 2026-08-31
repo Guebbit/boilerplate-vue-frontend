@@ -11,10 +11,6 @@ import { setActivePinia, createPinia } from 'pinia';
 import { getProductById } from '@api';
 import { useCartStore } from '@/modules/cart/store.ts';
 
-vi.mock('@/infrastructure/stores/observability.ts', () => ({
-    useObservabilityStore: () => ({ track: vi.fn() })
-}));
-
 vi.mock('@api', () => ({
     getProductById: vi.fn((id: string) =>
         id === 'broken'

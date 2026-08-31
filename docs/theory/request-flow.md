@@ -69,7 +69,7 @@ flowchart LR
     Err(["HTTP\nerror"])
 
     subgraph Analytics["Umami (product analytics)"]
-        PH["umami.track()\nauth, cart, checkout …\nautomatic pageviews"]
+        PH["Umami tracker tag\nautomatic pageviews\n(custom events: backend-side)"]
     end
 
     subgraph ErrorMon["Grafana Faro (error monitoring)"]

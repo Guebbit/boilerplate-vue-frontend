@@ -6,8 +6,9 @@
  * module-level singletons, so there is no init-order problem — callable from components and
  * equally from non-setup contexts (stores, router), as long as the call is inside a function.
  *
- * Analytics events fired before Umami's script has loaded are queued and flushed on load, so
- * boot-time events are never silently lost to the network round-trip.
+ * Umami is here for its PAGEVIEWS only — the tag writes them itself, including SPA route changes.
+ * This app emits no custom events: everything with an API request behind it is reported by the
+ * backend, from the handler that decided it. So there is no `track()` here to call.
  */
 
 import { defineStore } from 'pinia';
@@ -21,9 +22,9 @@ import {
 } from '@/infrastructure/observability/config.ts';
 import { logger } from '@/infrastructure/utils/logger.ts';
 
-// The Umami tracker script attaches a `umami` object to `window` once loaded.
+// The Umami tracker script attaches a `umami` object to `window` once loaded. Only `identify` is
+// declared: pageviews need no call, and this app sends no custom events.
 interface UmamiTracker {
-    track: (eventName: string, eventData?: Record<string, unknown>) => void;
     identify?: (data: Record<string, unknown>) => void;
 }
 
@@ -48,36 +49,6 @@ export const useObservabilityStore = defineStore('observability', () => {
 
     // In-flight initialization, so concurrent initFaro() calls share one setup.
     let faroInitPromise: Promise<boolean> | undefined;
-
-    /**
-     * Events tracked before the Umami script finished loading.
-     *
-     * Injecting the tag and having a working tracker are a network round-trip apart, so anything
-     * fired during boot falls inside that window and would be dropped. The cap is the safety valve
-     * for a script that never arrives (ad blocker, Umami down), which would otherwise leave an
-     * array growing for as long as the tab is open.
-     */
-    const pendingEvents: { event: string; properties?: Record<string, unknown> }[] = [];
-    const pendingEventsLimit = 50;
-
-    /**
-     * Hand any buffered events to the tracker, in the order they were recorded.
-     *
-     * A no-op until the script has attached its global, so it is safe to call speculatively.
-     */
-    const flushPendingEvents = (): void => {
-        const tracker = globalThis.umami;
-
-        if (!tracker) {
-            return;
-        }
-
-        // Drained rather than iterated: a second flush must not resend what the first already
-        // delivered, and `track()` appends to this same array.
-        for (const pending of pendingEvents.splice(0)) {
-            tracker.track(pending.event, pending.properties);
-        }
-    };
 
     // ── Faro (errors + tracing + web-vitals) ───────────────────────────────────
 
@@ -188,13 +159,12 @@ export const useObservabilityStore = defineStore('observability', () => {
     // ── Umami (product analytics) ──────────────────────────────────────────────
 
     /**
-     * Loads the Umami tracker script. Pageviews (including SPA route changes)
-     * are tracked automatically; custom events go through {@link track}.
+     * Loads the Umami tracker script, which is all this app asks of Umami: pageviews, including
+     * SPA route changes, are recorded by the script itself with nothing to call.
      *
      * @returns `true` when the tracker was injected (or already present),
      *  `false` when analytics is disabled by configuration. Injection is
-     *  guarded against duplicates (e.g. HMR); the script itself loads async,
-     *  and events tracked before it lands are buffered and sent on load.
+     *  guarded against duplicates (e.g. HMR); the script itself loads async.
      */
     const initUmami = (): boolean => {
         const config = readUmamiConfig();
@@ -214,9 +184,6 @@ export const useObservabilityStore = defineStore('observability', () => {
             script.defer = true;
             script.src = config.src;
             script.dataset.websiteId = config.websiteId;
-            // `load` is the only signal that `globalThis.umami` exists; everything tracked between
-            // this line and that event is sitting in `pendingEvents` waiting for it.
-            script.addEventListener('load', flushPendingEvents);
             document.head.append(script);
         }
 
@@ -224,44 +191,6 @@ export const useObservabilityStore = defineStore('observability', () => {
         logger.debug('observability', '[Umami] Tracker injected →', config.src);
 
         return true;
-    };
-
-    // ── Unified API ──────────────────────────────────────────────────────────
-
-    /**
-     * Tracks a product analytics event in Umami.
-     *
-     * Events emitted before the tracker script lands are buffered (see {@link pendingEvents});
-     * events emitted while analytics is disabled are dropped, since no script is coming.
-     *
-     * This app emits none of its own: pageviews are automatic and everything with an API call
-     * behind it is reported by the backend, which cannot be blocked by an extension or lost with
-     * the tab. The name is therefore a bare `string` — an app built on this boilerplate declares
-     * its own catalogue and narrows it there.
-     *
-     * @param event - Umami event name.
-     * @param properties - Optional event payload.
-     */
-    const track = (event: string, properties?: Record<string, unknown>): void => {
-        if (!umamiReady.value) {
-            return;
-        }
-
-        const tracker = globalThis.umami;
-
-        if (tracker) {
-            tracker.track(event, properties);
-            return;
-        }
-
-        // Past the cap the oldest events are the ones to lose: a session that has buffered 50
-        // events is one where the script is not coming, and the recent ones describe whatever
-        // the visitor is doing now.
-        if (pendingEvents.length >= pendingEventsLimit) {
-            pendingEvents.shift();
-        }
-
-        pendingEvents.push({ event, properties });
     };
 
     return {
@@ -274,7 +203,6 @@ export const useObservabilityStore = defineStore('observability', () => {
         initUmami,
 
         // Unified API
-        track,
         identifyUser,
         unidentifyUser,
         captureException

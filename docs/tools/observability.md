@@ -111,9 +111,9 @@ the other repo's data with nothing comparing the two, which is the same failure 
 sides emitting the same event; the last copy that lived here had already lost four names before
 anyone noticed.
 
-`track()` is still on the store, taking any string, for an app built on this boilerplate that has a
-moment only the browser can see. Before reaching for it, check that the backend cannot report the
-same fact — a name emitted from both sides writes two rows nothing downstream can tell apart.
+There is no `track()` on the store. An app built on this boilerplate that genuinely has a moment
+only the browser can see adds one back — but check first that the backend cannot report the same
+fact, because a name emitted from both sides writes two rows nothing downstream can tell apart.
 
 ### Environment variables
 
@@ -137,10 +137,6 @@ All observability calls go through `useObservabilityStore()`. Never import the F
 import { useObservabilityStore } from '@/infrastructure/stores/observability.ts';
 
 const obs = useObservabilityStore();
-
-// Track a custom event. This app declares none — see the taxonomy above — so the name is a
-// bare string, and an app built on this boilerplate declares its own catalogue.
-obs.track('some_client_only_moment', { order_id: 'order-abc' });
 
 // Identify the visitor after login, and drop the association on logout
 obs.identifyUser(userId);

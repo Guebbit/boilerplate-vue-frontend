@@ -23,7 +23,7 @@ vi.mock('@/app/guards/authentications.ts', () => ({
 }));
 
 vi.mock('@/infrastructure/stores/observability.ts', () => ({
-    useObservabilityStore: () => ({ captureException: vi.fn(), track: vi.fn() })
+    useObservabilityStore: () => ({ captureException: vi.fn() })
 }));
 
 /** Fresh router per test: it holds navigation state, and history is global. */

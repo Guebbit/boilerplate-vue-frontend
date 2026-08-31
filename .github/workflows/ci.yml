@@ -358,21 +358,19 @@ jobs:
     spec-identity:
         # The cross-repo contract gate.
         #
-        # Seven files exist in BOTH repos, byte-identical — the REST contract, the shared half of
-        # the async contract, the spectral ruleset both sides lint under, the frontend's analytics
-        # event names, and three shared scripts. `scripts/spec-identity.ts` holds the list and
-        # says, per entry, what a fork of it would break — and, for what is deliberately absent,
-        # why comparing an OUTPUT of a compared input would add nothing.
+        # Two files exist in BOTH repos, byte-identical — the REST contract and the shared half
+        # of the async contract. `scripts/spec-identity.ts` holds the list and says, per entry,
+        # what a fork of it would break — and, for what is deliberately absent, why comparing an
+        # OUTPUT of a compared input would add nothing.
         #
         # Until this job existed they were checked by nothing. Every other spec job here lints
         # THIS repo's copy and passes, because a forked spec is still a valid spec. What nobody
         # could see was the fork itself.
         #
-        # Two of the seven sit at different paths in each repo (the async contract is published
-        # there as `asyncapi.public.yaml` and received here as `asyncapi.yaml`; the analytics names
-        # are authored there under a `.frontend` suffix the two lint configs disagree about), which
-        # is why the list is path *pairs* rather than names — a same-path check could not express
-        # them, so they went unguarded longest.
+        # One of the two sits at a different path in each repo: the async contract is published
+        # there as `asyncapi.public.yaml` and received here as `asyncapi.yaml`. That is why the
+        # list is path *pairs* rather than names — a same-path check could not express it, so it
+        # went unguarded longest.
         #
         # The sibling is checked out read-only, at its default branch: the question is whether this
         # PR agrees with what the backend has actually shipped, not with some pinned older copy.

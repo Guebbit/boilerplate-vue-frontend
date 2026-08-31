@@ -20,22 +20,25 @@ observability stack here — the whole thing runs locally under Docker/Podman.
 
 ```mermaid
 flowchart LR
-    UserAction[User action\nor navigation] --> Store[useObservabilityStore\ntrack()]
-    Store --> Umami[Umami tracker\noptional]
+    Boot[App bootstrap] --> Store[useObservabilityStore\ninitUmami()]
+    Store -.injects the tag.-> Umami[Umami tracker\noptional]
     Nav[Route change] -.automatic pageview.-> Umami
+    API[API request] --> Backend[Backend handler] -->|"custom events"| Umami
 ```
 
-Two things this shape is meant to force, both explained in full on the Observability page: custom
-events go through the store rather than `window.umami`, and pageviews are the tracker's job rather
-than the router's.
+The shape is the point: this app _injects_ the tracker and nothing else. Pageviews are the
+tracker's job rather than the router's, and every custom event arrives at the same Umami website
+from the other side of the API.
 
-## Why the frontend emits so few events
+## Why the frontend emits no events
 
-This app can fire exactly four event names. That is not an oversight — the backend already emits
-the product events (a product view, a cart change, a completed checkout) from the request that
-performed them, where the data is authoritative. The frontend only names the moments no request
-can carry: the app booting, a token discarded in the browser, a checkout that never reached the
-API.
+Not one. The backend emits every product event — a product view, a cart change, a completed
+checkout, a logout — from the request that performed it, where the data is authoritative and where
+an extension cannot block it, a closing tab cannot lose it and a console cannot forge it.
+
+That leaves the frontend nothing to add. Its pageviews are written by the tag itself; its errors,
+web vitals and fetch spans go to [Faro](./observability.md). There is no `track()` on the store,
+because there was nothing left for it to send.
 
 Emitting the same event from both sides would double-count it, and letting the frontend own the
 canonical version would make the analytics depend on whether a tracker script loaded.
