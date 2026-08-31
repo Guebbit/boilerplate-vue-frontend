@@ -31,6 +31,9 @@ const props = defineProps<{
     error?: string;
 }>();
 
+/**
+ * Events this tab raises toward the parent view.
+ */
 const emit = defineEmits<{
     /**
      * The visitor asked for a filtered page. The parent owns the fetching — and owns the

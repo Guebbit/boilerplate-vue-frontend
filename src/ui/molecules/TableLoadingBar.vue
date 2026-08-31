@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /**
+ * @module
  * The loading bar for a `v-data-table`, supplied through its `#loader` slot.
  *
  * ── Why this exists instead of Vuetify's own ─────────────────────────────────────────────────

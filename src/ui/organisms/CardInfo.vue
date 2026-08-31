@@ -8,6 +8,9 @@ import type { ThemeAccent } from '@/ui/types.ts';
 import { computed } from 'vue';
 import { Info } from 'lucide-vue-next';
 
+/**
+ * Component props — see each field's own doc comment below.
+ */
 const props = defineProps<{
     /**
      * Card title.

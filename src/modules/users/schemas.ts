@@ -8,11 +8,6 @@ import { translate } from '@/infrastructure/i18n';
 import { signupBodyUsernameMin, createUserBodyPasswordMin } from '@api/schemas';
 
 /**
- * Validation schemas for the user forms.
- * Messages are thunks resolved at parse time — see {@link translate} for why.
- */
-
-/**
  * Validation schema for an email address.
  */
 const usersEmailSchema = z.email({ error: () => translate('users-form.email-invalid') });

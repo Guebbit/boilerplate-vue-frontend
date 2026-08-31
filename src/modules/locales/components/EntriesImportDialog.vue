@@ -31,6 +31,9 @@ const props = defineProps<{
     initialTenant?: string;
 }>();
 
+/**
+ * Emits the flattened rows upward on submit, alongside the confirmed mode and destination tenant.
+ */
 const emit = defineEmits<{
     import: [payload: { mode: 'merge' | 'replace'; tenant: string; entries: LocaleEntryInput[] }];
 }>();
@@ -40,6 +43,9 @@ const emit = defineEmits<{
  */
 const isOpen = defineModel<boolean>({ required: true });
 
+/**
+ * Translation function for this dialog's copy.
+ */
 const { t } = useI18n();
 
 /*
@@ -50,9 +56,13 @@ const { t } = useI18n();
  */
 
 /**
- * Ids for the dialog's name and for the parse error both inputs point at.
+ * Id for the dialog's name, so it is announced by its title rather than as "dialog".
  */
 const titleId = useId();
+
+/**
+ * Id for the parse error both the file picker and the paste area point at.
+ */
 const errorId = useId();
 
 /**

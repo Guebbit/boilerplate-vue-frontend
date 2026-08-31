@@ -37,10 +37,25 @@ import { collectModuleNavigation, groupNavigation, NAVIGATION_SECTIONS } from '@
 import type { AppNavigationEntry, AppNavigationSection } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
 
+/**
+ * Router instance used to resolve routes' `meta.access` and to navigate on logout.
+ */
 const router = useRouter();
+
+/**
+ * Current route — read for its name (hiding the login/signup link on their own pages)
+ * and its full path (the login redirect target).
+ */
 const route = useRoute();
+
+/**
+ * Translation function for nav labels.
+ */
 const { t } = useI18n();
 
+/**
+ * Session flags and the signed-in visitor, used to filter nav entries and render the account menu.
+ */
 const { isAuth, isAdmin, viewer } = storeToRefs(useSessionStore());
 
 /**
@@ -102,12 +117,16 @@ const shellNavEntries: AppNavigationEntry[] = [
     { name: 'StaticAbout', label: 'navigation.label-about', plural: 1, order: 99, icon: Info }
 ];
 
-/*
+/**
  * Whether this build ships sign-in at all. The account module owns those routes, and the shell
  * addresses them by name — a string nothing type-checks — so it asks the router rather than
  * assuming. A build with no account module simply shows no auth buttons.
  */
 const hasSignIn = computed(() => router.hasRoute(SIGN_IN_ROUTE_NAME));
+
+/**
+ * Whether this build ships sign-up, same reasoning as {@link hasSignIn}.
+ */
 const hasSignUp = computed(() => router.hasRoute(SIGN_UP_ROUTE_NAME));
 
 /**
@@ -118,7 +137,7 @@ const navSections = groupNavigation([
     ...collectModuleNavigation(enabledModules)
 ]);
 
-/*
+/**
  * Live counts, one per entry that declared a `badge` accessor. Materialised ONCE here rather than
  * inside the computed below: an accessor may start watchers and fetches (the cart's does), and a
  * computed that re-ran it on every recompute would re-arm them each time. The shell still names
@@ -178,6 +197,9 @@ const accountBadge = computed(
  */
 const logout = () => router.push(routerLinkI18n({ name: 'Logout' }));
 
+/**
+ * Vuetify theme controller, used to read/toggle light vs dark.
+ */
 const theme = useTheme();
 
 /**

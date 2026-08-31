@@ -10,8 +10,19 @@ import { Check, Languages } from 'lucide-vue-next';
 import { changeLanguage, supportedLanguages } from '@/infrastructure/i18n';
 import { useSessionStore } from '@/infrastructure/stores/session.ts';
 
+/**
+ * Router instance used to re-enter the current route under the new locale.
+ */
 const router = useRouter();
+
+/**
+ * Current route, whose params/query are preserved across a language switch.
+ */
 const route = useRoute();
+
+/**
+ * Translation function and the currently active locale code.
+ */
 const { t, locale } = useI18n();
 
 /**

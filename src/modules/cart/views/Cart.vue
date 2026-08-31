@@ -31,13 +31,22 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { ShippingSelector } from '@/modules/delivery';
 
 /**
- * Generics
+ * Translation function.
  */
 const { t } = useI18n();
-const router = useRouter();
-const { addMessage } = useNotificationsStore();
+
 /**
- * Cart store
+ * Router, for the post-checkout navigation to the orders list.
+ */
+const router = useRouter();
+
+/**
+ * Toast notifications.
+ */
+const { addMessage } = useNotificationsStore();
+
+/**
+ * Cart store actions this page drives directly.
  */
 const {
     fetchCart,
@@ -48,6 +57,10 @@ const {
     titleOf,
     resolveTitles
 } = useCartStore();
+
+/**
+ * Cart store state, reactive.
+ */
 const { cartItems, cartSummary } = storeToRefs(useCartStore());
 
 /**

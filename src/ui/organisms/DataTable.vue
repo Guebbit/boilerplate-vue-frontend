@@ -11,6 +11,9 @@ import { computed, getCurrentInstance, useSlots } from 'vue';
 import TableLoadingBar from '@/ui/molecules/TableLoadingBar.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 
+/**
+ * Component props — see each field's own doc comment below.
+ */
 const {
     headers,
     items,
@@ -50,6 +53,17 @@ const {
 const modelValue = defineModel<unknown>();
 
 /**
+ * This component's slots, read to compute {@link customHeaders}.
+ */
+const slots = useSlots();
+
+/**
+ * This component's own vnode props, read to detect whether a `v-model` listener was bound
+ * (see {@link isSelectable}).
+ */
+const vnodeProps = getCurrentInstance()?.vnode.props;
+
+/**
  * Whether the caller wants row selection at all.
  *
  * A table without a `v-model` is a table nobody asked to select from — an audit log, a read-only
@@ -60,8 +74,6 @@ const modelValue = defineModel<unknown>();
  * emit, and a listener for a declared emit is exactly what Vue keeps OUT of `$attrs` — so the
  * attrs check was always false, and no row was ever selectable.
  */
-const slots = useSlots();
-const vnodeProps = getCurrentInstance()?.vnode.props;
 const isSelectable = computed(
     () => vnodeProps !== null && vnodeProps !== undefined && 'onUpdate:modelValue' in vnodeProps
 );

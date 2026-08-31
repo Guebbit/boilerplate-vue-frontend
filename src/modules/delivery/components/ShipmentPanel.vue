@@ -38,10 +38,29 @@ const emit = defineEmits<
     (event: 'advanced') => void
 >();
 
+/**
+ * Translation function.
+ */
 const { t } = useI18n();
+
+/**
+ * Toast notifications.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Whether the current session may see the courier button.
+ */
 const { isAdmin } = storeToRefs(useSessionStore());
+
+/**
+ * Delivery store, for the courier action.
+ */
 const deliveryStore = useDeliveryStore();
+
+/**
+ * This order's parcel, reactive.
+ */
 const { shipment } = storeToRefs(deliveryStore);
 
 /**

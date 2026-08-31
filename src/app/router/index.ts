@@ -217,6 +217,11 @@ router.beforeEach((to, from) => {
     return tryRestoreAuth().then(() => enforceRouteAccess(to));
 });
 
+/**
+ * Registered as `beforeResolve`, not `beforeEach`: it must run after `enforceRouteAccess` has
+ * decided whether the navigation proceeds at all, so a blocked visitor never pays for a dictionary
+ * load that the `beforeEach` guard above is about to discard.
+ */
 router.beforeResolve(localeChoice);
 
 /**

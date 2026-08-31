@@ -48,9 +48,13 @@ const { id } = defineProps<{
 }>();
 
 /**
- * Product store selectors and fetch API.
+ * Product store's fetch action.
  */
 const { watchProduct } = useProductsStore();
+
+/**
+ * Product store's reactive current-record reference.
+ */
 const { currentProduct } = storeToRefs(useProductsStore());
 
 /**
@@ -86,11 +90,23 @@ const productStatus = computed(() =>
 watchProduct(() => id);
 
 /**
- * Storefront actions — the two writes a visitor makes from this page.
+ * Toast helper for the storefront actions below.
  */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Whether a visitor is signed in — gates the add-to-cart and wishlist actions.
+ */
 const { isAuth } = storeToRefs(useSessionStore());
+
+/**
+ * Cart store's write action, used by {@link handleAddToCart}.
+ */
 const { upsertCartItem } = useCartStore();
+
+/**
+ * Wishlist store's actions and selector, used by {@link handleToggleWishlist}.
+ */
 const { addToWishlist, removeFromWishlist, isSaved, fetchWishlist } = useWishlistStore();
 
 /**

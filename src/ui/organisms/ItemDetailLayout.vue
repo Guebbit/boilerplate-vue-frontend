@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import type { ThemeAccent } from '@/ui/types.ts';
-import { useSlots } from 'vue';
-
 /**
+ * @module
  * Shared skeleton for entity detail/edit pages (product, order, user…).
  * Sets --detail-accent so ItemDetailField / ItemDetailHero / chips inside
  * pick up the per-entity accent color automatically.
  *
  * Slots: hero, stats, default (main card), aside, actions.
  */
+import type { ThemeAccent } from '@/ui/types.ts';
+import { useSlots } from 'vue';
+
 defineProps<{
     /**
      * Theme accent applied as `--detail-accent`. Defaults to `primary`.
@@ -16,6 +17,10 @@ defineProps<{
     accent?: ThemeAccent;
 }>();
 
+/**
+ * Which optional slots the caller actually provided, so the layout can skip
+ * rendering the grid/flex regions for stats/aside/actions when they're unused.
+ */
 const slots = useSlots();
 </script>
 

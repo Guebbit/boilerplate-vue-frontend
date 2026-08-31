@@ -33,7 +33,16 @@ import { absentIs, isTransportFailure } from '@/infrastructure/utils/errors';
  * completed order and the header keeps showing items the server has already turned into one.
  */
 export const useCartStore = defineStore('cart', () => {
+    /**
+     * Shared per-key loading-flag bookkeeping from the core store, threaded into
+     * {@link useStructureRestApi} below.
+     */
     const { getLoading, setLoading } = useCoreStore();
+
+    /**
+     * Generic REST helper: wraps every mutating call in `fetchAny` so `loading` toggles
+     * automatically around each request.
+     */
     const { loading, fetchAny } = useStructureRestApi<CartItem, string>({ getLoading, setLoading });
 
     /**

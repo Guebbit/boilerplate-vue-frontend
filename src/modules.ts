@@ -1,4 +1,5 @@
 /**
+ * @module
  * THE registry: which domains this build serves.
  *
  * Adding a domain is one folder under `src/modules/` plus one line here. Removing one is `rm -rf`
@@ -25,6 +26,9 @@ import realtime from '@/modules/realtime/module';
 import users from '@/modules/users/module';
 import wishlist from '@/modules/wishlist/module';
 
+/**
+ * Every domain module wired into this build, in the order their routes are spliced in.
+ */
 export const enabledModules: AppModule[] = [
     account,
     admin,

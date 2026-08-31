@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import type { RouteLocationRaw } from 'vue-router';
-import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
-
 /**
+ * @module
  * The card a single-form page is: the fields, one submit button, and the way back.
  *
  * The create pages are the same skeleton over different fields — `ProductCreate` and `UserCreate`
@@ -17,6 +14,10 @@ import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
  *
  * Slots: default (the fields).
  */
+import { ref } from 'vue';
+import type { RouteLocationRaw } from 'vue-router';
+import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+
 const { loading } = defineProps<{
     /**
      * The submit button's text, already translated.

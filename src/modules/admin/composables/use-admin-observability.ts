@@ -160,7 +160,9 @@ export const useAdminObservability = (): UseAdminObservabilityReturn => {
      */
     const auditEvents = computed(() => audit.value?.items ?? []);
 
-    // Every entry matching the filters, not the page — which is what the pager below counts with.
+    /**
+     * Every entry matching the filters, not the page — which is what the pager below counts with.
+     */
     const auditTotal = computed(() => audit.value?.meta.totalItems ?? 0);
 
     /**

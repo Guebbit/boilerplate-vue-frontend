@@ -23,10 +23,12 @@
 
 - Exported functions: JSDoc REQUIRED (`@param`, `@returns`, `@throws` as needed).
 - Exported interfaces/types: JSDoc REQUIRED — purpose plus what each field means.
-- Every file: a JSDoc `@module` header at the top explaining the **logic or pattern** the file
-  follows — what it is and how it works, not what it is for in the product. Keep it short: a few
-  lines, enough to orient someone opening the file cold. If it grows into prose, it belongs in
-  `docs/`.
+- Every `.ts` file: a JSDoc `@module` header at the top explaining the **logic or pattern** the
+  file follows — what it is and how it works, not what it is for in the product. Keep it short: a
+  few lines, enough to orient someone opening the file cold. If it grows into prose, it belongs in
+  `docs/`. One `@module` header per file, always — a `.vue` SFC's `<script setup>` block gets it
+  the same way a `.ts` file does; a second `<script lang="ts">` block in the same SFC (e.g. the
+  devtools `name` block) is still part of that one file and does not get its own `@module` tag.
 - Non-trivial internal helpers: a concise inline or JSDoc explanation.
 - Comments MUST be brief theory-level notes on what the code does and its role — ADHD friendly,
   not line-by-line narration.

@@ -62,8 +62,7 @@ export const expandEntries = (
         let node = root;
         for (const [index, segment] of segments.entries()) {
             if (index === segments.length - 1) {
-                // Deeper keys win: never let a leaf overwrite a subtree another row already built.
-                if (typeof node[segment] !== 'object') node[segment] = value;
+                setLeaf(node, segment, value);
                 continue;
             }
             const child: unknown = node[segment];
@@ -72,6 +71,19 @@ export const expandEntries = (
         }
     }
     return foldNumericNodes(root) as TranslationDictionaries;
+};
+
+/**
+ * Writes one leaf value onto a node, never overwriting a subtree another row already built.
+ *
+ * Deeper keys win: see {@link expandEntries} for why a collision is dropped rather than thrown.
+ *
+ * @param node - The parent node to write into.
+ * @param segment - The leaf's own key on that node.
+ * @param value - The leaf string to write.
+ */
+const setLeaf = (node: TranslationDictionaries, segment: string, value: string): void => {
+    if (typeof node[segment] !== 'object') node[segment] = value;
 };
 
 /**

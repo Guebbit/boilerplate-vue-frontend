@@ -30,6 +30,7 @@ const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 const { fetchWishlist, removeFromWishlist, moveToCart } = useWishlistStore();
 const { items } = storeToRefs(useWishlistStore());
+
 /**
  * The saved products' titles — the wishlist answers ids only, and the cart store holds the join.
  */
@@ -59,6 +60,10 @@ const handleRemove = (productId: string) => {
         .catch((error) => notifyErrorMessages(addMessage, error));
 };
 
+/**
+ * Loads the wishlist on mount, then resolves the saved products' titles from the cart store's
+ * cache so each line has a name to render.
+ */
 onMounted(() =>
     fetchWishlist().then((lines) => resolveTitles((lines ?? []).map(({ productId }) => productId)))
 );

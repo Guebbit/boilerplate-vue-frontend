@@ -1,15 +1,29 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
-
 /**
+ * @module
  * Atomic read-only field used by detail pages to render one label/value pair.
  * The icon tile follows the page accent (--detail-accent, set by the view).
  */
+import { computed } from 'vue';
+import { EMPTY_VALUE } from '@/infrastructure/utils/formatters.ts';
+
 const props = defineProps<{
+    /**
+     * Field label.
+     */
     label: string;
+    /**
+     * The value to render. Falls back to {@link EMPTY_VALUE} when `undefined`,
+     * `null` or an empty string.
+     */
     value?: string | number | null;
+    /**
+     * Icon glyph shown in the accent tile beside the label/value.
+     */
     icon?: string;
+    /**
+     * Whether the field spans the full width of its containing grid.
+     */
     fullWidth?: boolean;
 }>();
 

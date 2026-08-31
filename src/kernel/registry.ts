@@ -1,4 +1,5 @@
 /**
+ * @module
  * The module registry.
  *
  * A module is a value, not a convention: everything it needs the application to do *for* it is

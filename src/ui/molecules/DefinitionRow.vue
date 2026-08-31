@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /**
+ * @module
  * One label/value row of a `<dl>`: a dense underlined row for a panel listing a dozen facts at
  * once. `ItemDetailField` is the other shape — a bordered tile with an icon, for a detail page.
  *

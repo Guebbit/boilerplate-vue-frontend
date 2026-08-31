@@ -50,6 +50,7 @@ const activeOptions = computed(() => [
     { value: true, label: t('users-list-page.filter-active-yes') },
     { value: false, label: t('users-list-page.filter-active-no') }
 ]);
+
 /**
  * Selectable page sizes for the users table.
  */

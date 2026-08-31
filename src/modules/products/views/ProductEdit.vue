@@ -46,9 +46,13 @@ import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 
 /**
- * Generic i18n and notification helpers.
+ * Localized dictionary helper, with the active locale reference used to revalidate the form.
  */
 const { t, locale } = useI18n();
+
+/**
+ * Toast helper for submission failures.
+ */
 const { addMessage } = useNotificationsStore();
 
 /**
@@ -59,9 +63,13 @@ const { id } = defineProps<{
 }>();
 
 /**
- * Product store APIs and reactive references.
+ * Product store's fetch and update actions.
  */
 const { watchProduct, updateProduct } = useProductsStore();
+
+/**
+ * Product store's reactive state: the current record and its loading flag.
+ */
 const { currentProduct, loading } = storeToRefs(useProductsStore());
 
 /**

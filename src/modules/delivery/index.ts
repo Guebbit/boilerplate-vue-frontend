@@ -1,4 +1,5 @@
 /**
+ * @module
  * Delivery — public barrel. Two components, and nothing else.
  *
  * The store is not here on purpose. Both siblings that use this module mount a component that

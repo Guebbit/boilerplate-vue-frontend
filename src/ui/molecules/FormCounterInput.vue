@@ -8,6 +8,9 @@
 import { onMounted } from 'vue';
 import { logger } from '@/infrastructure/utils/logger.ts';
 
+/**
+ * Component props — see each field's own doc comment below.
+ */
 const {
     label = '',
     ariaLabel,
@@ -48,7 +51,7 @@ const {
  */
 const count = defineModel<number>();
 
-/*
+/**
  * A prop union (`label` XOR `ariaLabel`) would say this at compile time, but `defineProps` cannot
  * destructure a union, so the rule is checked where the component mounts, in development only.
  */

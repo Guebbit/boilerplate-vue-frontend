@@ -33,10 +33,30 @@ import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
  * write into this same ledger, so the button that drives it lives beside what it explains.
  */
 const { t } = useI18n();
+
+/**
+ * Toast dispatcher for the sweep action's outcome.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Owns the movements read and the sweep write this tab renders/drives.
+ */
 const inventoryStore = useInventoryStore();
+
+/**
+ * The current page of movements, their total count across pages, and the shared loading flag.
+ */
 const { movements, movementsTotal, loading } = storeToRefs(inventoryStore);
+
+/**
+ * Source of product titles for the ledger's product column and filter.
+ */
 const productsStore = useProductsStore();
+
+/**
+ * The catalogue, used to resolve a movement's `productId` to a title.
+ */
 const { productsList } = storeToRefs(productsStore);
 
 /**

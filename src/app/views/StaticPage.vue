@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'StaticPage'
 };
@@ -29,6 +33,10 @@ const { page } = defineProps<{
     page: 'about' | 'faq' | 'terms' | 'privacy';
 }>();
 
+/**
+ * Translation helpers: `t` for plain strings, `tm`/`rt` for the raw paragraph/entry
+ * message lists resolved by {@link messageList}.
+ */
 // eslint-disable-next-line @typescript-eslint/unbound-method -- vue-i18n's documented destructuring; the composer binds these itself
 const { t, tm, rt } = useI18n();
 
@@ -55,10 +63,10 @@ const paragraphs = computed(() =>
  * The FAQ's question/answer pairs; empty for the prose-only pages.
  */
 const entries = computed(() =>
-    messageList(`static-pages.${page}.entries`).map((entry) => ({
-        question: rt((entry as { q: string; a: string }).q),
-        answer: rt((entry as { q: string; a: string }).a)
-    }))
+    messageList(`static-pages.${page}.entries`).map((entry) => {
+        const { q, a } = entry as { q: string; a: string };
+        return { question: rt(q), answer: rt(a) };
+    })
 );
 
 /**

@@ -3,6 +3,7 @@ import { RouterView } from 'vue-router';
 import { routeAnnouncement } from '@/app/router/announcer.ts';
 
 /**
+ * @module
  * The composition root, and deliberately almost empty.
  *
  * Everything a running application needs is installed in `src/main.ts` (pinia, the router, i18n,

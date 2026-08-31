@@ -8,7 +8,11 @@
 import CardDetail from '@/ui/organisms/CardDetail.vue';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 
-// No default on `hasImage`: Vue already casts an absent boolean prop to `false`.
+/**
+ * Component props — see each field's own doc comment below.
+ *
+ * No default on `hasImage`: Vue already casts an absent boolean prop to `false`.
+ */
 const { hasImage } = defineProps<{
     /**
      * Main heading.

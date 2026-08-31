@@ -1,4 +1,5 @@
 /**
+ * @module
  * Payments — public barrel. One component: the panel the order page mounts.
  *
  * The store stays inside. Paying happens ON an order, through the panel, and a sibling reaching

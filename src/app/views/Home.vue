@@ -1,4 +1,8 @@
 <script lang="ts">
+/**
+ * Named component block: gives the SFC a stable `name` for devtools/`<KeepAlive>`,
+ * required alongside `<script setup>` since the latter cannot declare one itself.
+ */
 export default {
     name: 'HomePage'
 };
@@ -22,7 +26,14 @@ import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import CardInfo from '@/ui/organisms/CardInfo.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
+/**
+ * Translation function for the page copy.
+ */
 const { t } = useI18n();
+
+/**
+ * Router instance, used only to check whether the products route exists.
+ */
 const router = useRouter();
 
 /**

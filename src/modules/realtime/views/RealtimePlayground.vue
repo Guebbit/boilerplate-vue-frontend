@@ -14,8 +14,14 @@ import { useRealtimeObservability } from '@/modules/realtime/use-realtime-observ
 import { formatMegabytes, formatTime, formatUptime } from '@/infrastructure/utils/formatters.ts';
 import type { RealtimeMetricsEntry } from '@types';
 
+/**
+ * Localized dictionary helper.
+ */
 const { t } = useI18n();
 
+/**
+ * Live SSE state and connection controls for the observability stream.
+ */
 const {
     status: observabilityStatus,
     entries: observabilityEntries,

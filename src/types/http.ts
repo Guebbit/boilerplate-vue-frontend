@@ -32,6 +32,7 @@ export interface ResponseSuccess<T> extends ResponseNeutral {
      * The endpoint's payload, when it returns one.
      */
     data?: T;
+    // Never present on a success envelope.
     errors: never;
 }
 

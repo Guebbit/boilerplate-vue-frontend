@@ -25,9 +25,21 @@ import type { InventoryLevel } from '@types';
  * "history" button on a row jumps the ledger below to that product's story.
  */
 const { t } = useI18n();
+
+/**
+ * Owns the levels read this board renders.
+ */
 const inventoryStore = useInventoryStore();
+
+/**
+ * The current page of levels, their total count across pages, and the shared loading flag.
+ */
 const { levels, levelsTotal, loading } = storeToRefs(inventoryStore);
 
+/**
+ * Emitted when a row's history button is pressed, naming the product the ledger below should
+ * jump to.
+ */
 const emit = defineEmits<{
     /**
      * A row's history button was pressed; the ledger below should jump to this product.

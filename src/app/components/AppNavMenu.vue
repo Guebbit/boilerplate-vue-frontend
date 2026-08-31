@@ -21,7 +21,13 @@ export interface AppNavItem {
      * Translated label.
      */
     title: string;
+    /**
+     * Locale-prefixed destination.
+     */
     to: RouteLocationRaw;
+    /**
+     * Lucide icon shown before the label; entries with none render no icon slot.
+     */
     icon?: Component;
     /**
      * Live count; `undefined` renders no badge.
@@ -40,11 +46,17 @@ export interface AppNavItem {
  * page, such as logout.
  */
 defineProps<{
+    /**
+     * Entries rendered as `menuitem`s, in order.
+     */
     items: AppNavItem[];
     /**
      * Translated name of the menu: tooltip, accessible name and the list's label.
      */
     label: string;
+    /**
+     * Activator icon, shown unless {@link avatar} is set.
+     */
     icon: Component;
     /**
      * Folded into the activator's accessible name, shown as a heading inside the menu.
@@ -66,9 +78,15 @@ defineProps<{
      * The visitor's `thumbnailUrl`, unresolved. Only read when {@link avatar} is set.
      */
     avatarThumbnailUrl?: string | null;
+    /**
+     * Forwarded to the activator button as `data-test`, for e2e targeting.
+     */
     dataTest?: string;
 }>();
 
+/**
+ * Translation function for badge labels.
+ */
 const { t } = useI18n();
 </script>
 

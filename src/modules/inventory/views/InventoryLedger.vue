@@ -39,13 +39,18 @@ const { t } = useI18n();
  */
 const movementLedger = ref<InstanceType<typeof MovementLedger>>();
 
-/*
+/**
  * The catalogue three children share (both forms' product select, the ledger's product column
  * and filter) — fetched once here rather than by each of them, so a page load does not race
  * three simultaneous first-fetches against the same store.
  */
 const productsStore = useProductsStore();
+
+/**
+ * The catalogue itself, read here only to decide whether the first fetch is still needed.
+ */
 const { productsList } = storeToRefs(productsStore);
+
 onMounted(() => {
     if (productsList.value.length === 0) void productsStore.fetchProducts();
 });

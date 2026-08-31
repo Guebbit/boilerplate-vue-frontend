@@ -1,10 +1,5 @@
-import 'vuetify/styles';
-import { createVuetify } from 'vuetify';
-import type { ThemeDefinition } from 'vuetify';
-import { en, it } from 'vuetify/locale';
-import { lucideAliases, lucideIconSet } from './icons.ts';
-
 /**
+ * @module
  * ─────────────────────────────────────────────────────────────────────────────
  * THE theme file.
  *
@@ -17,6 +12,11 @@ import { lucideAliases, lucideIconSet } from './icons.ts';
  * the `defaults` section below. Nothing else needs to change.
  * ─────────────────────────────────────────────────────────────────────────────
  */
+import 'vuetify/styles';
+import { createVuetify } from 'vuetify';
+import type { ThemeDefinition } from 'vuetify';
+import { en, it } from 'vuetify/locale';
+import { lucideAliases, lucideIconSet } from './icons.ts';
 
 /**
  * Light theme.

@@ -17,8 +17,15 @@ import AppDialogHost from '@/app/components/AppDialogHost.vue';
 import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { consumeMainFocus, MAIN_CONTENT } from '@/app/router/announcer.ts';
 
+/**
+ * Attrs fall through to `<v-main>` explicitly (`v-bind="$attrs"`), not to the root
+ * `<v-app>` — see the `data-main-content` note in the template.
+ */
 defineOptions({ inheritAttrs: false });
 
+/**
+ * Component props — see each field's own doc comment below.
+ */
 defineProps<{
     /**
      * Default page title rendered in the hero (overridable via #header slot)
@@ -50,6 +57,9 @@ onMounted(consumeMainFocus);
 const skipToContent = () =>
     document.querySelector<HTMLElement>(MAIN_CONTENT)?.focus({ preventScroll: false });
 
+/**
+ * Translation function and the active locale, the latter watched below to keep Vuetify in sync.
+ */
 const { t, locale } = useI18n();
 
 /**
@@ -62,12 +72,17 @@ const { t, locale } = useI18n();
  * Saying so here keeps the fallback a decision rather than a side effect.
  */
 const { current: vuetifyLocale, messages: vuetifyMessages } = useLocale();
+
+/**
+ * Applies the fallback rule above whenever the app locale changes, and once immediately
+ * on mount so the very first render is already in sync.
+ */
 watch(
     locale,
     (newLocale) => {
         vuetifyLocale.value = newLocale in vuetifyMessages.value ? newLocale : 'en';
     },
-    { immediate: true }
+    { immediate: true } // run the callback once on mount, not just on future changes
 );
 
 /**
@@ -85,9 +100,13 @@ const legalLinks = (['about', 'faq', 'terms', 'privacy'] as const).map((page) =>
 const { loadings, isLoading } = storeToRefs(useCoreStore());
 
 /**
- * Toasts
+ * Reactive toast queue, rendered below as one `v-alert` per visible message.
  */
 const { messages } = storeToRefs(useNotificationsStore());
+
+/**
+ * Dismisses a toast by id, wired to each alert's close button.
+ */
 const { hideMessage } = useNotificationsStore();
 
 /**

@@ -33,14 +33,22 @@ import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
 import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 
 /**
- * Generics
+ * Localized dictionary helper, with the active locale reference used to revalidate the form.
  */
 const { t, locale } = useI18n();
+
+/**
+ * Toast helper for submission failures.
+ */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Router instance, used to navigate to the new product's detail page after creation.
+ */
 const router = useRouter();
 
 /**
- * Products store
+ * Products store's create action.
  */
 const { createProduct } = useProductsStore();
 

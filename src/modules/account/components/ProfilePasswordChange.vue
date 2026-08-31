@@ -41,6 +41,9 @@ const showChangePassword = ref(false);
  */
 const passwordFormId = useId();
 
+/**
+ * The form element, so `useStructureFormValidation` can focus the first invalid field on submit.
+ */
 const passwordFormElement = ref<HTMLFormElement>();
 
 const {

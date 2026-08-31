@@ -1,9 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { placeholderImageUrl, resolveImageUrl } from '@/infrastructure/utils/images.ts';
-
 /**
+ * @module
  * One record's picture, in three tiers: thumbnail first, full image lazily, a bundled placeholder
  * icon when there is neither.
  *
@@ -27,6 +24,10 @@ import { placeholderImageUrl, resolveImageUrl } from '@/infrastructure/utils/ima
  * `thumbnailSrc`, and this behaves as a plain lazy image — the degradation every caller already
  * had to handle before thumbnails existed at all.
  */
+import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { placeholderImageUrl, resolveImageUrl } from '@/infrastructure/utils/images.ts';
+
 // `eager` takes no default: Vue casts an absent boolean prop to `false` already, and restating it
 // is the one thing `no-useless-default-assignment` is there to catch.
 const {

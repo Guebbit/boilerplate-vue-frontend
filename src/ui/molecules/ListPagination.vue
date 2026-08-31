@@ -6,6 +6,9 @@
  */
 import { ref, watch, nextTick } from 'vue';
 
+/**
+ * Component props — see each field's own doc comment below.
+ */
 const { length = 0, ariaLabel } = defineProps<{
     /**
      * Total number of pages

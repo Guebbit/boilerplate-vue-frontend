@@ -1,4 +1,5 @@
 /**
+ * @module
  * The column definitions `DataTable` takes.
  *
  * A separate module rather than `<script setup>` exports: the two shapes below form a union, and

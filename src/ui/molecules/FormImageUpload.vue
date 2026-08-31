@@ -12,8 +12,14 @@ import {
 } from '@/infrastructure/utils/uploads.ts';
 import { resolveImageUrl } from '@/infrastructure/utils/images.ts';
 
+/**
+ * Translation function for the field's label/hint/preview-alt copy.
+ */
 const { t } = useI18n();
 
+/**
+ * Component props — see each field's own doc comment below.
+ */
 const {
     label = '',
     hint = '',
@@ -106,6 +112,12 @@ const releaseObjectUrl = () => {
     objectUrl.value = undefined;
 };
 
+/**
+ * Keeps {@link objectUrl} in sync with the picked file, and collapses a `multiple`-shaped
+ * selection back to the single file this component models.
+ *
+ * @param file - The model's current value.
+ */
 watch(pickedFile, (file) => {
     const selected = normaliseSelection(file);
     // Revoke the outgoing URL BEFORE minting the replacement: on replacement as well as on
@@ -117,6 +129,9 @@ watch(pickedFile, (file) => {
     if (Array.isArray(file)) pickedFile.value = selected;
 });
 
+/**
+ * Releases the held object URL so the field never leaks a blob past its own lifetime.
+ */
 onBeforeUnmount(releaseObjectUrl);
 
 /**

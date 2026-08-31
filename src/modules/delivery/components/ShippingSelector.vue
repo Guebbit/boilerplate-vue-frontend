@@ -35,13 +35,24 @@ const { itemsTotal } = defineProps<{
  */
 const methodId = defineModel<string | undefined>();
 
+/**
+ * Translation function.
+ */
 const { t } = useI18n();
 
 /**
  * The heading's id: it is the group's label too, so the radios are named by it.
  */
 const titleId = useId();
+
+/**
+ * Delivery store, for the methods list.
+ */
 const deliveryStore = useDeliveryStore();
+
+/**
+ * The available shipping methods, reactive.
+ */
 const { methods } = storeToRefs(deliveryStore);
 
 onMounted(() => {

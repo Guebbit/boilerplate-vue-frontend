@@ -34,6 +34,9 @@ const props = defineProps<{
     metricsError?: string;
 }>();
 
+/**
+ * Events this tab raises toward the parent view.
+ */
 const emit = defineEmits<{
     /**
      * The visitor asked for fresh numbers. The parent owns the fetching.

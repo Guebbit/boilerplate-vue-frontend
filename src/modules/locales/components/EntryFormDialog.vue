@@ -26,6 +26,9 @@ const props = defineProps<{
     initialTenant?: string;
 }>();
 
+/**
+ * Emits the saved fields upward on submit — no store access of its own.
+ */
 const emit = defineEmits<{
     save: [fields: { tenant: string; key: string; value: string }];
 }>();
@@ -35,7 +38,14 @@ const emit = defineEmits<{
  */
 const isOpen = defineModel<boolean>({ required: true });
 
+/**
+ * Translation function and current locale, the latter re-triggering validation on change.
+ */
 const { t, locale } = useI18n();
+
+/**
+ * Toast dispatcher for the "fix the form's errors" notice.
+ */
 const { addMessage } = useNotificationsStore();
 
 /**
@@ -48,6 +58,9 @@ const titleId = useId();
  */
 const defaultTenant = computed(() => props.initialTenant ?? props.tenants.at(0)?.id ?? '');
 
+/**
+ * Field state, errors and submit gating, validated against {@link localesEntrySchema}.
+ */
 const { form, formErrors, showFormErrors, handleSubmit, setForm } = useStructureFormValidation(
     { tenant: '', key: '', value: '' },
     localesEntrySchema,

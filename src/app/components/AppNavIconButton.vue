@@ -23,6 +23,9 @@ import LazyImage from '@/ui/molecules/LazyImage.vue';
  */
 defineOptions({ inheritAttrs: false });
 
+/**
+ * Component props — see each field's own doc comment below.
+ */
 const props = defineProps<{
     /**
      * The visible name: tooltip text and accessible name.
@@ -70,6 +73,10 @@ const props = defineProps<{
     avatarThumbnailUrl?: string | null;
 }>();
 
+/**
+ * Non-prop attributes passed by the parent (e.g. a menu activator's handlers), merged
+ * with the tooltip's own activator props in {@link buttonProps}.
+ */
 const attributes = useAttrs();
 
 /**
