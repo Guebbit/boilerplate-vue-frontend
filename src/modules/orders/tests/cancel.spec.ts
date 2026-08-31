@@ -1,15 +1,12 @@
 /**
  * @module
- * Vitest spec mocking `orvalMutator` directly, so the assertions can inspect
- * the raw request body sent for each `cancelOrder` call.
- */
-
-/**
- * `cancelOrder` — the orders store's one customer write. Transport-mocked like the other store
- * flow specs; what is pinned is that the cancelled record REPLACES the cached one (the fact
- * worth rendering is the new status. A payload-less 200 cannot reach this store: `orvalMutator`
- * validates every response against its contract schema in every mode but vitest — see
- * http-validate-responses.spec.ts, which owns that behaviour.
+ * Vitest spec mocking `orvalMutator` directly, so the assertions can inspect the raw request body
+ * sent for `cancelOrder` — the orders store's one customer write.
+ *
+ * Transport-mocked like the other store flow specs; what is pinned is that the cancelled record
+ * REPLACES the cached one (the fact worth rendering is the new status). A payload-less 200 cannot
+ * reach this store: `orvalMutator` validates every response against its contract schema in every
+ * mode but vitest — see http-validate-responses.spec.ts, which owns that behaviour.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';

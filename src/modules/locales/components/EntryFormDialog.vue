@@ -1,13 +1,14 @@
 <script setup lang="ts">
 /**
  * @module
- * Dialog component: a schema-validated form (via `useAppForm`) that resets its fields on every
+ * Dialog component: a schema-validated form (via `useStructureFormValidation`) that resets its fields on every
  * open and emits the saved fields upward — no store access of its own.
  */
 import { watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
+import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { localesEntrySchema } from '@/modules/locales/schemas.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
 import type { LocaleTenantDescriptor } from '@types';
 
 /**
@@ -34,7 +35,8 @@ const emit = defineEmits<{
  */
 const isOpen = defineModel<boolean>({ required: true });
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const { addMessage } = useNotificationsStore();
 
 /**
  * The heading's id, so the dialog is announced by its title rather than as "dialog".
@@ -46,9 +48,14 @@ const titleId = useId();
  */
 const defaultTenant = computed(() => props.initialTenant ?? props.tenants.at(0)?.id ?? '');
 
-const { form, formErrors, showFormErrors, handleSubmit, setForm } = useAppForm(
+const { form, formErrors, showFormErrors, handleSubmit, setForm } = useStructureFormValidation(
     { tenant: '', key: '', value: '' },
-    localesEntrySchema
+    localesEntrySchema,
+    {
+        revalidateOn: locale,
+        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+        onInvalid: () => addMessage(t('generic.fix-errors'))
+    }
 );
 
 /*

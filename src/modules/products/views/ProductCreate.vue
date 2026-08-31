@@ -8,28 +8,34 @@ export default {
 /**
  * @module
  * Create form for a product: builds a picked/extended slice of the shared products schema, wires
- * it to `useAppForm`, and submits through the store's multipart-aware `createProduct`.
+ * it to `useStructureFormValidation`, and submits through the store's multipart-aware `createProduct`.
  */
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
+import {
+    useNotificationsStore,
+    useStructureFormValidation,
+    useUploadProgress as useToolkitUploadProgress
+} from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/modules/products/store';
 import { productsSchema } from '@/modules/products/schemas.ts';
 import { z } from 'zod';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import {
+    notifyErrorMessages,
+    VUETIFY_INVALID_FIELD_SELECTOR
+} from '@/infrastructure/utils/errors.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
-import { useUploadProgress } from '@/infrastructure/composables/use-upload-progress.ts';
+import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 
 /**
  * Generics
  */
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 const router = useRouter();
 
@@ -85,18 +91,37 @@ const {
     showFormErrors: showErrors,
     isSubmitting,
     handleSubmit
-} = useAppForm<ProductCreateForm>(
+} = useStructureFormValidation<ProductCreateForm>(
     { title: '', price: 0, description: '', active: true },
     createSchema,
-    // The `<form>` lives in `FormCard`; read through a getter so the element is resolved when a
-    // failed submit actually needs it, not while the card is still mounting.
-    { formElement: () => card.value?.formElement }
+    {
+        // The `<form>` lives in `FormCard`; read through a getter so the element is resolved when a
+        // failed submit actually needs it, not while the card is still mounting.
+        formElement: () => card.value?.formElement,
+        revalidateOn: locale,
+        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+        onInvalid: () => addMessage(t('generic.fix-errors'))
+    }
 );
 
 /**
  * Image upload progress, shown by `FormImageUpload` while the multipart create is in flight.
  */
-const { uploadProgress, trackUpload } = useUploadProgress();
+const { progress: uploadProgress, track } = useToolkitUploadProgress<AxiosRequestConfig>(
+    (onProgress) => ({
+        // `event.progress` is a 0–1 fraction, absent when the total size is unknown (a chunked or
+        // compressed request) — reporting 0 keeps the bar still rather than jumping about.
+        onUploadProgress: (event: AxiosProgressEvent) => onProgress(event.progress ?? 0)
+    })
+);
+
+/**
+ * Runs an API call with upload progress attached, and returns to idle however it ends.
+ */
+const trackUpload = <T,>(
+    file: File | undefined,
+    send: (options?: AxiosRequestConfig) => Promise<T>
+) => track(send, { enabled: !!file });
 
 /**
  * Validates the form and creates the product.

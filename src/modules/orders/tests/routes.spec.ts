@@ -1,16 +1,8 @@
 /**
  * @module
- * Vitest spec asserting each orders route record's declared `meta.access`
- * against a hard-coded table, checked by name via a lookup helper.
- */
-
-/**
- * The access requirement every orders route declares.
- *
- * A route that quietly loses its `meta.access` is indistinguishable from a public one: it keeps
- * rendering, keeps passing every other test, and is simply open to anyone. Nothing else in the
- * suite would say so, which is why each expected value is written out rather than derived from the
- * records under test.
+ * Vitest spec asserting each orders route record's declared `meta.access` against a hard-coded
+ * table, checked by name via a lookup helper — a route that quietly loses its `meta.access` is
+ * indistinguishable from a public one, and nothing else in the suite would say so.
  *
  * Lives with the module because these are facts about THIS domain — held in one table in a
  * platform spec, deleting a domain would break that spec, see `docs/theory/modules.md`. The

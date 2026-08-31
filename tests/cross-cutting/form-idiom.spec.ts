@@ -1,5 +1,7 @@
 /**
- * Every form in this app is wired the same way, and there is one place that wiring lives.
+ * Every form in this app is wired the same way, even though there is no longer one composable
+ * that forces it — `useAppForm` was removed as a thin wrapper around three answers a call site
+ * can just as well supply itself. This file is what replaces it as the thing that forces them.
  *
  * `useStructureFormValidation` is the toolkit's mechanism and it is deliberately ignorant of
  * vue-i18n, of Vuetify and of where a message goes — its own docblock says so. The consequence is
@@ -12,11 +14,14 @@
  * field to fix. That is invisible to every other test in this suite, which is what this file is
  * for.
  *
- * Two rules, and the second is what makes the first stick:
+ * Three rules, and the third is what makes the first two stick:
  *
- *   1. A view reaches the toolkit through `useAppForm`, never directly.
- *   2. A view does not keep its own "should I show errors yet" flag. The composable returns
+ *   1. Every `useStructureFormValidation(...)` call supplies `revalidateOn`, `invalidFieldSelector`
+ *      and `onInvalid` — the three answers a call site would otherwise have to re-decide.
+ *   2. A view does not keep its own "should I show errors yet" flag. The toolkit returns
  *      `showFormErrors`; a second one beside it can only disagree with it.
+ *   3. A page form (not a dialog) hands it a `formElement`, so a failed submit has something to
+ *      focus into.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -36,20 +41,21 @@ const componentFiles = (): string[] =>
 
 const sourceOf = (file: string): string => readFileSync(path.join(REPO_ROOT, file), 'utf8');
 
-/** The files that build form state at all — the population both rules apply to. */
+/** The files that build form state at all — the population every rule applies to. */
 const formComponents = (): string[] =>
-    componentFiles().filter((file) => /useAppForm|useStructureFormValidation/.test(sourceOf(file)));
+    componentFiles().filter((file) => sourceOf(file).includes('useStructureFormValidation'));
 
 /**
- * The argument list of every `useAppForm(...)` call in a file.
+ * The argument list of every `useStructureFormValidation(...)` call in a file.
  *
  * Read by matching parentheses rather than by regex: a leftover `ref="formElement"` in the
- * template satisfies a whole-file search while the composable is handed nothing, and a generic
- * argument like `useAppForm<{ email?: string }>` contains characters that stop a naive scan.
+ * template satisfies a whole-file search while the call itself is handed nothing, and a generic
+ * argument like `useStructureFormValidation<{ email?: string }>` contains characters that stop a
+ * naive scan.
  */
-const appFormCallsOf = (source: string): string[] => {
+const formValidationCallsOf = (source: string): string[] => {
     const calls: string[] = [];
-    for (const { index: start } of source.matchAll(/useAppForm\s*[(<]/g)) {
+    for (const { index: start } of source.matchAll(/useStructureFormValidation\s*[(<]/g)) {
         let depth = 0;
         for (let index = start; index < source.length; index++) {
             const character = source[index];
@@ -64,15 +70,20 @@ const appFormCallsOf = (source: string): string[] => {
 };
 
 describe('one form idiom', () => {
-    it('routes every form through useAppForm rather than the toolkit directly', () => {
-        const direct = componentFiles().filter((file) =>
-            sourceOf(file).includes('useStructureFormValidation')
+    it('gives every form the same three toolkit answers', () => {
+        const incomplete = formComponents().filter((file) =>
+            formValidationCallsOf(sourceOf(file)).some(
+                (call) =>
+                    !call.includes('revalidateOn') ||
+                    !call.includes('invalidFieldSelector') ||
+                    !call.includes('onInvalid')
+            )
         );
 
-        expect(direct).toEqual([]);
+        expect(incomplete).toEqual([]);
     });
 
-    it('lets the composable own whether errors are showing', () => {
+    it('lets the toolkit own whether errors are showing', () => {
         // `showFormErrors: showErrors` is a rename of the composable's own ref and is fine. A
         // `ref(false)` declared beside it is a second source of truth for one question.
         const ownFlag = formComponents().filter((file) =>
@@ -85,14 +96,16 @@ describe('one form idiom', () => {
     /**
      * A page form focuses its first invalid field; that is the whole reason `formElement` exists.
      * Dialogs are exempt and stay exempt: one already traps focus, so moving focus inside it is a
-     * different question from moving it on a page — see `use-app-form.ts`.
+     * different question from moving it on a page.
      */
     it('gives every page form an element to focus into', () => {
         const missing = formComponents()
             .filter((file) => !file.includes(`${path.sep}components${path.sep}`))
             .filter(
                 (file) =>
-                    !appFormCallsOf(sourceOf(file)).some((call) => call.includes('formElement'))
+                    !formValidationCallsOf(sourceOf(file)).some((call) =>
+                        call.includes('formElement')
+                    )
             );
 
         expect(missing).toEqual([]);

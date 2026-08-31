@@ -16,10 +16,12 @@ import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { MapPin, Plus, Star } from 'lucide-vue-next';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
+import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useAddressesStore } from '@/modules/account/stores/addresses.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import {
+    notifyErrorMessages,
+    VUETIFY_INVALID_FIELD_SELECTOR
+} from '@/infrastructure/utils/errors.ts';
 import type { Address, AddressInput } from '@types';
 import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
 
@@ -28,7 +30,7 @@ import { useDialogStore } from '@/infrastructure/stores/dialog.ts';
  * because the fact worth showing after any of them — exactly one default — is a property of the
  * list, not of the entry that changed.
  */
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 const { fetchAddresses, addAddress, updateAddress, removeAddress } = useAddressesStore();
 const { addresses, loading } = storeToRefs(useAddressesStore());
@@ -89,13 +91,15 @@ const addressSchema = z.object({
 });
 
 /*
- * No `formElement`: the dialog traps focus already — see `use-app-form.ts` on why a dialog's
- * `revealErrors` is a state change, not a focus move.
+ * No `formElement`: the dialog traps focus already — a dialog's `revealErrors` is a state
+ * change, not a focus move.
  */
-const { form, formErrors, showFormErrors, handleSubmit, setForm } = useAppForm<AddressForm>(
-    emptyForm(),
-    addressSchema
-);
+const { form, formErrors, showFormErrors, handleSubmit, setForm } =
+    useStructureFormValidation<AddressForm>(emptyForm(), addressSchema, {
+        revalidateOn: locale,
+        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+        onInvalid: () => addMessage(t('generic.fix-errors'))
+    });
 
 /**
  * Opens the dialog empty, for a new entry.

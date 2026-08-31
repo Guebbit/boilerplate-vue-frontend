@@ -8,15 +8,14 @@ export default {
 /**
  * @module
  * Order-edit page. Loads one order by route id, exposes a status/email form
- * built on `useAppForm`, and the operator's cancel/refund actions — each
+ * built on `useStructureFormValidation`, and the operator's cancel/refund actions — each
  * gated on the `actions` the server attaches to the loaded record.
  */
 import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
+import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/modules/orders/store.ts';
 import { useOrderRefund } from '@/modules/payments';
 import { ordersStatusSchema } from '@/modules/orders/schemas.ts';
@@ -36,12 +35,15 @@ import {
     formatDateTime,
     formatCurrency
 } from '@/infrastructure/utils/formatters.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import {
+    notifyErrorMessages,
+    VUETIFY_INVALID_FIELD_SELECTOR
+} from '@/infrastructure/utils/errors.ts';
 
 /**
  * Generic utility hooks.
  */
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
@@ -156,7 +158,12 @@ const {
     handleSubmit,
     activateAutoHydrate,
     applyServerErrors
-} = useAppForm<OrderEditForm>({}, editSchema, { formElement });
+} = useStructureFormValidation<OrderEditForm>({}, editSchema, {
+    formElement,
+    revalidateOn: locale,
+    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+    onInvalid: () => addMessage(t('generic.fix-errors'))
+});
 
 /**
  * Auto-hydrate the form from the fetched record once it resolves.

@@ -1,12 +1,8 @@
 /**
  * @module
- * Type-guard based readers for the `{ data }` response envelope: narrow to a plain object first,
- * then check for the `data` key, so a wrapped and an unwrapped response are both handled by the
- * same call site.
- */
-
-/**
- * Readers for the `{ data }` envelope the API wraps most payloads in.
+ * Type-guard based readers for the `{ data }` envelope the API wraps most payloads in: narrow to a
+ * plain object first, then check for the `data` key, so a wrapped and an unwrapped response are
+ * both handled by the same call site.
  *
  * Here rather than in a store because the envelope is a property of the transport: a login
  * response and a product list arrive in the same wrapper, and neither is the session's business.

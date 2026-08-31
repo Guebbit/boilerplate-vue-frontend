@@ -14,8 +14,11 @@ import { computed, ref } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
+import {
+    useNotificationsStore,
+    useStructureFormValidation,
+    useUploadProgress as useToolkitUploadProgress
+} from '@guebbit/vue-toolkit';
 import { useProductsStore } from '@/modules/products/store';
 import { productsSchema } from '@/modules/products/schemas.ts';
 import { z } from 'zod';
@@ -35,14 +38,17 @@ import {
     formatCurrency,
     formatFlag
 } from '@/infrastructure/utils/formatters.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import {
+    notifyErrorMessages,
+    VUETIFY_INVALID_FIELD_SELECTOR
+} from '@/infrastructure/utils/errors.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
-import { useUploadProgress } from '@/infrastructure/composables/use-upload-progress.ts';
+import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 
 /**
  * Generic i18n and notification helpers.
  */
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 
 /**
@@ -99,12 +105,31 @@ const {
     handleSubmit,
     activateAutoHydrate,
     applyServerErrors
-} = useAppForm<ProductEditForm>({}, editSchema, { formElement });
+} = useStructureFormValidation<ProductEditForm>({}, editSchema, {
+    formElement,
+    revalidateOn: locale,
+    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+    onInvalid: () => addMessage(t('generic.fix-errors'))
+});
 
 /**
  * Image upload progress, shown by `FormImageUpload` while a multipart save is in flight.
  */
-const { uploadProgress, trackUpload } = useUploadProgress();
+const { progress: uploadProgress, track } = useToolkitUploadProgress<AxiosRequestConfig>(
+    (onProgress) => ({
+        // `event.progress` is a 0–1 fraction, absent when the total size is unknown (a chunked or
+        // compressed request) — reporting 0 keeps the bar still rather than jumping about.
+        onUploadProgress: (event: AxiosProgressEvent) => onProgress(event.progress ?? 0)
+    })
+);
+
+/**
+ * Runs an API call with upload progress attached, and returns to idle however it ends.
+ */
+const trackUpload = <T,>(
+    file: File | undefined,
+    send: (options?: AxiosRequestConfig) => Promise<T>
+) => track(send, { enabled: !!file });
 
 /**
  * Auto-hydrate the form from the fetched record once it resolves.

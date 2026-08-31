@@ -1,14 +1,9 @@
 /**
  * @module
- * Vitest spec mocking `orvalMutator` directly, keyed by `METHOD /url`, so
- * the generated client and the store under test stay real.
- */
-
-/**
- * The feedback store — transport-mocked like the wishlist's spec: `orvalMutator` is a router
- * keyed on `METHOD /url`, the generated client and this store are real. What is worth pinning
- * is whole-list replacement (the inbox renders what the API answered, never a local guess) and
- * the status update reloading the inbox it changed.
+ * The feedback store, transport-mocked like the wishlist's spec: `orvalMutator` is a router keyed
+ * on `METHOD /url`, so the generated client and the store under test stay real. What is worth
+ * pinning is whole-list replacement (the inbox renders what the API answered, never a local guess)
+ * and the status update reloading the inbox it changed.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';

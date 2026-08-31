@@ -7,17 +7,19 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Public contact form, validated with `useAppForm` against a Zod schema and
+ * Public contact form, validated with `useStructureFormValidation` against a Zod schema and
  * submitted through the feedback store; success resets the form in place.
  */
 import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
+import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useFeedbackStore } from '@/modules/feedback/store.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import {
+    notifyErrorMessages,
+    VUETIFY_INVALID_FIELD_SELECTOR
+} from '@/infrastructure/utils/errors.ts';
 
 /**
  * The public contact form. No login required — it exists for the visitor who cannot log in —
@@ -33,7 +35,7 @@ interface ContactForm {
 /**
  * Translation function.
  */
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 /**
  * Toast dispatcher.
@@ -46,7 +48,7 @@ const { addMessage } = useNotificationsStore();
 const { submitContact } = useFeedbackStore();
 
 /**
- * The `<form>` element, handed to `useAppForm` so it can trigger native validation UI.
+ * The `<form>` element, handed to `useStructureFormValidation` so it can trigger native validation UI.
  */
 const formElement = ref<HTMLFormElement>();
 
@@ -54,7 +56,7 @@ const formElement = ref<HTMLFormElement>();
  * Form state, validation and submit wiring, built on the schema below.
  */
 const { form, formErrors, showFormErrors, isSubmitting, handleSubmit, resetForm } =
-    useAppForm<ContactForm>(
+    useStructureFormValidation<ContactForm>(
         { name: '', email: '', subject: '', message: '' },
         z.object({
             name: z.string().optional(),
@@ -62,7 +64,12 @@ const { form, formErrors, showFormErrors, isSubmitting, handleSubmit, resetForm 
             subject: z.string().min(1, { error: () => t('contact-page.subject-required') }),
             message: z.string().min(10, { error: () => t('contact-page.message-min') })
         }),
-        { formElement }
+        {
+            formElement,
+            revalidateOn: locale,
+            invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+            onInvalid: () => addMessage(t('generic.fix-errors'))
+        }
     );
 
 /**

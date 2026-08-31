@@ -9,7 +9,6 @@
 import { nextTick, type WritableComputedRef } from 'vue';
 import { createI18n, type I18n } from 'vue-i18n';
 import { mergeWith } from 'lodash-es';
-import { applyHtmlLocaleAttributes } from './dom.ts';
 
 /**
  * Shape of one locale's message tree: nested groups of strings, with array leaves for the static
@@ -290,6 +289,21 @@ export function _ensureFallbackLoaded(i18n: I18n, locale: string): Promise<unkno
             // A fallback with no local dictionary is a configuration choice, not an error.
             .catch(() => undefined)
     );
+}
+
+/**
+ * Keeps `<html lang>` and `<html dir>` in sync with the active locale.
+ *
+ * A right-to-left language laid out left-to-right is unreadable, and `dir` is the one switch the
+ * whole page follows.
+ *
+ * @param locale - Locale code now active, e.g. `en`.
+ * @param direction - Writing direction for that locale.
+ */
+function applyHtmlLocaleAttributes(locale: string, direction: 'ltr' | 'rtl'): void {
+    const html = document.querySelector('html');
+    html?.setAttribute('lang', locale);
+    html?.setAttribute('dir', direction);
 }
 
 /**

@@ -10,17 +10,19 @@ export default {
  * Receipt/adjustment form, instantiated twice with a `mode` prop rather than a runtime sign
  * toggle — so a mis-click cannot turn a delivery into a correction. Validation schema branches on
  * `mode` (strictly positive for a receipt, signed non-zero for an adjustment) and is handed to
- * `useAppForm`, which owns the field state and submit gating.
+ * `useStructureFormValidation`, which owns the field state and submit gating.
  */
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { z } from 'zod';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
+import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useInventoryStore } from '@/modules/inventory/store.ts';
 import { useProductsStore } from '@/modules/products';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import {
+    notifyErrorMessages,
+    VUETIFY_INVALID_FIELD_SELECTOR
+} from '@/infrastructure/utils/errors.ts';
 
 /**
  * The domain's two counter writes, one form: a RECEIPT (strictly positive — a delivery that
@@ -41,7 +43,7 @@ const isReceipt = computed(() => props.mode === 'receipt');
 /**
  * i18n translator for this component's template and messages.
  */
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 /**
  * Toast dispatcher used to report the write's outcome.
@@ -76,7 +78,7 @@ const productOptions = computed(() =>
 );
 
 /**
- * The `<form>` element, handed to `useAppForm` for its native-validity wiring.
+ * The `<form>` element, handed to `useStructureFormValidation` for its native-validity wiring.
  */
 const formElement = ref<HTMLFormElement>();
 
@@ -104,10 +106,15 @@ const schema = computed(() =>
 /**
  * Field state, errors and submit gating, seeded with the mode's default amount sign.
  */
-const { form, formErrors, showFormErrors, handleSubmit } = useAppForm(
+const { form, formErrors, showFormErrors, handleSubmit } = useStructureFormValidation(
     { productId: '', amount: props.mode === 'receipt' ? 10 : -1, note: '' },
     schema,
-    { formElement }
+    {
+        formElement,
+        revalidateOn: locale,
+        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+        onInvalid: () => addMessage(t('generic.fix-errors'))
+    }
 );
 
 /**

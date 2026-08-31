@@ -1,14 +1,15 @@
 <script setup lang="ts">
 /**
  * @module
- * Dialog component: a schema-validated form (via `useAppForm`) that swaps between a create and an
+ * Dialog component: a schema-validated form (via `useStructureFormValidation`) that swaps between a create and an
  * edit schema depending on whether a `language` prop was passed, resets on every open, and emits
  * the saved fields upward.
  */
 import { watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
+import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { localesLanguageEditSchema, localesLanguageSchema } from '@/modules/locales/schemas.ts';
+import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
 import type { LocaleCapability, LocaleDirection } from '@types';
 
 /**
@@ -45,7 +46,8 @@ const emit = defineEmits<{
  */
 const isOpen = defineModel<boolean>({ required: true });
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const { addMessage } = useNotificationsStore();
 
 /**
  * Whether the dialog is editing an existing language rather than creating one.
@@ -62,7 +64,7 @@ const titleId = useId();
  * what every entry references, so the API keeps it immutable — and a field that is sometimes
  * required is a field nobody can read the rule of.
  */
-const { form, formErrors, showFormErrors, handleSubmit, setForm } = useAppForm<{
+const { form, formErrors, showFormErrors, handleSubmit, setForm } = useStructureFormValidation<{
     tag: string;
     name: string;
     nativeName: string;
@@ -70,7 +72,12 @@ const { form, formErrors, showFormErrors, handleSubmit, setForm } = useAppForm<{
     active: boolean;
 }>(
     { tag: '', name: '', nativeName: '', direction: 'ltr', active: true },
-    computed(() => (isEdit.value ? localesLanguageEditSchema : localesLanguageSchema))
+    computed(() => (isEdit.value ? localesLanguageEditSchema : localesLanguageSchema)),
+    {
+        revalidateOn: locale,
+        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+        onInvalid: () => addMessage(t('generic.fix-errors'))
+    }
 );
 
 /*

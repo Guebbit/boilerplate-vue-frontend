@@ -16,9 +16,8 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
+import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { changeLanguage, supportedLanguages } from '@/infrastructure/i18n';
-import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { usersSchema } from '@/modules/users';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
@@ -28,7 +27,10 @@ import ProfilePasswordChange from '@/modules/account/components/ProfilePasswordC
 import ProfileDeleteAccount from '@/modules/account/components/ProfileDeleteAccount.vue';
 import ProfileSessions from '@/modules/account/components/ProfileSessions.vue';
 import ProfileAddresses from '@/modules/account/components/ProfileAddresses.vue';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import {
+    notifyErrorMessages,
+    VUETIFY_INVALID_FIELD_SELECTOR
+} from '@/infrastructure/utils/errors.ts';
 
 const { t, locale } = useI18n();
 const router = useRouter();
@@ -83,7 +85,12 @@ const {
     validate,
     revealErrors,
     setInitialData
-} = useAppForm<ProfileForm>({}, usersSchema, { formElement });
+} = useStructureFormValidation<ProfileForm>({}, usersSchema, {
+    formElement,
+    revalidateOn: locale,
+    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+    onInvalid: () => addMessage(t('generic.fix-errors'))
+});
 
 /**
  * Hydrate, never clobber.

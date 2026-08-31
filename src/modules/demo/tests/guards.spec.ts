@@ -1,11 +1,7 @@
 /**
  * @module
- * Vitest spec mocking `@/infrastructure/i18n` directly (translations aren't
- * loaded yet when this guard runs), while leaving Pinia real.
- */
-
-/**
- * Demo router guard — `src/modules/demo/guards.ts`.
+ * Demo router guard — `src/modules/demo/guards.ts` — mocking `@/infrastructure/i18n` directly
+ * (translations aren't loaded yet when this guard runs), while leaving Pinia real.
  *
  * A teaching guard, scoped to the Playground route, but two of its properties are real Vue Router
  * concerns rather than demo details:

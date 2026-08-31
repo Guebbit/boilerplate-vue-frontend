@@ -21,7 +21,7 @@ import type {
  * Endpoints that must never trigger the refresh-and-retry flow: a 401 there is a genuine
  * credential failure, not an expired token.
  */
-const refreshExcludedPaths = new Set([
+const REFRESH_EXCLUDED_PATHS = new Set([
     '/account/login',
     '/account/signup',
     '/account/reset',
@@ -33,11 +33,11 @@ const refreshExcludedPaths = new Set([
  * Tells whether a failed request should skip the token refresh flow.
  *
  * @param url - Request URL, absolute or relative.
- * @returns `true` when the URL's pathname is one of {@link refreshExcludedPaths}.
+ * @returns `true` when the URL's pathname is one of {@link REFRESH_EXCLUDED_PATHS}.
  */
 const shouldSkipRefresh = (url?: string) => {
     if (!url) return false;
-    return refreshExcludedPaths.has(toPathname(url));
+    return REFRESH_EXCLUDED_PATHS.has(toPathname(url));
 };
 
 /**

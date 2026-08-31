@@ -43,7 +43,7 @@ const isOpen = defineModel<boolean>({ required: true });
 const { t } = useI18n();
 
 /*
- * Deliberately NOT on `useAppForm`, unlike the two form dialogs beside it. What this validates is
+ * Deliberately NOT on `useStructureFormValidation`, unlike the two form dialogs beside it. What this validates is
  * a JSON document, and the useful result is the ROWS it parsed to — data the preview below
  * renders — not a per-field error. A schema would have to carry the parse through a transform to
  * hand back the same thing `parsed` already does.

@@ -8,24 +8,26 @@ export default {
 /**
  * @module
  * Collapsible live-password-change form: a zod schema built once (with a `superRefine` for the
- * confirm-match check) feeds `useAppForm`, and the toggle keeps the profile page from opening
+ * confirm-match check) feeds `useStructureFormValidation`, and the toggle keeps the profile page from opening
  * with three forms visible at once.
  */
 import { ref, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { z } from 'zod';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
+import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { usersPasswordSchema } from '@/modules/users';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import {
+    notifyErrorMessages,
+    VUETIFY_INVALID_FIELD_SELECTOR
+} from '@/infrastructure/utils/errors.ts';
 
 /**
  * The live password change: proves the current password, no email round-trip — unlike the reset
  * flow. Collapsed behind a toggle so the profile page does not open with three forms visible at
  * once.
  */
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 const { changePassword } = useProfileStore();
 
@@ -46,7 +48,7 @@ const {
     formErrors: passwordErrors,
     showFormErrors: showPasswordErrors,
     handleSubmit: handlePasswordSubmit
-} = useAppForm(
+} = useStructureFormValidation(
     {
         currentPassword: '',
         password: '',
@@ -71,7 +73,12 @@ const {
                     path: ['passwordConfirm']
                 });
         }),
-    { formElement: passwordFormElement }
+    {
+        formElement: passwordFormElement,
+        revalidateOn: locale,
+        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+        onInvalid: () => addMessage(t('generic.fix-errors'))
+    }
 );
 
 /**

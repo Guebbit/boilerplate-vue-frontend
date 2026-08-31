@@ -1,13 +1,9 @@
 /**
  * @module
- * Cypress end-to-end spec driving the real app: submits the public contact
- * form, then reads the resulting ticket back through the admin inbox.
- */
-
-/**
- * The contact form and the inbox it lands in — the feedback module's whole loop, driven the way
- * a visitor and then an admin would drive it. The inbox starts empty on purpose — the demo
- * profile seeds no tickets — so the form IS the fixture.
+ * Cypress end-to-end spec driving the real app: submits the public contact form, then reads the
+ * resulting ticket back through the admin inbox — the feedback module's whole loop, driven the way
+ * a visitor and then an admin would drive it. The inbox starts empty on purpose — the demo profile
+ * seeds no tickets — so the form IS the fixture.
  */
 describe('Feedback', () => {
     beforeEach(() => {

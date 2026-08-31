@@ -14,21 +14,27 @@ export default {
 import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
+import {
+    useNotificationsStore,
+    useStructureFormValidation,
+    useUploadProgress as useToolkitUploadProgress
+} from '@guebbit/vue-toolkit';
 import { useAuthStore } from '@/modules/account/stores/auth.ts';
 import { useRouter, useRoute } from 'vue-router';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import { usersSchema, usersPasswordSchema } from '@/modules/users';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import {
+    notifyErrorMessages,
+    VUETIFY_INVALID_FIELD_SELECTOR
+} from '@/infrastructure/utils/errors.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
-import { useUploadProgress } from '@/infrastructure/composables/use-upload-progress.ts';
+import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 
 /**
  * UI logics
  */
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 const router = useRouter();
 const route = useRoute();
@@ -74,7 +80,7 @@ const {
     isSubmitting,
     handleSubmit,
     applyServerErrors
-} = useAppForm<UserSignupForm>(
+} = useStructureFormValidation<UserSignupForm>(
     {
         email: '',
         password: '',
@@ -82,14 +88,33 @@ const {
         conditions: false
     },
     signupSchema,
-    { formElement }
+    {
+        formElement,
+        revalidateOn: locale,
+        invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+        onInvalid: () => addMessage(t('generic.fix-errors'))
+    }
 );
 
 /**
  * Profile image upload progress, shown by `FormImageUpload` while the multipart signup is in
  * flight.
  */
-const { uploadProgress, trackUpload } = useUploadProgress();
+const { progress: uploadProgress, track } = useToolkitUploadProgress<AxiosRequestConfig>(
+    (onProgress) => ({
+        // `event.progress` is a 0–1 fraction, absent when the total size is unknown (a chunked or
+        // compressed request) — reporting 0 keeps the bar still rather than jumping about.
+        onUploadProgress: (event: AxiosProgressEvent) => onProgress(event.progress ?? 0)
+    })
+);
+
+/**
+ * Runs an API call with upload progress attached, and returns to idle however it ends.
+ */
+const trackUpload = <T,>(
+    file: File | undefined,
+    send: (options?: AxiosRequestConfig) => Promise<T>
+) => track(send, { enabled: !!file });
 
 const { signup } = useAuthStore();
 

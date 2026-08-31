@@ -1,19 +1,13 @@
 /**
  * @module
- * Pinia store wrapping two independent, lazily-initialized telemetry SDKs behind one API.
+ * Pinia store wrapping two independent, lazily-initialized telemetry SDKs behind one API: Grafana
+ * Faro (errors, tracing, web-vitals) and Umami (product analytics). The browser only ever talks to
+ * Grafana Alloy's Faro receiver; Alloy fans out to Loki/Tempo/Prometheus. One store rather than two
+ * module-level singletons, so there is no init-order problem — callable from components and
+ * equally from non-setup contexts (stores, router), as long as the call is inside a function.
+ *
  * Analytics events fired before Umami's script has loaded are queued and flushed on load, so
  * boot-time events are never silently lost to the network round-trip.
- */
-
-/**
- * Observability store: Grafana Faro (errors, tracing, web-vitals) and Umami (product analytics).
- *
- * The browser only ever talks to Grafana Alloy's Faro receiver; Alloy fans out to
- * Loki/Tempo/Prometheus. One store rather than two module-level singletons, so there is no
- * init-order problem.
- *
- * Callable from components and equally from non-setup contexts (stores, router), as long as the
- * call is inside a function rather than at module level.
  */
 
 import { defineStore } from 'pinia';

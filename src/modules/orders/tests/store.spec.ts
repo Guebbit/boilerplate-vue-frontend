@@ -1,11 +1,7 @@
 /**
  * @module
- * Vitest spec mocking the `@api` client module directly, then exercising the
- * orders store's actions against canned responses.
- */
-
-/**
- * Unit tests for the orders store.
+ * Unit tests for the orders store, mocking the `@api` client module directly and exercising the
+ * store's actions against canned responses.
  *
  * One thing here is this repo's own logic rather than the toolkit's: `downloadInvoice`, the one
  * call whose payload is a binary Blob rather than a JSON envelope.

@@ -1,15 +1,8 @@
 /**
  * @module
- * Vitest spec asserting the demo route is public and carries the teaching
- * `exampleGuard`.
- */
-
-/**
- * The demo module's route surface.
- *
- * Public and guarded by `exampleGuard` — both are the point of the module, so both are asserted:
- * a Playground that quietly lost its guard would still render, and the teaching case would be
- * silently gone.
+ * The demo module's route surface: public and guarded by `exampleGuard` — both are the point of
+ * the module, so both are asserted. A Playground that quietly lost its guard would still render,
+ * and the teaching case would be silently gone.
  */
 import { describe, expect, it } from 'vitest';
 import routes from '../routes';

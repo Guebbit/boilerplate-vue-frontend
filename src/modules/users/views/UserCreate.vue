@@ -7,7 +7,7 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * User-create page. Builds a form on `useAppForm`, submitting multipart when
+ * User-create page. Builds a form on `useStructureFormValidation`, submitting multipart when
  * an avatar is attached and JSON otherwise (the branch itself lives in the
  * users store).
  */
@@ -15,22 +15,28 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
+import {
+    useNotificationsStore,
+    useStructureFormValidation,
+    useUploadProgress as useToolkitUploadProgress
+} from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/modules/users/store';
 import { usersSchema, usersPasswordSchema } from '@/modules/users/schemas.ts';
 import { z } from 'zod';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormCard from '@/ui/organisms/FormCard.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import {
+    notifyErrorMessages,
+    VUETIFY_INVALID_FIELD_SELECTOR
+} from '@/infrastructure/utils/errors.ts';
 import { imageUploadSchema } from '@/infrastructure/utils/uploads.ts';
-import { useUploadProgress } from '@/infrastructure/composables/use-upload-progress.ts';
+import type { AxiosProgressEvent, AxiosRequestConfig } from 'axios';
 
 /**
  * Generics
  */
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 const router = useRouter();
 
@@ -75,16 +81,33 @@ const {
     showFormErrors: showErrors,
     isSubmitting,
     handleSubmit
-} = useAppForm<UserCreateForm>({}, createSchema, {
+} = useStructureFormValidation<UserCreateForm>({}, createSchema, {
     // The `<form>` lives in `FormCard`; read through a getter so the element is resolved when a
     // failed submit actually needs it, not while the card is still mounting.
-    formElement: () => card.value?.formElement
+    formElement: () => card.value?.formElement,
+    revalidateOn: locale,
+    invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+    onInvalid: () => addMessage(t('generic.fix-errors'))
 });
 
 /**
  * Avatar upload progress, shown by `FormImageUpload` while the multipart create is in flight.
  */
-const { uploadProgress, trackUpload } = useUploadProgress();
+const { progress: uploadProgress, track } = useToolkitUploadProgress<AxiosRequestConfig>(
+    (onProgress) => ({
+        // `event.progress` is a 0–1 fraction, absent when the total size is unknown (a chunked or
+        // compressed request) — reporting 0 keeps the bar still rather than jumping about.
+        onUploadProgress: (event: AxiosProgressEvent) => onProgress(event.progress ?? 0)
+    })
+);
+
+/**
+ * Runs an API call with upload progress attached, and returns to idle however it ends.
+ */
+const trackUpload = <T,>(
+    file: File | undefined,
+    send: (options?: AxiosRequestConfig) => Promise<T>
+) => track(send, { enabled: !!file });
 
 /**
  * Validates the form and creates the user.

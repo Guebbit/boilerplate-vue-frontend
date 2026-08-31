@@ -1,12 +1,7 @@
 /**
  * @module
- * Barrel re-export: this module's only public surface for sibling modules to import.
- */
-
-/**
- * Users — public barrel.
- *
- * The only surface a sibling module may import. See any sibling's barrel for the rule.
+ * Users — public barrel: this module's only surface for sibling modules to import. See any
+ * sibling's barrel for the rule.
  *
  * One export, and it is deliberately not the store: the two schemas are here because account's
  * login, signup and password-reset forms validate against the same field rules this module's own

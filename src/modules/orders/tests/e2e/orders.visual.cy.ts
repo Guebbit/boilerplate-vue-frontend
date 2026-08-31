@@ -1,20 +1,10 @@
 /**
  * @module
- * Cypress visual-regression route list for the orders module, run through
- * the shared `sweepVisual` helper.
- */
-
-/**
- * Visual regression for this module's own screen.
+ * Cypress visual-regression route list for the orders module, run through the shared
+ * `sweepVisual` helper.
  *
- * Baselines live in `__snapshots__/` beside this file, so deleting the module deletes its
- * photographs too — a central folder would keep PNGs of a screen the app no longer serves.
- *
- * Not part of `npm run complete`: run it with `npm run test:e2e:visual`, and re-record with
- * `npm run test:e2e:visual:update` only after LOOKING at the diff image. Re-recording without
- * looking is the one thing that makes this suite worthless.
- *
- * The sweep itself lives in `tests/support/e2e/visual-sweep.ts`; this file is the screen list.
+ * Not part of `npm run complete`: run with `npm run test:e2e:visual`, and re-record with
+ * `npm run test:e2e:visual:update` only after LOOKING at the diff image.
  */
 import { sweepVisual } from '../../../../../tests/support/e2e/visual-sweep';
 

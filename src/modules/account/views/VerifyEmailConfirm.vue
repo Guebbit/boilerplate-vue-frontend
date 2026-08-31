@@ -15,11 +15,13 @@ import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
-import { useNotificationsStore } from '@guebbit/vue-toolkit';
-import { useAppForm } from '@/infrastructure/composables/use-app-form.ts';
+import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { useProfileStore } from '@/modules/account/stores/profile.ts';
-import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
+import {
+    notifyErrorMessages,
+    VUETIFY_INVALID_FIELD_SELECTOR
+} from '@/infrastructure/utils/errors.ts';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 
 /**
@@ -34,7 +36,7 @@ interface VerifyEmailConfirmForm {
     token?: string;
 }
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const { addMessage } = useNotificationsStore();
@@ -43,14 +45,19 @@ const { confirmEmailVerification } = useProfileStore();
 const formElement = ref<HTMLFormElement>();
 
 const { form, formErrors, showFormErrors, isSubmitting, handleSubmit } =
-    useAppForm<VerifyEmailConfirmForm>(
+    useStructureFormValidation<VerifyEmailConfirmForm>(
         {
             token: typeof route.query.token === 'string' ? route.query.token : ''
         },
         z.object({
             token: z.string().min(1, { error: () => t('verify-email-confirm-page.token-required') })
         }),
-        { formElement }
+        {
+            formElement,
+            revalidateOn: locale,
+            invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR,
+            onInvalid: () => addMessage(t('generic.fix-errors'))
+        }
     );
 
 /**

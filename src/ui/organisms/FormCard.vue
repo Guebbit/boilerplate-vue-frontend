@@ -42,7 +42,7 @@ const { loading } = defineProps<{
 const emit = defineEmits<{ submit: [] }>();
 
 /**
- * The `<form>` itself, exposed because `useAppForm` focuses the first invalid field inside it and
+ * The `<form>` itself, exposed because `useStructureFormValidation` focuses the first invalid field inside it and
  * the page that owns the form's state is a level up from the element.
  */
 const formElement = ref<HTMLFormElement>();

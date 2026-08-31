@@ -1,16 +1,9 @@
 /**
  * @module
- * Vitest spec mocking `orvalMutator` directly (the multipart encoding lives
- * in the generated client), then inspecting the raw requests sent by the
- * users store's actions.
- */
-
-/**
- * Unit tests for the users store.
- *
- * Same shape as the products store, including why `@api` is not mocked — see the header there:
- * the multipart encoding lives in the generated client, so the transport is mocked instead and
- * the assertions are about the request that actually goes out.
+ * Unit tests for the users store, mocking `orvalMutator` directly (the multipart encoding lives
+ * in the generated client) and inspecting the raw requests sent by the store's actions. Same
+ * shape as the products store, including why `@api` is not mocked — the multipart encoding lives
+ * in the generated client, so the transport is mocked instead.
  *
  * One extra thing is asserted here that has no products equivalent: `updateUser` receives a
  * password, and a password must not end up parked in client-side store state.

@@ -1,11 +1,8 @@
 /**
  * @module
- * Sole console boundary: every write is gated by a level ceiling and, for the quieter levels, an
- * opt-in scope set — both read once from env vars at module load, not re-evaluated per call.
- */
-
-/**
- * The only module in this app allowed to touch `console`. `no-console` is an error everywhere else.
+ * The only module in this app allowed to touch `console` — `no-console` is an error everywhere
+ * else. Every write is gated by a level ceiling and, for the quieter levels, an opt-in scope set —
+ * both read once from env vars at module load, not re-evaluated per call.
  *
  * Two axes, mirroring the paired backend:
  *

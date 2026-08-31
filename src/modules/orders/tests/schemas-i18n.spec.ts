@@ -1,19 +1,14 @@
 /**
  * @module
- * Vitest spec wiring the real i18n instance and locale dictionaries, then
- * parsing invalid values through the schemas to check the resolved messages.
- */
-
-/**
- * Orders' validation messages follow the active locale.
+ * Vitest spec wiring the real i18n instance and locale dictionaries, then parsing invalid values
+ * through orders' schemas to check the resolved messages follow the active locale.
  *
  * The MECHANISM — that a thunked Zod message re-resolves at parse time — is proven once, with an
  * invented schema, in `tests/cross-cutting/schemas-i18n.spec.ts`. What is proven here is that THIS
  * module's schemas and THIS module's dictionaries actually agree: every key the schemas reach for
- * exists in both languages, and the Italian copy is not the English copy.
- *
- * That is a fact about this domain, so it lives with it — deleting the folder deletes the coverage
- * rather than breaking a spec that belongs to nobody. See `docs/theory/modules.md`.
+ * exists in both languages, and the Italian copy is not the English copy — a fact about this
+ * domain, so it lives with it: deleting the folder deletes the coverage rather than breaking a
+ * spec that belongs to nobody. See `docs/theory/modules.md`.
  *
  * Against the real vue-i18n instance, with the modules wired in as `src/main.ts` does: a mocked
  * `t` would assert only that a key was looked up, which stays true when the message is frozen in
