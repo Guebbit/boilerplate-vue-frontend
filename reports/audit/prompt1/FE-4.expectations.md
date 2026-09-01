@@ -1,0 +1,30 @@
+# FE-4 — Frozen expectations (blind, Tier A only)
+
+Sources read (Tier A only):
+- `/home/andrea/Work/Guebbit/boilerplate-vue-frontend/openapi.yaml` (root bundle, verified byte-identical to backend) — `cart` paths lines 1896-2135, `CartItem` schema line 3352, `Order` schema line 3431, cart/checkout schemas lines 5451-5595.
+- `/home/andrea/Work/Guebbit/boilerplate-node-backend-2/src/modules/cart/openapi.yaml` — read for extra prose (path/schema comments not carried into the bundled root file), lines 1-370.
+
+No file under `src/`, no test file, and no Tier B doc was opened before this file was written and committed.
+
+## Quantity rules — server-side contract only
+
+- **E1** — `CartItem.quantity`, `UpsertCartItemRequest.quantity`, `UpdateCartItemByIdRequest.quantity`, `OrderItem.quantity` are all `type: integer, minimum: 1`. (openapi.yaml:3361-3363, 5514-5516, 5533-5535, 3395-3397). No `maximum` is declared on any of them, and `grep -n maximum` over the whole root bundle finds exactly two unrelated hits (`PageSize` max 100 at line 3102, `errorRate` max 1 at line 4260) — neither is cart-related. **The contract states no upper bound on cart-item quantity.** A quantity of 0 or negative is invalid (violates `minimum: 1`); the contract does not say whether the API rejects such a request with 422 generically or with a specific error code — only the generic `ValidationError` response is referenced for `POST /cart`, `PUT /cart/{productId}`, `DELETE /cart`, `DELETE /cart/{productId}` (422, openapi.yaml:1941-1942, 2024-2025, 2049-2050, 1971-1972).
+- **E2** — Quantity must be an **integer** (not just numeric) per schema `type: integer` (openapi.yaml:3362, 5515, 5534). The contract does not state client-side rounding/truncation behavior for non-integer input — that is undocumented at Tier A.
+- **E3** — Sending a body-less/malformed `DELETE /cart` (the by-body remove, `RemoveCartItemRequest`) 422s rather than clearing the cart; only `DELETE /cart/all` clears everything (openapi.yaml:1949, 1975-1981 description text — "a stripped or malformed body here 422s rather than falling back to clearing everything").
+- **E4** — `PUT /cart/{productId}` (`UpdateCartItemByIdRequest`) requires only `quantity`; `productId` is optional in the body (schema `required: [quantity]`, `productId` present but not required — openapi.yaml:5525-5535). This is "functionally equivalent to `POST /cart`" per description (openapi.yaml:2000).
+- **E5** — Nothing in the contract mentions a maximum-quantity error code, a "stock limit reached" error, or any cap tied to available stock for adding/updating a cart line. `POST /cart`, `PUT /cart/{productId}` do not list a 409 response at all — only 401/404/422/500 (openapi.yaml:1937-1944, 2020-2027). Stock/availability enforcement at cart-mutation time is not stated by Tier A for this batch.
+
+## Checkout
+
+- **E6** — `POST /cart/checkout` converts the cart into a new order and **clears the cart on success** (openapi.yaml:2078). Request body is optional (`required: false`, openapi.yaml:2083) and may carry `email`, `notes`, `addressId`, `shippingMethodId` (`CheckoutRequest`, openapi.yaml:5553-5568).
+- **E7** — Success response is **201 Created**, body is `CheckoutResponseEnvelope` wrapping `CheckoutResponse` (openapi.yaml:2089-2094, 5579-5595). `CheckoutResponse` requires only `order` (an `Order`); `message` is optional (openapi.yaml:5569-5578).
+- **E8** — Checkout can fail with: `401` (unauthenticated), `404` (an `addressId` that matches none of the caller's saved addresses → `errors[].code = CART_ADDRESS_NOT_FOUND`, per module source comment at cart/openapi.yaml:187-188 — not present verbatim in the bundled root file, which only documents the shipping-method 404 code at openapi.yaml:5565; also a `shippingMethodId` matching no method → `errors[].code = CART_SHIPPING_METHOD_NOT_FOUND`, openapi.yaml:5568), `409` (checking out an **empty cart** — stated only in the module source comment, cart/openapi.yaml:190-191: "Checking out an empty cart. The implementation has always answered 409; the spec simply never declared it." — the bundled root openapi.yaml just references the generic `Conflict` response with no description of what triggers it, openapi.yaml:2099-2100), `422` (validation error), `500`.
+- **E9** — The contract does **not** state that checkout can fail due to insufficient stock/quantity exceeding availability — no such error code or condition is documented at Tier A for `POST /cart/checkout`. The only documented failure conditions are: unauth, bad addressId, bad shippingMethodId, empty cart, and generic validation/server errors.
+- **E10** — `Order.totalPrice` = "Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method" (openapi.yaml:3464-3469). `Order.totalQuantity` = "Sum of `quantity` across every line item" (openapi.yaml:3459-3463). `Order.totalItems` = number of distinct line items, not to be confused with pagination's `totalItems` (openapi.yaml:3454-3458).
+- **E11** — `Order.shippingCost`/`Order.shippingMethod` are only populated "when the checkout chose a method"; omitting `shippingMethodId` means "the order carries no shipping" (openapi.yaml:5568, 3473-3480).
+- **E12** — `GET /cart` returns `CartResponse { items: CartItem[], summary: CartSummaryResponse }` (openapi.yaml:5475-5487). `CartSummaryResponse` requires `itemsCount` (distinct lines), `totalQuantity` (sum of quantities), `total` (sum of price×quantity, before tax/shipping/discounts); `currency` is optional (openapi.yaml:5451-5474).
+- **E13** — `GET /cart/summary` returns the same `CartSummaryResponse` shape wrapped in its own envelope, independent of the full cart fetch (openapi.yaml:2053-2072, 5536-5552).
+
+## Explicitly out of scope for Tier A (flagged, not assumed)
+
+- No maximum cart-item quantity, no per-product stock cap surfaced through the cart contract, and no client-only quantity rule (e.g., a UI-imposed max) is stated anywhere in Tier A. Any such rule found in `src/modules/cart/domain/*` during Step 3 is client-invented and must be checked against Tier B/behavior rather than assumed correct.
