@@ -54,7 +54,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
                 remember: remember ? LoginRequestRemember.medium : undefined
             })
                 .then((data) => {
-                    session.setAccessToken(getTokenFromResponse(data));
+                    session.setAccessToken(getTokenFromResponse(data), remember);
                 })
                 .then(() => useProfileStore().fetchProfile(true))
         );

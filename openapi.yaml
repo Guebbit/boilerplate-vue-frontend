@@ -3328,6 +3328,9 @@ components:
           type: string
         active:
           type: boolean
+        requiresShipping:
+          type: boolean
+          default: true
         imageUrl:
           $ref: '#/components/schemas/ImageUrl'
         thumbnailUrl:
@@ -5184,6 +5187,8 @@ components:
           minimum: 0
         active:
           type: boolean
+        requiresShipping:
+          type: boolean
         imageUrl:
           $ref: '#/components/schemas/ImageUrl'
         categories:
@@ -5213,6 +5218,8 @@ components:
           format: double
           minimum: 0
         active:
+          type: boolean
+        requiresShipping:
           type: boolean
         imageUpload:
           type: string
@@ -5265,6 +5272,9 @@ components:
         active:
           type: boolean
           default: true
+        requiresShipping:
+          type: boolean
+          default: true
         imageUrl:
           $ref: '#/components/schemas/ImageUrl'
         categories:
@@ -5295,6 +5305,9 @@ components:
         description:
           type: string
         active:
+          type: boolean
+          default: true
+        requiresShipping:
           type: boolean
           default: true
         imageUpload:
@@ -5381,6 +5394,8 @@ components:
           minimum: 0
         active:
           type: boolean
+        requiresShipping:
+          type: boolean
         imageUrl:
           $ref: '#/components/schemas/ImageUrl'
         categories:
@@ -5407,6 +5422,8 @@ components:
           format: double
           minimum: 0
         active:
+          type: boolean
+        requiresShipping:
           type: boolean
         imageUpload:
           type: string

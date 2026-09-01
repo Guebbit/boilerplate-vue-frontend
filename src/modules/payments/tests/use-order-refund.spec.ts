@@ -36,7 +36,7 @@ vi.mock('@/infrastructure/http', () => ({
                 success: false,
                 status: 404,
                 message: `no stub for ${key}`,
-                errors: [`no stub for ${key}`]
+                errors: [{ code: 'NOT_FOUND', message: `no stub for ${key}` }]
             });
         return Promise.resolve(responses[key]);
     })

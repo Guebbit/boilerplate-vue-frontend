@@ -83,6 +83,65 @@ describe('persistLocalePreference', () => {
     });
 });
 
+/** Every cookie this store touches, as a plain map — jsdom keeps `document.cookie` real. */
+const cookieJar = () =>
+    Object.fromEntries(
+        document.cookie
+            .split('; ')
+            .filter(Boolean)
+            .map((pair) => pair.split('=') as [string, string])
+    );
+
+describe('setAccessToken — the isAuth/rememberMe cookie pair', () => {
+    beforeEach(() => {
+        // Tests earlier in this file call `signedIn()`, which sets these cookies as a side
+        // effect; jsdom keeps `document.cookie` for the whole file, not per test. Cleared through
+        // the store's own method, like production code, rather than a raw assignment.
+        useSessionStore().clearSession();
+    });
+
+    it('sets a session-only isAuth cookie when remember was not chosen', () => {
+        useSessionStore().setAccessToken('token', false);
+
+        const jar = cookieJar();
+        expect(jar.isAuth).toBe('true');
+        expect(jar.rememberMe).toBeUndefined();
+    });
+
+    it('sets a persistent isAuth cookie when remember was chosen', () => {
+        useSessionStore().setAccessToken('token', true);
+
+        const jar = cookieJar();
+        expect(jar.isAuth).toBe('true');
+        expect(jar.rememberMe).toBe('true');
+    });
+
+    /*
+     * The bug this closes: a silent refresh does not know the original login's choice, so it
+     * must read it back from `rememberMe` rather than defaulting to session-only — otherwise a
+     * "remember me" visitor's isAuth hint would still die at the next browser restart.
+     */
+    it('keeps the isAuth cookie persistent across a refresh that does not pass `remember`', () => {
+        const store = useSessionStore();
+        store.setAccessToken('token', true);
+
+        store.setAccessToken('refreshed-token');
+
+        expect(cookieJar().rememberMe).toBe('true');
+        // Presence is what `tryRestoreAuth` reads; jsdom does not expose max-age back out.
+        expect(cookieJar().isAuth).toBe('true');
+    });
+
+    it('does not start a rememberMe marker for a login that never opts in', () => {
+        const store = useSessionStore();
+        store.setAccessToken('token', true);
+
+        store.setAccessToken('token-again', false);
+
+        expect(cookieJar().rememberMe).toBeUndefined();
+    });
+});
+
 describe('loadViewer', () => {
     /**
      * `thumbnailUrl` rides alongside `imageUrl` on the account payload — the shell's avatar is the

@@ -43,7 +43,12 @@ const ORDER = { id: 'o1', totalPrice: 19.98 };
  */
 const apiFailure = (status: number) =>
     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
-    Promise.reject({ success: false, status, message: 'nope', errors: ['nope'] }) as never;
+    Promise.reject({
+        success: false,
+        status,
+        message: 'nope',
+        errors: [{ code: 'STUB_ERROR', message: 'nope' }]
+    }) as never;
 
 vi.mock('@api', () => ({
     getCart: vi.fn(() => Promise.resolve({ data: CART })),

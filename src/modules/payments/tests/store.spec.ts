@@ -27,9 +27,22 @@ let responses: Record<string, unknown>;
 /**
  * The reject envelope `onResponseReject` builds, which is the only shape a store ever catches.
  */
-const rejectWith = (status: number, message: string) =>
+const rejectWith = (status: number, message: string, code = 'STUB_ERROR') =>
     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
-    Promise.reject({ success: false, status, message, errors: [message] });
+    Promise.reject({ success: false, status, message, errors: [{ code, message }] });
+
+/**
+ * A stubbed API-level refusal — `{ status, code, message }` — distinct from `Error`, which stubs
+ * a transport failure instead. Lets a test stub the exact `errors[].code` shape a real 4xx sends.
+ */
+interface Declined {
+    status: number;
+    code: string;
+    message: string;
+}
+
+const isDeclined = (value: unknown): value is Declined =>
+    typeof value === 'object' && value !== null && 'code' in value && 'status' in value;
 
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) => {
@@ -37,6 +50,7 @@ vi.mock('@/infrastructure/http', () => ({
         const answer = responses[key];
         if (answer === undefined) return rejectWith(404, `Not found: ${key}`);
         if (answer instanceof Error) return rejectWith(500, answer.message);
+        if (isDeclined(answer)) return rejectWith(answer.status, answer.message, answer.code);
         return Promise.resolve(answer);
     })
 }));
@@ -95,8 +109,17 @@ describe('payForOrder', () => {
     });
 
     it('lets a decline propagate — the caller owns the toast', () => {
-        responses['POST /payments/payment-1/confirm'] = undefined;
+        // `openapi.yaml`'s payments 409 block: a decline is `errors[].code === 'PAYMENT_DECLINED'`,
+        // not an absence — asserting the real shape catches a regression to generic error handling.
+        responses['POST /payments/payment-1/confirm'] = {
+            status: 409,
+            code: 'PAYMENT_DECLINED',
+            message: 'The card was declined'
+        };
         const store = usePaymentsStore();
-        return expect(store.payForOrder('order-1', '4000000000000002')).rejects.toThrow();
+        return expect(store.payForOrder('order-1', '4000000000000002')).rejects.toMatchObject({
+            status: 409,
+            errors: [{ code: 'PAYMENT_DECLINED' }]
+        });
     });
 });

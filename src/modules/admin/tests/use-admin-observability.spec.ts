@@ -59,7 +59,7 @@ const apiFailure = (status: number, message: string) => ({
     success: false,
     status,
     message,
-    errors: [message]
+    errors: [{ code: 'STUB_ERROR', message }]
 });
 
 describe('useAdminObservability', () => {

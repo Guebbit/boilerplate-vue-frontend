@@ -5,6 +5,8 @@
  * `errors` so a caller can discriminate on the shape rather than a status code.
  */
 
+import type { ErrorItem } from '@api';
+
 /**
  * Fields common to every response envelope, regardless of outcome.
  */
@@ -46,8 +48,8 @@ export interface ResponseReject extends ResponseNeutral {
      * Always absent on a reject envelope.
      */
     data?: never;
-    // UI friendly error message
-    errors: string[];
+    // Structured, machine-friendly errors — see `openapi.yaml`'s `ErrorResponse.errors`
+    errors: ErrorItem[];
     // Backend correlation identifiers — useful for support/debugging
     requestId?: string;
     traceId?: string;

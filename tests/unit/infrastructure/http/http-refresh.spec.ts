@@ -88,11 +88,14 @@ let scenario: Scenario = defaultScenario();
 /**
  * Builds the envelope the API rejects with, so the handlers and the app agree on one error shape.
  *
- * @param message - Human-readable reason, echoed into `errors` as the API does.
+ * @param message - Human-readable reason, echoed into `errors[0].message` as the API does.
  * @returns A 401 response carrying the standard reject envelope.
  */
 const unauthorized = (message: string) =>
-    HttpResponse.json({ success: false, status: 401, message, errors: [message] }, { status: 401 });
+    HttpResponse.json(
+        { success: false, status: 401, message, errors: [{ code: 'UNAUTHORIZED', message }] },
+        { status: 401 }
+    );
 
 const server = setupServer(
     /**

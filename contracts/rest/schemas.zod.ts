@@ -2564,6 +2564,7 @@ export const listProductsResponseDataItemsItemReservedMin = 0;
 
 export const listProductsResponseDataItemsItemAvailableMin = 0;
 
+export const listProductsResponseDataItemsItemRequiresShippingDefault = true;
 export const listProductsResponseDataMetaPageDefault = 1;
 
 export const listProductsResponseDataMetaPageSizeDefault = 10;
@@ -2602,6 +2603,9 @@ export const ListProductsResponse = zod.strictObject({
                     ),
                 description: zod.string().optional(),
                 active: zod.boolean().optional(),
+                requiresShipping: zod
+                    .boolean()
+                    .default(listProductsResponseDataItemsItemRequiresShippingDefault),
                 imageUrl: zod
                     .string()
                     .optional()
@@ -2649,6 +2653,7 @@ export const createProductBodyOnHandDefault = 100;
 export const createProductBodyOnHandMin = 0;
 
 export const createProductBodyActiveDefault = true;
+export const createProductBodyRequiresShippingDefault = true;
 
 export const CreateProductBody = zod.strictObject({
     title: zod.string(),
@@ -2656,6 +2661,7 @@ export const CreateProductBody = zod.strictObject({
     onHand: zod.number().min(createProductBodyOnHandMin).default(createProductBodyOnHandDefault),
     description: zod.string().optional(),
     active: zod.boolean().default(createProductBodyActiveDefault),
+    requiresShipping: zod.boolean().default(createProductBodyRequiresShippingDefault),
     imageUrl: zod
         .string()
         .optional()
@@ -2673,6 +2679,8 @@ export const createProductResponseDataOnHandMin = 0;
 export const createProductResponseDataReservedMin = 0;
 
 export const createProductResponseDataAvailableMin = 0;
+
+export const createProductResponseDataRequiresShippingDefault = true;
 
 export const CreateProductResponse = zod.strictObject({
     success: zod.literal(true),
@@ -2699,6 +2707,7 @@ export const CreateProductResponse = zod.strictObject({
             .describe('What a customer may actually buy. Derived from the two counters above.'),
         description: zod.string().optional(),
         active: zod.boolean().optional(),
+        requiresShipping: zod.boolean().default(createProductResponseDataRequiresShippingDefault),
         imageUrl: zod
             .string()
             .optional()
@@ -2731,6 +2740,7 @@ export const UpdateProductBody = zod.strictObject({
     description: zod.string().optional(),
     price: zod.number().min(updateProductBodyPriceMin),
     active: zod.boolean().optional(),
+    requiresShipping: zod.boolean().optional(),
     imageUrl: zod
         .string()
         .optional()
@@ -2748,6 +2758,8 @@ export const updateProductResponseDataOnHandMin = 0;
 export const updateProductResponseDataReservedMin = 0;
 
 export const updateProductResponseDataAvailableMin = 0;
+
+export const updateProductResponseDataRequiresShippingDefault = true;
 
 export const UpdateProductResponse = zod.strictObject({
     success: zod.literal(true),
@@ -2774,6 +2786,7 @@ export const UpdateProductResponse = zod.strictObject({
             .describe('What a customer may actually buy. Derived from the two counters above.'),
         description: zod.string().optional(),
         active: zod.boolean().optional(),
+        requiresShipping: zod.boolean().default(updateProductResponseDataRequiresShippingDefault),
         imageUrl: zod
             .string()
             .optional()
@@ -2861,6 +2874,8 @@ export const getProductByIdResponseDataReservedMin = 0;
 
 export const getProductByIdResponseDataAvailableMin = 0;
 
+export const getProductByIdResponseDataRequiresShippingDefault = true;
+
 export const GetProductByIdResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
@@ -2886,6 +2901,7 @@ export const GetProductByIdResponse = zod.strictObject({
             .describe('What a customer may actually buy. Derived from the two counters above.'),
         description: zod.string().optional(),
         active: zod.boolean().optional(),
+        requiresShipping: zod.boolean().default(getProductByIdResponseDataRequiresShippingDefault),
         imageUrl: zod
             .string()
             .optional()
@@ -2921,6 +2937,7 @@ export const UpdateProductByIdBody = zod.strictObject({
     description: zod.string().optional(),
     price: zod.number().min(updateProductByIdBodyPriceMin),
     active: zod.boolean().optional(),
+    requiresShipping: zod.boolean().optional(),
     imageUrl: zod
         .string()
         .optional()
@@ -2938,6 +2955,8 @@ export const updateProductByIdResponseDataOnHandMin = 0;
 export const updateProductByIdResponseDataReservedMin = 0;
 
 export const updateProductByIdResponseDataAvailableMin = 0;
+
+export const updateProductByIdResponseDataRequiresShippingDefault = true;
 
 export const UpdateProductByIdResponse = zod.strictObject({
     success: zod.literal(true),
@@ -2964,6 +2983,9 @@ export const UpdateProductByIdResponse = zod.strictObject({
             .describe('What a customer may actually buy. Derived from the two counters above.'),
         description: zod.string().optional(),
         active: zod.boolean().optional(),
+        requiresShipping: zod
+            .boolean()
+            .default(updateProductByIdResponseDataRequiresShippingDefault),
         imageUrl: zod
             .string()
             .optional()
@@ -3066,6 +3088,7 @@ export const searchProductsResponseDataItemsItemReservedMin = 0;
 
 export const searchProductsResponseDataItemsItemAvailableMin = 0;
 
+export const searchProductsResponseDataItemsItemRequiresShippingDefault = true;
 export const searchProductsResponseDataMetaPageDefault = 1;
 
 export const searchProductsResponseDataMetaPageSizeDefault = 10;
@@ -3104,6 +3127,9 @@ export const SearchProductsResponse = zod.strictObject({
                     ),
                 description: zod.string().optional(),
                 active: zod.boolean().optional(),
+                requiresShipping: zod
+                    .boolean()
+                    .default(searchProductsResponseDataItemsItemRequiresShippingDefault),
                 imageUrl: zod
                     .string()
                     .optional()
@@ -3461,6 +3487,7 @@ export const checkoutResponseDataOrderItemsItemProductReservedMin = 0;
 
 export const checkoutResponseDataOrderItemsItemProductAvailableMin = 0;
 
+export const checkoutResponseDataOrderItemsItemProductRequiresShippingDefault = true;
 export const checkoutResponseDataOrderTotalItemsMin = 0;
 
 export const checkoutResponseDataOrderTotalQuantityMin = 0;
@@ -3505,6 +3532,11 @@ export const CheckoutResponse = zod.strictObject({
                             ),
                         description: zod.string().optional(),
                         active: zod.boolean().optional(),
+                        requiresShipping: zod
+                            .boolean()
+                            .default(
+                                checkoutResponseDataOrderItemsItemProductRequiresShippingDefault
+                            ),
                         imageUrl: zod
                             .string()
                             .optional()
@@ -3772,6 +3804,7 @@ export const listOrdersResponseDataItemsItemItemsItemProductReservedMin = 0;
 
 export const listOrdersResponseDataItemsItemItemsItemProductAvailableMin = 0;
 
+export const listOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault = true;
 export const listOrdersResponseDataItemsItemTotalItemsMin = 0;
 
 export const listOrdersResponseDataItemsItemTotalQuantityMin = 0;
@@ -3830,6 +3863,11 @@ export const ListOrdersResponse = zod.strictObject({
                                 ),
                             description: zod.string().optional(),
                             active: zod.boolean().optional(),
+                            requiresShipping: zod
+                                .boolean()
+                                .default(
+                                    listOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault
+                                ),
                             imageUrl: zod
                                 .string()
                                 .optional()
@@ -3982,6 +4020,7 @@ export const createOrderResponseDataItemsItemProductReservedMin = 0;
 
 export const createOrderResponseDataItemsItemProductAvailableMin = 0;
 
+export const createOrderResponseDataItemsItemProductRequiresShippingDefault = true;
 export const createOrderResponseDataTotalItemsMin = 0;
 
 export const createOrderResponseDataTotalQuantityMin = 0;
@@ -4023,6 +4062,9 @@ export const CreateOrderResponse = zod.strictObject({
                         ),
                     description: zod.string().optional(),
                     active: zod.boolean().optional(),
+                    requiresShipping: zod
+                        .boolean()
+                        .default(createOrderResponseDataItemsItemProductRequiresShippingDefault),
                     imageUrl: zod
                         .string()
                         .optional()
@@ -4162,6 +4204,7 @@ export const updateOrderResponseDataItemsItemProductReservedMin = 0;
 
 export const updateOrderResponseDataItemsItemProductAvailableMin = 0;
 
+export const updateOrderResponseDataItemsItemProductRequiresShippingDefault = true;
 export const updateOrderResponseDataTotalItemsMin = 0;
 
 export const updateOrderResponseDataTotalQuantityMin = 0;
@@ -4203,6 +4246,9 @@ export const UpdateOrderResponse = zod.strictObject({
                         ),
                     description: zod.string().optional(),
                     active: zod.boolean().optional(),
+                    requiresShipping: zod
+                        .boolean()
+                        .default(updateOrderResponseDataItemsItemProductRequiresShippingDefault),
                     imageUrl: zod
                         .string()
                         .optional()
@@ -4375,6 +4421,7 @@ export const searchOrdersResponseDataItemsItemItemsItemProductReservedMin = 0;
 
 export const searchOrdersResponseDataItemsItemItemsItemProductAvailableMin = 0;
 
+export const searchOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault = true;
 export const searchOrdersResponseDataItemsItemTotalItemsMin = 0;
 
 export const searchOrdersResponseDataItemsItemTotalQuantityMin = 0;
@@ -4433,6 +4480,11 @@ export const SearchOrdersResponse = zod.strictObject({
                                 ),
                             description: zod.string().optional(),
                             active: zod.boolean().optional(),
+                            requiresShipping: zod
+                                .boolean()
+                                .default(
+                                    searchOrdersResponseDataItemsItemItemsItemProductRequiresShippingDefault
+                                ),
                             imageUrl: zod
                                 .string()
                                 .optional()
@@ -4573,6 +4625,7 @@ export const getOrderByIdResponseDataItemsItemProductReservedMin = 0;
 
 export const getOrderByIdResponseDataItemsItemProductAvailableMin = 0;
 
+export const getOrderByIdResponseDataItemsItemProductRequiresShippingDefault = true;
 export const getOrderByIdResponseDataTotalItemsMin = 0;
 
 export const getOrderByIdResponseDataTotalQuantityMin = 0;
@@ -4614,6 +4667,9 @@ export const GetOrderByIdResponse = zod.strictObject({
                         ),
                     description: zod.string().optional(),
                     active: zod.boolean().optional(),
+                    requiresShipping: zod
+                        .boolean()
+                        .default(getOrderByIdResponseDataItemsItemProductRequiresShippingDefault),
                     imageUrl: zod
                         .string()
                         .optional()
@@ -4755,6 +4811,7 @@ export const updateOrderByIdResponseDataItemsItemProductReservedMin = 0;
 
 export const updateOrderByIdResponseDataItemsItemProductAvailableMin = 0;
 
+export const updateOrderByIdResponseDataItemsItemProductRequiresShippingDefault = true;
 export const updateOrderByIdResponseDataTotalItemsMin = 0;
 
 export const updateOrderByIdResponseDataTotalQuantityMin = 0;
@@ -4796,6 +4853,11 @@ export const UpdateOrderByIdResponse = zod.strictObject({
                         ),
                     description: zod.string().optional(),
                     active: zod.boolean().optional(),
+                    requiresShipping: zod
+                        .boolean()
+                        .default(
+                            updateOrderByIdResponseDataItemsItemProductRequiresShippingDefault
+                        ),
                     imageUrl: zod
                         .string()
                         .optional()
@@ -4977,6 +5039,7 @@ export const cancelOrderByIdResponseDataItemsItemProductReservedMin = 0;
 
 export const cancelOrderByIdResponseDataItemsItemProductAvailableMin = 0;
 
+export const cancelOrderByIdResponseDataItemsItemProductRequiresShippingDefault = true;
 export const cancelOrderByIdResponseDataTotalItemsMin = 0;
 
 export const cancelOrderByIdResponseDataTotalQuantityMin = 0;
@@ -5018,6 +5081,11 @@ export const CancelOrderByIdResponse = zod.strictObject({
                         ),
                     description: zod.string().optional(),
                     active: zod.boolean().optional(),
+                    requiresShipping: zod
+                        .boolean()
+                        .default(
+                            cancelOrderByIdResponseDataItemsItemProductRequiresShippingDefault
+                        ),
                     imageUrl: zod
                         .string()
                         .optional()

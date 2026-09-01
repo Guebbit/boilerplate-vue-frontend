@@ -33,12 +33,12 @@ describe('onResponseReject', () => {
             const error = makeAxiosError(400, {
                 success: false,
                 message: 'Bad',
-                errors: ['field required']
+                errors: [{ code: 'FIELD_REQUIRED', message: 'field required' }]
             });
             return expect(onResponseReject(error as never)).rejects.toMatchObject({
                 success: false,
                 message: 'Bad',
-                errors: ['field required']
+                errors: [{ code: 'FIELD_REQUIRED', message: 'field required' }]
             });
         });
     });
@@ -47,11 +47,15 @@ describe('onResponseReject', () => {
         return import('@/infrastructure/http').then(({ onResponseReject }) => {
             const error = makeAxiosError(
                 422,
-                { success: false, message: 'Validation', errors: ['name required'] },
+                {
+                    success: false,
+                    message: 'Validation',
+                    errors: [{ code: 'NAME_REQUIRED', message: 'name required' }]
+                },
                 { 'x-request-id': 'req-abc-123', 'x-trace-id': 'trace-xyz-789' }
             );
             return expect(onResponseReject(error as never)).rejects.toMatchObject({
-                errors: ['name required'],
+                errors: [{ code: 'NAME_REQUIRED', message: 'name required' }],
                 requestId: 'req-abc-123',
                 traceId: 'trace-xyz-789'
             });
@@ -81,7 +85,7 @@ describe('onResponseReject', () => {
                 success: false,
                 status: 401,
                 message: enMessages['api-errors'].unauthorized,
-                errors: [enMessages['api-errors'].unauthorized]
+                errors: [{ code: 'UNAUTHORIZED', message: enMessages['api-errors'].unauthorized }]
             });
         });
     });
@@ -93,7 +97,7 @@ describe('onResponseReject', () => {
                 success: false,
                 status: 403,
                 message: enMessages['api-errors'].forbidden,
-                errors: [enMessages['api-errors'].forbidden]
+                errors: [{ code: 'FORBIDDEN', message: enMessages['api-errors'].forbidden }]
             });
         });
     });

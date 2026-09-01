@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { steppedQuantity, MIN_LINE_QUANTITY } from '@/modules/cart/domain';
+import { steppedQuantity } from '@/modules/cart/domain';
 
 describe('steppedQuantity', () => {
     it('steps up', () => {
@@ -23,16 +23,18 @@ describe('steppedQuantity', () => {
     });
 
     // A double click can outrun the disabled guard, and `quantity: 0` violates the contract.
+    // Asserted against the literal `openapi.yaml` `minimum: 1`, not the module's own
+    // `MIN_LINE_QUANTITY` — the constant drifting from the contract must fail this test.
     it('clamps at the floor instead of reaching zero', () => {
-        expect(steppedQuantity(1, -1)).toBe(MIN_LINE_QUANTITY);
+        expect(steppedQuantity(1, -1)).toBe(1);
     });
 
     it('clamps however far the step overshoots', () => {
-        expect(steppedQuantity(2, -50)).toBe(MIN_LINE_QUANTITY);
+        expect(steppedQuantity(2, -50)).toBe(1);
     });
 
     /* Defensive: a line should never be below the floor, but if one is, it comes back up to it. */
     it('lifts a line that is already below the floor', () => {
-        expect(steppedQuantity(0, -1)).toBe(MIN_LINE_QUANTITY);
+        expect(steppedQuantity(0, -1)).toBe(1);
     });
 });

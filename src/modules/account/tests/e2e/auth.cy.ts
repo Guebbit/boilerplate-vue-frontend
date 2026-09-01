@@ -201,7 +201,7 @@ describe('Authentication', () => {
                             success: false,
                             status: 401,
                             message: 'Unauthorized',
-                            errors: ['Unauthorized']
+                            errors: [{ code: 'UNAUTHORIZED', message: 'Unauthorized' }]
                         }
                     });
                 }).as('ordersForcedOnce');

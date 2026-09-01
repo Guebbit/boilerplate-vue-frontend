@@ -171,6 +171,7 @@ export interface Product {
     readonly available?: number;
     description?: string;
     active?: boolean;
+    requiresShipping?: boolean;
     imageUrl?: ImageUrl;
     thumbnailUrl?: ThumbnailUrl;
     categories?: string[];
@@ -1213,6 +1214,7 @@ export interface UpdateProductRequest {
     /** @minimum 0 */
     price: number;
     active?: boolean;
+    requiresShipping?: boolean;
     imageUrl?: ImageUrl;
     categories?: string[];
     tags?: string[];
@@ -1225,6 +1227,7 @@ export interface UpdateProductRequestMultipart {
     /** @minimum 0 */
     price: number;
     active?: boolean;
+    requiresShipping?: boolean;
     /** Optional product image */
     imageUpload?: Blob;
     categories?: string[];
@@ -1246,6 +1249,7 @@ export interface CreateProductRequest {
     onHand?: number;
     description?: string;
     active?: boolean;
+    requiresShipping?: boolean;
     imageUrl?: ImageUrl;
     categories?: string[];
     tags?: string[];
@@ -1259,6 +1263,7 @@ export interface CreateProductRequestMultipart {
     onHand?: number;
     description?: string;
     active?: boolean;
+    requiresShipping?: boolean;
     /** Optional product image */
     imageUpload?: Blob;
     categories?: string[];
@@ -1294,6 +1299,7 @@ export interface UpdateProductByIdRequest {
     /** @minimum 0 */
     price: number;
     active?: boolean;
+    requiresShipping?: boolean;
     imageUrl?: ImageUrl;
     categories?: string[];
     tags?: string[];
@@ -1305,6 +1311,7 @@ export interface UpdateProductByIdRequestMultipart {
     /** @minimum 0 */
     price: number;
     active?: boolean;
+    requiresShipping?: boolean;
     /** Optional product image */
     imageUpload?: Blob;
     categories?: string[];
@@ -3285,6 +3292,12 @@ export const createProductWithMultipart = (
     if (createProductRequestMultipart.active !== undefined) {
         formData.append(`active`, createProductRequestMultipart.active.toString());
     }
+    if (createProductRequestMultipart.requiresShipping !== undefined) {
+        formData.append(
+            `requiresShipping`,
+            createProductRequestMultipart.requiresShipping.toString()
+        );
+    }
     if (createProductRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, createProductRequestMultipart.imageUpload);
     }
@@ -3344,6 +3357,12 @@ export const updateProductWithMultipart = (
     formData.append(`price`, updateProductRequestMultipart.price.toString());
     if (updateProductRequestMultipart.active !== undefined) {
         formData.append(`active`, updateProductRequestMultipart.active.toString());
+    }
+    if (updateProductRequestMultipart.requiresShipping !== undefined) {
+        formData.append(
+            `requiresShipping`,
+            updateProductRequestMultipart.requiresShipping.toString()
+        );
     }
     if (updateProductRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, updateProductRequestMultipart.imageUpload);
@@ -3450,6 +3469,12 @@ export const updateProductByIdWithMultipart = (
     formData.append(`price`, updateProductByIdRequestMultipart.price.toString());
     if (updateProductByIdRequestMultipart.active !== undefined) {
         formData.append(`active`, updateProductByIdRequestMultipart.active.toString());
+    }
+    if (updateProductByIdRequestMultipart.requiresShipping !== undefined) {
+        formData.append(
+            `requiresShipping`,
+            updateProductByIdRequestMultipart.requiresShipping.toString()
+        );
     }
     if (updateProductByIdRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, updateProductByIdRequestMultipart.imageUpload);

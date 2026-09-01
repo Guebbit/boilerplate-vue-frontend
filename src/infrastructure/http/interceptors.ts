@@ -33,6 +33,15 @@ const getFallbackMessage = (status: number, fallback: string) => {
 };
 
 /**
+ * Stable `code` for a synthesized {@link ErrorItem}, when the server sent no `errors` field of
+ * its own to preserve. Only 401/403 get a code — those are the only fallback statuses that build one.
+ *
+ * @param status - HTTP status code of the response.
+ * @returns A code matching this client's own vocabulary, not the API's.
+ */
+const getFallbackErrorCode = (status: number) => (status === 401 ? 'UNAUTHORIZED' : 'FORBIDDEN');
+
+/**
  * Request interceptor: injects the bearer token (when authenticated) and the active language.
  *
  * @param config - Outgoing request config.
@@ -100,7 +109,12 @@ export const onResponseReject = (
         success: false,
         status,
         message,
-        errors: status === 401 || status === 403 ? [message] : ([] as string[]),
+        // No `errors` field arrived (transport failure, bare proxy error) — synthesize the
+        // structured shape callers rely on rather than leaving it empty.
+        errors:
+            status === 401 || status === 403
+                ? [{ code: getFallbackErrorCode(status), message }]
+                : [],
         ...(requestId && { requestId }),
         ...(traceId && { traceId })
     });

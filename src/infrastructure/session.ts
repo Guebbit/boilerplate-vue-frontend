@@ -7,6 +7,7 @@
 
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
+import { getCookie } from '@guebbit/js-toolkit';
 import {
     getAccount as apiGetAccount,
     refreshToken as apiRefreshToken,
@@ -81,16 +82,41 @@ export const useSessionStore = defineStore('session', () => {
     const isAdmin = computed(() => Boolean(accessToken.value && viewer.value?.admin));
 
     /**
+     * Thirty days — what "remember me" conventionally promises. Also stamped onto the durable
+     * `rememberMe` marker, so a later silent refresh (which does not know the original choice)
+     * can tell the two cases apart. See `useAuthStore.login`'s `remember` param.
+     */
+    const REMEMBER_ME_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
+
+    /**
      * Records a freshly issued token and flags the JS-readable `isAuth` cookie.
      *
      * The cookie is not the credential — it is the hint that lets `tryRestoreAuth` skip a
-     * pointless refresh round-trip for a visitor who was never signed in.
+     * pointless refresh round-trip for a visitor who was never signed in. Its own lifetime
+     * mirrors the `rememberMe` marker rather than defaulting to session-only: otherwise a
+     * "remember me" visitor's httpOnly refresh cookie would outlive the JS-readable hint that
+     * tells the app to even try it, silently dropping the remembered session at browser restart.
      *
      * @param token - Access token from a login or refresh response.
+     * @param remember - Whether to (re)start the 30-day `rememberMe` marker. `true`/`false` at
+     *  login, when the caller knows the visitor's choice; omitted on a silent refresh, which
+     *  reads whatever marker login left rather than guessing.
      */
-    const setAccessToken = (token?: string) => {
+    const setAccessToken = (token?: string, remember?: boolean) => {
         accessToken.value = token;
-        if (token) setCookie('isAuth=true; path=/; SameSite=Lax');
+        if (remember !== undefined)
+            setCookie(
+                remember
+                    ? `rememberMe=true; path=/; max-age=${REMEMBER_ME_MAX_AGE_SECONDS}; SameSite=Lax`
+                    : 'rememberMe=; path=/; max-age=0; SameSite=Lax'
+            );
+        if (!token) return;
+        const remembered = remember ?? Boolean(getCookie('rememberMe'));
+        setCookie(
+            remembered
+                ? `isAuth=true; path=/; max-age=${REMEMBER_ME_MAX_AGE_SECONDS}; SameSite=Lax`
+                : 'isAuth=true; path=/; SameSite=Lax'
+        );
     };
 
     /**
@@ -175,8 +201,9 @@ export const useSessionStore = defineStore('session', () => {
     const clearSession = () => {
         accessToken.value = undefined;
         viewer.value = undefined;
-        // The httpOnly jwt cookie can only be cleared server-side; isAuth is JS-accessible.
+        // The httpOnly jwt cookie can only be cleared server-side; isAuth/rememberMe are JS-accessible.
         setCookie('isAuth=; path=/; max-age=0; SameSite=Lax');
+        setCookie('rememberMe=; path=/; max-age=0; SameSite=Lax');
     };
 
     /**

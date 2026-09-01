@@ -29,7 +29,7 @@ let responses: Record<string, unknown>;
  */
 const rejectWith = (status: number, message: string) =>
     // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- the API's error ENVELOPE is this client's rejection contract
-    Promise.reject({ success: false, status, message, errors: [message] });
+    Promise.reject({ success: false, status, message, errors: [{ code: 'STUB_ERROR', message }] });
 
 vi.mock('@/infrastructure/http', () => ({
     orvalMutator: vi.fn((config: { url: string; method: string }) => {
