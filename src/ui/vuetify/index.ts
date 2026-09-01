@@ -111,6 +111,20 @@ const dark: ThemeDefinition = {
  * `src/main.ts`.
  */
 export default createVuetify({
+    // Mirror Tailwind's breakpoints (src/styles/main.css) exactly, so `useDisplay()` /
+    // `VRow`/`VCol` and Tailwind's `sm:`/`md:`/`lg:`/`xl:` utilities agree on where
+    // "mobile"/"tablet"/"desktop" start. Vuetify's own defaults don't line up with these.
+    display: {
+        thresholds: {
+            xs: 0,
+            sm: 600,
+            md: 960,
+            lg: 1280,
+            xl: 1920,
+            xxl: 2560
+        }
+    },
+
     theme: {
         defaultTheme: 'system',
         themes: { light, dark },

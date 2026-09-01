@@ -167,6 +167,11 @@ const handleRowClick = (_event: Event, { item }: { item: T }) => select(item);
         reading half a page of stale rows while the next page loads.
     -->
     <div role="region" :aria-label="caption" :aria-busy="loading ? 'true' : undefined">
+        <!--
+            Vuetify's `mobile` prop defaults to `false`, not `null`, so VDataTable never falls
+            back to the app-wide display.mobile on its own — `mobile-breakpoint` is what switches
+            it to its built-in stacked card-per-row layout below 600px ('sm').
+        -->
         <v-data-table
             :headers="vuetifyHeaders"
             :items="items"
@@ -178,6 +183,7 @@ const handleRowClick = (_event: Event, { item }: { item: T }) => select(item);
             hide-default-footer
             class="rounded-xl border"
             :row-props="rowProps"
+            mobile-breakpoint="sm"
             @click:row="handleRowClick"
         >
             <!-- Replaces Vuetify's unnamed internal bar — see `TableLoadingBar` for why. -->

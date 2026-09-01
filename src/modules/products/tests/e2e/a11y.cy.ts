@@ -10,6 +10,9 @@
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
+/** iPhone 14-class portrait — the width `DataTable.vue`'s `mobile-breakpoint` stacks rows below. */
+const PHONE = [390, 844] as const;
+
 /**
  * Detail-page URL for a populated product, resolved from a seeded role rather than a literal id.
  */
@@ -27,7 +30,9 @@ sweepA11y('products — public', [
     ['product detail', productDetail],
     // The storefront's most-used page in its other theme: the product cards and the facet
     // chips carry their own colours, and a pair that passes on white can fail on dark.
-    { name: 'products list, dark theme', route: '/en/products', theme: 'dark' }
+    { name: 'products list, dark theme', route: '/en/products', theme: 'dark' },
+    // The 8-column table stacked into cards below `sm` — the layout the desktop sweep never sees.
+    { name: 'products list, phone viewport', route: '/en/products', viewport: PHONE }
 ]);
 
 sweepA11y(

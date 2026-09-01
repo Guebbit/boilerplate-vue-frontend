@@ -10,4 +10,24 @@
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
-sweepA11y('admin', [['admin dashboard', '/en/admin']], 'admin');
+/** iPhone 14-class portrait — the width `DataTable.vue`'s `mobile-breakpoint` stacks rows below. */
+const PHONE = [390, 844] as const;
+
+sweepA11y(
+    'admin',
+    [
+        ['admin dashboard', '/en/admin'],
+        {
+            // The audit tab's table, stacked into cards below `sm` — the layout the desktop
+            // sweep never sees, and a tab the default sweep never opens.
+            name: 'admin dashboard, audit tab, phone viewport',
+            route: '/en/admin',
+            viewport: PHONE,
+            prepare: () => {
+                cy.contains('[role=tab]', 'Audit Log').click();
+                cy.get('[data-test=list-row]').should('exist');
+            }
+        }
+    ],
+    'admin'
+);

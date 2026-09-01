@@ -8,12 +8,23 @@
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
+/** iPhone 14-class portrait — the width `DataTable.vue`'s `mobile-breakpoint` stacks rows below. */
+const PHONE = [390, 844] as const;
+
 sweepA11y(
     'locales',
     [
         ['languages board', '/en/locales'],
         ['dictionary board', '/en/locales/dictionary'],
         ['translation entries', '/en/locales/it'],
+        // Each table stacked into cards below `sm` — the layout the desktop sweep never sees.
+        { name: 'languages board, phone viewport', route: '/en/locales', viewport: PHONE },
+        {
+            name: 'dictionary board, phone viewport',
+            route: '/en/locales/dictionary',
+            viewport: PHONE
+        },
+        { name: 'translation entries, phone viewport', route: '/en/locales/it', viewport: PHONE },
         {
             // The entry form dialog over the entries table: a modal with three fields, named
             // by its title, over a page the reader must not be able to wander into.

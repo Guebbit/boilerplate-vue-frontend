@@ -9,6 +9,9 @@
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
 
+/** iPhone 14-class portrait — the width `DataTable.vue`'s `mobile-breakpoint` stacks rows below. */
+const PHONE = [390, 844] as const;
+
 /*
  * The subject is the seeded non-admin — the `cy.loginAs('user')` account — asked for its own id
  * rather than told one, so the sweep addresses whichever backend the profile started. Not the
@@ -29,6 +32,8 @@ sweepA11y(
     'users',
     [
         ['users list', '/en/users'],
+        // The 8-column table stacked into cards below `sm` — the layout the desktop sweep never sees.
+        { name: 'users list, phone viewport', route: '/en/users', viewport: PHONE },
         ['user create', '/en/users/create'],
         ['user detail', userDetail],
         ['user edit', userEdit]
