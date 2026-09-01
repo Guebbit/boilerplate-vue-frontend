@@ -84,33 +84,187 @@
         "related": "Pagine correlate",
         "about": {
             "title": "Informazioni sul negozio",
-            "paragraphs": [
-                "Questo negozio è una demo: ogni prodotto, ordine e utente esiste per mostrare cosa sa fare il boilerplate sottostante. Il catalogo è piccolo di proposito — abbastanza piccolo da vedere la disponibilità muoversi quando acquisti, un filtro per categoria all'opera, e un ordine annullato un minuto dopo averlo creato.",
-                "Sotto il cofano c'è un frontend Vue 3 accoppiato a un'API Node/MongoDB, con un unico contratto OpenAPI condiviso. Ogni click qui chiama gli stessi endpoint di un vero deployment.",
-                "Sperimenta pure. Registrati, salva qualcosa nella lista dei desideri, prova a ordinare più di quanto c'è a scaffale — l'errore che ricevi è lo stesso che riceverebbe un cliente vero."
-            ]
+            "tagline": "Un negozio online completo che non vende niente — di proposito.",
+            "intro": [
+                "Questo è un negozio demo. Ogni prodotto, prezzo, ordine e cliente è un dato di esempio, messo qui perché tu possa percorrere un vero negozio dall'inizio alla fine: trovare un prodotto, salvarlo, metterlo nel carrello, completare l'acquisto con un indirizzo e un metodo di spedizione, poi seguire l'ordine mentre cambia stato. Nessun pagamento viene mai richiesto e niente viene spedito.",
+                "Esiste per mostrare cosa sa fare il boilerplate sottostante. Il catalogo è piccolo di proposito — abbastanza piccolo da vedere la disponibilità scendere quando acquisti, un filtro per categoria all'opera, e un ordine creato un minuto fa venire annullato.",
+                "Ogni click chiama la stessa API di un vero deployment. Anche gli errori sono veri: ordina più di quanto c'è a scaffale e ricevi esattamente il messaggio che vedrebbe un cliente pagante."
+            ],
+            "features": {
+                "title": "Cosa puoi provare",
+                "catalogue": {
+                    "title": "Sfoglia il catalogo",
+                    "text": "Cerca, filtra per categoria, apri una scheda prodotto e vedi la disponibilità in tempo reale. Gli amministratori creano e modificano i prodotti dalle stesse schermate."
+                },
+                "wishlist": {
+                    "title": "Salva per dopo",
+                    "text": "Il cuore su un prodotto lo tiene nella tua lista dei desideri; spostalo nel carrello con un click quando sei pronto."
+                },
+                "cart": {
+                    "title": "Carrello e checkout",
+                    "text": "Quantità limitate dalla disponibilità, un indirizzo salvato, un metodo di spedizione prezzato sulle tue righe — e un server che ricontrolla tutto prima di creare l'ordine."
+                },
+                "orders": {
+                    "title": "Storico ordini",
+                    "text": "Ogni ordine che fai, il suo pagamento, il suo pacco e la cronologia degli stati. Annullane uno mentre è in attesa, o riordinalo nel carrello."
+                },
+                "account": {
+                    "title": "Il tuo account",
+                    "text": "Registrati con un'email, modifica profilo e immagine, cambia la password, reimpostala se la dimentichi, ed elimina l'account quando hai finito."
+                },
+                "contact": {
+                    "title": "Contattaci",
+                    "text": "Un modulo di contatto i cui messaggi finiscono in una casella admin su questo stesso sito, dove ognuno passa per i suoi stati."
+                },
+                "languages": {
+                    "title": "Due lingue",
+                    "text": "Italiano e inglese, selezionabili dall'header — e i traduttori possono modificare entrambi i dizionari dal vivo dal lato admin."
+                },
+                "theme": {
+                    "title": "Chiaro e scuro",
+                    "text": "Segue il sistema per impostazione predefinita; un click fissa il tema che preferisci."
+                }
+            },
+            "stack": {
+                "title": "Sotto il cofano",
+                "frontend": {
+                    "title": "Frontend",
+                    "text": "Vue 3 con Vuetify e Tailwind, store Pinia, vue-router con rotte con prefisso di lingua, dizionari vue-i18n."
+                },
+                "api": {
+                    "title": "API",
+                    "text": "Un backend Node.js e MongoDB, con un profilo demo che si avvia su un database in memoria e carica i dati che vedi."
+                },
+                "contract": {
+                    "title": "Un solo contratto",
+                    "text": "Un documento OpenAPI condiviso dalle due parti: il client, i suoi tipi e i validatori delle risposte sono generati da lì, così i due non possono divergere."
+                },
+                "realtime": {
+                    "title": "Realtime",
+                    "text": "Server-sent events e un canale WebSocket, tipizzati allo stesso modo da un documento AsyncAPI."
+                },
+                "quality": {
+                    "title": "Controlli di qualità",
+                    "text": "Test unitari, test end-to-end, regressione visiva, verifiche di accessibilità e mutation testing, tutto nel repository."
+                },
+                "observability": {
+                    "title": "Osservabilità",
+                    "text": "Stato, metriche e log di audit su una console admin; errori e web vitals segnalati dal browser."
+                }
+            },
+            "try": {
+                "title": "Fai un giro",
+                "steps": [
+                    "Sfoglia il catalogo e apri un prodotto — nota la sua disponibilità.",
+                    "Registrati con l'email che preferisci; non le viene inviato nulla.",
+                    "Aggiungi qualche prodotto al carrello, poi prova a ordinarne più di quanti ce ne sono a scaffale.",
+                    "Completa l'acquisto con un indirizzo salvato e un metodo di spedizione, poi apri l'ordine e guardalo avanzare.",
+                    "Invia un messaggio dal modulo di contatto — un amministratore lo troverà nella casella."
+                ],
+                "note": "I dati vengono azzerati di tanto in tanto, quindi non tenere qui nulla a cui tieni — e per favore non inserire dati personali reali.",
+                "button-products": "Sfoglia i prodotti",
+                "button-signup": "Crea un account",
+                "button-faq": "Leggi le FAQ"
+            }
         },
         "faq": {
             "title": "Domande frequenti",
-            "paragraphs": ["Le domande che un negozio demo si sente fare."],
-            "entries": [
-                {
-                    "q": "C'è qualcosa di vero qui?",
-                    "a": "No. Prodotti, prezzi e ordini sono dati demo; nessun pagamento viene mai richiesto e niente viene spedito."
+            "intro": "Le domande che un negozio demo si sente fare — sugli acquisti, sugli ordini e sull'account, e sulla demo stessa.",
+            "topics": {
+                "shopping": {
+                    "title": "Acquisti",
+                    "entries": [
+                        {
+                            "q": "Come trovo un prodotto?",
+                            "a": "Apri il catalogo dall'header e usa la casella di ricerca o i filtri per categoria per restringere la lista. Ogni prodotto ha la sua pagina con descrizione, prezzo e disponibilità attuale."
+                        },
+                        {
+                            "q": "Cosa indica il numero della disponibilità?",
+                            "a": "È il conteggio in tempo reale del registro di magazzino: ogni acquisto sottrae e ogni annullamento restituisce. Un prodotto è sempre esaurito di proposito — un negozio dove nulla scarseggia non può mostrarti cosa succede al checkout quando qualcosa manca."
+                        },
+                        {
+                            "q": "Posso salvare un prodotto per dopo?",
+                            "a": "Sì. Il cuore nella scheda prodotto lo aggiunge alla lista dei desideri, che richiede un account. Dalla lista puoi spostare un articolo direttamente nel carrello."
+                        },
+                        {
+                            "q": "Come funziona il carrello?",
+                            "a": "Aggiungi un prodotto dalla sua pagina e regola la quantità nel carrello; non puoi superare la disponibilità. Il carrello vive sul server, quindi segue il tuo account su ogni dispositivo, e l'header mostra sempre quanti pezzi contiene e il loro totale."
+                        }
+                    ]
                 },
-                {
-                    "q": "Perché un prodotto è sempre esaurito?",
-                    "a": "È voluto: un negozio dove nulla scarseggia non può mostrare cosa succede al checkout quando qualcosa manca."
+                "orders": {
+                    "title": "Ordini, spedizione e pagamento",
+                    "entries": [
+                        {
+                            "q": "Come funziona il checkout?",
+                            "a": "Dal carrello scegli uno dei tuoi indirizzi salvati e un metodo di spedizione, poi conferma l'ordine. Il server ricontrolla disponibilità e prezzi in quel momento: se qualcosa è cambiato da quando hai caricato la pagina, il carrello si aggiorna e ti chiede di rivederlo prima di riprovare."
+                        },
+                        {
+                            "q": "Pago soldi veri?",
+                            "a": "No. Il pannello di pagamento su ogni ordine simula un fornitore di pagamenti per mostrarti il flusso — non viene addebitato nulla e non vengono mai chiesti dati di una carta."
+                        },
+                        {
+                            "q": "Verrà spedito qualcosa?",
+                            "a": "No. I metodi di spedizione sono abbastanza veri da essere prezzati sul tuo carrello, e ogni ordine mostra un pannello del pacco con il suo stato, ma nessuna spedizione fisica esiste."
+                        },
+                        {
+                            "q": "Posso annullare o ripetere un ordine?",
+                            "a": "Puoi annullare un ordine finché è in attesa, dalla sua pagina. Riordina copia le sue righe nel carrello; un prodotto nel frattempo uscito dal catalogo viene saltato e te lo diciamo."
+                        }
+                    ]
                 },
-                {
-                    "q": "Posso usare questo codice per il mio negozio?",
-                    "a": "Sì: è un boilerplate. Sostituisci i dati di esempio, i testi di queste pagine e il tema; il resto è tuo, da tenere o cancellare."
+                "account": {
+                    "title": "Il tuo account",
+                    "entries": [
+                        {
+                            "q": "Mi serve un account?",
+                            "a": "Sfogliare è aperto a tutti. La lista dei desideri, il carrello, il checkout e lo storico ordini sono tuoi, quindi richiedono l'accesso."
+                        },
+                        {
+                            "q": "Ho dimenticato la password.",
+                            "a": "Usa il link nella pagina di accesso: ti guida attraverso una richiesta di reimpostazione e una conferma, lo stesso flusso di un vero negozio."
+                        },
+                        {
+                            "q": "Posso eliminare il mio account?",
+                            "a": "Sì, dal tuo profilo. L'eliminazione chiede conferma prima di rimuovere qualsiasi cosa."
+                        },
+                        {
+                            "q": "Che fine fanno i miei dati?",
+                            "a": "Sono dati demo su un server demo, azzerati di tanto in tanto. Per favore non inserire dati personali reali; la pagina sulla privacy spiega cosa viene conservato e perché."
+                        }
+                    ]
                 },
-                {
-                    "q": "Dove finiscono i messaggi del modulo contatti?",
-                    "a": "Nella casella admin di questo stesso sito — accedi come amministratore e puoi gestirne lo stato."
+                "demo": {
+                    "title": "Sulla demo",
+                    "entries": [
+                        {
+                            "q": "C'è qualcosa di vero qui?",
+                            "a": "No. Prodotti, prezzi, ordini e clienti sono dati demo; nessun pagamento viene mai richiesto e niente viene spedito."
+                        },
+                        {
+                            "q": "Posso usare questo codice per il mio negozio?",
+                            "a": "Sì: è un boilerplate. Sostituisci i dati di esempio, i testi di queste pagine e il tema; il resto è tuo, da tenere o cancellare — ogni dominio è un modulo rimovibile in un colpo solo."
+                        },
+                        {
+                            "q": "Dove finiscono i messaggi del modulo contatti?",
+                            "a": "Nella casella admin di questo stesso sito. Accedi come amministratore e puoi gestire lo stato di ogni messaggio."
+                        },
+                        {
+                            "q": "Cosa c'è dal lato admin?",
+                            "a": "Gestione di utenti, prodotti e ordini, il registro di magazzino, l'editor delle traduzioni, la casella dei messaggi, e una console di osservabilità con stato, metriche e log di audit."
+                        },
+                        {
+                            "q": "Che lingue parla?",
+                            "a": "Italiano e inglese, selezionabili dall'header. I traduttori possono modificare entrambi i dizionari dal vivo dal lato admin, e la modifica compare senza un deployment."
+                        }
+                    ]
                 }
-            ]
+            },
+            "contact": {
+                "title": "Hai ancora una domanda?",
+                "text": "Inviala dal modulo di contatto — arriva nella casella admin.",
+                "button": "Contattaci"
+            }
         },
         "terms": {
             "title": "Termini di servizio",

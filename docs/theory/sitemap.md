@@ -46,13 +46,17 @@ each [module page](../modules/) renders, so the two cannot disagree.
 
 A navigation entry also says **where** it sits, with `section` — placement, never permission:
 
-| Section   | Desktop (`lg` and up)                                                              | Phone drawer           |
-| --------- | ---------------------------------------------------------------------------------- | ---------------------- |
-| `main`    | Inline in the app bar, icon-only: the label is the tooltip and the accessible name | Under "Browse"         |
-| `account` | The account menu (the signed-in visitor's icon), with logout at the end            | Under "Your account"   |
-| `admin`   | The administration menu, rendered only when at least one entry is reachable        | Under "Administration" |
+| Section   | Desktop (`lg` and up)                                                       | Phone drawer           |
+| --------- | --------------------------------------------------------------------------- | ---------------------- |
+| `main`    | Inline in the app bar, each entry its glyph and its label in full           | Under "Browse"         |
+| `account` | The account menu (the signed-in visitor's icon), with logout at the end     | Under "Your account"   |
+| `admin`   | The administration menu, rendered only when at least one entry is reachable | Under "Administration" |
 
 Every entry carries a lucide `icon`. Whether a section's chrome renders at all follows from the same `meta.access` rule as the entries: an anonymous visitor sees neither menu, and a drawer heading appears only above something visible.
+
+An entry in a menu section can also be **`pinned`**: it is lifted out of its menu and rendered as its own button beside the account menu, on every width, wearing its `badge` count and the short live text its `detail` accessor returns. The cart is the canonical case — a shop's cart is never behind a dropdown — and it shows "3 items, €59.97" right on the bar. The drawer still lists a pinned entry under its section.
+
+The phone drawer opens from the **right**, under the hamburger that sits last in the bar. On a phone the `main` section lives only in the drawer; the account and administration menus, the pinned buttons, sign-in and the footer's prose-page links stay on the bar and below the page at every width, so every entry is reachable without the drawer except the `main` ones.
 
 ### The platform's own routes
 

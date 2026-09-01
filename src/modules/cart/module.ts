@@ -4,7 +4,7 @@
  * seeds the cart count on auth), response schemas and locale loaders for the app
  * registry — see `AppModule`.
  */
-import { watch } from 'vue';
+import { computed, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { ShoppingCart } from 'lucide-vue-next';
 import type { AppModule } from '@/kernel/registry';
@@ -12,6 +12,7 @@ import routes from './routes';
 import { cartResponseSchemas } from './response-schemas';
 import { useCartStore } from './store';
 import { useSessionStore } from '@/infrastructure/session.ts';
+import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
 
 /**
  * The shopping cart, and the checkout that turns it into an order.
@@ -40,6 +41,11 @@ export default {
             plural: 1,
             order: 80,
             section: 'account',
+            /*
+             * A shop's cart is never behind a dropdown: pinned, it is its own button beside the
+             * account menu on every width, wearing the count and the total below.
+             */
+            pinned: true,
             icon: ShoppingCart,
             /*
              * The Badge of the glossary above, finally worn. Runs inside the shell's setup, so
@@ -58,6 +64,19 @@ export default {
                     { immediate: true }
                 );
                 return storeToRefs(cartStore).badgeQuantity;
+            },
+            /*
+             * The money beside the count. Formatted here, not in the store — a store holds
+             * numbers, the chrome shows text — and inside a computed so it follows both the cart
+             * and the active locale (`formatCurrency` reads the i18n locale ref).
+             */
+            detail: () => {
+                const { badgeTotal, badgeCurrency } = storeToRefs(useCartStore());
+                return computed(() =>
+                    badgeTotal.value === undefined
+                        ? undefined
+                        : formatCurrency(badgeTotal.value, badgeCurrency.value)
+                );
             }
         }
     ],

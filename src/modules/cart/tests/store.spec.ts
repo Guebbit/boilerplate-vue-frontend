@@ -76,7 +76,9 @@ describe('useCartStore', () => {
             const store = useCartStore();
 
             return store.fetchSummary().then(() => {
-                expect(store.badgeQuantity).toBe(1);
+                // Units, not lines: one line of two is a badge saying 2.
+                expect(store.badgeQuantity).toBe(2);
+                expect(store.badgeTotal).toBe(19.98);
             });
         });
 
@@ -87,6 +89,7 @@ describe('useCartStore', () => {
             return store.fetchSummary().then((summary) => {
                 expect(summary).toBeUndefined();
                 expect(store.badgeQuantity).toBeUndefined();
+                expect(store.badgeTotal).toBeUndefined();
             });
         });
 

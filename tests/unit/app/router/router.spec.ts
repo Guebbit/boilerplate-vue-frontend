@@ -170,7 +170,7 @@ describe('unknown routes', () => {
 });
 
 /**
- * The shop's prose pages — one component, four route records generated from a list.
+ * The shop's prose pages — four route records, four components, one naming formula.
  *
  * Worth pinning because the NAME is computed (`'Static' + page[0].toUpperCase() + page.slice(1)`)
  * and every navigation to these pages is by name. An off-by-one in that expression produces
@@ -180,18 +180,14 @@ describe('static prose pages', () => {
     it.each([
         ['about', 'StaticAbout'],
         ['faq', 'StaticFaq']
-    ])('serves /%s as the route named %s, driven by StaticPage', (page, name) =>
+    ])('serves /%s as the route named %s', (page, name) =>
         loadRouter().then((router) =>
             router.push(`/en/${page}`).then(() => {
                 expect(router.currentRoute.value.name).toBe(name);
-                // The one prop that tells the shared component which dictionary to render.
-                expect(router.currentRoute.value.matched.at(-1)?.props.default).toEqual({ page });
             })
         )
     );
 
-    // Terms and privacy are their own dedicated components (real legal copy needs structure the
-    // shared paragraph renderer does not support), so they carry no `page` prop.
     it.each([
         ['terms', 'StaticTerms'],
         ['privacy', 'StaticPrivacy']

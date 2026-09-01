@@ -170,10 +170,12 @@ export interface AppModule {
 }
 ```
 
-A navigation entry is `{ name, label, order, icon, section?, badge? }`: the route it points at, the
-label key, its rank, its lucide glyph, and the part of the chrome it sits in — `main` in the bar,
-`account` or `admin` in a menu. `section` is placement only; who sees the entry is still the
-route's `meta.access`. See [Sitemap](./sitemap.md#navigation-sections).
+A navigation entry is `{ name, label, order, icon, section?, badge?, pinned?, detail? }`: the route
+it points at, the label key, its rank, its lucide glyph, and the part of the chrome it sits in —
+`main` in the bar, `account` or `admin` in a menu. A `pinned` menu entry is lifted onto the bar as
+its own button beside the account menu, wearing its `badge` count and the text its `detail`
+accessor returns (the cart's total). `section` and `pinned` are placement only; who sees the entry
+is still the route's `meta.access`. See [Sitemap](./sitemap.md#navigation-sections).
 
 What subdomain a module sits in, and what kind of relationship each arrow to a sibling is, are the
 module's **strategic** declarations too — but they are not fields here. They are prose in the

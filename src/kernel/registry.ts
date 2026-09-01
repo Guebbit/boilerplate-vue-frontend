@@ -95,10 +95,29 @@ export interface AppNavigationEntry {
     section?: AppNavigationSection;
 
     /**
-     * The glyph the entry wears, a lucide component. The desktop bar renders `main` entries as
-     * icon-only buttons (their label becomes the accessible name and the tooltip), so in practice
-     * every entry needs one; the cross-cutting spec enforces it. Typed as a Vue component rather
-     * than a lucide type so the kernel owes the icon library nothing.
+     * Also shown as its own button beside the account menu, on every width — the cart is the
+     * canonical case: a shop's cart is never behind a dropdown.
+     *
+     * Placement again, not permission: the entry keeps its `section` (that is where the drawer
+     * lists it), it is only lifted OUT of that section's menu on desktop and worn on the bar
+     * instead, with its {@link badge} and {@link detail}. Only meaningful on a menu section
+     * (`account`/`admin`); a `main` entry is already on the bar.
+     */
+    pinned?: boolean;
+
+    /**
+     * A short live text worn beside the icon of a {@link pinned} entry — the cart's formatted
+     * total. Same contract as {@link badge}: an accessor the shell calls once in its setup, and a
+     * ref it renders without knowing whose store it reads. `undefined` or empty renders nothing.
+     */
+    detail?: () => Ref<string | undefined>;
+
+    /**
+     * The glyph the entry wears, a lucide component. The desktop bar shows `main` entries as icon
+     * plus label, the menus and the drawer prefix each entry with it, and a `pinned` entry is the
+     * icon with its count — so in practice every entry needs one; the cross-cutting spec enforces
+     * it. Typed as a Vue component rather than a lucide type so the kernel owes the icon library
+     * nothing.
      */
     icon?: Component;
 }

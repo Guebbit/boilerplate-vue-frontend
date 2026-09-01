@@ -33,6 +33,14 @@ export interface AppNavItem {
      * Live count; `undefined` renders no badge.
      */
     badge?: number;
+    /**
+     * Live text beside the icon of a pinned entry; `undefined` renders none.
+     */
+    detail?: string;
+    /**
+     * Lifted out of its section's menu onto the bar, beside the account menu.
+     */
+    pinned?: boolean;
 }
 
 /**

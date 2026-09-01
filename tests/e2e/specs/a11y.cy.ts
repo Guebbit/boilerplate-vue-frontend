@@ -71,30 +71,33 @@ sweepA11y('the shell', [
 ]);
 
 /**
- * The bar's entries are icon-only: the label lives in `aria-label` and in a tooltip that opens on
- * focus. Audited with the tooltip showing, because that is when `aria-describedby` points at a
- * node that exists and the two texts can be compared.
+ * The pinned entry (the cart) is icon-only: the label lives in `aria-label` and in a tooltip that
+ * opens on focus. Audited with the tooltip showing, because that is when `aria-describedby`
+ * points at a node that exists and the two texts can be compared. Signed in, because the entry's
+ * route is.
  */
 const NAV_TOOLTIP_SHOWN = {
     name: 'home, navigation tooltip shown',
     route: '/en',
     prepare: () => {
-        // A real Tab: the tooltip opens on `:focus-visible`, which `.focus()` does not set.
-        cy.get('.skip-link').focus();
+        // A real keystroke: the tooltip opens on `:focus-visible`, which `.focus()` does not
+        // set. Tab away and Shift+Tab back lands on the control with the keyboard's focus ring.
+        cy.get('[data-test^=pinned-]').first().focus();
         cy.realPress('Tab');
-        cy.realPress('Tab');
-        cy.focused().should('match', 'nav a');
+        cy.realPress(['Shift', 'Tab']);
+        cy.focused()
+            .should('have.attr', 'data-test')
+            .and('match', /^pinned-/);
         // By Vuetify's active class: tooltip content is `pointer-events: none`, which Cypress
         // reads as "covered", i.e. not visible — axe and a visitor both see it.
         cy.get('.v-tooltip.v-overlay--active .v-overlay__content').should('have.length', 1);
     }
 };
 
-sweepA11y('the shell chrome', [NAV_TOOLTIP_SHOWN]);
-
 sweepA11y(
     'the shell chrome, signed in',
     [
+        NAV_TOOLTIP_SHOWN,
         {
             name: 'home, account menu open',
             route: '/en',

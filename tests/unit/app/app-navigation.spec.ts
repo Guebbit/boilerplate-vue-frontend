@@ -19,7 +19,9 @@
  * actually declares is a separate, registry-driven invariant: `tests/cross-cutting/registry.spec.ts`.
  *
  * The three domains also cover the three SECTIONS — the bar, the account menu, the admin menu —
- * so what folds where on desktop is asserted alongside who sees what.
+ * so what folds where on desktop is asserted alongside who sees what. The member domain also
+ * contributes a PINNED entry: lifted out of the account menu onto the bar, beside it, with its
+ * count and its detail text — the cart's shape, without naming the cart.
  */
 import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
@@ -54,11 +56,18 @@ const routeAccess: Record<string, RouteAccess | undefined> = {
     PublicThing: undefined,
     LateThing: undefined,
     MemberThing: 'auth',
+    PinnedThing: 'auth',
     StaffThing: 'admin'
 };
 
 /** The live count behind the member entry's badge; `0` renders no badge at all. */
 const memberCount = ref(0);
+
+/** The live count behind the pinned entry's badge. */
+const pinnedCount = ref(0);
+
+/** The live text beside the pinned entry's glyph — a formatted total, in the real thing. */
+const pinnedDetail = ref<string | undefined>(undefined);
 
 /**
  * Stands in for a lucide glyph: what matters is that it renders hidden from the reader. Hoisted
@@ -107,6 +116,16 @@ vi.mock('@/modules', () => ({
                     section: 'account',
                     icon: Glyph,
                     badge: () => memberCount
+                },
+                {
+                    name: 'PinnedThing',
+                    label: 'navigation.label-pinned',
+                    order: 65,
+                    section: 'account',
+                    pinned: true,
+                    icon: Glyph,
+                    badge: () => pinnedCount,
+                    detail: () => pinnedDetail
                 }
             ]
         }
@@ -192,6 +211,8 @@ describe('Navigation', () => {
         registeredRoutes.value = ['Login', 'Signup'];
         currentRoute.value = { fullPath: '/' };
         memberCount.value = 0;
+        pinnedCount.value = 0;
+        pinnedDetail.value = undefined;
         document.body.innerHTML = '';
     });
 
@@ -232,9 +253,7 @@ describe('Navigation', () => {
         const { wrapper } = mountNav();
 
         // staff-domain is registered first, but its public entry is ranked after the shell's.
-        expect(
-            wrapper.findAll('header nav a').map((link) => link.attributes('aria-label'))
-        ).toEqual([
+        expect(wrapper.findAll('header nav a').map((link) => link.text())).toEqual([
             'navigation.label-home:1',
             'navigation.label-public:1',
             'navigation.label-late:1',
@@ -350,20 +369,77 @@ describe('Navigation', () => {
     });
 
     /**
-     * Icon-only, but never nameless (WCAG 1.1.1, 2.5.3): each bar entry is a link whose
-     * accessible name is its label, and the glyph inside is hidden from the reader.
+     * The bar says each page's name in full (WCAG 2.5.3: the visible text IS the accessible
+     * name, so no `aria-label` to drift from it), and the glyph beside it is hidden from the
+     * reader (WCAG 1.1.1).
      */
-    it('names every icon-only bar entry after its label, and hides the glyph', () => {
+    it('shows every bar entry as its label, with the glyph hidden from the reader', () => {
         const { wrapper } = mountNav();
 
         const links = wrapper.findAll('header nav a');
-        expect(links.map((link) => link.attributes('aria-label'))).toEqual([
+        expect(links.map((link) => link.text())).toEqual([
             'navigation.label-home:1',
             'navigation.label-public:1',
             'navigation.label-late:1',
             'navigation.label-about:1'
         ]);
-        for (const link of links) expect(link.find('svg').attributes('aria-hidden')).toBe('true');
+        for (const link of links) {
+            expect(link.attributes('aria-label')).toBeUndefined();
+            expect(link.find('svg').attributes('aria-hidden')).toBe('true');
+        }
+    });
+
+    /**
+     * A pinned entry is its own button on the bar, beside the account menu, and NOT a row in
+     * that menu: the count on the glyph, the detail text beside it, and one accessible name
+     * that tells the whole story — the detail is hidden on narrow screens, the badge is a bare
+     * number, so neither can be relied on for the name.
+     */
+    it('lifts a pinned entry out of the account menu onto the bar, with its count and detail', () => {
+        session.isAuth.value = true;
+        session.viewer.value = { email: 'someone@example.com' };
+        pinnedCount.value = 3;
+        pinnedDetail.value = '€ 59.97';
+
+        const { wrapper } = mountNav();
+
+        const pinned = wrapper.find('header a[data-test="pinned-PinnedThing"]');
+        expect(pinned.exists(), 'pinned entry is not a link on the bar').toBe(true);
+        expect(pinned.attributes('aria-label')).toBe(
+            'navigation.label-pinned:1: navigation.badge-items:3, € 59.97'
+        );
+        // The badge wraps the link (nested inside the button it would not show), so the count
+        // is looked up from the wrapper that contains the link, not inside the link.
+        const badge = wrapper
+            .findAll('header [data-test="nav-badge"]')
+            .find((candidate) => candidate.find('[data-test="pinned-PinnedThing"]').exists());
+        expect(badge?.find('.v-badge__badge').text()).toBe('3');
+        expect(pinned.find('[data-test="nav-detail"]').text()).toBe('€ 59.97');
+
+        const menuItems = wrapper
+            .findAll(
+                'header [role="menu"][aria-label="navigation.label-account-menu"] [role="menuitem"]'
+            )
+            .map((item) => item.text());
+        expect(menuItems).not.toContain('navigation.label-pinned:1');
+        // The drawer still lists it under its section: on a phone the bar is the drawer.
+        expect(wrapper.find('#app-drawer').text()).toContain('navigation.label-pinned:1');
+    });
+
+    it('renders a pinned entry with nothing to show as the named glyph alone', () => {
+        session.isAuth.value = true;
+        session.viewer.value = { email: 'someone@example.com' };
+
+        const { wrapper } = mountNav();
+        const pinned = wrapper.find('header [data-test="pinned-PinnedThing"]');
+
+        expect(pinned.attributes('aria-label')).toBe('navigation.label-pinned:1');
+        expect(wrapper.find('header [data-test="nav-badge"]').exists()).toBe(false);
+        expect(pinned.find('[data-test="nav-detail"]').exists()).toBe(false);
+    });
+
+    it('shows no pinned entry to a visitor its route would turn away', () => {
+        expect(mountNav().wrapper.find('[data-test="pinned-PinnedThing"]').exists()).toBe(false);
     });
 
     it('folds the account entries into a user menu named after the signed-in email', () => {
@@ -441,6 +517,12 @@ describe('Navigation', () => {
         expect(wrapper.find('#app-drawer').attributes('aria-label')).toBe(
             'navigation.label-drawer'
         );
+        // Both on the right: the hamburger is the bar's last control, and the drawer it opens
+        // slides in from the same edge (the stub keeps the prop as an attribute).
+        expect(wrapper.findAll('header button').at(-1)?.attributes('aria-controls')).toBe(
+            'app-drawer'
+        );
+        expect(wrapper.find('#app-drawer').attributes('location')).toBe('end');
 
         return hamburger.trigger('click').then(() => {
             expect(hamburger.attributes('aria-expanded')).toBe('true');

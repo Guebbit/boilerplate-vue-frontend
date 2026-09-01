@@ -88,23 +88,23 @@ const router = createRouter({
                     component: () => import('@/app/views/Home.vue')
                 },
                 /*
-                 * The shop's dictionary-driven prose pages — one component, two dictionaries.
-                 * Declared by the shell rather than a module because they are about the SHOP,
-                 * not a domain.
+                 * The shop's prose pages, one component each — every word comes from the
+                 * dictionary, the structure (feature grid, FAQ topics, legal clauses) from the
+                 * component. Declared by the shell rather than a module because they are about
+                 * the SHOP, not a domain.
                  */
-                ...(['about', 'faq'] as const).map((page) => ({
-                    path: page,
-                    name: staticPageRouteName(page),
-                    meta: { title: `static-pages.${page}.title` },
-                    component: () => import('@/app/views/StaticPage.vue'),
-                    props: { page }
-                })),
-                /*
-                 * Terms and privacy get their own components: real legal copy needs structure
-                 * (headings, lists, clauses) the generic paragraph renderer above does not
-                 * support. Same route names/paths as before, so the footer and cross-links
-                 * needed no changes.
-                 */
+                {
+                    path: 'about',
+                    name: staticPageRouteName('about'),
+                    meta: { title: 'static-pages.about.title' },
+                    component: () => import('@/app/views/AboutPage.vue')
+                },
+                {
+                    path: 'faq',
+                    name: staticPageRouteName('faq'),
+                    meta: { title: 'static-pages.faq.title' },
+                    component: () => import('@/app/views/FaqPage.vue')
+                },
                 {
                     path: 'terms',
                     name: staticPageRouteName('terms'),

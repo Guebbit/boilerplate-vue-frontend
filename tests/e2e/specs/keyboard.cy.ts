@@ -94,23 +94,51 @@ describe('keyboard', () => {
     });
 
     /**
-     * An icon-only entry shows its name as a tooltip on focus, not only on hover (WCAG 1.4.13),
-     * and the tooltip says the same thing the reader hears (WCAG 2.5.3).
+     * A bar entry says its name in full: the visible text is the accessible name, with no
+     * `aria-label` that could drift from it (WCAG 2.5.3), and so nothing to tooltip.
      */
-    it('shows the label of an icon-only entry as a tooltip on focus', () => {
+    it('reaches the first bar entry on the second Tab, and it is named by its visible text', () => {
         cy.visit('/en');
         cy.get('h1').should('exist');
 
-        // By a real Tab, not `.focus()`: the tooltip opens on `:focus-visible`, which a script
-        // focus does not set. Skip link → logo → first entry (the hamburger is hidden here).
+        // Skip link → logo → first entry (the hamburger sits at the far right, hidden here).
         cy.get('.skip-link').focus();
         cy.realPress('Tab');
         cy.realPress('Tab');
-        cy.focused().should('match', 'nav a');
+        cy.focused().should('match', 'nav a').and('not.have.attr', 'aria-label');
+        cy.focused().invoke('text').invoke('trim').should('not.be.empty');
+        cy.get(SHOWN_TOOLTIP).should('not.exist');
+    });
+
+    /**
+     * A pinned entry — the one kind of icon-only control left on the bar — shows its name as a
+     * tooltip on focus, not only on hover (WCAG 1.4.13), and the tooltip says what the reader
+     * hears first (WCAG 2.5.3): the name may go on to the count and the detail, but it starts
+     * with the label.
+     */
+    it('shows the label of a pinned entry as a tooltip on focus', () => {
+        cy.loginAs('user');
+        cy.visit('/en');
+        cy.get('h1').should('exist');
+
+        // By a real keystroke, not `.focus()`: the tooltip opens on `:focus-visible`, which a
+        // script focus does not set. Tab away and Shift+Tab back lands on the same control
+        // with the keyboard's focus ring.
+        cy.get('[data-test^=pinned-]').first().focus();
+        cy.realPress('Tab');
+        cy.realPress(['Shift', 'Tab']);
+        cy.focused()
+            .should('have.attr', 'data-test')
+            .and('match', /^pinned-/);
         cy.focused()
             .invoke('attr', 'aria-label')
             .then((label) => {
-                cy.get(SHOWN_TOOLTIP).should('have.length', 1).and('have.text', label);
+                cy.get(SHOWN_TOOLTIP)
+                    .should('have.length', 1)
+                    .invoke('text')
+                    .then((tooltip) => {
+                        expect(String(label).startsWith(tooltip.trim())).to.equal(true);
+                    });
             });
     });
 

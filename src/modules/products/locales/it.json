@@ -78,6 +78,6 @@
         "success-update": "Prodotto aggiornato con successo"
     },
     "navigation": {
-        "label-products-list": "@:generic.list @:generic.product"
+        "label-products-list": "@:generic.product"
     }
 }

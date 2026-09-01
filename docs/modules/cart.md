@@ -11,7 +11,7 @@
 | **Subdomain**           | `core` — The reason the product exists. Worth its own client-side rules.            |
 | **Screens**             | 1 — `Cart`                                                                          |
 | **Store**               | `cart`                                                                              |
-| **Menu entries**        | `Cart` (with badge)                                                                 |
+| **Menu entries**        | `Cart` (pinned beside the account menu, with its unit count and total)              |
 | **API calls**           | 8                                                                                   |
 | **Depends on**          | [`delivery`](./delivery.md)                                                         |
 | **Depended on by**      | [`orders`](./orders.md) · [`products`](./products.md) · [`wishlist`](./wishlist.md) |
@@ -55,10 +55,12 @@ store, while the module it depends on publishes a component.
 The one arrow going out is [`delivery`](./delivery.md), and it is `published-language`: the checkout
 mounts `ShippingSelector` and never learns what a shipping rate is.
 
-::: tip The badge is the only reactive thing this module lends the shell
-`badgeQuantity` is handed to the main navigation as an **accessor**, not a number. The shell calls it
-once inside its own setup and renders whatever the ref holds, without ever learning whose store it is
-reading.
+::: tip The badge and its total are the only reactive things this module lends the shell
+`badgeQuantity` (every unit in the cart) is handed to the main navigation as a **badge accessor**,
+and the formatted `badgeTotal` as a **detail accessor** — refs, not numbers. The shell calls each
+once inside its own setup and renders whatever the ref holds, without ever learning whose store it
+is reading. The entry is `pinned`, so both sit on the bar beside the account menu at every width
+rather than inside the account dropdown.
 
 It seeds from `GET /cart/summary` whenever a session appears — the whole point of that endpoint is a
 count that does not cost the cart — and every later mutation keeps it fresh through the store, since

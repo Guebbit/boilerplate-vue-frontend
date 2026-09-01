@@ -66,11 +66,25 @@ export const useCartStore = defineStore('cart', () => {
     const summarySeed = ref<CartSummaryResponse | undefined>();
 
     /**
-     * What the header badge wears: the loaded cart's count when one is loaded, the seed before.
+     * Whichever summary is freshest: the loaded cart's when one is loaded, the seed before.
      */
-    const badgeQuantity = computed(() =>
-        cart.value ? cart.value.summary.itemsCount : summarySeed.value?.itemsCount
-    );
+    const liveSummary = computed(() => cart.value?.summary ?? summarySeed.value);
+
+    /**
+     * What the header badge wears: every unit in the cart (`totalQuantity`, not the number of
+     * distinct lines) — three of one product is a badge saying 3.
+     */
+    const badgeQuantity = computed(() => liveSummary.value?.totalQuantity);
+
+    /**
+     * What the header writes beside the badge: the cart's money total, before shipping.
+     */
+    const badgeTotal = computed(() => liveSummary.value?.total);
+
+    /**
+     * The currency {@link badgeTotal} is in; absent when the API did not say.
+     */
+    const badgeCurrency = computed(() => liveSummary.value?.currency);
 
     /**
      * Fetches the lightweight summary. Resolves with nothing for a guest — a 401 here means "no
@@ -241,6 +255,8 @@ export const useCartStore = defineStore('cart', () => {
         cartItems,
         cartSummary,
         badgeQuantity,
+        badgeTotal,
+        badgeCurrency,
         fetchSummary,
 
         loading,

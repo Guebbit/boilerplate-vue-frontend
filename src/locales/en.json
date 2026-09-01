@@ -84,33 +84,187 @@
         "related": "Related pages",
         "about": {
             "title": "About this shop",
-            "paragraphs": [
-                "This storefront is a demo: every product, order and user in it exists to show what the boilerplate underneath can do. The catalogue is small on purpose — small enough that you can watch stock move when you buy, see a category chip filter the list, and cancel an order you placed a minute ago.",
-                "Under the hood it is a Vue 3 frontend paired with a Node/MongoDB API, sharing one OpenAPI contract. Everything you click here calls the same endpoints a real deployment would.",
-                "Poke at it. Sign up, save something to the wishlist, break the checkout by ordering more than the shelf holds — the error you get is the same one a real customer would."
-            ]
+            "tagline": "A complete e-commerce storefront that sells nothing — on purpose.",
+            "intro": [
+                "This is a demo shop. Every product, price, order and customer in it is seeded data, put here so you can walk through a real storefront end to end: find a product, save it, put it in the cart, check out with an address and a shipping method, then watch the order move through its statuses. No payment is ever taken and nothing ships.",
+                "It exists to show what the boilerplate underneath can do. The catalogue is small on purpose — small enough that you can see stock go down when you buy, a category chip filter the list, and an order you placed a minute ago get cancelled.",
+                "Everything you click calls the same API a real deployment would. The errors are real too: order more than the shelf holds and you get the exact message a paying customer would see."
+            ],
+            "features": {
+                "title": "What you can try",
+                "catalogue": {
+                    "title": "Browse the catalogue",
+                    "text": "Search, filter by category, open a product page and see its live stock. Admins add and edit products from the same screens."
+                },
+                "wishlist": {
+                    "title": "Save for later",
+                    "text": "The heart on a product keeps it on your wishlist; move it to the cart in one click when you are ready."
+                },
+                "cart": {
+                    "title": "Cart and checkout",
+                    "text": "Quantities capped by what is in stock, a saved address, a shipping method priced against your lines — and a server that re-checks all of it before it places the order."
+                },
+                "orders": {
+                    "title": "Order history",
+                    "text": "Every order you place, its payment, its parcel and its status timeline. Cancel one while it is pending, or reorder it back into the cart."
+                },
+                "account": {
+                    "title": "Your account",
+                    "text": "Sign up with an email, edit your profile and picture, change your password, reset it when you forget it, and delete the account when you are done."
+                },
+                "contact": {
+                    "title": "Get in touch",
+                    "text": "A contact form whose messages land in an admin inbox on this very site, where each one moves through its statuses."
+                },
+                "languages": {
+                    "title": "Two languages",
+                    "text": "English and Italian, switchable from the header — and translators can edit either dictionary live from the admin side."
+                },
+                "theme": {
+                    "title": "Light and dark",
+                    "text": "Follows your system by default; one click pins the theme you prefer."
+                }
+            },
+            "stack": {
+                "title": "Under the hood",
+                "frontend": {
+                    "title": "Frontend",
+                    "text": "Vue 3 with Vuetify and Tailwind, Pinia stores, vue-router with locale-prefixed routes, vue-i18n dictionaries."
+                },
+                "api": {
+                    "title": "API",
+                    "text": "A Node.js and MongoDB backend, with a demo profile that boots on an in-memory database and seeds the data you see."
+                },
+                "contract": {
+                    "title": "One contract",
+                    "text": "An OpenAPI document shared by both sides: the client, its types and the response validators are generated from it, so the two cannot drift."
+                },
+                "realtime": {
+                    "title": "Realtime",
+                    "text": "Server-sent events and a WebSocket channel, typed from an AsyncAPI document the same way."
+                },
+                "quality": {
+                    "title": "Quality gates",
+                    "text": "Unit tests, end-to-end tests, visual regression, accessibility sweeps and mutation testing, all in the repository."
+                },
+                "observability": {
+                    "title": "Observability",
+                    "text": "Health, metrics and an audit log on an admin console; errors and web vitals reported from the browser."
+                }
+            },
+            "try": {
+                "title": "Take it for a spin",
+                "steps": [
+                    "Browse the catalogue and open a product — notice its stock count.",
+                    "Sign up with any email you like; nothing is sent to it.",
+                    "Add a few products to the cart, then try ordering more of one than the shelf holds.",
+                    "Check out with a saved address and a shipping method, then open the order and watch it progress.",
+                    "Send a message through the contact form — an admin will find it in the inbox."
+                ],
+                "note": "The data resets from time to time, so do not keep anything here you would miss — and please do not enter real personal details.",
+                "button-products": "Browse products",
+                "button-signup": "Create an account",
+                "button-faq": "Read the FAQ"
+            }
         },
         "faq": {
             "title": "FAQ",
-            "paragraphs": ["The questions a demo shop gets asked."],
-            "entries": [
-                {
-                    "q": "Is anything here real?",
-                    "a": "No. Products, prices and orders are seeded demo data; no payment is ever taken and nothing ships."
+            "intro": "The questions a demo shop gets asked — about shopping here, about your orders and account, and about the demo itself.",
+            "topics": {
+                "shopping": {
+                    "title": "Shopping",
+                    "entries": [
+                        {
+                            "q": "How do I find a product?",
+                            "a": "Open the catalogue from the header and use the search box or the category chips to narrow the list. Every product has its own page with a description, a price and its current stock."
+                        },
+                        {
+                            "q": "What does the stock number mean?",
+                            "a": "It is the live count from the shop's inventory ledger: every purchase takes from it and every cancellation gives back. One product is always out of stock on purpose — a shop where nothing is ever scarce cannot show you what happens at checkout when something is."
+                        },
+                        {
+                            "q": "Can I save a product for later?",
+                            "a": "Yes. The heart on a product page adds it to your wishlist, which needs an account. From the wishlist you can move an item straight into the cart."
+                        },
+                        {
+                            "q": "How does the cart work?",
+                            "a": "Add a product from its page and adjust the quantity in the cart; you cannot go above what is in stock. The cart lives on the server, so it follows your account across devices, and the header always shows how many units it holds and what they add up to."
+                        }
+                    ]
                 },
-                {
-                    "q": "Why is one product always out of stock?",
-                    "a": "On purpose — a shop where nothing is ever scarce cannot demonstrate what happens at checkout when something is."
+                "orders": {
+                    "title": "Orders, shipping and payment",
+                    "entries": [
+                        {
+                            "q": "How does checkout work?",
+                            "a": "From the cart, pick one of your saved addresses and a shipping method, then place the order. The server checks stock and prices again at that moment: if anything changed since you loaded the page, the cart refreshes and asks you to review it before trying again."
+                        },
+                        {
+                            "q": "Do I pay real money?",
+                            "a": "No. The payment panel on each order simulates a payment provider so you can see the flow — nothing is charged and no card details are ever asked for."
+                        },
+                        {
+                            "q": "Will anything actually ship?",
+                            "a": "No. Shipping methods are real enough to be priced against your cart, and each order shows a parcel panel with its status, but no physical shipment exists."
+                        },
+                        {
+                            "q": "Can I cancel or repeat an order?",
+                            "a": "You can cancel an order while it is still pending, from its page. Reorder copies its lines back into your cart; a product that has since left the catalogue is skipped and you are told so."
+                        }
+                    ]
                 },
-                {
-                    "q": "Can I use this code for my own shop?",
-                    "a": "Yes: it is a boilerplate. Replace the seed data, the copy on these pages and the theme, and the rest is yours to keep or delete."
+                "account": {
+                    "title": "Your account",
+                    "entries": [
+                        {
+                            "q": "Do I need an account?",
+                            "a": "Browsing is open to everyone. The wishlist, the cart, checkout and the order history are yours, so they need you to be signed in."
+                        },
+                        {
+                            "q": "I forgot my password.",
+                            "a": "Use the link on the sign-in page: it walks you through a reset request and a confirmation, the same flow a real shop would run."
+                        },
+                        {
+                            "q": "Can I delete my account?",
+                            "a": "Yes, from your profile. The deletion asks you to confirm before anything is removed."
+                        },
+                        {
+                            "q": "What happens to my data?",
+                            "a": "It is demo data on a demo server, reset from time to time. Please do not enter real personal details; the privacy page explains what is stored and why."
+                        }
+                    ]
                 },
-                {
-                    "q": "Where do my contact messages go?",
-                    "a": "Into the admin inbox on this very site — log in as an admin and you can move them through their statuses."
+                "demo": {
+                    "title": "About the demo",
+                    "entries": [
+                        {
+                            "q": "Is anything here real?",
+                            "a": "No. Products, prices, orders and customers are seeded demo data; no payment is ever taken and nothing ships."
+                        },
+                        {
+                            "q": "Can I use this code for my own shop?",
+                            "a": "Yes: it is a boilerplate. Replace the seed data, the copy on these pages and the theme, and the rest is yours to keep or delete — each domain is a module you can remove in one go."
+                        },
+                        {
+                            "q": "Where do my contact messages go?",
+                            "a": "Into the admin inbox on this very site. Sign in as an admin and you can move each message through its statuses."
+                        },
+                        {
+                            "q": "What is on the admin side?",
+                            "a": "Users, products and orders management, the inventory ledger, the translations editor, the feedback inbox, and an observability console with health, metrics and an audit log."
+                        },
+                        {
+                            "q": "Which languages does it speak?",
+                            "a": "English and Italian, switchable from the header. Translators can edit either dictionary live from the admin side, and the change shows up without a deployment."
+                        }
+                    ]
                 }
-            ]
+            },
+            "contact": {
+                "title": "Still have a question?",
+                "text": "Send it through the contact form — it lands in the admin inbox.",
+                "button": "Contact us"
+            }
         },
         "terms": {
             "title": "Terms of service",

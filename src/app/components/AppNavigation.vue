@@ -3,7 +3,8 @@
  * @module
  * App shell navigation bar/drawer. Merges the shell's own two nav entries with whatever the
  * enabled modules contribute (via the kernel registry), filters each section by `canAccess`,
- * and renders the result as the desktop bar, the account/admin menus and the mobile drawer.
+ * and renders the result as the desktop bar (icon + label), the account/admin menus, the
+ * `pinned` buttons beside the account menu and the right-hand phone drawer.
  */
 import { computed, nextTick, ref, watch } from 'vue';
 import type { ComponentPublicInstance } from 'vue';
@@ -24,7 +25,8 @@ import {
 import AppLanguageSwitcher from '@/app/components/AppLanguageSwitcher.vue';
 import AppNavMenu from '@/app/components/AppNavMenu.vue';
 import type { AppNavItem } from '@/app/components/AppNavMenu.vue';
-import AppNavIconButton from '@/app/components/AppNavIconButton.vue';
+import AppNavBarLink from '@/app/components/AppNavBarLink.vue';
+import AppNavPinnedButton from '@/app/components/AppNavPinnedButton.vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import {
     loginContinueTo,
@@ -151,6 +153,17 @@ const badgeCounts = new Map(
 );
 
 /**
+ * Live detail texts, one per entry that declared a `detail` accessor — same materialise-once
+ * rule as {@link badgeCounts}, for the same reason.
+ */
+const badgeDetails = new Map(
+    Object.values(navSections)
+        .flat()
+        .filter((entry) => entry.detail)
+        .map((entry) => [entry.name, entry.detail!()] as const)
+);
+
+/**
  * Nav entries this visitor may see, one list per section.
  *
  * Deliberately no visibility flag on the entries. Each entry's requirement is read off the
@@ -165,16 +178,19 @@ const visibleSections = computed((): Record<AppNavigationSection, AppNavItem[]> 
     const resolve = (entries: AppNavigationEntry[]): AppNavItem[] =>
         entries
             .filter(({ name }) => canAccess(router.resolve({ name }).meta.access, visitor))
-            .map(({ name, label, plural, icon }) => ({
+            .map(({ name, label, plural, icon, pinned }) => ({
                 name,
                 // `plural` is optional on the manifest: a module that has not thought about it
                 // gets the singular, which is what every entry wanted before the field existed.
                 title: t(label, plural ?? 1),
                 to: routerLinkI18n({ name }),
                 icon,
+                pinned,
                 // Unwrapped here so the menu re-renders when a module's count moves.
                 // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- a ZERO badge must render as no badge; `??` would pin a `0` chip on the menu
-                badge: badgeCounts.get(name)?.value || undefined
+                badge: badgeCounts.get(name)?.value || undefined,
+                // An empty detail is no detail, same as the badge above.
+                detail: badgeDetails.get(name)?.value || undefined
             }));
     return {
         main: resolve(navSections.main),
@@ -184,13 +200,28 @@ const visibleSections = computed((): Record<AppNavigationSection, AppNavItem[]> 
 });
 
 /**
- * The one count the account menu wears while shut: whichever of its entries has a badge. With
- * several badged entries the first wins — the activator has room for one number, and the menu
- * itself shows each count beside its entry.
+ * The `pinned` entries, whichever menu section they came from, in `order`: each is its own
+ * button beside the account menu instead of a row inside a dropdown.
  */
-const accountBadge = computed(
-    () => visibleSections.value.account.find((item) => item.badge)?.badge
+const pinnedItems = computed(() =>
+    [...visibleSections.value.account, ...visibleSections.value.admin].filter((item) => item.pinned)
 );
+
+/**
+ * What the two menus list: their section minus what is pinned onto the bar — an entry shown
+ * twice on the same bar would be noise, not redundancy.
+ */
+const menuItems = computed(() => ({
+    account: visibleSections.value.account.filter((item) => !item.pinned),
+    admin: visibleSections.value.admin.filter((item) => !item.pinned)
+}));
+
+/**
+ * The one count the account menu wears while shut: whichever of its (unpinned) entries has a
+ * badge. With several badged entries the first wins — the activator has room for one number,
+ * and the menu itself shows each count beside its entry.
+ */
+const accountBadge = computed(() => menuItems.value.account.find((item) => item.badge)?.badge);
 
 /**
  * Navigates to the logout route, ending the session.
@@ -213,18 +244,7 @@ const toggleTheme = () => {
 
 <template>
     <v-app-bar flat border="b" density="comfortable">
-        <!-- Mobile: hamburger -->
         <template #prepend>
-            <v-app-bar-nav-icon
-                ref="hamburger"
-                class="lg:hidden"
-                :aria-label="t('navigation.label-menu')"
-                :aria-expanded="drawer"
-                :aria-controls="DRAWER_ID"
-                @click="drawer = !drawer"
-            >
-                <Menu :size="22" aria-hidden="true" />
-            </v-app-bar-nav-icon>
             <RouterLink :to="routerLinkI18n({ name: 'Home' })" class="flex items-center">
                 <img
                     :alt="t('navigation.label-logo')"
@@ -234,9 +254,9 @@ const toggleTheme = () => {
             </RouterLink>
         </template>
 
-        <!-- Desktop: the main section, icon-only. Each glyph is named and tooltipped by its label. -->
+        <!-- Desktop: the main section, each entry its glyph and its name in full. -->
         <nav class="hidden lg:flex items-center gap-1" :aria-label="t('navigation.label-menu')">
-            <AppNavIconButton
+            <AppNavBarLink
                 v-for="item in visibleSections.main"
                 :key="item.name"
                 :to="item.to"
@@ -255,8 +275,8 @@ const toggleTheme = () => {
                 <slot name="nav-right" />
 
                 <AppNavMenu
-                    v-if="visibleSections.admin.length > 0"
-                    :items="visibleSections.admin"
+                    v-if="menuItems.admin.length > 0"
+                    :items="menuItems.admin"
                     :label="t('navigation.label-admin-menu')"
                     :icon="ShieldCheck"
                     data-test="admin-menu"
@@ -284,13 +304,29 @@ const toggleTheme = () => {
                 </v-btn>
 
                 <!--
+                    Pinned entries — the cart — right beside the account menu, on every width:
+                    the glyph, its count, and the total the module hands over as `detail`.
+                -->
+                <AppNavPinnedButton
+                    v-for="item in pinnedItems"
+                    :key="'pinned-' + item.name"
+                    :to="item.to"
+                    :label="item.title"
+                    :icon="item.icon!"
+                    :badge="item.badge"
+                    :badge-label="item.badge ? t('navigation.badge-items', item.badge) : undefined"
+                    :detail="item.detail"
+                    :data-test="'pinned-' + item.name"
+                />
+
+                <!--
                     The signed-in visitor's own menu: their pages, then logout. Logout stays a
                     menu item that acts rather than a link: it mutates the session, it does not
                     merely navigate.
                 -->
                 <AppNavMenu
                     v-if="isAuth && viewer"
-                    :items="visibleSections.account"
+                    :items="menuItems.account"
                     :label="t('navigation.label-account-menu')"
                     :description="viewer.email"
                     :icon="CircleUserRound"
@@ -331,15 +367,31 @@ const toggleTheme = () => {
                 </v-btn>
 
                 <AppLanguageSwitcher />
+
+                <!-- Phone: the hamburger, last on the right — the drawer it opens slides in from there. -->
+                <v-app-bar-nav-icon
+                    ref="hamburger"
+                    class="lg:hidden"
+                    :aria-label="t('navigation.label-menu')"
+                    :aria-expanded="drawer"
+                    :aria-controls="DRAWER_ID"
+                    @click="drawer = !drawer"
+                >
+                    <Menu :size="22" aria-hidden="true" />
+                </v-app-bar-nav-icon>
             </div>
         </template>
     </v-app-bar>
 
-    <!-- Mobile: drawer. Its own label, distinct from the desktop nav's, so the two landmarks can be told apart. -->
+    <!--
+        Phone: drawer, from the right — under the hamburger that opened it. Its own label,
+        distinct from the desktop nav's, so the two landmarks can be told apart.
+    -->
     <v-navigation-drawer
         :id="DRAWER_ID"
         v-model="drawer"
         temporary
+        location="end"
         :aria-label="t('navigation.label-drawer')"
         @keydown.esc="drawer = false"
     >
@@ -362,12 +414,12 @@ const toggleTheme = () => {
                         :key="'drawer-' + item.name"
                         :to="item.to"
                         color="primary"
-                        class="capitalize"
                     >
                         <template v-if="item.icon" #prepend>
                             <component :is="item.icon" :size="20" class="mr-3" aria-hidden="true" />
                         </template>
-                        <v-list-item-title>
+                        <!-- `capitalize` on the title itself: on the item it never reached the text. -->
+                        <v-list-item-title class="capitalize">
                             {{ item.title }}
                             <v-badge
                                 v-if="item.badge"

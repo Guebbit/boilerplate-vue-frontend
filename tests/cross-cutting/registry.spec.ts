@@ -47,10 +47,11 @@ describe.each(moduleCases)('module %s', (_name, appModule) => {
     });
 
     /**
-     * The desktop bar renders an entry as its icon alone, with the label as tooltip and name.
-     * An entry without one would render an empty button — focusable, named, and blank.
+     * Every place an entry renders leads with its glyph — the bar beside the label, the menus and
+     * the drawer before it, a pinned entry as the glyph alone with its count. An entry without one
+     * would render a blank slot where every neighbour has a picture.
      */
-    it('gives every navigation entry an icon, because the bar shows nothing else', () => {
+    it('gives every navigation entry an icon, because every surface leads with one', () => {
         for (const entry of appModule.navigation ?? []) expect(entry.icon).toBeDefined();
     });
 
