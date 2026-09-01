@@ -63,6 +63,15 @@ export default defineConfig({
      * test wants to see the first failure, not a green that hid it.
      */
     retries: { runMode: 1, openMode: 0 },
+    // `test:e2e:live` runs all specs in ONE Cypress process against one shared backend — it
+    // cannot shard the way the demo profile does (see `scripts/run-e2e-shards.ts`), because
+    // sharding would mean several browsers mutating the same live data at once. Without these,
+    // a long single-session run accumulates DOM snapshots and browser state until Cypress's own
+    // V8 heap aborts (`trap invalid opcode` in dmesg) partway through — `numTestsKeptInMemory`
+    // caps the time-travel snapshot backlog and `experimentalMemoryManagement` forces GC between
+    // tests. https://docs.cypress.io/app/references/troubleshooting#Cypress-crashes
+    experimentalMemoryManagement: true,
+    numTestsKeptInMemory: 5,
     e2e: {
         /**
          * Node-side hooks. `compareVisualSnapshot` is the image diff behind

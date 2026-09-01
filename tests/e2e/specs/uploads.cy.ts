@@ -20,6 +20,16 @@
  */
 const UPLOAD_PATH = /^(?:https?:\/\/[^/]+)?\/images\/[\da-f]{32}\.(png|jpg|jpeg|webp)$/;
 
+/** The thumbnail sibling of {@link UPLOAD_PATH} — same optional API-host prefix, own segment. */
+const THUMBNAIL_PATH = /^(?:https?:\/\/[^/]+)?\/images\/thumbs\/v1\/[\w.-]+\.webp$/;
+
+/**
+ * `src` is already absolute once `resolveImageUrl` has prefixed it (see {@link UPLOAD_PATH}) — do
+ * not prepend `apiUrl` a second time, or the request 404s against a doubled origin.
+ */
+const toFetchableUrl = (path: string, apiUrl: string) =>
+    /^https?:\/\//.test(path) ? path : `${apiUrl}${path}`;
+
 /**
  * Asserts no locally-picked file is still sitting in the preview.
  *
@@ -270,11 +280,11 @@ describe('Image upload', () => {
                 .should('have.attr', 'src')
                 .then((source) => {
                     const imagePath = source as string;
-                    // A server-relative upload path, not a blob and not a filesystem path.
-                    expect(imagePath).to.match(/^\/[\w./-]+\.(png|jpg|jpeg|webp)$/);
+                    // Not a blob and not a filesystem path — see UPLOAD_PATH on the optional host.
+                    expect(imagePath).to.match(UPLOAD_PATH);
 
                     cy.env(['apiUrl']).then(({ apiUrl }) => {
-                        cy.request(`${String(apiUrl)}${imagePath}`).then((response) => {
+                        cy.request(toFetchableUrl(imagePath, String(apiUrl))).then((response) => {
                             expect(response.status).to.equal(200);
                             expect(response.headers['content-type']).to.match(/^image\//);
                         });
@@ -305,14 +315,16 @@ describe('Image upload', () => {
                 .then((source) => {
                     const thumbnailPath = source as string;
                     // The backend's own derivative path, distinct from the main image's — see
-                    // `imageStore.putDerivative` on the backend.
-                    expect(thumbnailPath).to.match(/^\/images\/thumbs\/v1\/[\w.-]+\.webp$/);
+                    // `imageStore.putDerivative` on the backend, and UPLOAD_PATH on the optional host.
+                    expect(thumbnailPath).to.match(THUMBNAIL_PATH);
 
                     cy.env(['apiUrl']).then(({ apiUrl }) => {
-                        cy.request(`${String(apiUrl)}${thumbnailPath}`).then((response) => {
-                            expect(response.status).to.equal(200);
-                            expect(response.headers['content-type']).to.match(/^image\/webp/);
-                        });
+                        cy.request(toFetchableUrl(thumbnailPath, String(apiUrl))).then(
+                            (response) => {
+                                expect(response.status).to.equal(200);
+                                expect(response.headers['content-type']).to.match(/^image\/webp/);
+                            }
+                        );
                     });
                 });
         });

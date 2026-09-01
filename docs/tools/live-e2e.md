@@ -74,6 +74,16 @@ NODE_RATE_LIMIT_MAX=1000 NODE_AUTH_RATE_LIMIT_MAX=1000 NODE_AUTH_RATE_LIMIT_ADDR
 
 All three are needed and they are separate buckets: the global one covers browsing, and the credential budget is itself a pair — one per account named, one per address calling — so raising only the first just moves which of them the suite trips over. Only FAILED credential attempts spend the credential budgets, which is why a suite that signs in correctly on every spec still gets through. Do not raise them in a deployed environment — the small credential budget is what makes password guessing expensive, and the two are deliberately decoupled so that widening one never widens the other (see `src/infrastructure/http/middlewares/security.ts` in the backend).
 
+### Why `test:e2e:live` runs on Chromium, not Cypress' default Electron
+
+`uploads.cy.ts`'s upload-and-wait-for-the-server-image cases (`Product edit`, `Product create`,
+`User create`, `Signup`, `Live backend`) crash the bundled Electron browser outright on at least one
+Linux host — a deterministic `trap invalid opcode` in the Electron binary itself (confirmed by
+running the spec alone, repeatedly, at the identical offset every time), not a timeout, a memory
+leak, or anything in this app's own code. Real Chromium runs the same interaction without crashing.
+`--browser chromium` is scoped to this one script: the demo-profile suites do not hit it (the demo
+backend's upload response is faster/smaller) and stay on Electron.
+
 ### Point the backend at Umami, or the analytics spec fails with Umami running
 
 `compose:restart` starts Umami on `:3080`, and the frontend's tracker finds it on its own — `VITE_UMAMI_SRC` and `VITE_UMAMI_WEBSITE_ID` in `.env-example` already name it. The **backend** is the half that does not: `NODE_UMAMI_*` is commented out there, because the compose stack sets it on the `app` service, and `npm run host` runs the backend outside that service. So a backend booted the way this page describes emits nothing, logs `Analytics provider is 'umami' but ... events are being discarded`, and carries on.
