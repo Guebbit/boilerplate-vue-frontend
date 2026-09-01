@@ -179,15 +179,26 @@ describe('unknown routes', () => {
 describe('static prose pages', () => {
     it.each([
         ['about', 'StaticAbout'],
-        ['faq', 'StaticFaq'],
-        ['terms', 'StaticTerms'],
-        ['privacy', 'StaticPrivacy']
-    ])('serves /%s as the route named %s', (page, name) =>
+        ['faq', 'StaticFaq']
+    ])('serves /%s as the route named %s, driven by StaticPage', (page, name) =>
         loadRouter().then((router) =>
             router.push(`/en/${page}`).then(() => {
                 expect(router.currentRoute.value.name).toBe(name);
                 // The one prop that tells the shared component which dictionary to render.
                 expect(router.currentRoute.value.matched.at(-1)?.props.default).toEqual({ page });
+            })
+        )
+    );
+
+    // Terms and privacy are their own dedicated components (real legal copy needs structure the
+    // shared paragraph renderer does not support), so they carry no `page` prop.
+    it.each([
+        ['terms', 'StaticTerms'],
+        ['privacy', 'StaticPrivacy']
+    ])('serves /%s as the route named %s, with its own component', (page, name) =>
+        loadRouter().then((router) =>
+            router.push(`/en/${page}`).then(() => {
+                expect(router.currentRoute.value.name).toBe(name);
             })
         )
     );

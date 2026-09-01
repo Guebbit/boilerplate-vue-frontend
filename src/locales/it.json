@@ -115,17 +115,17 @@
         "terms": {
             "title": "Termini di servizio",
             "paragraphs": [
-                "Questo è un sito dimostrativo. Nulla di ciò che è in vendita esiste, nessun ordine crea obblighi e nessun pagamento viene mai riscosso.",
-                "Gli account creati possono essere eliminati in qualsiasi momento quando i dati demo vengono ripristinati. Non conservarci nulla di importante — inclusa la tua vera password di tutti i giorni.",
-                "Il software è distribuito con la licenza presente nel repository; queste pagine descrivono la demo, non il codice."
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+                "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+                "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo."
             ]
         },
         "privacy": {
             "title": "Privacy",
             "paragraphs": [
-                "La demo conserva i dati dell'account che digiti — email, nome utente, indirizzi salvati — e nient'altro. Servono solo a far funzionare la demo e spariscono al ripristino del dataset.",
-                "Possono essere raccolte statistiche d'uso anonime per capire quali parti della demo vengono esercitate. Nulla viene venduto, condiviso o incrociato con altri dataset.",
-                "Per rimuovere subito i tuoi dati, elimina l'account dalla pagina profilo: il flusso di eliminazione è reale anche se il negozio non lo è."
+                "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+                "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+                "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo."
             ]
         }
     }

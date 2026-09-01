@@ -12,7 +12,7 @@
         "page-title": "Sign up",
         "label-email": "Email",
         "label-password": "Password",
-        "text-conditions": "I have read the privacy conditions",
+        "text-conditions": "I accept the {terms} and the {privacy}",
         "button-submit": "Register now",
         "success-email-code-sent": "Registration successful. We sent an email with a verification code."
     },

@@ -11,6 +11,7 @@ import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useLocale } from 'vuetify';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
+import { STATIC_PAGES, staticPageRouteName } from '@/app/utils/static-pages.ts';
 import AppNavigation from '@/app/components/AppNavigation.vue';
 import AppHealthBanner from '@/app/components/AppHealthBanner.vue';
 import DialogHost from '@/ui/organisms/DialogHost.vue';
@@ -89,9 +90,9 @@ watch(
  * The shop's prose pages, cross-linked from the footer so a `contentinfo` landmark exists on every
  * page. Same four the router declares; the names are computed the same way.
  */
-const legalLinks = (['about', 'faq', 'terms', 'privacy'] as const).map((page) => ({
+const legalLinks = STATIC_PAGES.map((page) => ({
     page,
-    to: routerLinkI18n({ name: 'Static' + page[0].toUpperCase() + page.slice(1) })
+    to: routerLinkI18n({ name: staticPageRouteName(page) })
 }));
 
 /**

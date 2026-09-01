@@ -18,6 +18,7 @@ import { logger } from '@/infrastructure/utils/logger.ts';
 
 import { collectModuleRoutes } from '@/kernel/registry';
 import { enabledModules } from '@/modules';
+import { staticPageRouteName } from '@/app/utils/static-pages.ts';
 
 /*
  * Every domain route in the app arrives through this one call, and this file names no domain at
@@ -87,16 +88,35 @@ const router = createRouter({
                     component: () => import('@/app/views/Home.vue')
                 },
                 /*
-                 * The shop's prose pages — one component, four dictionaries. Declared by the
-                 * shell rather than a module because they are about the SHOP, not a domain.
+                 * The shop's dictionary-driven prose pages — one component, two dictionaries.
+                 * Declared by the shell rather than a module because they are about the SHOP,
+                 * not a domain.
                  */
-                ...(['about', 'faq', 'terms', 'privacy'] as const).map((page) => ({
+                ...(['about', 'faq'] as const).map((page) => ({
                     path: page,
-                    name: 'Static' + page[0].toUpperCase() + page.slice(1),
+                    name: staticPageRouteName(page),
                     meta: { title: `static-pages.${page}.title` },
                     component: () => import('@/app/views/StaticPage.vue'),
                     props: { page }
                 })),
+                /*
+                 * Terms and privacy get their own components: real legal copy needs structure
+                 * (headings, lists, clauses) the generic paragraph renderer above does not
+                 * support. Same route names/paths as before, so the footer and cross-links
+                 * needed no changes.
+                 */
+                {
+                    path: 'terms',
+                    name: staticPageRouteName('terms'),
+                    meta: { title: 'static-pages.terms.title' },
+                    component: () => import('@/app/views/TermsPage.vue')
+                },
+                {
+                    path: 'privacy',
+                    name: staticPageRouteName('privacy'),
+                    meta: { title: 'static-pages.privacy.title' },
+                    component: () => import('@/app/views/PrivacyPage.vue')
+                },
                 {
                     path: 'error/:status/:message?',
                     name: 'Error',

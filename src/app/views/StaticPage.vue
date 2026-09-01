@@ -11,26 +11,33 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * One component for every prose page (about/FAQ/terms/privacy) — see the block below for how
- * it reads `static-pages.<page>` out of the dictionary.
+ * One component for the shop's dictionary-driven prose pages (about/FAQ) — see the block below
+ * for how it reads `static-pages.<page>` out of the dictionary. `terms` and `privacy` are their
+ * own dedicated components (`TermsPage`/`PrivacyPage`): real legal copy needs structure this
+ * generic paragraph renderer does not support, but they still cross-link back here.
  */
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
+import {
+    STATIC_PAGES,
+    staticPageParagraphs,
+    staticPageRouteName
+} from '@/app/utils/static-pages.ts';
 
 /**
- * One component for every prose page the shop needs — about, FAQ, terms, privacy. The copy
- * lives entirely in the locale files under `static-pages.<page>`, so a project built from this
+ * One component for the shop's dictionary-driven prose pages — about, FAQ. The copy lives
+ * entirely in the locale files under `static-pages.<page>`, so a project built from this
  * boilerplate rewrites dictionaries, not components: `paragraphs` renders as prose, an optional
  * `entries` list renders as question/answer panels (the FAQ), and the pages cross-link so one
- * nav entry (About) is enough to reach all four.
+ * nav entry (About) is enough to reach all four prose pages.
  */
 const { page } = defineProps<{
     /**
      * Which `static-pages.*` dictionary this instance renders.
      */
-    page: 'about' | 'faq' | 'terms' | 'privacy';
+    page: 'about' | 'faq';
 }>();
 
 /**
@@ -55,9 +62,7 @@ const messageList = (path: string): unknown[] => {
 /**
  * The page's prose, one string per paragraph.
  */
-const paragraphs = computed(() =>
-    messageList(`static-pages.${page}.paragraphs`).map((message) => rt(message as string))
-);
+const paragraphs = computed(() => staticPageParagraphs(tm, rt, `static-pages.${page}.paragraphs`));
 
 /**
  * The FAQ's question/answer pairs; empty for the prose-only pages.
@@ -72,9 +77,7 @@ const entries = computed(() =>
 /**
  * The sibling pages, for the cross-links at the bottom.
  */
-const siblings = computed(() =>
-    (['about', 'faq', 'terms', 'privacy'] as const).filter((name) => name !== page)
-);
+const siblings = computed(() => STATIC_PAGES.filter((name) => name !== page));
 </script>
 
 <template>
@@ -99,7 +102,7 @@ const siblings = computed(() =>
                     v-for="name in siblings"
                     :key="'link-' + name"
                     class="underline opacity-80"
-                    :to="routerLinkI18n({ name: 'Static' + name[0].toUpperCase() + name.slice(1) })"
+                    :to="routerLinkI18n({ name: staticPageRouteName(name) })"
                 >
                     {{ t(`static-pages.${name}.title`) }}
                 </RouterLink>

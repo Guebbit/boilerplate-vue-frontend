@@ -20,7 +20,8 @@ import {
     useUploadProgress as useToolkitUploadProgress
 } from '@guebbit/vue-toolkit';
 import { useAuthStore } from '@/modules/account/stores/auth.ts';
-import { useRouter, useRoute } from 'vue-router';
+import { RouterLink, useRouter, useRoute } from 'vue-router';
+import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import FormImageUpload from '@/ui/molecules/FormImageUpload.vue';
 import { usersSchema, usersPasswordSchema } from '@/modules/users';
@@ -185,9 +186,34 @@ const submitForm = () =>
                 />
                 <v-checkbox
                     v-model="form.conditions"
-                    :label="t('signup-page.text-conditions')"
                     :error-messages="showErrors ? formErrors.conditions : []"
-                />
+                >
+                    <!-- `i18n-t` interpolates the two links into the translated sentence; `@click.stop`
+                         keeps a link click from also toggling the checkbox, since Vuetify makes the
+                         whole label clickable. -->
+                    <template #label>
+                        <i18n-t keypath="signup-page.text-conditions" tag="span">
+                            <template #terms>
+                                <RouterLink
+                                    :to="routerLinkI18n({ name: 'StaticTerms' })"
+                                    class="underline"
+                                    @click.stop
+                                >
+                                    {{ t('static-pages.terms.title') }}
+                                </RouterLink>
+                            </template>
+                            <template #privacy>
+                                <RouterLink
+                                    :to="routerLinkI18n({ name: 'StaticPrivacy' })"
+                                    class="underline"
+                                    @click.stop
+                                >
+                                    {{ t('static-pages.privacy.title') }}
+                                </RouterLink>
+                            </template>
+                        </i18n-t>
+                    </template>
+                </v-checkbox>
                 <v-btn
                     type="submit"
                     color="primary"
