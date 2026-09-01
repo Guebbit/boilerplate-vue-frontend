@@ -5,3 +5,5 @@
  */
 
 export { MIN_LINE_QUANTITY, steppedQuantity } from './quantity';
+export { classifyCheckoutError } from './checkout-errors';
+export type { CheckoutErrorVerdict, CheckoutShortfallLine } from './checkout-errors';

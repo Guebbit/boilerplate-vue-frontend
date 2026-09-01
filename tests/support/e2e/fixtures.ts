@@ -128,6 +128,19 @@ declare global {
              * @param id - the product to unpublish
              */
             deactivateProduct(product: ProductLike): Chainable<null>;
+
+            /**
+             * Creates an order owned by the named role's seeded account, server-side as admin,
+             * carrying one line of a freshly created product.
+             *
+             * Provisions rather than reads: `orderInRole`'s dataset is the admin's own orders, and
+             * the seeded `user` account's one fixture is soft-deleted on purpose (see
+             * `orders/demo.ts`) — so a spec needing that account's own, VISIBLE order has nothing
+             * to find and must make one.
+             *
+             * @param role - whose account the order is created under
+             */
+            createOrder(role: E2ERole): Chainable<{ id: string; userId: string; status: string }>;
         }
     }
 }
@@ -218,6 +231,18 @@ Cypress.Commands.add('accountInRole', (role: E2ERole) =>
  * "cancel, then buy again" is an action on your own — buying again from someone else's order
  * refills nothing. The account is asked for its id rather than told one.
  */
+Cypress.Commands.add('createOrder', (role: E2ERole) =>
+    cy.accountInRole(role).then((account) =>
+        cy.createProduct().then((product) =>
+            adminApi<{ id: string; userId: string; status: string }>('/orders', 'POST', {
+                userId: account.id,
+                email: account.email,
+                items: [{ productId: product.id, quantity: 1 }]
+            })
+        )
+    )
+);
+
 Cypress.Commands.add('orderInRole', (role: 'cancellable') =>
     cy.accountInRole('admin').then((account) =>
         adminApi<{ items: { id: string; status: string; userId?: string }[] }>(

@@ -12,13 +12,14 @@ export default {
  * `actions`, and mounts the payment/shipment panels as self-contained
  * published-language components.
  */
-import { computed, watch } from 'vue';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/modules/orders/store.ts';
+import { useOrderActionsRefetch } from '@/modules/orders/composables/use-order-actions-refetch.ts';
 import { useCartStore } from '@/modules/cart';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { Download, ShoppingCart } from 'lucide-vue-next';
@@ -164,22 +165,11 @@ const downloadInvoice = () => {
  */
 watchOrder(() => id);
 
-/*
- * Refreshed once, and only when the record arrived without `actions` — the list-cache path. A
- * cold visit lets `watchOrder`'s own fetch answer with the full detail, and forcing a second
- * fetch beside it would race the toolkit's loading lock (a cancel clicked during that window
- * was silently swallowed — the e2e suite caught it).
+/**
+ * Forces the one re-fetch a list-cache arrival needs to gain `actions` — see the composable's
+ * own docs for why a second forced fetch must not race it.
  */
-let refreshedForActions = false;
-watch(
-    currentOrder,
-    (order) => {
-        if (refreshedForActions || !order || order.id !== id || order.actions !== undefined) return;
-        refreshedForActions = true;
-        void fetchOrder(order.id, { forced: true });
-    },
-    { immediate: true }
-);
+useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
 </script>
 
 <template>

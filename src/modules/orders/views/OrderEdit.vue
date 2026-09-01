@@ -17,6 +17,7 @@ import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useOrdersStore } from '@/modules/orders/store.ts';
+import { useOrderActionsRefetch } from '@/modules/orders/composables/use-order-actions-refetch.ts';
 import { useOrderRefund } from '@/modules/payments';
 import { ordersStatusSchema } from '@/modules/orders/schemas.ts';
 import { z } from 'zod';
@@ -56,7 +57,7 @@ const { id } = defineProps<{
 /**
  * Orders store APIs and references.
  */
-const { watchOrder, updateOrder, cancelOrder } = useOrdersStore();
+const { watchOrder, fetchOrder, updateOrder, cancelOrder } = useOrdersStore();
 const { currentOrder, loading } = storeToRefs(useOrdersStore());
 
 /**
@@ -234,6 +235,13 @@ const submitForm = () =>
  * not carry.
  */
 watchOrder(() => id);
+
+/**
+ * Forces the one re-fetch a list-cache arrival needs to gain `actions` — without it, an order
+ * opened from the list renders with a status select offering only its current status and a
+ * greyed-out Cancel, since every control on this page gates on that field.
+ */
+useOrderActionsRefetch(currentOrder, () => id, fetchOrder);
 </script>
 
 <template>
@@ -276,6 +284,7 @@ watchOrder(() => id);
                 >
                     <v-select
                         v-model="form.status"
+                        data-test="status-select"
                         :label="t('order-edit-page.label-status')"
                         :items="statusOptions"
                         item-title="label"
@@ -313,6 +322,7 @@ watchOrder(() => id);
                         <v-btn
                             variant="tonal"
                             color="warning"
+                            data-test="button-cancel-only"
                             :disabled="!canCancel || loading"
                             @click="runCancel(false)"
                         >
@@ -321,6 +331,7 @@ watchOrder(() => id);
                         <v-btn
                             variant="tonal"
                             color="warning"
+                            data-test="button-refund-only"
                             :disabled="!canRefund || loading"
                             @click="runRefund"
                         >
@@ -329,6 +340,7 @@ watchOrder(() => id);
                         <v-btn
                             variant="flat"
                             color="error"
+                            data-test="button-cancel-and-refund"
                             :disabled="!canCancelAndRefund || loading"
                             @click="runCancel(true)"
                         >

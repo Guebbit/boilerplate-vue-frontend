@@ -20,7 +20,8 @@ import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useCartStore } from '@/modules/cart/store.ts';
 // The stepper's floor is a rule, not a template detail — see `../domain/quantity.ts`. The
 // clamping half of that rule moved with the stepping itself, into `use-line-quantity.ts`.
-import { MIN_LINE_QUANTITY } from '@/modules/cart/domain';
+import { MIN_LINE_QUANTITY, classifyCheckoutError } from '@/modules/cart/domain';
+import type { CheckoutShortfallLine } from '@/modules/cart/domain';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import { formatCurrency } from '@/infrastructure/utils/formatters.ts';
@@ -69,16 +70,30 @@ const { cartItems, cartSummary } = storeToRefs(useCartStore());
 const shippingMethodId = ref<string | undefined>();
 
 /**
+ * The short lines a `CART_INSUFFICIENT_STOCK` refusal named, rendered inline so the customer
+ * fixes the basket in one pass rather than being refused again on the next attempt. Empty
+ * whenever the last checkout did not end in this particular refusal.
+ */
+const insufficientStockLines = ref<CheckoutShortfallLine[]>([]);
+
+/**
  * Places an order from the current cart.
  *
  * The store empties the local cart on success, so this only has to say so and move on — no
  * reload, and no reaching into another module's store for an endpoint that is this one's.
  *
+ * See `docs/modules/cart-checkout.md` §"The four refusals, and why they are shaped differently"
+ * for what each `classifyCheckoutError` branch below answers and why: `CART_CHANGED` means the
+ * cart this screen shows is stale, `CART_INSUFFICIENT_STOCK` names which lines and by how much,
+ * `CART_ADDRESS_NOT_FOUND` means the address on the order no longer resolves. Every other refusal
+ * — including a transport failure — has no more specific answer than the generic toast.
+ *
  * @returns A promise resolving once the flow settles: a success toast and a navigation to the
- *  orders list, or an error toast.
+ *  orders list, or the refusal-specific handling below.
  */
-const checkout = () =>
-    placeOrder(
+const checkout = () => {
+    insufficientStockLines.value = [];
+    return placeOrder(
         shippingMethodId.value === undefined
             ? undefined
             : { shippingMethodId: shippingMethodId.value }
@@ -88,7 +103,24 @@ const checkout = () =>
             // Fire-and-forget: a NavigationFailure here must not convert a completed checkout into an error toast.
             void router.push(routerLinkI18n({ name: 'OrdersList' }));
         })
-        .catch((error: unknown) => notifyErrorMessages(addMessage, error));
+        .catch((error: unknown) => {
+            const verdict = classifyCheckoutError(error);
+            if (verdict.kind === 'cart-changed') {
+                addMessage(t('cart-page.error-cart-changed'));
+                return fetchCart().then(() => undefined);
+            }
+            if (verdict.kind === 'insufficient-stock') {
+                insufficientStockLines.value = verdict.lines;
+                addMessage(t('cart-page.error-insufficient-stock'));
+                return;
+            }
+            if (verdict.kind === 'address-not-found') {
+                addMessage(t('cart-page.error-address-not-found'));
+                return;
+            }
+            notifyErrorMessages(addMessage, error);
+        });
+};
 
 /**
  * Stepping a line's quantity, debounced per product so three quick clicks are one request for the
@@ -145,6 +177,35 @@ onMounted(() =>
         </v-empty-state>
 
         <div v-else class="mx-auto grid w-full max-w-4xl gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+            <!--
+                CART_INSUFFICIENT_STOCK names every short line in one response — rendering it as a
+                single "some items are unavailable" toast would turn a one-pass fix into a
+                guessing game. See `docs/modules/cart-checkout.md`.
+            -->
+            <v-alert
+                v-if="insufficientStockLines.length > 0"
+                type="warning"
+                variant="tonal"
+                data-test="checkout-shortfall"
+                class="lg:col-span-2"
+            >
+                <ul class="flex flex-col gap-1">
+                    <li
+                        v-for="line in insufficientStockLines"
+                        :key="line.productId"
+                        data-test="checkout-shortfall-line"
+                    >
+                        {{
+                            t('cart-page.shortfall-line', {
+                                title: line.title,
+                                requested: line.requested,
+                                available: line.available
+                            })
+                        }}
+                    </li>
+                </ul>
+            </v-alert>
+
             <div class="flex flex-col gap-4">
                 <v-card
                     v-for="item in cartItems"

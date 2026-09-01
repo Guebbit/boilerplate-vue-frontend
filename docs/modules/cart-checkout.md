@@ -29,7 +29,7 @@ flowchart TD
     E --> F["route to the new order"]
 
     D -.->|"409 · someone else<br/>checked out first"| G["refetch and say so"]
-    D -.->|"422 · lines short<br/>on stock"| H["name the short lines"]
+    D -.->|"409 · lines short<br/>on stock"| H["name the short lines"]
     D -.->|"404 · address or<br/>method gone"| I["reopen that step"]
     D -.->|"transport failed"| J["CHECKOUT_REQUEST_FAILED"]
 
@@ -60,11 +60,11 @@ the boundary, not state.
 | Answer    | What happened                                                                | What the screen does                                                                                                                         |
 | --------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
 | `409`     | Another checkout won the race — the cart's lines are on someone else's order | Refetch the cart and say it has changed. **Not a retry** — re-sending would find an empty cart.                                              |
-| `422`     | One or more lines are short on stock                                         | Name the short lines. The server sends one entry per line with what was requested and what is available, so the basket is fixed in one pass. |
+| `409`     | One or more lines are short on stock (`CART_INSUFFICIENT_STOCK`)             | Name the short lines. The server sends one entry per line with what was requested and what is available, so the basket is fixed in one pass. |
 | `404`     | The address or the shipping method named no longer exists                    | Reopen that step rather than failing the whole flow.                                                                                         |
 | transport | The request never reached the API                                            | The one thing the server cannot report, so this client reports it.                                                                           |
 
-::: warning The 422 is a list, and rendering it as one message throws away the useful half
+::: warning The stock refusal is a list, and rendering it as one message throws away the useful half
 `errors[0].details.lines` carries `productId`, `title`, `requested` and `available` per short line.
 Collapsing that into "some items are unavailable" turns a one-pass fix into a guessing game.
 :::
