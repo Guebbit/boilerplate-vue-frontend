@@ -6,6 +6,7 @@
  */
 import { watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useDisplay } from 'vuetify';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { localesEntrySchema } from '@/modules/locales/schemas.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
@@ -47,6 +48,12 @@ const { t, locale } = useI18n();
  * Toast dispatcher for the "fix the form's errors" notice.
  */
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Whether the viewport is phone-sized — the dialog goes `fullscreen` there instead of floating
+ * at a fixed `max-width`, which would otherwise cramp this form's fields on a narrow screen.
+ */
+const { mobile } = useDisplay();
 
 /**
  * The heading's id, so the dialog is announced by its title rather than as "dialog".
@@ -97,7 +104,7 @@ const handleSave = () =>
 </script>
 
 <template>
-    <v-dialog v-model="isOpen" max-width="560" :aria-labelledby="titleId">
+    <v-dialog v-model="isOpen" max-width="560" :fullscreen="mobile" :aria-labelledby="titleId">
         <v-card class="p-5" data-test="entry-form">
             <h2 :id="titleId" class="mb-4 text-lg font-semibold">{{ t('entry-form.title') }}</h2>
             <form novalidate class="flex flex-col gap-3" @submit.prevent="handleSave">

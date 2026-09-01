@@ -7,6 +7,7 @@
  */
 import { watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useDisplay } from 'vuetify';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { localesLanguageEditSchema, localesLanguageSchema } from '@/modules/locales/schemas.ts';
 import { VUETIFY_INVALID_FIELD_SELECTOR } from '@/infrastructure/utils/errors.ts';
@@ -48,6 +49,12 @@ const isOpen = defineModel<boolean>({ required: true });
 
 const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
+
+/**
+ * Whether the viewport is phone-sized — the dialog goes `fullscreen` there instead of floating
+ * at a fixed `max-width`, which would otherwise cramp this form's fields on a narrow screen.
+ */
+const { mobile } = useDisplay();
 
 /**
  * Whether the dialog is editing an existing language rather than creating one.
@@ -110,7 +117,7 @@ const handleSave = () => handleSubmit((fields) => emit('save', fields));
 </script>
 
 <template>
-    <v-dialog v-model="isOpen" max-width="480" :aria-labelledby="titleId">
+    <v-dialog v-model="isOpen" max-width="480" :fullscreen="mobile" :aria-labelledby="titleId">
         <v-card class="p-5" data-test="language-form">
             <h2 :id="titleId" class="mb-1 text-lg font-semibold">
                 {{ isEdit ? t('locale-form.title-edit') : t('locale-form.title-create') }}

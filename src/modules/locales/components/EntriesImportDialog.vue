@@ -6,6 +6,7 @@
  */
 import { ref, watch, computed, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useDisplay } from 'vuetify';
 import type { LocaleEntryInput, LocaleTenantDescriptor } from '@types';
 import type { TranslationDictionaries } from '@/infrastructure/i18n';
 import { flattenDictionary } from '../dictionaries';
@@ -47,6 +48,12 @@ const isOpen = defineModel<boolean>({ required: true });
  * Translation function for this dialog's copy.
  */
 const { t } = useI18n();
+
+/**
+ * Whether the viewport is phone-sized — the dialog goes `fullscreen` there instead of floating
+ * at a fixed `max-width`, which would otherwise cramp this form's fields on a narrow screen.
+ */
+const { mobile } = useDisplay();
 
 /*
  * Deliberately NOT on `useStructureFormValidation`, unlike the two form dialogs beside it. What this validates is
@@ -162,7 +169,7 @@ const handleImport = () => {
 </script>
 
 <template>
-    <v-dialog v-model="isOpen" max-width="640" :aria-labelledby="titleId">
+    <v-dialog v-model="isOpen" max-width="640" :fullscreen="mobile" :aria-labelledby="titleId">
         <v-card class="p-5" data-test="entries-import">
             <h2 :id="titleId" class="mb-1 text-lg font-semibold">
                 {{ t('entries-import.title') }}

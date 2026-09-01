@@ -8,6 +8,7 @@
 import { computed, useId } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
+import { useDisplay } from 'vuetify';
 import { useDialogStore } from '@/ui/dialog.ts';
 
 /**
@@ -24,6 +25,12 @@ import { useDialogStore } from '@/ui/dialog.ts';
 const { t } = useI18n();
 const dialogStore = useDialogStore();
 const { queue } = storeToRefs(dialogStore);
+
+/**
+ * Whether the viewport is phone-sized — the dialog goes `fullscreen` there instead of floating
+ * at a fixed `max-width`, which would otherwise letterbox a confirmation on a narrow screen.
+ */
+const { mobile } = useDisplay();
 
 /**
  * Ids the dialog is named and described by — the title when one is given, the question always.
@@ -57,6 +64,7 @@ const isOpen = computed({
     <v-dialog
         v-model="isOpen"
         max-width="480"
+        :fullscreen="mobile"
         role="alertdialog"
         :aria-labelledby="current?.title ? titleId : messageId"
         :aria-describedby="messageId"

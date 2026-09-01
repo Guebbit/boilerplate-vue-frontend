@@ -19,6 +19,7 @@ import DataTable from '@/ui/organisms/DataTable.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import { useInventoryStore } from '@/modules/inventory/store.ts';
 import type { InventoryLevel } from '@types';
+import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 
 /**
  * The shelf counts, one row per product: what is on hand right now, three numbers each. The
@@ -51,6 +52,12 @@ const emit = defineEmits<{
  * Small on purpose — this is an admin table to read, not a feed to scroll.
  */
 const PAGE_SIZE = 10;
+
+/**
+ * Row-action button size: `small` on desktop, Vuetify's bigger default below `sm`, where a tap
+ * replaces a click and `small` misses the WCAG touch-target recommendation.
+ */
+const rowActionSize = useTouchFriendlySize();
 
 /**
  * Columns of the stock board.
@@ -133,7 +140,7 @@ onMounted(() => {
 
         <template v-slot:[`item.history`]="{ item }">
             <v-btn
-                size="small"
+                :size="rowActionSize"
                 variant="text"
                 data-test="level-history"
                 :aria-label="t('inventory-page.button-history-named', { name: item.title })"

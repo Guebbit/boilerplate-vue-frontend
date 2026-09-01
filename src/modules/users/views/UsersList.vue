@@ -26,6 +26,7 @@ import ListPagination from '@/ui/molecules/ListPagination.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
+import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 
 /**
  * Generic translation and notification accessors.
@@ -39,6 +40,12 @@ const { addMessage } = useNotificationsStore();
 const { watchSearchUsers, deleteUser, hardDeleteUser } = useUsersStore();
 const { filters, pageItemList, selectedUserId, pageCurrent, pageSize, pageTotal, loading } =
     storeToRefs(useUsersStore());
+
+/**
+ * Row-action button size: `small` on desktop, Vuetify's bigger default below `sm`, where a tap
+ * replaces a click and `small` misses the WCAG touch-target recommendation.
+ */
+const rowActionSize = useTouchFriendlySize();
 
 /**
  * Options of the "active" filter select.
@@ -241,7 +248,7 @@ const handleHardDelete = (userId: string) => {
             <template v-slot:[`item.actions`]="{ item }">
                 <div class="flex flex-wrap gap-1">
                     <v-btn
-                        size="small"
+                        :size="rowActionSize"
                         variant="tonal"
                         data-test="row-view"
                         :aria-label="
@@ -252,7 +259,7 @@ const handleHardDelete = (userId: string) => {
                         {{ t('users-list-page.button-view') }}
                     </v-btn>
                     <v-btn
-                        size="small"
+                        :size="rowActionSize"
                         variant="tonal"
                         color="secondary"
                         data-test="row-edit"
@@ -264,7 +271,7 @@ const handleHardDelete = (userId: string) => {
                         {{ t('users-list-page.button-edit') }}
                     </v-btn>
                     <v-btn
-                        size="small"
+                        :size="rowActionSize"
                         variant="tonal"
                         color="error"
                         data-test="row-delete"
@@ -277,7 +284,7 @@ const handleHardDelete = (userId: string) => {
                         {{ t('users-list-page.button-delete') }}
                     </v-btn>
                     <v-btn
-                        size="small"
+                        :size="rowActionSize"
                         variant="tonal"
                         color="error"
                         data-test="row-hard-delete"

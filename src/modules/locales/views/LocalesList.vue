@@ -25,6 +25,7 @@ import DataTable from '@/ui/organisms/DataTable.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import type { LocaleCapability } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 
 /**
  * The languages board: every language the deployment offers, from both tiers, each stating what
@@ -43,6 +44,12 @@ const { t } = useI18n();
 const { addMessage } = useNotificationsStore();
 const localesStore = useLocalesStore();
 const { capabilities, tenants, defaultLocale, fallbackLocale, loading } = storeToRefs(localesStore);
+
+/**
+ * Row-action button size: `small` on desktop, Vuetify's bigger default below `sm`, where a tap
+ * replaces a click and `small` misses the WCAG touch-target recommendation.
+ */
+const rowActionSize = useTouchFriendlySize();
 
 /**
  * Whether the create/edit dialog is open.
@@ -278,7 +285,7 @@ onMounted(() => {
                 -->
                 <div v-if="item.source !== 'static'" class="flex flex-wrap gap-1">
                     <v-btn
-                        size="small"
+                        :size="rowActionSize"
                         variant="tonal"
                         data-test="row-entries"
                         :aria-label="t('locales-list-page.button-entries-named', { tag: item.tag })"
@@ -292,7 +299,7 @@ onMounted(() => {
                         {{ t('locales-list-page.button-entries') }}
                     </v-btn>
                     <v-btn
-                        size="small"
+                        :size="rowActionSize"
                         variant="tonal"
                         color="secondary"
                         data-test="row-edit"
@@ -302,7 +309,7 @@ onMounted(() => {
                         {{ t('locales-list-page.button-edit') }}
                     </v-btn>
                     <v-btn
-                        size="small"
+                        :size="rowActionSize"
                         variant="tonal"
                         color="error"
                         data-test="row-delete"

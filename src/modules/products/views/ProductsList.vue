@@ -27,6 +27,7 @@ import ListPagination from '@/ui/molecules/ListPagination.vue';
 import DataTable from '@/ui/organisms/DataTable.vue';
 import LazyImage from '@/ui/molecules/LazyImage.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
+import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 
 /**
  * Localized dictionary helper.
@@ -61,6 +62,12 @@ const {
  * Whether the signed-in visitor may see the admin-only actions (create, edit, delete).
  */
 const { isAdmin } = storeToRefs(useSessionStore());
+
+/**
+ * Row-action button size: `small` on desktop, Vuetify's bigger default below `sm`, where a tap
+ * replaces a click and `small` misses the WCAG touch-target recommendation.
+ */
+const rowActionSize = useTouchFriendlySize();
 
 /**
  * Selectable page sizes for the products table.
@@ -315,7 +322,7 @@ const handleHardDelete = (productId: string) => {
             <template v-slot:[`item.actions`]="{ item }">
                 <div class="flex flex-wrap gap-1">
                     <v-btn
-                        size="small"
+                        :size="rowActionSize"
                         variant="tonal"
                         data-test="row-view"
                         :aria-label="
@@ -327,7 +334,7 @@ const handleHardDelete = (productId: string) => {
                     </v-btn>
                     <v-btn
                         v-if="isAdmin"
-                        size="small"
+                        :size="rowActionSize"
                         variant="tonal"
                         color="secondary"
                         data-test="row-edit"
@@ -340,7 +347,7 @@ const handleHardDelete = (productId: string) => {
                     </v-btn>
                     <v-btn
                         v-if="isAdmin"
-                        size="small"
+                        :size="rowActionSize"
                         variant="tonal"
                         color="error"
                         data-test="row-delete"
@@ -354,7 +361,7 @@ const handleHardDelete = (productId: string) => {
                     </v-btn>
                     <v-btn
                         v-if="isAdmin"
-                        size="small"
+                        :size="rowActionSize"
                         variant="tonal"
                         color="error"
                         data-test="row-hard-delete"

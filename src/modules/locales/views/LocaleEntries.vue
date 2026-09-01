@@ -34,6 +34,7 @@ import DataTable from '@/ui/organisms/DataTable.vue';
 import type { CoreDataTableHeader } from '@/ui/organisms/data-table-headers.ts';
 import type { LocaleEntry, LocaleEntryInput } from '@types';
 import { useDialogStore } from '@/ui/dialog.ts';
+import { useTouchFriendlySize } from '@/ui/composables/use-touch-friendly-size.ts';
 
 /**
  * One language's translation rows: paginated, searched, edited inline.
@@ -64,6 +65,12 @@ const tag = computed(() => String(route.params.tag));
 const capability = computed(() =>
     capabilities.value.find((language) => language.tag === tag.value)
 );
+
+/**
+ * Row-action button size: `small` on desktop, Vuetify's bigger default below `sm`, where a tap
+ * replaces a click and `small` misses the WCAG touch-target recommendation.
+ */
+const rowActionSize = useTouchFriendlySize();
 
 /**
  * Whether the "add entry" dialog is open.
@@ -428,7 +435,7 @@ const handleExport = () =>
 
             <template v-slot:[`item.actions`]="{ item }">
                 <v-btn
-                    size="small"
+                    :size="rowActionSize"
                     variant="tonal"
                     color="error"
                     data-test="entry-delete"

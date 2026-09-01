@@ -14,6 +14,7 @@ export default {
 import { onMounted, ref, useId } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
+import { useDisplay } from 'vuetify';
 import { storeToRefs } from 'pinia';
 import { MapPin, Plus, Star } from 'lucide-vue-next';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
@@ -34,6 +35,13 @@ const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 const { fetchAddresses, addAddress, updateAddress, removeAddress } = useAddressesStore();
 const { addresses, loading } = storeToRefs(useAddressesStore());
+
+/**
+ * Whether the viewport is phone-sized — the add/edit dialog goes `fullscreen` there instead of
+ * floating at a fixed `max-width`, which would otherwise cramp this form's fields on a narrow
+ * screen.
+ */
+const { mobile } = useDisplay();
 
 /**
  * The dialog's fields: every `AddressInput` string, optional ones as empty strings.
@@ -281,7 +289,12 @@ onMounted(fetchAddresses);
             </v-card>
         </div>
 
-        <v-dialog v-model="dialogOpen" max-width="480" :aria-labelledby="dialogTitleId">
+        <v-dialog
+            v-model="dialogOpen"
+            max-width="480"
+            :fullscreen="mobile"
+            :aria-labelledby="dialogTitleId"
+        >
             <v-card class="p-6" data-test="address-dialog">
                 <h2 :id="dialogTitleId" class="mb-4 text-lg font-semibold">
                     {{
