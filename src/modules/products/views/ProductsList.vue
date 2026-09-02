@@ -190,8 +190,12 @@ const handleHardDelete = (productId: string) => {
 
 <template>
     <LayoutDefault id="products-list-page" :title="t('products-list-page.page-title')">
-        <div v-if="facets && facets.categories.length > 0" class="mb-4" data-test="facet-chips">
-            <div class="flex flex-wrap items-center gap-2">
+        <div
+            v-if="facets && (facets.categories.length > 0 || facets.tags.length > 0)"
+            class="mb-4"
+            data-test="facet-chips"
+        >
+            <div v-if="facets.categories.length > 0" class="flex flex-wrap items-center gap-2">
                 <span class="text-sm opacity-70">{{
                     t('products-list-page.label-categories')
                 }}</span>
