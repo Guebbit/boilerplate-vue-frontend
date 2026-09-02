@@ -6,6 +6,7 @@
  */
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureCrudApi } from '@guebbit/vue-toolkit';
+import { useServerPageTotal } from '@/ui/composables/use-server-page-total.ts';
 import {
     listOrders,
     searchOrders,
@@ -62,7 +63,9 @@ export const useOrdersStore = defineStore('orders', () => {
         loading,
         pageCurrent,
         pageSize,
-        pageTotal,
+        // Local-only: counts whatever this store already holds, wrong for a server-paginated
+        // search. Shadowed below by useServerPageTotal's, built from the response's own count.
+        pageTotal: _localOnlyPageTotal,
         pageItemList,
 
         fetchList: fetchOrders,
@@ -93,7 +96,10 @@ export const useOrdersStore = defineStore('orders', () => {
                     userId: filters.userId,
                     productId: filters.productId,
                     email: filters.email
-                }).then((response) => response.data.items),
+                }).then((response) => {
+                    captureTotal(response.data.meta.totalPages);
+                    return response.data.items;
+                }),
 
             get: (orderId) => getOrderById(orderId).then((response) => response.data),
 
@@ -125,6 +131,12 @@ export const useOrdersStore = defineStore('orders', () => {
             maxRecords: 5000
         }
     );
+
+    /**
+     * `pageTotal` for `search`'s real, server-paginated results — `captureTotal` is called from
+     * `search:` above, once its response's `meta.totalPages` is in.
+     */
+    const { pageTotal, captureTotal } = useServerPageTotal();
 
     /**
      * Permanently deletes an order, bypassing the soft delete.

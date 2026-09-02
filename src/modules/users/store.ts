@@ -7,6 +7,7 @@
  */
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureCrudApi } from '@guebbit/vue-toolkit';
+import { useServerPageTotal } from '@/ui/composables/use-server-page-total.ts';
 import {
     listUsers,
     searchUsers,
@@ -61,7 +62,9 @@ export const useUsersStore = defineStore('users', () => {
         loading,
         pageCurrent,
         pageSize,
-        pageTotal,
+        // Local-only: counts whatever this store already holds, wrong for a server-paginated
+        // search. Shadowed below by useServerPageTotal's, built from the response's own count.
+        pageTotal: _localOnlyPageTotal,
         pageItemList,
 
         fetchList: fetchUsers,
@@ -93,7 +96,10 @@ export const useUsersStore = defineStore('users', () => {
                     email: filters.email,
                     username: filters.username,
                     active: filters.active
-                }).then((response) => response.data.items),
+                }).then((response) => {
+                    captureTotal(response.data.meta.totalPages);
+                    return response.data.items;
+                }),
 
             get: (userId) => getUserById(userId).then((response) => response.data),
 
@@ -116,6 +122,12 @@ export const useUsersStore = defineStore('users', () => {
         },
         { getLoading, setLoading }
     );
+
+    /**
+     * `pageTotal` for `search`'s real, server-paginated results — `captureTotal` is called from
+     * `search:` above, once its response's `meta.totalPages` is in.
+     */
+    const { pageTotal, captureTotal } = useServerPageTotal();
 
     /**
      * Permanently deletes a user, bypassing the soft delete.

@@ -56,9 +56,9 @@ describe('Products', () => {
         });
 
         // The list an anonymous visitor gets IS the API's public scope — no more, no less, on
-        // the one page this list can prove itself against: `pageTotal` here is the CLIENT's own
-        // accumulated record count, never the server's total (see the note on `ListPagination`
-        // in resilience.cy.ts), so a catalogue bigger than one page is unprovable page-to-page.
+        // the one page rendered: a paginated list only ever shows one page's worth of rows, so
+        // comparing against the WHOLE catalogue would fail by design the moment it outgrows one
+        // page, regardless of how correctly pagination itself behaves.
         it('renders exactly the publicly visible products for anonymous visitors', () => {
             cy.publicProducts().then((products) => {
                 cy.get('[data-test=list-row]').should(

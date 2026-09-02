@@ -43,9 +43,14 @@ const ORDER = {
  */
 const INVOICE = new Blob(['%PDF-1.4'], { type: 'application/pdf' });
 
+// `meta` matches the real `PaginationMeta` shape — `search:` (`store.ts`) reads
+// `meta.totalPages` for `pageTotal`, so an envelope without one no longer represents a real
+// response.
+const EMPTY_PAGE = { items: [], meta: { page: 1, pageSize: 10, totalItems: 0, totalPages: 1 } };
+
 vi.mock('@api', () => ({
-    listOrders: vi.fn(() => Promise.resolve({ data: { items: [] } })),
-    searchOrders: vi.fn(() => Promise.resolve({ data: { items: [] } })),
+    listOrders: vi.fn(() => Promise.resolve({ data: EMPTY_PAGE })),
+    searchOrders: vi.fn(() => Promise.resolve({ data: EMPTY_PAGE })),
     getOrderById: vi.fn(() => Promise.resolve({ data: ORDER })),
     createOrder: vi.fn(() => Promise.resolve({ data: ORDER })),
     updateOrderById: vi.fn(() => Promise.resolve({ data: ORDER })),

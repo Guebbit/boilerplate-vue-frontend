@@ -35,6 +35,7 @@ import type {
 import { flattenDictionary } from './dictionaries.ts';
 import { loadBundledDictionary, type TranslationDictionaries } from '@/infrastructure/i18n';
 import { localeTenant } from '@/infrastructure/i18n/locale-overrides.ts';
+import { useServerPageTotal } from '@/ui/composables/use-server-page-total.ts';
 import { LocaleTenantKind } from '@types';
 
 /**
@@ -112,7 +113,11 @@ export const useLocalesStore = defineStore('locales', () => {
         loading,
         pageCurrent,
         pageSize,
-        pageTotal,
+        // Local-only: counts whatever this store already holds, wrong for a server-paginated
+        // search — the cache holds every language visited this session, so after browsing
+        // Spanish, a two-row French search reported two pages, the second of them empty.
+        // Shadowed below by useServerPageTotal's, built from the response's own count.
+        pageTotal: _localOnlyPageTotal,
         pageItemList,
         watchList: watchSearchEntries,
         addRecord,
@@ -128,7 +133,7 @@ export const useLocalesStore = defineStore('locales', () => {
                     text: searchFilters.text,
                     tenant: searchFilters.tenant
                 }).then((response) => {
-                    entriesPageTotal.value = response.data.meta.totalPages;
+                    captureEntriesTotal(response.data.meta.totalPages);
                     return response.data.items;
                 })
         },
@@ -136,14 +141,11 @@ export const useLocalesStore = defineStore('locales', () => {
     );
 
     /**
-     * Pages in the CURRENT search, as the server counted them.
-     *
-     * Not the toolkit's `pageTotal`: that one divides the whole local record cache by the page
-     * size, and the cache holds every language visited this session — so after browsing Spanish,
-     * a two-row French search reported two pages, the second of them empty. The server's
-     * `meta.totalPages` is the only count that knows which rows belong to this search.
+     * Pages in the CURRENT search, as the server counted them (`useServerPageTotal`) —
+     * `captureEntriesTotal` is called from `search:` above, once its response's
+     * `meta.totalPages` is in.
      */
-    const entriesPageTotal = ref(0);
+    const { pageTotal: entriesPageTotal, captureTotal: captureEntriesTotal } = useServerPageTotal();
 
     /**
      * The manifest: every language, both tiers merged, as last fetched.
@@ -379,7 +381,6 @@ export const useLocalesStore = defineStore('locales', () => {
         loading,
         pageCurrent,
         pageSize,
-        pageTotal,
         pageItemList,
         entriesPageTotal,
         watchSearchEntries,

@@ -44,10 +44,14 @@ const lastFormData = () => {
 };
 
 /**
- * Makes the transport answer with a paginated envelope for this test.
+ * Makes the transport answer with a paginated envelope for this test. `meta` matches the real
+ * `PaginationMeta` shape — `search:` (`store.ts`) reads `meta.totalPages` for `pageTotal`, so an
+ * envelope without one no longer represents a real response.
  */
 const respondWithItems = (items: unknown[]) =>
-    vi.mocked(orvalMutator).mockResolvedValue({ data: { items } });
+    vi.mocked(orvalMutator).mockResolvedValue({
+        data: { items, meta: { page: 1, pageSize: 10, totalItems: items.length, totalPages: 1 } }
+    });
 
 /**
  * The query parameters of the most recent request.
