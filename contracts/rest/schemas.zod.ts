@@ -493,6 +493,7 @@ export const ListLocaleEntriesParams = zod.strictObject({
 });
 
 export const listLocaleEntriesQueryPageDefault = 1;
+export const listLocaleEntriesQueryPageMax = 10000;
 
 export const listLocaleEntriesQueryPageSizeDefault = 10;
 export const listLocaleEntriesQueryPageSizeMax = 100;
@@ -505,6 +506,7 @@ export const ListLocaleEntriesQueryParams = zod.strictObject({
     page: zod
         .number()
         .min(1)
+        .max(listLocaleEntriesQueryPageMax)
         .default(listLocaleEntriesQueryPageDefault)
         .describe('1-based page index'),
     pageSize: zod
@@ -533,6 +535,7 @@ export const listLocaleEntriesResponseDataItemsItemTenantRegExp = new RegExp(
     '^[a-z0-9][a-z0-9-]*$'
 );
 export const listLocaleEntriesResponseDataMetaPageDefault = 1;
+export const listLocaleEntriesResponseDataMetaPageMax = 10000;
 
 export const listLocaleEntriesResponseDataMetaPageSizeDefault = 10;
 export const listLocaleEntriesResponseDataMetaPageSizeMax = 100;
@@ -581,8 +584,11 @@ export const ListLocaleEntriesResponse = zod.strictObject({
             page: zod
                 .number()
                 .min(1)
+                .max(listLocaleEntriesResponseDataMetaPageMax)
                 .default(listLocaleEntriesResponseDataMetaPageDefault)
-                .describe('1-based page index'),
+                .describe(
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                ),
             pageSize: zod
                 .number()
                 .min(1)
@@ -1163,6 +1169,7 @@ export const GetObservabilityMetricsOverviewResponse = zod.strictObject({
  * @summary Recent audit events
  */
 export const getObservabilityAuditLogsQueryPageDefault = 1;
+export const getObservabilityAuditLogsQueryPageMax = 10000;
 
 export const getObservabilityAuditLogsQueryPageSizeDefault = 10;
 export const getObservabilityAuditLogsQueryPageSizeMax = 100;
@@ -1178,6 +1185,7 @@ export const GetObservabilityAuditLogsQueryParams = zod.strictObject({
     page: zod
         .number()
         .min(1)
+        .max(getObservabilityAuditLogsQueryPageMax)
         .default(getObservabilityAuditLogsQueryPageDefault)
         .describe('1-based page index'),
     pageSize: zod
@@ -1188,6 +1196,7 @@ export const GetObservabilityAuditLogsQueryParams = zod.strictObject({
 });
 
 export const getObservabilityAuditLogsResponseDataMetaPageDefault = 1;
+export const getObservabilityAuditLogsResponseDataMetaPageMax = 10000;
 
 export const getObservabilityAuditLogsResponseDataMetaPageSizeDefault = 10;
 export const getObservabilityAuditLogsResponseDataMetaPageSizeMax = 100;
@@ -1222,8 +1231,11 @@ export const GetObservabilityAuditLogsResponse = zod.strictObject({
             page: zod
                 .number()
                 .min(1)
+                .max(getObservabilityAuditLogsResponseDataMetaPageMax)
                 .default(getObservabilityAuditLogsResponseDataMetaPageDefault)
-                .describe('1-based page index'),
+                .describe(
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                ),
             pageSize: zod
                 .number()
                 .min(1)
@@ -1274,6 +1286,8 @@ export const GetAccountResponse = zod.strictObject({
             ),
         phone: zod.string().optional(),
         website: zod.string().optional(),
+        analyticsConsent: zod.enum(['granted', 'denied']).optional(),
+        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
         deletedAt: zod.iso.datetime({ offset: true }).optional()
@@ -1305,7 +1319,8 @@ export const UpdateAccountBody = zod.strictObject({
             'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
         ),
     phone: zod.string().optional(),
-    website: zod.string().optional()
+    website: zod.string().optional(),
+    analyticsConsent: zod.enum(['granted', 'denied']).optional()
 });
 
 export const updateAccountResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
@@ -1342,6 +1357,8 @@ export const UpdateAccountResponse = zod.strictObject({
             ),
         phone: zod.string().optional(),
         website: zod.string().optional(),
+        analyticsConsent: zod.enum(['granted', 'denied']).optional(),
+        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
         deletedAt: zod.iso.datetime({ offset: true }).optional()
@@ -1359,7 +1376,7 @@ export const RequestAccountDeleteResponse = zod.strictObject({
 });
 
 /**
- * Changes the authenticated user's password. Unlike the reset flow this proves possession of the current password rather than of the mailbox, so it needs no email round-trip. Other sessions stay live — revoke them with `POST /account/logout-all` or per session via `DELETE /account/sessions/{sessionId}`.
+ * Changes the authenticated user's password. Unlike the reset flow this proves possession of the current password rather than of the mailbox, so it needs no email round-trip. Every OTHER session is revoked; the response carries a fresh access token for this one, and sets fresh session cookies.
  * @summary Change password
  */
 export const changePasswordBodyCurrentPasswordMin = 8;
@@ -1377,7 +1394,33 @@ export const ChangePasswordBody = zod.strictObject({
 export const ChangePasswordResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
-    message: zod.string()
+    message: zod.string(),
+    data: zod.strictObject({
+        token: zod.string().describe('Access JWT'),
+        refreshToken: zod.string().optional().describe('Refresh token if returned by backend'),
+        expiresIn: zod.number().optional().describe('Access token expiry in seconds')
+    })
+});
+
+/**
+ * Re-proves the caller's password to refresh how recently they authenticated, without ending the session — the answer to a `401 REAUTH_REQUIRED` challenge from a route gated by freshness (checkout, payments, deleting the account, changing the email, session management). Re-mints the session and returns a fresh access token, same as `POST /account/password`.
+ * @summary Re-authenticate (step-up)
+ */
+export const reauthBodyPasswordMin = 8;
+
+export const ReauthBody = zod.strictObject({
+    password: zod.string().min(reauthBodyPasswordMin)
+});
+
+export const ReauthResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        token: zod.string().describe('Access JWT'),
+        refreshToken: zod.string().optional().describe('Refresh token if returned by backend'),
+        expiresIn: zod.number().optional().describe('Access token expiry in seconds')
+    })
 });
 
 /**
@@ -1618,7 +1661,7 @@ export const ConfirmAccountDeleteResponse = zod.strictObject({
 });
 
 /**
- * Authenticates a user with email and password credentials. On success, returns a JWT access token that must be passed as a Bearer token on subsequent authenticated requests.
+ * Authenticates a user with email and password credentials. On success, returns a JWT access token that must be passed as a Bearer token on subsequent authenticated requests — OR, when the account has two-factor authentication enabled, a short-lived challenge that must be submitted to `POST /account/login/2fa` instead.
  * @summary Login
  */
 export const loginBodyPasswordMin = 8;
@@ -1638,11 +1681,32 @@ export const LoginResponse = zod.strictObject({
     success: zod.literal(true),
     status: zod.number(),
     message: zod.string(),
-    data: zod.strictObject({
-        token: zod.string().describe('Access JWT'),
-        refreshToken: zod.string().optional().describe('Refresh token if returned by backend'),
-        expiresIn: zod.number().optional().describe('Access token expiry in seconds')
-    })
+    data: zod
+        .union([
+            zod.strictObject({
+                token: zod.string().describe('Access JWT'),
+                refreshToken: zod
+                    .string()
+                    .optional()
+                    .describe('Refresh token if returned by backend'),
+                expiresIn: zod.number().optional().describe('Access token expiry in seconds')
+            }),
+            zod.strictObject({
+                mfaRequired: zod
+                    .literal(true)
+                    .describe(
+                        'Always true — the credential check passed, but a second factor is required before a session is issued.'
+                    ),
+                challenge: zod
+                    .string()
+                    .describe(
+                        'Short-lived signed token naming this login attempt. Submit it, with a code, to POST \/account\/login\/2fa. Expires after five minutes.'
+                    )
+            })
+        ])
+        .describe(
+            'Either a full session (AuthTokens) or a step-up challenge (MfaChallenge) when the account has two-factor authentication enabled.'
+        )
 });
 
 /**
@@ -1702,6 +1766,8 @@ export const SignupResponse = zod.strictObject({
             ),
         phone: zod.string().optional(),
         website: zod.string().optional(),
+        analyticsConsent: zod.enum(['granted', 'denied']).optional(),
+        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
         deletedAt: zod.iso.datetime({ offset: true }).optional()
@@ -1778,16 +1844,418 @@ export const DeleteExpiredTokensResponse = zod.strictObject({
 });
 
 /**
+ * One JSON answer to "give me my data" (Art. 15, 20), assembled from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a full personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
+ * @summary Export the caller's own data
+ */
+export const exportAccountDataResponseDataProfileLocaleRegExp = new RegExp(
+    '^[a-z]{2}(-[A-Za-z0-9]+)*$'
+);
+export const exportAccountDataResponseDataOrdersItemItemsItemProductPriceMin = 0;
+
+export const exportAccountDataResponseDataOrdersItemItemsItemProductOnHandMin = 0;
+
+export const exportAccountDataResponseDataOrdersItemItemsItemProductReservedMin = 0;
+
+export const exportAccountDataResponseDataOrdersItemItemsItemProductAvailableMin = 0;
+
+export const exportAccountDataResponseDataOrdersItemItemsItemProductRequiresShippingDefault = true;
+export const exportAccountDataResponseDataOrdersItemTotalItemsMin = 0;
+
+export const exportAccountDataResponseDataOrdersItemTotalQuantityMin = 0;
+
+export const exportAccountDataResponseDataOrdersItemTotalPriceMin = 0;
+
+export const exportAccountDataResponseDataOrdersItemShippingCostMin = 0;
+
+export const exportAccountDataResponseDataPaymentsItemAmountMin = 0;
+
+export const ExportAccountDataResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        exportedAt: zod.iso.datetime({ offset: true }),
+        profile: zod.strictObject({
+            id: zod.string().describe('Resource identifier'),
+            email: zod.email(),
+            username: zod.string(),
+            admin: zod.boolean().optional(),
+            active: zod.boolean().optional(),
+            verified: zod.boolean().optional(),
+            imageUrl: zod
+                .string()
+                .optional()
+                .describe(
+                    'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                ),
+            thumbnailUrl: zod
+                .string()
+                .optional()
+                .describe(
+                    'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+                ),
+            locale: zod
+                .string()
+                .regex(exportAccountDataResponseDataProfileLocaleRegExp)
+                .optional()
+                .describe(
+                    'BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET \/locales`.'
+                ),
+            phone: zod.string().optional(),
+            website: zod.string().optional(),
+            analyticsConsent: zod.enum(['granted', 'denied']).optional(),
+            twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
+            createdAt: zod.iso.datetime({ offset: true }).optional(),
+            updatedAt: zod.iso.datetime({ offset: true }).optional(),
+            deletedAt: zod.iso.datetime({ offset: true }).optional()
+        }),
+        addresses: zod.array(
+            zod.strictObject({
+                id: zod.string().describe('Resource identifier'),
+                label: zod
+                    .string()
+                    .optional()
+                    .describe('The caller\'s own name for the entry — \"home\", \"office\".'),
+                fullName: zod.string(),
+                street: zod.string(),
+                city: zod.string(),
+                zip: zod.string(),
+                country: zod.string(),
+                phone: zod.string().optional(),
+                default: zod.boolean()
+            })
+        ),
+        orders: zod.array(
+            zod.strictObject({
+                id: zod.string().describe('Resource identifier'),
+                userId: zod.string().optional().describe('Resource identifier'),
+                email: zod.email(),
+                items: zod.array(
+                    zod.strictObject({
+                        product: zod.strictObject({
+                            id: zod.string().describe('Resource identifier'),
+                            title: zod.string(),
+                            price: zod
+                                .number()
+                                .min(
+                                    exportAccountDataResponseDataOrdersItemItemsItemProductPriceMin
+                                ),
+                            onHand: zod
+                                .number()
+                                .min(
+                                    exportAccountDataResponseDataOrdersItemItemsItemProductOnHandMin
+                                )
+                                .optional()
+                                .describe(
+                                    'Units physically present, whether or not they are spoken for.'
+                                ),
+                            reserved: zod
+                                .number()
+                                .min(
+                                    exportAccountDataResponseDataOrdersItemItemsItemProductReservedMin
+                                )
+                                .optional()
+                                .describe(
+                                    'Units held by an open order — present, but not for sale.'
+                                ),
+                            available: zod
+                                .number()
+                                .min(
+                                    exportAccountDataResponseDataOrdersItemItemsItemProductAvailableMin
+                                )
+                                .optional()
+                                .describe(
+                                    'What a customer may actually buy. Derived from the two counters above.'
+                                ),
+                            description: zod.string().optional(),
+                            active: zod.boolean().optional(),
+                            requiresShipping: zod
+                                .boolean()
+                                .default(
+                                    exportAccountDataResponseDataOrdersItemItemsItemProductRequiresShippingDefault
+                                ),
+                            imageUrl: zod
+                                .string()
+                                .optional()
+                                .describe(
+                                    'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
+                                ),
+                            thumbnailUrl: zod
+                                .string()
+                                .optional()
+                                .describe(
+                                    'Server-relative path to a small WebP derivative of `imageUrl`, produced by the image digest pipeline once an uploaded image has finished processing (see `docs\/tools\/image-processing.md`). Absent for a record whose image is a remote or default URL rather than an upload — there is nothing to derive a thumbnail from. Never accepted on a request body: the server is the only writer.'
+                                ),
+                            categories: zod.array(zod.string()).optional(),
+                            tags: zod.array(zod.string()).optional(),
+                            createdAt: zod.iso.datetime({ offset: true }).optional(),
+                            updatedAt: zod.iso.datetime({ offset: true }).optional(),
+                            deletedAt: zod.iso.datetime({ offset: true }).optional()
+                        }),
+                        quantity: zod.number().min(1)
+                    })
+                ),
+                totalItems: zod
+                    .number()
+                    .min(exportAccountDataResponseDataOrdersItemTotalItemsMin)
+                    .describe(
+                        'Number of distinct line items in this order. Not to be confused with `PaginationMeta.totalItems`, which counts orders matching a search.'
+                    ),
+                totalQuantity: zod
+                    .number()
+                    .min(exportAccountDataResponseDataOrdersItemTotalQuantityMin)
+                    .describe('Sum of `quantity` across every line item.'),
+                totalPrice: zod
+                    .number()
+                    .min(exportAccountDataResponseDataOrdersItemTotalPriceMin)
+                    .describe(
+                        'Sum of `product.price × quantity` across every line item, plus `shippingCost` when the checkout chose a method.'
+                    ),
+                notes: zod.string().optional().describe('Optional order notes'),
+                shippingMethod: zod
+                    .string()
+                    .optional()
+                    .describe(
+                        "The shipping method's id as the checkout froze it (e.g. standard, express, pickup)."
+                    ),
+                shippingCost: zod
+                    .number()
+                    .min(exportAccountDataResponseDataOrdersItemShippingCostMin)
+                    .optional()
+                    .describe(
+                        'What that method cost at checkout time — a later rate change cannot re-price history.'
+                    ),
+                shippingAddress: zod
+                    .strictObject({
+                        fullName: zod.string(),
+                        street: zod.string(),
+                        city: zod.string(),
+                        zip: zod.string(),
+                        country: zod.string(),
+                        phone: zod.string().optional()
+                    })
+                    .optional(),
+                status: zod
+                    .enum(['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled'])
+                    .describe(
+                        "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                    ),
+                actions: zod
+                    .strictObject({
+                        transitions: zod
+                            .array(
+                                zod
+                                    .enum([
+                                        'pending',
+                                        'paid',
+                                        'processing',
+                                        'shipped',
+                                        'delivered',
+                                        'cancelled'
+                                    ])
+                                    .describe(
+                                        "Where an order is in its lifecycle. The set is closed here; which value may FOLLOW which is the server's own lifecycle rules, answered per caller by `OrderActions`."
+                                    )
+                            )
+                            .describe(
+                                "The statuses this caller may move the order to. Empty on a terminal order, and never contains the order's current status."
+                            ),
+                        cancel: zod
+                            .boolean()
+                            .describe(
+                                'Whether `POST \/orders\/{id}\/cancel` would be accepted for this caller. A customer may cancel while unpaid or paid; an operator one step further.'
+                            ),
+                        pay: zod
+                            .boolean()
+                            .describe(
+                                "Whether this order is still awaiting payment — it can reach `paid`, which only a confirmed charge writes. Not in `transitions`, because no request may make that move: a client starts the flow with `POST \/payments\/intent` and the provider's yes does the rest."
+                            )
+                    })
+                    .optional()
+                    .describe(
+                        "What the requesting caller may do to this order, decided by the server. A client renders its controls from this rather than re-implementing the lifecycle: the rules depend on the caller's role, and a second copy in a separately deployed client is how the two come to disagree."
+                    ),
+                createdAt: zod.iso.datetime({ offset: true }).optional(),
+                updatedAt: zod.iso.datetime({ offset: true }).optional(),
+                deletedAt: zod.iso.datetime({ offset: true }).optional()
+            })
+        ),
+        payments: zod.array(
+            zod.strictObject({
+                id: zod.string().describe('Resource identifier'),
+                orderId: zod.string().describe('Resource identifier'),
+                amount: zod.number().min(exportAccountDataResponseDataPaymentsItemAmountMin),
+                currency: zod.string(),
+                status: zod.enum(['requires_confirmation', 'succeeded', 'declined', 'refunded']),
+                provider: zod.string(),
+                cardLast4: zod.string().optional(),
+                createdAt: zod.iso.datetime({ offset: true }).optional(),
+                updatedAt: zod.iso.datetime({ offset: true }).optional()
+            })
+        ),
+        shipments: zod.array(
+            zod.strictObject({
+                id: zod.string().describe('Resource identifier'),
+                orderId: zod.string().describe('Resource identifier'),
+                trackingCode: zod.string(),
+                status: zod.enum(['shipped', 'delivered']),
+                deliveredAt: zod.iso.datetime({ offset: true }).optional(),
+                createdAt: zod.iso.datetime({ offset: true }).optional(),
+                updatedAt: zod.iso.datetime({ offset: true }).optional()
+            })
+        ),
+        cart: zod.array(
+            zod.strictObject({
+                productId: zod.string().describe('Resource identifier'),
+                quantity: zod.number().min(1)
+            })
+        ),
+        wishlist: zod.array(
+            zod.strictObject({
+                productId: zod.string().describe('Resource identifier')
+            })
+        ),
+        sessions: zod.array(
+            zod.strictObject({
+                id: zod.string().describe('Resource identifier'),
+                type: zod.enum(['refresh']),
+                expiration: zod.iso.datetime({ offset: true }).optional(),
+                lastUsedAt: zod.iso.datetime({ offset: true }).optional()
+            })
+        ),
+        auditLog: zod.array(
+            zod.strictObject({
+                actor_user_id: zod.string(),
+                actor_role: zod.enum(['admin', 'user', 'anonymous']),
+                action: zod.string().describe('Dotted action name, e.g. `order.created`.'),
+                outcome: zod.enum(['success', 'failure']),
+                ip: zod.string().optional(),
+                user_agent: zod.string().optional(),
+                request_id: zod.string().optional(),
+                trace_id: zod.string().optional(),
+                target_type: zod.string().optional(),
+                target_id: zod.string().optional(),
+                metadata: zod.record(zod.string(), zod.unknown()).optional(),
+                timestamp: zod.iso.datetime({ offset: true }),
+                level: zod.enum(['info', 'warn'])
+            })
+        ),
+        feedback: zod
+            .array(
+                zod.strictObject({
+                    id: zod.string().describe('Resource identifier'),
+                    name: zod.string().optional(),
+                    email: zod.email(),
+                    subject: zod.string(),
+                    message: zod.string(),
+                    status: zod.string(),
+                    respondedAt: zod.iso.datetime({ offset: true }).optional(),
+                    createdAt: zod.iso.datetime({ offset: true }).optional()
+                })
+            )
+            .optional()
+            .describe('Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`.')
+    })
+});
+
+/**
+ * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, returns the same auth tokens `POST /account/login` returns for an account with no second factor.
+ * @summary Complete a two-factor login
+ */
+export const LoginTwoFactorBody = zod.strictObject({
+    challenge: zod.string().describe('The challenge token from POST \/account\/login.'),
+    code: zod.string().describe('A 6-digit TOTP code, or an unused backup code.')
+});
+
+export const LoginTwoFactorResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        token: zod.string().describe('Access JWT'),
+        refreshToken: zod.string().optional().describe('Refresh token if returned by backend'),
+        expiresIn: zod.number().optional().describe('Access token expiry in seconds')
+    })
+});
+
+/**
+ * Generates a fresh TOTP secret and returns it plaintext, once, along with the `otpauth://` URI to render as a QR code. Enrollment is not active until `POST /account/2fa/confirm` proves the caller scanned it. Calling this again — including on an account that already has 2FA on — replaces the pending secret and clears any confirmed one, for the "lost my phone, still have my session" recovery path.
+ * @summary Start two-factor enrollment
+ */
+export const SetupTwoFactorResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        secret: zod
+            .string()
+            .describe(
+                'The TOTP secret, base32-encoded, shown once for manual entry as a fallback to scanning.'
+            ),
+        otpauthUri: zod
+            .string()
+            .describe(
+                'An otpauth:\/\/ URI — the frontend renders it as a QR code; this API generates no image.'
+            )
+    })
+});
+
+/**
+ * Arms the pending secret from `POST /account/2fa/setup` against a code from the caller's authenticator app, and mints backup codes — returned in the clear exactly once.
+ * @summary Confirm two-factor enrollment
+ */
+export const ConfirmTwoFactorBody = zod.strictObject({
+    code: zod
+        .string()
+        .describe(
+            'A 6-digit code from the authenticator app enrolled via POST \/account\/2fa\/setup.'
+        )
+});
+
+export const ConfirmTwoFactorResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        backupCodes: zod
+            .array(zod.string())
+            .describe(
+                'One-time recovery codes for a lost authenticator, shown in the clear exactly once.'
+            )
+    })
+});
+
+/**
+ * Disables 2FA. Requires a valid TOTP code or an unused backup code in the body, on top of the route's own fresh-auth requirement — disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature.
+ * @summary Disable two-factor authentication
+ */
+export const DisableTwoFactorBody = zod.strictObject({
+    code: zod.string().describe('A TOTP code, or an unused backup code.')
+});
+
+export const DisableTwoFactorResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
+});
+
+/**
  * Returns a paginated list of user accounts.
  * @summary List users (paginated)
  */
 export const listUsersQueryPageDefault = 1;
+export const listUsersQueryPageMax = 10000;
 
 export const listUsersQueryPageSizeDefault = 10;
 export const listUsersQueryPageSizeMax = 100;
 
 export const ListUsersQueryParams = zod.strictObject({
-    page: zod.number().min(1).default(listUsersQueryPageDefault).describe('1-based page index'),
+    page: zod
+        .number()
+        .min(1)
+        .max(listUsersQueryPageMax)
+        .default(listUsersQueryPageDefault)
+        .describe('1-based page index'),
     pageSize: zod
         .number()
         .min(1)
@@ -1804,6 +2272,7 @@ export const ListUsersQueryParams = zod.strictObject({
 
 export const listUsersResponseDataItemsItemLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 export const listUsersResponseDataMetaPageDefault = 1;
+export const listUsersResponseDataMetaPageMax = 10000;
 
 export const listUsersResponseDataMetaPageSizeDefault = 10;
 export const listUsersResponseDataMetaPageSizeMax = 100;
@@ -1846,6 +2315,8 @@ export const ListUsersResponse = zod.strictObject({
                     ),
                 phone: zod.string().optional(),
                 website: zod.string().optional(),
+                analyticsConsent: zod.enum(['granted', 'denied']).optional(),
+                twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
                 updatedAt: zod.iso.datetime({ offset: true }).optional(),
                 deletedAt: zod.iso.datetime({ offset: true }).optional()
@@ -1855,8 +2326,11 @@ export const ListUsersResponse = zod.strictObject({
             page: zod
                 .number()
                 .min(1)
+                .max(listUsersResponseDataMetaPageMax)
                 .default(listUsersResponseDataMetaPageDefault)
-                .describe('1-based page index'),
+                .describe(
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                ),
             pageSize: zod
                 .number()
                 .min(1)
@@ -1935,6 +2409,8 @@ export const CreateUserResponse = zod.strictObject({
             ),
         phone: zod.string().optional(),
         website: zod.string().optional(),
+        analyticsConsent: zod.enum(['granted', 'denied']).optional(),
+        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
         deletedAt: zod.iso.datetime({ offset: true }).optional()
@@ -2007,6 +2483,8 @@ export const UpdateUserResponse = zod.strictObject({
             ),
         phone: zod.string().optional(),
         website: zod.string().optional(),
+        analyticsConsent: zod.enum(['granted', 'denied']).optional(),
+        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
         deletedAt: zod.iso.datetime({ offset: true }).optional()
@@ -2081,6 +2559,8 @@ export const GetUserByIdResponse = zod.strictObject({
             ),
         phone: zod.string().optional(),
         website: zod.string().optional(),
+        analyticsConsent: zod.enum(['granted', 'denied']).optional(),
+        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
         deletedAt: zod.iso.datetime({ offset: true }).optional()
@@ -2156,6 +2636,8 @@ export const UpdateUserByIdResponse = zod.strictObject({
             ),
         phone: zod.string().optional(),
         website: zod.string().optional(),
+        analyticsConsent: zod.enum(['granted', 'denied']).optional(),
+        twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
         deletedAt: zod.iso.datetime({ offset: true }).optional()
@@ -2206,16 +2688,38 @@ export const HardDeleteUserByIdResponse = zod.strictObject({
 });
 
 /**
+ * Strips the user's second factor, no code required — unlike the self-service `DELETE /account/2fa`, which demands one. The one deliberate exception to "prove the factor to remove it", for an account whose owner has lost both their authenticator and their backup codes. Every call is audited.
+ * @summary Admin-assisted 2FA recovery
+ */
+export const AdminDisableUserTwoFactorParams = zod.strictObject({
+    id: zod.string().describe('Resource identifier')
+});
+
+export const AdminDisableUserTwoFactorResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string()
+});
+
+/**
  * Searches and filters users via a JSON request body. Functionally equivalent to `GET /users` with query parameters
  * @summary Search users (DTO-friendly)
  */
 export const searchUsersBodyPageDefault = 1;
+export const searchUsersBodyPageMax = 10000;
 
 export const searchUsersBodyPageSizeDefault = 10;
 export const searchUsersBodyPageSizeMax = 100;
 
 export const SearchUsersBody = zod.strictObject({
-    page: zod.number().min(1).default(searchUsersBodyPageDefault).describe('1-based page index'),
+    page: zod
+        .number()
+        .min(1)
+        .max(searchUsersBodyPageMax)
+        .default(searchUsersBodyPageDefault)
+        .describe(
+            '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+        ),
     pageSize: zod
         .number()
         .min(1)
@@ -2235,6 +2739,7 @@ export const searchUsersResponseDataItemsItemLocaleRegExp = new RegExp(
     '^[a-z]{2}(-[A-Za-z0-9]+)*$'
 );
 export const searchUsersResponseDataMetaPageDefault = 1;
+export const searchUsersResponseDataMetaPageMax = 10000;
 
 export const searchUsersResponseDataMetaPageSizeDefault = 10;
 export const searchUsersResponseDataMetaPageSizeMax = 100;
@@ -2277,6 +2782,8 @@ export const SearchUsersResponse = zod.strictObject({
                     ),
                 phone: zod.string().optional(),
                 website: zod.string().optional(),
+                analyticsConsent: zod.enum(['granted', 'denied']).optional(),
+                twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
                 updatedAt: zod.iso.datetime({ offset: true }).optional(),
                 deletedAt: zod.iso.datetime({ offset: true }).optional()
@@ -2286,8 +2793,11 @@ export const SearchUsersResponse = zod.strictObject({
             page: zod
                 .number()
                 .min(1)
+                .max(searchUsersResponseDataMetaPageMax)
                 .default(searchUsersResponseDataMetaPageDefault)
-                .describe('1-based page index'),
+                .describe(
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                ),
             pageSize: zod
                 .number()
                 .min(1)
@@ -2343,6 +2853,7 @@ export const CreateFeedbackRequestResponse = zod.strictObject({
  * @summary List feedback requests
  */
 export const listFeedbackRequestsQueryPageDefault = 1;
+export const listFeedbackRequestsQueryPageMax = 10000;
 
 export const listFeedbackRequestsQueryPageSizeDefault = 10;
 export const listFeedbackRequestsQueryPageSizeMax = 100;
@@ -2351,6 +2862,7 @@ export const ListFeedbackRequestsQueryParams = zod.strictObject({
     page: zod
         .number()
         .min(1)
+        .max(listFeedbackRequestsQueryPageMax)
         .default(listFeedbackRequestsQueryPageDefault)
         .describe('1-based page index'),
     pageSize: zod
@@ -2364,6 +2876,7 @@ export const ListFeedbackRequestsQueryParams = zod.strictObject({
 });
 
 export const listFeedbackRequestsResponseDataMetaPageDefault = 1;
+export const listFeedbackRequestsResponseDataMetaPageMax = 10000;
 
 export const listFeedbackRequestsResponseDataMetaPageSizeDefault = 10;
 export const listFeedbackRequestsResponseDataMetaPageSizeMax = 100;
@@ -2395,8 +2908,11 @@ export const ListFeedbackRequestsResponse = zod.strictObject({
             page: zod
                 .number()
                 .min(1)
+                .max(listFeedbackRequestsResponseDataMetaPageMax)
                 .default(listFeedbackRequestsResponseDataMetaPageDefault)
-                .describe('1-based page index'),
+                .describe(
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                ),
             pageSize: zod
                 .number()
                 .min(1)
@@ -2414,6 +2930,7 @@ export const ListFeedbackRequestsResponse = zod.strictObject({
  * @summary Search feedback requests (DTO-friendly)
  */
 export const searchFeedbackRequestsBodyPageDefault = 1;
+export const searchFeedbackRequestsBodyPageMax = 10000;
 
 export const searchFeedbackRequestsBodyPageSizeDefault = 10;
 export const searchFeedbackRequestsBodyPageSizeMax = 100;
@@ -2422,8 +2939,11 @@ export const SearchFeedbackRequestsBody = zod.strictObject({
     page: zod
         .number()
         .min(1)
+        .max(searchFeedbackRequestsBodyPageMax)
         .default(searchFeedbackRequestsBodyPageDefault)
-        .describe('1-based page index'),
+        .describe(
+            '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+        ),
     pageSize: zod
         .number()
         .min(1)
@@ -2436,6 +2956,7 @@ export const SearchFeedbackRequestsBody = zod.strictObject({
 });
 
 export const searchFeedbackRequestsResponseDataMetaPageDefault = 1;
+export const searchFeedbackRequestsResponseDataMetaPageMax = 10000;
 
 export const searchFeedbackRequestsResponseDataMetaPageSizeDefault = 10;
 export const searchFeedbackRequestsResponseDataMetaPageSizeMax = 100;
@@ -2467,8 +2988,11 @@ export const SearchFeedbackRequestsResponse = zod.strictObject({
             page: zod
                 .number()
                 .min(1)
+                .max(searchFeedbackRequestsResponseDataMetaPageMax)
                 .default(searchFeedbackRequestsResponseDataMetaPageDefault)
-                .describe('1-based page index'),
+                .describe(
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                ),
             pageSize: zod
                 .number()
                 .min(1)
@@ -2531,6 +3055,7 @@ export const DeleteFeedbackRequestResponse = zod.strictObject({
  * @summary List products (paginated)
  */
 export const listProductsQueryPageDefault = 1;
+export const listProductsQueryPageMax = 10000;
 
 export const listProductsQueryPageSizeDefault = 10;
 export const listProductsQueryPageSizeMax = 100;
@@ -2540,7 +3065,12 @@ export const listProductsQueryMinPriceMin = 0;
 export const listProductsQueryMaxPriceMin = 0;
 
 export const ListProductsQueryParams = zod.strictObject({
-    page: zod.number().min(1).default(listProductsQueryPageDefault).describe('1-based page index'),
+    page: zod
+        .number()
+        .min(1)
+        .max(listProductsQueryPageMax)
+        .default(listProductsQueryPageDefault)
+        .describe('1-based page index'),
     pageSize: zod
         .number()
         .min(1)
@@ -2566,6 +3096,7 @@ export const listProductsResponseDataItemsItemAvailableMin = 0;
 
 export const listProductsResponseDataItemsItemRequiresShippingDefault = true;
 export const listProductsResponseDataMetaPageDefault = 1;
+export const listProductsResponseDataMetaPageMax = 10000;
 
 export const listProductsResponseDataMetaPageSizeDefault = 10;
 export const listProductsResponseDataMetaPageSizeMax = 100;
@@ -2629,8 +3160,11 @@ export const ListProductsResponse = zod.strictObject({
             page: zod
                 .number()
                 .min(1)
+                .max(listProductsResponseDataMetaPageMax)
                 .default(listProductsResponseDataMetaPageDefault)
-                .describe('1-based page index'),
+                .describe(
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                ),
             pageSize: zod
                 .number()
                 .min(1)
@@ -3054,6 +3588,7 @@ export const HardDeleteProductByIdResponse = zod.strictObject({
  * @summary Search products (DTO-friendly)
  */
 export const searchProductsBodyPageDefault = 1;
+export const searchProductsBodyPageMax = 10000;
 
 export const searchProductsBodyPageSizeDefault = 10;
 export const searchProductsBodyPageSizeMax = 100;
@@ -3063,7 +3598,14 @@ export const searchProductsBodyMinPriceMin = 0;
 export const searchProductsBodyMaxPriceMin = 0;
 
 export const SearchProductsBody = zod.strictObject({
-    page: zod.number().min(1).default(searchProductsBodyPageDefault).describe('1-based page index'),
+    page: zod
+        .number()
+        .min(1)
+        .max(searchProductsBodyPageMax)
+        .default(searchProductsBodyPageDefault)
+        .describe(
+            '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+        ),
     pageSize: zod
         .number()
         .min(1)
@@ -3090,6 +3632,7 @@ export const searchProductsResponseDataItemsItemAvailableMin = 0;
 
 export const searchProductsResponseDataItemsItemRequiresShippingDefault = true;
 export const searchProductsResponseDataMetaPageDefault = 1;
+export const searchProductsResponseDataMetaPageMax = 10000;
 
 export const searchProductsResponseDataMetaPageSizeDefault = 10;
 export const searchProductsResponseDataMetaPageSizeMax = 100;
@@ -3153,8 +3696,11 @@ export const SearchProductsResponse = zod.strictObject({
             page: zod
                 .number()
                 .min(1)
+                .max(searchProductsResponseDataMetaPageMax)
                 .default(searchProductsResponseDataMetaPageDefault)
-                .describe('1-based page index'),
+                .describe(
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                ),
             pageSize: zod
                 .number()
                 .min(1)
@@ -3503,7 +4049,7 @@ export const CheckoutResponse = zod.strictObject({
     data: zod.strictObject({
         order: zod.strictObject({
             id: zod.string().describe('Resource identifier'),
-            userId: zod.string().describe('Resource identifier'),
+            userId: zod.string().optional().describe('Resource identifier'),
             email: zod.email(),
             items: zod.array(
                 zod.strictObject({
@@ -3775,12 +4321,18 @@ export const MoveWishlistItemToCartResponse = zod.strictObject({
  * @summary List orders (paginated)
  */
 export const listOrdersQueryPageDefault = 1;
+export const listOrdersQueryPageMax = 10000;
 
 export const listOrdersQueryPageSizeDefault = 10;
 export const listOrdersQueryPageSizeMax = 100;
 
 export const ListOrdersQueryParams = zod.strictObject({
-    page: zod.number().min(1).default(listOrdersQueryPageDefault).describe('1-based page index'),
+    page: zod
+        .number()
+        .min(1)
+        .max(listOrdersQueryPageMax)
+        .default(listOrdersQueryPageDefault)
+        .describe('1-based page index'),
     pageSize: zod
         .number()
         .min(1)
@@ -3814,6 +4366,7 @@ export const listOrdersResponseDataItemsItemTotalPriceMin = 0;
 export const listOrdersResponseDataItemsItemShippingCostMin = 0;
 
 export const listOrdersResponseDataMetaPageDefault = 1;
+export const listOrdersResponseDataMetaPageMax = 10000;
 
 export const listOrdersResponseDataMetaPageSizeDefault = 10;
 export const listOrdersResponseDataMetaPageSizeMax = 100;
@@ -3830,7 +4383,7 @@ export const ListOrdersResponse = zod.strictObject({
         items: zod.array(
             zod.strictObject({
                 id: zod.string().describe('Resource identifier'),
-                userId: zod.string().describe('Resource identifier'),
+                userId: zod.string().optional().describe('Resource identifier'),
                 email: zod.email(),
                 items: zod.array(
                     zod.strictObject({
@@ -3978,8 +4531,11 @@ export const ListOrdersResponse = zod.strictObject({
             page: zod
                 .number()
                 .min(1)
+                .max(listOrdersResponseDataMetaPageMax)
                 .default(listOrdersResponseDataMetaPageDefault)
-                .describe('1-based page index'),
+                .describe(
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                ),
             pageSize: zod
                 .number()
                 .min(1)
@@ -4035,7 +4591,7 @@ export const CreateOrderResponse = zod.strictObject({
     message: zod.string(),
     data: zod.strictObject({
         id: zod.string().describe('Resource identifier'),
-        userId: zod.string().describe('Resource identifier'),
+        userId: zod.string().optional().describe('Resource identifier'),
         email: zod.email(),
         items: zod.array(
             zod.strictObject({
@@ -4219,7 +4775,7 @@ export const UpdateOrderResponse = zod.strictObject({
     message: zod.string(),
     data: zod.strictObject({
         id: zod.string().describe('Resource identifier'),
-        userId: zod.string().describe('Resource identifier'),
+        userId: zod.string().optional().describe('Resource identifier'),
         email: zod.email(),
         items: zod.array(
             zod.strictObject({
@@ -4388,12 +4944,20 @@ export const DeleteOrderResponse = zod.strictObject({
  * @summary Search orders (DTO-friendly)
  */
 export const searchOrdersBodyPageDefault = 1;
+export const searchOrdersBodyPageMax = 10000;
 
 export const searchOrdersBodyPageSizeDefault = 10;
 export const searchOrdersBodyPageSizeMax = 100;
 
 export const SearchOrdersBody = zod.strictObject({
-    page: zod.number().min(1).default(searchOrdersBodyPageDefault).describe('1-based page index'),
+    page: zod
+        .number()
+        .min(1)
+        .max(searchOrdersBodyPageMax)
+        .default(searchOrdersBodyPageDefault)
+        .describe(
+            '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+        ),
     pageSize: zod
         .number()
         .min(1)
@@ -4431,6 +4995,7 @@ export const searchOrdersResponseDataItemsItemTotalPriceMin = 0;
 export const searchOrdersResponseDataItemsItemShippingCostMin = 0;
 
 export const searchOrdersResponseDataMetaPageDefault = 1;
+export const searchOrdersResponseDataMetaPageMax = 10000;
 
 export const searchOrdersResponseDataMetaPageSizeDefault = 10;
 export const searchOrdersResponseDataMetaPageSizeMax = 100;
@@ -4447,7 +5012,7 @@ export const SearchOrdersResponse = zod.strictObject({
         items: zod.array(
             zod.strictObject({
                 id: zod.string().describe('Resource identifier'),
-                userId: zod.string().describe('Resource identifier'),
+                userId: zod.string().optional().describe('Resource identifier'),
                 email: zod.email(),
                 items: zod.array(
                     zod.strictObject({
@@ -4595,8 +5160,11 @@ export const SearchOrdersResponse = zod.strictObject({
             page: zod
                 .number()
                 .min(1)
+                .max(searchOrdersResponseDataMetaPageMax)
                 .default(searchOrdersResponseDataMetaPageDefault)
-                .describe('1-based page index'),
+                .describe(
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                ),
             pageSize: zod
                 .number()
                 .min(1)
@@ -4640,7 +5208,7 @@ export const GetOrderByIdResponse = zod.strictObject({
     message: zod.string(),
     data: zod.strictObject({
         id: zod.string().describe('Resource identifier'),
-        userId: zod.string().describe('Resource identifier'),
+        userId: zod.string().optional().describe('Resource identifier'),
         email: zod.email(),
         items: zod.array(
             zod.strictObject({
@@ -4826,7 +5394,7 @@ export const UpdateOrderByIdResponse = zod.strictObject({
     message: zod.string(),
     data: zod.strictObject({
         id: zod.string().describe('Resource identifier'),
-        userId: zod.string().describe('Resource identifier'),
+        userId: zod.string().optional().describe('Resource identifier'),
         email: zod.email(),
         items: zod.array(
             zod.strictObject({
@@ -5054,7 +5622,7 @@ export const CancelOrderByIdResponse = zod.strictObject({
     message: zod.string(),
     data: zod.strictObject({
         id: zod.string().describe('Resource identifier'),
-        userId: zod.string().describe('Resource identifier'),
+        userId: zod.string().optional().describe('Resource identifier'),
         email: zod.email(),
         items: zod.array(
             zod.strictObject({
@@ -5220,7 +5788,7 @@ export const CreatePaymentIntentResponse = zod.strictObject({
     data: zod.strictObject({
         id: zod.string().describe('Resource identifier'),
         orderId: zod.string().describe('Resource identifier'),
-        userId: zod.string().describe('Resource identifier'),
+        userId: zod.string().optional().describe('Resource identifier'),
         amount: zod
             .number()
             .min(createPaymentIntentResponseDataAmountMin)
@@ -5277,7 +5845,7 @@ export const GetPaymentByOrderResponse = zod.strictObject({
     data: zod.strictObject({
         id: zod.string().describe('Resource identifier'),
         orderId: zod.string().describe('Resource identifier'),
-        userId: zod.string().describe('Resource identifier'),
+        userId: zod.string().optional().describe('Resource identifier'),
         amount: zod
             .number()
             .min(getPaymentByOrderResponseDataAmountMin)
@@ -5334,7 +5902,7 @@ export const RefundPaymentByOrderResponse = zod.strictObject({
     data: zod.strictObject({
         id: zod.string().describe('Resource identifier'),
         orderId: zod.string().describe('Resource identifier'),
-        userId: zod.string().describe('Resource identifier'),
+        userId: zod.string().optional().describe('Resource identifier'),
         amount: zod
             .number()
             .min(refundPaymentByOrderResponseDataAmountMin)
@@ -5407,7 +5975,7 @@ export const ConfirmPaymentResponse = zod.strictObject({
     data: zod.strictObject({
         id: zod.string().describe('Resource identifier'),
         orderId: zod.string().describe('Resource identifier'),
-        userId: zod.string().describe('Resource identifier'),
+        userId: zod.string().optional().describe('Resource identifier'),
         amount: zod
             .number()
             .min(confirmPaymentResponseDataAmountMin)
@@ -5531,6 +6099,7 @@ export const AdvanceCourierResponse = zod.strictObject({
  * @summary Stock levels
  */
 export const listInventoryLevelsQueryPageDefault = 1;
+export const listInventoryLevelsQueryPageMax = 10000;
 
 export const listInventoryLevelsQueryPageSizeDefault = 10;
 export const listInventoryLevelsQueryPageSizeMax = 100;
@@ -5541,6 +6110,7 @@ export const ListInventoryLevelsQueryParams = zod.strictObject({
     page: zod
         .number()
         .min(1)
+        .max(listInventoryLevelsQueryPageMax)
         .default(listInventoryLevelsQueryPageDefault)
         .describe('1-based page index'),
     pageSize: zod
@@ -5561,6 +6131,7 @@ export const listInventoryLevelsResponseDataItemsItemReservedMin = 0;
 export const listInventoryLevelsResponseDataItemsItemAvailableMin = 0;
 
 export const listInventoryLevelsResponseDataMetaPageDefault = 1;
+export const listInventoryLevelsResponseDataMetaPageMax = 10000;
 
 export const listInventoryLevelsResponseDataMetaPageSizeDefault = 10;
 export const listInventoryLevelsResponseDataMetaPageSizeMax = 100;
@@ -5591,8 +6162,11 @@ export const ListInventoryLevelsResponse = zod.strictObject({
             page: zod
                 .number()
                 .min(1)
+                .max(listInventoryLevelsResponseDataMetaPageMax)
                 .default(listInventoryLevelsResponseDataMetaPageDefault)
-                .describe('1-based page index'),
+                .describe(
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                ),
             pageSize: zod
                 .number()
                 .min(1)
@@ -5610,6 +6184,7 @@ export const ListInventoryLevelsResponse = zod.strictObject({
  * @summary List stock movements
  */
 export const listStockMovementsQueryPageDefault = 1;
+export const listStockMovementsQueryPageMax = 10000;
 
 export const listStockMovementsQueryPageSizeDefault = 10;
 export const listStockMovementsQueryPageSizeMax = 100;
@@ -5618,6 +6193,7 @@ export const ListStockMovementsQueryParams = zod.strictObject({
     page: zod
         .number()
         .min(1)
+        .max(listStockMovementsQueryPageMax)
         .default(listStockMovementsQueryPageDefault)
         .describe('1-based page index'),
     pageSize: zod
@@ -5633,6 +6209,7 @@ export const ListStockMovementsQueryParams = zod.strictObject({
 });
 
 export const listStockMovementsResponseDataMetaPageDefault = 1;
+export const listStockMovementsResponseDataMetaPageMax = 10000;
 
 export const listStockMovementsResponseDataMetaPageSizeDefault = 10;
 export const listStockMovementsResponseDataMetaPageSizeMax = 100;
@@ -5673,8 +6250,11 @@ export const ListStockMovementsResponse = zod.strictObject({
             page: zod
                 .number()
                 .min(1)
+                .max(listStockMovementsResponseDataMetaPageMax)
                 .default(listStockMovementsResponseDataMetaPageDefault)
-                .describe('1-based page index'),
+                .describe(
+                    '1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.'
+                ),
             pageSize: zod
                 .number()
                 .min(1)

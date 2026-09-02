@@ -53,7 +53,8 @@ beforeEach(() => {
         'DELETE /account': { data: undefined },
         'DELETE /account/delete-confirm': { data: undefined },
         'PUT /account': { data: { ...USER, username: 'ada2' } },
-        'POST /account/password': { data: undefined },
+        // The envelope the real endpoint answers: a fresh access token for this session.
+        'POST /account/password': { data: { token: 'rotated-jwt' } },
         'POST /account/verify-request': { data: undefined },
         'POST /account/verify-confirm': { data: undefined }
     };
@@ -244,7 +245,7 @@ describe('the account deletion flow', () => {
 });
 
 describe('the self-service actions', () => {
-    it('changePassword sends all three fields to its own endpoint', () =>
+    it('changePassword sends all three fields and adopts the rotated access token', () =>
         useProfileStore()
             .changePassword('old-secret', 'new-secret', 'new-secret')
             .then(() => {
@@ -256,6 +257,9 @@ describe('the self-service actions', () => {
                 expect(Object.keys(last.data).toSorted()).toEqual(
                     ['currentPassword', 'password', 'passwordConfirm'].toSorted()
                 );
+                // The API revoked every other session and re-keyed this one; running on with the
+                // old token is the regression this pins against.
+                expect(useSessionStore().accessToken).toBe('rotated-jwt');
             }));
 
     it('confirmEmailVerification refetches the profile only for a live session', () => {

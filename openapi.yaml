@@ -742,7 +742,7 @@ paths:
       tags:
         - Auth
       summary: Change password
-      description: Changes the authenticated user's password. Unlike the reset flow this proves possession of the current password rather than of the mailbox, so it needs no email round-trip. Other sessions stay live — revoke them with `POST /account/logout-all` or per session via `DELETE /account/sessions/{sessionId}`.
+      description: Changes the authenticated user's password. Unlike the reset flow this proves possession of the current password rather than of the mailbox, so it needs no email round-trip. Every OTHER session is revoked; the response carries a fresh access token for this one, and sets fresh session cookies.
       operationId: changePassword
       security:
         - bearerAuth: []
@@ -754,7 +754,39 @@ paths:
               $ref: '#/components/schemas/ChangePasswordRequest'
       responses:
         '200':
-          $ref: '#/components/responses/Success'
+          description: Password changed; a fresh access token for this session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokensEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /account/reauth:
+    post:
+      tags:
+        - Auth
+      summary: Re-authenticate (step-up)
+      description: Re-proves the caller's password to refresh how recently they authenticated, without ending the session — the answer to a `401 REAUTH_REQUIRED` challenge from a route gated by freshness (checkout, payments, deleting the account, changing the email, session management). Re-mints the session and returns a fresh access token, same as `POST /account/password`.
+      operationId: reauth
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReauthRequest'
+      responses:
+        '200':
+          description: Re-authenticated; a fresh access token for this session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokensEnvelope'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '422':
@@ -1000,7 +1032,7 @@ paths:
       tags:
         - Auth
       summary: Login
-      description: Authenticates a user with email and password credentials. On success, returns a JWT access token that must be passed as a Bearer token on subsequent authenticated requests.
+      description: Authenticates a user with email and password credentials. On success, returns a JWT access token that must be passed as a Bearer token on subsequent authenticated requests — OR, when the account has two-factor authentication enabled, a short-lived challenge that must be submitted to `POST /account/login/2fa` instead.
       operationId: login
       security: []
       requestBody:
@@ -1011,11 +1043,11 @@ paths:
               $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
-          description: Auth tokens
+          description: Auth tokens, or a two-factor challenge
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthTokensEnvelope'
+                $ref: '#/components/schemas/LoginResponseEnvelope'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '422':
@@ -1145,6 +1177,125 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /account/export:
+    post:
+      tags:
+        - Auth
+      summary: Export the caller's own data
+      description: One JSON answer to "give me my data" (Art. 15, 20), assembled from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a full personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
+      operationId: exportAccountData
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The caller's own data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountExportEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /account/login/2fa:
+    post:
+      tags:
+        - Auth
+      summary: Complete a two-factor login
+      description: The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, returns the same auth tokens `POST /account/login` returns for an account with no second factor.
+      operationId: loginTwoFactor
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginTwoFactorRequest'
+      responses:
+        '200':
+          description: Auth tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokensEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /account/2fa/setup:
+    post:
+      tags:
+        - Auth
+      summary: Start two-factor enrollment
+      description: Generates a fresh TOTP secret and returns it plaintext, once, along with the `otpauth://` URI to render as a QR code. Enrollment is not active until `POST /account/2fa/confirm` proves the caller scanned it. Calling this again — including on an account that already has 2FA on — replaces the pending secret and clears any confirmed one, for the "lost my phone, still have my session" recovery path.
+      operationId: setupTwoFactor
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A fresh TOTP secret, awaiting confirmation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFactorSetupEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /account/2fa/confirm:
+    post:
+      tags:
+        - Auth
+      summary: Confirm two-factor enrollment
+      description: Arms the pending secret from `POST /account/2fa/setup` against a code from the caller's authenticator app, and mints backup codes — returned in the clear exactly once.
+      operationId: confirmTwoFactor
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorConfirmRequest'
+      responses:
+        '200':
+          description: Two-factor authentication is now on; here are the backup codes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFactorConfirmEnvelope'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /account/2fa:
+    delete:
+      tags:
+        - Auth
+      summary: Disable two-factor authentication
+      description: Disables 2FA. Requires a valid TOTP code or an unused backup code in the body, on top of the route's own fresh-auth requirement — disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature.
+      operationId: disableTwoFactor
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TwoFactorDisableRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/Success'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
         '500':
           $ref: '#/components/responses/InternalError'
   /users:
@@ -1393,6 +1544,30 @@ paths:
       description: Permanently removes the user identified by `{id}`, rather than soft-deleting it. Functionally equivalent to `DELETE /users/{id}?hardDelete=true`.
       operationId: hardDeleteUserById
       x-alias-of: deleteUserById
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          $ref: '#/components/responses/Success'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /users/{id}/2fa:
+    delete:
+      tags:
+        - Users
+      summary: Admin-assisted 2FA recovery
+      description: Strips the user's second factor, no code required — unlike the self-service `DELETE /account/2fa`, which demands one. The one deliberate exception to "prove the factor to remove it", for an account whose owner has lost both their authenticator and their backup codes. Every call is audited.
+      operationId: adminDisableUserTwoFactor
       security:
         - bearerAuth: []
       parameters:
@@ -3093,8 +3268,9 @@ components:
     Page:
       type: integer
       minimum: 1
+      maximum: 10000
       default: 1
-      description: 1-based page index
+      description: 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
     PageSize:
       type: integer
       default: 10
@@ -3284,6 +3460,14 @@ components:
           type: string
         website:
           type: string
+        analyticsConsent:
+          type: string
+          enum:
+            - granted
+            - denied
+        twoFactorEnabledAt:
+          type: string
+          format: date-time
         createdAt:
           type: string
           format: date-time
@@ -3436,7 +3620,6 @@ components:
       additionalProperties: false
       required:
         - id
-        - userId
         - email
         - items
         - totalItems
@@ -4432,6 +4615,11 @@ components:
           type: string
         website:
           type: string
+        analyticsConsent:
+          type: string
+          enum:
+            - granted
+            - denied
     UpdateAccountRequestMultipart:
       type: object
       additionalProperties: false
@@ -4451,6 +4639,11 @@ components:
           type: string
         website:
           type: string
+        analyticsConsent:
+          type: string
+          enum:
+            - granted
+            - denied
     ChangePasswordRequest:
       type: object
       additionalProperties: false
@@ -4464,6 +4657,46 @@ components:
         password:
           $ref: '#/components/schemas/Password'
         passwordConfirm:
+          $ref: '#/components/schemas/Password'
+    AuthTokens:
+      type: object
+      additionalProperties: false
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          description: Access JWT
+        refreshToken:
+          type: string
+          description: Refresh token if returned by backend
+        expiresIn:
+          type: integer
+          description: Access token expiry in seconds
+    AuthTokensEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: '#/components/schemas/EnvelopeSuccess'
+        status:
+          $ref: '#/components/schemas/EnvelopeStatus'
+        message:
+          $ref: '#/components/schemas/EnvelopeMessage'
+        data:
+          $ref: '#/components/schemas/AuthTokens'
+    ReauthRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - password
+      properties:
+        password:
           $ref: '#/components/schemas/Password'
     Session:
       type: object
@@ -4662,22 +4895,27 @@ components:
             - medium
             - long
           description: How long the refresh cookie outlives the tab — the "remember me" tiers, each sized by the deployment. Omitted, the cookie lives only as long as an access token.
-    AuthTokens:
+    MfaChallenge:
       type: object
       additionalProperties: false
       required:
-        - token
+        - mfaRequired
+        - challenge
       properties:
-        token:
+        mfaRequired:
+          type: boolean
+          enum:
+            - true
+          description: Always true — the credential check passed, but a second factor is required before a session is issued.
+        challenge:
           type: string
-          description: Access JWT
-        refreshToken:
-          type: string
-          description: Refresh token if returned by backend
-        expiresIn:
-          type: integer
-          description: Access token expiry in seconds
-    AuthTokensEnvelope:
+          description: Short-lived signed token naming this login attempt. Submit it, with a code, to POST /account/login/2fa. Expires after five minutes.
+    LoginResult:
+      oneOf:
+        - $ref: '#/components/schemas/AuthTokens'
+        - $ref: '#/components/schemas/MfaChallenge'
+      description: Either a full session (AuthTokens) or a step-up challenge (MfaChallenge) when the account has two-factor authentication enabled.
+    LoginResponseEnvelope:
       type: object
       additionalProperties: false
       required:
@@ -4693,7 +4931,7 @@ components:
         message:
           $ref: '#/components/schemas/EnvelopeMessage'
         data:
-          $ref: '#/components/schemas/AuthTokens'
+          $ref: '#/components/schemas/LoginResult'
     SignupRequest:
       type: object
       additionalProperties: false
@@ -4791,6 +5029,339 @@ components:
           $ref: '#/components/schemas/EnvelopeMessage'
         data:
           $ref: '#/components/schemas/RefreshTokenResponse'
+    ExportPayment:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - amount
+        - currency
+        - status
+        - provider
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        orderId:
+          $ref: '#/components/schemas/Id'
+        amount:
+          type: number
+          format: double
+          minimum: 0
+        currency:
+          type: string
+        status:
+          type: string
+          enum:
+            - requires_confirmation
+            - succeeded
+            - declined
+            - refunded
+        provider:
+          type: string
+        cardLast4:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ExportShipment:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - orderId
+        - trackingCode
+        - status
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        orderId:
+          $ref: '#/components/schemas/Id'
+        trackingCode:
+          type: string
+        status:
+          type: string
+          enum:
+            - shipped
+            - delivered
+        deliveredAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ExportSession:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - type
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        type:
+          type: string
+          enum:
+            - refresh
+        expiration:
+          type: string
+          format: date-time
+        lastUsedAt:
+          type: string
+          format: date-time
+    ExportAuditEntry:
+      type: object
+      additionalProperties: false
+      required:
+        - actor_user_id
+        - actor_role
+        - action
+        - outcome
+        - timestamp
+        - level
+      properties:
+        actor_user_id:
+          type: string
+        actor_role:
+          type: string
+          enum:
+            - admin
+            - user
+            - anonymous
+        action:
+          type: string
+          description: Dotted action name, e.g. `order.created`.
+        outcome:
+          type: string
+          enum:
+            - success
+            - failure
+        ip:
+          type: string
+        user_agent:
+          type: string
+        request_id:
+          type: string
+        trace_id:
+          type: string
+        target_type:
+          type: string
+        target_id:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        timestamp:
+          type: string
+          format: date-time
+        level:
+          type: string
+          enum:
+            - info
+            - warn
+    ExportFeedbackTicket:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - email
+        - subject
+        - message
+        - status
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        name:
+          type: string
+        email:
+          $ref: '#/components/schemas/Email'
+        subject:
+          type: string
+        message:
+          type: string
+        status:
+          type: string
+        respondedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+    AccountExportResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - exportedAt
+        - profile
+        - addresses
+        - orders
+        - payments
+        - shipments
+        - cart
+        - wishlist
+        - sessions
+        - auditLog
+      properties:
+        exportedAt:
+          type: string
+          format: date-time
+        profile:
+          $ref: '#/components/schemas/User'
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/Address'
+        orders:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+        payments:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExportPayment'
+        shipments:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExportShipment'
+        cart:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        wishlist:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - productId
+            properties:
+              productId:
+                $ref: '#/components/schemas/Id'
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExportSession'
+        auditLog:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExportAuditEntry'
+        feedback:
+          type: array
+          description: Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`.
+          items:
+            $ref: '#/components/schemas/ExportFeedbackTicket'
+    AccountExportEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: '#/components/schemas/EnvelopeSuccess'
+        status:
+          $ref: '#/components/schemas/EnvelopeStatus'
+        message:
+          $ref: '#/components/schemas/EnvelopeMessage'
+        data:
+          $ref: '#/components/schemas/AccountExportResponse'
+    LoginTwoFactorRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - challenge
+        - code
+      properties:
+        challenge:
+          type: string
+          description: The challenge token from POST /account/login.
+        code:
+          type: string
+          description: A 6-digit TOTP code, or an unused backup code.
+    TwoFactorSetup:
+      type: object
+      additionalProperties: false
+      required:
+        - secret
+        - otpauthUri
+      properties:
+        secret:
+          type: string
+          description: The TOTP secret, base32-encoded, shown once for manual entry as a fallback to scanning.
+        otpauthUri:
+          type: string
+          description: An otpauth:// URI — the frontend renders it as a QR code; this API generates no image.
+    TwoFactorSetupEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: '#/components/schemas/EnvelopeSuccess'
+        status:
+          $ref: '#/components/schemas/EnvelopeStatus'
+        message:
+          $ref: '#/components/schemas/EnvelopeMessage'
+        data:
+          $ref: '#/components/schemas/TwoFactorSetup'
+    TwoFactorConfirmRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          description: A 6-digit code from the authenticator app enrolled via POST /account/2fa/setup.
+    TwoFactorConfirmed:
+      type: object
+      additionalProperties: false
+      required:
+        - backupCodes
+      properties:
+        backupCodes:
+          type: array
+          items:
+            type: string
+          description: One-time recovery codes for a lost authenticator, shown in the clear exactly once.
+    TwoFactorConfirmEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - success
+        - status
+        - message
+        - data
+      properties:
+        success:
+          $ref: '#/components/schemas/EnvelopeSuccess'
+        status:
+          $ref: '#/components/schemas/EnvelopeStatus'
+        message:
+          $ref: '#/components/schemas/EnvelopeMessage'
+        data:
+          $ref: '#/components/schemas/TwoFactorConfirmed'
+    TwoFactorDisableRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          description: A TOTP code, or an unused backup code.
     UsersResponse:
       type: object
       additionalProperties: false
@@ -5836,7 +6407,6 @@ components:
       required:
         - id
         - orderId
-        - userId
         - amount
         - currency
         - status

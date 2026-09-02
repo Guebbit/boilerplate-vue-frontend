@@ -20,8 +20,9 @@
  */
 import { orvalMutator } from '../../src/infrastructure/http/index.js';
 /**
- * 1-based page index
+ * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
  * @minimum 1
+ * @maximum 10000
  */
 export type Page = number;
 
@@ -125,6 +126,13 @@ export interface ValidationErrorResponse {
     errors: ErrorItem[];
 }
 
+export type UserAnalyticsConsent = (typeof UserAnalyticsConsent)[keyof typeof UserAnalyticsConsent];
+
+export const UserAnalyticsConsent = {
+    granted: 'granted',
+    denied: 'denied'
+} as const;
+
 export interface User {
     id: Id;
     email: Email;
@@ -137,6 +145,8 @@ export interface User {
     locale?: Locale;
     phone?: string;
     website?: string;
+    analyticsConsent?: UserAnalyticsConsent;
+    twoFactorEnabledAt?: string;
     createdAt?: string;
     updatedAt?: string;
     deletedAt?: string;
@@ -230,7 +240,7 @@ export interface OrderActions {
 
 export interface Order {
     id: Id;
-    userId: Id;
+    userId?: Id;
     email: Email;
     items: OrderItem[];
     /**
@@ -830,6 +840,14 @@ export interface AuditLogsResponseEnvelope {
     data: AuditLogsPage;
 }
 
+export type UpdateAccountRequestAnalyticsConsent =
+    (typeof UpdateAccountRequestAnalyticsConsent)[keyof typeof UpdateAccountRequestAnalyticsConsent];
+
+export const UpdateAccountRequestAnalyticsConsent = {
+    granted: 'granted',
+    denied: 'denied'
+} as const;
+
 export interface UpdateAccountRequest {
     email?: Email;
     /** @minLength 3 */
@@ -838,7 +856,16 @@ export interface UpdateAccountRequest {
     imageUrl?: ImageUrl;
     phone?: string;
     website?: string;
+    analyticsConsent?: UpdateAccountRequestAnalyticsConsent;
 }
+
+export type UpdateAccountRequestMultipartAnalyticsConsent =
+    (typeof UpdateAccountRequestMultipartAnalyticsConsent)[keyof typeof UpdateAccountRequestMultipartAnalyticsConsent];
+
+export const UpdateAccountRequestMultipartAnalyticsConsent = {
+    granted: 'granted',
+    denied: 'denied'
+} as const;
 
 export interface UpdateAccountRequestMultipart {
     email?: Email;
@@ -849,12 +876,33 @@ export interface UpdateAccountRequestMultipart {
     imageUpload?: Blob;
     phone?: string;
     website?: string;
+    analyticsConsent?: UpdateAccountRequestMultipartAnalyticsConsent;
 }
 
 export interface ChangePasswordRequest {
     currentPassword: Password;
     password: Password;
     passwordConfirm: Password;
+}
+
+export interface AuthTokens {
+    /** Access JWT */
+    token: string;
+    /** Refresh token if returned by backend */
+    refreshToken?: string;
+    /** Access token expiry in seconds */
+    expiresIn?: number;
+}
+
+export interface AuthTokensEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AuthTokens;
+}
+
+export interface ReauthRequest {
+    password: Password;
 }
 
 export interface Session {
@@ -962,20 +1010,23 @@ export interface LoginRequest {
     remember?: LoginRequestRemember;
 }
 
-export interface AuthTokens {
-    /** Access JWT */
-    token: string;
-    /** Refresh token if returned by backend */
-    refreshToken?: string;
-    /** Access token expiry in seconds */
-    expiresIn?: number;
+export interface MfaChallenge {
+    /** Always true — the credential check passed, but a second factor is required before a session is issued. */
+    mfaRequired: true;
+    /** Short-lived signed token naming this login attempt. Submit it, with a code, to POST /account/login/2fa. Expires after five minutes. */
+    challenge: string;
 }
 
-export interface AuthTokensEnvelope {
+/**
+ * Either a full session (AuthTokens) or a step-up challenge (MfaChallenge) when the account has two-factor authentication enabled.
+ */
+export type LoginResult = AuthTokens | MfaChallenge;
+
+export interface LoginResponseEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
     message: EnvelopeMessage;
-    data: AuthTokens;
+    data: LoginResult;
 }
 
 export interface SignupRequest {
@@ -1022,6 +1073,182 @@ export interface RefreshTokenEnvelope {
     status: EnvelopeStatus;
     message: EnvelopeMessage;
     data: RefreshTokenResponse;
+}
+
+export type ExportPaymentStatus = (typeof ExportPaymentStatus)[keyof typeof ExportPaymentStatus];
+
+export const ExportPaymentStatus = {
+    requires_confirmation: 'requires_confirmation',
+    succeeded: 'succeeded',
+    declined: 'declined',
+    refunded: 'refunded'
+} as const;
+
+export interface ExportPayment {
+    id: Id;
+    orderId: Id;
+    /** @minimum 0 */
+    amount: number;
+    currency: string;
+    status: ExportPaymentStatus;
+    provider: string;
+    cardLast4?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export type ExportShipmentStatus = (typeof ExportShipmentStatus)[keyof typeof ExportShipmentStatus];
+
+export const ExportShipmentStatus = {
+    shipped: 'shipped',
+    delivered: 'delivered'
+} as const;
+
+export interface ExportShipment {
+    id: Id;
+    orderId: Id;
+    trackingCode: string;
+    status: ExportShipmentStatus;
+    deliveredAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export type ExportSessionType = (typeof ExportSessionType)[keyof typeof ExportSessionType];
+
+export const ExportSessionType = {
+    refresh: 'refresh'
+} as const;
+
+export interface ExportSession {
+    id: Id;
+    type: ExportSessionType;
+    expiration?: string;
+    lastUsedAt?: string;
+}
+
+export type ExportAuditEntryActorRole =
+    (typeof ExportAuditEntryActorRole)[keyof typeof ExportAuditEntryActorRole];
+
+export const ExportAuditEntryActorRole = {
+    admin: 'admin',
+    user: 'user',
+    anonymous: 'anonymous'
+} as const;
+
+export type ExportAuditEntryOutcome =
+    (typeof ExportAuditEntryOutcome)[keyof typeof ExportAuditEntryOutcome];
+
+export const ExportAuditEntryOutcome = {
+    success: 'success',
+    failure: 'failure'
+} as const;
+
+export type ExportAuditEntryMetadata = { [key: string]: unknown };
+
+export type ExportAuditEntryLevel =
+    (typeof ExportAuditEntryLevel)[keyof typeof ExportAuditEntryLevel];
+
+export const ExportAuditEntryLevel = {
+    info: 'info',
+    warn: 'warn'
+} as const;
+
+export interface ExportAuditEntry {
+    actor_user_id: string;
+    actor_role: ExportAuditEntryActorRole;
+    /** Dotted action name, e.g. `order.created`. */
+    action: string;
+    outcome: ExportAuditEntryOutcome;
+    ip?: string;
+    user_agent?: string;
+    request_id?: string;
+    trace_id?: string;
+    target_type?: string;
+    target_id?: string;
+    metadata?: ExportAuditEntryMetadata;
+    timestamp: string;
+    level: ExportAuditEntryLevel;
+}
+
+export interface ExportFeedbackTicket {
+    id: Id;
+    name?: string;
+    email: Email;
+    subject: string;
+    message: string;
+    status: string;
+    respondedAt?: string;
+    createdAt?: string;
+}
+
+export type AccountExportResponseWishlistItem = {
+    productId: Id;
+};
+
+export interface AccountExportResponse {
+    exportedAt: string;
+    profile: User;
+    addresses: Address[];
+    orders: Order[];
+    payments: ExportPayment[];
+    shipments: ExportShipment[];
+    cart: CartItem[];
+    wishlist: AccountExportResponseWishlistItem[];
+    sessions: ExportSession[];
+    auditLog: ExportAuditEntry[];
+    /** Present only when `NODE_EXPORT_INCLUDE_FEEDBACK=true`. */
+    feedback?: ExportFeedbackTicket[];
+}
+
+export interface AccountExportEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: AccountExportResponse;
+}
+
+export interface LoginTwoFactorRequest {
+    /** The challenge token from POST /account/login. */
+    challenge: string;
+    /** A 6-digit TOTP code, or an unused backup code. */
+    code: string;
+}
+
+export interface TwoFactorSetup {
+    /** The TOTP secret, base32-encoded, shown once for manual entry as a fallback to scanning. */
+    secret: string;
+    /** An otpauth:// URI — the frontend renders it as a QR code; this API generates no image. */
+    otpauthUri: string;
+}
+
+export interface TwoFactorSetupEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: TwoFactorSetup;
+}
+
+export interface TwoFactorConfirmRequest {
+    /** A 6-digit code from the authenticator app enrolled via POST /account/2fa/setup. */
+    code: string;
+}
+
+export interface TwoFactorConfirmed {
+    /** One-time recovery codes for a lost authenticator, shown in the clear exactly once. */
+    backupCodes: string[];
+}
+
+export interface TwoFactorConfirmEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: TwoFactorConfirmed;
+}
+
+export interface TwoFactorDisableRequest {
+    /** A TOTP code, or an unused backup code. */
+    code: string;
 }
 
 export interface UsersResponse {
@@ -1560,7 +1787,7 @@ export const PaymentStatus = {
 export interface Payment {
     id: Id;
     orderId: Id;
-    userId: Id;
+    userId?: Id;
     /**
      * The order's total as the intent froze it.
      * @minimum 0
@@ -1849,8 +2076,9 @@ export type GetLocaleMessagesParams = {
 
 export type ListLocaleEntriesParams = {
     /**
-     * 1-based page index
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
      * @minimum 1
+     * @maximum 10000
      */
     page?: PageParamParameter;
     /**
@@ -1901,8 +2129,9 @@ export type GetObservabilityAuditLogsParams = {
      */
     since?: string;
     /**
-     * 1-based page index
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
      * @minimum 1
+     * @maximum 10000
      */
     page?: PageParamParameter;
     /**
@@ -1923,8 +2152,9 @@ export const GetObservabilityAuditLogsOutcome = {
 
 export type ListUsersParams = {
     /**
-     * 1-based page index
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
      * @minimum 1
+     * @maximum 10000
      */
     page?: PageParamParameter;
     /**
@@ -1965,8 +2195,9 @@ export type DeleteUserByIdParams = {
 
 export type ListFeedbackRequestsParams = {
     /**
-     * 1-based page index
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
      * @minimum 1
+     * @maximum 10000
      */
     page?: PageParamParameter;
     /**
@@ -1986,8 +2217,9 @@ export type ListFeedbackRequestsParams = {
 
 export type ListProductsParams = {
     /**
-     * 1-based page index
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
      * @minimum 1
+     * @maximum 10000
      */
     page?: PageParamParameter;
     /**
@@ -2035,8 +2267,9 @@ export type DeleteProductByIdParams = {
 
 export type ListOrdersParams = {
     /**
-     * 1-based page index
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
      * @minimum 1
+     * @maximum 10000
      */
     page?: PageParamParameter;
     /**
@@ -2078,8 +2311,9 @@ export type DeleteOrderByIdParams = {
 
 export type ListInventoryLevelsParams = {
     /**
-     * 1-based page index
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
      * @minimum 1
+     * @maximum 10000
      */
     page?: PageParamParameter;
     /**
@@ -2096,8 +2330,9 @@ export type ListInventoryLevelsParams = {
 
 export type ListStockMovementsParams = {
     /**
-     * 1-based page index
+     * 1-based page index. Bounded so page × pageSize cannot ask for an unbounded Mongo skip.
      * @minimum 1
+     * @maximum 10000
      */
     page?: PageParamParameter;
     /**
@@ -2546,6 +2781,9 @@ export const updateAccountWithMultipart = (
     if (updateAccountRequestMultipart.website !== undefined) {
         formData.append(`website`, updateAccountRequestMultipart.website);
     }
+    if (updateAccountRequestMultipart.analyticsConsent !== undefined) {
+        formData.append(`analyticsConsent`, updateAccountRequestMultipart.analyticsConsent);
+    }
 
     return orvalMutator<UserEnvelope>(
         {
@@ -2569,19 +2807,38 @@ export const requestAccountDelete = (
 };
 
 /**
- * Changes the authenticated user's password. Unlike the reset flow this proves possession of the current password rather than of the mailbox, so it needs no email round-trip. Other sessions stay live — revoke them with `POST /account/logout-all` or per session via `DELETE /account/sessions/{sessionId}`.
+ * Changes the authenticated user's password. Unlike the reset flow this proves possession of the current password rather than of the mailbox, so it needs no email round-trip. Every OTHER session is revoked; the response carries a fresh access token for this one, and sets fresh session cookies.
  * @summary Change password
  */
 export const changePassword = (
     changePasswordRequest: ChangePasswordRequest,
-    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+    options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>
 ) => {
-    return orvalMutator<SuccessResponse>(
+    return orvalMutator<AuthTokensEnvelope>(
         {
             url: `/account/password`,
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             data: changePasswordRequest
+        },
+        options
+    );
+};
+
+/**
+ * Re-proves the caller's password to refresh how recently they authenticated, without ending the session — the answer to a `401 REAUTH_REQUIRED` challenge from a route gated by freshness (checkout, payments, deleting the account, changing the email, session management). Re-mints the session and returns a fresh access token, same as `POST /account/password`.
+ * @summary Re-authenticate (step-up)
+ */
+export const reauth = (
+    reauthRequest: ReauthRequest,
+    options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>
+) => {
+    return orvalMutator<AuthTokensEnvelope>(
+        {
+            url: `/account/reauth`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: reauthRequest
         },
         options
     );
@@ -2730,14 +2987,14 @@ export const confirmAccountDelete = (
 };
 
 /**
- * Authenticates a user with email and password credentials. On success, returns a JWT access token that must be passed as a Bearer token on subsequent authenticated requests.
+ * Authenticates a user with email and password credentials. On success, returns a JWT access token that must be passed as a Bearer token on subsequent authenticated requests — OR, when the account has two-factor authentication enabled, a short-lived challenge that must be submitted to `POST /account/login/2fa` instead.
  * @summary Login
  */
 export const login = (
     loginRequest: LoginRequest,
-    options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>
+    options?: SecondParameter<typeof orvalMutator<LoginResponseEnvelope>>
 ) => {
-    return orvalMutator<AuthTokensEnvelope>(
+    return orvalMutator<LoginResponseEnvelope>(
         {
             url: `/account/login`,
             method: 'POST',
@@ -2860,6 +3117,86 @@ export const deleteExpiredTokens = (
 ) => {
     return orvalMutator<SuccessResponse>(
         { url: `/account/tokens/expired`, method: 'DELETE' },
+        options
+    );
+};
+
+/**
+ * One JSON answer to "give me my data" (Art. 15, 20), assembled from every collection that holds something of the caller's — profile, address book, orders, payments, shipments, cart, wishlist, live sessions (metadata only, never a token value), and their own audit trail. Requires a FRESH session (`requireFreshAuth`) rather than a request body — a full personal-data dump is worth re-proving identity for, and this repository already has the mechanism.
+ * @summary Export the caller's own data
+ */
+export const exportAccountData = (
+    options?: SecondParameter<typeof orvalMutator<AccountExportEnvelope>>
+) => {
+    return orvalMutator<AccountExportEnvelope>({ url: `/account/export`, method: 'POST' }, options);
+};
+
+/**
+ * The second step of a login for an account with two-factor authentication enabled — submits the challenge from `POST /account/login` and a 6-digit code (or an unused backup code). On success, returns the same auth tokens `POST /account/login` returns for an account with no second factor.
+ * @summary Complete a two-factor login
+ */
+export const loginTwoFactor = (
+    loginTwoFactorRequest: LoginTwoFactorRequest,
+    options?: SecondParameter<typeof orvalMutator<AuthTokensEnvelope>>
+) => {
+    return orvalMutator<AuthTokensEnvelope>(
+        {
+            url: `/account/login/2fa`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: loginTwoFactorRequest
+        },
+        options
+    );
+};
+
+/**
+ * Generates a fresh TOTP secret and returns it plaintext, once, along with the `otpauth://` URI to render as a QR code. Enrollment is not active until `POST /account/2fa/confirm` proves the caller scanned it. Calling this again — including on an account that already has 2FA on — replaces the pending secret and clears any confirmed one, for the "lost my phone, still have my session" recovery path.
+ * @summary Start two-factor enrollment
+ */
+export const setupTwoFactor = (
+    options?: SecondParameter<typeof orvalMutator<TwoFactorSetupEnvelope>>
+) => {
+    return orvalMutator<TwoFactorSetupEnvelope>(
+        { url: `/account/2fa/setup`, method: 'POST' },
+        options
+    );
+};
+
+/**
+ * Arms the pending secret from `POST /account/2fa/setup` against a code from the caller's authenticator app, and mints backup codes — returned in the clear exactly once.
+ * @summary Confirm two-factor enrollment
+ */
+export const confirmTwoFactor = (
+    twoFactorConfirmRequest: TwoFactorConfirmRequest,
+    options?: SecondParameter<typeof orvalMutator<TwoFactorConfirmEnvelope>>
+) => {
+    return orvalMutator<TwoFactorConfirmEnvelope>(
+        {
+            url: `/account/2fa/confirm`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorConfirmRequest
+        },
+        options
+    );
+};
+
+/**
+ * Disables 2FA. Requires a valid TOTP code or an unused backup code in the body, on top of the route's own fresh-auth requirement — disabling from a stolen-but-fresh session is otherwise the cheapest way around the whole feature.
+ * @summary Disable two-factor authentication
+ */
+export const disableTwoFactor = (
+    twoFactorDisableRequest: TwoFactorDisableRequest,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>(
+        {
+            url: `/account/2fa`,
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorDisableRequest
+        },
         options
     );
 };
@@ -3135,6 +3472,17 @@ export const hardDeleteUserById = (
     options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
 ) => {
     return orvalMutator<SuccessResponse>({ url: `/users/${id}/hard`, method: 'DELETE' }, options);
+};
+
+/**
+ * Strips the user's second factor, no code required — unlike the self-service `DELETE /account/2fa`, which demands one. The one deliberate exception to "prove the factor to remove it", for an account whose owner has lost both their authenticator and their backup codes. Every call is audited.
+ * @summary Admin-assisted 2FA recovery
+ */
+export const adminDisableUserTwoFactor = (
+    id: string,
+    options?: SecondParameter<typeof orvalMutator<SuccessResponse>>
+) => {
+    return orvalMutator<SuccessResponse>({ url: `/users/${id}/2fa`, method: 'DELETE' }, options);
 };
 
 /**
@@ -4164,6 +4512,7 @@ export type RequestAccountDeleteResult = NonNullable<
     Awaited<ReturnType<typeof requestAccountDelete>>
 >;
 export type ChangePasswordResult = NonNullable<Awaited<ReturnType<typeof changePassword>>>;
+export type ReauthResult = NonNullable<Awaited<ReturnType<typeof reauth>>>;
 export type LogoutResult = NonNullable<Awaited<ReturnType<typeof logout>>>;
 export type GetSessionsResult = NonNullable<Awaited<ReturnType<typeof getSessions>>>;
 export type RevokeSessionResult = NonNullable<Awaited<ReturnType<typeof revokeSession>>>;
@@ -4196,6 +4545,11 @@ export type LogoutAllResult = NonNullable<Awaited<ReturnType<typeof logoutAll>>>
 export type DeleteExpiredTokensResult = NonNullable<
     Awaited<ReturnType<typeof deleteExpiredTokens>>
 >;
+export type ExportAccountDataResult = NonNullable<Awaited<ReturnType<typeof exportAccountData>>>;
+export type LoginTwoFactorResult = NonNullable<Awaited<ReturnType<typeof loginTwoFactor>>>;
+export type SetupTwoFactorResult = NonNullable<Awaited<ReturnType<typeof setupTwoFactor>>>;
+export type ConfirmTwoFactorResult = NonNullable<Awaited<ReturnType<typeof confirmTwoFactor>>>;
+export type DisableTwoFactorResult = NonNullable<Awaited<ReturnType<typeof disableTwoFactor>>>;
 export type ListUsersResult = NonNullable<Awaited<ReturnType<typeof listUsers>>>;
 export type CreateUserResult = NonNullable<Awaited<ReturnType<typeof createUser>>>;
 export type CreateUserWithMultipartResult = NonNullable<
@@ -4213,6 +4567,9 @@ export type UpdateUserByIdWithMultipartResult = NonNullable<
 >;
 export type DeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof deleteUserById>>>;
 export type HardDeleteUserByIdResult = NonNullable<Awaited<ReturnType<typeof hardDeleteUserById>>>;
+export type AdminDisableUserTwoFactorResult = NonNullable<
+    Awaited<ReturnType<typeof adminDisableUserTwoFactor>>
+>;
 export type SearchUsersResult = NonNullable<Awaited<ReturnType<typeof searchUsers>>>;
 export type CreateFeedbackRequestResult = NonNullable<
     Awaited<ReturnType<typeof createFeedbackRequest>>

@@ -21,6 +21,7 @@ import {
     updateUserById as apiUpdateUserById
 } from '@api';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
+import { getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
 
 /**
  * The visitor's own editable record, and every operation on it: fetch/update, the role-view
@@ -176,13 +177,22 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * Changes the password of the LIVE session by proving the current one — no email round-trip,
      * unlike the reset flow. Other sessions stay signed in; the sessions panel is where they end.
      *
+     * The API revokes every OTHER session on success and answers with a fresh access token for
+     * THIS one (plus fresh session cookies), so the token is adopted here the way login adopts
+     * its own — without it, this session would be living on borrowed time. `remember` is omitted:
+     * a password change is not the place to rewrite the visitor's remember-me choice.
+     *
      * @param currentPassword - The credential being replaced.
      * @param password - The new password.
      * @param passwordConfirm - Its confirmation.
-     * @returns A promise resolving once the API accepts the change.
+     * @returns A promise resolving once the API accepts the change and the fresh token is stored.
      */
     const changePassword = (currentPassword: string, password: string, passwordConfirm: string) =>
-        fetchAny(() => apiChangePassword({ currentPassword, password, passwordConfirm }));
+        fetchAny(() =>
+            apiChangePassword({ currentPassword, password, passwordConfirm }).then((data) => {
+                session.setAccessToken(getTokenFromResponse(data));
+            })
+        );
 
     /**
      * Re-sends the email-verification link — for the mail that never arrived. Signup already
