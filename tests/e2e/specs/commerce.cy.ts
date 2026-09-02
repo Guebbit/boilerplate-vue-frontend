@@ -45,7 +45,7 @@ describe('Commerce', () => {
         cy.contains('Product added to cart').should('exist');
 
         // ── Choose express at the cart; the selector quotes the flat rate ───────────
-        cy.get('[data-test=pinned-Cart]').click();
+        cy.goToCart();
         cy.get('[data-test=shipping-selector]').should('exist');
         cy.get('[data-test=shipping-method-express]').click();
         cy.get('[data-test=cart-checkout]').click();
@@ -98,7 +98,7 @@ describe('Commerce', () => {
         cy.get('[data-test=row-view]').first().click();
         cy.get('[data-test=add-to-cart]').click();
         cy.contains('Product added to cart').should('exist');
-        cy.get('[data-test=pinned-Cart]').click();
+        cy.goToCart();
         cy.get('[data-test=cart-checkout]').click();
         cy.get('#orders-list-page tbody tr').should('have.length', 1);
         cy.get('[data-test=row-view]').first().click();

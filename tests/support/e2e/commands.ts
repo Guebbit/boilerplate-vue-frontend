@@ -129,6 +129,9 @@ declare global {
 
             /** Ends the session through the account menu, as a visitor would. */
             logout(): Chainable<void>;
+
+            /** Opens the cart through its pinned nav button, beside the account menu. */
+            goToCart(): Chainable<void>;
         }
     }
 }
@@ -317,6 +320,14 @@ const MENU_ACTIVATOR = { account: '[data-test=user-menu]', admin: '[data-test=ad
 Cypress.Commands.add('navigateViaMenu', (menu: 'account' | 'admin', path: string) => {
     cy.get(MENU_ACTIVATOR[menu]).click();
     cy.get(`[role=menu] a[href="${path}"]`).should('be.visible').click();
+});
+
+/**
+ * The cart is a pinned bar entry rather than a menu item — see `AppNavPinnedButton`'s
+ * `data-test="pinned-<name>"` convention in `AppNavigation.vue`.
+ */
+Cypress.Commands.add('goToCart', () => {
+    cy.get('[data-test=pinned-Cart]').click();
 });
 
 Cypress.Commands.add('logout', () => {
