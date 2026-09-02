@@ -11,6 +11,13 @@
 - MUST keep nesting ≤ 3 levels; extract a helper for anything deeper.
 - MUST prefer pure functions and shared abstractions over duplicated inline logic.
 
+## Scope
+
+- MUST NOT preserve backward compatibility (old field names, deprecated endpoints, legacy code
+  paths, dual-write transitions) unless the user explicitly asks for it. Replace, don't shim.
+- MUST NOT leave deprecated code in place — no `@deprecated` tag kept "for later." When a change
+  supersedes something, remove it in the same change.
+
 ## Async and error handling
 
 - **Prefer promise chaining** (`.then`/`.catch`/`.finally`) when there are only 1–2 awaits.
@@ -33,6 +40,10 @@
 - Comments MUST be brief theory-level notes on what the code does and its role — ADHD friendly,
   not line-by-line narration.
 - Docs describing flow, architecture or process MUST include Mermaid diagrams.
+- Never narrate history — no "this used to...", "previously...", "was renamed from...". A comment
+  describes the code as it is now; git log is where the past lives.
+- Never link to a `.md` file outside `docs/*` — a root-level plan, audit, or report doc is
+  ephemeral; only `docs/` is a stable target for a comment to point at.
 
 Comments are **not** a replacement for the documentation. They are code-centric: they explain the
 code in front of you, and give a quick overview of what the docs already say in full. The
