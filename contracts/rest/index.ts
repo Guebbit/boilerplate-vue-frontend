@@ -1020,13 +1020,13 @@ export interface MfaChallenge {
 /**
  * Either a full session (AuthTokens) or a step-up challenge (MfaChallenge) when the account has two-factor authentication enabled.
  */
-export type LoginResult = AuthTokens | MfaChallenge;
+export type LoginOutcome = AuthTokens | MfaChallenge;
 
 export interface LoginResponseEnvelope {
     success: EnvelopeSuccess;
     status: EnvelopeStatus;
     message: EnvelopeMessage;
-    data: LoginResult;
+    data: LoginOutcome;
 }
 
 export interface SignupRequest {

@@ -45,7 +45,7 @@ describe('The customer journey', () => {
         cy.get('[data-test=add-to-cart]').click();
         cy.contains('Product added to cart').should('exist');
 
-        cy.navigateViaMenu('account', '/en/cart');
+        cy.get('[data-test=pinned-Cart]').click();
         // The demo customer's cart starts empty (the one seeded cart belongs to the admin), so
         // the line just added is the whole cart.
         cy.get('[data-test=cart-item]').should('have.length', 1);
