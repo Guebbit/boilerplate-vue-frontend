@@ -25,7 +25,7 @@ describe('The customer journey', () => {
         cy.get('[data-test=row-view]').first().click();
 
         cy.get('#product-target').should('exist');
-        cy.get('[data-test=product-stock]').should('contain.text', '25');
+        cy.get('[data-test=product-stock]').should('contain.text', '30');
         // The wall: buying is offered, disabled, and explained; saving is not offered at all.
         cy.get('[data-test=add-to-cart]').should('be.disabled');
         cy.contains('Sign in to buy').should('exist');
@@ -41,7 +41,7 @@ describe('The customer journey', () => {
         // a beat. One row is the chip's own count, so waiting for it IS waiting for the filter.
         cy.get('[data-test=row-view]').should('have.length', 1);
         cy.get('[data-test=row-view]').first().click();
-        cy.get('[data-test=product-stock]').should('contain.text', '25');
+        cy.get('[data-test=product-stock]').should('contain.text', '30');
         cy.get('[data-test=add-to-cart]').click();
         cy.contains('Product added to cart').should('exist');
 
@@ -92,6 +92,6 @@ describe('The customer journey', () => {
         // on whatever the unfiltered list re-rendered underneath it.
         cy.get('[data-test=row-view]').should('have.length', 1);
         cy.get('[data-test=row-view]').first().click();
-        cy.get('[data-test=product-stock]').should('contain.text', '25');
+        cy.get('[data-test=product-stock]').should('contain.text', '30');
     });
 });
