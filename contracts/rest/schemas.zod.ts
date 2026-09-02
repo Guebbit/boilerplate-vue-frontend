@@ -1386,9 +1386,24 @@ export const changePasswordBodyPasswordMin = 8;
 export const changePasswordBodyPasswordConfirmMin = 8;
 
 export const ChangePasswordBody = zod.strictObject({
-    currentPassword: zod.string().min(changePasswordBodyCurrentPasswordMin),
-    password: zod.string().min(changePasswordBodyPasswordMin),
-    passwordConfirm: zod.string().min(changePasswordBodyPasswordConfirmMin)
+    currentPassword: zod
+        .string()
+        .min(changePasswordBodyCurrentPasswordMin)
+        .describe(
+            "An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it."
+        ),
+    password: zod
+        .string()
+        .min(changePasswordBodyPasswordMin)
+        .describe(
+            "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
+        ),
+    passwordConfirm: zod
+        .string()
+        .min(changePasswordBodyPasswordConfirmMin)
+        .describe(
+            "An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it."
+        )
 });
 
 export const ChangePasswordResponse = zod.strictObject({
@@ -1409,7 +1424,12 @@ export const ChangePasswordResponse = zod.strictObject({
 export const reauthBodyPasswordMin = 8;
 
 export const ReauthBody = zod.strictObject({
-    password: zod.string().min(reauthBodyPasswordMin)
+    password: zod
+        .string()
+        .min(reauthBodyPasswordMin)
+        .describe(
+            "An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it."
+        )
 });
 
 export const ReauthResponse = zod.strictObject({
@@ -1668,7 +1688,12 @@ export const loginBodyPasswordMin = 8;
 
 export const LoginBody = zod.strictObject({
     email: zod.email(),
-    password: zod.string().min(loginBodyPasswordMin),
+    password: zod
+        .string()
+        .min(loginBodyPasswordMin)
+        .describe(
+            "An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it."
+        ),
     remember: zod
         .enum(['short', 'medium', 'long'])
         .optional()
@@ -1722,8 +1747,18 @@ export const signupBodyPasswordConfirmMin = 8;
 export const SignupBody = zod.strictObject({
     email: zod.email(),
     username: zod.string().min(signupBodyUsernameMin),
-    password: zod.string().min(signupBodyPasswordMin),
-    passwordConfirm: zod.string().min(signupBodyPasswordConfirmMin),
+    password: zod
+        .string()
+        .min(signupBodyPasswordMin)
+        .describe(
+            "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
+        ),
+    passwordConfirm: zod
+        .string()
+        .min(signupBodyPasswordConfirmMin)
+        .describe(
+            "An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it."
+        ),
     imageUrl: zod
         .string()
         .optional()
@@ -1798,8 +1833,18 @@ export const confirmPasswordResetBodyPasswordConfirmMin = 8;
 
 export const ConfirmPasswordResetBody = zod.strictObject({
     token: zod.string().describe('One-time password reset token (NOT a JWT).'),
-    password: zod.string().min(confirmPasswordResetBodyPasswordMin),
-    passwordConfirm: zod.string().min(confirmPasswordResetBodyPasswordConfirmMin)
+    password: zod
+        .string()
+        .min(confirmPasswordResetBodyPasswordMin)
+        .describe(
+            "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
+        ),
+    passwordConfirm: zod
+        .string()
+        .min(confirmPasswordResetBodyPasswordConfirmMin)
+        .describe(
+            "An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it."
+        )
 });
 
 export const ConfirmPasswordResetResponse = zod.strictObject({
@@ -2356,7 +2401,13 @@ export const createUserBodyLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$
 export const CreateUserBody = zod.strictObject({
     email: zod.email(),
     username: zod.string(),
-    password: zod.string().min(createUserBodyPasswordMin).optional(),
+    password: zod
+        .string()
+        .min(createUserBodyPasswordMin)
+        .optional()
+        .describe(
+            "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
+        ),
     sendSetupEmail: zod.boolean().default(createUserBodySendSetupEmailDefault),
     admin: zod.boolean().optional(),
     active: zod.boolean().default(createUserBodyActiveDefault),
@@ -2429,7 +2480,13 @@ export const UpdateUserBody = zod.strictObject({
     id: zod.string().describe('Resource identifier'),
     email: zod.email().optional(),
     username: zod.string().optional(),
-    password: zod.string().min(updateUserBodyPasswordMin).optional(),
+    password: zod
+        .string()
+        .min(updateUserBodyPasswordMin)
+        .optional()
+        .describe(
+            "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
+        ),
     admin: zod.boolean().optional(),
     active: zod.boolean().optional(),
     imageUrl: zod
@@ -2581,7 +2638,13 @@ export const updateUserByIdBodyLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]
 
 export const UpdateUserByIdBody = zod.strictObject({
     email: zod.email().optional(),
-    password: zod.string().min(updateUserByIdBodyPasswordMin).optional(),
+    password: zod
+        .string()
+        .min(updateUserByIdBodyPasswordMin)
+        .optional()
+        .describe(
+            "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
+        ),
     username: zod.string().optional(),
     admin: zod.boolean().optional(),
     active: zod.boolean().optional(),

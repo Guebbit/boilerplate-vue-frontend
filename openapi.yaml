@@ -3290,6 +3290,11 @@ components:
     Password:
       type: string
       minLength: 8
+      description: 'An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site''s password policy to whoever is guessing it.'
+    PasswordNew:
+      type: string
+      minLength: 8
+      description: A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form.
     Locale:
       type: string
       description: BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET /locales`.
@@ -4655,7 +4660,7 @@ components:
         currentPassword:
           $ref: '#/components/schemas/Password'
         password:
-          $ref: '#/components/schemas/Password'
+          $ref: '#/components/schemas/PasswordNew'
         passwordConfirm:
           $ref: '#/components/schemas/Password'
     AuthTokens:
@@ -4947,7 +4952,7 @@ components:
           type: string
           minLength: 3
         password:
-          $ref: '#/components/schemas/Password'
+          $ref: '#/components/schemas/PasswordNew'
         passwordConfirm:
           $ref: '#/components/schemas/Password'
         imageUrl:
@@ -4967,7 +4972,7 @@ components:
           type: string
           minLength: 3
         password:
-          $ref: '#/components/schemas/Password'
+          $ref: '#/components/schemas/PasswordNew'
         passwordConfirm:
           $ref: '#/components/schemas/Password'
         imageUpload:
@@ -4994,7 +4999,7 @@ components:
           type: string
           description: One-time password reset token (NOT a JWT).
         password:
-          $ref: '#/components/schemas/Password'
+          $ref: '#/components/schemas/PasswordNew'
         passwordConfirm:
           $ref: '#/components/schemas/Password'
     RefreshTokenResponse:
@@ -5405,7 +5410,7 @@ components:
         username:
           type: string
         password:
-          $ref: '#/components/schemas/Password'
+          $ref: '#/components/schemas/PasswordNew'
         admin:
           type: boolean
         active:
@@ -5431,7 +5436,7 @@ components:
         username:
           type: string
         password:
-          $ref: '#/components/schemas/Password'
+          $ref: '#/components/schemas/PasswordNew'
         admin:
           type: boolean
         active:
@@ -5458,7 +5463,7 @@ components:
         username:
           type: string
         password:
-          $ref: '#/components/schemas/Password'
+          $ref: '#/components/schemas/PasswordNew'
         sendSetupEmail:
           type: boolean
           default: false
@@ -5483,7 +5488,7 @@ components:
         username:
           type: string
         password:
-          $ref: '#/components/schemas/Password'
+          $ref: '#/components/schemas/PasswordNew'
         sendSetupEmail:
           type: boolean
           default: false
@@ -5516,7 +5521,7 @@ components:
         email:
           $ref: '#/components/schemas/Email'
         password:
-          $ref: '#/components/schemas/Password'
+          $ref: '#/components/schemas/PasswordNew'
         username:
           type: string
         admin:
@@ -5538,7 +5543,7 @@ components:
         email:
           $ref: '#/components/schemas/Email'
         password:
-          $ref: '#/components/schemas/Password'
+          $ref: '#/components/schemas/PasswordNew'
         username:
           type: string
         admin:

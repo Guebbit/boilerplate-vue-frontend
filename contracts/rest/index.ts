@@ -47,9 +47,16 @@ export type Text = string;
 export type Email = string;
 
 /**
+ * An EXISTING password, being proved rather than set — login, the current-password leg of a change, and re-auth. No complexity pattern: a password created before `PasswordNew` existed must still be provable, and a login attempt is not the place to also announce the site's password policy to whoever is guessing it.
  * @minLength 8
  */
 export type Password = string;
+
+/**
+ * A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form.
+ * @minLength 8
+ */
+export type PasswordNew = string;
 
 /**
  * BCP 47 language tag, e.g. `en` or `it`. Which tags a deployment actually supports is a runtime fact, not a contract one — ask `GET /locales`.
@@ -881,7 +888,7 @@ export interface UpdateAccountRequestMultipart {
 
 export interface ChangePasswordRequest {
     currentPassword: Password;
-    password: Password;
+    password: PasswordNew;
     passwordConfirm: Password;
 }
 
@@ -1033,7 +1040,7 @@ export interface SignupRequest {
     email: Email;
     /** @minLength 3 */
     username: string;
-    password: Password;
+    password: PasswordNew;
     passwordConfirm: Password;
     imageUrl?: ImageUrl;
 }
@@ -1042,7 +1049,7 @@ export interface SignupRequestMultipart {
     email: Email;
     /** @minLength 3 */
     username: string;
-    password: Password;
+    password: PasswordNew;
     passwordConfirm: Password;
     /** Optional user profile image */
     imageUpload?: Blob;
@@ -1055,7 +1062,7 @@ export interface PasswordResetRequest {
 export interface PasswordResetConfirmRequest {
     /** One-time password reset token (NOT a JWT). */
     token: string;
-    password: Password;
+    password: PasswordNew;
     passwordConfirm: Password;
 }
 
@@ -1267,7 +1274,7 @@ export interface UpdateUserRequest {
     id: Id;
     email?: Email;
     username?: string;
-    password?: Password;
+    password?: PasswordNew;
     admin?: boolean;
     active?: boolean;
     imageUrl?: ImageUrl;
@@ -1280,7 +1287,7 @@ export interface UpdateUserRequestMultipart {
     id: Id;
     email?: Email;
     username?: string;
-    password?: Password;
+    password?: PasswordNew;
     admin?: boolean;
     active?: boolean;
     /** Optional user profile image */
@@ -1293,7 +1300,7 @@ export interface UpdateUserRequestMultipart {
 export interface CreateUserRequest {
     email: Email;
     username: string;
-    password?: Password;
+    password?: PasswordNew;
     sendSetupEmail?: boolean;
     admin?: boolean;
     active?: boolean;
@@ -1304,7 +1311,7 @@ export interface CreateUserRequest {
 export interface CreateUserRequestMultipart {
     email: Email;
     username: string;
-    password?: Password;
+    password?: PasswordNew;
     sendSetupEmail?: boolean;
     admin?: boolean;
     active?: boolean;
@@ -1320,7 +1327,7 @@ export interface DeleteUserRequest {
 
 export interface UpdateUserByIdRequest {
     email?: Email;
-    password?: Password;
+    password?: PasswordNew;
     username?: string;
     admin?: boolean;
     active?: boolean;
@@ -1332,7 +1339,7 @@ export interface UpdateUserByIdRequest {
 
 export interface UpdateUserByIdRequestMultipart {
     email?: Email;
-    password?: Password;
+    password?: PasswordNew;
     username?: string;
     admin?: boolean;
     active?: boolean;
