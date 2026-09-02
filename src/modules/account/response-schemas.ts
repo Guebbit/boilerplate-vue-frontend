@@ -68,5 +68,23 @@ export const accountResponseSchemas: ResponseSchemaRoute[] = [
         method: 'DELETE',
         pattern: /^\/account\/addresses\/[^/]+$/,
         schema: schemas.RemoveAddressResponse
-    }
+    },
+    { method: 'POST', pattern: /^\/account\/reauth$/, schema: schemas.ReauthResponse },
+    { method: 'POST', pattern: /^\/account\/export$/, schema: schemas.ExportAccountDataResponse },
+    {
+        method: 'POST',
+        pattern: /^\/account\/login\/2fa$/,
+        schema: schemas.LoginTwoFactorResponse
+    },
+    {
+        method: 'POST',
+        pattern: /^\/account\/2fa\/setup$/,
+        schema: schemas.SetupTwoFactorResponse
+    },
+    {
+        method: 'POST',
+        pattern: /^\/account\/2fa\/confirm$/,
+        schema: schemas.ConfirmTwoFactorResponse
+    },
+    { method: 'DELETE', pattern: /^\/account\/2fa$/, schema: schemas.DisableTwoFactorResponse }
 ];

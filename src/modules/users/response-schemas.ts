@@ -26,5 +26,10 @@ export const usersResponseSchemas: ResponseSchemaRoute[] = [
         method: 'DELETE',
         pattern: /^\/users\/[^/]+\/hard$/,
         schema: schemas.HardDeleteUserByIdResponse
+    },
+    {
+        method: 'DELETE',
+        pattern: /^\/users\/[^/]+\/2fa$/,
+        schema: schemas.AdminDisableUserTwoFactorResponse
     }
 ];
