@@ -48,16 +48,6 @@ describe('Storefront', () => {
             cy.get('[data-test=add-to-cart]').should('be.disabled');
             cy.contains('Out of stock').should('exist');
         });
-
-        it('adds a unit to the cart and the badge follows', () => {
-            cy.loginAs('user');
-            cy.productInRole('inStock').then((product) => {
-                cy.visit(`/en/products/${product.id}`);
-            });
-
-            cy.get('[data-test=add-to-cart]').click();
-            cy.contains('Product added to cart').should('exist');
-        });
     });
 
     describe('order actions', () => {

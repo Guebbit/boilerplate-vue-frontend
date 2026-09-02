@@ -16,12 +16,9 @@ describe('Orders', () => {
             cy.get('[data-test=list-row]', { timeout: 10_000 }).should('have.length.at.least', 1);
         });
 
-        it('shows the page title', () => {
+        it('shows the page title and one row per order returned by the API', () => {
             cy.get('#orders-list-page').should('exist');
             cy.get('h1').should('contain.text', 'My Orders');
-        });
-
-        it('renders one row per order returned by the API', () => {
             cy.get('[data-test=list-row]').should('have.length.at.least', 1);
         });
 

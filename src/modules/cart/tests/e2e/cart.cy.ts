@@ -43,12 +43,9 @@ describe('Cart', () => {
             cy.contains('Your cart is empty').should('be.visible');
         });
 
-        it('shows the page title', () => {
+        it('shows the page title and the empty cart message', () => {
             cy.get('#cart-page').should('exist');
             cy.get('h1').should('contain.text', 'My Cart');
-        });
-
-        it('shows the empty cart message', () => {
             cy.contains('Your cart is empty').should('be.visible');
         });
 
