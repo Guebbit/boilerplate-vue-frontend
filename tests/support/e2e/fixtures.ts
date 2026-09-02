@@ -58,7 +58,9 @@ const ROLE_PREDICATES: Record<ProductRole, (product: ProductLike) => boolean> = 
 /*
  * Every role above is publicly visible, so the lookup uses the PUBLIC list: no login, no admin
  * token, and nothing that could disturb the session or analytics state a spec is measuring.
- * `pageSize` is the contract maximum, because a backend may seed more rows than one default page.
+ * `pageSize` is the contract maximum (`shared/contracts/openapi.root.yaml`'s `PageSize.maximum`) —
+ * a backend may seed more rows than that in total, which is what `publicProducts()` below walks
+ * every page for, rather than assuming one request is the whole catalogue.
  */
 const PUBLIC_PAGE_SIZE = 100;
 
@@ -145,13 +147,38 @@ declare global {
     }
 }
 
-Cypress.Commands.add('publicProducts', () =>
+/** One page of the public catalogue, plus how many pages exist in total. */
+const publicProductsPage = (
+    apiUrl: string,
+    page: number
+): Cypress.Chainable<{ items: ProductLike[]; totalPages: number }> =>
     cy
-        .env(['apiUrl'])
-        .then(({ apiUrl }) =>
-            cy.request(`${String(apiUrl)}/products?pageSize=${String(PUBLIC_PAGE_SIZE)}`)
-        )
-        .then((response) => (response.body as { data: { items: ProductLike[] } }).data.items)
+        .request(`${apiUrl}/products?pageSize=${String(PUBLIC_PAGE_SIZE)}&page=${String(page)}`)
+        .then((response) => {
+            const { items, meta } = (
+                response.body as {
+                    data: { items: ProductLike[]; meta: { totalPages: number } };
+                }
+            ).data;
+            return { items, totalPages: meta.totalPages };
+        });
+
+/**
+ * Walks every page from `page` onward, accumulating into `gathered` — one request per page is
+ * the cost of a catalogue larger than the contract's single-page maximum.
+ */
+const walkPublicProducts = (
+    apiUrl: string,
+    page: number,
+    gathered: ProductLike[]
+): Cypress.Chainable<ProductLike[]> =>
+    publicProductsPage(apiUrl, page).then(({ items, totalPages }) => {
+        const soFar = [...gathered, ...items];
+        return page < totalPages ? walkPublicProducts(apiUrl, page + 1, soFar) : cy.wrap(soFar);
+    });
+
+Cypress.Commands.add('publicProducts', () =>
+    cy.env(['apiUrl']).then(({ apiUrl }) => walkPublicProducts(String(apiUrl), 1, []))
 );
 
 Cypress.Commands.add('productInRole', (role: ProductRole) =>

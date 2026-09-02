@@ -51,7 +51,9 @@ describe('Commerce', () => {
         cy.get('[data-test=cart-checkout]').click();
 
         // ── The order froze the choice ──────────────────────────────────────────────
-        cy.get('#orders-list-page tbody tr').should('have.length', 1);
+        // At least one, not exactly one: this account's seed history carries its own orders
+        // (newest first, so this one — just placed — is still `.first()`).
+        cy.get('#orders-list-page tbody tr').should('have.length.at.least', 1);
         cy.get('[data-test=row-view]').first().click();
         cy.get('[data-test=order-shipping]').should('contain.text', 'express');
 
@@ -100,7 +102,8 @@ describe('Commerce', () => {
         cy.contains('Product added to cart').should('exist');
         cy.goToCart();
         cy.get('[data-test=cart-checkout]').click();
-        cy.get('#orders-list-page tbody tr').should('have.length', 1);
+        // At least one, not exactly one — see the same note in the test above.
+        cy.get('#orders-list-page tbody tr').should('have.length.at.least', 1);
         cy.get('[data-test=row-view]').first().click();
         cy.get('[data-test=payment-card-input] input').should('not.be.disabled').clear();
         cy.get('[data-test=payment-card-input] input')

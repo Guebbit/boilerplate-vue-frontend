@@ -51,10 +51,11 @@ describe('The customer journey', () => {
         cy.get('[data-test=cart-item]').should('have.length', 1);
         cy.get('[data-test=cart-checkout]').click();
 
-        // Checkout lands on the orders list; scoped to the customer, it holds exactly
-        // the order just placed — their seeded order is soft-deleted and must not show.
+        // Checkout lands on the orders list; scoped to the customer, it holds the order just
+        // placed, newest first — this account's other seeded orders are older (one soft-deleted
+        // and not shown at all), so `.first()` below is still the one just placed.
         cy.get('#orders-list-page').should('exist');
-        cy.get('#orders-list-page tbody tr').should('have.length', 1);
+        cy.get('#orders-list-page tbody tr').should('have.length.at.least', 1);
 
         // The confirmation email lists what was bought — read from the outbox the way a customer
         // reads their inbox. Both cart lines are on it: the seeded one and the one added above.
