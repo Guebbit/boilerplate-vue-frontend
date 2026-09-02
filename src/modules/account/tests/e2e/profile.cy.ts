@@ -7,6 +7,7 @@
  * What these specs pin is the page honouring those invariants, not the rules themselves — those
  * are the backend's to test.
  */
+import { E2E_ACCOUNTS } from '../../../../../tests/support/e2e/accounts';
 
 /**
  * Fills the address dialog's six required inputs and saves.
@@ -67,8 +68,8 @@ const loginFromAnotherDevice = () =>
         .then(({ apiUrl }) =>
             cy.task('createSession', {
                 apiUrl: String(apiUrl),
-                email: 'gino@pino.it',
-                password: 'password'
+                email: E2E_ACCOUNTS.user.email,
+                password: E2E_ACCOUNTS.user.password
             })
         )
         .then((created) => expect(created, 'the second session').to.equal(true));
@@ -142,7 +143,9 @@ describe('Profile self-service', () => {
             cy.get('[data-test=toggle-change-password]').click();
             // gino's real one; the new one satisfies `usersPasswordSchema` — the submit is no longer
             // disabled behind an invalid form, it reveals the errors, so the fixture must pass them.
-            cy.get('[data-test=current-password] input').should('not.be.disabled').type('password');
+            cy.get('[data-test=current-password] input')
+                .should('not.be.disabled')
+                .type(E2E_ACCOUNTS.user.password);
             cy.get('[data-test=new-password] input')
                 .should('not.be.disabled')
                 .type('BrandNew_Secret1!');

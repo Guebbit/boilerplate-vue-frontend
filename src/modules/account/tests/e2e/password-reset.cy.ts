@@ -7,6 +7,7 @@
  * the new one starts. `cy.demoEmailTo` reads the demo backend's `/__demo/emails` outbox, so these
  * specs only mean something against the demo profile.
  */
+import { E2E_ACCOUNTS } from '../../../../../tests/support/e2e/accounts';
 describe('Password reset', () => {
     beforeEach(() => {
         cy.visit('/en');
@@ -46,7 +47,8 @@ describe('Password reset', () => {
         cy.get('[type=email]').should('not.be.disabled').clear();
         cy.get('[type=email]').should('not.be.disabled').type('gino@pino.it');
         cy.get('[type=password]').should('not.be.disabled').clear();
-        cy.get('[type=password]').should('not.be.disabled').type('password'); // yesterday's password
+        // The pre-reset password — proven dead now that the reset above replaced it.
+        cy.get('[type=password]').should('not.be.disabled').type(E2E_ACCOUNTS.user.password);
         cy.get('form').submit();
         cy.get('#login-page').should('exist');
         cy.url().should('include', '/login');
