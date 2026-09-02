@@ -121,5 +121,16 @@
         "token-required": "The verification token is required",
         "button-submit": "Verify my email",
         "success": "Email address verified."
+    },
+    "oauth": {
+        "divider": "or",
+        "continue-with": "Continue with {provider}",
+        "callback-page": {
+            "page-title": "Signing you in…",
+            "error-access_denied": "Sign-in was cancelled.",
+            "error-email_unverified": "That email isn't verified with this provider yet. Try logging in with your password instead, or verify the address with the provider first.",
+            "error-provider_error": "Something went wrong signing you in. Please try again.",
+            "link-back-to-login": "Back to login"
+        }
     }
 }

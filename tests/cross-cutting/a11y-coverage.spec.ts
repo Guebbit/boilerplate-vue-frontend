@@ -51,7 +51,11 @@ const EXEMPT = new Set<string>([
     // shell: the two catch-alls are redirects onto the Error route, which IS swept (as "404"
     // through a bad URL, and as an explicit status through its own path).
     ':catchAll(.*)',
-    '/:catchAll(.*)'
+    '/:catchAll(.*)',
+    // shell: redirects onto `account`'s locale-prefixed `oauth/callback` route, which IS swept
+    // (under ITS OWN name, in `account`'s sweep) — this shell shim exists only because the
+    // backend's redirect target carries no locale segment to route on.
+    '/oauth/callback'
 ]);
 
 /** Every `path: '...'` literal in a route file, in order. */

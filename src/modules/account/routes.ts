@@ -52,6 +52,14 @@ export default [
         component: () => import('@/modules/account/views/VerifyEmailConfirm.vue')
     },
     {
+        // Public: the backend's own redirect (`router/index.ts`'s locale-less `/oauth/callback`
+        // shell) lands an ANONYMOUS browser here mid-flow, before any session is confirmed.
+        path: 'oauth/callback',
+        name: 'OAuthCallback',
+        meta: { title: 'oauth.callback-page.page-title' },
+        component: () => import('@/modules/account/views/OAuthCallback.vue')
+    },
+    {
         path: 'profile',
         name: 'Profile',
         meta: { access: 'auth', title: 'profile-page.page-title' },

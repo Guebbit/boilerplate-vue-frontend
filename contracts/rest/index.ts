@@ -1258,6 +1258,18 @@ export interface TwoFactorDisableRequest {
     code: string;
 }
 
+export interface OAuthProviders {
+    /** Registry names this deployment holds credentials for, e.g. `["google", "github"]`. */
+    providers: string[];
+}
+
+export interface OAuthProvidersEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: OAuthProviders;
+}
+
 export interface UsersResponse {
     items: User[];
     meta: PaginationMeta;
@@ -2156,6 +2168,15 @@ export const GetObservabilityAuditLogsOutcome = {
     success: 'success',
     failure: 'failure'
 } as const;
+
+export type CompleteOAuthLoginParams = {
+    code?: string;
+    state?: string;
+    /**
+     * Set by the provider instead of `code` when the user declines consent.
+     */
+    error?: string;
+};
 
 export type ListUsersParams = {
     /**
@@ -3204,6 +3225,45 @@ export const disableTwoFactor = (
             headers: { 'Content-Type': 'application/json' },
             data: twoFactorDisableRequest
         },
+        options
+    );
+};
+
+/**
+ * The OAuth providers this deployment holds credentials for — an empty list means none are configured. The frontend uses this to decide which "Continue with…" buttons to render.
+ * @summary List enabled OAuth providers
+ */
+export const listOAuthProviders = (
+    options?: SecondParameter<typeof orvalMutator<OAuthProvidersEnvelope>>
+) => {
+    return orvalMutator<OAuthProvidersEnvelope>(
+        { url: `/account/oauth/providers`, method: 'GET' },
+        options
+    );
+};
+
+/**
+ * Browser-navigated only: redirects to `provider`'s consent screen, having minted the CSRF `state` as a cookie. Not called programmatically — the frontend points a plain `<a href>` at this URL.
+ * @summary Start an OAuth login
+ */
+export const startOAuthLogin = (
+    provider: string,
+    options?: SecondParameter<typeof orvalMutator<unknown>>
+) => {
+    return orvalMutator<unknown>({ url: `/account/oauth/${provider}`, method: 'GET' }, options);
+};
+
+/**
+ * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure.
+ * @summary Complete an OAuth login
+ */
+export const completeOAuthLogin = (
+    provider: string,
+    params?: CompleteOAuthLoginParams,
+    options?: SecondParameter<typeof orvalMutator<unknown>>
+) => {
+    return orvalMutator<unknown>(
+        { url: `/account/oauth/${provider}/callback`, method: 'GET', params },
         options
     );
 };
@@ -4557,6 +4617,9 @@ export type LoginTwoFactorResult = NonNullable<Awaited<ReturnType<typeof loginTw
 export type SetupTwoFactorResult = NonNullable<Awaited<ReturnType<typeof setupTwoFactor>>>;
 export type ConfirmTwoFactorResult = NonNullable<Awaited<ReturnType<typeof confirmTwoFactor>>>;
 export type DisableTwoFactorResult = NonNullable<Awaited<ReturnType<typeof disableTwoFactor>>>;
+export type ListOAuthProvidersResult = NonNullable<Awaited<ReturnType<typeof listOAuthProviders>>>;
+export type StartOAuthLoginResult = NonNullable<Awaited<ReturnType<typeof startOAuthLogin>>>;
+export type CompleteOAuthLoginResult = NonNullable<Awaited<ReturnType<typeof completeOAuthLogin>>>;
 export type ListUsersResult = NonNullable<Awaited<ReturnType<typeof listUsers>>>;
 export type CreateUserResult = NonNullable<Awaited<ReturnType<typeof createUser>>>;
 export type CreateUserWithMultipartResult = NonNullable<

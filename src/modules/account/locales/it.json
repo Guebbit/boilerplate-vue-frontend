@@ -121,5 +121,16 @@
         "token-required": "Il token di verifica è obbligatorio",
         "button-submit": "Verifica la mia email",
         "success": "Indirizzo email verificato."
+    },
+    "oauth": {
+        "divider": "oppure",
+        "continue-with": "Continua con {provider}",
+        "callback-page": {
+            "page-title": "Accesso in corso…",
+            "error-access_denied": "Accesso annullato.",
+            "error-email_unverified": "Questa email non è ancora verificata con questo provider. Prova ad accedere con la password, oppure verifica prima l'indirizzo presso il provider.",
+            "error-provider_error": "Si è verificato un problema durante l'accesso. Riprova.",
+            "link-back-to-login": "Torna al login"
+        }
     }
 }

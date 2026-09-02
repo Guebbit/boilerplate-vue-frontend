@@ -86,5 +86,31 @@ export const accountResponseSchemas: ResponseSchemaRoute[] = [
         pattern: /^\/account\/2fa\/confirm$/,
         schema: schemas.ConfirmTwoFactorResponse
     },
-    { method: 'DELETE', pattern: /^\/account\/2fa$/, schema: schemas.DisableTwoFactorResponse }
+    { method: 'DELETE', pattern: /^\/account\/2fa$/, schema: schemas.DisableTwoFactorResponse },
+    /*
+     * Listed BEFORE the `:provider` pattern below — `find()` returns the first match, and
+     * `/^\/account\/oauth\/[^/]+$/` would otherwise absorb `providers` as if it were a provider
+     * name. Same rule the `/orders/:id/invoice` vs `/orders/:id` ordering above already follows.
+     */
+    {
+        method: 'GET',
+        pattern: /^\/account\/oauth\/providers$/,
+        schema: schemas.ListOAuthProvidersResponse
+    },
+    /*
+     * Both a browser-navigated redirect with no JSON body — `zod.void()` on the generated schema,
+     * never actually validated in practice since neither is called through the axios client — but
+     * still listed, so this table stays a complete map of the module's contract rather than one
+     * with two silent gaps.
+     */
+    {
+        method: 'GET',
+        pattern: /^\/account\/oauth\/[^/]+$/,
+        schema: schemas.StartOAuthLoginResponse
+    },
+    {
+        method: 'GET',
+        pattern: /^\/account\/oauth\/[^/]+\/callback$/,
+        schema: schemas.CompleteOAuthLoginResponse
+    }
 ];

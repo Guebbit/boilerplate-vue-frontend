@@ -14,12 +14,18 @@ export default {
 import { ref } from 'vue';
 import { z } from 'zod';
 import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
 import {
     useNotificationsStore,
     useStructureFormValidation,
     useUploadProgress as useToolkitUploadProgress
 } from '@guebbit/vue-toolkit';
 import { useAuthStore } from '@/modules/account/stores/auth.ts';
+import {
+    useOAuthProvidersStore,
+    oauthStartUrl,
+    providerLabel
+} from '@/modules/account/stores/oauth.ts';
 import { RouterLink, useRouter, useRoute } from 'vue-router';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
@@ -39,6 +45,13 @@ const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 const router = useRouter();
 const route = useRoute();
+
+/**
+ * Which OAuth providers to offer, fetched once — see the store's own doc for why a later mount
+ * of this view is a no-op rather than a second request.
+ */
+const { providers: oauthProviders } = storeToRefs(useOAuthProvidersStore());
+void useOAuthProvidersStore().fetchProviders();
 
 /**
  * Form logics
@@ -225,6 +238,26 @@ const submitForm = () =>
                     {{ t('signup-page.button-submit') }}
                 </v-btn>
             </form>
+            <template v-if="oauthProviders.length > 0">
+                <div class="my-4 flex items-center gap-3 text-xs uppercase opacity-60">
+                    <v-divider />
+                    {{ t('oauth.divider') }}
+                    <v-divider />
+                </div>
+                <!-- A real `<a href>` via v-btn's `href` prop: the redirect dance needs a genuine
+                     top-level navigation, which a RouterLink or a click handler cannot provide. -->
+                <v-btn
+                    v-for="provider in oauthProviders"
+                    :key="provider"
+                    :href="oauthStartUrl(provider)"
+                    variant="outlined"
+                    size="large"
+                    block
+                    class="mb-2"
+                >
+                    {{ t('oauth.continue-with', { provider: providerLabel(provider) }) }}
+                </v-btn>
+            </template>
         </v-card>
     </LayoutDefault>
 </template>

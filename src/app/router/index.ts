@@ -77,6 +77,20 @@ const router = createRouter({
                 }
             })
         },
+        /*
+         * The backend's OAuth callback redirects here (`NODE_FRONTEND_URL` carries no locale
+         * segment — it names an origin, not a page) — so this is the one entry point into the app
+         * that has to exist outside `/:locale`, same reasoning as the `/` redirect above. `query`
+         * is carried through so `?error=<code>` survives into `OAuthCallback.vue`.
+         */
+        {
+            path: '/oauth/callback',
+            redirect: (to) => ({
+                name: 'OAuthCallback',
+                params: { locale: getDefaultLocale() },
+                query: to.query
+            })
+        },
         {
             path: '/:locale',
             component: RouterView,

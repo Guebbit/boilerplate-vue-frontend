@@ -2285,6 +2285,52 @@ export const DisableTwoFactorResponse = zod.strictObject({
 });
 
 /**
+ * The OAuth providers this deployment holds credentials for — an empty list means none are configured. The frontend uses this to decide which "Continue with…" buttons to render.
+ * @summary List enabled OAuth providers
+ */
+export const ListOAuthProvidersResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        providers: zod
+            .array(zod.string())
+            .describe(
+                'Registry names this deployment holds credentials for, e.g. `[\"google\", \"github\"]`.'
+            )
+    })
+});
+
+/**
+ * Browser-navigated only: redirects to `provider`'s consent screen, having minted the CSRF `state` as a cookie. Not called programmatically — the frontend points a plain `<a href>` at this URL.
+ * @summary Start an OAuth login
+ */
+export const StartOAuthLoginParams = zod.strictObject({
+    provider: zod.string().describe('One of the names `GET \/account\/oauth\/providers` lists.')
+});
+
+export const StartOAuthLoginResponse = zod.void();
+
+/**
+ * Browser-navigated only: where `provider` sends the browser back after consent. Validates `state`, exchanges the code, finds-or-creates the account, and redirects to the frontend with the session cookies set — or with `?error=<code>` on failure.
+ * @summary Complete an OAuth login
+ */
+export const CompleteOAuthLoginParams = zod.strictObject({
+    provider: zod.string()
+});
+
+export const CompleteOAuthLoginQueryParams = zod.strictObject({
+    code: zod.string().optional(),
+    state: zod.string().optional(),
+    error: zod
+        .string()
+        .optional()
+        .describe('Set by the provider instead of `code` when the user declines consent.')
+});
+
+export const CompleteOAuthLoginResponse = zod.void();
+
+/**
  * Returns a paginated list of user accounts.
  * @summary List users (paginated)
  */
