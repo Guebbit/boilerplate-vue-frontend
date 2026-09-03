@@ -23,7 +23,9 @@ describe('Registration', () => {
         cy.get('[type=email]').should('not.be.disabled').type('new.customer@example.com');
         cy.get('[type=password]').eq(0).should('not.be.disabled').type('BrandNew_Pass1!');
         cy.get('[type=password]').eq(1).should('not.be.disabled').type('BrandNew_Pass1!');
-        cy.get('[type=checkbox]').check();
+        // Specifically the required one: a second, optional checkbox (`analyticsConsent`) now
+        // shares this form, and `[type=checkbox]` would check both.
+        cy.get('[data-test=signup-terms-accepted] input[type=checkbox]').check();
         cy.get('#signup-page button[type="submit"]').click();
 
         // No auto-login: the form hands over to the login page and the email does the rest.
@@ -69,7 +71,9 @@ describe('Registration', () => {
         cy.get('[type=email]').should('not.be.disabled').type('slow.reader@example.com');
         cy.get('[type=password]').eq(0).should('not.be.disabled').type('Another_Pass1!');
         cy.get('[type=password]').eq(1).should('not.be.disabled').type('Another_Pass1!');
-        cy.get('[type=checkbox]').check();
+        // Specifically the required one: a second, optional checkbox (`analyticsConsent`) now
+        // shares this form, and `[type=checkbox]` would check both.
+        cy.get('[data-test=signup-terms-accepted] input[type=checkbox]').check();
         cy.get('#signup-page button[type="submit"]').click();
         cy.get('#login-page').should('exist');
 

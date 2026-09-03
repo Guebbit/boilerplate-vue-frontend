@@ -75,7 +75,8 @@ export const useAuthStore = defineStore('accountAuth', () => {
      *
      * @param credentials - Account fields. `username` defaults to `email` and
      *  `passwordConfirm` to `password`; an `imageUpload` switches the call to
-     *  `multipart/form-data`.
+     *  `multipart/form-data`. `termsAccepted` must be `true` — the contract
+     *  declares it `enum: [true]` — and `analyticsConsent` is opt-in, omittable.
      * @param options - Per-call axios overrides, forwarded to `orvalMutator` —
      *  `Signup.vue` passes `onUploadProgress` through it.
      * @returns A promise resolving once the account has been created.
@@ -86,12 +87,16 @@ export const useAuthStore = defineStore('accountAuth', () => {
             password,
             username = email,
             passwordConfirm = password,
+            termsAccepted,
+            analyticsConsent,
             imageUpload
         }: {
             email: string;
             password: string;
             username?: string;
             passwordConfirm?: string;
+            termsAccepted: true;
+            analyticsConsent?: boolean;
             imageUpload?: File;
         },
         options?: AxiosRequestConfig
@@ -99,10 +104,28 @@ export const useAuthStore = defineStore('accountAuth', () => {
         fetchAny(() =>
             (imageUpload
                 ? signupWithMultipart(
-                      { email, username, password, passwordConfirm, imageUpload },
+                      {
+                          email,
+                          username,
+                          password,
+                          passwordConfirm,
+                          termsAccepted,
+                          analyticsConsent,
+                          imageUpload
+                      },
                       options
                   )
-                : apiSignup({ email, username, password, passwordConfirm }, options)
+                : apiSignup(
+                      {
+                          email,
+                          username,
+                          password,
+                          passwordConfirm,
+                          termsAccepted,
+                          analyticsConsent
+                      },
+                      options
+                  )
             ).then(() => undefined)
         );
 

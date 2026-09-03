@@ -51,7 +51,8 @@ const CREDENTIALS = {
     email: 'ada@example.com',
     password: 'hunter2hunter2',
     username: 'ada',
-    passwordConfirm: 'hunter2hunter2'
+    passwordConfirm: 'hunter2hunter2',
+    termsAccepted: true as const
 };
 
 describe('useAuthStore.signup', () => {
@@ -62,7 +63,7 @@ describe('useAuthStore.signup', () => {
 
     it('posts JSON when no image is attached', () =>
         useAuthStore()
-            .signup({ email: 'ada@example.com', password: 'hunter2hunter2' })
+            .signup({ email: 'ada@example.com', password: 'hunter2hunter2', termsAccepted: true })
             .then(() => {
                 const request = lastRequest();
                 expect(request).toMatchObject({ url: '/account/signup', method: 'POST' });
@@ -98,12 +99,13 @@ describe('useAuthStore.signup', () => {
         const store = useAuthStore();
 
         return store
-            .signup({ email: 'ada@example.com', password: 'hunter2hunter2' })
+            .signup({ email: 'ada@example.com', password: 'hunter2hunter2', termsAccepted: true })
             .then(() => {
                 expect(lastRequest().data).toMatchObject({ username: 'ada@example.com' });
                 return store.signup({
                     email: 'ada@example.com',
                     password: 'hunter2hunter2',
+                    termsAccepted: true,
                     imageUpload: IMAGE()
                 });
             })

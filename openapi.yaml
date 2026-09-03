@@ -3592,6 +3592,8 @@ components:
           type: string
         analyticsConsent:
           type: boolean
+        termsAccepted:
+          type: boolean
         twoFactorEnabledAt:
           type: string
           format: date-time
@@ -5061,6 +5063,7 @@ components:
         - username
         - password
         - passwordConfirm
+        - termsAccepted
       properties:
         email:
           $ref: '#/components/schemas/Email'
@@ -5073,6 +5076,12 @@ components:
           $ref: '#/components/schemas/Password'
         imageUrl:
           $ref: '#/components/schemas/ImageUrl'
+        termsAccepted:
+          type: boolean
+          enum:
+            - true
+        analyticsConsent:
+          type: boolean
     SignupRequestMultipart:
       type: object
       additionalProperties: false
@@ -5081,6 +5090,7 @@ components:
         - username
         - password
         - passwordConfirm
+        - termsAccepted
       properties:
         email:
           $ref: '#/components/schemas/Email'
@@ -5091,6 +5101,12 @@ components:
           $ref: '#/components/schemas/PasswordNew'
         passwordConfirm:
           $ref: '#/components/schemas/Password'
+        termsAccepted:
+          type: boolean
+          enum:
+            - true
+        analyticsConsent:
+          type: boolean
         imageUpload:
           type: string
           format: binary

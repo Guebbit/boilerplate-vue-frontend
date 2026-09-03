@@ -37,7 +37,7 @@
         "email-invalid": "Must be a valid email",
         "label-passwordConfirm": "Confirm Password",
         "username-min": "Username must be at least 3 characters long",
-        "conditions-required": "Must accept privacy conditions!",
+        "terms-required": "You must accept the Terms of Service and Privacy Policy!",
         "password-required": "Password is required",
         "password-min": "Password must be at least 8 characters long",
         "password-minus-required": "Password must contain at least one lowercase letter",

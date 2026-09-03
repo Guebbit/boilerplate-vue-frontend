@@ -1287,6 +1287,7 @@ export const GetAccountResponse = zod.strictObject({
         phone: zod.string().optional(),
         website: zod.string().optional(),
         analyticsConsent: zod.boolean().optional(),
+        termsAccepted: zod.boolean().optional(),
         twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -1358,6 +1359,7 @@ export const UpdateAccountResponse = zod.strictObject({
         phone: zod.string().optional(),
         website: zod.string().optional(),
         analyticsConsent: zod.boolean().optional(),
+        termsAccepted: zod.boolean().optional(),
         twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -1764,7 +1766,9 @@ export const SignupBody = zod.strictObject({
         .optional()
         .describe(
             'Absolute URL or server-relative upload path (e.g. `\/uploads\/abc.jpg`). `uri-reference`, not `uri`: an uploaded image is stored and returned as a path relative to the API host, which is not a valid absolute URI.'
-        )
+        ),
+    termsAccepted: zod.literal(true),
+    analyticsConsent: zod.boolean().optional()
 });
 
 export const signupResponseDataLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
@@ -1802,6 +1806,7 @@ export const SignupResponse = zod.strictObject({
         phone: zod.string().optional(),
         website: zod.string().optional(),
         analyticsConsent: zod.boolean().optional(),
+        termsAccepted: zod.boolean().optional(),
         twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -1949,6 +1954,7 @@ export const ExportAccountDataResponse = zod.strictObject({
             phone: zod.string().optional(),
             website: zod.string().optional(),
             analyticsConsent: zod.boolean().optional(),
+            termsAccepted: zod.boolean().optional(),
             twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
             createdAt: zod.iso.datetime({ offset: true }).optional(),
             updatedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -2407,6 +2413,7 @@ export const ListUsersResponse = zod.strictObject({
                 phone: zod.string().optional(),
                 website: zod.string().optional(),
                 analyticsConsent: zod.boolean().optional(),
+                termsAccepted: zod.boolean().optional(),
                 twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
                 updatedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -2507,6 +2514,7 @@ export const CreateUserResponse = zod.strictObject({
         phone: zod.string().optional(),
         website: zod.string().optional(),
         analyticsConsent: zod.boolean().optional(),
+        termsAccepted: zod.boolean().optional(),
         twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -2587,6 +2595,7 @@ export const UpdateUserResponse = zod.strictObject({
         phone: zod.string().optional(),
         website: zod.string().optional(),
         analyticsConsent: zod.boolean().optional(),
+        termsAccepted: zod.boolean().optional(),
         twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -2663,6 +2672,7 @@ export const GetUserByIdResponse = zod.strictObject({
         phone: zod.string().optional(),
         website: zod.string().optional(),
         analyticsConsent: zod.boolean().optional(),
+        termsAccepted: zod.boolean().optional(),
         twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -2746,6 +2756,7 @@ export const UpdateUserByIdResponse = zod.strictObject({
         phone: zod.string().optional(),
         website: zod.string().optional(),
         analyticsConsent: zod.boolean().optional(),
+        termsAccepted: zod.boolean().optional(),
         twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
         createdAt: zod.iso.datetime({ offset: true }).optional(),
         updatedAt: zod.iso.datetime({ offset: true }).optional(),
@@ -2892,6 +2903,7 @@ export const SearchUsersResponse = zod.strictObject({
                 phone: zod.string().optional(),
                 website: zod.string().optional(),
                 analyticsConsent: zod.boolean().optional(),
+                termsAccepted: zod.boolean().optional(),
                 twoFactorEnabledAt: zod.iso.datetime({ offset: true }).optional(),
                 createdAt: zod.iso.datetime({ offset: true }).optional(),
                 updatedAt: zod.iso.datetime({ offset: true }).optional(),

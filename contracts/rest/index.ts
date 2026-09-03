@@ -146,6 +146,7 @@ export interface User {
     phone?: string;
     website?: string;
     analyticsConsent?: boolean;
+    termsAccepted?: boolean;
     twoFactorEnabledAt?: string;
     createdAt?: string;
     updatedAt?: string;
@@ -1020,6 +1021,8 @@ export interface SignupRequest {
     password: PasswordNew;
     passwordConfirm: Password;
     imageUrl?: ImageUrl;
+    termsAccepted: true;
+    analyticsConsent?: boolean;
 }
 
 export interface SignupRequestMultipart {
@@ -1028,6 +1031,8 @@ export interface SignupRequestMultipart {
     username: string;
     password: PasswordNew;
     passwordConfirm: Password;
+    termsAccepted: true;
+    analyticsConsent?: boolean;
     /** Optional user profile image */
     imageUpload?: Blob;
 }
@@ -3045,6 +3050,10 @@ export const signupWithMultipart = (
     formData.append(`username`, signupRequestMultipart.username);
     formData.append(`password`, signupRequestMultipart.password);
     formData.append(`passwordConfirm`, signupRequestMultipart.passwordConfirm);
+    formData.append(`termsAccepted`, signupRequestMultipart.termsAccepted.toString());
+    if (signupRequestMultipart.analyticsConsent !== undefined) {
+        formData.append(`analyticsConsent`, signupRequestMultipart.analyticsConsent.toString());
+    }
     if (signupRequestMultipart.imageUpload !== undefined) {
         formData.append(`imageUpload`, signupRequestMultipart.imageUpload);
     }

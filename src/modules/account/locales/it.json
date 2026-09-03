@@ -12,7 +12,8 @@
         "page-title": "Registrazione",
         "label-email": "Email",
         "label-password": "Password",
-        "text-conditions": "Accetto i {terms} e la {privacy}",
+        "text-terms": "Accetto i {terms} e la {privacy}",
+        "text-analytics-consent": "Condividi dati di utilizzo anonimi per aiutarci a migliorare il prodotto",
         "button-submit": "Registrati",
         "success-email-code-sent": "Registrazione completata. Ti abbiamo inviato un'email con un codice di verifica."
     },

@@ -60,7 +60,8 @@ interface UserSignupForm {
     email?: string;
     password?: string;
     passwordConfirm?: string;
-    conditions?: boolean;
+    termsAccepted?: boolean;
+    analyticsConsent?: boolean;
     imageUpload?: File;
 }
 
@@ -75,9 +76,13 @@ const signupSchema = usersSchema
         passwordConfirm: z
             .string()
             .min(8, { error: () => t('users-form.password-confirm-required') }),
-        conditions: z.boolean().refine((value) => value, {
-            error: () => t('users-form.conditions-required')
+        // The only required checkbox — the contract's own `enum: [true]` on `termsAccepted`
+        // enforces this server-side too, so a client that skipped this refine would still 422.
+        termsAccepted: z.boolean().refine((value) => value, {
+            error: () => t('users-form.terms-required')
         }),
+        // Optional, unlike `termsAccepted`: nothing to refine, unchecked is a legal answer.
+        analyticsConsent: z.boolean(),
         imageUpload: imageUploadSchema
     })
     .refine((data) => data.password === data.passwordConfirm, {
@@ -99,7 +104,8 @@ const {
         email: '',
         password: '',
         passwordConfirm: '',
-        conditions: false
+        termsAccepted: false,
+        analyticsConsent: false
     },
     signupSchema,
     {
@@ -151,6 +157,10 @@ const submitForm = () =>
                     email: form.value.email!,
                     password: form.value.password!,
                     passwordConfirm: form.value.passwordConfirm!,
+                    // Validated by `signupSchema` above — `true` by the time submission is
+                    // allowed to reach here at all.
+                    termsAccepted: form.value.termsAccepted as true,
+                    analyticsConsent: form.value.analyticsConsent,
                     imageUpload: form.value.imageUpload
                 },
                 options
@@ -198,14 +208,15 @@ const submitForm = () =>
                     class="mt-2"
                 />
                 <v-checkbox
-                    v-model="form.conditions"
-                    :error-messages="showErrors ? formErrors.conditions : []"
+                    v-model="form.termsAccepted"
+                    data-test="signup-terms-accepted"
+                    :error-messages="showErrors ? formErrors.termsAccepted : []"
                 >
                     <!-- `i18n-t` interpolates the two links into the translated sentence; `@click.stop`
                          keeps a link click from also toggling the checkbox, since Vuetify makes the
                          whole label clickable. -->
                     <template #label>
-                        <i18n-t keypath="signup-page.text-conditions" tag="span">
+                        <i18n-t keypath="signup-page.text-terms" tag="span">
                             <template #terms>
                                 <RouterLink
                                     :to="routerLinkI18n({ name: 'StaticTerms' })"
@@ -227,6 +238,13 @@ const submitForm = () =>
                         </i18n-t>
                     </template>
                 </v-checkbox>
+                <!-- Opt-in, unlike the checkbox above: unchecked is a fully valid submission, so
+                     there is no error-messages binding — `analyticsConsent` cannot fail validation. -->
+                <v-checkbox
+                    v-model="form.analyticsConsent"
+                    data-test="signup-analytics-consent"
+                    :label="t('signup-page.text-analytics-consent')"
+                />
                 <v-btn
                     type="submit"
                     color="primary"
