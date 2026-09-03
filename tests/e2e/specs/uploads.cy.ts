@@ -142,21 +142,12 @@ describe('Image upload', () => {
             cy.get('form').submit();
             cy.contains('Product updated successfully').should('exist');
 
-            /*
-             * KNOWN LIMITATION on the live profile only: `invalidateCache(['products'])`
-             * (products/routes.ts) fires BEFORE the upload middleware, so the very next GET
-             * recomputes and RE-CACHES the pre-digest placeholder for the full
-             * `setCache(3600, ...)` TTL — the async digest worker's writeback never invalidates
-             * it again (`infrastructure/adapters/image.worker.ts` has no `invalidateCache` call).
-             * The demo profile has no broker and no such cache, so it digests inline and matches
-             * immediately. Asserted per profile rather than silently dropping live's coverage.
-             */
-            cy.env(['liveProfile']).then(({ liveProfile }) =>
-                cy
-                    .get('img[alt="Image preview"]')
-                    .should('have.attr', 'src')
-                    .and(liveProfile === true ? 'not.match' : 'match', UPLOAD_PATH)
-            );
+            // The backend's image digest worker invalidates the collection's cache tag once its
+            // writeback matches (`settleWriteback` in `infrastructure/adapters/image.worker.ts`),
+            // so a re-fetch after the async digest lands sees the promoted url on both profiles —
+            // the demo profile has no broker and digests inline; the live profile's queued digest
+            // just takes longer to appear, which `.should()`'s built-in retry covers.
+            cy.get('img[alt="Image preview"]').should('have.attr', 'src').and('match', UPLOAD_PATH);
         });
 
         /**
