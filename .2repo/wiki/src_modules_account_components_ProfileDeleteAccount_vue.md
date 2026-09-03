@@ -2,26 +2,25 @@
 
 ## Purpose
 
-A single-button Vue component that triggers the account-deletion flow. It wraps the `requestAccountDelete` store call behind a shared confirmation dialog and surfaces the result (success toast or error toast) via the notifications store. It exists to isolate the destructive action so the parent profile page doesn't need to own the confirmation/error-handling logic.
+A minimal, single-purpose UI widget that renders a "Delete account" button. When clicked it gates the actual API call behind a shared confirm dialog, then delegates the network request to the profile store. It exists to keep the destructive action self-contained and easy to drop into the account settings page without coupling that page to deletion logic.
 
 ## Key elements
 
-- **`handleDeleteAccount()`** — Entry point (bound to the button click). Opens the app-wide confirmation dialog; on acceptance, calls `requestAccountDelete()` from the profile store, then pushes a success or error toast.
-- **Template** — A `v-divider` and a full-width, error-colored `v-btn` (Vuetonic tonal variant) labeled via i18n key `profile-page.button-delete-account`.
-- **`useDialogStore().confirm()`** — Shared dialog utility; returns a promise that resolves `true`/`false` for accept/deny.
-- **`notifyErrorMessages(addMessage, error)`** — Imported from `@/infrastructure/utils/errors.ts`; formats and dispatches error notifications.
-- **i18n keys used** — `profile-page.confirm-delete-account`, `profile-page.success-delete-request`, `profile-page.button-delete-account`.
+- **`handleDeleteAccount()`** – The only logic function. Opens a `useDialogStore().confirm()` modal (error-colored, i18n message). On acceptance it calls `requestAccountDelete()` from `useProfileStore()`, shows a success toast on resolve, or routes the error through `notifyErrorMessages(addMessage, error)` for user-facing feedback.
+- **Template** – A `<v-divider>` spacer and a single `<v-btn>` (color `error`, variant `tonal`, `block`) bound to `handleDeleteAccount`. No other DOM is produced.
+- **i18n keys used** – `profile-page.button-delete-account`, `profile-page.confirm-delete-account`, `profile-page.success-delete-request`.
 
 ## Relationships
 
-- **`src/infrastructure/utils/logger.ts`** (graph neighbor) — Not imported directly by this file. The interaction is indirect: `notifyErrorMessages` (from `errors.ts`) routes error output through the shared logger, so this component's failure path ultimately feeds into the logging pipeline.
-- **`useProfileStore`** — Consumes `requestAccountDelete` (the actual API call lives there).
-- **`useDialogStore`** — Consumes the shared confirmation dialog for the destructive-action gate.
-- **`useNotificationsStore`** — Consumes `addMessage` for toast feedback (both success and error paths).
+- **`useProfileStore`** (`@/modules/account/stores/profile.ts`) – Provides `requestAccountDelete`, the actual network call. This component contains no fetch logic itself.
+- **`useDialogStore`** (`@/ui/dialog.ts`) – Supplies the reusable confirmation dialog.
+- **`useNotificationsStore`** (`@guebbit/vue-toolkit`) – Supplies `addMessage` for toasts.
+- **`notifyErrorMessages`** (`@/infrastructure/utils/errors.ts`) – Centralised error-to-toast adapter.
+- **`src/infrastructure/utils/logger.ts`** – Indirect dependency; not imported directly by this file, but reachable transitively through the error-handling utilities (`errors.ts`) that `notifyErrorMessages` relies on for structured logging.
 
 ## Notes
 
-- The component has **no props, no emits, no local state**. It is a pure action trigger; all reactive data lives in the stores it calls.
-- If the user clicks "deny" in the confirmation dialog, `handleDeleteAccount` resolves with no side effects (no toast, no API call).
-- The success path does **not** navigate away or redirect; the toast is the only feedback the user gets after the confirm step.
-- Error handling is delegated entirely to `notifyErrorMessages`; there is no local `try/catch` or per-error-code branching here.
+- The component is intentionally stateless: no local `ref`s, no `onMounted`, no props. All state lives in stores.
+- `handleDeleteAccount` returns the promise chain (the dialog's `.then` → store call → toast). If a parent needs to `await` it, the return value is available; otherwise fire-and-forget is fine.
+- Because the confirmation dialog is app-global (`useDialogStore`), the same visual/UX behaviour is guaranteed if the button is ever reused elsewhere.
+- No unit test or E2E selector is embedded in the file; tests should target the store method `requestAccountDelete` and the i18n keys independently.

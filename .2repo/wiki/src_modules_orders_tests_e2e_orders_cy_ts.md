@@ -2,25 +2,26 @@
 
 ## Purpose
 
-Cypress end-to-end spec that exercises the Orders list page in a real browser session. It logs in as an admin, loads `/en/orders`, and asserts that rows render with the expected status text, totals, and action buttons, and that the View action navigates to the order detail route.
+Cypress end-to-end spec that exercises the Orders list page in a real browser. It verifies that an admin sees full row actions (View, Edit, Delete, Hard delete) and can navigate to order detail, while a non-admin customer sees only the View action. It exists to guard the orders list rendering, per-role action visibility, and navigation behavior.
 
 ## Key elements
 
-- **`describe('Orders')`** – Top-level suite; `beforeEach` visits `/en` and calls `cy.resetState()`.
-- **`describe('Orders list')`** – Nested suite; `beforeEach` logs in as `admin`, navigates to `/en/orders`, and waits (10 s timeout) for at least one `[data-test=list-row]`.
-- **"shows the page title"** – Asserts `#orders-list-page` exists and `<h1>` contains "My Orders".
-- **"renders one row per order returned by the API"** – Verifies `≥ 1` row element is present.
-- **"displays order status and total in rows"** – Inside the first row, checks for a status keyword (pending/paid/processing/shipped/delivered/cancelled) and a numeric value.
-- **"shows View, Edit, Delete and Hard delete actions per row"** – Asserts all four `data-test=row-*` buttons exist in the first row.
-- **"navigates to order detail when clicking View"** – Clicks `row-view` on the first row, asserts the URL includes `/orders/` and `#order-target` is present.
+- **`describe('Orders')`** — top-level block; calls `cy.visit('/en')` and `cy.resetState()` before every test.
+- **`describe('Orders list')`** — admin-role tests; logs in as `admin`, visits `/en/orders`, waits for at least one `[data-test=list-row]`.
+  - *Page title & row count* — asserts `#orders-list-page` exists, `h1` contains "My Orders", ≥ 1 row.
+  - *Status & total* — first row must contain a status keyword (pending/paid/processing/shipped/delivered/cancelled) and a numeric total.
+  - *Admin row actions* — asserts `[data-test=row-view]`, `row-edit`, `row-delete`, `row-hard-delete` all exist in the first row.
+  - *View navigation* — clicks View, asserts URL includes `/orders/` and `#order-target` exists.
+- **`describe('Orders list — a non-admin customer')`** — creates a fresh order via `cy.createOrder('user')`, logs in as `user`, asserts only `row-view` exists and the other three actions do **not**.
 
 ## Relationships
 
-No graph neighbors are registered for this file. It is a terminal consumer that only depends on the running application (served at `/en`) and Cypress custom commands (`cy.resetState`, `cy.loginAs`).
+No graph neighbors are recorded for this file.
 
 ## Notes
 
-- **Custom commands:** `cy.resetState()` and `cy.loginAs('admin')` are not part of standard Cypress; they must be registered in a support/commands file before this spec runs.
-- **Selectors are `data-test`-driven:** All element queries rely on `data-test` attributes (`list-row`, `row-view`, `row-edit`, `row-delete`, `row-hard-delete`). Renaming or removing these attributes in the UI will break the spec without a TypeScript error.
-- **Only the first row is inspected:** Every row-level assertion uses `.eq(0)`. If the API returns zero orders the `beforeEach` guard catches it, but the spec does not verify exact row count.
-- **Navigation assertion is loose:** The detail-page check is `cy.url().should('include', '/orders/')` plus the presence of `#order-target`; it does not verify a specific order id in the URL.
+- **Custom commands** — `cy.resetState()`, `cy.loginAs(role)`, and `cy.createOrder(account)` are project-level Cypress commands (defined elsewhere); they encapsulate fixture seeding, authentication, and order creation.
+- **Why `cy.createOrder` is needed** — the seeded `user` account's own order fixture is soft-deleted (see `orders/demo.ts`), so the non-admin block must create a fresh order rather than rely on seed data.
+- **Pattern reference** — the per-role visibility model mirrors `src/modules/products/tests/e2e/products.cy.ts`.
+- **Selectors** — all DOM assertions use `data-test` attributes (e.g. `list-row`, `row-view`, `row-edit`), not class names or text, to stay resilient to styling changes.
+- **Timeout** — row assertions use an explicit `{ timeout: 10_000 }` to accommodate slower API responses after `cy.visit`.

@@ -2,23 +2,21 @@
 
 ## Purpose
 
-Registers the realtime module's screen with the shared `sweepVisual` visual-regression runner so that a screenshot of the page is captured and diffed against a stored baseline. This file acts purely as a declaration (screen list); all sweeping logic lives elsewhere.
+Registers the realtime playground screen with the shared `sweepVisual` visual-regression runner so its rendered output is screenshot-diffed against a stored baseline. It exists so that unexpected visual changes to the realtime module are caught in CI or local runs without manual eyeballing.
 
 ## Key elements
 
-- **`sweepVisual('realtime', [[…]], 'admin')`** — The single call that declares the module's screens to the shared runner. Arguments:
-  - Module name: `'realtime'`
-  - Screen list: one entry `['realtime-playground', '/en/playground/realtime', '#realtime-playground-page']` (test label, route, ready-selector)
-  - Auth role: `'admin'`
-- **Import** — `sweepVisual` from `tests/support/e2e/visual-sweep.ts`.
+- **`sweepVisual(...)` call** — the sole executable statement. Args:
+  - `'realtime'` — module/screen group name.
+  - `[['realtime-playground', '/en/playground/realtime', '#realtime-playground-page']]` — one screen entry: test name, route path, and the DOM selector that signals the page is fully rendered (ready state).
+  - `'admin'` — the authenticated role under which the screenshot is captured.
 
 ## Relationships
 
-- **`tests/support/e2e/visual-sweep.ts`** — Provides the `sweepVisual` function that this file calls. That module iterates over the declared screens, navigates to each route, waits for the ready selector, captures a screenshot, and diffs it against the baseline. This file contributes no logic; it only supplies the screen metadata.
+- **`tests/support/e2e/visual-sweep.ts`** — provides the `sweepVisual` runner. This file is a thin registration: all navigation, waiting, screenshotting, and diff logic lives in that module. Changing sweep behavior affects this test without editing it.
 
 ## Notes
 
-- Baseline PNGs live in a `__snapshots__/` folder **beside this file**, not in a central directory. Deleting the module folder also removes its screenshots.
-- This suite is **excluded from `npm run complete`**. Run it with `npm run test:e2e:visual`.
-- Re-recording baselines (`npm run test:e2e:visual:update`) should only be done after visually inspecting the diff image; re-recording without looking is explicitly called out as defeating the purpose of the suite.
-- The ready selector (`#realtime-playground-page`) is what tells the sweep when the screen has finished loading before capturing.
+- **Not in `npm run complete`.** Run explicitly with `npm run test:e2e:visual`.
+- **Baseline re-recording** (`npm run test:e2e:visual:update`) is gated by process: the JSDoc header instructs you to inspect the diff image first. Blindly updating baselines can mask real regressions.
+- The ready selector (`#realtime-playground-page`) is the only stability signal; if the page renders lazily after that element appears, the screenshot may capture a partially loaded state.

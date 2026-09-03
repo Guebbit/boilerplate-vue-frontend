@@ -2,24 +2,27 @@
 
 ## Purpose
 
-Documents the checkout flow module — the client's only multi-step flow. It collects an address and a shipping-method id, sends them via `POST /cart/checkout`, and renders whatever the server returns. No pricing, stock, or availability logic lives here.
+Documents the checkout flow — the only multi-step interaction in this client — covering how the user picks an address and shipping method, submits to `POST /cart/checkout`, and handles the four distinct failure modes. The file exists to make clear that the client collects inputs and renders server answers; all pricing, stock, and availability decisions live server-side.
 
 ## Key elements
 
-- **Checkout flow** – three-step UI (pick address → pick shipping → submit). All arithmetic is server-side.
-- **`ShippingSelector`** (mounted from `delivery`) – self-contained component; this module only passes a binding for the chosen method id and reads that id back. Fetches its own methods and rates.
-- **Error handling (four modes)** – `409` (race lost, refetch cart), `422` (per-line stock shortfall), `404` (address/method gone, reopen step), transport failure.
-- **`CHECKOUT_REQUEST_FAILED`** – the single analytics event (Umami) emitted by this client for checkout. All other checkout events are server-emitted.
-- **Post-success behavior** – the store replaces the local cart with the empty payload from the API, clearing the header badge.
+- **Checkout flow** — address selection → `ShippingSelector` (mounted) → `POST /cart/checkout` → store replaced with empty cart → route to new order.
+- **`ShippingSelector`** — mounted from `delivery` barrel; this module passes only the chosen method-id binding and reads nothing else back.
+- **Error handling (four refusals)** — `409` race (refetch, do not retry), `409` `CART_INSUFFICIENT_STOCK` (per-line shortfalls), `404` (address/method gone, reopen that step), transport failure.
+- **`CHECKOUT_REQUEST_FAILED`** — the single analytics event emitted by this client; all other checkout events are server-side.
+- **Post-success store update** — local cart replaced with the authoritative (empty) payload from the API, preventing a stale header badge.
 
 ## Relationships
 
-- **`cart`** – This module *belongs to* the cart store. On success the cart is overwritten with the server's empty cart; that is why checkout logic lives in the cart module rather than in orders. The cart module is labelled `core` because the screen/flow is load-bearing even though the arithmetic is not client-side.
-- **`account`** – The address-picking step reads from the account's saved addresses ("the account's saved book"). The 404 path (address no longer exists) sends the user back to that step.
+- **`docs/modules/cart.md`** — parent module; the store that holds cart state lives here, and checkout belongs to it rather than to `orders`.
+- **`docs/modules/delivery.md`** — source of the `ShippingSelector` component. Interaction is one-way: pass a method-id binding in, read the id out. This module never sees rates, method counts, or pricing logic.
+- **`docs/modules/orders.md`** — destination after success (route to the new order). Checkout is intentionally *not* placed here because the store mutation (clearing the cart) is a cart concern.
+- **`docs/theory/domain-layer.md`** — explains why no totals, stock checks, or availability logic appear in this module; all domain arithmetic is server-side.
+- **`docs/tools/umami.md`** — the one event this module emits (`CHECKOUT_REQUEST_FAILED`) writes into the shared Umami website; naming convention is one event name per emitter.
 
 ## Notes
 
-- The `422` response carries a **list** (`errors[0].details.lines`) with `productId`, `title`, `requested`, `available` per short line. Rendering it as a single "some items unavailable" message discards the per-line data and turns a one-pass fix into guesswork.
-- `409` is **not** a retryable error — re-sending the request would find an already-empty cart.
-- The analytics split (one client event, all others server-side) is deliberate: the only failure the server *cannot* report is a request that never reached the API, and that is exactly what `CHECKOUT_REQUEST_FAILED` covers.
-- `ShippingSelector` is a hard dependency to render but a soft one to remove: deleting `delivery` loses a step but does not break the module, because no state or pricing data crosses the boundary — only a method-id label does.
+- **409 race is not a retry.** Re-sending the request would hit an already-consumed cart. The correct recovery is to refetch and inform the user.
+- **Stock-shortage payload is structured, not a string.** `errors[0].details.lines` carries `productId`, `title`, `requested`, `available` per line. Rendering it as a single "some items unavailable" message discards the data that lets the user fix the basket in one pass.
+- **The `ShippingSelector` edge is vocabulary, not state.** This module never learns what a shipping rate is or how methods are priced. Deleting `delivery` removes a step from the UI but does not break the checkout submission.
+- **Analytics split is intentional.** Any event backed by an API call is reported by the server (unforgeable, survives tab close). The client reports only what no request can carry — a failure that never reached the API.

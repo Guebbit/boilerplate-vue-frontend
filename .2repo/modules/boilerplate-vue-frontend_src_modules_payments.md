@@ -6,38 +6,39 @@ tags:
 type: module
 module: src/modules/payments/
 files: 8
-updated: 2026-08-30T17:11:13.137130+00:00
+updated: 2026-09-03T10:59:27.613447+00:00
 ---
 
 # src/modules/payments/
 
 ## Purpose
 
-The payments module owns the card-payment and refund interaction for a single order. It is not a standalone page; the orders module mounts it. All PSP-specific logic (the intent → confirm sequence, the "404 means no payment yet" rule) is concentrated in an internal Pinia store, while the public surface is limited to one component and one composable so callers cannot bypass the order-scoped flow.
+The payments module owns every client-side interaction around paying for an order and refunding it. It encapsulates the two-step PSP sequence (create intent → confirm with card), interprets the server's "404 means no payment yet" convention, and exposes a narrow UI surface (a card-entry panel and a refund action) that the orders module mounts on its order page. It deliberately owns no routes of its own.
 
 ## Key parts
 
-- **`store.ts`** – Pinia store that mirrors the API's payment record and enforces the two PSP rules (intent → confirm, 404-as-absent). Everything else in the module reads through this store.
-- **`components/PaymentPanel.vue`** – The only UI entry point. Renders either the card form (while payable) or a status summary; delegates all state transitions to the store and notifies the parent on success.
-- **`composables/use-order-refund.ts`** – Thin composable exposing refund eligibility + action from the store, reactive to a route-driven order ID. Lets views bind a refund control without importing the store directly.
-- **`response-schemas.ts`** – Registers Zod-style schemas (method + URL pattern) for the four payments endpoints so the shared HTTP layer can validate responses at runtime.
-- **`module.ts` / `index.ts`** – Module manifest (registers schemas and locale loaders with the app registry; declares no routes) and the public barrel that re-exports only `PaymentPanel` and `useOrderRefund`.
-- **`tests/`** – Unit suites for the store (pins the PSP call sequence and the 404-vs-error asymmetry) and for the refund composable (verifies availability is driven entirely by the server's `actions.refund` field).
+- **`store.ts`** – Pinia store that mirrors the API's payment record locally and drives the intent/confirm flow. Components never hit the payment APIs directly; they call store actions. The 404-as-`undefined` contract lives here.
+- **`components/PaymentPanel.vue`** – The order-page payment card. While the order is payable it renders a single card-number field; once a payment record exists it collapses to a read-only status row. All logic is delegated to the store.
+- **`composables/use-order-refund.ts`** – Thin composable (`canRefund` + `refund()`) that reads the server's `actions.refund` flag from the store so UI components can offer a refund without importing the store themselves.
+- **`response-schemas.ts`** – Zod-style schemas paired with method + URL patterns for the four payments endpoints, consumed by the shared HTTP layer for runtime response validation.
+- **`module.ts`** – Registry manifest: registers the response schemas and locale loaders. No route definitions.
+- **`index.ts`** – Public barrel. The only export surface is `PaymentPanel` and `useOrderRefund`; the store and schemas remain module-private.
+- **`tests/`** – Vitest specs pinning the PSP call sequence, the 404 contract, and the "no local refundability logic" rule of the composable.
 
 ## How it connects
 
-The sole dependency is **`src/infrastructure/`**, which provides the shared HTTP transport (the `orvalMutator` the store calls through) and the app-registry mechanism that `module.ts` plugs into for schema and locale registration. The response-schema entries declared in `response-schemas.ts` are consumed by that same infrastructure HTTP layer to perform runtime validation before the store ever sees a payload. No other module imports the payments store directly; only the two public exports cross the boundary.
+- **`src/infrastructure/`** – The module's API calls travel through the shared HTTP client in infrastructure. `response-schemas.ts` plugs into that layer's runtime validation pipeline, and `module.ts` registers the module (schemas, locale loaders) with the application registry that infrastructure provides. No other module is imported; the payments store and components are self-contained.
 
 ## Where to start
 
-1. **`store.ts`** – Reading this first reveals the full payment lifecycle (intent → confirm, the 404 convention) and the state shape the component and composable rely on.
-2. **`index.ts`** – A quick read confirms exactly what the rest of the app is allowed to use, which clarifies the module's intentional encapsulation.
+1. **`store.ts`** – Understanding the intent/confirm flow and the 404 convention gives you the mental model for everything else in the module.
+2. **`components/PaymentPanel.vue`** – Seeing how the store's state maps to the two UI states (form vs. status row) shows the module's entire user-facing surface in one file.
 
 ## Connected modules
 ```mermaid
 flowchart LR
     m_src_modules_payments["src/modules/payments/"]
-    m_src_infrastructure["src/infrastructure/<br/>27 files"]
+    m_src_infrastructure["src/infrastructure/<br/>21 files"]
     m_src_modules_payments --- m_src_infrastructure
     style m_src_modules_payments stroke-width:3px
 ```
@@ -45,14 +46,14 @@ flowchart LR
 [[boilerplate-vue-frontend_src_infrastructure|src/infrastructure/]]
 
 ## Files
-- `src/modules/payments/components/PaymentPanel.vue` — Order-page panel that renders either a card-payment form (while the order is still payable) or a payment status summary. It owns no payment logic itself; the intent/confirm sequence is delegated to the payments store, and the component's only job is to present the form or the result and notify the parent on success.
-- `src/modules/payments/composables/use-order-refund.ts` — Vue composable that exposes a single order's refund capability (eligibility check + action) from the payments store, reactive to a route-driven order ID. It exists so views can bind a refund control without importing the store directly.
-- `src/modules/payments/index.ts` — Public barrel (entry point) for the payments module. It deliberately exposes only the `PaymentPanel` component and the `useOrderRefund` composable, keeping the payments store internal to the module so that external callers cannot bypass the order-scoped payment flow.
+- `src/modules/payments/components/PaymentPanel.vue` — Order-page payment card that shows either a single-field card form (while the order is still payable) or a read-only status row (after a payment record exists). It owns no payment logic itself — the two-step intent/confirm flow lives in the payments store; this component only collects the card number, fires the store call, surfaces the result as a toast, and tells the parent to refetch the order.
+- `src/modules/payments/composables/use-order-refund.ts` — A Vue composable that exposes a single-order refund control (`canRefund` + `refund()`) by delegating to the payments Pinia store. It exists so that UI components can act on one order's refund without importing the store directly, keeping the refund surface narrow and reactive to route-driven order changes.
+- `src/modules/payments/index.ts` — Public barrel for the payments module. It is the only file outside the module that may be imported from, exposing exactly two things: the `PaymentPanel` component (the UI through which a payment is initiated on an order) and the `useOrderRefund` composable (the operator's refund action). Everything else — including the payments store — stays private to the module.
 - `src/modules/payments/module.ts` — Declares the payments module manifest for the app registry. It registers the response schemas and locale loaders needed to wire the `PaymentPanel` into the application. The module intentionally owns no routes — paying is a sub-interaction on an order, mounted by the orders module, not a standalone page.
 - `src/modules/payments/response-schemas.ts` — Declares the response-envelope schema registrations for all four payments endpoints consumed by the module. Each entry pairs an HTTP method with a URL regex pattern and a Zod-style schema, so the shared HTTP layer can validate responses at runtime.
-- `src/modules/payments/store.ts` — Pinia store that owns the payments module's client-side state. It mirrors the API's payment record for the current order and concentrates the two PSP-specific rules — the intent → confirm sequence and "404 means no payment yet" — in one place so callers never reason about them directly.
-- `src/modules/payments/tests/store.spec.ts` — Unit test for the payments Pinia store with the HTTP transport (`orvalMutator`) replaced by a string-keyed router. It pins two invariants: the PSP call sequence (intent → confirm with card) and the asymmetry between a 404 ("no payment yet", resolves to `undefined`) and any other failure (must reject and reach the caller).
-- `src/modules/payments/tests/use-order-refund.spec.ts` — Vitest suite for the `useOrderRefund` composable. It verifies that the refund button's availability is driven entirely by the server's `actions.refund` field on the payment record — the composable decides nothing on its own — and that edge cases (no payment, missing order id) leave the control disabled rather than issuing a broken request.
+- `src/modules/payments/store.ts` — Pinia store for the payments module. It mirrors the API's payment record locally and encapsulates the two-step PSP sequence (create intent → confirm) plus the "404 means no payment yet" convention, so components never call the payment APIs directly.
+- `src/modules/payments/tests/store.spec.ts` — Vitest spec for the payments Pinia store. It pins two invariants: the PSP call sequence (create intent → confirm with card) and the critical contract that a 404 on the read endpoint means *"no payment yet"* (resolves to `undefined`) while **any other** failure must reject and propagate to the caller.
+- `src/modules/payments/tests/use-order-refund.spec.ts` — Unit tests for the `useOrderRefund` composable. They lock in the contract that the composable makes **no** local refundability decision: the button state is always a passthrough of the server's `actions.refund` flag, and the only client-side guard is an empty order-ID short-circuit.
 
 ---
 [[boilerplate-vue-frontend_INDEX|← boilerplate-vue-frontend index]]

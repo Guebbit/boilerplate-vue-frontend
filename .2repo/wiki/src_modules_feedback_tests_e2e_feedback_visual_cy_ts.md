@@ -2,19 +2,18 @@
 
 ## Purpose
 
-Declares the list of screens in the feedback module that require visual-regression snapshots, delegating the actual sweep logic to the shared `sweepVisual` helper. This file exists so that deleting the feedback module also removes its baselines (they live in a local `__snapshots__/` folder) and so the route list stays co-located with the code it tests.
+Declares the list of routes (one entry) for the feedback module's visual-regression test run. It hands that list to the shared `sweepVisual` helper, which orchestrates the actual screenshot capture and comparison. This file exists so each module's visual targets live alongside that module rather than in a monolithic central file.
 
 ## Key elements
 
-- **`sweepVisual('feedback', [...])`** — The single call in this file. Passes the module name `'feedback'` and an array of route tuples. Each tuple is `[label, url, anchorSelector]`; here there is one entry: `['contact', '/en/contact', '#contact-page']`, meaning the screenshot is of the `#contact-page` element on `/en/contact`.
+- **`sweepVisual('feedback', [...])`** – Single top-level call. Registers one visual target: route name `contact`, URL `/en/contact`, screenshot anchor `#contact-page`. The module key `'feedback'` namespaces the generated screenshot filenames.
 
 ## Relationships
 
-- **`tests/support/e2e/visual-sweep.ts`** — Provides the `sweepVisual` function imported at the top of this file. All sweep mechanics (navigation, waiting, capture, snapshot comparison) live there; this file only supplies the route list.
+- **`tests/support/e2e/visual-sweep.ts`** – Provides the `sweepVisual` function that this file imports. That helper is responsible for navigating each listed route, waiting for the anchor element, and performing the pixel-level screenshot comparison (or recording, in update mode). This file only supplies the data; all test logic lives in the helper.
 
 ## Notes
 
-- **Local baselines:** Snapshots are stored in `__snapshots__/` beside this file, not in a central directory. This is intentional — it prevents orphaned PNGs of screens the app no longer serves.
-- **Not in the default pipeline:** This test is excluded from `npm run complete`. Run it with `npm run test:e2e:visual`.
-- **Re-recording discipline:** Use `npm run test:e2e:visual:update` only after visually inspecting the diff image. The file's own comment calls out re-recording without looking as "the one thing that makes this suite worthless."
-- **Adding a screen:** To cover another route in the feedback module, append a `[label, url, anchorSelector]` tuple to the array passed to `sweepVisual`. No other boilerplate is needed.
+- **Not included in `npm run complete`.** Run it explicitly with `npm run test:e2e:visual`.
+- **Re-recording is manual and deliberate.** Use `npm run test:e2e:visual:update` *only* after visually inspecting the diff image—there is no automated "approve" step.
+- The file has no other exports; it is a side-effect module whose sole purpose is the `sweepVisual` call.

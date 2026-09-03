@@ -2,20 +2,20 @@
 
 ## Purpose
 
-Provides an accessible `#loader` slot replacement for `v-data-table`. Vuetify's built-in loading bar renders a `v-progress-linear` with `role="progressbar"` but no accessible name, producing an axe "serious" violation on every list screen. Because `aria-label` is not a declared prop, Vuetify component defaults cannot inject one; this component is the supported override point (the loader slot) that adds the label.
+Drop-in replacement for the `v-progress-linear` that `v-data-table` renders internally while `loading` is true. It exists to give that progress bar an `aria-label`, fixing a `serious` axe violation (unlabeled `role="progressbar"`) that cannot be resolved through Vuetify component defaults because `aria-label` is not a declared prop. Intended to be passed into every table's `#loader` slot.
 
 ## Key elements
 
-- **`<v-progress-linear>` (template)** — Renders the actual bar with `absolute`, `indeterminate`, `height="2"`, `color="primary"`, and `:aria-label` bound to the i18n key `generic.loading-state`.
-- **`useI18n()` / `t` (script setup)** — Supplies the translated loading-state label; the only runtime dependency in the file.
-- **No props, no emits, no exports beyond the default SFC export** — It is a purely presentational, stateless wrapper.
+- **`v-progress-linear` (template)** — The sole rendered element. Hard-coded to `absolute`, `indeterminate`, `height="2"`, `color="primary"`. The `aria-label` is the only dynamic binding: `t('generic.loading-state')` from `vue-i18n`.
+- **`useI18n` (script)** — Provides the translation function; no other logic or reactive state.
 
 ## Relationships
 
-No graph neighbors are recorded. The component is intended to be dropped into any `v-data-table`'s `#loader` slot; it has no imports from the application codebase beyond `vue-i18n`.
+None tracked in the dependency graph. The component is consumed by whatever `v-data-table` instances in the app assign it to their `#loader` slot, but no neighbor files are recorded.
 
 ## Notes
 
-- The component exists specifically so that every table gets the `aria-label` by *using the component*, rather than by remembering to add the attribute inline. The accessibility test suite can therefore target one location.
-- The doc block in the source explains why Vuetify's `defaults` mechanism cannot fix this (it only maps declared props, and `aria-label` is not one of them). If Vuetify changes its internal loader or adds a label prop in a future major version, this component may become redundant—verify before deleting.
-- The i18n key is `generic.loading-state`; adding a new language file requires that key to be present or the label will render as the raw key string.
+- This component **replaces** the table's internal loading bar entirely — Vuetify does not merge the slot content with its default; whatever the slot renders becomes the bar.
+- The label string lives under the i18n key `generic.loading-state`; adding a new language requires that key, not a change here.
+- It is deliberately stateless and prop-less. Do not add configuration props unless the design requirement changes across all tables simultaneously.
+- Because the file's docblock explicitly documents *why* the inline Vuetify bar can't be fixed globally, treat any future refactor that inlines this markup back into individual tables as an accessibility regression.

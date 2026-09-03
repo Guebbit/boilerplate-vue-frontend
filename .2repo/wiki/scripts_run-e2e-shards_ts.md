@@ -2,33 +2,31 @@
 
 ## Purpose
 
-The worker behind `npm run test:e2e`. It splits the functional Cypress spec suite into parallel shards (default 4) balanced by measured durations, boots one isolated demo backend per shard, staggers the `cypress run` launches, and collects pass/fail per shard — all against a single **built** (not dev) preview server so that shard count doesn't introduce compile-contention flakes.
+Orchestrates the sharded parallel execution of Cypress e2e specs (the worker behind `npm run test:e2e`). Splits functional specs across N parallel `cypress run` processes, each backed by its own in-memory demo backend, while sharing a single `vite preview` static server. Exists to cut wall-clock time from ~13 min (sequential) to ~85 s floor (bounded by the longest single spec) without the flakiness a dev server would introduce.
 
 ## Key elements
 
-- **Live-profile guard** — exits with code 2 (and a human-readable explanation) when `CYPRESS_liveProfile === 'true'`, because `cy.resetState()` would re-seed one shared real DB out from under the other shards.
-- **`positiveInteger(value)`** — parses an env-var string into a positive integer or returns `undefined`.
-- **`shardCount`** — read from `E2E_SHARDS`, defaults to 4.
-- **`specs`** — obtained via `globSync(FUNCTIONAL_SPEC_GLOBS)`, normalised to posix separators, sorted, and mapped to `{ file, key }` pairs. New spec files are picked up automatically.
-- **`weighted` / `shards`** — produced by `weighSpecs` (applies measured seconds from `SECONDS`) and `balanceShards` (longest-processor-time onto least-loaded shard).
-- **`SHARD_STAGGER_MS`** (4000 ms) — delay between consecutive `cypress run` spawns so the first process warms the bundle cache before the others read it, avoiding cold-cache truncation failures.
-- **`DEMO_PORT_BASE`** (3101) — shard *n* listens on `3101 + n`.
-- **`bootDemoBackends(count)`** — spawns one backend per shard (via `resolveBackendDemoCommand()`), sets per-shard env (`NODE_PORT`, `SERVER_PORT`, `DB_DATABASE=e2e_demo_shard_{n}`, `TMPDIR`), polls `GET /` for readiness, and registers a `kill` cleanup that signals the entire process group (negative PID) and removes the scratch directory. Registered on `exit`, `SIGINT`, and `SIGTERM`.
-- **`LOG_DIR`** (`reports/e2e/`) — destination for a failing shard's full stdout+stderr so CI can upload it.
-- **PHP-pairing guard** — throws if `E2E_SHARDS > 4` when the demo command is `composer`, because the PHP repo only provisions four `e2e_demo_shard_*` databases.
+- **Live-profile guard** — exits with code 2 if `CYPRESS_liveProfile === 'true'`, preventing `cy.resetState()` from racing against a shared real database.
+- **`positiveInteger`** — parses an env string to a positive integer or returns `undefined` (used for `E2E_SHARDS`, default 4).
+- **`specs`** — result of `globSync(FUNCTIONAL_SPEC_GLOBS)` mapped to `{ file, key }`; sorted for deterministic shard assignment.
+- **`weighted` / `shards`** — specs weighted by measured durations (`SECONDS`), then balanced via LPT (`balanceShards`).
+- **`SHARD_STAGGER_MS`** (4000) — sequential delay between spawning each Cypress process so the first populates the bundle cache before the others read it; prevents cold-cache "truncated bundle" / "cy.resetState is not a function" failures.
+- **`bootDemoBackends(count)`** — spawns `count` backend processes (one per shard) on ports `DEMO_PORT_BASE + i` (3101+), waits for `GET /` → 200, and returns a cleanup callback that kills the entire process group (`kill(-pid)`) and removes the scratch directory. Registered on `process.on('exit')` and `process.on('SIGINT/SIGTERM')`.
+- **`LOG_DIR`** (`reports/e2e/`) — per-shard full stdout/stderr persisted here on failure for CI upload.
+- **`DEMO_PORT_BASE`** (3101) — first port for per-shard backends.
 
 ## Relationships
 
-- **`scripts/paired-backend-path.ts`** — provides `resolveBackendDemoCommand()`, the actual command (and args) to boot the paired backend. Returns `undefined` when no pairing is configured, in which case this script expects backends to already be listening.
-- **`scripts/backend-demo-scratch-directory.ts`** — provides `createDemoScratchDirectory()` / `removeDemoScratchDirectory()` to give each in-memory Mongo a dedicated `TMPDIR` outside the machine's `/tmp` (avoids filling tmpfs) and to clean it up on shutdown.
-- **`scripts/cypress-spec-globs.ts`** — exports `FUNCTIONAL_SPEC_GLOBS`, the glob patterns this script uses to discover the spec files to shard.
-- **`scripts/e2e-shard-balancer.ts`** — exports `SECONDS` (measured per-spec durations), `weighSpecs()`, and `balanceShards()` (the LPT algorithm). This script is the consumer; the balancer is pure logic with no I/O.
-- **`tests/unit/scripts/cypress-spec-globs.spec.ts`** — unit-tests the glob patterns that feed into this script's `specs` list; does not import this file directly.
+- **`scripts/e2e-shard-balancer.ts`** — imports `SECONDS` (measured per-spec durations), `weighSpecs`, and `balanceShards`; all balancing logic lives there, this file only calls it.
+- **`scripts/cypress-spec-globs.ts`** — imports `FUNCTIONAL_SPEC_GLOBS`, the glob pattern(s) that determine which spec files are sharded. Adding a new spec module requires no edit to this file.
+- **`scripts/paired-backend-path.ts`** — imports `resolveBackendDemoCommand()`, which returns the `[command, ...args]` tuple to spawn the paired backend's demo script (or `undefined` when no pairing exists).
+- **`scripts/backend-demo-scratch-directory.ts`** — imports `createDemoScratchDirectory()` / `removeDemoScratchDirectory()` to redirect in-memory Mongo temp files off the system `/tmp`.
+- **`tests/unit/scripts/cypress-spec-globs.spec.ts`** — unit-tests the glob patterns consumed here; changes to `FUNCTIONAL_SPEC_GLOBS` are validated there before reaching this script.
 
 ## Notes
 
-- **Built bundle only.** The doc-block and comments explain why a dev server (`vite dev`) is unsafe: on-demand route compilation under 4 concurrent browsers lands inside Cypress timeouts and reads as a random flake. `vite preview` (static) eliminates that class of failure entirely.
-- **Cleanup is process-group-level.** Each backend is spawned with `detached: true`; the kill uses `process.kill(-pid, 'SIGTERM')` to signal the whole chain (npm → tsx → node → mongod, or composer → php → artisan). Killing only the wrapper orphans grandchildren that then hold the port and break the *next* run with `EADDRINUSE`.
-- **Stagger is a cache-warming workaround, not a timing tweak.** It exists specifically because concurrent cold-cache Cypress bundling has been observed to produce truncated bundles (`Unexpected end of input`) or a missing `cy.resetState` command. On a warm cache the cost is zero.
-- **PHP shard ceiling is structural, not configurable.** The four `e2e_demo_shard_*` databases are created by a SQL file in the PHP repo. Raising `E2E_SHARDS` above 4 against the PHP pairing will fail at Laravel's DB connection with no useful error unless you add the corresponding `CREATE DATABASE`/`GRANT` blocks first.
-- **The file is truncated in this wiki snapshot.** The readiness-polling loop, the actual staggered `cypress run` spawning, per-shard result collection, and the final exit-code logic follow the `bootDemoBackends` definition but are not shown above.
+- **PHP pairing ceiling:** `02-e2e-demo-shards.sql` in the PHP repo provisions exactly 4 databases (`e2e_demo_shard_1..4`). This script throws early if `E2E_SHARDS > 4` when the resolved command is `composer`, pointing to that file. The Node twin (in-memory Mongo) has no such ceiling.
+- **`detached: true` + negative-pid kill:** each backend is spawned in its own process group so `process.kill(-pid, 'SIGTERM')` reaches the full chain (e.g. `npm → tsx → node → mongod`). Without this, orphaned grandchildren hold the port and the *next* run fails with `EADDRINUSE`.
+- **Stagger is intentional and non-obvious:** the 4 s delay is not a retry or timeout; it exists solely so the first `cypress run` finishes bundling before the others start reading. On a warm cache it costs nothing perceptible; on a cold one it prevents a load-time failure that looks like a real bug.
+- **`BACKEND_DEMO_COMMAND` unset** means "backends are already running externally"; the script still waits for readiness on each port so a missing backend fails at the readiness check (with a clear message) rather than deep inside Cypress.
+- **`NODE_FRONTEND_URL`** is hardcoded to `http://localhost:8085` (the preview server) so OAuth callbacks and emailed links redirect correctly regardless of the Node twin's `.env` default.

@@ -2,18 +2,21 @@
 
 ## Purpose
 
-Registers the admin module's routes for accessibility (a11y) end-to-end testing. It exists as a thin, co-located route list so that deleting the admin module automatically removes its a11y coverage — a central list would go stale. The actual audit logic is delegated to a shared sweep utility.
+Declares the e2e accessibility sweep for the **admin** module's routes. It is co-located with the module so that deleting the admin module automatically removes its a11y coverage; a cross-cutting test (`tests/cross-cutting/a11y-coverage.spec.ts`) enforces that every routed module has exactly one of these files.
 
 ## Key elements
 
-- **`sweepA11y('admin', [['admin dashboard', '/en/admin']], 'admin')`** — Single call that registers the admin route (`/en/admin`, labelled "admin dashboard") under the `'admin'` sweep name and scope. This is the entire test body of the file.
+- **`PHONE`** — `const [390, 844]`; iPhone 14-class portrait width, below `DataTable.vue`'s `mobile-breakpoint` (the point where rows stack into cards).
+- **`sweepA11y('admin', routes, 'admin')`** — call to the shared sweep helper that drives the actual axe / audit logic. The `routes` array contains:
+  - A plain route: `['admin dashboard', '/en/admin']`.
+  - A viewport-specific config for the audit tab at phone size, with a `prepare` callback that clicks the "Audit Log" tab and asserts list rows are present.
 
 ## Relationships
 
-- **`tests/support/e2e/a11y-sweep.ts`** — Provides the `sweepA11y` function that performs the actual accessibility audit across the registered routes. This file only supplies the route data; all sweep mechanics live there.
+- **`tests/support/e2e/a11y-sweep.ts`** — provides the `sweepA11y` function that this file calls. The sweep file owns the test runner, axe injection, and assertion logic; this file supplies only the route list and any per-route setup (`prepare`, `viewport`).
 
 ## Notes
 
-- The file is deliberately a **route list, not test logic**. Do not add test assertions here; extend the sweep utility in `a11y-sweep.ts` if the audit needs to change.
-- Co-location is a contract: `tests/cross-cutting/a11y-coverage.spec.ts` asserts that every routed module has a file like this one, so silently removing this file without updating the cross-cutting check will break the build.
-- New admin routes must be appended to the routes array in the `sweepA11y` call, or they will not be a11y-audited.
+- The file intentionally contains **no test logic** of its own — all sweep mechanics live in `a11y-sweep.ts`. Adding a new admin route means appending an entry to the array here, not writing a new test.
+- The `prepare` callback uses `cy.contains('[role=tab]', 'Audit Log').click()`; it is timing-sensitive (waits for the tab to be clickable) and then asserts `[data-test=list-row]` exists. If the tab label changes in the UI, this callback breaks silently (the sweep will report a failure rather than a compile error).
+- The doc comment references `tests/cross-cutting/a11y-coverage.spec.ts` as the guard against silently losing a module's a11y coverage; that file is **not** imported here.

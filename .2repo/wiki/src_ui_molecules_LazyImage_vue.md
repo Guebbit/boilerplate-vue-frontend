@@ -2,27 +2,26 @@
 
 ## Purpose
 
-Renders a single record image with three display tiers (thumbnail → full image → bundled placeholder) while handling URL resolution, layout reservation, lazy loading, and error fallback in one place. It exists so callers never repeat the resolve / placeholder / size / lazy-load logic that every image site in the app needs.
+Renders a single record image in three tiers — a small blurred thumbnail that paints instantly, the full image that fades in over it once decoded, and a bundled placeholder icon when no image exists or the request fails. It centralises URL resolution, box reservation, lazy loading, and graceful degradation so that no caller has to handle those concerns individually.
 
 ## Key elements
 
-- **`defineProps`** — `src` (raw API path; resolution is this component's job), `alt` (required; `""` means decorative and is never overridden), `width`/`height` (default 96 px; used to reserve the box via `aspect-ratio`), `eager` (bypasses lazy loading for above-the-fold heroes), `rounded` (Tailwind class, default `"rounded"`; use `"rounded-full"` for avatars).
-- **`fullSource`** (computed) — `resolveImageUrl(src)` or `undefined` when no src / load failed.
-- **`thumbnailSource`** (computed) — `thumbnailImageUrl(src, width)` or `undefined`. Stays mounted even after the full image decodes to avoid a 300 ms gap during the fade.
-- **`displayedSource`** (computed) — `fullSource ?? placeholderImageUrl()`; the URL actually set on the visible `<img>`.
-- **`boxStyle`** (computed) — inline `width` + `aspect-ratio` so the row never reflows when bytes arrive.
-- **`watch(src)`** — resets `failed` and `loaded` flags when a recycled `v-for` row or route-param change supplies a new URL.
-- **`failed` / `loaded`** (refs) — track error and decode state; drive the opacity transition between thumbnail and full image.
-- **Template** — outer `<div>` carries `data-test="lazy-image"` and `data-placeholder="true"` when a stand-in is shown; thumbnail `<img>` is `alt=""` + `aria-hidden` (decorative); main `<img>` uses native `loading`/`decoding` attributes and a 300 ms opacity transition.
+- **Props** — `src` and `thumbnailSrc` (raw API paths; the component resolves them), `alt` (required; `""` is preserved as "decorative" across all tiers), `width`/`height` (default 96 × 96, used to reserve the box via `aspect-ratio`), `eager` (skip lazy loading for above-the-fold heroes), `rounded` (Tailwind class, defaults to `rounded`).
+- **`failed` / `loaded` refs** — track error state and full-image decode; both are reset via a `watch` on `src` so a recycled `v-for` row doesn't inherit a stale broken state.
+- **`fullSource` / `thumbnailSource` computed** — call `resolveImageUrl()` on the raw prop; return `undefined` when `failed` is true.
+- **`displayedSource` computed** — `fullSource` or `placeholderImageUrl()` as a fallback.
+- **Template** — two `<img>` elements inside a sized, `overflow-hidden` wrapper: the thumbnail (`alt=""`, `aria-hidden`, `scale-105 blur-sm`) stays mounted underneath after the full image fades in; the main image uses native `loading="lazy"` / `decoding="async"` and transitions opacity over 300 ms.
 
 ## Relationships
 
-None recorded in the dependency graph. The component imports from `@/infrastructure/utils/images.ts` (`placeholderImageUrl`, `resolveImageUrl`, `thumbnailImageUrl`) and `vue-i18n` (`useI18n` for the placeholder alt string).
+- **`@/infrastructure/utils/images.ts`** — imports `resolveImageUrl` (turns an API-relative path into an absolute URL against the API host) and `placeholderImageUrl` (returns the bundled fallback icon URL).
+- **`vue-i18n`** — `useI18n().t` supplies the placeholder's accessible name (`image.placeholder-alt`), which overrides the caller's `alt` only when a placeholder is shown and `alt` is non-empty.
 
 ## Notes
 
-- `eager` intentionally has **no default value**; Vue's absent-boolean → `false` coercion is relied upon, and an explicit `= false` would trip the `no-useless-default-assignment` lint rule.
-- The thumbnail tier is a no-op today because the backend does not serve thumbnails; the component degrades to plain lazy-loading. This is the designed fallback, not a TODO.
-- `alt=""` (decorative) is the **one** value that survives the placeholder override; the placeholder alt from i18n is applied only when `alt` is a non-empty string and the placeholder is showing.
-- Native `loading="lazy"` is preferred over an IntersectionObserver: the browser accounts for scroll velocity and connection type, which a fixed root-margin observer cannot.
-- The thumbnail is `scale-105 blur-sm` to mask the soft edge that `object-cover` blur leaves behind; it is removed from the DOM only when `thumbnailSource` is falsy, not when `loaded` flips.
+- Callers pass raw API paths; resolving them inside the component is deliberate to avoid duplicated logic upstream.
+- `thumbnailSrc` is independent of `src` — the backend serves them as separate files (small WebP derivative vs. original), so there is no client-side `width` parameter.
+- The thumbnail is intentionally **not** unmounted when `loaded` flips to true; removing it at the start of the fade would expose 300 ms of empty box. It costs nothing to leave under an opaque layer.
+- Native `loading="lazy"` is preferred over an `IntersectionObserver` because the browser accounts for scroll velocity and connection type.
+- `eager` has no explicit `false` default; Vue's boolean-prop casting handles the absent case, and restating it would trip the `no-useless-default-assignment` lint rule.
+- `alt=""` (decorative) is the one value never overridden by the placeholder text — critical for the nav account button where the button already carries the accessible name.

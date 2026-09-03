@@ -2,28 +2,30 @@
 
 ## Purpose
 
-The single application shell every view renders through. It provides the skip link, health banner, navigation, page hero, footer, confirmation-dialog host, toast stack, and full-page/activity loading indicators. It deliberately preloads no domain-specific data—only the layout chrome and its accessibility scaffolding live here.
+The universal page shell that every view renders through. It provides the skip link, health banner, navigation, page hero, footer with legal links, a confirmation-dialog host, a toast stack, and two loading indicators — while deliberately preloading no domain-specific data.
 
 ## Key elements
 
-- **`skipToContent()`** – Click handler for the skip link; programmatically focuses the `<v-main>` element (queried via `data-main-content`) rather than relying on a hash anchor, because the router intercepts `#` navigation and would not move focus.
-- **`consumeMainFocus`** (imported from `@/app/router/announcer.ts`) – Called in `onMounted`; satisfies the router's "focus main content after navigation" request. This layout is the component that owns the focusable main region.
-- **`vuetifyLocale` / `vuetifyMessages` sync** – A `watch` on the i18n `locale` sets Vuetify's internal locale, falling back to `'en'` for locales Vuetify has no bundled messages for (e.g. runtime-added locales). Prevents per-key console warnings and half-resolved `aria-label`s.
-- **`legalLinks`** – Computes footer links for the four prose pages (`about`, `faq`, `terms`, `privacy`) using `routerLinkI18n` with the `'Static' + Capitalized` route naming convention.
-- **`normalizeAlertType(type?)`** – Maps arbitrary/missing notification type strings to the four `v-alert` types, defaulting to `'info'`.
-- **`loadings` / `isLoading`** (from `useCoreStore`) – Drives the full-page `v-overlay` loader (bootstrapping) and the discreet corner loader (background activity).
-- **`messages` / `hideMessage`** (from `useNotificationsStore`) – Feeds the toast stack; each alert uses `v-if` (not `v-show`) so re-shown toasts are re-inserted into the DOM and re-announced by screen readers.
-- **Props** – `title?: string` (hero heading) and `centered?: boolean` (min-height centered content).
-- **Slots** – `default` (page content), `header` (replaces the hero), `navigation` (injected into `AppNavigation`).
+- **Props** — `title?` (default hero heading) and `centered?` (min-height, centered content wrapper).
+- **Slots** — `default` (page body), `header` (replaces the hero), `navigation` (extra nav content).
+- **`skipToContent()`** — Programmatically focuses `[data-main-content]` because a bare `#main` hash would only trigger router navigation, not a focus change.
+- **Locale sync (`watch` on `locale`)** — Keeps Vuetify's `useLocale().current` in step with the app locale; falls back to `'en'` for locales Vuetify has no messages for, avoiding per-key console warnings and half-resolved `aria-label`s.
+- **`legalLinks`** — Derived from `STATIC_PAGES` + `staticPageRouteName`, rendered in the footer so every page carries a `contentinfo` landmark.
+- **`normalizeAlertType()`** — Coerces arbitrary notification types to the four `v-alert` variants, defaulting to `'info'`.
+- **Toast stack** — Renders `v-alert` per visible message from `useNotificationsStore`; uses `v-if` (not `v-show`) so re-shown alerts are re-inserted and re-announced by screen readers.
+- **Full-page loader** — `v-overlay` bound to `loadings.core`, shown during app bootstrap.
+- **Corner activity loader** — `v-progress-circular` visible when `isLoading` is true but core loading has finished.
+- **`defineOptions({ inheritAttrs: false })`** — Attrs (e.g. `id="cart-page"`) are forwarded explicitly to `<v-main>` via `v-bind="$attrs"`, not to the `<v-app>` root.
 
 ## Relationships
 
-No graph neighbors recorded.
+No graph neighbors are registered for this file. It imports from `@/app/components/AppNavigation.vue`, `@/app/components/AppHealthBanner.vue`, `@/ui/organisms/DialogHost.vue`, `@/infrastructure/i18n/router-link.ts`, `@/app/utils/static-pages.ts`, `@/app/router/announcer.ts`, and the `@guebbit/vue-toolkit` stores (`useCoreStore`, `useNotificationsStore`), but none of those are tracked as graph neighbors.
 
 ## Notes
 
-- **`data-main-content` instead of an `id`** – The view's own `id` arrives via `$attrs` (e.g. `id="cart-page"`) and would overwrite a layout-supplied `id`. Using a `data-*` attribute avoids the collision; the skip link and `consumeMainFocus` both query `data-main-content`.
-- **`inheritAttrs: false`** – The layout forwards `$attrs` explicitly onto `<v-main>`, so the router-provided `id` lands on the main region, not the outer `<v-app>`.
-- **Toast accessibility pattern** – The wrapper is `role="region"`, *not* `aria-live`. Each individual `v-alert` carries `role="alert"` (error) or `role="status"` (others), giving per-toast urgency. A single live-region wrapper would announce all toasts at the same priority and would fail to re-announce a hidden-then-shown toast.
-- **No domain data fetching** – The viewer projection is restored by `tryRestoreAuth` before any component mounts; the editable user record is fetched by the account view itself. The shell never imports or queries a `User` entity.
-- **Progress circular labels** – Both `v-progress-circular` elements carry their own `aria-label` even when a parent already provides one, because the progressbar is a distinct accessible object that must be individually named.
+- **`data-main-content` instead of `id`** on `<v-main>`: a view's own `id` arrives through `$attrs` and would overwrite a static one. The skip link queries the data attribute so it never points at nothing.
+- **Skip link uses `@click.prevent` + `focus()`** rather than letting the browser follow the hash — a hash navigation goes through the router and does not move focus, defeating the purpose of the link.
+- **`tabindex="-1"` on `<v-main>`** makes it programmatically focusable (skip link, router announcer) without entering the tab order.
+- **Toast wrapper is `role="region"`, not `aria-live`**: each alert carries its own `role="alert"` (error) or `role="status"` (rest) so severity is preserved per message; a single live region would announce all toasts at equal urgency.
+- **No data fetching in the layout**: the viewer projection is loaded by `tryRestoreAuth` before first navigation; the editable user record is fetched by the account view. Keeping the shell domain-agnostic avoids a request per page load for signed-in users.
+- **Both progress indicators are explicitly `aria-label`ed** because `role="progressbar"` requires an accessible name, and the full-page one is the only visible content during boot.

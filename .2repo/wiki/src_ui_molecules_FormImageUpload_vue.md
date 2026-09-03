@@ -2,25 +2,31 @@
 
 ## Purpose
 
-A single-image picker field for forms: wraps Vuetify's `v-file-input`, renders a live preview from an object URL (or a stored image on edit), and optionally displays an upload-progress bar driven by the parent. It owns the full lifecycle of the temporary object URL so the blob never leaks.
+A single-image picker form field built on Vuetify's `v-file-input`. It renders a live preview from an object URL (or the record's existing image), displays validation errors, and shows an upload-progress bar whose percentage is driven by the parent via a `progress` prop. It exists so that every form that needs an "upload one image" input can drop in a consistent, self-contained field.
 
 ## Key elements
 
-- **`pickedFile`** — `defineModel<File | undefined>()`; the two-way binding the parent form reads/writes. Always a single `File`, never an array.
-- **`normaliseSelection`** — Coerces whatever Vuetify's model emits (`File | File[] | null`) down to `File | undefined`.
-- **`objectUrl`** (ref) + **`releaseObjectUrl`** — Pairs a `URL.createObjectURL` with a guaranteed `URL.revokeObjectURL` on every selection change and on unmount. Kept as a ref (not a computed) to avoid minting a new URL each re-evaluation and leaking the old one.
-- **`isUploading` / `progressPercent`** — Computed booleans/numbers derived from the `progress` prop. `undefined` hides the bar; `0` means the request started but sent nothing yet.
-- **`previewSource`** — Computed: prefers the object URL of the picked file, falls back to `currentImageUrl`. Both pass through `resolveImageUrl` so API-relative paths are resolved against the API origin, not the app origin.
-- **Props** — `label`, `hint`, `currentImageUrl`, `errorMessages`, `progress`, `disabled`. All optional; i18n defaults supplied when label/hint are empty.
+- **`pickedFile`** (`defineModel<File | undefined>`) — the two-way model the parent binds; always a single `File` or `undefined`.
+- **`normaliseSelection`** — collapses Vuetify's `File | File[] | null` model shape down to a single `File`, guarding against an array ever leaking into the parent's form state.
+- **`objectUrl`** (ref) + **`releaseObjectUrl`** — manually managed `URL.createObjectURL` / `revokeObjectURL` pair. Deliberately a ref, not a computed, so each blob is pinned exactly once and released on replacement, clear, or unmount.
+- **`watch(pickedFile, …)`** — the single sync point: normalises the selection, revokes the outgoing URL, mints a new one, and writes the collapsed file back into the model.
+- **`previewSource`** (computed) — resolves `objectUrl` or `currentImageUrl` through `resolveImageUrl`, then feeds the `<img>` tag.
+- **`isUploading` / `progressPercent`** (computed) — derive the progress-bar visibility and label from the `progress` prop.
+- **Props** — `label`, `hint`, `currentImageUrl`, `errorMessages`, `progress`, `disabled`; all optional with sensible defaults drawn from i18n and shared upload constants.
 
 ## Relationships
 
-No graph neighbors are recorded. The file imports two infrastructure utilities (`ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE`, `MAX_UPLOAD_SIZE_LABEL` from `uploads.ts`; `resolveImageUrl` from `images.ts`) and Vuetify / vue-i18n, but no other in-repo source files depend on it or are listed as neighbors.
+No graph neighbors are recorded for this file. It imports two shared utilities:
+
+- `@/infrastructure/utils/uploads.ts` — `ACCEPTED_IMAGE_ACCEPT_ATTRIBUTE`, `MAX_UPLOAD_SIZE_LABEL`.
+- `@/infrastructure/utils/images.ts` — `resolveImageUrl` (rewrites API-relative image paths to the API origin).
+
+The parent form is expected to pass a `progress` value from an axios `onUploadProgress` callback and to read `pickedFile` via the model binding.
 
 ## Notes
 
-- **`progress` is tri-state**: `undefined` (no upload → bar hidden) vs `0` (upload started, 0 bytes sent) vs `1–100`. Do not conflate `undefined` with `0` when wiring `onUploadProgress`.
-- **Object-URL hygiene**: the revoke-before-recreate order matters; calling `revokeObjectURL` after creating the replacement URL is a no-op in some browsers and a silent bug in others. The watcher always revokes first.
-- **`data-testid="upload-progress"`** on the progress bar exists because Vuetify's `v-file-input` renders its own internal `.v-progress-linear`; a class-based selector in tests would match that inner element and produce false positives.
-- **`resolveImageUrl`** is essential for `currentImageUrl`: the API returns a path relative to itself (e.g. `/images/foo.png`), which the browser would otherwise resolve against the app's origin → 404 on any deployment where the two hosts differ.
-- **Array collapse in the watcher**: if a future Vuetify version hands back a `File[]` despite `multiple` not being set, the watcher writes the first element back into the model so the parent contract stays `File | undefined`.
+- **`progress` semantics:** `undefined` means "no upload in flight" (bar hidden); `0` means "request started, nothing sent yet" (bar shown at 0 %). Do not default the prop to `0`.
+- **Object-URL lifecycle:** the URL is created and revoked only inside the `watch` and `onBeforeUnmount`. Adding a new code path that calls `URL.createObjectURL` without a matching `revokeObjectURL` will leak the blob for the lifetime of the SPA session.
+- **`data-testid="upload-progress"`** is used instead of a class selector because Vuetify's own `v-file-input` renders an internal `.v-progress-linear`; a class-based spec would match both and pass regardless of whether this bar is rendered.
+- **`resolveImageUrl`** is a no-op for `blob:` object URLs but rewrites `/images/…` paths against the API base URL. Skipping it would cause 404s on any deployment where the API origin differs from the app origin.
+- The component uses `defineModel` (Vue ≥ 3.4). The parent must bind with `v-model` to get the two-way file binding.

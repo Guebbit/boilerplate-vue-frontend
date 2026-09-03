@@ -1,26 +1,29 @@
 # src/modules/account/components/ProfilePasswordChange.vue
 
 ## Purpose
-A collapsible, inline password-change form for the profile page. It exists so the user can prove their current password and set a new one in a single request (no email round-trip), and so it stays hidden behind a toggle to avoid opening the profile page with multiple forms visible simultaneously.
+
+A collapsible password-change form embedded in the profile page. It proves the current password on the server (no email round-trip, unlike the reset flow) and is hidden behind a toggle so the profile page doesn't open with all three forms visible at once.
 
 ## Key elements
-- **Component** (`ProfilePasswordChange`) – registered name; no props or emits.
-- **`showChangePassword`** – `ref<boolean>` controlling visibility; the form uses `v-show`, not `v-if`, so state persists across toggles.
-- **`passwordForm` / `passwordErrors` / `showPasswordErrors` / `handlePasswordSubmit`** – returned from `useAppForm`, which pairs a reactive form object with a zod schema. Errors are only rendered when `showPasswordErrors` is true (i.e., after a submit attempt).
-- **Zod schema** – three fields (`currentPassword`, `password`, `passwordConfirm`). The new-password field reuses `usersPasswordSchema` from `@/modules/users`. A `superRefine` adds a cross-field match check on `passwordConfirm`.
-- **`submitPasswordChange`** – calls `handlePasswordSubmit`, which gates on validation, then invokes `changePassword(currentPassword, password, passwordConfirm)` from the profile store. On success it toasts a message, clears all three fields, and collapses the form. On failure it routes the error through `notifyErrorMessages`.
-- **`passwordFormId`** – generated via `useId()`; bound to the `<form>` `id` and the toggle button's `aria-controls` for accessibility.
-- **`passwordFormElement`** – template ref to the `<form>` element, passed into `useAppForm` so it can focus the first invalid field on submit.
+
+- **`showChangePassword` (ref)** — boolean gate controlling form visibility; also drives `aria-expanded` on the toggle button.
+- **Zod schema (inline)** — validates `currentPassword` (non-empty), `password` (via shared `usersPasswordSchema`), and `passwordConfirm` (non-empty). A `superRefine` enforces `passwordConfirm === password` and attaches a localized error to the `passwordConfirm` path.
+- **`useStructureFormValidation`** — wires the schema into reactive form state (`passwordForm`), field-level errors (`passwordErrors`), an error-visibility flag (`showPasswordErrors`), and a `handleSubmit` gate that focuses the first invalid field before allowing the API call. Re-validates when `locale` changes.
+- **`submitPasswordChange`** — calls `handleSubmit`, which on valid input delegates to `useProfileStore().changePassword(currentPassword, password, passwordConfirm)`. On success: clears all three fields, fires a success toast, collapses the form. On failure: routes the error through `notifyErrorMessages`.
+- **`passwordFormElement` (ref)** — bound to the `<form>` so the validation hook can focus the first invalid field on submit.
+- **`passwordFormId`** — generated via `useId()` for the toggle's `aria-controls` attribute.
 
 ## Relationships
-- **`@/modules/account/stores/profile.ts`** – provides `changePassword`, the actual API call.
-- **`@/modules/users`** – exports `usersPasswordSchema`, the shared zod schema for new-password validation.
-- **`@/infrastructure/composables/use-app-form.ts`** – encapsulates the form-state + zod-parse loop and focus management.
-- **`@/infrastructure/utils/errors.ts`** – provides `notifyErrorMessages`, which maps API errors to toast messages via the notifications store.
-- **`src/infrastructure/utils/logger.ts`** – transitive dependency (reachable through `useAppForm` or `errors.ts`); no direct import in this file.
+
+- **`@/modules/account/stores/profile.ts`** — calls `changePassword` from `useProfileStore` to perform the actual API request.
+- **`@/modules/users`** — imports `usersPasswordSchema` so the new-password rules (length, complexity, etc.) stay in one place.
+- **`@/infrastructure/utils/errors.ts`** — imports `notifyErrorMessages` (toast formatting) and `VUETIFY_INVALID_FIELD_SELECTOR` (used by the validation hook to focus the first invalid Vuetify field).
+- **`@guebbit/vue-toolkit`** — provides `useStructureFormValidation` (form validation lifecycle) and `useNotificationsStore` (toast messages).
+- **`src/infrastructure/utils/logger.ts`** — listed as a graph neighbor but not directly imported or referenced in this file; no visible interaction.
 
 ## Notes
-- The confirm-match check lives in `superRefine`, which runs at parse time. The code comment notes that `t()` inside `superRefine` is already effectively lazy (evaluated when `handleSubmit` triggers a parse), so no extra thunk is needed—unlike the `min(1)` messages which use `error: () => t(...)` thunks.
-- The form uses `novalidate` on the `<form>` element; all validation is handled by the zod layer, not native HTML constraints.
-- After a successful change the component does **not** reload the profile; it simply clears the three fields and collapses. Any downstream state (e.g., a "password changed" banner) is the parent page's responsibility.
-- `data-test` attributes (`toggle-change-password`, `current-password`, `new-password`, `new-password-confirm`, `submit-password-change`) are present for E2E selectors.
+
+- The `superRefine` calls `t()` at parse time; because `zod` invokes it lazily on each `.parse()` call, the i18n translation is always current without needing a thunk — a deliberate choice documented in the comment.
+- The form uses `v-show` (not `v-if`) inside `<v-expand-transition>`, so the DOM nodes persist and Vuetify's transition animation works both ways.
+- `autocomplete` attributes are set to `current-password` / `new-password` per HTML spec expectations for password managers.
+- The component is a single default export with no props or emits; it is purely self-contained state within the profile page.

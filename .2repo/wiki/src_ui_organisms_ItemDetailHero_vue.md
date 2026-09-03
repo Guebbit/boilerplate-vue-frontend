@@ -2,24 +2,24 @@
 
 ## Purpose
 
-Renders the top "hero" strip of a record detail page: a 72 px image (or a gradient icon-tile fallback) laid out beside the record's eyebrow, title, and description. It exists so that detail pages share one visual header regardless of whether the underlying record type has an image field.
+Renders the top section of a detail page: a 72 px picture (or a gradient icon tile as fallback) sitting beside the record's eyebrow, title, and description. It exists so every record type shares one consistent hero layout while allowing type-level control over whether an image slot appears at all.
 
 ## Key elements
 
-- **Props** — `title` (string, required), `description` (string, required), `eyebrow` (string \| number \| null, optional), `hasImage` (boolean, defaults to `false`), `imageUrl` (string \| null, optional), `imageAlt` (string, optional).
-- **`hasImage`** — Controls whether a `LazyImage` renders at all. Semantically means "this record *type* has an image field," not "this instance has a non-empty URL." When `false`, the hero shows the icon slot instead.
-- **Icon slot** (`name="icon"`) — Rendered inside a fixed `h-18 w-18` (72 px) tile with a gradient background driven by `--detail-accent`. Sized identically to the image so swapping never shifts the text column.
-- **`LazyImage`** — Rendered with `:eager="true"`, 72 × 72, `rounded-3xl`, `shadow-lg`.
-- **Scoped style `.detail-hero`** — Adds a radial-gradient accent glow in the top-right corner on top of `--v-theme-surface`.
+- **`hasImage` prop** — Type-level flag meaning "this *kind* of record has an image field." When absent (defaults to `false`), the icon-tile `<slot name="icon">` is rendered instead of an image. This is intentionally separate from `imageUrl`: an order, which has no image field, should never show a "no picture" stand-in.
+- **`imageUrl` / `thumbnailUrl` props** — Unresolved URLs consumed only when `hasImage` is true. Passed straight into `LazyImage`; `thumbnailUrl` may be absent if the image is a remote/default URL or the digest job hasn't finished.
+- **`imageAlt` prop** — Accessible label for the picture; falls back to `title` if not supplied.
+- **Icon tile (v-else branch)** — A 72 × 72 rounded gradient box (matching the image dimensions exactly) hosting the `icon` slot, marked `aria-hidden`.
+- **`CardDetail` wrapper** — Provides the structural card; this component layers a radial-gradient accent glow (driven by `--detail-accent`) on top via scoped CSS.
+- **`LazyImage`** — Renders the picture with `:eager="true"` and a 72 × 72 box.
 
 ## Relationships
 
-- **`CardDetail.vue`** — Direct wrapper; provides the card chrome and the `detail-hero` class anchor.
-- **`LazyImage.vue`** — Used as the image component when `hasImage` is true.
+No graph neighbors were reported. The file imports `CardDetail` and `LazyImage` from sibling UI components but no further dependencies are tracked in the dependency graph.
 
 ## Notes
 
-- `hasImage` is intentionally separate from `imageUrl`. A record type without an image field (e.g. an Order) omits `hasImage`, so no "missing picture" stand-in is rendered — the icon tile is the *correct* default, not a fallback for an empty URL.
-- `eyebrow` accepts `number` as well as `string` to allow numeric values (e.g. a count) without the caller coercing to string.
-- `imageAlt` is optional; when omitted the component falls back to `title`. The prop doc notes it is semantically required whenever `hasImage` is true, but this is a convention, not enforced.
-- The 72 px (`h-18 w-18`) constraint on both the image and the icon tile is a layout contract — changing one without the other will shift the text column on `sm:` and above.
+- **`hasImage` vs `imageUrl` distinction is deliberate and non-obvious.** A record type that *has* an image field but happens to have an empty value should still show the icon-tile stand-in (the slot). A record type that *lacks* an image field (e.g. an order) must not pass `hasImage` at all, so the slot renders without implying a missing picture. Callers are expected to set `hasImage` based on the type, not on whether the URL is non-empty.
+- **No default on `hasImage`.** The prop is optional; Vue coerces its absence to `false`, so no explicit default is needed.
+- **72 px is the shared dimension.** Both the `LazyImage` box and the icon tile use `h-18 w-18` / `width=72 height=72` so swapping between them never shifts the text column.
+- **`eyebrow` accepts `string | number | null`.** The template guards with `v-if="eyebrow !== undefined && eyebrow !== null"` before rendering, so a numeric eyebrow (e.g. an ID or count) is valid.

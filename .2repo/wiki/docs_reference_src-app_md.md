@@ -2,29 +2,43 @@
 
 ## Purpose
 
-Reference map for the application-tier files: the boot sequence, root component, module registry, application shell (router, guards, layouts, views), and shared type definitions. It exists so a reader can locate *where* each concern lives in `src/` without opening every file, and to show how the kernel's typed-module model flows into the concrete app shell.
+Catalogs every file that is **not** a domain module: the boot sequence (`src/main.ts`), the root component, the module enable list, the kernel registry, the application shell (router, guards, layouts, navigation components, static views), and the shared type definitions. It exists as a single lookup point for the "chrome around the domains" so a reader never has to infer which file owns a concern.
 
 ## Key elements
 
-- **`src/main.ts`** – Boot sequence. Creates the Vue app, installs Pinia, router, vue-i18n, Vuetify, and observability plugins, then mounts. The sole file that encodes ordering.
-- **`src/App.vue`** – Root component; intentionally near-empty (`<RouterView />` + docblock). Domain state lives in modules, not here.
-- **`src/modules.ts`** – Explicit list of enabled domains (one import, one array entry each). Enabling/disabling a domain is a one-line change; no filesystem discovery.
-- **`src/kernel/registry.ts`** – Typed definition of what a module declares (name, routes, store, locales, navigation) and validates the set at boot. The architectural thesis of the repo.
-- **`src/app/router/`** – Router built from the registry; names no domain. Contains `navigation.ts` (unauthenticated redirect + shell nav entries).
-- **`src/app/guards/`** – `authentications.ts` (per-route access; absence = public) and `locale-choice.ts` (resolves locale, assembles dictionary).
-- **`src/app/layouts/` & `src/app/components/`** – Page chrome (`LayoutDefault.vue`), navigation (`AppNavigation`, `AppNavMenu`, `AppNavIconButton`), `AppLanguageSwitcher`, `AppHealthBanner`. All built from registry entries, not hardcoded lists.
-- **`src/app/views/`** – `Home.vue` (landing, renders enabled modules' offers), `Error.vue` (catch-all incl. 404), `StaticPage.vue` (one component for all prose pages; copy from dictionaries).
-- **`src/types/`** – `index.ts` (single re-export path), `api.ts`, `http.ts`, `realtime.ts`, `asyncapi.generated.ts` (generated; never hand-edited).
-- **`src/locales/*.json`** – App-level translation bundles (navigation, generic errors, shared chrome). Module-owned strings live in `src/modules/*/locales/`.
+- **`src/main.ts`** – Boot sequence; the only file that knows plugin install order (Pinia, router, vue-i18n, Vuetify, observability) and the mount call.
+- **`src/App.vue`** – Root component; intentionally contains only `<RouterView />` so no domain state is stranded at the top.
+- **`src/modules.ts`** – Explicit array of enabled domains (one import + one entry each); no filesystem discovery.
+- **`src/kernel/registry.ts`** – Defines the typed shape of a module (name, routes, store, locales, navigation) and validates the set at boot.
+- **`src/app/router/index.ts`** – Builds the Vue router from the registry; names no domain directly.
+- **`src/app/router/navigation.ts`** – Unauthenticated redirect target and the shell's nav entry list.
+- **`src/app/guards/authentications.ts`** – Per-route access rule; absence means public.
+- **`src/app/guards/locale-choice.ts`** – Resolves the locale for the entered route and assembles its dictionary.
+- **`src/app/layouts/LayoutDefault.vue`** – Default page chrome (header, hero, nav, footer).
+- **`src/app/components/AppNavigation.vue`** – Assembles the labelled bar, account/admin menus, pinned buttons, and phone drawer from registry navigation entries grouped by `section`.
+- **`src/app/components/AppNavBarLink.vue` / `AppNavPinnedButton.vue`** – Individual desktop-bar entries with glyph, label, optional badge, and accessible name.
+- **`src/app/components/AppNavMenu.vue`** – Dropdown menu with `role="menu"` / `menuitem` on top of Vuetify keyboard handling.
+- **`src/app/components/AppNavIconButton.vue`** – Icon-only activator; accessible via `aria-label` + Escape-dismissable tooltip.
+- **`src/app/components/AppLanguageSwitcher.vue`** – Switches locale by re-entering the current route under the new locale (URL carries locale).
+- **`src/app/components/AppHealthBanner.vue`** – Banner shown only when the API is unreachable.
+- **`src/app/views/Home.vue` / `Error.vue` / `AboutPage.vue` / `FaqPage.vue`** – Landing, catch-all/404, and the two static prose pages (copy under `static-pages.*` keys).
+- **`src/types/`** – Shared type definitions (content truncated in source).
 
 ## Relationships
 
-- **`src/main.ts`** – The sole graph neighbor. It is the entry point that imports `App.vue`, resolves `modules.ts`, and installs every plugin before mounting. All other files on this page are *consumed* by that boot sequence rather than importing it back. `main.ts` is the only place the install order is expressed; every other file is order-independent.
+- **→ `docs/theory/architecture.md`** – The dependency axis (`infrastructure → kernel → modules → app`) and the `eslint.config.ts` enforcement are introduced here; this page points readers to that theory doc for the full model.
+- **→ `docs/theory/modules.md`** – The registry, the module enable list, and `App.vue`'s deliberate emptiness all rest on the module contract defined there.
+- **→ `docs/theory/module-lifecycle.md`** – "Enabling or disabling a domain is one line in `src/modules.ts`" is the entry point that lifecycle doc expands.
+- **→ `docs/theory/sitemap.md`** – Navigation sections, per-route access, and static-page cross-links are all governed by the sitemap rules this page's components implement.
+- **→ `docs/theory/strategic-ddd.md`** – The registry is described as "the thesis of the repository"; the strategic DDD doc explains why a typed value replaces a folder convention.
+- **→ `docs/theory/reading-path.md`** – `main.ts` is the first stop on the recommended reading path.
+- **→ `docs/reference/src-infrastructure.md`** – `locale-choice.ts` and `AppLanguageSwitcher.vue` depend on the i18n/override layer documented there.
+- **→ `docs/tools/accessibility-testing.md`** – `AppNavIconButton.vue`'s `aria-label` + tooltip pattern is verified by the accessibility test suite.
 
 ## Notes
 
-- Dependency direction is strictly `infrastructure → kernel → modules → app`; `eslint.config.ts` enforces it. A file in `src/app/` must not import from `src/kernel/` directly except through the registry value a module provides.
-- Access control is *per-route and opt-in*: no guard on a route means public. Do not infer access from route nesting.
-- Navigation is assembled from registry `section` groupings at runtime; there is no static nav list to keep in sync.
-- `src/types/asyncapi.generated.ts` is produced by `npm run gen:asyncapi`. The CI check (`npm run check:asyncapi-types`) fails if the committed copy diverges from a fresh generation.
-- Adding a new static page (about, FAQ, etc.) is a route entry plus dictionary keys, not a new Vue component.
+- **No filesystem discovery.** Adding a module requires an explicit import in `src/modules.ts`; there is no auto-scan. Forgetting the import silently excludes a domain.
+- **Access is opt-in per route.** An absent guard means the route is public; do not infer access from the route hierarchy.
+- **Navigation is registry-driven, not hand-written.** `AppNavigation.vue` groups entries by `section`; adding a nav item means adding a registry entry, not editing a component.
+- **Language switch is a navigation, not a state mutation.** Because the URL carries the locale, `AppLanguageSwitcher` re-enters the current route rather than calling `i18n.locale` in place.
+- **`App.vue` must stay near-empty.** Placing state or UI here would couple the shell to a domain and defeat the "delete a domain, nothing breaks" guarantee.

@@ -2,22 +2,20 @@
 
 ## Purpose
 
-Defines the TypeScript types for the realtime observability SSE feed: the shape of a single rendered feed entry and the lifecycle states of the underlying connection. This file centralises the client-facing contract so UI and infrastructure code share one source of truth for what a "realtime metric" looks like and what states a connection can be in.
+Defines the TypeScript types that describe the realtime observability SSE feed: the shape of an individual rendered event entry and the lifecycle states of the underlying connection. It exists so that consumers of the feed (rendering components, status indicators) share a single, typed contract without importing the full generated AsyncAPI schema.
 
 ## Key elements
 
-- **`RealtimeMetricsEntry`** (interface) — A single rendered SSE feed entry. Fields: `id`, `kind` (`'snapshot' | 'update' | 'heartbeat'`), `timestamp`, and `payload` (typed as `ObservabilityMetricsPayload`). The `kind` union discriminates the three named metrics events for distinct styling/labeling in the UI.
-- **`RealtimeConnectionStatus`** (type alias) — Five-state union: `'idle' | 'connecting' | 'open' | 'closed' | 'error'`, representing the full lifecycle of an SSE connection.
+- **`RealtimeMetricsEntry`** (interface) — Represents one SSE event as a feed row. Fields: `id` (render key), `kind` (`'snapshot' | 'update' | 'heartbeat'`), `timestamp` (ISO string), and `payload` (the typed metrics data).
+- **`RealtimeConnectionStatus`** (type alias) — A five-state union (`'idle' | 'connecting' | 'open' | 'closed' | 'error'`) describing the SSE connection lifecycle from not-started through failure.
 
 ## Relationships
 
-- **`src/types/asyncapi.generated.ts`** — Provides the `ObservabilityMetricsPayload` type used as the `payload` field of `RealtimeMetricsEntry`. This file is a pure consumer of that generated type.
-- **`src/infrastructure/create-sse-client.ts`** — The SSE client implementation that consumes both exports: it emits `RealtimeMetricsEntry` objects and tracks its own state as `RealtimeConnectionStatus`.
-- **`src/types/index.ts`** — Barrel re-export; makes both types available to the rest of the codebase under the `types` entry point.
-- **`docs/api/asyncapi-workflow.md`** — Documents the AsyncAPI spec that the `kind` values and payload shape are derived from; the types here are the client-side reflection of that contract.
+- **`src/types/asyncapi.generated.ts`** — `RealtimeMetricsEntry.payload` is typed as `ObservabilityMetricsPayload`, imported from this generated file. This file therefore depends on the AsyncAPI schema being kept in sync.
+- **`src/types/index.ts`** — Barrel file that re-exports both types so downstream modules can import them from the package root.
 
 ## Notes
 
-- This file is type-only (`import type`); it introduces no runtime code.
-- `kind` is a closed three-member union tied to the AsyncAPI event names. Adding a new event type in the spec requires updating both the generated payload type and this union.
-- `timestamp` is a plain `string`, not a `Date` — callers are responsible for parsing.
+- The `kind` union (`'snapshot' | 'update' | 'heartbeat'`) is intentionally a closed set of three values matching the named metrics events; adding a new event type requires updating this union *and* the corresponding AsyncAPI schema.
+- `timestamp` is an ISO string, not a `Date` object — formatting is the consumer's responsibility.
+- This module is purely declarative (no runtime code); safe to import in any context including SSR.

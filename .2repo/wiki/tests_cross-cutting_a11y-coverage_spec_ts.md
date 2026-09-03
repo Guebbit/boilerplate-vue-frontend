@@ -2,28 +2,32 @@
 
 ## Purpose
 
-A Vitest spec that performs a **structural** (source-reading) check: every route declared in a module's `routes.ts` (or the shell router) must be visited by that module's `a11y.cy.ts` sweep, and vice-versa. It does not run axe or open a browser; it catches the absence of a sweep that a runtime tool would never report because a missing spec produces no assertions. A new page without a sweep cannot be merged.
+A structural guard that asserts, without launching a browser, that every route the app declares has a corresponding path visited by its accessibility sweep (`a11y.cy.ts`). It exists because the sweeps live inside each domain module (so a deleted module's coverage disappears with it), and there is no single human-maintained list of "what is covered." This spec turns that absence into a failing assertion: a new page with no sweep cannot merge.
 
 ## Key elements
 
-- **`EXEMPT`** — `Set<string>` of route paths that are redirects or containers (`logout`, `/`, `/:locale`, catch-alls) and are intentionally not swept.
-- **`routePathsIn(source)`** — Extracts all `path: '…'` literals from a route-file source string; also handles the shell's `.map((page) => …)` pattern.
-- **`sweptPathsIn(source)`** — Extracts locale-prefixed URLs visited by a sweep, stripping the locale prefix and query/hash.
-- **`routeMatcher(route)`** — Converts a vue-router path (with `:param`, `:param?`, `(.*)`) into a `RegExp` that tests whether a swept path would hit that route.
-- **`RoutedUnit`** / **`moduleUnit(name)`** — Bundles a module's routes, swept paths, and whether a sweep file exists into one record.
-- **`routedModules`** — All modules under `src/modules/` that have a `routes.ts`.
-- **`shell`** — The `RoutedUnit` for `src/app/router/index.ts` vs. `tests/e2e/specs/a11y.cy.ts`.
-- **`unsweptRoutes(unit)`** — Returns routes in a unit that no swept path matches (exemptions excluded).
-- **Six `it` blocks** — (1) guard against vacuous parsing, (2) every routed module has a sweep file, (3) every module route is swept, (4) every shell route is swept, (5) no sweep visits a path no route serves (dead-path check, shell excluded), (6) no orphaned `a11y.cy.ts` lingers in a module that no longer has `routes.ts`.
+- **`EXEMPT`** — A `Set<string>` of route paths (redirects, containers, shims) that no sweep can or should visit. Each entry carries an inline comment justifying its exclusion.
+- **`routePathsIn(source)`** — Extracts every `path: '…'` literal from a route file's source text. Also detects the shell's mapped prose pages (`['about','faq',…].map((page) → …)`) that a simple regex would miss.
+- **`sweptPathsIn(source)`** — Extracts locale-prefixed URLs (`/en/…`, `/it/…`) from a sweep file, stripping the locale prefix and any query/hash fragment.
+- **`routeMatcher(route)`** — Compiles a vue-router path template (e.g. `products/:id/edit`) into a `RegExp` that matches concrete swept paths, handling `:param`, optional `:param?`, and `(.*)` patterns.
+- **`RoutedUnit`** — Interface bundling a unit's name, its declared routes, its swept paths, and whether a sweep file exists.
+- **`moduleUnit(name)` / `routedModules` / `shell`** — Build `RoutedUnit` objects for each domain module under `src/modules/*` and for the app shell (`src/app/router/index.ts` vs `tests/e2e/specs/a11y.cy.ts`).
+- **`unsweptRoutes(unit)`** — Returns the list of non-exempt routes in a unit that no swept path matches.
+- **Six `it` blocks** inside `describe('accessibility coverage', …)`:
+  1. Non-vacuity check (modules and routes are actually parsed).
+  2. Every routed module has an `a11y.cy.ts`.
+  3. Every declared route is reached by some swept path.
+  4. Same for the shell router.
+  5. No swept path is "dead" (references a route that no longer exists).
+  6. No orphaned `a11y.cy.ts` lingers after a module drops its `routes.ts`.
 
 ## Relationships
 
-- **`src/app/router/index.ts`** — Read at runtime via `readFileSync`; its route declarations are parsed and matched against the shell sweep (`tests/e2e/specs/a11y.cy.ts`). This is the only shell-level unit the spec checks.
+- **`tests/unit/app/guards/authentications.spec.ts`** — No code-level dependency. The connection is thematic: the `EXEMPT` set carves out `logout` and `/oauth/callback`, which are the very routes whose guard behavior the authentications spec exercises. A change to how those redirects work could affect whether this spec's exemption list stays correct.
 
 ## Notes
 
-- The spec is intentionally **not** an axe run. It catches *missing* sweeps, which a browser-based audit cannot detect (a non-existent spec produces no failure).
-- Route-param matching is approximate: `:id` matches any single segment, `:id?` matches zero or one, `(.*)` matches the remainder. It does not validate that the sweep actually supplies a meaningful value.
-- The shell's prose pages (`about`, `faq`, etc.) are declared via `.map()` over a string array rather than as individual `path:` literals; `routePathsIn` has a second regex to catch that pattern. Adding a new page to that array is a new route that must be swept.
-- The "dead path" check (sweep visits a path no route serves) **excludes the shell** because the shell's catch-all makes every path technically served.
-- Modules without a `routes.ts` (e.g. `delivery`, `payments`) are exempt from the sweep requirement — they render no page of their own.
+- This is a **source-text parser, not a runtime check.** It reads `.ts` files with regexes; it does not import or execute them. A refactor that changes how routes are declared (e.g. moving to a config object or a different quote style) will silently break the extraction and the "non-vacuous" test is the safety net for that.
+- The shell's prose pages are declared via a `.map()` over a const array rather than as individual `path:` literals. `routePathsIn` has a special second regex to pull those out. If the declaration pattern changes, this spec will under-count shell routes.
+- `EXEMPT` is intentionally small and opinionated. Adding an entry is a deliberate decision to leave a route unaudited and requires a comment explaining why.
+- The reverse-direction check (test 5) intentionally **excludes the shell**, because the shell's catch-all route makes every arbitrary path a "served" one.

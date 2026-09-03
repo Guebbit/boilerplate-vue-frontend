@@ -2,30 +2,27 @@
 
 ## Purpose
 
-Centralised error-handling helpers shared across the app: translating a caught value into user-facing text, classifying API rejections as transport-level vs. answered failures, the toast+Faro reporting pair every `catch` block calls, and a Vuetify-specific CSS selector for post-submit focus. It exists so that tone/language decisions, analytics-policy decisions, and a Vuetify quirk are each written in one place rather than scattered through feature code.
+Central module for error-handling utilities shared across the app. It binds the app's translated fallback wording to the toolkit's message extractor, classifies rejections into "no response" vs. "server answered with a specific status," provides the toast+Faro reporting pair called from catch blocks, and exports a Vuetify-specific CSS selector for locating invalid form fields.
 
 ## Key elements
 
-- **`getErrorMessage`** (internal) — Wraps the toolkit's `extractErrorMessage` with `translate('api-errors.unknown')` as the fallback string when the rejection carries nothing readable.
-- **`isTransportFailure`** (exported) — Returns `true` when the rejected value has no numeric `status` property, meaning the server never replied (network drop, unreachable host, etc.).
-- **`absentIs`** (exported) — Returns `true` when the rejection carries one of the caller-supplied HTTP statuses (e.g. 404, 401), i.e. the server *did* answer and the answer means "resource absent."
-- **`notifyErrorMessages`** (exported) — Two-step catch-block helper: calls the provided `addMessage` sink with `getErrorMessage(error)`, then forwards the raw error to `useObservabilityStore().captureException` (Faro).
-- **`VUETIFY_INVALID_FIELD_SELECTOR`** (exported constant) — CSS selector targeting the focusable element *inside* a `.v-input--error` wrapper (native `input`/`textarea`/`select` or any `[tabindex]` child). Passed as `invalidFieldSelector` to `useStructureFormValidation`.
+- **`getErrorMessage(error: unknown): string`** (internal) — Wraps `extractErrorMessage` from `@guebbit/js-toolkit` with the app's translated `"api-errors.unknown"` fallback so an empty rejection still yields readable copy.
+- **`isTransportFailure(error: unknown): boolean`** (exported) — Returns `true` when the rejected value carries no numeric `status` property (connection dropped, DNS failure, request never sent).
+- **`absentIs(error: unknown, ...statuses: number[]): boolean`** (exported) — Returns `true` when the rejection *does* carry a status and it matches one of the provided "absence" codes (e.g. 404 = no intent, 401 = no cart). Used by callers to distinguish "nothing there" from a genuine error.
+- **`notifyErrorMessages(addMessage, error)`** (exported) — Calls `addMessage` with `getErrorMessage(error)` for the user-facing toast, then unconditionally forwards the original error to `useObservabilityStore().captureException` (Faro) with stack.
+- **`VUETIFY_INVALID_FIELD_SELECTOR`** (exported constant) — CSS selector targeting the *focusable* control inside a `.v-input--error` wrapper (input, textarea, select, or `[tabindex]` for `v-select`). Passed as `invalidFieldSelector` by every form's `revealErrors()` call.
 
 ## Relationships
 
-No graph-tracked neighbors were recorded. The file imports three external modules:
-
-- `@guebbit/js-toolkit` → `extractErrorMessage` (the toolkit's message extractor that `getErrorMessage` wraps).
-- `@/infrastructure/stores/observability.ts` → `useObservabilityStore` (Faro capture sink used by `notifyErrorMessages`).
-- `@/infrastructure/i18n` → `translate` (provides the fallback string and any localised wording).
-
-Feature code imports `isTransportFailure`, `absentIs`, `notifyErrorMessages`, and `VUETIFY_INVALID_FIELD_SELECTOR` from this module.
+- **`@guebbit/js-toolkit`** — Source of `extractErrorMessage`; this file supplies the language-aware fallback string the toolkit leaves blank.
+- **`@/infrastructure/observability/store.ts`** — `useObservabilityStore` provides `captureException`, the Faro sink used by `notifyErrorMessages`.
+- **`@/infrastructure/i18n`** — `translate` resolves the fallback key (`api-errors.unknown`) at call time.
+- **`onResponseReject`** (referenced in docs, not imported) — Produces the `{ status }` envelope that `isTransportFailure` and `absentIs` classify.
+- **`useStructureFormValidation`** (referenced in docs) — Consumes `VUETIFY_INVALID_FIELD_SELECTOR` to focus the first invalid field after a failed submit.
 
 ## Notes
 
-- `getErrorMessage` is intentionally **not** exported; callers should use `notifyErrorMessages` or call `translate` themselves if they need only the string.
-- The transport-vs-answered split is tied to a shared Umami analytics site: only transport failures are reported here because the server-side repo already records answered failures. Reporting both would produce duplicate rows.
-- `absentIs` is a *negation helper*: it tells the caller the 404/401 means "nothing to render," not "an error to toast." Any status outside the supplied list is a genuine failure.
-- `VUETIFY_INVALID_FIELD_SELECTOR` differs from the toolkit's default `[aria-invalid="true"]` because Vuetify puts the error class on the wrapper, not the focusable control; the trailing `[tabindex]` clause catches `v-select` and similar non-native inputs.
-- All error-accepting parameters are typed `unknown` by design — the helpers must survive `catch` blocks where the thrown value may be a string, `null`, a thrown object, or anything else.
+- The analytics rationale: the app and the API both write to the same Umami website, so only *transport* failures (no HTTP status) are reported here; server-answered errors are already recorded server-side. Reporting both would produce indistinguishable duplicate rows.
+- `absentIs` is intentionally variadic — callers pass only the statuses they treat as "absence" for that particular endpoint, keeping the rest as hard failures.
+- `VUETIFY_INVALID_FIELD_SELECTOR` exists because Vuetify puts the `--error` class on the wrapper, not the native control; the trailing `[tabindex]` clause is needed for `v-select`, which renders no `<input>/<select>` of its own.
+- `getErrorMessage` is **not** exported; it is the private helper behind `notifyErrorMessages`. Callers that need a message string should go through the public pair.

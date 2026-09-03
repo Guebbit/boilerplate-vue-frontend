@@ -2,28 +2,28 @@
 
 ## Purpose
 
-Vitest spec that verifies the `cancelOrder` action in the orders store. It mocks `orvalMutator` at the transport layer so tests can assert both the resulting store state (cached record replaced with the cancelled one) and the exact request body sent for each refund-intent variant.
+Vitest spec for the `cancelOrder` action in the orders store. It mocks `orvalMutator` at the transport layer so assertions can inspect the **raw request body** (not just the URL) and verify that the store replaces the cached order record with the server-returned cancelled one.
 
 ## Key elements
 
-- **`ORDER`** — fixture object representing the server's cancelled-order response (id `o1`, status `cancelled`).
-- **`responses`** — mutable map keyed by `"METHOD url"`, read by the `orvalMutator` mock to return canned bodies.
-- **`sent`** — array of `{ url, method, data }` entries capturing every request the store made, enabling body-level assertions.
-- **`vi.mock('@/infrastructure/http')`** — replaces `orvalMutator` with a spy that records the call config and resolves from `responses`.
-- **`beforeEach`** — resets Pinia, clears mocks, reinitializes `sent` and `responses` with the single `POST /orders/o1/cancel` entry.
-- **`describe('cancelOrder')`** — asserts the store's cached order is replaced with the cancelled record after the action resolves.
-- **`describe('cancelOrder — the operator choosing what happens to the money')`** — three cases pinning the request body: `undefined` (no arg), `{ refund: false }`, and `{ refund: true }`.
+- **`ORDER`** — Fixture object (`id: 'o1'`, `status: 'cancelled'`) returned by the mocked `POST /orders/o1/cancel` endpoint.
+- **`sent`** (module-level array) — Records every `{ url, method, data }` the store sends, enabling body-level assertions.
+- **`responses`** (module-level record) — Canned response bodies keyed by `"METHOD /path"`, consumed by the `orvalMutator` mock.
+- **`vi.mock('@/infrastructure/http')`** — Replaces `orvalMutator` with a spy that pushes into `sent` and resolves the matching entry from `responses`.
+- **`describe('cancelOrder')`** — Single test: after the call, `store.orders.o1.status` is `'cancelled'` (record replaced, not removed).
+- **`describe('cancelOrder — the operator choosing what happens to the money')`** — Three tests pinning the request body:
+  - No second argument → `data` is `undefined` (default customer cancel).
+  - `cancelOrder('o1', false)` → body is `{ refund: false }`.
+  - `cancelOrder('o1', true)` → body is `{ refund: true }`.
 
 ## Relationships
 
-No graph neighbors are listed. The file's visible interactions are:
-
-- **Imports** `useOrdersStore` from `@/modules/orders/store.ts` (the unit under test).
-- **Mocks** `@/infrastructure/http` (`orvalMutator`) to intercept the transport layer.
-- The module doc-block references `http-validate-responses.spec.ts` as the owner of `orvalMutator`'s schema-validation behaviour (out of scope here).
+- Imports **`useOrdersStore`** from `@/modules/orders/store.ts` — the system under test.
+- Mocks **`orvalMutator`** from `@/infrastructure/http` — the transport layer the store uses for its single customer-facing write.
+- Cross-referenced in the file's docblock to `http-validate-responses.spec.ts`, which owns the contract-schema validation behavior that this spec does **not** exercise (validation is active in all modes except vitest).
 
 ## Notes
 
-- The spec deliberately does **not** test response-schema validation; that is delegated to `http-validate-responses.spec.ts`. A payload-less 200 never reaches the store in production because `orvalMutator` validates in all modes except Vitest.
-- The "no body" case is intentional: an absent body signals the API's default (customer cancel, no refund). Sending `{ refund: true }` unconditionally would overstate the caller's intent.
-- Tests use `return store.cancelOrder(...).then(...)` rather than `await`/`async`, matching the store's Promise-based return contract.
+- The "no body" test is intentional: omitting the `refund` argument is the API's default (customer cancel). Asserting `data` is `undefined` guards against the store accidentally serializing `{ refund: undefined }` or an empty object.
+- Transport-level mocking (replacing `orvalMutator`) is the shared pattern across store-flow specs; this file's distinguishing concern is body inspection, which the module docblock calls out explicitly.
+- `beforeEach` resets `sent`, `responses`, and Pinia on every test; the mock is module-scoped and must not be re-registered per test.

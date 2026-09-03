@@ -1,23 +1,16 @@
 # src/modules.ts
 
 ## Purpose
-
-Central registry that declares which domain modules are included in this build. Adding or removing a domain is a one-line change here (plus the corresponding folder), making the set of active modules the single source of truth the rest of the app boots from.
+The build-level registry of domain modules. It is the single place that declares which `src/modules/<name>/` folders are active in this build, and exports them as an ordered array consumed by the kernel's route-splicing logic. Adding or removing a domain is intentionally a one-line change here plus a folder on disk—no code generation or indirection.
 
 ## Key elements
-
-- **`enabledModules: AppModule[]`** — the sole export. An alphabetically ordered array of the 14 active domain modules (account, admin, cart, delivery, demo, feedback, inventory, locales, orders, payments, products, realtime, users, wishlist). Each entry is the default export of `src/modules/<name>/module`.
-- **`AppModule` type** (imported from `@/kernel/registry`) — the contract every domain module must satisfy to be listed here.
+- **`enabledModules: AppModule[]`** — the sole export. An alphabetically-ordered array of imported module objects (`account`, `admin`, `cart`, `delivery`, `demo`, `feedback`, `inventory`, `locales`, `orders`, `payments`, `products`, `realtime`, `users`, `wishlist`). Each element is a default export from `@/modules/<name>/module` typed as `AppModule` from `@/kernel/registry`. The array order is the order in which each module's route records are spliced into the router tree (order is semantically irrelevant for distinct paths, per the file's doc comment).
+- **Per-module imports** — one `import <name> from '@/modules/<name>/module'` per domain. Each module is expected to default-export an `AppModule` object.
 
 ## Relationships
-
-- **`src/kernel/registry.ts`** — provides the `AppModule` type that constrains every entry in `enabledModules`.
-- **`src/main.ts`** — application entry point; consumes `enabledModules` to bootstrap the module tree and router.
-- **`src/modules/demo/*`** (`guards.ts`, `store.ts`, `views/Playground.vue`) — internal pieces of the `demo` domain; this file only references the module's barrel (`@/modules/demo/module`), not the sub-files directly.
-- **`docs/theory/domain-layer.md`** — conceptual documentation for the domain-module pattern this file instantiates.
+- **`openapi.yaml`** — The domain modules listed here (account, cart, orders, payments, inventory, etc.) correspond to the API domains whose contracts are defined in the OpenAPI spec. The registry is the front-end counterpart: each module in `enabledModules` is the client-side wiring for one API domain in the spec.
 
 ## Notes
-
-- The array order is kept alphabetical purely for stable diffs. The comment in the file clarifies that vue-router's own ranking makes splice order irrelevant for distinct paths, so do not reorder to "fix" routing.
-- The file's own docblock treats a broken import after a domain removal as *intentional* coupling signal — do not add shims or feature-flag wrappers to paper over it.
-- There is no conditional logic, no environment check, no dynamic import. Presence in the array is the only gate.
+- **Alphabetical order is a convention, not a requirement.** The file's comment states that vue-router's own ranking makes splice order irrelevant for distinct paths; alphabetical ordering is kept purely so diffs stay minimal.
+- **No conditional or environment-based filtering.** Every module in the file is unconditionally included; "disabling" a domain means deleting its import line and its folder. The file's comment frames any resulting breakage as a real coupling worth surfacing rather than a problem to hide.
+- **`demo` and `realtime` are present alongside production domains.** They are not behind a flag in this file—remove them from the array if they should not ship.

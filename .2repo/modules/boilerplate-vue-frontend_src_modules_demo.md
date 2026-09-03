@@ -6,60 +6,57 @@ tags:
 type: module
 module: src/modules/demo/
 files: 11
-updated: 2026-08-30T17:10:16.354704+00:00
+updated: 2026-09-03T10:58:27.398035+00:00
 ---
 
 # src/modules/demo/
 
 ## Purpose
 
-A self-contained demo (showroom) module that exercises the project's core infrastructure—Pinia, `provide`/`inject`, router guards, i18n, and toast notifications—in a single readable view. It is deliberately un-abstracted and designed to be removed by deleting the folder plus one import line in `src/modules.ts`.
+A self-contained "showroom" module that exercises the project's core infrastructure—Pinia stores, typed `provide`/`inject`, route guards, and toast notifications—in one deliberately un-abstracted page. Every file lives inside this directory so that deleting `src/modules/demo/` (and its single registration line in `src/modules.ts`) removes the feature with zero residual references.
 
 ## Key parts
 
-- **View & supporting pieces** – `views/Playground.vue` is the single-page showcase; `components/ProvidedVariableCard.vue` + `provided.ts` demonstrate typed `provide`/`inject` across a component boundary; `store.ts` supplies the minimal Pinia counter store that both the view and the guard consume.
-- **Routing & registration** – `routes.ts` defines the one `playground` route (lazy-loaded, guarded); `guards.ts` provides the teaching `beforeEnter` hook that shows what is and isn't reachable in guard scope; `module.ts` is the `AppModule` manifest that registers routes, a nav entry, locale loaders, and a typed `demo` logger scope.
-- **Tests** – `tests/guards.spec.ts`, `tests/routes.spec.ts`, and `tests/store.spec.ts` pin the behavioral contracts of the guard, route table, and counter store respectively; `tests/e2e/a11y.cy.ts` feeds the module's pages into the global accessibility sweep.
+- **`views/Playground.vue`** — The single-page demo surface. Wires together the counter store, the `provide`/`inject` pair, a toast trigger, and sequential fake-loading states so a reader can trace each mechanism end-to-end in one file.
+- **`store.ts`** — Minimal Pinia setup store (state, getter, sync + async actions) that serves as the canonical worked example referenced by the Playground and by `exampleGuard`.
+- **`provided.ts` + `components/ProvidedVariableCard.vue`** — The typed `provide`/`inject` pair. State and mutation live in `provided.ts`; the Card is the injecting consumer kept separate so the value crosses a real component boundary.
+- **`guards.ts`** — A single `beforeEnter` guard that documents what *is* and *isn't* reachable from that hook (Pinia works, i18n does not yet, injected vars are absent).
+- **`module.ts` + `routes.ts`** — Module manifest and route table that register the Playground route (with the teaching guard) into the app's module registry without leaking the guard elsewhere.
+- **`tests/`** — Vitest specs pinning down the guard's contract, the route surface, and the store's behavior; a Cypress a11y registration so the shared accessibility sweep covers the demo route and the cross-cutting coverage check can verify it.
 
 ## How it connects
 
-- **`/` (repository root)** – `module.ts` plugs the demo into the app's module registry (`src/modules.ts`), contributing its routes, navigation entry, and locale loaders to the application shell.
-- **`src/infrastructure/`** – The module consumes Pinia (counter store, toast store), Vue Router (route table, guard), i18n (locale loading, translation calls in the guard), and the shared logger scoped to `demo`.
-- **`tests/support/`** – The co-located a11y test (`tests/e2e/a11y.cy.ts`) registers the module's routes with the shared `sweepA11y` helper so the demo pages participate in the project-wide accessibility pass.
+- **`src/infrastructure/`** — The demo consumes the app's shared infrastructure: Pinia for state management, Vue Router for navigation and guard hooks, the i18n system (whose load-order is what the guard demonstrates), and the toast/notification store. It is a *consumer* of these primitives, not a contributor.
+- **`tests/support/`** — The e2e a11y spec (`a11y.cy.ts`) plugs the demo's routes into the shared Cypress accessibility sweep maintained in `tests/support/`. The cross-cutting `a11y-coverage.spec.ts` there asserts that every routed module—including demo—has a corresponding a11y file, so deleting the demo also removes its coverage entry.
 
 ## Where to start
 
-1. **`views/Playground.vue`** – The single file a reader needs to see every demonstrated mechanism (store, inject, toasts, loading states) in one pass, with no indirection.
-2. **`module.ts`** – The one-page manifest that shows how a module plugs into the app (routes, nav, i18n, logger) and how removal is a single `rm -rf` + one import deletion.
+Read **`views/Playground.vue`** first—it is the one page where every demonstrated mechanism is visible in context and intentionally left un-abstracted so nothing is hidden behind indirection. Then open **`store.ts`** for the smallest, most self-contained concrete example (four lines of state/getter/actions) to ground the rest of the module in a single working unit.
 
 ## Connected modules
 ```mermaid
 flowchart LR
     m_src_modules_demo["src/modules/demo/"]
-    m_root["/ (repository root)<br/>29 files"]
-    m_docs["docs/<br/>8 files"]
-    m_src_infrastructure["src/infrastructure/<br/>27 files"]
+    m_src_infrastructure["src/infrastructure/<br/>21 files"]
     m_tests_support["tests/support/<br/>13 files"]
-    m_src_modules_demo --- m_root
-    m_src_modules_demo --- m_docs
     m_src_modules_demo --- m_src_infrastructure
     m_src_modules_demo --- m_tests_support
     style m_src_modules_demo stroke-width:3px
 ```
 
-[[boilerplate-vue-frontend_ROOT|/ (repository root)]] · [[boilerplate-vue-frontend_docs|docs/]] · [[boilerplate-vue-frontend_src_infrastructure|src/infrastructure/]] · [[boilerplate-vue-frontend_tests_support|tests/support/]]
+[[boilerplate-vue-frontend_src_infrastructure|src/infrastructure/]] · [[boilerplate-vue-frontend_tests_support|tests/support/]]
 
 ## Files
-- `src/modules/demo/components/ProvidedVariableCard.vue` — The "injecting" half of the Vue `provide`/`inject` demo. It consumes a shared reactive ref (provided by `Playground.vue`) via the `useProvidedVariable` composable, renders two text inputs that mutate the value through different binding styles, and logs every observed change. It exists as a separate component specifically because a component providing to itself would not exercise the cross-boundary mechanism the demo is meant to illustrate.
+- `src/modules/demo/components/ProvidedVariableCard.vue` — The consuming (injecting) half of the provide/inject demo. It pulls a shared ref via `useProvidedVariable`, displays the current value, and offers two text inputs that mutate the value through different mechanisms. It exists as a separate component (rather than inline markup in `Playground.vue`) because provide/inject only becomes observable when the value crosses a component boundary.
 - `src/modules/demo/guards.ts` — A single demo route guard for the Playground route. It exists to show, in one place, what is and isn't reachable from a Vue Router `beforeEnter` hook: Pinia stores work fine, i18n translations are not yet loaded (the dictionary loads later, in `beforeResolve`), and injected variables are unavailable because a guard has no component scope.
-- `src/modules/demo/module.ts` — Module manifest that registers the demo (showroom) module into the app's module registry. It wires together the demo routes, a navigation entry, and locale loaders under the `AppModule` contract, and declares a typed `demo` scope for the shared logger. The file is intentionally self-contained so the entire demo can be removed by deleting its folder and one import line in `src/modules.ts`.
-- `src/modules/demo/provided.ts` — A self-contained Vue 3 provide/inject demo that illustrates typed dependency injection using a `Symbol`-backed `InjectionKey`. It exists to show the mechanism (a ref paired with a mutation function passed down the component tree) in a form that is trivially deletable with `rm -rf src/modules/demo`.
+- `src/modules/demo/module.ts` — Module manifest that registers the demo "showroom" page (store, toolkit components, notification toasts, provide/inject demo) into the app's module registry. It exists as a self-contained, deletable unit — removing this folder and its single line in `src/modules.ts` cleanly removes the demo from the app with zero residual references.
+- `src/modules/demo/provided.ts` — Demonstrates Vue's typed `provide`/`inject` pattern using a `Symbol`-based `InjectionKey` instead of a magic string. The state and its mutation live in this file (not the composition root) so that deleting `src/modules/demo` removes the feature cleanly, fulfilling the module-isolation contract described in `src/modules.ts`.
 - `src/modules/demo/routes.ts` — Defines the route table for the demo module: a single `playground` route that lazy-loads its view component and is protected by the teaching `exampleGuard`. The file exists so the app's module registry can mount demo navigation without the guard leaking into other routes.
-- `src/modules/demo/store.ts` — A minimal Pinia store (`counter`) that exposes exactly one state ref, one computed getter, one sync action, and one async action. It exists as the worked example that the Playground page and `exampleGuard` use to demonstrate that a store is reachable from their respective scopes.
-- `src/modules/demo/tests/e2e/a11y.cy.ts` — Co-located accessibility test for the demo module. It registers the module's routes with the shared `sweepA11y` helper so that the demo's pages are included in the global a11y sweep. Keeping the file next to the module ensures that removing the module also removes its a11y coverage, and a cross-cutting spec (`tests/cross-cutting/a11y-coverage.spec.ts`) asserts that every routed module has exactly one such file.
-- `src/modules/demo/tests/guards.spec.ts` — Unit test for the demo router guard (`exampleGuard`). It verifies three contracts: the guard returns `undefined` (allowing navigation through), Pinia stores are reachable from within the guard, and the guard survives `t()` calls made before the i18n dictionary is loaded. i18n is fully mocked; Pinia is kept real by design.
-- `src/modules/demo/tests/routes.spec.ts` — Vitest spec that pins the demo module's public route contract: the single `Playground` route must be publicly accessible (no `access` meta) and guarded exclusively by `exampleGuard`. It exists so that silently dropping the teaching guard or adding an undeclared route causes an immediate test failure rather than a quiet behavioral regression.
-- `src/modules/demo/tests/store.spec.ts` — Vitest spec that verifies the demo counter store's synchronous and delayed-increment behaviors. It exists because the store is the boilerplate's worked example (used in a Playground and by `exampleGuard`), so a broken counter would propagate confusion; the tests lock in the expected semantics before anyone copies the pattern.
+- `src/modules/demo/store.ts` — A minimal Pinia setup store that demonstrates state, a getter, a sync action, and an async action. It exists as the canonical worked example referenced by the Playground page and `exampleGuard` to prove a store is reachable from their respective scopes.
+- `src/modules/demo/tests/e2e/a11y.cy.ts` — Registers the demo module's routes for the shared Cypress accessibility sweep. It exists so that deleting the demo module automatically removes its a11y coverage, and so the cross-cutting `a11y-coverage.spec.ts` can verify every routed module has a corresponding a11y file.
+- `src/modules/demo/tests/guards.spec.ts` — Vitest unit tests for `exampleGuard` (in `src/modules/demo/guards.ts`). The suite verifies two real Vue Router guard invariants — that the guard returns `undefined` (not `false`/an object) and that it does not throw when i18n translations are not yet loaded — while also demonstrating that Pinia stores are fully functional inside a `beforeEnter` guard.
+- `src/modules/demo/tests/routes.spec.ts` — Vitest suite that pins down the demo module's public route surface: it asserts the Playground route exists, is publicly accessible, is guarded solely by `exampleGuard`, and is the *only* route declared. It exists because a silently lost guard would still render the Playground and the teaching case would vanish without any visible error.
+- `src/modules/demo/tests/store.spec.ts` — Vitest spec for the demo counter store (`useDemoStore`). It verifies that the synchronous `increment` action, the `doubleCount` getter, and the asynchronous `incrementDelayed` action all behave as documented. The tests exist because the store is a worked example shown in the Playground — a broken counter would mislead users, and the `exampleGuard` feature also increments this store to demonstrate guard access.
 - `src/modules/demo/views/Playground.vue` — A single-page demo/showroom that exercises the project's core infrastructure in one readable view: the Pinia counter store, the `provide/inject` pattern, the toast notification store, and sequential fake loading states. It is intentionally un-abstracted so a reader can trace each mechanism end-to-end without following indirections.
 
 ---

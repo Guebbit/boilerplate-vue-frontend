@@ -2,23 +2,27 @@
 
 ## Purpose
 
-A self-service role-switch widget that lets an admin promote or demote *themselves* between standard-user and administrator, visible only on the admin's own profile page. It exists as a standalone block (deliberately outside the main profile form) because the role change hits a different endpoint under a different authorisation than the rest of the profile.
+A self-contained role-switch widget that lets an administrator viewing **their own** profile toggle their role between standard user and administrator. It is deliberately rendered outside the main profile form because a role change hits a different endpoint under different authorisation than the general "Save changes" flow.
 
 ## Key elements
 
-- **`roleIsAdmin` (ref)** — Reactive state backing the `<v-select>`. Seeded from `profile.admin` and re-seeded by a `watch` whenever the profile record changes ("hydrate, never clobber").
-- **`watch(profile, …)`** — Immediate watcher that re-syncs the select to the record; no dirty guard needed because a two-option select holds no user keystrokes.
-- **`roleOptions` (computed)** — The two translated choices (`generic.administrator` / `generic.standard-user`).
-- **`roleIsDirty` (computed)** — True when the select differs from what the record currently holds; gates the submit button.
-- **`handleRoleChange()`** — Applies the chosen role via `updateOwnRole`. Promoting resolves immediately; demoting first shows a confirmation dialog (the only irreversible direction). On refusal or failure the select is restored to the record's value.
+- **`roleIsAdmin`** (ref) – The boolean bound to the `<v-select>`. Seeded from `profile.admin` and re-seeded by a `watch` on `profile` (immediate) whenever the record changes underneath.
+- **`roleOptions`** (computed) – The two translated select options (`generic.administrator`, `generic.standard-user`).
+- **`roleIsDirty`** (computed) – `true` when the select value differs from `profile.admin`; gates the submit button.
+- **`handleRoleChange`** – Applies the chosen role via `useProfileStore().updateOwnRole`. Promotes unconditionally; **demotions** prompt a confirmation dialog first (the one direction the user cannot self-undo). On refusal or API failure the select is restored to the record's value.
+- **`<template v-if="isAdmin">`** – The entire widget is hidden for non-admins; the self-gating lives here rather than in the embedding page.
 
 ## Relationships
 
-- **`src/infrastructure/utils/logger.ts`** — No direct import in this file. It appears in the dependency graph as a transitive dependency, most likely pulled in through `@/infrastructure/utils/errors.ts` (used for `notifyErrorMessages`) or through the Pinia store modules.
+- **`@/modules/account/stores/profile.ts`** – Provides `useProfileStore()`; supplies the reactive `profile` ref and the `updateOwnRole` mutation.
+- **`@/infrastructure/session.ts`** – Provides `useSessionStore()`; reads `isAdmin` to gate rendering.
+- **`@/infrastructure/utils/errors.ts`** – `notifyErrorMessages` surfaces API errors as toasts.
+- **`@/ui/dialog.ts`** – `useDialogStore().confirm` drives the self-demotion confirmation.
+- **`@guebbit/vue-toolkit`** – `useNotificationsStore().addMessage` for success/error toasts.
 
 ## Notes
 
-- **Self-gating:** The entire template is wrapped in `v-if="isAdmin"`. A non-admin sees nothing; the gate lives with the widget, not the embedding page.
-- **Asymmetric confirmation:** Only *demotion* triggers a dialog. The rationale (documented in the JSDoc) is that demoting yourself removes the very routes you'd need to reverse it; promoting is a no-op risk-wise.
-- **Separate from the main form:** The `<v-divider>` + `<section>` block is intentionally outside the profile form's submit flow. Folding it into "Save changes" would put two authorisations behind one button.
-- **Test hooks:** `data-test="profile-role"`, `data-test="role-select"`, and `data-test="role-submit"` are exposed for E2E tests.
+- The component uses **both** a plain `export default { name: 'ProfileRole' }` and a `<script setup>` block — the former exists solely to give the component a stable name in DevTools / `<KeepAlive>` lookups.
+- The `watch` on `profile` has **no** dirty-guard: with a two-option select there are no in-progress keystrokes to clobber, so a simple re-seed is safe.
+- `handleRoleChange` is a no-op (resolves immediately) when `roleIsDirty` is false, so the button's `:disabled="!roleIsDirty"` is a UX convenience, not the only guard.
+- The widget is designed to be dropped into any admin profile view; the `v-if="isAdmin"` guard means the embedding page does not need to special-case role visibility.

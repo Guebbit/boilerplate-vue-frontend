@@ -2,37 +2,28 @@
 
 ## Purpose
 
-Cross-cutting test that validates structural invariants **every** enabled module must satisfy, without ever naming a specific domain. It iterates the module registry generically so that removing a module simply shrinks the test surface rather than breaking the spec. It exists to catch silent, non-throwing regressions: dangling navigation links, missing icons or route names, and i18n dictionary key collisions that would otherwise surface only as a human noticing raw keys on screen.
+A domain-agnostic Vitest spec that validates structural invariants across **all** enabled modules in the registry: navigation entries must reference declared routes, carry required fields, and live in known sections; i18n dictionaries must not have unowned key collisions; and every module must ship every declared locale. It iterates `enabledModules` rather than naming any domain, so deleting a module simply removes one iteration without breaking the spec.
 
 ## Key elements
 
-- **`routeNamesOf(routes)`** — recursively flattens a `RouteRecordRaw` tree into a string[] of all declared route names (any depth).
-- **`moduleCases`** — `[name, module]` tuples derived from `enabledModules`, used as the argument list for `describe.each`.
-- **`describe('the enabled registry')`** — a single guard assertion (`length > 0`) so the per-module suite is never vacuously green.
-- **`describe.each(moduleCases)` block** — five per-module checks:
-  - Every `navigation[].name` must exist in the module's own declared routes.
-  - Every `navigation[].order` must be a number.
-  - Every `navigation[].icon` must be defined (the desktop bar renders only the icon).
-  - Every `navigation[].section` must be `undefined` or a member of `NAVIGATION_SECTIONS`.
-  - Every top-level route must have a `string` name.
-- **`CO_OWNED_NAMESPACE`** (`'navigation'`) — the one i18n namespace intentionally shared across modules; checked one level deeper than other namespaces.
-- **`localeCodes`** — deduplicated union of all locale keys across enabled modules' `locales` maps.
-- **`dictionariesFor(locale)`** — async loader that returns the shared `@/locales/<locale>.json` (owner `'<shared>'`) plus every enabled module's per-locale dictionary, labelled by owner.
-- **`clashesIn(entries)`** — given `{owner, keys}[]`, returns a map of key → owners for any key declared by more than one owner.
-- **`describe.each(localeCodes)` block** — three per-locale checks:
-  - No top-level namespace (excluding `navigation`) is claimed by more than one owner.
-  - No entry *inside* the shared `navigation` namespace is claimed by more than one owner.
-  - Every enabled module ships a dictionary for the locale (no domain left untranslated).
+- **`routeNamesOf`** — recursively flattens a `RouteRecordRaw[]` tree into a flat list of string route names (including children at any depth).
+- **`moduleCases`** — `[name, appModule]` tuples derived from `enabledModules`; drives the `describe.each` block that runs per-module checks.
+- **`CO_OWNED_NAMESPACE`** (`'navigation'`) — the single top-level i18n key that modules are *expected* to co-own; collision checks for it descend one level deeper than for all other keys.
+- **`localeCodes`** — deduplicated set of locale codes across all enabled modules' `locales` objects.
+- **`dictionariesFor(locale)`** — Promise-based loader that resolves the shared `@/locales/<locale>.json` *and* each module's async `locales[locale]()` factory, tagging each with its owner.
+- **`clashesIn(entries)`** — given `{owner, keys}[]`, returns a map of key → owners for keys claimed by more than one contributor.
+- **Per-module tests** — assert: ≥ 1 enabled module (anti-vacuity); every `navigation` entry's `name` exists in the module's route tree; `order` is a number; `icon` is defined; `section` is `undefined` or a value in `NAVIGATION_SECTIONS`; every top-level route has a string `name`.
+- **Per-locale tests** — assert: no top-level dictionary key (except `navigation`) is declared by > 1 owner; no key *within* `navigation` is declared by > 1 owner; every enabled module provides that locale.
 
 ## Relationships
 
-- **`src/modules/*/module.ts`** — the file imports `enabledModules` from `@/modules` and reads each module's `routes`, `navigation`, and `locales` fields. It is the primary consumer being tested.
-- **`docs/reference/tests.md`** — documents the testing conventions this spec exemplifies: cross-cutting specs must iterate the registry and never hardcode a domain name.
+The dependency graph reports no neighbors for this file. It does import `enabledModules` (`@/modules`), `NAVIGATION_SECTIONS` (`@/kernel/registry`), the `TranslationDictionaries` type (`@/infrastructure/i18n`), and `RouteRecordRaw` (`vue-router`), and dynamically imports `@/locales/*.json` at test time, but none of these appear as graph edges.
 
 ## Notes
 
-- **Never name a domain.** The file deliberately references modules only via `appModule.name` in test labels. Deleting any module (e.g. `products`) keeps every assertion passing with one fewer iteration—this is the contract described in the file's header.
-- **`undefined` section is valid.** The shell interprets a missing `section` as `"main"`; the assertion explicitly allows it via `[undefined, ...NAVIGATION_SECTIONS]`.
-- **i18n deep-merge order matters.** Dictionaries are deep-merged at boot in registration order; a top-level key collision silently discards the earlier module's entries. The collision check exists because nothing at runtime throws or logs.
-- **`navigation` is the one shared namespace.** Because the merge *must* be deep for this namespace, the ownership check drops one level down to individual entries inside it rather than checking the top-level key itself.
-- **Shared locale JSON participates in collision checks.** It is loaded as owner `'<shared>'` and included in the same `clashesIn` pass as module dictionaries.
+- **Anti-vacuity guard:** the very first test asserts `enabledModules.length > 0`. Without it, every `describe.each` block would silently pass zero iterations if the registry were empty.
+- **`navigation` namespace is intentionally shared.** All modules contribute `navigation.label-*` slices; the spec checks uniqueness one level *inside* that object rather than at the top level. Do not "fix" this by renaming.
+- **`section: undefined` is valid.** The shell interprets it as `"main"`. The test explicitly allows it alongside the values in `NAVIGATION_SECTIONS`.
+- **The spec catches silent runtime failures, not crashes.** A navigation entry pointing at a non-existent route only produces a console warning from `vue-router`; a dictionary key collision causes the later-registered module's value to silently overwrite the earlier one during the deep-merge at boot.
+- **Dynamic locale imports** (`import(\`@/locales/${locale}.json\`)`) mean the set of importable files is determined at runtime by the registry, not by a static import list.
+- The file's doc-comment references `docs/theory/modules.md` as the design authority for why a cross-cutting spec must iterate rather than name.

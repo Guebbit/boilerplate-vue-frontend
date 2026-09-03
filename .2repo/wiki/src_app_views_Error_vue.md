@@ -2,24 +2,21 @@
 
 ## Purpose
 
-Generic full-page error view rendered when the router redirects with a status and message (e.g. an uncaught error or a rejected navigation). It displays the status, a human-readable message, and a single "Go Home" action.
+A generic, single-purpose error page rendered when the router redirects to an error state. It displays a status code and a message (either an i18n key or free-form router error text) inside the default layout, and offers a "Home" button to recover.
 
 ## Key elements
 
-- **Component `ErrorPage`** — declared in the options block; the `<script setup>` block carries all logic.
-- **Props** — `status?: string` (shown in the heading and as the empty-state title) and `message?: string` (default `''`, the text or i18n key to display).
-- **`normalizedMessage`** (computed) — returns `t(message)` when the string starts with `error-page.` or `navigation.`, otherwise passes the raw string through unchanged (router `onError` payloads are free-form).
-- **Template** — wraps content in `LayoutDefault` (`centered`), uses Vuetify's `v-empty-state` with a `SearchX` icon and a `v-btn` linking to the `Home` route via `routerLinkI18n`.
+- **`export default { name: 'ErrorPage' }`** — Separate `<script>` block that assigns a stable component name for devtools and `<KeepAlive>` (not possible inside `<script setup>`).
+- **`defineProps<{ status?, message? }>()`** — Accepts optional `status` and `message` strings supplied by the route definition.
+- **`normalizedMessage` (computed)** — If `message` begins with `error-page.` or `navigation.`, it is treated as an i18n key and passed through `t()`; otherwise it is rendered as-is (covers free-form text from `router.onError`).
+- **Template** — Wraps content in `LayoutDefault` (centered), uses Vuetify's `<v-empty-state>` for the icon/title/text/actions layout, shows a `SearchX` icon, and a `v-btn` that navigates to the `Home` route via `routerLinkI18n`.
 
 ## Relationships
 
-- Imports `LayoutDefault` (`@/app/layouts/LayoutDefault.vue`) as the page shell.
-- Imports `routerLinkI18n` (`@/infrastructure/i18n/router-link.ts`) to build the localized Home link.
-- Depends on the `vue-i18n` plugin (`useI18n`) and Vuetify's `v-empty-state` / `v-btn` components (assumed available globally).
-- No other graph neighbors are recorded.
+No graph-registered neighbors. The file imports `LayoutDefault`, `vue-i18n`, `vue`, `lucide-vue-next`, and `routerLinkI18n`, but none of those modules list this file as a dependent in the dependency graph.
 
 ## Notes
 
-- **Heuristic i18n detection** — the component does not receive a flag; it guesses that a string is an i18n key purely by its `error-page.` / `navigation.` prefix. Any new message prefix must be added to this check or it will render verbatim.
-- **Dual `<script>` blocks** — an empty options block (`name: 'ErrorPage'`) sits alongside `<script setup>`. This is the idiomatic way to set a component name in Vue 3 SFCs but is easy to miss when grepping.
-- The `status` prop is rendered directly in the `<h1>` and as the `v-empty-state` title, so it is expected to be a short token (e.g. `404`, `500`) rather than a sentence.
+- The dual `<script>` + `<script setup>` pattern is intentional: the non-setup block exists solely to attach the `name` option. Do not merge them.
+- The i18n-key detection in `normalizedMessage` is a prefix check (`error-page.`, `navigation.`), not a lookup. If a new error-namespace key is added, it must use one of those two prefixes or it will be rendered verbatim.
+- `status` is rendered as a bare string (e.g. "404", "500"); it is not translated.

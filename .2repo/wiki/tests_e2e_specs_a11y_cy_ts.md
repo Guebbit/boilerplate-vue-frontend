@@ -2,26 +2,26 @@
 
 ## Purpose
 
-Accessibility sweep for the "shell" routes — the landing page, prose pages (about, faq, terms, privacy), the 404 and error pages, and the shared chrome (app bar, drawer, language menu, theme toggle, account/admin menus). These routes have no owning module, so their a11y coverage lives here rather than inside a module's test directory. Only `serious` and `critical` axe violations fail the run; lighter findings are logged to `reports/a11y/`.
+Accessibility sweep for the app "shell" — routes and chrome that belong to no domain module. Module-owned routes carry their own a11y spec alongside the module so that deleting a domain deletes its coverage; this file is the residual home for the landing page, four prose pages, the error page, and the shared chrome (app bar, drawer, language menu, theme toggle, account/admin menus) that every page inherits.
 
 ## Key elements
 
-- **`PHONE`** — `[390, 844]` viewport constant (iPhone 14 portrait) used to trigger the nav-drawer breakpoint.
-- **`sweepA11y('the shell', …)`** — Main sweep covering all unowned routes: `/en`, `/en/about`, `/en/faq`, `/en/terms`, `/en/privacy`, `/en/this-route-does-not-exist` (404), `/en/error/500/error-page.not-found`, `/it` (locale coverage), dark theme, drawer-open, and language-menu-open states.
-- **`sweepA11y('the shell chrome', …)`** — Audits the nav tooltip with it actually rendered (uses `cy.realPress('Tab')` to trigger `:focus-visible`, then asserts the Vuetify tooltip overlay is active).
-- **`sweepA11y('the shell chrome, signed in', …, 'user')`** — Account-menu-open state, run under the `user` role.
-- **`sweepA11y('the shell chrome, signed in as an admin', …, 'admin')`** — Administration menu and admin drawer sections, run under the `admin` role.
-- Each entry is either a `[name, route]` pair or an object with `name`, `route`, optional `theme`, `viewport`, and a `prepare` callback that drives the UI into the state to audit.
+- **`PHONE`** — `[390, 844]`, the viewport breakpoint below which the nav collapses into a drawer.
+- **`sweepA11y('the shell', …)`** — primary sweep (no auth role). Covers: home, about, FAQ, terms, privacy, 404, the error page by its own address, home in Italian, home in dark theme, home with the drawer open on a phone, and home with the language menu open.
+- **`NAV_TOOLTIP_SHOWN`** — page config that opens the pinned (cart) nav tooltip via a real `Tab` / `Shift+Tab` keystroke (because `.focus()` does not set `:focus-visible`) and asserts the Vuetify overlay content is rendered.
+- **`sweepA11y('the shell chrome, signed in', …, 'user')`** — runs as the `user` role; audits the nav tooltip and the account menu open.
+- **`sweepA11y('the shell chrome, signed in as an admin', …, 'admin')`** — runs as the `admin` role; audits the administration menu and the phone drawer with its admin section visible.
 
 ## Relationships
 
-- **`tests/support/e2e/a11y-sweep.ts`** — Provides `sweepA11y`, the function this file calls. It encapsulates visiting a route, running axe, gating on `serious`/`critical`, writing reports, and applying the optional role/viewport/theme/prepare hooks.
-- **`docs/tools/accessibility-testing.md`** — The documentation that describes the a11y testing workflow and tooling this spec is part of.
+- **`tests/support/e2e/a11y-sweep.ts`** — provides the `sweepA11y` helper that this file calls three times. Each call passes a group name, an array of page configs (route + optional `prepare` / `viewport` / `theme`), and an optional auth role. The helper handles navigation, axe-core execution, and report writing.
 
 ## Notes
 
-- **Coverage guarantee is external:** `tests/cross-cutting/a11y-coverage.spec.ts` parses `src/app/router/index.ts` and fails if any route is missing from this file (or a module's equivalent). There is no lint rule here; completeness is enforced by that separate spec.
-- **Tooltip visibility trick:** Vuetify tooltip content is `pointer-events: none`, so Cypress's `.should('be.visible')` fails on it. The test instead asserts on the `.v-tooltip.v-overlay--active` class and checks content length.
-- **`cy.realPress('Tab')` vs `.focus()`:** The tooltip opens on `:focus-visible`, which programmatic `.focus()` does not set. The test must use a real keyboard press.
-- **Error-page route shape:** `:status` is required and `:message?` is an i18n key the page translates — the test hits both (`500` + `error-page.not-found`) to mirror what the error handler actually sends.
-- **Runs under the demo profile** in `ci.yml`, same as every other e2e spec in the suite.
+- **Gate severity:** only `serious` and `critical` axe violations fail the run. Advisory findings (e.g. contrast) are logged to `reports/a11y/` but do not block. The rationale: a gate that fires on advisory contrast is one that gets disabled.
+- **Coverage guarantee is external:** `tests/cross-cutting/a11y-coverage.spec.ts` parses `src/app/router/index.ts` against this file and fails if any route is unvisited. This file is not self-enforcing for completeness.
+- **Tooltip test uses `cy.realPress`, not `.focus()`:** Vuetify's tooltip opens on `:focus-visible`; Cypress's `.focus()` does not trigger it. Tab away and back is the only reliable way.
+- **Vuetify overlay vs. Cypress visibility:** tooltip content carries `pointer-events: none`, which Cypress interprets as "covered" (not visible). The test therefore asserts on the `.v-tooltip.v-overlay--active` class instead of using `.should('be.visible')`.
+- **Italian locale check:** included solely to catch a translated label whose `aria-*` counterpart was lost during i18n; no other structural difference is expected.
+- **Vuetify handles most input a11y** (labels, ARIA state on form controls). These sweeps primarily guard hand-written markup: skipped heading levels, icon-only buttons missing `aria-label`, images without alt text, and colour-contrast choices.
+- Runs under the demo profile, same as every other spec in `ci.yml`.

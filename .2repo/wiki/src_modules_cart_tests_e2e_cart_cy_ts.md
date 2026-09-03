@@ -2,22 +2,28 @@
 
 ## Purpose
 
-Cypress end-to-end test suite for the cart page. Covers the full user journey on `/en/cart`: empty-state rendering, item listing, quantity increment/decrement, item removal, full cart clear, and checkout redirect. Exists to guard the cart UI contract against regressions.
+Cypress E2E test suite for the cart page. It verifies the full user-visible behaviour of the cart: empty-state rendering, item listing, quantity increment/decrement, item removal, cart clearing, and checkout redirect to the orders list.
 
 ## Key elements
 
-- **`readFirstItemQuantity()`** – Helper that locates the first `[data-test=cart-item]`, extracts the numeric value from its "Quantity: N" label, asserts it is a positive integer, and returns it as a number.
-- **`describe('Empty cart')`** – Verifies the page title, "Your cart is empty" message, absence of items/summary, and presence of a "Browse products" link.
-- **`describe('Cart with items')`** – Verifies item rendering, summary totals, minus/plus quantity buttons (including the disabled-at-1 edge case), per-item removal, "Clear cart", and checkout redirect to `/orders`.
+- **`readFirstItemQuantity`** – module-level helper that grabs the first `[data-test=cart-item]`, extracts the numeric quantity from its `Quantity: N` label, asserts it is a positive integer, and returns it.
+- **`describe('Cart')`** – top-level suite. `beforeEach` visits `/en` and calls `cy.resetState()` to start from a known state.
+- **`describe('Empty cart')`** – suite that logs in as `admin`, visits `/en/cart`, conditionally clicks the clear button if one is present, and asserts the empty-state UI (title, "Your cart is empty" message, no items/summary, "Browse products" link).
+- **`describe('Cart with items')`** – suite that assumes at least one cart item exists after reset. Covers:
+  - Item presence and summary (Items / Total labels).
+  - Decrease button: verifies disabled state at quantity 1, otherwise clicks minus and confirms the new quantity.
+  - Increase button: clicks plus and confirms the new quantity.
+  - Remove: clicks `[data-test=cart-remove]` on the last item and asserts count decreased by one.
+  - Clear cart: clicks `[data-test=cart-clear]` and asserts the empty message.
+  - Checkout: clicks `[data-test=cart-checkout]` and asserts URL contains `/orders` and `#orders-list-page` exists.
 
 ## Relationships
 
-No dependency-graph neighbors are recorded for this file. It relies on globally-registered Cypress custom commands (`cy.resetState`, `cy.loginAs`) and the running application at `/en`.
+No graph neighbours are recorded for this file. It depends at runtime on the application under test (cart page, orders list page) and on two custom Cypress commands defined elsewhere: `cy.loginAs` and `cy.resetState`.
 
 ## Notes
 
-- Selectors are exclusively `data-test` attributes; no coupling to class names or DOM structure beyond those hooks.
-- The **Empty cart** `beforeEach` defensively clicks `[data-test=cart-clear]` if items happen to exist, ensuring a clean slate regardless of prior test state.
-- The **Cart with items** `beforeEach` waits up to 10 s for at least one `[data-test=cart-item]`, implying the cart is expected to be pre-populated (likely via `cy.resetState` or fixture data).
-- The decrease-quantity test branches on whether the initial quantity is 1 to assert the minus button is *disabled* rather than clicking it.
-- `readFirstItemQuantity` throws a descriptive error on parse failure and runs a Chai `expect` assertion *inside* the Cypress `then` chain (not in a separate `it`), so a failure surfaces as a test assertion error rather than a silent `undefined`.
+- All selectors use `data-test` attributes (e.g. `cart-item`, `cart-increase`, `cart-decrease`, `cart-remove`, `cart-clear`, `cart-checkout`). New DOM changes must keep these attributes stable for the tests to pass.
+- The "Cart with items" `beforeEach` does **not** add items explicitly; it relies on `cy.resetState()` (custom command) to restore a fixture state that already contains at least one cart line. If that assumption breaks, every test in that block fails at the `beforeEach` guard.
+- The empty-cart `beforeEach` conditionally clears the cart *if* a clear button is already visible, guarding against leftover state leaking in from a previous test's checkout.
+- Quantity assertions are string-based (`contains('Quantity: N')`) rather than reading a dedicated attribute, so the rendered label format is a de facto contract.

@@ -1,25 +1,26 @@
 # src/modules/feedback/views/Contact.vue
 
 ## Purpose
-
-Renders the public, unauthenticated contact form that lets any visitor submit a message to the feedback inbox. It validates input client-side with a Zod schema and delegates the actual submission to the feedback store, resetting the form on success.
+Public, no-auth-required contact form for visitors to submit feedback directly to the admin inbox. It validates user input against a Zod schema, delegates submission to the feedback store, and resets itself on success.
 
 ## Key elements
 
-- **`ContactForm` interface** — defines the four fields (`name`, `email`, `subject`, `message`) passed to `useAppForm`.
-- **Zod schema (inline in `setup`)** — enforces: optional `name`, valid `email`, `subject` ≥ 1 char, `message` ≥ 10 chars. Error messages are i18n keys.
-- **`useAppForm<ContactForm>(…)`** — provides `form`, `formErrors`, `showFormErrors`, `isSubmitting`, `handleSubmit`, `resetForm`. The `formElement` ref is passed so native browser validation UI can be triggered.
-- **`submitForm()`** — calls `handleSubmit` → `submitContact` (from `useFeedbackStore`). On success: dispatches a toast via `useNotificationsStore` and calls `resetForm()`. On failure: routes the error through `notifyErrorMessages`.
-- **`LayoutDefault`** — wraps the page with the site-wide header/footer and sets the page `id="contact-page"` and i18n title.
-- **Template** — a single `v-card` containing four `v-text-field`/`v-textarea` inputs and a submit `v-btn` bound to `isSubmitting`.
+- **`ContactForm` interface** — shapes the form state (`name`, `email`, `subject`, `message`, `website`). The `website` field is a honeypot; a filled value flags the submission as spam server-side.
+- **`useStructureFormValidation<ContactForm>(…)`** — wires up the form state (`form`), per-field errors (`formErrors`), submit lifecycle (`handleSubmit`, `isSubmitting`, `resetForm`), and locale-aware revalidation. Uses `VUETIFY_INVALID_FIELD_SELECTOR` for native browser validation focus and toasts a generic "fix errors" message on invalid submit.
+- **`submitForm`** — the `<form>` submit handler. Calls `submitContact` from `useFeedbackStore`, maps empty strings to `undefined` for optional fields, shows a success toast + resets on resolve, or dispatches error toasts via `notifyErrorMessages` on reject.
+- **Honeypot `<input>`** (`form.website`) — positioned off-screen (`-left-[9999px]`, zero dimensions), removed from a11y tree (`aria-hidden`) and tab order (`tabindex="-1"`), with `autocomplete="off"`. Never validated client-side; the BE interprets a non-empty value as spam.
 
 ## Relationships
 
-- **`src/infrastructure/utils/logger.ts`** — listed as a graph neighbor but not directly imported or referenced in this file. Any interaction is likely indirect (e.g., via `notifyErrorMessages` or the feedback store) and not visible in this component's source.
+- **`useFeedbackStore`** (`@/modules/feedback/store.ts`) — provides `submitContact`, the actual network/persistence action.
+- **`notifyErrorMessages`, `VUETIFY_INVALID_FIELD_SELECTOR`** (`@/infrastructure/utils/errors.ts`) — error-toast dispatching and the CSS selector for marking invalid Vuetify fields.
+- **`src/infrastructure/utils/logger.ts`** — listed as a graph neighbor; not directly imported here. Likely reached indirectly through `errors.ts` or `vue-toolkit` internals.
+- **`LayoutDefault`** (`@/app/layouts/LayoutDefault.vue`) — wraps the page in the standard site chrome.
+- **`useNotificationsStore`** (`@/vue-toolkit`) — toast/dismiss notifications for success and validation errors.
 
 ## Notes
 
-- `name` is the only truly optional field; the other three are effectively required by their Zod constraints.
-- The form uses `novalidate` on the `<form>` element and relies entirely on the Zod schema + `useAppForm` for validation rather than native HTML5 constraints.
-- `notifyErrorMessages` (from `@/infrastructure/utils/errors.ts`) is the sole error-display path; there is no inline per-field error on submit failure—only a toast.
-- All user-facing strings go through `t('contact-page.*')` i18n keys; no hardcoded copy in the template.
+- The honeypot is deliberately **not** validated by the Zod schema (it's `z.string().optional()`). Its purpose is purely to be carried through to the BE untouched; adding a `.min(1)` or similar would break the "empty = legitimate" invariant.
+- `revalidateOn: locale` means the Zod schema re-evaluates error messages when the i18n locale changes — the `error` callbacks capture `t` from `useI18n()` at setup time, so a locale switch without this option would leave stale translations in error strings.
+- `form.value.name` and `form.value.website` are coalesced with `||` (empty string → `undefined`), while `email`, `subject`, `message` use `??` (empty string stays). This distinction matters for the BE's required-vs-optional contract.
+- The form element carries `novalidate` to suppress native browser validation popups; `useStructureFormValidation` handles the UX via Vuetify error messages instead.

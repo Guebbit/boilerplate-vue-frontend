@@ -2,25 +2,27 @@
 
 ## Purpose
 
-Auto-generated Zod schema definitions for the Ecommerce Demo API REST contract, produced by orval v8.20.0 from the OpenAPI spec (v2.0.0). It provides runtime-validated TypeScript types for every response and request body the API exposes, intended for multi-project, multi-language use (client/server stubs, DTOs, SDKs).
+Auto-generated (by orval v8.20.0 from OpenAPI spec v2.0.0) Zod validation schemas for the Ecommerce Demo API's REST endpoints. It defines the shape of request bodies and response envelopes so that server-side handlers and client SDKs can validate payloads at runtime without duplicating the contract.
 
 ## Key elements
 
-- **`GetHealthResponse`** — Zod `strictObject` for the `GET /health` liveness check.
-- **`GetLocalesResponse`** — Zod `strictObject` for `GET /locales`. Validates the full locale manifest (tag, name, nativeName, direction, active, tenants, source, entryCount, revision) plus `default` and `fallback` tags.
-- **`CreateLocaleBody`** — Zod `strictObject` for the `POST /locales` request body (tag, name, nativeName, optional direction, active with default `true`).
-- **`CreateLocaleResponse`** — Zod `strictObject` for the `POST /locales` success response, including `baseLanguage` (ISO 639-1 primary subtag), timestamps, and revision.
-- **Regex & constraint constants** — e.g. `getLocalesResponseDataLocalesItemTagRegExp`, `createLocaleBodyTagRegExp`, `getLocalesResponseDataLocalesItemTenantsItemMax` (64), `getLocalesResponseDataLocalesItemTenantsItemRegExp`. Each is exported individually so orval can reference them inline in the schema.
-- **`.describe()` annotations** — Extensive inline documentation on every field explaining semantics (e.g., backend vs. frontend tenant capability, BCP 47 tag rules, why `direction` is a column rather than a derived value).
+- **`GetHealthResponse`** — Schema for the `GET /health` liveness endpoint; expects `{ success: true, status, message, data: { status: 'ok' } }`.
+- **`GetLocalesResponse`** — Schema for `GET /locales`; describes the full language manifest (per-locale `tag`, `name`, `nativeName`, `direction`, `active`, `tenants[]`, `source`, `entryCount`, `revision`) plus `default` and `fallback` tags.
+- **`CreateLocaleBody`** — Request-body schema for `POST /locales` (register a language in the dynamic tier). Fields: `tag`, `name`, `nativeName`, optional `direction`, `active` (defaults to `true`).
+- **`CreateLocaleResponse`** — Response schema for the same endpoint; returns the persisted locale record including `id`, `baseLanguage`, timestamps.
+- **Helper constants** — Exported `RegExp` values (BCP 47 tag, tenant id, base-language) and numeric min/max bounds (e.g. `getLocalesResponseDataLocalesItemTenantsItemMax`, `getLocalesResponseDataLocalesItemEntryCountMin`) used inside the schemas above.
+- **`createLocaleBodyActiveDefault`** — Explicit default (`true`) for the `active` field, exported so consumers can reference the same value.
 
 ## Relationships
 
-- **`docs/tools/runtime.md`** — This file is the type-level contract the runtime must satisfy; the schemas encode the response shapes, validation rules, and i18n behavior (Accept-Language handling, tenant capability reporting) that the runtime documentation describes narratively.
+No graph neighbors are recorded for this file. It is a leaf module: it imports only `zod` and is imported by the runtime validation layer and any generated client stubs that need type-level or runtime shape checks.
 
 ## Notes
 
-- **Generated file** — The header explicitly says "Do not edit manually." Regenerate via orval when the OpenAPI spec changes.
-- **`Accept-Language` is not declared per operation** — The header paragraph explains this is intentional: the header applies to all 33+ endpoints and is set once in a client interceptor. The paragraph in the file header *is* the contract for that behavior.
-- **Strict objects everywhere** — All schemas use `zod.strictObject`, so unknown keys will fail validation at runtime.
-- **Locale data is runtime state, not contract state** — The `tag`, `default`, and `fallback` fields are validated against regex patterns, not closed enums, because the set of supported languages is deployment-specific and discoverable only via `GET /locales`.
-- **Tenant semantics differ by context** — On a *locale*, `tenants` reports capability (which layer has a dictionary). On an *entry*, `tenants` reports override precedence. The `.describe()` text disambiguates; be careful not to conflate the two when reading schemas.
+- **Do not edit by hand.** The header states it is orval output; changes belong in the OpenAPI spec or the orval config.
+- **`zod.strictObject` everywhere.** Unknown keys in a payload will fail validation, not be silently dropped.
+- **Language-tag validation is regex-based**, not enum-based. The spec explicitly notes supported tags are a *runtime* fact; the schema only enforces BCP 47 *format*.
+- **`tenants` on a locale is a capability signal, not a label.** A backend tenant means the API can answer in that language; a frontend tenant means a client dictionary is downloadable. The two are distinct and a language may have only one.
+- **`baseLanguage` is stored, not derived.** It equals the ISO 639-1 primary subtag of `tag` but is a separate column for query/index purposes.
+- **`direction` is stored, not computed.** All current locales are `ltr`; the field exists so an `rtl` addition does not require a migration.
+- **`Accept-Language` is not declared per-operation** in the generated signatures; it applies globally (see the file header) and is set once via a client interceptor.

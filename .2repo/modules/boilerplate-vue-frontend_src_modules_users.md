@@ -6,38 +6,38 @@ tags:
 type: module
 module: src/modules/users/
 files: 15
-updated: 2026-08-30T17:11:52.198826+00:00
+updated: 2026-09-03T10:59:58.081289+00:00
 ---
 
 # src/modules/users/
 
 ## Purpose
 
-The `users` module implements the full admin-side user-management screen: a paginated list, a read-only detail page, and create/edit forms. It also owns the shared Zod validation schemas for the user form and the response-schema contracts that enforce runtime API validation on every users endpoint. All wiring is registered through the app's module system so the kernel can mount routes, navigation, and locale loaders in one pass.
+The `users` module provides the full admin surface for managing user accounts: a paginated list with search, create/detail/edit pages, and the Pinia store that performs CRUD, paginated search, and avatar-upload against the API. It also publishes its Zod form schemas so sibling modules (notably `account`) can validate login, signup, and password-reset forms against the same field rules without re-declaring them.
 
 ## Key parts
 
-- **Public surface & manifest** — `index.ts` exposes exactly two schema objects (the only import other modules may use); `module.ts` is the manifest that registers routes, a nav entry, response schemas, and locale loaders with `AppModule`.
-- **Schemas** — `schemas.ts` holds the Zod form-validation rules with i18n-resolved error messages; `response-schemas.ts` maps each users API endpoint (method + path-regex) to a Zod envelope for contract validation.
-- **Routing** — `routes.ts` declares the four `admin`-guarded route records (`RouteRecordRaw[]`) that Vue Router consumes.
-- **Store** — `store.ts` is a Pinia store providing CRUD, paginated search, and avatar upload. Most logic delegates to `useStructureCrudApi`; hand-written code covers the multipart avatar branch and `hardDeleteUser`.
-- **Views** — Four Vue SFCs in `views/`: `UsersList.vue` (filterable table with per-row actions), `User.vue` (read-only detail), `UserCreate.vue`, and `UserEdit.vue` (forms that compose `useAppForm` and call into the store).
-- **Tests** — Unit specs (`routes.spec.ts`, `schemas-i18n.spec.ts`, `store.spec.ts`) and e2e sweep registrations (`a11y.cy.ts`, `users.visual.cy.ts`) co-located under `tests/` so they are deleted with the module.
+- **Entry & manifest** — `index.ts` (barrel: re-exports the two Zod schemas for cross-module use) and `module.ts` (registers routes, nav entry, response schemas, and locale loaders with the `AppModule` registry).
+- **Validation & contracts** — `schemas.ts` (Zod form schemas with i18n-thunked error messages) and `response-schemas.ts` (per-endpoint Zod response contracts keyed by method + path regex).
+- **State** — `store.ts` (Pinia store built on the shared `useStructureCrudApi` primitive; exposes CRUD, search, avatar-upload, and a hard-delete action).
+- **Routes** — `routes.ts` (four `RouteRecordRaw` records, all gated behind `admin` access).
+- **Views** — `UsersList.vue` (paginated table + filters + row actions), `UserCreate.vue` (signup form with optional avatar), `UserEdit.vue` (edit form with optional password/avatar change), `User.vue` (read-only detail page).
+- **Tests** — Unit specs for the store, schema-i18n agreement, and route access declarations; E2E specs for accessibility (`sweepA11y`) and visual regression (`sweepVisual`).
 
 ## How it connects
 
-- **`src/infrastructure/`** — The module leans on shared infrastructure for nearly every non-domain concern: `AppModule` (registration in `module.ts`), `useStructureCrudApi` (CRUD plumbing in `store.ts`), `response-schema-map` (consumes `response-schemas.ts` at runtime), `useAppForm` (form state/validation in the three form views), and `orvalMutator` (the HTTP transport the store calls and tests mock).
-- **`tests/support/`** — The two e2e sweep files register their routes with the shared `sweepA11y` and `sweepVisual` helpers defined in the support layer, keeping the per-module file to a declarative list of URLs.
+- **`src/infrastructure/`** — The store is generated from the shared `useStructureCrudApi` toolkit, response schemas plug into the infrastructure's response-schema-map validator, and `module.ts` registers everything through the `AppModule` registry that the infrastructure kernel reads at boot. The Zod schemas and i18n thunks also lean on infrastructure-level locale and validation utilities.
+- **`tests/support/`** — The E2E files (`a11y.cy.ts`, `users.visual.cy.ts`) call the shared `sweepA11y` / `sweepVisual` harnesses that live in `tests/support/`, so the module only declares *which* routes to audit; the actual screenshot and accessibility logic is cross-cutting.
 
 ## Where to start
 
-Read **`module.ts`** first — it is a compact, single-file tour of everything the module registers (routes, nav, schemas, locales) and immediately shows how it plugs into the app shell. Then open **`index.ts`** to see the deliberately narrow public API the rest of the codebase is allowed to consume; its comments explain *why* the store is excluded, which clarifies the module's boundary in one paragraph.
+Read `schemas.ts` first to internalise the user data model and the validation rules that every view enforces. Then move to `store.ts` to see how those schemas feed into the CRUD/search/avatar-upload actions and how the shared toolkit shapes the HTTP layer. Together they give you the full request/response picture before you touch a single Vue component.
 
 ## Connected modules
 ```mermaid
 flowchart LR
     m_src_modules_users["src/modules/users/"]
-    m_src_infrastructure["src/infrastructure/<br/>27 files"]
+    m_src_infrastructure["src/infrastructure/<br/>21 files"]
     m_tests_support["tests/support/<br/>13 files"]
     m_src_modules_users --- m_src_infrastructure
     m_src_modules_users --- m_tests_support
@@ -47,21 +47,21 @@ flowchart LR
 [[boilerplate-vue-frontend_src_infrastructure|src/infrastructure/]] · [[boilerplate-vue-frontend_tests_support|tests/support/]]
 
 ## Files
-- `src/modules/users/index.ts` — Barrel re-export that defines the **only** public import surface for the `users` module. It exposes exactly two schema objects so sibling modules (specifically `account`) can validate forms against shared field rules without re-typing them. It deliberately omits the store, because the client-side sharing here is vocabulary (validation rules), not a shared record.
+- `src/modules/users/index.ts` — Barrel file (public entry point) for the `users` module. It exposes exactly two schema exports so that sibling modules (notably `account`) can validate login, signup, and password-reset forms against the same field rules without re-typing them. It deliberately omits the store: on the client neither module writes data — the API does — so what is shared is vocabulary, not a shared kernel.
 - `src/modules/users/module.ts` — Module manifest for the **users** admin screens (list, detail, create, edit). It registers routes, a navigation entry, response schemas, and locale loaders with the app's `AppModule` registry so the kernel can mount everything in one place.
-- `src/modules/users/response-schemas.ts` — Declares the complete set of Zod response-schema contracts for the users domain's outbound API calls. Each row pairs an HTTP method and a path-regex pattern with the schema that validates the response envelope. The list is consumed by the `response-schema-map` infrastructure to perform runtime contract validation on every users endpoint response.
+- `src/modules/users/response-schemas.ts` — Declares the response-schema contracts for every users-domain endpoint the module consumes. Each row pairs an HTTP method + path regex with a Zod schema, so the shared response-schema-map infrastructure can validate API responses at runtime. It exists to isolate the users domain's contract declarations in one table that the module manifest registers centrally.
 - `src/modules/users/routes.ts` — Declares the four route records for the users module (list, create, detail, edit). Each record pairs a URL path with a lazy-loaded Vue component and an `admin`-only `meta.access` guard, and the array is typed as `RouteRecordRaw[]` for registration into the app's Vue Router.
-- `src/modules/users/schemas.ts` — Zod validation schemas for the user form (signup/profile). Each error message is an i18n thunk — a `() => translate(…)` call resolved at **parse time** rather than at schema-definition time, so the active locale is always honoured regardless of when the module was first loaded.
-- `src/modules/users/store.ts` — Pinia store providing CRUD, paginated search, and avatar-upload support for users. It delegates nearly all wiring to the shared `useStructureCrudApi` primitive so that the only hand-written logic is the multipart branching for avatar uploads and the irreversible `hardDeleteUser` action.
-- `src/modules/users/tests/e2e/a11y.cy.ts` — Co-located a11y route list for the **users** module. It registers four user-facing routes with the shared `sweepA11y` helper so that accessibility audits run against the admin view of each page. Placing the list inside the module (rather than in a central file) guarantees the routes vanish if the module is deleted, and a cross-cutting spec enforces that every routed module ships one of these files.
-- `src/modules/users/tests/e2e/users.visual.cy.ts` — Declarative screen list for visual-regression testing of the users module. It feeds a single route entry (`users-list` → `/en/users`) into the shared `sweepVisual` helper so that a baseline screenshot is captured and compared on every visual run. The file exists per-module so that baselines (in a co-located `__snapshots__/` folder) are deleted together with the module, avoiding orphaned PNGs.
-- `src/modules/users/tests/routes.spec.ts` — Vitest spec that asserts every users route record declares the expected `meta.access` value and that no route exists without an explicit access decision. It guards against a route silently losing its access restriction, which would otherwise be indistinguishable from a public route in all other tests.
-- `src/modules/users/tests/schemas-i18n.spec.ts` — Vitest spec that verifies the users module's Zod schemas resolve validation error messages through the real vue-i18n instance into both English and Italian. It asserts a domain-specific invariant: every i18n key the schemas reference exists in both locale dictionaries, and the Italian strings are genuinely different from the English ones.
-- `src/modules/users/tests/store.spec.ts` — Unit tests for the `useUsersStore` Pinia store. It mocks the HTTP transport (`orvalMutator`) at the boundary and asserts on the raw request objects (URL, method, body shape) that the store's actions produce. This mirrors the products store spec in structure and rationale.
-- `src/modules/users/views/User.vue` — Read-only user detail page (registered as `UserTargetPage`). Receives a user `id` via props, triggers a fetch through the users store, and renders the user's fields (username, email, role, status, timestamps) in a structured detail layout with hero, stats cards, and action links.
-- `src/modules/users/views/UserCreate.vue` — Vue 3 SFC (named `UserCreatePage`) that renders a user-creation form. It composes `useAppForm` for state/validation, delegates the actual create call to the users store (which branches between multipart and JSON based on whether an avatar is attached), and navigates to the new user's detail page on success.
-- `src/modules/users/views/UserEdit.vue` — Vue 3 single-file component (named `UserEditPage`) that renders a single-user edit form. It loads a user by the `id` route prop, lets the user change email, password, and avatar, then persists the changes via the users store. An empty password or avatar field signals "leave unchanged."
-- `src/modules/users/views/UsersList.vue` — Paginated user-list view that wires the Pinia `useUsersStore` search/filter state to a filter form, a `DataTable` with per-row actions (view, edit, soft-delete, hard-delete), and a pagination control. It is the main list page for the users module.
+- `src/modules/users/schemas.ts` — Zod validation schemas for user form data. Error messages are i18n thunks (`() => translate(…)`) so translations are resolved at parse time, not at module-load time.
+- `src/modules/users/store.ts` — Pinia store that provides CRUD, paginated search, and avatar-upload operations for the User entity. It is generated from the shared `useStructureCrudApi` toolkit primitive so that the store's shape stays identical to other resource stores (e.g. products), differing only in endpoints and filter fields. A single hand-written action handles irreversible hard-delete.
+- `src/modules/users/tests/e2e/a11y.cy.ts` — Declares the accessibility route list for the users module so the shared `sweepA11y` helper can audit every user-facing page (list, create, detail, edit) as the admin. Co-located with the module so that deleting the module automatically removes its a11y coverage, and so a cross-cutting spec can verify no routed module is missing a sweep file.
+- `src/modules/users/tests/e2e/users.visual.cy.ts` — Declares the visual-regression routes for the **users** module so the shared `sweepVisual` harness knows which pages (and in-page anchors) to screenshot and compare. The file has no exports; its only runtime effect is the single `sweepVisual` call.
+- `src/modules/users/tests/routes.spec.ts` — Pins the `meta.access` declaration on every users-module route by name. It reads the raw route records directly (not a resolved router), so it needs no locale prefix or app context. Its role is to prove the access declarations are *present*; a separate router spec proves enforcement is *attached*. Together they ensure a route cannot silently become public.
+- `src/modules/users/tests/schemas-i18n.spec.ts` — Verifies that the users module's Zod schemas (`usersSchema`, `usersPasswordSchema`) emit validation messages resolved through the **real** vue-i18n instance in the currently active locale. This is distinct from the cross-cutting spec (`tests/cross-cutting/schemas-i18n.spec.ts`) which proves the thunked-message mechanism in isolation; this file proves the domain schemas and the `en.json` / `it.json` dictionaries actually agree. It lives alongside the domain rather than in a shared test folder.
+- `src/modules/users/tests/store.spec.ts` — Unit tests for the `useUsersStore` Pinia store. The transport layer (`orvalMutator`) is mocked so that the tests inspect the raw HTTP requests each store action constructs (URL, method, body shape, FormData vs. JSON) without hitting a network. A users-specific concern — that submitted passwords and uploaded Blobs never linger in store state — is asserted here in addition to the request-contract checks shared in shape with the products store.
+- `src/modules/users/views/User.vue` — Read-only user detail page that loads a single user by route `id` and renders their profile fields (username, email, role, status, timestamps) in a structured layout with hero, stats, detail grid, aside, and navigation actions.
+- `src/modules/users/views/UserCreate.vue` — Vue single-file component that renders the "Create User" form page. It collects email, username, password, admin/active flags, and an optional avatar file, validates them via a Zod schema, and delegates submission to the users store—sending a multipart request when an avatar is present or JSON otherwise (the branch is handled inside the store).
+- `src/modules/users/views/UserEdit.vue` — Single-user edit page. Loads a user by the route `id` prop, presents a form (email, optional password, optional avatar upload), and persists changes via the users store. An empty password or avatar field is a no-op ("leave as is"); a new avatar triggers a multipart upload with progress tracking.
+- `src/modules/users/views/UsersList.vue` — The paginated user listing and search page. It wires the `useUsersStore` reactive filter/pagination state to a filter form, a `DataTable`, and per-row action buttons (view, edit, soft-delete, hard-delete), and reports API errors as toasts.
 
 ---
 [[boilerplate-vue-frontend_INDEX|← boilerplate-vue-frontend index]]

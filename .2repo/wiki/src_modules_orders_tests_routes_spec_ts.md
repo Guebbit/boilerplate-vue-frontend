@@ -2,21 +2,21 @@
 
 ## Purpose
 
-Vitest spec that asserts every orders route record declares the expected `meta.access` value, and that no route exists outside the known set. It exists because a route that silently loses its `meta.access` is indistinguishable from a public one — no other test would flag it.
+Vitest spec that verifies every orders route record declares the expected `meta.access` value. It guards against a route silently losing its access declaration (which would make it indistinguishable from a public route) and against new routes being added without an explicit access decision.
 
 ## Key elements
 
-- **`byName(name)`** — local lookup helper; returns the `RouteRecordRaw` whose `name` matches, or `undefined`.
-- **`it.each` access-assertion block** — iterates a hard-coded table (`OrdersList`→`auth`, `OrderTarget`→`auth`, `OrderEdit`→`admin`) and verifies each route exists and carries the exact `meta.access` value.
-- **"declares no route this file does not know about" test** — compares the full set of route names against the hard-coded list; fails if a new route is added without an explicit access decision here.
+- **`byName`** — local helper that finds a `RouteRecordRaw` by its `name` property within the imported `routes` array.
+- **`describe('orders route access')`** — the single test suite.
+  - `it.each([...])` — table-driven assertion that `OrdersList` → `auth`, `OrderTarget` → `auth`, `OrderEdit` → `admin`.
+  - `it('declares no route this file does not know about')` — catch-all: the sorted list of all route names must equal exactly the three above, so any new route added to `routes.ts` breaks this test until it is listed here with an access level.
 
 ## Relationships
 
-- **`src/modules/orders/routes.ts`** — the file under test. This spec imports its default export (`routes`) and inspects each record's `name` and `meta.access` directly, without instantiating a router or resolving paths.
+- **`src/modules/orders/routes.ts`** (imported as `routes`) — the spec reads the module's raw route-record array directly. It does not instantiate a router, resolve paths, or apply a locale prefix; it only inspects `name` and `meta.access` on the declared records.
 
 ## Notes
 
-- Expected access values are **deliberately hard-coded**, not read back from the records. Deriving them from the same source would make the test tautological and unable to catch a missing `meta.access`.
-- Tests against raw route records (no locale prefix, no app-level router), so the spec is self-contained to the domain module.
-- Adding a new route to `routes.ts` will break this spec until the new name is added to both the `it.each` table and the sorted-name comparison list.
-- Placed in the domain module (not a platform-wide spec) so deleting the domain module does not break unrelated specs, per `docs/theory/modules.md`.
+- Asserts against the raw route records, not a resolved router, so no app bootstrap or i18n context is needed.
+- The catch-all test means adding a route to `routes.ts` without also adding a row to the `it.each` table (and updating the name list) will fail CI — this is intentional and forces an explicit access decision.
+- Lives in the orders module (not a platform-level spec) so that deleting the domain does not break a shared test, per `docs/theory/modules.md`.

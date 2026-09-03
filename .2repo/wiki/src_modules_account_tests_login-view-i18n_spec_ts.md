@@ -2,24 +2,26 @@
 
 ## Purpose
 
-End-to-end integration test that proves the `Login.vue` view is genuinely wired to `usersSchema` and vue-i18n's `revalidateOn: locale`. It mounts the real component, triggers validation with a real schema parse, and asserts that rendered `v-text-field` error text re-translates when the locale switches mid-form — without mocking vue-i18n or the schema.
+Integration test that proves the `Login.vue` view is genuinely wired to `usersSchema` + vue-i18n's `revalidateOn: locale`. Unlike the isolated mechanism test in `tests/cross-cutting/schemas-i18n.spec.ts`, this spec mounts the real view, triggers a form submit, and reads the rendered `v-text-field` validation text in two languages (en → it) to confirm re-translation actually happens mid-form.
 
 ## Key elements
 
-- **`wireModulesIntoCore()`** (called at module top-level) — injects the account and users locale dictionaries into the shared `i18n` instance so that `t()` resolves real translations rather than raw keys.
-- **`emailInvalidMessage()`** — calls `usersSchema.safeParse` with an invalid email, filters the Zod issue for the `email` path, and returns the i18n message. Also asserts the message does not contain a raw key (`users-form.`), guarding against un-loaded dictionaries that would make all assertions vacuously true.
-- **`mountLogin()`** — mounts `Login.vue` with `createPinia()`, `vuetify`, and `i18n` plugins; stubs `LayoutDefault` and `vue-router` (`RouterLink`, `useRoute`, `useRouter`).
-- **`errorTexts(wrapper)`** — collects the text of all `.v-messages__message` nodes currently in the DOM.
-- **Test: "re-translates a displayed validation error"** — sets an invalid email, submits, confirms the English message is rendered, switches to `it`, then asserts the Italian message is present *and* the English one is gone.
-- **Test: "does not put errors on a pristine form just because the language changed"** — mounts the form, switches locale, and asserts no `.v-messages__message` nodes exist.
+- **`wireModulesIntoCore()`** — imported from `tests/support/unit/wire-modules.ts`; registers the modules' i18n dictionaries into the shared i18n instance so translations are resolvable at runtime.
+- **`emailInvalidMessage()`** — runs `usersSchema.safeParse` with an invalid email, extracts the first `email`-path issue message, and asserts it is a translated string (not a raw key). Returns the message text for the *current* active locale.
+- **`mountLogin()`** — mounts `Login.vue` with `createPinia()`, Vuetify, the real `i18n` plugin, a `LayoutDefault` stub, and a `vue-router` mock. Returns the `VueWrapper`.
+- **`errorTexts(wrapper)`** — helper that collects the text of all `.v-messages__message` nodes in the rendered DOM.
+- **`vi.mock('vue-router', …)`** — stubs `RouterLink`, `useRoute`, `useRouter` so the view can render without a live router. vue-i18n is deliberately **not** mocked.
+- **`describe('Login view, language switched mid-form')`** — two test cases:
+  1. Submits an invalid email in English, asserts the English error renders; switches to Italian, asserts the Italian error replaces the English one.
+  2. Switches locale on a pristine (unsubmitted) form and asserts no validation messages appear.
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** — provides `wireModulesIntoCore()`, which is invoked once at module scope before any test runs. It is the mechanism that registers the account/users locale JSON into the global `i18n` instance; without it, every `t()` call would return the key string and all assertions would trivially pass.
+- **`tests/support/unit/wire-modules.ts`** — `wireModulesIntoCore()` is called at module top-level (before any `describe`) to inject the account and users modules' locale dictionaries into the i18n instance. Without this call, `emailInvalidMessage()` would return raw keys and every assertion would pass vacuously.
 
 ## Notes
 
-- The expected error text is derived by parsing with `usersSchema` (imported from the `@/modules/users` barrel), **not** by reading the locale JSON files directly. This ensures the assertion compares rendered output against what the schema actually produces, and respects module boundaries (a sibling's dictionary file is an internal detail).
-- vue-i18n is deliberately **not** mocked. A stubbed `t` that echoes its key would make English and Italian outputs identical, collapsing the assertion.
-- The second half of the language-switch test asserts the old English text is *absent*, not just that the Italian text is present. A view that renders both messages simultaneously would pass a "contains Italian" check alone.
-- `loadLocale` is called in both `beforeEach` and `afterEach` (resetting to `'en'`) to prevent locale state leaking between tests.
+- The spec reads expected error text by parsing through `usersSchema` (imported from the `@/modules/users` barrel) rather than from a locale JSON file. This was a lint-enforced convention: a sibling module's dictionary is internal; the barrel is the only sanctioned surface.
+- The assertion `expect(italian).not.toBe(english)` guards against a broken i18n setup where both locales silently fall back to the same string.
+- The second test (pristine form) exists to catch a regression where `revalidateOn: locale` triggers a full re-validation on a form the user never touched.
+- `beforeEach`/`afterEach` both reset to `loadLocale('en')` to prevent locale bleed between tests.

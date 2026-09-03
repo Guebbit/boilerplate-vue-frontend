@@ -2,26 +2,27 @@
 
 ## Purpose
 
-Vue composable that centralises the admin observability dashboard's data layer: three read endpoints (health, metrics overview, paginated audit logs) and one write (expired-token purge). It exists so the view binds to shared reactive refs rather than duplicating fetch/error bookkeeping per panel.
+Vue composable that centralises the admin observability dashboard's data layer: three read endpoints (health, metrics overview, paginated audit logs) and one write (expired-token purge). It gives the dashboard a single composable to call instead of repeating per-panel `loading`/`error`/`data` bookkeeping, and deliberately treats reads and the write differently in terms of error propagation.
 
 ## Key elements
 
-- **`UseAdminObservabilityReturn`** — exported interface describing every ref, computed, and function the composable exposes. Serves as the contract between this module and its consumer.
-- **`useAdminObservability()`** — the sole exported function. Returns the full state object described above.
-- **Three `useAsyncAction` instances** (health, metrics, audit) — each wraps one `@api` GET call. On failure the promise *resolves* and the message lands in the panel's own `error*` ref; the UI can still render the other two panels.
-- **`auditEvents` / `auditTotal` / `auditPages`** — computed refs derived from the single audit envelope (`{ items, meta }`), avoiding duplicated state that could disagree.
-- **`fetchHealth` / `fetchMetrics` / `fetchAuditLogs` / `fetchAll`** — thin wrappers over the `run` functions; all resolve with `void`.
-- **`clearExpiredTokens` / `clearingExpiredTokens`** — the one *write* action. Deliberately **not** wrapped in `useAsyncAction`: it rejects on failure so the calling view can react (toast) synchronously. The pending flag is the only local state it owns.
+- **`UseAdminObservabilityReturn`** — interface describing every ref, computed, and action the composable exposes.
+- **`useAdminObservability()`** — the single exported function. Internally creates three `useAsyncAction` wrappers (one per read endpoint) and returns the aggregated state + fetchers.
+- **`health` / `metrics` / `audit`** — `Ref` payloads fed by their respective `useAsyncAction`. Audit is an envelope (`{ items, meta }`); the other two are flat.
+- **`auditEvents` / `auditTotal` / `auditPages`** — `ComputedRef`s derived from the audit envelope so consumers never index into the raw payload.
+- **`fetchHealth` / `fetchMetrics` / `fetchAuditLogs`** — resolve-never fetchers; failures land in the corresponding `error*` ref.
+- **`fetchAll`** — runs all three reads via `Promise.all` for the initial dashboard paint.
+- **`clearingExpiredTokens`** — plain `Ref<boolean>` pending flag, bound by the view to its button.
+- **`clearExpiredTokens`** — the only *rejecting* action; calls `deleteExpiredTokens` and lets the promise reject so the view can show a toast. Intentionally **not** wrapped in `useAsyncAction`.
 
 ## Relationships
 
-- **`src/modules/admin/views/Admin.vue`** — primary consumer; calls `useAdminObservability()` in setup, binds the loading/error refs to panel UI, and calls `fetchAll()` on mount. Consumes `clearingExpiredTokens` to disable the purge button.
-- **`src/modules/admin/types.ts`** — source of the `AdminAuditFilters` interface that parameterises `fetchAuditLogs`.
-- **`docs/tools/admin-dashboard.md`** — product documentation describing the dashboard this composable backs; useful for understanding *why* each panel exists.
+No graph neighbors are tracked for this file. It imports from `@guebbit/vue-toolkit` (`useAsyncAction`), `@api` (four endpoint functions), `@types` (response types), `@/modules/admin/types.ts` (`AdminAuditFilters`), and `@/infrastructure/i18n` (`translate`).
 
 ## Notes
 
-- **Read vs. write error strategy is intentional.** Reads swallow rejections into per-panel error refs (partial render). The write (`clearExpiredTokens`) propagates the rejection so the view's existing toast logic fires without polling an error ref after the fact. Do not "unify" it into `useAsyncAction`.
-- The audit payload is a single envelope; `auditEvents`, `auditTotal`, and `auditPages` are all *computeds* off that one ref. Storing them as separate refs would risk inconsistency.
-- All error messages go through `translate()` (`@/infrastructure/i18n`) with keys prefixed `admin-page.error-load-*`.
-- `fetchAuditLogs` defaults to `{}` (first page, no filters) if called without arguments.
+- **Read vs write asymmetry is intentional.** Reads swallow errors into a ref so a partially-available stack still renders the panels that succeeded. The token-purge write *rejects* because the visitor is owed a visible outcome; the view handles the rejection with a toast. Don't "fix" this by wrapping the write in `useAsyncAction`.
+- **Audit is paginated server-side.** `auditEvents` holds only the current page's items; `auditTotal` and `auditPages` come from `meta`. The pager in the view reads these computed refs, not the raw envelope.
+- **Error strings are i18n'd at call time** via `translate('admin-page.error-load-*')`, passed as `fallbackErrorMessage` to `useAsyncAction`.
+- **`fetchAll` is fire-and-forget for the dashboard's initial load;** it resolves only after all three reads have *settled* (whether or not they succeeded).
+- **All returned values are reactive refs/computed refs**, not raw values — consumers must read `.value` in templates or reactive contexts.

@@ -2,30 +2,37 @@
 
 ## Purpose
 
-Catalog of every test file in the repository, mapping each to the single guarantee it enforces. It exists so a reader can identify *which* test covers a given rule without opening the spec itself.
+Reference index for the project's test architecture. It names every test file and the single guarantee each one provides, so a reader can locate *which* test covers a given rule without reading the specs themselves. It also records the two-level placement convention (co-located vs `tests/`) and which runner (Vitest or Cypress) owns which scope.
 
 ## Key elements
 
-- **Suite split rule** — single-module tests are co-located inside the module; system-level tests (infrastructure, kernel, app shell, cross-module rules) live under `tests/`.
-- **Runner ownership** — Vitest (jsdom) owns unit and cross-cutting suites; Cypress owns `tests/e2e/` and `tests/e2e/visual` (pixel baselines).
-- **`tests/cross-cutting/`** — one spec per architectural rule, asserted over all fourteen modules at once. Documented specs: `registry`, `published-language`, `form-idiom`, `store-location`, `schemas-i18n`, `a11y-coverage`, `coverage-and-mutate-scope`, `mutation-safe-imports`.
-- **`tests/unit/`** — organized by area: `kernel/`, `app/` (router, guards, navigation), `infrastructure/` (http, i18n, stores, composables, utils), `ui/`, `scripts/`. Each row names the specific behavior locked in.
-- **`tests/support/`** — harness code (e.g. `unit/wire-modules.ts`, `e2e/commands.ts`) that wires fixtures or extends commands; contains no assertions itself.
-- **`tests/e2e/specs/`** — browser-level tests that hit the paired backend's demo profile (mock layer retired).
+- **Placement rule** — module-scoped tests live inside the module; system-scoped tests (infrastructure, kernel, app shell, cross-module invariants) live under `tests/`.
+- **`tests/support/`** — shared harness (fixtures, helpers); contains no assertions.
+- **`tests/cross-cutting/`** (8 files) — one spec per architectural rule asserted over all fourteen modules simultaneously. Covers: registry invariants, published-language (barrel) discipline, `useAppForm` idiom, store file location, schema→i18n key resolution, a11y route coverage, coverage/Stryker scope sync, and mutation-safe import patterns.
+- **`tests/unit/kernel/`** — registry route/navigation collection on synthetic modules.
+- **`tests/unit/app/`** — router assembly, navigation model, auth guards, locale-choice, shell navigation.
+- **`tests/unit/infrastructure/`** — HTTP client/transport/request/refresh/validation, URL normalisation, response-schema map, i18n resolution & admin overrides, session store, observability wiring, SSE client, upload progress, error formatting, formatters (+ property-test variant), logger, upload limits.
+- **`tests/unit/ui/` and `tests/unit/scripts/`** — UI component and build-script tests (content truncated in source).
+- **Runner split** — Vitest + jsdom for everything up to single-component mounts; Cypress for real-browser / real-backend e2e and visual-regression (pixel baselines).
 
 ## Relationships
 
-- **`docs/reference/src-modules.md`** — cross-cutting specs (`registry`, `published-language`) assert invariants about module manifests and barrels; "Read next" links in this file point to module theory.
-- **`docs/reference/src-ui.md`** — `form-idiom.spec.ts` enforces the `useAppForm` idiom; `use-upload-progress.spec.ts` covers a UI-kit composable.
-- **`tests/cross-cutting/form-idiom.spec.ts`**, **`registry.spec.ts`**, **`published-language.spec.ts`**, **`store-location.spec.ts`** — the four cross-cutting specs whose guarantees are itemized in the table on this page.
-- **`tests/unit/infrastructure/http/`** — seven specs (client, http, http-request, http-refresh, http-validate-responses, url, response-schema-map) are listed with their individual guarantees.
-- **`tests/unit/infrastructure/stores/`** — `session.spec.ts` and `observability.spec.ts` are cataloged.
-- **`tests/support/unit/wire-modules.ts`** and **`tests/support/e2e/commands.ts`** — referenced as the harness layer that feeds the unit and e2e suites without asserting.
-- **`tests/e2e/specs/`** — the destination of the Cypress flow; described as requiring a real browser *and* a real backend.
+- **`docs/reference/src-app.md`** — "Read next" target for app-shell unit tests, `schemas-i18n.spec.ts`, and `i18n.spec.ts`.
+- **`docs/reference/src-infrastructure.md`** — "Read next" target for the entire `tests/unit/infrastructure/` block.
+- **`docs/reference/src-ui.md`** — "Read next" for `form-idiom.spec.ts`, `formatters.spec.ts`, `use-upload-progress.spec.ts`.
+- **`docs/reference/contracts.md`** — "Read next" for `url.spec.ts` and `response-schema-map.spec.ts`.
+- **`docs/reference/scripts.md`** — "Read next" for `tests/unit/scripts/` specs.
+- **`docs/api/endpoints.md`** — "Read next" for `http.spec.ts` and `errors.spec.ts`.
+- **`docs/api/openapi-workflow.md`** — "Read next" for `http-request.spec.ts` and `http-validate-responses.spec.ts`.
+- **`docs/theory/modules.md`** — "Read next" for registry, published-language, and kernel-registry specs.
+- **`docs/theory/sitemap.md`** — "Read next" for navigation and authentication-guard specs.
+- **`docs/theory/strategic-ddd.md`** — §2 and §4 explain the retired `context-map` / `subdomain-discipline` specs whose coupling check was replaced by an ESLint rule (`MODULE_EDGES`).
+- **`docs/tools/accessibility-testing.md`** — "Read next" for `a11y-coverage.spec.ts`.
+- **`docs/tools/admin-dashboard.md`** — "Read next" for `locale-overrides.spec.ts`.
 
 ## Notes
 
-- `context-map.spec.ts` and `subdomain-discipline.spec.ts` **no longer exist**. Their coupling check was promoted to the `MODULE_EDGES` ESLint rule in `eslint.config.ts`; the structural half was deleted along with the `dependsOn`/`subdomain` fields.
-- New modules are automatically covered by cross-cutting tests "the day they are added" — no per-module opt-in needed.
-- The e2e suite talks to the paired backend's **demo profile**; the previous in-repo mock layer has been retired.
-- `formatters.property.spec.ts` uses property-based testing (generated inputs) rather than example-based assertions — a distinct technique called out explicitly in the table.
+- The two former cross-cutting specs (`context-map.spec.ts`, `subdomain-discipline.spec.ts`) are **gone**. Their typed `dependsOn`/`subdomain` fields were removed; the structural coupling check now runs as a generated ESLint rule on every `npm run lint`.
+- The mock backend layer was retired. Cypress e2e tests hit the paired backend's **demo profile** — no local mocks.
+- `formatters.property.spec.ts` uses **property-based testing** over generated inputs rather than hand-picked examples; it is the only property-test file called out by name.
+- New modules are automatically in scope for all cross-cutting specs on the day they are added (no test update needed for coverage of the rule).

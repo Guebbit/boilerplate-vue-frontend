@@ -2,25 +2,27 @@
 
 ## Purpose
 
-Cross-cutting structural test that enforces where Pinia stores are declared within each module. It exists because `vitest.config.ts` floors domain-store coverage with a fixed glob; a store in any other location silently drops out of coverage without lowering the green number. This test makes that violation loud.
+Cross-cutting structural test that enforces a single convention: every Pinia store in `src/modules/*` must live in either `store.ts` (one store) or `stores/*.ts` (multiple stores), and no module may mix both shapes. It exists because `vitest.config.ts` floors domain stores with a fixed glob; a store placed anywhere else simply drops out of coverage silently, and the green percentage quietly shrinks.
 
 ## Key elements
 
-- **`sourceFiles(moduleRoot)`** — Recursively lists all `.ts` source files under a module directory, excluding anything under a `tests/` folder.
-- **`moduleNames()`** — Returns the directory names under `src/modules/`.
-- **`storeFilesOf(name)`** — Returns module-relative paths of every file whose source contains the string `defineStore(`. Matching on the call (not the filename) is the entire point.
-- **`isPermitted(relative)`** — Predicate that accepts exactly two shapes: `store.ts` (single segment) or `stores/<something>.ts` (two segments under a `stores/` directory).
-- **Test: placement** — For every module, asserts no `defineStore(` file sits outside the two permitted shapes.
-- **Test: mutual exclusion** — Asserts no module declares stores in *both* `store.ts` and `stores/` simultaneously.
-- **Test: meta-guard ("finds the stores it is meant to be checking")** — Asserts that at least 10 modules actually yield store files, preventing a broken search (renamed root, changed layout) from making every other assertion pass vacuously over an empty list.
+- **`MODULES_ROOT`** — Resolves to `src/modules` relative to the test file; the directory scanned for every assertion.
+- **`sourceFiles(moduleRoot)`** — Recursively lists all `.ts` files under a module directory, excluding anything whose path segment is `tests`.
+- **`moduleNames()`** — Returns the directory names directly under `MODULES_ROOT`.
+- **`storeFilesOf(name)`** — Filters `sourceFiles` to only those containing the literal string `defineStore(`. Detection is content-based, not filename-based.
+- **`isPermitted(relative)`** — Predicate that a module-relative path is exactly `store.ts` (one segment) or `stores/<anything>.ts` (two segments, first is `stores`).
+- **`describe('where a module keeps its stores')`** — Three tests:
+  1. *Per-module*: every file with `defineStore(` in each module passes `isPermitted`.
+  2. *No mixed shapes*: no module simultaneously has `store.ts` **and** a file under `stores/`.
+  3. *Guard on the guard*: at least 11 modules are found to contain stores, preventing the first two tests from passing vacuously over an empty list.
 
 ## Relationships
 
-- **`src/modules/*/store.ts`** — The target of the check. Each module's store file (or `stores/` directory) must satisfy the location and exclusivity rules enforced here.
-- **`docs/reference/tests.md`** — Documents this spec as part of the cross-cutting test suite that reviewers and contributors are expected to run.
+No direct imports from other project files. The test reads the on-disk layout of `src/modules/*` via `node:fs` and is implicitly coupled to the store-coverage glob defined in `vitest.config.ts` (referenced in the header comment, not imported).
 
 ## Notes
 
-- The test hardcodes `> 10` as the minimum store count in the meta-guard. Adding or removing modules is fine, but dropping below 11 store-bearing modules will fail this check even if the layout is correct — adjust the threshold if the codebase legitimately shrinks.
-- Matching is a raw `includes('defineStore(')` string check, not a parse. A comment containing that literal would register as a store file; keep comments free of that exact token.
-- The file's own header comment is the authoritative rationale for the two permitted shapes and the "never both" rule; read it before renaming a store file or adding a second store to a module.
+- Detection is by the `defineStore(` literal, not by filename. A file named `store.ts` that never calls `defineStore(` is invisible to this test; conversely a file named anything that *does* call it is caught.
+- The `recursive: true` option on `readdirSync` means nested subdirectories (other than `tests/`) are included in the scan.
+- The "guard on the guard" test uses a hard-coded threshold of `> 10` modules. If the codebase ever legitimately drops below that, the test will fail and need its constant adjusted.
+- The file enforces a *naming/placement* convention only; it does not check that stores are exported, registered, or free of type errors.

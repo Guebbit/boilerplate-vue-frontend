@@ -2,27 +2,28 @@
 
 ## Purpose
 
-Unit tests for the cart Pinia store (`useCartStore`). They lock in three behavioral contracts that types and e2e tests cannot catch: (1) a 401 from `getCartSummary` is the *only* status that means "no cart" (a 500 must still reject), (2) which actions emit analytics events and which do not, and (3) the checkout failure split — the client reports only network-level (status-less) failures, while the server reports all HTTP failures, preventing double-counted Umami rows.
+Vitest unit-test suite for the Pinia cart store. It locks down three invariants the store is designed around: every mutating action replaces the local cart with the API's response (not a patch), `fetchSummary` treats only a 401 as "no cart" while letting other failures propagate, and `checkout` must let both API rejections and network-level errors reach the caller unmodified.
 
 ## Key elements
 
-- **`describe('useCartStore')`** — top-level suite; creates a fresh Pinia and clears all mocks in `beforeEach`.
-- **`vi.mock('@api', …)`** — stubs all eight cart endpoints (`getCart`, `getCartSummary`, `upsertCartItem`, `updateCartItemById`, `removeCartItem`, `clearCart`, `checkout`, `reorder`) with default-resolving `CART` / `EMPTY_CART` / `ORDER` fixtures.
-- **`vi.mock('@/infrastructure/stores/observability.ts', …)`** — replaces `useObservabilityStore` with a single `track` spy so analytics assertions are direct.
-- **`apiFailure(status)`** — helper that builds the client's rejection envelope (`{ success, status, message, errors }`), *not* an `Error`, matching the real `onResponseReject` contract.
-- **`describe('fetchSummary')`** — verifies badge seeding, 401 → `undefined` badge, 500 → re-thrown rejection.
-- **`describe('before anything is fetched')`** — guards the header render path: `cartItems` is `[]`, `cart`/`cartSummary` are `undefined`.
-- **`describe('updateCartItem')`** — asserts the product id goes in the path (not body), no analytics event fires, and the recalculated response *replaces* the local cart.
-- **`describe('checkout')`** — the largest group; covers payload passthrough, cart emptying on success, 409 rejection *without* a client-side analytics call, status-less (`Error`) rejection *with* a `CHECKOUT_REQUEST_FAILED` event, and a 200-with-no-order envelope that must still resolve and clear the cart.
-- **`describe('reorder')`** — confirms the order id is the sole argument and the response (the updated cart) replaces local state.
+- **`CART`, `EMPTY_CART`, `ORDER`** – fixture constants used as the default mock payloads.
+- **`apiFailure(status)`** – builds the rejection envelope (`{ success, status, message, errors[] }`) that the API layer's `onResponseReject` produces. Explicitly *not* an `Error` instance; this is the client's rejection contract.
+- **`vi.mock('@api', …)`** – stubs all eight cart API functions (`getCart`, `getCartSummary`, `upsertCartItem`, `updateCartItemById`, `removeCartItem`, `clearCart`, `checkout`, `reorder`) to resolve the fixtures above. Individual tests override a single call with `mockReturnValueOnce` / `mockRejectedValueOnce`.
+- **`describe('fetchSummary')`** – asserts the badge seeds from `summary.totalQuantity` (units, not lines), that a 401 yields an empty badge, and that a 500 rejects.
+- **`describe('before anything is fetched')`** – confirms `cartItems` defaults to `[]` and summary is `undefined`.
+- **`describe('updateCartItem')`** – includes a dedicated test that the store *replaces* its local cart with the recalculated response, catching implementations that fire-and-forget the reply.
+- **`describe('clearCart')`** – asserts the call is bodyless (`toHaveBeenCalledWith()`), guarding the `DELETE /cart/all` vs `DELETE /cart/:productId` URL split.
+- **`describe('checkout')`** – covers no-payload call, payload pass-through, local-cart clearing on success, propagation of API rejections (409), propagation of `Error('Network Error')`, and a 200 with an empty body (cart still cleared, no crash).
+- **`describe('reorder')`** – verifies the order id is sent and the response (the updated cart) replaces local state.
+- **`$id` test** – asserts the store is registered under the Pinia id `"cart"`.
 
 ## Relationships
 
-No graph neighbors are documented. The file imports `useCartStore` (under test), the eight `@api` endpoint functions (mocked), and `analyticsEvents` from the observability infrastructure (used in one assertion). All three are mocked or import-only; no other source files are touched.
+No graph neighbors are recorded for this file. It imports `useCartStore` from `@/modules/cart/store` and the eight cart API functions from `@api`, both fully mocked via `vi.mock`.
 
 ## Notes
 
-- The `apiFailure` helper intentionally rejects with a plain object, not an `Error`. An ESLint disable comment documents this as the client's rejection contract — do not "fix" it.
-- The checkout analytics split is the subtlest part: a 409/4xx/5xx rejection must **not** call `track`; only a status-less rejection (network drop, CORS failure) calls `track(CHECKOUT_REQUEST_FAILED)`. Both tests exist to pin that boundary.
-- `clearCart()` (no arg) and `clearCart('p1')` hit the same endpoint; the tests verify the API call argument (`undefined` vs `{ productId }`) but assert **no** analytics event for either variant at this layer.
-- All assertions use `Promise.resolve`/`rejects` patterns rather than async/await, matching the store's promise-returning API and keeping the mock-call assertions in `.then()` callbacks.
+- **Rejection shape is intentional:** `apiFailure` returns a plain object, not an `Error`. The `eslint-disable` comment on that line is load-bearing—removing it would break the test's purpose of asserting the *envelope* passes through.
+- **401 is special in `fetchSummary` only:** other endpoints treat all rejections as errors. The "guest has no cart" semantics are scoped to the summary endpoint the header badge reads.
+- **Every mutation test asserts state *replacement*, not merge:** the suite repeatedly checks that `store.cart` equals the full mock response, not a patched version. This is the primary regression the suite guards against.
+- **`vi.clearAllMocks()` in `beforeEach`** runs after `setActivePinia(createPinia())`; reordering those two lines would reset the mock factories before Pinia is wired up.

@@ -2,29 +2,31 @@
 
 ## Purpose
 
-Unit tests for the products store's own request-shaping logic: which branch a create/update call takes (JSON vs multipart `FormData`), how the `FormData` is built (repeated keys, omitted optionals, Blob preservation), and how optimistic updates are applied before the transport resolves. The generated HTTP client is exercised for real; only the lowest transport (`orvalMutator`) is mocked, so encoding regressions that TypeScript cannot catch are still asserted.
+Unit tests for the products store's create, update, and delete actions. Focuses on the repo-specific logic — the JSON-vs-multipart branching, request shaping, and optimistic-update patching — rather than the thin CRUD wrappers over `@guebbit/vue-toolkit`. Mocks only the transport (`orvalMutator`) so the generated client and FormData encoding run for real, catching wire-format regressions that TypeScript cannot.
 
 ## Key elements
 
-- **`vi.mock('@/infrastructure/http', …)`** – replaces `orvalMutator` with a `vi.fn` that resolves `{ data: { id:'p1', title:'T', price:1 } }`; the single seam between the store and the network.
-- **`lastRequest()` / `lastFormData()` / `lastBody()`** – small helpers that pull the most recent `orvalMutator` call and (optionally) narrow its body to `FormData` or the JSON payload.
-- **`respondWithItems(items)`** – re-points the mock to return a paginated envelope for list-fetch tests.
-- **`PRODUCT`** – a fully-populated `Product` fixture used as seed state for optimistic-update assertions.
-- **`describe('createProduct', …)`** – six `it` blocks: JSON path, unwrap-to-entity, multipart path, Blob (not File) preservation, repeated array keys, omitted undefined optionals, and `onUploadProgress` forwarding.
-- **`describe('updateProduct', …)`** – mirrors create plus two store-state tests: optimistic title visible while the transport is pending (`mockImplementationOnce` + `vi.waitFor`), and `imageUpload` never persisted in state.
-- **`describe('deleteProduct', …)`** – (truncated in source; covers the DELETE branch.)
-- **`asStub`** (from `tests/support/stub`) – type-level cast helper used by `lastBody` to access the request body without widening to `unknown`.
+- **`lastRequest()`** — extracts the most recent axios config (url, method, data) passed to `orvalMutator`; throws if never called.
+- **`lastFormData()`** — same as above but asserts the body is a `FormData` instance before returning it.
+- **`lastBody()`** — returns the JSON `data` field of the last request via `asStub`.
+- **`respondWithItems(items)`** — sets `orvalMutator` to resolve a paginated envelope (`items` + `meta` matching the real `PaginationMeta` shape, including `totalPages`).
+- **`PRODUCT`** — a fully populated `Product` seed object used by the optimistic-update tests.
+- **`describe('createProduct')`** — verifies JSON POST (no image), multipart POST (image), Blob-not-File encoding, repeated `categories`/`tags` fields (not `categories[0]`), omission of unset optionals, and `onUploadProgress` forwarding.
+- **`describe('updateProduct')`** — verifies JSON PUT, multipart PUT, optimistic patch visible before the response resolves, Blob never persisted in store state, and `onUploadProgress` forwarding.
+- **`describe('deleteProduct')`** — verifies the DELETE call targets `/products/:id`.
 
 ## Relationships
 
-- **`src/infrastructure/http/index.ts`** – source of `orvalMutator`, the axios adapter that orval's generated client calls. This spec mocks that module so the store → generated-client → mutator chain runs for real, and asserts on the config object handed to the mutator.
-- **`tests/support/stub.ts`** – provides `asStub<T>`, a zero-runtime type assertion used to narrow the untyped `orvalMutator` call argument to a structured shape for assertions.
-- **`@/modules/products/store`** – the unit under test (`useProductsStore`). Not listed as a graph neighbor here because the spec file *is* the consumer; the store is the subject, not a collaborator.
+- **`src/infrastructure/http/index.ts`** — exports `orvalMutator`, the HTTP transport this spec mocks with `vi.mock`. All request-shaping assertions read from `orvalMutator`'s call arguments.
+- **`tests/support/stub.ts`** — exports `asStub`, a type-narrowing cast helper used by `lastBody()` to type the last request's data as `Record<string, unknown>`.
+- **`@/modules/products/store`** (SUT) — the `useProductsStore` Pinia store whose actions are exercised here.
+- **`@types`** — provides the `Product` type used by the `PRODUCT` fixture.
 
 ## Notes
 
-- Tests **return** their promise chain instead of `await`ing; vitest treats a rejected returned promise as a failure, so `.then`-body assertions are equally binding. This keeps the synchronous `it` body short and avoids extra tick bookkeeping.
-- `@api` (the orval-generated client) is **deliberately not mocked**. Mocking it would reduce assertions to "the store called the right function name" and skip the `splitByContentType` / `toFormData` encoding that actually determines whether the backend receives `categories` (repeated) or `categories[0]` (indexed), or `description=undefined` (string) vs. an omitted field.
-- The optimistic-update test uses `mockImplementationOnce` (not `mockResolvedValue`) so the promise stays pending until `release()` is called, then **only that one** call is affected; `beforeEach`'s `vi.clearAllMocks()` clears recorded calls but would *not* clear a persistent `mockReturnValue`, which is why the comment warns against that pattern here.
-- `imageUpload` is typed `Blob`, not `File`. The spec explicitly asserts the field survives as a `Blob` instance because axios' `toFormData` silently drops plain Blobs when recursing.
-- `onUploadProgress` forwarding is tested for both create and update; it was added to the store's signature when `ProductCreate.vue` / `ProductEdit.vue` needed a progress bar, and the second argument to `orvalMutator` exists solely to carry it.
+- `@api` is intentionally **not** mocked; the generated client and its FormData encoder run for real. Only `orvalMutator` (the transport boundary) is stubbed.
+- Tests **return** their promise chains instead of using `await`; assertions inside `.then` carry the same binding in Vitest.
+- The optimistic-update test uses `mockImplementationOnce` (not `mockImplementation`) because `beforeEach` → `vi.clearAllMocks()` clears recorded calls but **not** a persistently-set implementation.
+- That same test uses `vi.waitFor` rather than a fixed number of microtask ticks, because the toolkit awaits `cancelQueries()` before writing the optimistic record and the tick count is TanStack's concern.
+- The "repeated fields, not indexed keys" test exists because `FormData.append('categories', v)` in a loop is the only way to get multi-value fields on the wire; TypeScript gives no signal if a regression switches to `categories[0]`.
+- The "omits unset optional fields" test guards against the string `"undefined"` appearing as a FormData value when a field is left `undefined`.

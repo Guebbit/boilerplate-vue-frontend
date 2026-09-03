@@ -2,24 +2,22 @@
 
 ## Purpose
 
-Thin, framework-agnostic wrapper around the browser's `EventSource`. It opens a single SSE connection, registers one listener per typed event name, JSON-parses each frame, and silently drops frames that fail to parse. Exists so callers get a small, typed API without managing `EventSource` lifecycle or payload decoding themselves.
+Thin wrapper around the browser's `EventSource` that opens a single persistent SSE connection, registers one typed listener per event name, JSON-parses each incoming frame, and silently drops frames that fail to parse. It exists to give callers a small, typed surface (`SseClientCallbacks`) over the raw `EventSource` API without repeating the parse-and-filter boilerplate.
 
 ## Key elements
 
-- **`SseClientCallbacks`** (interface) — Optional `onOpen`, `onError`, and a generic `onEvent` handler whose payload is narrowed by the event name via `SseEventPayload<TEventName>`.
-- **`SseClient`** (interface) — Handle returned to callers; exposes a single `close()` method.
-- **`createSseClient(url, eventNames, callbacks?)`** (exported function) — Constructs an `EventSource` with `withCredentials: true`, wires up `open`/`error` listeners, then iterates `eventNames` to attach a per-name listener. Each listener runs the frame through `parseJsonData` and forwards to `callbacks.onEvent`. Returns an `SseClient` handle.
-- **`parseJsonData(rawData)`** (internal helper) — Attempts `JSON.parse`; returns `undefined` on failure so the caller can skip the frame. All other falsy values (`null`, `0`, `false`, `""`) pass through as legitimate payloads.
+- **`SseClientCallbacks`** (exported interface) – Optional `onOpen`, `onError`, and `onEvent` handlers. `onEvent` is generic over `TEventName extends SseEventName` so the payload type is narrowed per event.
+- **`SseClient`** (exported interface) – Handle returned to callers; exposes a single `close()` method.
+- **`parseJsonData`** (module-private) – Wraps `JSON.parse` in try/catch; returns `undefined` on malformed JSON so the caller can skip the frame.
+- **`createSseClient`** (exported) – Factory. Accepts a URL, a readonly array of `SseEventName`s, and optional callbacks. Creates an `EventSource` with `withCredentials: true`, wires up `open`/`error` listeners, then loops over `eventNames` registering one `addEventListener` per name. Returns an `SseClient` handle.
 
 ## Relationships
 
-- **`src/types/realtime.ts`** — Provides the `SseEventName` and `SseEventPayload` types imported from the `@types` alias. The generic `onEvent` signature and the per-frame payload cast both depend on these contracts.
-- **`src/modules/realtime/store.ts`** — Consumes `createSseClient` (and its `SseClientCallbacks`) to subscribe to typed SSE events and fold them into the realtime store's state.
-- **`docs/api/asyncapi-workflow.md`** — Documents the server-side SSE event schema that `SseEventName` / `SseEventPayload` mirror; useful as a reference when interpreting event payloads received through this client.
+No graph neighbors. The module only imports the `SseEventName` and `SseEventPayload` type aliases from the `@types` package; it exports its own interfaces and the `createSseClient` factory for upstream consumers.
 
 ## Notes
 
-- `withCredentials: true` is hardcoded; the connection is expected to rely on an auth cookie rather than an `Authorization` header.
-- The `undefined` return from `parseJsonData` is a deliberate failure sentinel. Do not replace it with `null` — `null` is a valid payload.
-- `JSON.parse` is wrapped in a `try/catch` with an eslint-disable for `no-restricted-syntax`; a malformed frame is dropped, never re-thrown.
-- One `addEventListener` call is made **per event name**, so each SSE event type gets its own dispatch path rather than a single `"message"` listener.
+- **Failure sentinel is `undefined`, not `null`.** `parseJsonData` returns `undefined` when JSON is invalid, and the caller checks `=== undefined`. This means legitimate payloads of `null`, `0`, `false`, or `""` are still forwarded to `onEvent`.
+- **One listener per event name.** The code deliberately calls `addEventListener` inside a `for` loop rather than using a single `onmessage`, so the browser dispatches each typed event individually (matching the `event:` field in SSE frames).
+- **`withCredentials: true`** is set unconditionally; the connection relies on the auth cookie rather than a custom header.
+- The single `eslint-disable-next-line no-restricted-syntax` on `JSON.parse` is intentional — there is no non-throwing JSON parser, and a bad frame is dropped, not a crash.

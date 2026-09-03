@@ -2,23 +2,21 @@
 
 ## Purpose
 
-Public barrel for the delivery module. It exposes exactly two Vue components (`ShippingSelector`, `ShipmentPanel`) and nothing else. The module's store is deliberately *not* re-exported here so that consumers must interact with shipping data through the components' own internal fetch logic rather than reaching for a shared store API.
+Public barrel for the delivery module. It exposes exactly two component re-exports and nothing else, serving as the single import point for anything outside the module that needs a shipping UI.
 
 ## Key elements
 
-- **`ShippingSelector`** — re-export of `./components/ShippingSelector.vue`. Fetches cart state internally to present shipping options.
-- **`ShipmentPanel`** — re-export of `./components/ShipmentPanel.vue`. Fetches order state internally to display parcel details.
-
-No additional exports, no side effects, no store re-exports.
+- **`ShippingSelector`** — re-export of `./components/ShippingSelector.vue` (default export).
+- **`ShipmentPanel`** — re-export of `./components/ShipmentPanel.vue` (default export).
 
 ## Relationships
 
-- **`src/modules/delivery/components/ShipmentPanel.vue`** — the component this file re-exports as `ShipmentPanel`.
-- **`src/modules/delivery/components/ShippingSelector.vue`** — the component this file re-exports as `ShippingSelector`.
+- **`src/modules/delivery/components/ShippingSelector.vue`** — the sole upstream dependency re-exported here as `ShippingSelector`.
+- **`src/modules/delivery/components/ShipmentPanel.vue`** — the sole upstream dependency re-exported here as `ShipmentPanel`.
 
-Both are the sole targets of this barrel; the file adds no logic beyond the named re-exports.
+This file is the only public surface; external consumers import from the module root rather than reaching into `./components/…` directly.
 
 ## Notes
 
-- The store that backs these components lives elsewhere in the module tree and is intentionally kept out of this barrel. The file's doc comment states the rationale: exposing the store would create a "wider" path to shipping-rate data, and the wider path tends to win in practice. If you need the store directly, import it from its own location—not from here.
-- Consumers should treat this file as the *only* public entry point for the delivery module; reach for these two components rather than importing sub-paths directly.
+- The store is deliberately **not** re-exported. Both components manage their own data (selector fetches cart state, panel fetches order state), so no shared store is needed. Publishing one would create a second, broader API path that consumers would prefer over the component-level one.
+- If you need to add a new public entry point, keep the barrel minimal and prefer a component or narrowly scoped utility over a full store export.

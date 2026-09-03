@@ -2,21 +2,23 @@
 
 ## Purpose
 
-The "injecting" half of the Vue `provide`/`inject` demo. It consumes a shared reactive ref (provided by `Playground.vue`) via the `useProvidedVariable` composable, renders two text inputs that mutate the value through different binding styles, and logs every observed change. It exists as a separate component specifically because a component providing to itself would not exercise the cross-boundary mechanism the demo is meant to illustrate.
+The consuming (injecting) half of the provide/inject demo. It pulls a shared ref via `useProvidedVariable`, displays the current value, and offers two text inputs that mutate the value through different mechanisms. It exists as a separate component (rather than inline markup in `Playground.vue`) because provide/inject only becomes observable when the value crosses a component boundary.
 
 ## Key elements
 
-- **`useProvidedVariable()`** (imported from `@/modules/demo/provided.ts`) — returns the injected pair `{ providedVariable, setProvidedVariable }`.
-- **`watch(providedVariable, …)`** — fires on every change to the injected ref; calls `logger.debug('demo', 'Provided ref changed', value)`.
-- **Two `<v-text-field>` inputs** in the template — first uses `v-model` (direct ref mutation); second uses `:model-value` + `@update:model-value` calling `setProvidedVariable` explicitly (setter-style mutation). Both feed the same shared ref.
-- **`t()`** from `vue-i18n` — resolves all user-facing labels under the `playground-page.label-provided*` keys.
+- **`useProvidedVariable()`** — imported from `@/modules/demo/provided.ts`; returns `{ providedVariable, setProvidedVariable }`. `providedVariable` is a reactive ref; `setProvidedVariable` is an explicit setter.
+- **`watch(providedVariable, …)`** — logs every observed change via `logger.debug('demo', 'Provided ref changed', value)`.
+- **Template – `v-text-field` (v-model)** — binds directly to `providedVariable`, demonstrating the ref-as-two-way-binding pattern.
+- **Template – `v-text-field` (`:model-value` + `@update:model-value`)** — reads from `providedVariable` but writes through `setProvidedVariable(…)`, demonstrating the explicit-setter pattern. Includes a `typeof value === 'string'` guard.
+- **`useI18n().t`** — resolves all visible labels from the `playground-page` translation namespace.
+- **Vuetify `v-card`** — wraps the UI; fixed width (`max-w-md`).
 
 ## Relationships
 
-The dependency graph records no neighbors for this file. The code itself imports `useProvidedVariable` from `@/modules/demo/provided.ts` (the providing side) and `logger` from `@/infrastructure/utils/logger.ts`.
+No graph neighbors are recorded for this file. It imports `useProvidedVariable` (provided by `Playground.vue` via Vue's `provide`) and the project-level `logger` utility.
 
 ## Notes
 
-- The second text field coerces non-string input to `''` before calling `setProvidedVariable` — a guard against `null`/`undefined` from the component's update event.
-- The `watch` is diagnostic only (logs to console); the visible reactivity in the template comes from Vue's normal binding, not from the watcher.
-- The file is intentionally a standalone SFC rather than a section of `Playground.vue` so the provide/inject boundary is visible to readers of the demo.
+- The two text fields are intentionally redundant: they exist to contrast `v-model` on a ref versus calling a named setter. They are not two independent features.
+- The component must be a *child* of whatever calls `provide`. Rendering it in isolation (no provider in the ancestor chain) will throw at `useProvidedVariable()`.
+- The `typeof value === 'string' ? value : ''` guard on the second field handles Vuetify's `update:model-value` potentially emitting `undefined` on clear; the first field (`v-model`) does not need this guard because Vue's ref assignment handles it.

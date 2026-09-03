@@ -2,20 +2,20 @@
 
 ## Purpose
 
-Guarantees that every admin route carries an explicit `meta.access` declaration and that no route exists outside the set known to this test. Without this spec, a route that silently drops its access requirement would still render and pass every other test, becoming publicly accessible with no signal.
+Guarantees that every admin route record carries an explicit `meta.access` declaration. Without this test, a route that silently loses its access level would become publicly reachable while all other tests still pass, because nothing else in the suite inspects that field. The test asserts declarations *on the route records themselves*, not on a resolved router, so it needs no locale prefix or app bootstrap.
 
 ## Key elements
 
-- **`byName(name)`** — Local helper that finds a `RouteRecordRaw` in the imported `routes` array by its `name` property.
-- **`it.each([['Admin', 'admin']])`** — Parameterized assertion that each listed route exists and its `meta.access` equals the expected value. The expected value is hard-coded, not read back from the record, so a mutation of the value is caught.
-- **`it('declares no route this file does not know about')`** — Exhaustiveness guard: asserts the sorted list of all route names in the module is exactly `['Admin']`. A new route added without an entry in the `it.each` table fails here.
+- **`byName(name)`** — local helper that finds a `RouteRecordRaw` by its `name` property from the imported `routes` array.
+- **`'Admin declares access: admin'`** — parameterised (`it.each`) assertion that the `Admin` route exists and its `meta.access` equals `'admin'`.
+- **`'declares no route this file does not know about'`** — whitelist guard: the sorted list of all route names must equal `['Admin']`. Catches a newly added route that no one has assigned an access level to.
 
 ## Relationships
 
-- **`src/modules/admin/routes.ts`** — The sole production import. The spec reads the raw `routes` array directly (not a resolved router), so no app bootstrap, locale prefix, or router instance is required.
+- **`src/modules/admin/routes.ts`** — the sole import target. The test reads its default-exported array of route records and asserts on their `meta` fields and the set of names. No other module or test depends on this file.
 
 ## Notes
 
-- The access expectations are deliberately written as literals (`'admin'`) rather than derived from the route records. This means a developer who changes the access level on a route will get a test failure rather than a silent re-blessing.
-- The file lives in the admin module (not a shared/platform spec) so that deleting the module doesn't orphan a platform-level test. See `docs/theory/modules.md` for the rationale.
-- A separate router spec (not in this file) verifies that the access-check middleware is actually attached at runtime; this spec only verifies the *declaration* is present on the records.
+- The access value (`'admin'`) is **hard-coded in the test** rather than read back from the route. The doc comment explains this is deliberate: deriving the expected value from the record under test would make the assertion tautological and unable to detect a missing field.
+- The file lives in the admin module (not a shared/platform spec) so that deleting the admin domain doesn't break an unrelated test suite — see `docs/theory/modules.md`.
+- Because it inspects raw route records, it runs without `vue-router`'s `createRouter`, locales, or guards.

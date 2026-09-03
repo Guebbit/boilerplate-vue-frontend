@@ -2,28 +2,25 @@
 
 ## Purpose
 
-Vitest spec for the delivery Pinia store. It transport-mocks the HTTP layer (same pattern as the wishlist spec) to verify the store's API surface, the `effectivePrice` free-above display rule, and the critical 404-vs-other-error distinction on shipment reads.
+Vitest spec for the delivery Pinia store. It mocks the HTTP layer (`orvalMutator`) and verifies that the store's public surface — method list, display pricing, shipment read, and advance action — behaves per the API contract, with special attention to the 404-as-"nothing shipped yet" convention and the free-above pricing rule.
 
 ## Key elements
 
-- **`METHODS`** – Fixture array with two delivery methods: `standard` (price 5, `freeAbove: 100`) and `express` (price 15, no threshold).
-- **`responses`** – Module-level `Record<string, unknown>` keyed `"METHOD /url"`, reset in `beforeEach`. Tests mutate it to simulate different HTTP outcomes.
-- **`rejectWith(status, message)`** – Builds the API's reject envelope (`{ success: false, status, message, errors }`). The store identifies "nothing shipped yet" by reading `status` off this shape.
-- **`vi.mock('@/infrastructure/http')`** – Replaces `orvalMutator` with a lookup against `responses`; unmatched keys resolve to a 404 reject.
-- **`beforeEach`** – Activates a fresh Pinia, clears mocks, and seeds default 200 responses for `/delivery/methods`, `/delivery/order/order-1`, and `/delivery/advance`.
-- **`describe('fetchMethods')`** – Asserts the store mirrors the API method list by id.
-- **`describe('effectivePrice')`** – Verifies the threshold is inclusive (`100 → 0`, `99.99 → 5`) and that a method without `freeAbove` is never free.
-- **`describe('fetchShipmentForOrder')`** – Two tests: a 404 resolves to `undefined` (nothing shipped), while a 500 rejects with the envelope and does **not** swallow into "nothing shipped".
-- **`describe('advance')`** – Confirms the return value passes through the API's count.
+- **`METHODS`** — Two fixture delivery methods: `standard` (price 5, `freeAbove` 100) and `express` (price 15, no threshold).
+- **`responses`** — Module-level `Record<string, unknown>` holding mocked HTTP responses keyed `"METHOD /url"`; reset in `beforeEach`.
+- **`rejectWith(status, message)`** — Builds the exact error envelope (`{ success, status, message, errors[] }`) that `onResponseReject` would produce, so the store's `status`-reading logic is exercised faithfully.
+- **`vi.mock('@/infrastructure/http')`** — Replaces `orvalMutator` with a lookup against `responses`; unknown keys → 404 reject, `Error` values → 500 reject, otherwise resolve.
+- **`describe('fetchMethods')`** — Asserts the store's `methods` array mirrors the API payload order.
+- **`describe('effectivePrice')`** — Verifies the free-above rule: at the threshold → 0, just below → base price, no threshold → never free.
+- **`describe('fetchShipmentForOrder')`** — Two cases: (1) 200 → shipment stored; then 404 → `shipment` is `undefined` (resolves, not rejects). (2) 500 → promise rejects with `{ status: 500 }`; the store does *not* swallow it.
+- **`describe('advance')`** — Asserts the resolved count of parcels advanced.
 
 ## Relationships
 
-The dependency graph reports no neighbors for this file. (It imports `useDeliveryStore` from `@/modules/delivery/store.ts` and mocks `@/infrastructure/http`, but neither appears in the graph.)
+No graph neighbors are recorded for this file. It imports the store under test (`@/modules/delivery/store.ts`) and the mocked module (`@/infrastructure/http`), but the dependency graph lists no external neighbors to document.
 
 ## Notes
 
-- **404 is the only "soft" failure.** Any other status (500, network error) must reject; the test explicitly guards against the store collapsing them into `undefined`. This is called out as "the one wrong answer this panel can give."
-- **Reject shape is not a native `Error`.** `rejectWith` produces a plain object matching the API envelope; an eslint-disable comment documents this as the client's rejection contract.
-- **`freeAbove` is inclusive.** At exactly `freeAbove` the price drops to 0; just below it the full price applies.
-- **Mid-test mutation of `responses`.** The shipment test clears `responses` between two `.then()` calls in the same chain to simulate a 404 on the second read—there is no separate mock call to reconfigure.
-- **Mock keying.** The `orvalMutator` stub looks up responses by upper-cased method + space + URL. Adding a new endpoint to the store requires a matching key in `beforeEach`.
+- The 404-vs-500 distinction is the single most important behavior under test: only a 404 is treated as "no shipment"; any other status must reject so the UI can show a real error rather than falsely reporting "nothing shipped yet."
+- `rejectWith` intentionally rejects with a plain object (not an `Error`), matching the project's `onResponseReject` contract. An ESLint disable comment documents this.
+- `responses` is mutated inside test bodies (e.g., set to `{}` mid-chain, or overwritten with an `Error` value) to simulate different server states without re-running `beforeEach`.

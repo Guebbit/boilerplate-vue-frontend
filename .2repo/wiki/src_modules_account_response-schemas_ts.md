@@ -2,20 +2,19 @@
 
 ## Purpose
 
-Declares the complete list of response-envelope schemas for every account-domain HTTP endpoint. Each entry pairs an HTTP method with a URL regex and a Zod (or equivalent) schema so the `infrastructure/http` layer can validate a live response against the expected contract. The array is registered through the module manifest, making validation toggleable by simply enabling or removing the account module.
+Declares the response-envelope schema for every account endpoint (method + URL pattern → Zod schema) so that `infrastructure/http` can validate each HTTP response against its contract by matching the originating request. Enabling the account domain turns this validation on; deleting the folder turns it off.
 
 ## Key elements
 
-- **`accountResponseSchemas`** (`ResponseSchemaRoute[]`) — the sole export. An 18-entry array covering all account routes: delete account (incl. confirm), login, signup, password reset (incl. confirm), delete expired tokens, update account, change password, logout, list/revoke sessions, email verification (request + confirm), and CRUD on addresses.
-- **`ResponseSchemaRoute`** (imported type) — the shape each row must satisfy: `{ method, pattern, schema }`. The type's doc comment (referenced in the JSDoc) is the single source of truth for the two invariants every row obeys.
-- **`@api/schemas`** (imported namespace) — provides every named response schema (e.g. `LoginResponse`, `GetAddressesResponse`). This file only *maps* them to routes; it defines none.
+- **`accountResponseSchemas: ResponseSchemaRoute[]`** — the sole export. A flat array of route entries covering all account endpoints (login, signup, password reset, 2FA, OAuth, sessions, addresses, account CRUD, reauth, data export, etc.). Each entry specifies `method`, a `pattern` (RegExp), and a `schema` imported from `@api/schemas`.
+- **`ResponseSchemaRoute`** (imported type from `@/infrastructure/http/response-schema-map`) — the shape each row must satisfy; the two invariants (first-match-wins, keying by method+pattern) are documented on that type.
 
 ## Relationships
 
-- **`src/modules/account/module.ts`** — the module manifest imports `accountResponseSchemas` and registers it into the HTTP layer's global schema map. Removing or disabling the account module removes these 18 contracts from validation with no other changes required.
+- **`src/modules/account/module.ts`** — registers `accountResponseSchemas` in the module manifest. The infrastructure layer reads the manifest to build its route→schema lookup table; this file supplies the account-domain rows. No other file in the account module imports this file directly.
 
 ## Notes
 
-- URL patterns use anchored regexes (`^…$`). Parameterized segments (session ID, address ID) are matched with `[^/]+` rather than named groups; the matcher in `infrastructure/http` is responsible for capturing any path params.
-- The two rows that could be ambiguous by path alone are disambiguated by method: e.g. `POST /account/addresses` (create) vs `PUT /account/addresses/:id` (update) vs `DELETE /account/addresses/:id` (remove).
-- Adding a new account endpoint requires two steps: add its schema to `@api/schemas` **and** add a row here. Forgetting the second step means the response will pass through unvalidated.
+- **Order matters.** Lookup uses `find()` (first match wins). The `oauth/providers` row is deliberately placed *before* the generic `oauth/:provider` row; a static segment that would otherwise be swallowed by a parameterised pattern must precede it. Apply the same rule when adding new routes.
+- **OAuth start/complete rows** (`GET /account/oauth/:provider` and `.../callback`) have `zod.void()` schemas and are never actually validated because they are browser navigations, not axios calls. They exist to keep the table a *complete* contract map with no silent gaps.
+- **Schema source.** All schemas come from the generated `@api/schemas` package — do not define Zod schemas inline here.

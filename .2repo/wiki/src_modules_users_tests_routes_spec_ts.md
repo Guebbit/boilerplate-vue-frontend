@@ -2,20 +2,22 @@
 
 ## Purpose
 
-Vitest spec that asserts every users route record declares the expected `meta.access` value and that no route exists without an explicit access decision. It guards against a route silently losing its access restriction, which would otherwise be indistinguishable from a public route in all other tests.
+Pins the `meta.access` declaration on every users-module route by name. It reads the raw route records directly (not a resolved router), so it needs no locale prefix or app context. Its role is to prove the access declarations are *present*; a separate router spec proves enforcement is *attached*. Together they ensure a route cannot silently become public.
 
 ## Key elements
 
-- **`byName(name)`** — local helper that looks up a `RouteRecordRaw` from the imported `routes` array by its `name` property.
-- **`it.each` access assertions** — iterates a hard-coded table (`UsersList`, `UserCreate`, `UserTarget`, `UserEdit` → all `'admin'`) and asserts both that the route exists and that `meta.access` matches.
-- **Completeness test** (`'declares no route this file does not know about'`) — compares the sorted list of all route names against the known set, catching any newly added route that lacks an access decision.
+- **`byName(name: string): RouteRecordRaw | undefined`** — local lookup helper; finds a route record in the imported `routes` array by its `name` field.
+- **`describe('users route access')`** — the sole test block.
+- **`it.each([...])`** — parameterized assertion: for each `(name, access)` pair (`UsersList`, `UserCreate`, `UserTarget`, `UserEdit` → `'admin'`), asserts the route exists and its `meta.access` matches exactly.
+- **`it('declares no route this file does not know about')`** — guardrail test: compares the sorted list of all route names in `routes` against the sorted list of names hardcoded in the `it.each` table. Fails if a new route is added to `routes.ts` without a corresponding entry here.
 
 ## Relationships
 
-- **`src/modules/users/routes.ts`** — the sole import under test. This spec reads the raw `RouteRecordRaw` array directly (not a resolved router), so it needs no locale prefix or app context. The router spec (elsewhere) proves enforcement is *attached*; this spec proves the declarations are *present*.
+- **`src/modules/users/routes.ts`** — the sole import. The test reads the exported `routes` array (typed as `RouteRecordRaw[]`) and inspects each record's `name` and `meta.access` fields. No mocking; it exercises the real array as the module ships it.
 
 ## Notes
 
-- The expected access values are written out explicitly rather than derived from the route records themselves. This is intentional: deriving from the source would make the test a tautology if a `meta.access` field were accidentally removed.
-- The file lives in the users module (not a shared platform spec) so that deleting the domain does not break unrelated specs.
-- Asserts against the module's own route records, not a mounted `createRouter` instance, keeping the test dependency-free.
+- Expected access values are **hardcoded**, not derived from the source. This is deliberate: if `meta.access` is accidentally removed from a route, the assertion `toBe('admin')` fails rather than passing vacuously.
+- The "no unknown route" test is a **completeness gate**: adding a route to `routes.ts` without updating this spec breaks the build, forcing the developer to make an explicit access decision.
+- Uses `toSorted()` (immutable) rather than `sort()` to avoid mutating the route-name arrays.
+- The file lives under `tests/` within the users module, co-located with the domain it documents (per the module convention referenced in the header comment).

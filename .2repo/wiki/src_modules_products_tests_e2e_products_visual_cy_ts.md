@@ -2,22 +2,19 @@
 
 ## Purpose
 
-Declares the screen list for the products module's visual-regression sweep. It is a thin "registration" file: it tells the shared sweep mechanism which URL and target selector to photograph, and nothing else. It exists so that deleting the products module also deletes its snapshot PNGs (stored in a sibling `__snapshots__/` folder) rather than leaving orphaned baselines in a central directory.
+Declares the list of screens for the products module's visual-regression sweep. It registers a single screen (`products-list`) so the shared `sweepVisual` harness can capture and compare a screenshot of the rendered page.
 
 ## Key elements
 
-- **`sweepVisual('products', …)` call** — registers one screen for capture:
-  - Screen id: `products-list`
-  - Route: `/en/products`
-  - Root selector: `#products-list-page`
-- No other exports, classes, or functions. The file has a single executable statement.
+- **`sweepVisual('products', …)` call** — the sole statement in the module. Passes the module name and an array of screen tuples to the harness.
+- **Screen tuple `['products-list', '/en/products', '#products-list-page']`** — defines one screen: a human-readable name, the URL to navigate to, and a CSS selector that anchors the screenshot crop.
 
 ## Relationships
 
-- **`tests/support/e2e/visual-sweep.ts`** — provides the `sweepVisual` helper. All navigation, waiting, and screenshot-taking logic lives there; this file only supplies the screen tuple. Changes to the sweep's timing, viewport, or snapshot-naming conventions are made in that support file, not here.
+- **`tests/support/e2e/visual-sweep.ts`** — provides the `sweepVisual` function. This file is its consumer: it supplies the module name and screen definitions that the harness iterates over to drive navigation, waiting, and screenshot capture.
 
 ## Notes
 
-- Not included in `npm run complete`. Invoke with `npm run test:e2e:visual`; regenerate baselines with `npm run test:e2e:visual:update`.
-- The project convention (stated in the file header) is that re-recording **must** be preceded by visually inspecting the diff image. Blind re-recording is explicitly discouraged.
-- Because baselines live in `__snapshots__/` adjacent to this file, moving or renaming this file without moving the snapshots will break the suite silently (Cypress will just create fresh baselines).
+- Excluded from `npm run complete`. Invoke via `npm run test:e2e:visual`.
+- Re-recording snapshots (`npm run test:e2e:visual:update`) should only be done after visually inspecting the diff image — the doc-block makes this a hard requirement, not a suggestion.
+- Adding a new screen is as simple as appending another `[name, url, selector]` tuple to the array; no other wiring is needed.

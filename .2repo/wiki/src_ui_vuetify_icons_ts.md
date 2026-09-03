@@ -2,21 +2,19 @@
 
 ## Purpose
 
-Integrates **lucide-vue-next** as Vuetify's icon system, replacing the default `@mdi/font` icon-font payload. It provides the alias map Vuetify uses internally and the render function Vuetify calls to produce an icon vnode.
+Wires **lucide-vue-next** into Vuetify as the application's icon system, replacing Vuetify's default `@mdi/font` icon font. It provides the alias table Vuetify internals look up by name and the render function that turns a resolved icon component into a vnode.
 
 ## Key elements
 
-- **`lucideAliases: IconAliases`** — Maps every icon name Vuetify components reference (e.g. `collapse`, `checkboxOn`, `sortAsc`, `ratingHalf`, `backspace`) to a specific lucide-vue-next component. Includes a block of hotkey glyphs (`command`, `ctrl`, `space`, `shift`, `alt`, `enter`, arrow keys, `backspace`) used by `v-hotkey` and related components.
-- **`lucideIconSet: IconSet`** — Supplies the single `component` render function Vuetify invokes. It calls `h(props.icon as Component, { size: '1.25em', strokeWidth: 2 })` to produce the vnode.
-- **~45 lucide-vue-next icon imports** — Concrete components (Chevrons, Circles, Arrows, etc.) referenced by the alias map.
+- **`lucideAliases`** (`IconAliases`) — Maps ~45 Vuetify-internal icon names (`collapse`, `checkboxOn`, `radioOff`, `sortAsc`, `loading`, hotkey glyphs, etc.) to specific lucide-vue-next components. Vuetify components reference icons through these keys; no alias entry is needed when a view passes a lucide component directly to an `icon` prop.
+- **`lucideIconSet`** (`IconSet`) — Exposes a single `component` function. Vuetify calls it with resolved `IconProps`; it invokes `h(props.icon, { size: '1.25em', strokeWidth: 2 })` to produce the icon vnode.
 
 ## Relationships
 
-- **`src/ui/vuetify/index.ts`** — Imports `lucideAliases` and `lucideIconSet` from this file and registers them as the active icon system when creating/configuring the Vuetify app instance. This is the sole consumer in the dependency graph.
+- **`src/ui/vuetify/index.ts`** — Imports `lucideAliases` and `lucideIconSet` and registers them as the `icons` option in the Vuetify plugin configuration, making this module the sole icon source for every Vuetify component in the app.
 
 ## Notes
 
-- `ratingEmpty` and `ratingFull` both resolve to the same `Star` component; Vuetify differentiates them via CSS/props, not by swapping components.
-- The render function hard-codes `size: '1.25em'` and `strokeWidth: 2`; there is no per-call override path visible here.
-- Views can bypass the alias map entirely by passing any lucide component directly to a Vuetify `icon` prop — the render function just renders whatever `props.icon` holds.
-- `ctrl` is mapped to `ChevronUp`, which is a stand-in glyph rather than a dedicated "control" symbol in the lucide set.
+- `size: '1.25em'` and `strokeWidth: 2` are deliberately chosen to match Vuetify's default icon-font visual weight so lucide icons align with surrounding text and other UI elements.
+- Several hotkey aliases are visual approximations rather than literal key glyphs (e.g. `ctrl` → `ChevronUp`, `space` → `RectangleHorizontal`, `alt` → `Option`).
+- Both `ratingEmpty` and `ratingFull` map to the same `Star` component; visual differentiation is expected to come from Vuetify's `rating` component styling rather than a distinct icon.

@@ -2,22 +2,29 @@
 
 ## Purpose
 
-Unit tests for the `useAddressesStore` that exercise all four address-book endpoints (fetch, add, update, delete) with only the HTTP transport mocked. The store's own fetch-after-write logic runs unmocked so the tests verify that the local list is always *replaced* by the server's full-book response rather than patched row-by-row.
+Unit tests for the `useAddressesStore` Pinia store. The only external dependency mocked is the HTTP transport (`orvalMutator`), so the store's real fetch-after-write logic (replace-the-whole-book, not patch-a-row) executes under test. The suite pins the invariant that the server is the source of truth for default-address promotion and list contents after every mutation.
 
 ## Key elements
 
-- **`lastRequest()`** — Helper that pulls the axios config (url, method, data) from the most recent `orvalMutator` call, or throws if none occurred.
-- **`respondWithBook(addresses)`** — Configures the mocked `orvalMutator` to resolve with `{ data: { addresses } }`, simulating a server that always returns the whole book.
-- **`describe('useAddressesStore')`** — Six tests covering: initial empty state; GET fetch; POST add; PUT update by id; DELETE with server-side default promotion; and the `?? []` fallback when the payload lacks an `addresses` key.
-- **Fixtures `HOME` / `WORK`** — Two static address objects (one default, one not) used across tests to represent a two-entry book.
+- **`lastRequest()`** – inspects the most recent `orvalMutator` mock call and returns its axios config (`url`, `method`, `data`) for assertion.
+- **`respondWithBook(addresses)`** – sets the mock transport to resolve with `{ data: { addresses } }`, i.e. a full-book response for any subsequent endpoint call.
+- **`HOME` / `WORK`** – two fixed fixture addresses (one default, one not) used across all test cases.
+- **Test cases** (one per CRUD verb + two edge cases):
+  - Initial state is an empty array.
+  - `fetchAddresses` issues GET `/account/addresses` and stores the returned list.
+  - `addAddress` issues POST and **replaces** the local list with the response.
+  - `updateAddress` issues PUT to `/account/addresses/:id` and replaces the list.
+  - `removeAddress` issues DELETE to `/account/addresses/:id` and adopts the server-promoted default from the response.
+  - A payload with no `addresses` key (`{ data: {} }`) is normalised to `[]`, never `undefined`.
 
 ## Relationships
 
-- **`@/infrastructure/http`** (graph neighbor) — The single module under test. `orvalMutator` is imported and then fully replaced via `vi.mock`, so no real HTTP call is ever made. The store under test (`useAddressesStore`) calls `orvalMutator` internally; these tests assert on the shape of the request it receives and the response it is fed back.
+- **`@/infrastructure/http`** (`src/infrastructure/http/index.ts`) – the sole module under test's dependency. `orvalMutator` is imported and replaced via `vi.mock`; all HTTP assertions go through it. The test never touches the real axios instance or network.
+- **`@/modules/account/stores/addresses.ts`** – the SUT. Every assertion reads `store.addresses` or the return value of a store action; the test exercises the store's own `?? []` normalisation in `readAddressesResponse`.
 
 ## Notes
 
-- The central invariant being pinned: **exactly one default address**, which is a property of the *list*, not of any single row. Every write test therefore asserts the full array is swapped, not that one element changed.
-- The `removeAddress` test is the sharpest case: if the store deleted the row locally, the book would briefly show zero defaults. The test confirms the store instead awaits the server's answer (which promotes the oldest survivor to `default: true`) before updating state.
-- The empty-payload test (`data: {}`) guards the `?? []` fallback inside `readAddressesResponse`; without it, consumers calling `.map()` on the result would crash at render time rather than showing an empty list.
-- `beforeEach` creates a fresh Pinia instance and clears all mocks, so tests are fully isolated with no cross-test state.
+- **Replace, don't patch.** Every endpoint is stubbed to return the *entire* book. A store that locally splices or patches a single row would pass a naive stub test but fail here, because the suite asserts `store.addresses` equals the full response array.
+- **Default promotion is server-side.** The `removeAddress` test explicitly sets the post-delete book to `[{ ...WORK, default: true }]` and asserts the store shows it. A client that deletes the row and re-evaluates defaults locally would produce a different (incorrect) state.
+- **Sparse-payload guard.** The final test mocks `{ data: {} }` (no `addresses` key) to verify the `?? []` fallback. Without it, downstream `.map()` calls would throw a render-time crash rather than showing an empty list.
+- **Mock default is `{ data: {} }`.** Before a test calls `respondWithBook`, the transport resolves an empty object. This is intentional—it mirrors the sparse-payload edge case and ensures no test accidentally relies on a "sensible" default shape.

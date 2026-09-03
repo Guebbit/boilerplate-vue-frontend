@@ -2,27 +2,26 @@
 
 ## Purpose
 
-The cart page view. Renders the visitor's cart lines (product title, quantity stepper, remove) alongside a summary panel with shipping selection and checkout/clear actions. It layers a debounced local stepper on top of the store's quantity update so rapid clicks collapse into one request per line.
+The cart page component. Renders the current cart's line items (with quantity steppers) and a sticky order summary, and drives the checkout flow. It layers a debounced local stepper on top of the store's quantity update so rapid clicks collapse into one request per line, and handles the four distinct checkout-refusal shapes with targeted UI (inline shortfall list, stale-cart refetch, generic toast).
 
 ## Key elements
 
-- **`checkout`** – Calls the store's `placeOrder` (passing `shippingMethodId` only when set), toasts success, and navigates to `OrdersList`. Navigation is fire-and-forget (`void`) so a `NavigationFailure` never converts a completed checkout into an error toast.
-- **`lineQuantity(item)`** – Returns the pending (visitor-side) quantity from `useLineQuantity` while a step is outstanding, falling back to the store's `item.quantity`.
-- **`removeLine(productId)`** – Calls `forget(productId)` *before* `removeCartItem` to discard any queued step that would otherwise fire after removal and re-create the line.
-- **`useLineQuantity(updateCartItem, …)`** – Composable providing `quantityOf`, `stepQuantity`, `forget`, `flushPending`. All debouncing/race-avoidance logic lives there, not in this view.
-- **`shippingMethodId`** – `ref<string | undefined>`; `undefined` means "no shipping method" (matches the API contract). Bound two-way to `<ShippingSelector>`.
-- **`onMounted`** – `fetchCart()` then `resolveTitles` for all product IDs so the view can display names immediately.
-- **`onBeforeUnmount(flushPending)`** – Flushes any in-flight debounced step so the request isn't lost.
-- **`MIN_LINE_QUANTITY`** – Imported from `@/modules/cart/domain`; disables the decrement button at the floor.
+- **`checkout()`** — Places an order via the cart store's `placeOrder` action. On success: success toast + fire-and-forget navigation to `OrdersList`. On failure: routes through `classifyCheckoutError` to handle `cart-changed` (refetch), `insufficient-stock` (pop `insufficientStockLines` for inline rendering), `address-not-found` (toast), or a generic error toast.
+- **`useLineQuantity(updateCartItem, onError)`** — Composable that debounces per-product quantity changes. Exposes `quantityOf` (shows pending step value), `stepQuantity`, `forget` (cancel pending), and `flushPending` (fire any in-flight step).
+- **`removeLine(productId)`** — Calls `forget(productId)` before `removeCartItem` so a queued step can't resurrect a deleted line. Errors surface as toasts.
+- **`lineQuantity(item)`** — Returns the quantity to display: the visitor's pending step if one is outstanding, otherwise the store's value.
+- **`insufficientStockLines`** — Reactive array of `CheckoutShortfallLine` rendered as an inline `v-alert` listing each short line's title, requested, and available quantity.
+- **`onMounted` / `onBeforeUnmount`** — Fetches the cart and resolves product titles on mount; flushes any pending quantity steps on unmount.
+- **`shippingMethodId`** — Optional ref bound to `<ShippingSelector>`; passed into `placeOrder` only when set.
 
 ## Relationships
 
-- **`src/infrastructure/utils/logger.ts`** – Appears in the dependency graph but no direct import or call is visible in this file's source. Interaction (if any) is indirect, likely through `notifyErrorMessages` in `errors.ts` or the store.
+- **`src/infrastructure/utils/logger.ts`** — Graph neighbor via the dependency graph, but no direct import or call is visible in this file. The error path routes through `notifyErrorMessages` (from `@/infrastructure/utils/errors.ts`), which may internally use the logger, but that indirection is not expressed here.
 
 ## Notes
 
-- Two `<script>` blocks: a plain one for the component `name` and a `<script setup>` for logic. This is a project convention, not a mistake.
-- The stepper's clamping rule (min quantity, max) is intentionally **not** in this file — it lives in `use-line-quantity.ts` / `domain/quantity.ts`. Don't add `Math.max`/`Math.min` guards here.
-- `data-test` attributes are present on every interactive element for e2e selectors; keep them when refactoring the template.
-- `titleOf` and `resolveTitles` come from the cart store; the view never fetches product names independently.
-- The summary card is sticky on `lg+` (`lg:sticky lg:top-20`) — layout, not behavior, but worth preserving if the grid changes.
+- The quantity floor (`MIN_LINE_QUANTITY`) is imported from `@/modules/cart/domain` — it is a domain rule, not a template concern. The composable `use-line-quantity.ts` owns the clamping logic.
+- `checkout()` clears `insufficientStockLines` at the top of every call so a new attempt starts clean.
+- The post-checkout `router.push` is deliberately fire-and-forget (`void`): a navigation failure must not turn a completed checkout into an error toast.
+- `data-test` attributes (`cart-item`, `cart-decrease`, `cart-increase`, `cart-remove`, `checkout-shortfall`, `checkout-shortfall-line`, `cart-summary`) are the E2E hooks; prefer them over structural selectors in tests.
+- The template file was truncated in the source provided; the checkout button (below `v-divider` in the summary column) and any trailing markup are not visible here.

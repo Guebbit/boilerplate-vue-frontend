@@ -2,25 +2,26 @@
 
 ## Purpose
 
-Unit-test spec for the `Product` detail view that mounts the real component against a real (memory-history) router and a real Pinia store, but stubs the fetch layer so every product shape the API can return is exercised in a single in-memory run — no browser, no network round trip per shape.
+Unit test for the `Product` detail view. It mounts the real component against a real (memory-history) router and exercises multiple product **shapes**—out-of-stock, in-stock, minimal, rich—by seeding data directly into the Pinia store, bypassing the network layer entirely.
 
 ## Key elements
 
-- **`mountProduct(product)`** — Core helper. Stubs `watchProduct` (via `vi.spyOn`), seeds the given product directly into the products store, stubs `fetchWishlist`, then mounts `Product.vue` with the real router, Vuetify, and i18n plugins. Returns a `VueWrapper`.
-- **`router`** — Built with `createMemoryHistory` + `collectModuleRoutes(enabledModules)`, mirroring the production router structure in `app/router/index.ts`.
-- **`signIn()`** — Seeds the session store with a token and viewer so the add-to-cart button renders (rather than a login prompt).
-- **`beforeEach`** — Resets Pinia, loads the `en` locale, and navigates the router to `/en/products/placeholder`.
-- **`describe('the shelf')`** — Asserts disabled/enable state of `[data-test=add-to-cart]` and stock-label text for `available: 0` vs `available: 4`.
-- **`describe('a barebones product')`** — Asserts the empty-description fallback glyph (`—`) for a minimal shape, and correct rendering when `description` and `categories` are present.
+- **`router`** – A Vue router built with `createMemoryHistory` and `collectModuleRoutes(enabledModules)`, mirroring the production routing structure so the component renders in its real route context.
+- **`mountProduct(product)`** – Core helper: stubs `watchProduct` and `fetchWishlist`, seeds the given product into `useProductsStore`, then mounts `Product.vue` with the router, Vuetify, and i18n plugins. Returns a Vue Test Utils wrapper.
+- **`signIn()`** – Sets `accessToken` and `viewer` on the session store so the add-to-cart button is visible (not hidden behind a login prompt).
+- **`noopStopHandle`** – A no-op that satisfies the `WatchStopHandle` return type required by the `watchProduct` spy.
+- **`describe('the shelf')`** – Asserts add-to-cart is disabled and "Out of stock" text appears when `available` is 0; asserts the opposite when `available > 0`.
+- **`describe('a barebones product')`** – Asserts the page renders for a product with only `id`, `title`, `price` (showing the `—` empty-value glyph), and that a full `description`/`categories` pair renders normally.
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** — Called at module top-level via `wireModulesIntoCore()` to register module side-effects (e.g. Pinia store providers, router guards) so the real `collectModuleRoutes` output is complete before the router is constructed.
-- **`contracts/rest/index.ts`** — Source of the `Product` type shape (imported here as `ProductType` from `@types`). The object literals passed to `mountProduct` must conform to the REST contract fields; changes to optional/required fields in the contract surface as compile errors in this spec.
+- **`tests/support/unit/wire-modules.ts`** – Imported as `wireModulesIntoCore` and called at module scope before any test runs, wiring module registrations into the kernel so `collectModuleRoutes` and store resolution work.
+- **`contracts/rest/index.ts`** – Referenced conceptually: the "barebones product" test documents the shape `POST /products` returns for a minimal payload (only required fields), keeping the unit test as the living spec for that contract branch.
 
 ## Notes
 
-- `watchProduct` is spied with a `noopStopHandle` (returns `undefined`) — the store never initiates a real fetch. If a future refactor changes `watchProduct`'s signature, the spy's return type will break first.
-- `fetchWishlist` is also stubbed per-mount; without it, a signed-in mount would trigger a real HTTP call the mocked transport cannot answer.
-- The test uses `[data-test=…]` attributes as its only DOM selectors — adding or renaming those attributes in `Product.vue` breaks the spec silently (`.get` throws).
-- The "barebones product" block explicitly replaced the e2e `ProductRole.minimal` fixture; do not re-introduce that fixture expecting this spec to cover it.
+- `watchProduct` is always spied with `mockImplementation(() => noopStopHandle)`—the store's own fetch never fires. The shape under test is injected via `addProduct` + `selectedProductId`.
+- `fetchWishlist` is stubbed per-mount to prevent a real transport call that the mocked environment cannot answer.
+- `LayoutDefault` is stubbed to a pass-through `<slot>` wrapper; any layout-level side effects are out of scope.
+- The `beforeEach` pushes the router to `/en/products/placeholder` and awaits `router.isReady()`—the actual product ID in the URL is irrelevant because the component reads its prop, not the param.
+- The comment notes this test supersedes a former e2e `ProductRole.minimal` fixture that had zero callers; the unit-level assertion is the sole remaining coverage for the minimal shape.

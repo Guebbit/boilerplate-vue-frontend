@@ -2,24 +2,26 @@
 
 ## Purpose
 
-Route view that renders the live SSE observability state from the `useRealtimeObservability` composable. It shows the current connection status, a KPI summary derived from the most recent event, and a scrollable feed of all received events with a per-entry toggle between a formatted metric grid and the raw JSON payload.
+Route-level view that renders the live Server-Sent Events (SSE) observability stream. It exposes connection controls, a KPI summary of the most recent event, and a scrollable feed of all received metric entries with an optional raw-JSON toggle. It exists as the human-facing "playground" for the `useRealtimeObservability` composable.
 
 ## Key elements
 
-- **`showRawEvents`** (`ref<boolean>`) — switch that, when on, replaces each feed entry's metric grid with a `<pre>` of the full JSON payload.
-- **`KIND_META`** — static map from `RealtimeMetricsEntry['kind']` (`snapshot` | `update` | `heartbeat`) to a lucide icon, Vuetify chip color, and left-border utility class.
-- **`latestEntry`** (computed) — last element of `observabilityEntries`; drives the KPI tile row above the feed.
-- **`feedEntries`** (computed) — `observabilityEntries` reversed so the newest event appears at the top.
-- **`onUnmounted(disconnectObservability)`** — guarantees the SSE connection is torn down when the user navigates away.
-- **Template** — wraps everything in `LayoutDefault`; KPI tiles use `CardMaterialStat`; the feed is a `max-h-[320px]` scrollable `role="log"` container with `tabindex="0"`.
+- **`showRawEvents` (ref)** — toggles each feed entry between a formatted metric grid (`<dl>`) and a `<pre>` of `JSON.stringify(payload, null, 2)`.
+- **`KIND_META`** — maps each `RealtimeMetricsEntry['kind']` (`snapshot`, `update`, `heartbeat`) to a Lucide icon, chip color, and left-border accent class.
+- **`latestEntry` (computed)** — the last item in `observabilityEntries`; drives the KPI stat tiles at the top of the card.
+- **`feedEntries` (computed)** — `observabilityEntries` reversed so the newest event appears first (avoids manual scroll-to-bottom).
+- **`onUnmounted(disconnectObservability)`** — ensures the SSE connection is closed when the route is left.
+- **KPI section** — four `CardMaterialStat` tiles (uptime, heap, requests/errors, SSE clients) populated from `latestEntry.payload`.
+- **Feed section** — `role="log"`, `tabindex="0"` scroll container (max-h 320 px) with one `v-card` per entry; a `role="status"` / `aria-live="polite"` paragraph above it announces only the latest event summary (not the whole list).
 
 ## Relationships
 
-- **`src/modules/realtime/routes.ts`** — registers this component as the route target for the playground path; the component is a passive view, all state lives in the composable.
-- **`docs/api/asyncapi-workflow.md`** — documents the SSE contract (event kinds, payload shape) that this view renders; the `KIND_META` keys and the `RealtimeMetricsEntry` payload fields (`uptimeSeconds`, `memory.heap*`, `http.totalRequests/totalErrors`, `realtime.sseClients`) correspond to that spec.
+No graph neighbors are recorded for this file. It consumes `useRealtimeObservability`, `LayoutDefault`, `CardMaterialStat`, the formatters (`formatMegabytes`, `formatTime`, `formatUptime`), and the `RealtimeMetricsEntry` type — all internal imports rather than dependency-graph edges.
 
 ## Notes
 
-- The scrollable feed uses `role="log"` + `tabindex="0"` (keyboard-scrollable) rather than `aria-live` on the list itself; the live region is a separate one-line summary (`role="status"`, `aria-live="polite"`) to avoid screen readers re-announcing every card on each event.
-- `KIND_META` border classes (`border-s-info`, `border-s-primary`, `border-s-secondary`) must match the project's design-system tokens; renaming those tokens will silently break the left-border accent.
-- The component is purely presentational: it owns no state beyond the raw-events toggle. All connection logic lives in `useRealtimeObservability`.
+- **Accessibility is deliberate:** the feed container is focusable (`tabindex="0"`) because a scroll region without focus is unreachable by keyboard. The live region is a single-line summary, *not* the card list, to prevent screen readers from re-announcing every card on each event.
+- **`toReversed()`** is used (not `.reverse()`) to avoid mutating the reactive array from the composable.
+- **`KIND_META` is a plain `Record`**, not a ref/computed — it is static config, not reactive state.
+- **Status chip** uses `role="status"` with a localized `aria-label` so the bare word "open"/"closed" is contextualized for assistive tech.
+- All user-visible strings go through `t('realtime-playground-page.…')`; there are no hardcoded labels.

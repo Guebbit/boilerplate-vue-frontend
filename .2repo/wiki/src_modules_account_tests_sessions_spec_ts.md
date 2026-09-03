@@ -2,24 +2,23 @@
 
 ## Purpose
 
-Unit tests for the device-sessions Pinia store (`useAccountSessionsStore`). Only the HTTP transport layer is mocked (keyed by request URL), while the store logic itself runs for real. The file exists to verify session fetching, revocation, and graceful handling of missing payloads.
+Unit tests for `useAccountSessionsStore` covering two behaviours: fetching the device-sessions list and revoking a single session (which should trigger a re-fetch). Only the HTTP transport is mocked; the Pinia store runs for real. Follows the same mock-by-URL pattern as `profile.spec.ts`.
 
 ## Key elements
 
-- **`responses`** — Module-level mutable record mapping `"METHOD /url"` strings to canned API responses. Reset in `beforeEach` to a default fixture (one current session `s1`).
-- **`vi.mock('@/infrastructure/http', …)`** — Replaces `orvalMutator` with a stub that looks up `responses` using the request's `method` and `url`.
-- **`requestedUrls()`** — Helper that extracts the sequence of URL strings passed to the mocked transport, used to assert call order.
-- **`beforeEach`** — Resets Pinia (`setActivePinia(createPinia())`), clears all mocks, and restores the default `responses` fixture.
-- **`describe('useAccountSessionsStore')`** — Contains two specs:
-  - *revokeSession reloads the list it changed* — Asserts the transport is called in order `GET /account/sessions` → `DELETE /account/sessions/s1` → `GET /account/sessions`, and that the store's session list reflects the server response.
-  - *a sessions payload without the list reads as no sessions* — Overrides the GET response with `{ data: undefined }` and asserts `store.sessions` resolves to `[]`.
+- **`responses`** — module-level `Record<string, unknown>` mapping `"METHOD /url"` keys (e.g. `"GET /account/sessions"`) to canned API responses. Reset in `beforeEach`.
+- **`vi.mock('@/infrastructure/http', …)`** — replaces `orvalMutator` with a function that looks up `responses` by the upper-cased method + URL and resolves the matching payload.
+- **`requestedUrls()`** — utility that extracts every `url` from the mocked `orvalMutator`'s call history, in order.
+- **`beforeEach`** — creates a fresh Pinia instance, clears all mocks, and seeds default responses for `GET /account/sessions` (one session `s1`) and `DELETE /account/sessions/s1` (empty body).
+- **`it('revokeSession reloads the list it changed')`** — asserts the URL sequence is `GET → DELETE → GET` and the store's `sessions` array matches the mock.
+- **`it('a sessions payload without the list reads as no sessions')`** — overrides the GET response to `{ data: undefined }` and asserts `store.sessions` becomes `[]`.
 
 ## Relationships
 
-- **`src/infrastructure/http/index.ts`** — Provides `orvalMutator`, the single HTTP transport the store depends on. This file mocks that module entirely; no real network calls are made. The mock signature (`{ url, method }` config object) mirrors the shape expected by the actual mutator.
+- **`src/infrastructure/http/index.ts`** — its `orvalMutator` export is the sole external dependency under test; the entire module is replaced via `vi.mock`, so no real HTTP calls are made.
 
 ## Notes
 
-- Mock responses are keyed as `METHOD /path` (e.g. `'GET /account/sessions'`). When adding a new endpoint, the key must match the exact URL the store generates, including any query strings or path parameters.
-- The test for `revokeSession` asserts the *third* transport call is a re-fetch of the list — this encodes the contract that mutation operations trigger a reload, not just a local array splice.
-- The "empty payload" test (`data: undefined`) documents a deliberate defensive choice in the store: a missing `sessions` array is treated as an empty list rather than propagating `undefined`.
+- Mock keys are exact `"METHOD url"` strings (e.g. `"DELETE /account/sessions/s1"`), not glob patterns — the URL in the store's request must match character-for-character.
+- The store under test lives at `@/modules/account/stores/sessions.ts` and is imported directly (not mocked).
+- Each test creates its own Pinia via `setActivePinia(createPinia())`; there is no shared store state between tests.

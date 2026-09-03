@@ -2,30 +2,30 @@
 
 ## Purpose
 
-A single end-to-end test that walks the shop as a real user would: a guest browses and hits the sign-in wall, then a logged-in customer filters, buys, checks out, cancels the order, and confirms stock is restored. After the one deliberate login reload, every subsequent navigation goes through in-app links and buttons—no deep `cy.visit`—so surviving session state across the journey is itself part of the assertion.
+End-to-end test that walks the full customer lifecycle in one continuous session: a guest browses and hits the sign-in wall, then a signed-in customer filters products, buys, checks out, cancels the order, and confirms the shelf stock has recovered. It exists to prove the app's state persists across navigation (one shared session) and that the cancel→restock round-trip is visible to the user.
 
 ## Key elements
 
-- **`beforeEach`** — Visits `/en`, calls `cy.resetState()` to clear the server-side session, then reloads `/en` so the page in front of the browser genuinely boots as a guest.
-- **`it('guest browses but cannot buy; the customer buys, cancels, and the shelf recovers')`** — The entire journey in one test:
-  - *Guest phase*: navigates to products, applies a category filter, opens a product, asserts the add-to-cart button is disabled, a "Sign in to buy" message is present, and the wishlist toggle is absent.
-  - *Login*: `cy.loginAs('user')` (the only reload in the test).
-  - *Purchase*: re-navigates to products, applies the same filter, adds to cart, goes to the cart via the account menu, checks out.
-  - *Order verification*: asserts the orders list shows exactly one row (the new order; the seeded order is soft-deleted) and, unless `liveProfile` is set, reads the demo outbox to confirm an `orders.order-confirm` email was sent.
-  - *Cancellation*: opens the order, clicks cancel, confirms via the app's own dialog (`[data-test=app-dialog-confirm]`), asserts the cancel button is gone and a reorder button is present.
-  - *Stock recovery*: dismisses any stacked toasts, navigates back to products (filter is still applied from the store), opens the same product, asserts stock reads **25** again.
-- **Custom Cypress commands relied upon**: `cy.navigateTo`, `cy.navigateViaMenu`, `cy.loginAs`, `cy.resetState`, `cy.demoEmailTo`.
-- **`liveProfile` env flag**: gates the demo-outbox email assertion; when `true` the email is skipped (live profiles send real mail).
+- **`describe('The customer journey')`** – single `describe` block; `beforeEach` visits `/en`, calls `cy.resetState()`, then visits `/en` again to ensure a clean guest start.
+- **`it('guest browses but cannot buy; the customer buys, cancels, and the shelf recovers')`** – the sole test case. Sequential phases:
+  - *Guest phase*: navigates to `/en/products`, clicks the "food (1)" category chip, asserts one row, opens the product, confirms `add-to-cart` is disabled, "Sign in to buy" is shown, and wishlist toggle is absent.
+  - *Login*: `cy.loginAs('user')` — the only reload in the journey.
+  - *Buy phase*: re-navigates, filters, adds to cart, goes to cart (asserts exactly 1 item), clicks checkout, lands on `#orders-list-page`.
+  - *Email check*: if not `liveProfile`, reads the outbox via `cy.demoEmailTo('gino@pino.it')` and asserts the template is `orders.order-confirm`.
+  - *Cancel phase*: opens the newest order, clicks `order-cancel`, confirms via `app-dialog-confirm`, asserts cancellation toast, cancel button gone, and reorder button present.
+  - *Shelf recovery*: dismisses all `.v-alert` toasts, navigates back to products, asserts the product still shows stock "30".
 
 ## Relationships
 
-No graph neighbors are recorded for this file. Its runtime dependencies are the custom commands above (defined in the Cypress support layer) and the application under test itself.
+No graph neighbors are recorded for this file.
 
 ## Notes
 
-- **One reload, by design.** The only `cy.visit` after `beforeEach` is the login step. Every later page change is driven by clicking links/buttons, so if state (cart, filter, session) survives, the test proves a single shared session.
-- **Filter is a toggle, not a set.** The app's store retains the active filter across navigation. After cancel, the test does *not* re-click the category chip—doing so would toggle the filter off and the row under it would be wrong. It instead waits for the one expected row that the stored filter already produces.
-- **Toasts block the action column.** Before navigating back to the products list, all `.v-alert` toasts must be dismissed via their close buttons, or the next row-click lands on a toast overlay.
-- **Demo customer cart starts empty.** The seeded cart belongs to the admin profile; the demo customer's single line is the one just added, so `have.length(1)` on `[data-test=cart-item]` is the full assertion.
-- **App dialog vs. browser dialog.** The cancel confirmation uses the in-app dialog (`[data-test=app-dialog-confirm]`); Cypress auto-accepts only `window.confirm`, so the test clicks the app's own confirm button.
-- All selectors use `data-test` attributes; no reliance on text or class structure beyond the Vuetify alert close button.
+- **Navigation discipline**: after login every step uses in-app links/buttons (`cy.navigateTo`, `cy.goToCart`) rather than `cy.visit`, because a full page reload would destroy the store/session the test is trying to verify.
+- **`cy.resetState()` + second `cy.visit`**: resetting state is server-side only; the already-loaded page still holds the old session, so a second visit is mandatory.
+- **Toast dismissal**: `.v-alert` elements overlay the table's action column. They must be closed individually (clicking the Vuetify close button) before any further row interaction, or clicks will land on the toast.
+- **Filter persistence**: the store retains the active category filter. Re-clicking the chip *toggles it off*, which would re-render the unfiltered list and break subsequent row assertions. The test relies on the filter still being active.
+- **Cart seeding**: the demo customer's cart starts empty (the seeded cart belongs to the admin account), so the single added line is the entire cart.
+- **App vs. browser dialog**: the cancel confirmation uses `data-test=app-dialog-confirm`; Cypress auto-accepts only the browser-native `confirm()`, not in-app dialogs.
+- **`liveProfile` guard**: the outbox assertion is skipped when `cy.env('liveProfile')` is `true`, since a real profile would send actual email.
+- **Selectors**: all interactive elements are targeted via `data-test` attributes; page-level assertions use element IDs (`#products-list-page`, `#product-target`, `#order-target`, `#orders-list-page`).

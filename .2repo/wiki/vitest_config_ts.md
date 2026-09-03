@@ -2,32 +2,28 @@
 
 ## Purpose
 
-Configures the Vitest unit and component test suite: environment, file inclusion, CSS handling, and—most critically—per-file coverage thresholds. It merges the resolved `vite.config.ts` with Vitest-specific `test` options and exports a plain object so `vitest.config.mutation.ts` can layer overrides on top.
+Vitest configuration for the unit and component test suite (jsdom-based). It merges the Vite config, points Vitest at the correct spec globs, and enforces **per-file** coverage thresholds so no untested file can hide inside a pooled average.
 
 ## Key elements
 
-- **`resolvedViteConfig`** — calls `vite.config.ts` (which is a function reading `VITE_APP_PORT` via `loadEnv`) to produce a plain object, required because `mergeConfig` cannot merge a function.
-- **`COVERAGE_FLOOR`** — a single `{ statements, branches, functions, lines: 70 }` object shared by most threshold globs so the number is written once.
-- **Default export (`mergeConfig(resolvedViteConfig, defineConfig({...}))`)** — the final config object consumed by `vitest` and by `vitest.config.mutation.ts`.
-- **`test.environment`** — points to `./tests/support/unit/jsdom-quiet-css.environment.ts` (a quieted jsdom), not the stock `'jsdom'`.
-- **`test.setupFiles`** — `tests/support/unit/setup.ts`.
-- **`test.include`** — three globs: `tests/unit/**`, `tests/cross-cutting/**`, and `src/modules/*/tests/**` (co-located module specs).
-- **`test.server.deps.inline`** — inlines `@guebbit/vue-toolkit` and `vuetify` to avoid raw CSS import errors from their ESM builds.
-- **`test.coverage.thresholds.perFile: true`** — enforces each threshold per individual file rather than pooling across a glob; without it a covered file can mask an untested one.
-- **Per-glob threshold entries** — e.g. `src/modules/*/store.ts`, `src/app/guards/!(authentications).ts`, `src/infrastructure/http/**`, etc. `authentications.ts` carries intentionally lower, measured values (branches 50, functions 55) as a ratcheting floor, not a target.
-- **`test.coverage.include: ['src/**/*.{ts,vue}']`** — forces every source file into the coverage denominator so untested files appear as 0% instead of being absent.
+- **`COVERAGE_FLOOR`** — Single object holding the shared 70% floor (statements, branches, functions, lines). Referenced by every threshold glob except `authentications.ts`, which has its own lower, measured values.
+- **`resolvedViteConfig`** — Resolves the function exported by `vite.config.ts` (which calls `loadEnv`) into a plain object so `mergeConfig` can work. Must be done here, not at merge time.
+- **`test.environment`** — Points to a custom `jsdom-quiet-css.environment.ts` wrapper that filters parser noise; not the stock `'jsdom'` string.
+- **`test.include`** — Three globs: central unit tests, cross-cutting tests, and module-local specs (`src/modules/*/tests/`). The `e2e/` subfolder under each module is excluded by the `.spec.ts` suffix and by `tsconfig.vitest.json`.
+- **`test.server.deps.inline`** — Inlines `@guebbit/vue-toolkit` and `vuetify` to work around raw `.css` imports in their ESM builds.
+- **`test.coverage.thresholds.perFile: true`** — The load-bearing line. Without it Vitest pools all files under a glob into one average, letting a covered file mask an untested one. With it, each file is checked independently and the error names the offender.
+- **`test.coverage.include` / `exclude`** — Forces every source file into the coverage denominator (prevents untested files from being silently absent) while excluding type declarations, bootstrap, vendor config, and the test files themselves.
 
 ## Relationships
 
-- **`vite.config.ts`** — imported and resolved at the top of this file; its plugins and base Vite options are merged into the final Vitest config via `mergeConfig`.
-- **`vitest.config.mutation.ts`** — imports this file's default export and merges mutation-testing overrides on top; this file must therefore export a plain object, not a function.
-- **`package.json`** — provides the `test` / `test:coverage` / `type-check-only` scripts that invoke this config (and the separate type-check command, since Vitest does not type-check).
-- **`tsconfig.node.json`** — supplies the TypeScript compiler settings for root-level `.ts` config files (including this one) during tooling runs.
+- **`vite.config.ts`** — Imported and resolved to an object before `mergeConfig`; supplies base Vite settings (resolve aliases, plugins, etc.) that Vitest inherits.
+- **`vitest.config.mutation.ts`** — Imports this file's default export (a plain object) and layers Stryker-specific overrides on top; the design of keeping the export as an object (not a function) exists specifically to make that merge possible.
+- **`tsconfig.node.json`** — Governs type-checking of this config file and other tooling scripts; Vitest itself does not type-check, so a compile error in a spec will not surface in a test run.
 
 ## Notes
 
-- **Vitest does not type-check.** A spec that fails to compile can still report green. `npm run type-check-only` is the actual compile gate.
-- **`perFile: true` is the single load-bearing threshold setting.** Removing it silently reverts to pooled averages, letting one well-covered file carry several untested ones past the 70% gate.
-- **The extglob `!(authentications)` in the guards glob is functional, not cosmetic.** A file matching two glob keys lands in both groups; the negation is what actually exempts it from the broad guard threshold.
-- **`tests/cross-cutting/store-location.spec.ts`** asserts that every `defineStore` under `src/modules/` sits in either `store.ts` or `stores/*.ts`, protecting the two threshold globs from silently losing a new store file.
-- **Coverage `exclude` list** intentionally removes type-only dirs, `main.ts` (e2e-only), vendor Vuetify config, and `src/modules/*/tests/**` (tests are not the thing being measured).
+- **Vitest does not type-check.** A spec that fails to compile can still pass. Use `npm run type-check-only` separately.
+- **Thresholds are per-file, not pooled.** Raising `COVERAGE_FLOOR` changes every glob at once; the exception (`authentications.ts`) is intentional and must be updated independently.
+- **`authentications.ts` thresholds are a measured floor, not a target.** They record where the file actually stands (2026-08-08); the convention is to ratchet them up over time, never lower them to make a run pass.
+- **Glob extglob negation is required.** `'src/app/guards/!(authentications).ts'` is not cosmetic: a file matching two glob keys lands in both groups, so the exemption must *leave* the broad glob to take effect.
+- **Coverage `include` glob is the fix for silent gaps.** Without it, v8 only reports files a test actually imported; untested files were absent from the report rather than showing 0%.

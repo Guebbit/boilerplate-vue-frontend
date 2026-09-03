@@ -2,27 +2,26 @@
 
 ## Purpose
 
-Route table that maps an HTTP method + URL pattern to the Zod schema validating the response for that call. It exists so `orvalMutator` can catch live contract violations without each call site knowing which operation it serves. Core (infrastructure-owned) rows are baked in; domain modules contribute their own rows at boot via registration.
+Maps every HTTP method + URL pattern to the Zod schema that validates its response. This lets the live API client (`orvalMutator`) check a response against the correct contract without the caller needing to know which operation it issued. Core infrastructure rows are baked in; domain modules contribute their own rows at boot.
 
 ## Key elements
 
-- **`ResponseSchemaRoute`** — interface with `method`, `pattern` (RegExp), and `schema` (ZodType). One row per `orvalMutator` call site.
-- **`coreRouteSchemas`** — private array of rows that belong to no domain module: `GET /` (health), the three `/account/*` session calls, and the `/locales*` boot-path reads.
-- **`routeSchemas`** — module-level `let` holding the active table (core rows + last registered module rows).
-- **`registerResponseSchemas(moduleRouteSchemas)`** — replaces the module rows (keeps core rows). Idempotent: calling twice does not duplicate.
-- **`resolveResponseSchema(method, url)`** — looks up the matching row by upper-cased method + regex `.test()` on the pathname; returns `undefined` if no row matches.
+- **`ResponseSchemaRoute`** (interface) — a single table row: `method`, a `RegExp` `pattern`, and a `zod.ZodType` `schema`.
+- **`coreRouteSchemas`** (const, not exported) — the rows belonging to no domain module: health probe, the three session `/account` calls, and the boot-path `/locales*` reads.
+- **`routeSchemas`** (module-level `let`) — the live table; starts as a copy of `coreRouteSchemas` and is replaced by `registerResponseSchemas`.
+- **`registerResponseSchemas(moduleRouteSchemas)`** (exported) — replaces the table with `coreRouteSchemas` + the supplied module rows. Calling it twice resets cleanly rather than duplicating.
+- **`resolveResponseSchema(method, url)`** (exported) — extracts the pathname, uppercases the method (defaulting to `GET`), and returns the first matching row's schema, or `undefined` if no row matches.
 
 ## Relationships
 
-- **`src/infrastructure/http/url.ts`** — provides `toPathname`, imported here and used inside `resolveResponseSchema` to extract the path for matching.
-- **`src/infrastructure/http/validate.ts`** — caller side: uses `resolveResponseSchema` to pick the schema and performs the actual Zod parse; logs a dev warning when the lookup returns `undefined`.
-- **`src/infrastructure/http/index.ts`** — barrel file; re-exports this module so consumers import from the directory.
-- **`docs/tools/live-e2e.md` / `docs/tools/property-testing.md`** — document the live-contract and property-testing tooling that depend on this table being populated before the app mounts.
+- **`src/infrastructure/http/url.ts`** — imports `toPathname` to strip query strings/origin from the URL before the regex match.
+- **`src/infrastructure/http/validate.ts`** — consumes `resolveResponseSchema` to obtain the Zod schema it will run against the incoming response body; also the layer that logs the dev-time warning when the lookup returns `undefined`.
 
 ## Notes
 
-- **Layering constraint:** `infrastructure` cannot import from `@/modules`. Rows therefore arrive via `registerResponseSchemas`, called by `src/main.ts` before mount. Any harness that exercises `orvalMutator` outside the app must call it too, or it tests an unregistered table.
-- **Regex anchoring is mandatory:** every pattern must start with `^` and end with `$`. Without the trailing `$`, a `[^/]+` segment absorbs the next literal segment (e.g. `/locales/[^/]+` swallows `/locales/es/entries`), causing the wrong schema to be applied.
-- **Ordering within `coreRouteSchemas` matters:** static-segment rows (e.g. `/locales/tenants`) must precede the wildcard rows that could match the same path.
-- **Missing row ≠ failure:** `resolveResponseSchema` returning `undefined` is a maintenance gap (caller warns in dev), not a validation error.
-- **Hand-written, not generated:** the table is maintained by eye against `contracts/rest/index.ts` because the Axios request config does not carry the operation name and parsing the generated client at runtime is not feasible.
+- **Anchoring is mandatory.** Every pattern must be `^…$`. Without the trailing `$`, a `[^/]+` segment will absorb an adjacent literal path (e.g. `/locales/es/entries` matching the `/locales/[^/]+` row) and the wrong schema will be applied.
+- **Static segments must precede wildcards.** `/locales/tenants` is registered *before* `/locales/[^/]+$` specifically so the `find()` scan hits it first. If you add a new literal segment, place it above the nearest wildcard.
+- **Missing row ≠ failure.** `resolveResponseSchema` returning `undefined` is a maintenance gap, not a validation error. The caller (`validate.ts` / `orvalMutator`) warns in dev but does not reject the response.
+- **No `@/modules` import allowed.** This file lives in `infrastructure`, which cannot reach into the module layer. All domain rows arrive through the `registerResponseSchemas` call in `src/main.ts` before the app mounts.
+- **One row = one `orvalMutator` call site.** The `schema` field should always be the corresponding `<PascalCase>Response` export from `@api/schemas`, keeping the table diffable against the generated client by eye.
+- **Order of module registration is irrelevant** as long as every pattern is fully anchored; the ordering constraint only applies within a single overlapping prefix family (like `/locales/*`).

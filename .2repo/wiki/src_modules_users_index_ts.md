@@ -2,20 +2,18 @@
 
 ## Purpose
 
-Barrel re-export that defines the **only** public import surface for the `users` module. It exposes exactly two schema objects so sibling modules (specifically `account`) can validate forms against shared field rules without re-typing them. It deliberately omits the store, because the client-side sharing here is vocabulary (validation rules), not a shared record.
+Barrel file (public entry point) for the `users` module. It exposes exactly two schema exports so that sibling modules (notably `account`) can validate login, signup, and password-reset forms against the same field rules without re-typing them. It deliberately omits the store: on the client neither module writes data — the API does — so what is shared is vocabulary, not a shared kernel.
 
 ## Key elements
 
-- **`usersSchema`** — re-exported from `./schemas`; the primary validation schema for user form fields.
-- **`usersPasswordSchema`** — re-exported from `./schemas`; validation rules specific to the password field, consumed by account's login / signup / password-reset forms.
+- **`usersSchema`** (re-exported from `./schemas`) — field-level validation schema for user records.
+- **`usersPasswordSchema`** (re-exported from `./schemas`) — field-level validation schema for password-related fields.
 
 ## Relationships
 
-- **`src/modules/users/schemas.ts`** — sole import source; this barrel re-exports its two named schema objects and nothing else.
-- The `account` module (sibling, not in this file's dependency list) is the intended consumer: it imports these two schemas rather than duplicating field rules. The edge is classified as *published-language* (shared vocabulary), not *shared-kernel* (shared write target), because neither client module writes the record — the API does.
+- **`src/modules/users/schemas.ts`** — Sole import target. Both exported symbols are defined here; this file merely re-exports them outward.
 
 ## Notes
 
-- The store is **intentionally absent** from this barrel. Importing it from outside would collapse the "vocabulary-sharing" boundary into a "shared-state" one, which is the distinction the docblock calls out between client and server architectures.
-- If you need to add a new export visible to siblings, it must go through this file — sibling modules are expected to import the barrel, not reach into `./schemas` directly.
-- The `@module` tag at the top marks this as a side-effect-free, re-export-only file (no runtime logic of its own).
+- The module's only public surface is these two exports. The store (if one exists in this module) is intentionally *not* exposed through the barrel.
+- The dependency edge to `account` is classified as **`published-language`** (shared vocabulary), distinct from the backend's **`shared-kernel`** relationship where both domains write the same record. Do not add store or mutation exports here without re-evaluating that classification.

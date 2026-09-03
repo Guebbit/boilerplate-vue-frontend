@@ -2,31 +2,27 @@
 
 ## Purpose
 
-Unit tests for the router's own behaviour — locale redirect, 404 catch-alls, global auth-restore ordering, error→redirect mapping, and that every shell-owned route record declares its `meta` requirements (title, access). Auth-enforcement logic is explicitly mocked out; this file verifies that enforcement is *attached* and correctly ordered, not that it decides correctly (that lives in `authentications.spec.ts`).
+Verifies that the router is correctly *wired*: that auth enforcement is attached globally and runs in the right order, that locale redirects and 404 catch-alls behave as designed, that the document title and WCAG announcer derive from route `meta`, and that the static prose routes resolve to their computed names. Enforcement itself is mocked — the unit under test is the router's own navigation logic and its route-table declarations, not the guard's decision logic (which lives in `tests/unit/app/guards/authentications.spec.ts`).
 
 ## Key elements
 
-- **`loadRouter()`** — resets the module registry, dynamically imports `@/app/router`, pushes `/`, awaits `isReady()`, and returns the fresh router instance. Used by every test case.
-- **`failNavigationWith(error)`** — helper that navigates to a non-Home route, makes the next `enforceRouteAccess` call throw the given error, then waits for the router to settle on a different route (the `onError` redirect target).
-- **`beforeAll` warm-up import** — pre-imports `@/app/router` (and transitively Vuetify) outside any test's time budget so the one-off transpile cost isn't charged to a single test under `--coverage`.
-- **`vi.mock('@/app/guards/authentications.ts', …)`** — stubs `tryRestoreAuth` and `enforceRouteAccess` with shared `vi.fn()` handles so tests can assert call counts and ordering.
-- **`describe('document title and announcer')`** — asserts `document.title`, `VITE_APP_NAME` interpolation, and `routeAnnouncement` value follow the active route.
-- **`describe('locale handling')`** — bare `/` redirects to a locale-prefixed Home.
-- **`describe('unknown routes')`** — pins the interaction between the single-segment `/:locale` param and the two catch-alls (locale-scoped vs. top-level), including the non-obvious case where a single unknown segment is absorbed as a locale.
-- **`describe('static prose pages')`** — verifies the computed route names (`StaticAbout`, `StaticFaq`, …) and the `props.default: { page }` payload.
-- **`describe('global auth restore')`** — `tryRestoreAuth` fires on initial nav and on every subsequent nav.
-- **`describe('access enforcement')`** — `enforceRouteAccess` runs on every navigation (public routes included) and only *after* `tryRestoreAuth` resolves.
-- **Error→redirect tests** (bottom of file, truncated) — use `failNavigationWith` to confirm `onError` issues a follow-up navigation to the expected target.
+- **`loadRouter()`** — Resets the module registry, dynamically imports `@/app/router`, pushes `/`, awaits `isReady()`, and returns the fresh router. Guarantees isolated navigation state per test.
+- **`beforeAll` warmup import** — Imports `@/app/router` once outside any test's time budget. Vite's transform cache is *not* cleared by `vi.resetModules()`, so only this first import transpiles the full view graph (Vuetify, etc.). Prevents the first real test from exceeding the 5 s default under `--coverage`.
+- **`describe('document title and announcer')`** — Asserts `document.title` and `routeAnnouncement.value` are set from `meta.title`, both translated (platform routes) and untranslated (module routes). Also iterates over shell-owned route names to confirm each declares a title.
+- **`describe('locale handling')`** — Confirms bare `/` redirects to a locale-prefixed Home.
+- **`describe('unknown routes')`** — Three cases: deep path → locale-scoped 404; single unknown segment → treated as an (unsupported) locale and lands on Home; deep unknown under a known locale → locale-scoped catch-all with `status=404`.
+- **`describe('static prose pages')`** — Pins the computed route names (`StaticAbout`, `StaticFaq`, `StaticTerms`, `StaticPrivacy`) so a typo in the name expression is caught.
+- **`describe('global auth restore')`** — Asserts `tryRestoreAuth` fires on initial navigation and on every subsequent navigation.
+- **`describe('access enforcement')`** — Asserts `enforceRouteAccess` is called on *every* navigation (no opt-out by omission) and that it runs *after* `tryRestoreAuth` settles.
+- **`failNavigationWith(error)`** (helper, truncated) — Navigates to Playground, then triggers a guard that throws the given error, and waits for the router to leave the starting route (the `onError` redirect). Starts off Home so a correct 401→Home redirect is distinguishable from a no-op.
 
 ## Relationships
 
-No graph neighbors are recorded for this file.
+No graph neighbors are listed. The file exercises `@/app/router` (the router instance), `@/app/guards/authentications.ts` (mocked), `@/infrastructure/observability/store.ts` (mocked), `@/app/router/announcer.ts`, and `@/app/router/navigation.ts` (for `signInLocation`).
 
 ## Notes
 
-- **Coverage timeout workaround:** the `beforeAll` import (60 s timeout) exists specifically because the first transpile of the router's module graph (which pulls in every view + Vuetify) exceeded the default 5 s per-test budget only under `--coverage`. Removing it will re-introduce a flaky failure in CI coverage runs.
-- **Fresh router per test:** `vi.resetModules()` clears the module cache but *not* Vite's transform cache, so subsequent `loadRouter()` calls are cheap. Do not assume the router module is truly "cold" after the first import.
-- **Top-level `/:catchAll(.*)` is documented as unreachable:** the single-segment `/:locale` param absorbs any first segment, so the top-level catch-all only fires if `/:locale` were changed to multi-segment. The test asserting this is intentionally kept as a guard against that refactor.
-- **Per-route access declarations are *not* here:** they were moved to `src/modules/<name>/tests/routes.spec.ts` to avoid a platform spec breaking when a domain is deleted. This file only asserts that enforcement is attached and ordered.
-- **`failNavigationWith` starts on `/en/playground`, not Home:** one of the redirect targets (the 401 fallback when no sign-in route is registered) *is* Home; starting there made "redirected" indistinguishable from "stayed."
-- **Environment stubs** (`vi.stubEnv`, `vi.unstubAllEnvs`) are used for `VITE_APP_NAME` and cleaned up in `afterEach`.
+- **Coverage timing trap.** The `beforeAll` warmup is not cosmetic: without it, the first test under `--coverage` can exceed the 5 s default because Vite's one-off transpile cost lands inside that test's budget. Removing or shortening the 60 s `beforeAll` timeout is likely to re-introduce a flaky coverage failure.
+- **Single-segment locale quirk.** `/:locale` matches exactly one path segment, so a bare `/nonsense` is read as locale `nonsense` (rewritten to the default) rather than as an unknown path. The top-level `/:catchAll(.*)` route is therefore unreachable for any real path; the test that documents this is intentionally kept as a guard against a future route-table change that would make it reachable.
+- **Per-route access declarations live elsewhere.** The old table of domain paths asserting each route's `meta.access` was moved to `src/modules/<name>/tests/routes.spec.ts`. What remains here is the shell-level contract: enforcement is attached and correctly ordered.
+- **`loadRouter` uses `vi.resetModules()` + dynamic `import`.** This means the router module graph is re-instantiated per test, but the expensive Vite transform is cached after the `beforeAll` warmup. Do not replace this with a static import or a single shared router instance without re-evaluating the isolation guarantees.

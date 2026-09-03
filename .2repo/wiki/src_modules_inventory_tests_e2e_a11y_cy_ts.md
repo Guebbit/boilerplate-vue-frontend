@@ -2,20 +2,18 @@
 
 ## Purpose
 
-Co-located accessibility (a11y) sweep for the inventory module's routed pages. It declares which routes the inventory domain owns and hands them to the shared `sweepA11y` helper, ensuring the module's a11y coverage is deleted automatically if the module is removed.
+Co-located accessibility (a11y) e2e coverage for the inventory module's routes. It registers the module's routes with the shared a11y sweep so that deleting the module automatically removes its a11y tests — avoiding a central list that references routes the app no longer serves.
 
 ## Key elements
 
-- **`sweepA11y('inventory', …)`** — Single top-level call that registers the inventory route list (`/en/inventory`, labelled "inventory ledger") under the `admin` scope for the shared a11y sweep runner.
-- **Module doc comment** — Documents the co-location rationale and points to `tests/cross-cutting/a11y-coverage.spec.ts` as the enforcement mechanism.
+- **`PHONE`** — `[390, 844]` viewport constant; matches iPhone 14-class portrait, the width at which `DataTable.vue`'s `mobile-breakpoint` stacks rows below `sm`.
+- **`sweepA11y('inventory', routes, 'admin')`** — the single test invocation. Declares two entries: the inventory ledger route at default viewport, and the same route at the `PHONE` viewport (to exercise `StockBoard` and the 7-column `MovementLedger` rendered as stacked cards). Authenticated as `admin`.
 
 ## Relationships
 
-- **`tests/support/e2e/a11y-sweep.ts`** — Provides the `sweepA11y` function that actually executes the accessibility checks against the supplied route list. This file is purely the route inventory; all sweep logic lives in the support file.
-- **`tests/cross-cutting/a11y-coverage.spec.ts`** (referenced in docs, not imported) — A cross-cutting spec that asserts every routed module has a co-located a11y file like this one, preventing a module from being added without a11y coverage.
+- **`tests/support/e2e/a11y-sweep.ts`** — provides the `sweepA11y` function that actually runs the accessibility checks. This file supplies only the route list and role; all sweep logic lives in that support module.
 
 ## Notes
 
-- This file has **no exports**; it executes side-effects on import (i.e., when Cypress loads the spec).
-- The route list is intentionally per-module rather than centralized. The doc comment explains the trade-off: a central list would accumulate stale routes after module deletion.
-- The third argument (`'admin'`) likely scopes which auth/permission context the sweep runs under, but the contract is defined in `a11y-sweep.ts`.
+- A cross-cutting guard (`tests/cross-cutting/a11y-coverage.spec.ts`) asserts that every routed module has a file like this one, so the co-location split cannot silently lose a domain.
+- The phone-viewport entry exists specifically because the inventory ledger's data tables reflow into cards below the `sm` breakpoint; the default-viewport entry would not surface a11y issues in that stacked layout.

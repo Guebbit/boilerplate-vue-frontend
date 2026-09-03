@@ -2,29 +2,29 @@
 
 ## Purpose
 
-Address-book panel for the account profile page. Renders the user's saved addresses as a card grid and provides add, edit, remove, and set-default operations through a modal dialog and inline actions. Every mutating action re-fetches the full address list from the API so the "exactly one default" invariant is always reflected from the server's authoritative state.
+Vue 3 single-file component that renders the user's address-book panel within the account/profile section. It provides full CRUD on saved addresses (add, edit, remove, set default) via a dialog form, pulling all state and actions from a Pinia store so the list re-renders from the server's full response after every write.
 
 ## Key elements
 
-- **`AddressForm`** – local interface mirroring `AddressInput` with optional fields as empty strings for form binding.
-- **`emptyForm()`** – returns a blank `AddressForm`; used on initial render and as the "add" reset.
-- **`addressSchema`** – Zod object schema; required fields (`fullName`, `street`, `city`, `zip`, `country`) have `.min(1)` with thunk-based error messages for i18n.
-- **`openAdd()` / `openEdit(address)`** – open the dialog, setting `editingId` (or clearing it) and populating the form.
-- **`handleSave()`** – wraps `handleSubmit`; dispatches `addAddress` or `updateAddress`, converts empty optional strings to `undefined`, and reports success/failure via toast.
-- **`handleMakeDefault(address)`** – calls `updateAddress(id, { default: true })`; relies on the store's post-write fetch to re-render the list.
-- **`handleRemove(address)`** – shows a confirmation dialog (`useDialogStore().confirm`), then calls `removeAddress`.
-- **`onMounted(fetchAddresses)`** – initial data load.
-- Template uses `v-card` grid, `v-dialog` for the form, `lucide-vue-next` icons, and `data-test` attributes for e2e selectors.
+- **`AddressForm` interface** – flat shape of the dialog's fields (label, fullName, street, city, zip, country, phone); all strings, optionals represented as empty strings.
+- **`emptyForm()`** – returns a blank `AddressForm`; also used to reset the form when opening "add".
+- **`addressSchema` (Zod)** – validation contract requiring five non-empty fields (fullName, street, city, zip, country); error messages are i18n thunks so they resolve in the active locale.
+- **`useStructureFormValidation`** (from `@guebbit/vue-toolkit`) – wires the schema into Vuetify's `v-text-field` error slots via `formErrors` / `showFormErrors`; revalidates on locale change.
+- **`openAdd` / `openEdit`** – set `editingId` and `form`, then open the dialog.
+- **`handleSave`** – dispatches `addAddress` or `updateAddress` based on `editingId`; drops empty optional fields (`label`, `phone`) before sending; toasts success or errors.
+- **`handleMakeDefault`** – calls `updateAddress(id, { default: true })`; relies on the store's fetch-after-write to re-render the list with the new default.
+- **`handleRemove`** – shows a confirmation via `useDialogStore().confirm(…)` then calls `removeAddress`.
+- **`mobile`** (from Vuetify `useDisplay`) – switches the dialog to `fullscreen` on phone-sized viewports.
+- **`dialogTitleId`** (from Vue `useId`) – gives the dialog heading a stable `id` for `aria-labelledby`.
 
 ## Relationships
 
-- **`src/infrastructure/utils/logger.ts`** – transitive dependency: the Pinia address store and/or `notifyErrorMessages` (from `@/infrastructure/utils/errors.ts`) log through the shared logger; this component does not import it directly.
+- **`src/infrastructure/utils/logger.ts`** – not imported directly by this component. It is likely pulled in transitively by `useAddressesStore` or the `@/infrastructure/utils/errors.ts` helpers (`notifyErrorMessages`) that this component calls on API failure.
 
 ## Notes
 
-- **Full-list re-fetch after every write** is deliberate: the single-default constraint is a property of the collection, not of the row that changed, so optimistic per-row updates would be insufficient.
-- **Optional fields (`label`, `phone`)** are coerced to `undefined` before sending, never as `""`, to avoid the API treating empty strings as real values.
-- **No `formElement`** is passed to `useAppForm` because the surrounding `v-dialog` already traps focus; `revealErrors` is therefore a state toggle, not a focus move.
-- **Zod error messages are thunks** (`() => t(key)`) so they resolve against the active locale at validation time, matching the project-wide convention.
-- **Accessibility**: the dialog heading gets a `useId()`-generated id referenced by `aria-labelledby`; per-entry action buttons carry templated `aria-label`s (e.g. "Edit *Home*") to disambiguate otherwise identical buttons.
-- `data-test` attributes are present on every interactive element and state region for the e2e suite.
+- Every write (add / update / remove / make-default) depends on the store re-fetching the full list; the component does **not** optimistically update local state. The "exactly one default" invariant is a property of the returned list, not of the single entry touched.
+- `label` and `phone` are optional in the API contract; the form represents them as empty strings and strips them (`|| undefined`) before sending to avoid persisting `""`.
+- The form has no `formElement` option passed to `useStructureFormValidation` because the dialog already traps focus; `revealErrors` is treated as a state change, not a focus move.
+- All user-facing strings go through `t()`; validation messages are thunks (`() => t(…)`) to support runtime locale switches without re-creation.
+- The file content is truncated in this view; the Vuetify form fields for the remaining inputs (zip, country, phone) and the dialog's action buttons are below the cutoff.

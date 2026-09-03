@@ -1,23 +1,23 @@
 # src/modules/inventory/components/StockBoard.vue
 
 ## Purpose
-A read-only admin table tab that displays current shelf counts (on-hand, reserved, available) per product. Supports filtering to low-availability items and client-side pagination. Designed as a glance-at table, not a scrollable feed.
+Read-only admin table that lists current shelf counts (on-hand, reserved, available) for each product. It reads from the shared inventory Pinia store, supports a "low availability only" filter, and delegates navigation-to-ledger to its parent via an emitted event.
 
 ## Key elements
-- **`levelHeaders`** (computed) — Localized `CoreDataTableHeader[]` for the DataTable; re-translates on locale change. The `history` column is marked `synthetic: true` and has no backing field.
-- **`lowOnly`** (ref, default `false`) — When true, narrows results to products at or under the server's low-availability threshold. Passed as `undefined` (not `false`) to the store call when off.
-- **`levelsPage` / `levelsPageTotal`** — Current page ref and computed page count (ceil of total / `PAGE_SIZE`).
-- **`loadLevels()`** — Calls `inventoryStore.fetchLevels({ page, pageSize, lowOnly })`. Triggered on mount and on any change to `levelsPage` or `lowOnly`.
-- **`PAGE_SIZE`** — Constant `10`; intentionally small for an admin table.
-- **`emit('history', productId)`** — Fired when a row's history button is clicked; the parent view is responsible for navigating the ledger.
-- **`DataTable`** — Renders the rows; `available` column gets a bold slot override; `history` column renders a text `v-btn`.
-- **`ListPagination`** — Bound to `levelsPage`, capped at `levelsPageTotal`.
+- **`levelHeaders`** — computed array of `CoreDataTableHeader<InventoryLevel>` producing the localized column definitions (product, on-hand, reserved, available, history). The history column is marked `synthetic: true` because its cell is a button, not a data field.
+- **`lowOnly`** — `ref(false)` toggle that, when on, narrows the query to products at or under the server's low-availability threshold.
+- **`levelsPage` / `levelsPageTotal`** — pagination state; page size is a hardcoded `PAGE_SIZE = 10`.
+- **`loadLevels()`** — calls `inventoryStore.fetchLevels({ page, pageSize, lowOnly })`. Triggered on mount and via a `watch` on `[levelsPage, lowOnly]`.
+- **`emit('history', productId)`** — the row's history button emits the product ID; the parent view is responsible for scrolling/jumping the ledger below to that product.
+- **`rowActionSize`** — from `useTouchFriendlySize()`, returns `small` on desktop and Vuetify's default (larger) size below the `sm` breakpoint for WCAG touch-target compliance.
+- **`storeToRefs(inventoryStore)`** — destructures `levels`, `levelsTotal`, and `loading` reactively from the store.
 
 ## Relationships
-No graph-neighbor files are documented for this component. It pulls data exclusively from `useInventoryStore` (via `storeToRefs`) and communicates upward only through the `history` emit to its parent view.
+No graph neighbors are recorded for this file. It consumes `useInventoryStore` (Pinia) and imports `DataTable`, `ListPagination`, and `useTouchFriendlySize` from the shared UI layer, but those are not listed as graph neighbors here.
 
 ## Notes
-- The component is purely presentational for its data: it never mutates inventory state, only reads and fetches.
-- The `history` column header has an empty `title` string; it exists solely to host the per-row button.
-- `lowOnly` is passed as `lowOnly.value || undefined`, so the store never receives an explicit `false`—only `true` or omission.
-- The `v-if="levels.length > 0"` guard on DataTable means an empty board hides the table entirely (pagination still renders).
+- The component intentionally does **not** navigate or scroll the ledger itself; it only emits `history` and trusts the parent to act.
+- The "history" column has an empty `title` and `synthetic: true` — it renders a button cell, so do not expect a sortable header.
+- `PAGE_SIZE` is a local constant (10), not pulled from a config; it's documented as intentionally small ("admin table to read, not a feed to scroll").
+- The `lowOnly` value is passed as `undefined` (not `false`) to the store fetch when the toggle is off, likely so the backend can distinguish "no filter" from an explicit value.
+- Component name is declared in a separate non-setup `<script>` block alongside `<script setup>` — a Vite/Vue convention for DevTools naming.

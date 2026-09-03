@@ -2,29 +2,27 @@
 
 ## Purpose
 
-A reusable stock-movement form that handles two distinct domain writes—receipt (add stock) and adjustment (signed delta, e.g. shrinkage)—by branching on a `mode` prop rather than a runtime sign toggle. This design prevents a mis-click from silently converting a delivery into a correction (or vice-versa).
+A single Vue component that handles both stock **receipts** (inbound deliveries) and stock **adjustments** (shrinkage/corrections). It is instantiated twice in the parent layout — once with `mode: 'receipt'` and once with `mode: 'adjust'` — so that a user mis-click cannot accidentally flip a positive delivery into a negative correction. Validation rules differ per mode and are enforced via a Zod schema before dispatching the store action.
 
 ## Key elements
 
-- **`props.mode`** (`'receipt' | 'adjust'`) — the only runtime differentiator; every label, schema, and store call branches on it.
-- **`schema`** (computed Zod object) — validates `productId`, `amount`, and `note`. For receipts, `amount` must be a positive integer ≥ 1; for adjustments, it must be a non-zero integer (positive or negative).
-- **`useAppForm`** — owns field state (`form`), error display (`formErrors`, `showFormErrors`), and submit gating (`handleSubmit`). Seeded with a mode-appropriate default amount (`10` for receipt, `-1` for adjust).
-- **`submitForm`** — validates via `handleSubmit`, then dispatches to `inventoryStore.receive` or `inventoryStore.adjust` depending on mode. On success it fires a toast, clears the note field, and re-fetches the product catalogue. On failure it routes the error through `notifyErrorMessages`.
-- **`productOptions`** — maps `productsList` into `{ value: id, title }` pairs for the `<v-select>`.
-- **`loading`** (from `inventoryStore`) — disables the submit button while a write is in flight.
+- **`props.mode`** (`'receipt' | 'adjust'`) — determines which validation branch, default amount, and store action apply; drives all template labels, hints, and `data-test` attributes.
+- **`isReceipt`** (computed) — shorthand boolean used throughout the component to branch UI and logic.
+- **`schema`** (computed Zod object) — branches on `isReceipt`: receipt requires `amount ≥ 1`; adjustment requires `amount` to be a non-zero integer (signed). All error messages are i18n-resolved.
+- **`useStructureFormValidation`** (from `@guebbit/vue-toolkit`) — owns field state (`form`), error exposure (`formErrors`, `showFormErrors`), and submit gating (`handleSubmit`). Re-validates on locale change via `revalidateOn`.
+- **`submitForm`** — wraps the store call (`inventoryStore.receive` / `inventoryStore.adjust`), posts a success toast with the new available count, refreshes the products catalogue, and routes failures through `notifyErrorMessages`.
+- **`productOptions`** (computed) — maps `productsStore.productsList` to `{ value, title }` pairs for the `<v-select>`.
+- **`formElement`** (ref) — bound to the `<form>` so `useStructureFormValidation` can leverage native form validity and the shared `VUETIFY_INVALID_FIELD_SELECTOR`.
 
 ## Relationships
 
-- **`useAppForm`** (`@/infrastructure/composables/use-app-form.ts`) — provides form state, Zod-schema-driven validation, and the `handleSubmit` wrapper that gates the submit action.
-- **`useInventoryStore`** (`@/modules/inventory/store.ts`) — exposes `receive`, `adjust`, and a `loading` flag.
-- **`useProductsStore`** (`@/modules/products`) — supplies the product catalogue and its `fetchProducts` refetch, keeping the catalogue's local counter copies in sync after each write.
-- **`notifyErrorMessages`** (`@/infrastructure/utils/errors.ts`) — formats and dispatches API error messages to the notifications store; carries server-side 409 copy verbatim.
-- **`useNotificationsStore`** (`@guebbit/vue-toolkit`) — provides `addMessage` for success toasts and error surfacing.
-- **`src/infrastructure/utils/logger.ts`** — listed as a graph neighbor but no direct import or call is visible in this file's source.
+- **`src/infrastructure/utils/errors.ts`** (same directory as graph neighbor `logger.ts`) — provides `notifyErrorMessages` (surfaces server error copy verbatim, especially the 409 "fewer units than reserved" message) and the `VUETIFY_INVALID_FIELD_SELECTOR` constant used for field-level error targeting.
+- **`src/modules/inventory/store.ts`** — source of `receive`, `adjust`, and the shared `loading` flag.
+- **`src/modules/products`** (store) — provides the product list for the select and is re-fetched after every successful write so its local counter copy stays in sync.
 
 ## Notes
 
-- The component is expected to be **instantiated twice** in the parent (once per mode), not toggled at runtime. Each instance gets its own `data-test` prefix (`receipt-*` vs `adjust-*`) and button color (`primary` vs `secondary`).
-- The note field is optional (`note || undefined` is passed to the store), but the Zod schema requires it to be a string (empty string passes).
-- After a successful write, `productsStore.fetchProducts()` is called because the products store maintains its own cached copy of stock counters independent of the inventory store.
-- The adjustment 409 case (correction would drive available stock below reserved units) is intentionally surfaced with the server's message text; the client does not rewrite it.
+- The component is deliberately **stateless across instances**: each mount starts with a mode-specific default amount (`10` for receipt, `-1` for adjust). There is no shared "sign toggle" anywhere.
+- On a successful submit the `note` field is cleared but `productId` and `amount` are not — the next entry inherits the last product and a mode-appropriate default.
+- The 409 conflict (adjustment that would drop stock below already-promised units) is the only expected "interesting" failure; its server message is shown verbatim via `notifyErrorMessages` rather than being re-worded client-side.
+- `revalidateOn: locale` means switching UI language re-runs the Zod schema so error messages update without a manual re-trigger.

@@ -2,21 +2,22 @@
 
 ## Purpose
 
-Co-located accessibility (a11y) e2e test for the account module. It declares which routes and UI states to audit; the actual sweep mechanism lives in the shared support module. Co-location ensures deleting the account module also removes its a11y coverage, preventing a stale central route list.
+Declares the list of routes, states, and fixture contexts that the account module submits to the shared accessibility sweep. It contains no audit logic itself — that lives in `a11y-sweep.ts` — but co-locating the route list here means deleting the account module also removes its a11y coverage, and `tests/cross-cutting/a11y-coverage.spec.ts` enforces that every routed module has one of these files.
 
 ## Key elements
 
-- **`UNISSUED_TOKEN`** — Sentinel token (`'a-token-nobody-issued'`) appended to confirm-page URLs so they render in their "expired link" state (form visible, token prefilled, other fields empty) without consuming a real one-time token.
-- **`sweepA11y('account — guest', […])`** — Audits six guest-facing routes: login, signup, password reset, three confirm pages (password-reset, account-delete, verify-email), plus two special states: dark-theme login and login with a submitted-empty error.
-- **`sweepA11y('account — signed in', […], 'user')`** — Audits the profile page and the address-dialog-open state, running under a `user` session.
+- **`UNISSUED_TOKEN`** (`const`) — A sentinel token (`'a-token-nobody-issued'`) appended to confirm-page URLs. Lets the sweep audit the "expired-link" rendering state (form visible, token prefilled, other fields empty) without consuming a real one-time token.
+- **`sweepA11y('account — guest', …)`** — Registers guest-facing routes: login, signup, password-reset, three confirm pages (each with `UNISSUED_TOKEN`), the OAuth error callback, login in dark theme, and login in its "submitted empty" error state (via a `prepare` callback that clicks submit and waits for `.v-messages__message`).
+- **`sweepA11y('account — signed in', …, 'user')`** — Registers authenticated routes under the `'user'` fixture: the profile page and the profile with the address dialog open (opened via `prepare` clicking `[data-test=address-add]`).
 
 ## Relationships
 
-- **`tests/support/e2e/a11y-sweep.ts`** — Provides the `sweepA11y` function that iterates the route/state list and runs the actual a11y assertions. This file only supplies the data.
-- **`tests/cross-cutting/a11y-coverage.spec.ts`** (referenced in the module doc comment) — Asserts that every routed module has a co-located a11y file like this one, so the split cannot silently lose a domain.
+- **Imports `sweepA11y`** from `tests/support/e2e/a11y-sweep.ts` — the sole mechanism this file calls. Each `sweepA11y` call passes a label, an array of route descriptors (either `[name, url]` or `{name, route, theme?, prepare?}`), and an optional fixture name.
+- **Referenced by `tests/cross-cutting/a11y-coverage.spec.ts`** (noted in the module doc-block) — that spec asserts every routed module ships a co-located a11y sweep file like this one, preventing silent loss of coverage.
 
 ## Notes
 
-- Confirm pages cannot use real tokens because flow specs spend them and a sweep cannot mint new ones. The unissued token is intentional: it exercises the same DOM a visitor with an expired link sees.
-- Two states use a `prepare` callback to drive the UI into a specific interaction state before auditing: submitting the login form empty (to audit inline error announcements tied to fields) and opening the address dialog (to audit modal naming, focus containment, and background inert-ness).
-- The file contains no test assertions of its own; all checking is delegated to the `sweepA11y` implementation.
+- The OAuth *success* callback is deliberately excluded: it redirects immediately and renders no own UI. Only the error state (`?error=access_denied`) is audited.
+- The "submitted empty" login entry uses `cy.get('form button[type=submit]').click()` inside `prepare`; the assertion that `.v-messages__message` is visible acts as a readiness gate before the a11y scanner runs.
+- Route entries can be a simple `[name, url]` tuple or an object with optional `theme` and `prepare` fields — both shapes are mixed within the same array.
+- The `'user'` string as the third argument to `sweepA11y` is a fixture selector, not a route or role name.

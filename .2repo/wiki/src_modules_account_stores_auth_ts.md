@@ -2,27 +2,28 @@
 
 ## Purpose
 
-Pinia store (Composition API, id `accountAuth`) that owns the **session lifecycle**: login, signup, password-reset, and the two logout paths. It wraps the generated REST calls from `@api`, coordinates with the session and profile stores, and fires analytics events. It deliberately does **not** hold editable profile data — that belongs to the sibling `profile.ts` store.
+Pinia store (Composition API) that owns the **session lifecycle**: login, signup, password reset, and the two logout paths. It deliberately does *not* hold the editable user record — that lives in `profile.ts`. The split keeps "am I signed in?" separate from "what does my record say?".
 
 ## Key elements
 
-- **`useAuthStore`** — the exported Pinia store; all other items below are its returned members.
-- **`login(email, password, remember?)`** — calls `apiLogin`, extracts the access token via `getTokenFromResponse`, stores it in the session store, then triggers `profileStore.fetchProfile(true)`. `remember=true` maps to `LoginRequestRemember.medium` (≈ 30-day refresh cookie); `false` leaves the cookie session-scoped.
-- **`signup(credentials, options?)`** — registers a new account. Accepts a single credentials object (`email`, `password`, optional `username`/`passwordConfirm`/`imageUpload`) plus optional `AxiosRequestConfig`. Switches to `signupWithMultipart` when an image file is present. Does **not** set a token — the backend requires email confirmation before login.
-- **`requestPasswordReset(email)`** — sends a one-time reset token to the given address.
-- **`confirmPasswordReset(token, password, passwordConfirm)`** — finalises the reset with the token and new credentials.
-- **`logout()`** — ends **this** session: fires analytics (`USER_LOGGED_OUT`), calls `obs.unidentifyUser()`, calls `session.logout()`, then `profileStore.resetAll()`.
-- **`logoutEverywhere()`** — same local cleanup but calls `session.logoutAll()` to revoke **all** refresh tokens (compromised-credentials path).
+- **`useAuthStore`** — the single exported store (`'accountAuth'`).
+- **`login(email, password, remember?)`** — calls the login API, extracts the token via `getTokenFromResponse`, stores it in the session store (setting `isAuth` cookie), then triggers `useProfileStore().fetchProfile(true)`.
+- **`signup(credentials, options?)`** — registers a new account. Branches to `signupWithMultipart` when `imageUpload` is present, otherwise plain JSON. Does **not** set a token; the backend requires email confirmation + separate login.
+- **`requestPasswordReset(email)`** — sends the reset-token email.
+- **`confirmPasswordReset(token, password, passwordConfirm)`** — completes the reset.
+- **`logout()`** — revokes the current session, unidentifies in observability, clears local token/cookie, and calls `useProfileStore().resetAll()`.
+- **`logoutEverywhere()`** — same teardown but revokes **all** refresh tokens (compromised-credentials path).
+
+All actions are wrapped in `fetchAny` from `useStructureRestApi`, which feeds global loading state through `useCoreStore`.
 
 ## Relationships
 
-- **`src/modules/account/stores/profile.ts`** — Called after `login` (`fetchProfile(true)`) and on both logout paths (`resetAll()`). This is the primary cross-store dependency; auth never mutates profile data directly.
-- **`docs/index.md`** (and the `docs/theory/modules.md` page it indexes) — Referenced in the file's docstring as the architectural rationale for splitting the account domain into separate auth and profile stores.
+- **`src/modules/account/stores/profile.ts`** — After a successful `login`, this store calls `useProfileStore().fetchProfile(true)`. On `logout`/`logoutEverywhere` it calls `useProfileStore().resetAll()` to drop cached profile data. This is the only cross-store coordination in the file.
 
 ## Notes
 
-- All API actions are wrapped in `fetchAny` from `useStructureRestApi`, which manages the global loading indicator via `useCoreStore`'s `getLoading`/`setLoading`.
-- Actions chain with `.then()` rather than sequential `await`; the module docstring flags this as a deliberate style choice.
-- `signup` takes a single object instead of six positional args to prevent silent transposition of `imageUpload` / `options` and to make the `username`-defaults-from-`email` and `passwordConfirm`-defaults-from-`password` fallbacks explicit.
-- The `httpOnly` JWT cookie is cleared only server-side; the JS-accessible `isAuth` flag is cleared locally by `session.logout()`.
-- Analytics (`useObservabilityStore.track` + `unidentifyUser`) fire on **both** logout paths but **not** on login or signup — check whether that is intentional before adding events.
+- **`.then` chaining, not `await`.** Each action chains the session/profile side-effects as `.then` callbacks rather than sequentially awaiting them. This is intentional (documented in the module JSDoc) and means the returned promise resolves after the profile fetch, not just after the API call.
+- **`remember` is binary at the UI level** but maps to `LoginRequestRemember.medium` (≈ 30 days) or `undefined`. There is no "long" tier here.
+- **`signup` takes a single object** (not positional args) to avoid transposition of `imageUpload` / `options` and to make the `username ← email` / `passwordConfirm ← password` defaults explicit.
+- **httpOnly `jwt` cookie** can only be cleared server-side; `logout`/`logoutEverywhere` rely on the session store to issue the right API call. The JS-accessible `isAuth` flag is cleared locally.
+- **No token is set on signup.** Callers must direct the user to confirm email and then call `login`.

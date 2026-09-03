@@ -2,30 +2,32 @@
 
 ## Purpose
 
-Cypress end-to-end spec covering the Products list and detail screens. It drives a real browser against a seeded backend to verify that anonymous visitors see only publicly visible products, admins see the full set with role-specific row actions, and the detail page renders the fields the API actually returned.
+Cypress E2E suite that exercises the products **list** and **detail** pages in a real browser against a seeded backend. It verifies what anonymous vs. admin users see (including soft-deleted and inactive products), that the public list matches the API's public scope, that row actions are role-gated, and that the detail page renders the fields the API returned.
 
 ## Key elements
 
-- **`describe('Products')`** — top-level suite; `beforeEach` visits `/en` and calls `cy.resetState()` to start from a clean session.
-- **`describe('Products list')`** — asserts:
-  - Page title and table presence.
-  - Soft-deleted and inactive products are hidden from anonymous visitors (tested as a transition: create → confirm visible → hide → confirm gone).
-  - Row count matches `cy.publicProducts()` exactly (public scope parity).
-  - Each row shows the product's title and price (addressed by title, not row index).
-  - "Create product" button is admin-only; row actions are View-only for non-admins vs. View / Edit / Delete / Hard-delete for admins.
-  - Admins *do* see soft-deleted and inactive rows.
-  - Clicking View navigates to `/products/:id` (id read off the clicked row).
-- **`describe('Product detail')`** — uses `cy.productInRole('rich')` to guarantee a record with title, price, and description; then asserts each field renders and a "Go to products list" link exists.
-- **Custom commands relied upon** (defined elsewhere): `cy.resetState()`, `cy.createProduct()`, `cy.softDeleteProduct(id)`, `cy.deactivateProduct(product)`, `cy.publicProducts()`, `cy.loginAs(role)`, `cy.productInRole(role)`.
+- **`PAGE_ONE_SIZE` (10)** – constant capping row-count and iteration assertions to a single rendered page; a paginated list can only ever show this many rows.
+- **`describe('Products list')`** – all list-page tests:
+  - Title/table presence.
+  - "Transition" tests: create → confirm visible → soft-delete or deactivate → confirm gone (one independent case per flag).
+  - Row-count parity with `cy.publicProducts()`, clamped to `PAGE_ONE_SIZE`.
+  - Title + price rendering per row (addressed by title, not index).
+  - Create-button and row-action visibility split by admin vs. anonymous.
+  - Admin still sees soft-deleted and inactive rows.
+  - Clicking **View** navigates to `/products/:id` (id read off the DOM row to avoid sort-tie fragility).
+- **`describe('Product detail')`** – detail-page tests using a `rich` fixture (guarantees description + price):
+  - Page exists, title / price / description displayed, back-link present.
+- **Custom Cypress commands relied on** (defined elsewhere): `cy.resetState`, `cy.createProduct`, `cy.softDeleteProduct`, `cy.deactivateProduct`, `cy.publicProducts`, `cy.loginAs`, `cy.productInRole`.
 
 ## Relationships
 
-No graph neighbors are recorded for this file. It depends on custom Cypress commands and `data-test` attributes defined in the application and support files, but those links are not captured in the dependency graph.
+No graph neighbors are recorded for this file. It implicitly depends on the custom command layer (listed above) and the seeded backend API, but no sibling source files are tracked in the dependency graph.
 
 ## Notes
 
-- **Assertions target API-served data, not literals.** Every expectation is read from the record the backend returned (`cy.publicProducts()`, `subject`), so the spec breaks if the API shape changes rather than silently passing against a stale catalogue.
-- **Row order is intentionally not pinned.** The API sorts by `createdAt DESC, _id DESC`; seeded rows can share a millisecond. The spec addresses rows by title or reads the id from the clicked DOM node to stay order-independent.
-- **Transition over tableau for visibility rules.** The soft-delete and deactivation tests create a product, confirm it is visible, then hide it and confirm it is gone. A pre-hidden fixture could not distinguish "filter works" from "row was never there."
-- **`deletedAt` and `active` are independent fields**, so they get separate test cases to keep failure attribution unambiguous.
-- **`cy.productInRole('rich')`** is used instead of `inStock` because the detail assertions read `description` and `price`; the "rich" role guarantees those fields are non-empty.
+- **Transition over tableau.** Visibility rules are tested by mutating state mid-test (create → hide → reload) rather than asserting on a pre-seeded hidden row, so a passing test actually proves the filter logic rather than "the row was never there."
+- **Independent flags, independent cases.** `deletedAt` and `active` are separate test cases; a combined assertion would go red without identifying which filter caused it.
+- **Only page 1 is asserted.** Comparing against the full catalogue would fail the moment it exceeds one page regardless of pagination correctness.
+- **Title-addressed, not index-addressed.** The API sorts by `createdAt DESC, _id DESC`; seeded rows can share a millisecond, so row order is a fixture-timing artifact, not behaviour under test.
+- **Synchronous DOM read before click.** The View-navigation test reads the product id inside a single `.then(($row) => …)` to avoid re-entering the Cypress chain (`.eq(0)` on a stale jQuery element throws).
+- **`rich` fixture for detail.** Chosen specifically because it guarantees non-empty `description` and `price`; an `inStock` fixture could have an empty description and make the assertion vacuous.

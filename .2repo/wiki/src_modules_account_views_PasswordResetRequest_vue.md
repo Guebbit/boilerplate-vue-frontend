@@ -1,23 +1,19 @@
 # src/modules/account/views/PasswordResetRequest.vue
 
 ## Purpose
-
-Public-facing page that collects an email address and requests a password-reset token from the backend. It always displays the same success acknowledgement regardless of whether the account exists, preventing username enumeration.
+Public "request password reset" page. The user enters an email address; the backend is asked to issue a reset token. The UI always displays the same success acknowledgement whether or not the account exists, preventing username enumeration.
 
 ## Key elements
-
-- **`submitForm`** — Orchestrates the submit flow: calls `requestPasswordReset(email)` from the auth store, shows a success toast on resolution, and routes API errors either to the relevant field (`applyServerErrors`) or to a generic toast (`notifyErrorMessages`).
-- **`useAppForm`** — Manages form state (`form`, `formErrors`, `isSubmitting`) and wraps the async submit with `handleSubmit`. Validates against `usersSchema.pick({ email: true })` (Zod) before the handler runs.
-- **`useAuthStore().requestPasswordReset`** — The API call that actually requests the reset token.
-- **Template** — Single email field + submit button inside a `v-card`, plus a "Go to Login" text button. Uses `novalidate` so the app's own validation (not browser-native) is authoritative.
+- **`submitForm`** – Entry point for the form's `@submit.prevent`. Delegates to `handleSubmit` (from `useStructureFormValidation`), which runs validation, then calls `useAuthStore().requestPasswordReset(email)`. On success a toast is shown; on failure, server errors are mapped to the offending field or surfaced as a toast.
+- **`useStructureFormValidation`** – Toolkit composable that owns `form`, `formErrors`, `showErrors`, `isSubmitting`, `handleSubmit`, and `applyServerErrors`. Configured with `usersSchema.pick({ email: true })`, `novalidate`-aware DOM targeting via `VUETFY_INVALID_FIELD_SELECTOR`, and `revalidateOn: locale` so re-validation fires on language switch.
+- **`applyServerErrors` / `notifyErrorMessages`** – Error-landing utilities: server-named field errors are applied to the form; anything unresolvable falls through to a generic toast.
+- **Template** – `LayoutDefault` wrapper → single `v-card` containing one email `v-text-field`, a submit `v-btn` with loading state, and a text button linking to the `Login` route via `routerLinkI18n`.
 
 ## Relationships
-
-- **`src/infrastructure/utils/logger.ts`** (listed graph neighbor) — Not directly imported or referenced in this file. No observable interaction in the source.
+- **`src/infrastructure/utils/logger.ts`** – Appears in the dependency graph but is not directly imported in this file; likely reached indirectly through `@/infrastructure/utils/errors.ts` or the auth store's API layer.
 
 ## Notes
-
-- **Enumeration safety is intentional and tested:** the component never branches its UI on whether the email belongs to an existing account. An e2e test asserts this; do not add conditional messaging.
-- **Non-null assertion on `form.value.email!`:** safe only because `handleSubmit` gates the callback behind successful schema validation; the handler is never invoked with an invalid/missing email.
-- **Dual `<script>` blocks:** the plain `<script>` block exists solely to set `name: 'PasswordResetRequestPage'` (required for devtools/keep-alive). All logic lives in `<script setup>`.
-- **`routerLinkI18n({ name: 'Login' })`** is used for the back-link so the route is locale-aware; do not hard-code a path.
+- **Enumeration safety is a tested contract.** The JSDoc references an e2e assertion that the response is identical for existing vs. non-existing accounts. Do not branch the success UI on whether the account was found.
+- The `<form>` carries `novalidate`, so all validation is handled by the toolkit composable, not the browser.
+- `form.value.email!` uses a non-null assertion; this is safe only because `handleSubmit` guarantees validation passed before the inner callback executes.
+- Re-validation on `locale` change means switching language mid-form re-runs the schema and may surface new error messages.

@@ -2,21 +2,19 @@
 
 ## Purpose
 
-Visual regression test for the application shell — the two screens (home/landing page and the 404 error page) that don't belong to any domain module. All other visual baselines live under `src/modules/<name>/tests/e2e/__snapshots__/`; this file captures the orphaned screens that have no owning module.
+Visual regression tests for the application "shell" — the pages that don't belong to any domain module (landing page, static prose pages, error page). Because module-owned screens keep their baselines alongside their module, these ownerless screens are the ones captured here. The suite is a reporting tool, not a CI gate.
 
 ## Key elements
 
-- **`sweepVisual('the shell', [...])`** — Single call to the shared sweep helper. Registers two route/selector pairs:
-  - `['home', '/en', '#home-page']` — landing page
-  - `['not-found', '/en/this-route-does-not-exist', '#error-page']` — error page shown for an unknown route
+- **`sweepVisual('the shell', […])`** — Captures four screens: `home` (`/en`, `#home-page`), `about` (`/en/about`, `#static-page-about`), `faq` (`/en/faq`, `#static-page-faq`), `not-found` (`/en/this-route-does-not-exist`, `#error-page`). Each entry is a `[label, url, selector]` tuple.
+- **`sweepVisual('the shell, signed in', […], 'user')`** — Captures the signed-in home page with the cart/account header visible. The third argument (`'user'`) tells the harness to run under an authenticated session.
 
 ## Relationships
 
-- **`tests/support/e2e/visual-sweep.ts`** — Provides the `sweepVisual` function imported and called directly. That module handles the actual screenshot capture, pixel-diff comparison, and report generation.
-- **`package.json`** — This file is deliberately excluded from the `npm run complete` script; it runs as a standalone report rather than a CI gate.
+- **`tests/support/e2e/visual-sweep.ts`** — Provides the `sweepVisual` function. That file defines how the sweep works, why a pixel diff is treated as a report rather than a pass/fail gate, and what the "five things that must be frozen" are (detailed further in `docs/tools/visual-regression.md`).
 
 ## Notes
 
-- Pixel diff here is a **report, not a gate** — a failing snapshot does not block the pipeline. The rationale and the five conditions that must be frozen for the comparison to be meaningful are documented in `docs/tools/visual-regression.md`.
-- If a new shell-level screen is added (no module ownership), add a row to the `sweepVisual` array rather than creating a separate spec file.
-- The `commands.ts` neighbor in the graph is not directly imported by this file; any interaction would be indirect through the shared test environment setup.
+- **Deliberately excluded from `npm run complete`.** This suite runs separately; a failing diff produces a report, not a build failure.
+- **No baselines live in this file's directory.** The sweep utility (in `visual-sweep.ts`) manages where screenshots are stored and compared; the `.cy.ts` file only declares *what* to capture.
+- **Adding a new shell page** means appending a `[label, url, selector]` tuple to the existing `sweepVisual` call — no new function or import needed.

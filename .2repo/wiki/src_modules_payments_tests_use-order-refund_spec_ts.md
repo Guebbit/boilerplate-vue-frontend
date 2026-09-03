@@ -2,26 +2,26 @@
 
 ## Purpose
 
-Vitest suite for the `useOrderRefund` composable. It verifies that the refund button's availability is driven entirely by the server's `actions.refund` field on the payment record — the composable decides nothing on its own — and that edge cases (no payment, missing order id) leave the control disabled rather than issuing a broken request.
+Unit tests for the `useOrderRefund` composable. They lock in the contract that the composable makes **no** local refundability decision: the button state is always a passthrough of the server's `actions.refund` flag, and the only client-side guard is an empty order-ID short-circuit.
 
 ## Key elements
 
-- **`payment(refund: boolean)`** – factory returning a minimal payment object whose `actions.refund` flag and `status` toggle with the argument.
-- **`responses`** – mutable `Record<string, unknown>` holding the mock HTTP responses; each test overwrites it to simulate different server states.
-- **`vi.mock('@/infrastructure/http')`** – replaces `orvalMutator` with a stub that looks up `responses` by `METHOD /path`; unmatched keys reject with a 404 error-envelope object (not a `Error` instance) to mirror the API's rejection contract.
-- **`settled()`** – single microtask flush (`Promise.resolve().then(() => undefined)`) that lets the composable's immediate watcher fetch resolve before assertions run.
-- **`describe('useOrderRefund')`** – four cases:
-  - Server says refund open → `canRefund` is `true`.
-  - After calling `refund()`, refreshed record shows `refund: false` → `canRefund` is `false`.
-  - 404 (no payment exists) → `canRefund` is `false`.
-  - `orderId` is `undefined` → `refund()` resolves to `undefined` without hitting the network.
+- **`payment(refund: boolean)`** – factory returning a minimal payment record; toggles `actions.refund` and flips `status` between `'succeeded'` and `'refunded'`.
+- **`responses`** – mutable `Record<string, unknown>` mapping `"METHOD /url"` to the response body the mocked transport should resolve with.
+- **`vi.mock('@/infrastructure/http')`** – replaces `orvalMutator` with a stub that looks up `responses`; unknown keys **reject** with a 404-shaped envelope (`{ success, status, message, errors }`), mirroring the store's real rejection contract.
+- **`settled()`** – single microtask yield (`Promise.resolve().then(...)`) so the composable's immediate watcher fetch resolves before assertions read state.
+- **Four `it` cases** (under `describe('useOrderRefund')`):
+  1. `canRefund` is `true` when the server's `actions.refund` is `true`.
+  2. After calling `refund()`, the refreshed record carries `actions.refund: false`, so `canRefund` becomes `false`.
+  3. A 404 (no payment record) keeps `canRefund` `false`.
+  4. `refund()` with an `undefined` order ID resolves to `undefined` without issuing a request.
 
 ## Relationships
 
-No graph neighbors are listed. The file imports `useOrderRefund` from `@/modules/payments` (the unit under test) and mocks `@/infrastructure/http` to isolate HTTP calls. It also uses `pinia` (`createPinia`, `setActivePinia`) and `vue` (`ref`) in test setup.
+No graph neighbors are recorded for this file. It imports `useOrderRefund` from `@/modules/payments` and mocks `@/infrastructure/http`, but neither relationship is tracked in the dependency graph.
 
 ## Notes
 
-- The 404 mock rejection is a plain object matching the API's error envelope (`{ success, status, message, errors }`), **not** a thrown `Error`. The store's `onResponseReject` reads `.status` off it; passing a real `Error` here would break that path.
-- `responses` is reset in `beforeEach`, so tests are order-independent. The "no payment" test sets it to `{}` to force every lookup into the 404 branch.
-- `settled()` only advances one microtask tick; it works because the immediate watcher performs a single fetch. If the composable ever chains multiple awaits, this helper would need updating.
+- The mock rejects with a **plain object**, not an `Error` instance. This is intentional — the API's error envelope *is* the client's rejection contract — and is suppressed with an `eslint-disable` for `@typescript-eslint/prefer-promise-reject-errors`.
+- `settled()` yields exactly one microtask. That is sufficient because the composable's immediate watcher performs a single fetch; it is **not** a full `flushPromises`-style drain.
+- The 404 path is semantically "no intent was ever created," distinct from a real failure; the store reads `status` off the envelope to tell them apart. The test asserts this distinction by clearing `responses` entirely.

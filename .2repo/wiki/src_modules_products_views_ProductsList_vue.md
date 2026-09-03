@@ -1,27 +1,28 @@
 # src/modules/products/views/ProductsList.vue
 
 ## Purpose
-
-The public products list page. It renders a search/filter form, toggleable category and tag facet chips, and a paginated data table of products. Admin users additionally see per-row edit, soft-delete, and hard-delete actions plus a "Create product" button.
+Public products listing page. Provides a search/filter form (text, ID, price range), category and tag facet chips, a paginated data table of products, and admin-gated row actions (edit, soft delete, hard delete). Mounted under `LayoutDefault`.
 
 ## Key elements
 
-- **`handleSearch` / `handleReset`** — apply or clear the reactive `filters` object and call `watchSearchProducts` (a Pinia store action that fetches the page). Both reset `pageCurrent` to 1.
-- **`handleCategoryChip(name)` / `handleTagChip(name)`** — toggle a single facet value on/off, then delegate to `handleSearch`.
-- **`tableHeaders`** (computed) — localized `CoreDataTableHeader<Product>[]`; re-evaluated on locale change.
-- **`pageItems`** (computed) — filters out `undefined` holes from the toolkit's sparse pagination array before handing rows to `DataTable`.
-- **`handleDelete` / `handleHardDelete`** — confirm-then-mutate flows (soft vs. hard) reporting results via the notifications store.
-- **`onMounted(fetchFacets)`** — loads category/tag counts once on mount; chips are hidden until data arrives.
-- **`pageSizeOptions`** — fixed `[10, 25, 50]` choices bound to the page-size `<v-select>`.
+- **`ProductsListPage`** — SFC default export (name + `<script setup>`).
+- **`tableHeaders`** (computed) — Localized column definitions for the `DataTable`; `image` and `actions` columns are marked `synthetic` (no direct field sort).
+- **`pageItems`** (computed) — Filters sparse `undefined` holes out of the toolkit's pagination array before handing rows to the table.
+- **`handleSearch`** — Resets `pageCurrent` to 1 and delegates to the store's `search()` action.
+- **`handleReset`** — Clears all filters, resets page, calls `search(true)`.
+- **`handleCategoryChip` / `handleTagChip`** — Toggle a single facet filter value on/off, then re-trigger search.
+- **`handleDelete` / `handleHardDelete`** — Prompt `confirm()`, call the store's `deleteProduct` / `hardDeleteProduct`, and toast the result.
+- **`pageSizeOptions`** — `[10, 25, 50]` choices bound to the `v-select` in the filter form.
+- **`rowActionSize`** — From `useTouchFriendlySize()`; makes row-action buttons larger below the `sm` breakpoint for WCAG touch-target compliance.
 
 ## Relationships
 
-- **`src/infrastructure/utils/logger.ts`** — reached indirectly through `notifyErrorMessages` (`@/infrastructure/utils/errors.ts`) and the `@guebbit/vue-toolkit` notifications store; all error toasts on this page flow through that chain.
-- **`tests/e2e/specs/keyboard.cy.ts`** — the `data-test` attributes (`facet-chips`, `category-chip`, `tag-chip`, `filter-text`, `create-product`, `row-view`) and the `role="button"` / `aria-pressed` on chips exist so that E2E keyboard-navigation specs can assert focus order and state announcements on this page.
+- **`src/infrastructure/utils/logger.ts`** — No direct import in this file. The error-reporting path runs through `@/infrastructure/utils/errors.ts` (`notifyErrorMessages`) and the `@guebbit/vue-toolkit` notifications store; any logging side-effects are encapsulated there.
 
 ## Notes
 
-- The `pageItemList` array is **sparse** by design in the toolkit; `pageItems` filters out `undefined` slots. An `eslint-disable` comment suppresses the "unnecessary condition" rule because the runtime holes are real regardless of the declared element type.
-- The `image` column is marked `synthetic: true` even though `imageUrl` exists on the model — it renders a `<LazyImage>` and intentionally omits sorting.
-- Facet chips use `role="button"` + `aria-pressed` to make the selected state announced to screen readers; Vuetify's `<v-chip>` alone does not set these.
-- The file was truncated in the source; the actions column likely contains the edit (navigates to a detail/edit route), soft-delete, and hard-delete buttons, all gated behind `isAdmin`.
+- **Sparse pagination array.** `pageItemList` from the toolkit contains `undefined` holes for out-of-range slots. The `pageItems` computed must filter them; the eslint disable is load-bearing—don't remove it.
+- **`synthetic` on `image`.** `imageUrl` *is* a real product field, but the column is marked `synthetic` to suppress a useless "sort by URL" affordance.
+- **`confirm()` dialogs.** Delete confirmations use the native blocking `confirm()` rather than a Vuetify dialog—this is intentional (simpler, no extra component state) but means the page briefly blocks the JS thread.
+- **Facet chips accessibility.** Each `v-chip` carries `role="button"` and `aria-pressed` so screen readers announce selected state; the visual color alone is not sufficient.
+- **Admin gating.** The "Create product" button and row actions (edit/delete) are rendered only when `isAdmin` (from the session store) is true; non-admins see a read-only table.

@@ -1,26 +1,25 @@
 # src/modules/account/views/VerifyEmailConfirm.vue
 
 ## Purpose
-Public (unauthenticated) confirmation page that spends a one-time email-verification token. The token arrived via email and acts as the credential, so the visitor need not be signed in. A submit button is used instead of auto-firing on mount to prevent mail scanners from prefetching the link and consuming the token before the human clicks through.
+
+Public, unauthenticated email-verification confirm page. The visitor follows a link from their email, enters the one-time token into a form, and submits it to activate their account. A submit button (rather than an auto-fire on mount) is used deliberately so that mail-client link prefetchers cannot spend the token before the human actually clicks.
 
 ## Key elements
-- **`VerifyEmailConfirmForm`** – Minimal interface describing the form shape (`token?: string`).
-- **`useAppForm<VerifyEmailConfirmForm>(…)`** – Wires up the reactive form, Zod validation (`token` must be a non-empty string), and submission state (`isSubmitting`, `handleSubmit`, `showFormErrors`).
-- **`submitForm()`** – Calls `confirmEmailVerification(token)` from the profile store; on success pushes a toast and navigates to the `Home` route via `routerLinkI18n`. Errors are surfaced through `notifyErrorMessages`.
-- **`confirmEmailVerification`** (from `useProfileStore`) – The actual API call that spends the token.
-- **Template** – Single `v-text-field` for the token and a `v-btn` submit, wrapped in `LayoutDefault` with an `id="verify-email-confirm-page"` anchor and `data-test` attributes for E2E selectors.
+
+- **`VerifyEmailConfirmPage`** – default export (name-only) identifying the component.
+- **`VerifyEmailConfirmForm`** – interface describing the form shape (`token?: string`).
+- **`form` / `formErrors` / `showFormErrors` / `isSubmitting` / `handleSubmit`** – returned by `useStructureFormValidation` (from `@guebbit/vue-toolkit`), wrapping a Zod schema that requires a non-empty token string. Revalidation is bound to the active `locale`.
+- **`submitForm`** – calls `confirmEmailVerification` from `useProfileStore` with the token; on success shows a toast and navigates to the `Home` route via `routerLinkI18n`; on failure delegates to `notifyErrorMessages`.
+- **Template** – a single `v-card` inside `LayoutDefault` containing one `v-text-field` (bound to `form.token`) and one `v-btn` submit. Both carry `data-test` attributes (`verify-token`, `verify-submit`).
 
 ## Relationships
-The only listed graph neighbor (`src/infrastructure/utils/logger.ts`) is **not** imported or referenced in this file. The actual runtime dependencies visible in the source are:
 
-- `useProfileStore` (`@/modules/account/stores/profile.ts`) – provides `confirmEmailVerification`.
-- `useAppForm` (`@/infrastructure/composables/use-app-form.ts`) – form lifecycle + validation.
-- `notifyErrorMessages` (`@/infrastructure/utils/errors.ts`) – error toast formatting.
-- `routerLinkI18n` (`@/infrastructure/i18n/router-link.ts`) – i18n-aware route target builder.
-- `useNotificationsStore` (`@guebbit/vue-toolkit`) – success/error toast queue.
+- **`src/infrastructure/utils/logger.ts`** – listed as a graph neighbor but no direct import or call is visible in this file. Interaction (if any) is transitive (e.g. through `useProfileStore` or the `vue-toolkit` form helper).
 
 ## Notes
-- **No auth guard:** the page is intentionally public; the token is the sole credential. Do not add a route guard requiring a session.
-- **Swallowed navigation result:** the `.then(() => undefined)` after `router.push` is deliberate—navigation errors are the router's own `onError` responsibility, not the form's. A parallel pattern exists in the password-reset confirm page.
-- **`novalidate` on `<form>`:** browser validation is suppressed; Zod (via `useAppForm`) is the sole validation layer.
-- **`token` pre-filled from `route.query`:** the field is editable, so a user can correct a truncated token from a poorly-wrapping email client before submitting.
+
+- The token is **pre-populated** from `route.query.token` if present, but the user can still edit the field before submitting. The Zod schema only enforces non-empty; there is no server-side shape validation here.
+- `handleSubmit` wraps the async store call; the extra `.then(() => undefined)` intentionally discards `router.push`'s return value so that navigation errors are handled by the router's own `onError`, not swallowed by the form's `.catch`.
+- On success the user is routed to `Home`, not to a profile page directly — the profile page's banner (or lack thereof) reflects verification state.
+- The `revalidateOn: locale` option means validation messages re-render when the user switches language.
+- This page is intentionally **public** (no auth guard); the token in the form *is* the credential, mirroring the password-reset confirm pattern.

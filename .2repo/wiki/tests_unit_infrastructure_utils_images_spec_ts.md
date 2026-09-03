@@ -2,25 +2,26 @@
 
 ## Purpose
 
-Unit tests for `src/infrastructure/utils/images.ts`, covering the three image-URL helpers. The core concern is `resolveImageUrl`: it must prefix API-relative paths with the API origin (read from the axios instance) while leaving already-absolute URLs untouched. The file also pins down the "no thumbnail param set" and "thumbnail param set" contracts for `thumbnailImageUrl`, and the fixed path returned by `placeholderImageUrl`.
+Unit tests for the two exports of `src/infrastructure/utils/images.ts`: `resolveImageUrl` and `placeholderImageUrl`. They exist to pin down the prefixing logic that converts API-relative image paths (e.g. `/images/<hash>.png`) into absolute URLs using the axios instance's `baseURL`, and to guarantee that already-fetchable sources (absolute URLs, `data:`/`blob:` URIs) and empty inputs are passed through or rejected unchanged. The tests target a regression where cross-origin deployments rendered blank images because no one asserted that a byte actually arrived—only that the `src` attribute was a string.
 
 ## Key elements
 
-- **`resolveImageUrl` tests** — verifies origin-prefixing, single-slash joining (avoiding `//` which browsers read as a protocol-relative host), pass-through of `https://`, `http://`, `//`, `data:`, and `blob:` URLs, `undefined` for nullish/empty input, and identity passthrough when `baseURL` is `''` (same-origin deployment).
-- **`thumbnailImageUrl` tests** — asserts `undefined` when `VITE_IMAGE_THUMBNAIL_PARAM` is unset (the "no sized variant" contract `LazyImage` relies on); when the param *is* set, appends `?w=<px>` or `&w=<px>` to the resolved URL; returns `undefined` for a nullish source.
-- **`placeholderImageUrl` test** — asserts the constant return value `/images/no-image-placeholder.svg`.
-- **`withThumbnails()` helper** — stubs the env var, calls `vi.resetModules()`, dynamically re-imports both the http client and the images module, re-applies the test `baseURL` to the fresh axios instance, and returns the freshly evaluated images module. Required because the thumbnail param is read at module-load time.
-- **`beforeEach` / `afterEach`** — sets and restores `instance.defaults.baseURL` on the *original* axios instance so the static-import tests resolve against a known origin.
+- **`resolveImageUrl` tests** — five cases:
+  - Prefixes a path with the API origin.
+  - Joins exactly one slash regardless of trailing/leading slashes (prevents accidental `//host` protocol-relative reads).
+  - Leaves absolute `http(s)://`, protocol-relative `//`, `data:`, and `blob:` sources untouched.
+  - Returns `undefined` for `undefined`, `null`, and `''` (the signal the UI uses to select a placeholder).
+  - Returns a rooted path (`/images/…`) when `baseURL` is empty (same-origin deployment).
+- **`placeholderImageUrl` tests** — asserts it returns the literal same-origin path `/images/no-image-placeholder.svg`.
+- **`beforeEach` / `afterEach`** — swaps `instance.defaults.baseURL` to a known test origin and restores the saved original after each test, so no build-time env stubbing is needed.
 
 ## Relationships
 
-No graph-neighbor files are recorded for this spec. It imports directly from two source modules:
-
-- `@/infrastructure/utils/images` — the unit under test.
-- `@/infrastructure/http/client` — imported for the shared axios `instance` whose `defaults.baseURL` the tests mutate.
+- **`@/infrastructure/utils/images`** — the module under test; both `resolveImageUrl` and `placeholderImageUrl` are imported and exercised.
+- **`@/infrastructure/http/client`** — the live axios `instance` is imported solely to read/write `defaults.baseURL`, mirroring how `resolveImageUrl` obtains the origin at runtime (including e2e runtime overrides invisible to build-time env reads).
 
 ## Notes
 
-- The thumbnail tests **cannot** use a static import of the images module: `VITE_IMAGE_THUMBNAIL_PARAM` is read at module-evaluation time. `withThumbnails()` re-evaluates the module after `vi.stubEnv`, which also re-evaluates the axios client—hence the extra `freshInstance.defaults.baseURL = …` line. Omitting it makes the suite silently depend on whatever `.env` is present.
-- The leading-`//` assertion is not cosmetic: a browser treats `//host` as a protocol-relative URL, so the single-slash join in `resolveImageUrl` is load-bearing, not stylistic.
-- `baseURL` is set on the axios instance rather than via an env stub because that is the actual read path in production code, including the e2e runner's runtime override.
+- Tests mutate the **shared** axios instance's `baseURL` directly rather than mocking env vars; the save/restore in `beforeEach`/`afterEach` is what keeps test isolation intact. Any test file that runs in parallel and also reads `instance.defaults.baseURL` could be affected if this save/restore pattern is skipped.
+- The "joins exactly one slash" case is deliberate: a double-slash (`https://api.example.test//images/…`) would be parsed by browsers as a protocol-relative host, silently breaking the request.
+- `thumbnailUrl` is tested through the same `resolveImageUrl` path (the backend promotes it to a server-relative path just like `imageUrl`), so there is no separate `thumbnailImageUrl` test leaf.

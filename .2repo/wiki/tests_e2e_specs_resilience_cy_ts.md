@@ -2,33 +2,34 @@
 
 ## Purpose
 
-Cypress e2e spec that verifies the application survives *any* dataset without visible breakage. Unlike the value-pinning specs (exact counts, titles, prices), this file asserts only structural health: pages render, log nothing unexpected, do not overflow horizontally, handle empty states, and keep pagination consistent with visible rows. It exists to catch the class of bugs a fixed-dataset spec cannot see—broken images, silent TypeErrors, a table 300 px past the viewport.
+Cypress E2E spec that asserts the app *survives* its current demo dataset without naming any specific value. Where sibling specs pin exact counts, titles, and prices, this file checks structural invariants: every reachable route renders without uncaught console noise or horizontal overflow, empty lists show an empty state rather than breaking, and the pagination control agrees with the rows actually on screen. It intentionally avoids asserting "how many" so that a changed count is a signal in the value-pinning specs, not noise here.
 
 ## Key elements
 
-- **`MAX_HORIZONTAL_OVERFLOW_PX`** (1) – Tolerance for sub-pixel rounding before a page is flagged as overflowing.
-- **`DEFAULT_PAGE_SIZE`** (10) – Mirrors `ProductsList.vue`'s `pageSizeOptions` default; used in the pagination assertion.
-- **`isKnownConsoleNoise`** – Filters out Grafana Faro's `"Faro"` error and vue-i18n's `[intlify] Not found` warning so they don't mask real regressions (or vice-versa).
-- **`CONSOLE_CAPTURE_KEY`** / **`ConsoleCall`** / **`WindowWithConsoleCapture`** – A plain `win` property (not `cy.spy`) that accumulates `console.error`/`warn` calls. A spy would be silently discarded on a cold-server dependency-discovery reload.
-- **`visitCapturingConsole(path)`** – Wraps `cy.visit` with `onBeforeLoad` to attach the capture array and wrap `console.error`/`console.warn`.
-- **`assertNoConsoleNoise()`** – Reads the captured calls from the window and asserts none are unexpected (after filtering known noise).
-- **`assertNoHorizontalOverflow()`** – Asserts `body.scrollWidth ≤ documentElement.clientWidth + 1`.
-- **`assertRouteIsHealthy(path, pageAnchor)`** – Combines the above: visit, assert anchor exists, no console noise, no overflow.
-- **`describe('Resilience')`** – Top-level suite with four inner suites:
-  - *every route renders, quietly, inside the viewport* – Iterates public, guest, authenticated, and admin routes via `assertRouteIsHealthy`.
-  - *the catalogue renders whatever the dataset holds* – Opens every admin-visible product detail page (including the sparse `barebones` record) and checks overflow.
-  - *lists tolerate being empty* – Searches for a nonexistent product to exercise the empty-list branch.
-  - *pagination agrees with the rows actually rendered* – Asserts `.v-pagination` presence is consistent with whether row count ≥ `DEFAULT_PAGE_SIZE`.
+- **`visitCapturingConsole(path)`** — Visits a URL, attaching `console.error`/`console.warn` interceptors in `onBeforeLoad` that push calls onto a plain array stored on the window under `__resilienceConsoleCalls`. Deliberately avoids `cy.spy()` so a cold-server dependency-discovery reload cannot silently discard the spy.
+- **`assertNoConsoleNoise()`** — Reads the captured array, filters out entries matching `isKnownConsoleNoise`, and asserts zero remain.
+- **`isKnownConsoleNoise(call)`** — Whitelist filter for two known non-regression logs: Grafana Faro's `"Faro"` error (no Alloy collector in plain `vite dev`) and vue-i18n's `[intlify] Not found` lazy-load warning. Must stay short and justified.
+- **`assertNoHorizontalOverflow()`** — Asserts `body.scrollWidth ≤ documentElement.clientWidth + 1px` (the 1px tolerance absorbs sub-pixel rounding).
+- **`assertRouteIsHealthy(path, pageAnchor)`** — Composite: visits with console capture, asserts the anchor element exists, then runs both the console-noise and overflow checks.
+- **`MAX_HORIZONTAL_OVERFLOW_PX`** (1) / **`DEFAULT_PAGE_SIZE`** (10) — Tolerance and pagination threshold constants.
+- **Test blocks** — Four `describe` groups:
+  - *every route renders, quietly, inside the viewport* — iterates public, guest, authenticated, and admin routes via `assertRouteIsHealthy`.
+  - *the catalogue renders whatever the dataset holds* — opens every admin-visible product detail page (including the `barebones` record) and asserts no overflow.
+  - *lists tolerate being empty* — searches for a nonsense string and asserts the empty branch renders cleanly.
+  - *pagination agrees with the rows actually rendered* — asserts the `.v-pagination` control is present iff rendered row count ≥ `DEFAULT_PAGE_SIZE`.
 
 ## Relationships
 
-No graph neighbors are recorded for this file. It depends only on the running demo backend (`cy.resetState()`, `cy.loginAs(...)`) and the DOM anchors of the pages under test; it imports nothing from the application source.
+- **`src/modules/products/demo.ts`** — Source of the `barebones` product (empty description, no categories, no tags) that exercises the "sparse record" path; also provides the soft-deleted and inactive rows.
+- **`src/modules/products/store.ts`** — Supplies `useServerPageTotal`, the server-reported page count that the pagination agreement check depends on.
+- **`ProductsList.vue`** — Component whose `pageSizeOptions` default (10) is mirrored in `DEFAULT_PAGE_SIZE`, and whose `[data-test=list-row]` / `[data-test=row-view]` / `[data-test=filter-text]` hooks are the selectors this spec drives.
+- **`stores/observability.ts`** — Grafana Faro integration whose `console.error("Faro")` output is whitelisted in `isKnownConsoleNoise`.
+- **Custom Cypress commands** (`cy.resetState()`, `cy.loginAs()`) — Used in `beforeEach` and role-scoped tests; defined elsewhere in the e2e support layer.
 
 ## Notes
 
-- **No value assertions by design.** Counts, titles, and prices are deliberately absent; a changed count is a signal for the value-pinning specs, not noise here.
-- **Console capture is a plain property, not a spy.** A `cy.spy` attached in `onBeforeLoad` can be lost when Vite's dependency-discovery triggers a full page reload on the first cold request. The array approach degrades to an empty list (no false failure) in that edge case.
-- **Known-noise list is intentionally short.** Adding an entry means this spec has *stopped watching* something; every addition should carry a justification comment.
-- **`inventory` and `feedback` routes are omitted** because those features were still in progress at the time of writing; they should be added to the route list once shipped.
-- **`barebones` product** (in the backend's `src/modules/products/demo.ts`) is the deliberately sparse record—no description, no categories, no tags—that exercises the "optional fields at schema defaults" path. Case 6 (admin detail-page loop) is the one that hits it.
-- **Pagination assertion is written as a relationship** (rows ≥ page size ⟹ control exists; rows < page size ⟹ control absent) rather than a fixed expectation, so it remains meaningful as the demo catalogue grows.
+- **Console capture is a plain window property, not a `cy.spy`.** The first navigation against a cold `vite dev` can trigger a Vite dependency-discovery full reload that discards the window object a spy was attached to. A synchronously-reattached array in `onBeforeLoad` resets to `[]` in the worst case but can never produce a false-positive failure.
+- **`isKnownConsoleNoise` is a whitelist, not a blacklist.** Adding an entry is an admission that the spec has stopped watching something. The file's own doc comment warns: an unexplained addition is how the file "quietly stops working."
+- **Routes are listed manually, not discovered from the router.** Parameterized routes (`products/:id/edit`, `error/:status/:message`) are excluded because they need fixtures to be meaningful. `inventory` and `feedback` are absent because those features were in progress; add them when they land.
+- **The pagination check is written as a two-way agreement** (rows ≥ page size ⇒ control exists; rows < page size ⇒ control absent) rather than a fixed expectation, so it remains meaningful as the demo catalogue grows. It caught a real bug where `pageTotal` was computed locally instead of server-reported.
+- **No randomised or generated data is used.** The demo dataset already contains the awkward records by design; a generated dataset would make failures unreproducible.

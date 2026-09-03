@@ -1,29 +1,22 @@
 # src/modules/account/tests/profile.spec.ts
 
 ## Purpose
-
-Unit tests for the profile store's user-facing flows (fetch, update, role change, password change, email verification, account deletion). The suite mocks **only** the HTTP transport (`orvalMutator`) with a URL-keyed router, so every layer above it — the generated API client, session store, observability store, and the `useStructureRestApi` composable — runs for real. A few cases establish a live session first via `useAuthStore().login`, mirroring how a real caller would arrive.
+Unit tests for the `useProfileStore` flows (fetch, update, role change, password change, email verification, account deletion). Only the HTTP transport is mocked; the generated client, `session.ts`, the observability store, and `useStructureRestApi` all execute for real.
 
 ## Key elements
-
-- **`responses`** (module-level `let`) — `Record<string, unknown>` keyed by `"METHOD /path"`. Rebuilt in `beforeEach`; individual tests overwrite one entry to vary the response without re-mocking.
-- **`vi.mock('@/infrastructure/http')`** — replaces `orvalMutator` with a function that looks up `responses` by the request's method + URL and resolves the matching payload.
-- **`requestedUrls()`** — helper that maps the mock's call history to an ordered array of URLs, used to assert which endpoints were hit and in what order.
-- **`beforeEach`** — resets Pinia, clears all mocks, and reinitialises `responses` to the default set of 8 endpoints.
-- **`describe('fetchProfile')`** — identifier selection, session viewer publication (including the no-payload guard).
-- **`describe('updateProfile')`** — rejection without a loaded profile; field filtering (admin flag stripped); correct self-service endpoint.
-- **`describe('locale preference')`** — locale persisted via `PUT /account`.
-- **`describe('own role')`** — role change routed to `/users/{id}` (admin endpoint), post-write refetch, rejection without profile.
-- **`describe('the account deletion flow')`** — `requestAccountDelete` preserves session; `confirmAccountDelete` clears it.
-- **`describe('the self-service actions')`** — `changePassword` payload shape; `confirmEmailVerification` refetches profile only when a session exists.
+- **`responses` (module-level `Record<string, unknown>`)** — keyed by `"METHOD /path"`, rebuilt in `beforeEach`. Tests override individual entries rather than re-mocking the module.
+- **`vi.mock('@/infrastructure/http')`** — replaces `orvalMutator` with a `vi.fn` that looks up `responses` by the request's method + URL and resolves the matching value.
+- **`requestedUrls()`** — helper that extracts the ordered list of URLs handed to the transport, used to assert call order and endpoint selection.
+- **`USER`** — a fixed representative user record (`id: 'u1'`, `username: 'ada'`, `admin: false`) shared across fetch/update/role assertions.
+- **`describe` blocks** — one per store action: `fetchProfile`, `updateProfile`, locale preference, `own role`, `the account deletion flow`, `the self-service actions` (changePassword, confirmEmailVerification).
+- **`beforeEach`** — resets Pinia (`setActivePinia(createPinia())`), clears all mocks, and reinitialises `responses` to the canonical set of endpoints.
 
 ## Relationships
-
-- **`src/infrastructure/http/index.ts`** — the sole mocked dependency. `orvalMutator` is the transport function the profile store (via the generated `@api` client) calls to issue HTTP requests. Replacing it here is the seam that lets the entire store → composable → client chain execute unmocked.
+- **`src/infrastructure/http/index.ts`** — the sole import that is *mocked*. The test replaces `orvalMutator` so that every HTTP call from the real client layer resolves against the in-test `responses` map. All other imports (`useProfileStore`, `useAuthStore`, `useSessionStore`) run un-mocked.
 
 ## Notes
-
-- The mock is intentionally shallow: only one function in the dependency graph is faked. If a test fails, the bug is in store/composable logic, not in a downstream mock.
-- `responses` is a mutable `let`, not a `const`. Tests that need a different payload for one endpoint overwrite that key inline rather than re-invoking `vi.mock` — the default shape stays in `beforeEach`.
-- Tests that assert "the session was not touched" (deletion request, role refetch) call `useAuthStore().login` first to create a real session, then verify `useSessionStore()` state. Without that step the assertion is vacuous.
-- The `updateProfile` field-filter test checks that `admin` never reaches the wire even when the caller passes it — the store is the sole enforcement point.
+- Tests that require an established session (e.g. `updateOwnRole` refetch, deletion flow) call the **real** `useAuthStore().login()` first — they do not manually seed the session store.
+- The mock key is `METHOD /path` (uppercased method + URL). A 404 (missing key) resolves `undefined`, which is how the "no payload" negative cases are expressed.
+- `updateProfile` intentionally strips the `admin` field before the wire call; the test asserts the exact key set on the `PUT /account` body to pin that guard.
+- Role changes go to `PUT /users/{id}` (admin-guarded), *not* `PUT /account`; the test asserts the URL to prevent silent routing regressions.
+- The file is truncated in the source provided; the `confirmEmailVerification` describe block's second case is cut off mid-assertion.

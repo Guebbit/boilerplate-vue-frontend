@@ -2,23 +2,23 @@
 
 ## Purpose
 
-Unit tests (Vitest) for the `notifyErrorMessages` helper and the `VUETIFY_INVALID_FIELD_SELECTOR` constant exported by `@/infrastructure/utils/errors.ts`. Covers message-extraction across input shapes, fallback behaviour, telemetry forwarding, and the CSS selector's matching against Vuetify markup.
+Unit tests for the error-handling utilities in `@/infrastructure/utils/errors.ts`. Validates that `notifyErrorMessages` extracts a human-readable string from a wide range of error shapes (and falls back safely when it can't), and that `VUETIFY_INVALID_FIELD_SELECTOR` correctly targets the first invalid field in Vuetify-shaped DOM markup.
 
 ## Key elements
 
-- **`notifyErrorMessages` suite** — asserts the function calls `addMessage` with the correct string for: plain strings, `Error` instances, error-like objects (`{ message }`), and a translated fallback for unrecognised / empty / non-string / `null` inputs. Also verifies the original value (not the derived string) is forwarded to `captureException`.
-- **`VUETIFY_INVALID_FIELD_SELECTOR` suite** — asserts the selector matches the first invalid Vuetify field (`input`, `textarea`, `select`, or a `[tabindex]` fallback for `v-select`-style wrappers) and returns `null` when nothing is in error.
-- **`firstMatch` helper** — injects raw HTML into a temporary `<form>`, queries with the selector, and removes the node.
-- **`vi.mock('@/infrastructure/stores/observability.ts')`** — replaces the real store with a `captureExceptionMock` so telemetry assertions are meaningful (the real implementation is a no-op until Faro is wired up).
-- **`beforeAll(() => loadLocale('en'))`** — loads the English dictionary so fallback assertions compare against actual copy rather than a raw i18n key.
+- **`notifyErrorMessages` test suite** — verifies the function handles plain strings, `Error` instances, error-like objects, non-string values, empty strings, `null`, and non-string `message` properties; always calls the provided `addMessage` with either the extracted message or the translated `api-errors.unknown` fallback.
+- **Observability reporting assertions** — confirms `captureException` receives the *original* error value (not the derived message), even on the fallback path.
+- **`VUETIFY_INVALID_FIELD_SELECTOR` test suite** — renders Vuetify-shaped HTML and asserts the selector finds the first `.v-input--error` descendant input/textarea/select (or a `[tabindex]` fallback), ignores non-error fields, and returns `null` when nothing is in error.
+- **`firstMatch` helper** — small DOM utility that injects an HTML string into a temporary `<form>`, runs `querySelector` with the selector under test, and cleans up.
+- **`captureExceptionMock`** — a `vi.fn()` injected via `vi.mock` of the observability store, making the (otherwise no-op) `captureException` observable.
 
 ## Relationships
 
-No graph neighbors are registered for this file.
+No graph neighbors are recorded for this file. It imports `notifyErrorMessages` and `VUETIFY_INVALID_FIELD_SELECTOR` from `@/infrastructure/utils/errors.ts`, `loadLocale` from `@/infrastructure/i18n`, and `enMessages` from `@/locales/en.json`, and mocks `@/infrastructure/observability/store.ts`.
 
 ## Notes
 
-- **Locale must be loaded before assertions.** The fallback message is translated copy; without `loadLocale` every fallback assertion would compare against a raw key like `api-errors.unknown` and silently pass or fail incorrectly.
-- **Observability mock is intentional.** The production `captureException` is a deliberate no-op pending Faro integration. Without the mock, "reports the error" assertions would pass vacuously (the mock would never be called, but the real store would also never fail).
-- **Empty-message guards are tested per shape.** Each falsy shape (`''`, `new Error('')`, `{ message: '' }`, `{ message: {…} }`, `null`) gets its own test because the corresponding `&&` guard is a single, review-invisible token; dropping any one would be caught only by its dedicated case.
-- **`null` is a realistic input.** An empty rejected API body deserialises to `null`; `typeof null === 'object'` means the `error &&` guard is the only thing preventing a `TypeError`.
+- `loadLocale('en')` in `beforeAll` is required: the fallback message is translated copy, so assertions compare against `enMessages['api-errors'].unknown` rather than a raw key.
+- The observability store is mocked because the real `captureException` is a deliberate no-op (Faro not yet wired up); without the mock, reporting assertions would pass vacuously.
+- Empty-message guards (`''`, `new Error('')`, `{ message: '' }`) each get a dedicated test case because the `&& error` / `&& error.message` truthiness checks are individually easy to drop in review.
+- The selector tests encode the accessibility contract that the *first* invalid field is targeted, and that Vuetify-specific class names (`.v-input--error`) must remain stable — a Vuetify rename would break these without breaking the underlying focus logic (tested elsewhere in `useStructureFormValidation`).

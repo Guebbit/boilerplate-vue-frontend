@@ -2,28 +2,26 @@
 
 ## Purpose
 
-Composition root of the HTTP tier. Wires the request/response interceptors onto the shared axios instance and exposes `orvalMutator` as the single function every generated (or hand-written) API call goes through. `orval.config.ts` points all generated clients at this module, making it the tier's public surface.
+Composition root of the HTTP tier. Wires interceptors onto the shared axios instance at module load and exposes `orvalMutator` as the single function every generated (and hand-written) API call goes through. This is the tier's public surface: `orval.config.ts` points all generated clients here, and interceptor specs exercise them via the re-exports in this file.
 
 ## Key elements
 
-- **`orvalMutator<T>(config, options?)`** — The only function permitted to call the shared axios `instance` directly. Merges per-call `options` with the codegen-built `config` (config wins on conflict), executes the request, optionally validates the response against a contract schema, and returns the unwrapped `response.data`.
-- **Interceptor wiring** (module-level, runs once on import) — Attaches `onRequest` / `onRequestReject` as request interceptors and `onResponseRejectWithRefresh` as the response-error interceptor.
-- **Re-exports** — `onRequest`, `onRequestReject`, `onResponseReject` are re-exported so that interceptor specs can import them through this module.
+- **`orvalMutator<T>(config, options?)`** — The sole allowed caller of the shared axios instance. Merges caller-supplied `options` under codegen-built `config` (config wins on conflict), sends the request, optionally validates the response against a contract, and resolves with `response.data`. Declaring the `options` parameter gives every generated function an `options?` arg for per-call overrides (`signal`, `onUploadProgress`, etc.).
+- **`instance.interceptors.request.use(onRequest, onRequestReject)`** — Attaches request interceptors at import time.
+- **`instance.interceptors.response.use(undefined, onResponseRejectWithRefresh)`** — Attaches the 401 refresh/retry interceptor.
+- **Re-exports** — `onRequest`, `onRequestReject`, `onResponseReject` from `./interceptors.ts`, so test files can import them through this module.
 
 ## Relationships
 
-- **`./client.ts`** — Provides the shared `instance` (single axios instance) that `orvalMutator` calls and the interceptors attach to.
-- **`./interceptors.ts`** — Supplies `onRequest`, `onRequestReject` (wired here) and `onResponseReject` (re-exported).
-- **`./refresh.ts`** — Supplies `onResponseRejectWithRefresh`, wired as the response-error interceptor (handles 401 token refresh).
-- **`./validate.ts`** — Supplies `shouldValidateResponses` and `validateResponseAgainstContract`, called inside `orvalMutator` after a successful response.
-- **`./response-schema-map.ts`** — Downstream of `validate.ts`; provides the schema map used for contract validation.
-- **`contracts/rest/index.ts`** — The contract definitions that `validateResponseAgainstContract` checks responses against.
-- **`src/infrastructure/stores/session.ts`** — Consumed by the refresh flow to read/write the session token.
-- **`src/modules/account/tests/*.spec.ts`** — Integration tests that exercise the full HTTP pipeline through this module's exports.
+- **`./client.ts`** — Provides the shared `instance` (axios) that this file configures and calls.
+- **`./interceptors.ts`** — Supplies `onRequest`, `onRequestReject`; this file re-exports them alongside `onResponseReject` (which is applied as the response rejection handler).
+- **`./refresh.ts`** — Provides `onResponseRejectWithRefresh`, wired as the response-rejection interceptor.
+- **`./validate.ts`** — Provides `shouldValidateResponses()` and `validateResponseAgainstContract()`, invoked inside `orvalMutator` after a successful request.
+- **`contracts/rest/index.ts`** — Consumed by `validate.ts` as the schema source for response validation (indirect dependency through `validate.ts`).
+- **Module test files** (e.g. `src/modules/account/tests/*.spec.ts`, `src/modules/inventory/tests/store.spec.ts`, etc.) — Import interceptors through this module's re-exports rather than reaching into `interceptors.ts` directly.
 
 ## Notes
 
-- **Headers merge is one level deeper than a top-level spread.** Every generated call that carries a body sets `Content-Type`, so a flat `{...options, ...config}` merge would silently drop caller-supplied headers (e.g. the `multipart/form-data` boundary). The code spreads `options.headers` and `config.headers` separately into a new object.
-- **`config` always wins over `options`.** The second parameter exists so callers can pass per-call axios config (`signal`, `onUploadProgress`) without touching `orvalMutator` directly; it is an escape hatch, not an override.
-- **The `eslint-disable no-misused-spread` on the headers line is intentional** — AxiosHeaders' enumerable entries are exactly what an object spread copies, per axios docs.
-- **Importing this module has a side effect:** it attaches interceptors to the shared instance. Tests that import it get the fully-wired instance; tests that import `./client.ts` directly get the bare one.
+- **Header merge depth.** `headers` is spread one level deeper (`{ ...options?.headers, ...config.headers }`) instead of top-level. This is intentional: every generated call with a body sets `Content-Type` in `config.headers`, so a top-level merge would clobber caller-supplied headers (e.g. multipart `boundary`) on exactly the requests most likely to need them.
+- **Validation is conditional.** `shouldValidateResponses()` gates the contract check, so production paths can skip it without modifying the mutator.
+- **Single entry point.** The eslint-disable comment and the doc block both stress that no other code should call `instance` directly; all behaviour configuration is funneled through this one function.

@@ -2,26 +2,26 @@
 
 ## Purpose
 
-Configuration file for Stryker mutator, defining which source files are mutated, how tests are run (via Vitest), where reports are written, and what score thresholds must be met. It exists so that mutation testing runs consistently across local development and CI without ad-hoc CLI flags.
+Stryker Mutator configuration that defines which source files are subject to mutation testing, how tests are executed (via Vitest), where reports are written, and what quality thresholds gate the build. It exists to make mutation coverage a reproducible, configurable part of the project's quality pipeline.
 
 ## Key elements
 
-- **`testRunner` / `vitest`** — Stryker delegates test execution to Vitest using `vitest.config.mutation.ts` (a dedicated config, not the default `vitest.config.ts`).
-- **`mutate`** — Glob list targeting `src/infrastructure`, `src/app`, `src/kernel`, and `src/modules/*/**` while explicitly excluding module `index.ts` barrels and module test directories.
-- **`incremental`** — When `true`, Stryker only scores mutants on lines touched by the current change (requires git).
-- **`coverageAnalysis: "perTest"`** — Stryker tracks which tests kill which mutants to prune redundant test executions.
-- **`thresholds`** — `high: 80`, `low: 60`, `break: 60`. A score below 60 causes the process to exit non-zero.
-- **`reporters`** — Emits HTML (`reports/mutation/index.html`), JSON (`reports/mutation/mutation.json`), clear-text, and progress output.
-- **`concurrency: 6`** / **`timeoutMS: 20000`** — Parallelism cap and per-test timeout in milliseconds.
-- **`ignorePatterns`** — Excludes `coverage/`, `reports/`, `dist/`, `docs/` from mutation and file-watching.
+- **`mutate`** — Glob patterns selecting the files under test: `src/infrastructure/**`, `src/ui/dialog.ts`, `src/app/**`, `src/kernel/**`, and `src/modules/*/**` (with exclusions for module `index.ts` barrel files and module test files).
+- **`testRunner` / `vitest.configFile`** — Tells Stryker to run Vitest using the dedicated `vitest.config.mutation.ts` config (separate from the main test config).
+- **`coverageAnalysis: "perTest"`** — Uses per-test coverage to cull mutants that are never exercised by any test, improving runtime.
+- **`incremental: true`** — Only mutates files changed in the current commit/diff, keeping CI runs fast.
+- **`thresholds`** — `high: 80`, `low: 60`, `break: 60`. A mutation score below 60% fails the run; between 60–80% it is flagged as "low."
+- **`reporters` + output paths** — Writes HTML and JSON reports under `reports/mutation/`.
+- **`concurrency: 6` / `timeoutMS: 20000`** — Runs up to 6 test batches in parallel; each mutation run times out after 20 s.
+- **`ignorePatterns`** — Excludes build artifacts, coverage output, docs, and reports from Stryker's file scanning.
 
 ## Relationships
 
-- **`github/workflows/mutation.yml`** — The CI workflow that invokes Stryker (typically via `npx stryker run`) and consumes the JSON report / exit code produced by this config to gate merges.
-- **`scripts/run-mutation-tests.ts`** — A local/CI helper script that launches Stryker, picking up this config automatically (or passing it explicitly), and may post-process the `reports/mutation/` artifacts.
+- **`github/workflows/mutation.yml`** — The CI workflow that invokes Stryker (e.g. `npx stryker run`), consuming the thresholds and report paths defined here to decide pass/fail and to publish the HTML report as a CI artifact.
 
 ## Notes
 
-- The `vitest.config.mutation.ts` file is separate from the standard Vitest config; changes to one do not affect the other.
-- `incremental: true` means a full-repo score only appears when there are no pending changes (e.g., on a clean branch head). In CI, this typically resolves to the diff against the default branch.
-- The `!src/modules/*/index.ts` exclusion exists because barrel files rarely contain logic worth mutating and can inflate the denominator with trivial mutants.
+- The dedicated `vitest.config.mutation.ts` means mutation-test runs may resolve aliases or mocks differently from the standard Vitest config; changes to one don't automatically affect the other.
+- `incremental: true` means a full-file mutation run only happens in non-incremental contexts (local dev, tag-based runs). In PR CI the effective scope shrinks to diffed files.
+- The `mutate` array explicitly targets `src/ui/dialog.ts` while the rest of `src/ui` is *not* mutated—treat this as intentional scoping, not an oversight.
+- Module `index.ts` files are excluded from mutation because they are re-export barrels; mutating them would produce meaningless mutants.

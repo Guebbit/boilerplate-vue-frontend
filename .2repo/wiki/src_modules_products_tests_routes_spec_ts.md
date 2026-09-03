@@ -1,17 +1,21 @@
 # src/modules/products/tests/routes.spec.ts
 
 ## Purpose
-Table-driven Vitest spec that verifies every route in the products module declares the expected `meta.access` value, and that no route exists outside the known set. It guards against a route silently losing its access declaration (making it public) or a new route being added without an access decision.
+
+Table-driven Vitest spec that asserts every route in the products module declares an explicit `meta.access` value, and that no route exists outside the tested set. It inspects the raw route records directly (no resolved router, no locale prefix), so it runs as a standalone fact about this module's declarations.
 
 ## Key elements
-- **`byName(name)`** — local helper that finds a `RouteRecordRaw` in the imported routes array by `route.name`.
-- **`it.each([...])('%s declares access: %s')`** — table-driven assertion checking each route's `meta.access` against a hardcoded expected value (`undefined` for public, `'admin'` for protected). Expectations are written out explicitly rather than derived from the route records, so a lost access field fails the test instead of matching itself.
-- **`it('declares no route this file does not know about')`** — closed-set check: the sorted list of all route names in `routes` must equal the sorted list of the four names in the table. Catches any new route added without a corresponding entry above.
+
+- **`byName(name)`** — helper that finds a `RouteRecordRaw` in the imported route table by its `name` string.
+- **`it.each([...])` block** — one case per known route, asserting both that the route exists and that its `meta.access` equals the expected literal (`undefined` for public, `'admin'` for protected). Expected values are written out explicitly so a silently dropped `meta.access` fails the test.
+- **Closed-set test** — maps all route names and asserts the sorted list equals the four known names, catching any newly added route that has no corresponding access decision.
 
 ## Relationships
-- **`src/modules/products/routes.ts`** — the sole production import. The spec reads the raw `RouteRecordRaw[]` exported by default from that file. It does not mount a router, apply locale prefixes, or touch the rest of the app; it inspects the module's own route table directly.
+
+- **`src/modules/products/routes.ts`** — the sole subject under test. This spec imports its default export (the array of `RouteRecordRaw` objects) and reads each record's `name` and `meta.access`. It does not mount, resolve, or navigate through the router; it treats the export as plain data.
 
 ## Notes
-- The expected access values are intentionally *not* read from the route objects. Deriving them from the records under test would make the assertion tautological and unable to detect a missing `meta.access`.
-- The closed-set check means adding a new product route without also adding a row to the `it.each` table will fail CI. Keep both in sync.
-- The file's header comment references `docs/theory/modules.md` for the architectural rationale (domain-specific facts live in the domain module, not a platform-wide spec).
+
+- The spec deliberately tests the *declaration* (the data in `routes.ts`), not *enforcement* (which belongs to a router-level spec). The two are complementary but independent.
+- Adding a new route to `routes.ts` without updating the `it.each` array **and** the closed-set literal will cause both tests to fail — that is intentional.
+- `meta.access` values are compared with `toBe` against the literal, not derived from any shared constant, so a refactor that renames the key or changes the type will surface here.

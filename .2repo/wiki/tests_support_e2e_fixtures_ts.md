@@ -2,31 +2,32 @@
 
 ## Purpose
 
-Cypress custom commands that locate or create demo-dataset records by **role** (e.g. "inStock", "rich") instead of by a backend-specific id or title. This keeps specs portable across backends: the shared contract treats `Id` as format-free, so naming a concrete record in a spec would adopt a constraint the contract deliberately avoided.
+Defines a set of Cypress custom commands that give specs a **role-based** way to find or create test subjects (products, orders, accounts) without hard-coding backend-specific IDs or titles. The design principle: a spec names *what it needs* (e.g. "an in-stock product", "a cancellable order") and the file resolves that against the running backend at runtime, keeping specs portable across backends.
 
 ## Key elements
 
-- **`ProductRole`** (`'inStock' | 'rich' | 'outOfStock'`) and **`ROLE_PREDICATES`** — maps each role to a boolean predicate over a `ProductLike` shape, defining what "in stock", "fully populated", and "zero stock" mean.
-- **`ProductLike`** — a six-field structural interface (id, title, price, onHand, description, categories). Declared locally rather than imported from `@api` because `tsconfig.cypress.json` is a composite project that does not claim `contracts/`.
-- **`publicProducts()`** — reads the anonymous `GET /products?pageSize=100` list via `cy.request`.
-- **`productInRole(role)`** — finds the first public product satisfying the role's predicate; throws a descriptive error if the dataset has none.
-- **`orderInRole('cancellable')`** — finds the admin's own order with `status === 'pending'` (the cancel-gate-open state), read as admin.
-- **`accountInRole(role)`** — calls `GET /account` as the given `E2ERole` to resolve the caller's id/email from the API rather than hardcoding them.
-- **`createProduct(overrides?)`** — `POST /products` as admin; defaults title to a test-run-unique string and price to 10.
-- **`softDeleteProduct(id)`** — `DELETE /products/{id}` as admin (sets `deletedAt`).
-- **`deactivateProduct(product)`** — `PUT /products/{id}` as admin with `active: false`.
-- **`apiAs<T>` / `adminApi<T>`** — internal helpers that route write (and role-scoped read) calls through `cy.task('adminApi')` on the Node side, passing credentials from `E2E_ACCOUNTS`.
+- **`ProductRole`** (`'inStock' | 'rich' | 'outOfStock'`) — the three product shapes specs may request; each maps to a predicate in `ROLE_PREDICATES`.
+- **`ROLE_PREDICATES`** — `Record<ProductRole, (p: ProductLike) => boolean>`; `inStock` checks `onHand > 0`, `rich` requires all optional fields populated, `outOfStock` checks `onHand === 0`.
+- **`publicProducts()`** — walks every page of the public catalogue (up to `PUBLIC_PAGE_SIZE = 100` per request) and returns the full item list. Uses `cy.request` as an anonymous caller.
+- **`productInRole(role)`** — calls `publicProducts()` then finds the first match; throws a descriptive error if no product satisfies the role.
+- **`createProduct(overrides?)`** — `POST /products` as admin via the `adminApi` task; defaults to a minimal body with a run-unique title.
+- **`softDeleteProduct(id)`** — `DELETE /products/{id}` (sets `deletedAt`).
+- **`deactivateProduct(product)`** — `PUT /products/{id}` with `active: false`; must include `title` and `price` because the update route is a full replace.
+- **`accountInRole(role)`** — `GET /account` as the named seeded user; returns `{ id, email }`.
+- **`createOrder(role)`** — provisions a new product then creates a one-line order under the named account's ID, all as admin.
+- **`orderInRole('cancellable')`** — reads the admin's own orders and returns the first with `pending` status.
+- **`apiAs` / `adminApi`** — internal helpers that route write/read calls through the `adminApi` Cypress task (Node-side) rather than `cy.request`, passing credentials from `E2E_ACCOUNTS`.
 
 ## Relationships
 
-- **`tests/support/e2e/accounts.ts`** — provides `E2E_ACCOUNTS` (credential map keyed by `E2ERole`) and the `E2ERole` type; `apiAs` and `accountInRole` consume both to authenticate role-scoped API calls.
-- **`tests/support/e2e/e2e.ts`** — the Cypress support entry point that imports this file so the custom commands are registered before specs run.
+- **`tests/support/e2e/accounts.ts`** — imports `E2E_ACCOUNTS` and the `E2ERole` type; supplies the seeded credential pairs used by `apiAs`, `accountInRole`, and `createOrder`.
+- **`tests/support/e2e/e2e.ts`** — the other support file in the same directory; the `adminApi` task it references (`cy.task('adminApi', …)`) is registered there, making this file's write commands dependent on that task existing.
 
 ## Notes
 
-- **Write path is Node-side, not browser-side.** All mutations (`createProduct`, `softDeleteProduct`, `deactivateProduct`) and role-scoped reads (`accountInRole`, `orderInRole`) go through `cy.task('adminApi')`. This avoids the Pinia-store token and refresh-cookie side-effects that a `cy.request` login would leave behind, which session-counting and analytics specs would observe.
-- **`deactivateProduct` requires `title` and `price` in the body.** The update route is replace-not-patch; omitting them yields a 422. The command passes the product's existing values forward.
-- **`createProduct` titles are unique per test run** (`e2e <runnable id>`), preventing a title-based assertion from matching a row another spec created.
-- **`orderInRole` matches `userId === account.id`.** This deliberately scopes to the admin's own orders (not all orders), because "cancel then rebuy" is an action on your own order.
-- **`PUBLIC_PAGE_SIZE = 100`** is the contract maximum, not a default, because a backend may seed more rows than one default page would return.
-- **`productInRole` and `orderInRole` throw on no-match** rather than skipping — a dataset missing a role means the branch is untested and the failure should be loud.
+- `ProductLike` is a **structural** local interface (six fields), deliberately not imported from `@api`, because `tsconfig.cypress.json` is a composite project that does not include `contracts/`.
+- All reads (`publicProducts`, `productInRole`) use the **public** (anonymous) product list — no login, no admin token — so they cannot disturb session cookies or analytics state that other specs assert on.
+- All writes go through the **`adminApi` Node task** (not `cy.request`) because the app stores its access token in a Pinia store; a browser-side admin call would leave a refresh cookie behind, breaking session-counting and analytics specs.
+- `createProduct` titles are made unique per test run via `Cypress.state('runnable').id` so title assertions cannot accidentally match a row created by a prior spec.
+- `deactivateProduct` must send `title` and `price` alongside `active: false` — the update endpoint is a full replace, not a patch; omitting required fields yields a 422.
+- `orderInRole` is restricted to the **admin's own** orders (not staff's view of all orders), because the cancel-then-rebuy flow is an action on your own order.

@@ -5,72 +5,59 @@ tags:
   - project/boilerplate-vue-frontend
 type: module
 module: src/ui/
-files: 18
-updated: 2026-08-30T17:12:21.323882+00:00
+files: 22
+updated: 2026-09-03T11:00:28.105994+00:00
 ---
 
 # src/ui/
 
 ## Purpose
 
-`src/ui/` is the shared UI layer for the application. It bundles the Vuetify design-system configuration, a set of reusable **molecules** (small, self-contained form controls and display widgets), and **organisms** (larger composite layout blocks such as detail-page skeletons and the app-wide data table). Together they ensure that every view composes the same visual vocabulary, accessibility rules, and theming without re-implementing layout or styling logic.
+`src/ui/` is the application's presentation layer. It contains every Vue component (molecules and organisms), shared composables, a single UI store, type definitions, and the Vuetify theme/icon configuration. Everything from a single label/value row to a full detail-page layout lives here, so that feature modules can compose pages without re-implementing visual or accessibility patterns.
 
 ## Key parts
 
-- **Design-system config** (`vuetify/index.ts`, `vuetify/icons.ts`, `types.ts`) — `vuetify/index.ts` is the single source of truth for colour palettes (light & dark), component defaults (rounding, variants, densities), the Lucide icon integration, and locale strings. `vuetify/icons.ts` wires `lucide-vue-next` as Vuetify's icon renderer. `types.ts` defines the shared `ThemeAccent` string-literal union so every component referencing an accent colour points at one canonical type.
-
-- **Molecules** (`molecules/`) — small, focused building blocks:
-  - *Form inputs*: `FormCounterInput` (accessible numeric stepper wrapper), `FormImageUpload` (single-image picker with preview, progress, and object-URL lifecycle management).
-  - *Display & navigation*: `LazyImage` (three-tier image loading with fallback), `ListPagination` (accessible pager that hides on single-page lists), `TableLoadingBar` (accessible `#loader` replacement for `v-data-table`).
-  - *Detail fields*: `DefinitionRow` (dense label/value row for `<dl>` blocks), `ItemDetailField` (icon-tile + label/value for individual detail pages).
-
-- **Organisms** (`organisms/`) — composite layout shells that views compose directly:
-  - *Page-level skeletons*: `ItemDetailLayout` (max-width container, hero+stats row, main/aside grid, accent CSS variable), `FormCard` (shared create/edit card shell with back-link and submit button).
-  - *Display cards*: `CardDetail`, `CardInfo`, `CardMaterialStat` — consistent Vuetify `v-card` surfaces for detail content, info highlights, and dashboard stat tiles.
-  - *Data table*: `DataTable` (generic wrapper over `v-data-table` that adapts the app's header shape, adds single-row selection, swaps in the accessible loader, and forwards selected slots) plus `data-table-headers.ts` (the column-header union types it accepts).
+- **Vuetify configuration** — `vuetify/index.ts` holds all design tokens (palettes, component defaults, breakpoints, locale) and `vuetify/icons.ts` wires lucide-vue-next as the icon system. Together they are the single restyling surface for the app.
+- **Composables** — `composables/use-server-page-total.ts` supplies a server-authoritative page count for paginated stores; `composables/use-touch-friendly-size.ts` returns a responsive Vuetify size prop for accessible touch targets.
+- **Molecules (small, single-purpose components)** — `DefinitionRow`, `ItemDetailField`, `LazyImage`, `ListPagination`, `TableLoadingBar` (read/display atoms); `FormCounterInput`, `FormImageUpload` (form-field wrappers that enforce a11y and validation shape).
+- **Organisms (larger, composed components)** — `DataTable` (generic accessible table with server-side pagination), `ItemDetailLayout` / `ItemDetailHero` / `CardDetail` / `CardInfo` / `CardMaterialStat` (detail-page building blocks), `FormCard` (single-form page shell), `DialogHost` (renders the confirmation dialog queue).
+- **Store & types** — `dialog.ts` is a Pinia store that turns `globalThis.confirm()` into an async, queueable, themeable confirmation; `types.ts` and `data-table-headers.ts` export shared type unions consumed across components.
 
 ## How it connects
 
-- **`docs/reference/`** — Provides the human-readable API reference for the components and design tokens defined here. Changes to props, slots, or theme keys in `src/ui/` must be reflected in the reference docs.
-- **`docs/theory/`** — Explains the architectural rationale behind the module (e.g., why organisms wrap Vuetify rather than exposing it, the molecule/organism split, and the single-source-of-truth theming policy). The code in `src/ui/` is the implementation those documents describe.
+This module has no outgoing dependencies on other modules in the project's dependency graph. It is a leaf: feature and page modules import from here, but `src/ui/` imports nothing outside of Vue, Vuetify, Pinia, and the `@guebbit/vue-toolkit` package.
 
 ## Where to start
 
-1. **`src/ui/vuetify/index.ts`** — Read this first to understand the palette, component defaults, and icon setup that every other file in the module inherits. It is the file a downstream project edits to rebrand the entire UI.
-2. **`src/ui/organisms/ItemDetailLayout.vue`** — A representative organism that shows how the module composes molecules (`ItemDetailField`, `LazyImage`, `CardMaterialStat`) into a full page skeleton, and how the `--detail-accent` custom property flows from theme to children without prop drilling.
+1. **`vuetify/index.ts`** — Read first to understand the color system, component defaults, and breakpoint rules that every component in this module relies on.
+2. **`organisms/DataTable.vue`** — The most feature-dense component here; it demonstrates the module's recurring patterns (a11y fixes, slot forwarding, composable integration, server-side pagination) in one file.
 
 ## Connected modules
-```mermaid
-flowchart LR
-    m_src_ui["src/ui/"]
-    m_docs_reference["docs/reference/<br/>10 files"]
-    m_docs_theory["docs/theory/<br/>11 files"]
-    m_src_ui --- m_docs_reference
-    m_src_ui --- m_docs_theory
-    style m_src_ui stroke-width:3px
-```
-
-[[boilerplate-vue-frontend_docs_reference|docs/reference/]] · [[boilerplate-vue-frontend_docs_theory|docs/theory/]]
+_(none)_
 
 ## Files
-- `src/ui/molecules/DefinitionRow.vue` — A single label/value row intended to sit inside a `<dl>` block. It provides the "dense, underlined" visual treatment for panels that list many facts at once (e.g. a dozen key–value pairs). It is the lightweight counterpart to `ItemDetailField`, which uses a bordered-tile-plus-icon layout for individual detail pages.
-- `src/ui/molecules/FormCounterInput.vue` — A thin wrapper around Vuetify's `v-number-input` that enforces an accessibility rule (a visible `label` or `ariaLabel` is required) and normalizes the `errorMessages` prop to match the shape every other form field in this codebase accepts. It exists so callers get a uniform stepper without repeating the guard or prop-shape logic.
-- `src/ui/molecules/FormImageUpload.vue` — A single-image picker field for forms: wraps Vuetify's `v-file-input`, renders a live preview from an object URL (or a stored image on edit), and optionally displays an upload-progress bar driven by the parent. It owns the full lifecycle of the temporary object URL so the blob never leaks.
-- `src/ui/molecules/ItemDetailField.vue` — Atomic, read-only field for detail pages that renders a single label/value pair alongside an icon tile. It standardizes how individual data points are displayed so parent detail views can compose many of these in a grid without repeating layout logic.
-- `src/ui/molecules/LazyImage.vue` — Renders a single record image with three display tiers (thumbnail → full image → bundled placeholder) while handling URL resolution, layout reservation, lazy loading, and error fallback in one place. It exists so callers never repeat the resolve / placeholder / size / lazy-load logic that every image site in the app needs.
-- `src/ui/molecules/ListPagination.vue` — A thin wrapper around Vuetify's `v-pagination` that solves three UX problems at once: it disappears entirely when a list has only one page, gives each instance a unique `aria-label` so screen readers don't merge two pagers into one landmark, and hands focus to the `<main>` landmark when it unmounts out from under the user's cursor.
-- `src/ui/molecules/TableLoadingBar.vue` — Provides an accessible `#loader` slot replacement for `v-data-table`. Vuetify's built-in loading bar renders a `v-progress-linear` with `role="progressbar"` but no accessible name, producing an axe "serious" violation on every list screen. Because `aria-label` is not a declared prop, Vuetify component defaults cannot inject one; this component is the supported override point (the loader slot) that adds the label.
-- `src/ui/organisms/CardDetail.vue` — A minimal presentational card shell that provides a consistent flat, bordered, padded surface (`v-card`) for detail-page content. It exists so that higher-level organisms (`ItemDetailHero`, stat tiles, the main content card) share identical card styling without duplicating the `v-card` configuration.
-- `src/ui/organisms/CardInfo.vue` — A small presentational "info card" organism that displays a themed gradient icon tile alongside a title and description. It exists to give a consistent, theme-aware visual block for feature highlights or summary sections.
-- `src/ui/organisms/CardMaterialStat.vue` — A presentational stat tile (title, headline value, optional subtitle) rendered as a Vuetify `v-card` with a colored top border. It exists to give dashboards and panels a consistent, theme-aware "big number" card without duplicating layout markup.
-- `src/ui/organisms/DataTable.vue` — A thin, generic wrapper around Vuetify's `v-data-table` that adapts this app's `CoreDataTableHeader<T>` shape to Vuetify's expectations, adds opt-in single-row selection via `v-model`, swaps in the accessible `TableLoadingBar`, and selectively forwards `header.*` / `item.*` slots. It exists so views never touch Vuetify's table API directly and so selection, a11y naming, and test hooks stay consistent across the app.
-- `src/ui/organisms/FormCard.vue` — Shared card shell for single-form pages (create/edit). It fixes the layout decisions that all such pages agree on — card width, `novalidate` form, block submit button, centred back link — so each concrete page only supplies its own fields and submit logic.
-- `src/ui/organisms/ItemDetailHero.vue` — Renders the top "hero" strip of a record detail page: a 72 px image (or a gradient icon-tile fallback) laid out beside the record's eyebrow, title, and description. It exists so that detail pages share one visual header regardless of whether the underlying record type has an image field.
-- `src/ui/organisms/ItemDetailLayout.vue` — Shared layout skeleton for entity detail/edit pages (product, order, user, etc.). It provides a consistent max-width container with a hero+stats row, a main+aside content grid, and an optional actions bar, while exposing a `--detail-accent` CSS custom property so child components can inherit a per-entity accent color without explicit prop drilling.
-- `src/ui/organisms/data-table-headers.ts` — Defines the column-header type shapes that `DataTable` accepts. It lives in its own module (rather than a component's `<script setup>`) because the two header forms are combined into a union **type**, and Vue's `<script setup>` can export an `interface` but not a `type` alias.
-- `src/ui/types.ts` — Defines a shared `ThemeAccent` string-literal union so that every UI component that accepts a theme accent references a single named type instead of repeating the inline union. This keeps the set of valid accents editable in exactly one place.
-- `src/ui/vuetify/icons.ts` — Integrates **lucide-vue-next** as Vuetify's icon system, replacing the default `@mdi/font` icon-font payload. It provides the alias map Vuetify uses internally and the render function Vuetify calls to produce an icon vnode.
-- `src/ui/vuetify/index.ts` — The single source of truth for the app's visual design. It configures Vuetify's theme (light & dark colour palettes), component-level defaults (rounding, variants, densities), the Lucide icon set, and built-in locale strings. Downstream projects restyle the entire UI by editing the palettes and the `defaults` block here—nothing else needs to change.
+- `src/ui/composables/use-server-page-total.ts` — A shared Vue composable that supplies a server-authoritative `pageTotal` (from `meta.totalPages`) for stores whose `search:` calls a real paginated endpoint. It exists because `@guebbit/vue-toolkit`'s built-in `pageTotal` counts the **local** item dictionary, which is incorrect for server-paginated data (e.g. a stale row from a previous language still inflating the count). This composable standardizes the fix so every server-paginated store handles it identically.
+- `src/ui/composables/use-touch-friendly-size.ts` — A single-purpose Vue composable that returns a reactive Vuetify `size` prop value for row-action buttons. On desktop it yields `'small'` (compact density); on mobile (below the `sm` breakpoint) it yields `undefined` so Vuetify falls back to its larger default, keeping the touch target at or above WCAG's 44 px recommendation.
+- `src/ui/dialog.ts` — A Pinia store that replaces the synchronous `globalThis.confirm()` with an async, queue-based, themeable confirmation flow. Callers push a `DialogRequest` and await a `Promise<boolean>`; the `DialogHost` component renders the queue head and calls back with the viewer's answer.
+- `src/ui/molecules/DefinitionRow.vue` — A single label/value row (`<dt>`/`<dd>`) for dense `<dl>`-style panels that list many facts at a glance. It exists as the compact counterpart to `ItemDetailField` (a bordered, icon-bearing tile for detail pages). The component is purely presentational: it applies layout and typography but leaves all value rendering and i18n to the caller.
+- `src/ui/molecules/FormCounterInput.vue` — A thin wrapper around Vuetify's `v-number-input` that adds two things the raw component doesn't provide: a dev-time guard ensuring the field is accessible (either a visible `label` or an `ariaLabel` must be supplied), and a uniform `errorMessages` prop shape so this stepper integrates with the same validation pattern as every other form field in the project.
+- `src/ui/molecules/FormImageUpload.vue` — A single-image picker form field built on Vuetify's `v-file-input`. It renders a live preview from an object URL (or the record's existing image), displays validation errors, and shows an upload-progress bar whose percentage is driven by the parent via a `progress` prop. It exists so that every form that needs an "upload one image" input can drop in a consistent, self-contained field.
+- `src/ui/molecules/ItemDetailField.vue` — Atomic, read-only presentational field for detail pages. Renders a single label/value pair with a decorative icon tile. Designed to be dropped into a CSS-grid layout where the parent controls the accent color.
+- `src/ui/molecules/LazyImage.vue` — Renders a single record image in three tiers — a small blurred thumbnail that paints instantly, the full image that fades in over it once decoded, and a bundled placeholder icon when no image exists or the request fails. It centralises URL resolution, box reservation, lazy loading, and graceful degradation so that no caller has to handle those concerns individually.
+- `src/ui/molecules/ListPagination.vue` — A thin wrapper around Vuetify's `v-pagination` for single lists. It removes itself from the DOM entirely when the list has only one page, supplies a descriptive `aria-label` so multiple paginators on a page are distinguishable to screen readers, and recovers focus to the `<main>` landmark if it unmounts while focus is inside it.
+- `src/ui/molecules/TableLoadingBar.vue` — Drop-in replacement for the `v-progress-linear` that `v-data-table` renders internally while `loading` is true. It exists to give that progress bar an `aria-label`, fixing a `serious` axe violation (unlabeled `role="progressbar"`) that cannot be resolved through Vuetify component defaults because `aria-label` is not a declared prop. Intended to be passed into every table's `#loader` slot.
+- `src/ui/organisms/CardDetail.vue` — A thin presentational wrapper that renders a Vuetify `v-card` with a fixed set of visual defaults (flat variant, border, `p-6` padding) and a single default slot. Detail-page cards (`ItemDetailHero`, stat tiles, the main content card) all compose through this component so they share one card shell without duplicating the markup.
+- `src/ui/organisms/CardInfo.vue` — An organism-level Vue component that renders a Vuetify `v-card` containing a gradient icon tile, a title, and a description. It exists as a reusable building block for "info card" layouts where the accent color is driven by the app's theme.
+- `src/ui/organisms/CardMaterialStat.vue` — A small presentational stat-tile component. It renders a Vuetify card containing a label, a large formatted value, and an optional subtitle, with a colored top border driven by a theme accent. It exists to give callers a consistent, theme-aware way to display a single metric without repeating layout markup.
+- `src/ui/organisms/DataTable.vue` — A generic (`T extends object`) Vue SFC that wraps Vuetify's `v-data-table` to provide a consistent, accessible table for the app. It translates the app's `CoreDataTableHeader<T>` shape into Vuetify column definitions, forwards caller-provided `header.*`/`item.*` slots, replaces the default loader with `TableLoadingBar`, and adds optional single-row selection via `v-model`. Pagination is server-side: the footer is hidden and `items-per-page` is set to `-1`.
+- `src/ui/organisms/DialogHost.vue` — A single-instance confirmation dialog host mounted once by the application layout. Any component that needs a confirmation calls `useDialogStore().confirm(...)` and never renders a dialog itself; this host is the only place that knows confirmations are Vuetify dialogs, so restyling every "Are you sure?" in the app is an edit to this one file.
+- `src/ui/organisms/FormCard.vue` — A presentational card that wraps a single-form page (e.g. `ProductCreate`, `UserCreate`) with its fixed chrome: a `novalidate` form, a full-width submit button, and a centred "back" text link. The caller supplies only the fields (via the default slot) and the i18n labels, so every create page shares the same card geometry and button layout without duplicating markup.
+- `src/ui/organisms/ItemDetailHero.vue` — Renders the top section of a detail page: a 72 px picture (or a gradient icon tile as fallback) sitting beside the record's eyebrow, title, and description. It exists so every record type shares one consistent hero layout while allowing type-level control over whether an image slot appears at all.
+- `src/ui/organisms/ItemDetailLayout.vue` — Shared layout skeleton for entity detail/edit pages (product, order, user, etc.). Provides a consistent two-column grid structure (hero/stats, main card/aside, actions) and sets a `--detail-accent` CSS custom property so that inner components (ItemDetailField, ItemDetailHero, chips) inherit the per-entity accent color without needing individual prop drilling.
+- `src/ui/organisms/data-table-headers.ts` — Defines the column-header shapes that `DataTable` accepts. It exists as a standalone module (rather than being declared in `<script setup>`) because it must export a `type` union, and `<script setup>` only accepts exported `interface` declarations.
+- `src/ui/types.ts` — A standalone module that holds shared UI-layer type definitions so that multiple components (organisms/molecules) can reference the same type without importing each other. Currently contains a single theme-accent union.
+- `src/ui/vuetify/icons.ts` — Wires **lucide-vue-next** into Vuetify as the application's icon system, replacing Vuetify's default `@mdi/font` icon font. It provides the alias table Vuetify internals look up by name and the render function that turns a resolved icon component into a vnode.
+- `src/ui/vuetify/index.ts` — The single source of truth for all design tokens in the project: Vuetify color palettes (light & dark), component `defaults`, display breakpoints, icon configuration, and locale setup. Downstream forks restyle the entire app by editing this file and `./icons.ts` alone; Tailwind only aliases these colors and defines no palette of its own.
 
 ---
 [[boilerplate-vue-frontend_INDEX|← boilerplate-vue-frontend index]]

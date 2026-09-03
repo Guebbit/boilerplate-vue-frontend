@@ -2,29 +2,31 @@
 
 ## Purpose
 
-The app shell's top navigation bar and mobile drawer. It merges the shell's own two entries (Home, StaticAbout) with every entry contributed by enabled modules (collected via the kernel registry), filters each section by `canAccess`, and renders the result as the desktop icon bar, the account/admin dropdown menus, and the mobile hamburger drawer.
+The app-shell navigation component. It merges the shell's own two nav entries (Home, About) with entries contributed by every enabled module (via the kernel registry), filters the combined set by the current visitor's access rights, and renders the result as the desktop icon-and-label bar, the account/admin dropdown menus, the `pinned` buttons beside the account menu, and the mobile phone drawer. The shell knows nothing about specific domains; deleting a module removes its menu entry automatically.
 
 ## Key elements
 
-- **`shellNavEntries`** – The two navigation entries owned by the shell itself (`Home`, `StaticAbout`); all others come from modules.
-- **`navSections`** – Result of `groupNavigation([...shellNavEntries, ...collectModuleNavigation(enabledModules)])`, yielding entries keyed by section (`main`, `account`, `admin`).
-- **`badgeCounts`** – A `Map` that materialises each entry's `badge()` accessor **once** at setup, preventing re-armed watchers/fetches on every recompute of the downstream computed.
-- **`visibleSections`** – Computed that filters entries via `canAccess` (reading the resolved route's `meta.access`), localizes labels with `t(label, plural ?? 1)`, builds locale-prefixed `to` links, and unwraps badge values for reactivity.
-- **`accountBadge`** – Single number shown on the closed account-menu activator (first badged entry wins).
-- **`hasSignIn` / `hasSignUp`** – Computed `router.hasRoute(...)` checks; a build without the account module simply hides the auth buttons.
-- **`drawer` / `hamburger` / focus watcher** – Mobile drawer open state plus a `watch` that moves focus into the drawer on open and back to the hamburger on close (WCAG 2.4.3), using `nextTick` because the DOM isn't updated yet.
-- **`toggleTheme`** – Flips Vuetify's global theme between `light` and `dark` (initial state follows OS via `system`).
-- **Template** – A single `<v-app-bar>` with: prepend (hamburger + logo), a `nav` of `AppNavIconButton`s for `visibleSections.main`, a default slot, and append containing the admin menu, auth buttons, account menu (with logout appended via `#after` slot), theme toggle, and `AppLanguageSwitcher`.
+- **`shellNavEntries`** — the two entries the shell owns (Home, StaticAbout), declared with `order` values spaced by tens so module entries can interleave.
+- **`hasSignIn` / `hasSignUp`** — computed flags that check `router.hasRoute(...)` rather than assuming the account module is present; a build without it simply hides auth buttons.
+- **`navSections`** — the full entry list grouped into `main`, `account`, `admin` via `groupNavigation`.
+- **`badgeCounts` / `badgeDetails`** — `Map`s materialised **once** (not inside a computed) so accessor-side watchers/fetches are not re-armed on every recompute.
+- **`visibleSections`** — computed that filters entries through `canAccess`, localises labels, resolves `routerLinkI18n` targets, and unwraps badge/detail refs.
+- **`pinnedItems` / `menuItems`** — split the account and admin sections: pinned entries become standalone bar buttons; the rest go into the dropdown menus (no duplicates).
+- **`accountBadge`** — the single badge shown on the closed account-menu activator (first badged entry wins).
+- **`logout`** — navigates to the `Logout` route.
+- **`toggleTheme`** — flips Vuetify's global theme between light and dark.
+- **Drawer focus management** — a `watch` on `drawer` moves focus to the first focusable child on open and back to the hamburger button on close (`nextTick` + `DRAWER_ID` query), satisfying WCAG 2.4.3.
+- **Slots** — `default` (bar centre), `nav-left`, `nav-right` allow pages to inject extra bar content.
 
 ## Relationships
 
-- **`src/kernel/registry.ts`** – Imports `collectModuleNavigation`, `groupNavigation`, `NAVIGATION_SECTIONS`, and the types `AppNavigationEntry` / `AppNavigationSection`. The shell calls `collectModuleNavigation(enabledModules)` to pull every enabled module's nav entries, then `groupNavigation` to bucket them into the three sections it renders. The shell defines the section vocabulary; modules choose where their entry sits via the `section` field on `AppNavigationEntry`.
+The dependency graph reports no recorded neighbors for this file. (In practice the file imports from `AppNavMenu`, `AppNavBarLink`, `AppNavPinnedButton`, `AppLanguageSwitcher`, the session store, the kernel registry, the i18n helpers, and the router navigation utilities, but none of these edges appear in the provided graph.)
 
 ## Notes
 
-- **Badge `||` vs `??`:** `badgeCounts.get(name)?.value || undefined` is deliberate—a `0` badge must disappear, and `??` would keep it. An eslint disable documents this.
-- **No visibility flag on entries:** Access control is derived from the *resolved route's* `meta.access` at render time, not from a static flag on the entry. A section whose every entry is out of reach yields an empty list, and the corresponding chrome (admin menu, drawer heading) simply does not render.
-- **`plural` is optional:** Modules that omit it get the singular form via `plural ?? 1`.
-- **Auth buttons use `v-if`, not `v-show`:** A hidden-but-present button remains in the tab order and is focusable by assistive tech.
-- **`hasSignIn`/`hasSignUp` use route names (strings):** These are not type-checked; they are a runtime probe so the shell stays agnostic to whether the account module is installed.
-- **`baseUrl` from `import.meta.env.BASE_URL`:** Used to resolve the logo image from `public/` regardless of the app's mount path.
+- **`||` vs `??` for badges:** the code deliberately uses `||` so a badge value of `0` renders as *no* badge; `??` would pin a visible "0" chip. An eslint-disable comment marks this.
+- **`v-if` not `v-show`** on auth buttons: a `v-show`-hidden `<button>` stays in the tab order, creating an invisible focus stop. `v-if` removes it from the DOM entirely.
+- **Badge/detail accessors are called once at setup time**, not inside the `visibleSections` computed. If a module's accessor starts watchers or fetches (e.g. the cart count), calling it inside a reactive computed would re-arm them on every recompute.
+- **`plural` is optional** on the manifest; a module that omits it falls back to `1` (singular), matching pre-field behaviour.
+- **`baseUrl`** (`import.meta.env.BASE_URL`) is prepended to the logo `src` so the asset resolves correctly when the app is served from a non-root path.
+- **Order values are spaced by tens** (10, 99 for shell; modules pick their own) to allow interleaving without renumbering.

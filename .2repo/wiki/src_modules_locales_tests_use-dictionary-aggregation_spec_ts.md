@@ -2,37 +2,29 @@
 
 ## Purpose
 
-Unit tests for the `useDictionaryAggregation` composable, exercising its three-source aggregation (stored entries, API baseline, bundled baseline) by faking the `useLocalesStore` with plain reactive refs rather than mocking the underlying transport layer (`import.meta.glob`, `orvalMutator`).
+Unit tests for the `useDictionaryAggregation` composable. Rather than mocking the network transport or the two internal loaders (`import.meta.glob` for bundled dictionaries, `orvalMutator` for API dictionaries), this spec fakes the Pinia store's three fetch methods with plain mutable variables, giving a single, narrow boundary to drive the composable's lookup logic.
 
 ## Key elements
 
-- **`vi.mock('@/modules/locales/store.ts', …)`** — replaces `useLocalesStore` with a factory that returns reactive refs (`capabilities`, `tenants`, `loading`) and `vi.fn` fetches (`fetchAllEntries`, `fetchApiDictionary`, `fetchBundledDictionary`, `fetchTenants`, `fetchLanguages`).
-- **`vi.mock('@/infrastructure/i18n/locale-overrides.ts', …)`** — stubs `fetchLocaleOverrides` to resolve `{}`.
-- **`vi.mock('@/infrastructure/i18n', …)`** — stubs `updateLocale` to resolve immediately.
-- **`entriesAnswer` / `apiBaselineAnswer` / `appBaselineAnswer`** — module-level `let` variables set per test to control what the faked fetches resolve with.
-- **`entry(key, value, tenant?)`** — helper that builds a `LocaleEntry` fixture row.
-- **`beforeEach`** — re-activates a fresh Pinia instance and resets all three answer variables to empty defaults.
-- **`describe('useDictionaryAggregation')`** — nine `it` blocks covering:
-  - Entry overrides baseline (cellState `'entry'`).
-  - Baseline without an entry (cellState `'baseline'`).
-  - Key with neither source (cellState `'missing'`).
-  - Backend tenant reads the API baseline, not the bundled one.
-  - Third-party tenant sees no baseline at all.
-  - `allKeys` is the union of entry keys, baseline keys, and pending keys.
-  - `resetPendingKeys` clears pending keys but preserves saved keys.
-  - `missingByTag` counts per-language and skips static-only languages.
-  - `hasBaseline` is `true` for own/backend tenants, `false` for others.
+- **`vi.mock('@/modules/locales/store.ts')`** — Replaces the entire `useLocalesStore` with an object whose fetch methods (`fetchTenants`, `fetchLanguages`, `fetchAllEntries`, `fetchApiDictionary`, `fetchBundledDictionary`) resolve from the mutable `let` variables below.
+- **`vi.mock('@/infrastructure/i18n/locale-overrides.ts')`** and **`vi.mock('@/infrastructure/i18n')`** — Neutralize side-effect modules so no real i18n work happens during tests.
+- **`OWN_TENANT` / `BACKEND_TENANT`** — Fixture tenant IDs (`'demo-fe'`, `'demo-be'`) matching the project's own and backend tenants.
+- **`capabilities` / `tenants`** — `ref` arrays faked into the store; `capabilities` contains one `dynamic` and one `static` language entry.
+- **`entry(key, value, tenant?)`** — Small factory that builds a `LocaleEntry` row with a deterministic `id`.
+- **`entriesAnswer`, `apiBaselineAnswer`, `appBaselineAnswer`** — Module-level `let` variables, reassigned per test, that the mocked store fetches resolve with.
+- **`beforeEach`** — Resets Pinia and all three answer variables to empty defaults.
+- **`describe('useDictionaryAggregation')`** — Ten `it` blocks covering: entry-vs-baseline-vs-missing cell state, tenant-specific baseline source (own → bundled, backend → API, third-party → none), `allKeys` union, `resetPendingKeys`, `missingByTag` counting (skipping static-only languages), and the `hasBaseline` gate.
 
 ## Relationships
 
-- **`src/modules/locales/composables/use-dictionary-aggregation.ts`** — the system under test; imported and exercised in every test case.
-- **`tests/cross-cutting/module-file-shapes.spec.ts`** — cross-cutting suite that likely validates structural conventions of this file.
-- **`tests/cross-cutting/coverage-and-mutate-scope.spec.ts`** — cross-cutting suite that likely asserts coverage/mutation-scope expectations for this spec.
-- **`tests/cross-cutting/published-language.spec.ts`** — cross-cutting suite in the same locales test area; shares fixture conventions (tenant ids, language tags).
+- **`src/modules/locales/composables/use-dictionary-aggregation.ts`** — The system under test; imported directly and exercised through its returned API (`loadLanguage`, `cellState`, `entryAt`, `baselineAt`, `isMissing`, `allKeys`, `addPendingKey`, `resetPendingKeys`, `missingByTag`, `languages`, `hasBaseline`).
+- **`tests/cross-cutting/module-file-shapes.spec.ts`** — Cross-cutting suite that asserts structural conventions (file naming, export shapes, mock patterns) across spec files including this one.
+- **`tests/cross-cutting/coverage-and-mutate-scope.spec.ts`** — Defines which files fall under coverage/mutation-scope enforcement; this spec's SUT path is in scope.
+- **`tests/cross-cutting/published-language.spec.ts`** — Validates that the languages referenced in fixtures (e.g. `'en'`) match the project's published-language allow-list.
 
 ## Notes
 
-- The mock strategy is intentional and documented in the file header: `fetchBundledDictionary` goes through `import.meta.glob` (not `orvalMutator`), so mocking the store's three fetches directly avoids mocking two unrelated loaders.
-- The faked store uses **plain `ref` variables** (`capabilities`, `tenants`) that are shared across all tests in the file, not re-created per test. Only the answer variables (`entriesAnswer`, etc.) are reassigned per test.
-- `OWN_TENANT` (`'demo-fe'`) and `BACKEND_TENANT` (`'demo-be'`) are hardcoded fixture ids that must match whatever the store mock exposes as `ownTenant` and the `tenants` array; changing them requires updating both the constants and the mock factory.
-- Tests that call `board.loadLanguage('en')` use the returned Promise (`.then(…)` pattern) rather than `await`, consistent with the Vitest style in this repo.
+- The mocking strategy is intentional and documented in the module doc comment: faking the store's fetch methods is the *only* boundary needed, avoiding separate mocks for `import.meta.glob` and `orvalMutator`. Changing the composable to bypass the store would break this approach.
+- The three answer variables are plain `let` bindings, not `vi.fn()` mocks. They are reset to empty in `beforeEach`, but a test that forgets to set one will silently get `[]` or `{}` rather than a mock-implementation error.
+- Tests use `.then()` chains on the returned Promise from `loadLanguage` rather than `async/await`; the `hasBaseline` checks are synchronous and require no `loadLanguage` call.
+- `LocaleTenantKind` is imported from `@types` (a type alias), not from the registry module directly; the store mock supplies the enum values inline.

@@ -2,18 +2,17 @@
 
 ## Purpose
 
-Public barrel file for the `products` module. It is the **only** entry point sibling modules are permitted to import from; all other files in the module are considered internal and are blocked by lint rules.
+Barrel file that defines the public import surface for the products module. It exists to enforce a single, narrow re-export contract: sibling modules must import through this file rather than reaching into the module's internals, a rule backed by lint.
 
 ## Key elements
 
-- **`useProductsStore`** — Re-exported from `./store`. This is the single named export and the sole public API of the products module.
+- **`useProductsStore`** (re-export) — the sole public export, forwarded from `./store`. This is the only symbol other modules are permitted to pull from the products module.
 
 ## Relationships
 
-- **`src/modules/products/store.ts`** — The actual definition of `useProductsStore` lives here. This barrel forwards that one symbol outward; no other file in the module is re-exported.
+- **`src/modules/products/store.ts`** — the sole source of this file's export. All other modules in the codebase consume `useProductsStore` via this barrel, never by importing `store` directly.
 
 ## Notes
 
-- Lint enforces the barrel boundary: a sibling module importing `@/modules/products/store` directly is an error, not a shortcut.
-- Adding a new export here is an intentional, public-API decision — the header comment explicitly warns to add one only when a sibling genuinely needs it.
-- The file contains no logic; it is purely a re-export with documentation.
+- Lint treats a direct `@/modules/products/store` import from a sibling module as an error, not a warning. Adding a new export here is a deliberate API decision; the file's doc comment frames each export as a stability promise to every consumer.
+- Do not re-export intermediate helpers or types "for convenience" — the surface is intentionally minimal.

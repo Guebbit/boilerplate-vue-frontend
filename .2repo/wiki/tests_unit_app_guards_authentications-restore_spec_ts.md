@@ -2,26 +2,25 @@
 
 ## Purpose
 
-Unit tests for `tryRestoreAuth`, the vue-router guard that converts a persisted `isAuth` cookie back into an active session on every navigation. The focus is the **order** and **conditional skipping** of two store calls (`refreshToken` → `loadViewer`), and the hard contract that the function must *always resolve* (a rejection would abort navigation and strand the visitor on a blank page).
+Unit tests for `tryRestoreAuth`, the vue-router guard that converts a surviving `isAuth` cookie into a live session (refresh token → load viewer). Because this guard must **always resolve** (a rejection aborts navigation and strands the visitor on a blank page), every failure-path test asserts a resolved promise. The file is split from `authentications.spec.ts` because the latter mocks `useSessionStore` as an empty reactive object driven through `storeToRefs`, whereas this test needs a *recording double* that captures the **order** of `refreshToken` and `loadViewer` calls and which of them is skipped.
 
 ## Key elements
 
-- **`sessionStore`** – Shared mutable mock replacing `useSessionStore`. Exposes `accessToken`, `refreshToken` (vi.fn), and `loadViewer` (vi.fn). Reset and re-stubbed in every `beforeEach`.
-- **`getCookieMock`** – vi.fn stand-in for `@guebbit/js-toolkit`'s `getCookie`, driven per-suite to simulate presence/absence of the `isAuth` cookie.
-- **`vi.mock` block** – Stubs `pinia/storeToRefs`, `@guebbit/vue-toolkit` notifications, and `@/infrastructure/i18n` so the SUT runs without side effects.
-- **Test suites**
-  - *Guest with no cookie* – asserts zero network calls.
-  - *Returning visitor (cookie present)* – asserts call order, cookie name, skip-when-no-token, and resolve-not-reject on both failure paths.
-  - *Token already in memory* – asserts `refreshToken` is skipped but `loadViewer` still fires.
-  - *Return value* – asserts the guard resolves to `undefined` (vue-router "proceed" signal), never a user object.
+- **`sessionStore`** – Module-level mutable double with `accessToken`, `refreshToken` (vi.fn), and `loadViewer` (vi.fn). Replaced in place by `vi.mock('@/infrastructure/session')` so the SUT reads the same object.
+- **`getCookieMock`** – Stand-in for `@guebbit/js-toolkit`'s `getCookie`; its return value selects which describe-block scenario runs.
+- **`beforeEach` (top-level)** – Clears all mocks, resets `accessToken` to `undefined`, and sets the "realistic" default where `refreshToken` writes `'restored-token'` into the store.
+- **`describe('a guest with no isAuth cookie')`** – Asserts `tryRestoreAuth` resolves without calling `refreshToken` or `loadViewer` (no wasted round-trip).
+- **`describe('a returning visitor holding the isAuth cookie')`** – Covers: happy-path ordering (refresh → load), cookie read by name `'isAuth'`, skipping `loadViewer` when refresh yields no token, resolving on refresh rejection, resolving on `loadViewer` rejection.
+- **`describe('a visitor whose token is already in memory')`** – Sets `accessToken` before the call; asserts `refreshToken` is skipped but `loadViewer` still fires.
+- **`describe('the value handed back to the router')`** – Asserts the guard resolves to `undefined` (vue-router "proceed"), not the user record.
 
 ## Relationships
 
-No graph neighbors are recorded. The only import under test is `tryRestoreAuth` from `@/app/guards/authentications`; all other imports are mocked out entirely.
+No graph neighbors are recorded for this file.
 
 ## Notes
 
-- **Separate file from `authentications.spec.ts`** on purpose: that file mocks the store to `{}` and drives it through `storeToRefs` (sufficient for `enforceRouteAccess`, a pure two-boolean check). Here the store is a *recording double* so assertions can distinguish call order and which call was skipped.
-- **`beforeEach` sets `refreshToken` to set `accessToken` as a side-effect.** This mirrors the real store contract (a successful refresh populates the token) so the second half of the SUT sees a realistic state.
-- **The "resolves" assertions are the behavioral spec.** Tests like *"resolves rather than rejecting when the refresh fails"* use `expect(...).resolves.toBeUndefined()` — the resolve *is* the assertion; a `.rejects` would indicate a navigation-aborting bug.
-- **`storeToRefs` is mocked to return fixed `value: false` refs** because `tryRestoreAuth` doesn't read those booleans; the mock exists only to satisfy the import chain.
+- The file header comment explicitly explains *why* this test is separate from `authentications.spec.ts`: the mock strategy differs (recording double vs. reactive refs), and merging them would force one file's mock to break the other's assertions.
+- The "resolves rather than rejects" tests use `expect(...).resolves.toBeUndefined()` — the resolution itself is the assertion; there is no separate `.catch` check.
+- `storeToRefs` is mocked to return static `{ value: false }` refs; this is a leftover dependency of the SUT's import chain and is not exercised by these tests.
+- The realistic-default `refreshToken` mock mutates `sessionStore.accessToken` synchronously inside the mock, so the second half of `tryRestoreAuth` sees a token only when the first half succeeded.

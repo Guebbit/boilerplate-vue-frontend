@@ -2,20 +2,18 @@
 
 ## Purpose
 
-Co-located accessibility e2e test for the **realtime** module. It registers the module's routes with the shared `sweepA11y` runner so that axe assertions are executed against each route. Placing this file inside the module (rather than a central list) ensures that deleting the module automatically removes its a11y coverage.
+Registers the **realtime** module's e2e accessibility (a11y) coverage by declaring its route to the shared `sweepA11y` runner, which visits the page and asserts axe results. It is co-located with the module so that deleting the module removes its a11y test with it, preventing a central list from referencing dead routes.
 
 ## Key elements
 
-- **`sweepA11y` call** — Registers one route for the realtime module:
-  - Module key: `'realtime'`
-  - Routes: `[['realtime playground', '/en/playground/realtime']]`
-  - Auth role: `'admin'`
+- **`sweepA11y('realtime', [['realtime playground', '/en/playground/realtime']], 'admin')`** — Registers one route ("realtime playground" at `/en/playground/realtime`) under the `realtime` module namespace, authenticated as the `admin` role. The runner (imported from `a11y-sweep.ts`) handles the visit and axe assertions.
 
 ## Relationships
 
-- **`tests/support/e2e/a11y-sweep.ts`** — Provides the `sweepA11y` function imported here. That module visits each registered route in the browser and runs axe-core accessibility assertions against the rendered page. This file is purely the route/role declaration; all sweep logic lives in the support module.
+- **`tests/support/e2e/a11y-sweep.ts`** — Provides the `sweepA11y` function that this file calls. The sweep visits each registered route and asserts against axe; this file merely supplies the route metadata.
 
 ## Notes
 
-- Coverage completeness is enforced by `tests/cross-cutting/a11y-coverage.spec.ts`, which asserts that every routed module ships a file like this one. Adding a new route to the realtime module without updating this list will fail that guard.
-- The file is a side-effect import (no exports). Test runners pick it up by file path, not by import.
+- A cross-cutting test (`tests/cross-cutting/a11y-coverage.spec.ts`) asserts that every routed module has a co-located file like this one, so a new module cannot be added without a11y coverage.
+- The file contains no test logic of its own; all axe assertions live in the shared `a11y-sweep` runner.
+- The third argument (`'admin'`) is the auth role passed to the runner, not a Playwright `cy.login` call made here.

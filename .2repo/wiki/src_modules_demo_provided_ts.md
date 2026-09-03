@@ -1,24 +1,20 @@
 # src/modules/demo/provided.ts
 
 ## Purpose
-
-A self-contained Vue 3 provide/inject demo that illustrates typed dependency injection using a `Symbol`-backed `InjectionKey`. It exists to show the mechanism (a ref paired with a mutation function passed down the component tree) in a form that is trivially deletable with `rm -rf src/modules/demo`.
+Demonstrates Vue's typed `provide`/`inject` pattern using a `Symbol`-based `InjectionKey` instead of a magic string. The state and its mutation live in this file (not the composition root) so that deleting `src/modules/demo` removes the feature cleanly, fulfilling the module-isolation contract described in `src/modules.ts`.
 
 ## Key elements
-
-- **`ProvidedVariable`** (type) — the payload type; a plain `string`.
-- **`ProvidedVariableMutation`** (type) — signature for the setter function, preventing descendants from writing to the ref directly.
-- **`ProvidedVariableContext`** (interface) — the object descendants actually receive: `{ providedVariable, setProvidedVariable }`.
-- **`providedVariableKey`** (exported const) — an `InjectionKey<ProvidedVariableContext>` backed by `Symbol('demo:providedVariable')`; the single source of truth for both `provide` and `inject`.
-- **`provideVariable()`** (exported function) — creates the ref (initial value `'From the Playground'`) and its setter, calls `provide()`, and returns the pair so the providing component can use it directly.
-- **`useProvidedVariable()`** (exported function) — calls `inject(providedVariableKey)!` and returns the pair; the non-null assertion assumes the caller is always under a `provideVariable()` ancestor.
+- **`ProvidedVariable`** (type alias) — the payload type; a `string`.
+- **`ProvidedVariableMutation`** (type alias) — signature for the setter: `(value?: string) => void`.
+- **`ProvidedVariableContext`** (interface) — the pair a descendant receives: a `Ref` plus its mutation function.
+- **`providedVariableKey`** (const) — `InjectionKey<ProvidedVariableContext>` backed by `Symbol('demo:providedVariable')`; carries the value's type so `inject` needs no annotation and renames are compile errors.
+- **`provideVariable()`** — creates the ref (default `'From the Playground'`) and its mutation, calls `provide(providedVariableKey, …)`, and returns the same pair for the providing component's own use.
+- **`useProvidedVariable()`** — calls `inject(providedVariableKey)!` and returns the pair. The non-null assertion is safe because the single consumer is guaranteed to render under a `provideVariable()` ancestor; a missing provider throws Vue's own `TypeError` on destructure.
 
 ## Relationships
-
-No project-internal dependencies. The only import is from the `vue` package. No other file in the dependency graph is linked to this module.
+No dependency-graph neighbors are recorded for this file. It imports only from `vue` and is consumed (per its own docstring) by a single view component within the `demo` module that calls `provideVariable()` in setup.
 
 ## Notes
-
-- The file is intentionally placed inside `src/modules/demo/` (not the composition root) so that deleting the module directory removes all of its state in one step, as `src/modules.ts` promises for every module.
-- `useProvidedVariable` relies on Vue's built-in `TypeError` when `inject` returns `undefined` and the destructure is attempted — there is no custom guard or demo-specific error message.
-- The mutation function defaults the argument to `''`, so calling `setProvidedVariable()` with no argument clears the value rather than setting it to `undefined`.
+- The mutation wrapper exists specifically so descendants **never** assign to the injected `Ref` directly; they call `setProvidedVariable` instead.
+- The default for `setProvidedVariable` is `''` (empty string), not the initial `'From the Playground'` value — calling the mutation with no argument clears the ref.
+- The `!` in `useProvidedVariable` is intentional and documented: it is a wiring invariant, not a defensive guard. If the invariant breaks, the failure mode is Vue's generic destructure `TypeError`, not a custom demo message.

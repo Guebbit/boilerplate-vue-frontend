@@ -2,23 +2,26 @@
 
 ## Purpose
 
-Registration page that collects email, password (with confirmation), a terms checkbox, and an optional avatar upload. Validates the input with a Zod schema built on top of the shared `usersSchema`, calls the auth store's `signup` action, and then redirects the user to the **Login** page (the new account still needs email confirmation before a session can start).
+The user-facing account registration page. It collects email, password (with confirmation), an optional avatar upload, and a terms/conditions acknowledgment, then calls the auth store's `signup` action. On success it redirects to the Login route (the account still requires email confirmation) rather than establishing a session. It also renders conditional OAuth "continue with" buttons when providers are configured.
 
 ## Key elements
 
-- **`signupSchema`** – Zod schema composed from `usersSchema.pick({ email })` + `usersPasswordSchema` + a `passwordConfirm` field + `conditions` boolean + `imageUpload`. A top-level `.refine` enforces password === passwordConfirm. All error messages are thunked (`() => t(...)`) so i18n strings resolve at parse time.
-- **`submitForm`** – Validates via `handleSubmit`, then wraps the `signup` store call in `trackUpload` (from `useUploadProgress`) so `FormImageUpload` can display real multipart progress. On success: `router.push({ name: 'Login', query: route.query })` + a "check your email" toast. On failure: tries `applyServerErrors(error)` first; if that returns `false`, falls back to `notifyErrorMessages`.
-- **`UserSignupForm`** – Local interface describing the form's reactive shape (email, password, passwordConfirm, conditions, imageUpload).
-- **`formElement`** – `ref<HTMLFormElement>` passed to `useAppForm` so the toolkit can scroll/focus the first invalid field.
+- **`signupSchema`** — Zod schema built by picking `email` from the shared `usersSchema`, extending with `usersPasswordSchema`, a `passwordConfirm` field, a `conditions` boolean, and an `imageUpload` file field; a top-level `.refine` enforces password === passwordConfirm with the error attached to the `passwordConfirm` path. All error messages are thunks (`() => t(…)`), so i18n is resolved at parse time.
+- **`trackUpload`** — Thin wrapper that calls `useToolkitUploadProgress`'s `track`, enabling progress reporting only when a `File` is actually attached. Returns the store promise so the caller can chain `.then`/`.catch`.
+- **`submitForm`** — Validates via `useStructureFormValidation`, then calls `useAuthStore().signup` with the form payload and optional `AxiosRequestConfig` (carrying `onUploadProgress`). On success pushes to the `Login` route preserving the current query string and fires a "check your email" notification. On failure, first attempts `applyServerErrors` to map field-level server errors; falls back to `notifyErrorMessages` toast.
+- **OAuth section (template)** — Renders a `v-btn` per provider using a real `href` (from `oauthStartUrl`) instead of a router link or click handler, because the OAuth redirect flow requires genuine top-level navigation.
+- **Conditions checkbox** — Uses `i18n-t` with two slot links (`#terms`, `#privacy`); `@click.stop` on each `RouterLink` prevents Vuetify's clickable-label from also toggling the checkbox.
+- **`useStructureFormValidation`** call — Configured with `revalidateOn: locale` so already-rendered error strings re-translate on locale switch, and `invalidFieldSelector: VUETIFY_INVALID_FIELD_SELECTOR` for automatic scroll-to-first-error.
 
 ## Relationships
 
-- **`src/infrastructure/utils/logger.ts`** – Listed as a graph neighbor but no direct import or call to a logger is visible in this file's source. Any logging likely occurs transitively inside `useAuthStore.signup` or `useAppForm`.
+The listed graph neighbor `src/infrastructure/utils/logger.ts` is **not** imported or referenced anywhere in this file. The file's actual infrastructure imports are `@/infrastructure/utils/errors.ts` (server-error mapping + invalid-field selector) and `@/infrastructure/utils/uploads.ts` (`imageUploadSchema`). It also depends on the shared `@/modules/users` schema exports and `@/modules/account/stores/auth.ts` / `oauth.ts` stores.
 
 ## Notes
 
-- **No login on success.** After a successful signup the user is sent to Login, not logged in. The account is in a "pending email confirmation" state until the user verifies.
-- **No username field.** The auth store internally defaults the username to the email address; this form intentionally omits a username input.
-- **`trackUpload` is a thin wrapper** around the store call; it exists solely to feed `uploadProgress` into `FormImageUpload`. Remove it and avatar upload still works, just without a progress bar.
-- **Error-handling order matters:** `applyServerErrors` maps server-returned field errors back onto the form (e.g. "email already taken"). Only if it returns `false` (no mappable field) does the code emit a generic toast via `notifyErrorMessages`.
-- **Two `<script>` blocks:** the first (non-`setup`) only sets the component `name`; all logic lives in the `lang="ts"` `<script setup>` block.
+- **No session is created on signup.** The success path navigates to `Login`; the user must confirm their email before they can sign in. This is intentional and differs from the Login flow.
+- **No username field.** The auth store internally defaults the username to the email address; the form never asks for one.
+- **OAuth buttons are real `<a>` elements.** Using `v-btn`'s `href` prop (not `to` or `@click`) is a hard requirement of the OAuth redirect dance; swapping to a `RouterLink` or programmatic `window.location` will break the flow.
+- **Upload progress fallback.** `event.progress ?? 0` guards against Axios omitting `progress` on chunked/compressed responses, keeping the progress bar stationary rather than animating to garbage values.
+- **`trackUpload` is a no-op enabler when no file is present.** It passes `{ enabled: false }` to `track`, so the progress UI stays idle for text-only signups.
+- **`formElement` ref + `novalidate`.** The native form is marked `novalidate` so the browser does not intercept submission; the toolkit handles focus/scroll on invalid fields using the Vuetify selector.

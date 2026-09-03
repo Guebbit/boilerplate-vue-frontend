@@ -2,34 +2,26 @@
 
 ## Purpose
 
-Edit form for a single product. It auto-hydrates from the store's `currentProduct` once the record is fetched by `watchProduct`, then persists field changes (title, price, description, active flag) and an optional replacement image through the store's multipart-aware `updateProduct`.
+Vue single-file component (`ProductEditPage`) that renders a product edit form. It auto-hydrates fields from the fetched record in the products store, validates user input with a Zod schema, and submits changes—including an optional replacement image—through the store's multipart-aware `updateProduct` action.
 
 ## Key elements
 
-- **`ProductEditForm`** (interface) — shape of the editable fields: `title`, `price`, `description`, `active`, `imageUpload`.
-- **`editSchema`** (Zod) — built once via `productsSchema.pick({title, price}).extend(...)`. Messages are thunks so the active i18n locale is picked up at parse time without rebuilding the schema.
-- **`useAppForm<ProductEditForm>`** — provides `form`, `formErrors`, `showFormErrors`, `isSubmitting`, `resetForm`, `handleSubmit`, `activateAutoHydrate`, `applyServerErrors`.
-- **`activateAutoHydrate(computed(...))`** — maps `currentProduct` into the form model the moment the store resolves.
-- **`submitForm`** — validates via `handleSubmit`, then calls `trackUpload(imageUpload, …)` wrapping `updateProduct(id, …)`. On success clears `form.imageUpload` so the served `imageUrl` drives the preview and a second save doesn't re-upload the same bytes.
-- **`heroTitle` / `heroDescription`** (computed) — fallback chain: product title → route `id` → i18n page title; description or empty-value glyph.
-- **`watchProduct(() => id)`** — re-fetches whenever the route param changes.
-- **`useUploadProgress`** — exposes `uploadProgress` (bound to `FormImageUpload`) and `trackUpload` (wraps the multipart call).
+- **`editSchema`** – Zod schema (built from `productsSchema.pick({title, price}).extend(…)`) requiring `title` and `price`; optional `description`, `active`, `imageUpload`. Messages are thunks resolved at parse time so they track the active locale without rebuild.
+- **`useStructureFormValidation`** (from `@guebbit/vue-toolkit`) – Provides `form`, `formErrors`, `showFormErrors`, `isSubmitting`, `resetForm`, `handleSubmit`, `activateAutoHydrate`, and `applyServerErrors`. Bound to `locale` via `revalidateOn` for live re-validation.
+- **`activateAutoHydrate`** – Populates the form model from `currentProduct` once the store finishes fetching.
+- **`trackUpload`** – Thin wrapper around the toolkit's `useUploadProgress.track`; enables progress tracking only when a `File` is present.
+- **`submitForm`** – Validates, calls `updateProduct(id, payload, options)`, clears `imageUpload` on success, and shows a toast. Falls through to `applyServerErrors` / `notifyErrorMessages` on failure.
+- **`watchProduct(() => id)`** – (Re)fetches the product whenever the route `id` param changes.
+- **`heroTitle` / `heroDescription`** – Computed fallbacks for the hero section (loaded title → route id → i18n label).
 
 ## Relationships
 
-- **`useProductsStore`** (`src/modules/products/store`) — source of `watchProduct`, `updateProduct`, `currentProduct`, `loading`.
-- **`productsSchema`** (`src/modules/products/schemas.ts`) — base Zod schema extended for the edit form.
-- **`useAppForm`** (`src/infrastructure/composables/use-app-form.ts`) — generic form-state + validation + submit machinery.
-- **`useUploadProgress`** (`src/infrastructure/composables/use-upload-progress.ts`) — progress tracking for the multipart image upload.
-- **`imageUploadSchema`** (`src/infrastructure/utils/uploads.ts`) — validation for the optional `File` field.
-- **`notifyErrorMessages`** (`src/infrastructure/utils/errors.ts`) — fallback toast when the error isn't a server-field error.
-- **`routerLinkI18n`** (`src/infrastructure/i18n/router-link.ts`) — i18n-aware navigation links in the footer actions.
-- **UI components** — `LayoutDefault`, `ItemDetailLayout`, `ItemDetailHero`, `CardDetail`, `CardInfo`, `CardMaterialStat`, `ItemDetailField`, `FormImageUpload` provide the page shell and form controls.
+- **`src/infrastructure/utils/logger.ts`** – No direct import or call is visible in this file. The dependency-graph link is likely transitive (e.g., through the products store or the toolkit). No explicit interaction to document here.
 
 ## Notes
 
-- **i18n schema pattern:** `editSchema` is constructed once; its error messages are thunks resolved at parse time. Do not rebuild the schema per locale (same convention as `src/modules/users/schemas.ts`).
-- **TS narrowing in closures:** `form.value.title` is destructured into a local const *before* the `trackUpload` callback because TypeScript's narrowing on a mutable ref does not survive into a nested closure. Preserve this pattern if the submit body grows.
-- **Image upload is idempotent-by-design:** after a successful save, `form.imageUpload` is set to `undefined`. The store has already merged the server-returned `imageUrl` into `currentProduct`, which `FormImageUpload` picks up as `:current-image-url`.
-- **`novalidate` on `<form>`:** native HTML validation is disabled; all validation is handled by Zod + `useAppForm`.
-- **Guard against missing id / title / price:** `submitForm` is a no-op if any of these are absent, preventing a malformed API call.
+- **Locale-reactive schema:** `editSchema` messages are thunks (same pattern as `@/modules/users/schemas.ts`), so switching locale re-validates without rebuilding the schema. `revalidateOn: locale` triggers the re-check.
+- **Narrowing workaround:** `form.value` is destructured *before* the `if` guard inside `submitForm` because TypeScript cannot narrow a mutable `Ref` inside a nested closure.
+- **Progress fallback:** `event.progress ?? 0` guards against `undefined` progress on chunked/compressed uploads; the bar stays at 0 rather than jumping.
+- **Image-reset after save:** Setting `form.value.imageUpload = undefined` post-success prevents a second save from re-uploading the same bytes; the preview falls back to the store's `imageUrl`.
+- **`novalidate` on `<form>`:** Browser validation is suppressed; all validation is handled by the Zod schema via `useStructureFormValidation`.

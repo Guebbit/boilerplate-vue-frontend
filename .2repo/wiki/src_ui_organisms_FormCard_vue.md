@@ -1,19 +1,25 @@
 # src/ui/organisms/FormCard.vue
 
 ## Purpose
-Shared card shell for single-form pages (create/edit). It fixes the layout decisions that all such pages agree on — card width, `novalidate` form, block submit button, centred back link — so each concrete page only supplies its own fields and submit logic.
+
+A presentational card that wraps a single-form page (e.g. `ProductCreate`, `UserCreate`) with its fixed chrome: a `novalidate` form, a full-width submit button, and a centred "back" text link. The caller supplies only the fields (via the default slot) and the i18n labels, so every create page shares the same card geometry and button layout without duplicating markup.
 
 ## Key elements
-- **`defineProps`** — `submitLabel` (translated button text), `backTo` (RouteLocationRaw), `backLabel` (translated link text), `loading` (disables/spins the button).
-- **`defineEmits<{ submit: [] }>`** — fired on form submit; the owning page performs validation and the actual request.
-- **`formElement` ref + `defineExpose`** — exposes the `<form>` DOM node so a parent one level up can call `useAppForm` and focus the first invalid field inside it.
-- **Default slot** — the page's form fields go here.
-- **Template** — `v-card` (max-w-xl, centred) → `<form novalidate>` → slot → `v-btn` submit → `v-btn` text link via `routerLinkI18n(backTo)`.
+
+- **Props** — `submitLabel`, `backTo` (a `RouteLocationRaw`), `backLabel`, `loading?`. Labels arrive already translated; `backTo` gets its locale prefix added internally via `routerLinkI18n`.
+- **`emit('submit')`** — fired on `<form>` submit; the owning page handles validation and the actual submission.
+- **`defineExpose({ formElement })`** — exposes the `<form>` ref so `useStructureFormValidation` (one level up) can focus the first invalid field without reaching into the DOM.
+- **Default slot** — the page's own form fields; this is the only variable part of the card.
+- **`routerLinkI18n`** (from `@/infrastructure/i18n/router-link.ts`) — wraps `backTo` so the locale prefix is applied before Vuetify's `<v-btn :to>` renders the link.
 
 ## Relationships
-No graph neighbors are recorded. The file imports `routerLinkI18n` from `@/infrastructure/i18n/router-link.ts` and the `RouteLocationRaw` type from `vue-router`.
+
+- **Sibling of `ItemDetailLayout`** — both are page-level organisms that a single page composes; they are deliberately kept *out* of `LayoutDefault` so a page that already owns its layout isn't forced to nest two card wrappers.
+- **`routerLinkI18n`** — imported for the back-link; the only external dependency beyond Vue/Vuetify.
 
 ## Notes
-- `novalidate` is always on; the page is responsible for validation.
-- Deliberately **not** wrapped in `LayoutDefault` (same reasoning as `ItemDetailLayout`): the page owns its own layout, and a card that ships its own layout container would conflict with a page that already provides one.
-- `formElement` is exposed rather than handled internally because the form-state owner (`useAppForm`) lives in the parent page, not in this component.
+
+- The form has `novalidate`; validation is the page's responsibility, not the card's. The card only emits `submit` and lets the parent decide whether to proceed.
+- `loading` spins the submit button and (via Vuetify's built-in disabled-while-loading) blocks a second submit. There is no manual `:disabled` binding.
+- Because the component is a "page-level organism," do not nest it inside another organism that already provides a card or layout container.
+- The card width is hard-coded (`max-w-xl`, `p-8`, `mx-auto mt-10`). If a future page needs a different width, that is a signal to either parameterise or fork — the design intent is that all create pages look identical.

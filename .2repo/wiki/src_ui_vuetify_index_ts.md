@@ -2,27 +2,28 @@
 
 ## Purpose
 
-The single source of truth for the app's visual design. It configures Vuetify's theme (light & dark colour palettes), component-level defaults (rounding, variants, densities), the Lucide icon set, and built-in locale strings. Downstream projects restyle the entire UI by editing the palettes and the `defaults` block here—nothing else needs to change.
+The single source of truth for all design tokens in the project: Vuetify color palettes (light & dark), component `defaults`, display breakpoints, icon configuration, and locale setup. Downstream forks restyle the entire app by editing this file and `./icons.ts` alone; Tailwind only aliases these colors and defines no palette of its own.
 
 ## Key elements
 
-- **`light: ThemeDefinition`** — Light-mode colour tokens. Every `on-*` value is set explicitly to guarantee WCAG AA contrast (e.g. `on-primary` is dark brown, not white, because the orange primary is too light). Status colours (`success`, `warning`, `info`, `error`) are darkened so they pass 4.5:1 against their own 12 %-opacity tonal wash used by `VAlert`.
-- **`dark: ThemeDefinition`** — Dark-mode palette. Swaps primary/secondary (cyan leads at night). `error` is lighter than the light-theme counterpart so it still reads on the dark surface.
-- **`export default createVuetify(…)`** — The Vuetify instance installed by `src/main.ts`. Contains:
-  - `theme` — `defaultTheme: 'system'`, both palettes, and `variations` (lighten/darken ×2 for primary, secondary, tertiary) used by gradients and hover states.
-  - `icons` — Registers the Lucide set and its alias map (imported from `./icons.ts`).
-  - `locale` — Vuetify's own i18n strings (data-table, pagination, aria-labels); kept in sync with vue-i18n by a `LayoutDefault` watcher.
-  - `defaults` — App-wide component personality (button rounding, field variant/density, chip shape, alert variant, etc.). This is the intended "fork point" for changing how the app feels.
+- **`light` / `dark`** — Two `ThemeDefinition` objects. Every color token is explicitly set (including `on-*`) to guarantee WCAG AA contrast. Status colors (`success`, `warning`, `info`) are darkened specifically because `VAlert` defaults to `variant="tonal"`, rendering them at 12 % opacity as the background. `focus` and `link` are separate tokens rather than reusing `primary` (which is too light as text-on-white in the light theme).
+- **`export default createVuetify({…})`** — The configured Vuetify instance, installed by `src/main.ts`. Configures:
+  - `display.thresholds` — mirrors Tailwind's breakpoints in `src/styles/main.css` so `useDisplay()` and Tailwind's `sm:`/`md:`/etc. agree.
+  - `theme` — `defaultTheme: 'system'`, both palettes, and `variations` (±2 lighten/darken on primary, secondary, tertiary).
+  - `icons` — registers the Lucide set and aliases from `./icons.ts`.
+  - `locale` — English + Italian Vuetify built-in strings; kept in sync with vue-i18n by `LayoutDefault`.
+  - `defaults` — per-component look-and-feel (rounded corners, flat buttons, outlined fields, tonal alerts, etc.). This is the "personality" layer a fork overrides.
 
 ## Relationships
 
-- **`src/ui/vuetify/icons.ts`** — Provides `lucideAliases` and `lucideIconSet`, which are wired into the `icons` section of the Vuetify instance.
-- **`docs/reference/src-ui.md`** — Reference documentation for the UI layer; this file is the concrete implementation it points to.
-- **`src/styles/tailwind.css`** (referenced in the header comment) — Tailwind defines *no* palette of its own; its colour utilities are aliases of the tokens defined here. Changing a hex in this file changes both Vuetify and Tailwind output.
+- **`src/ui/vuetify/icons.ts`** — Provides `lucideAliases` and `lucideIconSet`, which are wired into the `icons` section of the Vuetify instance. This file is the sole consumer of those exports.
+- **`src/main.ts`** — Imports and installs the default-exported Vuetify instance into the app (not imported here; this file is a dependency of `main.ts`).
+- **`src/styles/tailwind.css`** — Aliases the color tokens defined here; it does not define its own palette.
+- **`src/styles/main.css`** — The focus-ring halo and Tailwind breakpoints that `display.thresholds` must stay in sync with.
 
 ## Notes
 
-- **Contrast is intentional and documented inline.** Several colour choices (`error`, `success`, `warning`, `info`, `link`, `focus`) carry comments with measured ratios. Do not "simplify" them back to the Material defaults without re-checking the ratios, especially for tonal-variant components.
-- **`primary` is a background colour, not a text colour.** Using it as inline text (e.g. a link) fails AA. Use the dedicated `link` token instead.
-- **`focus` token** exists because the brand orange (~2:1 on white) cannot satisfy WCAG 2.4.11's 3:1 focus-indicator requirement. It reuses the `on-surface` near-black.
-- **Locale sync is manual-ish.** Vuetify's internal strings (data-table headers, etc.) are set here; vue-i18n app strings live elsewhere. A `LayoutDefault` component watches the app locale to keep them aligned—easy to desynchronise if the watcher is removed.
+- Status colors were deliberately chosen *darker* (light theme) or *lighter* (dark theme) than "standard" Material values so they pass 4.5:1 against their own 12 %-opacity tonal wash in `VAlert`. Changing them back to brighter hues will break that contrast.
+- `primary` in the light theme is intentionally a *background* color (dark `on-primary` text sits on it). It must never be reused as text-on-white; use the `link` token instead.
+- Display thresholds are not Vuetify's defaults; they were set to match the project's Tailwind breakpoints. If either side changes, both must be updated together.
+- The file header comment states the design-token ownership rule: Vuetify owns the palette, Tailwind only aliases it. Keep that boundary when adding tokens.

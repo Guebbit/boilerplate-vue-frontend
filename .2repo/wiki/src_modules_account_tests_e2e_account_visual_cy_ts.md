@@ -2,19 +2,20 @@
 
 ## Purpose
 
-Declarative screen list that tells the shared visual-regression sweep which routes and anchors to snapshot for the account module. It contains no test logic of its own — the mechanism lives in the shared `visual-sweep` utility.
+Declares the screen list for the account module's visual-regression sweep. It is a thin configuration file: all sweeping logic lives in `tests/support/e2e/visual-sweep.ts`; this file only names which screens to snapshot.
 
 ## Key elements
 
-- **`sweepVisual('account', [['login', '/en/login', '#login-page']])`** — Registers one screen (`login`) at route `/en/login`, anchored to `#login-page`. This is the sole runtime call in the file; everything else is documentation.
+- **`sweepVisual('account', [['login', '/en/login', '#login-page']])`** — single call registering one screen ("login") at route `/en/login` anchored to `#login-page`. This is the entire executable content of the file.
+- **Import:** `sweepVisual` from `tests/support/e2e/visual-sweep` (resolved via `../../../../../`).
 
 ## Relationships
 
-- **`tests/support/e2e/visual-sweep.ts`** — Provides the `sweepVisual` function actually imported and called here. That file owns the navigation, waiting, and screenshotting logic; this file only supplies the screen definitions.
+- **`tests/support/e2e/visual-sweep.ts`** — provides the `sweepVisual` helper that this file calls. All sweep mechanics (navigation, waiting, capturing, comparing to baselines) are owned by that module; this file contributes only the screen definitions.
 
 ## Notes
 
-- **Snapshot placement:** Baselines are stored in `__snapshots__/` *beside* this file (co-located with the module), so deleting the module also deletes its PNGs. There is no central snapshot folder.
-- **Not in `npm run complete`:** Run explicitly via `npm run test:e2e:visual`.
-- **Re-recording rule (from the file's own docs):** Use `npm run test:e2e:visual:update` only after visually inspecting the diff. Blind re-recordation is flagged as the one thing that invalidates the suite.
-- **Adding a screen** means appending another `[name, route, anchor]` tuple to the `sweepVisual` call — no other wiring required.
+- Baseline images live in a sibling `__snapshots__/` directory. Deleting the module folder deletes its baselines automatically.
+- **Not** included in `npm run complete`. Run explicitly with `npm run test:e2e:visual`.
+- Re-record baselines with `npm run test:e2e:visual:update` **only after visually inspecting the diff image**—the convention is a hard gate, not a suggestion.
+- The file is a `@module` (no named exports); it produces a side-effect (the registered screen list) when imported by the visual-sweep runner.

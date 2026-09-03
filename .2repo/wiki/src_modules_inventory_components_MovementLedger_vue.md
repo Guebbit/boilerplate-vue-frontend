@@ -1,28 +1,23 @@
 # src/modules/inventory/components/MovementLedger.vue
 
 ## Purpose
-
-Admin-facing tab that lists every stock transition (newest-first) in a paginated, filterable table, and hosts the "sweep" button that expires stale reservation holds. All reads/writes go through `useInventoryStore`; filters are local refs that trigger a re-fetch via a `watch`.
+Renders the inventory module's stock-movement ledger tab: a paginated, filterable table of every stock transition (newest-first) and the "Sweep" action that expires stale reservation holds. It owns its filter state locally and delegates all reads/writes to `useInventoryStore`.
 
 ## Key elements
-
-- **`movementHeaders`** — computed array of localized `CoreDataTableHeader<StockMovement>` columns; the `product` column is marked `synthetic` (title resolved from the products catalogue, not from the row).
-- **`movementsPage` / `movementsProductId` / `movementsReason`** — local `ref`s driving pagination and the two `v-select` filters; a single `watch` on all three calls `loadMovements()`.
-- **`loadMovements()`** — calls `inventoryStore.fetchMovements` with current page, `PAGE_SIZE` (10), and active filters.
-- **`focusProduct(productId)`** — exposed via `defineExpose`; sets the product filter and resets to page 1 so a parent (e.g. the stock board) can deep-link into one product's history.
-- **`handleSweep()`** — opens a warning-level confirm dialog, then calls `inventoryStore.sweep()`; reports the count of expired holds via the notifications store and surfaces errors with `notifyErrorMessages`.
-- **`signed(delta)` / `deltaClass(delta)`** — render deltas as `+n`/`-n`/`0` and color them success/error/muted respectively.
-- **`productTitle(productId)`** — resolves a product id to its title from `productsStore.productsList`, falling back to the raw id.
-- **Template slots** — custom cell renderers for `createdAt`, `product`, `onHandDelta`, `reservedDelta`, `reason` (chip), `reference` (router-link to `OrderTarget`), and `note`.
+- **`movementHeaders`** – Computed `CoreDataTableHeader<StockMovement>[]` for the seven ledger columns; the `product` column is marked `synthetic` because it is resolved from `productId` at render time, not read from a row field.
+- **`loadMovements`** – Calls `inventoryStore.fetchMovements` with the current page, `PAGE_SIZE` (10), product, and reason filters. Triggered by `onMounted` and by a `watch` on the three filter refs.
+- **`focusProduct(productId)`** – Sets the product filter and resets to page 1; exposed via `defineExpose` so the stock-board history button can jump to a specific product's ledger.
+- **`handleSweep`** – Opens a warning confirm dialog, then calls `inventoryStore.sweep()`; on success shows a toast with the expired-count, on failure routes through `notifyErrorMessages`.
+- **`signed` / `deltaClass`** – Small helpers that format a numeric delta with an explicit sign (`+3`, `-3`, `0`) and apply colour (`text-success` / `text-error` / `opacity-50`).
+- **`productTitle`** – Resolves a `productId` to its catalogue title via `productsList` from `useProductsStore`, falling back to the raw id.
+- **`productFilterOptions` / `reasonFilterOptions`** – Computed arrays (with an "All" row) feeding the two `v-select` filters.
 
 ## Relationships
-
-- The dependency-graph neighbor `src/infrastructure/utils/logger.ts` has **no visible direct import or call** in this file. Error reporting is delegated to `notifyErrorMessages` from `@/infrastructure/utils/errors.ts`; user-facing feedback goes through `useNotificationsStore`.
+- **`src/infrastructure/utils/logger.ts`** – Listed as a graph neighbor, but no direct import or call to `logger` is visible in this file's source. (The error path uses `notifyErrorMessages` from `@/infrastructure/utils/errors.ts` instead.)
 
 ## Notes
-
-- `PAGE_SIZE` is hard-coded to 10 by design ("admin table to read, not a feed to scroll").
-- The `product` column is **synthetic**: the `StockMovement` row carries `productId`, and the title is looked up against the already-loaded products list. If the product is missing, the raw id is shown.
-- The total-count badge (`movementsTotal`) reflects the **server-side match count**, not the rows on the current page — this is intentional to avoid implying the ledger is complete when only one page is loaded.
-- `reference` values are order ids and render as `router-link`s to the `OrderTarget` route; empty references render as `EMPTY_VALUE`.
-- `handleSweep` is idempotent server-side but **cancels the orders** behind the released holds, which is why a confirm dialog is required.
+- Filters are **local refs**, not store state. Changing any of them fires the `watch` → `loadMovements` cycle; there is no `computed` shortcut.
+- `PAGE_SIZE` is a module-level constant (10). Changing it requires editing this file.
+- The `reference` column is expected to be an order id; the template links it to the `OrderTarget` route. If the backend ever stores a different entity id there, the link will break silently.
+- `focusProduct` is the only public API (`defineExpose`). Parent components should call it via a template ref rather than reaching into internal refs.
+- The sweep confirm uses `useDialogStore().confirm`, which returns a Promise<boolean>; the `.then` chain is the only control flow—there is no `if/else` branch.

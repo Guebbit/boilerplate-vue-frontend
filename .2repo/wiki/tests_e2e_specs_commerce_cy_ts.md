@@ -2,24 +2,24 @@
 
 ## Purpose
 
-End-to-end test covering the two core commerce arcs: a customer buying with express shipping, experiencing a declined payment (demo decline card `4000 0000 0000 0002`), retrying successfully (`4242 4242 4242 4242`), and cancelling a paid order; and an admin advancing a paid order through `processing → shipped`, verifying the shipment panel / tracking email / courier delivery button, then recording a delivery receipt in the inventory ledger. Each `it` builds its own state and never reloads mid-arc.
+End-to-end spec for the full commerce lifecycle across two sessions: the customer purchases, watches a declined payment bounce back, retries successfully, and cancels a PAID order; the admin then advances a paid order through shipping, the courier delivers, and the inventory ledger records the receipt with a reason. Each test is self-contained (no cross-test state) and exercises only transitions the API actually permits.
 
 ## Key elements
 
-- **`moveOrderTo(label: RegExp, text: string)`** — module-level helper that clicks the v-select on the order-edit page, picks the option matching `label`, submits the form, and asserts the "Order updated successfully" toast. Used to walk the status machine one step at a time (the API only offers legal next-states).
-- **`describe('Commerce')`** — top-level suite; `beforeEach` visits `/en`, calls `cy.resetState()`, and visits again to start from a clean store.
-- **Test 1: "the customer ships express, gets declined, pays, and can still cancel"** — full buyer flow: add to cart → select express shipping → checkout → attempt payment with the decline card (asserts form persists and order stays pending) → pay with the good card (asserts "Payment received" / "Paid" status) → cancel the paid order via the in-app confirmation dialog.
-- **Test 2: "the admin ships, the courier delivers, and the ledger remembers why"** — customer buys and pays; then the test extracts the order id from the URL, logs out, logs in as `admin`, and navigates directly to `/en/orders/:id/edit`. Advances status via `moveOrderTo` (Processing → Shipped). Asserts the shipment panel shows a `TRK-` tracking code and "Shipped" status. Conditionally reads `GET /__demo/emails` (skipped when `liveProfile` is `true`) to verify a `delivery.shipment-shipped` template email carries the tracking prefix. Clicks the courier-advance button (asserts "Delivered" and button removal). Finally navigates to the inventory page, records a delivery receipt, and asserts the movement row shows `+` on hand and `0` on reserved.
+- **`moveOrderTo(label, text)`** — Helper that opens the Vantec/v-select status dropdown on the order-edit page, clicks the option matching `label`, and asserts the submitted confirmation. Advances the order exactly one step (paid → processing → shipped) because the API rejects non-adjacent jumps.
+- **`beforeEach`** — Visits `/en`, calls `cy.resetState()`, re-visits. Guarantees a clean slate for each test.
+- **Test 1: customer ships express, gets declined, pays, cancels** — Adds a product to cart, picks express shipping, checks out, attempts payment with `4000 0000 0000 0002` (demo-provider declined number), verifies the form is still present (order still pending), retries with `4242 4242 4242 4242`, confirms "Paid", then exercises the cancel path (app dialog, not browser `confirm`).
+- **Test 2: admin ships, courier delivers, ledger remembers why** — Re-buys and pays as the customer (because `pending` cannot jump to `shipped`), logs out, logs in as admin, navigates to the order by ID, advances processing → shipped via `moveOrderTo`, verifies the shipment panel + tracking code (`TRK-…`), checks the demo email outbox for the `delivery.shipment-shipped` template, clicks the courier-advance button (asserts it disappears after one use), then records a receipt in inventory and asserts the movement row shows `+` on-hand and `0` reserved.
 
 ## Relationships
 
-No graph neighbors are recorded for this file. It depends on the shared helpers `cy.resetState`, `cy.loginAs`, `cy.navigateTo`, `cy.navigateViaMenu`, and `cy.logout` (presumably defined in a Cypress support/commands file), and on the `__demo/emails` endpoint that is mounted only when `NODE_DEMO=true`.
+No graph neighbors are recorded for this file.
 
 ## Notes
 
-- **Two sessions, no mid-arc reload.** Each test performs a full login → action → logout → login cycle within a single `it`. Nothing relies on store state surviving a page load.
-- **Demo-only email assertion is inline-guarded**, not gated by a top-level `cy.skipUnlessDemo()`, because the surrounding assertions (shipment panel, courier, ledger) must run under the live profile too. The guard checks `cy.env('liveProfile')` before making the `__demo/emails` request.
-- **Decline card is a Stripe-style test number** (`4000 0000 0000 0002`); the form must remain visible and the order must stay `pending` after the refused attempt.
-- **`moveOrderTo` enforces single-step transitions** because the API's v-select only renders legal next-states; a direct `paid → shipped` jump is intentionally not possible through the UI.
-- **Inventory receipt assertion checks both `onHand` (+) and `reserved` (0)** to catch a ledger that increments the wrong counter.
-- **Login as admin requires logging out first** (`cy.logout()`), because an authenticated visit to `/login` redirects away and `cy.loginAs` would never find the form.
+- **Order-row assertions use `at.least 1`, not `1`.** The seed data for the test user already contains orders; the just-placed order is newest (`.first()`), but the table length is not a clean invariant.
+- **Declined-card retry is part of the assertion.** The spec explicitly verifies the payment form and cancel button still exist *after* the decline, proving the order is still pending and retryable.
+- **Email-outbox check is guarded by `liveProfile`.** `GET /__demo/emails` is only mounted when `NODE_DEMO=true`; in a live profile the email is sent for real and there is nothing to read. The guard is inline (not `cy.skipUnlessDemo`) so the surrounding live-profile assertions (shipment panel, courier, ledger) still run.
+- **Courier-advance is idempotent-by-absence.** The test clicks once, asserts "Delivered", then asserts the button is gone (`should('not.exist')`). A second click is not possible by design.
+- **Inventory receipt asserts both counters.** The movement row must show a positive on-hand change *and* reserved `= 0`; a bug that moved the wrong counter would still render a row.
+- **Log-out before admin login is required.** An authenticated session visiting `/login` redirects away, so `cy.loginAs('admin')` would never find the form. The spec captures the order ID from the URL before logging out.

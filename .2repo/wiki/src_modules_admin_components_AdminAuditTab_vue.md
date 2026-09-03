@@ -2,29 +2,30 @@
 
 ## Purpose
 
-Presentational audit-log tab for the admin dashboard. It owns the filter form's local state (actor, action, outcome, since, page, pageSize) and translates user interactions into a `search` emit; it renders the data table and pager declaratively from props the parent supplies. It never fetches data itself.
+Audit-log tab of the admin dashboard. It renders a filter form, a data table, and a pager for audit events, but performs no data fetching itself — all retrieval is delegated to the parent view via a `search` emit. The component is purely presentational: it owns only the local filter-form state and passes structured filters upward.
 
 ## Key elements
 
-- **Props** – `auditEvents`, `total`, `pages`, `loading`, `error`: the parent feeds back the current page of results and loading/error state.
-- **Emit `search(filters: AdminAuditFilters)`** – fired by Search, page-change, page-size-change, and Reset; the parent is responsible for fetching and for surfacing any rejection.
-- **`filters` (reactive)** – single source of truth for the form; page number lives *inside* this object rather than in separate state, because a stale page number would point at a different result set.
-- **`handleSearch`** – resets `filters.page` to 1 then emits `search`.
-- **`handlePageChange(page)`** – sets `filters.page` and emits `search`.
-- **`handleReset`** – clears all filter fields, restores default page size (50), resets page to 1, emits `search`.
-- **`outcomeOptions` (computed)** – localized `all` / `success` / `failure` select options.
-- **`pageSizeOptions`** – `[20, 50, 100]`; 100 is the API's declared maximum (larger values yield HTTP 422).
-- **`tableHeaders` (computed)** – eight `CoreDataTableHeader<AuditEventItem>` entries mapping display columns to `AuditEventItem` field keys.
-- **`truncateId(value, length=8)`** – shortens a correlation id for table display; returns `EMPTY_VALUE` dash when absent.
-- **Template slots** – custom renderers for `timestamp` (formatted), `actor_role` (color-coded chip), `outcome` (color-coded chip), `ip` (dash fallback), `request_id` / `trace_id` (truncated + `title` + `sr-only` full id).
+- **`props`** — `auditEvents`, `total`, `pages`, `loading`, `error`: the table data and parent-owned load/error status fed back in for rendering.
+- **`emit('search', filters)`** — the sole outward event; carries the current `AdminAuditFilters` object (actor, action, outcome, since, page, pageSize) to the parent for fetching.
+- **`filters`** (reactive) — local state for the filter form fields; page and pageSize live here so that changing filters resets the page and page changes re-emit the full filter bag.
+- **`handleSearch`** — resets `filters.page` to 1 and emits the current filters.
+- **`handlePageChange(page)`** — sets `filters.page` and emits; page is kept inside the filter object so a stale page number can never point at a different result set.
+- **`handleReset`** — clears all filter fields, restores `DEFAULT_PAGE_SIZE` (50), and re-emits.
+- **`truncateId(value, length?)`** — returns the first *length* characters (default 8) + `…`, or `EMPTY_VALUE` when absent; used for request/trace ID cells.
+- **`tableHeaders`** (computed) — localized `CoreDataTableHeader<AuditEventItem>[]` mapping column keys to i18n labels.
+- **`outcomeOptions`** (computed) — localized select options for the outcome filter (all / success / failure).
+- **`pageSizeOptions`** — `[20, 50, 100]`; capped at 100 because the API contract returns 422 above that.
+- **Template slots** — custom rendering for `timestamp` (formatted), `actor_role` and `outcome` (colored Vuetify chips), `ip` (fallback to `EMPTY_VALUE`), and `request_id`/`trace_id` (truncated with full id in `title` + a visually-hidden `sr-only` span for screen readers).
 
 ## Relationships
 
-No graph neighbors are recorded for this file. It imports shared UI components (`DataTable`, `ListPagination`), type contracts (`AuditEventItem`, `AdminAuditFilters`, `CoreDataTableHeader`), and formatting utilities (`formatDateTime`, `EMPTY_VALUE`), all of which live in the `@/ui` and `@/infrastructure` layers.
+No graph neighbors are recorded for this file. It imports shared UI components (`DataTable`, `ListPagination`), the `Search` icon from `lucide-vue-next`, the `AuditEventItem` / `AdminAuditFilters` types, and `formatDateTime` / `EMPTY_VALUE` utilities, but those are consumed rather than constituting a bidirectional graph edge in the dependency data provided.
 
 ## Notes
 
-- **Page number is inside `filters`** — intentional: the audit trail is append-only and paged from the newest end, so a page number that outlives its filter set would be meaningless. Resetting filters always resets page to 1.
-- **Accessibility on ID columns** – the truncated visible span is `aria-hidden="true"`; the full id is exposed via a separate `sr-only` span (not `aria-label`) to avoid `aria-prohibited-attr` on a role-less element and to prevent double-announcement. The `title` attribute is provided for mouse users.
-- **`pageSizeOptions` cap at 100** reflects the API contract; do not add larger values without a backend change.
-- **Error display is mutually exclusive with the table** – `<v-alert>` and `<DataTable>` are in an `v-if` / `v-else` pair, so the table is hidden when an error message is present.
+- **Never fetches.** The component has no composable, no `fetch`, no API call. Any change that would require a request must go through the `search` emit; the parent is solely responsible for network I/O and for surfacing errors via the `error` prop.
+- **Page reset on filter change is intentional.** `handleSearch` forces `page = 1` because the audit trail is append-only and paged from the newest end; a page number from a previous filter set would reference different rows.
+- **`pageSizeOptions` is a plain array, not a computed.** Its values are fixed by the API contract (`maximum: 100`); do not derive them dynamically.
+- **Accessibility choice for IDs.** The full request/trace id is exposed via a `title` attribute (mouse-only) *and* a `sr-only` `<span>`. A `aria-label` on a role-less `<span>` is prohibited (`aria-prohibited-attr`), and `aria-hidden` on the visible span prevents double announcement.
+- **`novalidate` on the form.** Validation is expected upstream or via Vuetify; the browser's native validation UI is suppressed.

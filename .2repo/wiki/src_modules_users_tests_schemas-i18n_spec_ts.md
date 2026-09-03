@@ -1,20 +1,24 @@
 # src/modules/users/tests/schemas-i18n.spec.ts
 
 ## Purpose
-Vitest spec that verifies the users module's Zod schemas resolve validation error messages through the real vue-i18n instance into both English and Italian. It asserts a domain-specific invariant: every i18n key the schemas reference exists in both locale dictionaries, and the Italian strings are genuinely different from the English ones.
+
+Verifies that the users module's Zod schemas (`usersSchema`, `usersPasswordSchema`) emit validation messages resolved through the **real** vue-i18n instance in the currently active locale. This is distinct from the cross-cutting spec (`tests/cross-cutting/schemas-i18n.spec.ts`) which proves the thunked-message mechanism in isolation; this file proves the domain schemas and the `en.json` / `it.json` dictionaries actually agree. It lives alongside the domain rather than in a shared test folder.
 
 ## Key elements
-- **`setLocale(locale)`** — calls `loadLocale` then `nextTick()` so Vue reactivity settles before the next assertion.
-- **`messagesOf(schema, value)`** — runs `schema.safeParse(value)` and returns the array of `issue.message` strings (empty array when no error).
-- **`describe('users schema messages')`** — two tests:
-  - *English → Italian on the same schema object*: parses an invalid `{ email, username }` through `usersSchema`, asserts the English message appears, switches to Italian, re-parses, and asserts the Italian message appears.
-  - *Password refinements in Italian*: parses `'short'` through `usersPasswordSchema` and asserts all four refinement messages (`password-min`, `password-maius-required`, `password-number-required`, `password-special-required`) match the Italian dictionary.
+
+- **`setLocale(locale)`** – calls `loadLocale(locale)` then awaits `nextTick()` so DOM-facing reactivity settles before the next assertion.
+- **`messagesOf(schema, value)`** – helper that runs `schema.safeParse(value)` and returns the flat array of issue `message` strings (empty array on success).
+- **`beforeAll`** – calls `wireModulesIntoCore()` to register locale messages the same way `src/main.ts` does, then sets the initial locale to `en`.
+- **`afterEach`** – resets the locale back to `en` so tests don't leak state.
+- **`it('resolves in English, then in Italian…')`** – parses an invalid `{ email, username }` against `usersSchema` in `en`, asserts the Italian message appears after switching to `it`.
+- **`it('does the same for every password rule…')`** – parses the string `'short'` against `usersPasswordSchema` in `it` and asserts all four refinement messages (`password-min`, `password-maius-required`, `password-number-required`, `password-special-required`) are present.
 
 ## Relationships
-- **`tests/support/unit/wire-modules.ts`** — calls `wireModulesIntoCore()` in `beforeAll` to register the users module's locale dictionaries on the shared i18n instance, replicating what `src/main.ts` does at application startup. Without this call the `loadLocale` + `t` chain would have no module-level messages registered.
+
+- **`tests/support/unit/wire-modules.ts`** – provides `wireModulesIntoCore()`, called once in `beforeAll`. This wires the users module's locale dictionaries into the shared vue-i18n core so that `loadLocale` / `t` can resolve `users-form.*` keys exactly as the production app does. Without this call the schemas' thunked messages would have no dictionary to read from.
 
 ## Notes
-- Deliberately uses the **real** vue-i18n instance, not a mocked `t`. A mock would only prove a key was *looked up*, not that the resolved string is in the correct language.
-- This spec is intentionally colocated with the users module (per `docs/theory/modules.md`): deleting the module folder removes the coverage rather than orphaning a cross-cutting test. The *mechanism* (thunked Zod messages re-resolving at parse time) is covered once in `tests/cross-cutting/schemas-i18n.spec.ts`.
-- `messagesOf` is a local helper typed against a minimal structural interface (`safeParse` returning `{ error?: { issues: … } }`) rather than importing the full Zod type, keeping the spec independent of Zod's version-specific typings.
-- `afterEach` resets the locale back to `'en'` to prevent cross-test leakage.
+
+- The file deliberately avoids mocking `t`; a mock would only confirm a key *was looked up*, not that the returned string matches the dictionary in the target language.
+- `messagesOf` accepts a structural type rather than the concrete Zod schema type, keeping the helper independent of a specific Zod version.
+- Locale switching is sequential within a single test (English → Italian) rather than split into separate tests, because the point is that the *same schema object* re-resolves its messages.

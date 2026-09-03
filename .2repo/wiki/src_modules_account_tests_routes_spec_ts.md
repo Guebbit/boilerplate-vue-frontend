@@ -2,20 +2,21 @@
 
 ## Purpose
 
-Guarantees that every account route explicitly declares its `meta.access` value and that no route is added to the module without an access decision. It asserts against the raw route records exported by the module (not a resolved router), so it runs without locale prefixes or the rest of the app.
+Pins the `meta.access` value each account route declares, asserting directly against the module's raw route records (not a resolved router). Exists to guarantee that a route silently losing its `meta.access` — making it indistinguishable from a public route — is caught by CI. It complements the router-level spec, which proves enforcement is *attached*; this proves the declarations are *there*.
 
 ## Key elements
 
-- **`byName(name)`** — small lookup helper that finds a route record by its `name` in the imported `routes` array.
-- **`it.each([...])('%s declares access: %s')`** — table-driven assertion that pins the expected `meta.access` (`'guest'`, `'auth'`, or `undefined`) for each named route: Login, Signup, PasswordResetRequest, PasswordResetConfirm, AccountDeleteConfirm, VerifyEmailConfirm, Profile, Logout.
-- **`it('declares no route this file does not know about')`** — completeness guard: the sorted list of all route names must exactly match the eight names enumerated above. Catches a new route added without an access decision.
+- **`byName(name)`** — helper that looks up a single `RouteRecordRaw` from the imported `routes` array by its `name` field.
+- **`describe('account route access')`** — the sole suite. Contains two tests:
+  - A parameterized `it.each` asserting each named route's `meta.access` equals an explicitly written expected value (`'guest'`, `'auth'`, or `undefined`).
+  - A completeness test that the *set* of route names in `routes` exactly matches the nine names listed in the file, so a newly added route without an access decision fails the suite.
 
 ## Relationships
 
-- **`src/modules/account/routes.ts`** — imports the default-exported route array (`routes`) and reads each record's `name` and `meta.access`. This is the sole dependency; no router instance or app context is needed.
+- **`src/modules/account/routes.ts`** — sole dependency. This spec imports its default export (the `routes` array) and reads each entry's `name` and `meta.access`. It does not mount a router or touch the rest of the app.
 
 ## Notes
 
-- The expected access values are deliberately hard-coded rather than derived from the records under test, so the test fails if a value silently changes instead of passing vacuously.
-- This spec proves declarations *exist*; a separate router-level spec is responsible for proving enforcement is *attached*. Both are needed.
-- The file intentionally lives in the account module (not a platform-wide spec) so that deleting the domain does not break an unrelated spec — see `docs/theory/modules.md`.
+- Expected access values are hard-coded literals, never derived from the source, so a refactoring that drops or renames a `meta.access` field is detected immediately.
+- The completeness test (`declares no route this file does not know about`) uses `toSorted()` on both sides, so order in the array does not matter — but *adding* a route without adding it to the expected list will fail the test.
+- `undefined` access (e.g. `OAuthCallback`, `Logout`) means "no `meta.access` key at all" (truly public), not a string value. The assertion uses `toBe(undefined)` via optional chaining, so both a missing key and an explicit `undefined` pass.

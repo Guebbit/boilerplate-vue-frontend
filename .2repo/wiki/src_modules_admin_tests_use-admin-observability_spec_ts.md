@@ -2,26 +2,27 @@
 
 ## Purpose
 
-Unit tests for the `useAdminObservability` composable. The file verifies the *composition* layer: that each of the three API fetchers (health, metrics, audit logs) writes only its own state slice, that the audit pagination envelope is decomposed into `items` / `total` / `pages` rather than stored as a single object, and that a failed endpoint degrades to a per-panel error message without affecting the panels that did succeed. Loading/error bookkeeping delegated to `useAsyncAction` is explicitly out of scope here.
+Unit tests for the `useAdminObservability` composable, focused exclusively on the **composition layer**: that each of the three fetchers writes its own state slice without leaking into the others, that the audit envelope is decomposed into `items` + pagination meta (not stored as one opaque object), and that a dead endpoint degrades to a per-panel error message while the other panels still render. Loading/error bookkeeping delegated to `useAsyncAction` is intentionally out of scope.
 
 ## Key elements
 
-- **`apiFailure(status, message)`** – builds the rejection envelope shape (`{ success: false, status, message, errors: [message] }`) that `onResponseReject` produces in production. Used to simulate API failures so tests exercise the real code path.
-- **`meta(totalItems, totalPages, page, pageSize)`** – factory for a `PaginationMeta` object used in audit-log response fixtures.
-- **`describe('initial state')`** – asserts every ref starts as `undefined` / `false` / `[]` / `0`.
-- **`describe('fetchHealth')`** – unwrapping, in-flight loading flag, and isolated error reporting (API message preferred over fallback).
-- **`describe('fetchMetrics')`** – unwrapping and the i18n-key fallback (`'admin-page.error-load-metrics'`) when a rejection carries no readable message.
-- **`describe('fetchAuditLogs')`** – envelope splitting (items + total + pages), large-pagination fidelity, filter pass-through under contract names, undefined-filter default, empty-page → zero pages, error → empty defaults + message, and replace-not-append semantics.
-- **`describe('fetchAll')`** – concurrent dispatch of all three fetchers and independent resolution.
+- **Mocked API surface (`@api`)** — `getObservabilityHealth`, `getObservabilityMetricsOverview`, `getObservabilityAuditLogs`, `deleteExpiredTokens` are all `vi.mock`-ed to return canned responses.
+- **`meta(totalItems, totalPages?, page?, pageSize?)`** — helper that builds a `PaginationMeta`-shaped object for audit-log fixtures.
+- **`apiFailure(status, message)`** — constructs the exact rejection envelope that `onResponseReject` produces in production (a plain object with `success`, `status`, `message`, `errors[]`), never an `Error` instance.
+- **`describe` blocks** — `initial state`, `fetchHealth`, `fetchMetrics`, `fetchAuditLogs`, `fetchAll`; each asserts state isolation, response unwrapping, error isolation, filter-payload pass-through, and concurrency.
 
 ## Relationships
 
-No external graph neighbors are recorded for this file. It imports from `@api` (mocked) and `@/modules/admin/composables/use-admin-observability` (the unit under test).
+No registered graph neighbors. The file's only runtime dependencies are:
+
+- `@/modules/admin/composables/use-admin-observability` — the composable under test.
+- `@api` — the API client module (mocked wholesale via `vi.mock`).
 
 ## Notes
 
-- **Rejection shape matters.** The `apiFailure` helper mirrors the *plain-object* envelope produced by `onResponseReject`. Mocking a raw `Error` or an arbitrary throw would let a composable that reads `.message` off a non-`Error` object pass while showing its fallback to real users.
-- **Fallback vs. API message.** When the rejection carries a `message`, the composable surfaces *that* string. The i18n fallback key (e.g. `'admin-page.error-load-metrics'`) is only used when no readable message exists (e.g. `{ status: 0 }`). Tests assert both paths.
-- **Zero pages ≠ one empty page.** An audit response with `totalItems: 0` yields `auditPages.value === 0`, which the pager component uses to hide itself. Tests pin this to prevent off-by-one pager rendering.
-- **`deleteExpiredTokens`** is mocked but not yet exercised in the visible test blocks; it is included in the `@api` mock to keep the module interface complete.
-- **Conventions:** `vi.mock('@api', …)` at module level; `vi.clearAllMocks()` in `beforeEach`; async assertions use `expect(promise).resolves` or chained `.then()` rather than `await` inside `it` blocks.
+- **Resolves, never rejects.** Every `fetch*` call is expected to *resolve* (possibly `undefined`), with errors landing in `errorHealth` / `errorMetrics` / `errorAudit` state. A test that expects a thrown promise would be wrong by design.
+- **Rejection shape matters.** Tests reject with the `apiFailure()` envelope, not a raw `Error`, to mirror what `onResponseReject` actually throws. The fallback-message test (`errorMetrics` → `'admin-page.error-load-metrics'`) only triggers when the rejection carries no readable `message` (e.g. `{ status: 0 }`).
+- **Filter payload is fully keyed.** Calling `fetchAuditLogs()` with no arguments still sends every filter key as `undefined`; the test asserts the exact call signature rather than a partial object.
+- **Empty audit page → 0 pages.** An empty result sets `auditPages` to `0`, not `1`; the UI pager hides itself below two pages.
+- **`fetchAll` is concurrent.** The test asserts all three `loading*` flags are `true` *before* any promise settles, confirming parallel dispatch rather than sequential chaining.
+- **`deleteExpiredTokens` is mocked but not exercised** in the visible portion of the file; it is included in the mock to prevent accidental real calls.

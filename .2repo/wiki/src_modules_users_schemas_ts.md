@@ -2,21 +2,22 @@
 
 ## Purpose
 
-Zod validation schemas for the user form (signup/profile). Each error message is an i18n thunk — a `() => translate(…)` call resolved at **parse time** rather than at schema-definition time, so the active locale is always honoured regardless of when the module was first loaded.
+Zod validation schemas for user form data. Error messages are i18n thunks (`() => translate(…)`) so translations are resolved at parse time, not at module-load time.
 
 ## Key elements
 
-- **`usersEmailSchema`** (internal) — `z.email()` with a single translated error message.
-- **`usersUsernameSchema`** (internal) — `z.string().min()` where the minimum is imported from the API contract (`signupBodyUsernameMin`).
-- **`usersPasswordSchema`** (exported) — Enforces the contract's minimum length (`createUserBodyPasswordMin`) plus four `.refine()` rules: lowercase, uppercase, digit, and special character (`[^\dA-Za-z]`). Each rule carries its own i18n key.
-- **`usersSchema`** (exported) — `z.object()` wrapping the full user form: `email` and `username` required; `id`, `imageUrl`, `admin`, `active`, `createdAt`, `updatedAt` are `.nullish()`; `phone` and `website` are `.optional()`.
+- **`usersEmailSchema`** *(internal)* – `z.email()` with a single i18n error key.
+- **`usersUsernameSchema`** *(internal)* – `z.string().min(signupBodyUsernameMin, …)`; minimum length is sourced from the shared API contract (`@api/schemas`), not hardcoded.
+- **`usersPasswordSchema`** *(exported)* – `z.string().min(createUserBodyPasswordMin, …)` followed by four `.refine()` calls enforcing ≥1 lowercase, ≥1 uppercase, ≥1 digit, and ≥1 special character. Each rule carries its own i18n error message.
+- **`usersSchema`** *(exported)* – `z.object({…})` representing the full user form: `email` and `username` are required; `id`, `imageUrl`, `admin`, `active`, `createdAt`, `updatedAt` are `.nullish()`; `phone` and `website` are `.optional()`.
 
 ## Relationships
 
-- **`src/modules/users/index.ts`** — Re-exports `usersPasswordSchema` and `usersSchema` so consumers of the `@/modules/users` barrel can import them without reaching into the file directly.
+- **`src/modules/users/index.ts`** – Consumes the two exported schemas (`usersPasswordSchema`, `usersSchema`) and re-exports them for the rest of the module. The two internal schemas (`usersEmailSchema`, `usersUsernameSchema`) stay private to this file.
 
 ## Notes
 
-- `usersEmailSchema` and `usersUsernameSchema` are **not** exported. Downstream code must go through `usersSchema` or re-import from this file explicitly.
-- The i18n keys for the lowercase and uppercase password rules read `password-minus-required` and `password-maius-required`. These look like typos (expected: `lowercase`/`uppercase`) but they are the keys the translation catalog must define — verify before renaming.
-- The "special character" check is `password && /[^\dA-Za-z]/.test(password)`. Because it runs inside `.refine()`, a `null`/`undefined` password is short-circuited by the `&&` guard; the actual absence is already caught by the `.min()` check above.
+- Only `usersPasswordSchema` and `usersSchema` are exported; the email and username sub-schemas are file-private and reachable only via `usersSchema`.
+- Password complexity uses `.refine()` (not `.regex()`) so each failing rule produces a distinct, human-readable message rather than a single combined one.
+- The minimum-length constants (`signupBodyUsernameMin`, `createUserBodyPasswordMin`) come from `@api/schemas`, keeping the frontend contract in sync with the API definition.
+- The `error` option in Zod is called as a thunk (`() => translate(…)`), not a string literal. This is intentional: it defers the i18n lookup until `parse()` runs, so the active locale at request time is respected.

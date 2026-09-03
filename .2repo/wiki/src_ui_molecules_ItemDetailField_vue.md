@@ -2,23 +2,24 @@
 
 ## Purpose
 
-Atomic, read-only field for detail pages that renders a single label/value pair alongside an icon tile. It standardizes how individual data points are displayed so parent detail views can compose many of these in a grid without repeating layout logic.
+Atomic, read-only presentational field for detail pages. Renders a single label/value pair with a decorative icon tile. Designed to be dropped into a CSS-grid layout where the parent controls the accent color.
 
 ## Key elements
 
-- **`props`** — `label` (string), `value` (string \| number \| null, optional), `icon` (string, optional), `fullWidth` (boolean, optional).
-- **`displayValue`** (computed) — Returns `String(props.value)`, or `EMPTY_VALUE` when the value is `undefined`, `null`, or `''`. Used as the fallback for the default slot.
-- **Template** — A `<article>` laid out as a two-column CSS grid (3rem icon tile + flexible text). The default slot renders `displayValue`; callers can slot in richer content to override it.
-- **`.detail-field-icon`** (scoped style) — Applies a gradient background and text color derived from the `--detail-accent` CSS custom property.
+- **`props`** — `label` (string), `value` (string | number | null | undefined), `icon` (optional glyph string), `fullWidth` (boolean; toggles `col-span-full`).
+- **`displayValue`** (computed) — Normalises `value` to a string; returns `EMPTY_VALUE` when the value is `undefined`, `null`, or `''`.
+- **Template** — An `<article>` with a two-column grid (icon tile + text block). The value area exposes a **default slot**; if the caller provides slot content it replaces `displayValue` entirely.
+- **Scoped style** — `.detail-field-icon` applies a gradient background and text colour derived from the `--detail-accent` CSS custom property.
 
 ## Relationships
 
-- Imports `EMPTY_VALUE` from `@/infrastructure/utils/formatters.ts` as the placeholder shown for absent values.
-- Consumes the `--detail-accent` CSS custom property, which is expected to be set on an ancestor element by the parent detail view.
+- Imports `EMPTY_VALUE` from `@/infrastructure/utils/formatters.ts`.
+- Expects the parent page/view to set the `--detail-accent` CSS variable on an ancestor element.
+- No other graph neighbours.
 
 ## Notes
 
-- `--detail-accent` is **not** defined here; the hosting page/view must set it (as an RGB triplet) or the icon tile will render with an invalid color.
-- The `icon` prop is rendered as raw text (`{{ props.icon }}`), so it is intended for emoji or Unicode glyphs, not SVG components.
-- Passing `fullWidth` adds `col-span-full`, which is only meaningful when the parent grid has more than one column.
-- The default slot fallback means callers can pass arbitrary Vue templates (e.g., links, badges) in place of the plain `displayValue` string.
+- The icon element is `aria-hidden="true"` — it is purely decorative and must not carry semantic meaning.
+- `fullWidth` is a Tailwind class toggle (`col-span-full`), so the component is intended to live inside a CSS grid container; outside a grid it has no effect.
+- The default slot can render arbitrary content (e.g., a link, a badge) in place of the plain stringified value.
+- Long values are handled with `[overflow-wrap:anywhere]` rather than a custom scrollbar or truncation.

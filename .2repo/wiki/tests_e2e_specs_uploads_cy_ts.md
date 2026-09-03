@@ -2,29 +2,28 @@
 
 ## Purpose
 
-Cypress end-to-end spec that verifies the full image-upload flow across every form in the app (product edit, product create, user create, signup). It asserts on the *consequence* of a multipart request — a server-returned `/images/<uuid>.<ext>` path appearing in the preview's `src` — rather than intercepting the request itself, so the assertions stay valid regardless of transport details.
+End-to-end Cypress spec that exercises the image-upload path across the three surfaces that accept a file: product edit, product create, and user create. It verifies the full round-trip (local preview → multipart submit → server-stored URL rendered back) without inspecting the wire directly; instead it asserts on the consequence (the `<img src>` becomes an API-served path) so the test is transport-agnostic.
 
 ## Key elements
 
-- **`UPLOAD_PATH`** (const regex) — Matches the server-relative or absolute path the API returns for a stored image (`/images/<32-hex>.<ext>`). Used as the expected `src` after a successful upload.
-- **`expectNoPendingLocalPreview()`** — Scans all `img[alt="Image preview"]` elements and asserts none have a `blob:` src. Distinguishes "a local file is awaiting upload" from "a seeded product already has a server image."
-- **`openHydratedProductEditForm()`** — Resolves a product by role (`inStock`), navigates to its edit page, and gates on the hydrated title text (not the `#product-edit-page` id, which exists before data loads).
-- **`selectSampleImage()`** — Calls `selectFile` on the hidden Vuetify file input with `{ force: true }` using `tests/e2e/fixtures/sample-image.png`.
-- **`describe('Product edit')`** — Tests the `accept` attribute, immediate blob preview, full upload → `imageUrl` render, blob-URL cleanup, wrong-type rejection (no API call), and plain field save without an image.
-- **`describe('Product create')`** — Verifies the route is not swallowed by `/products/:id`, creates with/without an image, and checks validation on an empty title.
-- **`describe('User create')`** — Covers the `createUserWithMultipart` branch with an avatar.
-- **`describe('Signup')`** — Covers the store method that historically lacked a multipart branch; confirms a profile image survives registration.
-- **`describe('Live backend')`** (gated by `cy.skipUnlessLive()`) — Exercises the real server pipeline: multer `fileFilter`, magic-byte re-check in `identifyImageFile()`, random filename generation, and `express.static` serving from `public/`.
+- **`UPLOAD_PATH`** / **`THUMBNAIL_PATH`** – Regexes matching the server-returned image and thumbnail URLs (optional absolute origin + `/images/…` path). Used to assert a successful upload rendered in the DOM.
+- **`toFetchableUrl(path, apiUrl)`** – Normalises a possibly-relative image path to an absolute URL; guards against double-prefixing when `resolveImageUrl` already added the origin.
+- **`DIGEST_TIMEOUT_MS` / `DIGEST_POLL_INTERVAL_MS`** – Bounded wait constants for the asynchronous image-digest worker (RabbitMQ broker).
+- **`pollForImageSource(selector, pattern, deadline)`** – Recursively re-reads an `<img>`'s `src` with `cy.reload()` between reads until it matches a regex or the deadline expires. Needed because the digest runs off-request and neither app pushes the update.
+- **`expectNoPendingLocalPreview()`** – Asserts no `blob:` URL lingers in any preview `<img>`, proving no locally-picked file is stuck in the form.
+- **`openHydratedProductEditForm()`** – Picks any in-stock product by role, visits its edit page, and gates on the hydrated title appearing (not just the layout container).
+- **`selectSampleImage()`** – Drives the hidden file input with `cy.selectFile` (`force: true` to bypass Vuetify's visual hiding).
+- **`describe('Image upload')`** – Three sub-suites: *Product edit* (accept-attr, instant preview, full upload round-trip, file cleanup, wrong-type rejection, no-image edit), *Product create* (route disambiguation, create-with-image, create-without-image, validation), *User create* (truncated in source).
 
 ## Relationships
 
-No graph neighbors are recorded for this file. It is a leaf spec that consumes the app under test via HTTP and depends only on the Cypress fixture `tests/e2e/fixtures/sample-image.png` (and `not-an-image.txt` for the negative case).
+No graph neighbors recorded.
 
 ## Notes
 
-- **No `cy.intercept`.** The suite deliberately avoids request-level assertions; correctness is inferred from the DOM state (preview `src`) after submit.
-- **`force: true` on `selectFile`** is required because Vuetify visually hides the native `<input type="file">` behind a styled label; without it the upload silently no-ops.
-- **Blob vs. server URL is the core invariant.** A `blob:` src means "picked but not uploaded." A seeded product may legitimately show a server image before any user action, so "no image" assertions are wrong; "no blob" is the correct check.
-- **`#product-edit-page` is not a readiness gate.** The id exists before data hydrates; gating on it leads to submit-against-empty-field failures that look like image bugs. The hydrated `<input type="text">` value is the real signal.
-- **Demo profile is a real multipart write.** The comment clarifies that even in the demo profile, a string where a `File` part is expected yields a 422, so the suite never silently tests the JSON branch unless that branch is the intent.
-- **Live-backend block is the only place** the real filesystem/multer/`express.static` path is exercised. A regression in any of those layers is invisible to every other test in this file.
+- **Assertion strategy**: The spec deliberately avoids `cy.intercept` for the multipart check. It asserts the *outcome* (server path in `src`) rather than the request shape, so it works regardless of transport changes.
+- **Digest polling**: Without a broker the first DOM read already matches and `pollForImageSource` returns immediately. With a broker, the page must be reloaded between reads because neither app client-pushes the update.
+- **Known cache limitation (live profile only)**: `invalidateCache(['products'])` fires *before* the upload middleware, so the next GET re-caches the pre-digest placeholder for the full 3600 s TTL. The test asserts per-profile (`cy.env('liveProfile')`) rather than dropping coverage.
+- **`force: true` on `selectFile`**: Vuetify keeps the native `<input type="file">` visually hidden; without `force` Cypress refuses to interact.
+- **Readiness gate**: `#product-edit-page` exists before data loads, so it is *not* used as a hydration signal. The hydrated title text is the real gate; submitting on the unhydrated form produces a validation error that looks like a broken image field.
+- **Profile-agnostic seeding**: Under the live profile a seeded product already has an `imageUrl`; assertions are written as "no `blob:` URL present" rather than "no image present" so both profiles pass.

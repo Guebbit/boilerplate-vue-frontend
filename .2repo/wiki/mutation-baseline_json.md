@@ -2,19 +2,15 @@
 
 ## Purpose
 
-Records the per-file mutation-testing kill score (as a percentage) captured at a point in time. It serves as a regression baseline: subsequent mutation-test runs can be diffed against these scores to flag files whose test effectiveness has dropped (or improved) without needing to re-derive expectations manually.
+A generated snapshot of per-file mutation testing scores for the project's source tree. It records the mutation score (0–100) achieved for each tracked file at a single point in time, serving as a baseline against which future runs can be compared to detect regressions or improvements in test effectiveness.
 
 ## Key elements
 
-- **`generatedAt`** — ISO-8601 timestamp of when the snapshot was produced.
-- **`files`** — A flat map of relative source-file paths (e.g. `src/infrastructure/http/client.ts`) to a numeric score (0–100). A score of `100` means every mutant in that file was killed; lower values indicate surviving mutants. Covers ~75 files across `app/`, `infrastructure/`, `kernel/`, and `modules/` (account, admin, cart, delivery, demo, feedback, inventory, orders, payments, products, realtime, users, wishlist).
-
-## Relationships
-
-- **`scripts/mutation-baseline.ts`** — The generator/comparer for this file. It presumably writes `mutation-baseline.json` after a full mutation-test run and reads it back to produce pass/fail or delta reports on subsequent runs.
+- **`generatedAt`** — ISO 8601 timestamp indicating when this baseline was captured.
+- **`files`** — A flat map of relative source file paths → numeric mutation score. Covers all major areas: `src/app` (guards, router), `src/infrastructure` (http, i18n, observability, utils), `src/kernel`, `src/modules/*` (account, admin, cart, delivery, demo, feedback, inventory, locales, orders, payments, products, realtime, users, wishlist), and `src/ui`.
 
 ## Notes
 
-- The values are *snapshot* scores, not thresholds. A "correct" value depends on the codebase state at `generatedAt`; stale baselines will cause false regressions.
-- Files not listed in `files` simply had no mutants (or were excluded from the run) — their absence is not an error.
-- The file is regenerated wholesale; there is no incremental merge logic visible in the content.
+- This is a **generated artifact** (indicated by the `generatedAt` field). Do not edit by hand; regenerate via the mutation-testing toolchain.
+- Scores of **0** (e.g. `announcer.ts`, `provided.ts`, `use-dictionary-cell-editor.ts`, `schemas.ts` under locales) mean no mutations were killed for that file at capture time — often a signal of missing or weak test coverage.
+- The file is self-contained; it has no runtime dependencies and is not imported by application code. It is consumed only by CI tooling or developer-facing dashboards that diff baselines.

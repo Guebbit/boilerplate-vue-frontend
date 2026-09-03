@@ -2,22 +2,26 @@
 
 ## Purpose
 
-Verifies that the products module's Zod schemas and its own locale dictionaries actually agree: every message key the schemas reference exists in both `en.json` and `it.json`, and the Italian copy resolves to text different from the English copy. Unlike the cross-cutting mechanism test, this file proves a fact specific to *this* domain.
+Cross-checks the products module's Zod schemas against its own locale dictionaries (en/it), verifying that message keys the schemas reference exist in both languages and resolve to different translated text. It runs against the **real** vue-i18n instance (not a mocked `t`) so it catches cases where a message is frozen in the wrong language. The thunked-message re-resolution *mechanism* is proven elsewhere (`tests/cross-cutting/schemas-i18n.spec.ts`); this file only proves this module's data agrees.
 
 ## Key elements
 
-- **`setLocale(locale)`** – Calls `loadLocale` and then `nextTick()` so DOM-facing reactivity settles before assertions run.
-- **`messagesOf(schema, value)`** – Runs `schema.safeParse(value)` and extracts the `message` string from every issue, returning `[]` on success.
-- **`describe('products schema messages')`** – The single test suite. Calls `wireModulesIntoCore()` in `beforeAll`, resets locale to `en` in `afterEach`, and contains one test that:
-  1. Parses `{ title: '', price: -1 }` against `productsSchema` under `en`, asserting the result contains `enMessages['products-form']['title-required']`.
-  2. Switches to `it` on the *same* schema object, re-parses, and asserts the result contains `itMessages['products-form']['title-required']`.
+- **`setLocale(locale)`** — Switches the active locale via `loadLocale`, then awaits `nextTick()` so DOM-facing reactivity settles before assertions run.
+- **`messagesOf(schema, value)`** — Calls `schema.safeParse(value)` and returns the flat array of `issue.message` strings (empty array on success).
+- **`beforeAll`** — Calls `wireModulesIntoCore()` to register all modules' messages with the real i18n instance (mirroring `src/main.ts`), then sets locale to `en`.
+- **`afterEach`** — Resets locale to `en` to avoid cross-test contamination.
+- **Single test** — Parses an intentionally invalid `{ title: '', price: -1 }` through `productsSchema`, asserts the English message for `products-form.title-required` is present, then switches to Italian and asserts the Italian message for the same key is present from the *same* schema object.
 
 ## Relationships
 
-- **`tests/support/unit/wire-modules.ts`** – Imports `wireModulesIntoCore` and calls it in `beforeAll` to register the products module's locale messages into the shared i18n core, replicating what `src/main.ts` does at application boot. Without this wiring the schema's thunked messages would resolve against an empty dictionary.
+- **`tests/support/unit/wire-modules.ts`** → imports `wireModulesIntoCore`, called in `beforeAll` to populate the real vue-i18n instance with all modules' message dictionaries exactly as `src/main.ts` would. Without this call the i18n instance would have no product messages registered.
+- **`@/modules/products/schemas.ts`** → imports `productsSchema`, the object under test.
+- **`@/infrastructure/i18n`** → imports `loadLocale`, used by the `setLocale` helper to switch the active locale at runtime.
+- **`../locales/en.json` / `../locales/it.json`** → imported to look up the expected translated strings for assertion comparison.
 
 ## Notes
 
-- Uses the **real** vue-i18n instance (via `loadLocale`), not a mocked `t`. The file's comment explains why: a mock would only confirm a key was *looked up*, which stays true even if the message is frozen in the wrong language.
-- Co-located in the products module folder by design: deleting the module folder removes this coverage automatically, per the convention in `docs/theory/modules.md`.
-- The cross-cutting *mechanism* proof (thunked Zod messages re-resolve at parse time) lives separately in `tests/cross-cutting/schemas-i18n.spec.ts` and uses an invented schema; this file only checks agreement between this module's schemas and its dictionaries.
+- A **mocked** `t` would only confirm a key was looked up; it stays green even when the resolved message is frozen in the wrong language. This file deliberately avoids that by exercising the real i18n runtime.
+- Assertions use `expect.arrayContaining` rather than exact equality, so the test tolerates additional validation issues on the same parse call.
+- The `nextTick()` after each locale switch is load-bearing: without it, reactive message resolution may not have flushed and the assertion would read a stale value.
+- The file deliberately does **not** test the thunk/re-resolution mechanism itself; that belongs to `tests/cross-cutting/schemas-i18n.spec.ts`. Keep the two concerns separate.

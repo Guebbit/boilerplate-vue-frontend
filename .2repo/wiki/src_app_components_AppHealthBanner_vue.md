@@ -1,23 +1,21 @@
 # src/app/components/AppHealthBanner.vue
 
 ## Purpose
-
-A thin, always-mounted presentational banner that surfaces a "degraded" warning when the API backend is unreachable. It intentionally does not render an error page—the app remains functional with bundled dictionaries and cached pages, so the message is "offline" rather than "broken." The component only reads a reachability flag; it never calls the API itself.
+A thin, always-mounted presentational banner that appears only when the backend API is unreachable. It exists to communicate a *degraded* (not *broken*) state to users, since the app still renders usable content (bundled dictionaries, cached pages) without a live backend.
 
 ## Key elements
-
-- **`down` (from `useApiHealth()`)** — reactive boolean; when `true`, the inner `v-system-bar` renders, when `false` it is removed.
-- **`t('generic.api-unreachable')`** — i18n translation string displayed inside the banner.
-- **`CloudOff` icon (lucide-vue-next)** — decorative, marked `aria-hidden="true"` so screen readers skip it.
-- **`role="status" aria-live="polite" aria-atomic="true"` wrapper** — the stable live region that *stays mounted* regardless of `down`. Only its content (the `v-if` child) comes and goes.
-- **`data-test="health-banner"`** — stable selector for e2e / integration tests.
+- **`useLivenessProbe(() => getHealth())`** — polls the `GET /` liveness endpoint (via `getHealth` from `@api`) and exposes a reactive `down` boolean that drives visibility.
+- **`getHealth`** (from `@api`) — the sole caller of `GET /` in the entire application; imported here with an explicit `eslint-disable` because the project rule "a component wires, it does not call the API" is intentionally waived for this single-line use.
+- **`useI18n()` / `t('generic.api-unreachable')`** — localised user-facing message.
+- **`CloudOff`** (lucide-vue-next) — decorative icon, marked `aria-hidden="true"`.
+- **`v-system-bar`** — Vuetify system-bar wrapper shown with `color="warning"` when `down` is true.
+- **`<div role="status" aria-live="polite" aria-atomic="true">`** — a permanently mounted live region; only its *content* (the `v-system-bar`) is conditionally rendered via `v-if="down"`.
 
 ## Relationships
-
-- **`src/infrastructure/composables/use-api-health.ts`** — imported as `useApiHealth`; the component destructures `{ down }` from it. All probing/HTTP logic lives in that composable; this file is purely a view of its single reactive flag.
+No graph neighbors are recorded for this file. Its only external runtime dependency is the `@api` module (`getHealth`), which is imported directly and is the file's sole consumer.
 
 ## Notes
-
-- **Accessibility gotcha (the whole point of the wrapper):** A live region that is *created* together with its message is never announced by assistive technology. The `div[role="status"]` must remain in the DOM at all times; only the `v-system-bar` inside it toggles. Do not move the `v-if` up to the wrapper.
-- **Not an error page by design.** The banner is `color="warning"` (Vuet system-bar), not `error`. Treat any refactor that changes it to a full-page block as a behavior change.
-- The component has no props, emits no events, and exposes no state—its entire contract is "render when `down` is true."
+- **Accessibility invariant:** the `aria-live` wrapper must stay in the DOM at all times. Assistive technologies only announce *changes inside* a region they already track; creating the region together with the message (e.g. moving it inside `v-if`) would silence the announcement.
+- **Intentional API-call exception:** the eslint restriction on `@api` imports in components is disabled here by comment. If the liveness logic is ever expanded, this is the natural place to extract a composable/store.
+- **`data-test="health-banner"`** attribute on `v-system-bar` is the stable hook for E2E / unit-test assertions.
+- The component is purely presentational state-display: it performs no retries, no user interaction, and no navigation.

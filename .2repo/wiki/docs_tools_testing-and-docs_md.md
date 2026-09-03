@@ -2,26 +2,34 @@
 
 ## Purpose
 
-This is the index ("map") page for the project's testing and documentation layer. It links every test layer (unit, property, cross-cutting, accessibility, visual regression, E2E demo/live, mutation) to its dedicated detail page, explains how to read a test run report, and documents where test data originates across the two repos. Its role is orientation: start here, jump to a layer's detail page, and always return via the cross-links.
+Serves as the single map page for all testing layers and test-data sources across the two-repo project. It exists so a reader (human or AI) can orient themselves to the full testing strategy, find the right detail page, and understand why each layer is distinct before diving into any individual tool.
 
 ## Key elements
 
-- **Layer table** — one row per testing layer (Unit, Component, Property, Cross-cutting, Accessibility, Visual Regression, E2E Demo Profile, E2E Live, Mutation) with the question it answers, the tool(s), the npm command, and a link to the detail page.
-- **Mermaid flowchart** — visualises the layer dependency order (Unit → Demo → Live/A11y/Visual; Mutation feeds back into Unit).
-- **"Reading a run" section** — documents `npm run test:report` / `scripts/report-test-results.ts`, the JSON (not JUnit) artefact format, and the per-module roll-up output. Notes the `check:spec-identity` guard that keeps the report script byte-identical across both repos.
-- **"Where test data comes from" table** — four sources (`db/demo/demo-data.json`, `demo.ts`, `factory.ts`, `contract-data.ts`) and the distinct question each answers.
-- **Mermaid data-flow diagram** (truncated in source) — shows the publish/seed pipeline for demo data.
+- **Mermaid flowchart** — visual dependency/ordering of the six testing layers (Unit → Demo E2E → Live E2E / A11y / Visual, with Mutation as a meta-checker).
+- **Testing layers table** — nine rows (Unit, Component, Property, Cross-cutting, Accessibility, Visual Regression, E2E Demo, E2E Live, Mutation), each with the question it answers, tooling, npm command, and link to a detail page.
+- **Rationale bullets** — explains why no layer subsumes another (isolation vs. wiring, filesystem cross-cutting, deterministic seeds vs. live infra, meta-testing).
+- **"Reading a run" section** — documents `npm run test:report` / `npm run test:unit:report`, the JSON artefact, `scripts/report-test-results.ts`, and the `check:spec-identity` guard that keeps the script byte-identical across both repos.
+- **E2E shard log convention** — `reports/e2e/shard-<n>.log` preserves full Cypress output because stderr may be truncated or piped away.
+- **Test-data sources table** — four sources (`db/demo/demo-data.json`, per-module `demo.ts`, per-module `factory.ts`, `tests/support/contract-data.ts`) with their distinct purposes.
+- **Data-flow Mermaid diagram** — illustrates how the backend produces and publishes the demo dataset (truncated in source).
 
 ## Relationships
 
-- **docs/tools/testing-quickstart.md** — the quickstart page that a new contributor hits before reading this map; this page is the "start anywhere" hub it links back to.
-- **docs/tools/tools-explained.md** — explains the broader tooling ecosystem (linters, formatters, etc.); this page is the testing-specific subset within that ecosystem and cross-links to the layer detail pages that `tools-explained` does not cover in depth.
-- **Layer detail pages** (`unit-testing.md`, `component-testing.md`, `property-testing.md`, `accessibility-testing.md`, `visual-regression.md`, `demo-profile.md`, `live-e2e.md`, `mutation-testing.md`) — each is a child page linked from the table; each also links back here via its "Related pages" footer.
+- **docs/tools/component-testing.md**, **property-testing.md**, **accessibility-testing.md**, **mutation-testing.md**, **live-e2e.md**, **demo-profile.md** — each is a detail page linked from the layers table; this page is their parent/navigation anchor.
+- **docs/tools/index.md** — index page that lists this page among the tools docs.
+- **docs/tools/testing-quickstart.md** — quickstart entry point that likely links back here for the full strategy.
+- **docs/tools/package-scripts.md** — documents the npm scripts (`test:unit`, `test:e2e`, `test:e2e:live`, `test:mutation`, `test:report`) referenced in this page's table.
+- **docs/tools/package-dependencies.md** — lists the testing dependencies (Vitest, Cypress, Stryker, cypress-axe, pixelmatch, fast-check) used by the layers described here.
+- **docs/reference/scripts.md** — reference for `scripts/report-test-results.ts` and `check:spec-identity`, both named in the "Reading a run" section.
+- **docs/getting-started.md** — onboarding doc that likely points here for "how to run the tests".
+- **README.md** — top-level entry point that links into the docs tree including this page.
 
 ## Notes
 
-- This file is documentation only — no executable code lives here. The only executable references are npm commands and the `scripts/report-test-results.ts` path.
-- The page asserts that `scripts/report-test-results.ts` is **byte-identical in both repos** (frontend and backend); the `check:spec-identity` script enforces this. Any edit here must keep that invariant in mind.
-- The "no mapper" property is called out as something to protect: demo data is published as the API's own serialised output, not as raw inputs that each repo maps independently.
-- The Mermaid diagram at the bottom of the file is truncated in the source; the full diagram likely shows the seed/publish flow for `demo-data.json`.
-- E2E shards that fail also dump full Cypress output to `reports/e2e/shard-<n>.log` as a safety net against stderr truncation — this is an operational detail, not a code export.
+- **JSON over JUnit is deliberate.** Vitest emits both; Jest emits only JSON without an extra dependency. JSON carries per-assertion durations, ancestor titles, and full failure messages. Adding a JUnit reporter later would be *alongside*, not a replacement.
+- **`scripts/report-test-results.ts` is byte-identical in both repos.** `check:spec-identity` enforces this. Do not diverge the two copies.
+- **No cross-repo mapper for test data.** The demo dataset is produced by the backend's `npm run seed:export` (seed → read back through real serializers → publish as JSON). This repo no longer holds its own copy or mapper; the API's serializer is the single source of truth.
+- **`db/demo/demo-data.json` is byte-identical across both repos.** It is the API's own output, not a hand-maintained fixture.
+- **E2E shard logs exist because of a real loss incident.** stderr piped through `tail` or truncated by a CI log limit makes a failure undiagnosable; the file dump is the recovery path.
+- **The demo profile runs against an in-memory Mongo seeded from the backend's fixtures**, not from a local copy — one instance per shard, deterministic because seeds are fixed.

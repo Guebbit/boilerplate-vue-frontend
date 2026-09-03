@@ -2,22 +2,23 @@
 
 ## Purpose
 
-Co-located route list that feeds the shared a11y sweep for the products module. It exists alongside the module so that deleting the module also removes its accessibility coverage, and so that the cross-cutting `a11y-coverage.spec.ts` can verify every routed module ships one of these files.
+Declares the set of routes and viewport/theme variants that the products module exposes to the shared a11y sweep mechanism. It exists so that axe audits cover both the public storefront and the admin CRUD pages, including edge cases (dark theme, phone-width stacking, form-error states) that a single default-desktop pass would miss.
 
 ## Key elements
 
-- **`productDetail`** — resolves the detail-page URL for the "rich" seeded product via `cy.productInRole('rich')`, returning a Cypress chain of `/en/products/{id}`.
-- **`productEdit`** — same lookup, returning `/en/products/{id}/edit`.
-- **`sweepA11y('products — public', …)`** — registers three public-facing routes: the product list, the product detail page, and the product list under the dark theme.
-- **`sweepA11y('products — admin', …, 'admin')`** — registers two admin routes (create, edit) plus a "submitted empty" variant that clicks the submit button first so validation messages are rendered for axe to audit.
+- **`PHONE`** – `[390, 844]` viewport constant; deliberately set below the `DataTable.vue` `mobile-breakpoint` so the 8-column table renders as stacked cards.
+- **`productDetail()`** – Resolves the product-detail URL by looking up the seeded `'rich'` role via `cy.productInRole`, returning a promise of the path string.
+- **`productEdit()`** – Same lookup, appending `/edit`.
+- **`sweepA11y('products — public', …)`** – Registers the public-facing routes: product list, product detail, a dark-theme variant of the list, and a phone-viewport variant of the list.
+- **`sweepA11y('products — admin', …)`** – Registers admin routes (create, edit, and a "submitted empty" form-error scenario) under the `'admin'` profile.
 
 ## Relationships
 
-- **`tests/support/e2e/a11y-sweep.ts`** — provides the `sweepA11y` function that turns this file's route entries into actual axe accessibility runs. This file supplies only the route list, names, and optional `prepare` hooks; all sweep mechanics live in the support module.
+- **`tests/support/e2e/a11y-sweep.ts`** – Provides `sweepA11y`, which consumes the route arrays defined here and drives the actual axe runs (visiting each URL, applying the specified theme/viewport/prepare hook, and collecting violations). This file is the *data* half; the support module is the *engine*.
 
 ## Notes
 
-- Detail and edit URLs use the **"rich"** role (not a bare in-stock product) so that axe actually encounters rendered description, category chips, and product image markup.
-- The dark-theme entry reuses the same `/en/products` route but exercises a different colour palette that can pass on white and fail on dark.
-- The "submitted empty" case is the only entry using a `prepare` hook; it ensures `.v-messages__message` elements are visible before axe runs, because axe cannot audit unrendered error text.
-- A central (non-co-located) a11y route list is deliberately avoided: `tests/cross-cutting/a11y-coverage.spec.ts` enforces the co-location contract, so a module deletion cannot orphan routes in a shared list.
+- URLs for detail/edit are never hardcoded IDs. They resolve through `cy.productInRole('rich')` so the sweep works against whatever backend the current Cypress profile is pointed at.
+- The `'rich'` role is chosen intentionally: it is the seeded product that has a description, category chips, and an image populated, giving axe the most visual surface to audit.
+- The dark-theme and phone-viewport entries exist because a pair of colour contrast or a table layout that passes on white/desktop can fail in those variants; they are separate sweep entries, not parameterised repeats.
+- The "submitted empty" `prepare` hook clicks the submit button and asserts `.v-messages__message` visibility before axe runs, ensuring the error-association (`aria-describedby`) and announcement requirements are actually in the DOM.

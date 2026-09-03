@@ -2,24 +2,24 @@
 
 ## Purpose
 
-Cypress end-to-end spec covering the full registration arc: a visitor signs up, spends the emailed verification token as a guest (via a fresh page load), and then proves the password gate is real by having the wrong password refused before the correct one is accepted. A second test confirms the unverified-banner lifecycle (present until the token is spent, absent after).
+End-to-end Cypress suite covering the full registration arc: account creation, consuming the emailed verification token as a guest, and confirming the password gate actually enforces the chosen password. It also verifies the "email unverified" banner appears and disappears around token consumption. The tests deliberately cross page reloads (fresh `cy.visit`) to mirror how a real user follows the inbox link, ensuring the account genuinely persists server-side.
 
 ## Key elements
 
-- **`describe('Registration')`** — top-level suite; `beforeEach` visits `/en`, calls `cy.resetState()`, then visits `/en` again to start from a clean slate.
-- **Test: "a visitor signs up, spends the emailed token as a guest, and logs in verified"** — Full happy path. Fills the signup form, asserts redirect to `#login-page` (no auto-login), reads the verification email via `cy.demoEmailTo`, opens the confirm link as a guest (`cy.visit`), submits verification, then logs in with a wrong password (stays on `/login`) followed by the correct one (leaves `/login`). Final visit to `/en/profile` asserts no verify banner.
-- **Test: "an unverified account shows the banner until the emailed token is spent"** — Signs up, logs in *without* verifying, asserts `[data-test=verify-banner]` exists on `/en/profile`. Then spends the emailed token and asserts the banner is gone.
-- **`cy.skipUnlessDemo()`** — guards both tests so they only run against the demo backend.
-- **`cy.demoEmailTo(address)`** — custom command that fetches the demo backend's `/__demo/emails` endpoint and returns the email object (template, token).
-- **`cy.resetState()`** — custom command that wipes server-side test state between runs.
+- **`describe('Registration')`** — top-level block; `beforeEach` resets state (`cy.resetState()`) and re-visits `/en` for a clean session.
+- **Test 1: "a visitor signs up, spends the emailed token as a guest, and logs in verified"** — Signs up via the form, reads the verification token from `cy.demoEmailTo('new.customer@example.com')`, opens `/en/verify-email/confirm?token=…` as a guest, submits, then confirms the password gate by being rejected with a wrong password and accepted with the right one. Finally asserts no `[data-test=verify-banner]` on `/en/profile`.
+- **Test 2: "an unverified account shows the banner until the emailed token is spent"** — Signs up, logs in *without* verifying (banner present on `/en/profile`), then consumes the token via the demo email endpoint and confirms the banner is gone.
+- **`cy.demoEmailTo(address)`** — Reads a specific email from the demo backend's `/__demo/emails` endpoint; returns `{ template, token, … }`.
+- **`cy.skipUnlessDemo()`** — Skips the test when not running against the demo backend.
 
 ## Relationships
 
-No dependency-graph neighbors are recorded for this file. It exercises the application purely through the browser and the demo backend's HTTP surface (`/__demo/emails`, page routes), with no direct imports of application source.
+No graph neighbors are recorded for this file.
 
 ## Notes
 
-- Page transitions between phases use `cy.visit(...)` deliberately, simulating a real user opening a new tab/link. Nothing in the browser carries the new user across; the account must exist server-side.
-- The wrong-password attempt is intentional (not a separate test) to prove the auth check is enforced, not just a UI flourish.
-- Both tests are demo-gated; running them against a production or CI backend will skip silently.
-- Selectors mix attribute (`[type=email]`, `[type=password]`), ID (`#signup-page`, `#login-page`, `#home-page`, `#profile-page`), and `data-test` hooks (`[data-test=verify-submit]`, `[data-test=verify-banner]`). The `data-test` attributes are the stable contract for verification UI.
+- Every test is gated behind `cy.skipUnlessDemo()`; the suite is a no-op in non-demo environments.
+- `cy.resetState()` in `beforeEach` is required because the first test leaves a verified account behind.
+- The two password inputs on the signup form are disambiguated with `.eq(0)` / `.eq(1)` (confirm field is the second one).
+- Each `.type()` / `.clear()` is preceded by `.should('not.be.disabled')` — a defensive assertion that the input is interactive before typing.
+- The verification link is intentionally opened with a bare `cy.visit(...)` (no prior auth), so the token is the only credential; this catches regressions where the app assumes a session is already present.

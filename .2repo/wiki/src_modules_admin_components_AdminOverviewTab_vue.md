@@ -2,26 +2,27 @@
 
 ## Purpose
 
-Presentational tab for the admin dashboard overview. It renders KPI cards, auth/business metric summaries, and system-info rows derived entirely from `health` and `metrics` payloads passed in via props. It owns no data-fetching state; the parent component supplies the payloads and their loading/error flags.
+Presentational tab for the admin dashboard that renders a row of KPI status cards (API health, dependencies, uptime, request/error counts, latency percentiles) plus auth and business metric sections. It derives every displayed value and status colour from `health` and `metrics` payloads passed in as props; it performs no fetching and holds no internal state.
 
 ## Key elements
 
-- **Props** — `health`, `metrics`, `loading`, `healthError`, `metricsError`; all display data is read from these, nothing is stored locally.
-- **`kpiCards` (computed)** — Builds the array of 10 KPI cards (API status, database, cache, queue, uptime, requests, errors, error rate, p50, p95) with title, value, hint, and status for each.
-- **`healthStatus` / `errorRateStatus` (computed)** — Map raw payload values onto the four-state `AdminKpiCard['status']` union (`loading | error | unknown | ok | warn`).
-- **`dependencyStatus` (function)** — Maps a single backing-service state string to a card status. `disabled` is intentionally treated as `ok`.
-- **`formatErrorRate` (function)** — Converts a 0–1 ratio to a percentage string or returns `EMPTY_VALUE`.
-- **`kpiDotClass` / `kpiStatusText` (functions)** — Translate a card status into a Tailwind background class and a localised label respectively.
-- **`flag` / `flagText` (functions)** — Render a boolean integration indicator as ✓/✗ plus an accessible label.
-- **Template** — Refresh button (emits `refresh`), responsive KPI card grid, and three conditional `<v-card>` sections (auth, business, system) using `DefinitionRow` for key-value pairs.
+- **Props** — `health`, `metrics`, `loading`, `healthError`, `metricsError`; all data the tab displays arrives from the parent.
+- **`emit('refresh')`** — signals the parent to re-fetch; the component itself never calls an API.
+- **`kpiCards` (computed)** — the single source of truth for the card grid; each entry carries `title`, `value`, optional `hint`, and a `status` that drives the dot colour and sr-only text.
+- **`healthStatus` / `errorRateStatus` (computed)** — map raw prop state to the four-level `AdminKpiCard['status']` vocabulary (`ok | warn | error | loading | unknown`).
+- **`dependencyStatus(state)`** — maps a single backing-service state string to a card status; treats `'disabled'` as `ok` (a supported configuration, not a warning).
+- **`kpiDotClass(status)`** — returns a **literal** Tailwind background class (`bg-success`, `bg-warning`, `bg-error`, `bg-info`, `bg-secondary`) via a lookup object.
+- **`kpiStatusText(status)`** — localised word for screen-reader users alongside the colour dot.
+- **`flag` / `flagText`** — render a boolean integration as ✓/✗ glyph plus localised Enabled/Disabled.
+- **Template sections** — KPI card grid, optional auth-metrics card, optional business-metrics card, and a system-info card (environment, memory, CPU, etc.) rendered with `DefinitionRow`.
 
 ## Relationships
 
-No graph neighbors are recorded for this file. It imports shared formatters (`formatUptime`, `formatMegabytes`, `formatTime`, `EMPTY_VALUE`), the `DefinitionRow` UI molecule, and the `AdminKpiCard` type, but no other component in the dependency graph is listed as a neighbor.
+No graph neighbors are recorded for this file.
 
 ## Notes
 
-- **Tailwind JIT gotcha:** `kpiDotClass` returns full literal class names (`bg-success`, `bg-warning`, etc.) instead of building them with a template literal. Tailwind's scanner only emits utilities it can see spelled out in source; a dynamic `bg-${x}` string would produce no CSS and the dot would be invisible.
-- **`disabled` ≠ warning:** A deployment that omits Redis or RabbitMQ reports those dependencies as `disabled`. The component maps that to `ok` so the card stays green rather than permanently amber.
-- **Accessibility:** Every status dot carries `aria-hidden="true"` and is paired with an `sr-only` span containing the localised status word. Boolean flags similarly pair a glyph with `flagText`.
-- **No fetching here:** The component emits `refresh` but performs no HTTP calls; the parent owns data retrieval and re-passes fresh props.
+- **Tailwind dynamic-class pitfall:** `kpiDotClass` returns full literal strings from a lookup object instead of building `bg-${color}` — the Tailwind scanner only emits utilities for class names it can see written in source, so a template-literal name would produce no CSS at all.
+- **`disabled` ≠ warning:** A dependency reported as `disabled` (e.g. Redis or RabbitMQ intentionally absent) is mapped to `ok`, not `warn`, to avoid a permanently amber card on valid deployments.
+- **Uptime fallback:** The uptime card reads `health.uptimeSeconds` first, then falls back to `metrics.process.uptimeSeconds`; both may be absent, in which case `formatUptime` receives `undefined`.
+- **Pure-derivation contract:** Every dot colour and glyph is a pure function of the props; the component intentionally has nothing of its own to keep in sync with an external store or timer.

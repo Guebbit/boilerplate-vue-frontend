@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-08-30T15:47:00.025032+00:00",
-  "head": "5700688757e720bd67a12d5405448f9206042f86",
+  "generated_at": "2026-09-03T10:05:11.011563+00:00",
+  "head": "0d779bcdebeb9abb1689d63a3d8a3645e3717521",
   "threshold": 5,
   "layers": {
     "execution": {
@@ -15,23 +15,18 @@
     },
     "index": {
       "artifact": ".2repo/repo-index.json",
-      "revision": "940115c292182ee334e8c17faa3d15b9795fc0c7d29d357c7c5fc71adf55ff67",
-      "chunk_count": 217,
-      "artifact_count": 3,
-      "artifact_digest": "7e81b05cb169e11dc721dcaab61f9d21ffba21660686c041af8a59c784c617f2"
+      "revision": "754467227bd17d4fbe547fd2544a4cb671df14682f51578d30482ab12fd3b7d5",
+      "chunk_count": 5028,
+      "artifact_count": 488,
+      "artifact_digest": "3bf15b9369a82b2ccb344fd29c71b4a413fc49a11b12386db6a89bf25af43e7b"
     },
     "context": {
       "artifact": ".2repo/REPO_CONTEXT.md",
-      "injected": [
-        "/target-repo/.graphifyignore",
-        "/target-repo/.gitattributes",
-        "/target-repo/.gitignore",
-        "/target-repo/CLAUDE.md"
-      ],
+      "injected": [],
       "ai_target": "claude",
       "provider": "ollama",
       "model": "qwen3.8:27b",
-      "mode": "extract"
+      "mode": "update"
     }
   }
 }

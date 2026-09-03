@@ -2,23 +2,21 @@
 
 ## Purpose
 
-Co-located accessibility (a11y) test for the **locales** module. It registers the module's routes with the shared `sweepA11y` runner, which visits each route and asserts accessibility with axe-core. By living inside the module's directory, deleting the module automatically removes its a11y coverage, preventing a stale central list from referencing routes the app no longer serves.
+Declares the locales module's routes (and one dialog state) to the shared `sweepA11y` runner, which visits each route and asserts against axe. It exists so the locales pages — including their mobile-stacked table layouts and the entry-creation dialog — are covered by the accessibility sweep without duplicating axe logic per page.
 
 ## Key elements
 
-- **`sweepA11y('locales', routes, 'admin')`** — Single call that registers three route entries plus one dialog-state entry, all executed under the `admin` role:
-  - `['languages board', '/en/locales']` — languages board page.
-  - `['dictionary board', '/en/locales/dictionary']` — dictionary board page.
-  - `['translation entries', '/en/locales/it']` — entries table (Italian locale chosen because it has exactly one seeded entry, guaranteeing a populated table without depending on a larger fixture).
-  - **Dialog-state entry** (`'translation entries, entry dialog open'`) — visits `/en/locales/it`, clicks `[data-test=entry-create]` to open the entry form modal, then confirms `[data-test=entry-form]` is visible before the axe assertion runs.
+- **`PHONE`** — Constant tuple `[390, 844]` (iPhone 14-class portrait). Used as the viewport for mobile-variant sweeps; sits below the `sm` breakpoint where `DataTable.vue` stacks rows into cards.
+- **`sweepA11y('locales', [...], 'admin')`** — The single top-level call. Registers seven sweep entries (three desktop routes, three phone-viewport routes, one dialog-open state) under the `'admin'` role. Each entry is either a `[name, route]` tuple or an object with optional `viewport` and `prepare` hooks.
+- **Route selection** — Uses `/en/locales/it` (Italian) rather than `/en/locales/es` for the entries page because `it` has exactly one seeded entry, guaranteeing a populated table without depending on a larger fixture's row count.
+- **`prepare` hook (dialog entry)** — Clicks `[data-test=entry-create]` and waits for `[data-test=entry-form]` to be visible, simulating the modal-over-table state that axe must audit.
 
 ## Relationships
 
-- **`tests/support/e2e/a11y-sweep.ts`** — Provides the `sweepA11y` function. This file is the sole consumer here; it calls the function once, passing the module name, a list of route/dialog descriptors, and the role. The sweep runner handles navigation, `prepare` hooks, and axe assertions for every entry in the list.
-- **`tests/cross-cutting/a11y-coverage.spec.ts`** (referenced in comments) — Asserts that every routed module has a co-located `a11y.cy.ts` like this one, ensuring the per-module split cannot silently lose a domain.
+- **`tests/support/e2e/a11y-sweep.ts`** — Provides `sweepA11y`, the shared runner this file calls. The runner owns the axe execution, viewport setup, and role-based auth; this file only supplies the route/state list and module name.
 
 ## Notes
 
-- The entry is registered with `it` (Italian) rather than `es` (Spanish) specifically because Italian has exactly one seeded entry, making the table state deterministic for the sweep regardless of other fixture row counts.
-- The dialog-state entry uses a `prepare` callback to open the modal; the sweep runner invokes it before the axe check, so the assertion covers the open-dialog state (three fields, title-named modal) rather than the underlying page alone.
-- All routes are prefixed `/en/locales/…`, meaning the sweep tests the English-locale path to the locales admin area.
+- The file is a side-effect module: it has no exports. Importing it in a Cypress spec registers the sweep entries.
+- `it` was chosen over `es` deliberately; swapping locales here changes what axe sees (empty vs. populated table) and can hide or create false positives.
+- The phone-viewport entries exist specifically because the desktop sweep never exercises the stacked-card layout that `DataTable.vue` produces below `sm`.

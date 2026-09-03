@@ -2,24 +2,20 @@
 
 ## Purpose
 
-Declares the response-validation schema table for every feedback endpoint the module calls. Each row pairs an HTTP method and URL regex with the corresponding schema from `@api/schemas`, so the response-envelope middleware can look up the correct validator by matching an incoming response's request.
+Declares the response-validation schema table for every feedback endpoint the module calls. Each row pairs an HTTP method and a URL regex with the `@api/schemas` envelope type that validates a successful response, so the HTTP layer can pick the correct schema at runtime.
 
 ## Key elements
 
-- **`feedbackResponseSchemas: ResponseSchemaRoute[]`** — The sole export. A 4-row table:
-  - `POST /feedback/contact` → `CreateFeedbackRequestResponse`
-  - `GET /feedback` → `ListFeedbackRequestsResponse`
-  - `POST /feedback/search` → `SearchFeedbackRequestsResponse`
-  - `PUT /feedback/{id}` → `UpdateFeedbackRequestStatusResponse`
-- **`ResponseSchemaRoute`** (type import) — The row shape `{ method, pattern, schema }`; its contract lives in `@/infrastructure/http/response-schema-map`.
-- **`schemas`** (import) — All schema definitions come from the shared `@api/schemas` package.
+- **`feedbackResponseSchemas: ResponseSchemaRoute[]`** — The single export. An ordered list of five rows covering `POST /feedback/contact`, `GET /feedback`, `POST /feedback/search`, `PUT /feedback/:id`, and `DELETE /feedback/:id`. The `:id` rows use the `[^/]+` regex wildcard.
 
 ## Relationships
 
-- **`src/modules/feedback/module.ts`** — Registers `feedbackResponseSchemas` in the module manifest so the HTTP layer can wire it into response validation. This file is a passive data table; all runtime behavior lives in the module and the infrastructure layer.
+- **`src/modules/feedback/module.ts`** — Registers `feedbackResponseSchemas` into the module manifest; this file is the data source that module reads.
+- **`@api/schemas`** (imported) — Supplies the concrete schema objects (`CreateFeedbackRequestResponse`, `ListFeedbackRequestsResponse`, `SearchFeedbackRequestsResponse`, `UpdateFeedbackRequestStatusResponse`, `DeleteFeedbackRequestResponse`) referenced by each row.
+- **`@/infrastructure/http/response-schema-map`** (imported as type) — Provides the `ResponseSchemaRoute` shape that every row must satisfy.
 
 ## Notes
 
-- **Row order matters.** The `POST /feedback/search` row must precede any future `[^/]+` wildcard on the same method, because a by-id regex would otherwise swallow the literal `search` segment. Today the only wildcard row is `PUT`, so the ordering constraint is latent, but adding a `GET /feedback/{id}` or a second `POST` wildcard would require re-ordering.
-- **`POST /feedback/search` is a browser-compatibility workaround.** Filters that used to travel in a `GET` body were moved to a `POST` because browsers cannot attach a body to a GET. The response envelope is identical to the `GET /feedback` row.
-- **Patterns are fully anchored** (`^…$`), so partial matches are impossible; the middleware can rely on a single exact hit per request.
+- The `POST /feedback/search` row exists as a "DTO spelling" of `GET /feedback`: the backend moved filter params from a JSON body to a dedicated route because browsers can't send a body on GET.
+- A commented-out row (static `search` segment) was considered but is intentionally absent — `search` would be swallowed by the `[^/]+` wildcard used for the by-id routes, and the only wildcard match in flight is `PUT`.
+- Row order matters only insofar as the matcher picks the first hit; static segments (`/contact`, `/search`) are listed before the wildcard rows to avoid shadowing.

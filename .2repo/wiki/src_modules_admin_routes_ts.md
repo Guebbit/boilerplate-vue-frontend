@@ -2,22 +2,22 @@
 
 ## Purpose
 
-Defines the route table for the admin domain. It exports a single lazy-loaded route for the observability dashboard, gated behind the `admin` access role, so the dashboard chunk is only fetched when an admin actually navigates to `/admin`.
+Defines the route table for the admin domain. Contains a single lazy-loaded, access-gated route record that exposes the observability dashboard to users with the `admin` role. It exists so that the dashboard bundle is only fetched when an authenticated admin navigates to `/admin`.
 
 ## Key elements
 
-- **`default` (export)** — An array of `RouteRecordRaw` containing one route:
-  - `path: 'admin'` / `name: 'Admin'`
-  - `meta.access: 'admin'` — used by the router guard to restrict navigation to the `admin` role
-  - `meta.title: 'admin-page.page-title'` — i18n key for the page title
-  - `component` — dynamic `import()` of `@/modules/admin/views/Admin.vue` (code-split chunk)
+- **Default export** — A `RouteRecordRaw[]` array with one entry:
+  - `path: 'admin'`, `name: 'Admin'`
+  - `meta.access: 'admin'` — gates the route to the admin role (consumed by whatever guard reads `meta.access`).
+  - `meta.title` — i18n key `admin-page.page-title`.
+  - `component` — dynamic `import()` of `@/modules/admin/views/Admin.vue`, deferring bundle load until navigation.
 
 ## Relationships
 
-- **`src/modules/admin/module.ts`** — Imports this default export and registers the route record with the application router.
-- **`src/modules/admin/tests/routes.spec.ts`** — Asserts the route's path, name, meta, and lazy-load behavior.
+- **`src/modules/admin/module.ts`** — Parent module file that imports this default export and registers the route with the application router.
+- **`src/modules/admin/tests/routes.spec.ts`** — Test suite that asserts the shape, meta, and lazy-load behavior of this route table.
 
 ## Notes
 
-- The array is cast with `as RouteRecordRaw[]` rather than annotated at the variable level; keep the cast if you add routes so the tuple type stays valid.
-- The `access` field in `meta` is the sole authorization mechanism for this route—there is no per-component guard. Ensure the router guard reads `meta.access` before rendering.
+- The array is explicitly cast `as RouteRecordRaw[]` even though it contains a single literal object; the cast ensures structural compatibility with `vue-router`'s type without widening to `any`.
+- Route access control relies entirely on the `meta.access` string — there is no inline guard in this file. The enforcement mechanism lives wherever routes are consumed (likely a global `beforeEach` in `module.ts` or app-level router config).

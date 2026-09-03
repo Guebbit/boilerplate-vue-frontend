@@ -1,20 +1,27 @@
 # tests/unit/app/guards/authentications.spec.ts
 
 ## Purpose
-Unit tests for the two exported functions in `@/app/guards/authentications` (`canAccess` and `enforceRouteAccess`). Validates the full access-control truth table and the redirect/notification behavior when a visitor is denied a route.
+
+Unit tests for the route-authentication guard functions `canAccess` and `enforceRouteAccess` in `@/app/guards/authentications`. Verifies the full access-level truth table and the redirect/notification behavior when a visitor is denied a route.
 
 ## Key elements
-- **`canAccess` truth-table tests** — `it.each` over all 12 combinations of route access level (`public`, `guest`, `auth`, `admin`) × visitor type (guest, user, admin) to assert the boolean decision.
-- **`enforceRouteAccess` behavior tests** — verify the returned redirect target, the notification key passed to `addMessage`, and the "continue" param preservation for guests redirected to login.
-- **`route(access?)` helper** — wraps `asStub<RouteLocationNormalized>` with just the fields the guard reads: `fullPath`, `params.locale`, and `meta.access`.
-- **`visitorStanding` reactive object** — shared mutable state (`isAuth`, `isAdmin` refs) injected via the `pinia` mock so individual tests can flip permission levels without re-mocking.
-- **Mocks** — `useSessionStore`, `storeToRefs`, `useNotificationsStore.addMessage`, and `translate` (identity function) are all stubbed to isolate the guard logic.
+
+- **`describe('canAccess')`** — Exhaustive `it.each` over all 12 combinations of `RouteAccess` (undefined, `'guest'`, `'auth'`, `'admin'`) × visitor standing (guest, user, admin), asserting the boolean result of the pure function.
+- **`describe('enforceRouteAccess')`** — Scenario tests for the guard's side effects:
+  - Permitted navigation returns `undefined` with no notification.
+  - Guest hitting an auth/admin route → redirected to `Login` (with locale param) and a `'navigation.error-not-logged'` notification; the original `fullPath` is preserved in the redirect so login can continue back.
+  - Authenticated non-admin hitting an admin route → redirected to `Home` with `'navigation.error-forbidden'` (no continue target, to avoid a login loop).
+  - Authenticated visitor hitting a guest-only route → redirected to `Home` with `'navigation.error-already-logged'`.
+  - Admin on an admin route → passes through silently.
+- **`route(access?)` helper** — Builds a minimal `RouteLocationNormalized` stub (via `asStub`) carrying `fullPath`, `params.locale`, and optional `meta.access`.
+- **Mock setup** — `vi.mock` replaces the session store, `pinia/storeToRefs` (returns a mutable `visitorStanding` ref pair), the notifications store (captures calls via `addMessageMock`), and `translate` (identity function so assertions match i18n keys, not locale-specific strings).
 
 ## Relationships
-- **`tests/support/stub.ts`** — provides `asStub`, used by the `route()` helper to build a minimally-shaped `RouteLocationNormalized` without a real router instance.
+
+- **`tests/support/stub.ts`** — Provides `asStub<T>`, a typed helper used to cast partial objects into full interface shapes (here, `RouteLocationNormalized`).
 
 ## Notes
-- The `translate` mock is an identity function on purpose: assertions compare against the i18n dictionary **key** (e.g. `'navigation.error-not-logged'`) rather than a locale-dependent string, so the tests are locale-agnostic.
-- The truth-table comment explicitly notes that the rows nobody expects (e.g. admin hitting a guest-only page) are the high-risk cases; all 12 rows are covered rather than a cherry-picked subset.
-- `visitorStanding` is reset in `beforeEach`; individual tests mutate its refs to simulate different permission levels without re-invoking the module factory.
-- The "keep blocked path as continue target" test uses `JSON.stringify` to confirm the original `fullPath` (`/en/target`) appears somewhere in the redirect object, rather than asserting a specific param key.
+
+- The i18n mock is deliberately identity (`key => key`) so test assertions reference stable dictionary keys rather than translations that shift with locale.
+- `visitorStanding` is a module-level `ref` pair whose values are mutated in individual tests and reset in `beforeEach`; this is the mechanism by which `storeToRefs` (mocked) feeds the guard under test.
+- The `canAccess` table is intentionally exhaustive (comment in-file notes that "rows nobody thinks to test" are where bugs hide); adding a new `RouteAccess` level or visitor flag requires extending the `it.each` array.

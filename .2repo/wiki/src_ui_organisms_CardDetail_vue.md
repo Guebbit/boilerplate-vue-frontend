@@ -2,21 +2,20 @@
 
 ## Purpose
 
-A minimal presentational card shell that provides a consistent flat, bordered, padded surface (`v-card`) for detail-page content. It exists so that higher-level organisms (`ItemDetailHero`, stat tiles, the main content card) share identical card styling without duplicating the `v-card` configuration.
+A thin presentational wrapper that renders a Vuetify `v-card` with a fixed set of visual defaults (flat variant, border, `p-6` padding) and a single default slot. Detail-page cards (`ItemDetailHero`, stat tiles, the main content card) all compose through this component so they share one card shell without duplicating the markup.
 
 ## Key elements
 
-- **`as` prop** (optional, default `'article'`) — controls the semantic HTML tag rendered by the `v-card` (`article | aside | div | section`).
-- **`defineOptions({ inheritAttrs: false })`** — suppresses automatic attribute fall-through on the root `<script setup>` wrapper.
-- **`v-bind="$attrs"` on `<v-card>`** — manually forwards any passed classes/attributes so they land on the `v-card` element rather than a wrapper, keeping the DOM flat.
-- **Single default slot** — all rendered content is supplied by the caller; the component itself adds no markup beyond the card chrome.
+- **`as` prop** (optional, default `'article'`): controls the semantic tag rendered by the `v-card` root. Accepts `'article' | 'aside' | 'div' | 'section'`.
+- **`defineOptions({ inheritAttrs: false })`**: prevents the caller's classes/attributes from landing on this component's own wrapper element.
+- **`v-bind="$attrs"` on the `<v-card>`**: re-targets those passthrough attributes onto the inner `v-card` instead, so callers can set classes, `id`, data-attrs, etc. on the card itself.
+- **Default slot**: the only content mechanism; the component adds no header, footer, or structural children of its own.
 
 ## Relationships
 
-No dependency-graph neighbors are recorded for this file.
+No graph neighbors. The file has no imports beyond the implicit Vuetify global (`v-card`) and exposes no named exports—consumers import it as a component and pass children via the default slot.
 
 ## Notes
 
-- The component is purely presentational: no data fetching, no events emitted, no computed state.
-- Because `inheritAttrs` is disabled, callers **must** rely on `$attrs` pass-through for styling/behavioral attributes (e.g., `class`, `data-*`, `v-*` bindings). Attributes passed to the component will *not* appear on a wrapper element—they go straight onto the `v-card`.
-- The `p-6` padding and `variant="flat"` + `border` combo are hard-coded; override them via passed attributes (e.g., a conflicting `class` will merge with `p-6`).
+- The `inheritAttrs: false` + `v-bind="$attrs"` split is intentional: without it, caller-supplied classes would hit *both* the wrapper and the `v-card`, making styling harder to target.
+- The component is fully presentational; it applies no logic, emits no events, and exposes no ref. All behaviour lives in the composing detail-page organisms.

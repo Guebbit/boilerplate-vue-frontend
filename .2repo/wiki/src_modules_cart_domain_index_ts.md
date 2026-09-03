@@ -2,19 +2,20 @@
 
 ## Purpose
 
-Barrel file that serves as the sole public entry point for the cart domain layer. It re-exports the pure business rules defined in sibling modules so that consumers (services, components, tests) import from one path rather than reaching into individual domain files. The module doc asserts a lint-enforced purity contract: no Vue, Pinia, axios, or any other tier may leak into this layer.
+Barrel (re-export) file for the cart domain layer. It serves as the single public entry point so consumers can import cart domain rules without knowing the internal file layout, while keeping the domain layer's "pure rules" boundary explicit.
 
 ## Key elements
 
-- **`MIN_LINE_QUANTITY`** — re-exported constant from `./quantity`; the lower bound for a cart line-item quantity.
-- **`steppedQuantity`** — re-exported function from `./quantity`; the pure quantity-stepping rule (clamp/step logic) used when adjusting line quantities.
+- **Re-exports from `./quantity`:** `MIN_LINE_QUANTITY` (constant) and `steppedQuantity` (function) — quantity-related pure domain logic.
+- **Re-exports from `./checkout-errors`:** `classifyCheckoutError` (function) and the types `CheckoutErrorVerdict`, `CheckoutShortfallLine` — classification logic for checkout-failure scenarios.
+- The file contains **no logic of its own**; it is purely an aggregation surface.
 
 ## Relationships
 
-- **`src/modules/cart/domain/quantity.ts`** — sole dependency. This file re-exports both of its named exports verbatim; no transformation or wrapping is applied.
+- **`src/modules/cart/domain/quantity.ts`** — Source of `MIN_LINE_QUANTITY` and `steppedQuantity`. This index re-exports both as the public API for quantity rules.
+- **`src/modules/cart/domain/checkout-errors.ts`** — Source of `classifyCheckoutError` and the two checkout-error types. This index re-exports them so callers need only import from this file.
 
 ## Notes
 
-- This file is the *only* path consumers should use to import cart domain rules. Importing `./quantity` directly from outside the domain folder bypasses the intended encapsulation and is likely flagged by lint.
-- The "pure rules" contract is enforced by a lint rule (see `docs/theory/domain-layer.md`), not just convention. Adding a runtime import of a framework or HTTP client here will break the build.
-- Adding a new export to the domain layer means (1) defining it in the appropriate `./<name>.ts` file and (2) adding a re-export line here. Forgetting step 2 makes the rule invisible to the rest of the codebase.
+- The module JSDoc (`@module`) declares a lint-enforced boundary: no Vue, Pinia, axios, or any other tier may be imported from this file or its re-exported siblings. Importers should treat this as the *only* sanctioned path into the cart domain layer.
+- `CheckoutErrorVerdict` and `CheckoutShortfallLine` are **type-only** exports (`export type`); they have no runtime cost.

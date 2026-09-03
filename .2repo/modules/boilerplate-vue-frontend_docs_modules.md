@@ -6,58 +6,57 @@ tags:
 type: module
 module: docs/modules/
 files: 18
-updated: 2026-08-30T17:07:31.138246+00:00
+updated: 2026-09-03T10:56:05.992369+00:00
 ---
 
 # docs/modules/
 
 ## Purpose
 
-Per-module documentation pages for every domain module in the codebase, plus a section index. Each Markdown file is a self-contained quick-reference for one module's screens, store, API surface, dependency edges, and boundaries. Together they form the "Modules" section of the docs site and serve as the primary orientation layer for newcomers and AI assistants working across the 14+ modules.
+The `docs/modules/` directory is the per-module reference section of the project wiki. Each page documents one application module—its owned screens, stores, API calls, public surface, and dependency edges—so that a developer (or AI assistant) can understand what a module is responsible for, what it publishes to siblings, and where its boundaries sit, without having to read the source code first.
 
 ## Key parts
 
-- **`index.md`** — Section landing page. Defines the vertical (per-domain) cut through the codebase, the shared dependency-map diagram conventions, the full module list (subdomain, store, screen count, edges), and the client↔backend pairing for each.
-- **Core commerce flow** — `cart.md`, `cart-checkout.md`, `orders.md`, `payments.md`, `delivery.md`, `wishlist.md`. Documents the add-to-cart → checkout → order-lifecycle pipeline and the component-only modules (`payments`, `delivery`) that siblings mount rather than navigate to.
-- **Catalogue & inventory** — `products.md` (four catalogue screens, ten API endpoints, shell wiring) and `inventory.md` (read-mostly admin ledger).
-- **Identity, admin & feedback** — `account.md`, `users.md`, `admin.md` / `admin-dashboard.md` (observability + audit console), `feedback.md` (contact form + inbox).
-- **Standalone / infrastructure** — `locales.md` + `locales-overrides.md` (i18n authoring and the two-tier runtime merge), `realtime.md` (SSE metrics playground), `demo.md` (boilerplate showcase, safe to delete).
+- **`index.md`** — Landing page for the section. Defines the vertical per-domain cut through the codebase, provides the module dependency map, shared diagram conventions, the full 14-module listing (subdomain, store, screen count, dependency edges), and the client↔backend pairing for every module.
+- **Core commerce modules** — `cart.md`, `cart-checkout.md`, `products.md`, `orders.md`, `payments.md`, `wishlist.md`, `account.md`. Document the primary customer-facing domain: catalogue browsing, cart/checkout flow, order lifecycle, payment/shipment panels, saved items, and self-service identity.
+- **Admin & operational modules** — `admin.md`, `admin-dashboard.md`, `inventory.md`, `users.md`, `feedback.md`, `locales.md`, `locales-overrides.md`, `realtime.md`. Cover the back-office screens: observability console, audit log, stock ledger, user management, contact inbox, i18n authoring, runtime locale overrides, and the live SSE metrics view.
+- **Supporting / leaf modules** — `delivery.md` (two published shipping components), `demo.md` (toolkit boilerplate showcase). Both are explicitly self-contained and deletable without cascading changes.
 
 ## How it connects
 
-- **`docs/`** — Parent section. `docs/modules/` is one sibling among the top-level docs areas; it cross-references the conventions defined at that level.
-- **`docs/reference/`** — Sibling section holding per-endpoint API reference. Module pages here link out to the reference docs when they enumerate API calls (e.g., `products.md` listing its ten endpoints).
-- **`docs/theory/`** — Sibling section for architectural rationale. Module pages occasionally point readers there for the "why" behind a boundary decision (e.g., the read-only audit posture in `admin-dashboard.md`).
-- **`/` (repository root)** — The code each page describes lives under `src/` at the root. Pages reference `src/modules.ts` (the registration manifest) and the module directories it enumerates, but the documentation itself has no runtime coupling to that code.
+- **`docs/api/`** — Module pages reference the specific endpoints each screen calls (e.g. the ten product endpoints, the four checkout failure modes, the five read-only admin endpoints). The `api/` section provides the wire-format and response-schema details that the module pages deliberately omit.
+- **`docs/reference/`** — Shared conventions that appear across many module pages (Pinia store patterns, barrel-export layout, screen composition rules, the `types.ts` local-convention) are documented once in `reference/` and cross-linked from individual module pages.
+- **`docs/theory/`** — The architectural rationale behind the vertical cut, the "consumer-only / component-only / leaf" module classifications, and the read-only-posture decisions (e.g. audit table, inventory ledger) are grounded in the design principles laid out in `theory/`.
+- **`docs/tools/`** — The toolkit features that `demo.md` and other pages exercise (provide/inject wiring, toasts, route guards, the module registration mechanism in `src/modules.ts`) are documented in `tools/` as project-specific infrastructure rather than per-module detail.
 
 ## Where to start
 
-1. **`index.md`** — Read this first. It gives you the dependency map, the subdomain taxonomy, and the shared diagram conventions, so every subsequent page is instantly legible.
-2. **`cart.md`** — A representative, mid-complexity module page (store + screen + one inter-module dependency to `wishlist` and `cart-checkout`). Understanding its layout and the way it states boundaries prepares you for the more isolated or component-only pages that follow.
+1. **`index.md`** — Read this first. It gives you the full dependency map, the subdomain grouping, and the diagram conventions so that every subsequent module page is immediately legible.
+2. **`cart.md`** — As the central write-target in the `core` subdomain and the module with the most outgoing and incoming edges (products add to it, wishlist moves to it, checkout reads from it, orders consume its result), understanding its public surface (`useCartStore`, the barrel) sets the pattern for how modules publish and consume in this codebase.
 
 ## Connected modules
 ```mermaid
 flowchart LR
     m_docs_modules["docs/modules/"]
-    m_root["/ (repository root)<br/>29 files"]
-    m_docs["docs/<br/>8 files"]
+    m_docs_api["docs/api/<br/>5 files"]
     m_docs_reference["docs/reference/<br/>10 files"]
-    m_docs_theory["docs/theory/<br/>11 files"]
-    m_docs_modules --- m_root
-    m_docs_modules --- m_docs
+    m_docs_theory["docs/theory/<br/>12 files"]
+    m_docs_tools["docs/tools/<br/>24 files"]
+    m_docs_modules --- m_docs_api
     m_docs_modules --- m_docs_reference
     m_docs_modules --- m_docs_theory
+    m_docs_modules --- m_docs_tools
     style m_docs_modules stroke-width:3px
 ```
 
-[[boilerplate-vue-frontend_ROOT|/ (repository root)]] · [[boilerplate-vue-frontend_docs|docs/]] · [[boilerplate-vue-frontend_docs_reference|docs/reference/]] · [[boilerplate-vue-frontend_docs_theory|docs/theory/]]
+[[boilerplate-vue-frontend_docs_api|docs/api/]] · [[boilerplate-vue-frontend_docs_reference|docs/reference/]] · [[boilerplate-vue-frontend_docs_theory|docs/theory/]] · [[boilerplate-vue-frontend_docs_tools|docs/tools/]]
 
 ## Files
 - `docs/modules/account.md` — Documents the `account` domain module: the visitor's self-service identity surface (login, signup, profile editing, password reset, email verification, account deletion, session management, address book). It is a consumer-only module with no exports and no dependents.
 - `docs/modules/admin-dashboard.md` — Documents the admin dashboard module — a single screen with two tabs (Overview, Audit) that assembles data from five read-only endpoints across two backend domains (`observability` and `audit-logs`). It also records the module's local `types.ts` convention and the deliberate read-only posture of the audit table.
 - `docs/modules/admin.md` — Documents the `admin` module: a single-screen observability console (service health, KPIs, audit log) that reads five backend endpoints directly, owns no state, and is deliberately designed to be deleted with a single `rm -rf` plus one line removed from `src/modules.ts`.
-- `docs/modules/cart-checkout.md` — Documents the checkout flow module — the client's only multi-step flow. It collects an address and a shipping-method id, sends them via `POST /cart/checkout`, and renders whatever the server returns. No pricing, stock, or availability logic lives here.
-- `docs/modules/cart.md` — Documents the `cart` domain module: its single screen (`Cart`), its Pinia store (`useCartStore`), and the checkout flow. This is the `core` subdomain — the module other domains point at to add, remove, or settle cart lines. It owns `badgeQuantity`, the one reactive value the application shell reads for the header badge.
+- `docs/modules/cart-checkout.md` — Documents the checkout flow — the only multi-step interaction in this client — covering how the user picks an address and shipping method, submits to `POST /cart/checkout`, and handles the four distinct failure modes. The file exists to make clear that the client collects inputs and renders server answers; all pricing, stock, and availability decisions live server-side.
+- `docs/modules/cart.md` — The cart module owns the cart screen, the `cart` Pinia store, and the checkout flow. It sits in the `core` subdomain and is the central write target for add-to-cart, reorder, and move-to-cart actions across the app. Its public surface is a single barrel (`index.ts`) and the `useCartStore` export.
 - `docs/modules/delivery.md` — Provides shipping functionality as two self-contained, published components (`ShippingSelector`, `ShipmentPanel`) that sibling modules mount into their own screens. It owns no routes, no navigation entries, and no dependencies — it exists solely to expose a component surface and a small Pinia store.
 - `docs/modules/demo.md` — Documentation for the `demo` module — a single-screen boilerplate showcase that exercises the toolkit (store, provide/inject, toasts, route guard). It is intentionally isolated: no other module imports it and it imports nothing, so it can be deleted with `rm -rf` plus one line in `src/modules.ts`.
 - `docs/modules/feedback.md` — Frontend module for a public contact form and the admin inbox behind it. Two screens (`Contact`, `FeedbackInbox`), one Pinia store, and three API endpoints. It is a fully self-contained leaf: no dependencies in either direction, no barrel export, and a backend counterpart that already exists in `boilerplate-node-backend`.

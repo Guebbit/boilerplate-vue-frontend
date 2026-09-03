@@ -2,26 +2,23 @@
 
 ## Purpose
 
-Module manifest that registers the demo (showroom) module into the app's module registry. It wires together the demo routes, a navigation entry, and locale loaders under the `AppModule` contract, and declares a typed `demo` scope for the shared logger. The file is intentionally self-contained so the entire demo can be removed by deleting its folder and one import line in `src/modules.ts`.
+Module manifest that registers the demo "showroom" page (store, toolkit components, notification toasts, provide/inject demo) into the app's module registry. It exists as a self-contained, deletable unit — removing this folder and its single line in `src/modules.ts` cleanly removes the demo from the app with zero residual references.
 
 ## Key elements
 
-- **Default export** — an object `satisfies AppModule` with:
-  - `name: 'demo'` — registry key.
-  - `routes` — re-exported from `./routes`; the single demo page exercising store, toolkit components, toasts, provide/inject, and a teaching route guard.
-  - `navigation` — one entry ("Playground", `FlaskConical` icon, `order: 20`, `section: 'main'`) that appears in the app nav.
-  - `locales` — lazy loaders for `./locales/en.json` and `./locales/it.json`.
-- **Declaration merge** — augments `LogScopes` in `@/infrastructure/utils/logger.ts` with `demo: true`, making `logger.debug('demo', …)` type-check. Removing this file removes that scope.
+- **`declare module '@/infrastructure/utils/logger.ts'`** — Declaration merge adding `demo: true` to the `LogScopes` interface, so `logger.debug('demo', …)` type-checks. Removing this file removes the scope.
+- **`export default { … } satisfies AppModule`** — The module manifest object containing:
+  - `name: 'demo'` — Registry key.
+  - `routes` — Imported from `./routes`; the demo page and teaching route guard.
+  - `navigation` — A single nav entry ("Playground", icon `FlaskConical`, section `main`, order `20`, label i18n key `navigation.label-playground`).
+  - `locales` — Lazy importers for `./locales/en.json` and `./locales/it.json`.
 
 ## Relationships
 
-- **`src/modules/demo/routes.ts`** — imported and passed directly as the `routes` field; this file does not define any routes itself.
-- **`@/kernel/registry`** — provides the `AppModule` type that the default export must satisfy.
-- **`@/infrastructure/utils/logger.ts`** — augmented via declaration merge to add the `demo` log scope.
-- **`lucide-vue-next`** — source of the `FlaskConical` nav icon.
+- **`src/modules/demo/routes.ts`** — Imported and passed directly as the manifest's `routes` field. This is the only import from outside `lucide-vue-next` and the kernel type; the manifest is the sole consumer of the routes file.
 
 ## Notes
 
-- The declaration merge targets `interface LogScopes` in the logger module, not an interface local to this file. The comment in the source clarifies that the name belongs to the augmented module.
-- The module is explicitly dependency-free at the domain level: nothing imports it except the one-line registration in `src/modules.ts`, and it imports no domain code. Treat it as a disposable showcase, not a production concern.
-- `plural: 1` on the navigation entry is the i18n key selector for the label; the actual string lives in the locale JSON files, not here.
+- The declaration merge targets `LogScopes` in `@/infrastructure/utils/logger.ts`. The interface name must match exactly what the logger declares; it is *not* a new interface owned by this module.
+- The module intentionally depends on no domain code. If you see imports of business entities here, it is a regression.
+- `satisfies AppModule` (not `: AppModule`) is used to keep the literal shape of the object in IDE hover while still enforcing the contract.

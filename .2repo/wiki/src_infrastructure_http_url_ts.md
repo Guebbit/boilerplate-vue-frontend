@@ -2,19 +2,21 @@
 
 ## Purpose
 
-Provides a single URL-to-pathname normalization function so that the two consumers that must agree on route identity (route-pattern matching and refresh exclusion) derive the same pathname from any given Axios request URL.
+Single-utility leaf module that normalises an Axios request URL into the pathname string the HTTP layer matches on. It exists so that route-pattern lookups and the refresh exclusion set both derive the same pathname from the same input, guaranteeing they cannot disagree about which URLs they recognise.
 
 ## Key elements
 
-- **`toPathname(url: string | undefined): string`** — The only export. Given an absolute (`http://…`, `https://…`) or relative URL, it extracts the pathname, strips any query string, and ensures the result starts with `/`. Returns `"/"` for a falsy input.
+- **`toPathname(url: string | undefined): string`** — The sole export. Given an absolute or relative URL (or `undefined`), it returns a pathname that always starts with `/`. Absolute `http(s)://` URLs are parsed via `new URL()` to extract the pathname; relative URLs are used as-is. In both cases the query string is dropped and a leading slash is prepended if missing. Returns `'/'` for `undefined`/falsy input.
 
 ## Relationships
 
-- **`src/infrastructure/http/response-schema-map.ts`** — Imports `toPathname` to convert incoming request URLs into the pathname form used for route-pattern matching.
-- **`src/infrastructure/http/refresh.ts`** — Imports `toPathname` to normalize URLs against its exclusion set (paths that should not trigger a refresh).
+- **`src/infrastructure/http/response-schema-map.ts`** — Calls `toPathname` to normalise request URLs before matching them against registered route patterns.
+- **`src/infrastructure/http/refresh.ts`** — Calls `toPathname` to build/compare the set of URLs excluded from token-refresh interception.
+
+Both depend on this module; this module depends on nothing.
 
 ## Notes
 
-- The function intentionally does **not** use `new URL()` for relative paths; it only parses absolute URLs. This means protocol-relative (`//host/path`) URLs are treated as relative and returned with a leading slash prepended.
-- Query-string stripping is a simple `split('?')` on the first segment, so fragment-only URLs (`/page#section`) are left intact (the `#` is not removed).
-- Because both consumers call this same leaf function, there is no risk of the two disagreeing on which pathname a URL maps to—any future change to normalization belongs in this file.
+- The function is intentionally a leaf: no imports beyond the global `URL` constructor. This keeps the normalisation logic in exactly one place.
+- Only `http://` and `https://` prefixes are treated as absolute; any other scheme (e.g. `//host/path` protocol-relative URLs) would fall through to the "relative" branch and be used as-is.
+- The query string is stripped with a simple `split('?')`, so only the first `?` is treated as the delimiter (consistent with standard URL parsing for the query portion).

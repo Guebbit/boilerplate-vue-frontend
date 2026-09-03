@@ -2,24 +2,21 @@
 
 ## Purpose
 
-End-to-end test for the forgot-password flow. It verifies the full round-trip: requesting a reset link, extracting the real token from the demo backend's email outbox, confirming a new password, and proving at the login form that the old password no longer works while the new one does. A second case confirms that a fabricated token changes nothing.
+End-to-end test of the forgot-password flow. It verifies that the reset link actually emailed by the backend (read from the demo email outbox) replaces the old password, and that a fabricated token changes nothing. Both tests are gated to the demo profile only.
 
 ## Key elements
 
-- **`describe('Password reset')`** — the top-level suite; `beforeEach` visits `/en`, calls `cy.resetState()`, then revisits `/en` to clear session cookies.
-- **Test: "the emailed link replaces the forgotten password"** — happy path. Submits the request form for `gino@pino.it`, reads the token via `cy.demoEmailTo('gino@pino.it')`, navigates to `/en/password-reset/confirm?token=…`, types the new password into both fields, then asserts login behaviour in both directions (old password → stays on `/login`; new password → lands on `#home-page`).
-- **Test: "a token nobody was sent changes nothing"** — negative path. Uses a hard-coded bogus token, confirms the success copy never appears, then logs in with the original `user` account to prove the password was untouched.
-- **`cy.demoEmailTo(address)`** — custom command that fetches the latest email for `address` from the demo backend's `/__demo/emails` outbox and returns `{ template, token }`.
-- **`cy.skipUnlessDemo()`** — guards every test so they only run against the demo profile.
+- **`describe('Password reset', …)`** — top-level suite; `beforeEach` visits `/en`, calls `cy.resetState()`, then revisits `/en` to get a clean session.
+- **`it('the emailed link replaces the forgotten password')`** — happy-path spec. Steps: submit the reset request → read the email via `cy.demoEmailTo('gino@pino.it')` → follow the `?token=` URL → type a new password → then *prove* both directions at the login form (old password is rejected, new password is accepted).
+- **`it('a token nobody was sent changes nothing')`** — negative spec. Visits the confirm page with a bogus token, submits a new password, asserts the success copy never appears, and confirms the original account password still works via `cy.loginAs('user')`.
 
 ## Relationships
 
-No external graph neighbours are recorded. The file depends entirely on custom Cypress commands (`cy.demoEmailTo`, `cy.resetState`, `cy.skipUnlessDemo`, `cy.loginAs`) and the demo backend's `/__demo/emails` endpoint; it does not import any project source modules.
+- **`tests/support/e2e/accounts.ts`** — imports `E2E_ACCOUNTS` to reference the known pre-reset password (`E2E_ACCOUNTS.user.password`) so the "old password is dead" assertion is data-driven rather than hardcoded.
 
 ## Notes
 
-- **Demo-only.** The email outbox is a demo-backend artifact; against a live deployment the email goes through a real queue the browser cannot inspect, so these specs are meaningless (and skipped) outside the demo profile.
-- **Token is never assumed.** The reset token is always read from the email that the API actually sent, which is what makes the test meaningful.
-- **Enumeration-safe response.** The acknowledgement text ("If the account exists…") is deliberately identical whether or not the account exists; the test asserts exactly that wording.
-- **Two password fields** on the confirm page are addressed with `.eq(0)` (new) and `.eq(1)` (confirm).
-- **Demo user / password:** `gino@pino.it` / `password` (the "old" password that must stop working).
+- **Demo-only specs.** Every test calls `cy.skipUnlessDemo()`; the `cy.demoEmailTo` custom command reads from the demo backend's `/__demo/emails` outbox, so these tests are meaningless (and skipped) against any non-demo profile.
+- **Enumeration-safe acknowledgement.** The reset-request form asserts the generic "If the account exists" copy, mirroring the security requirement that the response be identical whether or not the email is registered.
+- **Dual-direction proof.** The happy path doesn't just assert a redirect to login; it explicitly submits the *old* password and confirms rejection before submitting the *new* password and confirming acceptance.
+- **Custom commands used:** `cy.resetState()`, `cy.demoEmailTo(email)`, `cy.skipUnlessDemo()`, `cy.loginAs(role)` — all defined elsewhere in the test support layer.

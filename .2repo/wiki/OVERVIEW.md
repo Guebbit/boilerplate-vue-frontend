@@ -1,30 +1,28 @@
 # Repository Overview
 
-## What this repository is
+## What This Is
 
-A TypeScript-based **e-commerce / online-store application** built around a modular, Domain-Driven Design (DDD) architecture. It covers the full commerce domain—products, inventory, cart & checkout, orders, payments, delivery, users & accounts, wishlist, and an admin surface—with real-time eventing (AsyncAPI) alongside a REST API (Zod-validated contracts).
+A **modular e-commerce platform** with a full front-to-back stack. The codebase is organized around a **Domain-Driven Design (DDD)** architecture with explicit layers, module lifecycles, and API contracts (both REST and AsyncAPI/event-driven).
 
-## Main areas and how they relate
+## Main Areas & How They Relate
 
-| Area | Key evidence | Role |
-|---|---|---|
-| **Domain modules** (`src/modules/*`) | docs/modules/*, `docs/theory/modules.md`, `module-lifecycle.md` | Each business capability (cart, orders, payments, inventory, …) is an isolated module with its own lifecycle. |
-| **Application layer** (`src/app/*`) | `docs/reference/src-app.md` | Orchestrates use-cases across modules; entry point for HTTP and event handlers. |
-| **Infrastructure** (`src/infrastructure/*`) | `src/infrastructure/http/index.ts`, `src/infrastructure/utils/logger.ts` | Cross-cutting concerns: HTTP server, logging (touches 36 files), persistence, messaging. |
-| **UI** (`src/ui/*`) | `docs/reference/src-ui.md`, component-testing docs | Front-end components; served behind the API. |
-| **Contracts** (`contracts/rest/*`) | `schemas.zod.ts`, `asyncapi.yaml` | Typed request/response schemas and event specifications that modules and consumers share. |
-| **Admin dashboard** | `docs/modules/admin-dashboard.md`, `docs/tools/admin-dashboard.md` | Internal ops surface for managing the store. |
-| **Testing** (`tests/*`) | Cypress config, `a11y-sweep.ts`, `visual-sweep.ts`, component-testing docs | E2E (Cypress), component, and accessibility test suites. |
-| **Ops & tooling** | `docker-compose.yml`, `docker-compose.production.yml`, `docs/reference/ops.md`, scripts | Local dev (Docker Compose), production compose, and build/test scripts. |
-| **Docs site** | VitePress config, `docs/*` | A living wiki (this document) covering theory, API, modules, and reference. |
+| Area | Purpose |
+|---|---|
+| **Domain Modules** (`src/modules/`) | Core business capabilities: `products`, `cart`, `cart-checkout`, `orders`, `payments`, `inventory`, `delivery`, `wishlist`, `account`, `users`, `admin`, `feedback`, `locales` / `locales-overrides`, `realtime`, `demo`. Each is a self-contained unit with its own lifecycle. |
+| **Application / UI** (`src/app/`, `src/ui/`) | Composes modules into pages, handles state and routing, rendering. |
+| **Infrastructure** (`src/infrastructure/`) | Cross-cutting utilities (e.g., a shared `logger.ts` wired into ~35 files), transport, persistence. |
+| **Contracts** (`contracts/rest/`) | Zod schema definitions and route types for the REST API; `asyncapi.yaml` defines the event/async side. |
+| **Docs & Tooling** (`docs/`, `cypress.config.ts`, `docker-compose*.yml`) | VitePress-powered documentation site, E2E test config, local & production Docker orchestration. |
 
-**Request flow** (per `docs/theory/request-flow.md`): HTTP or event → application layer → domain module → infrastructure. Modules communicate through contracts and the async event bus rather than direct imports.
+The **theory** docs (`docs/theory/`) describe the layering, module boundaries, strategic DDD context mapping, and request flow. The **reference** docs (`docs/reference/`) map the physical source layout (`src-app`, `src-modules`, `src-infrastructure`, `src-ui`, `tests`).
 
-## Where to start reading
+## Where to Start Reading
 
-1. **`docs/theory/reading-path.md`** – the project's own suggested reading order.
-2. **`docs/getting-started.md`** – how to run the stack locally (Docker Compose, scripts).
-3. **`docs/theory/architecture.md`** + **`docs/theory/strategic-ddd.md`** – why the code is shaped the way it is.
-4. **`contracts/rest/schemas.zod.ts`** – the concrete API surface.
-5. **`docs/modules/index.md`** – pick a single domain module (e.g. *cart-checkout*) to trace one end-to-end flow.
-6. **`tests/`** – see expected behaviour in executable form.
+1. **`docs/getting-started.md`** – setup and first run.
+2. **`docs/theory/architecture.md`** + **`docs/theory/layers.md`** – the mental model for how the codebase is structured.
+3. **`docs/theory/modules.md`** + **`docs/theory/module-lifecycle.md`** – how individual domain modules are built and wired.
+4. **`docs/api/index.md`** – the public surface (REST + async).
+5. **`docs/modules/index.md`** – catalogue of domain modules and their responsibilities.
+6. **`README.md`** – top-level quickstart and project context.
+
+> **Tip for AI readers:** follow `docs/theory/reading-path.md` for the intended progressive disclosure order; consult `docs/reference/src-modules.md` when you need to map a concept to a concrete source directory.

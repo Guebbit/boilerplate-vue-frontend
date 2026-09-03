@@ -2,36 +2,30 @@
 
 ## Purpose
 
-Cypress E2E spec that verifies keyboard accessibility behaviours (Tab order, focus management, focus trapping, Escape semantics) that static analysis tools like axe cannot observe because they cannot press a key. Each case exercises a real keystroke through Chrome DevTools Protocol to confirm the shell's keyboard contract holds.
+Cypress E2E spec that verifies keyboard-interactive accessibility behaviours the app cannot be tested for via static axe/DOM checks: focus order, focus movement after navigation, focus trapping in overlays, and activation via real keystrokes (Tab, Enter, Space, Escape, ArrowDown). Each case guards a specific implementation in the app source that no unit test can exercise because it requires a browser-level focus traversal.
 
 ## Key elements
 
-- **`PHONE`** — `[390, 844]` viewport dimensions for mobile/drawer tests (iPhone 14-class portrait, the breakpoint below which nav collapses).
-- **`SHOWN_TOOLTIP`** — CSS selector (`.v-tooltip.v-overlay--active .v-overlay__content`) for detecting an active Vuetify tooltip; used because `pointer-events: none` makes Cypress treat the overlay as "covered."
-- **`describe('keyboard', …)`** — seven `it` blocks:
-  - *Skip link first Tab* — asserts DOM-order first focusable is `.skip-link` and that Enter lands on `[data-main-content]`.
-  - *Focus after navigation* — verifies router `afterEach` moves focus to main and updates `<title>`.
-  - *Drawer open/Escape* — focus enters drawer on open, Escape returns focus to the hamburger.
-  - *Tooltip on focus* — real Tab to an icon-only nav entry; asserts tooltip text matches `aria-label`.
-  - *Menu ArrowDown / Escape* — opens admin menu with ArrowDown, closes with Escape, focus stays on trigger.
-  - *Dialog focus trap* — Tab wraps within `.v-overlay--active`; Escape declines (order remains cancellable).
-  - *Facet chip toggle* — Enter and Space flip `aria-pressed` on a category chip.
+- **`PHONE`** — `[390, 844]` viewport constant; the iPhone 14-class size below which the nav bar collapses into the drawer.
+- **`SHOWN_TOOLTIP`** — Selector (`.v-tooltip.v-overlay--active .v-overlay__content`) that matches an *active* Vuetify tooltip. Used because Cypress's visibility check misreports tooltip content (it has `pointer-events: none` and a fixed position that `elementFromPoint` can't hit).
+- **`describe('keyboard', …)`** — Top-level suite; `beforeEach` visits `/en` and calls `cy.resetState()`.
+  - *Skip link test* — Asserts the first focusable element in DOM order carries `.skip-link`, then presses Enter to confirm it lands on `[data-main-content]`.
+  - *Focus after navigation* — Clicks a visible nav link, asserts focus moves to `[data-main-content]` and `document.title` updates.
+  - *Drawer open/close* — Opens the hamburger at phone width, asserts focus enters the drawer's first entry, then `Escape` closes it and returns focus to the trigger.
+  - *Bar entry naming* — Tabs to the first nav link; asserts it has no `aria-label`, non-empty visible text, and no tooltip.
+  - *Pinned entry tooltip* — Uses Shift+Tab to achieve `:focus-visible`; asserts the visible tooltip text is a prefix of the element's `aria-label`.
+  - *Admin menu* — `ArrowDown` opens (`aria-expanded=true`, `[role=menuitem]` present); `Escape` closes and keeps focus on the trigger.
+  - *Dialog focus trap* — Triggers a cancel-confirmation dialog; Tabs 4× and asserts focus stays inside `.v-overlay--active`; `Escape` dismisses (order remains cancellable).
+  - *Facet chip toggle* — `Enter` sets `aria-pressed="true"`; `Space` sets it back to `"false"`.
 
 ## Relationships
 
-- **`src/app/layout/LayoutDefault.vue`** — provides the skip link and the `[data-main-content]` focus target that the first two tests assert against.
-- **`src/app/components/AppDialogHost.vue`** — renders the confirmation dialog whose focus trap and Escape-escape are exercised by the "keeps focus inside the confirmation dialog" test.
-- **`src/app/components/AppNavIconButton.vue`** — the icon-only nav entries whose `:focus-visible` tooltip is verified in the tooltip test.
-- **`src/app/components/AppNavMenu.vue`** — the admin menu opened via `ArrowDown` and closed via `Escape` in the menu test.
-- **`src/modules/products/views/ProductsList.vue`** — renders the `[data-test=category-chip]` facet chips toggled by Enter/Space.
-- **`package.json`** — supplies `cypress-real-events` (the `cy.realPress` / `cy.realClick` API used throughout) and the Cypress runner configuration.
-- **`docs/tools/accessibility-testing.md`** — documents the broader accessibility testing strategy (axe + behavioural E2E) of which this spec is the keyboard-behaviour half.
-- **`docs/theory/layers.md`** — describes the shell/layout/component layering that these tests span (layout → nav components → view content).
+No graph neighbors are registered for this file.
 
 ## Notes
 
-- **`cy.realPress()` is mandatory, not optional.** `.type('{tab}')` dispatches a synthetic event that the browser does not translate into actual focus traversal. `cypress-real-events` sends the keystroke via CDP so the browser performs the real tab move. Consequence: the spec runs only in Chromium-family browsers.
-- **Tooltip assertion workaround.** Vuetify tooltips use `pointer-events: none`, so Cypress' `elementFromPoint`-based visibility check reports them as hidden. The `SHOWN_TOOLTIP` selector matches Vuetify's `v-overlay--active` class instead.
-- **Focus-visible distinction.** The tooltip test uses a real Tab sequence (skip-link → logo → entry) rather than `.focus()` because the tooltip is gated on `:focus-visible`, which script-driven focus does not trigger.
-- **Runs under the demo profile** in CI (see `ci.yml`), same as other E2E specs.
-- **No unit-test coverage for these behaviours.** The file header explicitly notes that none of the targeted components have a unit test capable of pressing Tab; this spec is the sole guard.
+- **`cy.realPress()` (from `cypress-real-events`) is required**, not `.type('{tab}')`. Cypress's simulated events dispatch on an element and do not trigger the browser's native focus traversal. `cypress-real-events` routes keystrokes through the Chrome DevTools Protocol, so only Chromium-family browsers work — which is what the CI `cypress run` configuration uses.
+- **`:focus-visible` vs `.focus()`**: The tooltip test deliberately uses `realPress('Tab')` then `realPress(['Shift','Tab'])` rather than `.focus()` because the tooltip binds to `:focus-visible`, which a script-initiated focus does not set.
+- **First-Tab assertion is DOM-order, not keystroke-based**: Pressing Tab from a fresh `cy.visit()` first lands on the Cypress runner's iframe boundary. The test instead queries all focusable elements and checks `.first()`.
+- **`cy.orderInRole('cancellable')`** (used in the dialog test) is a custom command that selects an order whose status makes the cancel button — and therefore the confirmation dialog — available.
+- The file intentionally avoids `aria-label` on visible-text nav entries (WCAG 2.5.3) and asserts that absence as a test condition.

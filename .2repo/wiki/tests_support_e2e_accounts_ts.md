@@ -2,21 +2,21 @@
 
 ## Purpose
 
-Single source of truth for the two demo credentials (user and admin) used across e2e tests. Centralising them here prevents silent drift that would occur if passwords were duplicated in login helpers and fixture seeds.
+Single source of truth for the two demo accounts (user & admin) used across all E2E specs. Centralizing credentials here prevents silent drift between UI-login flows, server-side API calls, and the backend seed script.
 
 ## Key elements
 
-- **`E2E_ACCOUNTS`** (`as const` object) — Maps roles to `{ email, password }` pairs:
-  - `user`: `gino@pino.it` / `password`
-  - `admin`: `root@root.it` / `rootroot`
-- **`E2ERole`** (type) — `keyof typeof E2E_ACCOUNTS`, resolves to `'user' | 'admin'`. Useful as a typed key when selecting an account programmatically.
+- **`E2E_ACCOUNTS`** (exported const) — Object keyed by role (`user`, `admin`), each holding `email` and `password`. Used by `cy.loginAs()` for UI-driven auth and by the `adminApi` task for server-side auth.
+- **`E2ERole`** (exported type) — `keyof typeof E2E_ACCOUNTS`, i.e. `"user" | "admin"`. A convenience union for typed role parameters.
 
 ## Relationships
 
-- **`tests/support/e2e/commands.ts`** — The `cy.loginAs()` command (documented in this file's JSDoc) consumes `E2E_ACCOUNTS` to drive a UI login with the correct credentials.
-- **`tests/support/e2e/fixtures.ts`** — The `adminApi` task authenticates server-side with the same `E2E_ACCOUNTS` values, ensuring seeded and logged-in accounts always match.
+- **`tests/support/e2e/commands.ts`** — Defines the `cy.loginAs()` command that reads `E2E_ACCOUNTS[role]` to fill login forms.
+- **`tests/support/e2e/fixtures.ts`** — Consumes `E2E_ACCOUNTS` when seeding or referencing the demo identities in test fixtures.
+- **`src/modules/account/tests/e2e/auth.cy.ts`**, **`password-reset.cy.ts`**, **`profile.cy.ts`** — Spec files that (directly or via the above helpers) authenticate as the user or admin account defined here.
 
 ## Notes
 
-- The `as const` modifier makes `E2E_ACCOUNTS` deeply readonly; any mutation attempt will be a compile-time error.
-- Both credentials are intentionally weak (e.g. literal `"password"`) because they exist only in the test environment—never use them to guess production auth.
+- Values are **literals**, not `cy.env()`. The file header explains that `E2E_ACCOUNTS[role]` is read synchronously in several call sites, while Cypress env access in this project is async-only (`allowCypressEnv: false` in `cypress.config.ts`).
+- The credentials **must stay in lock-step** with the backend repo's `src/kernel/seed-accounts.ts` and the `NODE_SEED_ADMIN_PASSWORD` / `NODE_SEED_USER_PASSWORD` env vars in both repos. There is no automated check — a mismatch is a silent breakage.
+- The `as const` assertion on `E2E_ACCOUNTS` freezes property types and enables the derived `E2ERole` union.

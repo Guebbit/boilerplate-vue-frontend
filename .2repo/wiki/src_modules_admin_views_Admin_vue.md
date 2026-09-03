@@ -2,24 +2,24 @@
 
 ## Purpose
 
-The admin dashboard shell. It owns which tab (overview or audit) is active, pulls all shared observability state and fetchers from `useAdminObservability`, and passes them down to the two tab child components as props. It also handles the "clear expired tokens" user action (confirmation dialog + outcome toast) and triggers the initial data fetch on mount.
+Admin dashboard shell component. It owns the active-tab state (overview vs. audit), fetches initial data on mount, and passes shared observability state and fetchers from `useAdminObservability` down to the two tab components as props and emit handlers. It also handles the single destructive action on the page — purging expired refresh tokens — by wrapping the composable's call in a confirmation dialog and a success/error toast.
 
 ## Key elements
 
-- **`activeTab`** (`ref<AdminTabKey>`) — drives the Vuetify `v-tabs` / `v-tabs-window` pair; defaults to `'overview'`.
-- **`overviewLoading`** (computed) — `true` while *either* `loadingHealth` or `loadingMetrics` is in flight; passed as a single `:loading` prop to `AdminOverviewTab`.
-- **`confirmClearExpiredTokens()`** — opens a warning-level confirmation via `useDialogStore()`. On accept, calls `clearExpiredTokens()` from the composable and raises a success or error toast via `useNotificationsStore()`. Declining resolves silently.
-- **`onMounted → fetchAll()`** — kick-starts the health, metrics, and audit reads so the overview tab is populated immediately.
-- **Template** — wraps everything in `LayoutDefault`; renders `AdminOverviewTab` and `AdminAuditTab` inside a `v-tabs-window`, plus a persistent "Clear expired tokens" button (`Trash2` icon) in the toolbar row.
+- **`activeTab`** – `ref<AdminTabKey>` bound to the Vuetify `v-tabs` control; switches between `'overview'` and `'audit'`.
+- **`useAdminObservability()` destructure** – pulls shared reactive state (`health`, `metrics`, `auditEvents`, `auditTotal`, `auditPages`, loading/error flags), `fetchAll`, `fetchAuditLogs`, `clearingExpiredTokens`, and `clearExpiredTokens`. This composable is the single data source for both tabs.
+- **`overviewLoading`** – computed that is `true` while either `loadingHealth` or `loadingMetrics` is in flight; passed to `AdminOverviewTab` as a single `:loading` prop.
+- **`confirmClearExpiredTokens`** – opens a `useDialogStore().confirm()` prompt; on accept calls `clearExpiredTokens()` and toasts the result via `useNotificationsStore().addMessage()`. The view is responsible only for the confirmation UX and the user-facing messages; the actual request and its pending flag live in the composable.
+- **`onMounted`** – fires `fetchAll()` once to prime both tabs.
+- **Template** – renders `LayoutDefault`, a Vuetify tab bar, the "clear expired tokens" button (with `Trash2` icon and `:loading` bound to `clearingExpiredTokens`), and a `v-tabs-window` that mounts `AdminOverviewTab` or `AdminAuditTab`.
 
 ## Relationships
 
-- **`src/modules/admin/composables/use-admin-observability.ts`** — sole source of all shared reactive state (`health`, `metrics`, `auditEvents`, loading/error flags) and the three fetchers (`fetchAll`, `fetchAuditLogs`, `clearExpiredTokens`). This view destructures from it and forwards values as props or `@emit` handlers to the two tab children.
-- **`docs/theory/strategic-ddd.md`** — architectural reference describing the module-bounded structure this view sits within (the `admin` bounded context).
-- **`docs/tools/admin-dashboard.md`** — user-facing documentation for the dashboard this view implements.
+No graph neighbors were recorded for this file. It imports from `use-admin-observability`, `AdminOverviewTab`, `AdminAuditTab`, `LayoutDefault`, `@/ui/dialog`, `@guebbit/vue-toolkit`, and `lucide-vue-next`, but none of those were listed as tracked neighbors.
 
 ## Notes
 
-- The confirmation dialog and the toast wording are intentionally kept **in this view**, while the actual `clearExpiredTokens` call and its `clearingExpiredTokens` pending flag live in the composable. The code comment explicitly notes that `clearExpiredTokens` **rejects** on failure, unlike the four read fetchers which resolve with an error payload — the `.catch()` here is therefore required.
-- All user-facing strings go through `t()` (vue-i18n); no literal copy appears in the template.
-- The "refresh" and "search" events from the tab children are wired back to `fetchAll` / `fetchAuditLogs` respectively, keeping the fetch logic in one place.
+- The JSDoc on `confirmClearExpiredTokens` explicitly calls out a contract difference inside the composable: `clearExpiredTokens` **rejects** on failure (so the view catches it), whereas the four read fetchers (`fetchAll`, `fetchAuditLogs`, etc.) do not — they surface errors through their `error*` refs instead. Don't assume a uniform error strategy when extending the composable.
+- The view never imports a route guard or auth check; access control is presumably handled upstream (router-level or layout-level).
+- All user-facing strings go through `t()` with the `admin-page.*` i18n namespace. Adding new copy means adding a key to that namespace, not hard-coding text.
+- The `confirmClearExpiredTokens` helper is defined in `<script setup>` scope (not exported); the only template binding is `@click="confirmClearExpiredTokens"`.

@@ -2,30 +2,32 @@
 
 ## Purpose
 
-Vue composable that merges the dictionary board's three data sources — stored entries, the API's deployed baseline, and this build's bundled baseline — plus in-page pending keys into a single per-cell read model. The board and cell editor query cell state through this composable rather than reading the raw sources, giving "what is this cell" exactly one answer.
+Vue composable that merges three locale data sources—stored entries, the API's deployed baseline, and the build's bundled baseline—plus page-local pending keys, into a single per-cell read model. The dictionary board and cell editor query cell state through this composable rather than reading the raw sources, giving "what is this cell" exactly one answer.
 
 ## Key elements
 
-- **`useDictionaryAggregation(tenant: Ref<string>)`** — the sole export; takes a reactive tenant ref owned by the caller and returns all board-level state and actions.
-- **`tenantKind` / `hasBaseline`** — computed; determine which baseline source (if any) applies to the current tenant.
-- **`languages`** — computed; writable languages (excludes `static`-only ones with no entries collection).
-- **`tenantOptions`** — computed; the tenant `<select>` dropdown options from the registry.
-- **`entriesIndex` / `baselines`** — computed maps keyed by language tag; the filtered, per-tenant entry index and the applicable baseline dictionary.
-- **`entryAt` / `baselineAt` / `isMissing` / `cellState`** — per-cell lookup helpers returning the stored entry, baseline text, gap flag, or a tri-state (`'entry' | 'baseline' | 'missing'`).
-- **`allKeys`** — computed; the sorted union of all baseline keys, entry keys, and pending keys.
-- **`missingByTag`** — computed; per-language count of missing keys.
-- **`loadBoard` / `loadLanguage`** — fetch the registry + every language column, or a single column (entries + both baselines).
-- **`afterWrite`** — post-write refresh: reload the column, refresh the language manifest counts, and push live overrides into the running app.
-- **`addPendingKey` / `resetPendingKeys`** — manage keys added in-page but not yet saved; `resetPendingKeys` is called on tenant switch.
-- **`applyLiveOverrides`** (module-private) — re-fetches overrides for one tag and applies them via `updateLocale`; intentionally swallows errors so a failed live refresh never surfaces as an error toast after a successful save.
+- **`useDictionaryAggregation(tenant: Ref<string>)`** — sole export; returns all refs, computeds, and action functions for the board.
+- **`applyLiveOverrides(tag)`** — internal; re-fetches and re-applies a language's i18n bundle to the running app after a write. Swallows errors so a courtesy refresh never toasts.
+- **`entriesByTag` / `apiBaselines` / `appBaselines`** — the three source refs (entries by tag, API baseline by tag, bundled baseline by tag).
+- **`pendingKeys`** — keys added on the page but not yet saved to any backend.
+- **`entriesIndex`** (computed) — per-language `Map<key, LocaleEntry>` filtered to the current tenant.
+- **`baselines`** (computed) — picks `appBaselines` for own tenant, `apiBaselines` for backend tenants, `{}` otherwise.
+- **`entryAt` / `baselineAt` / `isMissing` / `cellState`** — per-cell lookup helpers returning the stored entry, baseline text, gap status, or a three-way state (`'entry' | 'baseline' | 'missing'`).
+- **`allKeys`** (computed) — sorted union of all entry keys, baseline keys, and pending keys.
+- **`missingByTag`** (computed) — per-language count of keys with neither entry nor baseline.
+- **`loadBoard` / `loadLanguage` / `afterWrite`** — data-loading and post-write refresh orchestration.
+- **`addPendingKey` / `resetPendingKeys`** — manage the unsaved-key list (reset on tenant switch).
+- **`languages`** (computed) — writable languages (excludes `static`-only).
+- **`tenantKind` / `hasBaseline` / `tenantOptions`** — derived from the Pinia `localesStore`.
 
 ## Relationships
 
-- **`src/modules/locales/tests/use-dictionary-aggregation.spec.ts`** — the unit-test suite exercising this composable's cell lookups, key aggregation, and load/after-write flows.
+- **`src/modules/locales/tests/use-dictionary-aggregation.spec.ts`** — unit-test suite covering the composable's cell lookups, `allKeys` union, `missingByTag` counts, and `afterWrite` behavior.
+- (The dependency graph also lists `src/infrastructure/utils/logger.ts`, but this file does not import it; no direct interaction.)
 
 ## Notes
 
-- **`tenant` is caller-owned.** Switching tenants is a page-level action (resets page, drafts) that this composable does not handle; it simply re-derives everything reactively from the ref.
-- **`applyLiveOverrides` never throws.** The `.catch(() => undefined)` is deliberate: the board's state is already correct after a save, so a failed courtesy refresh must not produce an error toast.
-- **`static`-only languages are excluded** from `languages` and therefore never rendered as board columns — there is no entries collection to write a cell into.
-- **`pendingKeys` is not tenant-filtered internally.** It is a flat list managed by the caller; the caller must call `resetPendingKeys` on tenant switch to avoid leaking keys across tenants.
+- `tenant` is passed in as a `Ref` and is **not** mutated here; switching tenants is the caller's responsibility and should also call `resetPendingKeys`.
+- `loadBoard` catches all errors and routes them through `notifyErrorMessages`; individual `loadLanguage` calls do not.
+- `applyLiveOverrides` intentionally resolves to `undefined` on failure—by design, a live-refresh hiccup must not surface as a user-visible error after a successful save.
+- `allKeys` uses `Array.toSorted()` (ES2023), not in-place `sort`.

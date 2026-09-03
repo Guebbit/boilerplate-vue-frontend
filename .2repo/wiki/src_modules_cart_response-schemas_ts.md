@@ -2,18 +2,19 @@
 
 ## Purpose
 
-Declares the flat array of response-schema rows the HTTP layer matches against at runtime to validate that cart-endpoint responses conform to their expected contracts. The array is registered through the module manifest so that contract validation activates automatically when the cart domain is enabled.
+Declares the runtime contract-validation table for the cart domain: a flat array mapping each HTTP method + URL pattern to a Zod (or similar) response schema. The HTTP layer looks up a response against this table to validate it before handing it to the caller.
 
 ## Key elements
 
-- **`cartResponseSchemas: ResponseSchemaRoute[]`** — the sole export. An 8-row table mapping each cart route (method + regex pattern) to a Zod-style response schema from `@api/schemas`. Covers `GET/POST/DELETE /cart`, `GET /cart/summary`, `POST /cart/checkout`, `PUT/DELETE /cart/:id`, and `POST /cart/reorder/:id`.
+- **`cartResponseSchemas: ResponseSchemaRoute[]`** — The sole export. Nine rows covering GET/POST/PUT/DELETE on `/cart`, `/cart/summary`, `/cart/checkout`, `/cart/all`, `/cart/:id`, and `/cart/reorder/:id`. Each row pairs an HTTP method, a regex `pattern`, and a schema imported from `@api/schemas`.
+- **`ResponseSchemaRoute` (type import)** — From `@/infrastructure/http/response-schema-map`; defines the `{ method, pattern, schema }` shape and documents the two invariants every row must satisfy.
+- **Schema imports** — All response shapes are re-exported from `@api/schemas` (e.g. `GetCartResponse`, `CheckoutResponse`, `ReorderResponse`).
 
 ## Relationships
 
-- **`src/modules/cart/module.ts`** — The module manifest imports `cartResponseSchemas` and registers it with the HTTP response-schema map infrastructure. Registering it here is what turns runtime contract validation on for the cart domain; removing the file (and its import in `module.ts`) disables it.
+- **`src/modules/cart/module.ts`** — The module manifest imports `cartResponseSchemas` and registers it with the HTTP layer. Enabling the cart domain (i.e. including the module) automatically activates contract validation for these routes; removing the folder disables it. No other code reads this array directly.
 
 ## Notes
 
-- The two invariants every row must satisfy (e.g. `pattern` must be anchored, `schema` must parse the full envelope) are documented on the `ResponseSchemaRoute` type in `@/infrastructure/http/response-schema-map`, not repeated here.
-- Patterns are anchored regexes (`^…$`); the `PUT`/`DELETE` item routes use `[^/]+` to match a single path segment, and the reorder route adds a `reorder` prefix before the ID.
-- Adding a new cart endpoint means adding exactly one row to this array—no separate registration step is needed as long as `module.ts` still imports the export.
+- **Ordering matters.** The lookup uses `Array.find()`, which returns the *first* match. Static-segment rows (e.g. `/cart/all`) must appear before any wildcard row (`/cart/[^/]+`) whose pattern would also match them. The inline comment calls out that the `/cart/all` row is intentionally placed before the by-id rows for exactly this reason.
+- **One table per domain module.** This file is the cart-specific fragment; the HTTP layer aggregates all module tables. There is no per-file runtime logic—just data and a type annotation.

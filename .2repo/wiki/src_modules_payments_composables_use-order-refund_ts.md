@@ -2,22 +2,23 @@
 
 ## Purpose
 
-Vue composable that exposes a single order's refund capability (eligibility check + action) from the payments store, reactive to a route-driven order ID. It exists so views can bind a refund control without importing the store directly.
+A Vue composable that exposes a single-order refund control (`canRefund` + `refund()`) by delegating to the payments Pinia store. It exists so that UI components can act on one order's refund without importing the store directly, keeping the refund surface narrow and reactive to route-driven order changes.
 
 ## Key elements
 
-- **`useOrderRefund(orderId: Ref<string | undefined>)`** — the sole export. Accepts a reactive order ID and returns:
-  - **`canRefund`** (`ComputedRef<boolean>`) — `true` only when the server-provided `payment.actions.refund` flag is `true`. Updates automatically when the store's `payment` ref is replaced.
-  - **`refund()`** (`() => Promise<void>`) — calls `paymentsStore.refundForOrder(id)`. Resolves once the refreshed payment replaces the cache (which flips `canRefund` to `false`). No-ops (`Promise.resolve()`) if `orderId` is currently `undefined`.
-- **Internal `watch(orderId, …)`** — on mount and on every ID change, calls `paymentsStore.fetchPaymentForOrder(id)` to populate the store's `payment` ref.
+- **`useOrderRefund(orderId: Ref<string | undefined>)`** — the sole export.
+  - Calls `paymentsStore.fetchPaymentForOrder(id)` whenever `orderId` changes (including immediately on setup).
+  - Returns:
+    - `canRefund: ComputedRef<boolean>` — true only when the server-provided `payment.actions.refund` flag is `true`.
+    - `refund(): Promise<void>` — calls `paymentsStore.refundForOrder(id)`; resolves `undefined` so the cached payment refresh is what withdraws `canRefund`. No-ops if `orderId` is falsy.
 
 ## Relationships
 
-- **`src/modules/payments/store.ts`** — consumed via `usePaymentsStore()` and `storeToRefs`. Reads the `payment` state and calls `fetchPaymentForOrder` / `refundForOrder` actions.
-- **`src/modules/payments/index.ts`** (barrel) — intentionally does *not* re-export `usePaymentsStore`. `useOrderRefund` is the narrow exception that re-enters the store, so sibling modules that only need a refund control don't reach into the store and grow a second payment flow.
+- **`src/modules/payments/store.ts`** — source of all real work: `fetchPaymentForOrder`, `refundForOrder`, and the reactive `payment` state (via `storeToRefs`). This composable is a thin read/dispatch layer over those.
+- **`src/modules/payments/index.ts`** (barrel) — re-exports this composable to sibling modules but deliberately does *not* re-export `usePaymentsStore`. This file is the sanctioned narrow entry point for refund actions outside the payments panel.
 
 ## Notes
 
-- **Eligibility is server-owned.** Whether a refund is possible is read from `payment.actions.refund` (set by the API). Do not re-derive it from a local status field; that would split the rule across separately deployed clients.
-- **`refund()` does not mutate order status.** It only returns the money and refreshes the cached payment object. Any status change is a server-side side-effect surfaced through that refresh.
-- **The `orderId` param is reactive by contract.** Pass a `Ref` (e.g. from `useRoute().params.id`) so a route change re-fetches and re-evaluates eligibility without re-mounting the composable.
+- `canRefund` is **never** computed locally from order status. The server's `actions.refund` flag is the single source of truth; re-deriving it client-side would split the rule across separately deployed artifacts.
+- `refund()` intentionally does **not** mutate the order's status — it only triggers the money-return flow. Status changes, if any, happen server-side.
+- The barrel's restriction is "narrow by shape": this composable answers one question and performs one action, so a caller cannot grow a full payment flow out of it. Avoid adding further store methods here.

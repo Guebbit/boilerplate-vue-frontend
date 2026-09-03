@@ -1,21 +1,24 @@
 # scripts/run-backend-demo.ts
 
 ## Purpose
-A thin CLI wrapper behind `npm run backend:demo`. It resolves *which* paired backend to boot (delegating to `resolveBackendDemoCommand`), loads `.env`, spawns the backend's demo-profile process with a dedicated scratch directory, and forwards lifecycle signals. It exists so that `start-server-and-test` and a human each get one command with the sibling-checkout path already resolved.
+
+A thin CLI wrapper (`npm run backend:demo`) that boots the paired backend's demo profile. It resolves *which* backend to start (delegating to `paired-backend-path.ts` so the choice can't diverge from `check-spec-identity`), sets up the runtime environment (scratch dir, frontend URL), spawns the backend process, and forwards signals so it shuts down cleanly. When no demo command is configured it idles so `start-server-and-test` still sees a "live" server.
 
 ## Key elements
-- **Top-level `process.loadEnvFile()` (best-effort)** — populates `process.env` from a local `.env` before the command is resolved; missing file is silently ignored (CI passes the variable directly).
-- **`boot(argv)`** — creates a scratch directory, `spawn`s the backend with `stdio: 'inherit'` and a `TMPDIR` override, forwards `SIGTERM`/`SIGINT` to the child, removes the scratch directory on close, and exits with the child's code (defaulting to 1).
-- **`resolveBackendDemoCommand()`** *(imported)* — returns the argv array to spawn, or `null`/`undefined` when `BACKEND_DEMO_COMMAND` is unset.
-- **`createDemoScratchDirectory` / `removeDemoScratchDirectory`** *(imported)* — allocate and clean up a tmpfs-backed directory so the backend's in-memory Mongo does not fill the machine's `/tmp`.
-- **Idle fallback** — when no demo command is resolved, the script logs a message and starts a 60 s `setInterval` to keep the process alive, so `start-server-and-test` does not interpret an immediate exit as a dead server.
+
+- **`.env` load** (top-level) — calls `process.loadEnvFile()` in a try/catch so `BACKEND_DEMO_COMMAND` (and other vars) are visible before `resolveBackendDemoCommand()` runs. A missing `.env` is tolerated (CI passes the var directly).
+- **`boot(argv)`** — the single worker. Creates a scratch directory, `spawn`s the resolved command with `stdio: 'inherit'`, injects `TMPDIR` and `NODE_FRONTEND_URL` into the child env, forwards `SIGTERM`/`SIGINT` to the child, and on `close` removes the scratch directory and exits with the child's code.
+- **Idle branch** — when `resolveBackendDemoCommand()` returns nothing, logs a message and runs an infinite `setInterval` so the process never exits (required by `start-server-and-test`'s "is the server alive?" check).
+- **`demoCommand`** — the resolved `[command, ...args]` array passed to `boot`.
 
 ## Relationships
-- **`scripts/paired-backend-path.ts`** — provides `resolveBackendDemoCommand`, which performs the sibling-checkout resolution (the same logic `check-spec-identity` uses) to pick the correct paired backend and its demo-profile runner.
-- **`scripts/backend-demo-scratch-directory.ts`** — provides the scratch-directory create/remove helpers that give the spawned backend a dedicated `TMPDIR` under a tmpfs mount.
+
+- **`scripts/paired-backend-path.ts`** — provides `resolveBackendDemoCommand()`, which decides *which* paired backend to boot and *what* command to run (driven by the `BACKEND_DEMO_COMMAND` env var and the sibling-checkout resolution logic shared with `check-spec-identity`).
+- **`scripts/backend-demo-scratch-directory.ts`** — provides `createDemoScratchDirectory()` / `removeDemoScratchDirectory()`, used to give the backend's in-memory Mongo a dedicated writable location (on tmpfs) instead of the machine's `/tmp`.
 
 ## Notes
-- **No `BACKEND_DEMO_COMMAND` → no boot, but the process stays alive.** The idle `setInterval` is deliberate: `start-server-and-test` treats a start command that exits as a crashed server and aborts before waiting on an externally-managed backend.
-- **`process.exit(code ?? 1)`** in the close handler is intentional (eslint-suppressed): in a `child.on('close')` callback there is no caller to return to, so the exit code *is* the interface.
-- **Signal forwarding covers only `SIGTERM` and `SIGINT`.** A `SIGKILL` to the wrapper will orphan the child.
-- The two paired backends do not share the same demo-profile runner; which command to run is entirely controlled by `BACKEND_DEMO_COMMAND`.
+
+- `NODE_FRONTEND_URL` is hardcoded to `http://localhost:8085` in the child env, overriding the backend's own `.env` default of `:8080`. This matches the e2e/Cypress `baseUrl` so OAuth callbacks and emailed links point at the right port.
+- Without `BACKEND_DEMO_COMMAND` set the script does **not** fail; it idles. `start-server-and-test` treats a quick exit as "server crashed" and would abort the suite.
+- The exit code is propagated via `process.exit()` (eslint-suppressed) because the wrapper's exit status *is* the interface for the calling npm script.
+- This file is intentionally not a module — it runs as a script, not as imported library code.

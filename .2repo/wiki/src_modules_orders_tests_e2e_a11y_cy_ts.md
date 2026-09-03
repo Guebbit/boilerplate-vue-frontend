@@ -2,24 +2,22 @@
 
 ## Purpose
 
-Cypress E2E accessibility sweep for the orders module. It delegates the actual auditing to the shared `sweepA11y` helper, supplying the specific routes and roles to audit. It lives co-located with the orders module so that removing the module also removes its a11y coverage, preventing a central list from referencing routes the app no longer serves.
+Cypress a11y sweep definition for the orders module. It declares which routes to audit (orders list, detail, edit) and at which viewports, delegating the actual axe-core checks to the shared `sweepA11y` helper. The file is co-located with the module so that deleting the module also removes its a11y coverage; a cross-cutting spec (`tests/cross-cutting/a11y-coverage.spec.ts`) enforces that every routed module has one.
 
 ## Key elements
 
-- **`orderDetail()`** — Resolves the detail-page URL (`/en/orders/:id`) of a pending order owned by the current backend profile by calling `cy.orderInRole('cancellable')`.
-- **`orderEdit()`** — Same pattern, but resolves the edit-page URL (`/en/orders/:id/edit`).
-- **`sweepA11y('orders — signed in', …)`** — Audits the static `/en/orders` list route as a signed-in user.
-- **`sweepA11y('orders — admin', …)`** — Audits the dynamic detail and edit routes as an admin, since those pages are role-gated.
+- **`PHONE`** — `[390, 844]` const tuple representing an iPhone 14 portrait viewport; used to audit the `DataTable.vue` mobile-stack layout that the desktop sweep never exercises.
+- **`orderDetail()`** — Resolves the URL of a pending "cancellable" order via `cy.orderInRole`, returning `/en/orders/:id`. Pending status ensures all action buttons are rendered (vs. disabled/missing), which matters for a11y assertions.
+- **`orderEdit()`** — Same resolution pattern, returns `/en/orders/:id/edit` (admin-only route).
+- **`sweepA11y('orders — signed in', …)`** — Audits the orders list in default and phone viewports as a regular user profile.
+- **`sweepA11y('orders — admin', …)`** — Audits the detail and edit pages as an admin profile.
 
 ## Relationships
 
-- **`tests/support/e2e/a11y-sweep.ts`** — Provides the `sweepA11y` function that this file imports and calls. That file contains the actual axe-core (or equivalent) auditing logic; this file is purely the route list and role context.
-- **`cy.orderInRole('cancellable')`** — A custom Cypress command (defined elsewhere in test support) that finds a pending order owned by the current profile. Both URL resolvers depend on it.
-- **`tests/cross-cutting/a11y-coverage.spec.ts`** (referenced in a comment) — Asserts that every routed module has a co-located a11y sweep file like this one, guarding against a domain silently losing coverage.
+- **`tests/support/e2e/a11y-sweep.ts`** — Provides the `sweepA11y` helper that this file imports. The helper accepts a test title, a list of route descriptors (name + route or resolver, optional viewport), and a profile role, then drives the accessibility audit. This file is purely declarative configuration for that helper.
 
 ## Notes
 
-- The role is named **by backend profile**, not by a hardcoded user; the correct credentials are resolved at runtime by whichever backend the profile started against.
-- The `'cancellable'` role targets a **pending** order specifically, because that state renders every action button (cancel, edit, etc.). The comment explains that a disabled control and a missing one fail a11y differently, so auditing the most-interactive state is the point.
-- The detail page is reachable **by its owner only**, and the edit page is **admin-only**; the test runs them as the `admin` profile for that reason.
-- This file is intentionally *not* a `*.spec.ts` — it's a `*.cy.ts` module that registers sweeps via the shared helper rather than defining its own `describe`/`it` blocks.
+- The "cancellable" role is resolved dynamically at test time via `cy.orderInRole`; it maps to whatever backend profile is active, not a hardcoded order ID.
+- The phone-viewport entry on the orders list is intentionally a separate descriptor object (with `viewport` key) rather than a second route string — `sweepA11y` treats it as a distinct audit pass.
+- Detail and edit pages are **not** swept in the signed-in profile because they are owner-/admin-only; only the list is visible to both roles.

@@ -2,22 +2,27 @@
 
 ## Purpose
 
-Debounces per-product cart quantity stepper clicks into a single trailing API call while keeping the displayed number responsive. It exists to eliminate the race condition where three rapid clicks on `+` fired three concurrent requests and the last-arriving response overwrote the correct total.
+Provides a composable that debounces per-product cart quantity stepper clicks into a single trailing API call per line, while a local `pending` map keeps the UI responsive to the visitor's own clicks without waiting for the round trip. It replaces the previous pattern of firing one `updateCartItem` call per click, which caused out-of-order responses under slow connections.
 
 ## Key elements
 
-- **`useLineQuantity(update, onError, delayMs?)`** — The composable. Accepts the store's `updateCartItem`, an error handler (toast), and a debounce delay (default 400 ms). Returns the four-method API the view binds to.
-- **`pending`** (`ref<Partial<Record<string, number>>>`) — In-memory map of quantities the visitor has stepped to that have not yet been confirmed by the API.
-- **`senders`** (`Map<string, DebouncedFunc<() => void>>`) — One lodash `debounce` instance per product, created lazily on first use and retained for the page's lifetime. Deliberately a plain `Map` (not reactive) to avoid re-renders.
-- **`quantityOf(productId, stored)`** — Returns `pending[productId]` if one exists, otherwise the store's value. This is what the template reads, so the UI reflects the click instantly.
-- **`stepQuantity(productId, stored, step)`** — The action the stepper button calls. Computes `next` via `steppedQuantity`, writes it to `pending`, and triggers that product's debounced sender.
-- **`forget(productId)`** — Cancels the product's debounced sender and drops its pending entry. Must be called before removing a line so a queued send cannot resurrect it.
-- **`flushPending()`** — Calls `.flush()` on every sender. Intended for component unmount; sends all outstanding steps immediately rather than discarding them.
-- **`forgetPending` / `senderFor`** — Internal helpers: `forgetPending` destructures the entry out of the reactive object; `senderFor` memoises the debounce closure per product.
+- **`useLineQuantity(update, onError, delayMs?)`** — The sole export. Accepts the store's `updateCartItem` and the view's toast handler; returns `{ quantityOf, stepQuantity, forget, flushPending }`.
+- **`pending`** — `ref<Partial<Record<string, number>>>` holding quantities the visitor has stepped to but the API hasn't confirmed yet.
+- **`senders`** — A plain (non-reactive) `Map<string, DebouncedFunc>` of one lodash `debounce` instance per product, created lazily on first use.
+- **`quantityOf(productId, stored)`** — Returns the pending value if one is outstanding, otherwise the store's number. This is what the view binds for display.
+- **`stepQuantity(productId, stored, step)`** — Computes the next quantity via `steppedQuantity`, writes it to `pending`, and invokes that product's debounced sender.
+- **`forget(productId)`** — Cancels the product's timer and clears its pending entry. Must be called before a line is removed.
+- **`flushPending()`** — Calls `send.flush()` on every debounced sender. Intended for unmount cleanup.
+
+## Relationships
+
+No graph neighbors are recorded for this file. It imports `ref` from Vue, `debounce` from `lodash-es`, and `steppedQuantity` from `@/modules/cart/domain`.
 
 ## Notes
 
-- **Supersede guard in `.finally`**: The pending entry is only cleared if it still equals the quantity that was sent. A click made while the request is in flight writes a newer number into `pending`; an unconditional clear would drop that newer value.
-- **Per-product debouncing, not global**: Two lines stepped in the same instant produce two independent requests. A shared debounce would cancel one line's send when the other's timer fires.
-- **`flushPending` is a flush, not a cancel**: The file's comments explicitly state that dropping a pending step on unmount would be "the debounce losing data, which is the one thing it must never do."
-- **`senders` is not reactive**: A comment explains that making it a `ref` would trigger re-renders of every cart line each time a new timer is created, even though nothing renders from the map.
+- **`senders` is deliberately a plain `Map`, not a `ref`.** Nothing renders from it; making it reactive would trigger re-renders on every line when a timer is first created.
+- **`forget` must run before line removal.** A queued quantity for a deleted line would fire after removal and re-insert the line.
+- **`flushPending` is FLUSH, not CANCEL.** A step the visitor made and then navigated away from is a change they expect to persist. Dropping it on unmount would defeat the composable's purpose.
+- **`.finally()` guard:** the pending entry is cleared only if it still equals the value that was sent. A click made while the request was in flight leaves a newer number in `pending`; clearing unconditionally would discard it.
+- **Per-product debouncing.** Two lines stepped in the same tick are independent changes and must not cancel each other's timers.
+- `delayMs` defaults to **400 ms**.

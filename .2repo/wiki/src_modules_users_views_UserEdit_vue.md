@@ -2,27 +2,26 @@
 
 ## Purpose
 
-Vue 3 single-file component (named `UserEditPage`) that renders a single-user edit form. It loads a user by the `id` route prop, lets the user change email, password, and avatar, then persists the changes via the users store. An empty password or avatar field signals "leave unchanged."
+Single-user edit page. Loads a user by the route `id` prop, presents a form (email, optional password, optional avatar upload), and persists changes via the users store. An empty password or avatar field is a no-op ("leave as is"); a new avatar triggers a multipart upload with progress tracking.
 
 ## Key elements
 
-- **`UserEditForm`** – interface for the form model: `{ email, password, imageUpload }`.
-- **`editSchema`** – Zod schema built from `usersSchema.pick({ email })` extended with a `z.preprocess`-wrapped optional password (empty string → `undefined`) and `imageUpload` from `imageUploadSchema`. Validation messages are i18n thunks resolved at parse time.
-- **`useAppForm<UserEditForm>`** – shared composable providing `form`, `formErrors`, `isSubmitting`, `handleSubmit`, `activateAutoHydrate`, `applyServerErrors`, `resetForm`.
-- **`activateAutoHydrate(computed)`** – hydrates the form once `currentUser` resolves (pre-fills email, blanks password).
-- **`useUploadProgress()`** – exposes `uploadProgress` (percentage shown in `FormImageUpload`) and `trackUpload` (wraps the API call with progress tracking).
-- **`submitForm()`** – validates, then calls `updateUser(id, { email, password, imageUpload })`; on success clears `form.imageUpload` and shows a toast; on failure tries `applyServerErrors` before falling back to `notifyErrorMessages`.
-- **`watchUser(() => id)`** – re-fetches the user whenever the route `id` prop changes.
-- **Computed display values** – `heroTitle`, `heroDescription`, `userRole`, `userStatus` drive the hero/stats cards.
-- **Template** – `ItemDetailLayout` with hero, stat cards, a `<form>` (email, password, `FormImageUpload`, submit/reset buttons), an aside with metadata fields, and action buttons linking to `UserTarget` and `UsersList` routes.
+- **`editSchema`** — Zod schema built from `usersSchema.pick({ email: true })` extended with an optional `password` (empty string preprocessed to `undefined`) and an `imageUpload` field. Built once; i18n messages are thunks resolved at parse time via `revalidateOn: locale`.
+- **`useStructureFormValidation<UserEditForm>`** — Shared composable from `@guebbit/vue-toolkit` providing `form`, `formErrors`, `showFormErrors`, `isSubmitting`, `handleSubmit`, `resetForm`, `activateAutoHydrate`, and `applyServerErrors`.
+- **`activateAutoHydrate(computed(…))`** — Populates the form from `currentUser` once the fetch resolves; password is always reset to `''`.
+- **`trackUpload(file, send)`** — Wraps an API call with axios `onUploadProgress` tracking (0–1 fraction); disabled when no file is present.
+- **`submitForm`** — Validates, calls `updateUser(id, { email, password, imageUpload }, options)`, clears `form.imageUpload` on success to prevent re-uploading the same bytes, and surfaces server errors via `applyServerErrors` / `notifyErrorMessages`.
+- **`watchUser(() => id)`** — Triggers a (re)fetch when the route id changes.
+- **Template** — `LayoutDefault` → `ItemDetailLayout` with hero, stats (id / admin / active), a `<form>` with `v-text-field` (email, password) and `FormImageUpload`, plus an aside card with created/updated timestamps.
 
 ## Relationships
 
-No direct interaction with the listed graph neighbor (`src/infrastructure/utils/logger.ts`) is present in this file.
+- **`src/infrastructure/utils/logger.ts`** (listed graph neighbor) — No import or direct reference is visible in this file. It may be a transitive dependency pulled in through `useNotificationsStore` or other toolkit/store modules, but no code path in this SFC calls it explicitly.
 
 ## Notes
 
-- **Empty = unchanged convention:** password and `imageUpload` use "empty field means don't send" semantics, enforced at the schema level (`z.preprocess`) and at submit time (`password || undefined`).
-- **Post-upload reset:** after a successful save, `form.value.imageUpload` is explicitly set to `undefined` so the next save does not re-upload the same bytes (same pattern as `ProductEdit.vue`).
-- **Schema is built once:** i18n messages are thunks resolved at parse time, so the schema need not be rebuilt on language change.
-- **Route-prop driven:** the component receives `id` as a prop (not from `$route.params` directly), and `watchUser` handles refetching on change. A missing `id` makes `submitForm` a no-op.
+- `form.value.imageUpload` is set back to `undefined` after a successful submit. Without this, the same `File` object would be re-serialized on every subsequent save (same pattern as `ProductEdit.vue`).
+- Password field is intentionally optional: empty string is preprocessed to `undefined` so the API call omits the field entirely.
+- `event.progress` can be `undefined` for chunked/compressed requests; the code falls back to `0` to keep the progress bar stable.
+- The `id` prop is optional (`id?: string`); `submitForm` is a no-op if `id` is falsy, and the hero title falls back to the route id or a generic page title.
+- Validation re-runs on locale change (`revalidateOn: locale`) without rebuilding the schema.

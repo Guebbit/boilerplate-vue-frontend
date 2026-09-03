@@ -2,22 +2,23 @@
 
 ## Purpose
 
-A generic dropdown-menu shell that wraps `AppNavIconButton` as the activator and renders an array of `AppNavItem` entries inside a `role="menu"` list. It is the shared component behind both the account menu and the admin menu, giving them an identical keyboard-navigation contract (Vuetify `v-menu` defaults) plus correct ARIA menu semantics and a `#after` slot for non-navigation actions such as logout.
+Generic dropdown-menu shell that wraps an `AppNavIconButton` activator and renders a list of `AppNavItem` entries inside a Vuetify `v-menu` with proper ARIA menu semantics (`role="menu"` / `menuitem`). A single component powers both the account menu and the admin menu, giving them an identical keyboard contract and visual structure.
 
 ## Key elements
 
-- **`AppNavItem` (exported interface)** — Shape of one menu entry: `name` (stable route name, used as the `:key`), `title` (translated label), `to` (route target), optional `icon` component, and optional `badge` count.
-- **Props** — `items`, `label`, `icon`, `description?`, `badge?`, `avatar?`, `avatarUrl?`, `dataTest?`. The `avatar`/`avatarUrl` pair is account-menu–only; it replaces the icon on the activator with the visitor's picture.
-- **`#after` slot** — Rendered as the last child inside the `v-list` / `role="menu"` container; intended for actions that are not page navigations (e.g., a logout button).
-- **`useI18n`** — Provides `t()` for badge-label strings (`navigation.badge-items`) on both the activator and individual items.
+- **`AppNavItem` (exported interface)** — shape of one navigation entry: stable route `name`, translated `title`, locale-prefixed `to`, optional Lucide `icon`, `badge` count, `detail` text, and `pinned` flag.
+- **Props** — `items`, `label`, `icon`, `description`, `badge`, `avatar` (+ `avatarUrl` / `avatarThumbnailUrl`), and `dataTest`. The avatar-related props are only meaningful for the account-menu use case.
+- **`#after` slot** — renders inside the `v-list` after all items; intended for non-navigation actions (e.g. a "Sign out" button).
+- **`t` from `useI18n`** — used to translate badge labels (`navigation.badge-items`) on both the activator and individual items.
 
 ## Relationships
 
-- **`tests/e2e/specs/keyboard.cy.ts`** — E2E spec that exercises the keyboard contract this component relies on: ArrowDown to open the menu, arrow keys to walk `menuitem` entries, and Escape to close and return focus to the `AppNavIconButton` activator. The component itself does not implement this behavior; it inherits it from Vuetify's `v-menu`.
+- **`AppNavIconButton`** (imported) — rendered as the menu activator; receives the full set of display props (`label`, `icon`, `description`, `badge`, avatar fields, `dataTest`) plus Vuetify's activator bindings.
+- No other graph neighbors are listed.
 
 ## Notes
 
-- The `description` subheader rendered inside the menu is marked `aria-hidden="true"` because a heading is **not** a permitted child of `role="menu"`. Its accessible-name contribution comes from being folded into the activator's label instead.
-- `AppNavItem.name` (the route name) is the render `:key`, not `title` or `to`. This keeps re-renders stable across locales.
-- `avatarUrl` is only meaningful when `avatar` is `true`; it is left unresolved (no URL building happens here).
-- The component is intentionally locale-agnostic: all display strings arrive pre-translated via `items` and `label`; the only i18n call is for the "N items" badge label.
+- The description sub-header inside the menu is marked `aria-hidden="true"` because a `role="menu"` element does not permit a bare heading child; the same text is already part of the activator's accessible name.
+- `item.name` (the route name) is used as the `v-for` key — it is stable across locales, unlike `title` or `to`.
+- `badge` on the component level is the *activator* badge (visible when the menu is closed); `item.badge` is per-entry. They are independent.
+- The `pinned` field on `AppNavItem` is declared but not consumed inside this component; the parent is expected to lift pinned entries out of the `items` array and render them on the nav bar beside this menu.

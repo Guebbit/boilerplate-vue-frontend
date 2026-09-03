@@ -1,25 +1,26 @@
 # src/modules/users/views/UserCreate.vue
 
 ## Purpose
-Vue 3 SFC (named `UserCreatePage`) that renders a user-creation form. It composes `useAppForm` for state/validation, delegates the actual create call to the users store (which branches between multipart and JSON based on whether an avatar is attached), and navigates to the new user's detail page on success.
+
+Vue single-file component that renders the "Create User" form page. It collects email, username, password, admin/active flags, and an optional avatar file, validates them via a Zod schema, and delegates submission to the users store—sending a multipart request when an avatar is present or JSON otherwise (the branch is handled inside the store).
 
 ## Key elements
-- **`UserCreateForm`** — local `interface` describing the form shape: `email`, `username`, `password`, `admin`, `active`, `imageUpload`.
-- **`createSchema`** — Zod schema built once from `usersSchema.pick({ email, username })` extended with `usersPasswordSchema`, optional booleans, and `imageUploadSchema`.
-- **`card`** — template ref to `FormCard`; read lazily via a getter (`formElement`) so the `<form>` DOM node is resolved at submit time, not during mount.
-- **`handleSubmit` / `submitForm`** — wires `trackUpload` → `createUser` → success toast + `router.push` to `UserTarget`, with `.catch` feeding `notifyErrorMessages`.
-- **`useUploadProgress`** — exposes `uploadProgress` and `trackUpload`; the progress value is passed to `FormImageUpload` so the user sees avatar upload state during the multipart request.
-- **Template** — `LayoutDefault` → `FormCard` containing Vuetify text fields, `FormImageUpload`, and two `v-switch` toggles (admin / active).
+
+- **`UserCreateForm`** — local interface describing the form state (email, username, password, admin, active, imageUpload).
+- **`createSchema`** — Zod schema built once from `usersSchema.pick({email, username}).extend({password, admin, active, imageUpload})`. Messages are thunks resolved at parse time in the active locale.
+- **`useStructureFormValidation<UserCreateForm>`** — shared composable from `@guebbit/vue-toolkit` that owns `form`, `formErrors`, `isSubmitting`, and `handleSubmit`. `formElement` is a getter (`() => card.value?.formElement`) so the DOM ref is resolved lazily after `FormCard` mounts.
+- **`useToolkitUploadProgress`** — tracks the 0–1 `onUploadProgress` fraction from Axios; reports `0` when `event.progress` is `undefined` (chunked/compressed transfer).
+- **`trackUpload(file, send)`** — wraps an API call with the progress tracker, enabled only when `file` is present.
+- **`submitForm`** — orchestrates the full flow: `handleSubmit` → `trackUpload` → `createUser(...)` → success toast + `router.push` to `UserTarget`; on error, `notifyErrorMessages` surfaces toasts.
+- **Template** — `LayoutDefault` wrapping a `FormCard` with Vuetify inputs (`v-text-field`, `v-switch`) and `FormImageUpload`; all labels are i18n keys under `user-create-page.*`.
 
 ## Relationships
-- **`useUsersStore` → `createUser`** — the actual API call (multipart vs JSON decision) lives in the store, not here.
-- **`useAppForm`** — shared composable providing `form`, `formErrors`, `showFormErrors`, `isSubmitting`, `handleSubmit`.
-- **`FormCard` / `FormImageUpload` / `LayoutDefault`** — presentation components consumed in the template.
-- **`notifyErrorMessages`** — maps rejection reasons to toast messages via the notifications store.
-- **`src/infrastructure/utils/logger.ts`** — listed as a graph neighbor but no direct import or call is visible in this file; the connection is likely indirect (e.g., through the store or `useAppForm`).
+
+- **`src/infrastructure/utils/logger.ts`** — listed as a graph neighbor but not imported or referenced directly in this file; any interaction is transitive (e.g., through the users store or the validation composable).
 
 ## Notes
-- The `formElement` option passed to `useAppForm` is a **getter**, not a static ref — this is intentional so the element is looked up at the moment a failed submit needs to scroll/highlight, avoiding a race with `FormCard` still mounting.
-- The navigation after a successful create uses `void router.push(…)` so a `NavigationFailure` (e.g., user already left) does **not** turn a completed create into an error toast.
-- `imageUpload` is optional; when absent the store sends JSON instead of multipart. This branch is invisible here — read the users store to confirm.
-- The component is registered with `name: 'UserCreatePage'` in a separate non-setup `<script>` block (required for HMR/devtools alongside `<script setup>`).
+
+- The success navigation is intentionally fire-and-forget (`void router.push(...)`) so a `NavigationFailure` cannot convert a completed create into an error toast.
+- `formElement` is passed as a **getter**, not a value—`FormCard` may not be mounted when the composable is first evaluated, so a plain ref would be `undefined`.
+- `revalidateOn: locale` re-runs Zod validation (and re-renders error messages) whenever the active locale changes, because schema messages are locale-bound thunks.
+- The `imageUpload` field type is `File | undefined`; when absent the store sends a plain JSON body, when present it sends `multipart/form-data`—the branch logic is in the store, not here.

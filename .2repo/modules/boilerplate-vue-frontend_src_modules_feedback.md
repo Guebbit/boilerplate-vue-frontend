@@ -6,36 +6,36 @@ tags:
 type: module
 module: src/modules/feedback/
 files: 11
-updated: 2026-08-30T17:10:24.599665+00:00
+updated: 2026-09-03T10:58:37.860207+00:00
 ---
 
 # src/modules/feedback/
 
 ## Purpose
 
-The feedback module provides a public contact form and an admin-facing ticket inbox. It lets any visitor submit a message and lets an authenticated admin read, triage, and update the status of those messages—all as a self-contained feature registered into the app's module registry.
+The feedback module provides a two-surface contact/feedback feature: a public, no-auth form for visitors to submit a message, and an admin-only inbox where operators can review tickets, update their status, or delete them (GDPR erasure). It owns the routes, state management, validation schemas, and end-to-end test coverage for that loop, while registering itself with the application kernel through a module manifest.
 
 ## Key parts
 
-- **Module manifest & routing** — `module.ts` is the single entry point the kernel uses to discover the module; `routes.ts` and `response-schemas.ts` define the two paths (public contact, admin inbox) and the validation contracts for their API responses.
-- **State layer** — `store.ts` is a Pinia setup-store exposing `submitContact`, `fetchRequests`, and `updateStatus`, each backed by the shared `useStructureRestApi` helper for consistent loading-state plumbing.
-- **Views** — `views/Contact.vue` renders the unauthenticated form (Zod-validated, delegates to the store); `views/FeedbackInbox.vue` renders the admin ticket list with a per-ticket status dropdown.
-- **Tests** — Co-located per-module specs cover route access metadata (`tests/routes.spec.ts`), store behaviour (`tests/store.spec.ts`), and three e2e suites: full user-flow (`tests/e2e/feedback.cy.ts`), accessibility sweep (`tests/e2e/a11y.cy.ts`), and visual-regression baselines (`tests/e2e/feedback.visual.cy.ts`).
+- **Registration & contracts** — `module.ts` (manifest that wires routes, schemas, nav entries, and locale loaders into the registry), `routes.ts` (the two route records: public form + admin inbox), and `response-schemas.ts` (method/URL → validation-envelope mapping so the HTTP layer picks the right schema at runtime).
+- **State** — `store.ts`: a Pinia setup-style store exposing `submit`, `list`, `updateStatus`, and `delete` actions built on the shared `useStructureRestApi` plumbing. It is the first frontend caller of the feedback endpoints.
+- **Views** — `views/Contact.vue` (Zod-validated public form that delegates to the store) and `views/FeedbackInbox.vue` (ticket cards with status-change and delete actions, all strings via `vue-i18n`).
+- **Tests** — Unit specs (`tests/routes.spec.ts` for the access contract, `tests/store.spec.ts` for store invariants) and co-located Cypress e2e specs (`tests/e2e/`) covering the full user loop, accessibility sweeps, and visual-regression targets.
 
 ## How it connects
 
-- **`src/infrastructure/`** — The module consumes the app's kernel/module-registry to be mounted, relies on the response-envelope middleware that reads `response-schemas.ts`, and uses the shared `useStructureRestApi` toolkit (which wraps the Orval-generated HTTP client) for all three store actions. The Zod schemas and Pinia conventions come from this layer.
-- **`tests/support/`** — The three e2e spec files delegate their actual sweep logic to shared helpers (`sweepA11y`, `sweepVisual`) and the `orvalMutator` mock lives in this support package, so feedback tests stay thin and focused on module-specific behaviour.
+- **`src/infrastructure/`** — The module manifest plugs into the application kernel's module registry. The store relies on the infrastructure's `useStructureRestApi` helper for shared loading-flag management and on the generated API client (`orvalMutator`) for actual HTTP calls. `response-schemas.ts` references envelope types exported from `@api/schemas`, an infrastructure concern.
+- **`tests/support/`** — The e2e specs import shared helpers `sweepA11y` (accessibility) and `sweepVisual` (screenshot comparison) from this support package, so each module only declares *which* routes to sweep while the shared code handles orchestration.
 
 ## Where to start
 
-Read `module.ts` first—it's short and shows exactly how the module declares its routes, schemas, and locale loaders to the kernel, giving you the map of everything else. Then open `store.ts` to see the three actions that both views call and to understand the API contract the rest of the module depends on.
+Read `module.ts` first to see how the feature registers itself (routes, schemas, nav) and then jump to `store.ts` to understand the data flow: every user action in either view funnels through the store's actions into the generated API client. Together they reveal the boundary between this module's UI concerns and the shared infrastructure it depends on.
 
 ## Connected modules
 ```mermaid
 flowchart LR
     m_src_modules_feedback["src/modules/feedback/"]
-    m_src_infrastructure["src/infrastructure/<br/>27 files"]
+    m_src_infrastructure["src/infrastructure/<br/>21 files"]
     m_tests_support["tests/support/<br/>13 files"]
     m_src_modules_feedback --- m_src_infrastructure
     m_src_modules_feedback --- m_tests_support
@@ -46,16 +46,16 @@ flowchart LR
 
 ## Files
 - `src/modules/feedback/module.ts` — Module manifest that registers the feedback feature (contact form + admin inbox) into the app's module registry. It wires together routes, navigation entries, response schemas, and locale loaders so the kernel can discover and mount the module without importing its internals directly.
-- `src/modules/feedback/response-schemas.ts` — Declares the response-validation schema table for every feedback endpoint the module calls. Each row pairs an HTTP method and URL regex with the corresponding schema from `@api/schemas`, so the response-envelope middleware can look up the correct validator by matching an incoming response's request.
+- `src/modules/feedback/response-schemas.ts` — Declares the response-validation schema table for every feedback endpoint the module calls. Each row pairs an HTTP method and a URL regex with the `@api/schemas` envelope type that validates a successful response, so the HTTP layer can pick the correct schema at runtime.
 - `src/modules/feedback/routes.ts` — Defines the two route records (public contact form and admin-only feedback inbox) for the feedback module. It is consumed by the module registry to mount these paths into the app's router.
-- `src/modules/feedback/store.ts` — Pinia setup-store for the feedback module. It exposes a public `submitContact` action and an admin inbox (`requests`) with `fetchRequests` / `updateStatus` actions. All three actions run through the toolkit's `useStructureRestApi` so that loading-state plumbing (shared per-store-name flags) is consistent with the rest of the app.
-- `src/modules/feedback/tests/e2e/a11y.cy.ts` — Declares the a11y sweep route list for the feedback module. It feeds specific page routes (public contact page and admin feedback inbox) into the shared `sweepA11y` helper so that Cypress can run accessibility checks against both surfaces. The file exists per-module so that a11y coverage is co-located with the code it guards.
-- `src/modules/feedback/tests/e2e/feedback.cy.ts` — Cypress end-to-end spec that exercises the feedback module's full loop—visitor submits the public contact form, admin reads the resulting ticket in the inbox—plus guards (validation, role-based access) and static-page cross-linking. It exists to prove the two pages are wired together and the ticket survives navigation without a reload.
-- `src/modules/feedback/tests/e2e/feedback.visual.cy.ts` — Declares the list of screens in the feedback module that require visual-regression snapshots, delegating the actual sweep logic to the shared `sweepVisual` helper. This file exists so that deleting the feedback module also removes its baselines (they live in a local `__snapshots__/` folder) and so the route list stays co-located with the code it tests.
-- `src/modules/feedback/tests/routes.spec.ts` — Vitest spec that locks in the `meta.access` declaration of every feedback route. It exists to catch the failure mode where a route silently loses its access restriction (making an admin-only route publicly reachable) or where a new route is added without being accounted for.
-- `src/modules/feedback/tests/store.spec.ts` — Vitest spec for the feedback Pinia store. It mocks only the HTTP transport (`orvalMutator`) so the generated Orval client and the store logic under test both run for real. The focus is verifying that the inbox is always replaced by what the API returned (never a local guess) and that a status update triggers a reload of the list it changed.
-- `src/modules/feedback/views/Contact.vue` — Renders the public, unauthenticated contact form that lets any visitor submit a message to the feedback inbox. It validates input client-side with a Zod schema and delegates the actual submission to the feedback store, resetting the form on success.
-- `src/modules/feedback/views/FeedbackInbox.vue` — Admin inbox page for the public contact/feedback form. On mount it fetches the full ticket list and renders each ticket as a card with a status dropdown, letting an admin move a ticket through its lifecycle in a single click.
+- `src/modules/feedback/store.ts` — Pinia (setup-style) store for the feedback module. It exposes a public contact-form submit action and an admin inbox (list, status-update, delete) built on the toolkit's `useStructureRestApi` for shared loading-flag plumbing. It is the first frontend code to call the feedback endpoints, which predate this module.
+- `src/modules/feedback/tests/e2e/a11y.cy.ts` — Cypress e2e test that runs the shared `sweepA11y` accessibility sweep against the feedback module's routes on both the public and admin surfaces. It is co-located with the module so that deleting the feedback module removes its a11y coverage automatically, rather than leaving dangling route entries in a central list.
+- `src/modules/feedback/tests/e2e/feedback.cy.ts` — Cypress end-to-end spec that exercises the feedback module's full user loop: submitting the public contact form and verifying the resulting ticket in the admin inbox. It also covers spam/honeypot detection, ticket deletion (and cancellation), form validation, role-based access control, and the static-page cross-linking that anchors the contact page. The inbox is intentionally empty at test start — the form submission *is* the fixture.
+- `src/modules/feedback/tests/e2e/feedback.visual.cy.ts` — Declares the list of routes (one entry) for the feedback module's visual-regression test run. It hands that list to the shared `sweepVisual` helper, which orchestrates the actual screenshot capture and comparison. This file exists so each module's visual targets live alongside that module rather than in a monolithic central file.
+- `src/modules/feedback/tests/routes.spec.ts` — Guards the `meta.access` declaration of every feedback route so that a route cannot silently lose its access restriction (and become publicly reachable) without a deliberate test update. It encodes the module's access contract as a hard-coded table: the contact form is public, the inbox is admin-only.
+- `src/modules/feedback/tests/store.spec.ts` — Vitest spec for the feedback Pinia store. It mocks the HTTP transport layer (`orvalMutator`) as a `METHOD /url` router so the store under test and the generated API client remain real. The tests pin two invariants: the inbox is always replaced wholesale by the API response (never a local guess), and status-update / delete operations trigger a follow-up `GET /feedback` reload.
+- `src/modules/feedback/views/Contact.vue` — Public, no-auth-required contact form for visitors to submit feedback directly to the admin inbox. It validates user input against a Zod schema, delegates submission to the feedback store, and resets itself on success.
+- `src/modules/feedback/views/FeedbackInbox.vue` — Admin inbox view for the public contact/feedback form. On mount it loads the full ticket list from the feedback store, then renders each ticket as a card where an operator can change the ticket's status or delete it (GDPR erasure path). All user-facing strings go through `vue-i18n`.
 
 ---
 [[boilerplate-vue-frontend_INDEX|← boilerplate-vue-frontend index]]

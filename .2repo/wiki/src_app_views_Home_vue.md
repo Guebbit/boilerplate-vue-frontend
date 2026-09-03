@@ -2,22 +2,23 @@
 
 ## Purpose
 
-Landing page component for the app shell. Renders a static hero call-to-action and a three-card showcase grid, all fully i18n-driven. It exists as the default entry view that users see before navigating into any domain module.
+The app's landing page. Renders a static hero card (title, description, optional CTA) and a three-card showcase grid, all translated via i18n. The CTA link is conditionally hidden when the `products` domain is excluded from the build.
 
 ## Key elements
 
-- **`HomePage`** (default export) — the registered component name.
-- **`hasProductsList`** (computed) — checks `router.hasRoute('ProductsList')` to decide whether the hero CTA button renders. This is the sole cross-domain reference in the shell.
-- **`featuredProducts`** (computed) — returns three static showcase entries (title, description, theme variant, lucide icon) re-translated on locale change. Consumed by the `CardInfo` grid.
-- **Template** — uses `LayoutDefault` wrapper, a Vuetify `v-card` hero, and a responsive `CardInfo` grid. The CTA `v-btn` is conditionally rendered via `v-if="hasProductsList"`.
-- **Scoped style `.hero-card`** — radial-gradient background driven by Vuetify theme CSS variables (`--v-theme-primary`, `--v-theme-secondary`, `--v-theme-surface`).
+- **`export default { name: 'HomePage' }`** — Named component block; required alongside `<script setup>` so devtools and `<KeepAlive>` can identify the component.
+- **`hasProductsList`** (computed) — Boolean from `router.hasRoute('ProductsList')`. Guards the hero CTA button so the page doesn't render a dead link when the products module is stripped.
+- **`featuredProducts`** (computed) — Array of three `{ title, description, variant, icon }` objects. Re-evaluates on locale change because titles/descriptions come from `t()`. Icons are `Package`, `Tag`, `Star` from `lucide-vue-next`; variants map to `ThemeAccent` values (`primary`, `secondary`, `tertiary`).
+- **Template** — Wraps content in `LayoutDefault`, uses a Vuetify `v-card` hero and a responsive grid of `CardInfo` organisms. The CTA `v-btn` is rendered only when `hasProductsList` is true and navigates via `routerLinkI18n({ name: 'ProductsList' })`.
+- **Scoped style `.hero-card`** — Layered radial gradients keyed to `--v-theme-primary` / `--v-theme-secondary` CSS custom properties for a soft, theme-aware glow.
 
 ## Relationships
 
-- **`src/kernel/registry.ts`** — indirect: the registry (via `src/modules.ts`) is responsible for registering or omitting the `ProductsList` route. `hasProductsList` reads the *result* of that registration at runtime; no direct import exists in this file.
+No graph neighbors are recorded for this file. It imports from `@/app/layouts/LayoutDefault.vue`, `@/ui/organisms/CardInfo.vue`, `@/ui/types.ts`, `@/infrastructure/i18n/router-link.ts`, and standard libraries (`vue`, `vue-i18n`, `vue-router`, `lucide-vue-next`), but none of those appear as explicit graph edges.
 
 ## Notes
 
-- The `ProductsList` route name is a **string literal**, not a typed token. Removing the products module from the registry silently disables the CTA; neither the compiler nor the type-checker will flag the dangling reference. The `hasRoute` guard is the only safety net.
-- All user-facing text is i18n-keyed under the `home-page.*` namespace; there are no hardcoded strings in the template.
-- The component uses two `<script>` blocks: a plain options block for `name` and a `<script setup>` block for logic. Adding new logic should go in the setup block.
+- **Two `<script>` blocks is intentional.** The plain `<script>` exists solely to set `name`; `<script setup>` cannot declare a component name on its own.
+- **`hasProductsList` guard exists because the route name is a string.** Removing the `products` module from `src/modules.ts` will not produce a compile or type error—the link would simply resolve to a non-existent route at runtime. The computed check is the only safety net.
+- **`featuredProducts` recomputes on every locale switch** because `t()` is called inside the computed. The array shape is stable; only the strings change.
+- **The page is the one allowed cross-domain reference point.** The hero CTA is the single place the app shell links into a domain (`ProductsList`); everything else on the page is self-contained or uses shared UI components.

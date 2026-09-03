@@ -1,28 +1,33 @@
 # src/modules/inventory/store.ts
 
 ## Purpose
-Pinia store for the inventory domain. Exposes two paginated reads (stock-movement ledger, shelf-count board) and three writes (receive, adjust, sweep) over the structure REST API. All writes reload the views they touched before resolving, so callers never observe a counter the views have not caught up with. No client-side arithmetic on counts is performed.
+
+Pinia store (`'inventory'`) that owns the two reads (stock board, movement ledger) and three writes (receive, adjust, sweep) for the inventory domain. Every write reloads the affected views before resolving so callers never see a counter the views haven't caught up with.
 
 ## Key elements
 
-- **`useInventoryStore`** – the exported Pinia setup store (`'inventory'`).
-- **`loading`** – shared boolean from `useStructureRestApi`, surfaced for UI spinners.
-- **`movements` / `movementsTotal`** – current page of `StockMovement[]` and the cross-page count.
-- **`levels` / `levelsTotal`** – current page of `InventoryLevel[]` (shelf counts, most scarce first) and the cross-page count.
-- **`fetchMovements(query?)`** – loads a ledger page. Omitting `query` repeats the last one (used for post-write reloads).
-- **`fetchLevels(query?)`** – loads a board page; supports `lowOnly` filter. Same "repeat last query" behavior.
+- **`useInventoryStore`** – the exported `defineStore('inventory', …)` setup store; the only export.
+- **`fetchMovements(query?)`** – loads one page of the stock-movement ledger. Omitted `query` re-runs the last query (used by post-write reloads).
+- **`fetchLevels(query?)`** – loads one page of the stock board (most-scarce-first). Supports a `lowOnly` filter.
 - **`receive(productId, quantity, note?)`** – records a delivery (strictly positive quantity), then reloads both views.
-- **`adjust(productId, delta, note?)`** – applies a signed stocktake correction (negative = shrinkage), then reloads both views.
-- **`sweep()`** – expires stale reservations (idempotent; the API ships no scheduler, so this store is the tick driver), then reloads both views.
-- **`reloadAfterWrite(level?)`** – internal helper that chains `fetchMovements` → `fetchLevels` sequentially and resolves with the write's returned counters. Not exported from the store.
+- **`adjust(productId, delta, note?)`** – records a stocktake correction; `delta` is **signed** (negative = shrinkage). API rejects anything that would push `onHand` below `reserved`.
+- **`sweep()`** – expires stale reservations (idempotent). Driven externally; no server-side scheduler.
+- **`reloadAfterWrite(level)`** – internal helper; runs `fetchMovements` then `fetchLevels` sequentially, returns the counters.
+- **`loading`** – shared reactive flag from `useStructureRestApi`; true while any request in this store is in flight.
+- **`movements` / `movementsTotal` / `levels` / `levelsTotal`** – reactive state; `*Total` comes from the paginated response's `meta.totalItems`.
 
 ## Relationships
-No graph-neighbor files are documented for this module. Its runtime dependencies are `@guebbit/vue-toolkit` (`useCoreStore`, `useStructureRestApi`) and `@api` (the five inventory endpoints).
+
+No external graph neighbors are recorded for this file. Internally it depends on:
+
+- `@guebbit/vue-toolkit` → `useCoreStore` (app-wide loading registry) and `useStructureRestApi` (request runner + shared loading flag).
+- `@api` → `listInventoryLevels`, `listStockMovements`, `receiveStock`, `adjustStock`, `sweepReservations`.
+- `@types` → `InventoryLevel`, `StockMovement`, `ListInventoryLevelsParams`, `ListStockMovementsParams`.
 
 ## Notes
 
-- **Sequential reload order is deliberate.** Movements (the ledger) are fetched before levels (the board) so the board never appears without the movement that justifies it.
-- **`available` is server-derived.** It is computed from `onHand − reserved` on the API side; duplicating that subtraction client-side is a bug.
-- **`movementsQuery` / `levelsQuery` are module-private** (not returned from the store) and exist solely so a post-write reload repeats the page/filters the user is viewing.
-- **`sweep` is the "outside" scheduler.** There is no cron or worker in the API; this store (or another caller) is expected to invoke it periodically. Running it twice is safe—nothing new is released.
-- **`meta.totalItems` is preserved on both reads** because both lists are server-paginated; a bare `.length` would underreport, especially for the audit ledger.
+- **No local arithmetic on counts.** `available` is derived server-side from `onHand` and `reserved`; this store never re-implements that subtraction.
+- **Sequential, not concurrent, post-write reloads.** Movements are fetched before levels so the ledger "explains" the board; a board arriving before its justifying movement would read as a number nobody wrote.
+- **`movementsQuery` / `levelsQuery` are module-scoped `let`s**, not refs — they exist solely so a post-write reload can re-issue the exact page/filter the user was looking at. They are not exposed to consumers.
+- **`sweep` chains `fetchMovements().then(fetchLevels)`** rather than calling `reloadAfterWrite`, because the sweep response carries `expired` (a count) rather than an `InventoryLevel` row.
+- Both reads preserve `meta.totalItems` from the paginated response; do not replace with `items.length` — the ledger is the audit record and a bare row count would misreport history as complete.
