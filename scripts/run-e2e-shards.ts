@@ -187,7 +187,11 @@ const bootDemoBackends = async (count: number): Promise<() => void> => {
                 SERVER_PORT: String(port),
                 DB_DATABASE: `e2e_demo_shard_${index + 1}`,
                 NODE_DEMO: 'true',
-                TMPDIR: scratchDirectory
+                TMPDIR: scratchDirectory,
+                // All shards serve the SAME built bundle on :8085 (the preview server this file's
+                // own module doc names) — every shard's OAuth callback and emailed link must
+                // redirect there too, not at the Node twin's `.env` default of :8080.
+                NODE_FRONTEND_URL: 'http://localhost:8085'
             }
         });
         let output = '';

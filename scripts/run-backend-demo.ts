@@ -38,7 +38,15 @@ const boot = (argv: readonly string[]) => {
     const [command, ...commandArguments] = argv;
     const child = spawn(command, commandArguments, {
         stdio: 'inherit',
-        env: { ...process.env, TMPDIR: scratchDirectory }
+        env: {
+            ...process.env,
+            TMPDIR: scratchDirectory,
+            // Every e2e npm script serves the built/dev FE on :8085 (cypress.config.ts's
+            // baseUrl), never the backend's own `.env` default of :8080 — without this the OAuth
+            // callback and any emailed link redirect the browser at a port nothing is listening
+            // on here.
+            NODE_FRONTEND_URL: 'http://localhost:8085'
+        }
     });
 
     // `start-server-and-test` ends this wrapper with a signal; the backend under it must get the

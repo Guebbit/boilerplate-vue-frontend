@@ -133,13 +133,6 @@ export interface ValidationErrorResponse {
     errors: ErrorItem[];
 }
 
-export type UserAnalyticsConsent = (typeof UserAnalyticsConsent)[keyof typeof UserAnalyticsConsent];
-
-export const UserAnalyticsConsent = {
-    granted: 'granted',
-    denied: 'denied'
-} as const;
-
 export interface User {
     id: Id;
     email: Email;
@@ -152,7 +145,7 @@ export interface User {
     locale?: Locale;
     phone?: string;
     website?: string;
-    analyticsConsent?: UserAnalyticsConsent;
+    analyticsConsent?: boolean;
     twoFactorEnabledAt?: string;
     createdAt?: string;
     updatedAt?: string;
@@ -847,14 +840,6 @@ export interface AuditLogsResponseEnvelope {
     data: AuditLogsPage;
 }
 
-export type UpdateAccountRequestAnalyticsConsent =
-    (typeof UpdateAccountRequestAnalyticsConsent)[keyof typeof UpdateAccountRequestAnalyticsConsent];
-
-export const UpdateAccountRequestAnalyticsConsent = {
-    granted: 'granted',
-    denied: 'denied'
-} as const;
-
 export interface UpdateAccountRequest {
     email?: Email;
     /** @minLength 3 */
@@ -863,16 +848,8 @@ export interface UpdateAccountRequest {
     imageUrl?: ImageUrl;
     phone?: string;
     website?: string;
-    analyticsConsent?: UpdateAccountRequestAnalyticsConsent;
+    analyticsConsent?: boolean;
 }
-
-export type UpdateAccountRequestMultipartAnalyticsConsent =
-    (typeof UpdateAccountRequestMultipartAnalyticsConsent)[keyof typeof UpdateAccountRequestMultipartAnalyticsConsent];
-
-export const UpdateAccountRequestMultipartAnalyticsConsent = {
-    granted: 'granted',
-    denied: 'denied'
-} as const;
 
 export interface UpdateAccountRequestMultipart {
     email?: Email;
@@ -883,7 +860,7 @@ export interface UpdateAccountRequestMultipart {
     imageUpload?: Blob;
     phone?: string;
     website?: string;
-    analyticsConsent?: UpdateAccountRequestMultipartAnalyticsConsent;
+    analyticsConsent?: boolean;
 }
 
 export interface ChangePasswordRequest {
@@ -2810,7 +2787,10 @@ export const updateAccountWithMultipart = (
         formData.append(`website`, updateAccountRequestMultipart.website);
     }
     if (updateAccountRequestMultipart.analyticsConsent !== undefined) {
-        formData.append(`analyticsConsent`, updateAccountRequestMultipart.analyticsConsent);
+        formData.append(
+            `analyticsConsent`,
+            updateAccountRequestMultipart.analyticsConsent.toString()
+        );
     }
 
     return orvalMutator<UserEnvelope>(

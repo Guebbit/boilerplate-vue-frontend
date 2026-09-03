@@ -10,6 +10,7 @@ import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { listOAuthProviders as apiListOAuthProviders } from '@api';
 import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
+import { instance } from '@/infrastructure/http/client.ts';
 
 /**
  * Display names for the providers this app knows about. A name absent here still renders — see
@@ -35,13 +36,15 @@ export const providerLabel = (provider: string): string =>
  * dance needs an actual top-level browser navigation to reach the provider's consent screen and
  * come back with cookies set, which neither a `RouterLink` nor an axios call can do.
  *
+ * The prefix is read off the axios instance rather than `import.meta.env`, same reasoning as
+ * `resolveImageUrl` — it follows the e2e shard runner's `__E2E_API_URL` override, a runtime value
+ * a build-time env read can't see.
+ *
  * @param provider - Registry key, e.g. `'google'`.
  * @returns The backend's start-login URL for that provider.
  */
-export const oauthStartUrl = (provider: string): string => {
-    const apiUrl = (import.meta.env.VITE_API_URL as string | undefined) ?? '';
-    return `${apiUrl}/account/oauth/${provider}`;
-};
+export const oauthStartUrl = (provider: string): string =>
+    `${instance.defaults.baseURL ?? ''}/account/oauth/${provider}`;
 
 /**
  * The enabled OAuth providers — `Login.vue`/`Signup.vue` render one button per name, and render

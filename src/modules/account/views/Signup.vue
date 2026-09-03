@@ -239,7 +239,7 @@ const submitForm = () =>
                 </v-btn>
             </form>
             <template v-if="oauthProviders.length > 0">
-                <div class="my-4 flex items-center gap-3 text-xs uppercase opacity-60">
+                <div class="my-4 flex items-center gap-3 text-xs uppercase opacity-70">
                     <v-divider />
                     {{ t('oauth.divider') }}
                     <v-divider />
@@ -249,6 +249,7 @@ const submitForm = () =>
                 <v-btn
                     v-for="provider in oauthProviders"
                     :key="provider"
+                    :data-test="`oauth-${provider}`"
                     :href="oauthStartUrl(provider)"
                     variant="outlined"
                     size="large"

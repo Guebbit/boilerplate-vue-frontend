@@ -2353,6 +2353,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CheckoutResponseEnvelope'
+          links:
+            PayOrder:
+              operationId: createPaymentIntent
+              parameters:
+                orderId: $response.body#/data/order/id
+              description: The new order's id is the `orderId` to freeze into a payment intent.
+            CancelOrder:
+              operationId: cancelOrderById
+              parameters:
+                id: $response.body#/data/order/id
+              description: The new order's id can be cancelled directly.
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -2560,6 +2571,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrderEnvelope'
+          links:
+            PayOrder:
+              operationId: createPaymentIntent
+              parameters:
+                orderId: $response.body#/data/id
+              description: The new order's id is the `orderId` to freeze into a payment intent.
+            CancelOrder:
+              operationId: cancelOrderById
+              parameters:
+                id: $response.body#/data/id
+              description: The new order's id can be cancelled directly.
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -2868,6 +2890,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaymentEnvelope'
+          links:
+            ConfirmPayment:
+              operationId: confirmPayment
+              parameters:
+                id: $response.body#/data/id
+              description: The intent's id is confirmed here to complete the charge.
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -2968,6 +2996,17 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaymentEnvelope'
+          links:
+            RefundPayment:
+              operationId: refundPaymentByOrder
+              parameters:
+                orderId: $response.body#/data/orderId
+              description: A succeeded payment can be refunded without touching the order status.
+            CancelOrder:
+              operationId: cancelOrderById
+              parameters:
+                id: $response.body#/data/orderId
+              description: A paid order can still be cancelled, which refunds it too.
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -3552,10 +3591,7 @@ components:
         website:
           type: string
         analyticsConsent:
-          type: string
-          enum:
-            - granted
-            - denied
+          type: boolean
         twoFactorEnabledAt:
           type: string
           format: date-time
@@ -4707,10 +4743,7 @@ components:
         website:
           type: string
         analyticsConsent:
-          type: string
-          enum:
-            - granted
-            - denied
+          type: boolean
     UpdateAccountRequestMultipart:
       type: object
       additionalProperties: false
@@ -4731,10 +4764,7 @@ components:
         website:
           type: string
         analyticsConsent:
-          type: string
-          enum:
-            - granted
-            - denied
+          type: boolean
     ChangePasswordRequest:
       type: object
       additionalProperties: false
