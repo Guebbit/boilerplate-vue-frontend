@@ -8,13 +8,18 @@ export default {
 /**
  * @module
  * User detail (read-only) page. Loads one user by route id and renders its
- * fields, role and status.
+ * fields, role and status, plus the audited, no-proof-required 2FA recovery
+ * button for an owner who lost both their authenticator and their backup
+ * codes.
  */
 import { computed } from 'vue';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
+import { useNotificationsStore } from '@guebbit/vue-toolkit';
 import { useUsersStore } from '@/modules/users/store';
+import { useDialogStore } from '@/ui/dialog.ts';
+import { notifyErrorMessages } from '@/infrastructure/utils/errors.ts';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import { User } from 'lucide-vue-next';
 import ItemDetailField from '@/ui/molecules/ItemDetailField.vue';
@@ -84,6 +89,29 @@ const userStatus = computed(() =>
  * Selects and (re)fetches the user whenever the route id changes.
  */
 watchUser(() => id);
+
+const { addMessage } = useNotificationsStore();
+const { adminDisableTwoFactor } = useUsersStore();
+
+/**
+ * Strips this user's second factor after an explicit confirmation — the one deliberate exception
+ * to "prove the factor to remove it", for an owner who has lost both their authenticator and
+ * their backup codes. No code is asked for, which is exactly why the confirmation has to say so:
+ * every call is audited server-side, but nothing here re-proves it is really them.
+ *
+ * @returns Nothing; the outcome is reported as a toast.
+ */
+const handleDisableTwoFactor = () => {
+    if (!id) return;
+    return useDialogStore()
+        .confirm({ message: t('user-target-page.confirm-disable-two-factor'), color: 'error' })
+        .then((accepted) => {
+            if (!accepted) return;
+            return adminDisableTwoFactor(id)
+                .then(() => addMessage(t('user-target-page.success-disable-two-factor')))
+                .catch((error) => notifyErrorMessages(addMessage, error));
+        });
+};
 </script>
 
 <template>
@@ -185,6 +213,15 @@ watchUser(() => id);
                 </v-btn>
                 <v-btn variant="tonal" :to="routerLinkI18n({ name: 'UsersList' })">
                     {{ t('user-target-page.button-go-to-list') }}
+                </v-btn>
+                <v-btn
+                    v-if="currentUser"
+                    variant="text"
+                    color="error"
+                    data-test="user-disable-two-factor"
+                    @click="handleDisableTwoFactor"
+                >
+                    {{ t('user-target-page.button-disable-two-factor') }}
                 </v-btn>
             </template>
         </ItemDetailLayout>

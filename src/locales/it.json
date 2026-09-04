@@ -25,6 +25,13 @@
         "api-unreachable": "Il server non è raggiungibile — mostriamo ciò che funziona offline. Riproviamo in silenzio.",
         "notifications": "Notifiche"
     },
+    "reauth-dialog": {
+        "title": "Confermaci che sei tu",
+        "intro": "Questa azione richiede una verifica recente della password. Inserisci la tua password per continuare.",
+        "label-password": "Password",
+        "button-submit": "Conferma",
+        "error-wrong-password": "Password non corretta. Riprova."
+    },
     "navigation": {
         "label-home": "home",
         "error-already-logged": "Sei già loggato",

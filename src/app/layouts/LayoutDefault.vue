@@ -15,6 +15,7 @@ import { STATIC_PAGES, staticPageRouteName } from '@/app/utils/static-pages.ts';
 import AppNavigation from '@/app/components/AppNavigation.vue';
 import AppHealthBanner from '@/app/components/AppHealthBanner.vue';
 import DialogHost from '@/ui/organisms/DialogHost.vue';
+import ReauthDialog from '@/app/components/ReauthDialog.vue';
 import { useCoreStore, useNotificationsStore } from '@guebbit/vue-toolkit';
 import { consumeMainFocus, MAIN_CONTENT } from '@/app/router/announcer.ts';
 
@@ -203,6 +204,9 @@ const normalizeAlertType = (type?: string): 'success' | 'info' | 'warning' | 'er
 
         <!-- The one confirmation dialog, fed by `useDialogStore().confirm(...)` -->
         <DialogHost />
+
+        <!-- The step-up prompt, opened by the http layer's `REAUTH_REQUIRED` interceptor -->
+        <ReauthDialog />
 
         <!--
             Toast stack. The wrapper is a named region, NOT a live region: each alert announces

@@ -7,10 +7,13 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * The profile page: composes the record-edit form with the role/password/delete/sessions/
- * addresses panels as siblings, each owning its own store slice. `applyLanguagePreference` chains
- * the i18n switch and the route's `:locale` re-entry in that order after a save, mirroring the
- * header's language switcher.
+ * The profile page: composes the record-edit form with the avatar/role/password/2FA/sessions/
+ * addresses/delete panels as siblings, each owning its own store slice. `applyLanguagePreference`
+ * chains the i18n switch and the route's `:locale` re-entry in that order after a save, mirroring
+ * the header's language switcher.
+ *
+ * Panel order is deliberate: the most destructive control (`ProfileDeleteAccount`) sits LAST,
+ * rather than between the password form and the sessions list where it used to sit.
  */
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -22,8 +25,10 @@ import { useProfileStore } from '@/modules/account/stores/profile.ts';
 import { usersSchema } from '@/modules/users';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import ProfileVerificationBanner from '@/modules/account/components/ProfileVerificationBanner.vue';
+import ProfileAvatar from '@/modules/account/components/ProfileAvatar.vue';
 import ProfileRole from '@/modules/account/components/ProfileRole.vue';
 import ProfilePasswordChange from '@/modules/account/components/ProfilePasswordChange.vue';
+import ProfileTwoFactor from '@/modules/account/components/ProfileTwoFactor.vue';
 import ProfileDeleteAccount from '@/modules/account/components/ProfileDeleteAccount.vue';
 import ProfileSessions from '@/modules/account/components/ProfileSessions.vue';
 import ProfileAddresses from '@/modules/account/components/ProfileAddresses.vue';
@@ -188,6 +193,8 @@ const submitForm = () => {
         <ProfileVerificationBanner />
 
         <v-card class="mx-auto mt-10 w-full max-w-xl p-8">
+            <ProfileAvatar />
+
             <form ref="formElement" novalidate @submit.prevent="submitForm">
                 <v-text-field
                     v-model="form.username"
@@ -242,12 +249,13 @@ const submitForm = () => {
 
             <ProfileRole />
             <ProfilePasswordChange />
-            <ProfileDeleteAccount />
+            <ProfileTwoFactor />
         </v-card>
 
         <div class="mx-auto my-10 grid w-full max-w-xl gap-6">
             <ProfileSessions />
             <ProfileAddresses />
+            <ProfileDeleteAccount />
         </div>
     </LayoutDefault>
 </template>

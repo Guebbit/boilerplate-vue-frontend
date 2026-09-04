@@ -58,7 +58,10 @@
         "label-active": "Active",
         "label-created-at": "Created at",
         "label-updated-at": "Updated at",
-        "image-alt": "Profile picture of {name}"
+        "image-alt": "Profile picture of {name}",
+        "button-disable-two-factor": "Strip two-factor authentication",
+        "confirm-disable-two-factor": "Remove every second factor and backup code from this account, without proof from its owner? Every call is audited.",
+        "success-disable-two-factor": "Two-factor authentication removed from this account."
     },
     "user-create-page": {
         "page-title": "Create user",

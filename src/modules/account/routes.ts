@@ -25,6 +25,14 @@ export default [
         component: () => import('@/modules/account/views/Signup.vue')
     },
     {
+        // Guest, like `Login`: the challenge token is the credential here, not a session, and a
+        // signed-in visitor has no business on this page.
+        path: 'login/2fa',
+        name: 'TwoFactorChallenge',
+        meta: { access: 'guest', title: 'two-factor-challenge-page.page-title' },
+        component: () => import('@/modules/account/views/TwoFactorChallenge.vue')
+    },
+    {
         path: 'password-reset',
         name: 'PasswordResetRequest',
         meta: { access: 'guest', title: 'password-reset-request-page.page-title' },

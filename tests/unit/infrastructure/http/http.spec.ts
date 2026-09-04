@@ -6,7 +6,11 @@ vi.mock('@/infrastructure/session', () => ({
 }));
 
 vi.mock('pinia', () => ({
-    storeToRefs: (store: { accessToken: { value: undefined } }) => store
+    storeToRefs: (store: { accessToken: { value: undefined } }) => store,
+    // `@/infrastructure/http` now pulls in `step-up.ts` → `reauth-prompt.ts`, whose
+    // `defineStore('reauthPrompt', ...)` call runs at import time — never invoked by these
+    // onResponseReject-only tests, so a stub that satisfies the call without a real Pinia is enough.
+    defineStore: () => vi.fn()
 }));
 
 /**

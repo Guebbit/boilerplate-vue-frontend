@@ -58,7 +58,10 @@
         "label-active": "Attivo",
         "label-created-at": "Creato il",
         "label-updated-at": "Aggiornato il",
-        "image-alt": "Immagine del profilo di {name}"
+        "image-alt": "Immagine del profilo di {name}",
+        "button-disable-two-factor": "Rimuovi autenticazione a due fattori",
+        "confirm-disable-two-factor": "Rimuovere ogni secondo fattore e codice di backup da questo account, senza prova da parte del titolare? Ogni chiamata viene registrata.",
+        "success-disable-two-factor": "Autenticazione a due fattori rimossa da questo account."
     },
     "user-create-page": {
         "page-title": "Crea utente",

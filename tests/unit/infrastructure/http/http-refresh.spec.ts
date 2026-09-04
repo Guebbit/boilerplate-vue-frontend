@@ -43,7 +43,9 @@ const EXCLUDED_PATHS = [
     '/account/signup',
     '/account/reset',
     '/account/reset-confirm',
-    '/account/logout-all'
+    '/account/logout-all',
+    '/account/login/2fa',
+    '/account/login/2fa/send'
 ];
 
 /**
@@ -231,6 +233,20 @@ describe('401 refresh flow', () => {
                 .then(() => {
                     expect(document.cookie).toContain('isAuth=true');
                 }));
+
+        /**
+         * Single-flight: two 401s in the same tick must not race the refresh cookie against
+         * itself with two `GET /account/refresh` calls.
+         */
+        it('shares one refresh call between two 401s that arrive together', () =>
+            loadHttp().then(({ orvalMutator }) =>
+                Promise.all([
+                    orvalMutator({ url: '/orders', method: 'GET' }),
+                    orvalMutator({ url: '/orders', method: 'GET' })
+                ]).then(() => {
+                    expect(timesRequested('GET /account/refresh')).toBe(1);
+                })
+            ));
     });
 
     describe('when the refresh does not produce a usable token', () => {

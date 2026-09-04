@@ -21,14 +21,42 @@
  * Even with all five pinned, fonts and antialiasing move pixels between machines. That is why
  * `test:e2e:visual` is its own script and deliberately outside `npm run complete`: a suite that
  * answers to the machine that recorded it is a report, not a gate.
- *
+ */
+
+/** One screen to snapshot, at its default first paint or a state a `prepare` step reaches. */
+export interface VisualSweepCase {
+    /** Becomes the baseline/diff PNG's filename. */
+    name: string;
+    /** Locale-prefixed path to visit. */
+    route: string;
+    /** Selector `cy.compareSnapshot()` waits to exist before it is safe to photograph. */
+    readySelector: string;
+    /**
+     * Puts the page in the state to photograph — open a dialog, submit a form, drive a whole
+     * flow — after the content wait and before the freeze. Plain Cypress commands, enqueued in
+     * order. Absent, the screen is photographed at its first paint, same as before this existed.
+     */
+    prepare?: () => void;
+}
+
+/** The terse spelling for the common case — a route, loaded, photographed. */
+type VisualSweepEntry =
+    readonly [name: string, route: string, readySelector: string] | VisualSweepCase;
+
+const toCase = (entry: VisualSweepEntry): VisualSweepCase =>
+    Array.isArray(entry)
+        ? { name: entry[0], route: entry[1], readySelector: entry[2] }
+        : (entry as VisualSweepCase);
+
+/**
  * @param label - what this group of screens is, for the describe title
- * @param screens - `[snapshot name, path, ready selector]`; the name becomes the PNG filename
+ * @param screens - `[snapshot name, path, ready selector]` triples for a screen photographed at
+ *  its first paint, or full {@link VisualSweepCase} objects for one a `prepare` step has to reach
  * @param role - sign in as this first; omitted, the sweep runs signed out
  */
 export const sweepVisual = (
     label: string,
-    screens: readonly (readonly [name: string, route: string, readySelector: string])[],
+    screens: readonly VisualSweepEntry[],
     role?: 'user' | 'admin'
 ): void => {
     describe(`visual regression — ${label}`, () => {
@@ -46,7 +74,7 @@ export const sweepVisual = (
             if (role) cy.loginAs(role);
         });
 
-        for (const [name, route, readySelector] of screens)
+        for (const { name, route, readySelector, prepare } of screens.map((entry) => toCase(entry)))
             it(`${name} matches its baseline`, () => {
                 // Before the visit, so the page's very first fetch is counted — see the command.
                 cy.trackNetwork();
@@ -66,6 +94,8 @@ export const sweepVisual = (
                  * meaningless and never fails — the worst outcome this suite can produce.
                  */
                 cy.settleNetwork();
+
+                prepare?.();
 
                 cy.freezeForVisual();
                 cy.compareSnapshot(name);

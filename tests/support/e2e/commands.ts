@@ -132,6 +132,16 @@ declare global {
 
             /** Opens the cart through its pinned nav button, beside the account menu. */
             goToCart(): Chainable<void>;
+
+            /**
+             * Arms email as a second factor on the SIGNED-IN account, through the real profile UI
+             * — visits `/en/profile`, adds the method, reads the mailed code from the demo outbox,
+             * confirms, and clears the one-time backup-codes screen. Demo-profile only, since the
+             * code comes from `demoEmailTo`; open the caller's own `it()` with `cy.skipUnlessDemo()`.
+             *
+             * @param email - the signed-in account's own address, to look the code up by
+             */
+            enrollEmailTwoFactor(email: string): Chainable<void>;
         }
     }
 }
@@ -333,6 +343,24 @@ Cypress.Commands.add('goToCart', () => {
 Cypress.Commands.add('logout', () => {
     cy.get(MENU_ACTIVATOR.account).click();
     cy.get('[role=menu] [data-test=logout]').should('be.visible').click();
+});
+
+Cypress.Commands.add('enrollEmailTwoFactor', (email: string) => {
+    cy.visit('/en/profile');
+    cy.get('[data-test=two-factor-add-email]').click();
+    cy.get('[data-test=two-factor-enroll]').should('be.visible');
+    // `setup` just mailed the code; read it back rather than assume a fixed value.
+    cy.demoEmailTo(email).then((sent) => {
+        const codeLine = sent.lines?.find((line) => line.startsWith('code: '));
+        expect(codeLine, 'a `code:` line in the mailed 2FA variables').to.not.equal(undefined);
+        cy.get('[data-test=two-factor-enroll-code]').type(codeLine!.slice('code: '.length));
+    });
+    cy.get('[data-test=two-factor-enroll-confirm]').click();
+    // First factor: the backup codes screen blocks until it is acknowledged.
+    cy.get('[data-test=two-factor-backup-codes]').should('be.visible');
+    cy.get('[data-test=backup-codes-confirm-saved]').click();
+    cy.get('[data-test=backup-codes-continue]').click();
+    cy.get('[data-test=two-factor-backup-codes]').should('not.exist');
 });
 
 Cypress.Commands.add('loginAs', (role = 'user') => {

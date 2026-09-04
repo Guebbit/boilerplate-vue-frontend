@@ -25,6 +25,13 @@
         "api-unreachable": "The server is unreachable — showing what works offline. Retrying quietly.",
         "notifications": "Notifications"
     },
+    "reauth-dialog": {
+        "title": "Confirm it's you",
+        "intro": "This action needs a recent password check. Enter your password to continue.",
+        "label-password": "Password",
+        "button-submit": "Confirm",
+        "error-wrong-password": "That password is not right. Try again."
+    },
     "navigation": {
         "label-home": "home",
         "error-already-logged": "You are already logged",

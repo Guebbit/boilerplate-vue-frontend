@@ -9,12 +9,14 @@ import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import { useSessionStore } from '@/infrastructure/session.ts';
 import { getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
+import type { AxiosRequestConfig } from 'axios';
 import type { User } from '@types';
 import {
     getAccount as apiGetAccount,
     requestAccountDelete as apiRequestAccountDelete,
     confirmAccountDelete as apiConfirmAccountDelete,
     updateAccount as apiUpdateAccount,
+    updateAccountWithMultipart as apiUpdateAccountWithMultipart,
     changePassword as apiChangePassword,
     requestEmailVerification as apiRequestEmailVerification,
     confirmEmailVerification as apiConfirmEmailVerification,
@@ -106,27 +108,53 @@ export const useProfileStore = defineStore('accountProfile', () => {
      * record in the response carries that, so the banner appears without a refetch.
      *
      * @param userData - Fields to change; `email`, `username`, `locale`, `imageUrl`, `phone` and
-     *  `website` are sent.
+     *  `website` are sent. An `imageUpload` switches the call to `multipart/form-data` — the
+     *  `{ imageUpload, ...rest }` split `modules/users/store.ts` already has for the admin form,
+     *  one shape for both call sites. `imageUrl` and `imageUpload` are mutually exclusive in
+     *  practice: `ProfileAvatar.vue`'s remove button sends `imageUrl: ''` alone, its picker sends
+     *  `imageUpload` alone.
+     * @param options - Per-call axios overrides, forwarded to `orvalMutator` —
+     *  `ProfileAvatar.vue` passes `onUploadProgress` through it.
      * @returns A promise resolving with the updated profile, rejected with an
      *  `invalid user` error when no profile is selected.
      */
-    const updateProfile = (userData: Partial<User> = {}) => {
+    const updateProfile = (
+        { imageUpload, ...userData }: Partial<User> & { imageUpload?: File } = {},
+        options?: AxiosRequestConfig
+    ) => {
         if (!selectedIdentifier.value) return Promise.reject(new Error('invalid user'));
         return updateTarget(
             () =>
-                apiUpdateAccount({
-                    email: userData.email,
-                    username: userData.username,
-                    locale: userData.locale,
-                    imageUrl: userData.imageUrl,
-                    phone: userData.phone,
-                    website: userData.website
-                }).then((data) => {
+                (imageUpload
+                    ? apiUpdateAccountWithMultipart(
+                          {
+                              email: userData.email,
+                              username: userData.username,
+                              locale: userData.locale,
+                              imageUpload,
+                              phone: userData.phone,
+                              website: userData.website
+                          },
+                          options
+                      )
+                    : apiUpdateAccount(
+                          {
+                              email: userData.email,
+                              username: userData.username,
+                              locale: userData.locale,
+                              imageUrl: userData.imageUrl,
+                              phone: userData.phone,
+                              website: userData.website
+                          },
+                          options
+                      )
+                ).then((data) => {
                     const payload = getPayloadFromResponse<User>(data);
                     // The projection must not lag the record — same rule as fetchProfile.
                     if (payload) publishViewer(payload);
                     return data;
                 }),
+            // The new imageUrl comes back from the API; a Blob has no business in store state.
             userData,
             selectedIdentifier.value
         ).then((result) =>

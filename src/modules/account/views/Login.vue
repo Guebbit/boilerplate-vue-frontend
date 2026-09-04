@@ -7,9 +7,10 @@ export default {
 <script setup lang="ts">
 /**
  * @module
- * Login form: email/password validated against a schema built from the shared `usersSchema`,
- * plus the post-login redirect chained after the store call settles — a `?continue=` target when
- * present, or the record's saved language preference re-applied before landing on `Home`.
+ * Login form: email/password validated against a schema built from the shared `usersSchema`. A
+ * plain account redirects through `usePostLoginRedirect`; an account with two-factor armed hands
+ * the challenge to `useTwoFactorStore` and pushes `TwoFactorChallenge` instead — see the store's
+ * `LoginOutcome` for the branch this reads.
  */
 import { ref } from 'vue';
 import { RouterLink, useRouter, useRoute } from 'vue-router';
@@ -19,19 +20,19 @@ import { z } from 'zod';
 import { Eye, EyeOff } from 'lucide-vue-next';
 import { useNotificationsStore, useStructureFormValidation } from '@guebbit/vue-toolkit';
 import { useAuthStore } from '@/modules/account/stores/auth.ts';
-import { useProfileStore } from '@/modules/account/stores/profile.ts';
+import { useTwoFactorStore } from '@/modules/account/stores/two-factor.ts';
 import {
     useOAuthProvidersStore,
     oauthStartUrl,
     providerLabel
 } from '@/modules/account/stores/oauth.ts';
+import { usePostLoginRedirect } from '@/modules/account/composables/use-post-login-redirect.ts';
 import { usersSchema } from '@/modules/users';
 import LayoutDefault from '@/app/layouts/LayoutDefault.vue';
 import {
     notifyErrorMessages,
     VUETIFY_INVALID_FIELD_SELECTOR
 } from '@/infrastructure/utils/errors.ts';
-import { changeLanguage, supportedLanguages } from '@/infrastructure/i18n';
 import { routerLinkI18n } from '@/infrastructure/i18n/router-link.ts';
 import type { LoginRequest } from '@api';
 
@@ -42,6 +43,7 @@ const { t, locale } = useI18n();
 const { addMessage } = useNotificationsStore();
 const router = useRouter();
 const route = useRoute();
+const { redirectAfterLogin } = usePostLoginRedirect();
 
 /**
  * Which OAuth providers to offer, fetched once — see the store's own doc for why a later mount
@@ -98,39 +100,24 @@ const {
 /**
  * Validates the form and authenticates the user.
  *
- * @returns A promise resolving once the navigation settles: to the
- *  `?continue=` target when present, to `Home` otherwise. Invalid input is revealed, announced
- *  and focused by the toolkit before the handler is ever reached; API failures are attached to
- *  the field the server named, or reported as a toast when it named none.
+ * @returns A promise resolving once the outcome settles: a plain session redirects (see
+ *  `usePostLoginRedirect`); an account with 2FA armed hands the challenge to the two-factor store
+ *  and pushes `TwoFactorChallenge` instead. Invalid input is revealed, announced and focused by
+ *  the toolkit before the handler is ever reached; API failures are attached to the field the
+ *  server named, or reported as a toast when it named none.
  */
-const submitForm = () => {
-    const authStore = useAuthStore();
-    const profileStore = useProfileStore();
-    return handleSubmit(() =>
-        authStore
+const submitForm = () =>
+    handleSubmit(() =>
+        useAuthStore()
             .login(form.value.email, form.value.password, form.value.remember)
-            .then(() => {
-                /*
-                 * The record's language wins over the tab's: the saved preference is what this
-                 * visitor asked to read, and login is the moment their record joins the session.
-                 * A `?continue=` deep link keeps its own locale — the page it names wins — and a
-                 * record with no preference (or one this build does not speak) changes nothing.
-                 */
-                const saved = profileStore.profile?.locale;
-                const applyPreference =
-                    !route.query.continue &&
-                    typeof saved === 'string' &&
-                    saved !== locale.value &&
-                    supportedLanguages.includes(saved)
-                        ? changeLanguage(saved)
-                        : Promise.resolve();
-                return applyPreference.then(() =>
-                    // if query continue was set, redirect to that page, otherwise redirect to
-                    // home — under whichever locale is active by now
-                    route.query.continue
-                        ? router.push({ path: route.query.continue as string })
-                        : router.push(routerLinkI18n({ name: 'Home' }))
-                );
+            .then((outcome) => {
+                if (outcome?.kind === 'mfa') {
+                    useTwoFactorStore().beginLoginChallenge(outcome, form.value.remember ?? false);
+                    return router.push(
+                        routerLinkI18n({ name: 'TwoFactorChallenge', query: route.query })
+                    );
+                }
+                return redirectAfterLogin();
             })
             // Discard the NavigationFailure: handleSubmit's handler resolves with nothing
             .then(() => undefined)
@@ -138,7 +125,6 @@ const submitForm = () => {
         // A 401 names no field, so it stays a toast. A 422 that names `email` lands under it.
         if (!applyServerErrors(error)) notifyErrorMessages(addMessage, error);
     });
-};
 </script>
 
 <template>

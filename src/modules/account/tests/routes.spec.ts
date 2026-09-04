@@ -22,6 +22,7 @@ describe('account route access', () => {
     it.each([
         ['Login', 'guest'],
         ['Signup', 'guest'],
+        ['TwoFactorChallenge', 'guest'],
         ['PasswordResetRequest', 'guest'],
         ['PasswordResetConfirm', 'guest'],
         ['AccountDeleteConfirm', undefined],
@@ -40,6 +41,7 @@ describe('account route access', () => {
             [
                 'Login',
                 'Signup',
+                'TwoFactorChallenge',
                 'PasswordResetRequest',
                 'PasswordResetConfirm',
                 'AccountDeleteConfirm',

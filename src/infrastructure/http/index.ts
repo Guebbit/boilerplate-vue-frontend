@@ -10,12 +10,14 @@
  */
 import { instance } from './client.ts';
 import { onRequest, onRequestReject } from './interceptors.ts';
-import { onResponseRejectWithRefresh } from './refresh.ts';
+import { onResponseRejectWithStepUp } from './step-up.ts';
 import { shouldValidateResponses, validateResponseAgainstContract } from './validate.ts';
 import type { AxiosRequestConfig } from 'axios';
 
 instance.interceptors.request.use(onRequest, onRequestReject);
-instance.interceptors.response.use(undefined, onResponseRejectWithRefresh);
+// Step-up wraps refresh: a `REAUTH_REQUIRED` 401 has to be caught before the refresh branch would
+// "fix" it by renewing a cookie that was never the problem — see `step-up.ts`'s own module doc.
+instance.interceptors.response.use(undefined, onResponseRejectWithStepUp);
 
 /**
  * Custom orval mutator: the *only* function allowed to call the shared axios instance directly.

@@ -8,6 +8,7 @@
  * every routed module has one of these, so the split cannot quietly lose a domain.
  */
 import { sweepA11y } from '../../../../../tests/support/e2e/a11y-sweep';
+import { E2E_ACCOUNTS } from '../../../../../tests/support/e2e/accounts';
 
 /*
  * The three confirm pages take a one-time token from the email link. A token the demo outbox
@@ -38,6 +39,27 @@ sweepA11y('account — guest', [
         prepare: () => {
             cy.get('form button[type=submit]').click();
             cy.get('.v-messages__message').should('be.visible');
+        }
+    },
+    {
+        /*
+         * Reached through a REAL 2FA login, not `cy.visit('/en/login/2fa')` cold: the challenge is
+         * claim-check state the Pinia store holds in memory, not the URL, so a bare visit has
+         * nothing to show and bounces straight back to `Login`. This enrolls email 2FA on the
+         * demo user account, signs out, then signs back in through the form to reach it for real.
+         */
+        name: 'login, 2FA challenge',
+        route: '/en/login',
+        prepare: () => {
+            cy.skipUnlessDemo();
+            cy.loginAs('user');
+            cy.enrollEmailTwoFactor(E2E_ACCOUNTS.user.email);
+            cy.logout();
+            cy.visit('/en/login');
+            cy.get('[type=email]').type(E2E_ACCOUNTS.user.email);
+            cy.get('[type=password]').type(E2E_ACCOUNTS.user.password);
+            cy.get('form').submit();
+            cy.get('#two-factor-challenge-page').should('exist');
         }
     }
 ]);

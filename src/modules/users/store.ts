@@ -2,8 +2,9 @@
  * @module
  * Pinia store built on `useStructureCrudApi` for users CRUD and paginated
  * search, with a multipart branch for create/update when an avatar is
- * attached, plus one hand-written action (`hardDeleteUser`) for the
- * irreversible delete.
+ * attached, plus two hand-written actions: `hardDeleteUser` for the
+ * irreversible delete, and `adminDisableTwoFactor` for the audited,
+ * no-proof-required 2FA recovery.
  */
 import { defineStore } from 'pinia';
 import { useCoreStore, useStructureCrudApi } from '@guebbit/vue-toolkit';
@@ -17,7 +18,8 @@ import {
     updateUserById,
     updateUserByIdWithMultipart,
     deleteUserById,
-    hardDeleteUserById
+    hardDeleteUserById,
+    adminDisableUserTwoFactor as apiAdminDisableUserTwoFactor
 } from '@api';
 import type { AxiosRequestConfig } from 'axios';
 import type {
@@ -75,7 +77,8 @@ export const useUsersStore = defineStore('users', () => {
         createOne: createUser,
         updateOne: updateUser,
         deleteOne: deleteUser,
-        deleteTarget
+        deleteTarget,
+        fetchAny
     } = useStructureCrudApi<
         User,
         string,
@@ -142,6 +145,23 @@ export const useUsersStore = defineStore('users', () => {
     const hardDeleteUser = (userId: string) =>
         deleteTarget(() => hardDeleteUserById(userId), userId);
 
+    /**
+     * Strips a user's second factor with no code required — the admin-assisted recovery path for
+     * an owner who lost both their authenticator and their backup codes. Unlike every self-service
+     * 2FA mutation, no proof of the factor is asked for; every call is audited server-side, which
+     * is what makes skipping that proof safe to expose here at all.
+     *
+     * `fetchAny` rather than `deleteTarget`: nothing about the USER record is deleted, only a
+     * factor on it — `deleteTarget` would evict the record from this store's cache as if the whole
+     * user had been removed.
+     *
+     * @param userId - Identifier of the user whose 2FA is being stripped.
+     * @returns A promise resolving once the factor is gone and the record has been refetched, so
+     *  a cached `currentUser` never lags what the admin just did.
+     */
+    const adminDisableTwoFactor = (userId: string) =>
+        fetchAny(() => apiAdminDisableUserTwoFactor(userId).then(() => fetchUser(userId)));
+
     return {
         users,
         usersList,
@@ -164,6 +184,7 @@ export const useUsersStore = defineStore('users', () => {
         createUser,
         updateUser,
         deleteUser,
-        hardDeleteUser
+        hardDeleteUser,
+        adminDisableTwoFactor
     };
 });

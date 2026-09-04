@@ -8,17 +8,38 @@ import { defineStore } from 'pinia';
 import { useCoreStore, useStructureRestApi } from '@guebbit/vue-toolkit';
 import type { AxiosRequestConfig } from 'axios';
 import { useSessionStore } from '@/infrastructure/session.ts';
-import { getTokenFromResponse } from '@/infrastructure/http/envelope.ts';
+import { getTokenFromResponse, getPayloadFromResponse } from '@/infrastructure/http/envelope.ts';
 import {
     login as apiLogin,
     LoginRequestRemember,
     signup as apiSignup,
     signupWithMultipart,
     requestPasswordReset as apiRequestPasswordReset,
-    confirmPasswordReset as apiConfirmPasswordReset
+    confirmPasswordReset as apiConfirmPasswordReset,
+    reauth as apiReauth
 } from '@api';
+import type { MfaChallenge, LoginOutcome as ApiLoginOutcome } from '@api';
 import { useObservabilityStore } from '@/infrastructure/observability/store.ts';
 import { useProfileStore } from './profile.ts';
+
+/**
+ * What `login()` resolves with: a discriminated narrowing of the contract's own
+ * `AuthTokens | MfaChallenge` union. A call site branches on `kind` instead of inferring "did
+ * this establish a session" from which fields happen to be present.
+ */
+export type LoginOutcome =
+    | { kind: 'session' }
+    | {
+          kind: 'mfa';
+          /** Claim check for the half-finished login — not a code. Submit it to `/login/2fa[/send]`. */
+          challenge: string;
+          /** When the challenge stops being accepted. Count down from it; never hardcode a number. */
+          expiresAt: string;
+          /** The factors armed on this account, in the order to offer them. */
+          methods: MfaChallenge['methods'];
+          /** Which of `methods` to offer first. */
+          defaultMethod?: string;
+      };
 
 /**
  * Establishing or ending a session: login, signup, password reset, and the two ways out (this
@@ -35,28 +56,62 @@ export const useAuthStore = defineStore('accountAuth', () => {
     const { fetchAny } = useStructureRestApi({ getLoading, setLoading });
 
     /**
-     * Authenticates the user, stores the access token, flags the `isAuth`
-     * cookie and loads the profile.
+     * Authenticates the user. A plain account stores the access token, flags the `isAuth` cookie
+     * and loads the profile; an account with two-factor armed resolves with the step-up challenge
+     * instead — nothing here touches the session store on that branch, since an `MfaChallenge`
+     * response carries no token to store.
      *
      * @param email - Account email.
      * @param password - Plain-text password, sent over the wire only.
      * @param remember - The "remember me" checkbox. One checkbox, one tier: thirty days is what
      *  the phrase conventionally promises, so it maps to `medium`. Unchecked, the refresh cookie
-     *  the API sets lives only as long as an access token.
-     * @returns A promise resolving once the token is stored and the profile has
-     *  been (re)fetched.
+     *  the API sets lives only as long as an access token. Dropped by the backend on the 2FA path
+     *  regardless of this value — see `TwoFactorChallenge.vue`.
+     * @returns A promise resolving with the {@link LoginOutcome}, or `undefined` on the rare path
+     *  where `fetchAny` swallows the call (an overlapping in-flight request); a call site treats
+     *  that the same as `'session'`, matching what this action always did before it returned
+     *  anything meaningful.
      */
     const login = (email: string, password: string, remember = false) =>
-        fetchAny(() =>
+        fetchAny<LoginOutcome>(() =>
             apiLogin({
                 email,
                 password,
                 remember: remember ? LoginRequestRemember.medium : undefined
+            }).then((data) => {
+                const payload = getPayloadFromResponse<ApiLoginOutcome>(data);
+                // `in` rather than a property read: `AuthTokens` carries no `mfaRequired` field at
+                // all, so the union needs a guard TS can narrow on rather than an optional access.
+                if (payload && 'mfaRequired' in payload)
+                    return {
+                        kind: 'mfa',
+                        challenge: payload.challenge,
+                        expiresAt: payload.expiresAt,
+                        methods: payload.methods,
+                        defaultMethod: payload.defaultMethod
+                    } as const;
+
+                session.setAccessToken(getTokenFromResponse(data), remember);
+                return useProfileStore()
+                    .fetchProfile(true)
+                    .then(() => ({ kind: 'session' }) as const);
             })
-                .then((data) => {
-                    session.setAccessToken(getTokenFromResponse(data), remember);
-                })
-                .then(() => useProfileStore().fetchProfile(true))
+        );
+
+    /**
+     * Re-proves the caller's password to answer a `REAUTH_REQUIRED` 401, without ending the
+     * session. Adopts the rotated access token exactly as {@link changePassword} in
+     * `stores/profile.ts` does after a password change — dropping it would leave the stale token
+     * in the store, and the request the step-up interceptor is about to replay would 401 again.
+     *
+     * @param password - The credential being re-proven.
+     * @returns A promise resolving once the fresh token is stored.
+     */
+    const reauth = (password: string) =>
+        fetchAny(() =>
+            apiReauth({ password }).then((data) => {
+                session.setAccessToken(getTokenFromResponse(data));
+            })
         );
 
     /**
@@ -179,6 +234,7 @@ export const useAuthStore = defineStore('accountAuth', () => {
 
     return {
         login,
+        reauth,
         signup,
         requestPasswordReset,
         confirmPasswordReset,

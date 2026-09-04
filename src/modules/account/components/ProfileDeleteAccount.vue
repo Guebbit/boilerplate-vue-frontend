@@ -8,7 +8,9 @@ export default {
 /**
  * @module
  * Account-deletion trigger: a single confirm-then-request action chained through the app's
- * shared confirmation dialog before it calls the store.
+ * shared confirmation dialog before it calls the store. Self-wrapped in its own card, like its
+ * siblings in the bottom grid (`ProfileSessions`, `ProfileAddresses`) — the most destructive
+ * control on the page, moved out of the panels above it rather than sharing their card.
  */
 import { useI18n } from 'vue-i18n';
 import { useNotificationsStore } from '@guebbit/vue-toolkit';
@@ -41,9 +43,9 @@ const handleDeleteAccount = () =>
 </script>
 
 <template>
-    <v-divider class="my-6" />
-
-    <v-btn color="error" variant="tonal" block @click="handleDeleteAccount">
-        {{ t('profile-page.button-delete-account') }}
-    </v-btn>
+    <v-card class="p-8" data-test="profile-delete-account">
+        <v-btn color="error" variant="tonal" block @click="handleDeleteAccount">
+            {{ t('profile-page.button-delete-account') }}
+        </v-btn>
+    </v-card>
 </template>
