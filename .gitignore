@@ -55,6 +55,11 @@ coverage
 *.tsbuildinfo
 .claude
 
+# The optional symlink that exposes tests/audit/*.md as Claude Code slash commands — see
+# docs/tools/ai-auditing.md. The prompts themselves are versioned; this is one developer's
+# convenience, regenerable with a single ln -s.
+/.claude/commands/audit
+
 # graphify (code-graph tool) cache — generated, never committed
 graphify-out/
 

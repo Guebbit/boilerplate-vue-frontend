@@ -138,6 +138,20 @@ No assertions live here.
 | `tests/support/e2e/visual-sweep.ts`                 | The reusable screenshot-and-compare pass.                                                                                                                                                                                                                                                                                         | [Visual Regression](../tools/visual-regression.md)         |
 | `tests/support/e2e/visual-task.ts`                  | The Node-side task behind it — image comparison cannot run in the browser.                                                                                                                                                                                                                                                        | [Visual Regression](../tools/visual-regression.md)         |
 
+## `tests/audit/` — the prompts Vitest never runs
+
+The one directory here no runner touches. These are markdown prompts driven by hand against an LLM,
+covering the question no deterministic tool can reach: does the code do what the **docs** promise?
+They write reports to `reports/audit/` — gitignored, disposable — and never touch source.
+
+| File                         | What it is                                                                                          | Read next                              |
+| ---------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `tests/audit/spec-drift.md`  | The two-pass audit: freeze spec-derived expectations, then hunt tests that assert the code instead. | [AI Auditing](../tools/ai-auditing.md) |
+| `tests/audit/spec-gaps.md`   | Business rules and security boundaries with zero coverage.                                          | [AI Auditing](../tools/ai-auditing.md) |
+| `tests/audit/suite-bloat.md` | Near-duplicate tests that cost CI time and discriminate nothing.                                    | [AI Auditing](../tools/ai-auditing.md) |
+
+The same three files live in `boilerplate-node-backend` and are kept identical by hand.
+
 ## Co-located module tests
 
 | Pattern                                       | What it is                                                                                                                                                                                                                                                 | Read next                                          |
