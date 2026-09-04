@@ -2592,6 +2592,36 @@ export const ConfirmTwoFactorMethodResponse = zod.strictObject({
 });
 
 /**
+ * Mints a fresh set of ten one-time backup codes and discards whatever was left of the old set — the answer to burning through them with no way back in short of admin-assisted recovery. Requires a valid code from any armed method, or an unused backup code, on top of the route's own fresh-auth requirement, same reasoning as disabling a factor.
+ * @summary Regenerate backup codes
+ */
+export const RegenerateBackupCodesBody = zod.strictObject({
+    code: zod
+        .string()
+        .describe(
+            'A code from any armed method, or an unused backup code. Used to prove the factor being removed — or the account it protects — really belongs to the caller.'
+        )
+});
+
+export const RegenerateBackupCodesResponse = zod.strictObject({
+    success: zod.literal(true),
+    status: zod.number(),
+    message: zod.string(),
+    data: zod.strictObject({
+        backupCodes: zod
+            .array(zod.string())
+            .describe(
+                "The account's new one-time recovery codes, in the clear, shown exactly once — the old set no longer verifies."
+            ),
+        backupCodesRemaining: zod
+            .number()
+            .describe(
+                'How many unused backup codes the account now holds — `BACKUP_CODE_COUNT`, fresh off a regenerate.'
+            )
+    })
+});
+
+/**
  * The OAuth providers this deployment holds credentials for — an empty list means none are configured. The frontend uses this to decide which "Continue with…" buttons to render.
  * @summary List enabled OAuth providers
  */

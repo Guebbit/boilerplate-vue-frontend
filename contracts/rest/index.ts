@@ -1321,6 +1321,20 @@ export interface TwoFactorConfirmEnvelope {
     data: TwoFactorConfirmed;
 }
 
+export interface TwoFactorBackupCodesRegenerated {
+    /** The account's new one-time recovery codes, in the clear, shown exactly once — the old set no longer verifies. */
+    backupCodes: string[];
+    /** How many unused backup codes the account now holds — `BACKUP_CODE_COUNT`, fresh off a regenerate. */
+    backupCodesRemaining: number;
+}
+
+export interface TwoFactorBackupCodesRegeneratedEnvelope {
+    success: EnvelopeSuccess;
+    status: EnvelopeStatus;
+    message: EnvelopeMessage;
+    data: TwoFactorBackupCodesRegenerated;
+}
+
 export interface OAuthProviders {
     /** Registry names this deployment holds credentials for, e.g. `["google", "github"]`. */
     providers: string[];
@@ -3356,6 +3370,25 @@ export const confirmTwoFactorMethod = (
 };
 
 /**
+ * Mints a fresh set of ten one-time backup codes and discards whatever was left of the old set — the answer to burning through them with no way back in short of admin-assisted recovery. Requires a valid code from any armed method, or an unused backup code, on top of the route's own fresh-auth requirement, same reasoning as disabling a factor.
+ * @summary Regenerate backup codes
+ */
+export const regenerateBackupCodes = (
+    twoFactorCodeRequest: TwoFactorCodeRequest,
+    options?: SecondParameter<typeof orvalMutator<TwoFactorBackupCodesRegeneratedEnvelope>>
+) => {
+    return orvalMutator<TwoFactorBackupCodesRegeneratedEnvelope>(
+        {
+            url: `/account/2fa/backup-codes`,
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            data: twoFactorCodeRequest
+        },
+        options
+    );
+};
+
+/**
  * The OAuth providers this deployment holds credentials for — an empty list means none are configured. The frontend uses this to decide which "Continue with…" buttons to render.
  * @summary List enabled OAuth providers
  */
@@ -4751,6 +4784,9 @@ export type SetupTwoFactorMethodResult = NonNullable<
 >;
 export type ConfirmTwoFactorMethodResult = NonNullable<
     Awaited<ReturnType<typeof confirmTwoFactorMethod>>
+>;
+export type RegenerateBackupCodesResult = NonNullable<
+    Awaited<ReturnType<typeof regenerateBackupCodes>>
 >;
 export type ListOAuthProvidersResult = NonNullable<Awaited<ReturnType<typeof listOAuthProviders>>>;
 export type StartOAuthLoginResult = NonNullable<Awaited<ReturnType<typeof startOAuthLogin>>>;
