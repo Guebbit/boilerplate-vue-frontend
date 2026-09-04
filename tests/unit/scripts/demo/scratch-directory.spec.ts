@@ -1,5 +1,5 @@
 /**
- * `scripts/backend-demo-scratch-directory.ts` — the scratch directory a spawned demo backend writes its Mongo under.
+ * `scripts/demo/scratch-directory.ts` — the scratch directory a spawned demo backend writes its Mongo under.
  *
  * Four properties: it exists on disk and not under `os.tmpdir()` (the tmpfs this file exists to
  * keep clear), it is short enough for the Unix socket `tsx` opens under it, removing it takes
@@ -14,7 +14,7 @@ import path from 'node:path';
 import {
     createDemoScratchDirectory,
     removeDemoScratchDirectory
-} from '../../../scripts/backend-demo-scratch-directory';
+} from '../../../../scripts/demo/scratch-directory';
 
 /**
  * A pid that is certainly not running: `spawnSync` blocks until the child has been waited for, so

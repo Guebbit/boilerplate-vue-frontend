@@ -1,7 +1,7 @@
 /**
  * The five places that must agree about which Cypress specs exist.
  *
- * Three of them import `scripts/cypress-spec-globs.ts` and are true by construction. `package.json`
+ * Three of them import `scripts/e2e/cypress-spec-globs.ts` and are true by construction. `package.json`
  * cannot import anything, so its five `--spec` arguments are checked here instead — by resolving
  * them against the real filesystem and comparing the file sets, not by comparing the strings.
  * Comparing strings would pass on two spellings that mean different things, which is the whole
@@ -23,9 +23,9 @@ import {
     ALL_SPEC_GLOBS,
     FUNCTIONAL_SPEC_GLOBS,
     VISUAL_SPEC_GLOBS
-} from '../../../scripts/cypress-spec-globs';
+} from '../../../../scripts/e2e/cypress-spec-globs';
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
 
 /** The files a comma-separated `--spec` argument, or a glob list, actually resolves to. */
 const resolve = (globs: string[]): string[] =>
@@ -98,7 +98,7 @@ const codeLinesOf = (file: string): string[] =>
         .filter((line) => !/^\s*(\/\/|\/?\*)/.test(line));
 
 describe('nothing spells the spec set by hand', () => {
-    it.each(['cypress.config.ts', 'eslint.config.ts', 'scripts/run-e2e-shards.ts'])(
+    it.each(['cypress.config.ts', 'eslint.config.ts', 'scripts/e2e/run-shards.ts'])(
         '%s reads the constant instead of inlining a glob',
         (file) => {
             const lines = codeLinesOf(file);

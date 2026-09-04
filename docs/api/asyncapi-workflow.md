@@ -65,11 +65,11 @@ import { REALTIME_SSE_EVENT_NAMES } from '@types';
 
 ## Tooling used here
 
-| Tool                                        | Job                                                                   |
-| ------------------------------------------- | --------------------------------------------------------------------- |
-| `@asyncapi/cli`                             | validates `asyncapi.yaml` (`npm run lint:asyncapi`)                   |
-| `@asyncapi/modelina`                        | generates TypeScript types from AsyncAPI schemas                      |
-| custom `scripts/generate-asyncapi-types.ts` | runs modelina + appends the channel constants and the SSE payload map |
+| Tool                                                  | Job                                                                   |
+| ----------------------------------------------------- | --------------------------------------------------------------------- |
+| `@asyncapi/cli`                                       | validates `asyncapi.yaml` (`npm run lint:asyncapi`)                   |
+| `@asyncapi/modelina`                                  | generates TypeScript types from AsyncAPI schemas                      |
+| custom `scripts/contracts/generate-asyncapi-types.ts` | runs modelina + appends the channel constants and the SSE payload map |
 
 ## Commands
 
@@ -81,20 +81,20 @@ npm run check:asyncapi-types  # fail if the committed types are not what asyncap
 
 ## Shared with the backend
 
-`scripts/generate-asyncapi-types.ts` is **byte-identical** to the one in `boilerplate-node-backend`, and
+`scripts/contracts/generate-asyncapi-types.ts` is **byte-identical** to the one in `boilerplate-node-backend`, and
 both write the same path:
 
-| Repo     | Command                                                                        | Reads                                         |
-| -------- | ------------------------------------------------------------------------------ | --------------------------------------------- |
-| Frontend | `tsx scripts/generate-asyncapi-types.ts --out src/types/asyncapi.generated.ts` | this repo's `asyncapi.yaml` — the shared half |
-| Backend  | `tsx scripts/generate-asyncapi-types.ts --out src/types/asyncapi.generated.ts` | its own `asyncapi.yaml` — every channel       |
+| Repo     | Command                                                                                  | Reads                                         |
+| -------- | ---------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Frontend | `tsx scripts/contracts/generate-asyncapi-types.ts --out src/types/asyncapi.generated.ts` | this repo's `asyncapi.yaml` — the shared half |
+| Backend  | `tsx scripts/contracts/generate-asyncapi-types.ts --out src/types/asyncapi.generated.ts` | its own `asyncapi.yaml` — every channel       |
 
 The script is the same, the INPUT is not — so the two outputs differ, and are meant to: only the
 backend's carries `EmailJobPayload`, `PdfJobPayload` and `WORKER_CHANNELS`. Everything this repo's
 does carry, it carries identically, because the shared half of the spec is one document copied
 across.
 
-`asyncapi.yaml` and this script are in `SHARED_FILES` (`scripts/spec-identity.ts`), so
+`asyncapi.yaml` and this script are in `SHARED_FILES` (`scripts/pairing/spec-identity.ts`), so
 `check:spec-identity` fails on the commit that forks either. **The generated outputs are not**, and
 deliberately: they legitimately differ now, and even where they overlap a cross-repo comparison
 would only re-ask a question the two entries above already answer, at the price of carrying another

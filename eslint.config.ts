@@ -11,7 +11,7 @@ import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 import tseslint from 'typescript-eslint';
 import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { ALL_SPEC_GLOBS } from './scripts/cypress-spec-globs';
+import { ALL_SPEC_GLOBS } from './scripts/e2e/cypress-spec-globs';
 
 /**
  * Which siblings a module may reach at all, hand-maintained rather than declared per module.

@@ -1,11 +1,16 @@
 /**
- * `scripts/run-e2e-shards.ts`'s LPT balancer — the one piece of real algorithmic content among
+ * `scripts/e2e/run-shards.ts`'s LPT balancer — the one piece of real algorithmic content among
  * `scripts/`'s process-orchestration files, and the only one worth unit testing in isolation.
  * Driven against small hand-built duration tables rather than the real `SECONDS`, so the
  * properties under test stay legible independent of whatever the measured numbers happen to be.
  */
 import { describe, it, expect } from 'vitest';
-import { SECONDS, weighSpecs, balanceShards, type Spec } from '../../../scripts/e2e-shard-balancer';
+import {
+    SECONDS,
+    weighSpecs,
+    balanceShards,
+    type Spec
+} from '../../../../scripts/e2e/shard-balancer';
 
 const spec = (file: string, key = file): Spec => ({ file, key });
 

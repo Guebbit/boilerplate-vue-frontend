@@ -11,11 +11,8 @@
  * See `resolveBackendDemoCommand`.
  */
 import { spawn } from 'node:child_process';
-import { resolveBackendDemoCommand } from './paired-backend-path';
-import {
-    createDemoScratchDirectory,
-    removeDemoScratchDirectory
-} from './backend-demo-scratch-directory';
+import { resolveBackendDemoCommand } from '../pairing/paired-backend-path';
+import { createDemoScratchDirectory, removeDemoScratchDirectory } from './scratch-directory';
 
 /*
  * `.env` into `process.env` before the command is resolved — Node's own loader, as

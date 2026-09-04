@@ -91,7 +91,7 @@ Nothing needs rescoping to add one: `src/modules/<name>/tests/` is already outsi
 `tsconfig.app.json`, the Vitest `include`, the coverage `include` and the Stryker `mutate` list.
 `tsconfig.cypress.json` claims the `e2e/` folder (so the specs get Cypress' ambient types rather
 than the app's), `tsconfig.vitest.json` excludes it, and both `cypress.config.ts` and
-`scripts/run-e2e-shards.ts` discover the two homes by glob rather than by list.
+`scripts/e2e/run-shards.ts` discover the two homes by glob rather than by list.
 
 `cart` is the reference — it has one of everything, including the `domain/` folder that nothing may
 import a framework into.

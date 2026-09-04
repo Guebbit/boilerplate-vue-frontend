@@ -3,9 +3,9 @@
  *
  * The set is spelled in five places that cannot import from each other's world: this repo's
  * `cypress.config.ts` (`specPattern`), `eslint.config.ts` (which parser claims a file),
- * `scripts/run-e2e-shards.ts` (what the default gate schedules), and five `--spec` arguments in
+ * `scripts/e2e/run-shards.ts` (what the default gate schedules), and five `--spec` arguments in
  * `package.json`. Three of them read the constants below; `package.json` cannot import anything, so
- * `tests/unit/scripts/cypress-spec-globs.spec.ts` asserts its strings resolve to the same files instead.
+ * `tests/unit/scripts/e2e/cypress-spec-globs.spec.ts` asserts its strings resolve to the same files instead.
  *
  * Getting this wrong is silent in the direction that matters. Cypress INTERSECTS `--spec` with
  * `specPattern`, so a spec outside the pattern cannot be run even when named explicitly — and a

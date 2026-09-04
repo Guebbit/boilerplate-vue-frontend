@@ -1,5 +1,5 @@
 /**
- * `scripts/spec-identity.ts` — the cross-repo contract check.
+ * `scripts/pairing/spec-identity.ts` — the cross-repo contract check.
  *
  * Three separate things are worth testing here, and only one of them is the comparison logic:
  *
@@ -24,7 +24,7 @@
  * to the check is covered by every case below without touching this file — and, more to the
  * point, cannot be added *without* being covered.
  *
- * Mirrors `tests/unit/scripts/spec-identity.test.ts` in the backend, apart from section 2.
+ * Mirrors `tests/unit/scripts/pairing/spec-identity.test.ts` in the backend, apart from section 2.
  */
 import { describe, it, expect, afterAll } from 'vitest';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -41,8 +41,8 @@ import {
     fingerprint,
     sharedFileProblems,
     type RepoRole
-} from '../../../scripts/spec-identity';
-import { resolveBackendPath } from '../../../scripts/paired-backend-path';
+} from '../../../../scripts/pairing/spec-identity';
+import { resolveBackendPath } from '../../../../scripts/pairing/paired-backend-path';
 
 /** Builds a throwaway repo root holding the named files with the given contents. */
 const makeRoot = (files: Record<string, string>): string => {

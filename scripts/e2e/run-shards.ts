@@ -40,13 +40,10 @@ import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { globSync } from 'node:fs';
 import path from 'node:path';
-import { resolveBackendDemoCommand } from './paired-backend-path';
-import {
-    createDemoScratchDirectory,
-    removeDemoScratchDirectory
-} from './backend-demo-scratch-directory';
+import { resolveBackendDemoCommand } from '../pairing/paired-backend-path';
+import { createDemoScratchDirectory, removeDemoScratchDirectory } from '../demo/scratch-directory';
 import { FUNCTIONAL_SPEC_GLOBS } from './cypress-spec-globs';
-import { SECONDS, weighSpecs, balanceShards } from './e2e-shard-balancer';
+import { SECONDS, weighSpecs, balanceShards } from './shard-balancer';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..');
 

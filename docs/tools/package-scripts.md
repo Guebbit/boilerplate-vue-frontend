@@ -69,7 +69,7 @@ Generated output is committed. CI regenerates and fails if the result differs, s
 
 `openapi.yaml` and `asyncapi.yaml` are **owned by the backend** and arrive here through its `npm run sync:frontend`. Nothing in this repo produces them; `check:spec-identity` fails if they drift. So the sequence across the pair is: backend `npm run regenerate` → commit → pull here → `npm run regenerate` here.
 
-Those two are the whole list — `SHARED_FILES` in the backend's `scripts/spec-identity.ts` is what both the copy and the gate read. The backend's `db/demo/demo-data.json` is **not** on it: this repo keeps no copy, and the e2e suites seed from the backend's own fixtures instead.
+Those two are the whole list — `SHARED_FILES` in the backend's `scripts/pairing/spec-identity.ts` is what both the copy and the gate read. The backend's `db/demo/demo-data.json` is **not** on it: this repo keeps no copy, and the e2e suites seed from the backend's own fixtures instead.
 
 ## Docs scripts
 

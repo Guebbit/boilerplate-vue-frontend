@@ -177,7 +177,7 @@ A run re-executes the unit suite once per mutant. `.github/workflows/mutation.ym
 
 ## Concurrency
 
-`stryker.config.json`'s `concurrency` is only the **fallback** for a bare `npx stryker run`. `npm run test:mutation` goes through `scripts/run-mutation-tests.ts`, which reads `STRYKER_CONCURRENCY` from `.env` and passes it as `--concurrency` — and an explicit CLI flag always wins over the value in the file. The number is a property of the machine, not the project, which is why it lives in `.env` rather than the committed config.
+`stryker.config.json`'s `concurrency` is only the **fallback** for a bare `npx stryker run`. `npm run test:mutation` goes through `scripts/mutation/run-tests.ts`, which reads `STRYKER_CONCURRENCY` from `.env` and passes it as `--concurrency` — and an explicit CLI flag always wins over the value in the file. The number is a property of the machine, not the project, which is why it lives in `.env` rather than the committed config.
 
 ## Why a run is slow — static mutants
 
@@ -346,7 +346,7 @@ The three outcomes are different findings, and the columns keep them apart:
 
 Stryker's own thresholds are **global** — `high`, `low`, `break`, and nothing else. That is the same pooling failure that directory-shaped coverage thresholds have: a strong file carries a weak one, and the number that passes is an average nobody can act on. It gets worse as `mutate` widens, not better.
 
-So `mutation-baseline.json` records a score **per file**, and `scripts/check-mutation-baseline.ts` compares each run against it. It currently holds **69 files**, recorded 2026-08-18:
+So `mutation-baseline.json` records a score **per file**, and `scripts/mutation/check-baseline.ts` compares each run against it. It currently holds **69 files**, recorded 2026-08-18:
 
 - a file that drops below its recorded score **fails**;
 - a file that improves has its baseline **rewritten upward**, locking the gain in;
@@ -387,10 +387,10 @@ After that the rule is: raise `break` when a score **sustains** a higher band; n
 | Path                                 | Contents                                                                                |
 | ------------------------------------ | --------------------------------------------------------------------------------------- |
 | `stryker.config.json`                | Scope (`mutate`), the Vitest runner config, thresholds, concurrency fallback, reporters |
-| `scripts/run-mutation-tests.ts`      | Entry point for `npm run test:mutation`; reads `STRYKER_CONCURRENCY` from `.env`        |
+| `scripts/mutation/run-tests.ts`      | Entry point for `npm run test:mutation`; reads `STRYKER_CONCURRENCY` from `.env`        |
 | `mutation-baseline.json`             | Per-file scores. Committed. The ratchet's memory. Absent until the first run.           |
-| `scripts/mutation-baseline.ts`       | Ratchet logic — scoring, comparison, the "never lower" rule                             |
-| `scripts/check-mutation-baseline.ts` | CLI for the two commands below                                                          |
+| `scripts/mutation/baseline.ts`       | Ratchet logic — scoring, comparison, the "never lower" rule                             |
+| `scripts/mutation/check-baseline.ts` | CLI for the two commands below                                                          |
 | `.github/workflows/mutation.yml`     | Nightly schedule + dispatch, uploads the report even on failure                         |
 | `reports/mutation/index.html`        | Human-readable report (generated per run)                                               |
 | `reports/mutation/mutation.json`     | Machine-readable report the ratchet reads                                               |

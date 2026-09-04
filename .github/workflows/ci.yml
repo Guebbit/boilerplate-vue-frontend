@@ -359,7 +359,7 @@ jobs:
         # The cross-repo contract gate.
         #
         # Two files exist in BOTH repos, byte-identical — the REST contract and the shared half
-        # of the async contract. `scripts/spec-identity.ts` holds the list and says, per entry,
+        # of the async contract. `scripts/pairing/spec-identity.ts` holds the list and says, per entry,
         # what a fork of it would break — and, for what is deliberately absent, why comparing an
         # OUTPUT of a compared input would add nothing.
         #
@@ -428,7 +428,7 @@ jobs:
         # nothing is composed — `test-e2e-live` below is the job that attaches the real datastores,
         # and when the two disagree it wins. See docs/tools/demo-profile.md.
         #
-        # The sibling checkout is what `scripts/run-e2e-shards.ts` boots, so this job needs it as much
+        # The sibling checkout is what `scripts/e2e/run-shards.ts` boots, so this job needs it as much
         # as `spec-identity` above does — with its dependencies installed, since the demo profile
         # runs through tsx.
         runs-on: ubuntu-latest
@@ -436,7 +436,7 @@ jobs:
         permissions:
             contents: read
         env:
-            # Where the backend checkout lands, and what scripts/paired-backend-path.ts resolves. Same
+            # Where the backend checkout lands, and what scripts/pairing/paired-backend-path.ts resolves. Same
             # name and same value as e2e-live.yml, so the two e2e jobs describe one layout.
             BACKEND_PATH: .backend
             # How the shard runner boots each demo backend. There is no default in the code —

@@ -78,7 +78,7 @@ export const compareSnapshot = (options: CompareOptions): CompareResult => {
     /*
      * `__snapshots__` beside the spec. Resolved here rather than in the browser because only Node
      * can touch the filesystem, and `process.cwd()` is the repo root for anything `npm run` starts
-     * — the same assumption `scripts/report-test-results.ts` makes.
+     * — the same assumption `scripts/testing/report-results.ts` makes.
      */
     const baselineDirectory = path.join(process.cwd(), path.dirname(specRelative), '__snapshots__');
     const baselinePath = path.join(baselineDirectory, `${name}.png`);

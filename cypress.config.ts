@@ -20,8 +20,8 @@
 import { defineConfig } from 'cypress';
 import { loadEnv } from 'vite';
 import path from 'node:path';
-import { resolveBackendPath, resolveLiveResetCommand } from './scripts/paired-backend-path';
-import { ALL_SPEC_GLOBS } from './scripts/cypress-spec-globs';
+import { resolveBackendPath, resolveLiveResetCommand } from './scripts/pairing/paired-backend-path';
+import { ALL_SPEC_GLOBS } from './scripts/e2e/cypress-spec-globs';
 import { compareSnapshot } from './tests/support/e2e/visual-task';
 import { recordA11yViolations } from './tests/support/e2e/a11y-task';
 import { adminApi } from './tests/support/e2e/admin-api-task';
@@ -30,7 +30,7 @@ import type { A11yRecordRequest } from './tests/support/e2e/a11y-task';
 /*
  * `.env` into `process.env`, before anything below reads it. `loadEnv` answers with the file's
  * contents but does not export them, and `resolveBackendPath()`/`resolveLiveResetCommand()` read
- * the real environment — the same pair `scripts/check-spec-identity.ts` uses, so both agree about
+ * the real environment — the same pair `scripts/pairing/check-spec-identity.ts` uses, so both agree about
  * which backend a checkout is paired with. Node's own loader; a missing `.env` is not an error,
  * because CI passes these as real variables.
  */
@@ -64,7 +64,7 @@ export default defineConfig({
      */
     retries: { runMode: 1, openMode: 0 },
     // `test:e2e:live` runs all specs in ONE Cypress process against one shared backend — it
-    // cannot shard the way the demo profile does (see `scripts/run-e2e-shards.ts`), because
+    // cannot shard the way the demo profile does (see `scripts/e2e/run-shards.ts`), because
     // sharding would mean several browsers mutating the same live data at once. Without these,
     // a long single-session run accumulates DOM snapshots and browser state until Cypress's own
     // V8 heap aborts (`trap invalid opcode` in dmesg) partway through — `numTestsKeptInMemory`
@@ -196,12 +196,12 @@ export default defineConfig({
             // Only used by the live profile: `cy.resetState()` shells out to this checkout's
             // `host -- db:seed:reset` to restore the seed dataset between tests. `BACKEND_PATH` env
             // override, or a sibling-checkout default, always resolved to an absolute path — see
-            // scripts/paired-backend-path.ts, shared with scripts/check-spec-identity.ts so the two can
+            // scripts/pairing/paired-backend-path.ts, shared with scripts/pairing/check-spec-identity.ts so the two can
             // never silently disagree about which backend they mean.
             backendPath: resolveBackendPath(),
             // Only used by the live profile: the command `cy.resetState()` shells out to. The two
             // paired backends expose the reset through different runners, so this is a command
-            // rather than a script name — see scripts/paired-backend-path.ts. `null` when
+            // rather than a script name — see scripts/pairing/paired-backend-path.ts. `null` when
             // LIVE_RESET_COMMAND is unset, and then the live profile does not reset at all.
             liveResetCommand: resolveLiveResetCommand() ?? null,
             /*

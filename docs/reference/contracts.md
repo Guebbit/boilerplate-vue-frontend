@@ -55,7 +55,7 @@ regeneration, and the diff will look like the backend broke something.
 
 ## Keeping the pair in step
 
-`scripts/spec-identity.ts` holds the files that must be byte-identical in both checkouts, and
+`scripts/pairing/spec-identity.ts` holds the files that must be byte-identical in both checkouts, and
 `npm run check:spec-identity` is what enforces it. The membership test is not "are these the same
 today" but **"does a fork cause a silent bug?"** — everything on the list fails quietly, with both
 sides building and passing their own suites.
