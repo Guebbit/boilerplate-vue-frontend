@@ -1385,6 +1385,9 @@ export const changePasswordBodyCurrentPasswordMin = 8;
 
 export const changePasswordBodyPasswordMin = 8;
 
+export const changePasswordBodyPasswordRegExp = new RegExp(
+    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
+);
 export const changePasswordBodyPasswordConfirmMin = 8;
 
 export const ChangePasswordBody = zod.strictObject({
@@ -1397,6 +1400,7 @@ export const ChangePasswordBody = zod.strictObject({
     password: zod
         .string()
         .min(changePasswordBodyPasswordMin)
+        .regex(changePasswordBodyPasswordRegExp)
         .describe(
             "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
         ),
@@ -1803,6 +1807,9 @@ export const signupBodyUsernameMin = 3;
 
 export const signupBodyPasswordMin = 8;
 
+export const signupBodyPasswordRegExp = new RegExp(
+    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
+);
 export const signupBodyPasswordConfirmMin = 8;
 
 export const SignupBody = zod.strictObject({
@@ -1811,6 +1818,7 @@ export const SignupBody = zod.strictObject({
     password: zod
         .string()
         .min(signupBodyPasswordMin)
+        .regex(signupBodyPasswordRegExp)
         .describe(
             "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
         ),
@@ -1893,6 +1901,9 @@ export const RequestPasswordResetResponse = zod.strictObject({
  */
 export const confirmPasswordResetBodyPasswordMin = 8;
 
+export const confirmPasswordResetBodyPasswordRegExp = new RegExp(
+    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
+);
 export const confirmPasswordResetBodyPasswordConfirmMin = 8;
 
 export const ConfirmPasswordResetBody = zod.strictObject({
@@ -1900,6 +1911,7 @@ export const ConfirmPasswordResetBody = zod.strictObject({
     password: zod
         .string()
         .min(confirmPasswordResetBodyPasswordMin)
+        .regex(confirmPasswordResetBodyPasswordRegExp)
         .describe(
             "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
         ),
@@ -2736,6 +2748,9 @@ export const ListUsersResponse = zod.strictObject({
  */
 export const createUserBodyPasswordMin = 8;
 
+export const createUserBodyPasswordRegExp = new RegExp(
+    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
+);
 export const createUserBodySendSetupEmailDefault = false;
 export const createUserBodyActiveDefault = true;
 export const createUserBodyLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
@@ -2746,6 +2761,7 @@ export const CreateUserBody = zod.strictObject({
     password: zod
         .string()
         .min(createUserBodyPasswordMin)
+        .regex(createUserBodyPasswordRegExp)
         .optional()
         .describe(
             "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
@@ -2817,6 +2833,9 @@ export const CreateUserResponse = zod.strictObject({
  */
 export const updateUserBodyPasswordMin = 8;
 
+export const updateUserBodyPasswordRegExp = new RegExp(
+    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
+);
 export const updateUserBodyLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
 export const UpdateUserBody = zod.strictObject({
@@ -2826,6 +2845,7 @@ export const UpdateUserBody = zod.strictObject({
     password: zod
         .string()
         .min(updateUserBodyPasswordMin)
+        .regex(updateUserBodyPasswordRegExp)
         .optional()
         .describe(
             "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."
@@ -2979,6 +2999,9 @@ export const UpdateUserByIdParams = zod.strictObject({
 
 export const updateUserByIdBodyPasswordMin = 8;
 
+export const updateUserByIdBodyPasswordRegExp = new RegExp(
+    '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\dA-Za-z]).{8,}$'
+);
 export const updateUserByIdBodyLocaleRegExp = new RegExp('^[a-z]{2}(-[A-Za-z0-9]+)*$');
 
 export const UpdateUserByIdBody = zod.strictObject({
@@ -2986,6 +3009,7 @@ export const UpdateUserByIdBody = zod.strictObject({
     password: zod
         .string()
         .min(updateUserByIdBodyPasswordMin)
+        .regex(updateUserByIdBodyPasswordRegExp)
         .optional()
         .describe(
             "A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form."

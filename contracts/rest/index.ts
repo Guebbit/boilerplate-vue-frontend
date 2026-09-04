@@ -55,6 +55,7 @@ export type Password = string;
 /**
  * A password being SET — signup, reset, change, and every admin-issued user password. Must contain a lowercase letter, an uppercase letter, a digit and a symbol, on top of `Password`'s length floor — enforced server-side, not just by the paired frontend's form.
  * @minLength 8
+ * @pattern ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\dA-Za-z]).{8,}$
  */
 export type PasswordNew = string;
 
